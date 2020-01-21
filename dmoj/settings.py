@@ -495,3 +495,5 @@ try:
         exec(f.read(), globals())
 except IOError:
     pass
+
+TESTCASE_VISIBLE_LENGTH = 60

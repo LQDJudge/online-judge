@@ -19,10 +19,13 @@ from django.views.generic import DetailView, ListView
 
 from judge import event_poster as event
 from judge.highlight_code import highlight_code
-from judge.models import Contest, Language, Problem, ProblemTranslation, Profile, Submission
+from judge.models import Contest, Language, Problem, ProblemTranslation, Profile, Submission, ProblemData, ProblemTestCase
 from judge.utils.problems import get_result_data, user_authored_ids, user_completed_ids, user_editable_ids
 from judge.utils.raw_sql import use_straight_join
 from judge.utils.views import DiggPaginatorMixin, TitleMixin
+
+import os.path
+import zipfile
 
 
 def submission_related(queryset):
@@ -66,10 +69,12 @@ class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, Deta
         submission = self.object
         return mark_safe(escape(_('Submission of %(problem)s by %(user)s')) % {
             'problem': format_html('<a href="{0}">{1}</a>',
-                                   reverse('problem_detail', args=[submission.problem.code]),
+                                   reverse('problem_detail', args=[
+                                           submission.problem.code]),
                                    submission.problem.translated_name(self.request.LANGUAGE_CODE)),
             'user': format_html('<a href="{0}">{1}</a>',
-                                reverse('user_page', args=[submission.user.user.username]),
+                                reverse('user_page', args=[
+                                        submission.user.user.username]),
                                 submission.user.user.username),
         })
 
@@ -84,7 +89,8 @@ class SubmissionSource(SubmissionDetailBase):
         context = super(SubmissionSource, self).get_context_data(**kwargs)
         submission = self.object
         context['raw_source'] = submission.source.source.rstrip('\n')
-        context['highlighted_source'] = highlight_code(submission.source.source, submission.language.pygments)
+        context['highlighted_source'] = highlight_code(
+            submission.source.source, submission.language.pygments)
         return context
 
 
@@ -111,6 +117,42 @@ def group_test_cases(cases):
     return result
 
 
+def get_visible_content(data):
+    data = data or b''
+    data = data.replace(b'\r\n', b'\r').replace(b'\r', b'\n')
+    if (len(data) > settings.TESTCASE_VISIBLE_LENGTH):
+        data = data[:settings.TESTCASE_VISIBLE_LENGTH]
+        data += b'.' * 3
+    elif not data.endswith(b'\n'):
+        data += b'\n'
+    return data.decode('utf-8')
+
+
+def in_out_ans(case, submission, archive):
+    result = {}
+    result['input'] = get_visible_content(archive.read(case.input_file))
+    result['answer'] = get_visible_content(archive.read(case.output_file))
+    return result
+
+
+def get_problem_data(submission):
+    archive_path = os.path.join(settings.DMOJ_PROBLEM_DATA_ROOT,
+                                str(submission.problem.data_files.zipfile))
+    if not os.path.exists(archive_path):
+        raise InvalidInitException(
+            'archive file "%s" does not exist' % archive_path)
+    try:
+        archive = zipfile.ZipFile(archive_path, 'r')
+    except zipfile.BadZipfile:
+        raise InvalidInitException('bad archive: "%s"' % archive_path)
+    testcases = ProblemTestCase.objects.filter(dataset=submission.problem)\
+                .order_by('order')
+
+    problem_data = {case.order: in_out_ans(case, submission, archive)
+                    for case in testcases}
+
+    return problem_data
+
 class SubmissionStatus(SubmissionDetailBase):
     template_name = 'submission/status.html'
 
@@ -120,8 +162,11 @@ class SubmissionStatus(SubmissionDetailBase):
         context['last_msg'] = event.last()
         context['batches'] = group_test_cases(submission.test_cases.all())
         context['time_limit'] = submission.problem.time_limit
+        context['cases_data'] = get_problem_data(submission)
+
         try:
-            lang_limit = submission.problem.language_limits.get(language=submission.language)
+            lang_limit = submission.problem.language_limits.get(
+                language=submission.language)
         except ObjectDoesNotExist:
             pass
         else:
@@ -135,7 +180,8 @@ class SubmissionTestCaseQuery(SubmissionStatus):
     def get(self, request, *args, **kwargs):
         if 'id' not in request.GET or not request.GET['id'].isdigit():
             return HttpResponseBadRequest()
-        self.kwargs[self.pk_url_kwarg] = kwargs[self.pk_url_kwarg] = int(request.GET['id'])
+        self.kwargs[self.pk_url_kwarg] = kwargs[self.pk_url_kwarg] = int(
+            request.GET['id'])
         return super(SubmissionTestCaseQuery, self).get(request, *args, **kwargs)
 
 
@@ -195,19 +241,24 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                                                           queryset=ProblemTranslation.objects.filter(
                                                               language=self.request.LANGUAGE_CODE), to_attr='_trans'))
         if self.in_contest:
-            queryset = queryset.filter(contest__participation__contest_id=self.contest.id)
+            queryset = queryset.filter(
+                contest__participation__contest_id=self.contest.id)
             if self.contest.hide_scoreboard and self.contest.is_in_contest(self.request.user):
-                queryset = queryset.filter(contest__participation__user=self.request.profile)
+                queryset = queryset.filter(
+                    contest__participation__user=self.request.profile)
         else:
-            queryset = queryset.select_related('contest_object').defer('contest_object__description')
+            queryset = queryset.select_related(
+                'contest_object').defer('contest_object__description')
 
             # This is not technically correct since contest organizers *should* see these, but
             # the join would be far too messy
             if not self.request.user.has_perm('judge.see_private_contest'):
-                queryset = queryset.exclude(contest_object_id__in=Contest.objects.filter(hide_scoreboard=True))
+                queryset = queryset.exclude(
+                    contest_object_id__in=Contest.objects.filter(hide_scoreboard=True))
 
         if self.selected_languages:
-            queryset = queryset.filter(language_id__in=Language.objects.filter(key__in=self.selected_languages))
+            queryset = queryset.filter(
+                language_id__in=Language.objects.filter(key__in=self.selected_languages))
         if self.selected_statuses:
             queryset = queryset.filter(result__in=self.selected_statuses)
 
@@ -221,7 +272,8 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             if not self.request.user.has_perm('judge.see_organization_problem'):
                 filter = Q(problem__is_organization_private=False)
                 if self.request.user.is_authenticated:
-                    filter |= Q(problem__organizations__in=self.request.profile.organizations.all())
+                    filter |= Q(
+                        problem__organizations__in=self.request.profile.organizations.all())
                 queryset = queryset.filter(filter)
         return queryset
 
@@ -242,20 +294,26 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         authenticated = self.request.user.is_authenticated
         context['dynamic_update'] = False
         context['show_problem'] = self.show_problem
-        context['completed_problem_ids'] = user_completed_ids(self.request.profile) if authenticated else []
-        context['authored_problem_ids'] = user_authored_ids(self.request.profile) if authenticated else []
-        context['editable_problem_ids'] = user_editable_ids(self.request.profile) if authenticated else []
+        context['completed_problem_ids'] = user_completed_ids(
+            self.request.profile) if authenticated else []
+        context['authored_problem_ids'] = user_authored_ids(
+            self.request.profile) if authenticated else []
+        context['editable_problem_ids'] = user_editable_ids(
+            self.request.profile) if authenticated else []
 
-        context['all_languages'] = Language.objects.all().values_list('key', 'name')
+        context['all_languages'] = Language.objects.all(
+        ).values_list('key', 'name')
         context['selected_languages'] = self.selected_languages
 
         context['all_statuses'] = self.get_searchable_status_codes()
         context['selected_statuses'] = self.selected_statuses
 
         context['results_json'] = mark_safe(json.dumps(self.get_result_data()))
-        context['results_colors_json'] = mark_safe(json.dumps(settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS))
+        context['results_colors_json'] = mark_safe(
+            json.dumps(settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS))
 
-        context['page_suffix'] = suffix = ('?' + self.request.GET.urlencode()) if self.request.GET else ''
+        context['page_suffix'] = suffix = (
+            '?' + self.request.GET.urlencode()) if self.request.GET else ''
         context['first_page_href'] = (self.first_page_href or '.') + suffix
         context['my_submissions_link'] = self.get_my_submissions_page()
         context['all_submissions_link'] = self.get_all_submissions_page()
@@ -280,14 +338,16 @@ class UserMixin(object):
     def get(self, request, *args, **kwargs):
         if 'user' not in kwargs:
             raise ImproperlyConfigured('Must pass a user')
-        self.profile = get_object_or_404(Profile, user__username=kwargs['user'])
+        self.profile = get_object_or_404(
+            Profile, user__username=kwargs['user'])
         self.username = kwargs['user']
         return super(UserMixin, self).get(request, *args, **kwargs)
 
 
 class ConditionalUserTabMixin(object):
     def get_context_data(self, **kwargs):
-        context = super(ConditionalUserTabMixin, self).get_context_data(**kwargs)
+        context = super(ConditionalUserTabMixin,
+                        self).get_context_data(**kwargs)
         if self.request.user.is_authenticated and self.request.profile == self.profile:
             context['tab'] = 'my_submissions_tab'
         else:
@@ -355,19 +415,22 @@ class ProblemSubmissionsBase(SubmissionsListBase):
         if 'problem' not in kwargs:
             raise ImproperlyConfigured(_('Must pass a problem'))
         self.problem = get_object_or_404(Problem, code=kwargs['problem'])
-        self.problem_name = self.problem.translated_name(self.request.LANGUAGE_CODE)
+        self.problem_name = self.problem.translated_name(
+            self.request.LANGUAGE_CODE)
         return super(ProblemSubmissionsBase, self).get(request, *args, **kwargs)
 
     def get_all_submissions_page(self):
         return reverse('chronological_submissions', kwargs={'problem': self.problem.code})
 
     def get_context_data(self, **kwargs):
-        context = super(ProblemSubmissionsBase, self).get_context_data(**kwargs)
+        context = super(ProblemSubmissionsBase,
+                        self).get_context_data(**kwargs)
         if self.dynamic_update:
             context['dynamic_update'] = context['page_obj'].number == 1
             context['dynamic_problem_id'] = self.problem.id
             context['last_msg'] = event.last()
-        context['best_submissions_link'] = reverse('ranked_submissions', kwargs={'problem': self.problem.code})
+        context['best_submissions_link'] = reverse('ranked_submissions', kwargs={
+                                                   'problem': self.problem.code})
         return context
 
 
@@ -402,14 +465,17 @@ class UserProblemSubmissions(ConditionalUserTabMixin, UserMixin, ProblemSubmissi
     def get_content_title(self):
         if self.request.user.is_authenticated and self.request.profile == self.profile:
             return format_html('''My submissions for <a href="{3}">{2}</a>''',
-                               self.username, reverse('user_page', args=[self.username]),
+                               self.username, reverse(
+                                   'user_page', args=[self.username]),
                                self.problem_name, reverse('problem_detail', args=[self.problem.code]))
         return format_html('''<a href="{1}">{0}</a>'s submissions for <a href="{3}">{2}</a>''',
-                           self.username, reverse('user_page', args=[self.username]),
+                           self.username, reverse(
+                               'user_page', args=[self.username]),
                            self.problem_name, reverse('problem_detail', args=[self.problem.code]))
 
     def get_context_data(self, **kwargs):
-        context = super(UserProblemSubmissions, self).get_context_data(**kwargs)
+        context = super(UserProblemSubmissions,
+                        self).get_context_data(**kwargs)
         context['dynamic_user_id'] = self.profile.id
         return context
 
@@ -417,7 +483,8 @@ class UserProblemSubmissions(ConditionalUserTabMixin, UserMixin, ProblemSubmissi
 def single_submission(request, submission_id, show_problem=True):
     request.no_profile_update = True
     authenticated = request.user.is_authenticated
-    submission = get_object_or_404(submission_related(Submission.objects.all()), id=int(submission_id))
+    submission = get_object_or_404(submission_related(
+        Submission.objects.all()), id=int(submission_id))
 
     if not submission.problem.is_accessible_by(request.user):
         raise Http404()
@@ -515,11 +582,14 @@ class UserContestSubmissions(ForceContestMixin, UserProblemSubmissions):
         if self.problem.is_accessible_by(self.request.user):
             return format_html(_('<a href="{1}">{0}</a>\'s submissions for '
                                  '<a href="{3}">{2}</a> in <a href="{5}">{4}</a>'),
-                               self.username, reverse('user_page', args=[self.username]),
-                               self.problem_name, reverse('problem_detail', args=[self.problem.code]),
+                               self.username, reverse(
+                                   'user_page', args=[self.username]),
+                               self.problem_name, reverse(
+                                   'problem_detail', args=[self.problem.code]),
                                self.contest.name, reverse('contest_view', args=[self.contest.key]))
         return format_html(_('<a href="{1}">{0}</a>\'s submissions for '
                              'problem {2} in <a href="{4}">{3}</a>'),
-                           self.username, reverse('user_page', args=[self.username]),
+                           self.username, reverse(
+                               'user_page', args=[self.username]),
                            self.get_problem_number(self.problem),
                            self.contest.name, reverse('contest_view', args=[self.contest.key]))
