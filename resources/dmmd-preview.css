@@ -1,0 +1,41 @@
+div.dmmd-preview {
+    padding: 0;
+}
+
+div.dmmd-preview-update {
+    background: #ccc;
+    color: #333;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 4px;
+    height: 2em;
+    line-height: 2em;
+}
+
+div.dmmd-preview-content {
+    padding: 0 7px;
+}
+
+div.dmmd-preview.dmmd-preview-has-content div.dmmd-preview-update {
+    border-radius: 4px 4px 0 0;
+}
+
+div.dmmd-preview-has-content div.dmmd-preview-content {
+    padding-bottom: 7px;
+}
+
+div.dmmd-no-button div.dmmd-preview-update {
+	display: none;
+}
+
+div.dmmd-no-button div.dmmd-preview-content {
+	padding-bottom: 0;
+}
+
+div.dmmd-no-button:not(.dmmd-preview-has-content) {
+	display: none;
+}
+
+div.dmmd-preview-stale {
+	background: repeating-linear-gradient(-45deg, #fff, #fff 10px, #f8f8f8 10px, #f8f8f8 20px);
+}

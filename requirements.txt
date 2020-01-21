@@ -1,0 +1,32 @@
+Django>=2.2,<3
+django_compressor
+django-mptt
+django-pagedown<2
+django-registration-redux
+django-reversion
+django-social-share
+-e git://github.com/DMOJ/django-sortedm2m.git#egg=django-sortedm2m
+django-impersonate
+-e git://github.com/DMOJ/dmoj-wpadmin.git#egg=dmoj-wpadmin
+lxml
+Pygments
+mistune
+social-auth-app-django
+pytz
+django-statici18n
+pika
+ua-parser
+pyyaml
+jinja2
+django_jinja
+llist
+requests
+django-fernet-fields
+pyotp
+qrcode[pil]
+jsonfield
+pymoss
+packaging
+celery
+-e git://github.com/DMOJ/ansi2html.git#egg=ansi2html
+sqlparse

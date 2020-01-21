@@ -1,0 +1,9 @@
+{% extends "newsletter/common.html" %}
+
+{% block title %}{{ _('Newsletter') }} {{ newsletter.title }} {{ action }} {{ _('activate') }}{% endblock title %}
+
+{% block body %}
+    <h1>{{ _('Newsletter') }} {{ newsletter.title }} {{ action }} {{ _('activate') }}</h1>
+
+    <p>{{ _('You have successfully been unsubscribed.') }}</p>
+{% endblock body %}

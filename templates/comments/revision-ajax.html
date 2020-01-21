@@ -1,0 +1,3 @@
+{% with node=revision.field_dict %}
+    <div class="comment-body">{{ node.body|markdown('comment', MATH_ENGINE)|reference|str|safe }}</div>
+{% endwith %}

@@ -1,0 +1,68 @@
+.select2-selection ul li {
+    list-style-type: inherit;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    line-height: unset !important;
+}
+
+.wmd-wrapper {
+    padding-top: 2em;
+}
+
+.wmd-wrapper ul.wmd-button-row {
+    margin-left: 0;
+}
+
+.wmd-input {
+    width: 100% !important;
+}
+
+#content .content-description h1,
+#content .content-description h2,
+#content .content-description h3,
+#content .content-description h4,
+#content .content-description h5,
+#content .content-description h6 {
+    padding: 0;
+}
+
+#content .content-description h5 {
+  letter-spacing: initial;
+  text-transform: initial;
+}
+
+#content input.select2-search__field {
+    border: none;
+    box-shadow: none !important;
+}
+
+#content .content-description ul,
+#content .content-description ol {
+    margin: 0;
+}
+
+#content .content-description li {
+    list-style-type: inherit;
+}
+
+select[id^=id_contest_problems] {
+    width: 20em !important;
+}
+
+select#id_organizers.django-select2,
+select#id_organizations.django-select2,
+select#id_tags.django-select2 {
+    width: 20em;
+}
+
+@media (max-width: 780px) {
+    #content .vLargeTextField {
+        max-width: unset;
+    }
+}
+
+.dmmd-preview-update {
+  position: sticky;
+  top: 38px;
+}

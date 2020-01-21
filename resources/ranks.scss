@@ -1,0 +1,105 @@
+.admin a, .admin {
+    color: black !important;
+    font-weight: bold !important;
+}
+
+@mixin rate-svg-color($color) {
+    circle {
+        stroke: $color;
+    }
+    path {
+        fill: $color;
+    }
+}
+
+svg.rate-box {
+    width: 1.2em;
+
+    circle {
+        fill: none;
+        stroke-width: 2px;
+    }
+
+    &.rate-none {
+        visibility: hidden;
+    }
+
+    &.rate-newbie {
+        @include rate-svg-color(#999);
+    }
+
+    &.rate-amateur {
+        @include rate-svg-color(#00a900);
+    }
+
+    &.rate-expert {
+        @include rate-svg-color(#66f);
+    }
+
+    &.rate-candidate-master {
+        @include rate-svg-color(#f6f);
+    }
+
+    &.rate-master {
+        @include rate-svg-color(#dc0);
+    }
+
+    &.rate-grandmaster, &.rate-target {
+        @include rate-svg-color(#e00);
+    }
+
+    &.rate-target {
+        circle:last-child {
+            stroke: none;
+            fill: #e00;
+        }
+    }
+}
+
+.rating {
+    font-weight: bold;
+}
+
+.rate-none, .rate-none a {
+    color: black;
+    font-weight: normal;
+}
+
+.rate-newbie, .rate-newbie a {
+    color: #999;
+}
+
+.rate-amateur, .rate-amateur a {
+    color: #00a900;
+}
+
+.rate-expert, .rate-expert a {
+    color: blue;
+}
+
+.rate-candidate-master, .rate-candidate-master a {
+    color: purple;
+}
+
+.rate-master, .rate-master a {
+    color: #ffb100;
+}
+
+.rate-grandmaster, .rate-grandmaster a, .rate-target, .rate-target a {
+    color: #e00;
+}
+
+.rate-group {
+    white-space: nowrap;
+    display: inline-block;
+    color: black;
+
+    .rating {
+        display: inline-block;
+    }
+
+    .rate-box {
+        margin-right: 0.2em;
+        vertical-align: bottom;
+    }
+}

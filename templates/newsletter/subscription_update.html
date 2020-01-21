@@ -1,0 +1,17 @@
+{% extends "newsletter/common.html" %}
+
+{% block title %}{{ _('Newsletter update') }}{% endblock title %}
+
+{% block body %}
+    <h1>{{ _('Newsletter update') }} {{ newsletter.title }}</h1>
+
+    {% if error %}
+        <p>{{ _('Due to a technical error we were not able to submit your confirmation email. This could be because your email address is invalid.') }}</p>
+    {% else %}
+        <form enctype="multipart/form-data" method="post" action=".">
+            {% csrf_token %}
+            {{ form.as_p() }}
+            <p><input id="id_submit" name="submit" value="{{ _('Update subscription') }}" type="submit"></p>
+        </form>
+    {% endif %}
+{% endblock body %}
