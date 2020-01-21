@@ -128,7 +128,7 @@ def get_visible_content(data):
     return data.decode('utf-8')
 
 
-def in_out_ans(case, submission, archive):
+def get_input_answer(case, archive):
     result = {}
     result['input'] = get_visible_content(archive.read(case.input_file))
     result['answer'] = get_visible_content(archive.read(case.output_file))
@@ -148,7 +148,7 @@ def get_problem_data(submission):
     testcases = ProblemTestCase.objects.filter(dataset=submission.problem)\
                 .order_by('order')
 
-    problem_data = {case.order: in_out_ans(case, submission, archive)
+    problem_data = {case.order: get_input_answer(case, archive)
                     for case in testcases}
 
     return problem_data
