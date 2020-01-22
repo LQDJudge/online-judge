@@ -1,31 +1,51 @@
 import json
+import os.path
+import zipfile
 from operator import attrgetter
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
-from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist, PermissionDenied
-from django.db.models import Prefetch, Q
-from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import PermissionDenied
+from django.db.models import Prefetch
+from django.db.models import Q
+from django.http import Http404
+from django.http import HttpResponse
+from django.http import HttpResponseBadRequest
+from django.http import HttpResponseRedirect
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
-from django.utils.html import escape, format_html
+from django.utils.html import escape
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from django.utils.translation import gettext as _, gettext_lazy
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from django.views.decorators.http import require_POST
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView
+from django.views.generic import ListView
 
 from judge import event_poster as event
 from judge.highlight_code import highlight_code
-from judge.models import Contest, Language, Problem, ProblemTranslation, Profile, Submission, ProblemData, ProblemTestCase
-from judge.utils.problems import get_result_data, user_authored_ids, user_completed_ids, user_editable_ids
+from judge.models import Contest
+from judge.models import Language
+from judge.models import Problem
+from judge.models import ProblemTestCase
+from judge.models import ProblemTranslation
+from judge.models import Profile
+from judge.models import Submission
+from judge.utils.problems import get_result_data
+from judge.utils.problems import user_authored_ids
+from judge.utils.problems import user_completed_ids
+from judge.utils.problems import user_editable_ids
 from judge.utils.raw_sql import use_straight_join
-from judge.utils.views import DiggPaginatorMixin, TitleMixin
-
-import os.path
-import zipfile
+from judge.utils.views import DiggPaginatorMixin
+from judge.utils.views import TitleMixin
 
 
 def submission_related(queryset):
@@ -139,19 +159,20 @@ def get_problem_data(submission):
     archive_path = os.path.join(settings.DMOJ_PROBLEM_DATA_ROOT,
                                 str(submission.problem.data_files.zipfile))
     if not os.path.exists(archive_path):
-        raise InvalidInitException(
+        raise Exception(
             'archive file "%s" does not exist' % archive_path)
     try:
         archive = zipfile.ZipFile(archive_path, 'r')
     except zipfile.BadZipfile:
-        raise InvalidInitException('bad archive: "%s"' % archive_path)
+        raise Exception('bad archive: "%s"' % archive_path)
     testcases = ProblemTestCase.objects.filter(dataset=submission.problem)\
-                .order_by('order')
+        .order_by('order')
 
     problem_data = {case.order: get_input_answer(case, archive)
                     for case in testcases}
 
     return problem_data
+
 
 class SubmissionStatus(SubmissionDetailBase):
     template_name = 'submission/status.html'
