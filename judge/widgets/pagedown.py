@@ -31,7 +31,6 @@ else:
             kwargs.setdefault('css', ('pagedown_widget.css',))
             super(PagedownWidget, self).__init__(*args, **kwargs)
 
-
     class AdminPagedownWidget(PagedownWidget, admin_widgets.AdminTextareaWidget):
         class Media:
             css = {'all': [
@@ -39,7 +38,6 @@ else:
                 'admin/css/pagedown.css',
             ]}
             js = ['admin/js/pagedown.js']
-
 
     class MathJaxPagedownWidget(PagedownWidget):
         class Media:
@@ -49,10 +47,8 @@ else:
                 'pagedown_math.js',
             ]
 
-
     class MathJaxAdminPagedownWidget(AdminPagedownWidget, MathJaxPagedownWidget):
         pass
-
 
     class HeavyPreviewPageDownWidget(PagedownWidget):
         def __init__(self, *args, **kwargs):
@@ -85,7 +81,6 @@ else:
         class Media:
             css = {'all': ['dmmd-preview.css']}
             js = ['dmmd-preview.js']
-
 
     class HeavyPreviewAdminPageDownWidget(AdminPagedownWidget, HeavyPreviewPageDownWidget):
         class Media:
