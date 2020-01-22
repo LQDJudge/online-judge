@@ -170,7 +170,6 @@ def get_problem_data(submission):
 
     problem_data = {case.order: get_input_answer(case, archive)
                     for case in testcases}
-
     return problem_data
 
 
@@ -184,7 +183,6 @@ class SubmissionStatus(SubmissionDetailBase):
         context['batches'] = group_test_cases(submission.test_cases.all())
         context['time_limit'] = submission.problem.time_limit
         context['cases_data'] = get_problem_data(submission)
-
         try:
             lang_limit = submission.problem.language_limits.get(
                 language=submission.language)
