@@ -95,6 +95,13 @@
                 }).change();
             }
 
+            function checker_custom($checker, $custom_checker) {
+                $tr = $custom_checker.parent().parent();
+                $checker.change(function () {
+                    $tr.toggle($checker.val().startsWith('custom')).change();
+                }).change();
+            }
+
             function swap_row($a, $b) {
                 var $a_order = $a.find('input[id$=order]'), $b_order = $b.find('input[id$=order]');
                 var order = $a_order.val();
@@ -107,6 +114,7 @@
             }
 
             checker_precision($('#id_problem-data-checker'));
+            checker_custom($('#id_problem-data-checker'), $('#id_problem-data-custom_checker'));
 
             $table.on('add-row', function (e, $tr) {
                 var $order = $tr.find('input').filter('[id$=order]').attr('type', 'hidden').val(++order);
