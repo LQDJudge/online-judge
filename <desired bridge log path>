@@ -553,3 +553,4 @@ INFO 2020-01-26 05:15:35,436 judgehandler judge1: 5 test case(s) completed on: 4
 INFO 2020-01-26 05:15:35,531 judgehandler judge1: 3 test case(s) completed on: 42
 INFO 2020-01-26 05:15:35,729 judgehandler judge1: Grading has ended on: 42
 INFO 2020-01-26 05:15:35,729 judgelist Judge available after grading 42: judge1
+INFO 2020-01-26 05:28:39,295 judgehandler Judge disconnected from: ('127.0.0.1', 34940)
