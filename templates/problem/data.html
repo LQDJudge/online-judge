@@ -26,7 +26,7 @@
 
             var $table = $('#case-table');
             $table.on('add-row', function (e, $tr) {
-                update_select2();
+                // update_select2();
                 $tr.find('input').filter('[id$=file]').each(function () {
                     var $select, val = $(this).replaceWith($select = $('<select>').attr({
                         id: $(this).attr('id'),
@@ -97,8 +97,17 @@
 
             function checker_custom($checker, $custom_checker) {
                 $tr = $custom_checker.parent().parent();
+                $td = $checker.parent();
+                var $sample = $("<a/>",{
+                    text: "Sample Checker",
+                    style: "margin-left:3em;",
+                    target: "_blank",
+                    href: "{{url('custom_checker_sample')}}"
+                }).appendTo($td);
+
                 $checker.change(function () {
                     $tr.toggle($checker.val().startsWith('custom')).change();
+                    $sample.toggle($checker.val().startsWith('custom')).change();
                 }).change();
             }
 
@@ -286,6 +295,15 @@
                 }
             });
 
+            $('input#delete-all').change(function() {
+                if (this.checked) {
+                    $("input[name$='DELETE']").attr('checked', true);
+                }
+                else {
+                    $("input[name$='DELETE']").attr('checked', false);
+                }
+            });
+
             var $controls = $('#column-visible');
             var problem = $controls.attr('data-problem');
             $controls.find('input').change(function () {
@@ -305,7 +323,7 @@
                 }
                 $this.prop('checked', filled).trigger('change');
             });
-        });
+        }).change();
     </script>
 {% endblock %}
 
@@ -448,6 +466,10 @@
                 <input type="checkbox" data-suffix="generator_args">
                 {{ _('Generator args') }}
             </label>
+            <label>
+                <input type="checkbox" id="delete-all">
+                {{ _('Delete all') }}
+            </label>
         </div>
         <table id="case-table" class="table">
             <thead>
@@ -463,7 +485,8 @@
                 <th class="checker">{{ _('Checker') }}</th>
                 <th class="generator-args">{{ _('Generator args') }}</th>
                 {% if cases_formset.can_delete %}
-                    <th>{{ _('Delete?') }}</th>
+                    <th>{{ _('Delete?') }} 
+                    </th>
                 {% endif %}
             </tr>
             </thead>

@@ -17,6 +17,7 @@ from judge.sitemap import BlogPostSitemap, ContestSitemap, HomePageSitemap, Orga
 from judge.views import TitledTemplateView, api, blog, comment, contests, language, license, mailgun, organization, \
     preview, problem, problem_manage, ranked_submission, register, stats, status, submission, tasks, ticket, totp, \
     user, widgets
+from judge.views.about import about, custom_checker_sample
 from judge.views.problem_data import ProblemDataView, ProblemSubmissionDiff, \
     problem_data_file, problem_init_view
 from judge.views.register import ActivationView, RegistrationView
@@ -162,7 +163,7 @@ urlpatterns = [
     url(r'^users/', include([
         url(r'^$', user.users, name='user_list'),
         url(r'^(?P<page>\d+)$', lambda request, page:
-            HttpResponsePermanentRedirect('%s?page=%s' % (reverse('user_list'), page))),
+         uncommitted   HttpResponsePermanentRedirect('%s?page=%s' % (reverse('user_list'), page))),
         url(r'^find$', user.user_ranking_redirect, name='user_ranking_redirect'),
     ])),
 
@@ -360,6 +361,10 @@ urlpatterns = [
         url(r'^failure$', tasks.demo_failure),
         url(r'^progress$', tasks.demo_progress),
     ])),
+
+    url(r'^about/', about, name='about'),
+
+    url(r'^custom_checker_sample', custom_checker_sample, name='custom_checker_sample'),
 ]
 
 favicon_paths = ['apple-touch-icon-180x180.png', 'apple-touch-icon-114x114.png', 'android-chrome-72x72.png',
