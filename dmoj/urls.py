@@ -1,3 +1,4 @@
+from chat_box.views import chat
 from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
@@ -14,16 +15,16 @@ from judge.feed import AtomBlogFeed, AtomCommentFeed, AtomProblemFeed, BlogFeed,
 from judge.forms import CustomAuthenticationForm
 from judge.sitemap import BlogPostSitemap, ContestSitemap, HomePageSitemap, OrganizationSitemap, ProblemSitemap, \
     SolutionSitemap, UrlSitemap, UserSitemap
-from judge.views import TitledTemplateView, api, blog, comment, contests, language, license, mailgun, organization, \
-    preview, problem, problem_manage, ranked_submission, register, stats, status, submission, tasks, ticket, totp, \
-    user, widgets
-from judge.views.about import about, custom_checker_sample
+from judge.views import TitledTemplateView, about, api, blog, comment, contests, language, license, mailgun, \
+    organization, preview, problem, problem_manage, ranked_submission, register, stats, status, submission, tasks, \
+    ticket, totp, user, widgets
 from judge.views.problem_data import ProblemDataView, ProblemSubmissionDiff, \
     problem_data_file, problem_init_view
 from judge.views.register import ActivationView, RegistrationView
 from judge.views.select2 import AssigneeSelect2View, CommentSelect2View, ContestSelect2View, \
     ContestUserSearchSelect2View, OrganizationSelect2View, ProblemSelect2View, TicketUserSelect2View, \
     UserSearchSelect2View, UserSelect2View
+
 
 admin.autodiscover()
 
@@ -362,9 +363,11 @@ urlpatterns = [
         url(r'^progress$', tasks.demo_progress),
     ])),
 
-    url(r'^about/', about, name='about'),
+    url(r'^about/', about.about, name='about'),
 
-    url(r'^custom_checker_sample', custom_checker_sample, name='custom_checker_sample'),
+    url(r'^custom_checker_sample/', about.custom_checker_sample, name='custom_checker_sample'),
+
+    url(r'chat/', chat, name='chat'),
 ]
 
 favicon_paths = ['apple-touch-icon-180x180.png', 'apple-touch-icon-114x114.png', 'android-chrome-72x72.png',

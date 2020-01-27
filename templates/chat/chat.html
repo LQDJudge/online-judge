@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block js_media %}
+<script type="text/javascript">
+    var chatSocket = new WebSocket(
+        'ws://' + window.location.host +
+        '/ws/chat/');
+</script>
+<script type="text/javascript">
+    $(function() {
+        chatSocket.onmessage = function(e) {
+            var data = JSON.parse(e.data);
+            var message = data['message'];
+            $('#chat-log').append(message + '\n');
+        };
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+        $('#chat-message-input').focus();
+        $('#chat-message-input').keyup(function(e) {
+            if (e.keyCode === 13) {  // enter, return
+                $('#chat-message-submit').click();
+            }
+        });
+        $("#chat-message-submit").click(function() {
+            var message = "{{ request.user }}: " + $('input#chat-message-input').val();
+            chatSocket.send(JSON.stringify({
+                'message': message,
+            }));
+            $('input#chat-message-input').val('');
+        });
+    });
+</script>
+{% endblock js_media %}
+
+{% block body %}
+    <textarea id="chat-log" cols="100" rows="20"></textarea><br/>
+    <input id="chat-message-input" type="text" size="100"/><br/>
+    <button id="chat-message-submit"> Send </button>
+{% endblock body %}

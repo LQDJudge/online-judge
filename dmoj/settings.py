@@ -236,6 +236,8 @@ INSTALLED_APPS += (
     'statici18n',
     'impersonate',
     'django_jinja',
+    'chat_box',
+    'channels',
 )
 
 MIDDLEWARE = (
@@ -500,3 +502,13 @@ TESTCASE_VISIBLE_LENGTH = 60
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10240
 DATA_UPLOAD_MAX_MEMORY_SIZE = 2621440
+
+ASGI_APPLICATION = 'dmoj.routing.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('0.0.0.0', 6379)],
+        },
+    },
+}
