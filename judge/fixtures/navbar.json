@@ -74,7 +74,7 @@
             "path": "/about/",
             "regex": "^/about/$",
             "rght": 4,
-            "tree_id": 5
+            "tree_id": 6
         },
         "model": "judge.navigationbar",
         "pk": 6
@@ -90,7 +90,7 @@
             "path": "/status/",
             "regex": "^/status/$|^/judge/",
             "rght": 3,
-            "tree_id": 5
+            "tree_id": 6
         },
         "model": "judge.navigationbar",
         "pk": 7
@@ -106,7 +106,7 @@
             "path": "/chat/",
             "regex": "^/chat",
             "rght": 2,
-            "tree_id": 6
+            "tree_id": 5
         },
         "model": "judge.navigationbar",
         "pk": 8
