@@ -94,5 +94,21 @@
         },
         "model": "judge.navigationbar",
         "pk": 7
+    },
+    {
+        "fields": {
+            "key": "chat",
+            "label": "Chat",
+            "level": 0,
+            "lft": 1,
+            "order": 8,
+            "parent": null,
+            "path": "/chat/",
+            "regex": "^/chat",
+            "rght": 2,
+            "tree_id": 6
+        },
+        "model": "judge.navigationbar",
+        "pk": 8
     }
 ]
