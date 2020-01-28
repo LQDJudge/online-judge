@@ -1,8 +1,7 @@
 from django.shortcuts import render
 from django.utils.translation import gettext as _
+from django.views import View
 
 
-def chat(request):
-    return render(request, 'chat/chat.html', {
-        'title': _('Chat Box'),
-    })
+class ChatView(View):
+    template_name = 'chat.html'
