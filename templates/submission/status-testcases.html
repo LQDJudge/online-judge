@@ -36,7 +36,7 @@
         <table>{% for case in batch.cases %}
             <tr id="{{ case.id }}" class="case-row toggle closed">
                 <td>
-                    {%- if case.status != 'AC' and case.output and (prefix_length is none or prefix_length > 0) -%}
+                    {%- if ((prefix_length is none or prefix_length > 0) or (request.user.is_superuser)) -%}
                         <i class="fa fa-chevron-right fa-fw"></i>
                     {%- endif -%}
                     {%- if batch.id -%}
@@ -72,16 +72,17 @@
                 {% endif %}
             </tr>
 
-            {% if case.status != 'AC' and case.output and (prefix_length is none or prefix_length > 0) %}
+            {% if ((prefix_length is none or prefix_length > 0) or (request.user.is_superuser)) %}
                 <tr id="{{ case.id }}-output" style="display:none" class="case-feedback toggled">
                     <td colspan="5">
                         <div class="case-info">
-                            <strong>{{ _('Your output (clipped)') }}</strong>
-                            {% if prefix_length is none %}
-                                <pre class="case-output">{{ case.output|linebreaksbr }}</pre>
-                            {% else %}
-                                <pre class="case-output">{{ case.output[:prefix_length]|linebreaksbr }}</pre>
-                            {% endif %}
+                            {% set curr_data = cases_data[case.case] %}
+                            <strong>{{ _('Input:') }}</strong>
+                            <pre class="case-output">{{ curr_data['input']|linebreaksbr }}</pre>
+                            <strong>{{ _('Your output:') }}</strong>
+                            <pre class="case-output">{{ case.output|linebreaksbr }}</pre>
+                            <strong>{{ _('Answer:') }}</strong>
+                            <pre class="case-output">{{ curr_data['answer']|linebreaksbr }}</pre>
                         </div>
                     </td>
                     {% if case.extended_feedback %}
