@@ -15,8 +15,8 @@ python dmojauto-conf
 + python manage.py runbridged
 + dmoj 0.0.0.0 -p 9999 -c judge/conf1.yml (depend on port in the local_settings.py and directory of conf file)
 
-### 7. Change vietnamese:
- - go to /home/cuom1999/DMOJ/site/locale/vi
- - open .po file
+### 7. Update vietnamese translation:
+ - go to locale/vi
+ - modify .po file
  - python manage.py compilemessages
  - python manage.py compilejsi18n
