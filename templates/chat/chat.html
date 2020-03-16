@@ -34,7 +34,9 @@
 {% endblock js_media %}
 
 {% block body %}
-    <textarea id="chat-log" cols="100" rows="20"></textarea><br/>
-    <input id="chat-message-input" type="text" size="100"/><br/>
-    <button id="chat-message-submit"> Send </button>
+    <div>
+        <textarea disabled id="chat-log" rows="20" style="width: 100%"></textarea><br/>
+        <input id="chat-message-input" type="text" style="width: 100%"/><br/>
+    </div>
+    <button id="chat-message-submit" style="margin-top: 1em"> Send </button>
 {% endblock body %}

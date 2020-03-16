@@ -109,7 +109,7 @@ TIMEZONE_MAP = None
 TIMEZONE_DETECT_BACKEND = None
 
 TERMS_OF_SERVICE_URL = None
-DEFAULT_USER_LANGUAGE = 'PY3'
+DEFAULT_USER_LANGUAGE = 'CPP11'
 
 PHANTOMJS = ''
 PHANTOMJS_PDF_ZOOM = 0.75
@@ -431,9 +431,9 @@ EVENT_DAEMON_SUBMISSION_KEY = '6Sdmkx^%pk@GsifDfXcwX*Y7LRF%RGT8vmFpSxFBT$fwS7trc
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
 # Whatever you do, this better be one of the entries in `LANGUAGES`.
-LANGUAGE_CODE = 'en'
-TIME_ZONE = 'UTC'
-DEFAULT_USER_TIME_ZONE = 'America/Toronto'
+LANGUAGE_CODE = 'vi'
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
+DEFAULT_USER_TIME_ZONE = 'Asia/Ho_Chi_Minh'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True

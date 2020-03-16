@@ -218,7 +218,7 @@ header {
 }
 
 #nav-shadow {
-    height: 3px;
+    height: 1px;
     background: linear-gradient(rgba(0, 0, 0, 0.5), transparent);
 }
 
@@ -276,7 +276,7 @@ nav {
                 display: inline-block;
                 text-decoration: none;
                 vertical-align: middle;
-                color: #FFF;
+                color: #3e452c;
                 padding: 13px 7px;
                 height: 18px;
 
@@ -291,8 +291,9 @@ nav {
                 }
 
                 &.active {
-                    color: #FFF;
+                    // color: #FFF;
                     background: $highlight_blue;
+                    color: black;
                 }
 
                 .nav-expand {

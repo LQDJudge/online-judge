@@ -225,7 +225,7 @@
             $('a#fill-testcases').click(function () {
                 var inFiles = [], outFiles = [];
                 for (var i = 0; i < window.valid_files.length; i++) {
-                    if (window.valid_files[i].endsWith(".in")) {
+                    if (window.valid_files[i].endsWith(".in") || window.valid_files[i].endsWith(".inp")) {
                         inFiles.push(window.valid_files[i]);
                     }
                     if (window.valid_files[i].endsWith(".out")) {
@@ -233,7 +233,7 @@
                     }
                 }
                 if (inFiles.length == 0) {
-                    alert("No input/output files. Make sure your files' suffices are .in/.out");
+                    alert("No input/output files. Make sure your files' suffices are .in(p)/.out");
                     return false;
                 }
                 if (inFiles.length != outFiles.length) {
@@ -247,6 +247,9 @@
                 // fill cases
                 for (var i = 0; i < inFiles.length; i++) {
                     $("#id_cases-" + i + "-input_file").val(inFiles[i]).change();
+                }
+                for (var i = 0; i < outFiles.length; i++) {
+                    $("#id_cases-" + i + "-output_file").val(outFiles[i]).change();
                 }
                 // add points
                 if ($('#problem-type').val() == "ICPC") {
