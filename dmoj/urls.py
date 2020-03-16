@@ -367,7 +367,7 @@ urlpatterns = [
 
     url(r'^custom_checker_sample/', about.custom_checker_sample, name='custom_checker_sample'),
 
-    url(r'chat/', ChatView.as_view(), name='chat'),
+    url(r'^chat/', ChatView.as_view(), name='chat'),
 ]
 
 favicon_paths = ['apple-touch-icon-180x180.png', 'apple-touch-icon-114x114.png', 'android-chrome-72x72.png',
