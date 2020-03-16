@@ -24,7 +24,7 @@ INSTALLED_APPS += (
 )
 
 #path to problem folder
-DMOJ_PROBLEM_DATA_ROOT = '/home/Projects/CP/LQDJudge/problems'
+DMOJ_PROBLEM_DATA_ROOT = '/home/cuom1999/DMOJ/problems'
 
 # Caching. You can use memcached or redis instead.
 # Documentation: <https://docs.djangoproject.com/en/1.11/topics/cache/>
@@ -38,10 +38,10 @@ CACHES = {
 # Documentation: <https://docs.djangoproject.com/en/1.11/ref/databases/>
 DATABASES = {
      'default': {
-        'ENGINE': 'django.db.backends.mysql', 
+        'ENGINE': 'django.db.backends.mysql',
         'NAME': 'dmoj',
         'USER': 'dmoj',
-        'PASSWORD': 'admintl97p1',
+        'PASSWORD': '<password>',
         'HOST': '127.0.0.1',
         'OPTIONS': {
             'charset': 'utf8mb4',
@@ -56,8 +56,8 @@ DATABASES = {
 
 # Internationalization.
 # Documentation: <https://docs.djangoproject.com/en/1.11/topics/i18n/>
-LANGUAGE_CODE = 'vi'
-DEFAULT_USER_TIME_ZONE = 'Asia/Ho_Chi_Minh'
+LANGUAGE_CODE = 'en-ca'
+DEFAULT_USER_TIME_ZONE = 'America/Mexico_City'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
@@ -108,11 +108,11 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # A tuple of (name, email) pairs that specifies those who will be mailed
 # when the server experiences an error when DEBUG = False.
 ADMINS = (
-    ('luongd', 'doannguyenthanhluong@gmail.com'),
+    ('cuom1999', 'your.email@example.com'),
 )
 
 # The sender for the aforementioned emails.
-SERVER_EMAIL = 'LQDOJ: Le Quy Don Online Judge <errors@lqdoj.com>'
+SERVER_EMAIL = 'DMOJ: Modern Online Judge <errors@dmoj.ca>'
 
 
 ##################################################
@@ -124,7 +124,7 @@ SERVER_EMAIL = 'LQDOJ: Le Quy Don Online Judge <errors@lqdoj.com>'
 # webserver to serve the static files. This is the directory where all the 
 # static files DMOJ uses will be collected to.
 # You must configure your webserver to serve this directory as /static/ in production.
-STATIC_ROOT = '/home/luongd/Projects/LQDJudge/online-judge/static_root'
+STATIC_ROOT = '/home/cuom1999/DMOJ/static_root'
 
 # URL to access static files.
 #STATIC_URL = '/static/'
@@ -137,8 +137,8 @@ STATIC_ROOT = '/home/luongd/Projects/LQDJudge/online-judge/static_root'
 ############################################
 
 ## DMOJ site display settings.
-SITE_NAME = 'LQDOJ'
-SITE_LONG_NAME = 'LQDOJ: Le Quy Don Online Judge'
+SITE_NAME = 'FOOJ'
+SITE_LONG_NAME = 'FOOJ: Modern Online Judge'
 SITE_ADMIN_EMAIL = 'admin@example.com'
 TERMS_OF_SERVICE_URL = '//dmoj.ca/tos' # Use a flatpage.
 
