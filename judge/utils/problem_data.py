@@ -69,6 +69,11 @@ class ProblemDataCompiler(object):
                 if len(custom_checker_path) != 2:
                     raise ProblemDataError(_('How did you corrupt the custom checker path?'))
                 return(custom_checker_path[1])
+            if (case.checker == 'customval'):
+                validator_path = split_path_first(case.custom_validator.name)
+                if len(validator_path) != 2:
+                    raise ProblemDataError(_('How did you corrupt the custom checker path?'))
+                return(validator_path[1])
             if case.checker_args:
                 return {
                     'name': case.checker,

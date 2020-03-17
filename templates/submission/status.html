@@ -72,7 +72,7 @@
     {% endif %}
 
     <br>
-    <hr class="half-hr">
+    <hr>
     <br>
 
     <div id="test-cases">{% include "submission/status-testcases.html" %}</div>
@@ -81,7 +81,7 @@
         {% if request.user == submission.user.user or perms.judge.abort_any_submission %}
             <div id="abort-button">
                 <br>
-                <hr class="half-hr">
+                <hr>
                 <br>
                 <form action="{{ url('submission_abort', submission.id) }}" method="post">
                     {% csrf_token %}

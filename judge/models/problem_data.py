@@ -30,6 +30,7 @@ CHECKERS = (
     ('identical', _('Byte identical')),
     ('linecount', _('Line-by-line')),
     ('custom', _('Custom checker')),
+    ('customval', _('Custom Validator')),
 )
 
 
@@ -52,6 +53,12 @@ class ProblemData(models.Model):
                                       blank=True,
                                       upload_to=problem_directory_file,
                                       validators=[FileExtensionValidator(allowed_extensions=['py'])])
+    custom_validator = models.FileField(verbose_name=_('custom validator file'),
+                                        storage=problem_data_storage,
+                                        null=True,
+                                        blank=True,
+                                        upload_to=problem_directory_file,
+                                        validators=[FileExtensionValidator(allowed_extensions=['cpp'])])
     __original_zipfile = None
 
     def __init__(self, *args, **kwargs):
@@ -78,6 +85,10 @@ class ProblemData(models.Model):
             self.generator.name = _problem_directory_file(new, self.generator.name)
         if self.custom_checker:
             self.custom_checker.name = _problem_directory_file(new, self.custom_checker.name)
+        if self.custom_checker:
+            self.custom_checker.name = _problem_directory_file(new, self.custom_checker.name)
+        if self.custom_validator:
+            self.custom_validator.name = _problem_directory_file(new, self.custom_validator.name)
         self.save()
     _update_code.alters_data = True
 

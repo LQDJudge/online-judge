@@ -894,3 +894,535 @@ INFO 2020-03-16 04:50:11,813 judgehandler judge1: 1 test case(s) completed on: 6
 INFO 2020-03-16 04:50:11,944 judgehandler judge1: 4 test case(s) completed on: 63
 INFO 2020-03-16 04:50:12,087 judgehandler judge1: Grading has ended on: 63
 INFO 2020-03-16 04:50:12,088 judgelist Judge available after grading 63: judge1
+INFO 2020-03-17 05:52:30,384 judgehandler Judge connected from: ('127.0.0.1', 43860)
+INFO 2020-03-17 05:52:30,386 judgehandler Judge authenticated: ('127.0.0.1', 43860) (judge1)
+INFO 2020-03-17 05:52:37,582 judgelist Free judges: 1
+INFO 2020-03-17 05:52:37,582 judgelist Dispatched submission 63 to: judge1
+INFO 2020-03-17 05:52:37,590 judgehandler Submission acknowledged: 63
+INFO 2020-03-17 05:52:39,371 judgehandler judge1: Submission generated compiler messages: 63
+INFO 2020-03-17 05:52:39,433 judgehandler judge1: Grading has begun on: 63
+INFO 2020-03-17 05:52:39,478 judgehandler judge1: 7 test case(s) completed on: 63
+INFO 2020-03-17 05:52:39,728 judgehandler judge1: 17 test case(s) completed on: 63
+INFO 2020-03-17 05:52:39,979 judgehandler judge1: 24 test case(s) completed on: 63
+INFO 2020-03-17 05:52:40,231 judgehandler judge1: 17 test case(s) completed on: 63
+INFO 2020-03-17 05:52:40,483 judgehandler judge1: 7 test case(s) completed on: 63
+INFO 2020-03-17 05:52:40,733 judgehandler judge1: 18 test case(s) completed on: 63
+INFO 2020-03-17 05:52:41,641 judgehandler judge1: 2 test case(s) completed on: 63
+INFO 2020-03-17 05:52:41,735 judgehandler judge1: 2 test case(s) completed on: 63
+INFO 2020-03-17 05:52:41,828 judgehandler judge1: 6 test case(s) completed on: 63
+INFO 2020-03-17 05:52:42,697 judgehandler judge1: Grading has ended on: 63
+INFO 2020-03-17 05:52:42,697 judgelist Judge available after grading 63: judge1
+INFO 2020-03-17 05:52:47,180 judgelist Free judges: 1
+INFO 2020-03-17 05:52:47,181 judgelist Dispatched submission 63 to: judge1
+INFO 2020-03-17 05:52:47,199 judgehandler Submission acknowledged: 63
+INFO 2020-03-17 05:52:48,095 judgehandler judge1: Submission generated compiler messages: 63
+INFO 2020-03-17 05:52:48,133 judgehandler judge1: Grading has begun on: 63
+INFO 2020-03-17 05:52:48,254 judgehandler judge1: 15 test case(s) completed on: 63
+INFO 2020-03-17 05:52:48,506 judgehandler judge1: 23 test case(s) completed on: 63
+INFO 2020-03-17 05:52:48,757 judgehandler judge1: 24 test case(s) completed on: 63
+INFO 2020-03-17 05:52:49,009 judgehandler judge1: 16 test case(s) completed on: 63
+INFO 2020-03-17 05:52:49,672 judgehandler judge1: 5 test case(s) completed on: 63
+INFO 2020-03-17 05:52:49,871 judgehandler judge1: 2 test case(s) completed on: 63
+INFO 2020-03-17 05:52:50,081 judgehandler judge1: 4 test case(s) completed on: 63
+INFO 2020-03-17 05:52:50,185 judgehandler judge1: 11 test case(s) completed on: 63
+INFO 2020-03-17 05:52:51,173 judgehandler judge1: Grading has ended on: 63
+INFO 2020-03-17 05:52:51,174 judgelist Judge available after grading 63: judge1
+INFO 2020-03-17 06:40:31,639 judgelist Free judges: 1
+INFO 2020-03-17 06:40:31,640 judgelist Dispatched submission 64 to: judge1
+INFO 2020-03-17 06:40:31,656 judgehandler Submission acknowledged: 64
+INFO 2020-03-17 06:40:32,523 judgehandler judge1: Submission failed to compile: 64
+INFO 2020-03-17 06:40:32,523 judgelist Judge available after grading 64: judge1
+INFO 2020-03-17 06:40:44,497 judgelist Free judges: 1
+INFO 2020-03-17 06:40:44,498 judgelist Dispatched submission 65 to: judge1
+INFO 2020-03-17 06:40:44,514 judgehandler Submission acknowledged: 65
+INFO 2020-03-17 06:40:45,380 judgehandler judge1: Submission generated compiler messages: 65
+INFO 2020-03-17 06:40:45,422 judgehandler judge1: Grading has begun on: 65
+INFO 2020-03-17 06:40:45,460 judgehandler judge1: 3 test case(s) completed on: 65
+INFO 2020-03-17 06:40:45,669 judgehandler judge1: 12 test case(s) completed on: 65
+INFO 2020-03-17 06:40:45,920 judgehandler judge1: 24 test case(s) completed on: 65
+INFO 2020-03-17 06:40:46,546 judgehandler judge1: 3 test case(s) completed on: 65
+INFO 2020-03-17 06:40:47,294 judgehandler judge1: 3 test case(s) completed on: 65
+INFO 2020-03-17 06:40:48,126 judgehandler judge1: 2 test case(s) completed on: 65
+INFO 2020-03-17 06:40:48,213 judgehandler judge1: 1 test case(s) completed on: 65
+INFO 2020-03-17 06:40:48,306 judgehandler judge1: 7 test case(s) completed on: 65
+INFO 2020-03-17 06:40:48,400 judgehandler judge1: 1 test case(s) completed on: 65
+INFO 2020-03-17 06:40:48,505 judgehandler judge1: 2 test case(s) completed on: 65
+INFO 2020-03-17 06:40:48,668 judgehandler judge1: 2 test case(s) completed on: 65
+INFO 2020-03-17 06:40:48,772 judgehandler judge1: 13 test case(s) completed on: 65
+INFO 2020-03-17 06:40:48,924 judgehandler judge1: 9 test case(s) completed on: 65
+INFO 2020-03-17 06:40:49,083 judgehandler judge1: 12 test case(s) completed on: 65
+INFO 2020-03-17 06:40:49,198 judgehandler judge1: 6 test case(s) completed on: 65
+INFO 2020-03-17 06:40:49,292 judgehandler judge1: Grading has ended on: 65
+INFO 2020-03-17 06:40:49,292 judgelist Judge available after grading 65: judge1
+INFO 2020-03-17 06:41:14,985 judgelist Free judges: 1
+INFO 2020-03-17 06:41:14,986 judgelist Dispatched submission 66 to: judge1
+INFO 2020-03-17 06:41:15,002 judgehandler Submission acknowledged: 66
+INFO 2020-03-17 06:41:15,933 judgehandler judge1: Submission generated compiler messages: 66
+INFO 2020-03-17 06:41:15,987 judgehandler judge1: Grading has begun on: 66
+INFO 2020-03-17 06:41:16,732 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:17,484 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:18,485 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:19,237 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:19,988 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:20,739 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:21,490 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:22,241 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:22,992 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:23,744 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:24,746 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:25,497 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:26,537 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:26,999 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:27,750 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:28,502 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:29,253 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:30,004 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:30,756 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:31,507 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:32,259 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:33,260 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:34,011 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:34,763 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:35,514 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:36,783 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:37,016 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:37,767 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:38,519 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:39,270 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:40,274 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:41,220 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:41,523 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:42,275 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:43,026 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:43,777 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:44,761 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:45,279 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:46,031 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:46,782 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:47,793 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:48,284 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:49,035 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:49,786 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:50,537 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:51,539 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:52,290 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:53,041 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:54,012 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:54,667 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:56,598 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:57,148 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:57,336 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:57,799 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:58,550 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:41:59,301 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:00,052 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:00,803 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:01,554 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:02,305 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:03,056 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:03,807 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:04,559 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:05,560 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:07,232 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:08,571 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:08,748 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:08,868 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:09,316 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:10,067 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:10,818 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:11,569 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:12,523 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:13,071 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:14,073 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:14,824 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:15,575 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:16,519 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:17,077 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:17,885 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:19,195 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:19,483 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:20,671 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:21,007 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:21,584 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:22,702 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:23,337 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:24,103 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:24,839 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:25,590 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:27,274 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:28,934 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:30,623 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:31,010 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:31,222 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:31,346 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:31,465 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:32,101 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:33,421 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:33,600 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 06:42:33,778 judgehandler judge1: Grading has ended on: 66
+INFO 2020-03-17 06:42:33,778 judgelist Judge available after grading 66: judge1
+INFO 2020-03-17 06:43:15,398 judgelist Free judges: 1
+INFO 2020-03-17 06:43:15,399 judgelist Dispatched submission 67 to: judge1
+INFO 2020-03-17 06:43:15,416 judgehandler Submission acknowledged: 67
+INFO 2020-03-17 06:43:16,291 judgehandler judge1: Submission generated compiler messages: 67
+INFO 2020-03-17 06:43:16,335 judgehandler judge1: Grading has begun on: 67
+INFO 2020-03-17 06:43:18,415 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:19,417 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:20,418 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:22,421 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:24,423 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:25,675 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:28,800 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:29,681 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:30,682 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:31,684 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:33,686 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:34,868 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:37,161 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:37,246 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:38,694 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:40,696 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:43,158 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:44,952 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:46,955 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:48,957 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:50,960 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:52,963 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:54,965 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:56,968 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:57,969 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:43:59,972 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:00,974 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:02,976 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:05,229 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:06,231 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:08,234 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:09,235 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:11,238 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:13,241 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:14,242 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:16,245 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:17,246 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:19,249 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:21,502 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:22,504 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:23,505 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:25,508 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:27,511 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:29,513 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:31,516 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:32,518 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:34,520 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:35,522 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:36,523 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:37,775 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:38,777 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:40,780 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:42,546 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:43,527 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:44,256 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:44,786 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:46,840 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:48,436 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:49,104 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:50,794 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:51,832 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:52,797 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:55,050 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:57,053 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:44:59,055 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:00,057 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:01,058 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:02,066 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:03,061 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:05,064 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:06,794 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:07,163 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:08,069 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:10,071 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:12,884 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:13,325 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:14,327 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:16,330 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:17,514 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:19,334 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:20,623 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:21,528 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:22,338 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:23,339 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:25,342 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:26,496 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:27,345 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:29,348 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:30,351 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:31,602 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:33,605 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:35,608 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:37,802 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:38,612 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:39,614 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:41,616 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:42,618 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:44,300 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:45,622 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:46,592 judgehandler judge1: 1 test case(s) completed on: 67
+INFO 2020-03-17 06:45:46,688 judgehandler judge1: Grading has ended on: 67
+INFO 2020-03-17 06:45:46,688 judgelist Judge available after grading 67: judge1
+INFO 2020-03-17 08:13:04,323 judgelist Free judges: 1
+INFO 2020-03-17 08:13:04,324 judgelist Dispatched submission 63 to: judge1
+INFO 2020-03-17 08:13:04,341 judgehandler Submission acknowledged: 63
+INFO 2020-03-17 08:13:05,259 judgehandler judge1: Submission generated compiler messages: 63
+INFO 2020-03-17 08:13:05,297 judgehandler judge1: Grading has begun on: 63
+INFO 2020-03-17 08:13:05,490 judgehandler judge1: 20 test case(s) completed on: 63
+INFO 2020-03-17 08:13:05,740 judgehandler judge1: 12 test case(s) completed on: 63
+INFO 2020-03-17 08:13:05,993 judgehandler judge1: 18 test case(s) completed on: 63
+INFO 2020-03-17 08:13:06,246 judgehandler judge1: 10 test case(s) completed on: 63
+INFO 2020-03-17 08:13:06,497 judgehandler judge1: 7 test case(s) completed on: 63
+INFO 2020-03-17 08:13:06,748 judgehandler judge1: 13 test case(s) completed on: 63
+INFO 2020-03-17 08:13:06,999 judgehandler judge1: 17 test case(s) completed on: 63
+INFO 2020-03-17 08:13:07,100 judgehandler judge1: 3 test case(s) completed on: 63
+INFO 2020-03-17 08:13:07,195 judgehandler judge1: Grading has ended on: 63
+INFO 2020-03-17 08:13:07,195 judgelist Judge available after grading 63: judge1
+INFO 2020-03-17 08:24:22,552 judgelist Free judges: 1
+INFO 2020-03-17 08:24:22,553 judgelist Dispatched submission 66 to: judge1
+INFO 2020-03-17 08:24:22,570 judgehandler Submission acknowledged: 66
+INFO 2020-03-17 08:24:23,469 judgehandler judge1: Submission generated compiler messages: 66
+INFO 2020-03-17 08:24:23,513 judgehandler judge1: Grading has begun on: 66
+INFO 2020-03-17 08:24:24,456 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:25,208 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:25,958 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:26,710 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:27,461 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:28,212 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:28,963 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:29,714 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:30,466 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:32,967 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:34,755 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:37,701 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:38,462 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:38,699 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:38,895 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:39,823 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:39,953 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:40,072 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:40,190 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:40,309 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:40,737 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:41,488 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:42,498 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:42,990 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:43,803 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:44,493 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:45,474 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:45,995 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:48,833 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:49,522 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:50,522 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:51,445 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:52,724 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:54,554 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:57,735 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:59,334 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:59,489 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:59,650 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:24:59,794 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:00,445 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:00,918 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:01,033 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:01,128 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:01,221 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:01,373 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:01,467 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:01,769 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:02,520 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:03,779 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:04,565 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:05,867 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:06,412 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:06,903 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:07,413 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:07,779 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:08,780 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:09,618 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:10,282 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:11,281 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:12,546 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:12,689 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:13,287 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:15,030 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:16,166 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:16,597 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:16,792 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:17,543 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:18,545 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:19,296 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:20,887 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:20,982 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:21,550 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:22,495 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:23,691 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:23,951 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:24,554 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:25,556 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:26,307 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:27,058 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:27,809 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:28,560 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:29,311 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:30,573 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:30,814 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:31,565 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:32,316 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:33,067 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:34,918 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:35,862 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:37,273 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:38,821 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:39,952 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:41,092 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:42,292 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:43,096 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:43,911 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:44,383 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:44,502 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:44,708 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:44,826 judgehandler judge1: 1 test case(s) completed on: 66
+INFO 2020-03-17 08:25:44,944 judgehandler judge1: Grading has ended on: 66
+INFO 2020-03-17 08:25:44,945 judgelist Judge available after grading 66: judge1
+INFO 2020-03-17 09:36:18,687 judgehandler judge1: Updated problem list
+INFO 2020-03-17 09:36:57,505 judgehandler judge1: Updated problem list
+INFO 2020-03-17 09:53:24,844 judgehandler judge1: Updated problem list
+INFO 2020-03-17 09:53:45,291 judgehandler judge1: Updated problem list
+INFO 2020-03-17 09:53:45,293 judgehandler judge1: Updated problem list
+INFO 2020-03-17 09:55:08,413 judgelist Free judges: 1
+INFO 2020-03-17 09:55:08,414 judgelist Dispatched submission 68 to: judge1
+INFO 2020-03-17 09:55:08,431 judgehandler Submission acknowledged: 68
+INFO 2020-03-17 09:55:08,495 judgehandler judge1: Grading has begun on: 68
+INFO 2020-03-17 09:55:08,540 judgehandler judge1: 100 test case(s) completed on: 68
+INFO 2020-03-17 09:55:08,739 judgehandler judge1: Grading has ended on: 68
+INFO 2020-03-17 09:55:08,739 judgelist Judge available after grading 68: judge1
+INFO 2020-03-17 10:02:36,565 judgelist Free judges: 1
+INFO 2020-03-17 10:02:36,566 judgelist Dispatched submission 69 to: judge1
+INFO 2020-03-17 10:02:36,582 judgehandler Submission acknowledged: 69
+INFO 2020-03-17 10:02:36,645 judgehandler judge1: Grading has begun on: 69
+INFO 2020-03-17 10:02:36,799 judgehandler judge1: 4 test case(s) completed on: 69
+INFO 2020-03-17 10:02:37,049 judgehandler judge1: 7 test case(s) completed on: 69
+INFO 2020-03-17 10:02:37,300 judgehandler judge1: 7 test case(s) completed on: 69
+INFO 2020-03-17 10:02:37,551 judgehandler judge1: 7 test case(s) completed on: 69
+INFO 2020-03-17 10:02:37,801 judgehandler judge1: 7 test case(s) completed on: 69
+INFO 2020-03-17 10:02:38,052 judgehandler judge1: 7 test case(s) completed on: 69
+INFO 2020-03-17 10:02:38,302 judgehandler judge1: 7 test case(s) completed on: 69
+INFO 2020-03-17 10:02:38,553 judgehandler judge1: 7 test case(s) completed on: 69
+INFO 2020-03-17 10:02:38,803 judgehandler judge1: 7 test case(s) completed on: 69
+INFO 2020-03-17 10:02:39,098 judgehandler judge1: 4 test case(s) completed on: 69
+INFO 2020-03-17 10:02:39,811 judgehandler judge1: 2 test case(s) completed on: 69
+INFO 2020-03-17 10:02:39,994 judgehandler judge1: 1 test case(s) completed on: 69
+INFO 2020-03-17 10:02:40,088 judgehandler judge1: 2 test case(s) completed on: 69
+INFO 2020-03-17 10:02:40,188 judgehandler judge1: 6 test case(s) completed on: 69
+INFO 2020-03-17 10:02:40,431 judgehandler judge1: 8 test case(s) completed on: 69
+INFO 2020-03-17 10:02:40,561 judgehandler judge1: 6 test case(s) completed on: 69
+INFO 2020-03-17 10:02:40,812 judgehandler judge1: 7 test case(s) completed on: 69
+INFO 2020-03-17 10:02:40,939 judgehandler judge1: 4 test case(s) completed on: 69
+INFO 2020-03-17 10:02:41,119 judgehandler judge1: Grading has ended on: 69
+INFO 2020-03-17 10:02:41,120 judgelist Judge available after grading 69: judge1
+INFO 2020-03-17 10:06:16,366 judgelist Free judges: 1
+INFO 2020-03-17 10:06:16,366 judgelist Dispatched submission 70 to: judge1
+INFO 2020-03-17 10:06:16,383 judgehandler Submission acknowledged: 70
+INFO 2020-03-17 10:06:16,445 judgehandler judge1: Grading has begun on: 70
+INFO 2020-03-17 10:06:16,499 judgehandler judge1: 100 test case(s) completed on: 70
+INFO 2020-03-17 10:06:16,727 judgehandler judge1: Grading has ended on: 70
+INFO 2020-03-17 10:06:16,727 judgelist Judge available after grading 70: judge1
+INFO 2020-03-17 10:19:36,305 judgelist Free judges: 1
+INFO 2020-03-17 10:19:36,306 judgelist Dispatched submission 71 to: judge1
+INFO 2020-03-17 10:19:36,323 judgehandler Submission acknowledged: 71
+INFO 2020-03-17 10:19:36,381 judgehandler judge1: Grading has begun on: 71
+INFO 2020-03-17 10:19:36,495 judgehandler judge1: 2 test case(s) completed on: 71
+INFO 2020-03-17 10:19:36,746 judgehandler judge1: 4 test case(s) completed on: 71
+INFO 2020-03-17 10:19:37,500 judgehandler judge1: 2 test case(s) completed on: 71
+INFO 2020-03-17 10:19:38,294 judgehandler judge1: 1 test case(s) completed on: 71
+INFO 2020-03-17 10:19:39,134 judgehandler judge1: 3 test case(s) completed on: 71
+INFO 2020-03-17 10:19:39,738 judgehandler judge1: 3 test case(s) completed on: 71
+INFO 2020-03-17 10:19:39,819 judgehandler judge1: 3 test case(s) completed on: 71
+INFO 2020-03-17 10:19:39,913 judgehandler judge1: 2 test case(s) completed on: 71
+INFO 2020-03-17 10:19:40,006 judgehandler judge1: 1 test case(s) completed on: 71
+INFO 2020-03-17 10:19:40,100 judgehandler judge1: 2 test case(s) completed on: 71
+INFO 2020-03-17 10:19:40,194 judgehandler judge1: 1 test case(s) completed on: 71
+INFO 2020-03-17 10:19:40,288 judgehandler judge1: 1 test case(s) completed on: 71
+INFO 2020-03-17 10:19:40,393 judgehandler judge1: 1 test case(s) completed on: 71
+INFO 2020-03-17 10:19:40,546 judgehandler judge1: 7 test case(s) completed on: 71
+INFO 2020-03-17 10:19:40,789 judgehandler judge1: 7 test case(s) completed on: 71
+INFO 2020-03-17 10:19:40,888 judgehandler judge1: 7 test case(s) completed on: 71
+INFO 2020-03-17 10:19:40,988 judgehandler judge1: 7 test case(s) completed on: 71
+INFO 2020-03-17 10:19:41,095 judgehandler judge1: 7 test case(s) completed on: 71
+INFO 2020-03-17 10:19:42,010 judgehandler judge1: 5 test case(s) completed on: 71
+INFO 2020-03-17 10:19:42,330 judgehandler judge1: 2 test case(s) completed on: 71
+INFO 2020-03-17 10:19:42,509 judgehandler judge1: 1 test case(s) completed on: 71
+INFO 2020-03-17 10:19:42,687 judgehandler judge1: 1 test case(s) completed on: 71
+INFO 2020-03-17 10:19:42,806 judgehandler judge1: 7 test case(s) completed on: 71
+INFO 2020-03-17 10:19:42,943 judgehandler judge1: 8 test case(s) completed on: 71
+INFO 2020-03-17 10:19:43,081 judgehandler judge1: 7 test case(s) completed on: 71
+INFO 2020-03-17 10:19:43,211 judgehandler judge1: 7 test case(s) completed on: 71
+INFO 2020-03-17 10:19:44,145 judgehandler judge1: 1 test case(s) completed on: 71
+INFO 2020-03-17 10:19:44,329 judgehandler judge1: Grading has ended on: 71
+INFO 2020-03-17 10:19:44,329 judgelist Judge available after grading 71: judge1
+INFO 2020-03-17 10:20:03,524 judgelist Free judges: 1
+INFO 2020-03-17 10:20:03,524 judgelist Dispatched submission 72 to: judge1
+INFO 2020-03-17 10:20:03,543 judgehandler Submission acknowledged: 72
+INFO 2020-03-17 10:20:04,559 judgehandler judge1: Grading has begun on: 72
+INFO 2020-03-17 10:20:04,980 judgehandler judge1: 100 test case(s) completed on: 72
+INFO 2020-03-17 10:20:06,063 judgehandler judge1: Grading has ended on: 72
+INFO 2020-03-17 10:20:06,064 judgelist Judge available after grading 72: judge1
+INFO 2020-03-17 10:39:42,497 judgehandler judge1: Updated problem list
+INFO 2020-03-17 10:40:06,623 judgelist Free judges: 1
+INFO 2020-03-17 10:40:06,624 judgelist Dispatched submission 73 to: judge1
+INFO 2020-03-17 10:40:06,641 judgehandler Submission acknowledged: 73
+INFO 2020-03-17 10:40:07,021 judgehandler judge1: Grading has begun on: 73
+INFO 2020-03-17 10:40:07,661 judgehandler judge1: 1 test case(s) completed on: 73
+INFO 2020-03-17 10:40:07,760 judgehandler judge1: 2 test case(s) completed on: 73
+INFO 2020-03-17 10:40:07,898 judgehandler judge1: 2 test case(s) completed on: 73
+INFO 2020-03-17 10:40:07,967 judgehandler judge1: 1 test case(s) completed on: 73
+INFO 2020-03-17 10:40:08,036 judgehandler judge1: 2 test case(s) completed on: 73
+INFO 2020-03-17 10:40:08,105 judgehandler judge1: 7 test case(s) completed on: 73
+INFO 2020-03-17 10:40:08,641 judgehandler judge1: 7 test case(s) completed on: 73
+INFO 2020-03-17 10:40:10,832 judgehandler judge1: 2 test case(s) completed on: 73
+INFO 2020-03-17 10:40:11,113 judgehandler judge1: 1 test case(s) completed on: 73
+INFO 2020-03-17 10:40:11,207 judgehandler judge1: 1 test case(s) completed on: 73
+INFO 2020-03-17 10:40:11,301 judgehandler judge1: 1 test case(s) completed on: 73
+INFO 2020-03-17 10:40:11,395 judgehandler judge1: 1 test case(s) completed on: 73
+INFO 2020-03-17 10:40:11,508 judgehandler judge1: 1 test case(s) completed on: 73
+INFO 2020-03-17 10:40:11,626 judgehandler judge1: 1 test case(s) completed on: 73
+INFO 2020-03-17 10:40:11,745 judgehandler judge1: 5 test case(s) completed on: 73
+INFO 2020-03-17 10:40:11,864 judgehandler judge1: 6 test case(s) completed on: 73
+INFO 2020-03-17 10:40:12,042 judgehandler judge1: 7 test case(s) completed on: 73
+INFO 2020-03-17 10:40:13,078 judgehandler judge1: 7 test case(s) completed on: 73
+INFO 2020-03-17 10:40:13,256 judgehandler judge1: 7 test case(s) completed on: 73
+INFO 2020-03-17 10:40:13,374 judgehandler judge1: 7 test case(s) completed on: 73
+INFO 2020-03-17 10:40:13,494 judgehandler judge1: 1 test case(s) completed on: 73
+INFO 2020-03-17 10:40:13,612 judgehandler judge1: 7 test case(s) completed on: 73
+INFO 2020-03-17 10:40:13,754 judgehandler judge1: 7 test case(s) completed on: 73
+INFO 2020-03-17 10:40:13,898 judgehandler judge1: 7 test case(s) completed on: 73
+INFO 2020-03-17 10:40:14,186 judgehandler judge1: 7 test case(s) completed on: 73
+INFO 2020-03-17 10:40:15,061 judgehandler judge1: 2 test case(s) completed on: 73
+INFO 2020-03-17 10:40:15,343 judgehandler judge1: Grading has ended on: 73
+INFO 2020-03-17 10:40:15,344 judgelist Judge available after grading 73: judge1
+INFO 2020-03-17 10:41:31,866 judgehandler judge1: Updated problem list
+INFO 2020-03-17 11:45:21,903 judgehandler judge1: Updated problem list
+INFO 2020-03-17 11:46:04,956 judgehandler judge1: Updated problem list
+INFO 2020-03-17 12:03:42,222 judgehandler judge1: Updated problem list
+INFO 2020-03-17 12:04:10,459 judgehandler judge1: Updated problem list
+INFO 2020-03-17 12:06:29,965 judgehandler judge1: Updated problem list
+INFO 2020-03-17 12:06:29,967 judgehandler judge1: Updated problem list
+INFO 2020-03-17 12:06:51,732 judgehandler judge1: Updated problem list
+INFO 2020-03-17 12:08:18,391 judgehandler judge1: Updated problem list
+INFO 2020-03-17 12:08:33,491 judgehandler judge1: Updated problem list
+INFO 2020-03-17 12:08:40,406 judgehandler judge1: Updated problem list
+INFO 2020-03-17 12:08:47,975 judgehandler judge1: Updated problem list
+INFO 2020-03-17 12:17:40,345 judgehandler judge1: Updated problem list
+INFO 2020-03-17 12:50:27,823 judgehandler judge1: Updated problem list
+INFO 2020-03-17 12:50:50,494 judgehandler judge1: Updated problem list
+INFO 2020-03-17 13:03:40,569 judgehandler judge1: Updated problem list
+INFO 2020-03-17 13:03:40,716 judgehandler judge1: Updated problem list
+INFO 2020-03-17 13:04:09,882 judgehandler judge1: Updated problem list
+INFO 2020-03-17 13:04:22,381 judgehandler judge1: Updated problem list
+INFO 2020-03-17 13:07:13,538 judgehandler judge1: Updated problem list

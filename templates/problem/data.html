@@ -95,21 +95,29 @@
                 }).change();
             }
 
-            function checker_custom($checker, $custom_checker) {
-                $tr = $custom_checker.parent().parent();
+            (function toggle_custom() {
+                let $custom_checker = $('#id_problem-data-custom_checker')
+                let $checker = $('#id_problem-data-checker')
+                let $validator = $('#id_problem-data-custom_validator')
+                
+                $tr_checker = $custom_checker.parent().parent();
+                $tr_validator = $validator.parent().parent()
+
                 $td = $checker.parent();
                 var $sample = $("<a/>",{
-                    text: "Sample Checker",
+                    text: "{{_('Instruction')}}",
                     style: "margin-left:3em;",
                     target: "_blank",
                     href: "{{url('custom_checker_sample')}}"
                 }).appendTo($td);
 
                 $checker.change(function () {
-                    $tr.toggle($checker.val().startsWith('custom')).change();
+                    $tr_checker.toggle($checker.val() == 'custom').change();
+                    $tr_validator.toggle($checker.val() == 'customval').change();
                     $sample.toggle($checker.val().startsWith('custom')).change();
                 }).change();
-            }
+            })();
+
 
             function swap_row($a, $b) {
                 var $a_order = $a.find('input[id$=order]'), $b_order = $b.find('input[id$=order]');
@@ -123,8 +131,7 @@
             }
 
             checker_precision($('#id_problem-data-checker'));
-            checker_custom($('#id_problem-data-checker'), $('#id_problem-data-custom_checker'));
-
+            
             $table.on('add-row', function (e, $tr) {
                 var $order = $tr.find('input').filter('[id$=order]').attr('type', 'hidden').val(++order);
                 $order.after($('<span>', {'class': 'order'}).text($order.val()))
@@ -306,26 +313,6 @@
                     $("input[name$='DELETE']").attr('checked', false);
                 }
             });
-
-            var $controls = $('#column-visible');
-            var problem = $controls.attr('data-problem');
-            $controls.find('input').change(function () {
-                var $this = $(this), suffix = $this.attr('data-suffix'), checked = $this.is(':checked');
-                $table.find('.' + suffix.replace(/_/g, '-')).toggle(checked);
-                localStorage.setItem('data-visible:' + problem + ':' + suffix, checked ? '1' : '0')
-            }).each(function () {
-                var $this = $(this), suffix = $this.attr('data-suffix'), filled = false;
-                filled = localStorage.getItem('data-visible:' + problem + ':' + suffix);
-                if (filled !== null)
-                    filled = filled == '1';
-                else {
-                    filled = false;
-                    $table.find('[id$=' + suffix + ']').each(function () {
-                        filled |= !!$(this).val();
-                    });
-                }
-                $this.prop('checked', filled).trigger('change');
-            });
         }).change();
     </script>
 {% endblock %}
@@ -451,29 +438,7 @@
                 </a>
             </td>
         </table>
-        <div id="column-visible" data-problem="{{ problem.code }}">
-            <strong>{{ _('Show columns:') }}</strong>
-            <label>
-                <input type="checkbox" data-suffix="output_prefix">
-                {{ _('Output prefix') }}
-            </label>
-            <label>
-                <input type="checkbox" data-suffix="output_limit">
-                {{ _('Output limit') }}
-            </label>
-            <label>
-                <input type="checkbox" data-suffix="checker">
-                {{ _('Checker') }}
-            </label>
-            <label>
-                <input type="checkbox" data-suffix="generator_args">
-                {{ _('Generator args') }}
-            </label>
-            <label>
-                <input type="checkbox" id="delete-all">
-                {{ _('Delete all') }}
-            </label>
-        </div>
+        <input type="submit" value="{{ _('Apply!') }}" class="button" id="submit-button">
         <table id="case-table" class="table">
             <thead>
             <tr>
@@ -483,12 +448,10 @@
                 <th>{{ _('Output file') }}</th>
                 <th>{{ _('Points') }}</th>
                 <th>{{ _('Pretest?') }}</th>
-                <th class="output-prefix">{{ _('Output prefix') }}</th>
-                <th class="output-limit">{{ _('Output limit') }}</th>
-                <th class="checker">{{ _('Checker') }}</th>
-                <th class="generator-args">{{ _('Generator args') }}</th>
                 {% if cases_formset.can_delete %}
-                    <th>{{ _('Delete?') }} 
+                    <th>{{ _('Delete?') }}
+                        <br>
+                        <input type="checkbox" name="delete-all" id="delete-all"> 
                     </th>
                 {% endif %}
             </tr>
@@ -517,25 +480,15 @@
                     </td>
                     <td>{{ form.points.errors }}{{ form.points }}</td>
                     <td>{{ form.is_pretest.errors }}{{ form.is_pretest }}</td>
-                    <td class="output-prefix">{{ form.output_prefix.errors }}{{ form.output_prefix }}</td>
-                    <td class="output-limit">{{ form.output_limit.errors }}{{ form.output_limit }}</td>
-                    <td class="checker">
-                        {{ form.checker.errors }}{{ form.checker }}{{ form.checker_args.errors }}{{ form.checker_args }}
-                    </td>
-                    <td class="generator-args">{{ form.generator_args.errors }}{{ form.generator_args }}
-                        <a href="javascript:void(0)" class="edit-generator-args">
-                            <i class="fa fa-pencil"></i>
-                            {{ _('Edit') }}
-                        </a>
-                    </td>
                     {% if cases_formset.can_delete %}
-                        <td>{{ form.DELETE }}</td>
+                        <td>{{ form.DELETE }}
+                        </td>
                     {% endif %}
                 </tr>
             {% endfor %}
             </tbody>
         </table>
-        <input type="submit" value="{{ _('Submit!') }}" class="button" id="submit-button">
+        <input type="submit" value="{{ _('Apply!') }}" class="button" id="submit-button">
         <a id="add-case-row" href="#"><i class="fa fa-plus"></i> {{ _('Add new case') }}</a>
     </form>
     <div style="display: none" class="generator-args-editor"><textarea></textarea><a class="button">Save</a></div>

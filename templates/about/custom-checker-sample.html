@@ -2,10 +2,7 @@
 
 {% block body %}
     <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body {
-  max-width: 980px;
-  border: 1px solid #ddd;
-  outline: 1300px solid #fff;
-  margin: 16px auto;
+    margin: 0;
 }
 
 body .markdown-body
@@ -1079,28 +1076,13 @@ body .markdown-body
 <p>Additionally, if the <code>check</code> method has the flag <code>run_on_error</code> set, it will be run against the submission&rsquo;s output, even if it receives an IR/TLE/RTE/MLE verdict.
 The only built-in checker that has this flag set is the <code>linecount</code> checker.</p>
 <h2 id="return">Return:<a class="headerlink" href="#return" title="Permanent link"></a></h2>
-<p><code>True</code> for correct output, <code>False</code> for incorrect one</p>
+<p><code>check</code> can return either a <code>CheckerResult</code> object (<code>from dmoj.result import CheckerResult</code>), or a boolean (<code>case_passed_bool</code>).
+ A <code>CheckerResult</code> can be instantiated through <code>CheckerResult(case_passed_bool, points_awarded, feedback='')</code>.</p>
 <h2 id="sample-checker">Sample Checker:<a class="headerlink" href="#sample-checker" title="Permanent link"></a></h2>
 <p>Here is the checker for the problem: Print 2 integers having sum equal to n (n is read from input).</p>
-<div class="codehilite"><pre><span class="k">def</span> <span class="nf">check</span><span class="p">(</span><span class="n">process_output</span><span class="p">,</span> <span class="n">judge_output</span><span class="p">,</span> <span class="n">judge_input</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="c1"># process the input</span>
-    <span class="n">input_arr</span> <span class="o">=</span> <span class="n">judge_input</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-    <span class="k">assert</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">input_arr</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">input_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <iframe src="https://pastebin.com/embed_iframe/UvuchwbQ" style="border:none;width:100%;height:40em;"></iframe>
 
-    <span class="c1">#  process the contestant&#39;s output</span>
-    <span class="n">output_arr</span> <span class="o">=</span> <span class="n">process_output</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+</article></body></html>
+    
 
-    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">output_arr</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">False</span>
-
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">output_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">output_arr</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-    <span class="k">except</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">False</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="n">n</span> <span class="o">==</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">True</span>
-    <span class="k">return</span> <span class="bp">False</span>
-</pre></div></article></body></html>
 {% endblock body %}
