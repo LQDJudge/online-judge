@@ -117,12 +117,18 @@
                     <td colspan="5">
                         <div class="case-info">
                             {% set curr_data = cases_data[case.case] %}
+                            {% if curr_data != null %}
                             <strong>{{ _('Input:') }}</strong>
                             <pre class="case-output">{{ curr_data['input']|linebreaksbr }}</pre>
+                            {% endif %}
+                            
                             <strong>{{ _('Output:') }}</strong>
                             <pre class="case-output">{{ case.output|linebreaksbr }}</pre>
+
+                            {% if curr_data != null %}
                             <strong>{{ _('Answer:') }}</strong>
                             <pre class="case-output">{{ curr_data['answer']|linebreaksbr }}</pre>
+                            {% endif %}
 
                             {% if case.extended_feedback or case.feedback %}
                             <strong>{{ _('Judge feedback:') }}</strong>

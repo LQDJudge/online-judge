@@ -1426,3 +1426,2772 @@ INFO 2020-03-17 13:03:40,716 judgehandler judge1: Updated problem list
 INFO 2020-03-17 13:04:09,882 judgehandler judge1: Updated problem list
 INFO 2020-03-17 13:04:22,381 judgehandler judge1: Updated problem list
 INFO 2020-03-17 13:07:13,538 judgehandler judge1: Updated problem list
+INFO 2020-03-17 13:11:12,675 judgehandler Judge disconnected from: ('127.0.0.1', 43860)
+INFO 2020-03-18 00:38:16,911 judgehandler Judge connected from: ('127.0.0.1', 44088)
+INFO 2020-03-18 00:38:16,916 judgehandler Judge authenticated: ('127.0.0.1', 44088) (judge1)
+INFO 2020-03-18 00:38:35,323 judgehandler Judge disconnected from: ('127.0.0.1', 44088)
+INFO 2020-03-18 00:39:04,281 judgehandler Judge connected from: ('127.0.0.1', 44094)
+INFO 2020-03-18 00:39:04,283 judgehandler Judge authenticated: ('127.0.0.1', 44094) (judge1)
+INFO 2020-03-18 00:54:55,825 judgelist Free judges: 1
+INFO 2020-03-18 00:54:55,929 judgelist Dispatched submission 73 to: judge1
+INFO 2020-03-18 00:54:55,978 judgehandler Submission acknowledged: 73
+INFO 2020-03-18 00:54:56,152 judgehandler judge1: Grading has begun on: 73
+ERROR 2020-03-18 00:54:56,416 judgehandler Judge judge1 failed while handling submission 73
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 90, in check_result
+    checker = case.checker()
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 345, in checker
+    checker = self.problem.load_checker(name)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 152, in load_checker
+    self._checkers[name] = checker = load_module_from_file(os.path.join(get_problem_root(self.id), name))
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/module.py", line 18, in load_module_from_file
+    return load_module(name, f.read(), os.path.abspath(filename))
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/module.py", line 9, in load_module
+    exec(compile(code, filename or '<string>', 'exec'), mod.__dict__)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/gen.cpp", line 2
+    using namespace std;
+                  ^
+SyntaxError: invalid syntax
+
+INFO 2020-03-18 00:54:56,553 judgelist Judge available after grading 73: judge1
+INFO 2020-03-18 01:30:43,493 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:30:43,505 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:39:10,350 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:39:14,368 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:41:11,219 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:42:09,971 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:42:56,719 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:43:30,619 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:53:02,997 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:53:03,058 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:53:07,683 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:53:07,946 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:53:40,990 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:53:41,025 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:54:36,669 judgehandler judge1: Updated problem list
+INFO 2020-03-18 01:54:36,704 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:07:13,611 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:07:13,617 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:07:13,645 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:07:13,649 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:08:36,734 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:08:36,739 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:08:40,648 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:08:51,863 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:08:51,898 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:08:56,615 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:08:56,632 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:08:56,638 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:08:56,684 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:08:56,688 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:09:21,586 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:09:21,591 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:09:21,619 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:09:21,624 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:09:26,464 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:09:26,473 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:09:26,481 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:09:26,488 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:09:28,768 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:09:28,802 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:10:13,209 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:10:13,245 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:10:13,251 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:12:07,825 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:12:08,036 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:15:15,183 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:15:15,304 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:15:15,309 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:15:15,339 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:15:54,882 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:15:55,024 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:15:55,029 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:16:08,474 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:16:08,620 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:16:08,626 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:19:42,123 judgelist Free judges: 1
+INFO 2020-03-18 02:19:42,123 judgelist Dispatched submission 74 to: judge1
+INFO 2020-03-18 02:19:42,142 judgehandler Submission acknowledged: 74
+INFO 2020-03-18 02:19:45,293 judgehandler judge1: Submission generated compiler messages: 74
+INFO 2020-03-18 02:19:45,342 judgehandler judge1: Grading has begun on: 74
+INFO 2020-03-18 02:19:45,393 judgehandler judge1: 2 test case(s) completed on: 74
+INFO 2020-03-18 02:19:45,483 judgehandler judge1: Grading has ended on: 74
+INFO 2020-03-18 02:19:45,483 judgelist Judge available after grading 74: judge1
+INFO 2020-03-18 02:19:59,053 judgelist Free judges: 1
+INFO 2020-03-18 02:19:59,054 judgelist Dispatched submission 75 to: judge1
+INFO 2020-03-18 02:19:59,070 judgehandler Submission acknowledged: 75
+INFO 2020-03-18 02:20:00,675 judgehandler judge1: Submission generated compiler messages: 75
+INFO 2020-03-18 02:20:00,718 judgehandler judge1: Grading has begun on: 75
+INFO 2020-03-18 02:20:00,756 judgehandler judge1: 2 test case(s) completed on: 75
+INFO 2020-03-18 02:20:00,851 judgehandler judge1: Grading has ended on: 75
+INFO 2020-03-18 02:20:00,852 judgelist Judge available after grading 75: judge1
+INFO 2020-03-18 02:20:16,082 judgelist Free judges: 1
+INFO 2020-03-18 02:20:16,082 judgelist Dispatched submission 76 to: judge1
+INFO 2020-03-18 02:20:16,136 judgehandler Submission acknowledged: 76
+INFO 2020-03-18 02:20:17,741 judgehandler judge1: Submission generated compiler messages: 76
+INFO 2020-03-18 02:20:17,781 judgehandler judge1: Grading has begun on: 76
+INFO 2020-03-18 02:20:17,816 judgehandler judge1: 2 test case(s) completed on: 76
+INFO 2020-03-18 02:20:17,884 judgehandler judge1: Grading has ended on: 76
+INFO 2020-03-18 02:20:17,884 judgelist Judge available after grading 76: judge1
+INFO 2020-03-18 02:20:36,288 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:20:36,322 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:20:36,328 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:20:57,257 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:20:57,263 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:20:57,303 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:20:57,310 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:21:12,803 judgelist Free judges: 1
+INFO 2020-03-18 02:21:12,803 judgelist Dispatched submission 77 to: judge1
+INFO 2020-03-18 02:21:12,821 judgehandler Submission acknowledged: 77
+INFO 2020-03-18 02:21:14,250 judgehandler judge1: Submission generated compiler messages: 77
+INFO 2020-03-18 02:21:14,309 judgehandler judge1: Grading has begun on: 77
+ERROR 2020-03-18 02:21:14,360 judgehandler Judge judge1 failed while handling submission 77
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 345, in checker
+    checker = self.problem.load_checker(name)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 152, in load_checker
+    self._checkers[name] = checker = load_module_from_file(os.path.join(get_problem_root(self.id), name))
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/module.py", line 17, in load_module_from_file
+    with open(filename) as f:
+FileNotFoundError: [Errno 2] No such file or directory: '/home/cuom1999/DMOJ/problems/hinhvuong2/hinhvuong2/cppvalidator.py'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 90, in check_result
+    checker = case.checker()
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 347, in checker
+    raise InvalidInitException('checker module path does not exist: %s' % name)
+dmoj.config.InvalidInitException: checker module path does not exist: hinhvuong2/cppvalidator.py
+
+INFO 2020-03-18 02:21:14,386 judgelist Judge available after grading 77: judge1
+INFO 2020-03-18 02:22:04,950 judgelist Free judges: 1
+INFO 2020-03-18 02:22:04,951 judgelist Dispatched submission 77 to: judge1
+INFO 2020-03-18 02:22:04,961 judgehandler Submission acknowledged: 77
+INFO 2020-03-18 02:22:06,802 judgehandler judge1: Submission generated compiler messages: 77
+INFO 2020-03-18 02:22:07,224 judgehandler judge1: Grading has begun on: 77
+ERROR 2020-03-18 02:22:07,272 judgehandler Judge judge1 failed while handling submission 77
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 345, in checker
+    checker = self.problem.load_checker(name)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 152, in load_checker
+    self._checkers[name] = checker = load_module_from_file(os.path.join(get_problem_root(self.id), name))
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/module.py", line 17, in load_module_from_file
+    with open(filename) as f:
+FileNotFoundError: [Errno 2] No such file or directory: '/home/cuom1999/DMOJ/problems/hinhvuong2/hinhvuong2/cppvalidator.py'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 90, in check_result
+    checker = case.checker()
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 347, in checker
+    raise InvalidInitException('checker module path does not exist: %s' % name)
+dmoj.config.InvalidInitException: checker module path does not exist: hinhvuong2/cppvalidator.py
+
+INFO 2020-03-18 02:22:07,295 judgelist Judge available after grading 77: judge1
+INFO 2020-03-18 02:22:20,190 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:22:20,196 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:22:20,223 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:22:20,229 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:22:36,521 judgelist Free judges: 1
+INFO 2020-03-18 02:22:36,521 judgelist Dispatched submission 77 to: judge1
+INFO 2020-03-18 02:22:36,535 judgehandler Submission acknowledged: 77
+INFO 2020-03-18 02:22:38,220 judgehandler judge1: Submission generated compiler messages: 77
+INFO 2020-03-18 02:22:39,160 judgehandler judge1: Grading has begun on: 77
+ERROR 2020-03-18 02:22:40,105 judgehandler Judge judge1 failed while handling submission 77
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 90, in check_result
+    checker = case.checker()
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 345, in checker
+    checker = self.problem.load_checker(name)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 152, in load_checker
+    self._checkers[name] = checker = load_module_from_file(os.path.join(get_problem_root(self.id), name))
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/module.py", line 18, in load_module_from_file
+    return load_module(name, f.read(), os.path.abspath(filename))
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/module.py", line 9, in load_module
+    exec(compile(code, filename or '<string>', 'exec'), mod.__dict__)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 2, in <module>
+    from dmoj.conf import settings
+ModuleNotFoundError: No module named 'dmoj.conf'
+
+INFO 2020-03-18 02:22:40,130 judgelist Judge available after grading 77: judge1
+INFO 2020-03-18 02:26:11,592 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:26:11,625 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:27:38,527 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:28:45,294 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:28:45,330 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:28:48,631 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:28:48,637 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:28:48,676 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:28:48,683 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:29:27,431 judgelist Free judges: 1
+INFO 2020-03-18 02:29:27,431 judgelist Dispatched submission 77 to: judge1
+INFO 2020-03-18 02:29:27,449 judgehandler Submission acknowledged: 77
+INFO 2020-03-18 02:29:29,154 judgehandler judge1: Submission generated compiler messages: 77
+INFO 2020-03-18 02:29:30,105 judgehandler judge1: Grading has begun on: 77
+ERROR 2020-03-18 02:29:30,245 judgehandler Judge judge1 failed while handling submission 77
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 90, in check_result
+    checker = case.checker()
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 345, in checker
+    checker = self.problem.load_checker(name)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 152, in load_checker
+    self._checkers[name] = checker = load_module_from_file(os.path.join(get_problem_root(self.id), name))
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/module.py", line 18, in load_module_from_file
+    return load_module(name, f.read(), os.path.abspath(filename))
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/module.py", line 9, in load_module
+    exec(compile(code, filename or '<string>', 'exec'), mod.__dict__)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 2
+    from dmoj.judgeenv get_problem_root
+                                      ^
+SyntaxError: invalid syntax
+
+INFO 2020-03-18 02:29:30,290 judgelist Judge available after grading 77: judge1
+INFO 2020-03-18 02:29:51,045 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:29:51,079 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:29:51,084 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:29:55,836 judgelist Free judges: 1
+INFO 2020-03-18 02:29:55,836 judgelist Dispatched submission 77 to: judge1
+INFO 2020-03-18 02:29:55,905 judgehandler Submission acknowledged: 77
+INFO 2020-03-18 02:29:57,610 judgehandler judge1: Submission generated compiler messages: 77
+INFO 2020-03-18 02:29:57,645 judgehandler judge1: Grading has begun on: 77
+ERROR 2020-03-18 02:29:59,357 judgehandler Judge judge1 failed while handling submission 77
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 90, in check_result
+    checker = case.checker()
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 353, in checker
+    raise InvalidInitException('malformed checker: no check method found')
+dmoj.config.InvalidInitException: malformed checker: no check method found
+
+INFO 2020-03-18 02:29:59,385 judgelist Judge available after grading 77: judge1
+INFO 2020-03-18 02:49:47,673 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:49:47,678 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:58:02,464 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:58:02,757 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:58:03,313 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:58:16,227 judgelist Free judges: 1
+INFO 2020-03-18 02:58:16,227 judgelist Dispatched submission 77 to: judge1
+INFO 2020-03-18 02:58:16,246 judgehandler Submission acknowledged: 77
+INFO 2020-03-18 02:58:17,036 judgehandler judge1: Submission generated compiler messages: 77
+INFO 2020-03-18 02:58:17,068 judgehandler judge1: Grading has begun on: 77
+ERROR 2020-03-18 02:58:17,119 judgehandler Judge judge1 failed while handling submission 77
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 37, in check
+    make_input(process_output, judge_input)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 31, in make_input
+    with open(INPUT_FILE, 'r') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'input.txt'
+
+INFO 2020-03-18 02:58:17,154 judgelist Judge available after grading 77: judge1
+INFO 2020-03-18 02:58:40,527 judgelist Free judges: 1
+INFO 2020-03-18 02:58:40,527 judgelist Dispatched submission 77 to: judge1
+INFO 2020-03-18 02:58:40,531 judgehandler Submission acknowledged: 77
+INFO 2020-03-18 02:58:41,312 judgehandler judge1: Submission generated compiler messages: 77
+INFO 2020-03-18 02:58:41,354 judgehandler judge1: Grading has begun on: 77
+ERROR 2020-03-18 02:58:41,390 judgehandler Judge judge1 failed while handling submission 77
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 37, in check
+    make_input(process_output, judge_input)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 31, in make_input
+    with open(INPUT_FILE, 'r') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'input.txt'
+
+INFO 2020-03-18 02:58:41,399 judgelist Judge available after grading 77: judge1
+INFO 2020-03-18 02:59:01,296 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:59:01,330 judgehandler judge1: Updated problem list
+INFO 2020-03-18 02:59:08,495 judgelist Free judges: 1
+INFO 2020-03-18 02:59:08,495 judgelist Dispatched submission 77 to: judge1
+INFO 2020-03-18 02:59:08,506 judgehandler Submission acknowledged: 77
+INFO 2020-03-18 02:59:09,246 judgehandler judge1: Submission generated compiler messages: 77
+INFO 2020-03-18 02:59:09,336 judgehandler judge1: Grading has begun on: 77
+ERROR 2020-03-18 02:59:09,427 judgehandler Judge judge1 failed while handling submission 77
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 37, in check
+    make_input(process_output, judge_input)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 32, in make_input
+    f.write(judge_input)
+TypeError: write() argument must be str, not bytes
+
+INFO 2020-03-18 02:59:09,436 judgelist Judge available after grading 77: judge1
+INFO 2020-03-18 03:02:03,597 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:02:03,631 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:02:09,589 judgelist Free judges: 1
+INFO 2020-03-18 03:02:09,589 judgelist Dispatched submission 77 to: judge1
+INFO 2020-03-18 03:02:09,597 judgehandler Submission acknowledged: 77
+INFO 2020-03-18 03:02:10,405 judgehandler judge1: Submission generated compiler messages: 77
+INFO 2020-03-18 03:02:10,435 judgehandler judge1: Grading has begun on: 77
+ERROR 2020-03-18 03:02:11,277 judgehandler Judge judge1 failed while handling submission 77
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 38, in check
+    runcpp()
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 27, in runcpp
+    process = executor.launch(time=10, memory=1048576, stdin=INPUT_FILE)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/executors/mixins.py", line 122, in launch
+    fsize=self.fsize)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/cptbox/tracer.py", line 93, in __call__
+    return super().__call__(debugger, self.debugger_type, argv, executable, *args, **kwargs)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/cptbox/tracer.py", line 120, in __init__
+    self.__init_streams(stdin, stdout, stderr)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/cptbox/tracer.py", line 275, in __init_streams
+    self._child_stdin, self._stdin = stdin.fileno(), -1
+AttributeError: 'str' object has no attribute 'fileno'
+
+INFO 2020-03-18 03:02:11,290 judgelist Judge available after grading 77: judge1
+INFO 2020-03-18 03:04:39,454 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:04:39,488 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:04:45,641 judgelist Free judges: 1
+INFO 2020-03-18 03:04:45,641 judgelist Dispatched submission 77 to: judge1
+INFO 2020-03-18 03:04:45,708 judgehandler Submission acknowledged: 77
+INFO 2020-03-18 03:04:46,833 judgehandler judge1: Submission generated compiler messages: 77
+INFO 2020-03-18 03:04:47,411 judgehandler judge1: Grading has begun on: 77
+ERROR 2020-03-18 03:04:47,633 judgehandler Judge judge1 failed while handling submission 77
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 40, in check
+    runcpp()
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 28, in runcpp
+    process = executor.launch(time=10, memory=1048576, stdin=INPUT_FILE)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/executors/mixins.py", line 122, in launch
+    fsize=self.fsize)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/cptbox/tracer.py", line 93, in __call__
+    return super().__call__(debugger, self.debugger_type, argv, executable, *args, **kwargs)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/cptbox/tracer.py", line 120, in __init__
+    self.__init_streams(stdin, stdout, stderr)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/cptbox/tracer.py", line 275, in __init_streams
+    self._child_stdin, self._stdin = stdin.fileno(), -1
+AttributeError: 'str' object has no attribute 'fileno'
+
+INFO 2020-03-18 03:04:47,642 judgelist Judge available after grading 77: judge1
+INFO 2020-03-18 03:04:47,678 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:06:49,321 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:06:49,356 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:06:56,966 judgelist Free judges: 1
+INFO 2020-03-18 03:06:56,967 judgelist Dispatched submission 77 to: judge1
+INFO 2020-03-18 03:06:56,984 judgehandler Submission acknowledged: 77
+INFO 2020-03-18 03:06:58,090 judgehandler judge1: Submission generated compiler messages: 77
+INFO 2020-03-18 03:06:58,209 judgehandler judge1: Grading has begun on: 77
+ERROR 2020-03-18 03:06:58,871 judgehandler Judge judge1 failed while handling submission 77
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 41, in check
+    runcpp()
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 28, in runcpp
+    process = executor.launch(time=10, memory=1048576, stdin=INPUT_FILE)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/executors/mixins.py", line 122, in launch
+    fsize=self.fsize)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/cptbox/tracer.py", line 93, in __call__
+    return super().__call__(debugger, self.debugger_type, argv, executable, *args, **kwargs)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/cptbox/tracer.py", line 120, in __init__
+    self.__init_streams(stdin, stdout, stderr)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/cptbox/tracer.py", line 275, in __init_streams
+    self._child_stdin, self._stdin = stdin.fileno(), -1
+AttributeError: 'str' object has no attribute 'fileno'
+
+INFO 2020-03-18 03:06:58,881 judgelist Judge available after grading 77: judge1
+INFO 2020-03-18 03:06:59,875 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:07:38,822 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:07:38,857 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:07:38,861 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:07:46,632 judgelist Free judges: 1
+INFO 2020-03-18 03:07:46,632 judgelist Dispatched submission 77 to: judge1
+INFO 2020-03-18 03:07:46,636 judgehandler Submission acknowledged: 77
+INFO 2020-03-18 03:07:47,381 judgehandler judge1: Submission generated compiler messages: 77
+INFO 2020-03-18 03:07:47,425 judgehandler judge1: Grading has begun on: 77
+ERROR 2020-03-18 03:07:48,150 judgehandler Judge judge1 failed while handling submission 77
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 41, in check
+    runcpp()
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 28, in runcpp
+    process = executor.launch(time=10, memory=1048576, stdin=INPUT_FILE)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/executors/mixins.py", line 122, in launch
+    fsize=self.fsize)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/cptbox/tracer.py", line 93, in __call__
+    return super().__call__(debugger, self.debugger_type, argv, executable, *args, **kwargs)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/cptbox/tracer.py", line 120, in __init__
+    self.__init_streams(stdin, stdout, stderr)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/cptbox/tracer.py", line 275, in __init_streams
+    self._child_stdin, self._stdin = stdin.fileno(), -1
+AttributeError: 'str' object has no attribute 'fileno'
+
+INFO 2020-03-18 03:07:48,160 judgelist Judge available after grading 77: judge1
+INFO 2020-03-18 03:07:48,197 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:12:58,237 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:12:58,308 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:13:02,770 judgelist Free judges: 1
+INFO 2020-03-18 03:13:02,771 judgelist Dispatched submission 77 to: judge1
+INFO 2020-03-18 03:13:02,775 judgehandler Submission acknowledged: 77
+INFO 2020-03-18 03:13:03,696 judgehandler judge1: Submission generated compiler messages: 77
+INFO 2020-03-18 03:13:04,361 judgehandler judge1: Grading has begun on: 77
+INFO 2020-03-18 03:13:04,515 judgehandler judge1: 1 test case(s) completed on: 77
+INFO 2020-03-18 03:13:05,308 judgehandler judge1: 1 test case(s) completed on: 77
+INFO 2020-03-18 03:13:06,449 judgehandler judge1: Grading has ended on: 77
+INFO 2020-03-18 03:13:06,449 judgelist Judge available after grading 77: judge1
+INFO 2020-03-18 03:13:07,552 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:13:07,558 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:13:17,737 judgelist Free judges: 1
+INFO 2020-03-18 03:13:17,738 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 03:13:17,790 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 03:13:18,587 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 03:13:18,883 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 03:13:19,534 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 03:13:21,182 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 03:13:21,323 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 03:13:21,323 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 03:13:22,412 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:13:22,421 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:14:17,756 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:20:16,676 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:20:22,974 judgelist Free judges: 1
+INFO 2020-03-18 03:20:22,974 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 03:20:22,992 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 03:20:23,787 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 03:20:23,825 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 03:20:24,537 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 41, in check
+    runcpp()
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 25, in runcpp
+    executor = executors['CPP14'].Executor('validator', validator_source.read())
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/executors/compiled_executor.py", line 63, in __call__
+    obj.compile()
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/executors/compiled_executor.py", line 225, in compile
+    self.handle_compile_error(output)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/executors/compiled_executor.py", line 210, in handle_compile_error
+    raise CompileError(output)
+dmoj.error.CompileError: validatorcpp.cpp: In function ‘int main()’:
+validatorcpp.cpp:11:2: error: expected ‘;’ before ‘return’
+  return 0;
+  ^~~~~~
+
+
+INFO 2020-03-18 03:20:24,546 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 03:20:24,588 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:21:16,137 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:32:39,753 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:32:39,788 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:32:48,521 judgelist Free judges: 1
+INFO 2020-03-18 03:32:48,521 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 03:32:48,589 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 03:32:49,352 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 03:32:50,331 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 03:32:50,368 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 50, in check
+    print(len(result[0]))
+TypeError: object of type 'NoneType' has no len()
+
+INFO 2020-03-18 03:32:50,400 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 03:32:50,432 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:59:36,959 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:59:37,800 judgehandler judge1: Updated problem list
+INFO 2020-03-18 03:59:54,763 judgelist Free judges: 1
+INFO 2020-03-18 03:59:54,764 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 03:59:54,773 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 03:59:55,560 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 03:59:55,598 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 03:59:55,634 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 58, in check
+    make_input(process_output, judge_input)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 51, in make_input
+    with open(INPUT_FILE, 'w') as f:
+NameError: name 'INPUT_FILE' is not defined
+
+INFO 2020-03-18 03:59:55,644 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 04:00:16,344 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:00:16,389 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:00:16,394 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:00:19,019 judgelist Free judges: 1
+INFO 2020-03-18 04:00:19,019 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 04:00:19,036 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 04:00:19,823 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 04:00:19,859 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 04:00:20,634 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:00:21,360 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:00:21,450 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 04:00:21,450 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 04:00:21,590 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:00:21,598 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:00:21,856 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:01:59,766 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:02:08,574 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:02:12,729 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:02:12,745 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:02:12,797 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:02:12,800 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:02:16,010 judgelist Free judges: 1
+INFO 2020-03-18 04:02:16,011 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 04:02:16,028 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 04:02:16,910 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 04:02:17,401 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 04:02:17,669 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 59, in check
+    result = runcpp()
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 31, in runcpp
+    executor = executors['CPP14'].Executor('validator', validator_source.read())
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/executors/compiled_executor.py", line 63, in __call__
+    obj.compile()
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/executors/compiled_executor.py", line 225, in compile
+    self.handle_compile_error(output)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/executors/compiled_executor.py", line 210, in handle_compile_error
+    raise CompileError(output)
+dmoj.error.CompileError: validatorcpp.cpp: In function ‘int main()’:
+validatorcpp.cpp:11:2: error: expected ‘;’ before ‘return’
+  return 0;
+  ^~~~~~
+
+
+INFO 2020-03-18 04:02:17,678 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 04:02:17,713 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:02:35,409 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:02:39,651 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:02:39,685 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:02:39,688 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:02:44,848 judgelist Free judges: 1
+INFO 2020-03-18 04:02:44,849 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 04:02:44,867 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 04:02:45,864 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 04:02:46,407 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 04:02:46,838 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:02:47,644 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:02:47,713 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 04:02:47,714 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 04:02:47,881 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:02:47,885 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:02:48,140 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:02:54,208 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:03:45,052 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:04:41,781 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:04:41,784 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:04:41,816 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:04:41,819 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:04:44,965 judgelist Free judges: 1
+INFO 2020-03-18 04:04:44,965 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 04:04:44,982 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 04:04:45,776 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 04:04:46,509 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 04:04:46,898 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:04:48,028 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:04:48,287 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 04:04:48,287 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 04:04:48,497 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:04:48,498 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:04:48,500 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:05:57,971 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:06:00,046 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:06:09,244 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:06:09,279 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:06:11,674 judgelist Free judges: 1
+INFO 2020-03-18 04:06:11,674 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 04:06:11,691 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 04:06:12,480 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 04:06:12,521 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 04:06:13,381 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:06:14,492 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:06:14,602 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 04:06:14,602 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 04:06:14,826 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:06:14,834 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:06:14,931 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:07:50,006 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:07:50,041 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:07:50,044 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:07:53,609 judgelist Free judges: 1
+INFO 2020-03-18 04:07:53,609 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 04:07:53,626 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 04:07:54,409 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 04:07:54,460 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 04:07:55,271 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:07:55,938 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:07:56,081 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 04:07:56,081 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 04:07:56,426 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:07:56,434 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:07:56,442 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:28:08,497 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:28:08,531 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:28:08,534 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:28:10,929 judgelist Free judges: 1
+INFO 2020-03-18 04:28:10,930 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 04:28:11,001 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 04:28:12,122 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 04:28:13,509 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 04:28:13,698 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:28:13,791 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:28:13,884 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 04:28:13,885 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 04:28:14,107 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:28:14,115 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:28:14,123 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:28:48,957 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:28:50,501 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:28:54,002 judgelist Free judges: 1
+INFO 2020-03-18 04:28:54,002 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 04:28:54,006 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 04:28:54,763 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 04:28:54,804 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 04:28:55,666 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:28:56,233 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:28:56,327 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 04:28:56,327 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 04:28:56,539 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:28:56,547 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:28:56,731 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:31:13,256 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:31:15,205 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:31:26,852 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:31:26,909 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:31:26,911 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:31:41,488 judgelist Free judges: 1
+INFO 2020-03-18 04:31:41,488 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 04:31:41,493 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 04:31:42,259 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 04:31:42,299 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 04:31:43,149 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:31:43,799 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:31:44,114 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 04:31:44,115 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 04:31:44,998 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:31:45,006 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:31:45,014 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:32:50,824 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:33:02,789 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:33:02,793 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:33:02,824 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:33:02,826 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:33:05,426 judgelist Free judges: 1
+INFO 2020-03-18 04:33:05,426 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 04:33:05,443 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 04:33:06,223 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 04:33:06,269 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 04:33:07,011 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:33:07,761 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:33:07,854 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 04:33:07,854 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 04:33:08,076 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:33:08,079 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:33:08,257 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:48:58,744 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:48:58,790 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:48:58,794 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:49:03,667 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:49:03,701 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:49:06,026 judgelist Free judges: 1
+INFO 2020-03-18 04:49:06,026 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 04:49:06,034 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 04:49:06,814 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 04:49:06,852 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 04:49:07,610 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:49:08,492 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 04:49:09,803 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 04:49:09,803 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 04:49:10,565 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:49:10,571 judgehandler judge1: Updated problem list
+INFO 2020-03-18 04:49:10,576 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:05:02,246 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:05:02,254 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:05:02,837 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:05:09,041 judgelist Free judges: 1
+INFO 2020-03-18 05:05:09,042 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:05:09,059 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:05:09,862 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:05:09,915 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:05:10,737 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:05:11,454 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:05:11,605 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:05:11,605 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:05:11,858 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:05:11,860 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:05:11,948 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:06:37,958 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:06:37,992 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:06:37,994 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:06:41,334 judgelist Free judges: 1
+INFO 2020-03-18 05:06:41,334 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:06:41,351 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:06:42,293 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:06:42,410 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:07:13,649 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:07:44,508 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:07:44,586 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:07:44,586 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:07:44,737 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:07:44,743 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:08:44,352 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:08:44,398 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:08:44,402 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:08:47,676 judgelist Free judges: 1
+INFO 2020-03-18 05:08:47,676 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:08:47,695 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:08:48,511 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:08:48,553 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:09:19,804 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:09:50,686 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:09:50,785 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:09:50,785 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:09:50,958 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:09:50,965 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:11:32,552 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:11:32,586 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:11:34,886 judgelist Free judges: 1
+INFO 2020-03-18 05:11:34,886 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:11:34,904 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:11:35,683 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:11:35,727 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:11:36,484 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:11:37,219 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:11:37,741 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:11:37,741 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:11:41,059 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:11:41,062 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:12:47,223 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:12:47,629 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:12:58,742 judgelist Free judges: 1
+INFO 2020-03-18 05:12:58,743 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:12:58,761 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:12:59,557 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:12:59,594 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:13:00,350 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:13:01,078 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:13:01,191 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:13:01,191 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:13:01,390 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:13:01,393 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:13:27,886 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:13:36,696 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:13:36,732 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:13:39,149 judgelist Free judges: 1
+INFO 2020-03-18 05:13:39,150 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:13:39,166 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:13:40,103 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:13:40,530 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:13:41,338 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:13:41,980 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:13:42,384 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:13:42,384 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:13:43,266 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:13:43,268 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:14:57,393 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:14:57,740 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:15:00,537 judgelist Free judges: 1
+INFO 2020-03-18 05:15:00,537 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:15:00,541 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:15:01,316 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:15:01,676 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:15:02,271 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:15:03,143 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:15:03,238 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:15:03,238 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:15:03,461 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:15:03,469 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:16:32,254 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:16:51,941 judgelist Free judges: 1
+INFO 2020-03-18 05:16:51,941 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:16:51,957 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:16:52,756 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:16:52,797 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:16:52,874 judgehandler judge1: 2 test case(s) completed on: 78
+INFO 2020-03-18 05:16:52,950 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:16:52,950 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:16:53,267 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:16:53,325 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:16:59,187 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:16:59,562 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:17:00,669 judgelist Free judges: 1
+INFO 2020-03-18 05:17:00,670 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:17:00,686 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:17:01,474 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:17:01,771 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:17:02,146 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:17:02,214 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:17:02,358 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:17:02,359 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:17:02,967 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:17:02,976 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:17:22,480 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:19:43,002 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:19:43,036 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:19:45,745 judgelist Free judges: 1
+INFO 2020-03-18 05:19:45,745 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:19:45,750 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:19:46,505 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:19:46,540 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:19:46,622 judgehandler judge1: 2 test case(s) completed on: 78
+INFO 2020-03-18 05:19:46,689 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:19:46,690 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:19:47,017 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:19:47,075 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:20:27,753 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:20:27,756 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:20:27,787 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:20:27,790 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:20:31,121 judgelist Free judges: 1
+INFO 2020-03-18 05:20:31,122 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:20:31,140 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:20:31,933 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:20:32,779 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 05:20:32,876 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 42, in runcpp
+    stdout, stderr = proc.communicate(test_message + b'\n')
+NameError: name 'proc' is not defined
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 63, in check
+    result = runcpp()
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 48, in runcpp
+    raise(Exception())
+Exception
+
+INFO 2020-03-18 05:20:32,911 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:20:32,966 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:21:44,280 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:21:44,314 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:21:47,180 judgelist Free judges: 1
+INFO 2020-03-18 05:21:47,181 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:21:47,247 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:21:48,038 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:21:48,079 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 05:21:48,114 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 63, in check
+    result = runcpp()
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 42, in runcpp
+    stdout, stderr = proc.communicate(test_message + b'\n')
+NameError: name 'proc' is not defined
+
+INFO 2020-03-18 05:21:48,123 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:21:48,551 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:22:01,144 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:22:01,178 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:22:03,099 judgelist Free judges: 1
+INFO 2020-03-18 05:22:03,099 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:22:03,104 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:22:03,886 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:22:04,236 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:22:04,330 judgehandler judge1: 2 test case(s) completed on: 78
+INFO 2020-03-18 05:22:04,423 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:22:04,424 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:22:04,531 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:22:04,685 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:25:24,146 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:25:24,182 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:25:25,576 judgelist Free judges: 1
+INFO 2020-03-18 05:25:25,576 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:25:25,582 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:25:26,375 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:25:26,593 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 05:25:27,053 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 63, in check
+    result = runcpp()
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 42, in runcpp
+    stdout, stderr = process.communicate(test_message)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/communicate.py", line 68, in safe_communicate
+    input_offset += os.write(fd, chunk)
+TypeError: a bytes-like object is required, not 'str'
+
+INFO 2020-03-18 05:25:27,100 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:25:28,004 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:27:56,860 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:27:56,894 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:27:59,176 judgelist Free judges: 1
+INFO 2020-03-18 05:27:59,177 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:27:59,196 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:28:00,211 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:28:00,261 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 05:28:00,296 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 56, in check
+    make_input(process_output, judge_input)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 21, in make_input
+    return process_output + '\n' + judge_input
+TypeError: can't concat str to bytes
+
+INFO 2020-03-18 05:28:00,305 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:28:18,718 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:28:18,753 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:28:18,758 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:28:20,908 judgelist Free judges: 1
+INFO 2020-03-18 05:28:20,908 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:28:20,925 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:28:22,429 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:28:24,764 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:28:24,927 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:28:25,094 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:28:25,216 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:28:25,217 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:29:05,901 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:29:08,119 judgelist Free judges: 1
+INFO 2020-03-18 05:29:08,120 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:29:08,137 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:29:08,948 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:29:08,988 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:29:09,960 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:29:10,718 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:29:10,812 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:29:10,812 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:31:55,127 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:32:10,281 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:32:10,315 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:32:12,943 judgelist Free judges: 1
+INFO 2020-03-18 05:32:12,943 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:32:12,947 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:32:13,687 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:32:13,726 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:32:14,473 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:32:15,256 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:32:15,345 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:32:15,345 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:32:39,945 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:32:43,752 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:32:49,769 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:32:49,773 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:32:49,804 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:32:49,807 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:32:52,492 judgelist Free judges: 1
+INFO 2020-03-18 05:32:52,493 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:32:52,510 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:32:53,347 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:32:53,396 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:32:54,277 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:32:54,874 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:32:54,970 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:32:54,970 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:33:31,207 judgelist Free judges: 1
+INFO 2020-03-18 05:33:31,207 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:33:31,224 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:33:32,021 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:33:32,061 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:33:33,081 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:33:33,685 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:33:33,783 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:33:33,783 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:33:46,550 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:33:47,343 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:33:49,930 judgelist Free judges: 1
+INFO 2020-03-18 05:33:49,931 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:33:49,935 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:33:50,734 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:33:50,789 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:33:51,605 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:33:53,705 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:33:55,292 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:33:55,293 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:34:29,014 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:34:31,168 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:34:46,691 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:34:50,745 judgelist Free judges: 1
+INFO 2020-03-18 05:34:50,746 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:34:50,762 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:34:51,555 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:34:51,588 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:34:52,438 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:34:53,089 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:34:53,188 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:34:53,188 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:47:30,555 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:47:30,600 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:47:30,602 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:47:32,886 judgelist Free judges: 1
+INFO 2020-03-18 05:47:32,886 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:47:32,904 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:47:33,727 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:47:33,769 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:47:34,554 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:47:35,334 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:47:35,435 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:47:35,435 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:47:35,648 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:47:35,829 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:48:05,656 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:48:07,377 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:48:11,877 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:48:34,503 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:48:34,539 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:48:36,333 judgelist Free judges: 1
+INFO 2020-03-18 05:48:36,333 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:48:36,338 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:48:37,099 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:48:37,140 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:48:37,893 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:48:38,641 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:48:38,735 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:48:38,735 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:48:38,951 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:48:39,127 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:49:26,395 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:49:26,430 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:49:26,433 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:49:27,773 judgelist Free judges: 1
+INFO 2020-03-18 05:49:27,774 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:49:27,791 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:49:28,580 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:49:28,617 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:49:29,463 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:49:30,242 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:49:30,699 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:49:30,700 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 05:51:41,079 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:51:55,288 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:55:29,334 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:56:01,496 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:56:01,512 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:56:01,564 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:56:01,567 judgehandler judge1: Updated problem list
+INFO 2020-03-18 05:56:05,295 judgelist Free judges: 1
+INFO 2020-03-18 05:56:05,295 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 05:56:05,312 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 05:56:06,173 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 05:56:06,207 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 05:56:37,310 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:57:08,757 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 05:57:08,833 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 05:57:08,833 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:04:52,739 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:04:52,782 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:04:57,102 judgelist Free judges: 1
+INFO 2020-03-18 06:04:57,103 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:04:57,300 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:04:58,056 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:04:59,303 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 06:05:29,538 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 06:05:57,309 judgelist Abort request: 78
+INFO 2020-03-18 06:06:00,316 judgelist Abort request: 78
+INFO 2020-03-18 06:06:00,528 judgehandler judge1: Submission aborted: 78
+INFO 2020-03-18 06:06:00,528 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:06:00,697 judgelist Abort request: 78
+INFO 2020-03-18 06:06:39,173 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:06:39,558 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:06:39,974 judgelist Free judges: 1
+INFO 2020-03-18 06:06:39,974 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:06:39,991 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:06:40,789 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:06:40,841 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 06:07:11,914 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 06:07:27,961 judgelist Abort request: 78
+INFO 2020-03-18 06:07:29,301 judgelist Abort request: 78
+INFO 2020-03-18 06:07:30,107 judgelist Abort request: 78
+INFO 2020-03-18 06:07:42,920 judgehandler judge1: Submission aborted: 78
+INFO 2020-03-18 06:07:42,920 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:08:00,686 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:08:05,751 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:08:05,786 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:08:08,747 judgelist Free judges: 1
+INFO 2020-03-18 06:08:08,748 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:08:08,764 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:08:09,549 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:08:09,593 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 06:08:40,773 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 06:08:46,508 judgelist Abort request: 78
+INFO 2020-03-18 06:09:11,712 judgehandler judge1: Submission aborted: 78
+INFO 2020-03-18 06:09:11,712 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:09:12,488 judgelist Free judges: 1
+INFO 2020-03-18 06:09:12,488 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:09:12,549 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:09:12,556 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:09:12,563 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:09:13,433 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:09:13,479 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 06:09:27,697 judgelist Abort request: 78
+INFO 2020-03-18 06:09:38,190 judgelist Abort request: 78
+INFO 2020-03-18 06:09:44,640 judgehandler judge1: Submission aborted: 78
+INFO 2020-03-18 06:09:44,640 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:10:29,829 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:10:29,863 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:10:32,316 judgelist Free judges: 1
+INFO 2020-03-18 06:10:32,316 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:10:32,382 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:10:33,193 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:10:33,238 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 06:10:40,172 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 06:10:46,940 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 06:10:47,817 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 06:10:47,818 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:26:00,330 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:26:16,292 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:26:16,295 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:26:16,326 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:26:16,329 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:26:18,827 judgelist Free judges: 1
+INFO 2020-03-18 06:26:18,827 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:26:18,833 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:26:19,611 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:26:19,654 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 06:26:20,402 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 46, in grade
+    check = CheckerResult(check, case.points if check else 0.0)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/result.py", line 73, in __init__
+    assert isinstance(passed, bool)
+AssertionError
+
+INFO 2020-03-18 06:26:20,413 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:28:20,473 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:28:20,475 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:28:20,508 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:28:22,681 judgelist Free judges: 1
+INFO 2020-03-18 06:28:22,681 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:28:24,365 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:28:25,252 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:28:25,308 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 06:28:25,984 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 46, in grade
+    check = CheckerResult(check, case.points if check else 0.0)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/result.py", line 73, in __init__
+    assert isinstance(passed, bool)
+AssertionError
+
+INFO 2020-03-18 06:28:25,993 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:29:45,524 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:29:45,558 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:29:45,561 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:29:48,234 judgelist Free judges: 1
+INFO 2020-03-18 06:29:48,234 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:29:48,247 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:29:49,048 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:29:49,080 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 06:29:50,052 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 06:29:51,012 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 06:29:51,106 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 06:29:51,107 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:30:28,830 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:30:35,499 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:30:42,724 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:30:42,757 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:30:42,759 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:30:42,761 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:30:44,319 judgelist Free judges: 1
+INFO 2020-03-18 06:30:44,319 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:30:44,336 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:30:45,188 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:30:45,228 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 06:30:45,888 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 32, in check
+    executor = executors['CPP14'].Executor('validator', validator_source.read())
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/executors/compiled_executor.py", line 63, in __call__
+    obj.compile()
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/executors/compiled_executor.py", line 225, in compile
+    self.handle_compile_error(output)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/executors/compiled_executor.py", line 210, in handle_compile_error
+    raise CompileError(output)
+dmoj.error.CompileError: validatorcpp.cpp: In function ‘int main()’:
+validatorcpp.cpp:7:14: error: too many arguments to function ‘int getchar()’
+     getchar(c);
+              ^
+In file included from /usr/include/stdio.h:859:0
+                 from /usr/include/c++/7/cstdio:42
+                 from /usr/include/x86_64-linux-gnu/c++/7/bits/stdc++.h:46
+                 from validatorcpp.cpp:1:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:44:1: note: declared here
+ getchar (void)
+ ^~~~~~~
+
+
+INFO 2020-03-18 06:30:45,897 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:30:55,495 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:31:46,205 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:31:46,239 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:31:46,243 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:32:02,292 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:32:02,483 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:32:02,639 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:32:02,801 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:32:06,193 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:32:06,195 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:32:06,227 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:32:06,229 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:32:10,915 judgelist Free judges: 1
+INFO 2020-03-18 06:32:10,916 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:32:10,932 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:32:11,785 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:32:11,917 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 06:32:19,015 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 06:32:25,495 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 06:32:25,588 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 06:32:25,588 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:39:52,099 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:39:52,132 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:39:52,135 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:39:55,023 judgelist Free judges: 1
+INFO 2020-03-18 06:39:55,023 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:39:55,034 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:39:55,809 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:39:55,860 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 06:39:56,560 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 35, in check
+    with mktemp(judge_input) as input_file, mktemp(process_output) as output_file, mktemp(judge_output) as judge_file:
+NameError: name 'mktemp' is not defined
+
+INFO 2020-03-18 06:39:56,570 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:40:24,326 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:40:24,358 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:40:24,362 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:40:25,685 judgelist Free judges: 1
+INFO 2020-03-18 06:40:25,686 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:40:25,690 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:40:26,451 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:40:26,847 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 06:40:27,040 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 90, in check_result
+    checker = case.checker()
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 345, in checker
+    checker = self.problem.load_checker(name)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 152, in load_checker
+    self._checkers[name] = checker = load_module_from_file(os.path.join(get_problem_root(self.id), name))
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/module.py", line 18, in load_module_from_file
+    return load_module(name, f.read(), os.path.abspath(filename))
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/module.py", line 9, in load_module
+    exec(compile(code, filename or '<string>', 'exec'), mod.__dict__)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 5, in <module>
+    from dmoj.utils.helper_files import compile_with_auxiliary_files, mktemp
+ModuleNotFoundError: No module named 'dmoj.utils.helper_files'
+
+INFO 2020-03-18 06:40:27,071 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:41:45,645 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:41:45,679 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:41:48,021 judgelist Free judges: 1
+INFO 2020-03-18 06:41:48,022 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:41:48,039 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:41:48,846 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:41:48,884 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 06:41:49,614 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 44, in check
+    stderr=subprocess.PIPE, memory=memory_limit, time=time_limit)
+NameError: name 'memory_limit' is not defined
+
+INFO 2020-03-18 06:41:49,624 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:43:02,896 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:43:02,904 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:43:03,640 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:43:07,078 judgelist Free judges: 1
+INFO 2020-03-18 06:43:07,078 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:43:07,094 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:43:07,937 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:43:08,369 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 06:43:08,909 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 48, in check
+    proc_output, error = map(utf8text, process.communicate())
+NameError: name 'utf8text' is not defined
+
+INFO 2020-03-18 06:43:08,919 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:44:07,418 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:44:07,420 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:44:07,453 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:44:11,440 judgelist Free judges: 1
+INFO 2020-03-18 06:44:11,440 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:44:11,445 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:44:12,207 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:44:12,245 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 06:44:19,362 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 06:44:25,907 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 06:44:27,182 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 06:44:27,182 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 06:44:46,837 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:46:13,223 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:46:34,982 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:46:35,017 judgehandler judge1: Updated problem list
+INFO 2020-03-18 06:46:38,489 judgelist Free judges: 1
+INFO 2020-03-18 06:46:38,489 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 06:46:38,505 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 06:46:39,324 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 06:46:40,401 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 06:46:46,472 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 06:46:52,572 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 06:46:54,541 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 06:46:54,542 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:01:48,256 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:01:48,290 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:01:53,103 judgelist Free judges: 1
+INFO 2020-03-18 07:01:53,103 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:01:53,120 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:01:53,927 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:01:53,980 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:01:54,031 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 90, in check_result
+    checker = case.checker()
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 345, in checker
+    checker = self.problem.load_checker(name)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 152, in load_checker
+    self._checkers[name] = checker = load_module_from_file(os.path.join(get_problem_root(self.id), name))
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/module.py", line 18, in load_module_from_file
+    return load_module(name, f.read(), os.path.abspath(filename))
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/module.py", line 9, in load_module
+    exec(compile(code, filename or '<string>', 'exec'), mod.__dict__)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 68, in <module>
+    from dmoj.checkers.bridged import checker as Bcheck
+ModuleNotFoundError: No module named 'dmoj.checkers.bridged'
+
+INFO 2020-03-18 07:01:54,043 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:05:58,382 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:05:58,399 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:05:58,401 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:05:58,451 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:05:58,454 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:06:01,300 judgelist Free judges: 1
+INFO 2020-03-18 07:06:01,301 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:06:02,094 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:06:02,895 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:06:02,958 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:06:03,008 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/graders/standard.py", line 90, in check_result
+    checker = case.checker()
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 345, in checker
+    checker = self.problem.load_checker(name)
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/problem.py", line 152, in load_checker
+    self._checkers[name] = checker = load_module_from_file(os.path.join(get_problem_root(self.id), name))
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/module.py", line 18, in load_module_from_file
+    return load_module(name, f.read(), os.path.abspath(filename))
+  File "/usr/local/lib/python3.6/dist-packages/dmoj/utils/module.py", line 9, in load_module
+    exec(compile(code, filename or '<string>', 'exec'), mod.__dict__)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 72, in <module>
+    from dmoj.contrib import contrib_modules
+ModuleNotFoundError: No module named 'dmoj.contrib'
+
+INFO 2020-03-18 07:06:03,041 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:07:14,737 judgehandler Judge disconnected from: ('127.0.0.1', 44094)
+INFO 2020-03-18 07:08:45,618 judgehandler Judge connected from: ('127.0.0.1', 51126)
+INFO 2020-03-18 07:08:45,619 judgehandler Judge authenticated: ('127.0.0.1', 51126) (judge1)
+INFO 2020-03-18 07:09:29,324 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:09:29,327 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:09:29,359 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:09:29,361 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:09:32,610 judgelist Free judges: 1
+INFO 2020-03-18 07:09:32,610 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:09:32,614 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:09:33,384 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:09:33,802 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:09:34,399 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/graders/standard.py", line 90, in check_result
+    checker = case.checker()
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/problem.py", line 345, in checker
+    checker = self.problem.load_checker(name)
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/problem.py", line 152, in load_checker
+    self._checkers[name] = checker = load_module_from_file(os.path.join(get_problem_root(self.id), name))
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/utils/module.py", line 18, in load_module_from_file
+    return load_module(name, f.read(), os.path.abspath(filename))
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/utils/module.py", line 9, in load_module
+    exec(compile(code, filename or '<string>', 'exec'), mod.__dict__)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 69, in <module>
+    from dmoj.contrib import contrib_modules
+ModuleNotFoundError: No module named 'dmoj.contrib'
+
+INFO 2020-03-18 07:09:34,435 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:11:18,716 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:11:18,761 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:11:20,850 judgelist Free judges: 1
+INFO 2020-03-18 07:11:20,850 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:11:20,863 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:11:21,642 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:11:21,682 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:11:21,719 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/graders/standard.py", line 90, in check_result
+    checker = case.checker()
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/problem.py", line 345, in checker
+    checker = self.problem.load_checker(name)
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/problem.py", line 152, in load_checker
+    self._checkers[name] = checker = load_module_from_file(os.path.join(get_problem_root(self.id), name))
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/utils/module.py", line 18, in load_module_from_file
+    return load_module(name, f.read(), os.path.abspath(filename))
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/utils/module.py", line 9, in load_module
+    exec(compile(code, filename or '<string>', 'exec'), mod.__dict__)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 72, in <module>
+    from dmoj.utils.helper_files import compile_with_auxiliary_files, mktemp
+ModuleNotFoundError: No module named 'dmoj.utils.helper_files'
+
+INFO 2020-03-18 07:11:21,744 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:12:32,075 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:12:32,083 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:12:32,108 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:12:35,826 judgelist Free judges: 1
+INFO 2020-03-18 07:12:35,826 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:12:35,843 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:12:36,639 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:12:36,680 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:12:36,717 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/judge.py", line 164, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, meta, report=report)
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/judge.py", line 116, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/judge.py", line 208, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/graders/standard.py", line 41, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/dmojsite/lib/python3.6/site-packages/dmoj/graders/standard.py", line 104, in check_result
+    execution_time=result.execution_time)
+TypeError: check() got an unexpected keyword argument 'submission_source'
+
+INFO 2020-03-18 07:12:36,745 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:20:36,331 judgehandler Judge disconnected from: ('127.0.0.1', 51126)
+INFO 2020-03-18 07:26:21,728 judgehandler Judge connected from: ('127.0.0.1', 51310)
+INFO 2020-03-18 07:26:21,729 judgehandler Judge authenticated: ('127.0.0.1', 51310) (judge1)
+INFO 2020-03-18 07:26:28,864 judgelist Free judges: 1
+INFO 2020-03-18 07:26:28,864 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:26:28,874 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:26:29,648 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:26:29,677 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:26:30,245 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+TypeError: check() got an unexpected keyword argument 'submission_source'
+
+INFO 2020-03-18 07:26:30,254 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:28:38,785 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:28:38,787 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:28:38,822 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:28:44,533 judgelist Free judges: 1
+INFO 2020-03-18 07:28:44,533 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:28:44,966 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:28:46,156 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:28:46,419 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:28:46,454 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+TypeError: check() missing 2 required positional arguments: 'files' and 'lang'
+
+INFO 2020-03-18 07:28:46,464 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:28:46,887 judgelist Free judges: 1
+INFO 2020-03-18 07:28:46,887 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:28:46,897 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:28:47,673 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:28:47,729 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:28:47,778 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+TypeError: check() missing 2 required positional arguments: 'files' and 'lang'
+
+INFO 2020-03-18 07:28:47,787 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:29:22,441 judgelist Free judges: 1
+INFO 2020-03-18 07:29:22,441 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:29:22,458 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:29:23,255 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:29:23,292 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:29:23,327 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+TypeError: check() missing 2 required positional arguments: 'files' and 'lang'
+
+INFO 2020-03-18 07:29:23,337 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:29:30,109 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:29:30,112 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:29:30,521 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:29:30,530 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:29:33,459 judgelist Free judges: 1
+INFO 2020-03-18 07:29:33,459 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:29:34,354 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:29:35,122 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:29:35,195 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:29:35,258 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 241, in check
+    executor = get_executor(files, lang, compiler_time_limit, problem_id)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 232, in get_executor
+    executor = compile_with_auxiliary_files(filenames, lang, compiler_time_limit)
+  File "/home/cuom1999/DMOJ/judge/dmoj/utils/helper_files.py", line 23, in compile_with_auxiliary_files
+    with open(filename, 'rb') as f:
+FileNotFoundError: [Errno 2] No such file or directory: '/home/cuom1999/DMOJ/problems/hinhvuong2/hinhvuong2'
+
+INFO 2020-03-18 07:29:35,287 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:30:11,310 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:30:11,312 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:30:11,345 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:30:14,360 judgelist Free judges: 1
+INFO 2020-03-18 07:30:14,360 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:30:14,376 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:30:15,172 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:30:15,214 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 07:31:04,768 judgelist Abort request: 78
+ERROR 2020-03-18 07:31:16,046 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 256, in check
+    stderr=error)
+  File "/home/cuom1999/DMOJ/judge/dmoj/contrib/default.py", line 18, in parse_return_code
+    parse_helper_file_error(proc, executor, name, stderr, time_limit, memory_limit)
+  File "/home/cuom1999/DMOJ/judge/dmoj/utils/helper_files.py", line 81, in parse_helper_file_error
+    raise InternalError(error)
+dmoj.error.InternalError: checker timed out (> 20 seconds)
+
+INFO 2020-03-18 07:31:16,057 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:31:33,009 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:31:33,208 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:31:36,266 judgelist Abort request: 78
+INFO 2020-03-18 07:31:37,927 judgelist Free judges: 1
+INFO 2020-03-18 07:31:37,928 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:31:37,944 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:31:38,747 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:31:38,782 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:31:44,827 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 256, in check
+    stderr=error)
+  File "/home/cuom1999/DMOJ/judge/dmoj/contrib/default.py", line 18, in parse_return_code
+    parse_helper_file_error(proc, executor, name, stderr, time_limit, memory_limit)
+  File "/home/cuom1999/DMOJ/judge/dmoj/utils/helper_files.py", line 81, in parse_helper_file_error
+    raise InternalError(error)
+dmoj.error.InternalError: checker timed out (> 2 seconds)
+
+INFO 2020-03-18 07:31:44,836 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:35:38,888 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:35:38,890 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:35:38,922 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:35:41,880 judgelist Free judges: 1
+INFO 2020-03-18 07:35:41,880 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:35:41,908 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:35:42,659 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:35:42,694 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:35:48,739 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 256, in check
+    stderr=error)
+  File "/home/cuom1999/DMOJ/judge/dmoj/contrib/default.py", line 18, in parse_return_code
+    parse_helper_file_error(proc, executor, name, stderr, time_limit, memory_limit)
+  File "/home/cuom1999/DMOJ/judge/dmoj/utils/helper_files.py", line 81, in parse_helper_file_error
+    raise InternalError(error)
+dmoj.error.InternalError: checker timed out (> 2 seconds)
+
+INFO 2020-03-18 07:35:48,748 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:38:11,138 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:38:11,142 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:38:11,170 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:38:14,245 judgelist Free judges: 1
+INFO 2020-03-18 07:38:14,245 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:38:14,262 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:38:15,250 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:38:15,301 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:38:21,334 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 256, in check
+    stderr=error)
+  File "/home/cuom1999/DMOJ/judge/dmoj/contrib/default.py", line 18, in parse_return_code
+    parse_helper_file_error(proc, executor, name, stderr, time_limit, memory_limit)
+  File "/home/cuom1999/DMOJ/judge/dmoj/utils/helper_files.py", line 81, in parse_helper_file_error
+    raise InternalError(error)
+dmoj.error.InternalError: checker timed out (> 2 seconds)
+
+INFO 2020-03-18 07:38:21,343 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:40:25,486 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:40:28,773 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:40:29,514 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:40:32,144 judgelist Free judges: 1
+INFO 2020-03-18 07:40:32,145 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:40:32,566 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:40:33,389 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:40:34,629 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:40:35,441 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 241, in check
+    executor = get_executor(files, lang, compiler_time_limit, problem_id)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 232, in get_executor
+    executor = compile_with_auxiliary_files(filenames, lang, compiler_time_limit)
+  File "/home/cuom1999/DMOJ/judge/dmoj/utils/helper_files.py", line 53, in compile_with_auxiliary_files
+    executor = executor('_aux_file', None, aux_sources=sources, cached=True)
+  File "/home/cuom1999/DMOJ/judge/dmoj/executors/compiled_executor.py", line 63, in __call__
+    obj.compile()
+  File "/home/cuom1999/DMOJ/judge/dmoj/executors/compiled_executor.py", line 233, in compile
+    self.handle_compile_error(output)
+  File "/home/cuom1999/DMOJ/judge/dmoj/executors/compiled_executor.py", line 218, in handle_compile_error
+    raise CompileError(output)
+dmoj.error.CompileError: ain.cpp: In function ‘int main()’:
+ain.cpp:7:5: error: expected ‘;’ before ‘return’
+     return 0;
+     ^~~~~~
+
+
+INFO 2020-03-18 07:40:35,478 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:41:13,598 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:41:35,527 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:41:40,191 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:41:42,324 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:41:45,185 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:41:45,188 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:41:45,219 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:41:48,231 judgelist Free judges: 1
+INFO 2020-03-18 07:41:48,232 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:41:48,809 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:41:49,579 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:41:49,889 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:41:50,290 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 241, in check
+    executor = get_executor(files, lang, compiler_time_limit, problem_id)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 232, in get_executor
+    executor = compile_with_auxiliary_files(filenames, lang, compiler_time_limit)
+  File "/home/cuom1999/DMOJ/judge/dmoj/utils/helper_files.py", line 53, in compile_with_auxiliary_files
+    executor = executor('_aux_file', None, aux_sources=sources, cached=True)
+  File "/home/cuom1999/DMOJ/judge/dmoj/executors/compiled_executor.py", line 63, in __call__
+    obj.compile()
+  File "/home/cuom1999/DMOJ/judge/dmoj/executors/compiled_executor.py", line 233, in compile
+    self.handle_compile_error(output)
+  File "/home/cuom1999/DMOJ/judge/dmoj/executors/compiled_executor.py", line 218, in handle_compile_error
+    raise CompileError(output)
+dmoj.error.CompileError: ain.cpp: In function ‘int main()’:
+ain.cpp:6:27: error: ‘endl’ was not declared in this scope
+     std::cout << "123" << endl;
+                           ^~~~
+ain.cpp:6:27: note: suggested alternative:
+In file included from /usr/include/c++/7/iostream:39:0
+                 from ain.cpp:1:
+/usr/include/c++/7/ostream:590:5: note:   ‘std::endl’
+     endl(basic_ostream<_CharT, _Traits>& __os)
+     ^~~~
+
+
+INFO 2020-03-18 07:41:50,323 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:41:57,299 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:41:59,529 judgelist Free judges: 1
+INFO 2020-03-18 07:41:59,529 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:41:59,533 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:42:00,291 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:42:00,327 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 07:42:00,534 judgehandler judge1: 2 test case(s) completed on: 78
+INFO 2020-03-18 07:42:00,606 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 07:42:00,606 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:43:44,755 judgelist Free judges: 1
+INFO 2020-03-18 07:43:44,756 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:43:44,772 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:43:45,592 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:43:45,634 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 07:43:45,683 judgehandler judge1: 2 test case(s) completed on: 78
+INFO 2020-03-18 07:43:45,775 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 07:43:45,776 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:43:46,806 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:43:46,864 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:43:46,872 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:43:50,289 judgelist Abort request: 78
+INFO 2020-03-18 07:43:53,236 judgelist Free judges: 1
+INFO 2020-03-18 07:43:53,237 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:43:53,253 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:43:54,060 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:43:54,905 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 07:43:55,672 judgehandler judge1: 2 test case(s) completed on: 78
+INFO 2020-03-18 07:43:57,412 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 07:43:57,412 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:46:22,031 judgelist Free judges: 1
+INFO 2020-03-18 07:46:22,032 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:46:22,050 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:46:22,994 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:46:23,224 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 07:46:23,261 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 07:46:23,338 judgehandler judge1: 1 test case(s) completed on: 78
+INFO 2020-03-18 07:46:23,425 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 07:46:23,426 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:46:23,944 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:46:24,002 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:46:30,148 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:46:30,156 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:46:30,523 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:46:33,679 judgelist Abort request: 78
+INFO 2020-03-18 07:46:36,257 judgelist Free judges: 1
+INFO 2020-03-18 07:46:36,258 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:46:36,276 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:46:37,036 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:46:37,386 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:46:37,811 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+TypeError: check() got an unexpected keyword argument 'submission_source'
+
+INFO 2020-03-18 07:46:37,835 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:47:25,898 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:47:25,904 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:47:25,929 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:47:28,277 judgelist Free judges: 1
+INFO 2020-03-18 07:47:28,278 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:47:28,298 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:47:29,081 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:47:29,117 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:47:29,154 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 14, in check
+    **kwargs)
+TypeError: check() got multiple values for keyword argument 'problem_id'
+
+INFO 2020-03-18 07:47:29,168 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:49:30,893 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:49:30,901 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:49:30,938 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:49:30,945 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:49:36,156 judgelist Free judges: 1
+INFO 2020-03-18 07:49:36,157 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:49:36,222 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:49:37,025 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:49:37,065 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:49:37,109 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 14, in check
+    *args,
+NameError: name 'args' is not defined
+
+INFO 2020-03-18 07:49:37,140 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 07:49:47,958 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:49:47,960 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:49:48,181 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:49:48,190 judgehandler judge1: Updated problem list
+INFO 2020-03-18 07:49:50,142 judgelist Free judges: 1
+INFO 2020-03-18 07:49:50,143 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 07:49:50,146 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 07:49:50,900 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 07:49:50,940 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 07:49:50,978 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 14, in check
+    **kwargs)
+TypeError: check() got multiple values for keyword argument 'problem_id'
+
+INFO 2020-03-18 07:49:51,011 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 09:06:45,207 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:06:45,216 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:06:45,251 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:06:48,445 judgelist Free judges: 1
+INFO 2020-03-18 09:06:48,445 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 09:06:48,462 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 09:06:49,239 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 09:06:49,449 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 09:06:49,663 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+  File "/home/cuom1999/DMOJ/problems/hinhvuong2/cppvalidator.py", line 13, in check
+    **kwargs)
+TypeError: check() got multiple values for keyword argument 'problem_id'
+
+INFO 2020-03-18 09:06:49,697 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 09:07:49,886 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:07:49,889 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:07:49,932 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:07:52,740 judgelist Free judges: 1
+INFO 2020-03-18 09:07:52,740 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 09:07:52,760 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 09:07:53,583 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 09:07:53,638 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 09:07:53,697 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 62, in check_result
+    checker = case.checker()
+  File "/home/cuom1999/DMOJ/judge/dmoj/problem.py", line 339, in checker
+    raise InvalidInitException('malformed checker: no check method found')
+dmoj.config.InvalidInitException: malformed checker: no check method found
+
+INFO 2020-03-18 09:07:53,707 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 09:11:32,702 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:11:32,704 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:11:32,736 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:11:32,738 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:11:35,020 judgelist Free judges: 1
+INFO 2020-03-18 09:11:35,020 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 09:11:35,027 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 09:11:36,026 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 09:11:36,100 judgehandler judge1: Grading has begun on: 78
+ERROR 2020-03-18 09:11:36,866 judgehandler Judge judge1 failed while handling submission 78
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/site/judge/bridge/judgehandler.py", line 230, in on_internal_error
+    raise ValueError('\n\n' + packet['message'])
+ValueError: 
+
+Traceback (most recent call last):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 166, in grading_cleanup_wrapper
+    self._block_and_grade(problem, language, source, short_circuit, report=report)
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 118, in _block_and_grade
+    short_circuit=short_circuit):
+  File "/home/cuom1999/DMOJ/judge/dmoj/judge.py", line 210, in grade_cases
+    result = grader.grade(case)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 28, in grade
+    check = self.check_result(case, result)
+  File "/home/cuom1999/DMOJ/judge/dmoj/graders/standard.py", line 76, in check_result
+    problem_id=self.problem.id)
+TypeError: check() missing 2 required positional arguments: 'files' and 'lang'
+
+INFO 2020-03-18 09:11:36,903 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 09:17:00,823 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:17:00,831 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:17:00,857 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:17:00,867 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:17:03,897 judgelist Free judges: 1
+INFO 2020-03-18 09:17:03,898 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 09:17:04,144 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 09:17:04,931 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 09:17:05,672 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 09:17:06,072 judgehandler judge1: 2 test case(s) completed on: 78
+INFO 2020-03-18 09:17:06,713 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 09:17:06,714 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 09:17:30,720 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:17:38,802 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:17:39,907 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:18:17,425 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:18:17,427 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:18:23,341 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:18:36,697 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:18:36,699 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:18:54,323 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:18:54,326 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:18:54,359 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:18:57,278 judgelist Free judges: 1
+INFO 2020-03-18 09:18:57,279 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 09:18:57,296 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 09:18:58,096 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 09:18:58,137 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 09:18:58,858 judgehandler judge1: 2 test case(s) completed on: 78
+INFO 2020-03-18 09:18:58,933 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 09:18:58,933 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 09:19:10,228 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:19:28,294 judgelist Free judges: 1
+INFO 2020-03-18 09:19:28,295 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 09:19:28,312 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 09:19:29,122 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 09:19:29,164 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 09:19:29,896 judgehandler judge1: 2 test case(s) completed on: 78
+INFO 2020-03-18 09:19:29,988 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 09:19:29,988 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 09:20:32,052 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:20:33,459 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:20:38,356 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:21:07,789 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:21:12,246 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:21:12,723 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:21:40,993 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:21:47,484 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:21:47,487 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:22:07,187 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:22:07,195 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:22:09,140 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:22:09,148 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:22:12,992 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:22:17,963 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:22:17,972 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:22:17,996 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:22:22,377 judgelist Free judges: 1
+INFO 2020-03-18 09:22:22,377 judgelist Dispatched submission 78 to: judge1
+INFO 2020-03-18 09:22:22,394 judgehandler Submission acknowledged: 78
+INFO 2020-03-18 09:22:23,261 judgehandler judge1: Submission generated compiler messages: 78
+INFO 2020-03-18 09:22:23,300 judgehandler judge1: Grading has begun on: 78
+INFO 2020-03-18 09:22:24,075 judgehandler judge1: 2 test case(s) completed on: 78
+INFO 2020-03-18 09:22:24,831 judgehandler judge1: Grading has ended on: 78
+INFO 2020-03-18 09:22:24,831 judgelist Judge available after grading 78: judge1
+INFO 2020-03-18 09:22:46,386 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:23:14,996 judgelist Free judges: 1
+INFO 2020-03-18 09:23:14,996 judgelist Dispatched submission 79 to: judge1
+INFO 2020-03-18 09:23:15,013 judgehandler Submission acknowledged: 79
+INFO 2020-03-18 09:23:15,792 judgehandler judge1: Submission generated compiler messages: 79
+INFO 2020-03-18 09:23:15,828 judgehandler judge1: Grading has begun on: 79
+INFO 2020-03-18 09:23:16,564 judgehandler judge1: 2 test case(s) completed on: 79
+INFO 2020-03-18 09:23:16,643 judgehandler judge1: Grading has ended on: 79
+INFO 2020-03-18 09:23:16,643 judgelist Judge available after grading 79: judge1
+INFO 2020-03-18 09:24:30,974 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:24:33,179 judgelist Free judges: 1
+INFO 2020-03-18 09:24:33,179 judgelist Dispatched submission 79 to: judge1
+INFO 2020-03-18 09:24:33,184 judgehandler Submission acknowledged: 79
+INFO 2020-03-18 09:24:33,951 judgehandler judge1: Submission generated compiler messages: 79
+INFO 2020-03-18 09:24:33,988 judgehandler judge1: Grading has begun on: 79
+INFO 2020-03-18 09:24:34,744 judgehandler judge1: 2 test case(s) completed on: 79
+INFO 2020-03-18 09:24:34,829 judgehandler judge1: Grading has ended on: 79
+INFO 2020-03-18 09:24:34,829 judgelist Judge available after grading 79: judge1
+INFO 2020-03-18 09:25:37,373 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:25:37,529 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:25:55,589 judgelist Free judges: 1
+INFO 2020-03-18 09:25:55,589 judgelist Dispatched submission 79 to: judge1
+INFO 2020-03-18 09:25:55,594 judgehandler Submission acknowledged: 79
+INFO 2020-03-18 09:25:56,443 judgehandler judge1: Submission generated compiler messages: 79
+INFO 2020-03-18 09:25:56,496 judgehandler judge1: Grading has begun on: 79
+INFO 2020-03-18 09:25:57,449 judgehandler judge1: 100 test case(s) completed on: 79
+INFO 2020-03-18 09:25:58,999 judgehandler judge1: Grading has ended on: 79
+INFO 2020-03-18 09:25:59,000 judgelist Judge available after grading 79: judge1
+INFO 2020-03-18 09:26:21,941 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:26:21,970 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:26:22,069 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:26:49,725 judgelist Free judges: 1
+INFO 2020-03-18 09:26:49,725 judgelist Dispatched submission 79 to: judge1
+INFO 2020-03-18 09:26:49,744 judgehandler Submission acknowledged: 79
+INFO 2020-03-18 09:26:50,497 judgehandler judge1: Submission generated compiler messages: 79
+INFO 2020-03-18 09:26:51,407 judgehandler judge1: Grading has begun on: 79
+INFO 2020-03-18 09:26:51,576 judgehandler judge1: 1 test case(s) completed on: 79
+INFO 2020-03-18 09:26:52,516 judgehandler judge1: 99 test case(s) completed on: 79
+INFO 2020-03-18 09:26:54,080 judgehandler judge1: Grading has ended on: 79
+INFO 2020-03-18 09:26:54,081 judgelist Judge available after grading 79: judge1
+INFO 2020-03-18 09:27:50,426 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:27:50,454 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:27:50,567 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:28:14,711 judgelist Free judges: 1
+INFO 2020-03-18 09:28:14,711 judgelist Dispatched submission 79 to: judge1
+INFO 2020-03-18 09:28:14,721 judgehandler Submission acknowledged: 79
+INFO 2020-03-18 09:28:15,491 judgehandler judge1: Submission generated compiler messages: 79
+INFO 2020-03-18 09:28:15,546 judgehandler judge1: Grading has begun on: 79
+INFO 2020-03-18 09:28:15,617 judgehandler judge1: 6 test case(s) completed on: 79
+INFO 2020-03-18 09:28:15,869 judgehandler judge1: 5 test case(s) completed on: 79
+INFO 2020-03-18 09:28:16,122 judgehandler judge1: 3 test case(s) completed on: 79
+INFO 2020-03-18 09:28:16,373 judgehandler judge1: 11 test case(s) completed on: 79
+INFO 2020-03-18 09:28:16,624 judgehandler judge1: 13 test case(s) completed on: 79
+INFO 2020-03-18 09:28:16,874 judgehandler judge1: 10 test case(s) completed on: 79
+INFO 2020-03-18 09:28:17,125 judgehandler judge1: 11 test case(s) completed on: 79
+INFO 2020-03-18 09:28:17,378 judgehandler judge1: 6 test case(s) completed on: 79
+INFO 2020-03-18 09:28:17,635 judgehandler judge1: 5 test case(s) completed on: 79
+INFO 2020-03-18 09:28:18,746 judgehandler judge1: 1 test case(s) completed on: 79
+INFO 2020-03-18 09:28:18,937 judgehandler judge1: 1 test case(s) completed on: 79
+INFO 2020-03-18 09:28:19,055 judgehandler judge1: 2 test case(s) completed on: 79
+INFO 2020-03-18 09:28:19,210 judgehandler judge1: 1 test case(s) completed on: 79
+INFO 2020-03-18 09:28:19,354 judgehandler judge1: 4 test case(s) completed on: 79
+INFO 2020-03-18 09:28:19,497 judgehandler judge1: 6 test case(s) completed on: 79
+INFO 2020-03-18 09:28:19,742 judgehandler judge1: 7 test case(s) completed on: 79
+INFO 2020-03-18 09:28:19,886 judgehandler judge1: 7 test case(s) completed on: 79
+INFO 2020-03-18 09:28:20,875 judgehandler judge1: 1 test case(s) completed on: 79
+INFO 2020-03-18 09:28:21,244 judgehandler judge1: Grading has ended on: 79
+INFO 2020-03-18 09:28:21,245 judgelist Judge available after grading 79: judge1
+INFO 2020-03-18 09:28:52,121 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:28:52,129 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:28:54,084 judgelist Free judges: 1
+INFO 2020-03-18 09:28:54,084 judgelist Dispatched submission 79 to: judge1
+INFO 2020-03-18 09:28:54,121 judgehandler Submission acknowledged: 79
+INFO 2020-03-18 09:28:55,310 judgehandler judge1: Submission generated compiler messages: 79
+INFO 2020-03-18 09:28:55,359 judgehandler judge1: Grading has begun on: 79
+INFO 2020-03-18 09:28:56,201 judgehandler judge1: 3 test case(s) completed on: 79
+INFO 2020-03-18 09:28:56,453 judgehandler judge1: 11 test case(s) completed on: 79
+INFO 2020-03-18 09:28:56,704 judgehandler judge1: 12 test case(s) completed on: 79
+INFO 2020-03-18 09:28:56,959 judgehandler judge1: 11 test case(s) completed on: 79
+INFO 2020-03-18 09:28:57,211 judgehandler judge1: 10 test case(s) completed on: 79
+INFO 2020-03-18 09:28:57,463 judgehandler judge1: 10 test case(s) completed on: 79
+INFO 2020-03-18 09:28:57,715 judgehandler judge1: 8 test case(s) completed on: 79
+INFO 2020-03-18 09:28:57,966 judgehandler judge1: 4 test case(s) completed on: 79
+INFO 2020-03-18 09:28:58,217 judgehandler judge1: 7 test case(s) completed on: 79
+INFO 2020-03-18 09:28:59,099 judgehandler judge1: 4 test case(s) completed on: 79
+INFO 2020-03-18 09:28:59,243 judgehandler judge1: 1 test case(s) completed on: 79
+INFO 2020-03-18 09:28:59,386 judgehandler judge1: 1 test case(s) completed on: 79
+INFO 2020-03-18 09:28:59,530 judgehandler judge1: 2 test case(s) completed on: 79
+INFO 2020-03-18 09:28:59,686 judgehandler judge1: 9 test case(s) completed on: 79
+INFO 2020-03-18 09:28:59,843 judgehandler judge1: 7 test case(s) completed on: 79
+INFO 2020-03-18 09:29:00,058 judgehandler judge1: Grading has ended on: 79
+INFO 2020-03-18 09:29:00,058 judgelist Judge available after grading 79: judge1
+INFO 2020-03-18 09:32:55,663 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:32:55,665 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:32:55,742 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:33:13,368 judgelist Free judges: 1
+INFO 2020-03-18 09:33:13,369 judgelist Dispatched submission 79 to: judge1
+INFO 2020-03-18 09:33:13,385 judgehandler Submission acknowledged: 79
+INFO 2020-03-18 09:33:14,507 judgehandler judge1: Submission generated compiler messages: 79
+INFO 2020-03-18 09:33:14,555 judgehandler judge1: Grading has begun on: 79
+INFO 2020-03-18 09:33:14,625 judgehandler judge1: 3 test case(s) completed on: 79
+INFO 2020-03-18 09:33:14,841 judgehandler judge1: 11 test case(s) completed on: 79
+INFO 2020-03-18 09:33:15,094 judgehandler judge1: 11 test case(s) completed on: 79
+INFO 2020-03-18 09:33:15,345 judgehandler judge1: 10 test case(s) completed on: 79
+INFO 2020-03-18 09:33:15,596 judgehandler judge1: 11 test case(s) completed on: 79
+INFO 2020-03-18 09:33:15,852 judgehandler judge1: 5 test case(s) completed on: 79
+INFO 2020-03-18 09:33:16,105 judgehandler judge1: 11 test case(s) completed on: 79
+INFO 2020-03-18 09:33:16,356 judgehandler judge1: 8 test case(s) completed on: 79
+INFO 2020-03-18 09:33:16,607 judgehandler judge1: 9 test case(s) completed on: 79
+INFO 2020-03-18 09:33:16,858 judgehandler judge1: 9 test case(s) completed on: 79
+INFO 2020-03-18 09:33:17,732 judgehandler judge1: 2 test case(s) completed on: 79
+INFO 2020-03-18 09:33:19,972 judgehandler judge1: 2 test case(s) completed on: 79
+INFO 2020-03-18 09:33:20,276 judgehandler judge1: 1 test case(s) completed on: 79
+INFO 2020-03-18 09:33:20,420 judgehandler judge1: 1 test case(s) completed on: 79
+INFO 2020-03-18 09:33:20,564 judgehandler judge1: 1 test case(s) completed on: 79
+INFO 2020-03-18 09:33:20,744 judgehandler judge1: 2 test case(s) completed on: 79
+INFO 2020-03-18 09:33:21,706 judgehandler judge1: 1 test case(s) completed on: 79
+INFO 2020-03-18 09:33:21,850 judgehandler judge1: 1 test case(s) completed on: 79
+INFO 2020-03-18 09:33:22,924 judgehandler judge1: 1 test case(s) completed on: 79
+INFO 2020-03-18 09:33:24,645 judgehandler judge1: Grading has ended on: 79
+INFO 2020-03-18 09:33:24,646 judgelist Judge available after grading 79: judge1
+INFO 2020-03-18 09:34:10,424 judgelist Free judges: 1
+INFO 2020-03-18 09:34:10,424 judgelist Dispatched submission 79 to: judge1
+INFO 2020-03-18 09:34:10,432 judgehandler Submission acknowledged: 79
+INFO 2020-03-18 09:34:11,260 judgehandler judge1: Submission generated compiler messages: 79
+INFO 2020-03-18 09:34:11,311 judgehandler judge1: Grading has begun on: 79
+INFO 2020-03-18 09:34:11,445 judgehandler judge1: 9 test case(s) completed on: 79
+INFO 2020-03-18 09:34:11,697 judgehandler judge1: 12 test case(s) completed on: 79
+INFO 2020-03-18 09:34:11,948 judgehandler judge1: 11 test case(s) completed on: 79
+INFO 2020-03-18 09:34:12,200 judgehandler judge1: 10 test case(s) completed on: 79
+INFO 2020-03-18 09:34:12,451 judgehandler judge1: 10 test case(s) completed on: 79
+INFO 2020-03-18 09:34:12,703 judgehandler judge1: 9 test case(s) completed on: 79
+INFO 2020-03-18 09:34:12,955 judgehandler judge1: 10 test case(s) completed on: 79
+INFO 2020-03-18 09:34:13,207 judgehandler judge1: 6 test case(s) completed on: 79
+INFO 2020-03-18 09:34:13,478 judgehandler judge1: 4 test case(s) completed on: 79
+INFO 2020-03-18 09:34:14,414 judgehandler judge1: 5 test case(s) completed on: 79
+INFO 2020-03-18 09:34:14,635 judgehandler judge1: 2 test case(s) completed on: 79
+INFO 2020-03-18 09:34:14,786 judgehandler judge1: 3 test case(s) completed on: 79
+INFO 2020-03-18 09:34:15,008 judgehandler judge1: 8 test case(s) completed on: 79
+INFO 2020-03-18 09:34:15,240 judgehandler judge1: 1 test case(s) completed on: 79
+INFO 2020-03-18 09:34:15,384 judgehandler judge1: Grading has ended on: 79
+INFO 2020-03-18 09:34:15,385 judgelist Judge available after grading 79: judge1
+INFO 2020-03-18 09:34:31,767 judgelist Free judges: 1
+INFO 2020-03-18 09:34:31,767 judgelist Dispatched submission 80 to: judge1
+INFO 2020-03-18 09:34:31,783 judgehandler Submission acknowledged: 80
+INFO 2020-03-18 09:34:32,599 judgehandler judge1: Submission generated compiler messages: 80
+INFO 2020-03-18 09:34:32,660 judgehandler judge1: Grading has begun on: 80
+INFO 2020-03-18 09:34:32,843 judgehandler judge1: 5 test case(s) completed on: 80
+INFO 2020-03-18 09:34:33,104 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:33,596 judgehandler judge1: 5 test case(s) completed on: 80
+INFO 2020-03-18 09:34:35,937 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:37,732 judgehandler judge1: 2 test case(s) completed on: 80
+INFO 2020-03-18 09:34:40,781 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:43,157 judgehandler judge1: 2 test case(s) completed on: 80
+INFO 2020-03-18 09:34:44,884 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:47,250 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:47,955 judgehandler judge1: 2 test case(s) completed on: 80
+INFO 2020-03-18 09:34:48,074 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:48,192 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:48,385 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:48,523 judgehandler judge1: 2 test case(s) completed on: 80
+INFO 2020-03-18 09:34:48,826 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:49,042 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:49,950 judgehandler judge1: 3 test case(s) completed on: 80
+INFO 2020-03-18 09:34:50,093 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:50,237 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:50,381 judgehandler judge1: 2 test case(s) completed on: 80
+INFO 2020-03-18 09:34:50,525 judgehandler judge1: 2 test case(s) completed on: 80
+INFO 2020-03-18 09:34:50,668 judgehandler judge1: 2 test case(s) completed on: 80
+INFO 2020-03-18 09:34:50,811 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:50,983 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:51,816 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:52,031 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:52,175 judgehandler judge1: 2 test case(s) completed on: 80
+INFO 2020-03-18 09:34:52,318 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:52,462 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:52,606 judgehandler judge1: 2 test case(s) completed on: 80
+INFO 2020-03-18 09:34:52,749 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:52,980 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:53,913 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:54,087 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:54,228 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:54,321 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:54,415 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:54,510 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:54,603 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:54,697 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:54,791 judgehandler judge1: 2 test case(s) completed on: 80
+INFO 2020-03-18 09:34:54,884 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:55,118 judgehandler judge1: 2 test case(s) completed on: 80
+INFO 2020-03-18 09:34:55,283 judgehandler judge1: 5 test case(s) completed on: 80
+INFO 2020-03-18 09:34:56,216 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:56,595 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:56,791 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:34:57,058 judgehandler judge1: 2 test case(s) completed on: 80
+INFO 2020-03-18 09:34:58,604 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:35:00,140 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:35:00,642 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:35:01,879 judgehandler judge1: 2 test case(s) completed on: 80
+INFO 2020-03-18 09:35:02,028 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:35:03,323 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:35:04,960 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:35:05,098 judgehandler judge1: 1 test case(s) completed on: 80
+INFO 2020-03-18 09:35:05,178 judgehandler judge1: 7 test case(s) completed on: 80
+INFO 2020-03-18 09:35:05,258 judgehandler judge1: 4 test case(s) completed on: 80
+INFO 2020-03-18 09:35:05,327 judgehandler judge1: 4 test case(s) completed on: 80
+INFO 2020-03-18 09:35:05,396 judgehandler judge1: 2 test case(s) completed on: 80
+INFO 2020-03-18 09:35:05,488 judgehandler judge1: Grading has ended on: 80
+INFO 2020-03-18 09:35:05,488 judgelist Judge available after grading 80: judge1
+INFO 2020-03-18 09:35:40,128 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:35:40,188 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:36:11,729 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:36:11,832 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:36:11,842 judgehandler judge1: Updated problem list

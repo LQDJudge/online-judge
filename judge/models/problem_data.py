@@ -29,8 +29,8 @@ CHECKERS = (
     ('sorted', _('Unordered')),
     ('identical', _('Byte identical')),
     ('linecount', _('Line-by-line')),
-    ('custom', _('Custom checker')),
-    ('customval', _('Custom Validator')),
+    ('custom', _('Custom checker (PY)')),
+    ('customval', _('Custom validator (CPP)')),
 )
 
 
