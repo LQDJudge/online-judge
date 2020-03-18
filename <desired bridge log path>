@@ -4195,3 +4195,8 @@ INFO 2020-03-18 09:35:40,188 judgehandler judge1: Updated problem list
 INFO 2020-03-18 09:36:11,729 judgehandler judge1: Updated problem list
 INFO 2020-03-18 09:36:11,832 judgehandler judge1: Updated problem list
 INFO 2020-03-18 09:36:11,842 judgehandler judge1: Updated problem list
+INFO 2020-03-18 09:47:23,140 judgehandler Judge disconnected from: ('127.0.0.1', 51310)
+INFO 2020-03-18 09:47:33,189 judgehandler Judge connected from: ('127.0.0.1', 53378)
+INFO 2020-03-18 09:47:33,264 judgehandler Judge authenticated: ('127.0.0.1', 53378) (judge1)
+INFO 2020-03-18 12:26:36,347 judgehandler judge1: Updated problem list
+INFO 2020-03-18 12:26:45,389 judgehandler judge1: Updated problem list
