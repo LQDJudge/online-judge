@@ -1,4 +1,4 @@
-from chat_box.views import ChatView, send
+from chat_box.views import ChatView
 from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
@@ -10,6 +10,8 @@ from django.urls import reverse
 from django.utils.functional import lazystr
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import RedirectView
+from django.contrib.auth.decorators import login_required
+
 
 from judge.feed import AtomBlogFeed, AtomCommentFeed, AtomProblemFeed, BlogFeed, CommentFeed, ProblemFeed
 from judge.forms import CustomAuthenticationForm
@@ -24,7 +26,6 @@ from judge.views.register import ActivationView, RegistrationView
 from judge.views.select2 import AssigneeSelect2View, CommentSelect2View, ContestSelect2View, \
     ContestUserSearchSelect2View, OrganizationSelect2View, ProblemSelect2View, TicketUserSelect2View, \
     UserSearchSelect2View, UserSelect2View
-
 
 admin.autodiscover()
 
@@ -368,8 +369,8 @@ urlpatterns = [
     url(r'^custom_checker_sample/', about.custom_checker_sample, name='custom_checker_sample'),
 
     url(r'^chat/', include([
-        url(r'^$', ChatView.as_view(), name='chat'),
-        url(r'send$', send, name='send_message')
+        url(r'^$', login_required(ChatView.as_view()), name='chat'),
+
     ])),
 ]
 

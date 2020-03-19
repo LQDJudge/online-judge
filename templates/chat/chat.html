@@ -1,7 +1,7 @@
-{% if request.user.is_authenticated %}
 {% extends "base.html" %}
-
 {% block js_media %}
+<script src="{{ static('libs/jquery.waypoints.min.js')}}"></script>
+<script src="{{ static('libs/infinite.min.js') }}"></script>
 <script type="text/javascript">
     var chatSocket = new WebSocket(
         'ws://' + window.location.host +
@@ -12,15 +12,14 @@
         chatSocket.onmessage = function(e) {
             let data = JSON.parse(e.data)
             data = data['message']
-            console.log(data)
-            loadMessage(data['content'], 
-                        data['sender'], 
-                        data['time'], 
+            loadMessage(data['body'],
+                        data['author'],
+                        data['time'],
                         data['image'])
         };
 
         function loadMessage(content, user, time, image) {
-            li = `<li> 
+            li = `<li class="infinite-item"> 
                     <img src="${image}" class="profile-pic">
                     <div class="body-message">
                         <div class="user-time">
@@ -40,33 +39,43 @@
             $('#chat-log').scrollTop($('#chat-log')[0].scrollHeight);
         }
 
+        (function init_chatlog() {
+            ul = $('#chat-log')
+            {% for msg in message|reverse %}
+                loadMessage('{{msg.body}}', '{{msg.author}}', '12:00:00', '{{gravatar(msg.author, 32)}}')
+            {% endfor %}
+        })()
+
+        var infinite = new Waypoint.Infinite({
+            element: $('.infinite-container')[0],
+            onBeforePageLoad: function () {
+                $('.loading').show();
+            },
+            onAfterPageLoad: function ($items) {
+                $('.loading').hide();
+            }
+        });
 
         $("#chat-submit").click(function() {
             if ($("#chat-input").val().trim()) {
-                let content = $('#chat-input').val().trim();
+                let body = $('#chat-input').val().trim();
                 let img = '{{ gravatar(request.user, 32) }}'
                 
                 message = {
-                    'content': content,
+                    'body': body,
                     'image': img,
-                    'time': calcTime(6), // HCM City
-                    'sender': '{{ request.user }}'
+                    'author': '{{request.profile}}',
+                    'author_id': {{request.profile.id}},
                 }
 
+                // $.post("send/", message)
                 chatSocket.send(JSON.stringify({
-                    'message': message,
-                }))
-                // $.post('/chat/send', message)
+                    'message': message
+                }));
 
                 $('#chat-input').val('').focus();
             }
         });
-
-        function calcTime(offset) {
-            utc = new Date().getTime()
-            nd = new Date(utc + (3600000*offset));
-            return nd.toLocaleString();
-        }
 
         chatSocket.onclose = function(e) {
             console.error('Chat socket closed unexpectedly');
@@ -108,29 +117,15 @@
 {% endblock js_media %}
 
 {% block body %}
-    {% csrf_token %}
     <div id="chat-area">
-        <ul id="chat-log">
-            <li>
-                <img src="https://via.placeholder.com/150" class="profile-pic">
-                <div class="body-message">
-                    <div class="user-time">
-                        <a href="#" class="user">
-                            cuom1999
-                        </a>
-                        <span class="time">12:00:00</span>
-                    </div>
-                    <span class="message">
-                        <span>It’s possible that a request can come in via POST with an empty POST dictionary – if, say, a form is requested via the POST HTTP method but does not include form data. Therefore, you shouldn’t use if request.POST to check for use of the POST method; instead, use if request.method == "POST" (see HttpRequest.method).</span>
-                    </span>
-                </div>
-                <div class="clear"></div>
-            </li>
+        <ul id="chat-log" class="infinite-container">
         </ul>    
         {{_('Your message')}}
     
         <textarea rows="6" id="chat-input"></textarea>
     </div>
     <button id="chat-submit"> Send </button>
+    {% if page_obj.has_next %}
+        <a href="{{ request.path }}?page={{ message.next_page_number }}">next</a>
+    {% endif %}
 {% endblock body %}
-{% endif %}

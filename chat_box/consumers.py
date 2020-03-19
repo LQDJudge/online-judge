@@ -1,17 +1,19 @@
 import json
-
 from channels.generic.websocket import AsyncWebsocketConsumer
+from .models import Message
+
+from judge.models.profile import Profile
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_name = 'common'
+        self.room_name = 'room'
         self.room_group_name = 'chat_%s' % self.room_name
 
         # Join room group
         await self.channel_layer.group_add(
             self.room_group_name,
-            self.channel_name,
+            self.channel_name
         )
 
         await self.accept()
@@ -20,7 +22,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Leave room group
         await self.channel_layer.group_discard(
             self.room_group_name,
-            self.channel_name,
+            self.channel_name
         )
 
     # Receive message from WebSocket
@@ -40,8 +42,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
     # Receive message from room group
     async def chat_message(self, event):
         message = event['message']
-
+        time = save_data_and_get_time(message)
+        message['time'] = format_time(time)
         # Send message to WebSocket
         await self.send(text_data=json.dumps({
             'message': message,
         }))
+
+
+# return time
+def save_data_and_get_time(message):
+    new_message = Message(body=message['body'],
+                          author=Profile.objects
+                                        .get(id=message['author_id']),
+                          )
+    new_message.save()
+    return new_message.time
+
+
+def format_time(time):
+    return time.strftime('%H:%M %p  %d-%m-%Y')
