@@ -1,0 +1,58 @@
+#chat-log {
+    padding: 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    height: 20em;
+    width: 100%;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    overflow-y: scroll;
+}
+
+#chat-log li {
+    list-style-type: none;
+    margin: 0.5em;
+}
+
+#chat-input {
+    width: 100%;
+    padding: 0.4em;
+    color: black;
+}
+
+#chat-submit {
+    margin-top: 1em;
+}
+
+.profile-pic {
+    height: 2.6em;
+    width: 2.6em;
+    border-radius: 0.3em;
+    margin-top: 0.1em;
+    float: left;
+}
+
+.body-message {
+    padding-left: 3em;
+}
+
+.user-time {
+    margin-bottom: 0.3em;
+}
+
+.time {
+    margin-left: 0.5em;
+}
+
+.user {
+    font-weight: bold;
+}
+
+.clear {
+    clear: both;
+}
+.message {
+    word-wrap: break-word;
+}
+
+
