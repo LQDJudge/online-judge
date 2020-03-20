@@ -1,5 +1,4 @@
-#chat-log {
-    padding: 0;
+#chat-box {
     border: 1px solid #ccc;
     border-radius: 4px;
     height: 20em;
@@ -7,6 +6,17 @@
     overflow: hidden;
     overflow-wrap: break-word;
     overflow-y: scroll;
+}
+#loader {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 4%;
+}
+
+#chat-log {
+    padding: 0;
+    width: 100%;
 }
 
 #chat-log li {

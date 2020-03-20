@@ -1,6 +1,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .models import Message
+from .views import format_time
 
 from judge.models.profile import Profile
 
@@ -60,5 +61,3 @@ def save_data_and_get_time(message):
     return new_message.time
 
 
-def format_time(time):
-    return time.strftime('%H:%M %p  %d-%m-%Y')
