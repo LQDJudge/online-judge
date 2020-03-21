@@ -2,6 +2,9 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .models import Message
 from .views import format_time
+from django.urls import reverse
+from django.http import HttpResponse, HttpResponseRedirect
+
 
 from judge.models.profile import Profile
 
@@ -14,7 +17,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Join room group
         await self.channel_layer.group_add(
             self.room_group_name,
-            self.channel_name
+            self.channel_name,
         )
 
         await self.accept()
@@ -23,7 +26,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Leave room group
         await self.channel_layer.group_discard(
             self.room_group_name,
-            self.channel_name
+            self.channel_name,
         )
 
     # Receive message from WebSocket
@@ -58,6 +61,5 @@ def save_data_and_get_time(message):
                                         .get(id=message['author_id']),
                           )
     new_message.save()
+    HttpResponseRedirect(reverse('chat'))
     return new_message.time
-
-

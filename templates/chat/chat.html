@@ -7,6 +7,8 @@
 </script>
 <script type="text/javascript">
     $(function() {
+        let currentPage = 1;
+
         $('#loader').hide();
 
         chatSocket.onmessage = function(e) {
@@ -15,53 +17,87 @@
             loadMessage(data['body'],
                         data['author'],
                         data['time'],
-                        data['image'])
+                        data['image'],
+                        true)
+            $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
         };
+        
+        function encodeHTML(content) {
+            return content.replace(/[\u00A0-\u9999<>\&]/gim, function(i) {
+                   return '&#'+i.charCodeAt(0)+';';
+            });
+        }
 
-        function loadMessage(content, user, time, image) {
-            li = `<li class="infinite-item"> 
+        function loadMessage(content, user, time, image, isNew) {
+            if (isNew) content = encodeHTML(content)
+            li = `<li class="message"> 
                     <img src="${image}" class="profile-pic">
                     <div class="body-message">
                         <div class="user-time">
-                            <a href="#" class="user">
+                            <a href="{{ url('user_page') }}/${user}" class="user">
                                 ${user}
                             </a>
                             <span class="time">${time}</span>
                         </div>
-                        <span class="message">
-                            <span>${content}</span>
-                        </span>
+                        <span class="content-message">${content}                   </span>
                     </div>
                     <div class="clear"></div>
                 </li>`
             ul = $('#chat-log')
-            ul.append(li)
-            $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+            if (isNew) {
+                ul.append(li)
+            }
+            else {
+                ul.prepend(li)
+            }
         }
 
         (function init_chatlog() {
             ul = $('#chat-log')
-            {% for msg in message|reverse %}
-                loadMessage('{{msg.body}}', '{{msg.author}}', '{{msg.time}}', '{{gravatar(msg.author, 32)}}')
+            {% for msg in message %}
+                loadMessage(`{{msg.body}}`, `{{msg.author}}`, `{{msg.time}}`, `{{gravatar(msg.author, 32)}}`)
             {% endfor %}
+            $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
         })()
 
-        $('#chat-box').scroll(function() {
-            if ($('#chat-box').scrollTop() == 0) {
-                console.log('Hi')
-                $('#loader').show()
-            }
-        })
-        // var infinite = new Waypoint.Infinite({
-        //     element: $('.infinite-container')[0],
-        //     onBeforePageLoad: function () {
-        //         $('.loading').show();
-        //     },
-        //     onAfterPageLoad: function ($items) {
-        //         $('.loading').hide();
-        //     }
-        // });
+        function scrollTopOfBottom(container) {
+            return container[0].scrollHeight - container.innerHeight()
+        }
 
+        function scrollContainer(container, loader) {
+            container.scroll(function() {
+            if (container.scrollTop() == 0) {
+                if (currentPage < {{paginator.num_pages}}) {
+                    currentPage++;
+                    loader.show();
+                    $.ajax({
+                        url: `{{request.path}}?page=${currentPage}`,
+                        success: function(data) {
+                            let lastMsg = $('.message:first')
+                            let lastMsgPos = scrollTopOfBottom(container)
+
+                            data = JSON.parse(data)
+                            setTimeout( () => {
+                                for (msg of data) {
+                                    loadMessage(msg.body, msg.author, msg.time, msg.image)
+                                }
+                                
+                                loader.hide()
+
+                                // scroll to last msg
+                                container.scrollTop(
+                                    scrollTopOfBottom(container) - lastMsgPos
+                                )
+                            }, 500)
+                        }
+                    })
+                }
+            }
+        })}
+
+        scrollContainer($('#chat-box'), $('#loader'))
+
+        
         $("#chat-submit").click(function() {
             if ($("#chat-input").val().trim()) {
                 let body = $('#chat-input').val().trim();
@@ -74,7 +110,6 @@
                     'author_id': {{request.profile.id}},
                 }
 
-                // $.post("send/", message)
                 chatSocket.send(JSON.stringify({
                     'message': message
                 }));
@@ -126,7 +161,7 @@
     <div id="chat-area">
         <div id="chat-box">
             <img src="http://opengraphicdesign.com/wp-content/uploads/2009/01/loader64.gif" id="loader">
-            <ul id="chat-log" class="infinite-container waypoint">
+            <ul id="chat-log">
             </ul>
         </div>
         {{_('Your message')}}

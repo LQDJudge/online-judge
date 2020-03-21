@@ -4,7 +4,7 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.contrib.sitemaps.views import sitemap
-from django.http import Http404, HttpResponsePermanentRedirect
+from django.http import Http404, HttpResponsePermanentRedirect, HttpResponseRedirect
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.functional import lazystr
@@ -369,7 +369,9 @@ urlpatterns = [
     url(r'^custom_checker_sample/', about.custom_checker_sample, name='custom_checker_sample'),
 
     url(r'^chat/', include([
-        url(r'^$', login_required(ChatView.as_view()), name='chat'),
+        url(r'^$', 
+            login_required(ChatView.as_view()),
+            name='chat'),
 
     ])),
 ]

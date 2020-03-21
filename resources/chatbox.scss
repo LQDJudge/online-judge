@@ -7,6 +7,7 @@
     overflow-wrap: break-word;
     overflow-y: scroll;
 }
+
 #loader {
     display: block;
     margin-left: auto;
@@ -16,6 +17,7 @@
 
 #chat-log {
     padding: 0;
+    padding-top: 2em;
     width: 100%;
 }
 
@@ -61,8 +63,9 @@
 .clear {
     clear: both;
 }
-.message {
+.content-message {
     word-wrap: break-word;
+    white-space: pre-line;
 }
 
 
