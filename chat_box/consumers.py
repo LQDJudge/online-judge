@@ -33,6 +33,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
+        time = save_data_and_get_time(message)
+        message['time'] = format_time(time)
 
         # Send message to room group
         await self.channel_layer.group_send(
@@ -46,8 +48,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
     # Receive message from room group
     async def chat_message(self, event):
         message = event['message']
-        time = save_data_and_get_time(message)
-        message['time'] = format_time(time)
         # Send message to WebSocket
         await self.send(text_data=json.dumps({
             'message': message,
@@ -58,8 +58,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 def save_data_and_get_time(message):
     new_message = Message(body=message['body'],
                           author=Profile.objects
-                                        .get(id=message['author_id']),
+                                        .get(pk=message['author_id']),
                           )
     new_message.save()
-    HttpResponseRedirect(reverse('chat'))
     return new_message.time
