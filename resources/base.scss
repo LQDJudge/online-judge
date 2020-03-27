@@ -115,6 +115,7 @@ body {
     font-family: "Segoe UI", "Lucida Grande", Arial, sans-serif;
     color: #000;
     height: 100%;
+    overflow-x: hidden;
 }
 
 .unselectable {
@@ -180,7 +181,7 @@ header {
     }
 
     a {
-        color: #FFF;
+        color: #9c3706;
     }
 
     li {
@@ -206,7 +207,7 @@ header {
             }
 
             & > span {
-                color: #eee;
+                color: darkslateblue;
                 vertical-align: middle;
                 display: inline;
                 margin-top: 11px;
@@ -218,20 +219,20 @@ header {
 }
 
 #nav-shadow {
-    height: 3px;
-    background: linear-gradient(rgba(0, 0, 0, 0.5), transparent);
+    height: 2px;
+    background: linear-gradient(#7dc7ff, transparent);
 }
 
 #nav-container {
-    background: $widget_black;
+    background: #7dc7ff;
 
-    // opacity: 0.77
+    // opacity: 0.77;
     // filter: alpha(opacity=77)
     height: 100%;
 }
 
 #navigation {
-    position: fixed;
+    position: relative;
     top: 0;
     left: 0;
     right: 0;
@@ -276,12 +277,12 @@ nav {
                 display: inline-block;
                 text-decoration: none;
                 vertical-align: middle;
-                color: #FFF;
+                color: #9c3706;
                 padding: 13px 7px;
                 height: 18px;
 
                 &:link {
-                    color: #FFF;
+                    color: #9c3706;
                 }
 
                 &:hover {
@@ -291,8 +292,9 @@ nav {
                 }
 
                 &.active {
-                    color: #FFF;
+                    // color: #FFF;
                     background: $highlight_blue;
+                    color: black;
                 }
 
                 .nav-expand {
@@ -370,7 +372,7 @@ hr {
 }
 
 #content {
-    margin: 52px auto auto;
+    margin: 1em auto auto;
 
     // Header
     width: 90%;

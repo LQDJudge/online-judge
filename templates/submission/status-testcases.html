@@ -17,7 +17,7 @@
         {% if submission.error %}
             <h3>{{ _('Compilation Warnings') }}</h3>
             <pre>{{ submission.error|ansi2html }}</pre>
-            <hr class="half-hr"><br>
+            <hr><br>
         {% endif %}
         {% if is_pretest %}
             <h3>{{ _('Pretest Execution Results') }}</h3>
@@ -33,7 +33,48 @@
                 <br>
                 <div class="batch-cases">
             {% endif %}
-        <table>{% for case in batch.cases %}
+        <table id="testcases-table">
+            {% if submission.is_graded %}
+            {% if submission.result != 'AB' %}
+            <thead>
+                
+            <tr id="overall-row" class="case-row  overall-result-{{submission.result}}">
+                
+                <td><span class="col-title">{{_('Overall: ')}}</span>
+                {% if request.in_contest and submission.contest_or_none %}
+                    {% with contest=submission.contest_or_none %}
+                        ({{ _('%(points)s/%(total)s points', points=contest.points|roundfloat(3),
+                              total=contest.problem.points|floatformat(-1)) }})
+                    {% endwith %}
+                {% else %}
+                    {{ _('%(points)s/%(total)s', points=submission.points|roundfloat(3),
+                          total=submission.problem.points|floatformat(-1)) }}
+                {% endif %}
+                </td>
+                
+                <td><span class="case-{{submission.result}}">{{submission.long_status}}</span></td>
+                
+                <td><span class="col-title">{{_('Point: ')}}</span> 
+                    {{ submission.case_points|floatformat(0) }}/{{ submission.case_total|floatformat(0) }}
+                    
+                </td>
+                
+                <td><span class="col-title">{{_('Time: ')}}</span> 
+                {% if submission.result == "TLE" %}
+                    <span>---</span>
+                {% else %}
+                    <span title="{{ submission.time }}s">{{ (submission.time * 1000)|floatformat(0) }} ms</span>
+                {% endif %}
+
+                </td>
+                
+                <td><span class="col-title">{{_('Memory: ')}}</span>{{ submission.memory|kbdetailformat }}</td>
+            </tr>
+            </thead>
+            {% endif %}
+            {% endif %}
+
+            {% for case in batch.cases %}
             <tr id="{{ case.id }}" class="case-row toggle closed">
                 <td>
                     {%- if ((prefix_length is none or prefix_length > 0) or (request.user.is_superuser)) -%}
@@ -50,26 +91,25 @@
 
                 <td>
                     <span title="{{ case.long_status }}" class="case-{{ case.status }}">
-                        {%- if case.status == 'SC' %}&mdash;{% else %}{{ case.status }}{% endif -%}
+                        {%- if case.status == 'SC' %}&mdash;{% else %}{{ case.long_status }}{% endif -%}
                     </span>
-                    {%- if case.feedback %}&nbsp;({{ case.feedback }}){% endif -%}
                 </td>
+
+                {% if not batch.id %}
+                    <td><span class="col-title">{{_('Point')}}: </span> {{ case.points|floatformat(0) }}/{{ case.total|floatformat(0) }}</td>
+                {% endif %}
 
                 <td>
                     {%- if case.status != 'SC' -%}
                         {%- if case.status == 'TLE' -%}
-                            [&gt;<span>{{ time_limit|floatformat(3) }}s,</span>
+                            <span><span class="col-title">{{_('Time')}}: &gt;</span>{{ (time_limit * 1000)|floatformat(0) }} ms</span>
                         {%- else -%}
-                            [<span title="{{ case.time }}s">{{ case.time|floatformat(3) }}s,</span>
+                            <span title="{{ case.time }}s"><span class="col-title">{{_('Time')}}: </span>{{ (case.time * 1000)|floatformat(0) }} ms</span>
                         {%- endif -%}
                     {%- endif -%}
                 </td>
 
-                <td>{% if case.status != 'SC' %}{{ case.memory|kbdetailformat }}]{% endif %}</td>
-
-                {% if not batch.id %}
-                    <td>({{ case.points|floatformat(0) }}/{{ case.total|floatformat(0) }})</td>
-                {% endif %}
+                <td>{% if case.status != 'SC' %}<span class="col-title">{{_('Memory')}}: </span> {{ case.memory|kbdetailformat }}{% endif %}</td>
             </tr>
 
             {% if ((prefix_length is none or prefix_length > 0) or (request.user.is_superuser)) %}
@@ -77,22 +117,30 @@
                     <td colspan="5">
                         <div class="case-info">
                             {% set curr_data = cases_data[case.case] %}
+                            {% if curr_data != null %}
                             <strong>{{ _('Input:') }}</strong>
                             <pre class="case-output">{{ curr_data['input']|linebreaksbr }}</pre>
-                            <strong>{{ _('Your output:') }}</strong>
+                            {% endif %}
+                            
+                            <strong>{{ _('Output:') }}</strong>
                             <pre class="case-output">{{ case.output|linebreaksbr }}</pre>
+
+                            {% if curr_data != null %}
                             <strong>{{ _('Answer:') }}</strong>
                             <pre class="case-output">{{ curr_data['answer']|linebreaksbr }}</pre>
+                            {% endif %}
+
+                            {% if case.extended_feedback or case.feedback %}
+                            <strong>{{ _('Judge feedback:') }}</strong>
+                                {% if case.feedback %}
+                                <pre class="case-output">{{ case.feedback|linebreaksbr }}</pre>    
+                                {% endif %}
+                                {% if case.extended_feedback %}
+                                <pre class="case-output">{{ case.extended_feedback|linebreaksbr }}</pre>
+                                {% endif %}
+                            {% endif %}
                         </div>
                     </td>
-                    {% if case.extended_feedback %}
-                        <td colspan="5" class="case-ext-feedback">
-                            <div class="case-info">
-                                <strong>{{ _('Judge feedback') }}</strong>
-                                <pre class="case-output">{{ case.extended_feedback|linebreaksbr }}</pre>
-                            </div>
-                        </td>
-                    {% endif %}
                 </tr>
             {% endif %}
         {% endfor %}
@@ -104,29 +152,6 @@
         {% if submission.is_graded %}
             <br>
             {% if submission.result != "AB" %}
-                <b>{{ _('Resources:') }}</b>
-                {% if submission.result == "TLE" %}
-                    <span>---,</span>
-                {% else %}
-                    <span title="{{ submission.time }}s">{{ submission.time|floatformat(3) }}s,</span>
-                {% endif %}
-                {{ submission.memory|kbdetailformat }}
-                <br>
-                {% if is_pretest %}
-                    <b>{{ _('Final pretest score:') }}</b>
-                {% else %}
-                    <b>{{ _('Final score:') }}</b>
-                {% endif %}
-                {{ submission.case_points|floatformat(0) }}/{{ submission.case_total|floatformat(0) }}
-                {% if request.in_contest and submission.contest_or_none %}
-                    {% with contest=submission.contest_or_none %}
-                        ({{ _('%(points)s/%(total)s points', points=contest.points|roundfloat(3),
-                              total=contest.problem.points|floatformat(-1)) }})
-                    {% endwith %}
-                {% else %}
-                    ({{ _('%(points)s/%(total)s points', points=submission.points|roundfloat(3),
-                          total=submission.problem.points|floatformat(-1)) }})
-                {% endif %}
                 {% if is_pretest and submission.result == "AC" %}
                     <br>
                     <i>{{ _('Passing pretests does not guarantee a full score on system tests.') }}</i>

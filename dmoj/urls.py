@@ -4,12 +4,14 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.contrib.sitemaps.views import sitemap
-from django.http import Http404, HttpResponsePermanentRedirect
+from django.http import Http404, HttpResponsePermanentRedirect, HttpResponseRedirect
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.functional import lazystr
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import RedirectView
+from django.contrib.auth.decorators import login_required
+
 
 from judge.feed import AtomBlogFeed, AtomCommentFeed, AtomProblemFeed, BlogFeed, CommentFeed, ProblemFeed
 from judge.forms import CustomAuthenticationForm
@@ -24,7 +26,6 @@ from judge.views.register import ActivationView, RegistrationView
 from judge.views.select2 import AssigneeSelect2View, CommentSelect2View, ContestSelect2View, \
     ContestUserSearchSelect2View, OrganizationSelect2View, ProblemSelect2View, TicketUserSelect2View, \
     UserSearchSelect2View, UserSelect2View
-
 
 admin.autodiscover()
 
@@ -367,7 +368,12 @@ urlpatterns = [
 
     url(r'^custom_checker_sample/', about.custom_checker_sample, name='custom_checker_sample'),
 
-    url(r'chat/', ChatView.as_view(), name='chat'),
+    url(r'^chat/', include([
+        url(r'^$', 
+            login_required(ChatView.as_view()),
+            name='chat'),
+
+    ])),
 ]
 
 favicon_paths = ['apple-touch-icon-180x180.png', 'apple-touch-icon-114x114.png', 'android-chrome-72x72.png',
@@ -382,7 +388,7 @@ favicon_paths = ['apple-touch-icon-180x180.png', 'apple-touch-icon-114x114.png',
 
 for favicon in favicon_paths:
     urlpatterns.append(url(r'^%s$' % favicon, RedirectView.as_view(
-        url=lazystr(lambda: static('icons/' + favicon)),
+        url=static('icons/' + favicon)
     )))
 
 handler404 = 'judge.views.error.error404'

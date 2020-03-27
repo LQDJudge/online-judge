@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
-from django.forms import BaseModelFormSet, HiddenInput, ModelForm, NumberInput, Select, formset_factory
+from django.forms import BaseModelFormSet, HiddenInput, ModelForm, NumberInput, Select, formset_factory, FileInput
 from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -50,9 +50,12 @@ class ProblemDataForm(ModelForm):
 
     class Meta:
         model = ProblemData
-        fields = ['zipfile', 'generator', 'output_limit', 'output_prefix', 'checker', 'checker_args', 'custom_checker']
+        fields = ['zipfile', 'checker', 'checker_args', 'custom_checker', 'custom_validator']
         widgets = {
             'checker_args': HiddenInput,
+            'generator': HiddenInput,
+            'output_limit': HiddenInput,
+            'output_prefix': HiddenInput,
         }
 
 
@@ -62,14 +65,14 @@ class ProblemCaseForm(ModelForm):
     class Meta:
         model = ProblemTestCase
         fields = ('order', 'type', 'input_file', 'output_file', 'points',
-                  'is_pretest', 'output_limit', 'output_prefix', 'checker', 'checker_args', 'generator_args')
+                  'is_pretest', 'checker', 'checker_args') #, 'output_limit', 'output_prefix', 'generator_args')
         widgets = {
-            'generator_args': HiddenInput,
+            # 'generator_args': HiddenInput,
             'type': Select(attrs={'style': 'width: 100%'}),
             'points': NumberInput(attrs={'style': 'width: 4em'}),
-            'output_prefix': NumberInput(attrs={'style': 'width: 4.5em'}),
-            'output_limit': NumberInput(attrs={'style': 'width: 6em'}),
-            'checker_args': HiddenInput,
+            # 'output_prefix': NumberInput(attrs={'style': 'width: 4.5em'}),
+            # 'output_limit': NumberInput(attrs={'style': 'width: 6em'}),
+            # 'checker_args': HiddenInput,
         }
 
 

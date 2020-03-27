@@ -20,3 +20,6 @@ python dmojauto-conf
  - modify .po file
  - python manage.py compilemessages
  - python manage.py compilejsi18n
+
+###8. Run chat server:
+docker run -p 6379:6379 -d redis:2.8
