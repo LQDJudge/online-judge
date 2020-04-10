@@ -347,7 +347,8 @@ class ContestProblem(models.Model):
     partial = models.BooleanField(default=True, verbose_name=_('partial'))
     is_pretested = models.BooleanField(default=False, verbose_name=_('is pretested'))
     order = models.PositiveIntegerField(db_index=True, verbose_name=_('order'))
-    output_prefix_override = models.IntegerField(verbose_name=_('output prefix length override'), null=True, blank=True)
+    output_prefix_override = models.IntegerField(help_text=_('0 to not show testcases, 1 to show'), 
+                                                 verbose_name=_('visible testcases'), null=True, blank=True, default=0)
     max_submissions = models.IntegerField(help_text=_('Maximum number of submissions for this problem, '
                                                       'or 0 for no limit.'), default=0,
                                           validators=[MinValueValidator(0, _('Why include a problem you '
