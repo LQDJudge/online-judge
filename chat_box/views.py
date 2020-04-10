@@ -1,9 +1,7 @@
 from django.utils.translation import gettext as _
 from django.views.generic import ListView
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
+from django.http import HttpResponse
 from django.core.paginator import Paginator
-from django.urls import reverse
 
 from judge.jinja2.gravatar import gravatar
 from .models import Message
