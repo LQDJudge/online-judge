@@ -2143,11 +2143,11 @@ msgstr ""
 
 #: judge/tasks/submission.py:43
 msgid "Modifying submissions"
-msgstr ""
+msgstr "Chỉnh sửa bài nộp"
 
 #: judge/tasks/submission.py:56
 msgid "Recalculating user points"
-msgstr ""
+msgstr "Đang chấm lại điểm cho người dùng"
 
 #: judge/utils/problem_data.py:68
 msgid "Empty batches not allowed."
@@ -2190,19 +2190,19 @@ msgstr "Bạn đã làm hỏng đường dẫn zip?"
 
 #: judge/utils/problem_data.py:196
 msgid "How did you corrupt the generator path?"
-msgstr ""
+msgstr "Bạn đã làm hỏng đường dẫn đến chương trình sinh?"
 
 #: judge/utils/problems.py:78
 msgid "Wrong"
-msgstr ""
+msgstr "Sai"
 
 #: judge/utils/problems.py:80
 msgid "Timeout"
-msgstr ""
+msgstr "Quá thời gian"
 
 #: judge/utils/problems.py:81
 msgid "Error"
-msgstr ""
+msgstr "Lỗi"
 
 #: judge/utils/problems.py:92
 msgid "Can't pass both queryset and keyword filters"
@@ -2210,7 +2210,7 @@ msgstr "Không thể bỏ qua cả bộ lọc queryset và keyword"
 
 #: judge/utils/pwned.py:101
 msgid "Your password can't be a commonly used password."
-msgstr ""
+msgstr "Mật khẩu của bạn không thể được sử dụng quá phổ biến"
 
 #: judge/utils/pwned.py:102
 msgid "This password is too common."
@@ -2263,7 +2263,7 @@ msgstr "Bị rối?"
 
 #: judge/views/comment.py:36
 msgid "You must solve at least one problem before you can vote."
-msgstr ""
+msgstr "Bạn phải giải được ít nhất một bài trước khi có thể bỏ phiếu"
 
 #: judge/views/comment.py:63
 msgid "You already voted."
@@ -2302,7 +2302,7 @@ msgstr "Truy cập vào cuộc thi \"%s\" từ chối"
 
 #: judge/views/contests.py:246
 msgid "Clone Contest"
-msgstr ""
+msgstr "Tạo bản sao cho cuộc thi"
 
 #: judge/views/contests.py:309
 msgid "Contest not ongoing"
@@ -2324,18 +2324,18 @@ msgstr "Bạn đang ở một cuộc thi: \"%s\"."
 
 #: judge/views/contests.py:318
 msgid "Banned from joining"
-msgstr ""
+msgstr "Cấm dự thi"
 
 #: judge/views/contests.py:319
 msgid ""
 "You have been declared persona non grata for this contest. You are "
 "permanently barred from joining this contest."
-msgstr ""
+msgstr "Tài khoản của bạn đã bị liệt vào danh sách cấm thi trong cuộc thi này"
 
 #: judge/views/contests.py:379
 #, python-format
 msgid "Enter access code for \"%s\""
-msgstr ""
+msgstr "Nhập mã truy cập cho \"%s\""
 
 #: judge/views/contests.py:390
 #, python-format
