@@ -3600,11 +3600,11 @@ msgstr ""
 
 #: templates/problem/manage_submission.html:55
 msgid "Leave empty to not filter by language"
-msgstr ""
+msgstr "Chừa trống nếu không muốn lọc theo ngôn ngữ"
 
 #: templates/problem/manage_submission.html:60
 msgid "Leave empty to not filter by result"
-msgstr ""
+msgstr "Chừa trống nếu không muốn lọc theo kết quả"
 
 #: templates/problem/manage_submission.html:79
 msgid "Need valid values for both start and end IDs."
@@ -3612,7 +3612,7 @@ msgstr ""
 
 #: templates/problem/manage_submission.html:82
 msgid "End ID must be after start ID."
-msgstr ""
+msgstr "ID cuối phải đứng sau ID đầu"
 
 #: templates/problem/manage_submission.html:90
 #, python-brace-format
@@ -3628,19 +3628,19 @@ msgstr ""
 
 #: templates/problem/manage_submission.html:115
 msgid "Rejudge Submissions"
-msgstr ""
+msgstr "Chấm lại bài nộp"
 
 #: templates/problem/manage_submission.html:120
 msgid "Filter by ID:"
-msgstr ""
+msgstr "Lọc bằng ID:"
 
 #: templates/problem/manage_submission.html:123
 msgid "Starting ID:"
-msgstr ""
+msgstr "ID đầu:"
 
 #: templates/problem/manage_submission.html:127
 msgid "Ending ID:"
-msgstr ""
+msgstr "ID cuối:"
 
 #: templates/problem/manage_submission.html:131
 msgid "This range includes both endpoints."
@@ -3648,23 +3648,23 @@ msgstr ""
 
 #: templates/problem/manage_submission.html:134
 msgid "Filter by language:"
-msgstr ""
+msgstr "Lọc bằng ngôn ngữ:"
 
 #: templates/problem/manage_submission.html:142
 msgid "Filter by result:"
-msgstr ""
+msgstr "Lọc bằng kết quả:"
 
 #: templates/problem/manage_submission.html:150
 msgid "Rejudge selected submissions"
-msgstr ""
+msgstr "Chấm lại những bài nộp đã chọn"
 
 #: templates/problem/manage_submission.html:157
 msgid "Rescore Everything"
-msgstr ""
+msgstr "Chấm lại tất cả"
 
 #: templates/problem/manage_submission.html:163
 msgid "Rescore all submissions"
-msgstr ""
+msgstr "Chấm lại tất cả bài nộp"
 
 #: templates/problem/problem.html:91
 msgid "View as PDF"
@@ -3689,7 +3689,7 @@ msgstr "Lời giải tốt nhất"
 
 #: templates/problem/problem.html:132
 msgid "Read editorial"
-msgstr ""
+msgstr "Đọc hướng dẫn"
 
 #: templates/problem/problem.html:137
 msgid "Manage tickets"
@@ -3709,7 +3709,7 @@ msgstr ""
 
 #: templates/problem/problem.html:156
 msgid "Manage submissions"
-msgstr ""
+msgstr "Quản lý bài nộp"
 
 #: templates/problem/problem.html:162
 msgid "Clone problem"
@@ -3749,11 +3749,11 @@ msgstr "Báo cáo vấn đề"
 
 #: templates/problem/raw.html:62
 msgid "Time Limit:"
-msgstr ""
+msgstr "Giới hạn thời gian"
 
 #: templates/problem/raw.html:71
 msgid "Memory Limit:"
-msgstr ""
+msgstr "Giới hạn bộ nhớ"
 
 #: templates/problem/search-form.html:2
 msgid "Problem search"
@@ -3785,7 +3785,7 @@ msgstr "Kiểu bài tập"
 
 #: templates/problem/search-form.html:57
 msgid "Point range"
-msgstr ""
+msgstr "Khoảng điểm"
 
 #: templates/problem/search-form.html:63 templates/submission/list.html:331
 #: templates/ticket/list.html:248
