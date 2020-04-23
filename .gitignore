@@ -5,6 +5,7 @@
 *.py[co]
 *.mo
 *~
+[a-z0-9]{40,}
 dmoj/local_settings.py
 resources/style.css
 resources/content-description.css
