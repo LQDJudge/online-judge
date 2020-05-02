@@ -204,6 +204,9 @@
                             <th class="solved"><i class="fa fa-check"></i></th>
                         {% endif %}
                         <th class="problem">{{ _('Problem') }}</th>
+                        <!-- Luong begin -->
+                        <th class="pcode">Problem code</th>
+                        <!-- Luong end -->
                         <th class="category">{{ _('Category') }}</th>
                         {% if show_types %}
                             <th>{{ _('Types') }}</th>
@@ -220,6 +223,11 @@
                         <th class="problem">
                             <a href="{{ sort_links.name }}">{{ _('Problem') }}{{ sort_order.name }}</a>
                         </th>
+                        <!-- Luong begin -->
+                        <th class="pcode">
+                            <a href="">Problem code</a>
+                        </th>
+                        <!-- Luong end -->
                         <th class="category">
                             <a href="{{ sort_links.group }}">{{ _('Category') }}{{ sort_order.group }}</a>
                         </th>
@@ -277,6 +285,11 @@
                         <td class="problem">
                             <a href="{{ url('problem_detail', problem.code) }}">{{ problem.i18n_name }}</a>
                         </td>
+                        <!-- Luong begin -->
+                        <td class="pcode">
+                            <a href="{{ url('problem_detail', problem.code) }}">{{ problem.code }}</a>
+                        </td>
+                        <!-- Luong end -->
                         <td class="category">{{ problem.group.full_name }}</td>
                         {% if show_types %}
                             <td class="types">
