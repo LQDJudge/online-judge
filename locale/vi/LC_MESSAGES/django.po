@@ -2876,7 +2876,7 @@ msgstr "Chỉnh sửa tiểu sử"
 
 #: judge/views/user.py:263
 msgid "Leaderboard"
-msgstr ""
+msgstr "Bảng xếp hạng"
 
 #: judge/views/widgets.py:48 judge/views/widgets.py:58
 #, python-format
@@ -4293,7 +4293,7 @@ msgstr "Cập nhật profile"
 
 #: templates/user/user-about.html:14
 msgid "From"
-msgstr ""
+msgstr "Đến từ"
 
 #: templates/user/user-about.html:25
 msgid "Admin Notes"
@@ -4309,15 +4309,15 @@ msgstr ""
 
 #: templates/user/user-base.html:50
 msgid "Rank by points:"
-msgstr ""
+msgstr "Xếp hạng theo điểm số"
 
 #: templates/user/user-base.html:53
 msgid "Total points:"
-msgstr ""
+msgstr "Tổng điểm:"
 
 #: templates/user/user-base.html:68
 msgid "Rank by rating:"
-msgstr "Xếp hạng theo điểm số:"
+msgstr "Xếp hạng theo rating:"
 
 #: templates/user/user-base.html:70
 msgid "Rating:"
@@ -4520,13 +4520,13 @@ msgstr "Chọn tất cả"
 #~ msgid_plural "%(counter)s submissions left"
 #~ msgstr[0] "Còn %(counter)s lần nộp"
 
-#~ msgid "Author:"
-#~ msgid_plural "Authors:"
-#~ msgstr[0] "Tác giả:"
+msgid "Author:"
+msgid_plural "Authors:"
+msgstr[0] "Tác giả:"
 
-#~ msgid "Problem type"
-#~ msgid_plural "Problem types"
-#~ msgstr[0] "Loại đề bài"
+msgid "Problem type"
+msgid_plural "Problem types"
+msgstr[0] "Dạng bài"
 
 #~ msgid "No %(lang)s judge online"
 #~ msgstr "Không có máy chấm %(lang)s đang online"
