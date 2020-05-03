@@ -3574,7 +3574,7 @@ msgid ""
 "paste code from it</b>. Please be respectful to the problem author and "
 "editorialist. <br><br> <b>Submitting an official solution before solving the "
 "problem yourself is a bannable offence.</b>"
-msgstr ""
+msgstr "Tham khảo lời giải này <b>chỉ khi</b> bạn thật sự bế tắc ý tưởng, và đừng bao giờ sao chép code từ đây. Làm ơn tôn trọng tác giả của bài tập cũng như người viết lời giải. <br><br> <b>Submit code từ lời giải chính thức trước khi tự mình giải quyết bài toán là một sự xúc phạm nghiêm trọng đối với chúng tôi!</b>"
 
 #: templates/problem/list.html:62
 msgid "Filter by type..."
