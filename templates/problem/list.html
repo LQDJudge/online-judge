@@ -287,7 +287,7 @@
                         </td>
                         <!-- Luong begin -->
                         <td class="pcode">
-                            <a href="{{ url('problem_detail', problem.code) }}">{{ problem.code }}</a>
+                            <a class="pcodecell" href="{{ url('problem_detail', problem.code) }}">{{ problem.code }}</a>
                         </td>
                         <!-- Luong end -->
                         <td class="category">{{ problem.group.full_name }}</td>
@@ -321,4 +321,12 @@
         </div>
     </div>
     <br>
+    <!-- Luong begin -->
+    <script>
+        $(".pcodecell").each(function(idx, elt){
+            var pcode = elt.text;
+            elt.text = pcode.toUpperCase();
+        });
+    </script>
+    <!-- Luong end -->
 {% endblock %}
