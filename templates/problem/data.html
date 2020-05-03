@@ -232,10 +232,10 @@
             $('a#fill-testcases').click(function () {
                 var inFiles = [], outFiles = [];
                 for (var i = 0; i < window.valid_files.length; i++) {
-                    if (window.valid_files[i].endsWith(".in") || window.valid_files[i].endsWith(".inp")) {
+                    if (window.valid_files[i].endsWith(".in") || window.valid_files[i].endsWith(".inp") || window.valid_files[i].endsWith(".IN") || window.valid_files[i].endsWith(".INP")) {
                         inFiles.push(window.valid_files[i]);
                     }
-                    if (window.valid_files[i].endsWith(".out")) {
+                    if (window.valid_files[i].endsWith(".out") || window.valid_files[i].endsWith(".OUT")) {
                         outFiles.push(window.valid_files[i]);
                     }
                 }
