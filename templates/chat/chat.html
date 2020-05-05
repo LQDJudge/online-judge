@@ -38,6 +38,9 @@
                                 ${user}
                             </a>
                             <span class="time">${time}</span>
+                            {% if request.user.is_staff %}
+                            <a id="remove_btn_${user}_" class="chatbtn_remove_mess" data-messtime="${time}" data-author="${user}">Delete</a>
+                            {% endif %}
                         </div>
                         <span class="content-message">${content}                   </span>
                     </div>
@@ -55,7 +58,9 @@
         (function init_chatlog() {
             ul = $('#chat-log')
             {% for msg in message %}
-                loadMessage(`{{msg.body}}`, `{{msg.author}}`, `{{msg.time}}`, `{{gravatar(msg.author, 32)}}`)
+                {% if not msg.hidden %}
+                    loadMessage(`{{msg.body}}`, `{{msg.author}}`, `{{msg.time}}`, `{{gravatar(msg.author, 32)}}`)
+                {% endif %}
             {% endfor %}
             $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
         })()
@@ -97,6 +102,21 @@
 
         scrollContainer($('#chat-box'), $('#loader'))
 
+        $(document).on("click", ".chatbtn_remove_mess", function() {
+            var elt = $(this);
+            console.log(elt.data());
+            $.ajax({
+                url: 'delete/',
+                type: 'post',
+                data: elt.data(),
+                dataType: 'json',
+                success: function(data){
+                    console.log(data);
+                    console.log('delete ajax call success!');
+                    location.reload();
+                }
+            });
+        });
         
         $("#chat-submit").click(function() {
             if ($("#chat-input").val().trim()) {
@@ -158,6 +178,7 @@
 {% endblock js_media %}
 
 {% block body %}
+{% csrf_token %}
     <div id="chat-area">
         <div id="chat-box">
             <img src="http://opengraphicdesign.com/wp-content/uploads/2009/01/loader64.gif" id="loader">

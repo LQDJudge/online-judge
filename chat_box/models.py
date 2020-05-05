@@ -15,6 +15,7 @@ class Message(models.Model):
     author = models.ForeignKey(Profile, verbose_name=_('user'), on_delete=CASCADE)
     time = models.DateTimeField(verbose_name=_('posted time'), auto_now_add=True)
     body = models.TextField(verbose_name=_('body of comment'), max_length=8192)
+    hidden = models.BooleanField(verbose_name='is hidden', default=False)
 
     def save(self, *args, **kwargs):
         new_message = self.id

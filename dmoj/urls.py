@@ -1,4 +1,4 @@
-from chat_box.views import ChatView
+from chat_box.views import ChatView, delete_message
 from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
@@ -372,6 +372,7 @@ urlpatterns = [
         url(r'^$', 
             login_required(ChatView.as_view()),
             name='chat'),
+        url(r'^delete/$', delete_message, name='delete_message')
 
     ])),
 ]
