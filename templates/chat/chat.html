@@ -17,6 +17,7 @@
             loadMessage(data['body'],
                         data['author'],
                         data['time'],
+                        data['id'],
                         data['image'],
                         true)
             $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
@@ -28,7 +29,7 @@
             });
         }
 
-        function loadMessage(content, user, time, image, isNew) {
+        function loadMessage(content, user, time, messid, image, isNew) {
             if (isNew) content = encodeHTML(content)
             li = `<li class="message"> 
                     <img src="${image}" class="profile-pic">
@@ -39,7 +40,7 @@
                             </a>
                             <span class="time">${time}</span>
                             {% if request.user.is_staff %}
-                            <a class="chatbtn_remove_mess" data-messtime="${time}" data-author="${user}">Delete</a>
+                            <a class="chatbtn_remove_mess" data-messtime="${time}" data-author="${user}" data-messid="${messid}">Delete</a>
                             {% endif %}
                         </div>
                         <span class="content-message">${content}                   </span>
@@ -58,9 +59,7 @@
         (function init_chatlog() {
             ul = $('#chat-log')
             {% for msg in message %}
-                {% if not msg.hidden %}
-                    loadMessage(`{{msg.body}}`, `{{msg.author}}`, `{{msg.time}}`, `{{gravatar(msg.author, 32)}}`)
-                {% endif %}
+                    loadMessage(`{{msg.body}}`, `{{msg.author}}`, `{{msg.time}}`, `{{msg.id}}`, `{{gravatar(msg.author, 32)}}`)
             {% endfor %}
             $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
         })()
@@ -84,7 +83,7 @@
                             data = JSON.parse(data)
                             setTimeout( () => {
                                 for (msg of data) {
-                                    loadMessage(msg.body, msg.author, msg.time, msg.image)
+                                    loadMessage(msg.body, msg.author, msg.time, msg.id, msg.image)
                                 }
                                 
                                 loader.hide()

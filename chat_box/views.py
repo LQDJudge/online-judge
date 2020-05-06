@@ -2,6 +2,8 @@ from django.utils.translation import gettext as _
 from django.views.generic import ListView
 from django.http import HttpResponse, JsonResponse
 from django.core.paginator import Paginator
+from django.shortcuts import render
+from django.forms.models import model_to_dict
 
 from judge.jinja2.gravatar import gravatar
 from .models import Message
@@ -18,6 +20,7 @@ def format_messages(messages):
         'author': str(msg.author),
         'body': msg.body,
         'image': gravatar(msg.author, 32),
+        'id': msg.id
     } for msg in messages]
     return json.dumps(msg_list)
 
@@ -30,9 +33,13 @@ class ChatView(ListView):
     paginate_by = 50
     paginator = Paginator(Message.objects.filter(hidden=False), paginate_by)
 
+    def get_queryset(self):
+        return Message.objects.filter(hidden=False)
+
     def get(self, request, *args, **kwargs):
         page = request.GET.get('page')
         if (page == None):
+            # return render(request, 'chat/chat.html', {'message': format_messages(Message.objects.all())})
             return super().get(request, *args, **kwargs)
 
         cur_page = self.paginator.get_page(page)
@@ -54,16 +61,16 @@ def delete_message(request):
         return JsonResponse(ret)
 
     if request.user.is_staff:
-        author = request.POST.get('author')
-        time = request.POST.get('messtime')
+        messid = int(request.POST.get('messid'))
         all_mess = Message.objects.all()
         
         for mess in all_mess:
-            if mess.author.__str__() == author and format_time(mess.time) == time:
+            if mess.id == messid:
                 mess.hidden = True
                 mess.save()
                 new_elt = {'time': format_time(mess.time), 'content': mess.body}
                 ret = new_elt
+                break
         
         return JsonResponse(ret)
     
