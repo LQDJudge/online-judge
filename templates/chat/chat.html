@@ -44,7 +44,7 @@
                             </a>
                             <span class="time">${time}</span>
                             {% if request.user.is_staff %}
-                            <a class="chatbtn_remove_mess" data-messtime="${time}" data-author="${user}" data-messid="${messid}">Delete</a>
+                            <a class="chatbtn_remove_mess" style="color:red; cursor: pointer;" data-messtime="${time}" data-author="${user}" data-messid="${messid}">Delete</a>
                             {% endif %}
                         </div>
                         <span class="content-message">${content}                   </span>
