@@ -12,14 +12,16 @@
         $('#loader').hide();
 
         chatSocket.onmessage = function(e) {
-            let data = JSON.parse(e.data)
-            data = data['message']
+            let data = JSON.parse(e.data);
+            console.log(data);
+            data = data['message'];
             loadMessage(data['body'],
                         data['author'],
                         data['time'],
                         data['id'],
                         data['image'],
-                        true)
+                        true);
+            // console.log(data);
             $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
         };
         
@@ -30,7 +32,8 @@
         }
 
         function loadMessage(content, user, time, messid, image, isNew) {
-            if (isNew) content = encodeHTML(content)
+            // if (isNew) content = encodeHTML(content)
+            content = encodeHTML(content);
             li = `<li class="message"> 
                     <img src="${image}" class="profile-pic">
                     <div class="body-message">
@@ -58,9 +61,11 @@
 
         (function init_chatlog() {
             ul = $('#chat-log')
+            {% autoescape on %}
             {% for msg in message %}
-                    loadMessage(`{{msg.body}}`, `{{msg.author}}`, `{{msg.time}}`, `{{msg.id}}`, `{{gravatar(msg.author, 32)}}`)
+                    loadMessage("{{msg.body|safe|escapejs}}", `{{msg.author}}`, `{{msg.time}}`, `{{msg.id}}`, `{{gravatar(msg.author, 32)}}`);
             {% endfor %}
+            {% endautoescape %}
             $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
         })()
 
@@ -101,21 +106,21 @@
 
         scrollContainer($('#chat-box'), $('#loader'))
 
+        {% if request.user.is_staff %}
         $(document).on("click", ".chatbtn_remove_mess", function() {
             var elt = $(this);
-            console.log(elt.data());
             $.ajax({
                 url: 'delete/',
                 type: 'post',
                 data: elt.data(),
                 dataType: 'json',
                 success: function(data){
-                    console.log(data);
                     console.log('delete ajax call success!');
                     location.reload();
                 }
             });
         });
+        {% endif %}
         
         $("#chat-submit").click(function() {
             if ($("#chat-input").val().trim()) {
