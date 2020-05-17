@@ -5,6 +5,7 @@
         'ws://' + window.location.host +
         '/ws/chat/');
 </script>
+<script type="text/javascript" src="{{ static('mathjax_config.js') }}"></script>
 <script type="text/javascript">
     $(function() {
         let currentPage = 1;
@@ -179,6 +180,8 @@
 
     });
 </script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"></script>
 {% endblock js_media %}
 
 {% block body %}
