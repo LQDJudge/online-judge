@@ -6,6 +6,8 @@
         '/ws/chat/');
 </script>
 <script type="text/javascript" src="{{ static('mathjax_config.js') }}"></script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"></script>
 <script type="text/javascript">
     $(function() {
         let currentPage = 1;
@@ -58,6 +60,7 @@
             else {
                 ul.prepend(li)
             }
+            MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
         }
 
         (function init_chatlog() {
@@ -180,8 +183,7 @@
 
     });
 </script>
-<script type="text/javascript"
-        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"></script>
+
 {% endblock js_media %}
 
 {% block body %}
