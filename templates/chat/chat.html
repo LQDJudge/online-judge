@@ -36,6 +36,8 @@
 
         function loadMessage(content, user, time, messid, image, isNew) {
             // if (isNew) content = encodeHTML(content)
+	    time = new Date(time);
+	    time = moment(time).format("HH:mm DD-MM-YYYY");
             content = encodeHTML(content);
             li = `<li class="message"> 
                     <img src="${image}" class="profile-pic">
