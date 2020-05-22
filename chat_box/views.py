@@ -11,7 +11,8 @@ import json
 
 
 def format_time(time):
-    return time.strftime('%H:%M %p  %d-%m-%Y')
+    return time
+    #return time.strftime('%H:%M %p  %d-%m-%Y')
 
 
 def format_messages(messages):
