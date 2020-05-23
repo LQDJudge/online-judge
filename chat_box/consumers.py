@@ -4,7 +4,7 @@ from .models import Message
 from .views import format_time
 from django.urls import reverse
 from django.http import HttpResponse, HttpResponseRedirect
-
+from django.core import serializers
 
 from judge.models.profile import Profile
 
@@ -34,8 +34,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
         
-        time = save_data_and_get_time(message)
-        message['time'] = format_time(time)
+        message_saved = save_data_and_return(message)
+
+        message['time'] = message_saved[0]['fields']['time']
+        message['id'] = message_saved[0]['pk']
 
         # Send message to room group
         await self.channel_layer.group_send(
@@ -56,10 +58,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 
 # return time
-def save_data_and_get_time(message):
+def save_data_and_return(message):
     new_message = Message(body=message['body'],
                           author=Profile.objects
                                         .get(pk=message['author_id']),
                           )
     new_message.save()
-    return new_message.time
+    json_data = serializers.serialize("json", 
+                                        Message.objects
+                                               .filter(pk=new_message.id)
+                                      )
+    return json.loads(json_data)

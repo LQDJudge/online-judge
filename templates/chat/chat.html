@@ -16,7 +16,6 @@
 
         chatSocket.onmessage = function(e) {
             let data = JSON.parse(e.data);
-            console.log(data);
             data = data['message'];
             loadMessage(data['body'],
                         data['author'],
