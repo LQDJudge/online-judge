@@ -1,7 +1,6 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .models import Message
-from .views import format_time
 from django.urls import reverse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core import serializers
@@ -35,7 +34,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = text_data_json['message']
         
         message_saved = save_data_and_return(message)
-
         message['time'] = message_saved[0]['fields']['time']
         message['id'] = message_saved[0]['pk']
 

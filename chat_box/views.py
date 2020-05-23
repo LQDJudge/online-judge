@@ -10,20 +10,16 @@ from .models import Message
 import json
 
 
-def format_time(time):
-    return time
-    #return time.strftime('%H:%M %p  %d-%m-%Y')
-
 
 def format_messages(messages):
     msg_list = [{
-        'time': format_time(msg.time),
+        'time': msg.time,
         'author': str(msg.author),
         'body': msg.body,
         'image': gravatar(msg.author, 32),
         'id': msg.id
     } for msg in messages]
-    return json.dumps(msg_list)
+    return json.dumps(msg_list, default=str)
 
 
 class ChatView(ListView):
@@ -50,9 +46,6 @@ class ChatView(ListView):
         context = super().get_context_data(**kwargs)
         context['title'] = self.title
 
-        for msg in context['message']:
-            msg.time = format_time(msg.time)
-
         return context
 
 def delete_message(request):
@@ -69,7 +62,7 @@ def delete_message(request):
             if mess.id == messid:
                 mess.hidden = True
                 mess.save()
-                new_elt = {'time': format_time(mess.time), 'content': mess.body}
+                new_elt = {'time': mess.time, 'content': mess.body}
                 ret = new_elt
                 break
         
