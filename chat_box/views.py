@@ -14,10 +14,11 @@ import json
 def format_messages(messages):
     msg_list = [{
         'time': msg.time,
-        'author': str(msg.author),
+        'author': msg.author,
         'body': msg.body,
         'image': gravatar(msg.author, 32),
-        'id': msg.id
+        'id': msg.id,
+        'css_class': msg.author.css_class,
     } for msg in messages]
     return json.dumps(msg_list, default=str)
 

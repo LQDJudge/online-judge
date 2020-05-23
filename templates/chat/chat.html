@@ -22,6 +22,7 @@
                         data['time'],
                         data['id'],
                         data['image'],
+                        data['css_class'],
                         true);
             // console.log(data);
             $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
@@ -33,18 +34,20 @@
             });
         }
 
-        function loadMessage(content, user, time, messid, image, isNew) {
+        function loadMessage(content, user, time, messid, image, css_class, isNew) {
             // if (isNew) content = encodeHTML(content)
-	    time = new Date(time);
-	    time = moment(time).format("HH:mm DD-MM-YYYY");
+            time = new Date(time);
+            time = moment(time).format("HH:mm DD-MM-YYYY");
             content = encodeHTML(content);
             li = `<li class="message"> 
                     <img src="${image}" class="profile-pic">
                     <div class="body-message">
                         <div class="user-time">
-                            <a href="{{ url('user_page') }}/${user}" class="user">
-                                ${user}
-                            </a>
+                            <span class="${css_class}">
+                                <a href="{{ url('user_page') }}/${user}" class="user">
+                                    ${user}
+                                </a>
+                            </span>
                             <span class="time">${time}</span>
                             {% if request.user.is_staff %}
                             <a class="chatbtn_remove_mess" style="color:red; cursor: pointer;" data-messtime="${time}" data-author="${user}" data-messid="${messid}">Delete</a>
@@ -68,7 +71,7 @@
             ul = $('#chat-log')
             {% autoescape on %}
             {% for msg in message %}
-                    loadMessage("{{msg.body|safe|escapejs}}", `{{msg.author}}`, `{{msg.time}}`, `{{msg.id}}`, `{{gravatar(msg.author, 32)}}`);
+                loadMessage("{{msg.body|safe|escapejs}}", `{{msg.author}}`, `{{msg.time}}`, `{{msg.id}}`, `{{gravatar(msg.author, 32)}}`,`{{msg.author.css_class}}`);
             {% endfor %}
             {% endautoescape %}
             $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
@@ -93,7 +96,7 @@
                             data = JSON.parse(data)
                             setTimeout( () => {
                                 for (msg of data) {
-                                    loadMessage(msg.body, msg.author, msg.time, msg.id, msg.image)
+                                    loadMessage(msg.body, msg.author, msg.time, msg.id, msg.image, msg.css_class)
                                 }
                                 
                                 loader.hide()
@@ -137,6 +140,7 @@
                     'image': img,
                     'author': '{{request.profile}}',
                     'author_id': {{request.profile.id}},
+                    'css_class': '{{request.profile.css_class}}',
                 }
 
                 chatSocket.send(JSON.stringify({
