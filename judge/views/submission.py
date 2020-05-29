@@ -165,11 +165,17 @@ def get_problem_data(submission):
         archive = zipfile.ZipFile(archive_path, 'r')
     except zipfile.BadZipfile:
         raise Exception('bad archive: "%s"' % archive_path)
+   
     testcases = ProblemTestCase.objects.filter(dataset=submission.problem)\
-        .order_by('order')
+                               .order_by('order')
 
-    problem_data = {case.order: get_input_answer(case, archive)
-                    for case in testcases}
+    if (submission.is_pretested):
+        testcases = testcases.filter(is_pretest=True)
+
+    problem_data = {}
+    for count, case in enumerate(testcases):
+        problem_data[count + 1] = get_input_answer(case, archive)
+
     return problem_data
 
 
