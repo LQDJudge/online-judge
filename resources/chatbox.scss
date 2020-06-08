@@ -1,3 +1,4 @@
+
 #loader {
     display: block;
     margin-left: auto;
@@ -58,8 +59,8 @@
 
 #chat-area {
     height: 85vh;
-    display: flex !important;
-    flex-direction: column;
+    /*display: flex;*/
+    /*flex-direction: column;*/
 }
 #chat-online {
     border: 1px solid #ccc;
@@ -92,8 +93,7 @@
     font-family: "Segoe UI", "Lucida Grande", Arial, sans-serif;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
-    height: -webkit-fill-available;
-    max-height: 8em;
+    height: 15%;
 }
 
 #chat-online-content {
@@ -107,7 +107,7 @@
     background-color: #39ff14;
     border-radius: 50%;
     display: inline-block;
-    margin-bottom: -0.1em;
+    margin-bottom: -0.2em;
     border: 1px lightgreen solid;   
 }
 
@@ -134,4 +134,3 @@
         margin-top: -0.5em;
     }
 }
-

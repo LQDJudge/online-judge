@@ -212,7 +212,12 @@
 </script>
 
 {% endblock js_media %}
-
+<!-- 
+{% block media %}
+<style>
+</style>
+{% endblock media %}
+ -->
 {% block body %}
     {% csrf_token %}
     {% block before_posts %}{% endblock %}
