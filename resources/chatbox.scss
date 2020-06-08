@@ -1,13 +1,3 @@
-#chat-box {
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    height: 20em;
-    width: 100%;
-    overflow: hidden;
-    overflow-wrap: break-word;
-    overflow-y: scroll;
-}
-
 #loader {
     display: block;
     margin-left: auto;
@@ -26,11 +16,6 @@
     margin: 0.5em;
 }
 
-#chat-input {
-    width: 100%;
-    padding: 0.4em;
-    color: black;
-}
 
 #chat-submit {
     margin-top: 1em;
@@ -47,7 +32,7 @@
 .body-message {
     padding-left: 3em;
     padding-bottom: 1em;
-    border-bottom: 1px solid lightgray
+    border-bottom: 1px solid lightgray;
 }
 
 .user-time {
@@ -70,4 +55,83 @@
     white-space: pre-line;
 }
 
+
+#chat-area {
+    height: 85vh;
+    display: flex !important;
+    flex-direction: column;
+}
+#chat-online {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    overflow-y: scroll;
+    max-height: 81vh;
+}
+#chat-online-content {
+}
+
+#chat-box {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    overflow-y: scroll;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    max-height: 85%;
+    height: auto;
+}
+
+#chat-input {
+    width: 100.3%;
+    padding: 0.4em;
+    color: black;
+    font-family: "Segoe UI", "Lucida Grande", Arial, sans-serif;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    height: -webkit-fill-available;
+    max-height: 8em;
+}
+
+#chat-online-content {
+    padding: 0;
+    width: 100%;
+}
+
+.dot {
+    height: 0.8em;
+    width: 0.8em;
+    background-color: #39ff14;
+    border-radius: 50%;
+    display: inline-block;
+    margin-bottom: -0.1em;
+    border: 1px lightgreen solid;   
+}
+
+
+@media (min-width: 800px) {
+    #chat-container {
+        display: flex;
+        width: 100%;
+    }
+    #chat-box {
+
+    }
+    #chat-online {
+        margin-left: auto;
+        width: 22%;
+    }
+    #chat-area {
+        width: 75%;
+    }
+    .chat-left-panel, .chat-right-panel {
+        display: block !important;
+    }
+    #content {
+        margin-top: -0.5em;
+    }
+}
 

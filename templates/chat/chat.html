@@ -1,5 +1,9 @@
 {% extends "base.html" %}
+{% block title_row %}{% endblock %}
+{% block title_ruler %}{% endblock %}
+
 {% block js_media %}
+
 <script type="text/javascript">
     var chatSocket = new WebSocket(
         'ws://' + window.location.host +
@@ -187,21 +191,66 @@
         });
 
     });
+
+    $(document).ready(function () {
+        $('.chat-right-panel').hide();
+        $('#chat-tab').find('a').click(function (e) {
+            e.preventDefault();
+            $('#chat-tab').addClass('active');
+            $('#online-tab').removeClass('active');
+            $('.chat-left-panel').show();
+            $('.chat-right-panel').hide();
+        });
+        $('#online-tab').find('a').click(function (e) {
+            e.preventDefault();
+            $('#online-tab').addClass('active');
+            $('#chat-tab').removeClass('active');
+            $('.chat-left-panel').hide();
+            $('.chat-right-panel').show();
+        });
+    });
 </script>
 
 {% endblock js_media %}
 
 {% block body %}
-{% csrf_token %}
-    <div id="chat-area">
-        <div id="chat-box">
-            <img src="http://opengraphicdesign.com/wp-content/uploads/2009/01/loader64.gif" id="loader">
-            <ul id="chat-log">
+    {% csrf_token %}
+    {% block before_posts %}{% endblock %}
+    <div id="mobile" class="tabs">
+        <ul>
+            <li id="chat-tab" class="tab active"><a href="#">
+                <i class="tab-icon fa fa-comments"></i> {{ _('Chat') }}
+            </a></li>
+            <li id="online-tab" class="tab"><a href="#"><i class="tab-icon fa fa-wifi"></i> {{ _('Online Users') }}</a></li>
+        </ul>
+    </div>
+    
+    <div id="chat-container">
+        <div id="chat-area" class="chat-left-panel">
+            <div id="chat-box">
+                <img src="http://opengraphicdesign.com/wp-content/uploads/2009/01/loader64.gif" id="loader">
+                <ul id="chat-log">
+                </ul>
+            </div>
+            <textarea id="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
+        </div>
+        <button id="chat-submit" style="display:none;"> Send </button>
+        <div id="chat-online" class="chat-right-panel sidebox">
+            <h3>
+                {{_('Online Users')}} 
+                <i class="fa fa-wifi"></i>
+            </h3>
+            <ul id="chat-online-content">
+                {% for user in online_users %}
+                    <li>
+                        <span class="dot"></span>
+                        <span style="padding-left:0.25em">
+                            {{ link_user(user) }}
+                        </span>
+                    </li>
+                {% endfor %}
             </ul>
         </div>
-        {{_('Your message')}}
-    
-        <textarea rows="6" id="chat-input"></textarea>
     </div>
-    <button id="chat-submit"> Send </button>
+
 {% endblock body %}

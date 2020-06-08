@@ -4,13 +4,12 @@ from django.http import HttpResponse, JsonResponse
 from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.forms.models import model_to_dict
+from django.utils import timezone
 
 from judge.jinja2.gravatar import gravatar
-from .models import Message
+from .models import Message, Profile
 import json
-
-
-
+    
 def format_messages(messages):
     msg_list = [{
         'time': msg.time,
@@ -46,7 +45,9 @@ class ChatView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = self.title
-
+        last_five_minutes = timezone.now()-timezone.timedelta(minutes=5)
+        context['online_users'] = Profile.objects \
+                                        .filter(last_access__gte = last_five_minutes)
         return context
 
 def delete_message(request):
