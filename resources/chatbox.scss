@@ -101,16 +101,20 @@
     width: 100%;
 }
 
-.dot {
+.green-dot, .red-dot {
     height: 0.8em;
     width: 0.8em;
-    background-color: #39ff14;
     border-radius: 50%;
     display: inline-block;
-    margin-bottom: -0.2em;
-    border: 1px lightgreen solid;   
+    margin-bottom: -0.15em;
+}
+.green-dot {
+    background-color: #42f58d;
 }
 
+.red-dot {
+    background-color: red;
+}
 
 @media (min-width: 800px) {
     #chat-container {

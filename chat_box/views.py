@@ -21,6 +21,18 @@ def format_messages(messages):
     } for msg in messages]
     return json.dumps(msg_list, default=str)
 
+def get_admin_online_status():
+    all_admin = Profile.objects.filter(display_rank='admin')
+    last_five_minutes = timezone.now()-timezone.timedelta(minutes=5)
+    ret = []
+
+    for admin in all_admin:
+        is_online = False
+        if (admin.last_access >= last_five_minutes):
+            is_online = True
+        ret.append({'user': admin, 'is_online': is_online})
+    
+    return ret
 
 class ChatView(ListView):
     model = Message
@@ -47,7 +59,10 @@ class ChatView(ListView):
         context['title'] = self.title
         last_five_minutes = timezone.now()-timezone.timedelta(minutes=5)
         context['online_users'] = Profile.objects \
-                                        .filter(last_access__gte = last_five_minutes)
+                                        .filter(display_rank='user',
+                                            last_access__gte = last_five_minutes)\
+                                        .order_by('-rating')
+        context['admin_status'] = get_admin_online_status()
         return context
 
 def delete_message(request):
