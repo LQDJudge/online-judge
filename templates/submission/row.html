@@ -36,7 +36,7 @@
 {% if submission.status == 'G' %}
     <div class="sub-testcase">
         {%- if submission.current_testcase > 0 -%}
-            {{ _('Case #%(case)s', case=submission.current_testcase) }}
+            {{ _('Point %(point)s / Case #%(case)s', point=submission.points, case=submission.current_testcase) }}
         {%- else -%}
             ...
         {%- endif -%}

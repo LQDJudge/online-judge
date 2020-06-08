@@ -5,6 +5,7 @@ from operator import itemgetter
 
 from django import db
 from django.utils import timezone
+from django.db.models import F
 
 from judge import event_poster as event
 from judge.caching import finished_submission
@@ -165,7 +166,7 @@ class DjangoJudgeHandler(JudgeHandler):
         super(DjangoJudgeHandler, self).on_grading_begin(packet)
         if Submission.objects.filter(id=packet['submission-id']).update(
                 status='G', is_pretested=packet['pretested'],
-                current_testcase=1, batch=False):
+                current_testcase=1, batch=False, points=0):
             SubmissionTestCase.objects.filter(submission_id=packet['submission-id']).delete()
             event.post('sub_%s' % Submission.get_id_secret(packet['submission-id']), {'type': 'grading-begin'})
             self._post_update_submission(packet['submission-id'], 'grading-begin')
@@ -327,8 +328,10 @@ class DjangoJudgeHandler(JudgeHandler):
         id = packet['submission-id']
         updates = packet['cases']
         max_position = max(map(itemgetter('position'), updates))
+        sum_points = sum(map(itemgetter('points'), updates))
+        print(sum_points)
 
-        if not Submission.objects.filter(id=id).update(current_testcase=max_position + 1):
+        if not Submission.objects.filter(id=id).update(current_testcase=max_position + 1, points=F('points') + sum_points):
             logger.warning('Unknown submission: %s', id)
             json_log.error(self._make_json_log(packet, action='test-case', info='unknown submission'))
             return
