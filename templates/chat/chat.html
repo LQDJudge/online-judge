@@ -213,11 +213,14 @@
 
 {% endblock js_media %}
 
-<!-- {% block media %}
+{% block media %}
 <style>
+#content {
+    margin-top: -0.5em;
+}
 </style>
 {% endblock media %}
- -->
+
 {% block body %}
     {% csrf_token %}
     {% block before_posts %}{% endblock %}
