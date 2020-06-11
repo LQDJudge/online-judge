@@ -220,11 +220,11 @@ header {
 
 #nav-shadow {
     height: 2px;
-    background: linear-gradient(#7dc7ff, transparent);
+    background: linear-gradient(lightgray, transparent);
 }
 
 #nav-container {
-    background: #7dc7ff;
+    background: white;
 
     // opacity: 0.77;
     // filter: alpha(opacity=77)
@@ -280,21 +280,27 @@ nav {
                 color: #9c3706;
                 padding: 13px 7px;
                 height: 18px;
+                border-top: 2px solid transparent;
+                border-bottom: 2px solid transparent;
+                font-weight: bold;
+                font-size: initial;
 
                 &:link {
                     color: #9c3706;
                 }
 
                 &:hover {
-                    color: #FFF;
+                    border-top: 2px solid $widget_black;
+                    color: $widget_black;
                     background: rgba(255, 255, 255, 0.25);
                     margin: 0;
                 }
 
                 &.active {
                     // color: #FFF;
-                    background: $highlight_blue;
-                    color: black;
+                    border-top: 2px solid $widget_black;
+                    color: $widget_black;
+                    background: white;
                 }
 
                 .nav-expand {
@@ -308,7 +314,7 @@ nav {
                 left: 5px;
                 display: none;
                 color: #fff;
-                background: $widget_black;
+                background: #00c4cc;
                 margin: 0 !important;
                 box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
 
@@ -328,7 +334,7 @@ nav {
                         font-size: 0.8em;
                         line-height: 18px;
                         display: block;
-                        border-left: 4px solid $highlight_blue;
+                        border-left: 4px solid black;
                         white-space: nowrap;
                     }
                 }
@@ -340,7 +346,7 @@ nav {
                 border: none;
                 width: 100%;
                 border-radius: 0;
-                height: auto;
+                height: auto !important;
             }
 
             &:hover > ul, &:active > ul, &:focus > ul {
@@ -373,6 +379,7 @@ hr {
 
 #content {
     margin: 1em auto auto;
+    margin-top: -0.5em;
 
     // Header
     width: 90%;
@@ -577,7 +584,7 @@ math {
         display: block;
         line-height: 26px;
         font-size: 2em;
-        color: #FFF;
+        color: $widget_black;
         padding: 0 0.25em;
         margin: 4px 0.25em;
         white-space: nowrap;
@@ -597,17 +604,19 @@ math {
         border-left: 4px solid $highlight_blue;
         position: fixed;
         top: 36px;
-        background: $widget_black;
+        background: white;
         bottom: 0;
-        width: 8em;
+        width: fit-content;
         left: 0;
         box-shadow: none;
+        border: 1px solid;
 
         li {
             display: block;
 
             a {
                 display: block;
+                font-weight: normal;
 
                 .nav-expand {
                     float: right;
