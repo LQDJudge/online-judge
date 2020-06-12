@@ -11,8 +11,13 @@
     <link rel="alternate" type="application/rss+xml" href="{{ url('problem_rss') }}" title="RSS Problem Feed">
     {% include "blog/media-css.html" %}
     <style>
+        @media (max-width: 800px) {
+            .title {
+                clear: both;
+            }
+        }
         .post {
-            margin: 0 1.4em;
+            margin: 0 2%;
         }
         .time {
             margin-left: 0;
