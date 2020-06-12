@@ -7,12 +7,15 @@
     margin-right: 0;
 
     .post {
-        border-bottom: 2px solid $border_gray;
-        padding-top: 0.5em;
+        border: 1px dotted grey;
+        border-radius: 1em;
+        border-top: 0.125rem solid #9b9b9b;
+        padding: 1.25rem 1.25rem 1.563rem;
+        margin-bottom: 2em;
 
         .title {
             font-weight: 600;
-            font-size: 1.7em;
+            font-size: 1.875em;
 
             a {
                 color: Maroon !important;
@@ -24,7 +27,7 @@
         }
 
         &:last-child {
-            border-bottom: none;
+            // border-bottom: none;
         }
     }
 }

@@ -14,6 +14,9 @@
         .post {
             margin: 0 1.4em;
         }
+        .time {
+            margin-left: 0;
+        }
 
         .post:first-child {
             margin-top: 0.6em;
@@ -47,6 +50,10 @@
         .no-clarifications-message {
             font-style: italic;
             text-align: center;
+        }
+
+        h3 a {
+            color: lightcyan;
         }
     </style>
 {% endblock %}
@@ -93,9 +100,7 @@
             <div class="sidebox-content">
                 {% for post in posts %}
                     <section class="{% if post.sticky %}sticky {% endif %}post">
-                        <h2 class="title">
-                            <a href="{{ url('blog_post', post.id, post.slug) }}">{{ post.title }}</a>
-                        </h2>
+                        <span style="float:right;">
                         <span class="time">
                             {%- if post.sticky %}<i title="Sticky" class="fa fa-star fa-fw"></i>{% endif -%}
                             {% with authors=post.authors.all() %}
@@ -111,6 +116,11 @@
                                 </span>
                             </a>
                         </span>
+                        </span>
+                        <h2 class="title">
+                            <a href="{{ url('blog_post', post.id, post.slug) }}">{{ post.title }}</a>
+                        </h2>
+                        
                         <div class="summary content-description">
                             {% cache 86400 'post_summary' post.id %}
                                 {{ post.summary|default(post.content, true)|markdown('blog', 'svg', lazy_load=True)|reference|str|safe }}
