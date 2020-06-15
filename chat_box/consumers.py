@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core import serializers
 
+from judge.jinja2.gravatar import gravatar
 from judge.models.profile import Profile
 
 
@@ -32,8 +33,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
-        
-        message_saved = save_data_and_return(message)
+
+        author = self.scope['user']
+        author = Profile.objects.get(id=author.id)
+
+        message['author'] = author.username
+        message['css_class'] = author.css_class
+        message['image'] = gravatar(author, 32)
+
+        message_saved = save_data_and_return(message, author)
         message['time'] = message_saved[0]['fields']['time']
         message['id'] = message_saved[0]['pk']
 
@@ -56,10 +64,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 
 # return time
-def save_data_and_return(message):
+def save_data_and_return(message, author):
     new_message = Message(body=message['body'],
-                          author=Profile.objects
-                                        .get(pk=message['author_id']),
+                          author=author,
                           )
     new_message.save()
     json_data = serializers.serialize("json", 

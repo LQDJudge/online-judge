@@ -141,10 +141,6 @@
                 
                 message = {
                     'body': body,
-                    'image': img,
-                    'author': '{{request.profile}}',
-                    'author_id': {{request.profile.id}},
-                    'css_class': '{{request.profile.css_class}}',
                 }
 
                 chatSocket.send(JSON.stringify({
