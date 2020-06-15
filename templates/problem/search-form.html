@@ -26,6 +26,11 @@
                         {% if show_types %} checked{% endif %}>
                 <label for="show_types">{{ _('Show problem types') }}</label>
             </div>
+            <div>
+                <input id="show_editorial" type="checkbox" name="show_editorial" value="1"
+                        {% if show_editorial %} checked{% endif %}>
+                <label for="show_editorial">{{ _('Show editorial') }}</label>
+            </div>
             <div class="filter-form-group">
                 <label for="category"><i>{{ _('Category') }}</i></label>
                 <select id="category" name="category">

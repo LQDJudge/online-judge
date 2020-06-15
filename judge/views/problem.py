@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db import transaction
-from django.db.models import Count, F, Prefetch, Q
+from django.db.models import Count, F, Prefetch, Q, Sum, Case, When, IntegerField
 from django.db.utils import ProgrammingError
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -404,9 +404,17 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
 
     def get_context_data(self, **kwargs):
         context = super(ProblemList, self).get_context_data(**kwargs)
+
         context['hide_solved'] = 0 if self.in_contest else int(self.hide_solved)
         context['show_types'] = 0 if self.in_contest else int(self.show_types)
         context['full_text'] = 0 if self.in_contest else int(self.full_text)
+        context['show_editorial'] = 0 if self.in_contest else int(self.show_editorial)
+
+        if (context['show_editorial']):
+            context['object_list'] = context['object_list'] \
+                                        .annotate(has_public_editorial=Sum(Case(When(solution__is_public=True, then=1),
+                                                  default=0, output_field=IntegerField())))
+
         context['category'] = self.category
         context['categories'] = ProblemGroup.objects.all()
         if self.show_types:
@@ -456,7 +464,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         self.hide_solved = self.GET_with_session(request, 'hide_solved')
         self.show_types = self.GET_with_session(request, 'show_types')
         self.full_text = self.GET_with_session(request, 'full_text')
-
+        self.show_editorial = self.GET_with_session(request, 'show_editorial')
+        
         self.search_query = None
         self.category = None
         self.selected_types = []
@@ -485,7 +494,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             return generic_message(request, 'FTS syntax error', e.args[1], status=400)
 
     def post(self, request, *args, **kwargs):
-        to_update = ('hide_solved', 'show_types', 'full_text')
+        to_update = ('hide_solved', 'show_types', 'full_text', 'show_editorial')
         for key in to_update:
             if key in request.GET:
                 val = request.GET.get(key) == '1'
