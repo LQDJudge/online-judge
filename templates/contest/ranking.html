@@ -250,7 +250,7 @@
                     // update best submissions
                     let curBest = bestSubmissions[problem]
 
-                    if (scoretimeComparison(curSubmission, curBest)) {
+                    if (scoretimeComparison(curSubmission, curBest) && score) {
                         bestSubmissions[problem] = curSubmission;
                     } 
                 }
