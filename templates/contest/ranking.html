@@ -41,6 +41,10 @@
             text-decoration: underline;
         }
 
+        .first-solve {
+            background: #00f9a1;
+        }
+
         .rank {
             min-width: 2.5em
         }
@@ -214,6 +218,48 @@
         </script>
     {% endif %}
     <script type="text/javascript">
+
+        function scoretimeComparison(sub1, sub2) {
+            if (!sub2) return true;
+            return sub1['score'] > sub2['score'] || (sub1['score'] === sub2['score'] && sub1['time'] < sub2['time']);
+        }
+
+        function highlightFirstSolve() {
+            // bucket to store submissions by problems
+            let bestSubmissions = {};
+
+            // get information
+            $('td a').each(function() {
+                let td = $(this)[0]
+                let link = td['attributes']['href']['value']
+                if (link.includes('submissions')) {
+                    let scoreAndTime = (td.innerText.split('\n'))
+                    let linkElements = link.split('/')
+
+                    // get information
+                    let problem = linkElements[linkElements.length - 2];
+                    let score = parseFloat(scoreAndTime[0])
+                    let time = new Date('05/04/2020 ' + scoreAndTime[1])
+
+                    let curSubmission = {
+                        'td': $(this).parent(),
+                        'score': score,
+                        'time': time 
+                    }
+
+                    // update best submissions
+                    let curBest = bestSubmissions[problem]
+
+                    if (scoretimeComparison(curSubmission, curBest)) {
+                        bestSubmissions[problem] = curSubmission;
+                    } 
+                }
+            })
+            for (let problem in bestSubmissions) {
+                bestSubmissions[problem]['td'].addClass('first-solve')
+            }
+        }
+
         $(function () {
             var url = '{{ url('contest_participation', contest.key, '__username__') }}';
             var placeholder = $('#search-contest').replaceWith($('<select>').attr({
@@ -240,6 +286,8 @@
             $('#show-organizations-checkbox').click(function () {
                 $('.organization-column').toggle();
             });
+            highlightFirstSolve();
+            
         });
     </script>
     {% include "contest/media-js.html" %}
