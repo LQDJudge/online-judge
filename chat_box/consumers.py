@@ -35,7 +35,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = text_data_json['message']
 
         author = self.scope['user']
-        author = Profile.objects.get(user_id=author.id)
+        author = Profile.objects.get(user=author)
 
         message['author'] = author.username
         message['css_class'] = author.css_class
