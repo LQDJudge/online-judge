@@ -1,5 +1,7 @@
 {% extends "user/base-users-table.html" %}
 
+{% set friends = request.profile.get_friends() if request.user.is_authenticated else {} %}
+
 {% block after_rank_head %}
     {% if has_rating %}
         <th>{{ _('Rating') }}</th>
@@ -52,9 +54,7 @@
 {% endblock %}
 
 {% block row_extra %}
-    {% if user.participation.is_disqualified %}
-        class="disqualified"
-    {% endif %}
+    class="{{ 'disqualified' if user.participation.is_disqualified }} {{ 'friend' if user.username in friends }} {{'highlight' if user.username == request.user.username}}"
 {% endblock %}
 
 {% block before_point %}

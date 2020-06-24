@@ -279,3 +279,18 @@ a.edit-profile {
         color: white;
     }
 }
+
+.follow {
+    background: green;   
+    border-color: lightgreen;
+}
+.follow:hover {
+    background: darkgreen;
+}
+.unfollow {
+    background: red;
+    border-color: pink;
+}
+.unfollow:hover {
+    background: darkred;
+}

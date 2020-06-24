@@ -16,7 +16,11 @@
 {% block title_ruler %}{% endblock %}
 
 {% block title_row %}
-    {% set tab = 'list' %}
+    {% if request.GET.get('friend') == 'true'%}
+        {% set tab = 'friends' %}
+    {% else %}
+        {% set tab = 'list' %}
+    {% endif %}
     {% set title = 'Leaderboard' %}
     {% include "user/user-list-tabs.html" %}
 {% endblock %}

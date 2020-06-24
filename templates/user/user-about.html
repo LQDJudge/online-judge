@@ -9,6 +9,20 @@
 
 {% block user_content %}
     <div class="content-description">
+        {% if request.user != user.user %}
+        <form method="post">
+            {% csrf_token %}
+            <button class="{{ 'unfollow' if followed else 'follow' }}">
+                {% if followed %}
+                    <i class="fa fa-remove"></i>
+                    {{ _('Unfollow') }}
+                {% else %}
+                    <i class="fa fa-user-plus"></i>
+                    {{ _('Follow') }}
+                {% endif %}
+            </button>
+        </form>
+        {% endif %}
         {% with orgs=user.organizations.all() %}
             {% if orgs %}
                 <p style="margin-top: 0"><b>{{ _('From') }}</b>

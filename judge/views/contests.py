@@ -602,7 +602,7 @@ def get_contest_ranking_list(request, contest, participation=None, ranking_list=
                 problems)
 
     users = ranker(ranking_list(contest, problems), key=attrgetter('points', 'cumtime'))
-
+    
     if show_current_virtual:
         if participation is None and request.user.is_authenticated:
             participation = request.profile.current_contest

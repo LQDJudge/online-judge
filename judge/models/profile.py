@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import Max
+from django.db.models import Max, CASCADE
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
@@ -16,7 +16,7 @@ from judge.models.choices import ACE_THEMES, MATH_ENGINES_CHOICES, TIMEZONE
 from judge.models.runtime import Language
 from judge.ratings import rating_class
 
-__all__ = ['Organization', 'Profile', 'OrganizationRequest']
+__all__ = ['Organization', 'Profile', 'OrganizationRequest', 'Friend']
 
 
 class EncryptedNullCharField(EncryptedCharField):
@@ -178,6 +178,16 @@ class Profile(models.Model):
     def css_class(self):
         return self.get_user_css_class(self.display_rank, self.rating)
 
+    def get_friends(self): #list of usernames, including you
+        friend_obj = self.following_users.all()
+        ret = set()
+
+        if (friend_obj):
+            ret = set(friend.username for friend in friend_obj[0].users.all())
+        
+        ret.add(self.username)
+        return ret
+
     class Meta:
         permissions = (
             ('test_site', 'Shows in-progress development stuff'),
@@ -202,3 +212,40 @@ class OrganizationRequest(models.Model):
     class Meta:
         verbose_name = _('organization join request')
         verbose_name_plural = _('organization join requests')
+
+
+class Friend(models.Model):
+    users = models.ManyToManyField(Profile)
+    current_user = models.ForeignKey(Profile, related_name="following_users", on_delete=CASCADE)
+
+    @classmethod
+    def is_friend(self, current_user, new_friend):
+        try:
+            return current_user.following_users.get().users \
+                        .filter(user=new_friend.user).exists()
+        except:
+            return False
+
+    @classmethod
+    def make_friend(self, current_user, new_friend):
+        friend, created = self.objects.get_or_create(
+            current_user = current_user
+        )
+        friend.users.add(new_friend)
+
+    @classmethod
+    def remove_friend(self, current_user, new_friend):
+        friend, created = self.objects.get_or_create(
+            current_user = current_user
+        )
+        friend.users.remove(new_friend)
+
+    @classmethod
+    def toggle_friend(self, current_user, new_friend):
+        if (self.is_friend(current_user, new_friend)):
+            self.remove_friend(current_user, new_friend)
+        else:
+            self.make_friend(current_user, new_friend)
+
+    def __str__(self):
+        return str(self.current_user)

@@ -23,7 +23,7 @@ from django.views.generic import DetailView, ListView, TemplateView
 from reversion import revisions
 
 from judge.forms import ProfileForm, newsletter_id
-from judge.models import Profile, Rating, Submission
+from judge.models import Profile, Rating, Submission, Friend
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
 from judge.utils.problems import contest_completed_ids, user_completed_ids
@@ -92,9 +92,11 @@ class UserPage(TitleMixin, UserMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super(UserPage, self).get_context_data(**kwargs)
 
+        context['followed'] = Friend.is_friend(self.request.profile, self.object)
         context['hide_solved'] = int(self.hide_solved)
         context['authored'] = self.object.authored_problems.filter(is_public=True, is_organization_private=False) \
                                   .order_by('code')
+
         rating = self.object.ratings.order_by('-contest__end_time')[:1]
         context['rating'] = rating[0] if rating else None
 
@@ -148,6 +150,19 @@ class UserAboutPage(UserPage):
             context['max_graph'] = max_user + ratio * delta
             context['min_graph'] = min_user + ratio * delta - delta
         return context
+
+    # follow/unfollow user
+    def post(self, request, user, *args, **kwargs):
+        try:
+            if not request.profile:
+                raise Exception('You have to login')
+            if (request.profile.username == user):
+                raise Exception('Cannot make friend with yourself')
+            
+            following_profile = Profile.objects.get(user__username=user)
+            Friend.toggle_friend(request.profile, following_profile)
+        finally:
+            return HttpResponseRedirect(request.path_info)
 
 
 class UserProblemsPage(UserPage):
@@ -269,9 +284,14 @@ class UserList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ListView):
     default_sort = '-performance_points'
 
     def get_queryset(self):
-        return (Profile.objects.filter(is_unlisted=False).order_by(self.order, 'id').select_related('user')
+        ret = Profile.objects.filter(is_unlisted=False).order_by(self.order, 'id').select_related('user') \
                 .only('display_rank', 'user__username', 'points', 'rating', 'performance_points',
-                      'problem_count'))
+                      'problem_count')
+
+        if (self.request.GET.get('friend') == 'true'):
+            friends = list(self.request.profile.get_friends())
+            ret = ret.filter(user__username__in=friends)
+        return ret
 
     def get_context_data(self, **kwargs):
         context = super(UserList, self).get_context_data(**kwargs)

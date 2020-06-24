@@ -286,6 +286,22 @@
             $('#show-organizations-checkbox').click(function () {
                 $('.organization-column').toggle();
             });
+            {% if request.user.is_authenticated %}
+            $('#show-friends-checkbox').click(function() {
+                let checked = $('#show-friends-checkbox').is(':checked');
+                if (checked) {
+                    $('tbody tr').hide();
+                    $('.friend').show();
+                    $('.friend').last().find('td').css({'border-bottom-width': 
+                        '1px', 'border-color': '#ccc'});    
+                }
+                else {
+                    $('tr').show();
+                    $('.friend').last().find('td').removeAttr('style');
+                }
+            })
+            {% endif %}
+
             highlightFirstSolve();
             
         });
@@ -301,7 +317,12 @@
             {% endif %}
         {% endif %}
         <input id="show-organizations-checkbox" type="checkbox" style="vertical-align: bottom">
-        <label for="show-organizations-checkbox" style="vertical-align: bottom">{{ _('Show organizations') }}</label>
+        <label for="show-organizations-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show organizations') }}</label>
+    
+        {% if request.user.is_authenticated %}
+        <input id="show-friends-checkbox" type="checkbox" style="vertical-align: bottom;">
+        <label for="show-friends-checkbox" style="vertical-align: bottom;">{{ _('Show friends only') }}</label>
+        {% endif %}
     </div>
     {% include "contest/ranking-table.html" %}
 {% endblock %}
