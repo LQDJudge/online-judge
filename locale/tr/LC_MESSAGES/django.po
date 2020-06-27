@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dmoj\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-04-10 01:26-0500\n"
+"POT-Creation-Date: 2020-06-25 08:39+0700\n"
 "PO-Revision-Date: 2019-11-11 22:06\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Turkish\n"
@@ -18,7 +18,7 @@ msgstr ""
 
 #: chat_box/models.py:15 judge/admin/interface.py:107
 #: judge/models/contest.py:257 judge/models/contest.py:381
-#: judge/models/profile.py:191
+#: judge/models/profile.py:201
 msgid "user"
 msgstr "kullanıcı"
 
@@ -30,7 +30,7 @@ msgstr "gönderi zamanı"
 msgid "body of comment"
 msgstr "yorum metni"
 
-#: chat_box/views.py:29
+#: chat_box/views.py:41
 msgid "Chat Box"
 msgstr ""
 
@@ -102,7 +102,7 @@ msgstr ""
 msgid "Login"
 msgstr "Giriş"
 
-#: dmoj/urls.py:105 templates/base.html:190
+#: dmoj/urls.py:105 templates/base.html:192
 msgid "Home"
 msgstr "Ana sayfa"
 
@@ -138,7 +138,7 @@ msgstr "Yarışmalar"
 
 #: judge/admin/contest.py:64 templates/contest/contest.html:83
 #: templates/contest/moss.html:43 templates/problem/list.html:206
-#: templates/problem/list.html:221 templates/user/user-problems.html:56
+#: templates/problem/list.html:224 templates/user/user-problems.html:56
 #: templates/user/user-problems.html:98
 msgid "Problem"
 msgstr ""
@@ -159,7 +159,7 @@ msgstr "Ayrıntılar"
 msgid "Format"
 msgstr ""
 
-#: judge/admin/contest.py:117 templates/contest/ranking-table.html:5
+#: judge/admin/contest.py:117 templates/contest/ranking-table.html:7
 msgid "Rating"
 msgstr "Derecelendirme"
 
@@ -253,8 +253,8 @@ msgid "Taxonomy"
 msgstr "Tasnif"
 
 #: judge/admin/problem.py:128 templates/contest/contest.html:84
-#: templates/problem/data.html:449 templates/problem/list.html:211
-#: templates/problem/list.html:232 templates/user/base-users-table.html:10
+#: templates/problem/data.html:449 templates/problem/list.html:214
+#: templates/problem/list.html:240 templates/user/base-users-table.html:10
 #: templates/user/user-problems.html:58
 msgid "Points"
 msgstr "Puanlar"
@@ -400,7 +400,8 @@ msgstr[1] "%d çözüm yeniden puanlandı."
 msgid "Rescore the selected submissions"
 msgstr "Seçili çözümleri yeniden puanla"
 
-#: judge/admin/submission.py:200
+#: judge/admin/submission.py:200 templates/problem/list.html:208
+#: templates/problem/list.html:228
 msgid "Problem code"
 msgstr "Problem anahtarı"
 
@@ -875,7 +876,7 @@ msgid "Create private contests"
 msgstr ""
 
 #: judge/models/contest.py:248 judge/models/contest.py:345
-#: judge/models/contest.py:382 judge/models/contest.py:404
+#: judge/models/contest.py:382 judge/models/contest.py:405
 #: judge/models/submission.py:83
 msgid "contest"
 msgstr "yarışma"
@@ -942,7 +943,7 @@ msgid "contest participations"
 msgstr "yarışma katılımı"
 
 #: judge/models/contest.py:344 judge/models/contest.py:366
-#: judge/models/contest.py:405 judge/models/problem.py:352
+#: judge/models/contest.py:406 judge/models/problem.py:352
 #: judge/models/problem.py:357 judge/models/problem.py:375
 #: judge/models/problem_data.py:38
 msgid "problem"
@@ -1035,11 +1036,11 @@ msgstr "yarışma derecesi"
 msgid "contest ratings"
 msgstr "yarışma derecesi"
 
-#: judge/models/contest.py:412
+#: judge/models/contest.py:413
 msgid "contest moss result"
 msgstr ""
 
-#: judge/models/contest.py:413
+#: judge/models/contest.py:414
 msgid "contest moss results"
 msgstr ""
 
@@ -1615,7 +1616,7 @@ msgid ""
 msgstr ""
 
 #: judge/models/profile.py:76 judge/models/profile.py:93
-#: judge/models/profile.py:192
+#: judge/models/profile.py:202
 msgid "organization"
 msgstr "Organizasyon"
 
@@ -1711,31 +1712,31 @@ msgstr ""
 msgid "Notes for administrators regarding this user."
 msgstr ""
 
-#: judge/models/profile.py:186
+#: judge/models/profile.py:196
 msgid "user profile"
 msgstr "Kullanıcı Profili"
 
-#: judge/models/profile.py:187
+#: judge/models/profile.py:197
 msgid "user profiles"
 msgstr "Kullanıcı Profilleri"
 
-#: judge/models/profile.py:194
+#: judge/models/profile.py:204
 msgid "request time"
 msgstr "istek zamanı"
 
-#: judge/models/profile.py:195
+#: judge/models/profile.py:205
 msgid "state"
 msgstr "durum"
 
-#: judge/models/profile.py:200
+#: judge/models/profile.py:210
 msgid "reason"
 msgstr "sebep"
 
-#: judge/models/profile.py:203
+#: judge/models/profile.py:213
 msgid "organization join request"
 msgstr "organizasyona katılma isteği"
 
-#: judge/models/profile.py:204
+#: judge/models/profile.py:214
 msgid "organization join requests"
 msgstr "organizasyona katılma istekleri"
 
@@ -2253,7 +2254,8 @@ msgctxt "hours and minutes"
 msgid "%h:%m"
 msgstr "%h:%m"
 
-#: judge/views/about.py:7 templates/user/user-about.html:33
+#: judge/views/about.py:7 templates/user/user-about.html:47
+#: templates/user/user-tabs.html:4
 msgid "About"
 msgstr "Hakkında"
 
@@ -2393,7 +2395,7 @@ msgstr "%s adlı kullanıcının \"%s\" yarışmasına katılımı"
 msgid "Live"
 msgstr "Canlı"
 
-#: judge/views/contests.py:697
+#: judge/views/contests.py:697 templates/contest/contest-tabs.html:16
 msgid "Participation"
 msgstr "Katılım"
 
@@ -2432,6 +2434,7 @@ msgid "corrupt page %s"
 msgstr "bozuk sayfa \"%s\""
 
 #: judge/views/language.py:12 templates/status/judge-status-table.html:9
+#: templates/status/status-tabs.html:5
 msgid "Runtimes"
 msgstr "Dil sürümleri"
 
@@ -2449,7 +2452,7 @@ msgid "Could not find such organization."
 msgstr "Böyle bir organizasyon bulunamadı."
 
 #: judge/views/organization.py:72 judge/views/register.py:34
-#: templates/organization/list.html:15
+#: templates/organization/list.html:15 templates/user/user-list-tabs.html:6
 msgid "Organizations"
 msgstr "Organizasyonlar"
 
@@ -2567,35 +2570,35 @@ msgid "Editorial for <a href=\"{1}\">{0}</a>"
 msgstr "<a href=\"{1}\">{0}</a> için problem analizi"
 
 #: judge/views/problem.py:286 templates/contest/contest.html:79
-#: templates/user/users-table.html:23
+#: templates/user/user-tabs.html:5 templates/user/users-table.html:23
 msgid "Problems"
 msgstr "Problemler"
 
-#: judge/views/problem.py:547
+#: judge/views/problem.py:556
 msgid "Banned from submitting"
 msgstr "Çözüm gönderme engellendi"
 
-#: judge/views/problem.py:548
+#: judge/views/problem.py:557
 msgid ""
 "You have been declared persona non grata for this problem. You are "
 "permanently barred from submitting this problem."
 msgstr ""
 "Bu problem için istenmeyen adam olarak işaretlendin. Çözüm gönderemezsin."
 
-#: judge/views/problem.py:562
+#: judge/views/problem.py:571
 msgid "Too many submissions"
 msgstr "Çok fazla çözüm gönderisi"
 
-#: judge/views/problem.py:563
+#: judge/views/problem.py:572
 msgid "You have exceeded the submission limit for this problem."
 msgstr "Bu soru için çözüm gönderi sınırını geçtin."
 
-#: judge/views/problem.py:633 judge/views/problem.py:636
+#: judge/views/problem.py:642 judge/views/problem.py:645
 #, python-format
 msgid "Submit to %(problem)s"
 msgstr "Çözüm gönder -%(problem)s"
 
-#: judge/views/problem.py:652
+#: judge/views/problem.py:661
 msgid "Clone Problem"
 msgstr ""
 
@@ -2741,44 +2744,44 @@ msgstr "Sürüm matrisi"
 msgid "Submission of %(problem)s by %(user)s"
 msgstr "%(user)s tarafından %(problem)s için gönderilen çözüm"
 
-#: judge/views/submission.py:227 judge/views/submission.py:228
+#: judge/views/submission.py:233 judge/views/submission.py:234
 #: templates/problem/problem.html:127
 msgid "All submissions"
 msgstr "Tüm çözümler"
 
-#: judge/views/submission.py:384
+#: judge/views/submission.py:390
 msgid "All my submissions"
 msgstr "Tüm çözümlerim"
 
-#: judge/views/submission.py:385
+#: judge/views/submission.py:391
 #, python-format
 msgid "All submissions by %s"
 msgstr "%s'nin tüm çözümleri"
 
-#: judge/views/submission.py:416
+#: judge/views/submission.py:422
 #, python-format
 msgid "All submissions for %s"
 msgstr "%s için tüm çözümler"
 
-#: judge/views/submission.py:435
+#: judge/views/submission.py:441
 msgid "Must pass a problem"
 msgstr "Bir problem tanımlanmalı"
 
-#: judge/views/submission.py:481
+#: judge/views/submission.py:487
 #, python-format
 msgid "My submissions for %(problem)s"
 msgstr "%(problem)s için çözümlerim"
 
-#: judge/views/submission.py:482
+#: judge/views/submission.py:488
 #, python-format
 msgid "%(user)s's submissions for %(problem)s"
 msgstr "%(user)s tarafından %(problem)s için gönderilen çözümler"
 
-#: judge/views/submission.py:583
+#: judge/views/submission.py:589
 msgid "Must pass a contest"
 msgstr "Bir yarışma tanımlanmalı"
 
-#: judge/views/submission.py:602
+#: judge/views/submission.py:608
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a href="
@@ -2787,7 +2790,7 @@ msgstr ""
 "<a href=\"{1}\">{0}</a> tarafından <a href=\"{3}\">{2}</a> için gönderilen "
 "çözüm - <a href=\"{5}\">{4}</a>"
 
-#: judge/views/submission.py:609
+#: judge/views/submission.py:615
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for problem {2} in <a href=\"{4}\">{3}"
@@ -2873,20 +2876,21 @@ msgstr "Hesabım"
 msgid "User %s"
 msgstr "Kullanıcı %s"
 
-#: judge/views/user.py:136
+#: judge/views/user.py:138
 msgid "M j, Y, G:i"
 msgstr "j M Y, G:i"
 
-#: judge/views/user.py:221
+#: judge/views/user.py:236
 msgid "Updated on site"
 msgstr "Sitede güncellendi"
 
-#: judge/views/user.py:254 templates/admin/auth/user/change_form.html:14
+#: judge/views/user.py:269 templates/admin/auth/user/change_form.html:14
 #: templates/admin/auth/user/change_form.html:17 templates/base.html:224
+#: templates/user/user-tabs.html:10
 msgid "Edit profile"
 msgstr "Profili düzenle"
 
-#: judge/views/user.py:263
+#: judge/views/user.py:278 templates/user/user-list-tabs.html:4
 msgid "Leaderboard"
 msgstr "Sıralama"
 
@@ -2942,9 +2946,17 @@ msgstr "Kullanıcı düzenle"
 msgid "Rejudge"
 msgstr "Yeniden değerlendir"
 
+#: templates/base.html:216
+#, python-format
+msgid "Hello, <b>%(username)s</b>."
+msgstr "Merhaba, <b>%(username)s</b>."
+
 #: templates/base.html:222 templates/comments/list.html:89
-#: templates/contest/ranking-table.html:39
+#: templates/contest/contest-list-tabs.html:24
+#: templates/contest/ranking-table.html:41
+#: templates/problem/problem-list-tabs.html:6
 #: templates/submission/info-base.html:12
+#: templates/submission/submission-list-tabs.html:15
 msgid "Admin"
 msgstr "Yönetici"
 
@@ -2974,59 +2986,107 @@ msgid "This site works best with JavaScript enabled."
 msgstr "Bu sitenin düzgün görüntülenmesi için JavaScript etkin olmalıdır."
 
 #: templates/blog/content.html:13 templates/comments/list.html:68
-#: templates/comments/list.html:83 templates/contest/tag-title.html:9
-#: templates/flatpages/admin_link.html:3 templates/license.html:10
-#: templates/problem/editorial.html:14
+#: templates/comments/list.html:83 templates/contest/contest-tabs.html:23
+#: templates/contest/tag-title.html:9 templates/flatpages/admin_link.html:3
+#: templates/license.html:10 templates/problem/editorial.html:14
 msgid "Edit"
 msgstr "Düzenle"
 
-#: templates/blog/list.html:85
+#: templates/blog/content.html:27
+#, python-format
+msgid ""
+"\n"
+"                    posted on %(time)s\n"
+"                "
+msgstr ""
+"\n"
+"%(time)s"
+
+#: templates/blog/dashboard.html:21
+#, python-format
+msgid ""
+"\n"
+"                                    on %(time)s\n"
+"                                "
+msgstr ""
+"\n"
+"%(time)s"
+
+#: templates/blog/list.html:97
 msgid "Blog"
 msgstr ""
 
-#: templates/blog/list.html:87
+#: templates/blog/list.html:99
 msgid "Events"
 msgstr "Etkinlikler"
 
-#: templates/blog/list.html:92
+#: templates/blog/list.html:104
 msgid "News"
 msgstr "Haberler"
 
-#: templates/blog/list.html:130 templates/problem/problem.html:310
+#: templates/blog/list.html:116
+#, python-brace-format
+msgid "posted on {time}"
+msgstr "{time}"
+
+#: templates/blog/list.html:145 templates/problem/problem.html:310
 msgid "Clarifications"
 msgstr "Açıklamalar"
 
-#: templates/blog/list.html:146 templates/problem/problem.html:321
+#: templates/blog/list.html:161 templates/problem/problem.html:321
 msgid "No clarifications have been made at this time."
 msgstr "Henüz bir açıklama yapılmadı."
 
-#: templates/blog/list.html:154
+#: templates/blog/list.html:169
 msgid "Ongoing contests"
 msgstr "Devam eden yarışmalar"
 
-#: templates/blog/list.html:172
+#: templates/blog/list.html:187
 msgid "Upcoming contests"
 msgstr "Gelecek yarışmalar"
 
-#: templates/blog/list.html:189
+#: templates/blog/list.html:204
 msgid "Comment stream"
 msgstr "Son yorumlar"
 
-#: templates/blog/list.html:208
+#: templates/blog/list.html:223
 msgid "New problems"
 msgstr "Yeni problemler"
 
-#: templates/blog/list.html:225
+#: templates/blog/list.html:240
 msgid "My open tickets"
 msgstr "Açık biletlerim"
 
-#: templates/blog/list.html:246
+#: templates/blog/list.html:261
 msgid "New tickets"
 msgstr "Yeni biletler"
 
-#: templates/chat/chat.html:167
-msgid "Your message"
+#: templates/chat/chat.html:226
+msgid "Chat"
 msgstr ""
+
+#: templates/chat/chat.html:228 templates/chat/chat.html:244
+#, fuzzy
+#| msgid "Online Judge"
+msgid "Online Users"
+msgstr "Online Değerlendirme Sistemi"
+
+#: templates/chat/chat.html:239
+msgid "Enter your message"
+msgstr ""
+
+#: templates/chat/chat.html:248
+#, fuzzy
+#| msgid "Admin"
+msgid "Admins"
+msgstr "Yönetici"
+
+#: templates/chat/chat.html:262 templates/contest/contest.html:86
+#: templates/contest/list.html:153 templates/contest/list.html:195
+#: templates/contest/list.html:271 templates/problem/list.html:215
+#: templates/problem/list.html:246
+msgid "Users"
+msgstr "Kullanıcılar"
 
 #: templates/comments/list.html:2
 msgid "Comments"
@@ -3035,6 +3095,16 @@ msgstr "Yorumlar"
 #: templates/comments/list.html:18 templates/comments/list.html:27
 msgid "Please login to vote"
 msgstr "Oylamak için lütfen giriş yap"
+
+#: templates/comments/list.html:40
+#, python-brace-format
+msgid "commented on {time}"
+msgstr "{time} "
+
+#: templates/comments/list.html:49
+#, python-format
+msgid "edit %(edits)s"
+msgstr "düzenleme %(edits)s"
 
 #: templates/comments/list.html:51 templates/comments/media-js.html:77
 msgid "edited"
@@ -3051,6 +3121,17 @@ msgstr "Yanıtla"
 #: templates/comments/list.html:86
 msgid "Hide"
 msgstr "Gizle"
+
+#: templates/comments/list.html:101
+#, python-format
+msgid ""
+"\n"
+"                                                This comment is hidden due "
+"to too much negative feedback.\n"
+"                                                Click <a href=\"javascript:"
+"comment_show_content(%(id)s)\">here</a> to view it.\n"
+"                                            "
+msgstr ""
 
 #: templates/comments/list.html:120
 msgid "There are no comments at the moment."
@@ -3141,13 +3222,52 @@ msgstr ""
 msgid "Next"
 msgstr "Sonraki"
 
+#: templates/contest/contest-list-tabs.html:21
+#: templates/problem/problem-list-tabs.html:5
+msgid "List"
+msgstr "Liste"
+
+#: templates/contest/contest-list-tabs.html:22
+msgid "Calendar"
+msgstr "Takvim"
+
+#: templates/contest/contest-tabs.html:4
+msgid "Info"
+msgstr "Hakkında"
+
+#: templates/contest/contest-tabs.html:6 templates/stats/base.html:9
+#: templates/submission/list.html:339
+msgid "Statistics"
+msgstr "İstatistikler"
+
+#: templates/contest/contest-tabs.html:11
+msgid "Rankings"
+msgstr "Sıralamalar"
+
+#: templates/contest/contest-tabs.html:13
+msgid "Hidden Rankings"
+msgstr "Gizli Sıralamalar"
+
+#: templates/contest/contest-tabs.html:21
+msgid "MOSS"
+msgstr ""
+
+#: templates/contest/contest-tabs.html:26
+msgid "Clone"
+msgstr ""
+
 #: templates/contest/contest-tabs.html:37
+#: templates/contest/contest-tabs.html:57
 msgid "Leave contest"
 msgstr "Yarışmadan ayrıl"
 
 #: templates/contest/contest-tabs.html:44 templates/contest/list.html:293
 msgid "Virtual join"
 msgstr "Sanal katılım"
+
+#: templates/contest/contest-tabs.html:55
+msgid "Stop spectating"
+msgstr "İzlemeyi bırak"
 
 #: templates/contest/contest-tabs.html:64
 msgid "Spectate contest"
@@ -3162,21 +3282,37 @@ msgstr "Yarışmaya katıl"
 msgid "Login to participate"
 msgstr "Katılmak için giriş yap"
 
+#: templates/contest/contest.html:37
+msgid "Participating virtually."
+msgstr "Sanal olarak katılınıyor. "
+
+#: templates/contest/contest.html:43
+msgid "Contest is over."
+msgstr "Yarışma sona erdi"
+
 #: templates/contest/contest.html:59 templates/contest/contest.html:63
 msgid "F j, Y, G:i T"
 msgstr "j F Y, G:i T"
+
+#: templates/contest/contest.html:59
+#, python-format
+msgid ""
+"<b>%(time_limit)s</b> window between <b>%(start_time)s</b> and <b>"
+"%(end_time)s</b>"
+msgstr ""
+" <b>%(start_time)s</b> ile <b>%(end_time)s</b> arasında, süre sınırı <b>"
+"%(time_limit)s</b>"
+
+#: templates/contest/contest.html:63
+#, python-format
+msgid "<b>%(length)s</b> long starting on <b>%(start_time)s</b>"
+msgstr "başlangıç <b>%(start_time)s</b>, yarışma süresi <b>%(length)s</b>"
 
 #: templates/contest/contest.html:85
 msgid "AC Rate"
 msgstr "AC Oranı"
 
-#: templates/contest/contest.html:86 templates/contest/list.html:153
-#: templates/contest/list.html:195 templates/contest/list.html:271
-#: templates/problem/list.html:212 templates/problem/list.html:238
-msgid "Users"
-msgstr "Kullanıcılar"
-
-#: templates/contest/contest.html:111
+#: templates/contest/contest.html:111 templates/problem/list.html:322
 msgid "Editorial"
 msgstr "Problem analizi"
 
@@ -3284,37 +3420,43 @@ msgstr ""
 msgid "Only the following organizations may access this contest:"
 msgstr "Yarışmaya yalnızca şu organizasyonlar erişebilir:"
 
-#: templates/contest/ranking-table.html:7
+#: templates/contest/ranking-table.html:9
 msgid "Organization"
 msgstr "Organizasyon"
 
-#: templates/contest/ranking-table.html:30
+#: templates/contest/ranking-table.html:32
 msgid "Un-Disqualify"
 msgstr ""
 
-#: templates/contest/ranking-table.html:33
+#: templates/contest/ranking-table.html:35
 msgid "Disqualify"
 msgstr ""
 
-#: templates/contest/ranking.html:173
+#: templates/contest/ranking.html:177
 #, fuzzy
 #| msgid "Are you sure you want to join?"
 msgid "Are you sure you want to disqualify this participation?"
 msgstr "Katılmak istediğine emin misin?"
 
-#: templates/contest/ranking.html:178
+#: templates/contest/ranking.html:182
 #, fuzzy
 #| msgid "Are you sure you want to join?"
 msgid "Are you sure you want to un-disqualify this participation?"
 msgstr "Katılmak istediğine emin misin?"
 
-#: templates/contest/ranking.html:252
+#: templates/contest/ranking.html:316
 msgid "View user participation"
 msgstr "Kullanıcı katılımını göster"
 
-#: templates/contest/ranking.html:256
+#: templates/contest/ranking.html:320
 msgid "Show organizations"
 msgstr "Organizasyonları göster"
+
+#: templates/contest/ranking.html:324
+#, fuzzy
+#| msgid "Show my tickets only"
+msgid "Show friends only"
+msgstr "Sadece benim biletlerimi göster"
 
 #: templates/contest/stats.html:38
 #, fuzzy
@@ -3594,16 +3736,16 @@ msgstr "Tipe göre filtrele..."
 msgid "Hot problems"
 msgstr "Popüler problemler"
 
-#: templates/problem/list.html:207 templates/problem/list.html:224
-#: templates/problem/search-form.html:30 templates/user/user-problems.html:57
+#: templates/problem/list.html:210 templates/problem/list.html:232
+#: templates/problem/search-form.html:35 templates/user/user-problems.html:57
 msgid "Category"
 msgstr "Kategori"
 
-#: templates/problem/list.html:209 templates/problem/list.html:228
+#: templates/problem/list.html:212 templates/problem/list.html:236
 msgid "Types"
 msgstr "Tipler"
 
-#: templates/problem/list.html:235
+#: templates/problem/list.html:243
 #, python-format
 msgid "AC %%"
 msgstr "AC %%"
@@ -3672,6 +3814,18 @@ msgstr ""
 msgid "Rescore Everything"
 msgstr ""
 
+#: templates/problem/manage_submission.html:158
+#, fuzzy, python-format
+#| msgid "Rescore the selected submissions"
+msgid "This will rescore %(count)d submissions."
+msgstr "Seçili çözümleri yeniden puanla"
+
+#: templates/problem/manage_submission.html:162
+#, fuzzy, python-format
+#| msgid "Are you sure you want to join?"
+msgid "Are you sure you want to rescore %(count)d submissions?"
+msgstr "Katılmak istediğine emin misin?"
+
 #: templates/problem/manage_submission.html:163
 msgid "Rescore all submissions"
 msgstr ""
@@ -3684,6 +3838,13 @@ msgstr "PDF olarak göster"
 #: templates/problem/problem.html:116
 msgid "Submit solution"
 msgstr "Çözüm yolla"
+
+#: templates/problem/problem.html:104
+#, python-format
+msgid "%(counter)s submission left"
+msgid_plural "%(counter)s submissions left"
+msgstr[0] "%(counter)s gönderi kaldı"
+msgstr[1] "%(counter)s gönderi kaldı"
 
 #: templates/problem/problem.html:112
 msgid "0 submissions left"
@@ -3741,9 +3902,34 @@ msgstr "Zaman sınırı:"
 msgid "Memory limit:"
 msgstr "Bellek sınırı:"
 
+#: templates/problem/problem.html:210
+msgid "Author:"
+msgid_plural "Authors:"
+msgstr[0] "Yazar"
+msgstr[1] "Yazarlar"
+
+#: templates/problem/problem.html:225
+msgid "Problem type"
+msgid_plural "Problem types"
+msgstr[0] "Soru tipi"
+msgstr[1] "Soru tipleri"
+
 #: templates/problem/problem.html:238
 msgid "Allowed languages"
 msgstr "İzin verilen diller"
+
+#: templates/problem/problem.html:246
+#, python-format
+msgid "No %(lang)s judge online"
+msgstr "%(lang)s için çevrimiçi judge yok"
+
+#: templates/problem/problem.html:257
+#, fuzzy
+#| msgid "Judges"
+msgid "Judge:"
+msgid_plural "Judges:"
+msgstr[0] "Judge'lar"
+msgstr[1] "Judge'lar"
 
 #: templates/problem/problem.html:274
 msgid "none available"
@@ -3785,26 +3971,59 @@ msgstr "Çözülmüş problemleri gizle"
 msgid "Show problem types"
 msgstr "Problem tiplerini göster"
 
-#: templates/problem/search-form.html:33 templates/problem/search-form.html:35
+#: templates/problem/search-form.html:32
+#, fuzzy
+#| msgid "Read editorial"
+msgid "Show editorial"
+msgstr "Problem analizine git"
+
+#: templates/problem/search-form.html:38 templates/problem/search-form.html:40
+#: templates/submission/submission-list-tabs.html:4
 msgid "All"
 msgstr "Tümü"
 
-#: templates/problem/search-form.html:46
+#: templates/problem/search-form.html:51
 msgid "Problem types"
 msgstr "Problem tipleri"
 
-#: templates/problem/search-form.html:57
+#: templates/problem/search-form.html:62
 msgid "Point range"
 msgstr "Puan aralığı"
 
-#: templates/problem/search-form.html:63 templates/submission/list.html:331
+#: templates/problem/search-form.html:68 templates/submission/list.html:331
 #: templates/ticket/list.html:248
 msgid "Go"
 msgstr "Git"
 
-#: templates/problem/search-form.html:64
+#: templates/problem/search-form.html:69
 msgid "Random"
 msgstr "Rastgele"
+
+#: templates/problem/submit.html:192
+#, python-format
+msgid ""
+"<b>Warning!</b> Your default language, <b>%(default_language)s</b>, is "
+"unavailable for this problem and has been deselected."
+msgstr ""
+"<b>Uyarı</b> Varsayılan dilin, <b>%(default_language)s</b>, bu soru için "
+"kullanılamıyor."
+
+#: templates/problem/submit.html:203
+#, python-format
+msgid ""
+"\n"
+"                        You have %(left)s submission left\n"
+"                        "
+msgid_plural ""
+"\n"
+"                        You have %(left)s submissions left\n"
+"                    "
+msgstr[0] ""
+"\n"
+"Geriye %(left)s çözümün kaldı"
+msgstr[1] ""
+"\n"
+"Geriye %(left)s çözümün kaldı"
 
 #: templates/problem/submit.html:212
 msgid "You have 0 submissions left"
@@ -3817,6 +4036,11 @@ msgstr "Bu problem için herhangi bir judge mevcut değil."
 #: templates/problem/submit.html:252
 msgid "Submit!"
 msgstr "Gönder!"
+
+#: templates/registration/activate.html:3
+#, python-format
+msgid "%(key)s is an invalid activation key."
+msgstr "Geçersiz aktivasyon kodu: %(key)s."
 
 #: templates/registration/activation_complete.html:3
 msgid "Your account has been successfully activated."
@@ -3879,6 +4103,13 @@ msgstr ""
 "Eğer bir e-posta almadıysan, kaydolduğun e-posta adresini girdiğinden emin "
 "ol ve spam klasörünü kontrol et."
 
+#: templates/registration/password_reset_email.txt:1
+#, python-format
+msgid ""
+"You're receiving this email because you requested a password reset for your "
+"user account at %(site_name)s."
+msgstr "Bu e-posta %(site_name)s üyeliğinin şifre sıfırlaması için gönderildi."
+
 #: templates/registration/password_reset_email.txt:3
 msgid "Please go to the following page and choose a new password:"
 msgstr "Lütfen bu sayfaya git ve yeni bir şifre seç:"
@@ -3890,6 +4121,16 @@ msgstr "Unuttuysan diye, kullanıcı adın:"
 #: templates/registration/password_reset_email.txt:9
 msgid "Thanks for using our site!"
 msgstr "Sitemizi kullandığın için teşekkür ederiz!"
+
+#: templates/registration/password_reset_email.txt:11
+#, python-format
+msgid "The %(site_name)s team"
+msgstr "%(site_name)s takımı"
+
+#: templates/registration/password_reset_subject.txt:1
+#, python-format
+msgid "Password reset on %(site_name)s"
+msgstr "%(site_name)s şifre sıfırlaması"
 
 #: templates/registration/profile_creation.html:36
 #: templates/registration/username_select.html:7
@@ -3930,6 +4171,7 @@ msgid "Affiliated organizations"
 msgstr "Organizasyon üyelikleri"
 
 #: templates/registration/registration_form.html:192
+#: templates/user/edit-profile.html:128
 msgid "Notify me about upcoming contests"
 msgstr "Gelecek yarışmalar hakkında beni bilgilendir"
 
@@ -3951,6 +4193,11 @@ msgstr "Kaydol!"
 msgid "Enter the 6-digit code generated by your app:"
 msgstr ""
 
+#: templates/registration/totp_auth.html:41
+#, python-format
+msgid "If you lost your authentication device, please contact us at %(email)s."
+msgstr ""
+
 #: templates/registration/totp_disable.html:38
 msgid ""
 "To protect your account, you must first authenticate before you can disable "
@@ -3968,10 +4215,6 @@ msgstr ""
 #: templates/registration/totp_enable.html:73
 msgid "Or enter this code manually:"
 msgstr ""
-
-#: templates/stats/base.html:9 templates/submission/list.html:339
-msgid "Statistics"
-msgstr "İstatistikler"
 
 #: templates/stats/language.html:11
 msgid "Submission Statistics"
@@ -4020,6 +4263,14 @@ msgstr ""
 msgid "Runtime Info"
 msgstr "Dil sürümü bilgileri"
 
+#: templates/status/status-tabs.html:4
+msgid "Judges"
+msgstr "Judge'lar"
+
+#: templates/status/status-tabs.html:6
+msgid "Version Matrix"
+msgstr "Sürüm Matrisi"
+
 #: templates/submission/internal-error-message.html:8
 msgid "An internal error occurred while grading."
 msgstr "Değerlendirme sırasında bir hata oluştu."
@@ -4047,6 +4298,12 @@ msgstr ""
 #: templates/submission/list.html:355
 msgid "You were disconnected. Refresh to show latest updates."
 msgstr "Bağlantın koptu. Son güncellemeleri görmek için sayfayı yenile."
+
+#: templates/submission/row.html:39
+#, fuzzy, python-format
+#| msgid "%(points)s / %(total)s"
+msgid "Point %(point)s / Case #%(case)s"
+msgstr "%(points)s/%(total)s"
 
 #: templates/submission/row.html:49
 msgid "view"
@@ -4178,6 +4435,19 @@ msgstr "Kaynağı görüntüle"
 msgid "Abort"
 msgstr "İptal et"
 
+#: templates/submission/submission-list-tabs.html:6
+msgid "Mine"
+msgstr "Çözümlerim"
+
+#: templates/submission/submission-list-tabs.html:9
+msgid "Best"
+msgstr "En iyi"
+
+#: templates/submission/submission-list-tabs.html:12
+#, python-format
+msgid "%(user)s's"
+msgstr "%(user)s"
+
 #: templates/ticket/list.html:135 templates/ticket/ticket.html:257
 msgid "Reopened: "
 msgstr "Yeniden açıldı:"
@@ -4252,6 +4522,10 @@ msgstr "Burada hiçbir şey yok :("
 msgid "Post"
 msgstr "Gönderi"
 
+#: templates/user/base-users-table.html:3
+msgid "Rank"
+msgstr "Sıralama"
+
 #: templates/user/base-users.html:14 templates/user/base-users.html:69
 msgid "Search by handle..."
 msgstr "Kullanıcı adı ile ara..."
@@ -4296,21 +4570,57 @@ msgstr "Userscript"
 msgid "Update profile"
 msgstr "Profilini güncelle"
 
-#: templates/user/user-about.html:14
+#: templates/user/pp-row.html:22
+#, python-format
+msgid ""
+"\n"
+"            weighted <b>%(weight)s%%</b>\n"
+"        "
+msgstr ""
+"\n"
+"ağırlık <b>%(weight)s%%</b>"
+
+#: templates/user/pp-row.html:27
+#, python-format
+msgid "%(pp).1fpp"
+msgstr "%(pp).1fpp"
+
+#: templates/user/pp-row.html:29
+#, python-format
+msgid "%(pp).0fpp"
+msgstr "%(pp).0fpp"
+
+#: templates/user/user-about.html:18
+msgid "Unfollow"
+msgstr ""
+
+#: templates/user/user-about.html:21
+msgid "Follow"
+msgstr ""
+
+#: templates/user/user-about.html:28
 msgid "From"
 msgstr "Organizasyonlar"
 
-#: templates/user/user-about.html:25
+#: templates/user/user-about.html:39
 msgid "Admin Notes"
 msgstr ""
 
-#: templates/user/user-about.html:40
+#: templates/user/user-about.html:54
 msgid "You have not shared any information."
 msgstr "Henüz hiçbir bilgi paylaşmadın."
 
-#: templates/user/user-about.html:42
+#: templates/user/user-about.html:56
 msgid "This user has not shared any information."
 msgstr "Bu kullanıcı henüz hiçbir bilgi paylaşmadı."
+
+#: templates/user/user-base.html:42
+#, fuzzy, python-format
+#| msgid "contest problems"
+msgid "%(counter)s problem solved"
+msgid_plural "%(counter)s problems solved"
+msgstr[0] "yarışma problemleri"
+msgstr[1] "yarışma problemleri"
 
 #: templates/user/user-base.html:50
 msgid "Rank by points:"
@@ -4340,6 +4650,10 @@ msgstr "En düşük derece:"
 msgid "Max rating:"
 msgstr "En yüksek derece:"
 
+#: templates/user/user-list-tabs.html:5
+msgid "Friends"
+msgstr ""
+
 #: templates/user/user-problems.html:35
 msgid "Points Breakdown"
 msgstr "Puan Dağılımı"
@@ -4360,75 +4674,35 @@ msgstr "Yazılan Problemler"
 msgid "Hide problems I've solved"
 msgstr "Çözdüğüm soruları gizle"
 
+#: templates/user/user-problems.html:93
+#, python-format
+msgid "%(points).1f points"
+msgstr "%(points).1f puan"
+
 #: templates/user/user-problems.html:99
 msgid "Score"
 msgstr "Puan"
 
+#: templates/user/user-problems.html:110
+#, python-format
+msgid "%(points)s / %(total)s"
+msgstr "%(points)s/%(total)s"
+
+#: templates/user/user-tabs.html:7
+msgid "Impersonate"
+msgstr "Yerine geç"
+
+#: templates/user/user-tabs.html:13
+msgid "Admin User"
+msgstr "Yönetici kullanıcı"
+
+#: templates/user/user-tabs.html:16
+msgid "Admin Profile"
+msgstr "Yönetici Profili"
+
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Tümünü seç"
-
-#~ msgid "Hello, <b>%(username)s</b>."
-#~ msgstr "Merhaba, <b>%(username)s</b>."
-
-#~ msgid ""
-#~ "\n"
-#~ "                    posted on %(time)s\n"
-#~ "                "
-#~ msgstr ""
-#~ "\n"
-#~ "%(time)s"
-
-#~ msgid ""
-#~ "\n"
-#~ "                                    on %(time)s\n"
-#~ "                                "
-#~ msgstr ""
-#~ "\n"
-#~ "%(time)s"
-
-#~ msgid "posted on {time}"
-#~ msgstr "{time}"
-
-#~ msgid "commented on {time}"
-#~ msgstr "{time} "
-
-#~ msgid "edit %(edits)s"
-#~ msgstr "düzenleme %(edits)s"
-
-#~ msgid "List"
-#~ msgstr "Liste"
-
-#~ msgid "Calendar"
-#~ msgstr "Takvim"
-
-#~ msgid "Info"
-#~ msgstr "Hakkında"
-
-#~ msgid "Rankings"
-#~ msgstr "Sıralamalar"
-
-#~ msgid "Hidden Rankings"
-#~ msgstr "Gizli Sıralamalar"
-
-#~ msgid "Stop spectating"
-#~ msgstr "İzlemeyi bırak"
-
-#~ msgid "Participating virtually."
-#~ msgstr "Sanal olarak katılınıyor. "
-
-#~ msgid "Contest is over."
-#~ msgstr "Yarışma sona erdi"
-
-#~ msgid ""
-#~ "<b>%(time_limit)s</b> window between <b>%(start_time)s</b> and <b>"
-#~ "%(end_time)s</b>"
-#~ msgstr ""
-#~ " <b>%(start_time)s</b> ile <b>%(end_time)s</b> arasında, süre sınırı <b>"
-#~ "%(time_limit)s</b>"
-
-#~ msgid "<b>%(length)s</b> long starting on <b>%(start_time)s</b>"
-#~ msgstr "başlangıç <b>%(start_time)s</b>, yarışma süresi <b>%(length)s</b>"
 
 #~ msgid "Started on {time}"
 #~ msgstr "Başlangıç: {time}"
@@ -4448,67 +4722,6 @@ msgstr "Tümünü seç"
 #~ msgid "Generator args"
 #~ msgstr "Generator değişkenleri"
 
-#~ msgid "%(counter)s submission left"
-#~ msgid_plural "%(counter)s submissions left"
-#~ msgstr[0] "%(counter)s gönderi kaldı"
-#~ msgstr[1] "%(counter)s gönderi kaldı"
-
-#~ msgid "Author:"
-#~ msgid_plural "Authors:"
-#~ msgstr[0] "Yazar"
-#~ msgstr[1] "Yazarlar"
-
-#~ msgid "Problem type"
-#~ msgid_plural "Problem types"
-#~ msgstr[0] "Soru tipi"
-#~ msgstr[1] "Soru tipleri"
-
-#~ msgid "No %(lang)s judge online"
-#~ msgstr "%(lang)s için çevrimiçi judge yok"
-
-#~ msgid ""
-#~ "<b>Warning!</b> Your default language, <b>%(default_language)s</b>, is "
-#~ "unavailable for this problem and has been deselected."
-#~ msgstr ""
-#~ "<b>Uyarı</b> Varsayılan dilin, <b>%(default_language)s</b>, bu soru için "
-#~ "kullanılamıyor."
-
-#~ msgid ""
-#~ "\n"
-#~ "                        You have %(left)s submission left\n"
-#~ "                        "
-#~ msgid_plural ""
-#~ "\n"
-#~ "                        You have %(left)s submissions left\n"
-#~ "                    "
-#~ msgstr[0] ""
-#~ "\n"
-#~ "Geriye %(left)s çözümün kaldı"
-#~ msgstr[1] ""
-#~ "\n"
-#~ "Geriye %(left)s çözümün kaldı"
-
-#~ msgid "%(key)s is an invalid activation key."
-#~ msgstr "Geçersiz aktivasyon kodu: %(key)s."
-
-#~ msgid ""
-#~ "You're receiving this email because you requested a password reset for "
-#~ "your user account at %(site_name)s."
-#~ msgstr ""
-#~ "Bu e-posta %(site_name)s üyeliğinin şifre sıfırlaması için gönderildi."
-
-#~ msgid "The %(site_name)s team"
-#~ msgstr "%(site_name)s takımı"
-
-#~ msgid "Password reset on %(site_name)s"
-#~ msgstr "%(site_name)s şifre sıfırlaması"
-
-#~ msgid "Judges"
-#~ msgstr "Judge'lar"
-
-#~ msgid "Version Matrix"
-#~ msgstr "Sürüm Matrisi"
-
 #~ msgid "Case #%(case)s"
 #~ msgstr "Test #%(case)s"
 
@@ -4520,44 +4733,3 @@ msgstr "Tümünü seç"
 
 #~ msgid "Final score:"
 #~ msgstr "Puan:"
-
-#~ msgid "Mine"
-#~ msgstr "Çözümlerim"
-
-#~ msgid "Best"
-#~ msgstr "En iyi"
-
-#~ msgid "%(user)s's"
-#~ msgstr "%(user)s"
-
-#~ msgid "Rank"
-#~ msgstr "Sıralama"
-
-#~ msgid ""
-#~ "\n"
-#~ "            weighted <b>%(weight)s%%</b>\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "ağırlık <b>%(weight)s%%</b>"
-
-#~ msgid "%(pp).1fpp"
-#~ msgstr "%(pp).1fpp"
-
-#~ msgid "%(pp).0fpp"
-#~ msgstr "%(pp).0fpp"
-
-#~ msgid "%(points).1f points"
-#~ msgstr "%(points).1f puan"
-
-#~ msgid "%(points)s / %(total)s"
-#~ msgstr "%(points)s/%(total)s"
-
-#~ msgid "Impersonate"
-#~ msgstr "Yerine geç"
-
-#~ msgid "Admin User"
-#~ msgstr "Yönetici kullanıcı"
-
-#~ msgid "Admin Profile"
-#~ msgstr "Yönetici Profili"

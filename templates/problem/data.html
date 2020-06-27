@@ -229,14 +229,33 @@
                 return false;
             });
 
+            function isInpFile(x) {
+                let tail = ['.in', '.inp', '.IN', '.INP']
+                for (let i of tail) {
+                    if (x.endsWith(i)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            function isOutFile(x) {
+                let tail = ['.out', '.OUT', '.ans', '.ANS']
+                for (let i of tail) {
+                    if (x.endsWith(i)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
             $('a#fill-testcases').click(function () {
                 var inFiles = [], outFiles = [];
-                for (var i = 0; i < window.valid_files.length; i++) {
-                    if (window.valid_files[i].endsWith(".in") || window.valid_files[i].endsWith(".inp") || window.valid_files[i].endsWith(".IN") || window.valid_files[i].endsWith(".INP")) {
-                        inFiles.push(window.valid_files[i]);
+                for (let file of window.valid_files) {
+                    if (isInpFile(file)) {
+                        inFiles.push(file);
                     }
-                    if (window.valid_files[i].endsWith(".out") || window.valid_files[i].endsWith(".ans") || window.valid_files[i].endsWith(".OUT") || window.valid_files[i].endsWith(".ANS")) {
-                        outFiles.push(window.valid_files[i]);
+                    if (isOutFile(file)) {
+                        outFiles.push(file);
                     }
                 }
                 if (inFiles.length == 0) {
@@ -247,6 +266,10 @@
                     alert("The input files do not match the output files!");
                     return false;
                 }
+                
+                inFiles.sort();
+                outFiles.sort();
+
                 // add boxes
                 while ($total.val() < inFiles.length) {
                     $('a#add-case-row').click();

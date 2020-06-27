@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dmoj\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-04-10 01:26-0500\n"
+"POT-Creation-Date: 2020-06-25 08:39+0700\n"
 "PO-Revision-Date: 2019-11-11 22:05\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Chinese Simplified\n"
@@ -18,7 +18,7 @@ msgstr ""
 
 #: chat_box/models.py:15 judge/admin/interface.py:107
 #: judge/models/contest.py:257 judge/models/contest.py:381
-#: judge/models/profile.py:191
+#: judge/models/profile.py:201
 msgid "user"
 msgstr "用户"
 
@@ -30,7 +30,7 @@ msgstr "发布时间"
 msgid "body of comment"
 msgstr "评论正文"
 
-#: chat_box/views.py:29
+#: chat_box/views.py:41
 msgid "Chat Box"
 msgstr ""
 
@@ -102,7 +102,7 @@ msgstr ""
 msgid "Login"
 msgstr "登录"
 
-#: dmoj/urls.py:105 templates/base.html:190
+#: dmoj/urls.py:105 templates/base.html:192
 msgid "Home"
 msgstr "首页"
 
@@ -136,7 +136,7 @@ msgstr "带标签的竞赛"
 
 #: judge/admin/contest.py:64 templates/contest/contest.html:83
 #: templates/contest/moss.html:43 templates/problem/list.html:206
-#: templates/problem/list.html:221 templates/user/user-problems.html:56
+#: templates/problem/list.html:224 templates/user/user-problems.html:56
 #: templates/user/user-problems.html:98
 msgid "Problem"
 msgstr "题目"
@@ -157,7 +157,7 @@ msgstr "详细信息"
 msgid "Format"
 msgstr ""
 
-#: judge/admin/contest.py:117 templates/contest/ranking-table.html:5
+#: judge/admin/contest.py:117 templates/contest/ranking-table.html:7
 msgid "Rating"
 msgstr "评分"
 
@@ -247,8 +247,8 @@ msgid "Taxonomy"
 msgstr "分类"
 
 #: judge/admin/problem.py:128 templates/contest/contest.html:84
-#: templates/problem/data.html:449 templates/problem/list.html:211
-#: templates/problem/list.html:232 templates/user/base-users-table.html:10
+#: templates/problem/data.html:449 templates/problem/list.html:214
+#: templates/problem/list.html:240 templates/user/base-users-table.html:10
 #: templates/user/user-problems.html:58
 msgid "Points"
 msgstr "分数"
@@ -390,7 +390,8 @@ msgstr[0] "%d个程序提交的分数已被重新计算。"
 msgid "Rescore the selected submissions"
 msgstr "重新计算选定程序的分数"
 
-#: judge/admin/submission.py:200
+#: judge/admin/submission.py:200 templates/problem/list.html:208
+#: templates/problem/list.html:228
 msgid "Problem code"
 msgstr "题目代码"
 
@@ -858,7 +859,7 @@ msgid "Create private contests"
 msgstr ""
 
 #: judge/models/contest.py:248 judge/models/contest.py:345
-#: judge/models/contest.py:382 judge/models/contest.py:404
+#: judge/models/contest.py:382 judge/models/contest.py:405
 #: judge/models/submission.py:83
 msgid "contest"
 msgstr "竞赛"
@@ -925,7 +926,7 @@ msgid "contest participations"
 msgstr "竞赛参与信息"
 
 #: judge/models/contest.py:344 judge/models/contest.py:366
-#: judge/models/contest.py:405 judge/models/problem.py:352
+#: judge/models/contest.py:406 judge/models/problem.py:352
 #: judge/models/problem.py:357 judge/models/problem.py:375
 #: judge/models/problem_data.py:38
 msgid "problem"
@@ -1018,11 +1019,11 @@ msgstr "竞赛评分信息"
 msgid "contest ratings"
 msgstr "竞赛评分历史"
 
-#: judge/models/contest.py:412
+#: judge/models/contest.py:413
 msgid "contest moss result"
 msgstr ""
 
-#: judge/models/contest.py:413
+#: judge/models/contest.py:414
 msgid "contest moss results"
 msgstr ""
 
@@ -1593,7 +1594,7 @@ msgid ""
 msgstr ""
 
 #: judge/models/profile.py:76 judge/models/profile.py:93
-#: judge/models/profile.py:192
+#: judge/models/profile.py:202
 msgid "organization"
 msgstr "组织"
 
@@ -1689,31 +1690,31 @@ msgstr ""
 msgid "Notes for administrators regarding this user."
 msgstr ""
 
-#: judge/models/profile.py:186
+#: judge/models/profile.py:196
 msgid "user profile"
 msgstr "用户信息"
 
-#: judge/models/profile.py:187
+#: judge/models/profile.py:197
 msgid "user profiles"
 msgstr "用户信息"
 
-#: judge/models/profile.py:194
+#: judge/models/profile.py:204
 msgid "request time"
 msgstr "请求时间"
 
-#: judge/models/profile.py:195
+#: judge/models/profile.py:205
 msgid "state"
 msgstr "状态"
 
-#: judge/models/profile.py:200
+#: judge/models/profile.py:210
 msgid "reason"
 msgstr "原因"
 
-#: judge/models/profile.py:203
+#: judge/models/profile.py:213
 msgid "organization join request"
 msgstr "组织加入请求"
 
-#: judge/models/profile.py:204
+#: judge/models/profile.py:214
 msgid "organization join requests"
 msgstr "组织加入请求"
 
@@ -2222,7 +2223,8 @@ msgctxt "hours and minutes"
 msgid "%h:%m"
 msgstr "%h:%m"
 
-#: judge/views/about.py:7 templates/user/user-about.html:33
+#: judge/views/about.py:7 templates/user/user-about.html:47
+#: templates/user/user-tabs.html:4
 msgid "About"
 msgstr "自我介绍"
 
@@ -2362,7 +2364,7 @@ msgstr "%s在%s中的参与历史"
 msgid "Live"
 msgstr "实时"
 
-#: judge/views/contests.py:697
+#: judge/views/contests.py:697 templates/contest/contest-tabs.html:16
 msgid "Participation"
 msgstr "参与历史"
 
@@ -2401,6 +2403,7 @@ msgid "corrupt page %s"
 msgstr "页面错误 %s"
 
 #: judge/views/language.py:12 templates/status/judge-status-table.html:9
+#: templates/status/status-tabs.html:5
 msgid "Runtimes"
 msgstr "语言"
 
@@ -2418,7 +2421,7 @@ msgid "Could not find such organization."
 msgstr "找不到该组织。"
 
 #: judge/views/organization.py:72 judge/views/register.py:34
-#: templates/organization/list.html:15
+#: templates/organization/list.html:15 templates/user/user-list-tabs.html:6
 msgid "Organizations"
 msgstr "组织"
 
@@ -2532,34 +2535,34 @@ msgid "Editorial for <a href=\"{1}\">{0}</a>"
 msgstr "<a href=\"{1}\">{0}</a>的题解"
 
 #: judge/views/problem.py:286 templates/contest/contest.html:79
-#: templates/user/users-table.html:23
+#: templates/user/user-tabs.html:5 templates/user/users-table.html:23
 msgid "Problems"
 msgstr "题目"
 
-#: judge/views/problem.py:547
+#: judge/views/problem.py:556
 msgid "Banned from submitting"
 msgstr "禁止提交"
 
-#: judge/views/problem.py:548
+#: judge/views/problem.py:557
 msgid ""
 "You have been declared persona non grata for this problem. You are "
 "permanently barred from submitting this problem."
 msgstr "您在该题目不受欢迎。您被永久禁止为该题目提交解决程序。"
 
-#: judge/views/problem.py:562
+#: judge/views/problem.py:571
 msgid "Too many submissions"
 msgstr "提交太多了"
 
-#: judge/views/problem.py:563
+#: judge/views/problem.py:572
 msgid "You have exceeded the submission limit for this problem."
 msgstr "您已超出此问题的提交限制。"
 
-#: judge/views/problem.py:633 judge/views/problem.py:636
+#: judge/views/problem.py:642 judge/views/problem.py:645
 #, python-format
 msgid "Submit to %(problem)s"
 msgstr "提交于 %(problem)s"
 
-#: judge/views/problem.py:652
+#: judge/views/problem.py:661
 msgid "Clone Problem"
 msgstr ""
 
@@ -2702,44 +2705,44 @@ msgstr "版本矩阵"
 msgid "Submission of %(problem)s by %(user)s"
 msgstr "%(user)s 在 %(problem)s 的提交结果"
 
-#: judge/views/submission.py:227 judge/views/submission.py:228
+#: judge/views/submission.py:233 judge/views/submission.py:234
 #: templates/problem/problem.html:127
 msgid "All submissions"
 msgstr "所有提交历史"
 
-#: judge/views/submission.py:384
+#: judge/views/submission.py:390
 msgid "All my submissions"
 msgstr "我提交的程序"
 
-#: judge/views/submission.py:385
+#: judge/views/submission.py:391
 #, python-format
 msgid "All submissions by %s"
 msgstr "%s 的提交历史"
 
-#: judge/views/submission.py:416
+#: judge/views/submission.py:422
 #, python-format
 msgid "All submissions for %s"
 msgstr "%s 的提交历史"
 
-#: judge/views/submission.py:435
+#: judge/views/submission.py:441
 msgid "Must pass a problem"
 msgstr "必须给予题目"
 
-#: judge/views/submission.py:481
+#: judge/views/submission.py:487
 #, python-format
 msgid "My submissions for %(problem)s"
 msgstr "我对 %(problem)s 提交的程序"
 
-#: judge/views/submission.py:482
+#: judge/views/submission.py:488
 #, python-format
 msgid "%(user)s's submissions for %(problem)s"
 msgstr "%(user)s 在 %(problem)s 的提交历史"
 
-#: judge/views/submission.py:583
+#: judge/views/submission.py:589
 msgid "Must pass a contest"
 msgstr "必须给予竞赛"
 
-#: judge/views/submission.py:602
+#: judge/views/submission.py:608
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a href="
@@ -2748,7 +2751,7 @@ msgstr ""
 "<a href=\"{5}\">{4}</a> 中 <a href=\"{1}\">{0}</a> 在 <a href=\"{3}\">{2}</"
 "a> 的提交历史"
 
-#: judge/views/submission.py:609
+#: judge/views/submission.py:615
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for problem {2} in <a href=\"{4}\">{3}"
@@ -2832,20 +2835,21 @@ msgstr "我的帐户"
 msgid "User %s"
 msgstr "用户 %s"
 
-#: judge/views/user.py:136
+#: judge/views/user.py:138
 msgid "M j, Y, G:i"
 msgstr "Y年n月j日 G:i"
 
-#: judge/views/user.py:221
+#: judge/views/user.py:236
 msgid "Updated on site"
 msgstr "在网站上更新"
 
-#: judge/views/user.py:254 templates/admin/auth/user/change_form.html:14
+#: judge/views/user.py:269 templates/admin/auth/user/change_form.html:14
 #: templates/admin/auth/user/change_form.html:17 templates/base.html:224
+#: templates/user/user-tabs.html:10
 msgid "Edit profile"
 msgstr "编辑个人资料"
 
-#: judge/views/user.py:263
+#: judge/views/user.py:278 templates/user/user-list-tabs.html:4
 msgid "Leaderboard"
 msgstr "排行榜"
 
@@ -2901,9 +2905,17 @@ msgstr "编辑用户"
 msgid "Rejudge"
 msgstr "重新评分"
 
+#: templates/base.html:216
+#, python-format
+msgid "Hello, <b>%(username)s</b>."
+msgstr "你好，<b>%(username)s</b>。"
+
 #: templates/base.html:222 templates/comments/list.html:89
-#: templates/contest/ranking-table.html:39
+#: templates/contest/contest-list-tabs.html:24
+#: templates/contest/ranking-table.html:41
+#: templates/problem/problem-list-tabs.html:6
 #: templates/submission/info-base.html:12
+#: templates/submission/submission-list-tabs.html:15
 msgid "Admin"
 msgstr "管理"
 
@@ -2933,59 +2945,109 @@ msgid "This site works best with JavaScript enabled."
 msgstr "本网站启用 JavaScript 效果最好。"
 
 #: templates/blog/content.html:13 templates/comments/list.html:68
-#: templates/comments/list.html:83 templates/contest/tag-title.html:9
-#: templates/flatpages/admin_link.html:3 templates/license.html:10
-#: templates/problem/editorial.html:14
+#: templates/comments/list.html:83 templates/contest/contest-tabs.html:23
+#: templates/contest/tag-title.html:9 templates/flatpages/admin_link.html:3
+#: templates/license.html:10 templates/problem/editorial.html:14
 msgid "Edit"
 msgstr "编辑"
 
-#: templates/blog/list.html:85
+#: templates/blog/content.html:27
+#, python-format
+msgid ""
+"\n"
+"                    posted on %(time)s\n"
+"                "
+msgstr ""
+"\n"
+" 于 %(time)s 张贴 \n"
+"                "
+
+#: templates/blog/dashboard.html:21
+#, python-format
+msgid ""
+"\n"
+"                                    on %(time)s\n"
+"                                "
+msgstr ""
+"\n"
+" 在 %(time)s\n"
+"                                "
+
+#: templates/blog/list.html:97
 msgid "Blog"
 msgstr "更新"
 
-#: templates/blog/list.html:87
+#: templates/blog/list.html:99
 msgid "Events"
 msgstr "活动"
 
-#: templates/blog/list.html:92
+#: templates/blog/list.html:104
 msgid "News"
 msgstr "新闻"
 
-#: templates/blog/list.html:130 templates/problem/problem.html:310
+#: templates/blog/list.html:116
+#, python-brace-format
+msgid "posted on {time}"
+msgstr "贴在 {time}"
+
+#: templates/blog/list.html:145 templates/problem/problem.html:310
 msgid "Clarifications"
 msgstr "澄清"
 
-#: templates/blog/list.html:146 templates/problem/problem.html:321
+#: templates/blog/list.html:161 templates/problem/problem.html:321
 msgid "No clarifications have been made at this time."
 msgstr "目前还没有作出任何澄清。"
 
-#: templates/blog/list.html:154
+#: templates/blog/list.html:169
 msgid "Ongoing contests"
 msgstr "进行中的竞赛"
 
-#: templates/blog/list.html:172
+#: templates/blog/list.html:187
 msgid "Upcoming contests"
 msgstr "未来的竞赛"
 
-#: templates/blog/list.html:189
+#: templates/blog/list.html:204
 msgid "Comment stream"
 msgstr "评论流"
 
-#: templates/blog/list.html:208
+#: templates/blog/list.html:223
 msgid "New problems"
 msgstr "新题目"
 
-#: templates/blog/list.html:225
+#: templates/blog/list.html:240
 msgid "My open tickets"
 msgstr "我的活动工单"
 
-#: templates/blog/list.html:246
+#: templates/blog/list.html:261
 msgid "New tickets"
 msgstr "新工单"
 
-#: templates/chat/chat.html:167
-msgid "Your message"
+#: templates/chat/chat.html:226
+msgid "Chat"
 msgstr ""
+
+#: templates/chat/chat.html:228 templates/chat/chat.html:244
+#, fuzzy
+#| msgid "Online Judge"
+msgid "Online Users"
+msgstr "在线评测系统"
+
+#: templates/chat/chat.html:239
+msgid "Enter your message"
+msgstr ""
+
+#: templates/chat/chat.html:248
+#, fuzzy
+#| msgid "Admin"
+msgid "Admins"
+msgstr "管理"
+
+#: templates/chat/chat.html:262 templates/contest/contest.html:86
+#: templates/contest/list.html:153 templates/contest/list.html:195
+#: templates/contest/list.html:271 templates/problem/list.html:215
+#: templates/problem/list.html:246
+msgid "Users"
+msgstr "用户"
 
 #: templates/comments/list.html:2
 msgid "Comments"
@@ -2994,6 +3056,16 @@ msgstr "评论"
 #: templates/comments/list.html:18 templates/comments/list.html:27
 msgid "Please login to vote"
 msgstr "登录后才可投票"
+
+#: templates/comments/list.html:40
+#, python-brace-format
+msgid "commented on {time}"
+msgstr "于 {time} 时评论"
+
+#: templates/comments/list.html:49
+#, python-format
+msgid "edit %(edits)s"
+msgstr "编辑 %(edits)s"
 
 #: templates/comments/list.html:51 templates/comments/media-js.html:77
 msgid "edited"
@@ -3010,6 +3082,17 @@ msgstr "回复"
 #: templates/comments/list.html:86
 msgid "Hide"
 msgstr "隐藏"
+
+#: templates/comments/list.html:101
+#, python-format
+msgid ""
+"\n"
+"                                                This comment is hidden due "
+"to too much negative feedback.\n"
+"                                                Click <a href=\"javascript:"
+"comment_show_content(%(id)s)\">here</a> to view it.\n"
+"                                            "
+msgstr ""
 
 #: templates/comments/list.html:120
 msgid "There are no comments at the moment."
@@ -3100,13 +3183,52 @@ msgstr ""
 msgid "Next"
 msgstr "下个月"
 
+#: templates/contest/contest-list-tabs.html:21
+#: templates/problem/problem-list-tabs.html:5
+msgid "List"
+msgstr "清单"
+
+#: templates/contest/contest-list-tabs.html:22
+msgid "Calendar"
+msgstr "日历"
+
+#: templates/contest/contest-tabs.html:4
+msgid "Info"
+msgstr "资料和信息"
+
+#: templates/contest/contest-tabs.html:6 templates/stats/base.html:9
+#: templates/submission/list.html:339
+msgid "Statistics"
+msgstr "统计数据"
+
+#: templates/contest/contest-tabs.html:11
+msgid "Rankings"
+msgstr "排行榜"
+
+#: templates/contest/contest-tabs.html:13
+msgid "Hidden Rankings"
+msgstr "隐藏的排名"
+
+#: templates/contest/contest-tabs.html:21
+msgid "MOSS"
+msgstr ""
+
+#: templates/contest/contest-tabs.html:26
+msgid "Clone"
+msgstr ""
+
 #: templates/contest/contest-tabs.html:37
+#: templates/contest/contest-tabs.html:57
 msgid "Leave contest"
 msgstr "离开竞赛"
 
 #: templates/contest/contest-tabs.html:44 templates/contest/list.html:293
 msgid "Virtual join"
 msgstr "参加虚拟竞赛"
+
+#: templates/contest/contest-tabs.html:55
+msgid "Stop spectating"
+msgstr "停止旁观"
 
 #: templates/contest/contest-tabs.html:64
 msgid "Spectate contest"
@@ -3121,21 +3243,36 @@ msgstr "参加竞赛"
 msgid "Login to participate"
 msgstr "登录即可进入"
 
+#: templates/contest/contest.html:37
+msgid "Participating virtually."
+msgstr "虚拟参与中。"
+
+#: templates/contest/contest.html:43
+msgid "Contest is over."
+msgstr "竞赛已结束。"
+
 #: templates/contest/contest.html:59 templates/contest/contest.html:63
 msgid "F j, Y, G:i T"
 msgstr "Y年n月j日 G:i T"
+
+#: templates/contest/contest.html:59
+#, python-format
+msgid ""
+"<b>%(time_limit)s</b> window between <b>%(start_time)s</b> and <b>"
+"%(end_time)s</b>"
+msgstr ""
+"<b>%(start_time)s</b>到<b>%(end_time)s</b>中的<b>%(time_limit)s</b>小时窗口"
+
+#: templates/contest/contest.html:63
+#, python-format
+msgid "<b>%(length)s</b> long starting on <b>%(start_time)s</b>"
+msgstr "从 <b>%(start_time)s</b> 开始的 <b>%(length)s</b> 时间段"
 
 #: templates/contest/contest.html:85
 msgid "AC Rate"
 msgstr "AC率"
 
-#: templates/contest/contest.html:86 templates/contest/list.html:153
-#: templates/contest/list.html:195 templates/contest/list.html:271
-#: templates/problem/list.html:212 templates/problem/list.html:238
-msgid "Users"
-msgstr "用户"
-
-#: templates/contest/contest.html:111
+#: templates/contest/contest.html:111 templates/problem/list.html:322
 msgid "Editorial"
 msgstr "编辑"
 
@@ -3241,37 +3378,43 @@ msgstr ""
 msgid "Only the following organizations may access this contest:"
 msgstr "只有下列组织可能访问此竞赛："
 
-#: templates/contest/ranking-table.html:7
+#: templates/contest/ranking-table.html:9
 msgid "Organization"
 msgstr "组织"
 
-#: templates/contest/ranking-table.html:30
+#: templates/contest/ranking-table.html:32
 msgid "Un-Disqualify"
 msgstr ""
 
-#: templates/contest/ranking-table.html:33
+#: templates/contest/ranking-table.html:35
 msgid "Disqualify"
 msgstr ""
 
-#: templates/contest/ranking.html:173
+#: templates/contest/ranking.html:177
 #, fuzzy
 #| msgid "Are you sure you want to join?"
 msgid "Are you sure you want to disqualify this participation?"
 msgstr "你确定你想要加入吗?"
 
-#: templates/contest/ranking.html:178
+#: templates/contest/ranking.html:182
 #, fuzzy
 #| msgid "Are you sure you want to join?"
 msgid "Are you sure you want to un-disqualify this participation?"
 msgstr "你确定你想要加入吗?"
 
-#: templates/contest/ranking.html:252
+#: templates/contest/ranking.html:316
 msgid "View user participation"
 msgstr "查看用户参与历史"
 
-#: templates/contest/ranking.html:256
+#: templates/contest/ranking.html:320
 msgid "Show organizations"
 msgstr "显示机构"
+
+#: templates/contest/ranking.html:324
+#, fuzzy
+#| msgid "Show my tickets only"
+msgid "Show friends only"
+msgstr "只显示我的工单"
 
 #: templates/contest/stats.html:38
 #, fuzzy
@@ -3548,16 +3691,16 @@ msgstr "根据类型过滤"
 msgid "Hot problems"
 msgstr "热门问题"
 
-#: templates/problem/list.html:207 templates/problem/list.html:224
-#: templates/problem/search-form.html:30 templates/user/user-problems.html:57
+#: templates/problem/list.html:210 templates/problem/list.html:232
+#: templates/problem/search-form.html:35 templates/user/user-problems.html:57
 msgid "Category"
 msgstr "分类"
 
-#: templates/problem/list.html:209 templates/problem/list.html:228
+#: templates/problem/list.html:212 templates/problem/list.html:236
 msgid "Types"
 msgstr "类型"
 
-#: templates/problem/list.html:235
+#: templates/problem/list.html:243
 #, python-format
 msgid "AC %%"
 msgstr "AC%%"
@@ -3626,6 +3769,18 @@ msgstr ""
 msgid "Rescore Everything"
 msgstr ""
 
+#: templates/problem/manage_submission.html:158
+#, fuzzy, python-format
+#| msgid "Rescore the selected submissions"
+msgid "This will rescore %(count)d submissions."
+msgstr "重新计算选定程序的分数"
+
+#: templates/problem/manage_submission.html:162
+#, fuzzy, python-format
+#| msgid "Are you sure you want to join?"
+msgid "Are you sure you want to rescore %(count)d submissions?"
+msgstr "你确定你想要加入吗?"
+
 #: templates/problem/manage_submission.html:163
 msgid "Rescore all submissions"
 msgstr ""
@@ -3638,6 +3793,12 @@ msgstr "PDF 视图"
 #: templates/problem/problem.html:116
 msgid "Submit solution"
 msgstr "提交程序"
+
+#: templates/problem/problem.html:104
+#, python-format
+msgid "%(counter)s submission left"
+msgid_plural "%(counter)s submissions left"
+msgstr[0] "还剩%(counter)s 提交数"
 
 #: templates/problem/problem.html:112
 msgid "0 submissions left"
@@ -3695,9 +3856,31 @@ msgstr "时间限制："
 msgid "Memory limit:"
 msgstr "内存限制："
 
+#: templates/problem/problem.html:210
+msgid "Author:"
+msgid_plural "Authors:"
+msgstr[0] "作者："
+
+#: templates/problem/problem.html:225
+msgid "Problem type"
+msgid_plural "Problem types"
+msgstr[0] "题目类型"
+
 #: templates/problem/problem.html:238
 msgid "Allowed languages"
 msgstr "允许的语言"
+
+#: templates/problem/problem.html:246
+#, python-format
+msgid "No %(lang)s judge online"
+msgstr "没有支持 %(lang)s 的裁判服务器。"
+
+#: templates/problem/problem.html:257
+#, fuzzy
+#| msgid "Judge"
+msgid "Judge:"
+msgid_plural "Judges:"
+msgstr[0] "评测"
 
 #: templates/problem/problem.html:274
 msgid "none available"
@@ -3739,26 +3922,57 @@ msgstr "隐藏已解决的题目"
 msgid "Show problem types"
 msgstr "显示题目类型"
 
-#: templates/problem/search-form.html:33 templates/problem/search-form.html:35
+#: templates/problem/search-form.html:32
+#, fuzzy
+#| msgid "Read editorial"
+msgid "Show editorial"
+msgstr "阅读题解"
+
+#: templates/problem/search-form.html:38 templates/problem/search-form.html:40
+#: templates/submission/submission-list-tabs.html:4
 msgid "All"
 msgstr "所有"
 
-#: templates/problem/search-form.html:46
+#: templates/problem/search-form.html:51
 msgid "Problem types"
 msgstr "题目类型"
 
-#: templates/problem/search-form.html:57
+#: templates/problem/search-form.html:62
 msgid "Point range"
 msgstr "分数范围"
 
-#: templates/problem/search-form.html:63 templates/submission/list.html:331
+#: templates/problem/search-form.html:68 templates/submission/list.html:331
 #: templates/ticket/list.html:248
 msgid "Go"
 msgstr "搜索"
 
-#: templates/problem/search-form.html:64
+#: templates/problem/search-form.html:69
 msgid "Random"
 msgstr "随机"
+
+#: templates/problem/submit.html:192
+#, python-format
+msgid ""
+"<b>Warning!</b> Your default language, <b>%(default_language)s</b>, is "
+"unavailable for this problem and has been deselected."
+msgstr ""
+"<b>警告!</b> 您的默认编程语言, <b>%(default_language)s</b>, 在此问题不可用，"
+"且已取消选择。"
+
+#: templates/problem/submit.html:203
+#, python-format
+msgid ""
+"\n"
+"                        You have %(left)s submission left\n"
+"                        "
+msgid_plural ""
+"\n"
+"                        You have %(left)s submissions left\n"
+"                    "
+msgstr[0] ""
+"\n"
+" 您还剩下 %(left)s 次提交机会 \n"
+"                    "
 
 #: templates/problem/submit.html:212
 msgid "You have 0 submissions left"
@@ -3771,6 +3985,11 @@ msgstr "此题目没有可用的裁判服务器。"
 #: templates/problem/submit.html:252
 msgid "Submit!"
 msgstr "提交！"
+
+#: templates/registration/activate.html:3
+#, python-format
+msgid "%(key)s is an invalid activation key."
+msgstr "%(key)s 是一个无效的激活密钥。"
 
 #: templates/registration/activation_complete.html:3
 msgid "Your account has been successfully activated."
@@ -3831,6 +4050,14 @@ msgstr ""
 "如果您没有收到电子邮件，请确保您打开的是您注册时所用的邮箱，并检查您的垃圾邮"
 "件文件夹。"
 
+#: templates/registration/password_reset_email.txt:1
+#, python-format
+msgid ""
+"You're receiving this email because you requested a password reset for your "
+"user account at %(site_name)s."
+msgstr ""
+"因为您要求您的用户帐户在 %(site_name)s 重置密码，所以您收到这封电子邮件。"
+
 #: templates/registration/password_reset_email.txt:3
 msgid "Please go to the following page and choose a new password:"
 msgstr "请转到以下页面以设置新密码："
@@ -3842,6 +4069,16 @@ msgstr "您的用户名："
 #: templates/registration/password_reset_email.txt:9
 msgid "Thanks for using our site!"
 msgstr "感谢您使用我们的网站！"
+
+#: templates/registration/password_reset_email.txt:11
+#, python-format
+msgid "The %(site_name)s team"
+msgstr "%(site_name)s 团队"
+
+#: templates/registration/password_reset_subject.txt:1
+#, python-format
+msgid "Password reset on %(site_name)s"
+msgstr "在 %(site_name)s 上重置密码"
 
 #: templates/registration/profile_creation.html:36
 #: templates/registration/username_select.html:7
@@ -3880,6 +4117,7 @@ msgid "Affiliated organizations"
 msgstr "关联的组织"
 
 #: templates/registration/registration_form.html:192
+#: templates/user/edit-profile.html:128
 msgid "Notify me about upcoming contests"
 msgstr "通过Email发送未来竞赛的通知"
 
@@ -3901,6 +4139,11 @@ msgstr "注册！"
 msgid "Enter the 6-digit code generated by your app:"
 msgstr ""
 
+#: templates/registration/totp_auth.html:41
+#, python-format
+msgid "If you lost your authentication device, please contact us at %(email)s."
+msgstr ""
+
 #: templates/registration/totp_disable.html:38
 msgid ""
 "To protect your account, you must first authenticate before you can disable "
@@ -3918,10 +4161,6 @@ msgstr ""
 #: templates/registration/totp_enable.html:73
 msgid "Or enter this code manually:"
 msgstr ""
-
-#: templates/stats/base.html:9 templates/submission/list.html:339
-msgid "Statistics"
-msgstr "统计数据"
 
 #: templates/stats/language.html:11
 msgid "Submission Statistics"
@@ -3970,6 +4209,14 @@ msgstr "ID"
 msgid "Runtime Info"
 msgstr "软件信息"
 
+#: templates/status/status-tabs.html:4
+msgid "Judges"
+msgstr "裁判服务器"
+
+#: templates/status/status-tabs.html:6
+msgid "Version Matrix"
+msgstr "版本矩阵"
+
 #: templates/submission/internal-error-message.html:8
 msgid "An internal error occurred while grading."
 msgstr "评分时裁判服务端发生了内部错误。"
@@ -3997,6 +4244,12 @@ msgstr ""
 #: templates/submission/list.html:355
 msgid "You were disconnected. Refresh to show latest updates."
 msgstr "您处于离线状态。刷新以显示最近的更新。"
+
+#: templates/submission/row.html:39
+#, fuzzy, python-format
+#| msgid "%(points)s / %(total)s"
+msgid "Point %(point)s / Case #%(case)s"
+msgstr "%(points)s / %(total)s"
 
 #: templates/submission/row.html:49
 msgid "view"
@@ -4130,6 +4383,19 @@ msgstr "查看源代码"
 msgid "Abort"
 msgstr "停止"
 
+#: templates/submission/submission-list-tabs.html:6
+msgid "Mine"
+msgstr "我的"
+
+#: templates/submission/submission-list-tabs.html:9
+msgid "Best"
+msgstr "最佳"
+
+#: templates/submission/submission-list-tabs.html:12
+#, python-format
+msgid "%(user)s's"
+msgstr "%(user)s 的"
+
 #: templates/ticket/list.html:135 templates/ticket/ticket.html:257
 msgid "Reopened: "
 msgstr "重新打开状态： "
@@ -4203,6 +4469,10 @@ msgstr "暂无内容！"
 msgid "Post"
 msgstr "帖子"
 
+#: templates/user/base-users-table.html:3
+msgid "Rank"
+msgstr "排名"
+
 #: templates/user/base-users.html:14 templates/user/base-users.html:69
 msgid "Search by handle..."
 msgstr "用户名搜索…"
@@ -4247,21 +4517,57 @@ msgstr "用户脚本"
 msgid "Update profile"
 msgstr "更新资料"
 
-#: templates/user/user-about.html:14
+#: templates/user/pp-row.html:22
+#, python-format
+msgid ""
+"\n"
+"            weighted <b>%(weight)s%%</b>\n"
+"        "
+msgstr ""
+"\n"
+"        比重 <b>%(weight)s%%</b>\n"
+"        "
+
+#: templates/user/pp-row.html:27
+#, python-format
+msgid "%(pp).1fpp"
+msgstr "%(pp).1fpp"
+
+#: templates/user/pp-row.html:29
+#, python-format
+msgid "%(pp).0fpp"
+msgstr "%(pp).0fpp"
+
+#: templates/user/user-about.html:18
+msgid "Unfollow"
+msgstr ""
+
+#: templates/user/user-about.html:21
+msgid "Follow"
+msgstr ""
+
+#: templates/user/user-about.html:28
 msgid "From"
 msgstr "组织"
 
-#: templates/user/user-about.html:25
+#: templates/user/user-about.html:39
 msgid "Admin Notes"
 msgstr ""
 
-#: templates/user/user-about.html:40
+#: templates/user/user-about.html:54
 msgid "You have not shared any information."
 msgstr "您还没有共享的任何信息。"
 
-#: templates/user/user-about.html:42
+#: templates/user/user-about.html:56
 msgid "This user has not shared any information."
 msgstr "此用户没有共享的任何信息。"
+
+#: templates/user/user-base.html:42
+#, fuzzy, python-format
+#| msgid "contest problems"
+msgid "%(counter)s problem solved"
+msgid_plural "%(counter)s problems solved"
+msgstr[0] "竞赛题目"
 
 #: templates/user/user-base.html:50
 msgid "Rank by points:"
@@ -4291,6 +4597,10 @@ msgstr "最低评分："
 msgid "Max rating:"
 msgstr "最高评分："
 
+#: templates/user/user-list-tabs.html:5
+msgid "Friends"
+msgstr ""
+
 #: templates/user/user-problems.html:35
 msgid "Points Breakdown"
 msgstr "分数细分"
@@ -4311,9 +4621,31 @@ msgstr "创作的题目"
 msgid "Hide problems I've solved"
 msgstr "隐藏我已经解决的题目"
 
+#: templates/user/user-problems.html:93
+#, python-format
+msgid "%(points).1f points"
+msgstr "%(points).1f 分"
+
 #: templates/user/user-problems.html:99
 msgid "Score"
 msgstr "得分"
+
+#: templates/user/user-problems.html:110
+#, python-format
+msgid "%(points)s / %(total)s"
+msgstr "%(points)s / %(total)s"
+
+#: templates/user/user-tabs.html:7
+msgid "Impersonate"
+msgstr "假冒用户"
+
+#: templates/user/user-tabs.html:13
+msgid "Admin User"
+msgstr "管理用户"
+
+#: templates/user/user-tabs.html:16
+msgid "Admin Profile"
+msgstr "管理资料"
 
 #: templates/widgets/select_all.html:8
 msgid "Check all"
@@ -4321,70 +4653,6 @@ msgstr "全选"
 
 #~ msgid "output prefix length override"
 #~ msgstr "输出前缀替换"
-
-#~ msgid "Hello, <b>%(username)s</b>."
-#~ msgstr "你好，<b>%(username)s</b>。"
-
-#~ msgid ""
-#~ "\n"
-#~ "                    posted on %(time)s\n"
-#~ "                "
-#~ msgstr ""
-#~ "\n"
-#~ " 于 %(time)s 张贴 \n"
-#~ "                "
-
-#~ msgid ""
-#~ "\n"
-#~ "                                    on %(time)s\n"
-#~ "                                "
-#~ msgstr ""
-#~ "\n"
-#~ " 在 %(time)s\n"
-#~ "                                "
-
-#~ msgid "posted on {time}"
-#~ msgstr "贴在 {time}"
-
-#~ msgid "commented on {time}"
-#~ msgstr "于 {time} 时评论"
-
-#~ msgid "edit %(edits)s"
-#~ msgstr "编辑 %(edits)s"
-
-#~ msgid "List"
-#~ msgstr "清单"
-
-#~ msgid "Calendar"
-#~ msgstr "日历"
-
-#~ msgid "Info"
-#~ msgstr "资料和信息"
-
-#~ msgid "Rankings"
-#~ msgstr "排行榜"
-
-#~ msgid "Hidden Rankings"
-#~ msgstr "隐藏的排名"
-
-#~ msgid "Stop spectating"
-#~ msgstr "停止旁观"
-
-#~ msgid "Participating virtually."
-#~ msgstr "虚拟参与中。"
-
-#~ msgid "Contest is over."
-#~ msgstr "竞赛已结束。"
-
-#~ msgid ""
-#~ "<b>%(time_limit)s</b> window between <b>%(start_time)s</b> and <b>"
-#~ "%(end_time)s</b>"
-#~ msgstr ""
-#~ "<b>%(start_time)s</b>到<b>%(end_time)s</b>中的<b>%(time_limit)s</b>小时窗"
-#~ "口"
-
-#~ msgid "<b>%(length)s</b> long starting on <b>%(start_time)s</b>"
-#~ msgstr "从 <b>%(start_time)s</b> 开始的 <b>%(length)s</b> 时间段"
 
 #~ msgid "Started on {time}"
 #~ msgstr "开始时间{time}"
@@ -4407,62 +4675,6 @@ msgstr "全选"
 #~ msgid "Generator args"
 #~ msgstr "生成器参数"
 
-#~ msgid "%(counter)s submission left"
-#~ msgid_plural "%(counter)s submissions left"
-#~ msgstr[0] "还剩%(counter)s 提交数"
-
-#~ msgid "Author:"
-#~ msgid_plural "Authors:"
-#~ msgstr[0] "作者："
-
-#~ msgid "Problem type"
-#~ msgid_plural "Problem types"
-#~ msgstr[0] "题目类型"
-
-#~ msgid "No %(lang)s judge online"
-#~ msgstr "没有支持 %(lang)s 的裁判服务器。"
-
-#~ msgid ""
-#~ "<b>Warning!</b> Your default language, <b>%(default_language)s</b>, is "
-#~ "unavailable for this problem and has been deselected."
-#~ msgstr ""
-#~ "<b>警告!</b> 您的默认编程语言, <b>%(default_language)s</b>, 在此问题不可"
-#~ "用，且已取消选择。"
-
-#~ msgid ""
-#~ "\n"
-#~ "                        You have %(left)s submission left\n"
-#~ "                        "
-#~ msgid_plural ""
-#~ "\n"
-#~ "                        You have %(left)s submissions left\n"
-#~ "                    "
-#~ msgstr[0] ""
-#~ "\n"
-#~ " 您还剩下 %(left)s 次提交机会 \n"
-#~ "                    "
-
-#~ msgid "%(key)s is an invalid activation key."
-#~ msgstr "%(key)s 是一个无效的激活密钥。"
-
-#~ msgid ""
-#~ "You're receiving this email because you requested a password reset for "
-#~ "your user account at %(site_name)s."
-#~ msgstr ""
-#~ "因为您要求您的用户帐户在 %(site_name)s 重置密码，所以您收到这封电子邮件。"
-
-#~ msgid "The %(site_name)s team"
-#~ msgstr "%(site_name)s 团队"
-
-#~ msgid "Password reset on %(site_name)s"
-#~ msgstr "在 %(site_name)s 上重置密码"
-
-#~ msgid "Judges"
-#~ msgstr "裁判服务器"
-
-#~ msgid "Version Matrix"
-#~ msgstr "版本矩阵"
-
 #~ msgid "Case #%(case)s"
 #~ msgstr "测试数据 #%(case)s"
 
@@ -4474,45 +4686,3 @@ msgstr "全选"
 
 #~ msgid "Final score:"
 #~ msgstr "最终得分："
-
-#~ msgid "Mine"
-#~ msgstr "我的"
-
-#~ msgid "Best"
-#~ msgstr "最佳"
-
-#~ msgid "%(user)s's"
-#~ msgstr "%(user)s 的"
-
-#~ msgid "Rank"
-#~ msgstr "排名"
-
-#~ msgid ""
-#~ "\n"
-#~ "            weighted <b>%(weight)s%%</b>\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "        比重 <b>%(weight)s%%</b>\n"
-#~ "        "
-
-#~ msgid "%(pp).1fpp"
-#~ msgstr "%(pp).1fpp"
-
-#~ msgid "%(pp).0fpp"
-#~ msgstr "%(pp).0fpp"
-
-#~ msgid "%(points).1f points"
-#~ msgstr "%(points).1f 分"
-
-#~ msgid "%(points)s / %(total)s"
-#~ msgstr "%(points)s / %(total)s"
-
-#~ msgid "Impersonate"
-#~ msgstr "假冒用户"
-
-#~ msgid "Admin User"
-#~ msgstr "管理用户"
-
-#~ msgid "Admin Profile"
-#~ msgstr "管理资料"
