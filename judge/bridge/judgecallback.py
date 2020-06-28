@@ -329,7 +329,6 @@ class DjangoJudgeHandler(JudgeHandler):
         updates = packet['cases']
         max_position = max(map(itemgetter('position'), updates))
         sum_points = sum(map(itemgetter('points'), updates))
-        print(sum_points)
 
         if not Submission.objects.filter(id=id).update(current_testcase=max_position + 1, points=F('points') + sum_points):
             logger.warning('Unknown submission: %s', id)
