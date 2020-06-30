@@ -200,41 +200,6 @@
                 </div>
             {% endif %}
 
-            <div class="blog-sidebox sidebox">
-                <h3>{{ _('Comment stream') }} <i class="fa fa-comments"></i></h3>
-                <div class="sidebox-content">
-                    <ul>
-                        {% for comment in comments %}
-                            <li>
-                                <span style="padding-left:0.25em" class="poster">
-                                    {{ link_user(comment.author) }}
-                                </span> &rarr;
-                                <a href="{{ comment.link }}#comment-{{ comment.id }}">{{ page_titles[comment.page] }}</a>
-                            </li>{% endfor %}
-                    </ul>
-                    <span class="rssatom">
-                        <a href="{{ url('comment_rss') }}"><span><i class="fa fa-rss"></i></span> RSS</a>
-                        /
-                        <a href="{{ url('comment_atom') }}">Atom</a>
-                    </span>
-                </div>
-            </div>
-            <div class="blog-sidebox sidebox">
-                <h3>{{ _('New problems') }} <i class="fa fa-puzzle-piece"></i>
-                </h3>
-                <div class="sidebox-content">
-                    <ul class="problem-list">
-                        {% for problem in new_problems %}
-                            <li><a href="{{ url('problem_detail', problem.code) }}">{{ problem.name }}</a></li>
-                        {% endfor %}
-                    </ul>
-                    <span class="rssatom">
-                        <a href="{{ url('problem_rss') }}"><span><i class="fa fa-rss"></i></span> RSS</a>
-                        /
-                        <a href="{{ url('problem_atom') }}">Atom</a>
-                    </span>
-                </div>
-            </div>
             {% if perms.judge.test_site and own_open_tickets %}
                 <div class="blog-sidebox sidebox">
                     <h3>{{ _('My open tickets') }} <i class="fa fa-question-circle"></i></h3>
@@ -277,6 +242,43 @@
                     </div>
                 </div>
             {% endif %}
+
+            <div class="blog-sidebox sidebox">
+                <h3>{{ _('New problems') }} <i class="fa fa-puzzle-piece"></i>
+                </h3>
+                <div class="sidebox-content">
+                    <ul class="problem-list">
+                        {% for problem in new_problems %}
+                            <li><a href="{{ url('problem_detail', problem.code) }}">{{ problem.name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                    <span class="rssatom">
+                        <a href="{{ url('problem_rss') }}"><span><i class="fa fa-rss"></i></span> RSS</a>
+                        /
+                        <a href="{{ url('problem_atom') }}">Atom</a>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="blog-sidebox sidebox">
+                <h3>{{ _('Comment stream') }} <i class="fa fa-comments"></i></h3>
+                <div class="sidebox-content">
+                    <ul>
+                        {% for comment in comments %}
+                            <li>
+                                <span style="padding-left:0.25em" class="poster">
+                                    {{ link_user(comment.author) }}
+                                </span> &rarr;
+                                <a href="{{ comment.link }}#comment-{{ comment.id }}">{{ page_titles[comment.page] }}</a>
+                            </li>{% endfor %}
+                    </ul>
+                    <span class="rssatom">
+                        <a href="{{ url('comment_rss') }}"><span><i class="fa fa-rss"></i></span> RSS</a>
+                        /
+                        <a href="{{ url('comment_atom') }}">Atom</a>
+                    </span>
+                </div>
+            </div>
         </div>
     </div>
     {% block after_posts %}{% endblock %}
