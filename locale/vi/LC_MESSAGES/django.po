@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: lqdojvn\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-06-25 08:39+0700\n"
-"PO-Revision-Date: 2020-06-27 22:32\n"
+"PO-Revision-Date: 2020-06-30 16:38\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
 "Language: vi_VN\n"
@@ -869,11 +869,11 @@ msgstr "tổng thời gian"
 
 #: judge/models/contest.py:261
 msgid "is disqualified"
-msgstr ""
+msgstr "bị loại"
 
 #: judge/models/contest.py:262
 msgid "Whether this participation is disqualified."
-msgstr ""
+msgstr "Thí sinh này bị loại."
 
 #: judge/models/contest.py:263
 msgid "virtual participation id"
@@ -882,7 +882,7 @@ msgstr "mã số tham gia thử"
 #: judge/models/contest.py:264
 #| msgid "0 means non-virtual, otherwise the n-th virtual participation"
 msgid "0 means non-virtual, otherwise the n-th virtual participation."
-msgstr ""
+msgstr "0 = thi ảo, còn lại là lần thi thứ n."
 
 #: judge/models/contest.py:265
 msgid "contest format specific data"
@@ -1411,11 +1411,11 @@ msgstr "Dòng với dòng"
 
 #: judge/models/problem_data.py:32
 msgid "Custom checker (PY)"
-msgstr ""
+msgstr "Custom checker (PY)"
 
 #: judge/models/problem_data.py:33
 msgid "Custom validator (CPP)"
-msgstr ""
+msgstr "Custom validator (CPP)"
 
 #: judge/models/problem_data.py:40
 msgid "data zip file"
@@ -1451,11 +1451,11 @@ msgstr "kiểm tra đối số như là một đối tượng JSON"
 
 #: judge/models/problem_data.py:50
 msgid "custom checker file"
-msgstr ""
+msgstr "custom checker file"
 
 #: judge/models/problem_data.py:56
 msgid "custom validator file"
-msgstr ""
+msgstr "custom validator file"
 
 #: judge/models/problem_data.py:97
 msgid "problem data set"
@@ -2157,7 +2157,7 @@ msgstr[0] "%d ngày %h:%m:%s"
 #: judge/utils/timedelta.py:53
 msgctxt "time format without day"
 msgid "%h:%m:%s"
-msgstr ""
+msgstr "%h:%m:%s"
 
 #: judge/utils/timedelta.py:59
 msgctxt "time format no seconds with day"
@@ -2174,7 +2174,7 @@ msgstr[0] "%d ngày"
 #: judge/utils/timedelta.py:63
 msgctxt "hours and minutes"
 msgid "%h:%m"
-msgstr ""
+msgstr "%h:%m"
 
 #: judge/views/about.py:7 templates/user/user-about.html:47
 #: templates/user/user-tabs.html:4
@@ -2183,7 +2183,7 @@ msgstr "Giới thiệu"
 
 #: judge/views/about.py:13
 msgid "Custom Checker Sample"
-msgstr ""
+msgstr "Hướng dẫn checker"
 
 #: judge/views/blog.py:38
 #, python-format
@@ -2321,12 +2321,12 @@ msgstr "Tham gia"
 #: judge/views/contests.py:743
 #, python-format
 msgid "%s MOSS Results"
-msgstr ""
+msgstr "%s Kết quả MOSS"
 
 #: judge/views/contests.py:770
 #, python-format
 msgid "Running MOSS for %s..."
-msgstr ""
+msgstr "Đang chạy MOSS cho %s..."
 
 #: judge/views/contests.py:793
 #, python-format
@@ -2568,7 +2568,7 @@ msgstr "Tính lại điểm cho %s..."
 #, python-format
 msgid "Successfully scheduled %d submission for rejudging."
 msgid_plural "Successfully scheduled %d submissions for rejudging."
-msgstr[0] ""
+msgstr[0] "Đã lên lịch chấm lại cho %d bài nộp."
 
 #: judge/views/ranked_submission.py:58
 #, python-format
@@ -2695,16 +2695,16 @@ msgstr ""
 
 #: judge/views/ticket.py:33 judge/views/ticket.py:39
 msgid "Ticket title"
-msgstr ""
+msgstr "Tiêu đề thẻ"
 
 #: judge/views/ticket.py:40
 msgid "Issue description"
-msgstr ""
+msgstr "Mô tả vấn đề"
 
 #: judge/views/ticket.py:85 judge/views/ticket.py:88
 #, python-format
 msgid "New ticket for %s"
-msgstr ""
+msgstr "Thẻ mới cho %s"
 
 #: judge/views/ticket.py:142
 #, python-format
@@ -2872,7 +2872,7 @@ msgstr "Đăng ký"
 
 #: templates/base.html:254
 msgid "spectating"
-msgstr ""
+msgstr "quan sát"
 
 #: templates/base.html:267
 msgid "This site works best with JavaScript enabled."
@@ -2946,7 +2946,7 @@ msgstr "Đề bài mới"
 
 #: templates/blog/list.html:240
 msgid "My open tickets"
-msgstr "Thẻ mở của tôi"
+msgstr "Thẻ của tôi"
 
 #: templates/blog/list.html:261
 msgid "New tickets"
@@ -2954,7 +2954,7 @@ msgstr "Thẻ mới"
 
 #: templates/chat/chat.html:226
 msgid "Chat"
-msgstr ""
+msgstr "Chat"
 
 #: templates/chat/chat.html:228 templates/chat/chat.html:244
 #| msgid "Online Judge"
@@ -3345,7 +3345,7 @@ msgstr ""
 #: templates/contest/stats.html:43
 #| msgid "Problem name"
 msgid "Problem AC Rate"
-msgstr ""
+msgstr "Tỉ lệ AC"
 
 #: templates/contest/stats.html:48 templates/stats/language.html:16
 msgid "Submissions by Language"
@@ -3549,7 +3549,7 @@ msgstr ""
 #: templates/problem/data.html:108
 #| msgid "Administration"
 msgid "Instruction"
-msgstr ""
+msgstr "Hướng dẫn"
 
 #: templates/problem/data.html:410
 msgid "View YAML"
@@ -3557,7 +3557,7 @@ msgstr "Xem YAML"
 
 #: templates/problem/data.html:441 templates/problem/data.html:491
 msgid "Apply!"
-msgstr ""
+msgstr "Lưu!"
 
 #: templates/problem/data.html:446
 msgid "Type"
@@ -3603,7 +3603,7 @@ msgstr "Kiểu"
 #: templates/problem/list.html:243
 #, python-format
 msgid "AC %%"
-msgstr ""
+msgstr "AC %%"
 
 #: templates/problem/manage_submission.html:55
 msgid "Leave empty to not filter by language"
@@ -3725,7 +3725,7 @@ msgstr "Sửa đổi test"
 
 #: templates/problem/problem.html:148
 msgid "My tickets"
-msgstr ""
+msgstr "Thẻ của tôi"
 
 #: templates/problem/problem.html:156
 msgid "Manage submissions"
@@ -4058,7 +4058,7 @@ msgstr "Thời gian hoạt động"
 
 #: templates/status/judge-status-table.html:7
 msgid "Ping"
-msgstr ""
+msgstr "Ping"
 
 #: templates/status/judge-status-table.html:8
 msgid "Load"
@@ -4077,7 +4077,7 @@ msgstr "Không có máy chấm nào tại thời điểm này."
 
 #: templates/status/language-list.html:33 templates/ticket/list.html:261
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #: templates/status/language-list.html:35
 msgid "Runtime Info"
@@ -4122,7 +4122,7 @@ msgstr "Bạn đã bị ngắt kết nối. Tải lại trang để hiển thị
 #: templates/submission/row.html:39
 #| msgid "Case #%(case)s"
 msgid "Point %(point)s / Case #%(case)s"
-msgstr ""
+msgstr "Point %(point)s / Case #%(case)s"
 
 #: templates/submission/row.html:49
 msgid "view"
@@ -4178,22 +4178,22 @@ msgstr "Hàng loạt "
 
 #: templates/submission/status-testcases.html:43
 msgid "Overall: "
-msgstr ""
+msgstr "Tổng cộng: "
 
 #: templates/submission/status-testcases.html:57
 #| msgid "Points:"
 msgid "Point: "
-msgstr ""
+msgstr "Điểm: "
 
 #: templates/submission/status-testcases.html:62
 #| msgid "Time:"
 msgid "Time: "
-msgstr ""
+msgstr "Time: "
 
 #: templates/submission/status-testcases.html:71
 #| msgid "Memory"
 msgid "Memory: "
-msgstr ""
+msgstr "Memory: "
 
 #: templates/submission/status-testcases.html:84
 msgid "Case"
@@ -4210,27 +4210,27 @@ msgstr "Bộ test"
 #: templates/submission/status-testcases.html:99
 #| msgid "Points"
 msgid "Point"
-msgstr ""
+msgstr "Point"
 
 #: templates/submission/status-testcases.html:121
 #| msgid "Input file"
 msgid "Input:"
-msgstr ""
+msgstr "Input:"
 
 #: templates/submission/status-testcases.html:125
 #| msgid "Output file"
 msgid "Output:"
-msgstr ""
+msgstr "Output:"
 
 #: templates/submission/status-testcases.html:129
 #| msgid "Wrong Answer"
 msgid "Answer:"
-msgstr ""
+msgstr "Answer:"
 
 #: templates/submission/status-testcases.html:134
 #| msgid "Judge feedback"
 msgid "Judge feedback:"
-msgstr ""
+msgstr "Phản hồi:"
 
 #: templates/submission/status-testcases.html:157
 msgid "Passing pretests does not guarantee a full score on system tests."
@@ -4259,7 +4259,7 @@ msgstr "Tốt nhất"
 #: templates/submission/submission-list-tabs.html:12
 #, python-format
 msgid "%(user)s's"
-msgstr ""
+msgstr "%(user)s's"
 
 #: templates/ticket/list.html:135 templates/ticket/ticket.html:257
 msgid "Reopened: "
@@ -4283,7 +4283,7 @@ msgstr ""
 
 #: templates/ticket/list.html:240
 msgid "Assignee"
-msgstr ""
+msgstr "Người được hỏi"
 
 #: templates/ticket/list.html:262
 msgid "Title"
@@ -4291,11 +4291,11 @@ msgstr "Tiêu đề"
 
 #: templates/ticket/list.html:264 templates/ticket/ticket.html:328
 msgid "Assignees"
-msgstr ""
+msgstr "Người được hỏi"
 
 #: templates/ticket/new_problem.html:7
 msgid "Thanks for opening a ticket!"
-msgstr ""
+msgstr "Cảm ơn bạn đã mở thẻ!"
 
 #: templates/ticket/new_problem.html:9
 msgid "Please keep in mind that this form is for reporting issues with a problem statement, and not for asking for help. If you require assistance on solving a problem, ask in the comments instead."
@@ -4307,15 +4307,15 @@ msgstr ""
 
 #: templates/ticket/ticket.html:333
 msgid "No one is assigned."
-msgstr ""
+msgstr "Không ai được hỏi."
 
 #: templates/ticket/ticket.html:339
 msgid "Close ticket"
-msgstr ""
+msgstr "Đóng"
 
 #: templates/ticket/ticket.html:341
 msgid "Reopen ticket"
-msgstr ""
+msgstr "Mở lại"
 
 #: templates/ticket/ticket.html:345
 msgid "Assignee notes"
@@ -4327,7 +4327,7 @@ msgstr "Không có gì ở đây."
 
 #: templates/ticket/ticket.html:385
 msgid "Post"
-msgstr "Bài viết"
+msgstr "Gửi"
 
 #: templates/user/base-users-table.html:3
 msgid "Rank"
@@ -4335,15 +4335,15 @@ msgstr "Xếp hạng"
 
 #: templates/user/base-users.html:14 templates/user/base-users.html:69
 msgid "Search by handle..."
-msgstr ""
+msgstr "Tìm kiếm bằng tên..."
 
 #: templates/user/edit-profile.html:97
 msgid "Self-description"
-msgstr ""
+msgstr "Mô tả bản thân"
 
 #: templates/user/edit-profile.html:105
 msgid "Select your closest major city"
-msgstr ""
+msgstr "Chọn thành phố lớn gần nhất"
 
 #: templates/user/edit-profile.html:114
 msgid "Editor theme"
@@ -4351,7 +4351,7 @@ msgstr "Giao diện khung viết code"
 
 #: templates/user/edit-profile.html:119
 msgid "Math engine"
-msgstr ""
+msgstr "Math engine"
 
 #: templates/user/edit-profile.html:143 templates/user/edit-profile.html:144
 msgid "Change your avatar"
