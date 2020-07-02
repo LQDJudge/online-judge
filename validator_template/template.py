@@ -18,7 +18,8 @@ def get_executor(files, lang, compiler_time_limit, problem_id):
         if not isinstance(files, list):
             files = [files]
         filenames = [os.path.join(get_problem_root(problem_id), f) for f in files]
-        executor = compile_with_auxiliary_files(filenames, lang, compiler_time_limit)
+        executor = compile_with_auxiliary_files(filenames, 
+                                                compiler_time_limit=compiler_time_limit)
 
     return executor
 
