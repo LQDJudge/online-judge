@@ -125,6 +125,14 @@ class Profile(models.Model):
     def username(self):
         return self.user.username
 
+    @cached_property
+    def count_unseen_notifications(self):
+        query = {
+            'read': False,
+            'comment__hidden': False,
+        }
+        return self.notifications.filter(**query).count()
+    
     _pp_table = [pow(settings.DMOJ_PP_STEP, i) for i in range(settings.DMOJ_PP_ENTRIES)]
 
     def calculate_points(self, table=_pp_table):

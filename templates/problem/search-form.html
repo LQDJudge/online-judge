@@ -7,13 +7,13 @@
                 <input id="search" type="text" name="search" value="{{ search_query or '' }}"
                        placeholder="{{ _('Search problems...') }}">
             </div>
-            {% if has_fts %}
+            <!-- {% if has_fts %}
                 <div>
                     <input id="full_text" type="checkbox" name="full_text" value="1"
                            {% if full_text %}checked{% endif %}>
                     <label for="full_text">{{ _('Full text search') }}</label>
                 </div>
-            {% endif %}
+            {% endif %} -->
             {% if request.user.is_authenticated %}
                 <div>
                     <input id="hide_solved" type="checkbox" name="hide_solved" value="1"

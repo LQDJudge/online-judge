@@ -18,7 +18,7 @@ from judge.forms import CustomAuthenticationForm
 from judge.sitemap import BlogPostSitemap, ContestSitemap, HomePageSitemap, OrganizationSitemap, ProblemSitemap, \
     SolutionSitemap, UrlSitemap, UserSitemap
 from judge.views import TitledTemplateView, about, api, blog, comment, contests, language, license, mailgun, \
-    organization, preview, problem, problem_manage, ranked_submission, register, stats, status, submission, tasks, \
+    notification, organization, preview, problem, problem_manage, ranked_submission, register, stats, status, submission, tasks, \
     ticket, totp, user, widgets
 from judge.views.problem_data import ProblemDataView, ProblemSubmissionDiff, \
     problem_data_file, problem_init_view
@@ -375,6 +375,10 @@ urlpatterns = [
         url(r'^delete/$', delete_message, name='delete_message')
 
     ])),
+
+    url(r'^notifications/', 
+        login_required(notification.NotificationList.as_view()),
+        name='notification')
 ]
 
 favicon_paths = ['apple-touch-icon-180x180.png', 'apple-touch-icon-114x114.png', 'android-chrome-72x72.png',

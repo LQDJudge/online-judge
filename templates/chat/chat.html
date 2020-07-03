@@ -37,11 +37,20 @@
                    return '&#'+i.charCodeAt(0)+';';
             });
         }
+        const datesAreOnSameDay = (first, second) =>
+            first.getFullYear() === second.getFullYear() &&
+            first.getMonth() === second.getMonth() &&
+            first.getDate() === second.getDate();
 
         function loadMessage(content, user, time, messid, image, css_class, isNew) {
             // if (isNew) content = encodeHTML(content)
             time = new Date(time);
-            time = moment(time).format("HH:mm DD-MM-YYYY");
+            if (datesAreOnSameDay(time, new Date())) {
+                time = moment(time).format("HH:mm");
+            }
+            else {
+                time = moment(time).format("HH:mm DD-MM-YYYY");   
+            }
             content = encodeHTML(content);
             li = `<li class="message"> 
                     <img src="${image}" class="profile-pic">

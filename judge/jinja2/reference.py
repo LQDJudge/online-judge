@@ -56,6 +56,13 @@ def get_user_info(usernames):
                    .values_list('user__username', 'display_rank', 'rating')}
 
 
+def get_user_from_text(text):
+    user_list = set()
+    for i in rereference.finditer(text):
+        user_list.add(text[i.start() + 6: i.end() - 1])
+    return Profile.objects.filter(user__username__in=user_list)
+
+
 reference_map = {
     'user': (get_user, get_user_info),
     'ruser': (get_user_rating, get_user_info),

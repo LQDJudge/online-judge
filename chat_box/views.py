@@ -6,6 +6,7 @@ from django.shortcuts import render
 from django.forms.models import model_to_dict
 from django.utils import timezone
 
+
 from judge.jinja2.gravatar import gravatar
 from .models import Message, Profile
 import json

@@ -167,12 +167,12 @@ header {
 }
 
 #user-links {
-    top: 0;
-    right: 0;
-    position: absolute;
+    // display: inline;
+    float: right;
     color: #5c5954;
 
     .anon {
+        margin-top: 1em;
         padding-right: 10px;
         display: inline-flex;
         min-height: 100%;
@@ -640,10 +640,6 @@ math {
     }
 
     #user-links {
-        bottom: 6px;
-        right: 6px;
-        position: absolute;
-
         & > ul > li {
             & > a > span {
                 padding-top: 4px;
@@ -665,7 +661,7 @@ math {
 
 @media not all and (max-width: 760px) {
     #nav-list {
-        display: block !important;
+        display: inline !important;
 
         li {
             &.home-menu-item {
@@ -681,4 +677,21 @@ math {
             }
         }
     }
+}
+
+#notification {
+    color: gray;
+    float: left;
+    margin-top: 0.8em;
+    margin-right: 0.8em;
+    font-size: 1.3em;
+}
+@media (max-width: 500px) {
+    #notification {
+        margin-top: 0.6em;
+    }
+}
+
+.notification-open #notification {
+    color: green !important;
 }

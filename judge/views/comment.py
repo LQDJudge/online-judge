@@ -13,9 +13,10 @@ from reversion import revisions
 from reversion.models import Version
 
 from judge.dblock import LockModel
-from judge.models import Comment, CommentVote
+from judge.models import Comment, CommentVote, Notification
 from judge.utils.views import TitleMixin
 from judge.widgets import MathJaxPagedownWidget
+from judge.comments import add_mention_notifications, del_mention_notifications
 
 __all__ = ['upvote_comment', 'downvote_comment', 'CommentEditAjax', 'CommentContent',
            'CommentEdit']
@@ -116,6 +117,11 @@ class CommentEditAjax(LoginRequiredMixin, CommentMixin, UpdateView):
     form_class = CommentEditForm
 
     def form_valid(self, form):
+        # update notifications
+        comment = form.instance
+        del_mention_notifications(comment)
+        add_mention_notifications(comment)
+
         with transaction.atomic(), revisions.create_revision():
             revisions.set_comment(_('Edited from site'))
             revisions.set_user(self.request.user)

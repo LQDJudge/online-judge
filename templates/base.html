@@ -204,48 +204,64 @@
                 </li>
             {% endfor %}
         </ul>
-
-        <span id="user-links">
+        <div style="float: right; display: inline;">
             {% if request.user.is_authenticated %}
-                <ul>
-                    <li>
-                        <a href="{{ url('user_page') }}">
-                            <span>
-                                <img src="{{ gravatar(request.user, 32) }}" height="24" width="24">{# -#}
-                                <span>
-                                    {%- trans username=request.user.username -%}
-                                        Hello, <b>{{ username }}</b>.
-                                    {%- endtrans %}
-                                </span>
-                            </span>
-                        </a>
-                        <ul style="width: 150px">
-                            {% if request.user.is_staff or request.user.is_superuser %}
-                                <li><a href="{{ url('admin:index') }}">{{ _('Admin') }}</a></li>
-                            {% endif %}
-                            <li><a href="{{ url('user_edit_profile') }}">{{ _('Edit profile') }}</a></li>
-                            {% if request.user.is_impersonate %}
-                                <li><a href="{{ url('impersonate-stop') }}">Stop impersonating</a></li>
-                            {% else %}
-                                <li>
-                                    <form action="{{ url('auth_logout') }}" method="POST">
-                                        {% csrf_token %}
-                                        <button type="submit">{{ _('Log out') }}</button>
-                                    </form>
-                                </li>
-                            {% endif %}
-                        </ul>
-                    </li>
-                </ul>
-            {% else %}
-                <span class="anon">
-                    <a href="{{ url('auth_login') }}?next={{ LOGIN_RETURN_PATH|urlencode }}"><b>{{ _('Log in') }}</b></a>
-                    &nbsp;{{ _('or') }}&nbsp;
-                    <a href="{{ url('registration_register') }}"><b>{{ _('Sign up') }}</b></a>
+            {% set unseen_cnt = request.profile.count_unseen_notifications %}
+            <span class="{{ 'notification-open' if unseen_cnt > 0 }}">
+                <a href="{{ url('notification') }}" class="fa fa-bell" id="notification" aria-hidden="true">
+                {% if unseen_cnt > 0 %}    
+                <span>
+                    {{ unseen_cnt }}
                 </span>
+                {% endif %}
+                </a>
+            </span>
             {% endif %}
-        </span>
+            <span id="user-links">
+                {% if request.user.is_authenticated %}
+                    
+                    <ul>
+                        <li>
+                            <a href="{{ url('user_page') }}">
+                                <span>
+                                    <img src="{{ gravatar(request.user, 32) }}" height="24" width="24">{# -#}
+                                    <span>
+                                        {%- trans username=request.user.username -%}
+                                            Hello, <b>{{ username }}</b>.
+                                        {%- endtrans %}
+                                    </span>
+                                </span>
+                            </a>
+                            <ul style="width: 150px">
+                                {% if request.user.is_staff or request.user.is_superuser %}
+                                    <li><a href="{{ url('admin:index') }}">{{ _('Admin') }}</a></li>
+                                {% endif %}
+                                <li><a href="{{ url('user_edit_profile') }}">{{ _('Edit profile') }}</a></li>
+                                {% if request.user.is_impersonate %}
+                                    <li><a href="{{ url('impersonate-stop') }}">Stop impersonating</a></li>
+                                {% else %}
+                                    <li>
+                                        <form action="{{ url('auth_logout') }}" method="POST">
+                                            {% csrf_token %}
+                                            <button type="submit">{{ _('Log out') }}</button>
+                                        </form>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </li>
+                    </ul>
+                {% else %}
+                    <span class="anon">
+                        <a href="{{ url('auth_login') }}?next={{ LOGIN_RETURN_PATH|urlencode }}"><b>{{ _('Log in') }}</b></a>
+                        &nbsp;{{ _('or') }}&nbsp;
+                        <a href="{{ url('registration_register') }}"><b>{{ _('Sign up') }}</b></a>
+                    </span>
+                {% endif %}
+            </span>
+        </div>
+        
     </div>
+
     <div id="nav-shadow"></div>
 </nav>
 {% if request.in_contest %}

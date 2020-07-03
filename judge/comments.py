@@ -18,9 +18,28 @@ from reversion import revisions
 from reversion.models import Revision, Version
 
 from judge.dblock import LockModel
-from judge.models import Comment, CommentLock, CommentVote
+from judge.models import Comment, CommentLock, CommentVote, Notification
 from judge.utils.raw_sql import RawSQLColumn, unique_together_left_join
 from judge.widgets import HeavyPreviewPageDownWidget
+from judge.jinja2.reference import get_user_from_text
+
+
+
+def add_mention_notifications(comment):
+    user_referred = get_user_from_text(comment.body).exclude(id=comment.author.id)
+    for user in user_referred:
+        notification_ref = Notification(owner=user,
+                                        comment=comment,
+                                        category='Mention')
+        notification_ref.save()
+
+def del_mention_notifications(comment):
+    query = {
+        'comment': comment,
+        'category': 'Mention'
+    }
+    Notification.objects.filter(**query).delete()
+
 
 
 class CommentForm(ModelForm):
@@ -87,10 +106,22 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
             comment = form.save(commit=False)
             comment.author = request.profile
             comment.page = page
+
+
             with LockModel(write=(Comment, Revision, Version), read=(ContentType,)), revisions.create_revision():
                 revisions.set_user(request.user)
                 revisions.set_comment(_('Posted comment'))
                 comment.save()
+
+            # add notification for reply
+            if comment.parent and comment.parent.author != comment.author:
+                notification_rep = Notification(owner=comment.parent.author,
+                                            comment=comment,
+                                            category='Reply')
+                notification_rep.save()
+
+            add_mention_notifications(comment)
+                        
             return HttpResponseRedirect(request.path)
 
         context = self.get_context_data(object=self.object, comment_form=form)
@@ -118,5 +149,5 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
                                       not profile.submission_set.filter(points=F('problem__points')).exists())
         context['comment_list'] = queryset
         context['vote_hide_threshold'] = settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD
-
         return context
+

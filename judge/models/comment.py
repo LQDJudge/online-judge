@@ -19,7 +19,8 @@ from judge.models.problem import Problem
 from judge.models.profile import Profile
 from judge.utils.cachedict import CacheDict
 
-__all__ = ['Comment', 'CommentLock', 'CommentVote']
+
+__all__ = ['Comment', 'CommentLock', 'CommentVote', 'Notification']
 
 comment_validator = RegexValidator(r'^[pcs]:[a-z0-9]+$|^b:\d+$',
                                    _(r'Page code must be ^[pcs]:[a-z0-9]+$|^b:\d+$'))
@@ -183,3 +184,11 @@ class CommentLock(models.Model):
 
     def __str__(self):
         return str(self.page)
+
+
+class Notification(models.Model):
+    owner = models.ForeignKey(Profile, verbose_name=_('owner'), related_name="notifications", on_delete=CASCADE)
+    time = models.DateTimeField(verbose_name=_('posted time'), auto_now_add=True)
+    comment = models.ForeignKey(Comment, verbose_name=_('comment'), on_delete=CASCADE)
+    read = models.BooleanField(verbose_name=_('read'), default=False)
+    category = models.CharField(verbose_name=_('category'), max_length=10)
