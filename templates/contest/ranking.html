@@ -219,9 +219,22 @@
     {% endif %}
     <script type="text/javascript">
 
+        function isFaster(time1, time2) {
+            let arr1 = time1.split(':');
+            let arr2 = time2.split(':');
+
+            for (let i in arr1) {
+                let val1 = parseInt(arr1[i]);   
+                let val2 = parseInt(arr2[i]);
+                if (val1 < val2) return true;
+                if (val1 > val2) return false;
+            }
+            return false;
+        }
+
         function scoretimeComparison(sub1, sub2) {
             if (!sub2) return true;
-            return sub1['score'] > sub2['score'] || (sub1['score'] === sub2['score'] && sub1['time'] < sub2['time']);
+            return sub1['score'] > sub2['score'] || (sub1['score'] === sub2['score'] && isFaster(sub1['time'], sub2['time']));
         }
 
         function highlightFirstSolve() {
@@ -239,7 +252,7 @@
                     // get information
                     let problem = linkElements[linkElements.length - 2];
                     let score = parseFloat(scoreAndTime[0])
-                    let time = new Date('05/04/2020 ' + scoreAndTime[1])
+                    let time = scoreAndTime[1]
 
                     let curSubmission = {
                         'td': $(this).parent(),
