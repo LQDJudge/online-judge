@@ -33,4 +33,4 @@ sqlparse
 channels
 channels-redis
 docker
-
+python-memcached
