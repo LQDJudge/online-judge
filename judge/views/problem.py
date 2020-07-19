@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db import transaction
-from django.db.models import Count, F, Prefetch, Q
+from django.db.models import Count, F, Prefetch, Q, Sum, Case, When, IntegerField
 from django.db.utils import ProgrammingError
 from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -287,11 +287,11 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
     context_object_name = 'problems'
     template_name = 'problem/list.html'
     paginate_by = 50
-    sql_sort = frozenset(('points', 'ac_rate', 'user_count', 'code'))
+    sql_sort = frozenset(('date', 'points', 'ac_rate', 'user_count', 'code'))
     manual_sort = frozenset(('name', 'group', 'solved', 'type'))
     all_sorts = sql_sort | manual_sort
-    default_desc = frozenset(('points', 'ac_rate', 'user_count'))
-    default_sort = 'code'
+    default_desc = frozenset(('date', 'points', 'ac_rate', 'user_count'))
+    default_sort = '-date'
 
     def get_paginator(self, queryset, per_page, orphans=0,
                       allow_empty_first_page=True, **kwargs):
@@ -407,6 +407,13 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         context['hide_solved'] = 0 if self.in_contest else int(self.hide_solved)
         context['show_types'] = 0 if self.in_contest else int(self.show_types)
         context['full_text'] = 0 if self.in_contest else int(self.full_text)
+        context['show_editorial'] = 0 if self.in_contest else int(self.show_editorial)
+
+        if (context['show_editorial']):
+            context['object_list'] = context['object_list'] \
+                                        .annotate(has_public_editorial=Sum(Case(When(solution__is_public=True, then=1),
+                                                  default=0, output_field=IntegerField())))
+
         context['category'] = self.category
         context['categories'] = ProblemGroup.objects.all()
         if self.show_types:
@@ -456,7 +463,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         self.hide_solved = self.GET_with_session(request, 'hide_solved')
         self.show_types = self.GET_with_session(request, 'show_types')
         self.full_text = self.GET_with_session(request, 'full_text')
-
+        self.show_editorial = self.GET_with_session(request, 'show_editorial')
+        
         self.search_query = None
         self.category = None
         self.selected_types = []
