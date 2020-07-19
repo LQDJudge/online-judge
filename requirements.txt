@@ -34,3 +34,4 @@ channels
 channels-redis
 docker
 python-memcached
+netaddr
