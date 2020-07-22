@@ -149,9 +149,11 @@ def get_visible_content(data):
 
 
 def get_input_answer(case, archive):
-    result = {}
-    result['input'] = get_visible_content(archive.read(case.input_file))
-    result['answer'] = get_visible_content(archive.read(case.output_file))
+    result = {'input': '', 'answer': ''}
+    if (len(case.input_file)):
+        result['input'] = get_visible_content(archive.read(case.input_file))
+    if (len(case.output_file)):
+        result['answer'] = get_visible_content(archive.read(case.output_file))
     return result
 
 
