@@ -30,7 +30,7 @@ def check(process_output, judge_output, judge_input,
           lang='CPP14',
           time_limit=10,
           memory_limit=1024**2,
-          compiler_time_limit=10,
+          compiler_time_limit=30,
           feedback=True, type='default',
           point_value=None, **kwargs) -> CheckerResult:
     executor = get_executor(files, lang, compiler_time_limit, problem_id)
