@@ -55,7 +55,7 @@
                 <td><span class="case-{{submission.result}}">{{submission.long_status}}</span></td>
                 
                 <td><span class="col-title">{{_('Point: ')}}</span> 
-                    {{ submission.case_points|floatformat(0) }}/{{ submission.case_total|floatformat(0) }}
+                    {{ submission.case_points|floatformat(1) }}/{{ submission.case_total|floatformat(0) }}
                     
                 </td>
                 
@@ -96,7 +96,7 @@
                 </td>
 
                 {% if not batch.id %}
-                    <td><span class="col-title">{{_('Point')}}: </span> {{ case.points|floatformat(0) }}/{{ case.total|floatformat(0) }}</td>
+                    <td><span class="col-title">{{_('Point')}}: </span> {{ case.points|floatformat }}/{{ case.total|floatformat(0) }}</td>
                 {% endif %}
 
                 <td>

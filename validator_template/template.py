@@ -1,11 +1,10 @@
-import os
+import os, re
 import subprocess
 
-from dmoj.contrib import contrib_modules
 from dmoj.error import InternalError
 from dmoj.judgeenv import env, get_problem_root
 from dmoj.result import CheckerResult
-from dmoj.utils.helper_files import compile_with_auxiliary_files, mktemp
+from dmoj.utils.helper_files import compile_with_auxiliary_files, mktemp, parse_helper_file_error
 from dmoj.utils.unicode import utf8text
 
 executor = None
@@ -23,29 +22,53 @@ def get_executor(files, lang, compiler_time_limit, problem_id):
 
     return executor
 
+class Module:
+    AC = 0
+    WA = 1
+    PARTIAL = 2
+
+    # a float from 0 to 1
+    repartial = re.compile(r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$', re.M)
+
+    @classmethod
+    def parse_return_code(cls, proc, executor, point_value, time_limit, memory_limit, feedback, name, stderr):
+        if proc.returncode == cls.AC:
+            return CheckerResult(True, point_value, feedback=feedback)
+        elif proc.returncode == cls.PARTIAL:
+            match = cls.repartial.search(stderr)
+            if not match:
+                raise InternalError('Invalid stderr for partial points: %r' % stderr)
+            points = float(match.group(0))
+            if not 0 <= points < 1:
+                raise InternalError('Invalid partial points: %d' % points)
+            return CheckerResult(False, points * point_value, feedback=feedback)
+        elif proc.returncode == cls.WA:
+            return CheckerResult(False, 0, feedback=feedback)
+        else:
+            parse_helper_file_error(proc, executor, name, stderr, time_limit, memory_limit)
+
 
 def check(process_output, judge_output, judge_input, 
           problem_id={{problemid}},
           files={{filecpp}},
           lang='CPP14',
           time_limit=10,
-          memory_limit=1024**2,
+          memory_limit=1024 * 512,
           compiler_time_limit=30,
-          feedback=True, type='default',
+          feedback=True,
           point_value=None, **kwargs) -> CheckerResult:
     executor = get_executor(files, lang, compiler_time_limit, problem_id)
 
-    if type not in contrib_modules:
-        raise InternalError('%s is not a valid return code parser' % type)
-
     with mktemp(judge_input) as input_file, mktemp(process_output) as output_file, mktemp(judge_output) as judge_file:
-        process = executor.launch(input_file.name, output_file.name, judge_file.name, stdout=subprocess.PIPE,
+        try: 
+            process = executor.launch(input_file.name, output_file.name, judge_file.name, stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE, memory=memory_limit, time=time_limit)
+            proc_output, error = map(utf8text, process.communicate())
+        except Exception as err:
+            raise InternalError('Error while running checker: %r', err)
 
-        proc_output, error = map(utf8text, process.communicate())
-
-        return contrib_modules[type].ContribModule.parse_return_code(process, executor, point_value, time_limit,
-                                                                     memory_limit,
-                                                                     feedback=utf8text(proc_output)
-                                                                     if feedback else None, name='checker',
-                                                                     stderr=error)
+        return Module.parse_return_code(process, executor, point_value, time_limit,
+                                         memory_limit,
+                                         feedback=utf8text(proc_output)
+                                         if feedback else None, name='checker',
+                                         stderr=error)

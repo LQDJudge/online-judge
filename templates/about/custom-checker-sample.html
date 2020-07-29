@@ -98,10 +98,18 @@ main.exe [input_file] [output_file] [ans_file]</pre>
         </p>
         <h2>Return: </h2>
         <p>
-            Chương trình trả về giá trị 0 nếu AC, 1 nếu WA. Những thông tin được viết ra stdout (bằng cout) sẽ được in ra màn hình cho người nộp bài(feedback)
+            Chương trình trả về giá trị:
+            <ul>
+                <li> 0 nếu AC (100% điểm)</li>
+                <li> 1 nếu WA (0 điểm)</li>
+                <li> 2 nếu điểm thành phần (sẽ hiển thị là WA). Khi đó cần in ra stderr một số thực trong đoạn [0, 1) thể hiện cho tỷ lệ điểm.  </li> 
+            </ul>
+            Những thông tin được viết ra stdout (bằng cout) sẽ được in ra màn hình cho người nộp bài(feedback)
         </p>
 
         <h2>Ví dụ: </h2>
+        <p>Chương trình sau dùng để chấm bài toán: Cho n là một số nguyên dương. In ra hai số tự nhiên a, b sao cho a + b = n. </p>
+        <p>Nếu in ra a + b = n và a, b >= 0 thì được 100% số điểm, nếu a + b = n nhưng một trong 2 số a, b âm thì được 50% số điểm. </p>
         <pre class="code2">
 #include &lt;bits/stdc++.h&gt;
 using namespace std;
@@ -119,7 +127,14 @@ int main(int argc, char** argv) {
 
     if (a + b == c + d) {
         cout &lt;&lt; a &lt;&lt; &quot; + &quot; &lt;&lt; b &lt;&lt; &quot; = &quot; &lt;&lt; c &lt;&lt; &quot; + &quot; &lt;&lt; d &lt;&lt; endl;
-        return 0; // AC
+            
+        if (a >= 0 && b >= 0) {
+            return 0; // AC
+        }
+        else {
+            cerr << 0.5;
+            return 2; // PARTIAL
+        }
     }     
     else {
         cout &lt;&lt; &quot;a + b = &quot; &lt;&lt; a + b &lt;&lt; &quot; != &quot; &lt;&lt; n &lt;&lt; endl;

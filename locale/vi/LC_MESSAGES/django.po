@@ -34,7 +34,7 @@ msgstr "bình luận"
 
 #: chat_box/views.py:41
 msgid "Chat Box"
-msgstr "Khu Tâm Sự"
+msgstr "Khu Trò Chuyện"
 
 #: dmoj/settings.py:349
 msgid "German"
