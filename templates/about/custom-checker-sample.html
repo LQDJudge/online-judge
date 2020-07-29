@@ -102,7 +102,7 @@ main.exe [input_file] [output_file] [ans_file]</pre>
             <ul>
                 <li> 0 nếu AC (100% điểm)</li>
                 <li> 1 nếu WA (0 điểm)</li>
-                <li> 2 nếu điểm thành phần (sẽ hiển thị là WA). Khi đó cần in ra stderr một số thực trong đoạn [0, 1) thể hiện cho tỷ lệ điểm.  </li> 
+                <li> 2 nếu điểm thành phần. Khi đó cần in ra stderr một số thực trong đoạn [0, 1] thể hiện cho tỷ lệ điểm. Nếu điểm < 1 thì hiển thị WA, điểm = 1 thì hiển thị AC.  </li> 
             </ul>
             Những thông tin được viết ra stdout (bằng cout) sẽ được in ra màn hình cho người nộp bài(feedback)
         </p>

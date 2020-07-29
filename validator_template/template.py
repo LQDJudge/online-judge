@@ -39,9 +39,11 @@ class Module:
             if not match:
                 raise InternalError('Invalid stderr for partial points: %r' % stderr)
             points = float(match.group(0))
-            if not 0 <= points < 1:
+            if not 0 <= points <= 1:
                 raise InternalError('Invalid partial points: %d' % points)
-            return CheckerResult(False, points * point_value, feedback=feedback)
+            
+            ac = (points == 1)
+            return CheckerResult(ac, points * point_value, feedback=feedback)
         elif proc.returncode == cls.WA:
             return CheckerResult(False, 0, feedback=feedback)
         else:
