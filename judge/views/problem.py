@@ -681,6 +681,9 @@ class ProblemClone(ProblemMixin, PermissionRequiredMixin, TitleMixin, SingleObje
 
 
 def download_submissions(request, problem):
+    if not request.user.is_superuser:
+        raise Http404
+        
     submissions = Submission.objects.filter(problem__code=problem, result='AC')
 
     with tempfile.SpooledTemporaryFile() as tmp:
