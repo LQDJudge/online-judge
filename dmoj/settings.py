@@ -203,6 +203,7 @@ else:
                 },
                 ('judge.BlogPost', 'fa-rss-square'),
                 ('judge.Comment', 'fa-comment-o'),
+                ('judge.Ticket', 'fa-exclamation-circle'),
                 ('flatpages.FlatPage', 'fa-file-text-o'),
                 ('judge.Solution', 'fa-pencil'),
             ],
@@ -238,6 +239,7 @@ INSTALLED_APPS += (
     'django_jinja',
     'chat_box',
     'channels',
+    'newsletter',
 )
 
 MIDDLEWARE = (
@@ -515,3 +517,15 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+
+NEWSLETTER_CONFIRM_EMAIL = False
+
+# Amount of seconds to wait between each email. Here 100ms is used.
+NEWSLETTER_EMAIL_DELAY = 0.1
+
+# Amount of seconds to wait between each batch. Here one minute is used.
+NEWSLETTER_BATCH_DELAY = 60
+
+# Number of emails in one batch
+NEWSLETTER_BATCH_SIZE = 100

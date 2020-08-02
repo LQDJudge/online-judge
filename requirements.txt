@@ -33,5 +33,6 @@ sqlparse
 channels
 channels-redis
 docker
+django-newsletter
 python-memcached
 netaddr

@@ -2,23 +2,31 @@
 {% block title %}Newsletter list - {{ SITE_LONG_NAME }}{% endblock %}
 {% block content_title %}Newsletter list{% endblock %}
 
+{% block media %}
+<style>
+    * {
+        box-sizing: border-box;
+    }
+</style>
+{% endblock %}
+
 {% block body %}
     {% if request.user.is_authenticated %}
         <form method="POST" action="" class="form-area">
             {% csrf_token %}
             {{ formset.management_form }}
-            <table>
+            <table class="table">
                 <tr>
                     <th>Newsletter</th>
                     <th>Subscribe</th>
                 </tr>
                 {% for form in formset.forms %}
                     <tr>
-                        <td>{{ form.id }}{{ form.newsletter }}
+                        <td>{{ form.id }}
                             <a href="{{ url('newsletter_archive', form.instance.newsletter.slug) }}">
                                 {{ form.instance.newsletter.title }}</a>
                         </td>
-                        <td>{{ form.subscribed }}</td>
+                        <td>{{ form.subscribed }}</d>
                     </tr>
                 {% endfor %}
             </table>
