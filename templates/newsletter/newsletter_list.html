@@ -1,24 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Newsletter list - {{ SITE_LONG_NAME }}{% endblock %}
-{% block content_title %}Newsletter list{% endblock %}
-
-{% block media %}
-<style>
-    * {
-        box-sizing: border-box;
-    }
-</style>
-{% endblock %}
+{% block title %} {{ _('Newsletter list') }} - {{ SITE_LONG_NAME }}{% endblock %}
+{% block content_title %} {{ _('Newsletter list') }} {% endblock %}
 
 {% block body %}
+    <h3> {{ _('Subscribe to get the latest emails about upcoming contests and events.')}} </h3>
+    <br/>
+    <div style="width: 50%; margin: auto;">
     {% if request.user.is_authenticated %}
-        <form method="POST" action="" class="form-area">
+        <form method="POST" action="" class="form-area" style="width:100%;">
             {% csrf_token %}
             {{ formset.management_form }}
             <table class="table">
                 <tr>
-                    <th>Newsletter</th>
-                    <th>Subscribe</th>
+                    <th>{{ _('Newsletter') }}</th>
+                    <th>{{ _('Subscribe') }}</th>
                 </tr>
                 {% for form in formset.forms %}
                     <tr>
@@ -32,7 +27,7 @@
             </table>
             <hr>
             <p>
-                <input id="id_submit" name="submit" value="Update subscriptions" type="submit" style="float: right">
+                <input id="id_submit" name="submit" value="{{_('Update subscriptions')}}" type="submit" style="float: right">
             </p>
         </form>
     {% else %}
@@ -47,4 +42,5 @@
             {% endfor %}
         </table>
     {% endif %}
+    </div>
 {% endblock %}
