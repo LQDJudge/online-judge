@@ -190,7 +190,14 @@ class SubmissionStatus(SubmissionDetailBase):
         context['last_msg'] = event.last()
         context['batches'] = group_test_cases(submission.test_cases.all())
         context['time_limit'] = submission.problem.time_limit
-        context['cases_data'] = get_problem_data(submission)
+
+        contest = submission.contest_or_none
+        prefix_length = 0
+        if (contest is not None):
+            prefix_length = contest.problem.output_prefix_override
+        if ((contest is None or prefix_length > 0) or self.request.user.is_superuser):
+            context['cases_data'] = get_problem_data(submission)
+
         try:
             lang_limit = submission.problem.language_limits.get(
                 language=submission.language)
