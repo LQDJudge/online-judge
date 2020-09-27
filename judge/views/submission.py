@@ -137,6 +137,11 @@ def group_test_cases(cases):
     return result
 
 
+def read_head_archive(archive, file):
+    with archive.open(file) as f:
+        return f.read(settings.TESTCASE_VISIBLE_LENGTH + 3)
+
+
 def get_visible_content(data):
     data = data or b''
     data = data.replace(b'\r\n', b'\r').replace(b'\r', b'\n')
@@ -151,9 +156,9 @@ def get_visible_content(data):
 def get_input_answer(case, archive):
     result = {'input': '', 'answer': ''}
     if (len(case.input_file)):
-        result['input'] = get_visible_content(archive.read(case.input_file))
+        result['input'] = get_visible_content(read_head_archive(archive, case.input_file))
     if (len(case.output_file)):
-        result['answer'] = get_visible_content(archive.read(case.output_file))
+        result['answer'] = get_visible_content(read_head_archive(archive, case.output_file))
     return result
 
 
