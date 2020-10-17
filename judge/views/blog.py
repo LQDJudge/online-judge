@@ -86,7 +86,7 @@ class PostList(ListView):
 
         if self.request.user.is_authenticated:
             profile = self.request.profile
-            context['own_open_tickets'] = (Ticket.objects.filter(user=profile, is_open=True).order_by('-id')
+            context['own_open_tickets'] = (Ticket.objects.filter(Q(user=profile) | Q(assignees__in=[profile]), is_open=True).order_by('-id')
                                            .prefetch_related('linked_item').select_related('user__user'))
         else:
             profile = None
