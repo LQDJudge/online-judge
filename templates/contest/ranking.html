@@ -50,7 +50,7 @@
         }
 
         .points {
-            min-width: 4em;
+            min-width: 2.5em;
         }
 
         .disqualified {
@@ -117,6 +117,16 @@
         }
 
         .organization-column a {
+            color: gray !important;
+            font-weight: 600;
+        }
+
+        .fullname-column {
+            text-align: right !important;
+            border-right: none !important;
+        }
+
+        .fullname-column span {
             color: gray !important;
             font-weight: 600;
         }
@@ -299,6 +309,9 @@
             $('#show-organizations-checkbox').click(function () {
                 $('.organization-column').toggle();
             });
+            $('#show-fullnames-checkbox').click(function () { 
+                $('.fullname-column').toggle();
+            });
             {% if request.user.is_authenticated %}
             $('#show-friends-checkbox').click(function() {
                 let checked = $('#show-friends-checkbox').is(':checked');
@@ -332,6 +345,9 @@
         <input id="show-organizations-checkbox" type="checkbox" style="vertical-align: bottom">
         <label for="show-organizations-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show organizations') }}</label>
     
+        <input id="show-fullnames-checkbox" type="checkbox" style="vertical-align: bottom">
+
+        <label for="show-fullnames-checkbox" style="vertical-align: bottom; margin-right: 1em;">Hiển thị tên thật</label>
         {% if request.user.is_authenticated %}
         <input id="show-friends-checkbox" type="checkbox" style="vertical-align: bottom;">
         <label for="show-friends-checkbox" style="vertical-align: bottom;">{{ _('Show friends only') }}</label>
