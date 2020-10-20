@@ -19,8 +19,8 @@ class NotificationList(ListView):
         
         query = {
             'owner': self.request.profile,
-            'comment__hidden': False,
         }
+
         self.queryset = Notification.objects.filter(**query)\
                            .order_by('-time')[:100] \
                            .annotate(seen=Value(True, output_field=BooleanField()))

@@ -189,6 +189,8 @@ class CommentLock(models.Model):
 class Notification(models.Model):
     owner = models.ForeignKey(Profile, verbose_name=_('owner'), related_name="notifications", on_delete=CASCADE)
     time = models.DateTimeField(verbose_name=_('posted time'), auto_now_add=True)
-    comment = models.ForeignKey(Comment, verbose_name=_('comment'), on_delete=CASCADE)
+    comment = models.ForeignKey(Comment, null=True, verbose_name=_('comment'), on_delete=CASCADE)
     read = models.BooleanField(verbose_name=_('read'), default=False)
     category = models.CharField(verbose_name=_('category'), max_length=10)
+    html_link = models.TextField(default='', verbose_name=_('html link to comments, used for non-comments'), max_length=1000)
+    author = models.ForeignKey(Profile, null=True, verbose_name=_('who trigger, used for non-comment'), on_delete=CASCADE)

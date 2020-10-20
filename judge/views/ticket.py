@@ -1,5 +1,7 @@
 import json
 
+from itertools import chain
+
 from django import forms
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied, ValidationError
@@ -17,7 +19,7 @@ from django.views.generic import ListView
 from django.views.generic.detail import SingleObjectMixin
 
 from judge import event_poster as event
-from judge.models import Problem, Profile, Ticket, TicketMessage
+from judge.models import Problem, Profile, Ticket, TicketMessage, Notification
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.tickets import filter_visible_tickets, own_ticket_filter
 from judge.utils.views import SingleObjectFormView, TitleMixin, paginate_query_context
@@ -27,6 +29,16 @@ from judge.widgets import HeavyPreviewPageDownWidget
 ticket_widget = (forms.Textarea() if HeavyPreviewPageDownWidget is None else
                  HeavyPreviewPageDownWidget(preview=reverse_lazy('ticket_preview'),
                                             preview_timeout=1000, hide_preview_button=True))
+
+
+def add_ticket_notifications(users, author, link, ticket):
+    html = f"<a href=\"{link}\">{ticket.linked_item}</a>"
+    for user in users:
+        notification = Notification(owner=user,
+                                    html_link=html,
+                                    category='Ticket',
+                                    author=author)
+        notification.save()
 
 
 class TicketForm(forms.Form):
@@ -66,13 +78,18 @@ class NewTicketView(LoginRequiredMixin, SingleObjectFormView):
         message = TicketMessage(ticket=ticket, user=ticket.user, body=form.cleaned_data['body'])
         message.save()
         ticket.assignees.set(self.get_assignees())
+
+        link = reverse('ticket', args=[ticket.id])
+
+        add_ticket_notifications(ticket.assignees.all(), ticket.user, link, ticket)
+
         if event.real:
             event.post('tickets', {
                 'type': 'new-ticket', 'id': ticket.id,
                 'message': message.id, 'user': ticket.user_id,
                 'assignees': list(ticket.assignees.values_list('id', flat=True)),
             })
-        return HttpResponseRedirect(reverse('ticket', args=[ticket.id]))
+        return HttpResponseRedirect(link)
 
 
 class NewProblemTicketView(ProblemMixin, TitleMixin, NewTicketView):
@@ -127,6 +144,13 @@ class TicketView(TitleMixin, LoginRequiredMixin, TicketMixin, SingleObjectFormVi
                                 body=form.cleaned_data['body'],
                                 ticket=self.object)
         message.save()
+
+        link = '%s#message-%d' % (reverse('ticket', args=[self.object.id]), message.id)
+
+        notify_list = list(chain(self.object.assignees.all(), [self.object.user]))
+        notify_list.remove(message.user)
+        add_ticket_notifications(notify_list, message.user, link, self.object)
+
         if event.real:
             event.post('tickets', {
                 'type': 'ticket-message', 'id': self.object.id,
@@ -136,7 +160,7 @@ class TicketView(TitleMixin, LoginRequiredMixin, TicketMixin, SingleObjectFormVi
             event.post('ticket-%d' % self.object.id, {
                 'type': 'ticket-message', 'message': message.id,
             })
-        return HttpResponseRedirect('%s#message-%d' % (reverse('ticket', args=[self.object.id]), message.id))
+        return HttpResponseRedirect(link)
 
     def get_title(self):
         return _('%(title)s - Ticket %(id)d') % {'title': self.object.title, 'id': self.object.id}

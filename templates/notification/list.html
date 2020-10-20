@@ -11,19 +11,30 @@
     <tr>
         <th>{{ _('User') }}</th>
         <th>{{ _('Activity') }}</th>
-        <th>{{ _('Comment') }}</th>
+        <th>{{ _('Link') }}</th>
         <th>{{ _('Time') }}</th>
     </tr>
     {% for notification in notifications %}
     <tr class="{{ 'highlight' if not notification.seen }}">    
         <td>
-            {{ link_user(notification.comment.author) }}
+            {% if notification.comment %}
+                {{ link_user(notification.comment.author) }}
+            {% else %}
+                {{ link_user(notification.author) }}
+            {% endif %}
+            
         </td>
         <td>
             {{ notification.category }}
         </td>
         <td>
-            <a href="{{ notification.comment.link }}#comment-{{ notification.comment.id }}">{{ page_titles[notification.comment.page] }}</a>
+            {% if notification.comment %}
+                <a href="{{ notification.comment.link }}#comment-{{ notification.comment.id }}">{{ page_titles[notification.comment.page] }}</a>
+            {% else %}
+                {% autoescape off %}
+                    {{notification.html_link}}
+                {% endautoescape %}
+            {% endif %}
         </td>
         <td>
             {{ relative_time(notification.time) }}

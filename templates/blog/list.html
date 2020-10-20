@@ -214,6 +214,7 @@
                                         <a href="{{ ticket.linked_item.get_absolute_url() }}">
                                             {{ ticket.linked_item|item_title }}</a>
                                     </div>
+                                    <div>{{ link_user(ticket.user) }}</div>
                                 </li>
                             {% endfor %}
                         </ul>

@@ -129,7 +129,6 @@ class Profile(models.Model):
     def count_unseen_notifications(self):
         query = {
             'read': False,
-            'comment__hidden': False,
         }
         return self.notifications.filter(**query).count()
     
