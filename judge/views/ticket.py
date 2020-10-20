@@ -33,6 +33,11 @@ ticket_widget = (forms.Textarea() if HeavyPreviewPageDownWidget is None else
 
 def add_ticket_notifications(users, author, link, ticket):
     html = f"<a href=\"{link}\">{ticket.linked_item}</a>"
+    
+    users = set(users)
+    if author in users:
+        users.remove(author)
+
     for user in users:
         notification = Notification(owner=user,
                                     html_link=html,
@@ -148,7 +153,6 @@ class TicketView(TitleMixin, LoginRequiredMixin, TicketMixin, SingleObjectFormVi
         link = '%s#message-%d' % (reverse('ticket', args=[self.object.id]), message.id)
 
         notify_list = list(chain(self.object.assignees.all(), [self.object.user]))
-        notify_list.remove(message.user)
         add_ticket_notifications(notify_list, message.user, link, self.object)
 
         if event.real:
