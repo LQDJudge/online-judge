@@ -323,7 +323,8 @@
                 }
                 else {
                     $('tr').show();
-                    $('.friend').last().find('td').removeAttr('style');
+                    $('.friend').last().find('td').css({'border-bottom-width': 
+                        '', 'border-color': ''});
                 }
             })
             {% endif %}
