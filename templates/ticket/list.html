@@ -83,7 +83,7 @@
             });
 
             register_notify('ticket', {
-                $checkbox: $('#notification'),
+                $checkbox: $('#desktop-notification'),
                 change: function (enabled) {
                     if (!enabled)
                         for (key in localStorage)
@@ -217,8 +217,8 @@
         <aside>
             <div>
                 <div id="notification-box">
-                    <input id="notification" type="checkbox">
-                    <label for="notification">{{ _('Use desktop notification') }}</label>
+                    <input id="desktop-notification" type="checkbox">
+                    <label for="desktop-notification">{{ _('Use desktop notification') }}</label>
                 </div>
 
                 <form id="filter-form" name="form" action="" method="get">
