@@ -57,6 +57,14 @@ class ChatView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        # hard code, should be fixed later
+        address = f'{self.request.get_host()}/ws/chat/'
+        if self.request.is_secure():
+            context['ws_address'] = f'wss://{address}'
+        else:
+            context['ws_address'] = f'ws://{address}'
+
         context['title'] = self.title
         last_five_minutes = timezone.now()-timezone.timedelta(minutes=5)
         context['online_users'] = Profile.objects \

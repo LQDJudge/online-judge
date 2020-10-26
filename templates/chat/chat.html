@@ -5,9 +5,8 @@
 {% block js_media %}
 
 <script type="text/javascript">
-    var chatSocket = new WebSocket(
-        'ws://' + window.location.host +
-        '/ws/chat/');
+    // change ws to wss if using HTTPS
+    var chatSocket = new WebSocket( "{{ws_address}}" );
 </script>
 <script type="text/javascript" src="{{ static('mathjax_config.js') }}"></script>
 <script type="text/javascript"

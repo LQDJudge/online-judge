@@ -13,4 +13,6 @@ resources/ranks.css
 resources/table.css
 sass_processed
 <desired bridge log path>
+node_modules/
+package-lock.json
 
