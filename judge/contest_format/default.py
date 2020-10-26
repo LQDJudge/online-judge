@@ -53,7 +53,7 @@ class DefaultContestFormat(BaseContestFormat):
                        self.best_solution_state(format_data['points'], contest_problem.points)),
                 url=reverse('contest_user_submissions',
                             args=[self.contest.key, participation.user.user.username, contest_problem.problem.code]),
-                points=floatformat(format_data['points']),
+                points=floatformat(format_data['points'], -self.contest.points_precision),
                 time=nice_repr(timedelta(seconds=format_data['time']), 'noday'),
             )
         else:
@@ -62,7 +62,7 @@ class DefaultContestFormat(BaseContestFormat):
     def display_participation_result(self, participation):
         return format_html(
             u'<td class="user-points">{points}<div class="solving-time">{cumtime}</div></td>',
-            points=floatformat(participation.score),
+            points=floatformat(participation.score, -self.contest.points_precision),
             cumtime=nice_repr(timedelta(seconds=participation.cumtime), 'noday'),
         )
 

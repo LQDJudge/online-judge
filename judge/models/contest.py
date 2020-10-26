@@ -1,5 +1,5 @@
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models, transaction
 from django.db.models import CASCADE
 from django.urls import reverse
@@ -113,7 +113,10 @@ class Contest(models.Model):
                               help_text=_('A JSON object to serve as the configuration for the chosen contest format '
                                           'module. Leave empty to use None. Exact format depends on the contest format '
                                           'selected.'))
-
+    points_precision = models.IntegerField(verbose_name=_('precision points'), default=2,
+                                           validators=[MinValueValidator(0), MaxValueValidator(10)],
+                                           help_text=_('Number of digits to round points to.'))
+    
     @cached_property
     def format_class(self):
         return contest_format.formats[self.format_name]
@@ -256,7 +259,7 @@ class ContestParticipation(models.Model):
     contest = models.ForeignKey(Contest, verbose_name=_('associated contest'), related_name='users', on_delete=CASCADE)
     user = models.ForeignKey(Profile, verbose_name=_('user'), related_name='contest_history', on_delete=CASCADE)
     real_start = models.DateTimeField(verbose_name=_('start time'), default=timezone.now, db_column='start')
-    score = models.IntegerField(verbose_name=_('score'), default=0, db_index=True)
+    score = models.FloatField(verbose_name=_('score'), default=0, db_index=True)
     cumtime = models.PositiveIntegerField(verbose_name=_('cumulative time'), default=0)
     is_disqualified = models.BooleanField(verbose_name=_('is disqualified'), default=False,
                                           help_text=_('Whether this participation is disqualified.'))
