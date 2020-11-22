@@ -2,6 +2,8 @@ import re
 
 import mistune
 
+from django.conf import settings
+
 from judge.utils.mathoid import MathoidMathParser
 
 mistune._pre_tags.append('latex')
@@ -48,7 +50,7 @@ class MathInlineLexer(mistune.InlineLexer):
 
 class MathRenderer(mistune.Renderer):
     def __init__(self, *args, **kwargs):
-        if kwargs.pop('math', False):
+        if kwargs.pop('math', False) and settings.MATHOID_URL != False:
             self.mathoid = MathoidMathParser(kwargs.pop('math_engine', None) or 'svg')
         else:
             self.mathoid = None
