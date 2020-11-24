@@ -395,6 +395,11 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             queryset = queryset.filter(points__gte=self.point_start)
         if self.point_end is not None:
             queryset = queryset.filter(points__lte=self.point_end)
+        if self.show_editorial:
+            queryset = queryset.annotate(
+                            has_public_editorial=Sum(Case(When(solution__is_public=True, then=1),
+                            default=0, output_field=IntegerField())))
+
         return queryset.distinct()
 
     def get_queryset(self):
@@ -409,11 +414,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         context['show_types'] = 0 if self.in_contest else int(self.show_types)
         context['full_text'] = 0 if self.in_contest else int(self.full_text)
         context['show_editorial'] = 0 if self.in_contest else int(self.show_editorial)
-
-        if (context['show_editorial']):
-            context['object_list'] = context['object_list'] \
-                                        .annotate(has_public_editorial=Sum(Case(When(solution__is_public=True, then=1),
-                                                  default=0, output_field=IntegerField())))
 
         context['category'] = self.category
         context['categories'] = ProblemGroup.objects.all()
