@@ -283,14 +283,18 @@ class UserList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ListView):
     default_desc = all_sorts
     default_sort = '-performance_points'
 
+    def filter_friend_queryset(self, queryset):
+        friends = list(self.request.profile.get_friends())
+        ret = queryset.filter(user__username__in=friends)
+        return ret
+
     def get_queryset(self):
         ret = Profile.objects.filter(is_unlisted=False).order_by(self.order, 'id').select_related('user') \
                 .only('display_rank', 'user__username', 'points', 'rating', 'performance_points',
                       'problem_count')
 
-        if (self.request.GET.get('friend') == 'true'):
-            friends = list(self.request.profile.get_friends())
-            ret = ret.filter(user__username__in=friends)
+        if (self.request.GET.get('friend') == 'true') and self.request.profile:
+            ret = self.filter_friend_queryset(ret)
         return ret
 
     def get_context_data(self, **kwargs):
