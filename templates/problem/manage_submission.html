@@ -10,7 +10,7 @@
 
         .pane {
             display: block;
-            max-width: 20em;
+            max-width: 25em;
             border: 1px #ccc solid;
             border-radius: 5px;
             padding: 10px;
@@ -70,7 +70,8 @@
             var $use_id = $('#by-range-check');
             var $id_start = $('#by-range-start');
             var $id_end = $('#by-range-end');
-            $('#rejudge-selected').click(function (e) {
+            
+            var actionClick = function (e) {
                 e.preventDefault();
                 if ($use_id.prop('checked')) {
                     var start = parseInt($id_start.val());
@@ -84,24 +85,35 @@
                     }
                 }
 
-                var $form = $(this).parents('form');
+                var $form = $('#form-action');
+                var input = $("<input>")
+                        .attr("type", "hidden")
+                        .attr("name", "action").val(e.data.action);
+                $form.append(input);
+
                 $.post('{{ url('problem_submissions_rejudge_preview', problem.code) }}', $form.serialize(), 'text')
                     .done(function (count) {
-                        if (confirm("{{ _('You are about to rejudge {count} submissions. Are you sure you want to do this?') }}"
-                            .replace('{count}', count))) {
+                        if (confirm("{{ _('You are about to {action} {count} submissions. Are you sure you want to do this?') }}"
+                            .replace('{count}', count)
+                            .replace('{action}', e.data.action))) {
                             $form.submit();
                         }
                     })
                     .fail(function () {
-                        if (confirm("{{ _('You are about to rejudge a few submissions. Are you sure you want to do this?') }}")) {
+                        if (confirm("{{ _('You are about to {action} a few submissions. Are you sure you want to do this?') }}".replace('{action}', e.data.action))) {
                             $form.submit();
                         }
                     });
-            });
+            };
+
+            $('#rejudge-selected').on('click', {action: 'rejudge'}, actionClick);
+            $('#download-selected').on('click', {action: 'download'}, actionClick);
+
 
             $use_id.change(function () {
                 $('#by-range-filter').find('input').prop('disabled', !this.checked);
             });
+
         });
     </script>
 {% endblock %}
@@ -112,8 +124,8 @@
     <div class="panes">
         {% if request.user.has_perm('judge.rejudge_submission_lot') %}
             <div class="pane">
-                <h3>{{ _('Rejudge Submissions') }}</h3>
-                <form action="{{ url('problem_submissions_rejudge', problem.code) }}" method="post">
+                <h3>{{ _('Filter submissions') }}</h3>
+                <form action="{{ url('problem_submissions_action', problem.code) }}" method="post" id="form-action">
                     {% csrf_token %}
                     <div class="control-group">
                         <label><input id="by-range-check" type="checkbox" name="use_range" value="on">
@@ -146,23 +158,27 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <a id="rejudge-selected" class="unselectable button full" href="#">
-                        {{ _('Rejudge selected submissions') }}
+                </form>
+            </div>
+            <div class="pane">
+                <h3> {{ _('Action') }} </h3>
+                <a id="rejudge-selected" class="unselectable button full" href="#">
+                    {{ _('Rejudge selected submissions') }}
+                </a>
+                </br>
+
+                <a id="download-selected" class="unselectable button full" href="#">
+                    {{ _('Download selected submissions') }}
+                </a>
+                <br>
+                <form action="{{ url('problem_submissions_rescore_all', problem.code) }}" method="post">
+                    {% csrf_token %}
+                    <a id="rescore-all" class="unselectable button full" href="#"
+                       data-warning="{{ _('Are you sure you want to rescore %(count)d submissions?', count=submission_count) }}">
+                        {{ _('Rescore all submissions') }}
                     </a>
                 </form>
             </div>
         {% endif %}
-
-        <div class="pane">
-            <h3>{{ _('Rescore Everything') }}</h3>
-            <p id="rescore-warning">{{ _('This will rescore %(count)d submissions.', count=submission_count) }}</p>
-            <form action="{{ url('problem_submissions_rescore_all', problem.code) }}" method="post">
-                {% csrf_token %}
-                <a id="rescore-all" class="unselectable button full" href="#"
-                   data-warning="{{ _('Are you sure you want to rescore %(count)d submissions?', count=submission_count) }}">
-                    {{ _('Rescore all submissions') }}
-                </a>
-            </form>
-        </div>
     </div>
 {% endblock %}

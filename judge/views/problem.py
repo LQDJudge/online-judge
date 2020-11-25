@@ -4,7 +4,6 @@ import shutil
 from datetime import timedelta
 from operator import itemgetter
 from random import randrange
-import zipfile, tempfile
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -678,24 +677,3 @@ class ProblemClone(ProblemMixin, PermissionRequiredMixin, TitleMixin, SingleObje
         problem.types.set(types)
 
         return HttpResponseRedirect(reverse('admin:judge_problem_change', args=(problem.id,)))
-
-
-def download_submissions(request, problem):
-    if not request.user.is_superuser:
-        raise Http404
-        
-    submissions = Submission.objects.filter(problem__code=problem, result='AC')
-
-    with tempfile.SpooledTemporaryFile() as tmp:
-        with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
-            for submission in submissions:
-                file_name = str(submission.id) + '.' + str(submission.language.key)
-                archive.writestr(file_name, submission.source.source)
-            
-        # Reset file pointer
-        tmp.seek(0)
-
-        # Write file data to response
-        response = HttpResponse(tmp.read(), content_type='application/x-zip-compressed')
-        response['Content-Disposition'] = 'attachment; filename="%s"' % (str(problem) + '_submissions.zip')
-        return response

@@ -1,5 +1,7 @@
 from operator import itemgetter
 
+import zipfile, tempfile
+
 from celery.result import AsyncResult
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -63,7 +65,7 @@ class ManageProblemSubmissionView(TitleMixin, ManageProblemSubmissionMixin, Deta
         return context
 
 
-class BaseRejudgeSubmissionsView(PermissionRequiredMixin, ManageProblemSubmissionActionMixin, BaseDetailView):
+class BaseActionSubmissionsView(PermissionRequiredMixin, ManageProblemSubmissionActionMixin, BaseDetailView):
     permission_required = 'judge.rejudge_submission_lot'
 
     def perform_action(self):
@@ -88,16 +90,45 @@ class BaseRejudgeSubmissionsView(PermissionRequiredMixin, ManageProblemSubmissio
         raise NotImplementedError()
 
 
-class RejudgeSubmissionsView(BaseRejudgeSubmissionsView):
-    def generate_response(self, id_range, languages, results):
+class ActionSubmissionsView(BaseActionSubmissionsView):
+    def rejudge_response(self, id_range, languages, results):
         status = rejudge_problem_filter.delay(self.object.id, id_range, languages, results)
         return redirect_to_task_status(
             status, message=_('Rejudging selected submissions for %s...') % (self.object.name,),
             redirect=reverse('problem_submissions_rejudge_success', args=[self.object.code, status.id]),
         )
 
+    def download_response(self, id_range, languages, results):
+        if not self.request.user.is_superuser:
+            raise Http404
+        
+        queryset = Submission.objects.filter(problem_id=self.object.id)
+        submissions = apply_submission_filter(queryset, id_range, languages, results)
 
-class PreviewRejudgeSubmissionsView(BaseRejudgeSubmissionsView):
+        with tempfile.SpooledTemporaryFile() as tmp:
+            with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
+                for submission in submissions:
+                    file_name = str(submission.id) + '_' + str(submission.user) + '.' + str(submission.language.key)
+                    archive.writestr(file_name, submission.source.source)
+                
+            # Reset file pointer
+            tmp.seek(0)
+
+            # Write file data to response
+            response = HttpResponse(tmp.read(), content_type='application/x-zip-compressed')
+            response['Content-Disposition'] = 'attachment; filename="%s"' % (str(self.object.code) + '_submissions.zip')
+            return response
+
+    def generate_response(self, id_range, languages, results):
+        action = self.request.POST.get('action')
+        if (action == 'rejudge'):
+            return self.rejudge_response(id_range, languages, results)
+        elif (action == 'download'):
+            return self.download_response(id_range, languages, results)
+        else:
+            return Http404()
+
+class PreviewActionSubmissionsView(BaseActionSubmissionsView):
     def generate_response(self, id_range, languages, results):
         queryset = apply_submission_filter(self.object.submission_set.all(), id_range, languages, results)
         return HttpResponse(str(queryset.count()))

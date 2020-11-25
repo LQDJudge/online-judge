@@ -119,7 +119,6 @@ urlpatterns = [
         url(r'^/pdf$', problem.ProblemPdfView.as_view(), name='problem_pdf'),
         url(r'^/pdf/(?P<language>[a-z-]+)$', problem.ProblemPdfView.as_view(), name='problem_pdf'),
         url(r'^/clone', problem.ProblemClone.as_view(), name='problem_clone'),
-        url(r'^/downloadAC$', problem.download_submissions, name='download_submissions'),
         url(r'^/submit$', problem.problem_submit, name='problem_submit'),
         url(r'^/resubmit/(?P<submission>\d+)$', problem.problem_submit, name='problem_submit'),
 
@@ -139,8 +138,8 @@ urlpatterns = [
 
         url(r'^/manage/submission', include([
             url('^$', problem_manage.ManageProblemSubmissionView.as_view(), name='problem_manage_submissions'),
-            url('^/rejudge$', problem_manage.RejudgeSubmissionsView.as_view(), name='problem_submissions_rejudge'),
-            url('^/rejudge/preview$', problem_manage.PreviewRejudgeSubmissionsView.as_view(),
+            url('^/action$', problem_manage.ActionSubmissionsView.as_view(), name='problem_submissions_action'),
+            url('^/action/preview$', problem_manage.PreviewActionSubmissionsView.as_view(),
                 name='problem_submissions_rejudge_preview'),
             url('^/rejudge/success/(?P<task_id>[A-Za-z0-9-]*)$', problem_manage.rejudge_success,
                 name='problem_submissions_rejudge_success'),
