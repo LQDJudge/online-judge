@@ -78,7 +78,7 @@
     <div id="test-cases">{% include "submission/status-testcases.html" %}</div>
 
     {% if not submission.is_graded %}
-        {% if request.user == submission.user.user or perms.judge.abort_any_submission %}
+        {% if perms.judge.abort_any_submission %}
             <div id="abort-button">
                 <br>
                 <hr>
