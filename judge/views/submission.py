@@ -237,7 +237,6 @@ def abort_submission(request, submission):
     #         not request.user.has_perm('abort_any_submission')):
     #     raise PermissionDenied()
     if (not request.user.is_authenticated 
-            or submission.was_rejudged
             or not request.user.has_perm('abort_any_submission')):
         raise PermissionDenied()
     submission.abort()
