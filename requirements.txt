@@ -30,9 +30,10 @@ packaging
 celery
 -e git://github.com/DMOJ/ansi2html.git#egg=ansi2html
 sqlparse
-channels
+channels==2.4.0
 channels-redis
 docker
 django-newsletter
 python-memcached
 netaddr
+redis
