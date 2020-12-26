@@ -204,7 +204,7 @@
                     var isodate = day.toISOString().split('T')[0];
                     days.push({
                         date: new Date(day),
-                        weekday: day.getDay(),
+                        weekday: (day.getDay() + 6) % 7,
                         day_num: day_num,
                         activity: submission_activity[isodate] || 0,
                     });
