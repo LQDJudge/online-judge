@@ -254,6 +254,7 @@ class Contest(models.Model):
             ('contest_rating', _('Rate contests')),
             ('contest_access_code', _('Contest access codes')),
             ('create_private_contest', _('Create private contests')),
+            ('change_contest_visibility', _('Change contest visibility')),
         )
         verbose_name = _('contest')
         verbose_name_plural = _('contests')

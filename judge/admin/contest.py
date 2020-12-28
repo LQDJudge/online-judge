@@ -123,7 +123,6 @@ class ContestAdmin(VersionAdmin):
         (_('Justice'), {'fields': ('banned_users',)}),
     )
     list_display = ('key', 'name', 'is_visible', 'is_rated', 'start_time', 'end_time', 'time_limit', 'user_count')
-    actions = ['make_visible', 'make_hidden']
     inlines = [ContestProblemInline]
     actions_on_top = True
     actions_on_bottom = True
@@ -131,6 +130,16 @@ class ContestAdmin(VersionAdmin):
     change_list_template = 'admin/judge/contest/change_list.html'
     filter_horizontal = ['rate_exclude']
     date_hierarchy = 'start_time'
+
+    def get_actions(self, request):
+        actions = super(ContestAdmin, self).get_actions(request)
+
+        if request.user.has_perm('judge.change_contest_visibility') or \
+                request.user.has_perm('judge.create_private_contest'):
+            for action in ('make_visible', 'make_hidden'):
+                actions[action] = self.get_action(action)
+
+        return actions
 
     def get_queryset(self, request):
         queryset = Contest.objects.all()
@@ -147,7 +156,31 @@ class ContestAdmin(VersionAdmin):
             readonly += ['access_code']
         if not request.user.has_perm('judge.create_private_contest'):
             readonly += ['is_private', 'private_contestants', 'is_organization_private', 'organizations']
+            if not request.user.has_perm('judge.change_contest_visibility'):
+                readonly += ['is_visible']
         return readonly
+
+    def save_model(self, request, obj, form, change):
+        # `is_visible` will not appear in `cleaned_data` if user cannot edit it
+        if form.cleaned_data.get('is_visible') and not request.user.has_perm('judge.change_contest_visibility'):
+            if not form.cleaned_data['is_private'] and not form.cleaned_data['is_organization_private']:
+                raise PermissionDenied
+            if not request.user.has_perm('judge.create_private_contest'):
+                raise PermissionDenied
+
+        super().save_model(request, obj, form, change)
+
+        # We need this flag because `save_related` deals with the inlines, but does not know if we have already rescored
+        self._rescored = False
+        if form.changed_data and any(f in form.changed_data for f in ('format_config', 'format_name')):
+            self._rescore(obj.key)
+            self._rescored = True
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        # Only rescored if we did not already do so in `save_model`
+        if not self._rescored and any(formset.has_changed() for formset in formsets):
+            self._rescore(form.cleaned_data['key'])
 
     def has_change_permission(self, request, obj=None):
         if not request.user.has_perm('judge.edit_own_contest'):
@@ -156,7 +189,13 @@ class ContestAdmin(VersionAdmin):
             return True
         return obj.organizers.filter(id=request.profile.id).exists()
 
+    def _rescore(self, contest_key):
+        from judge.tasks import rescore_contest
+        transaction.on_commit(rescore_contest.s(contest_key).delay)
+
     def make_visible(self, request, queryset):
+        if not request.user.has_perm('judge.change_contest_visibility'):
+            queryset = queryset.filter(Q(is_private=True) | Q(is_organization_private=True))
         count = queryset.update(is_visible=True)
         self.message_user(request, ungettext('%d contest successfully marked as visible.',
                                              '%d contests successfully marked as visible.',
@@ -164,7 +203,9 @@ class ContestAdmin(VersionAdmin):
     make_visible.short_description = _('Mark contests as visible')
 
     def make_hidden(self, request, queryset):
-        count = queryset.update(is_visible=False)
+        if not request.user.has_perm('judge.change_contest_visibility'):
+            queryset = queryset.filter(Q(is_private=True) | Q(is_organization_private=True))
+        count = queryset.update(is_visible=True)
         self.message_user(request, ungettext('%d contest successfully marked as hidden.',
                                              '%d contests successfully marked as hidden.',
                                              count) % count)
