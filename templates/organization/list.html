@@ -4,8 +4,25 @@
     <script type="text/javascript">
         $(function () {
             $("#organization-table").tablesorter();
+            {% if request.user.is_authenticated %}
+            $('#show-my-org-checkbox').click(function() {
+                let checked = $('#show-my-org-checkbox').is(':checked');
+                if (checked) {
+                    $('.other-organization').hide();
+                    $('.my-organization').last().find('td').css({'border-bottom-width': 
+                        '1px', 'border-color': '#ccc'});
+                }
+                else {
+                    $('.other-organization').show();
+                    $('.my-organization').last().find('td').css({'border-bottom-width': 
+                        '', 'border-color': ''});
+                }
+            })
+            $('#show-my-org-checkbox').click()
+            {% endif %}
         });
     </script>
+
 {% endblock %}
 
 {% block title_ruler %}{% endblock %}
@@ -17,6 +34,13 @@
 {% endblock %}
 
 {% block body %}
+    {% if request.user.is_authenticated %}
+    <div style="margin-bottom: 0.5em">
+        <input id="show-my-org-checkbox" type="checkbox" style="vertical-align: bottom;">
+        <label for="show-my-org-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show my organizations only') }}</label>
+    </div>
+    {% endif %}
+    
     <table id="organization-table" class="table">
         <thead>
         <tr>
@@ -26,7 +50,7 @@
         </thead>
         <tbody>
         {% for org in organizations %}
-            <tr>
+            <tr class="{{ 'my-organization' if org in my_organizations else 'other-organization'}}">
                 <td><a href="{{ org.get_absolute_url() }}">{{ org.name }}</a></td>
                 <td><a href="{{ org.get_users_url() }}">{{ org.member_count }}</a></td>
             </tr>

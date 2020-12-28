@@ -6,17 +6,18 @@ from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Value, BooleanField
 from django.forms import Form, modelformset_factory
 from django.http import Http404, HttpResponsePermanentRedirect, HttpResponseRedirect
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext as _, gettext_lazy, ungettext
 from django.views.generic import DetailView, FormView, ListView, UpdateView, View
 from django.views.generic.detail import SingleObjectMixin, SingleObjectTemplateResponseMixin
 from reversion import revisions
 
 from judge.forms import EditOrganizationForm
-from judge.models import Organization, OrganizationRequest, Profile
+from judge.models import BlogPost, Comment, Organization, OrganizationRequest, Problem, Profile, Contest
 from judge.utils.ranker import ranker
 from judge.utils.views import TitleMixin, generic_message
 
@@ -25,8 +26,21 @@ __all__ = ['OrganizationList', 'OrganizationHome', 'OrganizationUsers', 'Organiz
            'OrganizationRequestDetail', 'OrganizationRequestView', 'OrganizationRequestLog',
            'KickUserWidgetView']
 
+class OrganizationBase(object):
+    def can_edit_organization(self, org=None):
+        if org is None:
+            org = self.object
+        if not self.request.user.is_authenticated:
+            return False
+        profile_id = self.request.profile.id
+        return org.admins.filter(id=profile_id).exists() or org.registrant_id == profile_id
 
-class OrganizationMixin(object):
+    def is_member(self, org=None):
+        if org is None:
+            org = self.object
+        return self.request.profile in org if self.request.user.is_authenticated else False
+
+class OrganizationMixin(OrganizationBase):
     context_object_name = 'organization'
     model = Organization
 
@@ -46,15 +60,7 @@ class OrganizationMixin(object):
             else:
                 return generic_message(request, _('No such organization'),
                                        _('Could not find such organization.'))
-
-    def can_edit_organization(self, org=None):
-        if org is None:
-            org = self.object
-        if not self.request.user.is_authenticated:
-            return False
-        profile_id = self.request.profile.id
-        return org.admins.filter(id=profile_id).exists() or org.registrant_id == profile_id
-
+    
 
 class OrganizationDetailView(OrganizationMixin, DetailView):
     def get(self, request, *args, **kwargs):
@@ -65,7 +71,7 @@ class OrganizationDetailView(OrganizationMixin, DetailView):
         return self.render_to_response(context)
 
 
-class OrganizationList(TitleMixin, ListView):
+class OrganizationList(TitleMixin, ListView, OrganizationBase):
     model = Organization
     context_object_name = 'organizations'
     template_name = 'organization/list.html'
@@ -74,6 +80,15 @@ class OrganizationList(TitleMixin, ListView):
     def get_queryset(self):
         return super(OrganizationList, self).get_queryset().annotate(member_count=Count('member'))
 
+    def get_context_data(self, **kwargs):
+        context = super(OrganizationList, self).get_context_data(**kwargs)
+        context['my_organizations'] = set()
+
+        for organization in context['organizations']:
+            if self.can_edit_organization(organization) or self.is_member(organization):
+                context['my_organizations'].add(organization)
+
+        return context
 
 class OrganizationHome(OrganizationDetailView):
     template_name = 'organization/home.html'
@@ -82,6 +97,23 @@ class OrganizationHome(OrganizationDetailView):
         context = super(OrganizationHome, self).get_context_data(**kwargs)
         context['title'] = self.object.name
         context['can_edit'] = self.can_edit_organization()
+        context['is_member'] = self.is_member()
+        context['new_problems'] = Problem.objects.filter(is_public=True, is_organization_private=True,
+                                                         organizations=self.object) \
+                                                 .order_by('-date', '-id')[:settings.DMOJ_BLOG_NEW_PROBLEM_COUNT]
+        context['new_contests'] = Contest.objects.filter(is_visible=True, is_organization_private=True,
+                                                 organizations=self.object) \
+                                         .order_by('-end_time', '-id')[:settings.DMOJ_BLOG_NEW_CONTEST_COUNT]
+
+        context['posts'] = BlogPost.objects.filter(visible=True, publish_on__lte=timezone.now(),
+                                                   is_organization_private=True, organizations=self.object) \
+                                           .order_by('-sticky', '-publish_on') \
+                                           .prefetch_related('authors__user', 'organizations')
+        context['post_comment_counts'] = {
+            int(page[2:]): count for page, count in
+            Comment.objects.filter(page__in=['b:%d' % post.id for post in context['posts']], hidden=False)
+                           .values_list('page').annotate(count=Count('page')).order_by()
+        }
         return context
 
 
