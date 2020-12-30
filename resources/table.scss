@@ -83,3 +83,22 @@
         border-bottom-left-radius: 0 !important;
     }
 }
+
+#users-table td:nth-child(2), #users-table th:nth-child(2) {
+    border-right: none;
+    text-align: left;
+}
+
+#users-table .fullname-column {
+    text-align: right !important;
+    border-right: none !important;
+}
+
+#users-table .fullname-column span {
+    color: gray !important;
+    font-weight: 600;
+}
+
+#users-table th a {
+    color: white;
+}
