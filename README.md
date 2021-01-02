@@ -61,6 +61,18 @@ dmoj 0.0.0.0 -p 9999 -c <path to yml configure file>
 ```
 Here we suppose you use the default port 9999 for bridge in `settings.py`. You can create multiple judges, each should be in a seperate terminal.
 
+**Optional**
+
+5. Run celery worker (This is server's queue. It may be necessary in some functions)
+```bash
+celery -A dmoj_celery worker
+```
+
+6. Run a live event server (So everything is updated lively like in the production)
+```bash
+node websocket/daemon.js
+```
+
 ## Deploy
 Most of the steps are similar to Django tutorials. Here are two usual steps:
 
