@@ -26,44 +26,55 @@ Support plagiarism detection via [Stanford MOSS](https://theory.stanford.edu/~ai
 
 ## Installation
 
-Check out the install documentation at [docs.dmoj.ca](docs.dmoj.ca). Remember to update the `local_settings.py`.
+Most of the setup are the same as DMOJ installations. You can view the installation guide of DMOJ here: https://docs.dmoj.ca/#/site/installation.
+There is one minor change: Instead of `git clone https://github.com/DMOJ/site.git`, you clone this repo `git clone https://github.com/LQDJudge/online-judge.git`.
+
+Some frequent difficulties when installation:
+
+1. Missing the `local_settings.py`. You need to copy the `local_settings.py` in order to pass the check.
+2. Missing the problem folder in `local_settings.py`. You need to create a folder to contain all problem packages and configure in `local_settings.py`.
+3. Missing static folder in `local_settings.py`. Similar to problem folder, make sure to configure `STATIC_FILES` inside `local_settings.py`. 
+4. Missing configure file for judges. Each judge must have a seperate configure file. To create this file, you can run `python dmojauto-conf`. Checkout all sample files here https://github.com/DMOJ/docs/blob/master/sample_files.
 
 ## Usage
 
-Activate virtualenv:
+Suppose you finished all the installation. Everytime you want to run a local server, follow these steps:
+
+1. Activate virtualenv:
 ```bash
 source dmojsite/bin/activate
 ```
 
-Run server:
+2. Run server:
 ```bash
 python manage.py runserver 0.0.0.0:8000
 ```
 
-Create configure file for judge:
-```bash
-python dmojauto-conf
-```
-
-Create folder for problems, change the dir in judge conf file and `local_settings.py`.
-
-Connect judge:
+3. Create a bridge (this is opened in a different terminal with the second step if you are using the same machine)
 ```bash
 python manage.py runbridged
-dmoj 0.0.0.0 -p 9999 -c judge/conf1.yml (depend on port in the local_settings.py and directory of conf file)
 ```
 
-Update vietnamese translation:
+4. Create a judge (another terminal)
+```bash
+dmoj 0.0.0.0 -p 9999 -c <path to yml configure file>
+```
+Here we suppose you use the default port 9999 for bridge in `settings.py`. You can create multiple judges, each should be in a seperate terminal.
+
+## Deploy
+Most of the steps are similar to Django tutorials. Here are two usual steps:
+
+1. Update vietnamese translation:
  - go to `locale/vi`
  - modify `.po` file
  - ```bash python manage.py compilemessages```
  - ```bash python manage.py compilejsi18n```
 
-Run chat server:
-```bash
-docker run -p 6379:6379 -d redis:2.8
-```
-
+2. Update styles (using SASS)
+ - Change .css/.scss files in `resources` folder
+ - ```bash ./make_styles && python manage.py collectstatic```
+ - Sometimes you need to `Ctrl + F5` to see the new user interface in browser.
+ 
 ## Screenshots
 
 ### Leaderboard
