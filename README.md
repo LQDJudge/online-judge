@@ -22,14 +22,18 @@ Supported languages:
 - Perl
 - Python 2 / Python 3
 
+Support plagiarism detection via [Stanford MOSS](https://theory.stanford.edu/~aiken/moss/).
+
 ## Installation
+
+Check out the install documentation at [docs.dmoj.ca](docs.dmoj.ca). Remember to update the `local_settings.py`.
+
+## Usage
 
 Activate virtualenv:
 ```bash
 source dmojsite/bin/activate
 ```
-
-Remember to update the `local_settings.py`.
 
 Run server:
 ```bash
