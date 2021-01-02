@@ -9,6 +9,8 @@ LQDOJ: Le Quy Don Online Judge
 
 Homepage: [https://lqdoj.edu.vn](https://lqdoj.edu.vn)
 
+Based on [DMOJ](https://dmoj.ca/).
+
 Supported languages: 
 
 - Assembly (x64)
