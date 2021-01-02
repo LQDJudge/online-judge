@@ -77,6 +77,7 @@ node websocket/daemon.js
 Most of the steps are similar to Django tutorials. Here are two usual steps:
 
 1. Update vietnamese translation:
+ - If you add any new phrases in the code, ```bash python manage.py makemessages```
  - go to `locale/vi`
  - modify `.po` file
  - ```bash python manage.py compilemessages```
@@ -84,7 +85,7 @@ Most of the steps are similar to Django tutorials. Here are two usual steps:
 
 2. Update styles (using SASS)
  - Change .css/.scss files in `resources` folder
- - ```bash ./make_styles && python manage.py collectstatic```
+ - ```bash ./make_style && python manage.py collectstatic```
  - Sometimes you need to `Ctrl + F5` to see the new user interface in browser.
  
 ## Screenshots
