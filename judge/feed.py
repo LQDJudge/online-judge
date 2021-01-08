@@ -15,8 +15,8 @@ class ProblemFeed(Feed):
     description = 'The latest problems added on the %s website' % settings.SITE_LONG_NAME
 
     def items(self):
-        return BlogPost.objects.filter(visible=True, publish_on__lte=timezone.now(), is_organization_private=False) \
-                                       .order_by('-sticky', '-publish_on')
+        return Problem.objects.filter(is_public=True, is_organization_private=False).defer('description')\
+                      .order_by('-date', '-id')[:25]
 
     def item_title(self, problem):
         return problem.name
