@@ -8,6 +8,13 @@ from django.utils.feedgenerator import Atom1Feed
 from judge.jinja2.markdown import markdown
 from judge.models import BlogPost, Comment, Problem
 
+import re
+
+
+# https://lsimons.wordpress.com/2011/03/17/stripping-illegal-characters-out-of-xml-in-python/
+def escape_xml_illegal_chars(val, replacement='?'):
+    _illegal_xml_chars_RE = re.compile(u'[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
+    return _illegal_xml_chars_RE.sub(replacement, val)
 
 class ProblemFeed(Feed):
     title = 'Recently Added %s Problems' % settings.SITE_NAME
@@ -86,6 +93,7 @@ class BlogFeed(Feed):
         summary = cache.get(key)
         if summary is None:
             summary = str(markdown(post.summary or post.content, 'blog'))
+            summary = escape_xml_illegal_chars(summary)
             cache.set(key, summary, 86400)
         return summary
 
