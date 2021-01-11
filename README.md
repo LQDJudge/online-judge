@@ -30,7 +30,12 @@ Support plagiarism detection via [Stanford MOSS](https://theory.stanford.edu/~ai
 Most of the setup are the same as DMOJ installations. You can view the installation guide of DMOJ here: https://docs.dmoj.ca/#/site/installation.
 There is one minor change: Instead of `git clone https://github.com/DMOJ/site.git`, you clone this repo `git clone https://github.com/LQDJudge/online-judge.git`.
 
-Some frequent difficulties when installation:
+### Additional Steps in Production:
+
+1. To use newsletter (email sending), go to admin and create a newsletter.
+2. Change the domain name and website name in Admin page: Navigation Bars/Sites
+
+### Some frequent difficulties when installation:
 
 1. Missing the `local_settings.py`. You need to copy the `local_settings.py` in order to pass the check.
 2. Missing the problem folder in `local_settings.py`. You need to create a folder to contain all problem packages and configure in `local_settings.py`.
