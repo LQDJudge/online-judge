@@ -33,6 +33,7 @@ class ProblemFeed(Feed):
         desc = cache.get(key)
         if desc is None:
             desc = str(markdown(problem.description, 'problem'))[:500] + '...'
+            desc = escape_xml_illegal_chars(desc)
             cache.set(key, desc, 86400)
         return desc
 
@@ -63,6 +64,7 @@ class CommentFeed(Feed):
         desc = cache.get(key)
         if desc is None:
             desc = str(markdown(comment.body, 'comment'))
+            desc = escape_xml_illegal_chars(desc)
             cache.set(key, desc, 86400)
         return desc
 
