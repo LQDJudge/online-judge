@@ -541,7 +541,7 @@ def problem_submit(request, problem, submission=None):
         if request.method == 'POST':
             user_logger.info('Naughty user %s wants to submit to %s without permission',
                              request.user.username, problem.code)
-            return HttpResponseForbidden('<h1>Do you want me to ban you?</h1>')
+            return HttpResponseForbidden('<h1>Not allowed to submit. Try later.</h1>')
         raise Http404()
 
     if problem.is_editable_by(request.user):
