@@ -26,6 +26,46 @@
         }
         {% endif %}
 
+        @media (max-width: 500px) {
+            #search-contest, #search-org, #search-btn {
+                width: 100%;
+                margin-bottom: 0.5em;
+            }
+            #search-contest {
+                height: 2.5em;
+            }
+            #search-btn {
+                margin-top: 0.5em;
+            }
+            #filter-form input {
+                padding-left: 8px;
+            }
+        }
+
+        @media (min-width: 500px) {
+            #filter-form input {
+                margin: 0 0.5em 0 0!important;
+                padding-left: 8px;
+                padding-top: 8px;
+            }
+            #search-contest {
+                width: 30%;
+                height: 2.3em;
+                margin-right: 1em;
+                margin-bottom: 0;
+                padding-top: 4px !important;
+            }
+
+            #search-org {
+                width: 40%;
+            }
+
+            #search-btn {
+                display: inline-block;
+                height: 2.3em;
+                margin-left: 0.5em;
+            }
+        }
     </style>
 {% endblock %}
 
@@ -58,6 +98,9 @@
             }
 
             makeToggleBtn($("#ongoing-btn"), $("#ongoing-table"));
+
+            $('#search-org').select2({multiple: 1, placeholder: '{{ _('Organizations...') }}'})
+                    .css({'visibility': 'visible'});
 
             // var tooltip_classes = 'tooltipped tooltipped-e';
             //
@@ -171,6 +214,20 @@
 
 {% block body %}
     <div class="content-description">
+        
+        <form id="filter-form">
+            <input id="search-contest" type="text" name="contest" value="{{ contest_query or '' }}"
+                   placeholder="{{ _('Search contests...') }}">
+
+            <select id="search-org" name="orgs" multiple>
+                {% for org in organizations %}
+                    <option value="{{ org.id }}"{% if org.id in org_query %} selected{% endif %}>
+                        {{ org.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button id="search-btn"> {{ _('Search')}} </button>
+        </form>
         {% if active_participations %}
             <h4>{{ _('Active Contests') }}</h4>
             <table class="contest-list table striped">
