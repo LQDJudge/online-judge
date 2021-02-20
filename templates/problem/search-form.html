@@ -32,6 +32,16 @@
                 <label for="show_editorial">{{ _('Show editorial') }}</label>
             </div>
             <div class="filter-form-group">
+                <label for="type"><i>{{ _('Organization') }}</i></label>
+                <select id="search-org" name="orgs" multiple>
+                    {% for org in organizations %}
+                        <option value="{{ org.id }}"{% if org.id in org_query %} selected{% endif %}>
+                            {{ org.name }}
+                        </option>
+                    {% endfor %}
+                </select> 
+            </div>
+            <div class="filter-form-group">
                 <label for="category"><i>{{ _('Category') }}</i></label>
                 <select id="category" name="category">
                     {% if category %}
@@ -45,6 +55,7 @@
                         </option>
                     {% endfor %}
                 </select>
+
             </div>
             {% if show_types %}
                 <div class="filter-form-group">

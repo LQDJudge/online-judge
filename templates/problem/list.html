@@ -3,13 +3,17 @@
 {% block media %}
     <link rel="stylesheet" href="{{ static('libs/nouislider.min.css') }}">
     <noscript>
-        <style>#category, #types {
-            visibility: visible;
-        }
+        <style>
+            #category, #types {
+                visibility: visible;
+            }
         </style>
     </noscript>
     {% if not request.in_contest %}
         <style>
+            #search-org {
+                width: 100%;
+            }
             #problem-table th {
                 padding: 0;
             }
@@ -60,6 +64,8 @@
 
                 $category.select2().css({'visibility': 'visible'}).change(clean_submit);
                 $('#types').select2({multiple: 1, placeholder: '{{ _('Filter by type...') }}'})
+                    .css({'visibility': 'visible'});
+                $('#search-org').select2({multiple: 1, placeholder: '{{ _('Organizations...') }}'})
                     .css({'visibility': 'visible'});
 
                 // This is incredibly nasty to do but it's needed because otherwise the select2 steals the focus
