@@ -81,7 +81,8 @@ class ContestList(DiggPaginatorMixin, TitleMixin, ContestListMixin, ListView):
     template_name = 'contest/list.html'
     title = gettext_lazy('Contests')
     context_object_name = 'past_contests'
-
+    first_page_href = None
+    
     @cached_property
     def _now(self):
         return timezone.now()
@@ -142,6 +143,9 @@ class ContestList(DiggPaginatorMixin, TitleMixin, ContestListMixin, ListView):
         context['contest_query'] = self.contest_query
         context['org_query'] = self.org_query
         context['organizations'] = Organization.objects.all()
+        context['page_suffix'] = suffix = (
+            '?' + self.request.GET.urlencode()) if self.request.GET else ''
+        context['first_page_href'] = (self.first_page_href or '.') + suffix
         return context
 
 
