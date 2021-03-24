@@ -31,7 +31,7 @@ from judge import event_poster as event
 from judge.comments import CommentedDetailView
 from judge.forms import ContestCloneForm
 from judge.models import Contest, ContestMoss, ContestParticipation, ContestProblem, ContestTag, \
-    Problem, Profile, Submission
+    Organization, Problem, Profile, Submission
 from judge.tasks import run_moss
 from judge.utils.celery import redirect_to_task_status
 from judge.utils.opengraph import generate_opengraph
@@ -81,14 +81,37 @@ class ContestList(DiggPaginatorMixin, TitleMixin, ContestListMixin, ListView):
     template_name = 'contest/list.html'
     title = gettext_lazy('Contests')
     context_object_name = 'past_contests'
-
+    first_page_href = None
+    
     @cached_property
     def _now(self):
         return timezone.now()
 
+    def get(self, request, *args, **kwargs):
+        self.contest_query = None
+        self.org_query = []
+
+        if 'orgs' in self.request.GET:
+            try:
+                self.org_query = list(map(int, request.GET.getlist('orgs')))
+            except ValueError:
+                pass
+
+        return super(ContestList, self).get(request, *args, **kwargs)
+
     def _get_queryset(self):
-        return super(ContestList, self).get_queryset() \
+        queryset = super(ContestList, self).get_queryset() \
             .order_by('-start_time', 'key').prefetch_related('tags', 'organizations', 'organizers')
+        
+        if 'contest' in self.request.GET:
+            self.contest_query = query = ' '.join(self.request.GET.getlist('contest')).strip()
+            if query:
+                queryset = queryset.filter(
+                        Q(key__icontains=query) | Q(name__icontains=query))
+        if self.org_query:
+            queryset = queryset.filter(organizations__in=self.org_query)
+
+        return queryset
 
     def get_queryset(self):
         return self._get_queryset().filter(end_time__lt=self._now)
@@ -117,6 +140,12 @@ class ContestList(DiggPaginatorMixin, TitleMixin, ContestListMixin, ListView):
         context['future_contests'] = future
         context['now'] = self._now
         context['first_page_href'] = '.'
+        context['contest_query'] = self.contest_query
+        context['org_query'] = self.org_query
+        context['organizations'] = Organization.objects.all()
+        context['page_suffix'] = suffix = (
+            '?' + self.request.GET.urlencode()) if self.request.GET else ''
+        context['first_page_href'] = (self.first_page_href or '.') + suffix
         return context
 
 
@@ -593,7 +622,8 @@ def base_contest_ranking_list(contest, problems, queryset):
 def contest_ranking_list(contest, problems):
     return base_contest_ranking_list(contest, problems, contest.users.filter(virtual=0, user__is_unlisted=False)
                                      .prefetch_related('user__organizations')
-                                     .order_by('is_disqualified', '-score', 'cumtime'))
+                                     .extra(select={'round_score': 'round(score, 6)'})
+                                     .order_by('is_disqualified', '-round_score', 'cumtime'))
 
 
 def get_contest_ranking_list(request, contest, participation=None, ranking_list=contest_ranking_list,
