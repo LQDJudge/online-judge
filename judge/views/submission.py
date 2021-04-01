@@ -139,7 +139,16 @@ def group_test_cases(cases):
 
 def read_head_archive(archive, file):
     with archive.open(file) as f:
-        return f.read(settings.TESTCASE_VISIBLE_LENGTH + 3)
+        s = f.read(settings.TESTCASE_VISIBLE_LENGTH + 3)
+        # add this so there are no characters left behind (ex, 'á' = 2 utf-8 chars)
+        while True:
+            try:
+                s.decode('utf-8')
+                break
+            except UnicodeDecodeError:
+                s += f.read(1)
+        return s
+
 
 def get_visible_content(data):
     data = data or b''
