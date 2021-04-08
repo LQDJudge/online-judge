@@ -25,8 +25,8 @@ def generate_report(problem):
 
 
 def import_users(csv_file):
-    # 1st row: username, password, organization
-    # ... row: a_username,passhere,organ
+    # 1st row: username, password, name, organization
+    # ... row: a_username, passhere, my_name, organ
     try:
         f = open(csv_file, 'r')
     except OSError:
@@ -37,10 +37,14 @@ def import_users(csv_file):
         reader = csv.DictReader(f)
 
         for row in reader:
-            username = row['username']
-            pwd = row['password']
-
-            user, _ = User.objects.get_or_create(username=username, defaults={
+            try:
+                username = row['username']
+                pwd = row['password']
+            except Exception:
+                print('username and/or password column missing')
+                print('Make sure your columns are: username, password, name, organization')
+            
+            user, created = User.objects.get_or_create(username=username, defaults={
                 'is_active': True,
             })
 
@@ -48,10 +52,18 @@ def import_users(csv_file):
                 'language': Language.get_python3(),
                 'timezone': settings.DEFAULT_USER_TIME_ZONE,
             })
+            if created:
+                print('Created user', username)
 
             if pwd:
                 user.set_password(pwd)
-            
+            elif created:
+                user.set_password('lqdoj')
+                print('User', username, 'missing password, default=lqdoj')
+
+            if 'name' in row.keys() and row['name']:
+                user.first_name = row['name']
+
             if 'organization' in row.keys() and row['organization']:
                 org = Organization.objects.get(name=row['organization'])
                 profile.organizations.add(org)

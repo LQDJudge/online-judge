@@ -139,18 +139,27 @@ def group_test_cases(cases):
 
 def read_head_archive(archive, file):
     with archive.open(file) as f:
-        return f.read(settings.TESTCASE_VISIBLE_LENGTH + 3)
+        s = f.read(settings.TESTCASE_VISIBLE_LENGTH + 3)
+        # add this so there are no characters left behind (ex, 'á' = 2 utf-8 chars)
+        while True:
+            try:
+                s.decode('utf-8')
+                break
+            except UnicodeDecodeError:
+                s += f.read(1)
+        return s
 
 
 def get_visible_content(data):
     data = data or b''
     data = data.replace(b'\r\n', b'\r').replace(b'\r', b'\n')
+
+    data = data.decode('utf-8')
+
     if (len(data) > settings.TESTCASE_VISIBLE_LENGTH):
         data = data[:settings.TESTCASE_VISIBLE_LENGTH]
-        data += b'.' * 3
-    elif not data.endswith(b'\n'):
-        data += b'\n'
-    return data.decode('utf-8')
+        data += '.' * 3
+    return data
 
 
 def get_input_answer(case, archive):
