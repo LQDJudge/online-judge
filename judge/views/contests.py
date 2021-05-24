@@ -751,7 +751,7 @@ class ContestParticipationList(LoginRequiredMixin, ContestRankingBase):
 class ContestParticipationDisqualify(ContestMixin, SingleObjectMixin, View):
     def get_object(self, queryset=None):
         contest = super().get_object(queryset)
-        if not self.can_edit:
+        if not contest.is_editable_by(self.request.user):
             raise Http404()
         return contest
 
@@ -772,7 +772,7 @@ class ContestMossMixin(ContestMixin, PermissionRequiredMixin):
 
     def get_object(self, queryset=None):
         contest = super().get_object(queryset)
-        if settings.MOSS_API_KEY is None or not self.can_edit:
+        if settings.MOSS_API_KEY is None or not contest.is_editable_by(self.request.user):
             raise Http404()
         if not contest.is_editable_by(self.request.user):
             raise Http404()
