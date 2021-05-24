@@ -43,7 +43,7 @@ from judge.utils.problems import get_result_data
 from judge.utils.problems import user_authored_ids
 from judge.utils.problems import user_completed_ids
 from judge.utils.problems import user_editable_ids
-from judge.utils.raw_sql import use_straight_join
+from judge.utils.raw_sql import join_sql_subquery, use_straight_join
 from judge.utils.views import DiggPaginatorMixin
 from judge.utils.views import TitleMixin
 
@@ -292,11 +292,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                                                           queryset=ProblemTranslation.objects.filter(
                                                               language=self.request.LANGUAGE_CODE), to_attr='_trans'))
         if self.in_contest:
-            queryset = queryset.filter(
-                contest__participation__contest_id=self.contest.id)
-            if self.contest.hide_scoreboard and self.contest.is_in_contest(self.request.user):
-                queryset = queryset.filter(
-                    contest__participation__user=self.request.profile)
+            queryset = queryset.filter(contest_object=self.contest)
+            if not self.contest.can_see_full_scoreboard(self.request.user):
+                queryset = queryset.filter(user=self.request.profile)
         else:
             queryset = queryset.select_related(
                 'contest_object').defer('contest_object__description')
@@ -304,12 +302,18 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             # This is not technically correct since contest organizers *should* see these, but
             # the join would be far too messy
             if not self.request.user.has_perm('judge.see_private_contest'):
-                queryset = queryset.exclude(
-                    contest_object_id__in=Contest.objects.filter(hide_scoreboard=True))
+                # Show submissions for any contest you can edit or visible scoreboard
+                contest_queryset = Contest.objects.filter(Q(authors=self.request.profile) |
+                                                          Q(curators=self.request.profile) |
+                                                          Q(scoreboard_visibility=Contest.SCOREBOARD_VISIBLE) |
+                                                          Q(end_time__lt=timezone.now())).distinct()
+                queryset = queryset.filter(Q(user=self.request.profile) |
+                                           Q(contest_object__in=contest_queryset) |
+                                           Q(contest_object__isnull=True))
 
         if self.selected_languages:
             queryset = queryset.filter(
-                language_id__in=Language.objects.filter(key__in=self.selected_languages))
+                language__in=Language.objects.filter(key__in=self.selected_languages))
         if self.selected_statuses:
             queryset = queryset.filter(result__in=self.selected_statuses)
 
@@ -318,14 +322,13 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     def get_queryset(self):
         queryset = self._get_queryset()
         if not self.in_contest:
-            if not self.request.user.has_perm('judge.see_private_problem'):
-                queryset = queryset.filter(problem__is_public=True)
-            if not self.request.user.has_perm('judge.see_organization_problem'):
-                filter = Q(problem__is_organization_private=False)
-                if self.request.user.is_authenticated:
-                    filter |= Q(
-                        problem__organizations__in=self.request.profile.organizations.all())
-                queryset = queryset.filter(filter)
+            join_sql_subquery(
+                queryset,
+                subquery=str(Problem.get_visible_problems(self.request.user).distinct().only('id').query),
+                params=[],
+                join_fields=[('problem_id', 'id')],
+                alias='visible_problems',
+            )
         return queryset
 
     def get_my_submissions_page(self):
@@ -452,7 +455,7 @@ class ProblemSubmissionsBase(SubmissionsListBase):
                            reverse('problem_detail', args=[self.problem.code]))
 
     def access_check_contest(self, request):
-        if self.in_contest and not self.contest.can_see_scoreboard(request.user):
+        if self.in_contest and not self.contest.can_see_own_scoreboard(request.user):
             raise Http404()
 
     def access_check(self, request):

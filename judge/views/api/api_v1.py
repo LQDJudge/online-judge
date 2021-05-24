@@ -16,10 +16,9 @@ def sane_time_repr(delta):
 
 
 def api_v1_contest_list(request):
-    queryset = Contest.objects.filter(is_visible=True, is_private=False,
-                                      is_organization_private=False).prefetch_related(
-        Prefetch('tags', queryset=ContestTag.objects.only('name'), to_attr='tag_list')).defer('description')
-
+    queryset = Contest.get_visible_contests(request.user).prefetch_related(
+        Prefetch('tags', queryset=ContestTag.objects.only('name'), to_attr='tag_list'))
+    
     return JsonResponse({c.key: {
         'name': c.name,
         'start_time': c.start_time.isoformat(),
@@ -33,10 +32,7 @@ def api_v1_contest_detail(request, contest):
     contest = get_object_or_404(Contest, key=contest)
 
     in_contest = contest.is_in_contest(request.user)
-    can_see_rankings = contest.can_see_scoreboard(request.user)
-    if contest.hide_scoreboard and in_contest:
-        can_see_rankings = False
-
+    can_see_rankings = contest.can_see_full_scoreboard(request.user)
     problems = list(contest.contest_problems.select_related('problem')
                     .defer('problem__description').order_by('order'))
     participations = (contest.users.filter(virtual=0, user__is_unlisted=False)

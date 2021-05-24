@@ -185,7 +185,7 @@
 {% endmacro %}
 
 {% macro user_count(contest, user) %}
-    {% if contest.show_scoreboard or contest.can_see_scoreboard(user) %}
+    {% if contest.can_see_own_scoreboard(user) %}
         <a href="{{ url('contest_ranking', contest.key) }}">{{ contest.user_count }}</a>
     {% else %}
         {{ contest.user_count }}
@@ -195,7 +195,7 @@
 {% macro contest_join(contest, request) %}
     {% if not request.in_contest %}
         <td>
-            {% if request.profile in contest.organizers.all() %}
+            {% if request.profile in contest.authors.all() or request.profile in contest.curators.all() or request.profile in contest.testers.all() %}
                 <form action="{{ url('contest_join', contest.key) }}" method="post">
                     {% csrf_token %}
                     <input type="submit" class="unselectable button full participate-button"

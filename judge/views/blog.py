@@ -81,17 +81,14 @@ class PostList(ListView):
                                                       .annotate(points=Max('points'), latest=Max('date'))
                                                       .order_by('-latest')
                                                       [:settings.DMOJ_BLOG_RECENTLY_ATTEMPTED_PROBLEMS_COUNT])
+        
+        visible_contests = Contest.get_visible_contests(self.request.user).filter(is_visible=True) \
+                                  .order_by('start_time')
 
-        visible_contests = Contest.objects.filter(is_visible=True).order_by('start_time')
-        q = Q(is_private=False, is_organization_private=False)
-        if self.request.user.is_authenticated:
-            q |= Q(is_organization_private=True, organizations__in=user.organizations.all())
-            q |= Q(is_private=True, private_contestants=user)
-            q |= Q(view_contest_scoreboard=user)
-        visible_contests = visible_contests.filter(q)
-        context['current_contests'] = visible_contests.filter(start_time__lte=now, end_time__gt=now).distinct()
-        context['future_contests'] = visible_contests.filter(start_time__gt=now).distinct()
+        context['current_contests'] = visible_contests.filter(start_time__lte=now, end_time__gt=now)
+        context['future_contests'] = visible_contests.filter(start_time__gt=now)
 
+        visible_contests = Contest.get_visible_contests(self.request.user).filter(is_visible=True)
         if self.request.user.is_authenticated:
             profile = self.request.profile
             context['own_open_tickets'] = (Ticket.objects.filter(Q(user=profile) | Q(assignees__in=[profile]), is_open=True).order_by('-id')

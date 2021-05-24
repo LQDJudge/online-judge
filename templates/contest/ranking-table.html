@@ -32,7 +32,7 @@
 {% endblock %}
 
 {% block user_data %}
-    {% if is_organizer %}
+    {% if can_edit %}
         <span class="contest-participation-operation">
             <form action="{{ url('contest_participation_disqualify', contest.key) }}" method="post">
                 {% csrf_token %}
@@ -56,7 +56,7 @@
 {% block before_point_head %}
     {% for problem in problems %}
         <th class="points header problem-score-col"><a href="{{ url('contest_ranked_submissions', contest.key, problem.problem.code) }}">
-            {{- loop.index }}
+            {{- contest.get_label_for_problem(loop.index0) }}
             <div class="point-denominator">{{ problem.points }}</div>
         </a></th>
     {% endfor %}
