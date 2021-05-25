@@ -43,6 +43,7 @@ from judge.utils.problems import get_result_data
 from judge.utils.problems import user_authored_ids
 from judge.utils.problems import user_completed_ids
 from judge.utils.problems import user_editable_ids
+from judge.utils.problems import get_problem_case
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
 from judge.utils.views import DiggPaginatorMixin
 from judge.utils.views import TitleMixin
@@ -137,60 +138,23 @@ def group_test_cases(cases):
     return result
 
 
-def read_head_archive(archive, file):
-    with archive.open(file) as f:
-        s = f.read(settings.TESTCASE_VISIBLE_LENGTH + 3)
-        # add this so there are no characters left behind (ex, 'á' = 2 utf-8 chars)
-        while True:
-            try:
-                s.decode('utf-8')
-                break
-            except UnicodeDecodeError:
-                s += f.read(1)
-        return s
-
-
-def get_visible_content(data):
-    data = data or b''
-    data = data.replace(b'\r\n', b'\r').replace(b'\r', b'\n')
-
-    data = data.decode('utf-8')
-
-    if (len(data) > settings.TESTCASE_VISIBLE_LENGTH):
-        data = data[:settings.TESTCASE_VISIBLE_LENGTH]
-        data += '.' * 3
-    return data
-
-
-def get_input_answer(case, archive):
-    result = {'input': '', 'answer': ''}
-    if (len(case.input_file)):
-        result['input'] = get_visible_content(read_head_archive(archive, case.input_file))
-    if (len(case.output_file)):
-        result['answer'] = get_visible_content(read_head_archive(archive, case.output_file))
-    return result
-
-
-def get_problem_data(submission):
-    archive_path = os.path.join(settings.DMOJ_PROBLEM_DATA_ROOT,
-                                str(submission.problem.data_files.zipfile))
-    if not os.path.exists(archive_path):
-        raise Exception(
-            'archive file "%s" does not exist' % archive_path)
-    try:
-        archive = zipfile.ZipFile(archive_path, 'r')
-    except zipfile.BadZipfile:
-        raise Exception('bad archive: "%s"' % archive_path)
-   
+def get_cases_data(submission):
     testcases = ProblemTestCase.objects.filter(dataset=submission.problem)\
                                .order_by('order')
-
+    
     if (submission.is_pretested):
         testcases = testcases.filter(is_pretest=True)
 
+    files = []
+    for case in testcases:
+        if case.input_file: files.append(case.input_file)
+        if case.output_file: files.append(case.output_file)
+    case_data = get_problem_case(submission.problem, files)
+
     problem_data = {}
     for count, case in enumerate(testcases):
-        problem_data[count + 1] = get_input_answer(case, archive)
+        problem_data[count + 1] = {'input': case_data[case.input_file],
+                                   'answer': case_data[case.output_file]}
 
     return problem_data
 
@@ -210,7 +174,7 @@ class SubmissionStatus(SubmissionDetailBase):
         if (contest is not None):
             prefix_length = contest.problem.output_prefix_override
         if ((contest is None or prefix_length > 0) or self.request.user.is_superuser):
-            context['cases_data'] = get_problem_data(submission)
+            context['cases_data'] = get_cases_data(submission)
 
         try:
             lang_limit = submission.problem.language_limits.get(
