@@ -152,8 +152,11 @@ def get_cases_data(submission):
     case_data = get_problem_case(submission.problem, files)
 
     problem_data = {}
-    for count, case in enumerate(testcases):
-        problem_data[count + 1] = {'input': case_data[case.input_file],
+    count = 0
+    for case in testcases:
+        if case.type != 'C': continue
+        count += 1
+        problem_data[count] = {'input': case_data[case.input_file],
                                    'answer': case_data[case.output_file]}
 
     return problem_data
@@ -167,6 +170,7 @@ class SubmissionStatus(SubmissionDetailBase):
         submission = self.object
         context['last_msg'] = event.last()
         context['batches'] = group_test_cases(submission.test_cases.all())
+        print(context['batches'])
         context['time_limit'] = submission.problem.time_limit
 
         contest = submission.contest_or_none
