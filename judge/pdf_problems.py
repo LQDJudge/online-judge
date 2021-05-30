@@ -288,6 +288,7 @@ class SeleniumPDFRender(BasePdfMaker):
     def _make(self, debug):
         options = webdriver.ChromeOptions()
         options.add_argument("--headless")
+        options.add_argument("--no-sandbox") # for root
         options.binary_location = settings.SELENIUM_CUSTOM_CHROME_PATH
 
         browser = webdriver.Chrome(settings.SELENIUM_CHROMEDRIVER_PATH, options=options)
