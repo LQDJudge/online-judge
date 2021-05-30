@@ -256,7 +256,6 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
                     'math_engine': maker.math_engine,
                 }).replace('"//', '"https://').replace("'//", "'https://")
                 maker.title = problem_name
-
                 assets = ['style.css', 'pygment-github.css']
                 if maker.math_engine == 'jax':
                     assets.append('mathjax_config.js')
@@ -267,7 +266,6 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
                     self.logger.error('Failed to render PDF for %s', problem.code)
                     return HttpResponse(maker.log, status=500, content_type='text/plain')
                 shutil.move(maker.pdffile, cache)
-
         response = HttpResponse()
         if hasattr(settings, 'DMOJ_PDF_PROBLEM_INTERNAL') and \
                 request.META.get('SERVER_SOFTWARE', '').startswith('nginx/'):
