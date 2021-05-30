@@ -7,7 +7,7 @@
         $(function () {
         });
     </script>
-    <script type="text/javascript" src="{{ static('libs/jquery-sortable.js') }}"></script>
+    <script type="text/javascript" src="{{ static('jquery-ui.min.js') }}"></script>
     <script type="text/javascript" src="{{ static('libs/featherlight/featherlight.min.js') }}"></script>
     <script type="text/javascript">
         $(function () {
@@ -75,6 +75,17 @@
                 }
             }
 
+            function swap_row($a, $b) {
+                var $a_order = $a.find('input[id$=order]'), $b_order = $b.find('input[id$=order]');
+                var order = $a_order.val();
+                $a_order.val($b_order.val());
+                $b_order.val(order);
+                $b.after($a);
+                $a.find('span.order').text($a_order.val());
+                $b.find('span.order').text($b_order.val());
+                handle_table_reorder();
+            }
+
             function checker_precision($checker) {
                 var $td = $checker.parent();
                 var $args = $td.find('input');
@@ -117,18 +128,6 @@
                     $sample.toggle($checker.val().startsWith('custom')).change();
                 }).change();
             })();
-
-
-            function swap_row($a, $b) {
-                var $a_order = $a.find('input[id$=order]'), $b_order = $b.find('input[id$=order]');
-                var order = $a_order.val();
-                $a_order.val($b_order.val());
-                $b_order.val(order);
-                $b.after($a);
-                $a.find('span.order').text($a_order.val());
-                $b.find('span.order').text($b_order.val());
-                handle_table_reorder();
-            }
 
             checker_precision($('#id_problem-data-checker'));
             
@@ -281,33 +280,29 @@
                 for (var i = 0; i < outFiles.length; i++) {
                     $("#id_cases-" + i + "-output_file").val(outFiles[i]).change();
                 }
+
                 // add points
                 if ($('#problem-type').val() == "ICPC") {
-                    for (i = 0; i + 1 < inFiles.length; i++) {
-                        $("#id_cases-" + i + "-points").val("0").change();
-                    }
-                    $("#id_cases-" + (inFiles.length - 1) + "-points").val("100").change();
+                    $('#case-table tbody tr td').find('input[id$=points]').val('0').change();
+                    $('#case-table tbody tr td').find('input[id$=points]:visible')
+                        .last().val('100').change();
                 }
                 else {
-                    for (i = 0; i < inFiles.length; i++) {
-                        $("#id_cases-" + i + "-points").val("1").change();
-                    }
+                    $('#case-table tbody tr td').find('input[id$=points]').val('1').change()
                 }
                 return false;
             });
 
             var oldIndex;
-            $table.sortable({
-                containerSelector: 'table',
-                itemPath: '> tbody:first',
+             $('#case-table tbody').sortable({
                 itemSelector: 'tr',
                 handle: 'i.fa-ellipsis-v',
-                placeholder: '<tr class="placeholder">',
-                onDragStart: function ($item, container, _super) {
+                start: function (event, ui) {
+                    $item = ui.item;
                     oldIndex = $item.index();
-                    _super($item, container);
                 },
-                onDrop: function ($item, container, _super) {
+                stop: function (event, ui) {
+                    $item = ui.item;
                     var newIndex = $item.index();
                     if (newIndex > oldIndex) {
                         var order = parseInt($item.parent().children().slice(oldIndex, newIndex).each(function () {
@@ -324,7 +319,6 @@
                     }
                     if (newIndex != oldIndex)
                         handle_table_reorder();
-                    _super($item, container);
                 }
             });
 
@@ -368,45 +362,8 @@
             z-index: 2000;
         }
 
-        tr.placeholder {
-            display: block;
-            background: red;
-            position: relative;
-            margin: 0;
-            padding: 0;
-            border: none;
-        }
-
-        tr.placeholder:before {
-            content: "";
-            position: absolute;
-            width: 0;
-            height: 0;
-            border: 5px solid transparent;
-            border-left-color: red;
-            margin-top: -5px;
-            left: -5px;
-            border-right: none;
-        }
-
         i.fa-ellipsis-v {
             cursor: move;
-        }
-
-        .edit-generator-args {
-            position: relative;
-        }
-
-        .generator-args-editor textarea {
-            display: block;
-            width: 100%;
-            margin-bottom: 0.5em;
-            height: 8em;
-        }
-
-        .generator-args-editor #submit-button {
-            display: block;
-            float: right;
         }
 
         #case-table tbody td {
@@ -491,7 +448,9 @@
                     <tbody class="extra-row-body" style="display: none">
                 {% endif %}
                 <tr data-type="{{ form['type'].value() }}">
-                    <td>{{ form.id }}{{ form.order.errors }}{{ form.order }}</td>
+                    <td>
+                        {{ form.id }}{{ form.order.errors }}{{ form.order }}
+                    </td>
                     <td class="type-column">{{ form.type.errors }}{{ form.type }}</td>
                     <td{% if not (form.empty_permitted or form['type'].value() != 'C' or
                                   form['input_file'].value() in valid_files) %} class="bad-file"{% endif %}>
@@ -504,8 +463,7 @@
                     <td>{{ form.points.errors }}{{ form.points }}</td>
                     <td>{{ form.is_pretest.errors }}{{ form.is_pretest }}</td>
                     {% if cases_formset.can_delete %}
-                        <td>{{ form.DELETE }}
-                        </td>
+                        <td>{{ form.DELETE }}</td>
                     {% endif %}
                 </tr>
             {% endfor %}
@@ -514,5 +472,4 @@
         <input type="submit" value="{{ _('Apply!') }}" class="button" id="submit-button">
         <a id="add-case-row" href="#"><i class="fa fa-plus"></i> {{ _('Add new case') }}</a>
     </form>
-    <div style="display: none" class="generator-args-editor"><textarea></textarea><a class="button">Save</a></div>
 {% endblock %}
