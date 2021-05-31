@@ -76,7 +76,6 @@ class RegistrationView(OldRegistrationView):
         kwargs['TIMEZONE_BG'] = settings.TIMEZONE_BG if tzmap else '#4E7CAD'
         kwargs['password_validators'] = get_default_password_validators()
         kwargs['tos_url'] = settings.TERMS_OF_SERVICE_URL
-        print(kwargs['form'].errors)
         return super(RegistrationView, self).get_context_data(**kwargs)
 
     def register(self, form):
