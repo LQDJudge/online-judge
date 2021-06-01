@@ -1,11 +1,13 @@
 import errno
 import os
+from zipfile import BadZipFile, ZipFile
 
 from django.core.validators import FileExtensionValidator
+from django.core.cache import cache
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from judge.utils.problem_data import ProblemDataStorage
+from judge.utils.problem_data import ProblemDataStorage, get_file_cachekey
 
 __all__ = ['problem_data_storage', 'problem_directory_file', 'ProblemData', 'ProblemTestCase', 'CHECKERS']
 
@@ -66,7 +68,16 @@ class ProblemData(models.Model):
         self.__original_zipfile = self.zipfile
 
     def save(self, *args, **kwargs):
-        if self.zipfile != self.__original_zipfile:
+        if self.zipfile != self.__original_zipfile and self.__original_zipfile:
+            # Delete caches
+            try: 
+                files = ZipFile(self.__original_zipfile.path).namelist()
+                for file in files:
+                    cache_key = 'problem_archive:%s:%s' % (self.problem.code, get_file_cachekey(file))
+                    cache.delete(cache_key)
+            except BadZipFile:
+                pass
+
             self.__original_zipfile.delete(save=False)
         return super(ProblemData, self).save(*args, **kwargs)
 

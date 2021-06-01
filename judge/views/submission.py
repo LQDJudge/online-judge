@@ -43,7 +43,7 @@ from judge.utils.problems import get_result_data
 from judge.utils.problems import user_authored_ids
 from judge.utils.problems import user_completed_ids
 from judge.utils.problems import user_editable_ids
-from judge.utils.problems import get_problem_case
+from judge.utils.problem_data import get_problem_case
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
 from judge.utils.views import DiggPaginatorMixin
 from judge.utils.views import TitleMixin
@@ -172,7 +172,6 @@ class SubmissionStatus(SubmissionDetailBase):
         submission = self.object
         context['last_msg'] = event.last()
         context['batches'] = group_test_cases(submission.test_cases.all())
-        print(context['batches'])
         context['time_limit'] = submission.problem.time_limit
 
         contest = submission.contest_or_none
