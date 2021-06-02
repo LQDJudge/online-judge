@@ -1,4 +1,5 @@
 import json
+import math
 from calendar import Calendar, SUNDAY
 from collections import defaultdict, namedtuple
 from datetime import date, datetime, time, timedelta
@@ -37,7 +38,7 @@ from judge.utils.celery import redirect_to_task_status
 from judge.utils.opengraph import generate_opengraph
 from judge.utils.problems import _get_result_data
 from judge.utils.ranker import ranker
-from judge.utils.stats import get_bar_chart, get_pie_chart
+from judge.utils.stats import get_bar_chart, get_pie_chart, get_histogram
 from judge.utils.views import DiggPaginatorMixin, SingleObjectFormView, TitleMixin, generic_message
 
 __all__ = ['ContestList', 'ContestDetail', 'ContestRanking', 'ContestJoin', 'ContestLeave', 'ContestCalendar',
@@ -524,6 +525,7 @@ class CachedContestCalendar(ContestCalendar):
 
 class ContestStats(TitleMixin, ContestMixin, DetailView):
     template_name = 'contest/stats.html'
+    POINT_BIN = 10 # in point distribution
 
     def get_title(self):
         return _('%s Statistics') % self.object.name
@@ -558,6 +560,21 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
             for category in _get_result_data(defaultdict(int, status_counts[i]))['categories']:
                 result_data[category['code']][i] = category['count']
 
+        problem_points = [[] for _ in range(num_problems)]
+        point_count = queryset.values('contest__problem__order', 'contest__points')\
+                              .annotate(count=Count('contest__points')) \
+                              .filter(points__isnull=False) \
+                              .order_by('contest__problem__order', 'contest__points')
+        
+        counter = [[0 for _ in range(self.POINT_BIN + 1)] for _ in range(num_problems)]
+        for sub in point_count.iterator():
+            problem_idx = sub['contest__problem__order'] - 1
+            bin_idx = math.floor(sub['contest__points'] * self.POINT_BIN / 100) 
+            counter[problem_idx][bin_idx] += sub['count']
+        for i in range(num_problems):
+            problem_points[i] = [(j * 100 / self.POINT_BIN, counter[i][j]) 
+                                        for j in range(len(counter[i]))]
+            
         stats = {
             'problem_status_count': {
                 'labels': labels,
@@ -574,6 +591,9 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
                 queryset.values('contest__problem__order', 'problem__name').annotate(ac_rate=ac_rate)
                         .order_by('contest__problem__order').values_list('problem__name', 'ac_rate'),
             ),
+            'problem_point': [get_histogram(problem_points[i])
+                for i in range(num_problems)
+            ],
             'language_count': get_pie_chart(
                 queryset.values('language__name').annotate(count=Count('language__name'))
                         .filter(count__gt=0).order_by('-count').values_list('language__name', 'count'),
@@ -585,7 +605,7 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
         }
 
         context['stats'] = mark_safe(json.dumps(stats))
-
+        context['problems'] = labels
         return context
 
 

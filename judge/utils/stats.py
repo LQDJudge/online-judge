@@ -51,3 +51,18 @@ def get_bar_chart(data, **kwargs):
             },
         ],
     }
+
+def get_histogram(data, **kwargs):
+    return {
+        'labels': [round(i, 1) for i in list(map(itemgetter(0), data))],
+        'datasets': [
+            {
+                'backgroundColor': kwargs.get('fillColor', 'rgba(151,187,205,0.5)'),
+                'borderColor': kwargs.get('strokeColor', 'rgba(151,187,205,0.8)'),
+                'borderWidth': 1,
+                'hoverBackgroundColor': kwargs.get('highlightFill', 'rgba(151,187,205,0.75)'),
+                'hoverBorderColor': kwargs.get('highlightStroke', 'rgba(151,187,205,1)'),
+                'data': list(map(itemgetter(1), data)),
+            },
+        ],
+    }

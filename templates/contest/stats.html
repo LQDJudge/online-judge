@@ -18,9 +18,22 @@
             $(function () {
                 draw_stacked_bar_chart(window.stats.problem_status_count, $('#problem-status-count'));
                 draw_bar_chart(window.stats.problem_ac_rate, $('#problem-ac-rate'));
+                pts_hist = draw_histogram(window.stats.problem_point[0], $('#problem-point'));
                 draw_pie_chart(window.stats.language_count, $('#language-count'));
                 draw_bar_chart(window.stats.language_ac_rate, $('#language-ac-rate'));
+                
+                $('#problem-point-select').change(function() {
+                    pts_hist.destroy();
+                    problem = $(this).val();
+                    pts_hist = draw_histogram(window.stats.problem_point[problem], 
+                        $('#problem-point'));
+                })
+
+                $('#problem-point-select').select2({
+                    width: '10em',
+                });
             });
+            
         </script>
     {% endcompress %}
     {% include "contest/media-js.html" %}
@@ -42,6 +55,21 @@
 
     <h3>{{ _('Problem AC Rate') }}</h3>
     <div id="problem-ac-rate" class="chart">
+        <canvas></canvas>
+    </div>
+    
+    <h3>
+        {{ _('Problem Point Distribution') }}: 
+        <select id="problem-point-select">
+            {% for name in problems %}
+                <option value="{{ loop.index0 }}" class="point-dropdown">
+                    {{ name }}
+                </option>
+            {% endfor %}
+        </select>
+    </h3>
+
+    <div id="problem-point" class="chart">
         <canvas></canvas>
     </div>
 
