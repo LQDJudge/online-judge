@@ -563,11 +563,11 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
         problem_points = [[] for _ in range(num_problems)]
         point_count_queryset = list(queryset.values('problem__code', 'contest__points', 'contest__problem__points')
                                   .annotate(count=Count('contest__points'))
-                                  .filter(points__isnull=False)
                                   .order_by('problem__code', 'contest__points')
                                   .values_list('problem__code', 'contest__points', 'contest__problem__points', 'count'))
         counter = [[0 for _ in range(self.POINT_BIN + 1)] for _ in range(num_problems)]
         for problem_code, point, max_point, count in point_count_queryset:
+            if point == None: continue
             problem_idx = codes.index(problem_code)
             bin_idx = math.floor(point * self.POINT_BIN / max_point) 
             counter[problem_idx][bin_idx] += count
