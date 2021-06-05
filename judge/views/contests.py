@@ -567,7 +567,7 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
                                   .values_list('problem__code', 'contest__points', 'contest__problem__points', 'count'))
         counter = [[0 for _ in range(self.POINT_BIN + 1)] for _ in range(num_problems)]
         for problem_code, point, max_point, count in point_count_queryset:
-            if point == None: continue
+            if (point == None) or (problem_code not in codes): continue
             problem_idx = codes.index(problem_code)
             bin_idx = math.floor(point * self.POINT_BIN / max_point) 
             counter[problem_idx][bin_idx] += count
