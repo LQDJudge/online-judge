@@ -67,6 +67,6 @@ def import_users(csv_file):
             if 'organization' in row.keys() and row['organization']:
                 org = Organization.objects.get(name=row['organization'])
                 profile.organizations.add(org)
-
+            user.email = row['email']
             user.save()
             profile.save()
