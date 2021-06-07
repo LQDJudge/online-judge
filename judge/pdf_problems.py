@@ -300,16 +300,19 @@ class SeleniumPDFRender(BasePdfMaker):
         except TimeoutException:
             logger.error('PDF math rendering timed out')
             self.log = self.get_log(browser) + '\nPDF math rendering timed out'
+            browser.quit()
             return
         response = browser.execute_cdp_cmd('Page.printToPDF', self.template)
         self.log = self.get_log(browser)
         if not response:
+            browser.quit()
             return
 
         with open(self.pdffile, 'wb') as f:
             f.write(base64.b64decode(response['data']))
 
         self.success = True
+        browser.quit()
 
 
 if HAS_PUPPETEER:
