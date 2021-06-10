@@ -41,11 +41,28 @@
         .problem-info-entry {
             padding-top: 0.5em;
         }
+
+        #raw_problem {
+            visibility: hidden;
+            width: 0;
+            height: 0;
+        }
     </style>
 {% endblock %}
 
 {% block content_js_media %}
     {% include "comments/media-js.html" %}
+    <script type="text/javascript">
+        $(function() {
+            $('#pdf_button').click(async function(e) {
+                e.preventDefault();
+                while(!$('.math-loaded', frames['raw_problem'].document).length){
+                    await new Promise(r => setTimeout(r, 200)); 
+                }
+                frames['raw_problem'].print();
+            });
+        });
+    </script>
 {% endblock %}
 
 {% block title_row %}
@@ -81,16 +98,19 @@
                 {% endfor %}
             </span>
         {% endif %}
-        {% if has_pdf_render %}
-            <span class="spacer"></span>
-            <a href="{{ url('problem_pdf', problem.code) }}" class="view-pdf">
-                <span class="pdf-icon">
-                    <span class="fa fa-file-pdf-o pdf-icon-logo"></span>
-                    <span class="pdf-icon-bar"></span>
-                </span>
-                {{ _('View as PDF') }}
-            </a>
+        
+        <span class="spacer"></span>
+        {% if has_render %}
+        <a href="{{ url('problem_pdf', problem.code) }}" class="view-pdf">
+        {% else %}
+        <a id="pdf_button" class="view-pdf" href='#'>
         {% endif %}
+            <span class="pdf-icon">
+                <span class="fa fa-file-pdf-o pdf-icon-logo"></span>
+                <span class="pdf-icon-bar"></span>
+            </span>
+            {{ _('View as PDF') }}
+        </a>
     </div>
 {% endblock %}
 
@@ -324,6 +344,7 @@
     {% else %}
         {% include "comments/list.html" %}
     {% endif %}
+    <iframe src="{{problem.code}}/raw" name="raw_problem" id="raw_problem"></iframe>
 {% endblock %}
 
 {% block bodyend %}
