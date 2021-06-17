@@ -135,9 +135,11 @@
                 data: elt.data(),
                 dataType: 'json',
                 success: function(data){
-                    console.log('delete ajax call success!');
-                    location.reload();
-                }
+                    elt.closest('li').hide();        
+                },
+                fail: function(data) {
+                    alert('Fail to delete');
+                },
             });
         });
         {% endif %}
