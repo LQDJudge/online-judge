@@ -92,7 +92,7 @@
             {% for case in batch.cases %}
             <tr id="{{ case.id }}" class="case-row toggle closed">
                 <td>
-                    {%- if ((prefix_length is none or prefix_length > 0) or (request.user.is_superuser)) -%}
+                    {%- if can_see_testcases -%}
                         <i class="fa fa-chevron-right fa-fw"></i>
                     {%- endif -%}
                     {%- if batch.id -%}
@@ -132,7 +132,7 @@
                 <td>{% if case.status != 'SC' %}<span class="col-title">{{_('Memory')}}: </span> {{ case.memory|kbdetailformat }}{% endif %}</td>
             </tr>
 
-                {% if ((prefix_length is none or prefix_length > 0) or (request.user.is_superuser)) %}
+                {% if can_see_testcases %}
                     <tr id="{{ case.id }}-output" style="display:none" class="case-feedback toggled">
                         <td colspan="5">
                             <div class="case-info">

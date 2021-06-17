@@ -167,20 +167,36 @@ def get_cases_data(submission):
 class SubmissionStatus(SubmissionDetailBase):
     template_name = 'submission/status.html'
 
+    def access_testcases_in_contest(self):
+        contest = self.object.contest_or_none
+        if contest is None:
+            return False
+        if contest.problem.problem.is_editable_by(self.request.user):
+            return True
+        if contest.problem.contest.is_in_contest(self.request.user):
+            return False
+        if contest.participation.ended:
+            return True
+        return False
+
     def get_context_data(self, **kwargs):
         context = super(SubmissionStatus, self).get_context_data(**kwargs)
         submission = self.object
         context['last_msg'] = event.last()
         context['batches'] = group_test_cases(submission.test_cases.all())
         context['time_limit'] = submission.problem.time_limit
-
+        context['can_see_testcases'] = False
+        
         contest = submission.contest_or_none
         prefix_length = 0
+        can_see_testcases = self.access_testcases_in_contest()
+
         if (contest is not None):
             prefix_length = contest.problem.output_prefix_override
-        if ((contest is None or prefix_length > 0) or self.request.user.is_superuser):
+        
+        if contest is None or prefix_length > 0 or can_see_testcases:
             context['cases_data'] = get_cases_data(submission)
-
+            context['can_see_testcases'] = True
         try:
             lang_limit = submission.problem.language_limits.get(
                 language=submission.language)
