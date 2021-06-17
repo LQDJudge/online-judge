@@ -286,7 +286,7 @@
 
         function update_ranking() {
             $.get({
-                url: 'ajax',
+                url: '/contest/{{contest.key}}/ranking/ajax',
                 success: function(HTML) {
                     $('#users-table').html(HTML);
                     highlightFirstSolve();
