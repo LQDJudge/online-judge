@@ -275,13 +275,10 @@
             }
 
             function ticket_message(ticket) {
-                console.log('Fetching data for: ' + ticket.message);
                 $.ajax({
                     url: '{{ url('ticket_message_ajax', ticket.id) }}',
                     data: {message: ticket.message},
                     success: function (data) {
-                        console.log('Got data for: ' + ticket.message);
-                        console.log(data);
                         $('#messages').append($(data.message));
                     },
                     error: function (data) {
@@ -299,7 +296,6 @@
                 return new EventReceiver(
                     "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
                     ['ticket-{{ ticket.id }}'], last_msg, function (message) {
-                        console.log(message);
                         switch (message.type) {
                             case 'ticket-status':
                                 ticket_status(message);

@@ -227,6 +227,7 @@
             });
         </script>
     {% endif %}
+    <script type="text/javascript" src="{{ static('event.js') }}"></script>
     <script type="text/javascript">
 
         function isFaster(time1, time2) {
@@ -283,7 +284,35 @@
             }
         }
 
+        function update_ranking() {
+            $.get({
+                url: 'ajax',
+                success: function(HTML) {
+                    $('#users-table').html(HTML);
+                    highlightFirstSolve();
+                },
+                fail: function() {
+                    console.log('Fail to update ranking');
+                }
+            });
+        }
+
+        window.load_dynamic_update = function (last_msg) {
+            return new EventReceiver(
+                "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
+                ['contest_{{contest.id}}'], last_msg, function (message) {
+                    switch (message.type) {
+                        case 'update':
+                            update_ranking();
+                            break;
+                    }
+                }
+            );
+        }
+
         $(function () {
+            load_dynamic_update({{last_msg}});
+
             var url = '{{ url('contest_participation', contest.key, '__username__') }}';
             var placeholder = $('#search-contest').replaceWith($('<select>').attr({
                 id: 'search-contest'
@@ -341,6 +370,7 @@
 
             highlightFirstSolve();
             
+
         });
     </script>
     {% include "contest/media-js.html" %}
