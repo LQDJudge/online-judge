@@ -124,12 +124,14 @@
                     body: body,
                 };
 
+                $('#chat-input').val('');
+
                 $.post("{{ url('post_chat_message') }}", message)
                     .fail(function(res) {
                         console.log('Fail to send message');
                     })
                     .done(function(res, status) {
-                        $('#chat-input').val('').focus();
+                        $('#chat-input').focus();
                     })
             }
         });
@@ -195,6 +197,10 @@
                     }
                 })
         })
+
+        setInterval(function() {
+            $('#refresh-button').click();
+        }, 5 * 60 * 1000);
 
         $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
         remove_day_if_today();
