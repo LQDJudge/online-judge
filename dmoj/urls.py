@@ -1,4 +1,4 @@
-from chat_box.views import ChatView, delete_message
+from chat_box.views import ChatView, delete_message, post_message, chat_message_ajax, online_status_ajax
 from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
@@ -372,8 +372,10 @@ urlpatterns = [
         url(r'^$', 
             login_required(ChatView.as_view()),
             name='chat'),
-        url(r'^delete/$', delete_message, name='delete_message')
-
+        url(r'^delete/$', delete_message, name='delete_chat_message'),
+        url(r'^post/$', post_message, name='post_chat_message'),
+        url(r'^ajax$', chat_message_ajax, name='chat_message_ajax'),
+        url(r'^online_status/ajax$', online_status_ajax, name='online_status_ajax')
     ])),
 
     url(r'^notifications/', 

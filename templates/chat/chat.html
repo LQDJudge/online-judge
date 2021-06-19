@@ -4,135 +4,106 @@
 {% block title %} {{_('Chat Box')}} {% endblock %}
 {% block js_media %}
 
-<script type="text/javascript">
-    // change ws to wss if using HTTPS
-    var chatSocket = new WebSocket( "{{ws_address}}" );
-</script>
 <script type="text/javascript" src="{{ static('mathjax_config.js') }}"></script>
-<script type="text/javascript"
-        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"></script>
+<script type="text/javascript" src="{{ static('event.js') }}"></script>
+
 <script type="text/javascript">
-    $(function() {
-        let currentPage = 1;
+    window.currentPage = 1;
 
-        $('#loader').hide();
+    function load_page(page) {
+        $.get('?page=' + page)
+            .fail(function() {
+                console.log("Fail to load page " + page);
+            })
+            .done(function(data) {
+                setTimeout(function() {
+                    let container = $('#chat-box');
+                    let lastMsgPos = scrollTopOfBottom(container)
+                    
+                    $('#loader').hide();  
+                    $('#chat-log').prepend(data);
+                    remove_day_if_today();
 
-        chatSocket.onmessage = function(e) {
-            let data = JSON.parse(e.data);
-            data = data['message'];
-            loadMessage(data['body'],
-                        data['author'],
-                        data['time'],
-                        data['id'],
-                        data['image'],
-                        data['css_class'],
-                        true);
-            // console.log(data);
-            $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
-        };
-        
-        function encodeHTML(content) {
-            return content.replace(/[\u00A0-\u9999<>\&]/gim, function(i) {
-                   return '&#'+i.charCodeAt(0)+';';
-            });
+                    container.scrollTop(scrollTopOfBottom(container) - lastMsgPos);
+                }, 500);
+            })
+    }
+
+    function scrollTopOfBottom(container) {
+        return container[0].scrollHeight - container.innerHeight()
+    }
+
+    function scrollContainer(container, loader) {
+        container.scroll(function() {
+        if (container.scrollTop() == 0) {
+            if (currentPage < {{paginator.num_pages}}) {
+                currentPage++;
+                loader.show();
+                load_page(currentPage);
+            }
         }
-        const datesAreOnSameDay = (first, second) =>
-            first.getFullYear() === second.getFullYear() &&
-            first.getMonth() === second.getMonth() &&
-            first.getDate() === second.getDate();
+    })}
 
-        function loadMessage(content, user, time, messid, image, css_class, isNew) {
-            // if (isNew) content = encodeHTML(content)
-            time = new Date(time);
-            if (datesAreOnSameDay(time, new Date())) {
-                time = moment(time).format("HH:mm");
+    function remove_day_if_today() {
+        $('.message_date').each(function() {
+            sent_date = $(this).html()
+            console.log(sent_date);
+            if (sent_date === "{{today}}") {
+                $(this).hide();
             }
-            else {
-                time = moment(time).format("HH:mm DD-MM-YYYY");   
-            }
-            content = encodeHTML(content);
-            li = `<li class="message"> 
-                    <img src="${image}" class="profile-pic">
-                    <div class="body-message">
-                        <div class="user-time">
-                            <span class="${css_class}">
-                                <a href="{{ url('user_page') }}/${user}">
-                                    ${user}
-                                </a>
-                            </span>
-                            <span class="time">${time}</span>
-                            {% if request.user.is_staff %}
-                            <a class="chatbtn_remove_mess" style="color:red; cursor: pointer;" data-messtime="${time}" data-author="${user}" data-messid="${messid}">Delete</a>
-                            {% endif %}
-                        </div>
-                        <span class="content-message">${content}                   </span>
-                    </div>
-                    <div class="clear"></div>
-                </li>`
-            ul = $('#chat-log')
-            if (isNew) {
-                ul.append(li)
-            }
-            else {
-                ul.prepend(li)
-            }
-            MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
-        }
-
-        (function init_chatlog() {
-            ul = $('#chat-log')
-            {% autoescape on %}
-            {% for msg in message %}
-                loadMessage("{{msg.body|safe|escapejs}}", `{{msg.author}}`, `{{msg.time}}`, `{{msg.id}}`, `{{gravatar(msg.author, 32)}}`,`{{msg.author.css_class}}`);
-            {% endfor %}
-            {% endautoescape %}
-            $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
-        })()
-
-        function scrollTopOfBottom(container) {
-            return container[0].scrollHeight - container.innerHeight()
-        }
-
-        function scrollContainer(container, loader) {
-            container.scroll(function() {
-            if (container.scrollTop() == 0) {
-                if (currentPage < {{paginator.num_pages}}) {
-                    currentPage++;
-                    loader.show();
-                    $.ajax({
-                        url: `{{request.path}}?page=${currentPage}`,
-                        success: function(data) {
-                            let lastMsg = $('.message:first')
-                            let lastMsgPos = scrollTopOfBottom(container)
-
-                            data = JSON.parse(data)
-                            setTimeout( () => {
-                                for (msg of data) {
-                                    loadMessage(msg.body, msg.author, msg.time, msg.id, msg.image, msg.css_class)
-                                }
-                                
-                                loader.hide()
-
-                                // scroll to last msg
-                                container.scrollTop(
-                                    scrollTopOfBottom(container) - lastMsgPos
-                                )
-                            }, 500)
-                        }
-                    })
+        })
+    }
+    
+    window.load_dynamic_update = function (last_msg) {
+        return new EventReceiver(
+            "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
+            ['chat'], last_msg, function (message) {
+                switch (message.type) {
+                    case 'new_message':
+                        add_new_message(message.message);
+                        break;
                 }
             }
-        })}
+        );
+    }
 
+    function add_new_message(message) {
+        // console.log(message);
+        $.get({
+            url: "{{ url('chat_message_ajax') }}",
+            data: {
+                message: message,
+            },
+            success: function (data) {
+                $('#chat-log').append($(data));
+                $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight)
+                MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+            },
+            error: function (data) {
+                if (data.status === 403)
+                    console.log('No right to see: ' + message);
+                else {
+                    console.log('Could not load chat message:');
+                    console.log(data.responseText);
+                }
+            }
+        });
+    }
+
+    $(function() {
+        $('#loader').hide();
+        
         scrollContainer($('#chat-box'), $('#loader'))
 
         {% if request.user.is_staff %}
         $(document).on("click", ".chatbtn_remove_mess", function() {
             var elt = $(this);
             $.ajax({
-                url: 'delete/',
+                url: "{{ url('delete_chat_message') }}",
                 type: 'post',
-                data: elt.data(),
+                data: {
+                    message: elt.attr('value'),
+                },
                 dataType: 'json',
                 success: function(data){
                     elt.closest('li').hide();        
@@ -147,23 +118,21 @@
         $("#chat-submit").click(function() {
             if ($("#chat-input").val().trim()) {
                 let body = $('#chat-input').val().trim();
-                let img = '{{ gravatar(request.user, 32) }}'
+                let img = '{{ gravatar(request.user, 32) }}';
                 
                 message = {
-                    'body': body,
-                }
+                    body: body,
+                };
 
-                chatSocket.send(JSON.stringify({
-                    'message': message
-                }));
-
-                $('#chat-input').val('').focus();
+                $.post("{{ url('post_chat_message') }}", message)
+                    .fail(function(res) {
+                        console.log('Fail to send message');
+                    })
+                    .done(function(res, status) {
+                        $('#chat-input').val('').focus();
+                    })
             }
         });
-
-        chatSocket.onclose = function(e) {
-            console.error('Chat socket closed unexpectedly');
-        };
 
         $("#chat-log").change(function() {
             $('#chat-log').scrollTop($('#chat-log')[0].scrollHeight);
@@ -196,9 +165,6 @@
             return true
         });
 
-    });
-
-    $(document).ready(function () {
         $('.chat-right-panel').hide();
         $('#chat-tab').find('a').click(function (e) {
             e.preventDefault();
@@ -214,17 +180,46 @@
             $('.chat-left-panel').hide();
             $('.chat-right-panel').show();
         });
+
+        $('#refresh-button').on('click', function() {
+            $.get("{{url('online_status_ajax')}}")
+                .fail(function() {
+                    console.log("Fail to get online status");
+                })
+                .done(function(data) {
+                    if (data.status == 403) {
+                        console.log("Fail to retrieve data");
+                    }
+                    else {
+                        $('#chat-online-content').html(data);
+                    }
+                })
+        })
+
+        $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+        remove_day_if_today();
+        load_dynamic_update({{last_msg}});
     });
 </script>
 
 {% endblock js_media %}
 
 {% block media %}
-<style>
-#content {
-    margin-top: -0.5em;
-}
-</style>
+    <style>
+        #content {
+            margin-top: -0.5em;
+        }
+        #refresh-button {
+            padding: 0 0.1em 0 0.1em;
+            margin: 0.1em;
+            border-radius: 0.1em;
+            background: goldenrod;
+        }
+        #refresh-button:hover {
+            background: lightgreen;
+            color: grey !important;
+        }
+    </style>
 {% endblock media %}
 
 {% block body %}
@@ -244,6 +239,7 @@
             <div id="chat-box">
                 <img src="http://opengraphicdesign.com/wp-content/uploads/2009/01/loader64.gif" id="loader">
                 <ul id="chat-log">
+                    {% include 'chat/message_list.html' %}
                 </ul>
             </div>
             <textarea id="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
@@ -251,34 +247,11 @@
         <button id="chat-submit" style="display:none;"> Send </button>
         <div id="chat-online" class="chat-right-panel sidebox">
             <h3>
-                {{_('Online Users')}} 
-                <i class="fa fa-wifi"></i>
+                {{_('Online Users')}}
+                <button id="refresh-button" class="fa fa-rotate-right" title="{{_('Refresh')}}"></button> 
             </h3>
             <ul id="chat-online-content">
-                <h4>{{_('Admins')}}: </h4>
-                <hr/>
-                {% for user in admin_status %}
-                    <li style="padding-left: 1em">
-                        {% if user.is_online %}
-                        <span class="green-dot"></span>
-                        {% else %}
-                        <span class="red-dot"></span>
-                        {% endif %}
-                        <span style="padding-left:0.25em">
-                            {{ link_user(user.user) }}
-                        </span>
-                    </li>
-                {% endfor %}
-                <h4 style="margin-top:1em;">{{_('Users')}}: </h4>
-                <hr/>
-                {% for user in online_users %}
-                    <li style="padding-left: 1em">
-                        <span class="green-dot"></span>
-                        <span style="padding-left:0.25em">
-                            {{ link_user(user.user) }}
-                        </span>
-                    </li>
-                {% endfor %}
+                {% include "chat/online_status.html" %}
             </ul>
         </div>
     </div>

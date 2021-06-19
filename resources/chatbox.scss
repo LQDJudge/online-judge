@@ -51,11 +51,14 @@
 .clear {
     clear: both;
 }
+
 .content-message {
     word-wrap: break-word;
-    white-space: pre-line;
 }
 
+.content-message p {
+    margin: 0;
+}
 
 #chat-area {
     height: 85vh;

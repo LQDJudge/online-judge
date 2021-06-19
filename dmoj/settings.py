@@ -243,7 +243,6 @@ INSTALLED_APPS += (
     'impersonate',
     'django_jinja',
     'chat_box',
-    'channels',
     'newsletter',
 )
 
@@ -512,17 +511,6 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 2621440
 FILE_UPLOAD_PERMISSIONS = 0o644
 
 MESSAGES_TO_LOAD = 15
-
-ASGI_APPLICATION = 'dmoj.routing.application'
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('0.0.0.0', 6379)],
-        },
-    },
-}
-
 
 NEWSLETTER_CONFIRM_EMAIL = False
 

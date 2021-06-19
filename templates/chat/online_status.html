@@ -1,0 +1,24 @@
+<h4>{{_('Admins')}}: </h4>
+<hr/>
+{% for user in admin_status %}
+    <li style="padding-left: 1em">
+        {% if user.is_online %}
+        <span class="green-dot"></span>
+        {% else %}
+        <span class="red-dot"></span>
+        {% endif %}
+        <span style="padding-left:0.25em">
+            {{ link_user(user.user) }}
+        </span>
+    </li>
+{% endfor %}
+<h4 style="margin-top:1em;">{{_('Users')}}: </h4>
+<hr/>
+{% for user in online_users %}
+    <li style="padding-left: 1em">
+        <span class="green-dot"></span>
+        <span style="padding-left:0.25em">
+            {{ link_user(user.user) }}
+        </span>
+    </li>
+{% endfor %}

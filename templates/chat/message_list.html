@@ -1,0 +1,8 @@
+{% for message in object_list | reverse%}
+    {% include "chat/message.html" %}
+{% endfor %}
+
+{% if REQUIRE_JAX %}
+    {% include "mathjax-load.html" %}
+{% endif %}
+{% include "comments/math.html" %}

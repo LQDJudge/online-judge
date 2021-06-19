@@ -1,26 +1,119 @@
 from django.utils.translation import gettext as _
 from django.views.generic import ListView
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.core.paginator import Paginator
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import render
 from django.forms.models import model_to_dict
 from django.utils import timezone
+from django.contrib.auth.decorators import login_required
 
+import datetime
 
+from judge import event_poster as event
 from judge.jinja2.gravatar import gravatar
 from .models import Message, Profile
 import json
     
-def format_messages(messages):
-    msg_list = [{
-        'time': msg.time,
-        'author': msg.author,
-        'body': msg.body,
-        'image': gravatar(msg.author, 32),
-        'id': msg.id,
-        'css_class': msg.author.css_class,
-    } for msg in messages]
-    return json.dumps(msg_list, default=str)
+
+class ChatView(ListView):
+    context_object_name = 'message'
+    template_name = 'chat/chat.html'
+    title = _('Chat Box')
+    paginate_by = 50
+    messages = Message.objects.filter(hidden=False)
+    paginator = Paginator(messages, paginate_by)
+
+    def get_queryset(self):
+        return self.messages
+
+    def get(self, request, *args, **kwargs):
+        page = request.GET.get('page')
+        if page == None:
+            return super().get(request, *args, **kwargs)
+
+        cur_page = self.paginator.get_page(page)
+
+        return render(request, 'chat/message_list.html', {
+            'object_list': cur_page.object_list,
+        })
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['title'] = self.title
+        context['last_msg'] = event.last()
+        context['online_users'] = get_user_online_status()
+        context['admin_status'] = get_admin_online_status()
+        context['today'] = timezone.now().strftime("%d-%m-%Y")
+        return context
+
+
+def delete_message(request):
+    ret = {'delete': 'done'}
+    
+    if request.method == 'GET':
+        return JsonResponse(ret)
+
+    if request.user.is_staff:
+        try:
+            messid = int(request.POST.get('message'))
+            mess = Message.objects.get(id=messid)
+        except:
+            return HttpResponseBadRequest()
+        
+        mess.hidden = True
+        mess.save()
+        
+        return JsonResponse(ret)
+    
+    return JsonResponse(ret)
+
+
+@login_required
+def post_message(request):
+    ret = {'msg': 'posted'}
+
+    if request.method == 'GET':
+        return JsonResponse(ret)
+
+    new_message = Message(author=request.profile,
+                          body=request.POST['body'])
+    new_message.save()
+
+    event.post('chat', {
+        'type': 'new_message',
+        'message': new_message.id,
+    })
+
+    return JsonResponse(ret)
+
+@login_required
+def chat_message_ajax(request):
+    if request.method != 'GET':
+        return HttpResponseBadRequest()
+
+    try:
+        message_id = request.GET['message']
+    except KeyError:
+        return HttpResponseBadRequest()
+
+    try:
+        message = Message.objects.filter(hidden=False).get(id=message_id)
+    except Message.DoesNotExist:
+        return HttpResponseBadRequest()
+    return render(request, 'chat/message.html', {
+        'message': message,
+    })
+
+
+def get_user_online_status():
+    last_five_minutes = timezone.now()-timezone.timedelta(minutes=5)
+    return Profile.objects \
+        .filter(display_rank='user',
+        last_access__gte = last_five_minutes)\
+        .order_by('-rating')
+
 
 def get_admin_online_status():
     all_admin = Profile.objects.filter(display_rank='admin')
@@ -35,63 +128,10 @@ def get_admin_online_status():
     
     return ret
 
-class ChatView(ListView):
-    model = Message
-    context_object_name = 'message'
-    template_name = 'chat/chat.html'
-    title = _('Chat Box')
-    paginate_by = 50
-    paginator = Paginator(Message.objects.filter(hidden=False), paginate_by)
 
-    def get_queryset(self):
-        return Message.objects.filter(hidden=False)
-
-    def get(self, request, *args, **kwargs):
-        page = request.GET.get('page')
-        if (page == None):
-            # return render(request, 'chat/chat.html', {'message': format_messages(Message.objects.all())})
-            return super().get(request, *args, **kwargs)
-
-        cur_page = self.paginator.get_page(page)
-        return HttpResponse(format_messages(cur_page.object_list))
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # hard code, should be fixed later
-        address = f'{self.request.get_host()}/ws/chat/'
-        if self.request.is_secure():
-            context['ws_address'] = f'wss://{address}'
-        else:
-            context['ws_address'] = f'ws://{address}'
-
-        context['title'] = self.title
-        last_five_minutes = timezone.now()-timezone.timedelta(minutes=5)
-        context['online_users'] = Profile.objects \
-                                        .filter(display_rank='user',
-                                            last_access__gte = last_five_minutes)\
-                                        .order_by('-rating')
-        context['admin_status'] = get_admin_online_status()
-        return context
-
-def delete_message(request):
-    ret = {'delete': 'done'}
-    
-    if request.method == 'GET':
-        return JsonResponse(ret)
-
-    if request.user.is_staff:
-        messid = int(request.POST.get('messid'))
-        all_mess = Message.objects.all()
-        
-        for mess in all_mess:
-            if mess.id == messid:
-                mess.hidden = True
-                mess.save()
-                new_elt = {'time': mess.time, 'content': mess.body}
-                ret = new_elt
-                break
-        
-        return JsonResponse(ret)
-    
-    return JsonResponse(ret)
+@login_required
+def online_status_ajax(request):
+    return render(request, 'chat/online_status.html', {
+            'online_users': get_user_online_status(),
+            'admin_status': get_admin_online_status(),
+        })

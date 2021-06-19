@@ -1,0 +1,25 @@
+<li class="message" id="message-{{ message.id }}"> 
+    <img src="{{ gravatar(message.author, 32) }}" class="profile-pic">
+    <div class="body-message">
+        <div class="user-time">
+            <span class="username {{ message.author.css_class }}">
+                <a href="{{ url('user_page', message.author.user.username) }}">
+                    {{message.author}}
+                </a>
+            </span>
+            <span class="time">
+                {{ message.time|date('TIME_FORMAT') }}
+                <span class="message_date">{{ message.time|date('d-m-Y') }}</span>
+            </span>
+            {% if request.user.is_staff %}
+            <a class="chatbtn_remove_mess" value="{{message.id}}" style="color:red; cursor: pointer;">
+                Delete
+            </a>
+            {% endif %}
+        </div>
+        <span class="content-message">
+            {{message.body | markdown('comment', MATH_ENGINE)|reference|str|safe }}
+        </span>
+    </div>
+    <div class="clear"></div>
+</li>
