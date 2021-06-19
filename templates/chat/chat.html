@@ -47,7 +47,6 @@
     function remove_day_if_today() {
         $('.message_date').each(function() {
             sent_date = $(this).html()
-            console.log(sent_date);
             if (sent_date === "{{today}}") {
                 $(this).hide();
             }
