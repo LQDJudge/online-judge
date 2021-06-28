@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import re
@@ -248,7 +249,7 @@ def get_visible_content(data):
 
 
 def get_file_cachekey(file):
-    return file.replace(' ', '===')
+    return hashlib.sha1(file.encode()).hexdigest()
 
 def get_problem_case(problem, files):
     result = {}
