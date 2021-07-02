@@ -1,24 +1,27 @@
-<h4>{{_('Admins')}}: </h4>
-<hr/>
-{% for user in admin_status %}
-    <li style="padding-left: 1em">
-        {% if user.is_online %}
-        <span class="green-dot"></span>
-        {% else %}
-        <span class="red-dot"></span>
-        {% endif %}
-        <span style="padding-left:0.25em">
-            {{ link_user(user.user) }}
-        </span>
-    </li>
-{% endfor %}
-<h4 style="margin-top:1em;">{{_('Users')}}: </h4>
-<hr/>
-{% for user in online_users %}
-    <li style="padding-left: 1em">
-        <span class="green-dot"></span>
-        <span style="padding-left:0.25em">
-            {{ link_user(user.user) }}
-        </span>
-    </li>
+{% for section in status_sections %}
+    {% if section.user_list %}
+        <div class="status-section-title toggle open">
+            <h4>
+                <i class="fa fa-chevron-right fa-fw"></i>{{_(section.title)}}
+            </h4>
+            <hr/>
+        </div>
+        <ul class="status-list toggled">
+        {% for user in section.user_list %}
+            <li style="padding-left: 0.1em" class="status-row">
+                <div class="status-container">
+                    <img src="{{ gravatar(user.user, 135) }}" class="status-pic">
+                    <svg style="position:absolute;" height="32" width="32">
+                        <circle class="status-circle" 
+                                fill="{{'green' if user.is_online else 'red'}}"/>
+                    </svg>
+                </div>
+                <span style="padding-left:0.3em" class="username {{ user.user.css_class }}">
+                    {{ link_user(user.user) }}
+                </span>
+            </li>
+        {% endfor %}
+        </ul>
+        <br>
+    {% endif %}
 {% endfor %}

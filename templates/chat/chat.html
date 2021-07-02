@@ -192,7 +192,9 @@
                         console.log("Fail to retrieve data");
                     }
                     else {
-                        $('#chat-online-content').html(data);
+                        $('#chat-online-content').html(data).find('.toggle').each(function () {
+                            register_toggle($(this));
+                        });;
                     }
                 })
         })
@@ -223,6 +225,54 @@
         #refresh-button:hover {
             background: lightgreen;
             color: grey !important;
+        }
+        .status-pic {
+            height: 1.3em;
+            width: 1.3em;
+            border-radius: 0.3em;
+        }
+        .status-container {
+            position: relative;
+            display: inline-flex;
+        }
+        .status-circle {
+            position: absolute; 
+            bottom: 0; 
+            right: 0;
+            cx: 18;
+            cy: 18;
+            r: 4.5;
+            stroke: white;
+            stroke-width: 1;
+        }
+        .status-row {
+            display: flex;
+            margin-bottom: 0.5em;
+            font-size: 15px;
+        }
+        .status-list {
+            padding: 0;
+        }
+        .status-section-title {
+            cursor: pointer;
+        }
+        ::-webkit-scrollbar {
+          width: 20px;
+        }
+
+        ::-webkit-scrollbar-track {
+          background-color: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+          background-color: #d6dee1;
+          border-radius: 20px;
+          border: 6px solid transparent;
+          background-clip: content-box;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+          background-color: #a8bbbf;
         }
     </style>
 {% endblock media %}

@@ -68,14 +68,13 @@
 #chat-online {
     border: 1px solid #ccc;
     border-radius: 4px;
-    overflow: hidden;
-    overflow-wrap: break-word;
-    overflow-y: scroll;
-    max-height: 81vh;
 }
 #chat-online-content {
+    overflow: hidden;
+    overflow-wrap: break-word;
+    overflow-y: auto;
+    max-height: 81vh;
 }
-
 #chat-box {
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -102,21 +101,6 @@
 #chat-online-content {
     padding: 0;
     width: 100%;
-}
-
-.green-dot, .red-dot {
-    height: 0.8em;
-    width: 0.8em;
-    border-radius: 50%;
-    display: inline-block;
-    margin-bottom: -0.15em;
-}
-.green-dot {
-    background-color: #42f58d;
-}
-
-.red-dot {
-    background-color: red;
 }
 
 @media (min-width: 800px) {

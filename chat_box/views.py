@@ -5,6 +5,7 @@ from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render
 from django.forms.models import model_to_dict
+from django.db.models import Case, BooleanField
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 
@@ -43,8 +44,7 @@ class ChatView(ListView):
 
         context['title'] = self.title
         context['last_msg'] = event.last()
-        context['online_users'] = get_user_online_status()
-        context['admin_status'] = get_admin_online_status()
+        context['status_sections'] = get_status_context(self.request)
         context['today'] = timezone.now().strftime("%d-%m-%Y")
         return context
 
@@ -112,6 +112,7 @@ def get_user_online_status():
     return Profile.objects \
         .filter(display_rank='user',
         last_access__gte = last_five_minutes)\
+        .annotate(is_online=Case(default=True,output_field=BooleanField()))\
         .order_by('-rating')
 
 
@@ -129,9 +130,36 @@ def get_admin_online_status():
     return ret
 
 
+def get_status_context(request):
+    friend_list = request.profile.get_friends()
+    all_user_status = get_user_online_status()
+    friend_status = []
+    user_status = []
+
+    for user in all_user_status:
+        if user.username in friend_list:
+            friend_status.append(user)
+        else:
+            user_status.append(user)
+
+    return [
+        {
+            'title': 'Admins',
+            'user_list': get_admin_online_status(),
+        },
+        {
+            'title': 'Following',
+            'user_list': friend_status,
+        },
+        {
+            'title': 'Users',
+            'user_list': user_status,
+        },
+    ]
+
+
 @login_required
 def online_status_ajax(request):
     return render(request, 'chat/online_status.html', {
-            'online_users': get_user_online_status(),
-            'admin_status': get_admin_online_status(),
+            'status_sections': get_status_context(request),
         })
