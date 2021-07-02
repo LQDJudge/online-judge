@@ -68,12 +68,15 @@
 #chat-online {
     border: 1px solid #ccc;
     border-radius: 4px;
+    padding-bottom: 0 !important;
 }
 #chat-online-content {
+    margin-top: 0.5em;
+    margin-bottom: 0;
     overflow: hidden;
     overflow-wrap: break-word;
     overflow-y: auto;
-    max-height: 81vh;
+    max-height: 77vh;
 }
 #chat-box {
     border: 1px solid #ccc;
