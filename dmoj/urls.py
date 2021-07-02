@@ -391,7 +391,7 @@ favicon_paths = ['apple-touch-icon-180x180.png', 'apple-touch-icon-114x114.png',
                  'favicon-96x96.png',
                  'favicon-32x32.png', 'favicon-16x16.png', 'android-chrome-192x192.png', 'android-chrome-48x48.png',
                  'mstile-310x150.png', 'apple-touch-icon-144x144.png', 'browserconfig.xml', 'manifest.json',
-                 'apple-touch-icon-120x120.png', 'mstile-310x310.png']
+                 'apple-touch-icon-120x120.png', 'mstile-310x310.png', 'reload.png']
 
 for favicon in favicon_paths:
     urlpatterns.append(url(r'^%s$' % favicon, RedirectView.as_view(

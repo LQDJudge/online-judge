@@ -217,14 +217,19 @@
             margin-top: -0.5em;
         }
         #refresh-button {
-            padding: 0 0.1em 0 0.1em;
-            margin: 0.1em;
-            border-radius: 0.1em;
-            background: goldenrod;
+            padding: 0;
+            margin-left: auto;
+            margin-right: 0.3em;
+            background: transparent;
+            border: none;
+            height: 1.5em;
+            width: 1.5em;
         }
         #refresh-button:hover {
             background: lightgreen;
-            color: grey !important;
+            -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+            transition: 1.5s ease-in-out;
         }
         .status-pic {
             height: 1.3em;
@@ -255,24 +260,32 @@
         }
         .status-section-title {
             cursor: pointer;
+            margin-top: 0.5em;
         }
         ::-webkit-scrollbar {
-          width: 20px;
+            width: 20px;
         }
 
         ::-webkit-scrollbar-track {
-          background-color: transparent;
+            background-color: transparent;
         }
 
         ::-webkit-scrollbar-thumb {
-          background-color: #d6dee1;
-          border-radius: 20px;
-          border: 6px solid transparent;
-          background-clip: content-box;
+            background-color: #d6dee1;
+            border-radius: 20px;
+            border: 6px solid transparent;
+            background-clip: content-box;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-          background-color: #a8bbbf;
+            background-color: #a8bbbf;
+        }
+
+        @media (min-width: 800px) {
+            #page-container {
+                position:fixed;
+                overflow:hidden;
+            }
         }
     </style>
 {% endblock media %}
@@ -301,9 +314,13 @@
         </div>
         <button id="chat-submit" style="display:none;"> Send </button>
         <div id="chat-online" class="chat-right-panel sidebox">
-            <h3>
+            <h3 style="display:flex">
                 {{_('Online Users')}}
-                <button id="refresh-button" class="fa fa-rotate-right" title="{{_('Refresh')}}"></button> 
+                <button id="refresh-button" title="{{_('Refresh')}}">
+                    <img src="/reload.png"
+                         width="100%"
+                    >
+                </button> 
             </h3>
             <div id="chat-online-content">
                 {% include "chat/online_status.html" %}
