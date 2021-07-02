@@ -284,12 +284,30 @@
             }
         }
 
+        function renew_filter() {
+            var checkboxes = [
+                '#show-organizations-checkbox',
+                '#show-fullnames-checkbox',
+                '#show-friends-checkbox',
+                '#show-total-score-checkbox',
+            ];
+
+            for (var i of checkboxes) {
+                var $box = $(i);
+                if ($box.is(':checked')) {
+                    $box.click();
+                    $box.click();
+                }
+            }
+        }
+
         function update_ranking() {
             $.get({
                 url: '/contest/{{contest.key}}/ranking/ajax',
                 success: function(HTML) {
                     $('#users-table').html(HTML);
                     highlightFirstSolve();
+                    renew_filter();
                 },
                 fail: function() {
                     console.log('Fail to update ranking');
@@ -297,21 +315,24 @@
             });
         }
 
-        window.load_dynamic_update = function (last_msg) {
-            return new EventReceiver(
-                "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
-                ['contest_{{contest.id}}'], last_msg, function (message) {
-                    switch (message.type) {
-                        case 'update':
-                            update_ranking();
-                            break;
-                    }
-                }
-            );
-        }
+        // window.load_dynamic_update = function (last_msg) {
+        //     return new EventReceiver(
+        //         "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
+        //         ['contest_{{contest.id}}'], last_msg, function (message) {
+        //             switch (message.type) {
+        //                 case 'update':
+        //                     update_ranking();
+        //                     break;
+        //             }
+        //         }
+        //     );
+        // }
 
         $(function () {
-            load_dynamic_update({{last_msg}});
+            // load_dynamic_update({{last_msg}});
+            {% if request.in_contest %} 
+                setInterval(update_ranking, 60 * 1000);
+            {% endif %}
 
             var url = '{{ url('contest_participation', contest.key, '__username__') }}';
             var placeholder = $('#search-contest').replaceWith($('<select>').attr({
