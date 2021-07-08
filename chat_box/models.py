@@ -1,4 +1,3 @@
-from asgiref.sync import async_to_sync
 from django.db import models
 from django.db.models import CASCADE
 from django.utils.translation import gettext_lazy as _
