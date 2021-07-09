@@ -34,3 +34,4 @@ django-newsletter
 netaddr
 redis
 lupa
+websocket-client
