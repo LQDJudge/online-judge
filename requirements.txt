@@ -35,3 +35,4 @@ netaddr
 redis
 lupa
 websocket-client
+python-memcached
