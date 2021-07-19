@@ -18,10 +18,10 @@ from django.db.models.expressions import CombinedExpression
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import date as date_filter
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.functional import cached_property
-from django.utils.html import format_html
+from django.utils.html import format_html, escape
 from django.utils.safestring import mark_safe
 from django.utils.timezone import make_aware
 from django.utils.translation import gettext as _, gettext_lazy
@@ -32,7 +32,7 @@ from judge import event_poster as event
 from judge.comments import CommentedDetailView
 from judge.forms import ContestCloneForm
 from judge.models import Contest, ContestMoss, ContestParticipation, ContestProblem, ContestTag, \
-    Organization, Problem, Profile, Submission
+    Organization, Problem, Profile, Submission, ProblemClarification
 from judge.tasks import run_moss
 from judge.utils.celery import redirect_to_task_status
 from judge.utils.opengraph import generate_opengraph
@@ -40,11 +40,12 @@ from judge.utils.problems import _get_result_data
 from judge.utils.ranker import ranker
 from judge.utils.stats import get_bar_chart, get_pie_chart, get_histogram
 from judge.utils.views import DiggPaginatorMixin, SingleObjectFormView, TitleMixin, generic_message
+from judge.widgets import HeavyPreviewPageDownWidget
 
 __all__ = ['ContestList', 'ContestDetail', 'ContestRanking', 'ContestJoin', 'ContestLeave', 'ContestCalendar',
            'ContestClone', 'ContestStats', 'ContestMossView', 'ContestMossDelete', 'contest_ranking_ajax',
            'ContestParticipationList', 'ContestParticipationDisqualify', 'get_contest_ranking_list',
-           'base_contest_ranking_list']
+           'base_contest_ranking_list', 'ContestClarificationView']
 
 
 def _find_contest(request, key, private_check=True):
@@ -854,3 +855,64 @@ class ContestTagDetail(TitleMixin, ContestTagDetailAjax):
 
     def get_title(self):
         return _('Contest tag: %s') % self.object.name
+
+
+class ProblemClarificationForm(forms.Form):
+    body = forms.CharField(widget=HeavyPreviewPageDownWidget(preview=reverse_lazy('comment_preview'),
+                                                         preview_timeout=1000, hide_preview_button=True))
+
+    def __init__(self, request, *args, **kwargs):
+        self.request = request
+        super(ProblemClarificationForm, self).__init__(*args, **kwargs)
+        self.fields['body'].widget.attrs.update({'placeholder': _('Issue description')})
+
+
+class NewContestClarificationView(ContestMixin, TitleMixin, SingleObjectFormView):
+    form_class = ProblemClarificationForm
+    template_name = 'contest/clarification.html'
+
+    def get_form_kwargs(self):
+        kwargs = super(NewContestClarificationView, self).get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
+
+    def is_accessible(self):
+        if not self.request.user.is_authenticated:
+            return False
+        if not self.request.in_contest:
+            return False
+        if not self.request.participation.contest == self.get_object():
+            return False
+        return self.request.user.is_superuser or \
+               self.request.profile in self.request.participation.contest.authors.all() or \
+               self.request.profile in self.request.participation.contest.curators.all()
+
+    def get(self, request, *args, **kwargs):
+        if not self.is_accessible():
+            raise Http404()
+        return super().get(self, request, *args, **kwargs)
+
+    def form_valid(self, form):
+        problem_code = self.request.POST['problem']
+        description = form.cleaned_data['body']
+
+        clarification = ProblemClarification(description=description)
+        clarification.problem = Problem.objects.get(code=problem_code)
+        clarification.save()
+        
+        link = reverse('home')
+        return HttpResponseRedirect(link)
+
+    def get_title(self):
+        return "New clarification for %s" % self.object.name
+
+    def get_content_title(self):
+        return mark_safe(escape(_('New clarification for %s')) %
+                         format_html('<a href="{0}">{1}</a>', reverse('problem_detail', args=[self.object.key]),
+                                     self.object.name))
+
+    def get_context_data(self, **kwargs):
+        context = super(NewContestClarificationView, self).get_context_data(**kwargs)
+        context['problems'] = ContestProblem.objects.filter(contest=self.object)\
+                                         .order_by('order')
+        return context

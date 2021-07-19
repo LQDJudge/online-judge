@@ -322,6 +322,10 @@ window.register_notify = function (type, options) {
     status_change();
 };
 
+window.notify_clarification = function(msg) {
+    var message = `Problem ${msg.problem_label} (${msg.problem_name}):\n` + msg.body;
+    alert(message);
+}
 
 $(function () {
     // Close dismissable boxes

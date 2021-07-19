@@ -11,7 +11,9 @@ from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
+from judge import event_poster as event
 from judge.fulltext import SearchQuerySet
 from judge.models.profile import Organization, Profile
 from judge.models.runtime import Language
@@ -407,6 +409,26 @@ class ProblemClarification(models.Model):
     description = models.TextField(verbose_name=_('clarification body'))
     date = models.DateTimeField(verbose_name=_('clarification timestamp'), auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        super(ProblemClarification, self).save(*args, **kwargs)
+
+        if event.real:
+            from judge.models import ContestProblem
+
+            now = timezone.now()
+            # List all ongoing contests containing this problem
+            contest_problems = ContestProblem.objects.filter(
+                                        contest__start_time__lte=now,
+                                        contest__end_time__gt=now,
+                                        problem=self.problem).values_list('order', 'contest')
+            
+            for order, contest_id in contest_problems.iterator(): 
+                event.post('contest_clarification_' + str(contest_id), {
+                    'problem_label':  order,
+                    'problem_name': self.problem.name,
+                    'problem_code': self.problem.code,
+                    'body': self.description
+                })
 
 class LanguageLimit(models.Model):
     problem = models.ForeignKey(Problem, verbose_name=_('problem'), related_name='language_limits', on_delete=CASCADE)

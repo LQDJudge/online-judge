@@ -104,6 +104,12 @@ class PostList(ListView):
             context['open_tickets'] = filter_visible_tickets(tickets, self.request.user, profile)[:10]
         else:
             context['open_tickets'] = []
+
+        if self.request.in_contest:
+            if self.request.user.is_superuser or \
+               self.request.profile in self.request.participation.contest.authors.all() or \
+               self.request.profile in self.request.participation.contest.curators.all():
+                context['can_edit_contest'] = True
         return context
 
 

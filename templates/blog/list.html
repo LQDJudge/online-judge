@@ -48,6 +48,14 @@
         h3 a {
             color: lightcyan;
         }
+
+        #add-clarification {
+            float: left;
+            color: chartreuse;
+        }
+        #add-clarification:hover {
+            color: cyan;
+        }
     </style>
 {% endblock %}
 
@@ -104,7 +112,16 @@
         <div class="blog-sidebar">
             {% if request.in_contest and request.participation.contest.use_clarifications %}
                 <div class="blog-sidebox sidebox">
-                    <h3>{{ _('Clarifications') }} <i class="fa fa-question-circle"></i></h3>
+                    <h3>{{ _('Clarifications') }}
+                            <i class="fa fa-question-circle"></i>
+                            {% if can_edit_contest %}
+                            <a href="{{url('new_contest_clarification', request.participation.contest.key)}}" 
+                               class="fa fa-plus-circle" 
+                               id="add-clarification"
+                               title="{{_('Add')}}">
+                            </a>
+                            {% endif %}
+                    </h3>
                     <div class="sidebox-content">
                         {% if has_clarifications %}
                             <ul>
