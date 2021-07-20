@@ -124,7 +124,7 @@
         </div>
 
         {% if rating %}
-            <h4>Rating History</h4>
+            <h4>{{_('Rating History')}}</h4>
             <div id="rating-chart">
                 <canvas></canvas>
             </div>
@@ -212,8 +212,7 @@
 
                 var sum_activity = days.map(obj => obj.activity).reduce((a, b) => a + b, 0);
                 $div.find('#submission-total-count').text(
-                    ngettext("%(cnt)d total submission", "%(cnt)d total submissions", sum_activity)
-                        .replace("%(cnt)d", sum_activity)
+                    sum_activity + " " + "{{_('total submission(s)')}}"
                 )
                 if (year == current_year) {
                     $('#submission-activity-header').text(

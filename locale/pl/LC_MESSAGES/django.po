@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dmoj\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-20 08:11+0700\n"
+"POT-Creation-Date: 2021-07-20 23:59+0700\n"
 "PO-Revision-Date: 2019-11-11 22:05\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Polish\n"
@@ -3167,6 +3167,10 @@ msgstr ""
 msgid "Refresh"
 msgstr ""
 
+#: templates/chat/message.html:18
+msgid "Delete"
+msgstr ""
+
 #: templates/comments/list.html:2
 msgid "Comments"
 msgstr ""
@@ -4788,8 +4792,18 @@ msgstr ""
 msgid "More"
 msgstr ""
 
+#: templates/user/user-about.html:127
+#, fuzzy
+#| msgid "Rating"
+msgid "Rating History"
+msgstr "Ocena"
+
 #: templates/user/user-about.html:198
 msgid "past year"
+msgstr ""
+
+#: templates/user/user-about.html:215
+msgid "total submission(s)"
 msgstr ""
 
 #: templates/user/user-base.html:42
@@ -4807,6 +4821,11 @@ msgstr ""
 
 #: templates/user/user-base.html:53
 msgid "Total points:"
+msgstr ""
+
+#: templates/user/user-base.html:66
+#, python-format
+msgid "%(num)s contests written"
 msgstr ""
 
 #: templates/user/user-base.html:68

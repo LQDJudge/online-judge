@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dmoj\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-20 08:11+0700\n"
+"POT-Creation-Date: 2021-07-20 23:59+0700\n"
 "PO-Revision-Date: 2019-11-11 22:06\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Turkish\n"
@@ -3220,6 +3220,12 @@ msgstr ""
 msgid "Refresh"
 msgstr ""
 
+#: templates/chat/message.html:18
+#, fuzzy
+#| msgid "Delete?"
+msgid "Delete"
+msgstr "Sil?"
+
 #: templates/comments/list.html:2
 msgid "Comments"
 msgstr "Yorumlar"
@@ -4934,9 +4940,21 @@ msgstr ""
 msgid "More"
 msgstr ""
 
+#: templates/user/user-about.html:127
+#, fuzzy
+#| msgid "History"
+msgid "Rating History"
+msgstr "Geçmiş"
+
 #: templates/user/user-about.html:198
 msgid "past year"
 msgstr ""
+
+#: templates/user/user-about.html:215
+#, fuzzy
+#| msgid "All submissions"
+msgid "total submission(s)"
+msgstr "Tüm çözümler"
 
 #: templates/user/user-base.html:42
 #, fuzzy, python-format
@@ -4953,6 +4971,21 @@ msgstr "Puan sırası:"
 #: templates/user/user-base.html:53
 msgid "Total points:"
 msgstr "Toplam puan:"
+
+#: templates/user/user-base.html:66
+#, fuzzy, python-format
+#| msgid ""
+#| "\n"
+#| "                        You have %(left)s submission left\n"
+#| "                        "
+#| msgid_plural ""
+#| "\n"
+#| "                        You have %(left)s submissions left\n"
+#| "                    "
+msgid "%(num)s contests written"
+msgstr ""
+"\n"
+"Geriye %(left)s çözümün kaldı"
 
 #: templates/user/user-base.html:68
 msgid "Rank by rating:"

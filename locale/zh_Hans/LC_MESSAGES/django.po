@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dmoj\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-20 08:11+0700\n"
+"POT-Creation-Date: 2021-07-20 23:59+0700\n"
 "PO-Revision-Date: 2019-11-11 22:05\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Chinese Simplified\n"
@@ -3181,6 +3181,12 @@ msgstr ""
 msgid "Refresh"
 msgstr ""
 
+#: templates/chat/message.html:18
+#, fuzzy
+#| msgid "Delete?"
+msgid "Delete"
+msgstr "删除？"
+
 #: templates/comments/list.html:2
 msgid "Comments"
 msgstr "评论"
@@ -4882,9 +4888,21 @@ msgstr ""
 msgid "More"
 msgstr ""
 
+#: templates/user/user-about.html:127
+#, fuzzy
+#| msgid "History"
+msgid "Rating History"
+msgstr "编辑历史"
+
 #: templates/user/user-about.html:198
 msgid "past year"
 msgstr ""
+
+#: templates/user/user-about.html:215
+#, fuzzy
+#| msgid "All submissions"
+msgid "total submission(s)"
+msgstr "所有提交历史"
 
 #: templates/user/user-base.html:42
 #, fuzzy, python-format
@@ -4900,6 +4918,22 @@ msgstr "得分排名："
 #: templates/user/user-base.html:53
 msgid "Total points:"
 msgstr "总得分："
+
+#: templates/user/user-base.html:66
+#, fuzzy, python-format
+#| msgid ""
+#| "\n"
+#| "                        You have %(left)s submission left\n"
+#| "                        "
+#| msgid_plural ""
+#| "\n"
+#| "                        You have %(left)s submissions left\n"
+#| "                    "
+msgid "%(num)s contests written"
+msgstr ""
+"\n"
+" 您还剩下 %(left)s 次提交机会 \n"
+"                    "
 
 #: templates/user/user-base.html:68
 msgid "Rank by rating:"

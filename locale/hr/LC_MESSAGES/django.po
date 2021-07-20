@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dmoj\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-20 08:11+0700\n"
+"POT-Creation-Date: 2021-07-20 23:59+0700\n"
 "PO-Revision-Date: 2019-11-11 22:05\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Croatian\n"
@@ -3173,6 +3173,10 @@ msgstr ""
 msgid "Refresh"
 msgstr ""
 
+#: templates/chat/message.html:18
+msgid "Delete"
+msgstr ""
+
 #: templates/comments/list.html:2
 msgid "Comments"
 msgstr "Komentari"
@@ -4828,9 +4832,21 @@ msgstr ""
 msgid "More"
 msgstr ""
 
+#: templates/user/user-about.html:127
+#, fuzzy
+#| msgid "History"
+msgid "Rating History"
+msgstr "Povijest"
+
 #: templates/user/user-about.html:198
 msgid "past year"
 msgstr ""
+
+#: templates/user/user-about.html:215
+#, fuzzy
+#| msgid "All submissions"
+msgid "total submission(s)"
+msgstr "Sva predana rješenja"
 
 #: templates/user/user-base.html:42
 #, python-format
@@ -4846,6 +4862,11 @@ msgstr ""
 
 #: templates/user/user-base.html:53
 msgid "Total points:"
+msgstr ""
+
+#: templates/user/user-base.html:66
+#, python-format
+msgid "%(num)s contests written"
 msgstr ""
 
 #: templates/user/user-base.html:68

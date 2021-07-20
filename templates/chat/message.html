@@ -15,7 +15,7 @@
             </span>
             {% if request.user.is_staff %}
             <a class="chatbtn_remove_mess" value="{{message.id}}" style="color:red; cursor: pointer;">
-                Delete
+                {{_('Delete')}}
             </a>
             {% endif %}
         </div>
