@@ -2494,29 +2494,29 @@ msgstr ""
 #: judge/views/organization.py:78 judge/views/register.py:34
 #: templates/organization/list.html:32 templates/user/user-list-tabs.html:6
 msgid "Organizations"
-msgstr ""
+msgstr "Tổ chức"
 
 #: judge/views/organization.py:128
 #, python-format
 msgid "%s Members"
-msgstr ""
+msgstr "%s Thành viên"
 
 #: judge/views/organization.py:157 judge/views/organization.py:160
 #: judge/views/organization.py:165
 msgid "Joining organization"
-msgstr ""
+msgstr "Tham gia tổ chức"
 
 #: judge/views/organization.py:157
 msgid "You are already in the organization."
-msgstr ""
+msgstr "Bạn đã ở trong tổ chức."
 
 #: judge/views/organization.py:160
 msgid "This organization is not open."
-msgstr ""
+msgstr "Tổ chức này không phải tổ chức mở."
 
 #: judge/views/organization.py:177
 msgid "Leaving organization"
-msgstr ""
+msgstr "Rời tổ chức"
 
 #: judge/views/organization.py:177
 #, python-format
