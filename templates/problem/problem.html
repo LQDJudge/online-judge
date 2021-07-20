@@ -332,7 +332,9 @@
         <div id="clarification_header_container">
             <i class="fa fa-question-circle"></i>
             <a id="clarification_header">
-                {{ _('This problem has %d clarification(s)' % clarifications|length) }}
+                {% trans trimmed length=clarifications|length %}
+                This problem has {{length}} clarification(s)
+                {% endtrans %}
             </a>
         </div>
     {% endif %}
