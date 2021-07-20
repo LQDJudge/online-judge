@@ -2765,7 +2765,7 @@ msgstr "Ma trận phiên bản"
 #: judge/views/submission.py:84 judge/views/submission.py:91
 #, python-format
 msgid "Submission of %(problem)s by %(user)s"
-msgstr "Các bài nộp của %(user)s cho bài %(problem)s"
+msgstr "Bài nộp của %(user)s cho bài %(problem)s"
 
 #: judge/views/submission.py:244 judge/views/submission.py:245
 #: templates/problem/problem.html:176
