@@ -4004,7 +4004,7 @@ msgstr "Các bài nộp tốt nhất"
 
 #: templates/problem/problem.html:181
 msgid "Read editorial"
-msgstr ""
+msgstr "Xem hướng dẫn"
 
 #: templates/problem/problem.html:186
 msgid "Manage tickets"
