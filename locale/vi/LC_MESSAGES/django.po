@@ -2096,7 +2096,7 @@ msgstr "chỉ chấm pretest"
 
 #: judge/models/submission.py:184 templates/contest/moss.html:58
 msgid "submissions"
-msgstr "số bài nộp"
+msgstr "bài nộp"
 
 #: judge/models/submission.py:188 judge/models/submission.py:199
 msgid "associated submission"
