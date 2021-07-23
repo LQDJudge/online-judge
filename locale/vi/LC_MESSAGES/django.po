@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-20 23:59+0700\n"
+"POT-Creation-Date: 2021-07-23 10:48+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -104,7 +104,7 @@ msgstr ""
 msgid "Login"
 msgstr "Đăng nhập"
 
-#: dmoj/urls.py:105 templates/base.html:192
+#: dmoj/urls.py:105 templates/base.html:193
 msgid "Home"
 msgstr "Trang chủ"
 
@@ -160,6 +160,7 @@ msgid "Format"
 msgstr "Thể thức"
 
 #: judge/admin/contest.py:124 templates/contest/ranking-table.html:7
+#: templates/user/user-about.html:15 templates/user/user-about.html:45
 msgid "Rating"
 msgstr ""
 
@@ -211,7 +212,7 @@ msgstr "Tính toán lại kết quả"
 msgid "username"
 msgstr "tên đăng nhập"
 
-#: judge/admin/contest.py:320 templates/base.html:276
+#: judge/admin/contest.py:320 templates/base.html:277
 msgid "virtual"
 msgstr "ảo"
 
@@ -251,6 +252,7 @@ msgstr ""
 #: judge/admin/problem.py:128 templates/contest/contest.html:84
 #: templates/problem/data.html:429 templates/problem/list.html:235
 #: templates/problem/list.html:261 templates/user/base-users-table.html:10
+#: templates/user/user-about.html:36 templates/user/user-about.html:52
 #: templates/user/user-problems.html:58
 msgid "Points"
 msgstr "Điểm"
@@ -2310,7 +2312,7 @@ msgid "%h:%m"
 msgstr "%h:%m"
 
 #: judge/views/about.py:7 templates/organization/home.html:62
-#: templates/user/user-about.html:47 templates/user/user-tabs.html:4
+#: templates/user/user-about.html:83 templates/user/user-tabs.html:4
 msgid "About"
 msgstr "Giới thiệu"
 
@@ -2636,7 +2638,8 @@ msgid "Editorial for <a href=\"{1}\">{0}</a>"
 msgstr "Hướng dẫn cho <a href=\"{1}\">{0}</a>"
 
 #: judge/views/problem.py:287 templates/contest/contest.html:79
-#: templates/user/user-tabs.html:5 templates/user/users-table.html:31
+#: templates/user/user-about.html:28 templates/user/user-tabs.html:5
+#: templates/user/users-table.html:31
 msgid "Problems"
 msgstr "Bài tập"
 
@@ -2937,21 +2940,25 @@ msgstr "Tài khoản của tôi"
 msgid "User %s"
 msgstr "Thành viên %s"
 
-#: judge/views/user.py:140
-msgid "M j, Y, G:i"
-msgstr "M j, Y, G:i"
+#: judge/views/user.py:144
+msgid "M j, Y"
+msgstr "j M, Y"
 
-#: judge/views/user.py:257
+#: judge/views/user.py:167
+msgid "M j, Y, G:i"
+msgstr "j M, Y, G:i"
+
+#: judge/views/user.py:286
 msgid "Updated on site"
 msgstr "Được cập nhật trên web"
 
-#: judge/views/user.py:290 templates/admin/auth/user/change_form.html:14
-#: templates/admin/auth/user/change_form.html:17 templates/base.html:237
+#: judge/views/user.py:319 templates/admin/auth/user/change_form.html:14
+#: templates/admin/auth/user/change_form.html:17 templates/base.html:238
 #: templates/user/user-tabs.html:10
 msgid "Edit profile"
 msgstr "Chỉnh sửa thông tin"
 
-#: judge/views/user.py:299 templates/user/user-list-tabs.html:4
+#: judge/views/user.py:328 templates/user/user-list-tabs.html:4
 msgid "Leaderboard"
 msgstr "Bảng xếp hạng"
 
@@ -2992,7 +2999,7 @@ msgid "View Submissions"
 msgstr "Xem Bài Nộp"
 
 #: templates/admin/judge/problem/change_form.html:17
-#: templates/user/user-base.html:61
+#: templates/user/user-base.html:112
 msgid "View submissions"
 msgstr "Xem bài nộp"
 
@@ -3007,12 +3014,12 @@ msgstr "Chỉnh sửa thông tin"
 msgid "Rejudge"
 msgstr "Chấm lại"
 
-#: templates/base.html:229
+#: templates/base.html:230
 #, python-format
 msgid "Hello, <b>%(username)s</b>."
 msgstr "Xin chào, <b>%(username)s</b>."
 
-#: templates/base.html:235 templates/comments/list.html:89
+#: templates/base.html:236 templates/comments/list.html:89
 #: templates/contest/contest-list-tabs.html:24
 #: templates/contest/ranking-table.html:50
 #: templates/problem/problem-list-tabs.html:6
@@ -3021,28 +3028,28 @@ msgstr "Xin chào, <b>%(username)s</b>."
 msgid "Admin"
 msgstr ""
 
-#: templates/base.html:244
+#: templates/base.html:245
 msgid "Log out"
 msgstr "Đăng xuất"
 
-#: templates/base.html:253
+#: templates/base.html:254
 #: templates/registration/password_reset_complete.html:4
 msgid "Log in"
 msgstr "Đăng nhập"
 
-#: templates/base.html:254 templates/registration/registration_form.html:177
+#: templates/base.html:255 templates/registration/registration_form.html:177
 msgid "or"
 msgstr "hoặc"
 
-#: templates/base.html:255
+#: templates/base.html:256
 msgid "Sign up"
 msgstr "Đăng ký"
 
-#: templates/base.html:270
+#: templates/base.html:271
 msgid "spectating"
 msgstr "đang theo dõi"
 
-#: templates/base.html:283
+#: templates/base.html:284
 msgid "This site works best with JavaScript enabled."
 msgstr ""
 
@@ -4713,118 +4720,129 @@ msgstr "%(pp).1fpp"
 msgid "%(pp).0fpp"
 msgstr "%(pp).0fpp"
 
-#: templates/user/user-about.html:18
-msgid "Unfollow"
-msgstr "Bỏ theo dõi"
-
-#: templates/user/user-about.html:21
-msgid "Follow"
-msgstr "Theo dõi"
-
-#: templates/user/user-about.html:28
-msgid "From"
-msgstr "Đến từ"
-
-#: templates/user/user-about.html:39
-msgid "Admin Notes"
-msgstr "Lưu ý của admin"
-
-#: templates/user/user-about.html:54
-msgid "You have not shared any information."
-msgstr "Bạn chưa chia sẻ thông tin nào."
-
-#: templates/user/user-about.html:56
-msgid "This user has not shared any information."
-msgstr "Người dùng này chưa chia sẻ thông tin nào."
-
-#: templates/user/user-about.html:74
-msgid "Mon"
-msgstr "Thứ 2"
-
-#: templates/user/user-about.html:79
-msgid "Tues"
-msgstr "Thứ 3"
-
-#: templates/user/user-about.html:84
-msgid "Wed"
-msgstr "Thứ 4"
-
-#: templates/user/user-about.html:89
-msgid "Thurs"
-msgstr "Thứ 5"
-
-#: templates/user/user-about.html:94
-msgid "Fri"
-msgstr "Thứ 6"
-
-#: templates/user/user-about.html:99
-#, fuzzy
-#| msgid "State"
-msgid "Sat"
-msgstr "Trạng thái"
-
-#: templates/user/user-about.html:104
-msgid "Sun"
-msgstr "CN"
-
-#: templates/user/user-about.html:113
-msgid "Less"
-msgstr "Ít"
-
-#: templates/user/user-about.html:119
-msgid "More"
-msgstr "Nhiều"
-
-#: templates/user/user-about.html:127
-#, fuzzy
-msgid "Rating History"
-msgstr "Các lần thi"
-
-#: templates/user/user-about.html:198
-msgid "past year"
-msgstr "năm ngoái"
-
-#: templates/user/user-about.html:215
-#, fuzzy
-msgid "total submission(s)"
-msgstr "bài nộp"
-
-#: templates/user/user-base.html:42
+#: templates/user/user-about.html:23
 #, python-format
 msgid "%(counter)s problem solved"
 msgid_plural "%(counter)s problems solved"
 msgstr[0] "Đã giải %(counter)s bài"
 
-#: templates/user/user-base.html:50
-msgid "Rank by points:"
-msgstr "Rank theo điểm:"
-
-#: templates/user/user-base.html:53
-msgid "Total points:"
+#: templates/user/user-about.html:35
+#, fuzzy
+#| msgid "Total points:"
+msgid "Total points"
 msgstr "Tổng điểm:"
 
-#: templates/user/user-base.html:66
-#, python-format
-msgid "%(num)s contests written"
-msgstr "Tham gia %(num)s kỳ thi"
-
-#: templates/user/user-base.html:68
-msgid "Rank by rating:"
+#: templates/user/user-about.html:45
+#, fuzzy
+#| msgid "Rank by rating:"
+msgid "Rank by rating"
 msgstr "Rank theo rating:"
 
-#: templates/user/user-base.html:70
-msgid "Rating:"
-msgstr "Rating:"
+#: templates/user/user-about.html:52
+#, fuzzy
+#| msgid "Rank by points:"
+msgid "Rank by points"
+msgstr "Rank theo điểm:"
 
-#: templates/user/user-base.html:71
+#: templates/user/user-about.html:64
+msgid "From"
+msgstr "Đến từ"
+
+#: templates/user/user-about.html:75
+msgid "Admin Notes"
+msgstr "Lưu ý của admin"
+
+#: templates/user/user-about.html:90
+msgid "You have not shared any information."
+msgstr "Bạn chưa chia sẻ thông tin nào."
+
+#: templates/user/user-about.html:92
+msgid "This user has not shared any information."
+msgstr "Người dùng này chưa chia sẻ thông tin nào."
+
+#: templates/user/user-about.html:101
+msgid "Awards"
+msgstr "Thành tích"
+
+#: templates/user/user-about.html:112
+msgid "%(label)s (%(date)s)"
+msgstr "%(label)s (%(date)s)"
+
+#: templates/user/user-about.html:130
+msgid "Mon"
+msgstr "Thứ 2"
+
+#: templates/user/user-about.html:135
+msgid "Tues"
+msgstr "Thứ 3"
+
+#: templates/user/user-about.html:140
+msgid "Wed"
+msgstr "Thứ 4"
+
+#: templates/user/user-about.html:145
+msgid "Thurs"
+msgstr "Thứ 5"
+
+#: templates/user/user-about.html:150
+msgid "Fri"
+msgstr "Thứ 6"
+
+#: templates/user/user-about.html:155
+#, fuzzy
+#| msgid "State"
+msgid "Sat"
+msgstr "Trạng thái"
+
+#: templates/user/user-about.html:160
+msgid "Sun"
+msgstr "CN"
+
+#: templates/user/user-about.html:169
+msgid "Less"
+msgstr "Ít"
+
+#: templates/user/user-about.html:175
+msgid "More"
+msgstr "Nhiều"
+
+#: templates/user/user-about.html:184
+msgid "Rating History"
+msgstr "Các lần thi"
+
+#: templates/user/user-about.html:255
+msgid "past year"
+msgstr "năm ngoái"
+
+#: templates/user/user-about.html:272
+msgid "total submission(s)"
+msgstr "bài nộp"
+
+#: templates/user/user-about.html:276
+msgid "submissions in the last year"
+msgstr "bài nộp trong năm qua"
+
+#: templates/user/user-base.html:101
+msgid "Unfollow"
+msgstr "Bỏ theo dõi"
+
+#: templates/user/user-base.html:104
+msgid "Follow"
+msgstr "Theo dõi"
+
+#: templates/user/user-base.html:120
+msgid "Contests written"
+msgstr "Số kỳ thi"
+
+#: templates/user/user-base.html:124
 msgid "Volatility:"
 msgstr "Độ dao động:"
 
-#: templates/user/user-base.html:72
+#: templates/user/user-base.html:128
 msgid "Min. rating:"
 msgstr "Min. rating:"
 
-#: templates/user/user-base.html:73
+#: templates/user/user-base.html:132
 msgid "Max rating:"
 msgstr "Max rating:"
 
@@ -4872,15 +4890,18 @@ msgstr "Giả danh"
 
 #: templates/user/user-tabs.html:13
 msgid "Admin User"
-msgstr "Quản lý người dùng"
+msgstr "Người dùng"
 
 #: templates/user/user-tabs.html:16
 msgid "Admin Profile"
-msgstr "Quản lý thông tin"
+msgstr "Thông tin"
 
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Chọn tất cả"
+
+#~ msgid "Rating:"
+#~ msgstr "Rating:"
 
 #~ msgid "hide scoreboard"
 #~ msgstr "ẩn bảng điểm"

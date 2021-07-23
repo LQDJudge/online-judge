@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dmoj\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-20 23:59+0700\n"
+"POT-Creation-Date: 2021-07-23 10:48+0700\n"
 "PO-Revision-Date: 2019-11-11 22:05\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Croatian\n"
@@ -103,7 +103,7 @@ msgstr ""
 msgid "Login"
 msgstr "Prijava"
 
-#: dmoj/urls.py:105 templates/base.html:192
+#: dmoj/urls.py:105 templates/base.html:193
 msgid "Home"
 msgstr "Početna"
 
@@ -163,6 +163,7 @@ msgid "Format"
 msgstr ""
 
 #: judge/admin/contest.py:124 templates/contest/ranking-table.html:7
+#: templates/user/user-about.html:15 templates/user/user-about.html:45
 msgid "Rating"
 msgstr "Bodovi"
 
@@ -222,7 +223,7 @@ msgstr ""
 msgid "username"
 msgstr "korisničko ime"
 
-#: judge/admin/contest.py:320 templates/base.html:276
+#: judge/admin/contest.py:320 templates/base.html:277
 msgid "virtual"
 msgstr "virtualno"
 
@@ -262,6 +263,7 @@ msgstr "Taksonomija"
 #: judge/admin/problem.py:128 templates/contest/contest.html:84
 #: templates/problem/data.html:429 templates/problem/list.html:235
 #: templates/problem/list.html:261 templates/user/base-users-table.html:10
+#: templates/user/user-about.html:36 templates/user/user-about.html:52
 #: templates/user/user-problems.html:58
 msgid "Points"
 msgstr "Bodovi"
@@ -2345,7 +2347,7 @@ msgid "%h:%m"
 msgstr "%h:%m"
 
 #: judge/views/about.py:7 templates/organization/home.html:62
-#: templates/user/user-about.html:47 templates/user/user-tabs.html:4
+#: templates/user/user-about.html:83 templates/user/user-tabs.html:4
 msgid "About"
 msgstr ""
 
@@ -2673,7 +2675,8 @@ msgid "Editorial for <a href=\"{1}\">{0}</a>"
 msgstr ""
 
 #: judge/views/problem.py:287 templates/contest/contest.html:79
-#: templates/user/user-tabs.html:5 templates/user/users-table.html:31
+#: templates/user/user-about.html:28 templates/user/user-tabs.html:5
+#: templates/user/users-table.html:31
 msgid "Problems"
 msgstr "Zadaci"
 
@@ -2969,21 +2972,25 @@ msgstr ""
 msgid "User %s"
 msgstr ""
 
-#: judge/views/user.py:140
+#: judge/views/user.py:144
+msgid "M j, Y"
+msgstr ""
+
+#: judge/views/user.py:167
 msgid "M j, Y, G:i"
 msgstr ""
 
-#: judge/views/user.py:257
+#: judge/views/user.py:286
 msgid "Updated on site"
 msgstr ""
 
-#: judge/views/user.py:290 templates/admin/auth/user/change_form.html:14
-#: templates/admin/auth/user/change_form.html:17 templates/base.html:237
+#: judge/views/user.py:319 templates/admin/auth/user/change_form.html:14
+#: templates/admin/auth/user/change_form.html:17 templates/base.html:238
 #: templates/user/user-tabs.html:10
 msgid "Edit profile"
 msgstr ""
 
-#: judge/views/user.py:299 templates/user/user-list-tabs.html:4
+#: judge/views/user.py:328 templates/user/user-list-tabs.html:4
 msgid "Leaderboard"
 msgstr ""
 
@@ -3024,7 +3031,7 @@ msgid "View Submissions"
 msgstr ""
 
 #: templates/admin/judge/problem/change_form.html:17
-#: templates/user/user-base.html:61
+#: templates/user/user-base.html:112
 msgid "View submissions"
 msgstr ""
 
@@ -3039,12 +3046,12 @@ msgstr ""
 msgid "Rejudge"
 msgstr ""
 
-#: templates/base.html:229
+#: templates/base.html:230
 #, python-format
 msgid "Hello, <b>%(username)s</b>."
 msgstr ""
 
-#: templates/base.html:235 templates/comments/list.html:89
+#: templates/base.html:236 templates/comments/list.html:89
 #: templates/contest/contest-list-tabs.html:24
 #: templates/contest/ranking-table.html:50
 #: templates/problem/problem-list-tabs.html:6
@@ -3053,28 +3060,28 @@ msgstr ""
 msgid "Admin"
 msgstr ""
 
-#: templates/base.html:244
+#: templates/base.html:245
 msgid "Log out"
 msgstr ""
 
-#: templates/base.html:253
+#: templates/base.html:254
 #: templates/registration/password_reset_complete.html:4
 msgid "Log in"
 msgstr ""
 
-#: templates/base.html:254 templates/registration/registration_form.html:177
+#: templates/base.html:255 templates/registration/registration_form.html:177
 msgid "or"
 msgstr ""
 
-#: templates/base.html:255
+#: templates/base.html:256
 msgid "Sign up"
 msgstr ""
 
-#: templates/base.html:270
+#: templates/base.html:271
 msgid "spectating"
 msgstr ""
 
-#: templates/base.html:283
+#: templates/base.html:284
 msgid "This site works best with JavaScript enabled."
 msgstr ""
 
@@ -4760,95 +4767,7 @@ msgstr ""
 msgid "%(pp).0fpp"
 msgstr ""
 
-#: templates/user/user-about.html:18
-msgid "Unfollow"
-msgstr ""
-
-#: templates/user/user-about.html:21
-msgid "Follow"
-msgstr ""
-
-#: templates/user/user-about.html:28
-msgid "From"
-msgstr ""
-
-#: templates/user/user-about.html:39
-msgid "Admin Notes"
-msgstr ""
-
-#: templates/user/user-about.html:54
-msgid "You have not shared any information."
-msgstr ""
-
-#: templates/user/user-about.html:56
-msgid "This user has not shared any information."
-msgstr ""
-
-#: templates/user/user-about.html:74
-#, fuzzy
-#| msgid "Monday"
-msgid "Mon"
-msgstr "Ponedjeljak"
-
-#: templates/user/user-about.html:79
-#, fuzzy
-#| msgid "Tuesday"
-msgid "Tues"
-msgstr "Utorak"
-
-#: templates/user/user-about.html:84
-msgid "Wed"
-msgstr ""
-
-#: templates/user/user-about.html:89
-#, fuzzy
-#| msgid "Thursday"
-msgid "Thurs"
-msgstr "Četvrtak"
-
-#: templates/user/user-about.html:94
-#, fuzzy
-#| msgid "Friday"
-msgid "Fri"
-msgstr "Petak"
-
-#: templates/user/user-about.html:99
-#, fuzzy
-#| msgid "Status"
-msgid "Sat"
-msgstr "Status predanog rješenja"
-
-#: templates/user/user-about.html:104
-#, fuzzy
-#| msgid "Sunday"
-msgid "Sun"
-msgstr "Nedjelja"
-
-#: templates/user/user-about.html:113
-msgid "Less"
-msgstr ""
-
-#: templates/user/user-about.html:119
-msgid "More"
-msgstr ""
-
-#: templates/user/user-about.html:127
-#, fuzzy
-#| msgid "History"
-msgid "Rating History"
-msgstr "Povijest"
-
-#: templates/user/user-about.html:198
-msgid "past year"
-msgstr ""
-
-#: templates/user/user-about.html:215
-#, fuzzy
-#| msgid "All submissions"
-msgid "total submission(s)"
-msgstr "Sva predana rješenja"
-
-#: templates/user/user-base.html:42
+#: templates/user/user-about.html:23
 #, python-format
 msgid "%(counter)s problem solved"
 msgid_plural "%(counter)s problems solved"
@@ -4856,36 +4775,140 @@ msgstr[0] ""
 msgstr[1] ""
 msgstr[2] ""
 
-#: templates/user/user-base.html:50
-msgid "Rank by points:"
+#: templates/user/user-about.html:35
+#, fuzzy
+#| msgid "allows partial points"
+msgid "Total points"
+msgstr "dopušteno djelomično bodovanje"
+
+#: templates/user/user-about.html:45
+#, fuzzy
+#| msgid "Rating"
+msgid "Rank by rating"
+msgstr "Bodovi"
+
+#: templates/user/user-about.html:52
+msgid "Rank by points"
 msgstr ""
 
-#: templates/user/user-base.html:53
-msgid "Total points:"
+#: templates/user/user-about.html:64
+msgid "From"
 msgstr ""
 
-#: templates/user/user-base.html:66
-#, python-format
-msgid "%(num)s contests written"
+#: templates/user/user-about.html:75
+msgid "Admin Notes"
 msgstr ""
 
-#: templates/user/user-base.html:68
-msgid "Rank by rating:"
+#: templates/user/user-about.html:90
+msgid "You have not shared any information."
 msgstr ""
 
-#: templates/user/user-base.html:70
-msgid "Rating:"
+#: templates/user/user-about.html:92
+msgid "This user has not shared any information."
 msgstr ""
 
-#: templates/user/user-base.html:71
+#: templates/user/user-about.html:101
+msgid "Awards"
+msgstr ""
+
+#: templates/user/user-about.html:112
+#, fuzzy, python-format
+#| msgctxt "contest problem"
+#| msgid "%(problem)s in %(contest)s"
+msgid "%(label)s (%(date)s)"
+msgstr "%(problem)s u %(contest)s"
+
+#: templates/user/user-about.html:130
+#, fuzzy
+#| msgid "Monday"
+msgid "Mon"
+msgstr "Ponedjeljak"
+
+#: templates/user/user-about.html:135
+#, fuzzy
+#| msgid "Tuesday"
+msgid "Tues"
+msgstr "Utorak"
+
+#: templates/user/user-about.html:140
+msgid "Wed"
+msgstr ""
+
+#: templates/user/user-about.html:145
+#, fuzzy
+#| msgid "Thursday"
+msgid "Thurs"
+msgstr "Četvrtak"
+
+#: templates/user/user-about.html:150
+#, fuzzy
+#| msgid "Friday"
+msgid "Fri"
+msgstr "Petak"
+
+#: templates/user/user-about.html:155
+#, fuzzy
+#| msgid "Status"
+msgid "Sat"
+msgstr "Status predanog rješenja"
+
+#: templates/user/user-about.html:160
+#, fuzzy
+#| msgid "Sunday"
+msgid "Sun"
+msgstr "Nedjelja"
+
+#: templates/user/user-about.html:169
+msgid "Less"
+msgstr ""
+
+#: templates/user/user-about.html:175
+msgid "More"
+msgstr ""
+
+#: templates/user/user-about.html:184
+#, fuzzy
+#| msgid "History"
+msgid "Rating History"
+msgstr "Povijest"
+
+#: templates/user/user-about.html:255
+msgid "past year"
+msgstr ""
+
+#: templates/user/user-about.html:272
+#, fuzzy
+#| msgid "All submissions"
+msgid "total submission(s)"
+msgstr "Sva predana rješenja"
+
+#: templates/user/user-about.html:276
+msgid "submissions in the last year"
+msgstr ""
+
+#: templates/user/user-base.html:101
+msgid "Unfollow"
+msgstr ""
+
+#: templates/user/user-base.html:104
+msgid "Follow"
+msgstr ""
+
+#: templates/user/user-base.html:120
+#, fuzzy
+#| msgid "contest rated"
+msgid "Contests written"
+msgstr "bodovanje natjecanja"
+
+#: templates/user/user-base.html:124
 msgid "Volatility:"
 msgstr ""
 
-#: templates/user/user-base.html:72
+#: templates/user/user-base.html:128
 msgid "Min. rating:"
 msgstr ""
 
-#: templates/user/user-base.html:73
+#: templates/user/user-base.html:132
 msgid "Max rating:"
 msgstr ""
 
@@ -4944,6 +4967,14 @@ msgstr ""
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr ""
+
+#, fuzzy
+#~| msgid "All submissions for %s"
+#~ msgid "%(cnt)d submission on %(date)s"
+#~ msgid_plural "%(cnt)d submissions on %(date)s"
+#~ msgstr[0] "Sva predana rješenja za korisnika %s"
+#~ msgstr[1] "Sva predana rješenja za korisnika %s"
+#~ msgstr[2] "Sva predana rješenja za korisnika %s"
 
 #, fuzzy
 #~| msgid "Rescore the selected submissions"

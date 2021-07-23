@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dmoj\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-20 23:59+0700\n"
+"POT-Creation-Date: 2021-07-23 10:48+0700\n"
 "PO-Revision-Date: 2019-11-11 22:05\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Chinese Traditional\n"
@@ -102,7 +102,7 @@ msgstr ""
 msgid "Login"
 msgstr "登入"
 
-#: dmoj/urls.py:105 templates/base.html:192
+#: dmoj/urls.py:105 templates/base.html:193
 msgid "Home"
 msgstr "首頁"
 
@@ -158,6 +158,7 @@ msgid "Format"
 msgstr ""
 
 #: judge/admin/contest.py:124 templates/contest/ranking-table.html:7
+#: templates/user/user-about.html:15 templates/user/user-about.html:45
 msgid "Rating"
 msgstr "評分"
 
@@ -209,7 +210,7 @@ msgstr ""
 msgid "username"
 msgstr "使用者名稱"
 
-#: judge/admin/contest.py:320 templates/base.html:276
+#: judge/admin/contest.py:320 templates/base.html:277
 msgid "virtual"
 msgstr ""
 
@@ -249,6 +250,7 @@ msgstr ""
 #: judge/admin/problem.py:128 templates/contest/contest.html:84
 #: templates/problem/data.html:429 templates/problem/list.html:235
 #: templates/problem/list.html:261 templates/user/base-users-table.html:10
+#: templates/user/user-about.html:36 templates/user/user-about.html:52
 #: templates/user/user-problems.html:58
 msgid "Points"
 msgstr "分數"
@@ -2302,7 +2304,7 @@ msgid "%h:%m"
 msgstr "%h:%m"
 
 #: judge/views/about.py:7 templates/organization/home.html:62
-#: templates/user/user-about.html:47 templates/user/user-tabs.html:4
+#: templates/user/user-about.html:83 templates/user/user-tabs.html:4
 msgid "About"
 msgstr ""
 
@@ -2626,7 +2628,8 @@ msgid "Editorial for <a href=\"{1}\">{0}</a>"
 msgstr ""
 
 #: judge/views/problem.py:287 templates/contest/contest.html:79
-#: templates/user/user-tabs.html:5 templates/user/users-table.html:31
+#: templates/user/user-about.html:28 templates/user/user-tabs.html:5
+#: templates/user/users-table.html:31
 msgid "Problems"
 msgstr "問題"
 
@@ -2918,21 +2921,25 @@ msgstr "我的帳戶"
 msgid "User %s"
 msgstr "用戶 %s"
 
-#: judge/views/user.py:140
+#: judge/views/user.py:144
+msgid "M j, Y"
+msgstr ""
+
+#: judge/views/user.py:167
 msgid "M j, Y, G:i"
 msgstr ""
 
-#: judge/views/user.py:257
+#: judge/views/user.py:286
 msgid "Updated on site"
 msgstr ""
 
-#: judge/views/user.py:290 templates/admin/auth/user/change_form.html:14
-#: templates/admin/auth/user/change_form.html:17 templates/base.html:237
+#: judge/views/user.py:319 templates/admin/auth/user/change_form.html:14
+#: templates/admin/auth/user/change_form.html:17 templates/base.html:238
 #: templates/user/user-tabs.html:10
 msgid "Edit profile"
 msgstr ""
 
-#: judge/views/user.py:299 templates/user/user-list-tabs.html:4
+#: judge/views/user.py:328 templates/user/user-list-tabs.html:4
 msgid "Leaderboard"
 msgstr ""
 
@@ -2973,7 +2980,7 @@ msgid "View Submissions"
 msgstr ""
 
 #: templates/admin/judge/problem/change_form.html:17
-#: templates/user/user-base.html:61
+#: templates/user/user-base.html:112
 msgid "View submissions"
 msgstr ""
 
@@ -2988,12 +2995,12 @@ msgstr ""
 msgid "Rejudge"
 msgstr ""
 
-#: templates/base.html:229
+#: templates/base.html:230
 #, python-format
 msgid "Hello, <b>%(username)s</b>."
 msgstr ""
 
-#: templates/base.html:235 templates/comments/list.html:89
+#: templates/base.html:236 templates/comments/list.html:89
 #: templates/contest/contest-list-tabs.html:24
 #: templates/contest/ranking-table.html:50
 #: templates/problem/problem-list-tabs.html:6
@@ -3002,28 +3009,28 @@ msgstr ""
 msgid "Admin"
 msgstr ""
 
-#: templates/base.html:244
+#: templates/base.html:245
 msgid "Log out"
 msgstr "登出"
 
-#: templates/base.html:253
+#: templates/base.html:254
 #: templates/registration/password_reset_complete.html:4
 msgid "Log in"
 msgstr ""
 
-#: templates/base.html:254 templates/registration/registration_form.html:177
+#: templates/base.html:255 templates/registration/registration_form.html:177
 msgid "or"
 msgstr ""
 
-#: templates/base.html:255
+#: templates/base.html:256
 msgid "Sign up"
 msgstr ""
 
-#: templates/base.html:270
+#: templates/base.html:271
 msgid "spectating"
 msgstr ""
 
-#: templates/base.html:283
+#: templates/base.html:284
 msgid "This site works best with JavaScript enabled."
 msgstr ""
 
@@ -4691,128 +4698,144 @@ msgstr ""
 msgid "%(pp).0fpp"
 msgstr ""
 
-#: templates/user/user-about.html:18
-msgid "Unfollow"
-msgstr ""
-
-#: templates/user/user-about.html:21
-msgid "Follow"
-msgstr ""
-
-#: templates/user/user-about.html:28
-msgid "From"
-msgstr ""
-
-#: templates/user/user-about.html:39
-msgid "Admin Notes"
-msgstr ""
-
-#: templates/user/user-about.html:54
-msgid "You have not shared any information."
-msgstr ""
-
-#: templates/user/user-about.html:56
-msgid "This user has not shared any information."
-msgstr ""
-
-#: templates/user/user-about.html:74
-#, fuzzy
-#| msgid "Monday"
-msgid "Mon"
-msgstr "星期一"
-
-#: templates/user/user-about.html:79
-#, fuzzy
-#| msgid "Tuesday"
-msgid "Tues"
-msgstr "星期二"
-
-#: templates/user/user-about.html:84
-msgid "Wed"
-msgstr ""
-
-#: templates/user/user-about.html:89
-#, fuzzy
-#| msgid "Thursday"
-msgid "Thurs"
-msgstr "星期四"
-
-#: templates/user/user-about.html:94
-#, fuzzy
-#| msgid "Friday"
-msgid "Fri"
-msgstr "星期五"
-
-#: templates/user/user-about.html:99
-msgid "Sat"
-msgstr ""
-
-#: templates/user/user-about.html:104
-#, fuzzy
-#| msgid "Sunday"
-msgid "Sun"
-msgstr "星期日"
-
-#: templates/user/user-about.html:113
-msgid "Less"
-msgstr ""
-
-#: templates/user/user-about.html:119
-msgid "More"
-msgstr ""
-
-#: templates/user/user-about.html:127
-#, fuzzy
-#| msgid "History"
-msgid "Rating History"
-msgstr "歷史記錄"
-
-#: templates/user/user-about.html:198
-msgid "past year"
-msgstr ""
-
-#: templates/user/user-about.html:215
-#, fuzzy
-#| msgid "All submissions"
-msgid "total submission(s)"
-msgstr "全部的提交"
-
-#: templates/user/user-base.html:42
+#: templates/user/user-about.html:23
 #, python-format
 msgid "%(counter)s problem solved"
 msgid_plural "%(counter)s problems solved"
 msgstr[0] ""
 
-#: templates/user/user-base.html:50
-msgid "Rank by points:"
+#: templates/user/user-about.html:35
+#, fuzzy
+#| msgid "points"
+msgid "Total points"
+msgstr "分"
+
+#: templates/user/user-about.html:45
+#, fuzzy
+#| msgid "Rating"
+msgid "Rank by rating"
+msgstr "評分"
+
+#: templates/user/user-about.html:52
+#, fuzzy
+#| msgid "points"
+msgid "Rank by points"
+msgstr "分"
+
+#: templates/user/user-about.html:64
+msgid "From"
 msgstr ""
 
-#: templates/user/user-base.html:53
-msgid "Total points:"
+#: templates/user/user-about.html:75
+msgid "Admin Notes"
 msgstr ""
 
-#: templates/user/user-base.html:66
+#: templates/user/user-about.html:90
+msgid "You have not shared any information."
+msgstr ""
+
+#: templates/user/user-about.html:92
+msgid "This user has not shared any information."
+msgstr ""
+
+#: templates/user/user-about.html:101
+msgid "Awards"
+msgstr ""
+
+#: templates/user/user-about.html:112
 #, python-format
-msgid "%(num)s contests written"
+msgid "%(label)s (%(date)s)"
 msgstr ""
 
-#: templates/user/user-base.html:68
-msgid "Rank by rating:"
+#: templates/user/user-about.html:130
+#, fuzzy
+#| msgid "Monday"
+msgid "Mon"
+msgstr "星期一"
+
+#: templates/user/user-about.html:135
+#, fuzzy
+#| msgid "Tuesday"
+msgid "Tues"
+msgstr "星期二"
+
+#: templates/user/user-about.html:140
+msgid "Wed"
 msgstr ""
 
-#: templates/user/user-base.html:70
-msgid "Rating:"
+#: templates/user/user-about.html:145
+#, fuzzy
+#| msgid "Thursday"
+msgid "Thurs"
+msgstr "星期四"
+
+#: templates/user/user-about.html:150
+#, fuzzy
+#| msgid "Friday"
+msgid "Fri"
+msgstr "星期五"
+
+#: templates/user/user-about.html:155
+msgid "Sat"
 msgstr ""
 
-#: templates/user/user-base.html:71
+#: templates/user/user-about.html:160
+#, fuzzy
+#| msgid "Sunday"
+msgid "Sun"
+msgstr "星期日"
+
+#: templates/user/user-about.html:169
+msgid "Less"
+msgstr ""
+
+#: templates/user/user-about.html:175
+msgid "More"
+msgstr ""
+
+#: templates/user/user-about.html:184
+#, fuzzy
+#| msgid "History"
+msgid "Rating History"
+msgstr "歷史記錄"
+
+#: templates/user/user-about.html:255
+msgid "past year"
+msgstr ""
+
+#: templates/user/user-about.html:272
+#, fuzzy
+#| msgid "All submissions"
+msgid "total submission(s)"
+msgstr "全部的提交"
+
+#: templates/user/user-about.html:276
+#, fuzzy
+#| msgid "submission time"
+msgid "submissions in the last year"
+msgstr "提交時間"
+
+#: templates/user/user-base.html:101
+msgid "Unfollow"
+msgstr ""
+
+#: templates/user/user-base.html:104
+msgid "Follow"
+msgstr ""
+
+#: templates/user/user-base.html:120
+msgid "Contests written"
+msgstr ""
+
+#: templates/user/user-base.html:124
 msgid "Volatility:"
 msgstr ""
 
-#: templates/user/user-base.html:72
+#: templates/user/user-base.html:128
 msgid "Min. rating:"
 msgstr ""
 
-#: templates/user/user-base.html:73
+#: templates/user/user-base.html:132
 msgid "Max rating:"
 msgstr ""
 

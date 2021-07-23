@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dmoj\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-20 23:59+0700\n"
+"POT-Creation-Date: 2021-07-23 10:48+0700\n"
 "PO-Revision-Date: 2019-11-11 22:06\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Turkish\n"
@@ -102,7 +102,7 @@ msgstr ""
 msgid "Login"
 msgstr "Giriş"
 
-#: dmoj/urls.py:105 templates/base.html:192
+#: dmoj/urls.py:105 templates/base.html:193
 msgid "Home"
 msgstr "Ana sayfa"
 
@@ -160,6 +160,7 @@ msgid "Format"
 msgstr ""
 
 #: judge/admin/contest.py:124 templates/contest/ranking-table.html:7
+#: templates/user/user-about.html:15 templates/user/user-about.html:45
 msgid "Rating"
 msgstr "Derecelendirme"
 
@@ -215,7 +216,7 @@ msgstr ""
 msgid "username"
 msgstr "kullanıcı adı"
 
-#: judge/admin/contest.py:320 templates/base.html:276
+#: judge/admin/contest.py:320 templates/base.html:277
 msgid "virtual"
 msgstr "sanal"
 
@@ -255,6 +256,7 @@ msgstr "Tasnif"
 #: judge/admin/problem.py:128 templates/contest/contest.html:84
 #: templates/problem/data.html:429 templates/problem/list.html:235
 #: templates/problem/list.html:261 templates/user/base-users-table.html:10
+#: templates/user/user-about.html:36 templates/user/user-about.html:52
 #: templates/user/user-problems.html:58
 msgid "Points"
 msgstr "Puanlar"
@@ -2381,7 +2383,7 @@ msgid "%h:%m"
 msgstr "%h:%m"
 
 #: judge/views/about.py:7 templates/organization/home.html:62
-#: templates/user/user-about.html:47 templates/user/user-tabs.html:4
+#: templates/user/user-about.html:83 templates/user/user-tabs.html:4
 msgid "About"
 msgstr "Hakkında"
 
@@ -2711,7 +2713,8 @@ msgid "Editorial for <a href=\"{1}\">{0}</a>"
 msgstr "<a href=\"{1}\">{0}</a> için problem analizi"
 
 #: judge/views/problem.py:287 templates/contest/contest.html:79
-#: templates/user/user-tabs.html:5 templates/user/users-table.html:31
+#: templates/user/user-about.html:28 templates/user/user-tabs.html:5
+#: templates/user/users-table.html:31
 msgid "Problems"
 msgstr "Problemler"
 
@@ -3013,21 +3016,27 @@ msgstr "Hesabım"
 msgid "User %s"
 msgstr "Kullanıcı %s"
 
-#: judge/views/user.py:140
+#: judge/views/user.py:144
+#, fuzzy
+#| msgid "M j, Y, G:i"
+msgid "M j, Y"
+msgstr "j M Y, G:i"
+
+#: judge/views/user.py:167
 msgid "M j, Y, G:i"
 msgstr "j M Y, G:i"
 
-#: judge/views/user.py:257
+#: judge/views/user.py:286
 msgid "Updated on site"
 msgstr "Sitede güncellendi"
 
-#: judge/views/user.py:290 templates/admin/auth/user/change_form.html:14
-#: templates/admin/auth/user/change_form.html:17 templates/base.html:237
+#: judge/views/user.py:319 templates/admin/auth/user/change_form.html:14
+#: templates/admin/auth/user/change_form.html:17 templates/base.html:238
 #: templates/user/user-tabs.html:10
 msgid "Edit profile"
 msgstr "Profili düzenle"
 
-#: judge/views/user.py:299 templates/user/user-list-tabs.html:4
+#: judge/views/user.py:328 templates/user/user-list-tabs.html:4
 msgid "Leaderboard"
 msgstr "Sıralama"
 
@@ -3068,7 +3077,7 @@ msgid "View Submissions"
 msgstr ""
 
 #: templates/admin/judge/problem/change_form.html:17
-#: templates/user/user-base.html:61
+#: templates/user/user-base.html:112
 msgid "View submissions"
 msgstr "Gönderileri görüntüle"
 
@@ -3083,12 +3092,12 @@ msgstr "Kullanıcı düzenle"
 msgid "Rejudge"
 msgstr "Yeniden değerlendir"
 
-#: templates/base.html:229
+#: templates/base.html:230
 #, python-format
 msgid "Hello, <b>%(username)s</b>."
 msgstr "Merhaba, <b>%(username)s</b>."
 
-#: templates/base.html:235 templates/comments/list.html:89
+#: templates/base.html:236 templates/comments/list.html:89
 #: templates/contest/contest-list-tabs.html:24
 #: templates/contest/ranking-table.html:50
 #: templates/problem/problem-list-tabs.html:6
@@ -3097,28 +3106,28 @@ msgstr "Merhaba, <b>%(username)s</b>."
 msgid "Admin"
 msgstr "Yönetici"
 
-#: templates/base.html:244
+#: templates/base.html:245
 msgid "Log out"
 msgstr "Çıkış yap"
 
-#: templates/base.html:253
+#: templates/base.html:254
 #: templates/registration/password_reset_complete.html:4
 msgid "Log in"
 msgstr "Giriş yap"
 
-#: templates/base.html:254 templates/registration/registration_form.html:177
+#: templates/base.html:255 templates/registration/registration_form.html:177
 msgid "or"
 msgstr "ya da"
 
-#: templates/base.html:255
+#: templates/base.html:256
 msgid "Sign up"
 msgstr ""
 
-#: templates/base.html:270
+#: templates/base.html:271
 msgid "spectating"
 msgstr "izleniyor"
 
-#: templates/base.html:283
+#: templates/base.html:284
 msgid "This site works best with JavaScript enabled."
 msgstr "Bu sitenin düzgün görüntülenmesi için JavaScript etkin olmalıdır."
 
@@ -4868,95 +4877,7 @@ msgstr "%(pp).1fpp"
 msgid "%(pp).0fpp"
 msgstr "%(pp).0fpp"
 
-#: templates/user/user-about.html:18
-msgid "Unfollow"
-msgstr ""
-
-#: templates/user/user-about.html:21
-msgid "Follow"
-msgstr ""
-
-#: templates/user/user-about.html:28
-msgid "From"
-msgstr "Organizasyonlar"
-
-#: templates/user/user-about.html:39
-msgid "Admin Notes"
-msgstr ""
-
-#: templates/user/user-about.html:54
-msgid "You have not shared any information."
-msgstr "Henüz hiçbir bilgi paylaşmadın."
-
-#: templates/user/user-about.html:56
-msgid "This user has not shared any information."
-msgstr "Bu kullanıcı henüz hiçbir bilgi paylaşmadı."
-
-#: templates/user/user-about.html:74
-#, fuzzy
-#| msgid "Monday"
-msgid "Mon"
-msgstr "Pazartesi"
-
-#: templates/user/user-about.html:79
-#, fuzzy
-#| msgid "Tuesday"
-msgid "Tues"
-msgstr "Salı"
-
-#: templates/user/user-about.html:84
-msgid "Wed"
-msgstr ""
-
-#: templates/user/user-about.html:89
-#, fuzzy
-#| msgid "Thursday"
-msgid "Thurs"
-msgstr "Perşembe "
-
-#: templates/user/user-about.html:94
-#, fuzzy
-#| msgid "Friday"
-msgid "Fri"
-msgstr "Cuma"
-
-#: templates/user/user-about.html:99
-#, fuzzy
-#| msgid "State"
-msgid "Sat"
-msgstr "Durum"
-
-#: templates/user/user-about.html:104
-#, fuzzy
-#| msgid "Sunday"
-msgid "Sun"
-msgstr "Pazar"
-
-#: templates/user/user-about.html:113
-msgid "Less"
-msgstr ""
-
-#: templates/user/user-about.html:119
-msgid "More"
-msgstr ""
-
-#: templates/user/user-about.html:127
-#, fuzzy
-#| msgid "History"
-msgid "Rating History"
-msgstr "Geçmiş"
-
-#: templates/user/user-about.html:198
-msgid "past year"
-msgstr ""
-
-#: templates/user/user-about.html:215
-#, fuzzy
-#| msgid "All submissions"
-msgid "total submission(s)"
-msgstr "Tüm çözümler"
-
-#: templates/user/user-base.html:42
+#: templates/user/user-about.html:23
 #, fuzzy, python-format
 #| msgid "contest problems"
 msgid "%(counter)s problem solved"
@@ -4964,16 +4885,131 @@ msgid_plural "%(counter)s problems solved"
 msgstr[0] "yarışma problemleri"
 msgstr[1] "yarışma problemleri"
 
-#: templates/user/user-base.html:50
-msgid "Rank by points:"
-msgstr "Puan sırası:"
-
-#: templates/user/user-base.html:53
-msgid "Total points:"
+#: templates/user/user-about.html:35
+#, fuzzy
+#| msgid "Total points:"
+msgid "Total points"
 msgstr "Toplam puan:"
 
-#: templates/user/user-base.html:66
+#: templates/user/user-about.html:45
+#, fuzzy
+#| msgid "Rank by rating:"
+msgid "Rank by rating"
+msgstr "Derece sırası:"
+
+#: templates/user/user-about.html:52
+#, fuzzy
+#| msgid "Rank by points:"
+msgid "Rank by points"
+msgstr "Puan sırası:"
+
+#: templates/user/user-about.html:64
+msgid "From"
+msgstr "Organizasyonlar"
+
+#: templates/user/user-about.html:75
+msgid "Admin Notes"
+msgstr ""
+
+#: templates/user/user-about.html:90
+msgid "You have not shared any information."
+msgstr "Henüz hiçbir bilgi paylaşmadın."
+
+#: templates/user/user-about.html:92
+msgid "This user has not shared any information."
+msgstr "Bu kullanıcı henüz hiçbir bilgi paylaşmadı."
+
+#: templates/user/user-about.html:101
+msgid "Awards"
+msgstr ""
+
+#: templates/user/user-about.html:112
 #, fuzzy, python-format
+#| msgctxt "contest problem"
+#| msgid "%(problem)s in %(contest)s"
+msgid "%(label)s (%(date)s)"
+msgstr "%(problem)s - %(contest)s"
+
+#: templates/user/user-about.html:130
+#, fuzzy
+#| msgid "Monday"
+msgid "Mon"
+msgstr "Pazartesi"
+
+#: templates/user/user-about.html:135
+#, fuzzy
+#| msgid "Tuesday"
+msgid "Tues"
+msgstr "Salı"
+
+#: templates/user/user-about.html:140
+msgid "Wed"
+msgstr ""
+
+#: templates/user/user-about.html:145
+#, fuzzy
+#| msgid "Thursday"
+msgid "Thurs"
+msgstr "Perşembe "
+
+#: templates/user/user-about.html:150
+#, fuzzy
+#| msgid "Friday"
+msgid "Fri"
+msgstr "Cuma"
+
+#: templates/user/user-about.html:155
+#, fuzzy
+#| msgid "State"
+msgid "Sat"
+msgstr "Durum"
+
+#: templates/user/user-about.html:160
+#, fuzzy
+#| msgid "Sunday"
+msgid "Sun"
+msgstr "Pazar"
+
+#: templates/user/user-about.html:169
+msgid "Less"
+msgstr ""
+
+#: templates/user/user-about.html:175
+msgid "More"
+msgstr ""
+
+#: templates/user/user-about.html:184
+#, fuzzy
+#| msgid "History"
+msgid "Rating History"
+msgstr "Geçmiş"
+
+#: templates/user/user-about.html:255
+msgid "past year"
+msgstr ""
+
+#: templates/user/user-about.html:272
+#, fuzzy
+#| msgid "All submissions"
+msgid "total submission(s)"
+msgstr "Tüm çözümler"
+
+#: templates/user/user-about.html:276
+#, fuzzy
+#| msgid "submission test case"
+msgid "submissions in the last year"
+msgstr "çözüm testi"
+
+#: templates/user/user-base.html:101
+msgid "Unfollow"
+msgstr ""
+
+#: templates/user/user-base.html:104
+msgid "Follow"
+msgstr ""
+
+#: templates/user/user-base.html:120
+#, fuzzy
 #| msgid ""
 #| "\n"
 #| "                        You have %(left)s submission left\n"
@@ -4982,28 +5018,20 @@ msgstr "Toplam puan:"
 #| "\n"
 #| "                        You have %(left)s submissions left\n"
 #| "                    "
-msgid "%(num)s contests written"
+msgid "Contests written"
 msgstr ""
 "\n"
 "Geriye %(left)s çözümün kaldı"
 
-#: templates/user/user-base.html:68
-msgid "Rank by rating:"
-msgstr "Derece sırası:"
-
-#: templates/user/user-base.html:70
-msgid "Rating:"
-msgstr ""
-
-#: templates/user/user-base.html:71
+#: templates/user/user-base.html:124
 msgid "Volatility:"
 msgstr "Değişkenlik:"
 
-#: templates/user/user-base.html:72
+#: templates/user/user-base.html:128
 msgid "Min. rating:"
 msgstr "En düşük derece:"
 
-#: templates/user/user-base.html:73
+#: templates/user/user-base.html:132
 msgid "Max rating:"
 msgstr "En yüksek derece:"
 
@@ -5060,6 +5088,14 @@ msgstr "Yönetici Profili"
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Tümünü seç"
+
+#, fuzzy
+#~| msgid "%(counter)s submission left"
+#~| msgid_plural "%(counter)s submissions left"
+#~ msgid "%(cnt)d submission on %(date)s"
+#~ msgid_plural "%(cnt)d submissions on %(date)s"
+#~ msgstr[0] "%(counter)s gönderi kaldı"
+#~ msgstr[1] "%(counter)s gönderi kaldı"
 
 #, fuzzy
 #~| msgid "Admin"
