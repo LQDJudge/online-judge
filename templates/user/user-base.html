@@ -23,6 +23,61 @@
             display: -ms-flexbox;
             display: flex;
         }
+
+        .user-info {
+            font-size: 1.4em;
+            line-height: 1.225;
+            font-weight: 500;
+        }
+
+        .user-info-header {
+            color: gray;
+        }
+
+        .user-info-container {
+            display: grid;
+            grid-column-gap: .5rem;
+            grid-row-gap: 1rem;
+            grid-template-columns: repeat(6, minmax(10rem, 1fr));
+        }
+
+        .user-info-card {
+            align-items: center;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+        }
+
+        .user-info-body {
+            font-weight: bold;
+        }
+
+        @media (max-width: 500px) {
+            .user-info-container {
+                grid-template-columns: repeat(2, minmax(10rem, 1fr));
+            }
+        }
+
+        .user-stat {
+            text-align: right;
+            font-weight: bold;
+            margin-right: 0.5em;
+        }
+
+        .user-stat-container {
+            margin-bottom: 0.5em;
+        }
+
+        .user-stat-header {
+            color: gray;
+        }
+
+        #awards img {
+            height: 105px;
+            margin-right: 1em;
+            margin-left: 1em;
+        }
     </style>
 {% endblock %}
 
@@ -37,40 +92,47 @@
                 <img src="{{ gravatar(user, 135) }}" width="135px" height="135px">
             </div>
             <br>
-
-            <div><b>
-                {%- trans trimmed counter=user.problem_count %}
-                    {{ counter }} problem solved
-                {% pluralize %}
-                    {{ counter }} problems solved
-                {% endtrans -%}
-            </b></div>
-
-            {% if not user.is_unlisted %}
-                <div><b class="semibold">{{ _('Rank by points:') }}</b> #{{ rank }}</div>
+            {% if request.user != user.user %}
+            <form method="post">
+                {% csrf_token %}
+                <button style="width:135px" class="{{ 'unfollow' if followed else 'follow' }}">
+                    {% if followed %}
+                        <i class="fa fa-remove"></i>
+                        {{ _('Unfollow') }}
+                    {% else %}
+                        <i class="fa fa-user-plus"></i>
+                        {{ _('Follow') }}
+                    {% endif %}
+                </button>
+            </form>
             {% endif %}
-            <div>
-                <b class="semibold">{{ _('Total points:') }}</b>
-                <span title="{{ user.performance_points|floatformat(2) }}">
-                    {{ user.performance_points|floatformat(0) }}
-                </span>
-            </div>
-
             <br>
             <div>
-                <a href="{{ url('all_user_submissions', user.user.username) }}">{{ _('View submissions') }}</a>
+                <form action="{{ url('all_user_submissions', user.user.username) }}">
+                    <input type="submit" value="{{ _('View submissions') }}" style="width:135px">
+                </form>
             </div>
 
             {% if ratings %}
                 <br>
-                <div><b>{% trans num=ratings|length %}{{ num }} contests written{% endtrans %}</b></div>
-                {% if not user.is_unlisted %}
-                    <div><b class="semibold">{{ _('Rank by rating:') }}</b> #{{ rating_rank }}</div>
-                {% endif %}
-                <div><b class="semibold">{{ _('Rating:') }}</b> {{ rating_number(rating) }}</div>
-                <div><b class="semibold">{{ _('Volatility:') }}</b> {{ rating.volatility }}</div>
-                <div><b class="semibold">{{ _('Min. rating:') }}</b> {{ rating_number(min_rating) }}</div>
-                <div><b class="semibold">{{ _('Max rating:') }}</b> {{ rating_number(max_rating) }}</div>
+                <div style="border: 3px dashed darkgray; padding: 0.3em; margin-right: 15px; border-radius: 6px;">
+                    <div class="user-stat-container">
+                        <div class="user-stat-header">{{_('Contests written')}}:</div>
+                        <div class="user-stat">{{ratings|length}}</div>
+                    </div>
+                    <div class="user-stat-container">
+                        <div class="user-stat-header">{{ _('Volatility:') }}</div>
+                        <div class="user-stat">{{ rating.volatility }}</div>
+                    </div>
+                    <div class="user-stat-container">
+                        <div class="user-stat-header">{{ _('Min. rating:') }}</div>
+                        <div class="user-stat">{{ rating_number(min_rating) }}</div>
+                    </div>
+                    <div class="user-stat-container">
+                        <div class="user-stat-header">{{ _('Max rating:') }}</div>
+                        <div class="user-stat">{{ rating_number(max_rating) }}</div>
+                    </div>
+                </div>
             {% endif %}
         </div>
         <div class="user-content">{% block user_content %}{% endblock %}</div>

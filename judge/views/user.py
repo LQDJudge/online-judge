@@ -74,6 +74,11 @@ class UserPage(TitleMixin, UserMixin, DetailView):
         return (_('My account') if self.request.user == self.object.user else
                 _('User %s') % self.object.user.username)
 
+    def get_content_title(self):
+        username = self.object.user.username
+        css_class = self.object.css_class
+        return mark_safe(f'<span class="{css_class}">{username}</span>')
+
     # TODO: the same code exists in problem.py, maybe move to problems.py?
     @cached_property
     def profile(self):
@@ -126,6 +131,28 @@ EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 class UserAboutPage(UserPage):
     template_name = 'user/user-about.html'
 
+    def get_awards(self, ratings):
+        result = {}
+
+        sorted_ratings = sorted(ratings,
+            key=lambda x: (x.rank, -x.contest.end_time.timestamp()))
+
+        result['medals'] = [{
+            'label': rating.contest.name,
+            'ranking': rating.rank,
+            'link': reverse('contest_ranking', args=(rating.contest.key,)) + '#!' + self.object.username,
+            'date': date_format(rating.contest.end_time, _('M j, Y')),
+        } for rating in sorted_ratings if rating.rank <= 3]
+
+        num_awards = 0
+        for i in result:
+            num_awards += len(result[i])
+
+        if num_awards == 0:
+            result = None
+
+        return result
+
     def get_context_data(self, **kwargs):
         context = super(UserAboutPage, self).get_context_data(**kwargs)
         ratings = context['ratings'] = self.object.ratings.order_by('-contest__end_time').select_related('contest') \
@@ -141,6 +168,8 @@ class UserAboutPage(UserPage):
             'class': rating_class(rating.rating),
             'height': '%.3fem' % rating_progress(rating.rating),
         } for rating in ratings]))
+
+        context['awards'] = self.get_awards(ratings)
 
         if ratings:
             user_data = self.object.ratings.aggregate(Min('rating'), Max('rating'))
