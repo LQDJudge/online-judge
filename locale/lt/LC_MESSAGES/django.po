@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dmoj\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-23 10:48+0700\n"
+"POT-Creation-Date: 2021-07-24 07:18+0700\n"
 "PO-Revision-Date: 2019-11-11 22:05\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Lithuanian\n"
@@ -565,7 +565,7 @@ msgstr ""
 msgid "N j, Y, g:i a"
 msgstr ""
 
-#: judge/jinja2/datetime.py:26
+#: judge/jinja2/datetime.py:26 templates/chat/message.html:13
 #, python-brace-format
 msgid "{time}"
 msgstr ""
@@ -3157,23 +3157,23 @@ msgstr ""
 msgid "Comment stream"
 msgstr ""
 
-#: templates/chat/chat.html:303
+#: templates/chat/chat.html:447
 msgid "Chat"
 msgstr ""
 
-#: templates/chat/chat.html:305 templates/chat/chat.html:322
+#: templates/chat/chat.html:449 templates/chat/chat.html:456
 msgid "Online Users"
 msgstr ""
 
-#: templates/chat/chat.html:317
-msgid "Enter your message"
-msgstr ""
-
-#: templates/chat/chat.html:323
+#: templates/chat/chat.html:457
 msgid "Refresh"
 msgstr ""
 
-#: templates/chat/message.html:18
+#: templates/chat/chat.html:475
+msgid "Enter your message"
+msgstr ""
+
+#: templates/chat/message.html:17
 msgid "Delete"
 msgstr ""
 

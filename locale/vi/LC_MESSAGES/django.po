@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-23 10:48+0700\n"
+"POT-Creation-Date: 2021-07-24 07:18+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -536,7 +536,7 @@ msgstr "Mã kỳ thi đã tồn tại."
 msgid "N j, Y, g:i a"
 msgstr "N j, Y, g:i a"
 
-#: judge/jinja2/datetime.py:26
+#: judge/jinja2/datetime.py:26 templates/chat/message.html:13
 #, python-brace-format
 msgid "{time}"
 msgstr "{time}"
@@ -544,7 +544,7 @@ msgstr "{time}"
 #: judge/jinja2/datetime.py:26
 #, python-brace-format
 msgid "on {time}"
-msgstr "vào lúc {time}"
+msgstr "vào {time}"
 
 #: judge/models/choices.py:59
 msgid "Leave as LaTeX"
@@ -3135,23 +3135,23 @@ msgstr "Bài tập mới"
 msgid "Comment stream"
 msgstr "Dòng bình luận"
 
-#: templates/chat/chat.html:303
+#: templates/chat/chat.html:447
 msgid "Chat"
 msgstr "Chat"
 
-#: templates/chat/chat.html:305 templates/chat/chat.html:322
+#: templates/chat/chat.html:449 templates/chat/chat.html:456
 msgid "Online Users"
 msgstr "Trực tuyến"
 
-#: templates/chat/chat.html:317
-msgid "Enter your message"
-msgstr "Nhập chat"
-
-#: templates/chat/chat.html:323
+#: templates/chat/chat.html:457
 msgid "Refresh"
 msgstr "Làm mới"
 
-#: templates/chat/message.html:18
+#: templates/chat/chat.html:475
+msgid "Enter your message"
+msgstr "Nhập chat"
+
+#: templates/chat/message.html:17
 #, fuzzy
 #| msgid "Delete?"
 msgid "Delete"
@@ -3168,7 +3168,7 @@ msgstr "Đăng nhập để vote"
 #: templates/comments/list.html:40
 #, python-brace-format
 msgid "commented on {time}"
-msgstr "đã bình luận vào lúc {time}"
+msgstr "đã bình luận vào {time}"
 
 #: templates/comments/list.html:49
 #, python-format
@@ -4765,6 +4765,7 @@ msgid "Awards"
 msgstr "Thành tích"
 
 #: templates/user/user-about.html:112
+#, python-format
 msgid "%(label)s (%(date)s)"
 msgstr "%(label)s (%(date)s)"
 
