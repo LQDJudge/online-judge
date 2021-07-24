@@ -212,8 +212,9 @@ function count_down(label) {
     }, 1000);
 }
 
-function register_time(elems, limit) {
-    limit = limit || 300;
+function register_time(elems, limit) { // in hours
+    if ('limit_time' in window) limit = window.limit_time;
+    else limit = limit || 300 * 24;
     elems.each(function () {
         var outdated = false;
         var $this = $(this);
@@ -225,7 +226,7 @@ function register_time(elems, limit) {
             if ($('body').hasClass('window-hidden'))
                 return outdated = true;
             outdated = false;
-            if (moment().diff(time, 'days') > limit) {
+            if (moment().diff(time, 'hours') > limit) {
                 $this.text(abs);
                 return;
             }

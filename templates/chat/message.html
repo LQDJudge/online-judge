@@ -10,17 +10,18 @@
                 </a>
             </span>
             <span class="time">
-                {{ message.time|date('TIME_FORMAT') }}
-                <span class="message_date">{{ message.time|date('d-m-Y') }}</span>
+                {{ relative_time(message.time, abs=_('{time}'), rel=_('{time}'), format=_('g:i a d/m/Y')) }}
             </span>
-            {% if request.user.is_staff %}
-            <a class="chatbtn_remove_mess" value="{{message.id}}" style="color:red; cursor: pointer;">
-                {{_('Delete')}}
-            </a>
-            {% endif %}
         </div>
         <span class="content-message">
-            {{message.body | markdown('comment', MATH_ENGINE)|reference|str|safe }}
+            <div class="body-block" title="{{ message.time|date('g:i a') }}">
+                {% if request.user.is_staff %}
+                <a class="chatbtn_remove_mess" value="{{message.id}}" style="color:red; cursor: pointer;">
+                    {{_('Delete')}}
+                </a>
+                {% endif %}
+                {{message.body | markdown('comment', MATH_ENGINE)|reference|str|safe }}
+            </div>
         </span>
     </div>
     <div class="clear"></div>

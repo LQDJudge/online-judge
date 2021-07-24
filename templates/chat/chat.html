@@ -6,9 +6,12 @@
 
 <script type="text/javascript" src="{{ static('mathjax_config.js') }}"></script>
 <script type="text/javascript" src="{{ static('event.js') }}"></script>
-
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script type="module" src="https://unpkg.com/emoji-picker-element@1"></script>
 <script type="text/javascript">
     window.currentPage = 1;
+    window.limit_time = 0;
+    window.messages_per_page = 50;
 
     function load_page(page) {
         $.get('?page=' + page)
@@ -20,9 +23,16 @@
                     let container = $('#chat-box');
                     let lastMsgPos = scrollTopOfBottom(container)
                     
-                    $('#loader').hide();  
+                    $('#loader').hide();
+
                     $('#chat-log').prepend(data);
-                    remove_day_if_today();
+
+                    $('.body-block').slice(0, window.messages_per_page).each(function() {
+                        resize_emoji($(this));
+                    });
+
+                    register_time($('.time-with-rel'));
+                    merge_authors();
 
                     container.scrollTop(scrollTopOfBottom(container) - lastMsgPos);
                 }, 500);
@@ -44,15 +54,6 @@
         }
     })}
 
-    function remove_day_if_today() {
-        $('.message_date').each(function() {
-            sent_date = $(this).html()
-            if (sent_date === "{{today}}") {
-                $(this).hide();
-            }
-        })
-    }
-    
     window.load_dynamic_update = function (last_msg) {
         return new EventReceiver(
             "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
@@ -67,16 +68,20 @@
     }
 
     function add_new_message(message) {
-        // console.log(message);
         $.get({
             url: "{{ url('chat_message_ajax') }}",
             data: {
                 message: message,
             },
             success: function (data) {
-                $('#chat-log').append($(data));
-                $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight)
+                var $data = $(data);
+                resize_emoji($data.find('.body-block'));
+
+                $('#chat-log').append($data);
+                $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
                 MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+                register_time($('.time-with-rel'));
+                merge_authors();
             },
             error: function (data) {
                 if (data.status === 403)
@@ -89,9 +94,62 @@
         });
     }
 
+    function merge_authors() {
+        var time_limit = 5; // minutes
+        var last = {
+            username: null,
+            time: null,
+            $content: null
+        };
+        $('.body-message').each(function() {
+            var username = $(this).find(".username a").text().trim();
+            var $body = $(this).find(".content-message .body-block");
+            var time = moment($(this).find(".time-with-rel").attr('data-iso'));
+            var $content = $(this).children('.content-message');
+
+            if (username == last.username && time.diff(last.time, 'minutes') <= time_limit) {
+                last.$content.append($body);
+                $(this).parent().remove();
+            }
+            else {
+                last.username = username;
+                last.time = time;
+                last.$content = $content;
+            }
+        });
+    }
+
+    function submit_chat() {
+        if ($("#chat-input").val().trim()) {
+            var body = $('#chat-input').val().trim();
+            body = body.split('\n').join('\n\n');
+            
+            var message = {
+                body: body,
+            };
+
+            $('#chat-input').val('');
+
+            $.post("{{ url('post_chat_message') }}", message)
+                .fail(function(res) {
+                    console.log('Fail to send message');
+                })
+                .done(function(res, status) {
+                    $('#chat-input').focus();
+                })
+        }
+    }
+
+    function resize_emoji(element) {
+        var html = element.html();
+        html = html.replace(/(\p{Extended_Pictographic})/ug, `<span class="big-emoji">$1</span>`);
+        element.html(html);
+    }
+
     $(function() {
         $('#loader').hide();
-        
+        merge_authors();
+
         scrollContainer($('#chat-box'), $('#loader'))
 
         {% if request.user.is_staff %}
@@ -105,7 +163,13 @@
                 },
                 dataType: 'json',
                 success: function(data){
-                    elt.closest('li').hide();        
+                    var $block = elt.parent();
+                    if ($block.parent().find('.body-block').length > 1) {
+                        $block.remove();
+                    }
+                    else {
+                        elt.closest('li').remove();
+                    }
                 },
                 fail: function(data) {
                     alert('Fail to delete');
@@ -114,25 +178,8 @@
         });
         {% endif %}
         
-        $("#chat-submit").click(function() {
-            if ($("#chat-input").val().trim()) {
-                let body = $('#chat-input').val().trim();
-                let img = '{{ gravatar(request.user, 32) }}';
-                
-                message = {
-                    body: body,
-                };
-
-                $('#chat-input').val('');
-
-                $.post("{{ url('post_chat_message') }}", message)
-                    .fail(function(res) {
-                        console.log('Fail to send message');
-                    })
-                    .done(function(res, status) {
-                        $('#chat-input').focus();
-                    })
-            }
+        $('.body-block').each(function() {
+            resize_emoji($(this));
         });
 
         $("#chat-log").change(function() {
@@ -159,7 +206,7 @@
                 }
                 else {
                     e.preventDefault();
-                    $('#chat-submit').click();
+                    submit_chat();
                 }
                 return false
             }
@@ -204,99 +251,41 @@
         }, 5 * 60 * 1000);
 
         $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
-        remove_day_if_today();
         load_dynamic_update({{last_msg}});
+
+        const button = document.querySelector('#emoji-button')
+        const tooltip = document.querySelector('.tooltip')
+        Popper.createPopper(button, tooltip)
+
+        function toggleEmoji() {
+            tooltip.classList.toggle('shown')
+        }
+        $('#emoji-button').on('click', function(e) {
+            e.preventDefault();
+            toggleEmoji();
+        });
+
+        $('emoji-picker').on('emoji-click', function(e) {
+            var $chat = $('#chat-input');
+            var text = $chat.val();
+            $chat.val(text + e.detail.unicode);
+        })
+
+        document.addEventListener('keydown', function(e) {
+            if (e.keyCode === 27 && $('.tooltip').hasClass('shown')) {
+                toggleEmoji();
+            }
+        })
     });
 </script>
 
 {% endblock js_media %}
 
 {% block media %}
-    <style>
-        #content {
-            margin-top: -0.5em;
-        }
-        #refresh-button {
-            padding: 0;
-            margin-left: auto;
-            margin-right: 0.3em;
-            background: transparent;
-            border: none;
-            height: 1.5em;
-            width: 1.5em;
-        }
-        #refresh-button:hover {
-            background: lightgreen;
-            -webkit-transform: rotate(360deg);
-            transform: rotate(360deg);
-            transition: 1.5s ease-in-out;
-        }
-        .status-pic {
-            height: 1.3em;
-            width: 1.3em;
-            border-radius: 0.3em;
-        }
-        .status-container {
-            position: relative;
-            display: inline-flex;
-        }
-        .status-circle {
-            position: absolute; 
-            bottom: 0; 
-            right: 0;
-            cx: 18px;
-            cy: 18px;
-            r: 4.5px;
-            stroke: white;
-            stroke-width: 1;
-        }
-        .status-row {
-            display: flex;
-            margin-bottom: 0.5em;
-            font-size: 15px;
-        }
-        .status-list {
-            padding: 0;
-        }
-        .status-section-title {
-            cursor: pointer;
-            margin-top: 0.5em;
-        }
-        ::-webkit-scrollbar {
-            width: 20px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background-color: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background-color: #d6dee1;
-            border-radius: 20px;
-            border: 6px solid transparent;
-            background-clip: content-box;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background-color: #a8bbbf;
-        }
-
-        @media (min-width: 800px) {
-            #page-container {
-                position:fixed;
-                overflow:hidden;
-            }
-        }
-
-        #page-container {
-            width: 100%;
-        }
-    </style>
+    {% include "chat/chat_css.html" %}
 {% endblock media %}
-
+{% block footer %}{% endblock %}
 {% block body %}
-    {% csrf_token %}
-    {% block before_posts %}{% endblock %}
     <div id="mobile" class="tabs">
         <ul>
             <li id="chat-tab" class="tab active"><a href="#">
@@ -307,16 +296,6 @@
     </div>
     
     <div id="chat-container">
-        <div id="chat-area" class="chat-left-panel">
-            <div id="chat-box">
-                <img src="http://opengraphicdesign.com/wp-content/uploads/2009/01/loader64.gif" id="loader">
-                <ul id="chat-log">
-                    {% include 'chat/message_list.html' %}
-                </ul>
-            </div>
-            <textarea id="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
-        </div>
-        <button id="chat-submit" style="display:none;"> Send </button>
         <div id="chat-online" class="chat-right-panel sidebox">
             <h3 style="display:flex">
                 {{_('Online Users')}}
@@ -330,6 +309,20 @@
                 {% include "chat/online_status.html" %}
             </div>
         </div>
+        <div id="chat-area" class="chat-left-panel" style="width:100%">
+            <div id="chat-box">
+                <img src="http://opengraphicdesign.com/wp-content/uploads/2009/01/loader64.gif" id="loader">
+                <ul id="chat-log">
+                    {% include 'chat/message_list.html' %}
+                </ul>
+            </div>
+            <div style="height: 15%">
+                <a id="emoji-button" href="#" title="{{_('Emoji')}}"><i class="icofont-slightly-smile"></i></a>
+                <textarea id="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
+            </div>
+            <div class="tooltip" role="tooltip">
+                <emoji-picker></emoji-picker>
+            </div>
+        </div>
     </div>
-
 {% endblock body %}
