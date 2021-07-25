@@ -1,0 +1,104 @@
+#chat-log p {
+    margin: 0;
+    padding-top: 0.1em;
+    padding-bottom: 0.1em;
+}
+.chatbtn_remove_mess {
+    float: right;
+    margin-right: 1em;
+}
+#emoji-button {
+    position: absolute;
+    right: 1em;
+    font-size: 2em;
+    color: lightgray;
+}
+#emoji-button:hover {
+    color: gray;
+}
+#chat-log {
+    padding: 0;
+    padding-top: 2em;
+    width: 100%;
+    font-size: 14px;
+}
+#chat-log li {
+    list-style-type: none;
+    margin: 0.5em;
+}
+#chat-submit {
+    margin-top: 1em;
+}
+.big-emoji {
+    font-size: 16px;
+}
+#chat-input, #chat-log .content-message {
+    font-family: "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Twemoji Mozilla","Noto Color Emoji", "EmojiOne Color","Android Emoji", "Segoe UI", "Lucida Grande", Arial, sans-serif;
+}
+
+#chat-online {
+    border-right: 1px solid #ccc;
+    padding-bottom: 0 !important;
+    min-width: 25%;
+    border-bottom: 0;
+}
+#chat-online-content {
+    margin-top: 0.5em;
+    margin-bottom: 0;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    overflow-y: auto;
+    max-height: 77vh;
+}
+#chat-box {
+    /*border: 1px solid #ccc;*/
+    /*border-top-right-radius: 4px;*/
+    width: 100%;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    overflow-y: scroll;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    max-height: 85%;
+    height: auto;
+}
+
+#chat-input {
+    width: 100%;
+    padding: 0.4em;
+    padding-bottom: 0.6em;
+    border: 0;
+    color: black;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    height: 100%;
+    font-size: 14px;
+}
+#chat-online-content {
+    padding: 0;
+    width: 100%;
+}
+@media (min-width: 800px) {
+    #chat-container {
+        display: flex;
+        width: 100%;
+        height: 90vh;
+        border: 1px solid #ccc;
+        /*border-radius: 0 4px 0 0;*/
+        border-bottom: 0;
+    }
+    #chat-online {
+        margin: 0;
+    }
+    .chat-left-panel, .chat-right-panel {
+        display: block !important;
+    }
+}
+@media (max-width: 799px) {
+    #chat-area {
+        height: 500px;
+    }
+    #emoji-button {
+        display: none;
+    }
+}
