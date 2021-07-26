@@ -146,6 +146,25 @@
         element.html(html);
     }
 
+    function insert_char_after_cursor(elem, char) {
+        var val = elem.value;
+        if (typeof elem.selectionStart == "number" && typeof elem.selectionEnd == "number") {
+            var start = elem.selectionStart;
+            var prefix = elem.value.slice(0, start);
+            var prefix_added = prefix + char;
+            var chars = [...val];
+            chars.splice([...prefix].length, 0, char);
+            elem.value = chars.join('');
+            elem.selectionStart = elem.selectionEnd = prefix_added.length;
+        } else if (document.selection && document.selection.createRange) {
+            var range = document.selection.createRange();
+            elem.focus();
+            range.text = char;
+            range.collapse(false);
+            range.select();
+        }
+    }
+
     $(function() {
         $('#loader').hide();
         merge_authors();
@@ -191,18 +210,7 @@
         $('#chat-input').keydown(function(e) {
             if (e.keyCode === 13) {
                 if (e.ctrlKey || e.shiftKey) {
-                    var val = this.value;
-                    if (typeof this.selectionStart == "number" && typeof this.selectionEnd == "number") {
-                        var start = this.selectionStart;
-                        this.value = val.slice(0, start) + "\n" + val.slice(this.selectionEnd);
-                        this.selectionStart = this.selectionEnd = start + 1;
-                    } else if (document.selection && document.selection.createRange) {
-                        this.focus();
-                        var range = document.selection.createRange();
-                        range.text = "\r\n";
-                        range.collapse(false);
-                        range.select();
-                    }
+                    insert_char_after_cursor(this, "\n");
                 }
                 else {
                     e.preventDefault();
@@ -266,9 +274,9 @@
         });
 
         $('emoji-picker').on('emoji-click', function(e) {
-            var $chat = $('#chat-input');
-            var text = $chat.val();
-            $chat.val(text + e.detail.unicode);
+            var $chat = $('#chat-input').get(0);
+            insert_char_after_cursor($chat, e.detail.unicode);
+            $chat.focus();
         })
 
         document.addEventListener('keydown', function(e) {
