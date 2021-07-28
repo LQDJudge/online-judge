@@ -382,7 +382,14 @@ urlpatterns = [
 
     url(r'^notifications/', 
         login_required(notification.NotificationList.as_view()),
-        name='notification')
+        name='notification'),
+
+    url(r'^import_users/', include([
+        url(r'^$', user.ImportUsersView.as_view(), name='import_users'),
+        url(r'post_file/$', user.import_users_post_file, name='import_users_post_file'),
+        url(r'submit/$', user.import_users_submit, name='import_users_submit'),
+        url(r'sample/$', user.sample_import_users, name='import_users_sample')
+    ])),
 ]
 
 favicon_paths = ['apple-touch-icon-180x180.png', 'apple-touch-icon-114x114.png', 'android-chrome-72x72.png',

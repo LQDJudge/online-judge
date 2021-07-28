@@ -13,7 +13,7 @@
             <div class="user-info-card">
                 <div class="user-info">
                     <div class="user-info-header"><i class="fa fa-star {{user.css_class}}"></i> {{_('Rating')}}</div>
-                    <div class="user-info-body {{user.css_class}}">{{user.rating}}</div>
+                    <div class="user-info-body {{user.css_class}}">{{user.rating if user.rating else '-'}}</div>
                 </div>
             </div>
             <div class="user-info-card">
@@ -43,7 +43,7 @@
             <div class="user-info-card">
                 <div class="user-info">
                     <div class="user-info-header" title="{{_('Rank by rating')}}"><i style="color: peru" class="fa fa-globe" ></i> {{_('Rating')}}</div>
-                    <div class="user-info-body">{{rating_rank}}</div>
+                    <div class="user-info-body">{{rating_rank if rating_rank else '-'}}</div>
                 </div>
             </div>
             {% endif %}
