@@ -88,7 +88,9 @@ def import_users(users):
             if added_orgs:
                 cur_log += 'Added to ' + ', '.join(added_orgs) + ' - '
 
-        user.email = row['email']
+        if row['email']:
+            user.email = row['email']
+            
         user.save()
         profile.save()
         cur_log += 'Saved\n'
