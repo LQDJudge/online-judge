@@ -91,7 +91,7 @@ class ICPCContestFormat(DefaultContestFormat):
                 format_data[str(prob)] = {'time': dt, 'points': points, 'penalty': prev}
                 score += points
 
-        participation.cumtime = cumtime + penalty
+        participation.cumtime = max(0, cumtime + penalty)
         participation.score = score
         participation.tiebreaker = last  # field is sorted from least to greatest
         participation.format_data = format_data
