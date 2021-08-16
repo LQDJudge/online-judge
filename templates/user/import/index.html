@@ -27,10 +27,10 @@
                 $('#load_button').addClass('disabled');
             
                 var file = files[0];
-                if (file.type != 'text/csv') {
-                    alert("{{_('Upload CSV only')}}");
-                    return;
-                }
+                //if (file.type != 'text/csv') {
+                //    alert("{{_('Upload CSV only')}}");
+                //    return;
+                //}
                 var form_data = new FormData();
                 form_data.append('csv_file', file, file.name);
 
