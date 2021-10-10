@@ -11,6 +11,7 @@ from django.forms import Form, modelformset_factory
 from django.http import Http404, HttpResponsePermanentRedirect, HttpResponseRedirect
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _, gettext_lazy, ungettext
 from django.views.generic import DetailView, FormView, ListView, UpdateView, View
 from django.views.generic.detail import SingleObjectMixin, SingleObjectTemplateResponseMixin
@@ -114,6 +115,7 @@ class OrganizationHome(OrganizationDetailView):
             Comment.objects.filter(page__in=['b:%d' % post.id for post in context['posts']], hidden=False)
                            .values_list('page').annotate(count=Count('page')).order_by()
         }
+        context['pending_count'] = OrganizationRequest.objects.filter(state='P', organization=self.object).count()
         return context
 
 
@@ -230,7 +232,7 @@ class OrganizationRequestDetail(LoginRequiredMixin, TitleMixin, DetailView):
 OrganizationRequestFormSet = modelformset_factory(OrganizationRequest, extra=0, fields=('state',), can_delete=True)
 
 
-class OrganizationRequestBaseView(LoginRequiredMixin, SingleObjectTemplateResponseMixin, SingleObjectMixin, View):
+class OrganizationRequestBaseView(TitleMixin, LoginRequiredMixin, SingleObjectTemplateResponseMixin, SingleObjectMixin, View):
     model = Organization
     slug_field = 'key'
     slug_url_kwarg = 'key'
@@ -243,6 +245,10 @@ class OrganizationRequestBaseView(LoginRequiredMixin, SingleObjectTemplateRespon
             raise PermissionDenied()
         return organization
 
+    def get_content_title(self):
+        href = reverse('organization_home', args=[self.object.id, self.object.slug])
+        return mark_safe(f'Manage join requests for <a href="{href}">{self.object.name}</a>')
+ 
     def get_context_data(self, **kwargs):
         context = super(OrganizationRequestBaseView, self).get_context_data(**kwargs)
         context['title'] = _('Managing join requests for %s') % self.object.name
