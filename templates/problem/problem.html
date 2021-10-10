@@ -81,6 +81,9 @@
         $(function() {
             $('#pdf_button').click(async function(e) {
                 e.preventDefault();
+                if (!$('#raw_problem').attr('src')) {
+                    $('#raw_problem').attr('src', '{{problem.code}}/raw')
+                }
                 while(!$('.math-loaded', frames['raw_problem'].document).length){
                     await new Promise(r => setTimeout(r, 200)); 
                 }
