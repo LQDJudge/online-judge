@@ -15,7 +15,7 @@ from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Case, Count, F, FloatField, IntegerField, Max, Min, Q, Sum, Value, When
 from django.db.models.expressions import CombinedExpression
-from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import date as date_filter
 from django.urls import reverse, reverse_lazy
@@ -916,3 +916,39 @@ class NewContestClarificationView(ContestMixin, TitleMixin, SingleObjectFormView
         context['problems'] = ContestProblem.objects.filter(contest=self.object)\
                                          .order_by('order')
         return context
+
+
+class ContestClarificationAjax(ContestMixin, DetailView):
+    template_name = 'contest/clarification-ajax.html'\
+    
+    def is_accessible(self):
+        if not self.request.user.is_authenticated:
+            return False
+        if not self.request.in_contest:
+            return False
+        if not self.request.participation.contest == self.object:
+            return False
+        return self.request.user.is_superuser or \
+               self.request.profile in self.request.participation.contest.authors.all() or \
+               self.request.profile in self.request.participation.contest.curators.all()
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if not self.is_accessible():
+            raise Http404()
+
+        polling_time = 1 # minute
+        last_one_minute = last_five_minutes = timezone.now()-timezone.timedelta(minutes=polling_time)
+        
+        queryset = list(ProblemClarification.objects.filter(
+                problem__in=self.object.problems.all(),
+                date__gte=last_one_minute
+            ).values('problem', 'problem__name', 'description'))
+        
+        problems = list(ContestProblem.objects.filter(contest=self.object)\
+                                         .order_by('order').values('problem'))
+        problems = [i['problem'] for i in problems]
+        for cla in queryset:
+            cla['order'] = self.object.get_label_for_problem(problems.index(cla['problem']))
+
+        return JsonResponse(queryset, safe=False, json_dumps_params={'ensure_ascii': False})

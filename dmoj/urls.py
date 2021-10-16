@@ -1,4 +1,5 @@
 from chat_box.views import ChatView, delete_message, post_message, chat_message_ajax, online_status_ajax
+
 from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
@@ -226,6 +227,7 @@ urlpatterns = [
             name='contest_participation_disqualify'),
 
         url(r'^/clarification$', contests.NewContestClarificationView.as_view(), name='new_contest_clarification'),
+        url(r'^/clarification/ajax$', contests.ContestClarificationAjax.as_view(), name='contest_clarification_ajax'),
 
         url(r'^/$', lambda _, contest: HttpResponsePermanentRedirect(reverse('contest_view', args=[contest]))),
     ])),

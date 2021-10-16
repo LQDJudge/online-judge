@@ -324,8 +324,32 @@ window.register_notify = function (type, options) {
 };
 
 window.notify_clarification = function(msg) {
-    var message = `Problem ${msg.problem_label} (${msg.problem_name}):\n` + msg.body;
+    var message = `Problem ${msg.order} (${msg.problem__name}):\n` + msg.description;
     alert(message);
+}
+
+window.register_contest_notification = function(url) {
+    function get_clarifications() {
+        $.get(url)
+            .fail(function() {
+                console.log("Fail to update clarification");
+            })
+            .done(function(data) {
+                for (i of data) {
+                    window.notify_clarification(i);
+                }
+                if (data.status == 403) {
+                    console.log("Fail to retrieve data");
+                }
+                else {
+                    $('#chat-online-content').html(data).find('.toggle').each(function () {
+                        register_toggle($(this));
+                    });;
+                }
+            })
+    }
+    get_clarifications();
+    setInterval(get_clarifications, 60 * 1000);
 }
 
 $(function () {

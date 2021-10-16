@@ -61,21 +61,9 @@
 {% block content_js_media %}
     {% include "comments/media-js.html" %}
     {% if request.in_contest %}
-        {% if last_msg %}
-            <script type="text/javascript" src="{{ static('event.js') }}"></script>
-            <script>
-                function setup_event_contest(last_msg) {
-                    var channel = ['contest_clarification_' + {{request.participation.contest.id}}]
-                    return new EventReceiver(
-                        "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
-                        channel, last_msg, function (message) {
-                            notify_clarification(message);
-                        }
-                    );
-                }
-                setup_event_contest();
-            </script>
-        {% endif %}
+        <script type="text/javascript">
+            window.register_contest_notification("{{url('contest_clarification_ajax', request.participation.contest.key)}}");
+        </script>
     {% endif %}
     <script type="text/javascript">
         $(function() {
