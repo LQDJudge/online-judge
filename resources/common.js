@@ -335,16 +335,18 @@ window.register_contest_notification = function(url) {
                 console.log("Fail to update clarification");
             })
             .done(function(data) {
+                try {
+                    JSON.parse(data);
+                } 
+                catch (e) {
+                    return;
+                }
+                
                 for (i of data) {
                     window.notify_clarification(i);
                 }
                 if (data.status == 403) {
                     console.log("Fail to retrieve data");
-                }
-                else {
-                    $('#chat-online-content').html(data).find('.toggle').each(function () {
-                        register_toggle($(this));
-                    });;
                 }
             })
     }

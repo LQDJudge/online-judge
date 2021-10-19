@@ -57,7 +57,8 @@ class PostList(ListView):
                 clarifications = ProblemClarification.objects.filter(problem__in=participation.contest.problems.all())
                 context['has_clarifications'] = clarifications.count() > 0
                 context['clarifications'] = clarifications.order_by('-date')
-
+                if participation.contest.is_editable_by(self.request.user):
+                        context['can_edit_contest'] = True
         context['user_count'] = lazy(Profile.objects.count, int, int)
         context['problem_count'] = lazy(Problem.objects.filter(is_public=True).count, int, int)
         context['submission_count'] = lazy(Submission.objects.count, int, int)
@@ -105,11 +106,6 @@ class PostList(ListView):
         else:
             context['open_tickets'] = []
 
-        if self.request.in_contest:
-            if self.request.user.is_superuser or \
-               self.request.profile in self.request.participation.contest.authors.all() or \
-               self.request.profile in self.request.participation.contest.curators.all():
-                context['can_edit_contest'] = True
         return context
 
 

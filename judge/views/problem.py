@@ -27,8 +27,8 @@ from django.views.generic.detail import SingleObjectMixin
 
 from judge.comments import CommentedDetailView
 from judge.forms import ProblemCloneForm, ProblemSubmitForm
-from judge.models import ContestProblem, ContestSubmission, Judge, Language, Problem, ProblemGroup, \
-    ProblemTranslation, ProblemType, RuntimeVersion, Solution, Submission, SubmissionSource, \
+from judge.models import ContestProblem, ContestSubmission, Judge, Language, Problem, ProblemClarification, \
+    ProblemGroup, ProblemTranslation, ProblemType, RuntimeVersion, Solution, Submission, SubmissionSource, \
     TranslatedProblemForeignKeyQuerySet, Organization
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
@@ -439,6 +439,15 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             context['point_start'], context['point_end'], context['point_values'] = 0, 0, {}
             context['hide_contest_scoreboard'] = self.contest.scoreboard_visibility in \
                 (self.contest.SCOREBOARD_AFTER_CONTEST, self.contest.SCOREBOARD_AFTER_PARTICIPATION)
+            context['has_clarifications'] = False
+            if self.request.user.is_authenticated:
+                participation = self.request.profile.current_contest
+                if participation:
+                    clarifications = ProblemClarification.objects.filter(problem__in=participation.contest.problems.all())
+                    context['has_clarifications'] = clarifications.count() > 0
+                    context['clarifications'] = clarifications.order_by('-date')
+                    if participation.contest.is_editable_by(self.request.user):
+                        context['can_edit_contest'] = True
         return context
 
     def get_noui_slider_points(self):

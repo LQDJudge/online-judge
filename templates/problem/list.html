@@ -335,6 +335,41 @@
                 {% endfor %}
                 </tbody>
             </table>
+            {% if request.in_contest and request.participation.contest.use_clarifications %}
+                <br><br>
+                {% if can_edit_contest %}
+                <div style="float: right; font-size: 1.2em">
+                    <a href="{{url('new_contest_clarification', request.participation.contest.key)}}"><i class="fa fa-plus-circle" style="color:green"></i> <u>{{_('Add clarifications')}}</u></a>
+                </div>
+                {% endif %}
+                {% if has_clarifications %}
+                    <div style="font-size: 1.2em; font-style: bold">
+                        <i class="fa fa-question-circle"></i> {{_('Clarifications')}}</div>
+                    <table class="table">
+                        <tr>
+                            <th>{{_('Problem')}}</th>
+                            <th>{{_('Time')}}</th>
+                            <th>{{_('Description')}}</th>
+                        </tr>
+                        {% for clarification in clarifications %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url('problem_detail', clarification.problem.code) }}"
+                                       class="problem">
+                                        {{ clarification.problem.name }}
+                                    </a>
+                                </td>
+                                <td class="time">{{ relative_time(clarification.date) }}</td>
+                                <td><p style="overflow-wrap: break-word; word-break: break-word">{{clarification.description}}</p></td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                {% else %}
+                    <p style="font-style: italic; text-align: center">
+                        {{ _('No clarifications have been made at this time.') }}</center>
+                    </p>
+                {% endif %}
+            {% endif %}
             {% if page_obj.num_pages > 1 %}
                 <div style="margin-top:10px;">{% include "list-pages.html" %}</div>
             {% endif %}

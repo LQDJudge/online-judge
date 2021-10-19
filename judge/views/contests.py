@@ -919,22 +919,9 @@ class NewContestClarificationView(ContestMixin, TitleMixin, SingleObjectFormView
 
 
 class ContestClarificationAjax(ContestMixin, DetailView):
-    template_name = 'contest/clarification-ajax.html'\
-    
-    def is_accessible(self):
-        if not self.request.user.is_authenticated:
-            return False
-        if not self.request.in_contest:
-            return False
-        if not self.request.participation.contest == self.object:
-            return False
-        return self.request.user.is_superuser or \
-               self.request.profile in self.request.participation.contest.authors.all() or \
-               self.request.profile in self.request.participation.contest.curators.all()
-
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        if not self.is_accessible():
+        if not self.object.is_accessible_by(request.user):
             raise Http404()
 
         polling_time = 1 # minute
