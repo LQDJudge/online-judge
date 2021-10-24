@@ -644,14 +644,14 @@ def base_contest_ranking_list(contest, problems, queryset):
 
 
 def contest_ranking_list(contest, problems):
-    return base_contest_ranking_list(contest, problems, contest.users.filter(virtual=0)
+    return base_contest_ranking_list(contest, problems, contest.users.filter(virtual__gte=0)
                                      .prefetch_related('user__organizations')
                                      .extra(select={'round_score': 'round(score, 6)'})
                                      .order_by('is_disqualified', '-round_score', 'cumtime', 'tiebreaker'))
 
 
 def get_contest_ranking_list(request, contest, participation=None, ranking_list=contest_ranking_list,
-                             show_current_virtual=True, ranker=ranker):
+                             show_current_virtual=False, ranker=ranker):
     problems = list(contest.contest_problems.select_related('problem').defer('problem__description').order_by('order'))
 
     users = ranker(ranking_list(contest, problems), key=attrgetter('points', 'cumtime', 'tiebreaker'))
@@ -680,6 +680,7 @@ def contest_ranking_ajax(request, contest, participation=None):
         'problems': problems,
         'contest': contest,
         'has_rating': contest.ratings.exists(),
+        'can_edit': contest.is_editable_by(request.user)
     })
 
 
@@ -705,7 +706,6 @@ class ContestRankingBase(ContestMixin, TitleMixin, DetailView):
         users, problems = self.get_ranking_list()
         context['users'] = users
         context['problems'] = problems
-        context['last_msg'] = event.last()
         context['tab'] = self.tab
         return context
 
@@ -759,6 +759,7 @@ class ContestParticipationList(LoginRequiredMixin, ContestRankingBase):
         context['has_rating'] = False
         context['now'] = timezone.now()
         context['rank_header'] = _('Participation')
+        context['participation_tab'] = True
         return context
 
     def get(self, request, *args, **kwargs):

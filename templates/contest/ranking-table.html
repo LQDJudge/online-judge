@@ -32,6 +32,9 @@
 {% endblock %}
 
 {% block user_data %}
+    {% if user.participation.virtual %}
+        <sup style="color:grey">[{{user.participation.virtual}}]</sup>
+    {% endif %}
     {% if can_edit %}
         <span class="contest-participation-operation">
             <form action="{{ url('contest_participation_disqualify', contest.key) }}" method="post">
@@ -63,7 +66,7 @@
 {% endblock %}
 
 {% block row_extra %}
-    class="{{ 'disqualified' if user.participation.is_disqualified }} {{ 'friend' if user.username in friends }} {{'highlight' if user.username == request.user.username}}"
+    class="{{ 'disqualified' if user.participation.is_disqualified }} {{ 'friend' if user.username in friends }} {{'highlight' if user.username == request.user.username}} {{'virtual' if user.participation.virtual}}"
 {% endblock %}
 
 {% block before_point %}

@@ -284,13 +284,20 @@
             }
         }
 
+        let non_virtual_rank = [];
+        let original_rank = [];
+
         function renew_filter() {
             var checkboxes = [
                 '#show-organizations-checkbox',
                 '#show-fullnames-checkbox',
                 '#show-friends-checkbox',
                 '#show-total-score-checkbox',
+                '#show-virtual-checkbox'
             ];
+
+            get_all_rank();
+            get_non_virtual_rank();
 
             for (var i of checkboxes) {
                 var $box = $(i);
@@ -316,6 +323,50 @@
             });
         }
 
+        function get_all_rank() {
+            original_rank = [];
+            $('tbody tr').each(function() {
+                original_rank.push($(this).children('td:first').html());
+            });
+        }
+        
+        function get_non_virtual_rank() {
+            non_virtual_rank = [];
+            $non_virtual_rows = $('tbody tr').not('.virtual');
+            $non_virtual_rows.each(function() {
+                non_virtual_rank.push($(this).children('td:first').html());
+            });
+            var res = [];
+            for (var i in non_virtual_rank) {
+                if (i > 0 && non_virtual_rank[i] === non_virtual_rank[i - 1]) {
+                    res.push(res[res.length - 1]);
+                }
+                else {
+                    res.push(parseInt(i) + 1);
+                }
+            }
+            non_virtual_rank = res;
+        }
+
+        function hide_virtual() {
+            $('.virtual').hide();
+            var $non_virtual_rows = $('tbody tr').not('.virtual');
+            $non_virtual_rows.each(function(index) {
+                $(this).children('td:first').html(non_virtual_rank[index]);
+            });
+            $non_virtual_rows.last().find('td').css({'border-bottom-width': 
+                '1px', 'border-color': '#ccc'});
+        }
+
+        function show_virtual() {
+            $('.virtual').show();
+            $('tbody tr').each(function(index) {
+                $(this).children('td:first').html(original_rank[index]);
+            });
+            $('tbody tr').not('.virtual').last().find('td').css({'border-bottom-width': 
+                        '', 'border-color': ''});
+        }
+
         // window.load_dynamic_update = function (last_msg) {
         //     return new EventReceiver(
         //         "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
@@ -330,11 +381,6 @@
         // }
 
         $(function () {
-            // load_dynamic_update({{last_msg}});
-            {% if request.in_contest %} 
-                setInterval(update_ranking, 60 * 1000);
-            {% endif %}
-
             var url = '{{ url('contest_participation', contest.key, '__username__') }}';
             var placeholder = $('#search-contest').replaceWith($('<select>').attr({
                 id: 'search-contest'
@@ -363,6 +409,7 @@
             $('#show-fullnames-checkbox').click(function () { 
                 $('.fullname-column').toggle();
             });
+
             {% if request.user.is_authenticated %}
             $('#show-friends-checkbox').click(function() {
                 let checked = $('#show-friends-checkbox').is(':checked');
@@ -379,13 +426,30 @@
                 }
             })
             {% endif %}
-
+            $('#show-virtual-checkbox').click(function() {
+                let checked = $('#show-virtual-checkbox').is(':checked');
+                if (checked) {
+                    show_virtual();
+                }
+                else {
+                    hide_virtual();
+                }
+            })
             $('#show-total-score-checkbox').click(function() {
                 $('.problem-score-col').toggle();    
             })
 
             highlightFirstSolve();
             renew_filter();
+            {% if participation_tab %}
+                $('#show-virtual-checkbox').hide();
+                $('#show-virtual-label').hide();
+            {% else %}
+                hide_virtual();
+                {% if request.in_contest %} 
+                    setInterval(update_ranking, 60 * 1000);
+                {% endif %}
+            {% endif %}
 
         });
     </script>
@@ -409,8 +473,10 @@
         <input id="show-friends-checkbox" type="checkbox" style="vertical-align: bottom;">
         <label for="show-friends-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show friends only') }}</label>
         {% endif %}
-        <input id="show-total-score-checkbox" type="checkbox" style="vertical-align: bottom;">
-        <label for="show-total-score-checkbox" style="vertical-align: bottom;">{{ _('Total score only') }}</label>
+        <input id="show-total-score-checkbox" type="checkbox" style="vertical-align: bottom; ">
+        <label for="show-total-score-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Total score only') }}</label>
+        <input id="show-virtual-checkbox" type="checkbox" style="vertical-align: bottom;">
+        <label id="show-virtual-label" for="show-virtual-checkbox" style="vertical-align: bottom;">{{ _('Show virtual participation') }}</label>
     </div>
     {% include "contest/ranking-table.html" %}
 {% endblock %}
