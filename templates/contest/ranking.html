@@ -262,21 +262,24 @@
 
                     // get information
                     let problem = linkElements[linkElements.length - 2];
-                    let score = parseFloat(scoreAndTime[0])
-                    let time = scoreAndTime[1]
+                    let score = parseFloat(scoreAndTime[0]);
+                    let time = scoreAndTime[1];
+                    console.log(time);
 
-                    let curSubmission = {
-                        'td': $(this).parent(),
-                        'score': score,
-                        'time': time 
+                    if (time) {
+                        let curSubmission = {
+                            'td': $(this).parent(),
+                            'score': score,
+                            'time': time 
+                        }
+
+                        // update best submissions
+                        let curBest = bestSubmissions[problem]
+
+                        if (scoretimeComparison(curSubmission, curBest) && score) {
+                            bestSubmissions[problem] = curSubmission;
+                        } 
                     }
-
-                    // update best submissions
-                    let curBest = bestSubmissions[problem]
-
-                    if (scoretimeComparison(curSubmission, curBest) && score) {
-                        bestSubmissions[problem] = curSubmission;
-                    } 
                 }
             })
             for (let problem in bestSubmissions) {
