@@ -643,8 +643,10 @@ def base_contest_ranking_list(contest, problems, queryset):
             queryset.select_related('user__user', 'rating').defer('user__about', 'user__organizations__about')]
 
 
-def contest_ranking_list(contest, problems):
-    return base_contest_ranking_list(contest, problems, contest.users.filter(virtual__gte=0)
+def contest_ranking_list(contest, problems, queryset=None):
+    if not queryset:
+        queryset = contest.users.filter(virtual=0)
+    return base_contest_ranking_list(contest, problems, queryset
                                      .prefetch_related('user__organizations')
                                      .extra(select={'round_score': 'round(score, 6)'})
                                      .order_by('is_disqualified', '-round_score', 'cumtime', 'tiebreaker'))
@@ -674,7 +676,15 @@ def contest_ranking_ajax(request, contest, participation=None):
     if not contest.can_see_full_scoreboard(request.user):
         raise Http404()
 
-    users, problems = get_contest_ranking_list(request, contest, participation)
+    queryset = contest.users.filter(virtual__gte=0)
+    if request.GET.get('friend') == 'true' and request.profile:
+        friends = list(request.profile.get_friends())
+        queryset = queryset.filter(user__user__username__in=friends)
+    if request.GET.get('virtual') != 'true':
+        queryset = queryset.filter(virtual=0)
+
+    users, problems = get_contest_ranking_list(request, contest, participation,
+                        ranking_list=partial(contest_ranking_list, queryset=queryset))
     return render(request, 'contest/ranking-table.html', {
         'users': users,
         'problems': problems,
