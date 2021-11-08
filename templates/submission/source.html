@@ -17,6 +17,10 @@
         a:active .line .highlighter {
             background: rgba(255, 212, 0, 0.48);
         }
+
+        .copy-clipboard {
+            margin-top: 0;
+        }
     </style>
 {% endblock %}
 
@@ -41,9 +45,9 @@
     <hr>
     <br>
     <div class="source-wrap">
-        <table>
+        <table style="width: 100%">
             <tr>
-                <td class="source-ln">
+                <td class="source-ln" style="width: 0">
                     <div>
                         {% for line in raw_source.split('\n') %}
                             <a href="#line-{{ loop.index }}" name="line-{{ loop.index }}">
