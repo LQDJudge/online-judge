@@ -330,6 +330,10 @@
                     $("input[name$='DELETE']").attr('checked', false);
                 }
             });
+
+	    // Change to OI if the first row point > 0
+	    if($("#id_cases-0-points").val() != '0') $('#problem-type').val('OI');
+
         }).change();
     </script>
 {% endblock %}
