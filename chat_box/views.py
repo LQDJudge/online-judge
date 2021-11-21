@@ -355,9 +355,14 @@ def get_room(user_one, user_two):
 
 @login_required
 def get_or_create_room(request):
-    decrypted_other_id = request.GET.get('other')
-    request_id, other_id = decrypt_url(decrypted_other_id)
+    if request.method == 'GET':
+        decrypted_other_id = request.GET.get('other')
+    elif request.method == 'POST':
+        decrypted_other_id = request.POST.get('other')
+    else:
+        return HttpResponseBadRequest()
 
+    request_id, other_id = decrypt_url(decrypted_other_id)
     if not other_id or not request_id or request_id != request.profile.id:
         return HttpResponseBadRequest()
 
@@ -372,7 +377,9 @@ def get_or_create_room(request):
         return HttpResponseBadRequest()
     # TODO: each user can only create <= 300 rooms
     room = get_room(other_user, user)
-    return JsonResponse({'room': room.id, 'other_user_id': other_user.id})
+    if request.method == 'GET':
+        return JsonResponse({'room': room.id, 'other_user_id': other_user.id})
+    return HttpResponseRedirect(reverse('chat', kwargs={'room_id': room.id}))
 
 
 def get_unread_count(rooms, user):
