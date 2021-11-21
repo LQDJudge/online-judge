@@ -276,7 +276,10 @@ def get_status_context(request, include_ignored=False):
         ignored_users = Profile.objects.none()
         queryset = Profile.objects
     else:
-        ignored_users = Ignore.get_ignored_users(request.profile)
+        try:
+            ignored_users = Ignore.get_ignored_users(request.profile)
+        except:
+            ignored_users = Profile.objects.none()
         queryset = Profile.objects.exclude(id__in=ignored_users)
 
     last_two_minutes = timezone.now()-timezone.timedelta(minutes=2)
