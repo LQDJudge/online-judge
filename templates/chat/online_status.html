@@ -1,3 +1,14 @@
+<li class="status-row" id="lobby_row">
+    <div class="status-container">
+        <img src="{{ static('icons/logo.png') }}" style="height:1.3em">
+    </div>
+    <span style="padding-left:0.5em">
+        <b>{{_('Lobby')}}</b>
+    </span>
+    <span class="spacer">
+        <span class="unread-count" id="unread-count-lobby">{{unread_count_lobby if unread_count_lobby}}</span>
+    </span>
+</li>
 {% for section in status_sections %}
     {% if section.user_list %}
         <div class="status-section-title toggle open">
@@ -8,7 +19,7 @@
         </div>
         <ul class="status-list toggled">
         {% for user in section.user_list %}
-            <li style="padding-left: 0.1em" class="status-row">
+            <li class="status-row">
                 <div class="status-container">
                     <img src="{{ gravatar(user.user, 135) }}" class="status-pic">
                     <svg style="position:absolute;" height="32" width="32">
@@ -18,6 +29,9 @@
                 </div>
                 <span style="padding-left:0.3em" class="username {{ user.user.css_class }}">
                     {{ link_user(user.user) }}
+                </span>
+                <span class="click_space spacer" value="{{user.url}}" id="click_space_{{user.user.id}}">
+                    <span class="unread-count" id="unread-count-{{user.user.id}}">{{user.unread_count if user.unread_count}}</span>
                 </span>
             </li>
         {% endfor %}

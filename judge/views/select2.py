@@ -4,6 +4,8 @@ from django.shortcuts import get_object_or_404
 from django.utils.encoding import smart_text
 from django.views.generic.list import BaseListView
 
+from chat_box.utils import encrypt_url
+
 from judge.jinja2.gravatar import gravatar
 from judge.models import Comment, Contest, Organization, Problem, Profile
 
@@ -121,3 +123,35 @@ class AssigneeSelect2View(UserSearchSelect2View):
     def get_queryset(self):
         return Profile.objects.filter(assigned_tickets__isnull=False,
                                       user__username__icontains=self.term).distinct()
+
+
+class ChatUserSearchSelect2View(BaseListView):
+    paginate_by = 20
+
+    def get_queryset(self): # TODO: add block
+        return _get_user_queryset(self.term)
+
+    def get(self, request, *args, **kwargs):
+        self.request = request
+        self.kwargs = kwargs
+        self.term = kwargs.get('term', request.GET.get('term', ''))
+        self.gravatar_size = request.GET.get('gravatar_size', 128)
+        self.gravatar_default = request.GET.get('gravatar_default', None)
+
+        self.object_list = self.get_queryset().values_list('pk', 'user__username', 'user__email', 'display_rank')
+
+        context = self.get_context_data()
+
+        return JsonResponse({
+            'results': [
+                {
+                    'text': username,
+                    'id': encrypt_url(request.profile.id, pk),
+                    'gravatar_url': gravatar(email, self.gravatar_size, self.gravatar_default),
+                    'display_rank': display_rank,
+                } for pk, username, email, display_rank in context['object_list']],
+            'more': context['page_obj'].has_next(),
+        })
+
+    def get_name(self, obj):
+        return str(obj)

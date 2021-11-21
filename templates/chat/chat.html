@@ -9,23 +9,52 @@
 <script src="https://unpkg.com/@popperjs/core@2"></script>
 <script type="module" src="https://unpkg.com/emoji-picker-element@1"></script>
 <script type="text/javascript">
+let message_template = `
+{% with message=message_template %}
+    {% include "chat/message.html" %}
+{% endwith %}  
+`;
+</script>
+<script type="text/javascript">
     window.currentPage = 1;
-    window.limit_time = 0;
+    window.limit_time = 24;
     window.messages_per_page = 50;
+    window.room_id = "{{room if room else ''}}";
+    window.unread_message = 0;
+    window.other_user_id = "{{other_user.id if other_user else ''}}";
+    window.num_pages = {{paginator.num_pages}};
+    window.lock = false;
 
-    function load_page(page) {
-        $.get('?page=' + page)
+    function load_page(page, refresh_html=false) {
+        var param = {
+            'page': page,
+        }
+        $.get("{{ url('chat', '') }}" + window.room_id, param)
             .fail(function() {
                 console.log("Fail to load page " + page);
             })
             .done(function(data) {
+                if (refresh_html) {
+                    $('#chat-log').html('');
+                    $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+                    window.lock = true;
+                }
+
+                window.num_pages = parseInt($('<div>' + data + '</div>').find('#num_pages').html());
+                var time = refresh_html ? 0 : 500;
+                
                 setTimeout(function() {
-                    let container = $('#chat-box');
-                    let lastMsgPos = scrollTopOfBottom(container)
+                    let $chat_box = $('#chat-box');
+                    let lastMsgPos = scrollTopOfBottom($chat_box)
                     
                     $('#loader').hide();
 
-                    $('#chat-log').prepend(data);
+                    if (refresh_html) {
+                        $('#chat-log').append(data);
+                    }
+                    else {
+                        $('#chat-log').prepend(data);
+                    }
 
                     $('.body-block').slice(0, window.messages_per_page).each(function() {
                         resize_emoji($(this));
@@ -34,8 +63,14 @@
                     register_time($('.time-with-rel'));
                     merge_authors();
 
-                    container.scrollTop(scrollTopOfBottom(container) - lastMsgPos);
-                }, 500);
+                    if (!refresh_html) {
+                        $chat_box.scrollTop(scrollTopOfBottom($chat_box) - lastMsgPos);
+                    }
+                    else {
+                        $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+                    }
+                    window.lock = false;
+                }, time);
             })
     }
 
@@ -46,7 +81,7 @@
     function scrollContainer(container, loader) {
         container.scroll(function() {
         if (container.scrollTop() == 0) {
-            if (currentPage < {{paginator.num_pages}}) {
+            if (currentPage < window.num_pages && !window.lock) {
                 currentPage++;
                 loader.show();
                 load_page(currentPage);
@@ -57,41 +92,121 @@
     window.load_dynamic_update = function (last_msg) {
         return new EventReceiver(
             "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
-            ['chat'], last_msg, function (message) {
-                switch (message.type) {
-                    case 'new_message':
-                        add_new_message(message.message);
-                        break;
+            ['chat_lobby', 'chat_{{request.profile.id}}'], last_msg, function (message) {
+                var room = (message.type == 'lobby') ? '' : message.room;
+                if (message.author_id == {{request.profile.id}}) {
+                    check_new_message(message.message, message.tmp_id, room);
+                }
+                else {
+                    add_new_message(message.message, room);
                 }
             }
         );
     }
 
-    function add_new_message(message) {
-        $.get({
-            url: "{{ url('chat_message_ajax') }}",
-            data: {
-                message: message,
-            },
-            success: function (data) {
-                var $data = $(data);
-                resize_emoji($data.find('.body-block'));
-
-                $('#chat-log').append($data);
-                $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
-                MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
-                register_time($('.time-with-rel'));
-                merge_authors();
-            },
-            error: function (data) {
-                if (data.status === 403)
-                    console.log('No right to see: ' + message);
-                else {
-                    console.log('Could not load chat message:');
-                    console.log(data.responseText);
+    function refresh_status() {
+        $.get("{{url('online_status_ajax')}}")
+            .fail(function() {
+                console.log("Fail to get online status");
+            })
+            .done(function(data) {
+                if (data.status == 403) {
+                    console.log("Fail to retrieve data");
                 }
+                else {
+                    $('#chat-online-list').html(data).find('.toggle').each(function () {
+                        register_toggle($(this));
+                    });
+                    register_click_space();
+                }
+            })
+
+        var data = {
+            'user': window.other_user_id,
+        };
+
+        $.get("{{url('user_online_status_ajax')}}", data)
+            .fail(function() {
+                console.log("Fail to get user online status");
+            })
+            .done(function(data) {
+                $('#chat-info').html(data);
+                register_time($('.time-with-rel'));
+                register_setting();
+            })
+    }
+
+    function add_message(data) {
+        var $data = $(data);
+        resize_emoji($data.find('.body-block'));
+
+        $('#chat-log').append($data);
+        $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+        register_time($('.time-with-rel'));
+        MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+        merge_authors();
+    }
+
+    function add_new_message(message, room) {
+        function callback(update) {
+            if (!document['hidden']) {
+                if (update) update_last_seen();
+                refresh_status();
             }
-        });
+            else {
+                window.unread_message++;
+                document.title = "(" + window.unread_message + ") " + "{{ _('New message(s)') }}";
+            }
+        }
+
+        if (room == window.room_id) {
+            $.get({
+                url: "{{ url('chat_message_ajax') }}",
+                data: {
+                    message: message,
+                },
+                success: function (data) {
+                    add_message(data);
+                    callback(true);
+                },
+                error: function (data) {
+                    console.log('Could not add new message');
+                }
+            });
+        }
+        else {
+            callback(false);
+        }
+    }
+
+    function check_new_message(message, tmp_id, room) {
+        if (room == "{{room}}") {
+            $.get({
+                url: "{{ url('chat_message_ajax') }}",
+                data: {
+                    message: message,
+                },
+                success: function (data) {
+                    var $body_block = $(data).find('.body-block');
+                    if ($('#message-'+tmp_id).length) {
+                        $('#message-'+tmp_id).replaceWith(data);
+                    }
+                    else {
+                        $('#body-block-'+tmp_id).replaceWith($body_block);
+                    }
+                    resize_emoji($body_block);
+                    MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+                    register_time($('.time-with-rel'));
+                    remove_unread_current_user();
+                },
+                error: function (data) {
+                    console.log('Fail to check message');
+                    var $body = $('#body-block-'+tmp_id + ' p');
+                    $body.css('text-decoration', 'line-through');
+                    $body.css('text-decoration-color', 'red');
+                }
+            });
+        }
     }
 
     function merge_authors() {
@@ -119,25 +234,40 @@
         });
     }
 
+    function add_message_from_template(body, tmp_id) {
+        var html = message_template;
+        html = html.replaceAll('$body', body).replaceAll('$id', tmp_id);
+        var $html = $(html);
+        $html.find('.time-with-rel').attr('data-iso', (new Date()).toISOString());
+        add_message($html[0].outerHTML, false);
+    }
+
     function submit_chat() {
+        {% if last_msg and not request.profile.mute %}
         if ($("#chat-input").val().trim()) {
             var body = $('#chat-input').val().trim();
             body = body.split('\n').join('\n\n');
             
             var message = {
                 body: body,
+                room: window.room_id,
+                tmp_id: Date.now(),
             };
 
             $('#chat-input').val('');
+
+            add_message_from_template(body, message.tmp_id);
 
             $.post("{{ url('post_chat_message') }}", message)
                 .fail(function(res) {
                     console.log('Fail to send message');
                 })
                 .done(function(res, status) {
+                    $('#empty_msg').hide();
                     $('#chat-input').focus();
                 })
         }
+        {% endif %}
     }
 
     function resize_emoji(element) {
@@ -163,6 +293,77 @@
             range.collapse(false);
             range.select();
         }
+    }
+
+    function register_click_space() {
+        function callback() {
+            history.replaceState(null, '', "{{url('chat', '')}}" + window.room_id);
+            load_page(window.currentPage, true, refresh_status);
+            update_last_seen();
+            refresh_status();
+            $('#chat-input').focus();
+        }
+        $('.click_space').on('click', function(e) {
+            if ($(this).attr('id') == 'click_space_' + window.other_user_id) {
+                return;
+            }
+            var other_user = $(this).attr('value');
+            $.get("{{url('get_or_create_room')}}" + `?other=${other_user}`)
+                .done(function(data) {
+                    window.currentPage = 1;
+                    window.room_id = data.room;
+                    window.other_user_id = data.other_user_id;
+                    callback();
+                })
+                .fail(function() {
+                    console.log('Fail to get_or_create_room');
+                })
+        });
+        $('#lobby_row').on('click', function(e) {
+            if (window.room_id) {
+                window.currentPage = 1;
+                window.room_id = '';
+                window.other_user_id = '';
+                callback();
+            }
+        });
+    }
+
+    function update_last_seen() {
+        var data = {
+            room: window.room_id
+        };
+
+        $.post("{{ url('update_last_seen') }}", data)
+            .fail(function(data) {
+                console.log('Fail to update last seen');
+            })
+            .done(function(data) {
+
+            })
+    }
+
+    function remove_unread_current_user() {
+        if (window.other_user_id) {
+           $("#unread-count-" + window.other_user_id).hide();
+        }
+        else {
+            $('#unread-count-lobby').hide();
+        }
+    }
+
+    function register_setting() {
+        $('#setting-button').on('click', function() {
+            $('#setting-content').toggle();
+        });
+        $('#setting-content li').on('click', function() {
+            $(this).children('a')[0].click();
+        })
+        $('#setting-content a').on('click', function() {
+            var href = $(this).attr('href');
+            href += '?next=' + window.location.pathname;
+            $(this).attr('href', href);
+        })
     }
 
     $(function() {
@@ -191,7 +392,7 @@
                     }
                 },
                 fail: function(data) {
-                    alert('Fail to delete');
+                    console.log('Fail to delete');
                 },
             });
         });
@@ -201,6 +402,7 @@
             resize_emoji($(this));
         });
 
+        $("#chat-log").show();
         $("#chat-log").change(function() {
             $('#chat-log').scrollTop($('#chat-log')[0].scrollHeight);
         });
@@ -237,26 +439,9 @@
             $('.chat-right-panel').show();
         });
 
-        $('#refresh-button').on('click', function() {
-            $.get("{{url('online_status_ajax')}}")
-                .fail(function() {
-                    console.log("Fail to get online status");
-                })
-                .done(function(data) {
-                    if (data.status == 403) {
-                        console.log("Fail to retrieve data");
-                    }
-                    else {
-                        $('#chat-online-content').html(data).find('.toggle').each(function () {
-                            register_toggle($(this));
-                        });;
-                    }
-                })
-        })
+        $('#refresh-button').on('click', refresh_status)
 
-        setInterval(function() {
-            $('#refresh-button').click();
-        }, 5 * 60 * 1000);
+        setInterval(refresh_status, 2 * 60 * 1000);
 
         $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
         load_dynamic_update({{last_msg}});
@@ -279,11 +464,67 @@
             $chat.focus();
         })
 
+        register_click_space();
+
         document.addEventListener('keydown', function(e) {
             if (e.keyCode === 27 && $('.tooltip').hasClass('shown')) {
                 toggleEmoji();
             }
         })
+        
+        $('#search-handle').replaceWith($('<select>').attr({
+            id: 'search-handle',
+            name: 'other',
+            onchange: 'form.submit()'
+        }));
+        var in_user_redirect = false;
+        $('#search-handle').select2({
+            placeholder: '{{ _('Search by handle...') }}',
+            ajax: {
+                url: '{{ url('chat_user_search_select2_ajax') }}'
+            },
+            minimumInputLength: 1,
+            escapeMarkup: function (markup) {
+                return markup;
+            },
+            templateResult: function (data, container) {
+                return $('<span>')
+                    .append($('<img>', {
+                        'class': 'user-search-image', src: data.gravatar_url,
+                        width: 24, height: 24
+                    }))
+                    .append($('<span>', {'class': data.display_rank + ' user-search-name'}).text(data.text))
+                    .append($('<a>', {href: '/user/' + data.text, 'class': 'user-redirect'})
+                        .append($('<i>', {'class': 'fa fa-mail-forward'}))
+                        .mouseover(function () {
+                            in_user_redirect = true;
+                        }).mouseout(function () {
+                            in_user_redirect = false;
+                        }));
+            }
+        }).on('select2:selecting', function () {
+            return !in_user_redirect;
+        });
+
+        // https://stackoverflow.com/questions/42121565/detecting-class-change-without-setinterval
+        if (typeof(MutationObserver) !== undefined) {
+            var observer = new MutationObserver(function (event) {
+                if (!document['hidden'] && window.unread_message > 0) {
+                    update_last_seen();
+                    refresh_status();
+                    window.unread_message = 0;
+                    document.title = "{{_('Chat Box')}}";
+                }
+            })
+            
+            observer.observe(document.body, {
+                attributes: true, 
+                attributeFilter: ['class'],
+                childList: false, 
+                characterData: false
+            })
+        }
+        register_setting();
     });
 </script>
 
@@ -314,23 +555,37 @@
                 </button> 
             </h3>
             <div id="chat-online-content">
-                {% include "chat/online_status.html" %}
+                <div id="search-container">
+                    <center>
+                        <form id="search-form" name="form" action="{{ url('get_or_create_room') }}" method="get">
+                            <input id="search-handle" type="text" name="search"
+                                   placeholder="{{ _('Search by handle...') }}">
+                        </form>
+                    </center>
+                </div>
+                <div id="chat-online-list">
+                    {% include "chat/online_status.html" %}
+                </div>
             </div>
         </div>
         <div id="chat-area" class="chat-left-panel" style="width:100%">
-            <div id="chat-box">
-                <img src="http://opengraphicdesign.com/wp-content/uploads/2009/01/loader64.gif" id="loader">
-                <ul id="chat-log">
-                    {% include 'chat/message_list.html' %}
-                </ul>
-            </div>
-            <div style="height: 15%">
-                <a id="emoji-button" href="#" title="{{_('Emoji')}}"><i class="icofont-slightly-smile"></i></a>
-                <textarea id="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
-            </div>
-            <div class="tooltip" role="tooltip">
-                <emoji-picker></emoji-picker>
-            </div>
+                <div id="chat-info" style="height: 8%">
+                    {% include 'chat/user_online_status.html' %}
+                </div>
+                <div id="chat-box">
+
+                    <img src="{{static('loading.gif')}}" id="loader">
+                    <ul id="chat-log" style="display: none">
+                        {% include 'chat/message_list.html' %}
+                    </ul>
+                </div>
+                <div style="height: 15%">
+                    <a id="emoji-button" href="#" title="{{_('Emoji')}}"><i class="icofont-slightly-smile"></i></a>
+                    <textarea id="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
+                </div>
+                <div class="tooltip" role="tooltip">
+                    <emoji-picker></emoji-picker>
+                </div>
         </div>
     </div>
 {% endblock body %}

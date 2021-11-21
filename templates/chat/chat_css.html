@@ -2,53 +2,7 @@
     #content {
         margin: -1em 1em 0 0;
     }
-    #refresh-button {
-        padding: 0;
-        margin-left: auto;
-        margin-right: 0.3em;
-        background: transparent;
-        border: none;
-        height: 1.5em;
-        width: 1.5em;
-    }
-    #refresh-button:hover {
-        background: lightgreen;
-        -webkit-transform: rotate(360deg);
-        transform: rotate(360deg);
-        transition: 1.5s ease-in-out;
-    }
-    .status-pic {
-        height: 1.3em;
-        width: 1.3em;
-        border-radius: 0.3em;
-    }
-    .status-container {
-        position: relative;
-        display: inline-flex;
-    }
-    .status-circle {
-        position: absolute; 
-        bottom: 0; 
-        right: 0;
-        cx: 18px;
-        cy: 18px;
-        r: 4.5px;
-        stroke: white;
-        stroke-width: 1;
-    }
-    .status-row {
-        display: flex;
-        margin-bottom: 0.5em;
-        font-size: 15px;
-    }
-    .status-list {
-        padding: 0;
-        padding-left: 1em;
-    }
-    .status-section-title {
-        cursor: pointer;
-        margin-top: 0.5em;
-    }
+    
     ::-webkit-scrollbar {
         width: 20px;
     }
@@ -143,14 +97,55 @@
     .body-block:hover {
         background: #eee;
     }
-    #chat-input, #chat-log .content-message {
-        font-family: "Apple Color Emoji", "Segoe UI", "Lucida Grande", Arial, sans-serif;
+    .active-span {
+        margin-top: 1em;
+        margin-right: 1em;
+        color: #636363;
     }
+
+    .unread-count {
+        float: right;
+        color: white;
+        background-color: darkcyan;
+        border-radius: 2px;
+        padding: 0 0.5em;
+    }
+    #search-form {
+        float: inherit;
+    }
+    #search-container {
+        margin-bottom: 0.4em;
+    }
+    #setting {
+        position: relative;
+    }
+    #setting-content {
+        display: none;
+        position: absolute;
+        background-color: #f1f1f1;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+        right: 0;
+    }
+    #setting-content li {
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        color: black;
+        font-weight: bold;
+    }
+    #setting-content li:hover {
+        background-color: #ddd;
+        cursor: pointer;
+    }
+
+    #page-container {
+        position:fixed;
+        overflow:hidden;
+    }
+
     @media (min-width: 800px) {
-        #page-container {
-            position:fixed;
-            overflow:hidden;
-        }
     }
     @media (max-width: 799px) {
         html, body {
@@ -159,6 +154,12 @@
         }
         #mobile ul {
             width: 100%;
+        }
+        .info-pic {
+            margin-left: 0.5em;
+        }
+        .active-span {
+            display: none;
         }
     }
 </style>

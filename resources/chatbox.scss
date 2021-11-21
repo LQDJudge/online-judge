@@ -55,8 +55,7 @@
     overflow-y: scroll;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
-    max-height: 85%;
-    height: auto;
+    height: 75%;
 }
 
 #chat-input {
@@ -89,6 +88,88 @@
     .chat-left-panel, .chat-right-panel {
         display: block !important;
     }
+}
+#chat-input, #chat-log .content-message {
+    font-family: "Segoe UI", "Lucida Grande", Arial, sans-serif;
+}
+.info-pic {
+    height: 90%;
+    border-radius: 50%;
+    padding: 0.05em;
+    border: 0.1px solid #ccc;
+    margin-left: 3em;
+    margin-bottom: 1.5px;
+}
+.info-circle {
+    position: absolute; 
+    cx: 86%;
+    cy: 80%;
+    r: 6px;
+    stroke: white;
+    stroke-width: 1;
+}
+.info-name {
+    margin-left: 10px;
+    font-size: 2em;
+    font-weight: bold !important;
+}
+.info-name a {
+    display: table-caption;
+}
+#chat-info {
+    border-bottom: 2px solid darkgray;
+    display: flex;
+}
+#refresh-button {
+    padding: 0;
+    margin-left: auto;
+    margin-right: 0.3em;
+    background: transparent;
+    border: none;
+    height: 1.5em;
+    width: 1.5em;
+}
+#refresh-button:hover {
+    background: lightgreen;
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+    transition: 1.5s ease-in-out;
+}
+.status-pic {
+    height: 1.3em;
+    width: 1.3em;
+    border-radius: 0.3em;
+}
+.status-container {
+    position: relative;
+    display: inline-flex;
+}
+.status-circle {
+    position: absolute; 
+    bottom: 0; 
+    right: 0;
+    cx: 18px;
+    cy: 18px;
+    r: 4.5px;
+    stroke: white;
+    stroke-width: 1;
+}
+.status-row {
+    display: flex;
+    font-size: 15px;
+    padding: 0.2em 0.2em 0.2em 1em;
+    border-radius: 4px;
+}
+.status-row:hover {
+    background: lightgray;
+    cursor: pointer;
+}
+.status-list {
+    padding: 0;
+}
+.status-section-title {
+    cursor: pointer;
+    margin-top: 0.5em;
 }
 @media (max-width: 799px) {
     #chat-area {

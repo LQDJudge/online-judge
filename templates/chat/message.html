@@ -6,7 +6,7 @@
         <div class="user-time">
             <span class="username {{ message.author.css_class }}">
                 <a href="{{ url('user_page', message.author.user.username) }}">
-                    {{message.author}}
+                    {{ message.author }}
                 </a>
             </span>
             <span class="time">
@@ -14,7 +14,7 @@
             </span>
         </div>
         <span class="content-message">
-            <div class="body-block" title="{{ message.time|date('g:i a') }}">
+            <div class="body-block" id="body-block-{{ message.id }}" title="{{ message.time|date('g:i a') }}">
                 {% if request.user.is_staff %}
                 <a class="chatbtn_remove_mess" value="{{message.id}}" style="color:red; cursor: pointer;">
                     {{_('Delete')}}

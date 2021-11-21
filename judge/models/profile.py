@@ -257,5 +257,13 @@ class Friend(models.Model):
         else:
             self.make_friend(current_user, new_friend)
 
+    @classmethod
+    def get_friend_profiles(self, current_user):
+        try:
+            ret = self.objects.get(current_user=current_user).users.all()
+        except Friend.DoesNotExist:
+            ret = []
+        return ret
+
     def __str__(self):
         return str(self.current_user)

@@ -523,3 +523,13 @@ details {
     padding: 5px 10px;
     border-radius: 4px;
 }
+
+.control-button {
+    background: lightgray;
+    color: black !important;
+    border: 0;  
+}
+
+.control-button:hover {
+    background: gray;
+}

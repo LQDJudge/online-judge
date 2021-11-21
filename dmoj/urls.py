@@ -1,4 +1,4 @@
-from chat_box.views import ChatView, delete_message, post_message, chat_message_ajax, online_status_ajax
+from chat_box.views import *
 
 from django.conf import settings
 from django.conf.urls import include, url
@@ -24,8 +24,8 @@ from judge.views import TitledTemplateView, about, api, blog, comment, contests,
 from judge.views.problem_data import ProblemDataView, ProblemSubmissionDiff, \
     problem_data_file, problem_init_view
 from judge.views.register import ActivationView, RegistrationView
-from judge.views.select2 import AssigneeSelect2View, CommentSelect2View, ContestSelect2View, \
-    ContestUserSearchSelect2View, OrganizationSelect2View, ProblemSelect2View, TicketUserSelect2View, \
+from judge.views.select2 import AssigneeSelect2View, ChatUserSearchSelect2View, CommentSelect2View, \
+    ContestSelect2View, ContestUserSearchSelect2View, OrganizationSelect2View, ProblemSelect2View, TicketUserSelect2View, \
     UserSearchSelect2View, UserSelect2View
 
 admin.autodiscover()
@@ -288,6 +288,7 @@ urlpatterns = [
 
         url(r'^select2/', include([
             url(r'^user_search$', UserSearchSelect2View.as_view(), name='user_search_select2_ajax'),
+            url(r'^user_search_chat$', ChatUserSearchSelect2View.as_view(), name='chat_user_search_select2_ajax'),
             url(r'^contest_users/(?P<contest>\w+)$', ContestUserSearchSelect2View.as_view(),
                 name='contest_user_search_select2_ajax'),
             url(r'^ticket_user$', TicketUserSelect2View.as_view(), name='ticket_user_select2_ajax'),
@@ -373,13 +374,15 @@ urlpatterns = [
     url(r'^custom_checker_sample/', about.custom_checker_sample, name='custom_checker_sample'),
 
     url(r'^chat/', include([
-        url(r'^$', 
-            login_required(ChatView.as_view()),
-            name='chat'),
+        url(r'^(?P<room_id>\d*)$', login_required(ChatView.as_view()), name='chat'),
         url(r'^delete/$', delete_message, name='delete_chat_message'),
         url(r'^post/$', post_message, name='post_chat_message'),
         url(r'^ajax$', chat_message_ajax, name='chat_message_ajax'),
-        url(r'^online_status/ajax$', online_status_ajax, name='online_status_ajax')
+        url(r'^online_status/ajax$', online_status_ajax, name='online_status_ajax'),
+        url(r'^get_or_create_room$', get_or_create_room, name='get_or_create_room'),
+        url(r'^update_last_seen$', update_last_seen, name='update_last_seen'),
+        url(r'^online_status/user/ajax$', user_online_status_ajax, name='user_online_status_ajax'),
+        url(r'^toggle_ignore/(?P<user_id>\d+)$', toggle_ignore, name='toggle_ignore'),
     ])),
 
     url(r'^notifications/', 

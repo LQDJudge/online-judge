@@ -2,15 +2,6 @@
 
 {% block media %}
     <style>
-        #control-button {
-            margin-left: 0.8em;
-            background: lightgray;
-            color: black !important;
-            border: 0;  
-        }
-        #control-button:hover {
-            background: gray;
-        }
         {% if request.user.is_authenticated and is_member %}
             #control-panel {
                 display: none;
@@ -63,7 +54,7 @@
                     $('.blog-content').hide();
                     $('.blog-sidebar').show();
                 });
-                $('#control-button').click(function(e) {
+                $('.control-button').click(function(e) {
                     e.preventDefault();
                     $('#control-panel').toggle("fast");
                 })
@@ -92,7 +83,7 @@
                        class="unselectable button">{{ _('Request membership') }}</a>
                 {% endif %}
             {% endif %}
-            <button id="control-button"><i class="fa fa-ellipsis-h"></i></button>
+            <button class="control-button"><i class="fa fa-ellipsis-h"></i></button>
         </div>
     </div>
 {% endblock %}

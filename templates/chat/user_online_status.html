@@ -1,0 +1,35 @@
+{% if other_user %}
+<div class="status-container" style="height: 100%">
+    <img src="{{ gravatar(other_user.user, 135) }}" class="info-pic">
+    <svg style="position:absolute; height:100%; width: 110%">
+        <circle class="info-circle" 
+                fill="{{'green' if other_online else 'red'}}"/>
+    </svg>
+</div>
+{% endif %}
+<span class="info-name username">
+    {% if other_user %}
+    <a href="{{url('user_page', other_user)}}">{{other_user.user.username}}</a>
+    {% else%}
+    <a href="#" style="margin-left: 3em">{{ _('Lobby') }}</a>
+    {% endif %}
+</span>
+<span class="spacer"></span>
+{% if other_user and not other_online %}
+    <span class="active-span">{{ relative_time(other_user.last_access, abs=_('Last online on {time}'), rel=_('Online {time}'), format=_('g:i a d/m/Y')) }}</span>
+{% endif %}
+
+{% if other_user %}
+<span style="margin-right: 0.3em" id="setting">
+    <button class="control-button" style="height:100%;" id="setting-button"> 
+        <i class="fa fa-ellipsis-h"></i>
+    </button>
+    <div id="setting-content">
+        <li>
+            <a href="{{url('toggle_ignore', other_user.id)}}" style="color: {{'green' if is_ignored else 'red'}}">{{_('Unignore') if is_ignored else _('Ignore')}}</a>
+        </li>
+    </div>
+</span>
+{% else %}
+<span class="active-span">{{online_count}} {{_('users are online')}}</span>
+{% endif %}
