@@ -425,3 +425,23 @@ def toggle_ignore(request, **kwargs):
     Ignore.toggle_ignore(request.profile, other_user)
     next_url = request.GET.get('next', '/')
     return HttpResponseRedirect(next_url)
+
+
+@login_required
+def get_unread_boxes(request):
+    if (request.method != 'GET'):
+        return HttpResponseBadRequest()
+
+    mess = Message.objects.filter(room=OuterRef('room'),
+                                  time__gte=OuterRef('last_seen'))\
+            .exclude(author=request.profile)\
+            .order_by().values('room')\
+            .annotate(unread_count=Count('pk')).values('unread_count')
+
+    unread_boxes = UserRoom.objects\
+        .filter(user=request.profile, room__isnull=False)\
+        .annotate(
+            unread_count=Coalesce(Subquery(mess, output_field=IntegerField()), 0),
+        ).filter(unread_count__gte=1).count()
+
+    return JsonResponse({'unread_boxes': unread_boxes})

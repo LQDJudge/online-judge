@@ -383,6 +383,7 @@ urlpatterns = [
         url(r'^update_last_seen$', update_last_seen, name='update_last_seen'),
         url(r'^online_status/user/ajax$', user_online_status_ajax, name='user_online_status_ajax'),
         url(r'^toggle_ignore/(?P<user_id>\d+)$', toggle_ignore, name='toggle_ignore'),
+        url(r'^get_unread_boxes$', get_unread_boxes, name='get_unread_boxes'),
     ])),
 
     url(r'^notifications/', 

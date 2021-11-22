@@ -150,6 +150,20 @@
                 id: '{{ request.user.id|escapejs }}',
                 name: '{{ request.user.username|escapejs }}'
             };
+            $(function() {
+                if ($('.nav-chat').length) {
+                    $.get("{{url('get_unread_boxes')}}")
+                        .done(function(data) {
+                            if (data.unread_boxes) {
+                                var html = `<sub class="unread_boxes">${data.unread_boxes}</sub>`;
+                                $('.nav-chat').append(html);        
+                            }
+                        })
+                        .fail(function(data) {
+                            console.log('Fail to get unread boxes');
+                        });
+                }
+            });
         </script>
     {% else %}
         <script>window.user = {};</script>

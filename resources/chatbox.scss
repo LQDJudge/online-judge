@@ -171,6 +171,13 @@
     cursor: pointer;
     margin-top: 0.5em;
 }
+.unread_boxes {
+    background-color: darkcyan;
+    color: white;
+    border-radius: 50%;
+    padding: 0 3px;
+    margin-left: -4px;
+}
 @media (max-width: 799px) {
     #chat-area {
         height: 500px;
