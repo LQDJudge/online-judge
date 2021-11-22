@@ -304,10 +304,12 @@ def get_status_context(request, include_ignored=False):
     if joined_id:
         recent_list = Profile.objects.raw(
             f'SELECT * from judge_profile where id in ({joined_id}) order by field(id,{joined_id})')
-
-    friend_list = Friend.get_friend_profiles(request.profile).exclude(id__in=recent_profile_id)\
-                    .exclude(id__in=ignored_users)\
-                    .order_by('-last_access')
+    try:
+        friend_list = Friend.get_friend_profiles(request.profile).exclude(id__in=recent_profile_id)\
+                        .exclude(id__in=ignored_users)\
+                        .order_by('-last_access')
+    except:
+        friend_list = Profile.objects.none()
     admin_list = queryset.filter(display_rank='admin')\
                 .exclude(id__in=friend_list).exclude(id__in=recent_profile_id)
     all_user_status = queryset\
