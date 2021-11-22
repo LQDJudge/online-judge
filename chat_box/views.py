@@ -403,6 +403,7 @@ def get_unread_count(rooms, user):
         mess = Message.objects.filter(room__isnull=True,
                                       time__gte=OuterRef('last_seen'))\
                 .exclude(author=user)\
+                .order_by().values('room')\
                 .annotate(unread_count=Count('pk')).values('unread_count')
 
         return UserRoom.objects\
