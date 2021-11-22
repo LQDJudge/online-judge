@@ -19,7 +19,7 @@
         </div>
         <ul class="status-list toggled">
         {% for user in section.user_list %}
-            <li class="status-row">
+            <li class="click_space status-row" id="click_space_{{user.user.id}}" value="{{user.url}}">
                 <div class="status-container">
                     <img src="{{ gravatar(user.user, 135) }}" class="status-pic">
                     <svg style="position:absolute;" height="32" width="32">
@@ -28,9 +28,9 @@
                     </svg>
                 </div>
                 <span style="padding-left:0.3em" class="username {{ user.user.css_class }}">
-                    {{ link_user(user.user) }}
+                    {{ user.user.username }}
                 </span>
-                <span class="click_space spacer" value="{{user.url}}" id="click_space_{{user.user.id}}">
+                <span class="spacer">
                     <span class="unread-count" id="unread-count-{{user.user.id}}">{{user.unread_count if user.unread_count}}</span>
                 </span>
             </li>

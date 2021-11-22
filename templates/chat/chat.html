@@ -24,6 +24,8 @@ let message_template = `
     window.other_user_id = "{{other_user.id if other_user else ''}}";
     window.num_pages = {{paginator.num_pages}};
     window.lock = false;
+    window.lock_click_space = false;
+    let isMobile = window.matchMedia("only screen and (max-width: 799px)").matches;
 
     function load_page(page, refresh_html=false) {
         var param = {
@@ -296,6 +298,8 @@ let message_template = `
     }
 
     function load_room(encrypted_user) {
+        if (window.lock_click_space) return;
+
         function callback() {
             history.replaceState(null, '', "{{url('chat', '')}}" + window.room_id);
             load_page(window.currentPage, true, refresh_status);
@@ -303,6 +307,7 @@ let message_template = `
             refresh_status();
             $('#chat-input').focus();
         }
+        window.lock_click_space = true;
         if (encrypted_user) {
             $.get("{{url('get_or_create_room')}}" + `?other=${encrypted_user}`)
                 .done(function(data) {
@@ -321,6 +326,7 @@ let message_template = `
             window.other_user_id = '';
             callback();
         }
+        window.lock_click_space = false;
     }
 
     function register_click_space() {
@@ -336,6 +342,9 @@ let message_template = `
                 load_room(null);
             }
         });
+        if (isMobile) {
+            $('#chat-tab a').click();
+        }
     }
 
     function update_last_seen() {
