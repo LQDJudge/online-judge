@@ -262,7 +262,7 @@ class Friend(models.Model):
         try:
             ret = self.objects.get(current_user=current_user).users.all()
         except Friend.DoesNotExist:
-            ret = []
+            ret = Profile.objects.none()
         return ret
 
     def __str__(self):

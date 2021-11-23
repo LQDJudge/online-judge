@@ -276,10 +276,7 @@ def get_status_context(request, include_ignored=False):
         ignored_users = Profile.objects.none()
         queryset = Profile.objects
     else:
-        try:
-            ignored_users = Ignore.get_ignored_users(request.profile)
-        except:
-            ignored_users = Profile.objects.none()
+        ignored_users = Ignore.get_ignored_users(request.profile)
         queryset = Profile.objects.exclude(id__in=ignored_users)
 
     last_two_minutes = timezone.now()-timezone.timedelta(minutes=2)
@@ -304,12 +301,9 @@ def get_status_context(request, include_ignored=False):
     if joined_id:
         recent_list = Profile.objects.raw(
             f'SELECT * from judge_profile where id in ({joined_id}) order by field(id,{joined_id})')
-    try:
-        friend_list = Friend.get_friend_profiles(request.profile).exclude(id__in=recent_profile_id)\
-                        .exclude(id__in=ignored_users)\
-                        .order_by('-last_access')
-    except:
-        friend_list = Profile.objects.none()
+    friend_list = Friend.get_friend_profiles(request.profile).exclude(id__in=recent_profile_id)\
+                    .exclude(id__in=ignored_users)\
+                    .order_by('-last_access')
     admin_list = queryset.filter(display_rank='admin')\
                 .exclude(id__in=friend_list).exclude(id__in=recent_profile_id)
     all_user_status = queryset\
@@ -379,6 +373,11 @@ def get_or_create_room(request):
         return HttpResponseBadRequest()
     # TODO: each user can only create <= 300 rooms
     room = get_room(other_user, user)
+    for u in [other_user, user]:
+        user_room, _ = UserRoom.objects.get_or_create(user=u, room=room)
+        user_room.last_seen = timezone.now()
+        user_room.save()
+
     if request.method == 'GET':
         return JsonResponse({'room': room.id, 'other_user_id': other_user.id})
     return HttpResponseRedirect(reverse('chat', kwargs={'room_id': room.id}))
