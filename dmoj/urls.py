@@ -22,7 +22,7 @@ from judge.views import TitledTemplateView, about, api, blog, comment, contests,
     notification, organization, preview, problem, problem_manage, ranked_submission, register, stats, status, submission, tasks, \
     ticket, totp, user, widgets
 from judge.views.problem_data import ProblemDataView, ProblemSubmissionDiff, \
-    problem_data_file, problem_init_view
+    problem_data_file, problem_init_view, ProblemZipUploadView
 from judge.views.register import ActivationView, RegistrationView
 from judge.views.select2 import AssigneeSelect2View, ChatUserSearchSelect2View, CommentSelect2View, \
     ContestSelect2View, ContestUserSearchSelect2View, OrganizationSelect2View, ProblemSelect2View, TicketUserSelect2View, \
@@ -132,6 +132,7 @@ urlpatterns = [
         url(r'^/test_data$', ProblemDataView.as_view(), name='problem_data'),
         url(r'^/test_data/init$', problem_init_view, name='problem_data_init'),
         url(r'^/test_data/diff$', ProblemSubmissionDiff.as_view(), name='problem_submission_diff'),
+        url(r'^/test_data/upload$', ProblemZipUploadView.as_view(), name='problem_zip_upload'),
         url(r'^/data/(?P<path>.+)$', problem_data_file, name='problem_data_file'),
 
         url(r'^/tickets$', ticket.ProblemTicketListView.as_view(), name='problem_ticket_list'),

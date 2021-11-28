@@ -3,14 +3,38 @@
 {% block js_media %}
     <script type="text/javascript">
         window.valid_files = {{valid_files_json}};
-
-        $(function () {
-        });
+        window.big_input = (window.valid_files.length > 100);
     </script>
     <script type="text/javascript" src="{{ static('jquery-ui.min.js') }}"></script>
     <script type="text/javascript" src="{{ static('libs/featherlight/featherlight.min.js') }}"></script>
+    <script type="text/javascript" src="{{ static('fine-uploader/jquery.fine-uploader.js') }}"></script>
     <script type="text/javascript">
         $(function () {
+            $("#problem-data-zipfile_fine_uploader").fineUploader({
+                    request: {
+                        endpoint: "{{url('problem_zip_upload', problem.code)}}",
+                        params: {
+                            'csrfmiddlewaretoken': '{{ csrf_token }}'
+                        }
+                    },
+                    chunking: {
+                        enabled: true,
+                        partSize: 40000000,
+                    },
+                    resume: {
+                        enabled: true
+                    },
+                    validation: {
+                        allowedExtensions: ['zip'],
+                    },
+                }).on('complete', function (event, id, name, responseJSON) {
+                    console.log(responseJSON);
+                    if (!responseJSON.success) {
+                        alert('Fail to upload: ' + responseJSON.error);
+                    }
+                    else window.location.reload();
+                });;
+
             function update_select2() {
                 $('tbody:not(.extra-row-body) .type-column select').select2({
                     minimumResultsForSearch: -1
@@ -20,6 +44,7 @@
             update_select2();
 
             function autofill_if_exists($select, file) {
+                console.log(1);
                 if (!$select.val() && ~window.valid_files.indexOf(file))
                     $select.val(file).trigger('change');
             }
@@ -34,7 +59,7 @@
                         style: 'width: 100%'
                     })).val();
                     $select.select2({
-                        data: window.valid_files,
+                        data: window.big_input ? [val] : window.valid_files,
                         allowClear: true,
                         placeholder: ''
                     }).val(val).trigger('change').on('change', function () {
@@ -269,16 +294,25 @@
                 inFiles.sort();
                 outFiles.sort();
 
+                // big number of input
+                if (inFiles.length > 100) {
+                    window.big_input = true;
+                }
+
                 // add boxes
                 while ($total.val() < inFiles.length) {
                     $('a#add-case-row').click();
                 }
                 // fill cases
                 for (var i = 0; i < inFiles.length; i++) {
-                    $("#id_cases-" + i + "-input_file").val(inFiles[i]).change();
+                    var $select = $("#id_cases-" + i + "-input_file");
+                    $select.select2('destroy').empty().select2({ data: [inFiles[i]] });
+                    $select.val(inFiles[i]).change();
                 }
                 for (var i = 0; i < outFiles.length; i++) {
-                    $("#id_cases-" + i + "-output_file").val(outFiles[i]).change();
+                    var $select = $("#id_cases-" + i + "-output_file");
+                    $select.select2('destroy').empty().select2({ data: [outFiles[i]] });
+                    $select.val(outFiles[i]).change();
                 }
 
                 // add points
@@ -336,9 +370,11 @@
 
         }).change();
     </script>
+    {% include 'fine_uploader/script.html' %}
 {% endblock %}
 
 {% block media %}
+    <link href="{{ static ('fine-uploader/fine-uploader.css') }}" rel="stylesheet">
     <style>
         #case-table .select2 {
             text-align: initial;

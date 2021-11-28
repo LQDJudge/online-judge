@@ -244,6 +244,7 @@ INSTALLED_APPS += (
     'django_jinja',
     'chat_box',
     'newsletter',
+    'django.forms',
 )
 
 MIDDLEWARE = (
@@ -265,6 +266,8 @@ MIDDLEWARE = (
     'judge.social_auth.SocialAuthExceptionMiddleware',
     'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
 )
+
+FORM_RENDERER = 'django.forms.renderers.TemplatesSetting'
 
 IMPERSONATE_REQUIRE_SUPERUSER = True
 IMPERSONATE_DISABLE_LOGGING = True
