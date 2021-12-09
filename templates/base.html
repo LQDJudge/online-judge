@@ -151,12 +151,12 @@
                 name: '{{ request.user.username|escapejs }}'
             };
             $(function() {
-                if ($('.nav-chat').length) {
+                if ($('#chat-icon').length) {
                     $.get("{{url('get_unread_boxes')}}")
                         .done(function(data) {
                             if (data.unread_boxes) {
                                 var html = `<sub class="unread_boxes">${data.unread_boxes}</sub>`;
-                                $('.nav-chat').append(html);        
+                                $('#chat-icon').append(html);        
                             }
                         })
                         .fail(function(data) {
@@ -219,15 +219,18 @@
                 </li>
             {% endfor %}
         </ul>
-        <div style="float: right; display: inline;">
+        <div style="float: right; display: inline; font-size: larger;">
             {% if request.user.is_authenticated %}
+            <span title="{{_('Chat')}}">
+                <a id="chat-icon" href="{{ url('chat', '') }}" class="icofont-wechat" aria-hidden="true">
+                </a>
+            </span>
+
             {% set unseen_cnt = request.profile.count_unseen_notifications %}
-            <span class="{{ 'notification-open' if unseen_cnt > 0 }}">
-                <a href="{{ url('notification') }}" class="fa fa-bell" id="notification" aria-hidden="true">
+            <span title="{{_('Notification')}}" class="{{ 'notification-open' if unseen_cnt > 0 }}">
+                <a href="{{ url('notification') }}" class="icofont-alarm" id="notification" aria-hidden="true">
                 {% if unseen_cnt > 0 %}    
-                <span>
-                    {{ unseen_cnt }}
-                </span>
+                <sub class="unread_boxes">{{unseen_cnt}}</sub>
                 {% endif %}
                 </a>
             </span>
@@ -258,7 +261,7 @@
                                     <li>
                                         <form action="{{ url('auth_logout') }}" method="POST">
                                             {% csrf_token %}
-                                            <button type="submit">{{ _('Log out') }}</button>
+                                            <button type="submit" style="color: red !important">{{ _('Log out') }}</button>
                                         </form>
                                     </li>
                                 {% endif %}
