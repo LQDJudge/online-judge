@@ -15,4 +15,5 @@ sass_processed
 <desired bridge log path>
 node_modules/
 package-lock.json
+/src
 
