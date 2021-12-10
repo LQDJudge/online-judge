@@ -74,7 +74,6 @@ class ContestList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ContestL
     all_sorts = frozenset(('name', 'user_count', 'start_time'))
     default_desc = frozenset(('name', 'user_count'))
     default_sort = '-start_time'
-    first_page_href = None
     
     @cached_property
     def _now(self):
@@ -139,9 +138,6 @@ class ContestList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ContestL
         context['contest_query'] = self.contest_query
         context['org_query'] = self.org_query
         context['organizations'] = Organization.objects.all()
-        context['page_suffix'] = suffix = (
-            '?' + self.request.GET.urlencode()) if self.request.GET else ''
-        context['first_page_href'] = (self.first_page_href or '.') + suffix
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())
         return context
