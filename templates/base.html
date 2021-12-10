@@ -289,7 +289,7 @@
             {% if request.participation.spectate %}
                 {{ _('spectating') }}
             {% elif request.participation.end_time %}
-                <div id="contest-time-remaining" data-secs="{{ request.participation.time_remaining|seconds }}">
+                <div id="contest-time-remaining" data-secs="{{request.participation.end_time}}">
                     {{ request.participation.time_remaining|timedelta("localized") }}
                 </div>
             {% else %}

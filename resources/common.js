@@ -183,8 +183,7 @@ if (!Date.now) {
 }
 
 function count_down(label) {
-    var initial = parseInt(label.attr('data-secs'));
-    var start = Date.now();
+    var end_time = new Date(label.attr('data-secs'));
 
     function format(num) {
         var s = "0" + num;
@@ -192,7 +191,7 @@ function count_down(label) {
     }
 
     var timer = setInterval(function () {
-        var time = Math.round(initial - (Date.now() - start) / 1000);
+        var time = Math.round((end_time - Date.now()) / 1000);
         if (time <= 0) {
             clearInterval(timer);
             setTimeout(function() {
