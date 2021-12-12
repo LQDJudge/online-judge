@@ -166,8 +166,12 @@ class Profile(models.Model):
     remove_contest.alters_data = True
 
     def update_contest(self):
-        contest = self.current_contest
-        if contest is not None and (contest.ended or not contest.contest.is_accessible_by(self.user)):
+        from judge.models import ContestParticipation
+        try:
+            contest = self.current_contest
+            if contest is not None and (contest.ended or not contest.contest.is_accessible_by(self.user)):
+                self.remove_contest()
+        except ContestParticipation.DoesNotExist:
             self.remove_contest()
 
     update_contest.alters_data = True
