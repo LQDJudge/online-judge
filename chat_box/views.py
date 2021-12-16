@@ -323,7 +323,7 @@ def get_status_context(request, include_ignored=False):
             'user_list': get_online_status(request.profile, friend_list),
         },
         {
-            'title': 'Admins',
+            'title': 'Admin',
             'user_list': get_online_status(request.profile, admin_list),
         },
         {
@@ -359,6 +359,7 @@ def get_or_create_room(request):
         return HttpResponseBadRequest()
 
     request_id, other_id = decrypt_url(decrypted_other_id)
+
     if not other_id or not request_id or request_id != request.profile.id:
         return HttpResponseBadRequest()
 

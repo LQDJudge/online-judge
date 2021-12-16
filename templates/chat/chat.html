@@ -14,6 +14,12 @@ let message_template = `
     {% include "chat/message.html" %}
 {% endwith %}  
 `;
+let META_HEADER = [
+    "{{_('Recent')}}",
+    "{{_('Following')}}",
+    "{{_('Admin')}}",
+    "{{_('Other')}}",
+];
 </script>
 <script type="text/javascript">
     window.currentPage = 1;

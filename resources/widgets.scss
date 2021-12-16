@@ -517,11 +517,17 @@ ul.select2-selection__rendered {
     }
 }
 
-details {
-    border: 1px solid $border_gray;
-    background: $background_light_gray;
-    padding: 5px 10px;
-    border-radius: 4px;
+.spoiler-text {
+    border: 1px solid black;
+    padding: 0.5em;
+    margin-top: 0.5em;
+    border-radius: 5px;
+    background: #def;
+}
+
+.spoiler-summary {
+    padding-left: 0.5em;
+    text-decoration: underline;
 }
 
 .control-button {

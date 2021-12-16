@@ -112,6 +112,14 @@
                     <input type="submit" value="{{ _('View submissions') }}" style="width:135px">
                 </form>
             </div>
+            <br>
+            <div>
+                <form action="{{ url('get_or_create_room') }}" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" value="{{ chat_param(request.profile, user)}}" name="other">
+                    <input type="submit" value="{{ _('Send message') }}" style="width:135px">
+                </form>
+            </div>
 
             {% if ratings %}
                 <br>

@@ -1,0 +1,25 @@
+{% extends "common-content.html" %}
+
+{% block content_js_media %}
+    {% include "comments/media-js.html" %}
+{% endblock %}
+
+{% block content_media %}
+    {% include "comments/media-css.html" %}
+    <style>
+        #comment-header {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    {% include "comments/list.html" %}
+{% endblock %}
+
+{% block bodyend %}
+    {% if REQUIRE_JAX %}
+        {% include "mathjax-load.html" %}
+    {% endif %}
+    {% include "comments/math.html" %}
+{% endblock %}

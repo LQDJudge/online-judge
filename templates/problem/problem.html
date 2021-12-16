@@ -1,6 +1,5 @@
 {% extends "common-content.html" %}
 {% block content_media %}
-    {% include "comments/media-css.html" %}
     <style>
         .title-state {
             font-size: 2em;
@@ -59,7 +58,6 @@
 {% endblock %}
 
 {% block content_js_media %}
-    {% include "comments/media-js.html" %}
     {% if request.in_contest %}
         <script type="text/javascript">
             window.register_contest_notification("{{url('contest_clarification_ajax', request.participation.contest.key)}}");
@@ -166,9 +164,10 @@
     {% endif %}
     <div><a href="{{ url('chronological_submissions', problem.code) }}">{{ _('All submissions') }}</a></div>
     <div><a href="{{ url('ranked_submissions', problem.code) }}">{{ _('Best submissions') }}</a></div>
+    <hr>
+    <div><a href="{{ url('problem_comments', problem.code) }}">{{ _('Discuss') }}</a></div>
     {% if editorial and editorial.is_public and 
             not (request.user.is_authenticated and request.profile.current_contest) %}
-        <hr>
         <div><a href="{{ url('problem_editorial', problem.code) }}">{{ _('Read editorial') }}</a></div>
     {% endif %}
     {% if can_edit_problem %}
@@ -345,7 +344,8 @@
 
 {% block post_description_end %}
     {% if request.user.is_authenticated and not request.profile.mute %}
-        <a href="{{ url('new_problem_ticket', problem.code) }}" class="button clarify">
+        <a href="{{ url('new_problem_ticket', problem.code) }}" class="clarify">
+            <i class="fa fa-flag" style="margin-right:0.5em"></i>
             {%- if contest_problem and contest_problem.contest.use_clarifications and request.profile.current_contest.live -%}
                 {{ _('Request clarification') }}
             {%- else -%}
@@ -372,8 +372,6 @@
                 <p class="no-comments-message">{{ _('No clarifications have been made at this time.') }}</p>
             {% endif %}
         </div>
-    {% else %}
-        {% include "comments/list.html" %}
     {% endif %}
     <iframe name="raw_problem" id="raw_problem"></iframe>
 {% endblock %}

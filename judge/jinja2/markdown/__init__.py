@@ -12,6 +12,7 @@ from lxml.etree import ParserError, XMLSyntaxError
 from judge.highlight_code import highlight_code
 from judge.jinja2.markdown.lazy_load import lazy_load as lazy_load_processor
 from judge.jinja2.markdown.math import MathInlineGrammar, MathInlineLexer, MathRenderer
+from judge.jinja2.markdown.spoiler import SpoilerInlineGrammar, SpoilerInlineLexer, SpoilerRenderer
 from judge.utils.camo import client as camo_client
 from judge.utils.texoid import TEXOID_ENABLED, TexoidRenderer
 from .. import registry
@@ -26,15 +27,15 @@ class CodeSafeInlineGrammar(mistune.InlineGrammar):
     emphasis = re.compile(r'^\*((?:\*\*|[^\*])+?)()\*(?!\*)')  # *word*
 
 
-class AwesomeInlineGrammar(MathInlineGrammar, CodeSafeInlineGrammar):
+class AwesomeInlineGrammar(MathInlineGrammar, SpoilerInlineGrammar, CodeSafeInlineGrammar):
     pass
 
 
-class AwesomeInlineLexer(MathInlineLexer, mistune.InlineLexer):
+class AwesomeInlineLexer(MathInlineLexer, SpoilerInlineLexer, mistune.InlineLexer):
     grammar_class = AwesomeInlineGrammar
 
 
-class AwesomeRenderer(MathRenderer, mistune.Renderer):
+class AwesomeRenderer(MathRenderer, SpoilerRenderer, mistune.Renderer):
     def __init__(self, *args, **kwargs):
         self.nofollow = kwargs.pop('nofollow', True)
         self.texoid = TexoidRenderer() if kwargs.pop('texoid', False) else None
@@ -128,7 +129,6 @@ def markdown(value, style, math_engine=None, lazy_load=False):
     markdown = mistune.Markdown(renderer=renderer, inline=AwesomeInlineLexer,
                                 parse_block_html=1, parse_inline_html=1)
     result = markdown(value)
-
     if post_processors:
         try:
             tree = html.fromstring(result, parser=html.HTMLParser(recover=True))
