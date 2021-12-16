@@ -2676,7 +2676,6 @@ msgid "Disscuss {0}"
 msgstr ""
 
 #: judge/views/problem.py:229
-#, fuzzy, python-brace-format
 msgid "Discuss <a href=\"{1}\">{0}</a>"
 msgstr "Thảo luận <a href=\"{1}\">{0}</a>"
 
