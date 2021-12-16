@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-12-17 02:37+0700\n"
+"POT-Creation-Date: 2021-12-17 03:21+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -5145,14 +5145,18 @@ msgid "Follow"
 msgstr "Theo dõi"
 
 #: templates/user/user-base.html:120
+msgid "Send message"
+msgstr "Nhắn tin"
+
+#: templates/user/user-base.html:128
 msgid "Contests written"
 msgstr "Số kỳ thi"
 
-#: templates/user/user-base.html:124
+#: templates/user/user-base.html:132
 msgid "Min. rating:"
 msgstr "Min. rating:"
 
-#: templates/user/user-base.html:128
+#: templates/user/user-base.html:136
 msgid "Max rating:"
 msgstr "Max rating:"
 
