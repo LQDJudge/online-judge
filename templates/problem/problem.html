@@ -164,8 +164,11 @@
     {% endif %}
     <div><a href="{{ url('chronological_submissions', problem.code) }}">{{ _('All submissions') }}</a></div>
     <div><a href="{{ url('ranked_submissions', problem.code) }}">{{ _('Best submissions') }}</a></div>
-    <hr>
-    <div><a href="{{ url('problem_comments', problem.code) }}">{{ _('Discuss') }}</a></div>
+    
+    {% if not contest_problem or not contest_problem.contest.use_clarifications %}
+        <hr>
+        <div><a href="{{ url('problem_comments', problem.code) }}">{{ _('Discuss') }}</a></div>
+    {% endif %}
     {% if editorial and editorial.is_public and 
             not (request.user.is_authenticated and request.profile.current_contest) %}
         <div><a href="{{ url('problem_editorial', problem.code) }}">{{ _('Read editorial') }}</a></div>
