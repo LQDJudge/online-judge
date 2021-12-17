@@ -3409,12 +3409,10 @@ msgid "Please login to vote"
 msgstr "Đăng nhập để vote"
 
 #: templates/comments/list.html:40
-#, python-brace-format
 msgid "commented on {time}"
-msgstr "đã bình luận vào {time}"
+msgstr "bình luận vào {time}"
 
 #: templates/comments/list.html:49
-#, python-format
 msgid "edit %(edits)s"
 msgstr "chỉnh sửa %(edits)s"
 
