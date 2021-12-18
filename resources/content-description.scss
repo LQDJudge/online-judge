@@ -107,9 +107,9 @@
         white-space: pre-wrap;
         word-wrap: break-word;
         margin: 1.5em 0 1.5em 0;
-        padding: 1em;
-        border: 1px solid $border_gray;
-        background-color: #f8f8f8;
+        padding: 0.5em;
+        padding-right: 0;
+        background-color: hsla(0,0%,92.5%,.5);
         color: black;
         border-radius: $widget_border_radius;
     }
@@ -182,6 +182,34 @@
     text-align: center;
     margin-left: auto;
     margin-right: auto;
+}
+
+.codehilitetable {
+    .linenos {
+        width: 4%;
+        
+        pre {
+            color: rgba(0,0,0,.26);
+            background-color: rgba(0,0,0,.07);
+            width: 100%;
+
+            span {
+                margin-left: 0.4em;
+            }
+        }
+    }
+
+    .code {
+        padding-left: 0.2em;
+
+        pre {
+            padding-left: 1em;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+    }
+
+    width: 100%;
 }
 
 @media (min-width: 700px) {

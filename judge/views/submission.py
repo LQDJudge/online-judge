@@ -111,7 +111,7 @@ class SubmissionSource(SubmissionDetailBase):
         submission = self.object
         context['raw_source'] = submission.source.source.rstrip('\n')
         context['highlighted_source'] = highlight_code(
-            submission.source.source, submission.language.pygments)
+            submission.source.source, submission.language.pygments, linenos=False)
         return context
 
 
