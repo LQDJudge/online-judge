@@ -408,11 +408,13 @@ def get_unread_count(rooms, user):
                 .order_by().values('room')\
                 .annotate(unread_count=Count('pk')).values('unread_count')
 
-        return UserRoom.objects\
+        res = UserRoom.objects\
             .filter(user=user, room__isnull=True)\
             .annotate(
                 unread_count=Coalesce(Subquery(mess, output_field=IntegerField()), 0),
-            ).values_list('unread_count', flat=True)[0]
+            ).values_list('unread_count', flat=True)
+
+        return res[0] if len(res) else 0
 
 
 @login_required
