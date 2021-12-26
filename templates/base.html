@@ -177,6 +177,17 @@
     {% if request.user.is_authenticated and request.profile.user_script and not request.user.is_impersonate %}
         <script type="text/javascript">{{ request.profile.user_script|safe }}</script>
     {% endif %}
+    <script type="text/javascript" src="https://storage.yandexcloud.net/slaylines/uploads/snowflakes.min.1.0.0.js" defer></script>
+
+    <script>
+        var snowConfig = {
+          color: [0, 1, 1],
+          count: 100,
+          opacity: 0.7,
+          density: 1 / 50,
+        };
+
+    </script>
 
     <noscript>
         <style>
@@ -189,8 +200,6 @@
             }
         </style>
     </noscript>
-    <style>
-    </style>
 </head>
 <body>
 <svg width="0" height="0" style="display: block">
