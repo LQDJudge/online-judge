@@ -177,19 +177,6 @@
     {% if request.user.is_authenticated and request.profile.user_script and not request.user.is_impersonate %}
         <script type="text/javascript">{{ request.profile.user_script|safe }}</script>
     {% endif %}
-    <script type="text/javascript" src="https://storage.yandexcloud.net/slaylines/uploads/snowflakes.min.1.0.0.js" defer></script>
-
-    <script>
-        var snowConfig = {
-          color: [0, 1, 1],
-          count: 100,
-          opacity: 0.7,
-          density: 1 / 100,
-          speed: 1 / 100000,
-        };
-
-    </script>
-
     <noscript>
         <style>
             #content {
@@ -203,6 +190,13 @@
     </noscript>
 </head>
 <body>
+<script src="https://unpkg.com/magic-snowflakes/dist/snowflakes.min.js"></script>
+<script>
+    var snowflakes = new Snowflakes({
+        speed: 0.3,
+        count: 20,
+    });
+</script>
 <svg width="0" height="0" style="display: block">
     <defs>
         <clipPath id="rating-clip"><circle cx="8" cy="8" r="7"/></clipPath>
