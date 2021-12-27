@@ -153,7 +153,7 @@
                                     <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
                                 </div>
                                 <div class="time">
-                                    {{ _('Ends in %(countdown)s.', countdown=contest.end_time|as_countdown) }}
+                                    {{ _('Ends in') }} {{ _('%(countdown)s.', countdown=contest.end_time|as_countdown) }}
                                 </div>
                             </div>
                         {% endfor %}

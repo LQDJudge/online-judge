@@ -10,7 +10,7 @@
                     <span class="post-authors">{{ link_users(authors) }}</span>
                 {%- endif -%}
             {% endwith %}
-            {{ relative_time(post.publish_on, abs=_('posted on {time}'), rel=_('posted {time}')) -}}
+            {{_('posted')}} {{ relative_time(post.publish_on, abs=_('on {time}'), rel=_('{time}')) -}}
         </span>
         <span>
             <a href="{{ url('blog_post', post.id, post.slug) }}#comments" class="blog-comment-count-link">
