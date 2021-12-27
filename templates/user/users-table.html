@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block after_rank %}
-    <td><img style="max-width: none; border-radius: 50%" src="{{ gravatar(user, 45) }}" height="45px" width="45px"></td>
+    <td><img style="border: 2px solid black; max-width: none; border-radius: 50%" src="{{ gravatar(user, 45) }}" height="45px" width="45px"></td>
     <td class="rating-td">{% if user.rating %}{{ rating_number(user) }}{% endif %}</td>
 {% endblock %}
 
