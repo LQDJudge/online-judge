@@ -67,6 +67,13 @@ th.header.rank {
         white-space: nowrap;
     }
 
+    .about-td {
+        max-height: 45px;
+        overflow: hidden;
+        cursor: pointer;
+        overflow-wrap: anywhere;
+    }
+
     tr {
         transition: background-color linear .2s;
 
