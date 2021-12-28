@@ -183,7 +183,7 @@ if (!Date.now) {
 }
 
 function count_down(label) {
-    var end_time = new Date(label.attr('data-secs'));
+    var end_time = new Date(label.attr('data-secs').replace(' ', 'T'));
 
     function format(num) {
         var s = "0" + num;
