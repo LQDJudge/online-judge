@@ -40,6 +40,16 @@ class CustomRegistrationForm(RegistrationForm):
     if ReCaptchaField is not None:
         captcha = ReCaptchaField(widget=ReCaptchaWidget())
 
+    def clean_organizations(self):
+        organizations = self.cleaned_data.get('organizations') or []
+        max_orgs = settings.DMOJ_USER_MAX_ORGANIZATION_COUNT
+
+        if sum(org.is_open for org in organizations) > max_orgs:
+            raise forms.ValidationError(
+                _('You may not be part of more than {count} public organizations.').format(count=max_orgs))
+
+        return self.cleaned_data['organizations']
+
     def clean_email(self):
         if User.objects.filter(email=self.cleaned_data['email']).exists():
             raise forms.ValidationError(gettext('The email address "%s" is already taken. Only one registration '
@@ -71,7 +81,7 @@ class RegistrationView(OldRegistrationView):
     def register(self, form):
         user = super(RegistrationView, self).register(form)
         profile, _ = Profile.objects.get_or_create(user=user, defaults={
-            'language': Language.get_python3(),
+            'language': Language.get_default_language(),
         })
 
         cleaned_data = form.cleaned_data

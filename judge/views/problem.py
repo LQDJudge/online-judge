@@ -21,14 +21,14 @@ from django.utils.functional import cached_property
 from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _, gettext_lazy
-from django.views.generic import ListView, View
+from django.views.generic import DetailView, ListView, View
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
 from judge.comments import CommentedDetailView
 from judge.forms import ProblemCloneForm, ProblemSubmitForm
-from judge.models import ContestProblem, ContestSubmission, Judge, Language, Problem, ProblemGroup, \
-    ProblemTranslation, ProblemType, RuntimeVersion, Solution, Submission, SubmissionSource, \
+from judge.models import ContestProblem, ContestSubmission, Judge, Language, Problem, ProblemClarification, \
+    ProblemGroup, ProblemTranslation, ProblemType, RuntimeVersion, Solution, Submission, SubmissionSource, \
     TranslatedProblemForeignKeyQuerySet, Organization
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
@@ -154,12 +154,9 @@ class ProblemRaw(ProblemMixin, TitleMixin, TemplateResponseMixin, SingleObjectMi
             ))
 
 
-class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
+class ProblemDetail(ProblemMixin, SolvedProblemMixin, DetailView):
     context_object_name = 'problem'
     template_name = 'problem/problem.html'
-
-    def get_comment_page(self):
-        return 'p:%s' % self.object.code
 
     def get_context_data(self, **kwargs):
         context = super(ProblemDetail, self).get_context_data(**kwargs)
@@ -170,6 +167,7 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
         contest_problem = (None if not authed or user.profile.current_contest is None else
                            get_contest_problem(self.object, user.profile))
         context['contest_problem'] = contest_problem
+
         if contest_problem:
             clarifications = self.object.clarifications
             context['has_clarifications'] = clarifications.count() > 0
@@ -220,6 +218,21 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
         return context
 
 
+class ProblemComments(ProblemMixin, TitleMixin, CommentedDetailView):
+    context_object_name = 'problem'
+    template_name = 'problem/comments.html'
+
+    def get_title(self):
+        return _('Disscuss {0}').format(self.object.name)
+
+    def get_content_title(self):
+        return format_html(_(u'Discuss <a href="{1}">{0}</a>'), self.object.name,
+                           reverse('problem_detail', args=[self.object.code]))
+
+    def get_comment_page(self):
+        return 'p:%s' % self.object.code
+
+
 class LatexError(Exception):
     pass
 
@@ -256,7 +269,6 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
                     'math_engine': maker.math_engine,
                 }).replace('"//', '"https://').replace("'//", "'https://")
                 maker.title = problem_name
-
                 assets = ['style.css', 'pygment-github.css']
                 if maker.math_engine == 'jax':
                     assets.append('mathjax_config.js')
@@ -267,7 +279,6 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
                     self.logger.error('Failed to render PDF for %s', problem.code)
                     return HttpResponse(maker.log, status=500, content_type='text/plain')
                 shutil.move(maker.pdffile, cache)
-
         response = HttpResponse()
         if hasattr(settings, 'DMOJ_PDF_PROBLEM_INTERNAL') and \
                 request.META.get('SERVER_SOFTWARE', '').startswith('nginx/'):
@@ -438,7 +449,17 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         else:
             context['hot_problems'] = None
             context['point_start'], context['point_end'], context['point_values'] = 0, 0, {}
-            context['hide_contest_scoreboard'] = self.contest.hide_scoreboard
+            context['hide_contest_scoreboard'] = self.contest.scoreboard_visibility in \
+                (self.contest.SCOREBOARD_AFTER_CONTEST, self.contest.SCOREBOARD_AFTER_PARTICIPATION)
+            context['has_clarifications'] = False
+            if self.request.user.is_authenticated:
+                participation = self.request.profile.current_contest
+                if participation:
+                    clarifications = ProblemClarification.objects.filter(problem__in=participation.contest.problems.all())
+                    context['has_clarifications'] = clarifications.count() > 0
+                    context['clarifications'] = clarifications.order_by('-date')
+                    if participation.contest.is_editable_by(self.request.user):
+                        context['can_edit_contest'] = True
         return context
 
     def get_noui_slider_points(self):

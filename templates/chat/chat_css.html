@@ -1,0 +1,164 @@
+<style>
+    #content {
+        margin: -1em 1em 0 0;
+    }
+    
+    ::-webkit-scrollbar {
+        width: 20px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background-color: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: #d6dee1;
+        border-radius: 20px;
+        border: 6px solid transparent;
+        background-clip: content-box;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: #a8bbbf;
+    }
+
+    #page-container {
+        width: 100%;
+    }
+
+    .body-message img{
+        max-height: 12em;
+    }
+
+    .tooltip:not(.shown) {
+        display: none;
+    }
+    
+    textarea {
+        resize: none;
+    }
+
+    .tooltip {
+        left: 120vh !important;
+        transform: translate(100px, 0) !important;
+        position: absolute;
+    }
+
+    #loader {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        width: 4%;
+    }
+    .profile-pic {
+        height: 2.6em;
+        width: 2.6em;
+        border-radius: 0.3em;
+        margin-top: 0.1em;
+        float: left;
+    }
+    .body-message {
+        padding-left: 3em;
+        padding-bottom: 0.5em;
+        border-bottom: 1px dotted lightgray;
+    }
+    .user-time {
+        margin-bottom: 0.3em;
+    }
+    .time {
+        margin-left: 0.5em;
+    }
+    .clear {
+        clear: both;
+    }
+    .content-message {
+        word-wrap: break-word;
+    }
+    .content-message p {
+        margin: 0;
+    }
+    #content {
+        width: 100%;
+    }
+    #content-body {
+        padding-bottom: 0;
+    }
+    #page-container {
+        min-height: 0;
+    }
+    .sidebox h3 {
+        border-radius: 0;
+        margin: -1px -5.5px 0 -5.8px;
+    }
+    .body-block {
+        border-radius: 4px;
+        padding-left: 0.2em;
+    }
+    .body-block:hover {
+        background: #eee;
+    }
+    .active-span {
+        margin-top: 1em;
+        margin-right: 1em;
+        color: #636363;
+    }
+
+    .unread-count {
+        float: right;
+        color: white;
+        background-color: darkcyan;
+        border-radius: 2px;
+        padding: 0 0.5em;
+    }
+    #search-form {
+        float: inherit;
+    }
+    #search-container {
+        margin-bottom: 0.4em;
+    }
+    #setting {
+        position: relative;
+    }
+    #setting-content {
+        display: none;
+        position: absolute;
+        background-color: #f1f1f1;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+        right: 0;
+    }
+    #setting-content li {
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        color: black;
+        font-weight: bold;
+    }
+    #setting-content li:hover {
+        background-color: #ddd;
+        cursor: pointer;
+    }
+
+    @media (min-width: 800px) {
+        #page-container {
+            position:fixed;
+            overflow:hidden;
+        }
+    }
+    @media (max-width: 799px) {
+        html, body {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        #mobile ul {
+            width: 100%;
+        }
+        .info-pic {
+            margin-left: 0.5em;
+        }
+        .active-span {
+            display: none;
+        }
+    }
+</style>

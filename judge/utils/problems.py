@@ -1,6 +1,8 @@
 from collections import defaultdict
 from math import e
+import os, zipfile
 
+from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Case, Count, ExpressionWrapper, F, Max, Q, When
 from django.db.models.fields import FloatField
@@ -112,8 +114,8 @@ def hot_problems(duration, limit):
     cache_key = 'hot_problems:%d:%d' % (duration.total_seconds(), limit)
     qs = cache.get(cache_key)
     if qs is None:
-        qs = Problem.objects.filter(is_public=True, is_organization_private=False,
-                                    submission__date__gt=timezone.now() - duration, points__gt=3, points__lt=25)
+        qs = Problem.get_public_problems() \
+                    .filter(submission__date__gt=timezone.now() - duration, points__gt=3, points__lt=25)
         qs0 = qs.annotate(k=Count('submission__user', distinct=True)).order_by('-k').values_list('k', flat=True)
 
         if not qs0:

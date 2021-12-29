@@ -13,7 +13,8 @@ from django.db import transaction
 from django.db.models import Count, Max, Min
 from django.db.models.fields import DateField
 from django.db.models.functions import Cast, ExtractYear
-from django.http import Http404, HttpResponseRedirect, JsonResponse
+from django.forms import Form
+from django.http import Http404, HttpResponseRedirect, JsonResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
@@ -21,18 +22,21 @@ from django.utils.formats import date_format
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _, gettext_lazy
+from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
+from django.template.loader import render_to_string
 from reversion import revisions
 
 from judge.forms import ProfileForm, newsletter_id
 from judge.models import Profile, Rating, Submission, Friend
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
+from judge.tasks import import_users
 from judge.utils.problems import contest_completed_ids, user_completed_ids
 from judge.utils.ranker import ranker
 from judge.utils.subscription import Subscription
 from judge.utils.unicode import utf8text
-from judge.utils.views import DiggPaginatorMixin, QueryStringSortMixin, TitleMixin, generic_message
+from judge.utils.views import DiggPaginatorMixin, QueryStringSortMixin, TitleMixin, generic_message, SingleObjectFormView
 from .contests import ContestRanking
 
 __all__ = ['UserPage', 'UserAboutPage', 'UserProblemsPage', 'users', 'edit_profile']
@@ -73,6 +77,11 @@ class UserPage(TitleMixin, UserMixin, DetailView):
     def get_title(self):
         return (_('My account') if self.request.user == self.object.user else
                 _('User %s') % self.object.user.username)
+
+    def get_content_title(self):
+        username = self.object.user.username
+        css_class = self.object.css_class
+        return mark_safe(f'<span class="{css_class}">{username}</span>')
 
     # TODO: the same code exists in problem.py, maybe move to problems.py?
     @cached_property
@@ -126,6 +135,28 @@ EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 class UserAboutPage(UserPage):
     template_name = 'user/user-about.html'
 
+    def get_awards(self, ratings):
+        result = {}
+
+        sorted_ratings = sorted(ratings,
+            key=lambda x: (x.rank, -x.contest.end_time.timestamp()))
+
+        result['medals'] = [{
+            'label': rating.contest.name,
+            'ranking': rating.rank,
+            'link': reverse('contest_ranking', args=(rating.contest.key,)) + '#!' + self.object.username,
+            'date': date_format(rating.contest.end_time, _('M j, Y')),
+        } for rating in sorted_ratings if rating.rank <= 3]
+
+        num_awards = 0
+        for i in result:
+            num_awards += len(result[i])
+
+        if num_awards == 0:
+            result = None
+
+        return result
+
     def get_context_data(self, **kwargs):
         context = super(UserAboutPage, self).get_context_data(**kwargs)
         ratings = context['ratings'] = self.object.ratings.order_by('-contest__end_time').select_related('contest') \
@@ -141,6 +172,8 @@ class UserAboutPage(UserPage):
             'class': rating_class(rating.rating),
             'height': '%.3fem' % rating_progress(rating.rating),
         } for rating in ratings]))
+
+        context['awards'] = self.get_awards(ratings)
 
         if ratings:
             user_data = self.object.ratings.aggregate(Min('rating'), Max('rating'))
@@ -285,7 +318,9 @@ def edit_profile(request):
         form.fields['test_site'].initial = request.user.has_perm('judge.test_site')
 
     tzmap = settings.TIMEZONE_MAP
+    print(settings.REGISTER_NAME_URL)
     return render(request, 'user/edit-profile.html', {
+        'edit_name_url': settings.REGISTER_NAME_URL,
         'require_staff_2fa': settings.DMOJ_REQUIRE_STAFF_2FA,
         'form': form, 'title': _('Edit profile'), 'profile': profile,
         'has_math_config': bool(settings.MATHOID_URL),
@@ -367,3 +402,56 @@ class UserLogoutView(TitleMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         auth_logout(request)
         return HttpResponseRedirect(request.get_full_path())
+
+
+class ImportUsersView(TitleMixin, TemplateView):
+    template_name = 'user/import/index.html'
+    title = _('Import Users')
+
+    def get(self, *args, **kwargs):
+        if self.request.user.is_superuser:
+            return super().get(self, *args, **kwargs)
+        return HttpResponseForbidden()
+
+
+def import_users_post_file(request):
+    if not request.user.is_superuser or request.method != 'POST':
+        return HttpResponseForbidden()
+    users = import_users.csv_to_dict(request.FILES['csv_file'])
+
+    if not users:
+        return JsonResponse({
+            'done': False,
+            'msg': 'No valid row found. Make sure row containing username.'
+        })
+    
+    table_html = render_to_string('user/import/table_csv.html', {
+                    'data': users
+                })
+    return JsonResponse({
+        'done': True,
+        'html': table_html,
+        'data': users
+    })
+    
+
+def import_users_submit(request):
+    import json
+    if not request.user.is_superuser or request.method != 'POST':
+        return HttpResponseForbidden()
+
+    users = json.loads(request.body)['users']
+    log = import_users.import_users(users)
+    return JsonResponse({
+        'msg': log     
+    })
+
+
+def sample_import_users(request):
+    if not request.user.is_superuser or request.method != 'GET':
+        return HttpResponseForbidden()
+    filename = 'import_sample.csv'
+    content = ','.join(import_users.fields) + '\n' + ','.join(import_users.descriptions)
+    response = HttpResponse(content, content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename={0}'.format(filename)
+    return response

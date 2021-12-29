@@ -183,8 +183,7 @@ if (!Date.now) {
 }
 
 function count_down(label) {
-    var initial = parseInt(label.attr('data-secs'));
-    var start = Date.now();
+    var end_time = new Date(label.attr('data-secs').replace(' ', 'T'));
 
     function format(num) {
         var s = "0" + num;
@@ -192,7 +191,7 @@ function count_down(label) {
     }
 
     var timer = setInterval(function () {
-        var time = Math.round(initial - (Date.now() - start) / 1000);
+        var time = Math.round((end_time - Date.now()) / 1000);
         if (time <= 0) {
             clearInterval(timer);
             setTimeout(function() {
@@ -212,8 +211,9 @@ function count_down(label) {
     }, 1000);
 }
 
-function register_time(elems, limit) {
-    limit = limit || 300;
+function register_time(elems, limit) { // in hours
+    if ('limit_time' in window) limit = window.limit_time;
+    else limit = limit || 300 * 24;
     elems.each(function () {
         var outdated = false;
         var $this = $(this);
@@ -225,7 +225,7 @@ function register_time(elems, limit) {
             if ($('body').hasClass('window-hidden'))
                 return outdated = true;
             outdated = false;
-            if (moment().diff(time, 'days') > limit) {
+            if (moment().diff(time, 'hours') > limit) {
                 $this.text(abs);
                 return;
             }
@@ -322,6 +322,36 @@ window.register_notify = function (type, options) {
     status_change();
 };
 
+window.notify_clarification = function(msg) {
+    var message = `Problem ${msg.order} (${msg.problem__name}):\n` + msg.description;
+    alert(message);
+}
+
+window.register_contest_notification = function(url) {
+    function get_clarifications() {
+        $.get(url)
+            .fail(function() {
+                console.log("Fail to update clarification");
+            })
+            .done(function(data) {
+                try {
+                    JSON.parse(data);
+                } 
+                catch (e) {
+                    return;
+                }
+                
+                for (i of data) {
+                    window.notify_clarification(i);
+                }
+                if (data.status == 403) {
+                    console.log("Fail to retrieve data");
+                }
+            })
+    }
+    get_clarifications();
+    setInterval(get_clarifications, 60 * 1000);
+}
 
 $(function () {
     // Close dismissable boxes

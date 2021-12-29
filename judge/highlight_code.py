@@ -27,11 +27,12 @@ else:
         def wrap(self, source, outfile):
             return self._wrap_div(self._wrap_pre(_wrap_code(source)))
 
-    def highlight_code(code, language, cssclass='codehilite'):
+    def highlight_code(code, language, cssclass='codehilite', linenos=True):
         try:
             lexer = pygments.lexers.get_lexer_by_name(language)
         except pygments.util.ClassNotFound:
             return _make_pre_code(code)
 
-        # return mark_safe(pygments.highlight(code, lexer, HtmlCodeFormatter(cssclass=cssclass, linenos='table')))
+        if linenos:
+            return mark_safe(pygments.highlight(code, lexer, HtmlCodeFormatter(cssclass=cssclass, linenos='table')))
         return mark_safe(pygments.highlight(code, lexer, HtmlCodeFormatter(cssclass=cssclass)))

@@ -3,14 +3,38 @@
 {% block js_media %}
     <script type="text/javascript">
         window.valid_files = {{valid_files_json}};
-
-        $(function () {
-        });
+        window.big_input = (window.valid_files.length > 100);
     </script>
-    <script type="text/javascript" src="{{ static('libs/jquery-sortable.js') }}"></script>
+    <script type="text/javascript" src="{{ static('jquery-ui.min.js') }}"></script>
     <script type="text/javascript" src="{{ static('libs/featherlight/featherlight.min.js') }}"></script>
+    <script type="text/javascript" src="{{ static('fine-uploader/jquery.fine-uploader.js') }}"></script>
     <script type="text/javascript">
         $(function () {
+            $("#problem-data-zipfile_fine_uploader").fineUploader({
+                    request: {
+                        endpoint: "{{url('problem_zip_upload', problem.code)}}",
+                        params: {
+                            'csrfmiddlewaretoken': '{{ csrf_token }}'
+                        }
+                    },
+                    chunking: {
+                        enabled: true,
+                        partSize: 40000000,
+                    },
+                    resume: {
+                        enabled: true
+                    },
+                    validation: {
+                        allowedExtensions: ['zip'],
+                    },
+                }).on('complete', function (event, id, name, responseJSON) {
+                    console.log(responseJSON);
+                    if (!responseJSON.success) {
+                        alert('Fail to upload: ' + responseJSON.error);
+                    }
+                    else window.location.reload();
+                });;
+
             function update_select2() {
                 $('tbody:not(.extra-row-body) .type-column select').select2({
                     minimumResultsForSearch: -1
@@ -20,6 +44,7 @@
             update_select2();
 
             function autofill_if_exists($select, file) {
+                console.log(1);
                 if (!$select.val() && ~window.valid_files.indexOf(file))
                     $select.val(file).trigger('change');
             }
@@ -34,7 +59,7 @@
                         style: 'width: 100%'
                     })).val();
                     $select.select2({
-                        data: window.valid_files,
+                        data: window.big_input ? [val] : window.valid_files,
                         allowClear: true,
                         placeholder: ''
                     }).val(val).trigger('change').on('change', function () {
@@ -73,6 +98,17 @@
                 } catch (e) {
                     return {};
                 }
+            }
+
+            function swap_row($a, $b) {
+                var $a_order = $a.find('input[id$=order]'), $b_order = $b.find('input[id$=order]');
+                var order = $a_order.val();
+                $a_order.val($b_order.val());
+                $b_order.val(order);
+                $b.after($a);
+                $a.find('span.order').text($a_order.val());
+                $b.find('span.order').text($b_order.val());
+                handle_table_reorder();
             }
 
             function checker_precision($checker) {
@@ -117,18 +153,6 @@
                     $sample.toggle($checker.val().startsWith('custom')).change();
                 }).change();
             })();
-
-
-            function swap_row($a, $b) {
-                var $a_order = $a.find('input[id$=order]'), $b_order = $b.find('input[id$=order]');
-                var order = $a_order.val();
-                $a_order.val($b_order.val());
-                $b_order.val(order);
-                $b.after($a);
-                $a.find('span.order').text($a_order.val());
-                $b.find('span.order').text($b_order.val());
-                handle_table_reorder();
-            }
 
             checker_precision($('#id_problem-data-checker'));
             
@@ -270,44 +294,49 @@
                 inFiles.sort();
                 outFiles.sort();
 
+                // big number of input
+                if (inFiles.length > 100) {
+                    window.big_input = true;
+                }
+
                 // add boxes
                 while ($total.val() < inFiles.length) {
                     $('a#add-case-row').click();
                 }
                 // fill cases
                 for (var i = 0; i < inFiles.length; i++) {
-                    $("#id_cases-" + i + "-input_file").val(inFiles[i]).change();
+                    var $select = $("#id_cases-" + i + "-input_file");
+                    $select.select2('destroy').empty().select2({ data: [inFiles[i]] });
+                    $select.val(inFiles[i]).change();
                 }
                 for (var i = 0; i < outFiles.length; i++) {
-                    $("#id_cases-" + i + "-output_file").val(outFiles[i]).change();
+                    var $select = $("#id_cases-" + i + "-output_file");
+                    $select.select2('destroy').empty().select2({ data: [outFiles[i]] });
+                    $select.val(outFiles[i]).change();
                 }
+
                 // add points
                 if ($('#problem-type').val() == "ICPC") {
-                    for (i = 0; i + 1 < inFiles.length; i++) {
-                        $("#id_cases-" + i + "-points").val("0").change();
-                    }
-                    $("#id_cases-" + (inFiles.length - 1) + "-points").val("100").change();
+                    $('#case-table tbody tr td').find('input[id$=points]').val('0').change();
+                    $('#case-table tbody tr td').find('input[id$=points]:visible')
+                        .last().val('100').change();
                 }
                 else {
-                    for (i = 0; i < inFiles.length; i++) {
-                        $("#id_cases-" + i + "-points").val("1").change();
-                    }
+                    $('#case-table tbody tr td').find('input[id$=points]').val('1').change()
                 }
                 return false;
             });
 
             var oldIndex;
-            $table.sortable({
-                containerSelector: 'table',
-                itemPath: '> tbody:first',
+             $('#case-table tbody').sortable({
                 itemSelector: 'tr',
                 handle: 'i.fa-ellipsis-v',
-                placeholder: '<tr class="placeholder">',
-                onDragStart: function ($item, container, _super) {
+                start: function (event, ui) {
+                    $item = ui.item;
                     oldIndex = $item.index();
-                    _super($item, container);
                 },
-                onDrop: function ($item, container, _super) {
+                stop: function (event, ui) {
+                    $item = ui.item;
                     var newIndex = $item.index();
                     if (newIndex > oldIndex) {
                         var order = parseInt($item.parent().children().slice(oldIndex, newIndex).each(function () {
@@ -324,7 +353,6 @@
                     }
                     if (newIndex != oldIndex)
                         handle_table_reorder();
-                    _super($item, container);
                 }
             });
 
@@ -336,11 +364,17 @@
                     $("input[name$='DELETE']").attr('checked', false);
                 }
             });
+
+	    // Change to OI if the first row point > 0
+	    if($("#id_cases-0-points").val() != '0') $('#problem-type').val('OI');
+
         }).change();
     </script>
+    {% include 'fine_uploader/script.html' %}
 {% endblock %}
 
 {% block media %}
+    <link href="{{ static ('fine-uploader/fine-uploader.css') }}" rel="stylesheet">
     <style>
         #case-table .select2 {
             text-align: initial;
@@ -368,45 +402,8 @@
             z-index: 2000;
         }
 
-        tr.placeholder {
-            display: block;
-            background: red;
-            position: relative;
-            margin: 0;
-            padding: 0;
-            border: none;
-        }
-
-        tr.placeholder:before {
-            content: "";
-            position: absolute;
-            width: 0;
-            height: 0;
-            border: 5px solid transparent;
-            border-left-color: red;
-            margin-top: -5px;
-            left: -5px;
-            border-right: none;
-        }
-
         i.fa-ellipsis-v {
             cursor: move;
-        }
-
-        .edit-generator-args {
-            position: relative;
-        }
-
-        .generator-args-editor textarea {
-            display: block;
-            width: 100%;
-            margin-bottom: 0.5em;
-            height: 8em;
-        }
-
-        .generator-args-editor #submit-button {
-            display: block;
-            float: right;
         }
 
         #case-table tbody td {
@@ -491,7 +488,9 @@
                     <tbody class="extra-row-body" style="display: none">
                 {% endif %}
                 <tr data-type="{{ form['type'].value() }}">
-                    <td>{{ form.id }}{{ form.order.errors }}{{ form.order }}</td>
+                    <td>
+                        {{ form.id }}{{ form.order.errors }}{{ form.order }}
+                    </td>
                     <td class="type-column">{{ form.type.errors }}{{ form.type }}</td>
                     <td{% if not (form.empty_permitted or form['type'].value() != 'C' or
                                   form['input_file'].value() in valid_files) %} class="bad-file"{% endif %}>
@@ -504,8 +503,7 @@
                     <td>{{ form.points.errors }}{{ form.points }}</td>
                     <td>{{ form.is_pretest.errors }}{{ form.is_pretest }}</td>
                     {% if cases_formset.can_delete %}
-                        <td>{{ form.DELETE }}
-                        </td>
+                        <td>{{ form.DELETE }}</td>
                     {% endif %}
                 </tr>
             {% endfor %}
@@ -514,5 +512,4 @@
         <input type="submit" value="{{ _('Apply!') }}" class="button" id="submit-button">
         <a id="add-case-row" href="#"><i class="fa fa-plus"></i> {{ _('Add new case') }}</a>
     </form>
-    <div style="display: none" class="generator-args-editor"><textarea></textarea><a class="button">Save</a></div>
 {% endblock %}

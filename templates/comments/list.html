@@ -1,5 +1,5 @@
 <div id="comments" class="comment-area">
-    <h2><i style="padding-right: 0.3em" class="fa fa-comments"></i>{{ _('Comments') }}</h2>
+    <h2 id="comment-header"><i style="padding-right: 0.3em" class="fa fa-comments"></i>{{ _('Comments') }}</h2>
     {% if has_comments %}
         <ul class="comments top-level-comments new-comments">
             {% set logged_in = request.user.is_authenticated %}

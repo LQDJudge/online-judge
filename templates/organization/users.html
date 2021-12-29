@@ -5,13 +5,20 @@
             margin: -8px 0;
             padding: 3px 12px;
         }
-        #users-table td:nth-child(4), #users-table th:nth-child(4) {
+        #users-table td:nth-child(3), #users-table th:nth-child(3) {
             border-right: none;
+        }
+        .rank-td {
+            font-family: "Jersey M54";
+            font-size: large;
+        }
+        .user-points, .user-problem-count, .rating-td {
+            font-family: cursive;
         }
     </style>
 
     {% if is_admin %}
-        <style>#users-table td:nth-child(3), #users-table th:nth-child(3) {
+        <style>#users-table td:nth-child(4), #users-table th:nth-child(4) {
             border-right: none;
         }
         </style>

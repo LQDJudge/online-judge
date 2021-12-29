@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="{{ static('style.css') }}">
+    <link rel="stylesheet" href="{{ static('pygment-github.css') }}" type="text/css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="pygment-github.css" type="text/css">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -79,18 +81,18 @@
 </div>
 <hr style="clear: both;">
 <div class="content-description printing">
-    {{ description|markdown('problem', 'tex' if math_engine == 'jax' else math_engine)|reference|absolutify(url)|str|safe }}
+    {{ description|markdown('problem', 'tex')|reference|absolutify(url)|str|safe }}
 </div>
-{% if math_engine == 'jax' %}
-    <script type="text/javascript" src="mathjax_config.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"></script>
-    <script type="text/javascript">
-        MathJax.Hub.Register.StartupHook("End", function () {
-            if (typeof window.callPhantom === 'function')
-                window.callPhantom({'action': 'snapshot'});
-            document.body.classList.add('math-loaded');
-        });
-    </script>
-{% endif %}
+
+<script type="text/javascript" src="{{ static('mathjax_config.js') }}"></script>
+<script type="text/javascript" src="mathjax_config.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"></script>
+<script type="text/javascript">
+    MathJax.Hub.Register.StartupHook("End", function () {
+        if (typeof window.callPhantom === 'function')
+            window.callPhantom({'action': 'snapshot'});
+        document.body.classList.add('math-loaded');
+    });
+</script>
 </body>
 </html>

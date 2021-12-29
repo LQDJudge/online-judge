@@ -2,14 +2,24 @@ import json
 import mimetypes
 import os
 from itertools import chain
+import shutil
+from tempfile import gettempdir
 from zipfile import BadZipfile, ZipFile
+
+from django import forms
+from django.conf import settings
+from django.http import HttpResponse, HttpRequest
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import View
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.files import File
 from django.core.exceptions import ValidationError
 from django.forms import BaseModelFormSet, HiddenInput, ModelForm, NumberInput, Select, formset_factory, FileInput
-from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils.html import escape, format_html
@@ -22,6 +32,7 @@ from judge.models import Problem, ProblemData, ProblemTestCase, Submission, prob
 from judge.utils.problem_data import ProblemDataCompiler
 from judge.utils.unicode import utf8text
 from judge.utils.views import TitleMixin
+from judge.utils.fine_uploader import combine_chunks, save_upload, handle_upload, FineUploadFileInput, FineUploadForm
 from judge.views.problem import ProblemMixin
 
 mimetypes.init()
@@ -52,6 +63,7 @@ class ProblemDataForm(ModelForm):
         model = ProblemData
         fields = ['zipfile', 'checker', 'checker_args', 'custom_checker', 'custom_validator']
         widgets = {
+            'zipfile': FineUploadFileInput,
             'checker_args': HiddenInput,
             'generator': HiddenInput,
             'output_limit': HiddenInput,
@@ -74,6 +86,7 @@ class ProblemCaseForm(ModelForm):
             # 'output_limit': NumberInput(attrs={'style': 'width: 6em'}),
             # 'checker_args': HiddenInput,
         }
+
 
 
 class ProblemCaseFormSet(formset_factory(ProblemCaseForm, formset=BaseModelFormSet, extra=1, max_num=1,
@@ -242,3 +255,39 @@ def problem_init_view(request, problem):
             format_html('<a href="{1}">{0}</a>', problem.name,
                         reverse('problem_detail', args=[problem.code])))),
     })
+
+
+class ProblemZipUploadView(ProblemManagerMixin, View):
+    def dispatch(self, *args, **kwargs):
+        return super(ProblemZipUploadView, self).dispatch(*args, **kwargs)
+    
+    def post(self, request, *args, **kwargs):
+        self.object = problem = self.get_object()
+        problem_data = get_object_or_404(ProblemData, problem=self.object)
+        form = FineUploadForm(request.POST, request.FILES)
+        
+        if form.is_valid():
+            fileuid = form.cleaned_data['qquuid']
+            filename = form.cleaned_data['qqfilename']
+            dest = os.path.join(gettempdir(), fileuid)
+
+            def post_upload():
+                zip_dest = os.path.join(dest, filename)
+                try:
+                    ZipFile(zip_dest).namelist() # check if this file is valid
+                    with open(zip_dest, 'rb') as f:
+                        problem_data.zipfile.delete()
+                        problem_data.zipfile.save(filename, File(f))
+                        f.close()
+                except Exception as e:
+                    raise Exception(e)
+                finally:
+                    shutil.rmtree(dest)
+                    
+            try:
+                handle_upload(request.FILES['qqfile'], form.cleaned_data, dest, post_upload=post_upload)
+            except Exception as e:
+                return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({'success': True})
+        else:
+            return HttpResponse(status_code=400)

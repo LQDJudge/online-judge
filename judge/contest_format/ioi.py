@@ -73,6 +73,7 @@ class IOIContestFormat(DefaultContestFormat):
 
         participation.cumtime = max(cumtime, 0)
         participation.score = points
+        participation.tiebreaker = 0
         participation.format_data = format_data
         participation.save()
 

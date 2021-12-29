@@ -53,7 +53,10 @@ th.header.rank {
 
 #users-table {
     .username {
-        width: 100%;
+    }
+
+    .about-column {
+        width: 30%;
     }
 
     .header {
@@ -62,6 +65,13 @@ th.header.rank {
 
     .rank, .points, .problems, .username {
         white-space: nowrap;
+    }
+
+    .about-td {
+        max-height: 45px;
+        overflow: hidden;
+        cursor: pointer;
+        overflow-wrap: anywhere;
     }
 
     tr {

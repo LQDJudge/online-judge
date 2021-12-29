@@ -43,7 +43,8 @@ from judge.utils.problems import get_result_data
 from judge.utils.problems import user_authored_ids
 from judge.utils.problems import user_completed_ids
 from judge.utils.problems import user_editable_ids
-from judge.utils.raw_sql import use_straight_join
+from judge.utils.problem_data import get_problem_case
+from judge.utils.raw_sql import join_sql_subquery, use_straight_join
 from judge.utils.views import DiggPaginatorMixin
 from judge.utils.views import TitleMixin
 
@@ -110,7 +111,7 @@ class SubmissionSource(SubmissionDetailBase):
         submission = self.object
         context['raw_source'] = submission.source.source.rstrip('\n')
         context['highlighted_source'] = highlight_code(
-            submission.source.source, submission.language.pygments)
+            submission.source.source, submission.language.pygments, linenos=False)
         return context
 
 
@@ -137,60 +138,28 @@ def group_test_cases(cases):
     return result
 
 
-def read_head_archive(archive, file):
-    with archive.open(file) as f:
-        s = f.read(settings.TESTCASE_VISIBLE_LENGTH + 3)
-        # add this so there are no characters left behind (ex, 'á' = 2 utf-8 chars)
-        while True:
-            try:
-                s.decode('utf-8')
-                break
-            except UnicodeDecodeError:
-                s += f.read(1)
-        return s
-
-
-def get_visible_content(data):
-    data = data or b''
-    data = data.replace(b'\r\n', b'\r').replace(b'\r', b'\n')
-
-    data = data.decode('utf-8')
-
-    if (len(data) > settings.TESTCASE_VISIBLE_LENGTH):
-        data = data[:settings.TESTCASE_VISIBLE_LENGTH]
-        data += '.' * 3
-    return data
-
-
-def get_input_answer(case, archive):
-    result = {'input': '', 'answer': ''}
-    if (len(case.input_file)):
-        result['input'] = get_visible_content(read_head_archive(archive, case.input_file))
-    if (len(case.output_file)):
-        result['answer'] = get_visible_content(read_head_archive(archive, case.output_file))
-    return result
-
-
-def get_problem_data(submission):
-    archive_path = os.path.join(settings.DMOJ_PROBLEM_DATA_ROOT,
-                                str(submission.problem.data_files.zipfile))
-    if not os.path.exists(archive_path):
-        raise Exception(
-            'archive file "%s" does not exist' % archive_path)
-    try:
-        archive = zipfile.ZipFile(archive_path, 'r')
-    except zipfile.BadZipfile:
-        raise Exception('bad archive: "%s"' % archive_path)
-   
+def get_cases_data(submission):
     testcases = ProblemTestCase.objects.filter(dataset=submission.problem)\
                                .order_by('order')
-
+    
     if (submission.is_pretested):
         testcases = testcases.filter(is_pretest=True)
 
+    files = []
+    for case in testcases:
+        if case.input_file: files.append(case.input_file)
+        if case.output_file: files.append(case.output_file)
+    case_data = get_problem_case(submission.problem, files)
+
     problem_data = {}
-    for count, case in enumerate(testcases):
-        problem_data[count + 1] = get_input_answer(case, archive)
+    count = 0
+    for case in testcases:
+        if case.type != 'C': continue
+        count += 1
+        problem_data[count] = {
+            'input': case_data[case.input_file] if case.input_file else '',
+            'answer': case_data[case.output_file] if case.output_file else '',
+        }
 
     return problem_data
 
@@ -198,20 +167,36 @@ def get_problem_data(submission):
 class SubmissionStatus(SubmissionDetailBase):
     template_name = 'submission/status.html'
 
+    def access_testcases_in_contest(self):
+        contest = self.object.contest_or_none
+        if contest is None:
+            return False
+        if contest.problem.problem.is_editable_by(self.request.user):
+            return True
+        if contest.problem.contest.is_in_contest(self.request.user):
+            return False
+        if contest.participation.ended:
+            return True
+        return False
+
     def get_context_data(self, **kwargs):
         context = super(SubmissionStatus, self).get_context_data(**kwargs)
         submission = self.object
         context['last_msg'] = event.last()
         context['batches'] = group_test_cases(submission.test_cases.all())
         context['time_limit'] = submission.problem.time_limit
-
+        context['can_see_testcases'] = False
+        
         contest = submission.contest_or_none
         prefix_length = 0
+        can_see_testcases = self.access_testcases_in_contest()
+
         if (contest is not None):
             prefix_length = contest.problem.output_prefix_override
-        if ((contest is None or prefix_length > 0) or self.request.user.is_superuser):
-            context['cases_data'] = get_problem_data(submission)
-
+        
+        if contest is None or prefix_length > 0 or can_see_testcases:
+            context['cases_data'] = get_cases_data(submission)
+            context['can_see_testcases'] = True
         try:
             lang_limit = submission.problem.language_limits.get(
                 language=submission.language)
@@ -292,11 +277,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                                                           queryset=ProblemTranslation.objects.filter(
                                                               language=self.request.LANGUAGE_CODE), to_attr='_trans'))
         if self.in_contest:
-            queryset = queryset.filter(
-                contest__participation__contest_id=self.contest.id)
-            if self.contest.hide_scoreboard and self.contest.is_in_contest(self.request.user):
-                queryset = queryset.filter(
-                    contest__participation__user=self.request.profile)
+            queryset = queryset.filter(contest_object=self.contest)
+            if not self.contest.can_see_full_scoreboard(self.request.user):
+                queryset = queryset.filter(user=self.request.profile)
         else:
             queryset = queryset.select_related(
                 'contest_object').defer('contest_object__description')
@@ -304,12 +287,18 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             # This is not technically correct since contest organizers *should* see these, but
             # the join would be far too messy
             if not self.request.user.has_perm('judge.see_private_contest'):
-                queryset = queryset.exclude(
-                    contest_object_id__in=Contest.objects.filter(hide_scoreboard=True))
+                # Show submissions for any contest you can edit or visible scoreboard
+                contest_queryset = Contest.objects.filter(Q(authors=self.request.profile) |
+                                                          Q(curators=self.request.profile) |
+                                                          Q(scoreboard_visibility=Contest.SCOREBOARD_VISIBLE) |
+                                                          Q(end_time__lt=timezone.now())).distinct()
+                queryset = queryset.filter(Q(user=self.request.profile) |
+                                           Q(contest_object__in=contest_queryset) |
+                                           Q(contest_object__isnull=True))
 
         if self.selected_languages:
             queryset = queryset.filter(
-                language_id__in=Language.objects.filter(key__in=self.selected_languages))
+                language__in=Language.objects.filter(key__in=self.selected_languages))
         if self.selected_statuses:
             queryset = queryset.filter(result__in=self.selected_statuses)
 
@@ -318,14 +307,13 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     def get_queryset(self):
         queryset = self._get_queryset()
         if not self.in_contest:
-            if not self.request.user.has_perm('judge.see_private_problem'):
-                queryset = queryset.filter(problem__is_public=True)
-            if not self.request.user.has_perm('judge.see_organization_problem'):
-                filter = Q(problem__is_organization_private=False)
-                if self.request.user.is_authenticated:
-                    filter |= Q(
-                        problem__organizations__in=self.request.profile.organizations.all())
-                queryset = queryset.filter(filter)
+            join_sql_subquery(
+                queryset,
+                subquery=str(Problem.get_visible_problems(self.request.user).distinct().only('id').query),
+                params=[],
+                join_fields=[('problem_id', 'id')],
+                alias='visible_problems',
+            )
         return queryset
 
     def get_my_submissions_page(self):
@@ -452,7 +440,7 @@ class ProblemSubmissionsBase(SubmissionsListBase):
                            reverse('problem_detail', args=[self.problem.code]))
 
     def access_check_contest(self, request):
-        if self.in_contest and not self.contest.can_see_scoreboard(request.user):
+        if self.in_contest and not self.contest.can_see_own_scoreboard(request.user):
             raise Http404()
 
     def access_check(self, request):

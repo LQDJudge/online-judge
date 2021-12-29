@@ -16,10 +16,9 @@ def sane_time_repr(delta):
 
 
 def api_v1_contest_list(request):
-    queryset = Contest.objects.filter(is_visible=True, is_private=False,
-                                      is_organization_private=False).prefetch_related(
-        Prefetch('tags', queryset=ContestTag.objects.only('name'), to_attr='tag_list')).defer('description')
-
+    queryset = Contest.get_visible_contests(request.user).prefetch_related(
+        Prefetch('tags', queryset=ContestTag.objects.only('name'), to_attr='tag_list'))
+    
     return JsonResponse({c.key: {
         'name': c.name,
         'start_time': c.start_time.isoformat(),
@@ -33,13 +32,10 @@ def api_v1_contest_detail(request, contest):
     contest = get_object_or_404(Contest, key=contest)
 
     in_contest = contest.is_in_contest(request.user)
-    can_see_rankings = contest.can_see_scoreboard(request.user)
-    if contest.hide_scoreboard and in_contest:
-        can_see_rankings = False
-
+    can_see_rankings = contest.can_see_full_scoreboard(request.user)
     problems = list(contest.contest_problems.select_related('problem')
                     .defer('problem__description').order_by('order'))
-    participations = (contest.users.filter(virtual=0, user__is_unlisted=False)
+    participations = (contest.users.filter(virtual=0)
                       .prefetch_related('user__organizations')
                       .annotate(username=F('user__user__username'))
                       .order_by('-score', 'cumtime') if can_see_rankings else [])
@@ -138,20 +134,20 @@ def api_v1_user_info(request, user):
     last_rating = profile.ratings.last()
 
     contest_history = {}
-    if not profile.is_unlisted:
-        participations = ContestParticipation.objects.filter(user=profile, virtual=0, contest__is_visible=True,
-                                                             contest__is_private=False,
-                                                             contest__is_organization_private=False)
-        for contest_key, rating, volatility in participations.values_list('contest__key', 'rating__rating',
-                                                                          'rating__volatility'):
-            contest_history[contest_key] = {
-                'rating': rating,
-                'volatility': volatility,
-            }
+    participations = ContestParticipation.objects.filter(user=profile, virtual=0, contest__is_visible=True,
+                                                         contest__is_private=False,
+                                                         contest__is_organization_private=False)
+    for contest_key, rating, mean, performance in participations.values_list(
+        'contest__key', 'rating__rating', 'rating__mean', 'rating__performance',
+    ):
+        contest_history[contest_key] = {
+            'rating': rating,
+            'raw_rating': mean,
+            'performance': performance,
+        }
 
     resp['contests'] = {
         'current_rating': last_rating.rating if last_rating else None,
-        'volatility': last_rating.volatility if last_rating else None,
         'history': contest_history,
     }
 

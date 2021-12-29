@@ -105,7 +105,7 @@ class Comment(MPTTModel):
         try:
             link = None
             if self.page.startswith('p:'):
-                link = reverse('problem_detail', args=(self.page[2:],))
+                link = reverse('problem_comments', args=(self.page[2:],))
             elif self.page.startswith('c:'):
                 link = reverse('contest_view', args=(self.page[2:],))
             elif self.page.startswith('b:'):

@@ -516,3 +516,26 @@ ul.select2-selection__rendered {
         }
     }
 }
+
+.spoiler-text {
+    border: 1px solid black;
+    padding: 0.5em;
+    margin-top: 0.5em;
+    border-radius: 5px;
+    background: #def;
+}
+
+.spoiler-summary {
+    padding-left: 0.5em;
+    text-decoration: underline;
+}
+
+.control-button {
+    background: lightgray;
+    color: black !important;
+    border: 0;  
+}
+
+.control-button:hover {
+    background: gray;
+}

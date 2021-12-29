@@ -1,6 +1,5 @@
 {% extends "common-content.html" %}
 {% block content_media %}
-    {% include "comments/media-css.html" %}
     <style>
         .title-state {
             font-size: 2em;
@@ -41,11 +40,47 @@
         .problem-info-entry {
             padding-top: 0.5em;
         }
+
+        #raw_problem {
+            visibility: hidden;
+            width: 0;
+            height: 0;
+        }
+
+        #clarification_header {
+            color: red;
+            cursor: pointer;
+        }
+        #clarification_header:hover {
+            color: orange;
+        }
     </style>
 {% endblock %}
 
 {% block content_js_media %}
-    {% include "comments/media-js.html" %}
+    {% if request.in_contest %}
+        <script type="text/javascript">
+            window.register_contest_notification("{{url('contest_clarification_ajax', request.participation.contest.key)}}");
+        </script>
+    {% endif %}
+    <script type="text/javascript">
+        $(function() {
+            $('#pdf_button').click(async function(e) {
+                e.preventDefault();
+                if (!$('#raw_problem').attr('src')) {
+                    $('#raw_problem').attr('src', '{{problem.code}}/raw')
+                }
+                while(!$('.math-loaded', frames['raw_problem'].document).length){
+                    await new Promise(r => setTimeout(r, 200)); 
+                }
+                frames['raw_problem'].print();
+            });
+            $('#clarification_header').on('click', function() {
+                $('#clarification_header_container').hide();
+                window.scrollTo(0, document.body.scrollHeight);
+            })
+        });
+    </script>
 {% endblock %}
 
 {% block title_row %}
@@ -81,16 +116,19 @@
                 {% endfor %}
             </span>
         {% endif %}
-        {% if has_pdf_render %}
-            <span class="spacer"></span>
-            <a href="{{ url('problem_pdf', problem.code) }}" class="view-pdf">
-                <span class="pdf-icon">
-                    <span class="fa fa-file-pdf-o pdf-icon-logo"></span>
-                    <span class="pdf-icon-bar"></span>
-                </span>
-                {{ _('View as PDF') }}
-            </a>
+        
+        <span class="spacer"></span>
+        {% if has_render %}
+        <a href="{{ url('problem_pdf', problem.code) }}" class="view-pdf">
+        {% else %}
+        <a id="pdf_button" class="view-pdf" href='#'>
         {% endif %}
+            <span class="pdf-icon">
+                <span class="fa fa-file-pdf-o pdf-icon-logo"></span>
+                <span class="pdf-icon-bar"></span>
+            </span>
+            {{ _('View as PDF') }}
+        </a>
     </div>
 {% endblock %}
 
@@ -126,9 +164,13 @@
     {% endif %}
     <div><a href="{{ url('chronological_submissions', problem.code) }}">{{ _('All submissions') }}</a></div>
     <div><a href="{{ url('ranked_submissions', problem.code) }}">{{ _('Best submissions') }}</a></div>
+    
+    {% if not contest_problem or not contest_problem.contest.use_clarifications %}
+        <hr>
+        <div><a href="{{ url('problem_comments', problem.code) }}">{{ _('Discuss') }}</a></div>
+    {% endif %}
     {% if editorial and editorial.is_public and 
             not (request.user.is_authenticated and request.profile.current_contest) %}
-        <hr>
         <div><a href="{{ url('problem_editorial', problem.code) }}">{{ _('Read editorial') }}</a></div>
     {% endif %}
     {% if can_edit_problem %}
@@ -279,6 +321,17 @@
 {% endblock %}
 
 {% block description %}
+    {% if contest_problem and contest_problem.contest.use_clarifications and has_clarifications %}
+        <div id="clarification_header_container">
+            <i class="fa fa-question-circle"></i>
+            <a id="clarification_header">
+                {% trans trimmed length=clarifications|length %}
+                This problem has {{length}} clarification(s)
+                {% endtrans %}
+            </a>
+        </div>
+    {% endif %}
+
     {% cache 86400 'problem_html' problem.id MATH_ENGINE LANGUAGE_CODE %}
         {{ description|markdown("problem", MATH_ENGINE)|reference|str|safe }}
     {% endcache %}
@@ -294,7 +347,8 @@
 
 {% block post_description_end %}
     {% if request.user.is_authenticated and not request.profile.mute %}
-        <a href="{{ url('new_problem_ticket', problem.code) }}" class="button clarify">
+        <a href="{{ url('new_problem_ticket', problem.code) }}" class="clarify">
+            <i class="fa fa-flag" style="margin-right:0.5em"></i>
             {%- if contest_problem and contest_problem.contest.use_clarifications and request.profile.current_contest.live -%}
                 {{ _('Request clarification') }}
             {%- else -%}
@@ -321,9 +375,8 @@
                 <p class="no-comments-message">{{ _('No clarifications have been made at this time.') }}</p>
             {% endif %}
         </div>
-    {% else %}
-        {% include "comments/list.html" %}
     {% endif %}
+    <iframe name="raw_problem" id="raw_problem"></iframe>
 {% endblock %}
 
 {% block bodyend %}

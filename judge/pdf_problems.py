@@ -1,3 +1,4 @@
+import base64
 import errno
 import io
 import json
@@ -10,6 +11,20 @@ import uuid
 from django.conf import settings
 from django.utils.translation import gettext
 
+logger = logging.getLogger('judge.problem.pdf')
+
+HAS_SELENIUM = False
+if settings.USE_SELENIUM:
+    try:
+        from selenium import webdriver
+        from selenium.common.exceptions import TimeoutException
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support import expected_conditions as EC
+        from selenium.webdriver.support.ui import WebDriverWait
+        HAS_SELENIUM = True
+    except ImportError:
+        logger.warning('Failed to import Selenium', exc_info=True)
+
 HAS_PHANTOMJS = os.access(settings.PHANTOMJS, os.X_OK)
 HAS_SLIMERJS = os.access(settings.SLIMERJS, os.X_OK)
 
@@ -18,12 +33,10 @@ PUPPETEER_MODULE = settings.PUPPETEER_MODULE
 HAS_PUPPETEER = os.access(NODE_PATH, os.X_OK) and os.path.isdir(PUPPETEER_MODULE)
 
 HAS_PDF = (os.path.isdir(settings.DMOJ_PDF_PROBLEM_CACHE) and
-           (HAS_PHANTOMJS or HAS_SLIMERJS or HAS_PUPPETEER))
+           (HAS_PHANTOMJS or HAS_SLIMERJS or HAS_PUPPETEER or HAS_SELENIUM))
 
 EXIFTOOL = settings.EXIFTOOL
 HAS_EXIFTOOL = os.access(EXIFTOOL, os.X_OK)
-
-logger = logging.getLogger('judge.problem.pdf')
 
 
 class BasePdfMaker(object):
@@ -240,8 +253,8 @@ puppeteer.launch().then(browser => Promise.resolve()
 
     def get_render_script(self):
         return self.template.replace('{params}', json.dumps({
-            'input': 'file://' + os.path.abspath(os.path.join(self.dir, 'input.html')),
-            'output': os.path.abspath(os.path.join(self.dir, 'output.pdf')),
+            'input': 'file://%s' % self.htmlfile,
+            'output': self.pdffile,
             'paper': settings.PUPPETEER_PAPER_SIZE,
             'footer': gettext('Page [page] of [topage]'),
         }))
@@ -257,9 +270,55 @@ puppeteer.launch().then(browser => Promise.resolve()
         self.proc = subprocess.Popen(cmdline, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=self.dir, env=env)
         self.log = self.proc.communicate()[0]
 
+class SeleniumPDFRender(BasePdfMaker):
+    success = False
+    template = {
+        'printBackground': True,
+        'displayHeaderFooter': True,
+        'headerTemplate': '<div></div>',
+        'footerTemplate': '<center style="margin: 0 auto; font-family: Segoe UI; font-size: 10px">' +
+                          gettext('Page %s of %s') %
+                          ('<span class="pageNumber"></span>', '<span class="totalPages"></span>') +
+                          '</center>',
+    }
+
+    def get_log(self, driver):
+        return '\n'.join(map(str, driver.get_log('driver') + driver.get_log('browser')))
+
+    def _make(self, debug):
+        options = webdriver.ChromeOptions()
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox") # for root
+        options.binary_location = settings.SELENIUM_CUSTOM_CHROME_PATH
+
+        browser = webdriver.Chrome(settings.SELENIUM_CHROMEDRIVER_PATH, options=options)
+        browser.get('file://%s' % self.htmlfile)
+        self.log = self.get_log(browser)
+
+        try:
+            WebDriverWait(browser, 15).until(EC.presence_of_element_located((By.CLASS_NAME, 'math-loaded')))
+        except TimeoutException:
+            logger.error('PDF math rendering timed out')
+            self.log = self.get_log(browser) + '\nPDF math rendering timed out'
+            browser.quit()
+            return
+        response = browser.execute_cdp_cmd('Page.printToPDF', self.template)
+        self.log = self.get_log(browser)
+        if not response:
+            browser.quit()
+            return
+
+        with open(self.pdffile, 'wb') as f:
+            f.write(base64.b64decode(response['data']))
+
+        self.success = True
+        browser.quit()
+
 
 if HAS_PUPPETEER:
     DefaultPdfMaker = PuppeteerPDFRender
+elif HAS_SELENIUM:
+    DefaultPdfMaker = SeleniumPDFRender
 elif HAS_SLIMERJS:
     DefaultPdfMaker = SlimerJSPdfMaker
 elif HAS_PHANTOMJS:

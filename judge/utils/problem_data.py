@@ -1,15 +1,17 @@
+import hashlib
 import json
 import os
 import re
 import shutil
-
 import yaml
+import zipfile
+
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.urls import reverse
 from django.utils.translation import gettext as _
-
+from django.core.cache import cache
 
 VALIDATOR_TEMPLATE_PATH = 'validator_template/template.py'
 
@@ -232,3 +234,61 @@ class ProblemDataCompiler(object):
     def generate(cls, *args, **kwargs):
         self = cls(*args, **kwargs)
         self.compile()
+
+
+def get_visible_content(data):
+    data = data or b''
+    data = data.replace(b'\r\n', b'\r').replace(b'\r', b'\n')
+
+    data = data.decode('utf-8')
+
+    if (len(data) > settings.TESTCASE_VISIBLE_LENGTH):
+        data = data[:settings.TESTCASE_VISIBLE_LENGTH]
+        data += '.' * 3
+    return data
+
+
+def get_file_cachekey(file):
+    return hashlib.sha1(file.encode()).hexdigest()
+
+def get_problem_case(problem, files):
+    result = {}
+    uncached_files = []
+
+    for file in files:
+        cache_key = 'problem_archive:%s:%s' % (problem.code, get_file_cachekey(file))
+        qs = cache.get(cache_key)
+        if qs is None:
+            uncached_files.append(file)
+        else:
+            result[file] = qs
+
+    if not uncached_files:
+        return result
+
+    archive_path = os.path.join(settings.DMOJ_PROBLEM_DATA_ROOT,
+                                    str(problem.data_files.zipfile))
+    if not os.path.exists(archive_path):
+        raise Exception(
+            'archive file "%s" does not exist' % archive_path)
+    try:
+        archive = zipfile.ZipFile(archive_path, 'r')
+    except zipfile.BadZipfile:
+        raise Exception('bad archive: "%s"' % archive_path)
+
+    for file in uncached_files:
+        cache_key = 'problem_archive:%s:%s' % (problem.code, get_file_cachekey(file))
+        with archive.open(file) as f:
+            s = f.read(settings.TESTCASE_VISIBLE_LENGTH + 3)
+            # add this so there are no characters left behind (ex, 'á' = 2 utf-8 chars)
+            while True:
+                try:
+                    s.decode('utf-8')
+                    break
+                except UnicodeDecodeError:
+                    s += f.read(1)
+            qs = get_visible_content(s)
+        cache.set(cache_key, qs, 86400)
+        result[file] = qs
+
+    return result

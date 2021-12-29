@@ -41,6 +41,7 @@ class DefaultContestFormat(BaseContestFormat):
 
         participation.cumtime = max(cumtime, 0)
         participation.score = points
+        participation.tiebreaker = 0
         participation.format_data = format_data
         participation.save()
 
@@ -68,3 +69,10 @@ class DefaultContestFormat(BaseContestFormat):
 
     def get_problem_breakdown(self, participation, contest_problems):
         return [(participation.format_data or {}).get(str(contest_problem.id)) for contest_problem in contest_problems]
+
+    def get_contest_problem_label_script(self):
+        return '''
+            function(n)
+                return tostring(math.floor(n + 1))
+            end
+        '''

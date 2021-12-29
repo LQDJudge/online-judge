@@ -1,0 +1,12 @@
+{% if object_list %}
+<div style="display: none" id="num_pages">{{num_pages}}</div>
+{% for message in object_list | reverse%}
+    {% include "chat/message.html" %}
+{% endfor %}
+{% else %}
+    <center id="empty_msg">{{_('You are connect now. Say something to start the conversation.')}}</center>
+{% endif %}
+{% if REQUIRE_JAX %}
+    {% include "mathjax-load.html" %}
+{% endif %}
+{% include "comments/math.html" %}

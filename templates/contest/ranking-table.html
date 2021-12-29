@@ -32,7 +32,10 @@
 {% endblock %}
 
 {% block user_data %}
-    {% if is_organizer %}
+    {% if user.participation.virtual %}
+        <sup style="color:grey">[{{user.participation.virtual}}]</sup>
+    {% endif %}
+    {% if can_edit %}
         <span class="contest-participation-operation">
             <form action="{{ url('contest_participation_disqualify', contest.key) }}" method="post">
                 {% csrf_token %}
@@ -56,14 +59,14 @@
 {% block before_point_head %}
     {% for problem in problems %}
         <th class="points header problem-score-col"><a href="{{ url('contest_ranked_submissions', contest.key, problem.problem.code) }}">
-            {{- loop.index }}
+            {{- contest.get_label_for_problem(loop.index0) }}
             <div class="point-denominator">{{ problem.points }}</div>
         </a></th>
     {% endfor %}
 {% endblock %}
 
 {% block row_extra %}
-    class="{{ 'disqualified' if user.participation.is_disqualified }} {{ 'friend' if user.username in friends }} {{'highlight' if user.username == request.user.username}}"
+    class="{{ 'disqualified' if user.participation.is_disqualified }} {{'highlight' if user.username == request.user.username}}"
 {% endblock %}
 
 {% block before_point %}

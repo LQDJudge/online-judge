@@ -10,7 +10,7 @@ django-impersonate
 -e git://github.com/DMOJ/dmoj-wpadmin.git#egg=dmoj-wpadmin
 lxml
 Pygments
-mistune
+mistune<2
 social-auth-app-django
 pytz
 django-statici18n
@@ -30,10 +30,9 @@ packaging
 celery
 -e git://github.com/DMOJ/ansi2html.git#egg=ansi2html
 sqlparse
-channels==2.4.0 
-channels-redis==2.4.2
-docker
 django-newsletter
-python-memcached
 netaddr
 redis
+lupa
+websocket-client
+python-memcached

@@ -32,6 +32,10 @@ svg.rate-box {
         @include rate-svg-color(#00a900);
     }
 
+    &.rate-specialist {
+        @include rate-svg-color(#03a89e);
+    }
+
     &.rate-expert {
         @include rate-svg-color(#66f);
     }
@@ -73,12 +77,16 @@ svg.rate-box {
     color: #00a900;
 }
 
+.rate-specialist, .rate-specialist a {
+    color: darkcyan;
+}
+
 .rate-expert, .rate-expert a {
     color: blue;
 }
 
 .rate-candidate-master, .rate-candidate-master a {
-    color: purple;
+    color: #a0a;
 }
 
 .rate-master, .rate-master a {

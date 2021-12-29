@@ -181,7 +181,7 @@ header {
     }
 
     a {
-        color: #9c3706;
+        color: lightcoral;
     }
 
     li {
@@ -291,7 +291,7 @@ nav {
 
                 &:hover {
                     border-top: 2px solid #9c3706;
-                    color: #9c3706;
+                    color: lightcoral;
                     background: rgba(255, 255, 255, 0.25);
                     margin: 0;
                 }
@@ -314,7 +314,7 @@ nav {
                 left: 5px;
                 display: none;
                 color: #fff;
-                background: #00c4cc;
+                background: darkcyan;
                 margin: 0 !important;
                 box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
 
@@ -329,6 +329,10 @@ nav {
                 li {
                     display: block;
 
+                    a {
+                        color: white !important;
+                    }
+                    
                     a, button {
                         padding: 8px 20px 8px 8px !important;
                         font-size: 0.8em;
@@ -680,12 +684,31 @@ math {
 }
 
 #notification {
-    color: gray;
+    color: lightsteelblue;
     float: left;
-    margin-top: 0.8em;
+    margin-top: 0.6em;
     margin-right: 0.8em;
     font-size: 1.3em;
 }
+
+#chat-icon {
+    color: lightseagreen;
+    float: left;
+    margin-top: 0.6em;
+    margin-right: 0.5em;
+    font-size: 1.3em;
+}
+
+.unread_boxes {
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 1px 4px;
+    margin-left: -12px;
+    font-size: x-small;
+    font-family: monospace;
+}
+
 @media (max-width: 500px) {
     #notification {
         margin-top: 0.6em;

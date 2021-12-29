@@ -24,5 +24,7 @@ def seconds(timedelta):
 
 @registry.filter
 @registry.render_with('time-remaining-fragment.html')
-def as_countdown(timedelta):
-    return {'countdown': timedelta}
+def as_countdown(time):
+    time_now = datetime.datetime.now(datetime.timezone.utc)
+    initial = abs(time - time_now)
+    return {'countdown': time, 'initial': initial}

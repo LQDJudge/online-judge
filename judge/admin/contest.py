@@ -7,10 +7,12 @@ from django.forms import ModelForm, ModelMultipleChoiceField
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _, ungettext
 from reversion.admin import VersionAdmin
 
+from django_ace import AceWidget
 from judge.models import Contest, ContestProblem, ContestSubmission, Profile, Rating
 from judge.ratings import rate_contest
 from judge.widgets import AdminHeavySelect2MultipleWidget, AdminHeavySelect2Widget, AdminPagedownWidget, \
@@ -94,7 +96,9 @@ class ContestForm(ModelForm):
 
     class Meta:
         widgets = {
-            'organizers': AdminHeavySelect2MultipleWidget(data_view='profile_select2'),
+            'authors': AdminHeavySelect2MultipleWidget(data_view='profile_select2'),
+            'curators': AdminHeavySelect2MultipleWidget(data_view='profile_select2'),
+            'testers': AdminHeavySelect2MultipleWidget(data_view='profile_select2'),
             'private_contestants': AdminHeavySelect2MultipleWidget(data_view='profile_select2',
                                                                    attrs={'style': 'width: 100%'}),
             'organizations': AdminHeavySelect2MultipleWidget(data_view='organization_select2'),
@@ -111,18 +115,19 @@ class ContestForm(ModelForm):
 
 class ContestAdmin(VersionAdmin):
     fieldsets = (
-        (None, {'fields': ('key', 'name', 'organizers')}),
-        (_('Settings'), {'fields': ('is_visible', 'use_clarifications', 'hide_problem_tags', 'hide_scoreboard',
+        (None, {'fields': ('key', 'name', 'authors', 'curators', 'testers')}),
+        (_('Settings'), {'fields': ('is_visible', 'use_clarifications', 'hide_problem_tags', 'scoreboard_visibility',
                                     'run_pretests_only', 'points_precision')}),
         (_('Scheduling'), {'fields': ('start_time', 'end_time', 'time_limit')}),
         (_('Details'), {'fields': ('description', 'og_image', 'logo_override_image', 'tags', 'summary')}),
-        (_('Format'), {'fields': ('format_name', 'format_config')}),
+        (_('Format'), {'fields': ('format_name', 'format_config', 'problem_label_script')}),
         (_('Rating'), {'fields': ('is_rated', 'rate_all', 'rating_floor', 'rating_ceiling', 'rate_exclude')}),
         (_('Access'), {'fields': ('access_code', 'is_private', 'private_contestants', 'is_organization_private',
                                   'organizations', 'view_contest_scoreboard')}),
         (_('Justice'), {'fields': ('banned_users',)}),
     )
     list_display = ('key', 'name', 'is_visible', 'is_rated', 'start_time', 'end_time', 'time_limit', 'user_count')
+    search_fields = ('key', 'name')
     inlines = [ContestProblemInline]
     actions_on_top = True
     actions_on_bottom = True
@@ -146,7 +151,7 @@ class ContestAdmin(VersionAdmin):
         if request.user.has_perm('judge.edit_all_contest'):
             return queryset
         else:
-            return queryset.filter(organizers__id=request.profile.id)
+            return queryset.filter(Q(authors=request.profile) | Q(curators=request.profile)).distinct()
 
     def get_readonly_fields(self, request, obj=None):
         readonly = []
@@ -158,6 +163,8 @@ class ContestAdmin(VersionAdmin):
             readonly += ['is_private', 'private_contestants', 'is_organization_private', 'organizations']
             if not request.user.has_perm('judge.change_contest_visibility'):
                 readonly += ['is_visible']
+        if not request.user.has_perm('judge.contest_problem_label'):
+            readonly += ['problem_label_script']
         return readonly
 
     def save_model(self, request, obj, form, change):
@@ -185,9 +192,9 @@ class ContestAdmin(VersionAdmin):
     def has_change_permission(self, request, obj=None):
         if not request.user.has_perm('judge.edit_own_contest'):
             return False
-        if request.user.has_perm('judge.edit_all_contest') or obj is None:
+        if obj is None:
             return True
-        return obj.organizers.filter(id=request.profile.id).exists()
+        return obj.is_editable_by(request.user)
 
     def _rescore(self, contest_key):
         from judge.tasks import rescore_contest
@@ -232,14 +239,10 @@ class ContestAdmin(VersionAdmin):
         if not request.user.has_perm('judge.contest_rating'):
             raise PermissionDenied()
         with transaction.atomic():
-            if connection.vendor == 'sqlite':
-                Rating.objects.all().delete()
-            else:
-                cursor = connection.cursor()
+            with connection.cursor() as cursor:
                 cursor.execute('TRUNCATE TABLE `%s`' % Rating._meta.db_table)
-                cursor.close()
             Profile.objects.update(rating=None)
-            for contest in Contest.objects.filter(is_rated=True).order_by('end_time'):
+            for contest in Contest.objects.filter(is_rated=True, end_time__lte=timezone.now()).order_by('end_time'):
                 rate_contest(contest)
         return HttpResponseRedirect(reverse('admin:judge_contest_changelist'))
 
@@ -247,16 +250,21 @@ class ContestAdmin(VersionAdmin):
         if not request.user.has_perm('judge.contest_rating'):
             raise PermissionDenied()
         contest = get_object_or_404(Contest, id=id)
-        if not contest.is_rated:
+        if not contest.is_rated or not contest.ended:
             raise Http404()
         with transaction.atomic():
             contest.rate()
         return HttpResponseRedirect(request.META.get('HTTP_REFERER', reverse('admin:judge_contest_changelist')))
 
-    def get_form(self, *args, **kwargs):
-        form = super(ContestAdmin, self).get_form(*args, **kwargs)
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(ContestAdmin, self).get_form(request, obj, **kwargs)
+        if 'problem_label_script' in form.base_fields:
+            # form.base_fields['problem_label_script'] does not exist when the user has only view permission
+            # on the model.
+            form.base_fields['problem_label_script'].widget = AceWidget('lua', request.profile.ace_theme)
+   
         perms = ('edit_own_contest', 'edit_all_contest')
-        form.base_fields['organizers'].queryset = Profile.objects.filter(
+        form.base_fields['curators'].queryset = Profile.objects.filter(
             Q(user__is_superuser=True) |
             Q(user__groups__permissions__codename__in=perms) |
             Q(user__user_permissions__codename__in=perms),
@@ -274,7 +282,7 @@ class ContestParticipationForm(ModelForm):
 
 class ContestParticipationAdmin(admin.ModelAdmin):
     fields = ('contest', 'user', 'real_start', 'virtual', 'is_disqualified')
-    list_display = ('contest', 'username', 'show_virtual', 'real_start', 'score', 'cumtime')
+    list_display = ('contest', 'username', 'show_virtual', 'real_start', 'score', 'cumtime', 'tiebreaker')
     actions = ['recalculate_results']
     actions_on_bottom = actions_on_top = True
     search_fields = ('contest__key', 'contest__name', 'user__user__username')
@@ -284,7 +292,7 @@ class ContestParticipationAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super(ContestParticipationAdmin, self).get_queryset(request).only(
             'contest__name', 'contest__format_name', 'contest__format_config',
-            'user__user__username', 'real_start', 'score', 'cumtime', 'virtual',
+            'user__user__username', 'real_start', 'score', 'cumtime', 'tiebreaker', 'virtual',
         )
 
     def save_model(self, request, obj, form, change):

@@ -9,23 +9,59 @@
 
 {% block user_content %}
     <div class="content-description">
-        {% if request.user != user.user %}
-        <form method="post">
-            {% csrf_token %}
-            <button class="{{ 'unfollow' if followed else 'follow' }}">
-                {% if followed %}
-                    <i class="fa fa-remove"></i>
-                    {{ _('Unfollow') }}
-                {% else %}
-                    <i class="fa fa-user-plus"></i>
-                    {{ _('Follow') }}
-                {% endif %}
-            </button>
-        </form>
+        <div class="user-info-container">
+            <div class="user-info-card">
+                <div class="user-info">
+                    <div class="user-info-header"><i class="fa fa-star {{user.css_class}}"></i> {{_('Rating')}}</div>
+                    <div class="user-info-body {{user.css_class}}">{{user.rating if user.rating else '-'}}</div>
+                </div>
+            </div>
+            <div class="user-info-card">
+                <div class="user-info">
+                    <div class="user-info-header"
+                        title="
+                        {%- trans trimmed counter=user.problem_count %}
+                            {{ counter }} problem solved
+                        {% pluralize %}
+                            {{ counter }} problems solved
+                        {% endtrans -%}"
+                    ><i style="color: darkcyan;" class="fa fa-slack"></i> {{_('Problems')}}</div>
+                    <div class="user-info-body">{{user.problem_count}}</div>
+                </div>
+            </div>
+            <div class="user-info-card">
+                <div class="user-info">
+                    <div class="user-info-header"
+                        title="{{_('Total points')}}"
+                    ><i style="color:green" class="icofont-tick-mark"></i> {{_('Points')}}</div>
+                    <div class="user-info-body"><span title="{{ user.performance_points|floatformat(2) }}">
+                    {{ user.performance_points|floatformat(0) }}
+                </span></div>
+                </div>
+            </div>
+            {% if not user.is_unlisted %}
+            <div class="user-info-card">
+                <div class="user-info">
+                    <div class="user-info-header" title="{{_('Rank by rating')}}"><i style="color: peru" class="fa fa-globe" ></i> {{_('Rating')}}</div>
+                    <div class="user-info-body">{{rating_rank if rating_rank else '-'}}</div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="user-info-card">
+                <div class="user-info">
+                    <div class="user-info-header" title="{{_('Rank by points')}}"><i style="color: blue" class="fa fa-globe" ></i> {{_('Points')}}</div>
+                    <div class="user-info-body">{{rank}}</div>
+                </div>
+            </div>
+        </div>
+        {% if user.user.first_name %}
+            <p style="font-size:1.4em; text-align: center;">
+                {{user.user.first_name}}{% if user.user.last_name %}    ({{user.user.last_name}}){% endif %}
+            </p>
         {% endif %}
         {% with orgs=user.organizations.all() %}
             {% if orgs %}
-                <p style="margin-top: 0"><b>{{ _('From') }}</b>
+                <p style="margin-top: 0"><i class="fa fa-university"></i> {{ _('From') }}
                     {% for org in orgs -%}
                         <a href="{{ org.get_absolute_url() }}">{{ org.name }}</a>
                         {%- if not loop.last %}, {% endif %}
@@ -57,6 +93,26 @@
                 {% endif %}
             </i>
             <br>
+        {% endif %}
+
+        {% if awards %}
+            <br>
+            <div id="awards">
+                <h4>{{_('Awards')}}</h4>
+                {% for medal in awards.medals %}
+                    {% if medal.ranking == 1 %}
+                        {% set medal_url = static('awards/gold-medal.png') %}
+                    {% elif medal.ranking == 2%}
+                        {% set medal_url = static('awards/silver-medal.png') %}
+                    {% else %}
+                        {% set medal_url = static('awards/bronze-medal.png') %}
+                    {% endif %}
+                    <a href={{medal.link}}>
+                        <img src="{{medal_url}}"
+                         title="{% trans label=medal.label, date=medal.date%}{{label}} ({{date}}){% endtrans %}">
+                    </a>
+                {% endfor%}
+            </div>
         {% endif %}
 
         <br>
@@ -124,7 +180,8 @@
         </div>
 
         {% if rating %}
-            <h4>Rating History</h4>
+            <br>
+            <h4>{{_('Rating History')}}</h4>
             <div id="rating-chart">
                 <canvas></canvas>
             </div>
@@ -212,13 +269,11 @@
 
                 var sum_activity = days.map(obj => obj.activity).reduce((a, b) => a + b, 0);
                 $div.find('#submission-total-count').text(
-                    ngettext("%(cnt)d total submission", "%(cnt)d total submissions", sum_activity)
-                        .replace("%(cnt)d", sum_activity)
+                    sum_activity + " " + "{{_('total submission(s)')}}"
                 )
                 if (year == current_year) {
                     $('#submission-activity-header').text(
-                        ngettext("%(cnt)d submission in the last year", "%(cnt)d submissions in the last year", sum_activity)
-                            .replace("%(cnt)d", sum_activity)
+                        sum_activity + " " + "{{_('submissions in the last year')}}"
                     )
                 }
 
@@ -230,7 +285,6 @@
                     $div.find('#submission-' + current_weekday)
                         .append($('<td>').addClass('activity-blank').append('<div>'));
                 }
-
                 days.forEach(obj => {
                     var level = activity_breakdown.findIndex(x => x >= obj.activity);
                     var text =
@@ -413,26 +467,31 @@
                             },
                             {
                                 begin: 1000,
-                                end: 1200,
+                                end: 1400,
                                 color: 'rgb(0, 169, 0, 0.4)'
                             },
                             {
-                                begin: 1200,
-                                end: 1500,
+                                begin: 1400,
+                                end: 1700,
+                                color: 'rgb(3, 168, 158, 0.4)'
+                            },
+                            {
+                                begin: 1700,
+                                end: 1900,
                                 color: 'rgb(0, 0, 255, 0.4)'
                             },
                             {
-                                begin: 1500,
-                                end: 1800,
+                                begin: 1900,
+                                end: 2100,
                                 color: 'rgb(128, 0, 128, 0.37)'
                             },
                             {
-                                begin: 1800,
-                                end: 2200,
+                                begin: 2100,
+                                end: 2400,
                                 color: 'rgb(255, 177, 0, 0.4)'
                             },
                             {
-                                begin: 2200,
+                                begin: 2400,
                                 end: 3000,
                                 color: 'rgb(238, 0, 0, 0.4)'
                             },

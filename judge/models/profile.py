@@ -136,12 +136,15 @@ class Profile(models.Model):
 
     def calculate_points(self, table=_pp_table):
         from judge.models import Problem
-        data = (Problem.objects.filter(submission__user=self, submission__points__isnull=False, is_public=True,
-                                       is_organization_private=False)
-                       .annotate(max_points=Max('submission__points')).order_by('-max_points')
-                       .values_list('max_points', flat=True).filter(max_points__gt=0))
-        extradata = Problem.objects.filter(submission__user=self, submission__result='AC', is_public=True) \
-                           .values('id').distinct().count()
+        public_problems = Problem.get_public_problems()
+        data = (
+            public_problems.filter(submission__user=self, submission__points__isnull=False)
+                           .annotate(max_points=Max('submission__points')).order_by('-max_points')
+                           .values_list('max_points', flat=True).filter(max_points__gt=0)
+        )
+        extradata = (
+            public_problems.filter(submission__user=self, submission__result='AC').values('id').distinct().count()
+        )
         bonus_function = settings.DMOJ_PP_BONUS_FUNCTION
         points = sum(data)
         problems = len(data)
@@ -163,8 +166,12 @@ class Profile(models.Model):
     remove_contest.alters_data = True
 
     def update_contest(self):
-        contest = self.current_contest
-        if contest is not None and (contest.ended or not contest.contest.is_accessible_by(self.user)):
+        from judge.models import ContestParticipation
+        try:
+            contest = self.current_contest
+            if contest is not None and (contest.ended or not contest.contest.is_accessible_by(self.user)):
+                self.remove_contest()
+        except ContestParticipation.DoesNotExist:
             self.remove_contest()
 
     update_contest.alters_data = True
@@ -253,6 +260,14 @@ class Friend(models.Model):
             self.remove_friend(current_user, new_friend)
         else:
             self.make_friend(current_user, new_friend)
+
+    @classmethod
+    def get_friend_profiles(self, current_user):
+        try:
+            ret = self.objects.get(current_user=current_user).users.all()
+        except Friend.DoesNotExist:
+            ret = Profile.objects.none()
+        return ret
 
     def __str__(self):
         return str(self.current_user)

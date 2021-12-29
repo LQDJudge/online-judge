@@ -210,7 +210,6 @@ label[for="language"], label[for="status"] {
         padding-left: 1em;
         padding-bottom: 3px;
         padding-top: 3px;
-        display: inline-block;
     }
 
     // .batch-cases .case-row td b {
@@ -237,7 +236,7 @@ label[for="language"], label[for="status"] {
         font-family: Consolas;
     }
 
-    #testcases-table {
+    .testcases-table {
         width: 100%;
         border: 1px solid grey;
         border-radius: 0.5em;
