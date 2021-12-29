@@ -94,6 +94,16 @@
 
             {% csrf_token %}
 
+            {% if edit_name_url %}
+            <div style="margin-bottom: 1em; font-size: 1.1em">
+                <label style="color:#666">{{_('Name and School')}}:</label>
+                <span>
+                    <a href="{{edit_name_url}}">{{_('Enter this form')}}</a>
+                    <span style="float: right">({{_('It takes some time for admin to approve')}})</span>
+                </span>
+            </div>
+            {% endif %}
+
             <div style="padding-top:0.5em" class="block-header">{{ _('Self-description') }}:</div>
             {{ form.about }}
             <hr>

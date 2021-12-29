@@ -318,7 +318,9 @@ def edit_profile(request):
         form.fields['test_site'].initial = request.user.has_perm('judge.test_site')
 
     tzmap = settings.TIMEZONE_MAP
+    print(settings.REGISTER_NAME_URL)
     return render(request, 'user/edit-profile.html', {
+        'edit_name_url': settings.REGISTER_NAME_URL,
         'require_staff_2fa': settings.DMOJ_REQUIRE_STAFF_2FA,
         'form': form, 'title': _('Edit profile'), 'profile': profile,
         'has_math_config': bool(settings.MATHOID_URL),

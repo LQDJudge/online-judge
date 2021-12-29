@@ -490,6 +490,8 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.user.user_details',
 )
 
+SOCIAL_AUTH_PROTECTED_USER_FIELDS = ['first_name', 'last_name']
+SOCIAL_AUTH_GOOGLE_OAUTH2_USER_FIELDS = ['email', 'username']
 SOCIAL_AUTH_GITHUB_SECURE_SCOPE = ['user:email']
 SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
 SOCIAL_AUTH_SLUGIFY_USERNAMES = True
@@ -501,11 +503,6 @@ MOSS_API_KEY = None
 
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 
-try:
-    with open(os.path.join(os.path.dirname(__file__), 'local_settings.py')) as f:
-        exec(f.read(), globals())
-except IOError:
-    pass
 
 TESTCASE_VISIBLE_LENGTH = 64
 
@@ -525,3 +522,12 @@ NEWSLETTER_BATCH_DELAY = 60
 
 # Number of emails in one batch
 NEWSLETTER_BATCH_SIZE = 100
+
+# Google form to request name
+REGISTER_NAME_URL = None
+
+try:
+    with open(os.path.join(os.path.dirname(__file__), 'local_settings.py')) as f:
+        exec(f.read(), globals())
+except IOError:
+    pass

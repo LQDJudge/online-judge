@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-12-27 15:13+0700\n"
+"POT-Creation-Date: 2021-12-29 13:13+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -108,7 +108,7 @@ msgstr ""
 msgid "Login"
 msgstr "Đăng nhập"
 
-#: dmoj/urls.py:106 templates/base.html:211
+#: dmoj/urls.py:106 templates/base.html:207
 msgid "Home"
 msgstr "Trang chủ"
 
@@ -156,7 +156,7 @@ msgstr "Cài đặt"
 msgid "Scheduling"
 msgstr ""
 
-#: judge/admin/contest.py:122 templates/organization/home.html:98
+#: judge/admin/contest.py:122 templates/organization/home.html:100
 msgid "Details"
 msgstr "Chi tiết"
 
@@ -217,7 +217,7 @@ msgstr "Tính toán lại kết quả"
 msgid "username"
 msgstr "tên đăng nhập"
 
-#: judge/admin/contest.py:320 templates/base.html:298
+#: judge/admin/contest.py:320 templates/base.html:294
 msgid "virtual"
 msgstr "ảo"
 
@@ -318,7 +318,7 @@ msgstr "Email"
 
 #: judge/admin/profile.py:96 judge/views/register.py:29
 #: templates/registration/registration_form.html:173
-#: templates/user/edit-profile.html:106
+#: templates/user/edit-profile.html:114
 msgid "Timezone"
 msgstr "Múi giờ"
 
@@ -2338,8 +2338,9 @@ msgctxt "hours and minutes"
 msgid "%h:%m"
 msgstr "%h:%m"
 
-#: judge/views/about.py:7 templates/organization/home.html:103
+#: judge/views/about.py:7 templates/organization/home.html:105
 #: templates/user/user-about.html:83 templates/user/user-tabs.html:4
+#: templates/user/users-table.html:32
 msgid "About"
 msgstr "Giới thiệu"
 
@@ -2677,7 +2678,7 @@ msgstr "Thảo luận <a href=\"{1}\">{0}</a>"
 
 #: judge/views/problem.py:297 templates/contest/contest.html:79
 #: templates/user/user-about.html:28 templates/user/user-tabs.html:5
-#: templates/user/users-table.html:31
+#: templates/user/users-table.html:29
 msgid "Problems"
 msgstr "Bài tập"
 
@@ -2802,7 +2803,7 @@ msgstr "Các bài nộp tốt nhất cho bài {0} trong <a href=\"{2}\">{1}</a>"
 msgid "A username must contain letters, numbers, or underscores"
 msgstr "Tên đăng nhập phải chứa ký tự, chữ số, hoặc dấu gạch dưới"
 
-#: judge/views/register.py:31 templates/user/edit-profile.html:110
+#: judge/views/register.py:31 templates/user/edit-profile.html:118
 msgid "Preferred language"
 msgstr "Ngôn ngữ ưa thích"
 
@@ -2990,17 +2991,17 @@ msgstr "j M, Y, G:i"
 msgid "Updated on site"
 msgstr "Được cập nhật trên web"
 
-#: judge/views/user.py:323 templates/admin/auth/user/change_form.html:14
-#: templates/admin/auth/user/change_form.html:17 templates/base.html:259
+#: judge/views/user.py:324 templates/admin/auth/user/change_form.html:14
+#: templates/admin/auth/user/change_form.html:17 templates/base.html:255
 #: templates/user/user-tabs.html:10
 msgid "Edit profile"
 msgstr "Chỉnh sửa thông tin"
 
-#: judge/views/user.py:332 templates/user/user-list-tabs.html:4
+#: judge/views/user.py:333 templates/user/user-list-tabs.html:4
 msgid "Leaderboard"
 msgstr "Bảng xếp hạng"
 
-#: judge/views/user.py:407
+#: judge/views/user.py:408
 msgid "Import Users"
 msgstr ""
 
@@ -3196,20 +3197,20 @@ msgstr "Chỉnh sửa thông tin"
 msgid "Rejudge"
 msgstr "Chấm lại"
 
-#: templates/base.html:228 templates/chat/chat.html:566
+#: templates/base.html:224 templates/chat/chat.html:566
 msgid "Chat"
 msgstr "Chat"
 
-#: templates/base.html:234
+#: templates/base.html:230
 msgid "Notification"
 msgstr "Thông báo"
 
-#: templates/base.html:251
+#: templates/base.html:247
 #, python-format
 msgid "Hello, <b>%(username)s</b>."
 msgstr "Xin chào, <b>%(username)s</b>."
 
-#: templates/base.html:257 templates/chat/chat.html:20
+#: templates/base.html:253 templates/chat/chat.html:20
 #: templates/comments/list.html:89 templates/contest/contest-list-tabs.html:24
 #: templates/contest/ranking-table.html:53
 #: templates/problem/problem-list-tabs.html:6
@@ -3218,28 +3219,28 @@ msgstr "Xin chào, <b>%(username)s</b>."
 msgid "Admin"
 msgstr ""
 
-#: templates/base.html:266
+#: templates/base.html:262
 msgid "Log out"
 msgstr "Đăng xuất"
 
-#: templates/base.html:275
+#: templates/base.html:271
 #: templates/registration/password_reset_complete.html:4
 msgid "Log in"
 msgstr "Đăng nhập"
 
-#: templates/base.html:276 templates/registration/registration_form.html:177
+#: templates/base.html:272 templates/registration/registration_form.html:177
 msgid "or"
 msgstr "hoặc"
 
-#: templates/base.html:277
+#: templates/base.html:273
 msgid "Sign up"
 msgstr "Đăng ký"
 
-#: templates/base.html:292
+#: templates/base.html:288
 msgid "spectating"
 msgstr "đang theo dõi"
 
-#: templates/base.html:305
+#: templates/base.html:301
 msgid "This site works best with JavaScript enabled."
 msgstr ""
 
@@ -3341,7 +3342,7 @@ msgid "New message(s)"
 msgstr "Tin nhắn mới"
 
 #: templates/chat/chat.html:507 templates/chat/chat.html:588
-#: templates/user/base-users.html:14 templates/user/base-users.html:69
+#: templates/user/base-users.html:14 templates/user/base-users.html:80
 msgid "Search by handle..."
 msgstr "Tìm kiếm theo tên..."
 
@@ -3550,7 +3551,7 @@ msgstr "Danh sách"
 msgid "Calendar"
 msgstr "Lịch"
 
-#: templates/contest/contest-tabs.html:4 templates/organization/home.html:96
+#: templates/contest/contest-tabs.html:4 templates/organization/home.html:98
 msgid "Info"
 msgstr "Thông tin"
 
@@ -3601,10 +3602,12 @@ msgid "Login to participate"
 msgstr "Đăng nhập để tham gia"
 
 #: templates/contest/contest.html:33
+#, python-format
 msgid "Spectating, contest ends in %(countdown)s."
 msgstr "Đang theo dõi, kỳ thi còn %(countdown)s."
 
 #: templates/contest/contest.html:35
+#, python-format
 msgid "Participating virtually, %(countdown)s remaining."
 msgstr "Đang tham gia ảo, còn %(countdown)s."
 
@@ -3613,6 +3616,7 @@ msgid "Participating virtually."
 msgstr "Đang tham gia ảo."
 
 #: templates/contest/contest.html:41
+#, python-format
 msgid "Starting in %(countdown)s."
 msgstr "Kỳ thi bắt đầu trong %(countdown)s nữa."
 
@@ -3621,6 +3625,7 @@ msgid "Contest is over."
 msgstr "Kỳ thi đã kết thúc."
 
 #: templates/contest/contest.html:47
+#, python-format
 msgid "Your time is up! Contest ends in %(countdown)s."
 msgstr "Hết giờ! Kỳ thi kết thúc trong %(countdown)s."
 
@@ -3630,6 +3635,7 @@ msgid "You have %(countdown)s remaining."
 msgstr "Bạn còn %(countdown)s."
 
 #: templates/contest/contest.html:52
+#, python-format
 msgid "Contest ends in %(countdown)s."
 msgstr "Kỳ thi kết thúc trong %(countdown)s"
 
@@ -3811,7 +3817,7 @@ msgstr "Chỉ những tổ chức sau được tham gia kỳ thi:"
 msgid "Organization"
 msgstr "Tổ chức"
 
-#: templates/contest/ranking-table.html:10 templates/user/users-table.html:13
+#: templates/contest/ranking-table.html:10
 msgid "Full Name"
 msgstr "Họ tên"
 
@@ -4016,55 +4022,55 @@ msgstr "Bạn phải tham gia lại để được hiển thị trong bảng x�
 msgid "You will have to request membership in order to join again."
 msgstr "Bạn phải đăng ký thành viên để được tham gia lại."
 
-#: templates/organization/home.html:79
+#: templates/organization/home.html:81
 msgid "Join organization"
 msgstr "Tham gia tổ chức"
 
-#: templates/organization/home.html:83
+#: templates/organization/home.html:85
 msgid "Request membership"
 msgstr "Đăng ký thành viên"
 
-#: templates/organization/home.html:113
+#: templates/organization/home.html:115
 msgid "Organization news"
 msgstr "Tin tức tổ chức"
 
-#: templates/organization/home.html:119
+#: templates/organization/home.html:121
 msgid "There is no news at this time."
 msgstr "Không có tin tức."
 
-#: templates/organization/home.html:128
+#: templates/organization/home.html:130
 msgid "Controls"
 msgstr "Quản lý"
 
-#: templates/organization/home.html:133
+#: templates/organization/home.html:135
 msgid "Edit organization"
 msgstr "Chỉnh sửa tổ chức"
 
-#: templates/organization/home.html:139
+#: templates/organization/home.html:141
 msgid "View requests"
 msgstr "Xem các đơn đăng ký"
 
-#: templates/organization/home.html:152
+#: templates/organization/home.html:154
 msgid "Admin organization"
 msgstr "Trang admin tổ chức"
 
-#: templates/organization/home.html:158
+#: templates/organization/home.html:160
 msgid "View members"
 msgstr "Xem thành viên"
 
-#: templates/organization/home.html:165
+#: templates/organization/home.html:167
 msgid "Leave organization"
 msgstr "Rời tổ chức"
 
-#: templates/organization/home.html:174
+#: templates/organization/home.html:176
 msgid "New private contests"
 msgstr "Kỳ thi riêng tư mới"
 
-#: templates/organization/home.html:184 templates/organization/home.html:199
+#: templates/organization/home.html:186 templates/organization/home.html:201
 msgid "View all"
 msgstr "Tất cả"
 
-#: templates/organization/home.html:190
+#: templates/organization/home.html:192
 msgid "New private problems"
 msgstr "Bài tập riêng tư mới"
 
@@ -4632,12 +4638,12 @@ msgid "Default language"
 msgstr "Ngôn ngữ ưa thích"
 
 #: templates/registration/registration_form.html:186
-#: templates/user/edit-profile.html:173
+#: templates/user/edit-profile.html:181
 msgid "Affiliated organizations"
 msgstr "Tổ chức bạn muốn tham gia"
 
 #: templates/registration/registration_form.html:195
-#: templates/user/edit-profile.html:128
+#: templates/user/edit-profile.html:136
 msgid "Notify me about upcoming contests"
 msgstr "Nhận thông báo về các kỳ thi tương lai"
 
@@ -4980,43 +4986,55 @@ msgstr "Không có gì."
 msgid "Rank"
 msgstr "Rank"
 
-#: templates/user/edit-profile.html:97
+#: templates/user/edit-profile.html:98
+msgid "Name and School"
+msgstr "Họ tên và Trường"
+
+#: templates/user/edit-profile.html:100
+msgid "Enter this form"
+msgstr "Điền vào link này"
+
+#: templates/user/edit-profile.html:101
+msgid "It takes some time for admin to approve"
+msgstr "Ban quản trị sẽ phê duyệt"
+
+#: templates/user/edit-profile.html:105
 msgid "Self-description"
 msgstr "Tự giới thiệu"
 
-#: templates/user/edit-profile.html:105
+#: templates/user/edit-profile.html:113
 msgid "Select your closest major city"
 msgstr "Chọn thành phố gần nhất"
 
-#: templates/user/edit-profile.html:114
+#: templates/user/edit-profile.html:122
 msgid "Editor theme"
 msgstr "Giao diện cho code editor"
 
-#: templates/user/edit-profile.html:119
+#: templates/user/edit-profile.html:127
 msgid "Math engine"
 msgstr ""
 
-#: templates/user/edit-profile.html:143 templates/user/edit-profile.html:144
+#: templates/user/edit-profile.html:151 templates/user/edit-profile.html:152
 msgid "Change your avatar"
 msgstr "Đổi ảnh đại diện"
 
-#: templates/user/edit-profile.html:150
+#: templates/user/edit-profile.html:158
 msgid "Change your password"
 msgstr "Đổi mật khẩu"
 
-#: templates/user/edit-profile.html:157
+#: templates/user/edit-profile.html:165
 msgid "Two Factor Authentication is enabled."
 msgstr "Two Factor Authentication đã được kích hoạt."
 
-#: templates/user/edit-profile.html:164
+#: templates/user/edit-profile.html:172
 msgid "Two Factor Authentication is disabled."
 msgstr "Two Factor Authentication đã được hủy kích hoạt."
 
-#: templates/user/edit-profile.html:181
+#: templates/user/edit-profile.html:189
 msgid "User-script"
 msgstr ""
 
-#: templates/user/edit-profile.html:185
+#: templates/user/edit-profile.html:193
 msgid "Update profile"
 msgstr "Cập nhật thông tin"
 
