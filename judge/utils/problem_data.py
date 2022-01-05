@@ -286,7 +286,11 @@ def get_problem_case(problem, files):
                     s.decode('utf-8')
                     break
                 except UnicodeDecodeError:
-                    s += f.read(1)
+                    next_char = f.read(1)
+                    if next_char:
+                        s += next_char
+                    else:
+                        raise Exception('File %s is not able to decode in utf-8' % file)
             qs = get_visible_content(s)
         cache.set(cache_key, qs, 86400)
         result[file] = qs
