@@ -319,6 +319,22 @@
             }
         }
 
+        function get_initial_rank() {
+            var ranks = $('.rank-td').map(function() {return this.innerHTML}).get();
+            var usernames = $('.user-name .user a').map(function() {return this.text}).get();
+            window.user_rank = new Map();
+            for (var i = 0; i < ranks.length; i++) {
+                window.user_rank[usernames[i]] = ranks[i];
+            }
+        }
+
+        function add_initial_friend_rank() {
+            var usernames = $('.user-name .user a').map(function() {return this.text}).get();
+            $('.rank-td').each(function(i) {
+                this.innerHTML += ' (' + window.user_rank[usernames[i]] + ')';
+            });
+        }
+
         function update_ranking() {
             var friend = $('#show-friends-checkbox').is(':checked');
             var virtual = $('#show-virtual-checkbox').is(':checked');
@@ -328,8 +344,13 @@
                 success: function(HTML) {
                     $('#users-table').html(HTML);
                     highlightFirstSolve();
-                    renew_filter();
                     $('#loading-gif').hide();
+                    if (!virtual && !friend) {
+                        get_initial_rank();
+                    }
+                    if (friend) {
+                        add_initial_friend_rank();
+                    }
                 },
                 fail: function() {
                     console.log('Fail to update ranking');
@@ -394,6 +415,7 @@
 
             highlightFirstSolve();
             renew_filter();
+            get_initial_rank();
             {% if participation_tab %}
                 $('#show-virtual-checkbox').hide();
                 $('#show-virtual-label').hide();
