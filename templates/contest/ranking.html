@@ -330,8 +330,18 @@
 
         function add_initial_friend_rank() {
             var usernames = $('.user-name .user a').map(function() {return this.text}).get();
+
+            var is_virtual = [];
+            $('.user-name').each(function() {
+                if($(this).children('sup').length) {
+                    is_virtual.push(1);
+                }
+                else is_virtual.push(0);
+            });
+            console.log(is_virtual);
+
             $('.rank-td').each(function(i) {
-                this.innerHTML += ' (' + window.user_rank[usernames[i]] + ')';
+                if (!is_virtual[i]) this.innerHTML += ' (' + window.user_rank[usernames[i]] + ')';
             });
         }
 
