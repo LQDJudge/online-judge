@@ -117,6 +117,12 @@
 
             $("#contest-info").show();
 
+            $("#contest-info-toggle").on('click', function() {
+                $.post("{{url('contest_mode_ajax')}}", function() {
+                    window.location.reload();
+                })
+            });
+
             $(document).mousemove(function (e) {
                 x_pos = e.screenX;
                 y_pos = e.screenY;
@@ -190,6 +196,42 @@
         </style>
     </noscript>
     <style>
+        #contest-info {
+            font-size: 1.25em;
+            border: 5px solid $highlight_blue;
+            border-radius: 0 $widget_border_radius $widget_border_radius 0;
+            z-index: 100000;
+            cursor: move;
+            position: fixed;
+            left: 20px;
+            top: 90%;
+            display: none;
+        }
+        #contest-info-main {
+            border-left: 5px dotted white;
+            background: rgba(0, 0, 0, 0.77);
+            padding: 10px 12px;
+            color: white;
+            display: inline;
+        }
+        #contest-info-toggle {
+            display: inline;
+            padding: 10px 12px;
+            border-radius: 0 10px 10px 0;
+            cursor: pointer;
+        }
+        .contest-info-toggle-mode-on {
+            background: rgba(0, 205, 0, 0.57);
+        }
+        .contest-info-toggle-mode-on:hover {
+            background: rgba(0, 205, 0, 0.97);
+        }
+        .contest-info-toggle-mode-off {
+            background: rgba(255, 0, 0, 0.57);
+        }
+        .contest-info-toggle-mode-off:hover {
+            background: rgba(255, 0, 0, 0.97);
+        }
     </style>
 </head>
 <body>
@@ -284,18 +326,27 @@
 </nav>
 {% if request.in_contest %}
     <div id="contest-info">
-        <a href="{{ url('contest_view', request.participation.contest.key) }}" style="vertical-align: middle">
-            {{ request.participation.contest.name }} -
-            {% if request.participation.spectate %}
-                {{ _('spectating') }}
-            {% elif request.participation.end_time %}
-                <div id="contest-time-remaining" data-secs="{{request.participation.end_time}}">
-                    {{ request.participation.time_remaining|timedelta("localized") }}
-                </div>
+        <div id="contest-info-main">
+            <a href="{{ url('contest_view', request.participation.contest.key) }}" style="vertical-align: middle; display: inline">
+                {{ request.participation.contest.name }} -
+                {% if request.participation.spectate %}
+                    {{ _('spectating') }}
+                {% elif request.participation.end_time %}
+                    <div id="contest-time-remaining" data-secs="{{request.participation.end_time}}">
+                        {{ request.participation.time_remaining|timedelta("localized") }}
+                    </div>
+                {% else %}
+                    {{ _('virtual') }}
+                {% endif %}
+            </a>
+        </div>
+        <div id="contest-info-toggle" class="{{'contest-info-toggle-mode-on' if request.contest_mode else 'contest-info-toggle-mode-off'}}">
+            {% if request.contest_mode %}
+                <i class="fa fa-toggle-on" style="color: white"></i> {{_('Compete')}}
             {% else %}
-                {{ _('virtual') }}
+                <i class="fa fa-toggle-off" style="color: white"></i> {{_('General')}}
             {% endif %}
-        </a>
+        </div>
     </div>
 {% endif %}
 <div id="page-container">

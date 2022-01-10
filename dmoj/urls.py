@@ -280,6 +280,7 @@ urlpatterns = [
     url(r'^mailgun/mail_activate/$', mailgun.MailgunActivationView.as_view(), name='mailgun_activate'),
 
     url(r'^widgets/', include([
+        url(r'^contest_mode$', contests.update_contest_mode, name='contest_mode_ajax'),
         url(r'^rejudge$', widgets.rejudge_submission, name='submission_rejudge'),
         url(r'^single_submission$', submission.single_submission_query, name='submission_single_query'),
         url(r'^submission_testcases$', submission.SubmissionTestCaseQuery.as_view(), name='submission_testcases_query'),

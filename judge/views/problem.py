@@ -71,7 +71,8 @@ class ProblemMixin(object):
     def get(self, request, *args, **kwargs):
         try:
             return super(ProblemMixin, self).get(request, *args, **kwargs)
-        except Http404:
+        except Http404 as e:
+            print(e)
             return self.no_such_problem()
 
 
@@ -90,7 +91,8 @@ class SolvedProblemMixin(object):
 
     @cached_property
     def in_contest(self):
-        return self.profile is not None and self.profile.current_contest is not None
+        return self.profile is not None and self.profile.current_contest is not None \
+            and self.request.in_contest_mode
 
     @cached_property
     def contest(self):
@@ -120,10 +122,9 @@ class ProblemSolution(SolvedProblemMixin, ProblemMixin, TitleMixin, CommentedDet
         solution = get_object_or_404(Solution, problem=self.object)
 
         if (not solution.is_public or solution.publish_on > timezone.now()) and \
-                not self.request.user.has_perm('judge.see_private_solution') or \
-                (self.request.user.is_authenticated and
-                 self.request.profile.current_contest):
+                not self.request.user.has_perm('judge.see_private_solution'):
             raise Http404()
+
         context['solution'] = solution
         context['has_solved_problem'] = self.object.id in self.get_completed_problems()
         return context

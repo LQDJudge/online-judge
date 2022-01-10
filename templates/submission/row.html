@@ -24,7 +24,7 @@
     <div>
         {{ link_user(submission.user) }}
         <span class="time">{{ relative_time(submission.date) }}</span>
-        {% if not request.in_contest and submission.contest_object_id %}
+        {% if not request.in_contest_mode and submission.contest_object_id %}
             <a href="{{ url('contest_view', submission.contest_object.key) }}"
                class="submission-contest">
                 <i title="{{ submission.contest_object.name }}" class="fa fa-dot-circle-o"></i>

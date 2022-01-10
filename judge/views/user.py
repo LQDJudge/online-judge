@@ -92,7 +92,8 @@ class UserPage(TitleMixin, UserMixin, DetailView):
 
     @cached_property
     def in_contest(self):
-        return self.profile is not None and self.profile.current_contest is not None
+        return self.profile is not None and self.profile.current_contest is not None \
+            and self.request.in_contest_mode
 
     def get_completed_problems(self):
         if self.in_contest:
@@ -374,8 +375,8 @@ class FixedContestRanking(ContestRanking):
 
 def users(request):
     if request.user.is_authenticated:
-        participation = request.profile.current_contest
-        if participation is not None:
+        if request.in_contest_mode:
+            participation = request.profile.current_contest
             contest = participation.contest
             return FixedContestRanking.as_view(contest=contest)(request, contest=contest.key)
     return user_list_view(request)
