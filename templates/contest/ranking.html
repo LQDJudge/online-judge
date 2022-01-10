@@ -321,7 +321,7 @@
 
         function get_initial_rank() {
             var ranks = $('.rank-td').map(function() {return this.innerHTML}).get();
-            var usernames = $('.user-name .user a').map(function() {return this.text}).get();
+            var usernames = $('.user-name .rating a').map(function() {return this.text}).get();
             window.user_rank = new Map();
             for (var i = 0; i < ranks.length; i++) {
                 window.user_rank[usernames[i]] = ranks[i];
@@ -329,7 +329,7 @@
         }
 
         function add_initial_friend_rank() {
-            var usernames = $('.user-name .user a').map(function() {return this.text}).get();
+            var usernames = $('.user-name .rating a').map(function() {return this.text}).get();
 
             var is_virtual = [];
             $('.user-name').each(function() {
@@ -338,7 +338,6 @@
                 }
                 else is_virtual.push(0);
             });
-            console.log(is_virtual);
 
             $('.rank-td').each(function(i) {
                 if (!is_virtual[i]) this.innerHTML += ' (' + window.user_rank[usernames[i]] + ')';
