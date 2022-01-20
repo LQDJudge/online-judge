@@ -94,7 +94,9 @@
     {% block js_media %}{% endblock %}
     {% if request.in_contest %}
         <script>$(function () {
-            count_down($("#contest-time-remaining"));
+            if ($("#contest-time-remaining").length) {
+                count_down($("#contest-time-remaining"));
+            }
 
             var selected = null,
                 x_pos = 0, y_pos = 0,
