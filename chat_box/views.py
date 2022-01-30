@@ -375,9 +375,10 @@ def get_or_create_room(request):
     # TODO: each user can only create <= 300 rooms
     room = get_room(other_user, user)
     for u in [other_user, user]:
-        user_room, _ = UserRoom.objects.get_or_create(user=u, room=room)
-        user_room.last_seen = timezone.now()
-        user_room.save()
+        user_room, created = UserRoom.objects.get_or_create(user=u, room=room)
+        if created:
+            user_room.last_seen = timezone.now()
+            user_room.save()
 
     if request.method == 'GET':
         return JsonResponse({'room': room.id, 'other_user_id': other_user.id})
