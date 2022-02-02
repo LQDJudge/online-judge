@@ -206,6 +206,7 @@ let META_HEADER = [
                     MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
                     register_time($('.time-with-rel'));
                     remove_unread_current_user();
+                    merge_authors();
                 },
                 error: function (data) {
                     console.log('Fail to check message');
@@ -229,6 +230,12 @@ let META_HEADER = [
             var $body = $(this).find(".content-message .body-block");
             var time = moment($(this).find(".time-with-rel").attr('data-iso'));
             var $content = $(this).children('.content-message');
+
+            if (username == window.user.name) {
+                $(this).find('.message-text').each(function() {
+                    $(this).removeClass('message-text-other').addClass('message-text-myself');  
+                });
+            }
 
             if (username == last.username && time.diff(last.time, 'minutes') <= time_limit) {
                 last.$content.append($body);
