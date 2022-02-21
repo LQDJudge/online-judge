@@ -1,0 +1,166 @@
+html, body {
+    height: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: url(/images/judge0_background.png) no-repeat center center fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
+.ui[class*="left action"].input>.dropdown {
+    border-radius: 0 .28571429rem .28571429rem 0;
+}
+
+.ui.selection.dropdown {
+    width: 205px;
+}
+
+.lm_header .lm_tab {
+    padding-bottom: 3px;
+    height: 16px;
+    font-family: "Droid Sans Mono", monospace, monospace, "Droid Sans Fallback";
+    font-size: 14px;
+}
+
+.lm_header .lm_tab.lm_active {
+    box-shadow: none;
+    padding-bottom: 3px;
+}
+
+#site-navigation {
+    border-radius: 0;
+    margin: 0;
+    background: #1e1e1e;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    height: 45px;
+}
+
+#navigation-message {
+    font-size: 1.2em;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+@keyframes slide {
+    0% { transform: translateX(570px); }
+    100% { transform: translateX(-100%); }
+}
+@-webkit-keyframes slide {
+    0% { transform: translateX(570px); }
+    100% { transform: translateX(-100%); }
+}
+
+.navigation-message-text {
+    white-space: nowrap;
+    -moz-animation: slide 60s linear infinite;
+    -webkit-animation: slide 60s linear infinite;
+    animation: slide 60s linear infinite;
+}
+
+.navigation-message-text:hover {
+    -moz-animation-play-state: paused;
+    -webkit-animation-play-state: paused;
+    animation-play-state: paused;
+}
+
+#navigation-message a {
+    color: #41a5f1;
+    font-weight: bold;
+}
+
+#site-icon {
+    height: 40px;
+    vertical-align: middle;
+}
+
+#site-header {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+#site-header h2 {
+    display: inline;
+    vertical-align: middle;
+    font-family: 'Exo 2', sans-serif;
+}
+
+#site-content {
+    height: calc(100% - 45px - 19px);
+}
+
+#site-modal .header {
+    color: #db2828;
+}
+
+#site-footer {
+    background-color: darkslategrey;
+    bottom: 0;
+    font-family: monospace, monospace, "Droid Sans Fallback";
+    font-size: 13px;
+    height: 19px;
+    padding-left: 16px;
+    padding-right: 16px;
+    position: fixed;
+}
+
+#site-footer {
+    color: gray;
+    left: 0;
+    width: 100%;
+}
+
+#editor-status-line {
+    background: transparent;
+    color: #fff;
+    font-family: monospace;
+    height: 19px;
+    padding: 0px 16px;
+    width: inherit;
+}
+
+#editor-status-line input[type=text] {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-family: monospace;
+    outline: none;
+}
+
+#editor-status-line input[type=text]::selection {
+    background-color: #cce2ff;
+    color: #fff;
+}
+
+.blink {
+    animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+    50% {
+        background: #FFD700;
+    }
+}
+
+.dot {
+    background: #0E6EB8;
+    position: absolute;
+    border-radius: 50px;
+    width: 5px;
+    height: 5px;
+    right: 7.5px;
+    top: 7.5px;
+}
+
+.no-left-padding {
+    padding-left: 0 !important;
+}
+
+input[type="text"] {
+    width: 205px !important;
+}

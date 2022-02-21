@@ -18,7 +18,7 @@ from judge.feed import AtomBlogFeed, AtomCommentFeed, AtomProblemFeed, BlogFeed,
 from judge.forms import CustomAuthenticationForm
 from judge.sitemap import BlogPostSitemap, ContestSitemap, HomePageSitemap, OrganizationSitemap, ProblemSitemap, \
     SolutionSitemap, UrlSitemap, UserSitemap
-from judge.views import TitledTemplateView, about, api, blog, comment, contests, language, license, mailgun, \
+from judge.views import TitledTemplateView, about, api, blog, comment, contests, ide, language, license, mailgun, \
     notification, organization, preview, problem, problem_manage, ranked_submission, register, stats, status, submission, tasks, \
     ticket, totp, user, widgets
 from judge.views.problem_data import ProblemDataView, ProblemSubmissionDiff, \
@@ -398,6 +398,11 @@ urlpatterns = [
         url(r'post_file/$', user.import_users_post_file, name='import_users_post_file'),
         url(r'submit/$', user.import_users_submit, name='import_users_submit'),
         url(r'sample/$', user.sample_import_users, name='import_users_sample')
+    ])),
+
+    url(r'^ide/', include([
+        url(r'^$', login_required(TitledTemplateView.as_view(template_name='ide.html', title=_('IDE'))), name='ide'),
+        url(r'api', ide.api, name='ide_api'),
     ])),
 ]
 
