@@ -2,7 +2,7 @@
 {% block js_media %}
     <script type="text/javascript">
         {% if dynamic_update and last_msg %}
-            {% if request.in_contest %}
+            {% if request.in_contest_mode %}
                 window.current_contest = '{{request.participation.contest.key}}';
             {% else %}
                 window.current_contest = null;

@@ -58,7 +58,7 @@
 {% endblock %}
 
 {% block content_js_media %}
-    {% if request.in_contest %}
+    {% if request.in_contest_mode %}
         <script type="text/javascript">
             window.register_contest_notification("{{url('contest_clarification_ajax', request.participation.contest.key)}}");
         </script>
@@ -88,7 +88,7 @@
         {% if request.user.is_authenticated %}
             {% if problem.id in completed_problem_ids %}
                 <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-                    {% if problem.is_public or request.in_contest %}
+                    {% if problem.is_public or request.in_contest_mode %}
                         <i class="solved-problem-color title-state fa fa-check-circle"></i>
                     {% else %}
                         <i class="solved-problem-color title-state fa fa-lock"></i>
@@ -96,7 +96,7 @@
                 </a>
             {% elif problem.id in attempted_problems %}
                 <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-                    {% if problem.is_public or request.in_contest %}
+                    {% if problem.is_public or request.in_contest_mode %}
                         <i class="attempted-problem-color title-state fa fa-minus-circle"></i>
                     {% else %}
                         <i class="attempted-problem-color title-state fa fa-lock"></i>
@@ -133,7 +133,7 @@
 {% endblock %}
 
 {% block info_float %}
-    {% if request.user.is_authenticated and request.in_contest and submission_limit %}
+    {% if request.user.is_authenticated and request.in_contest_mode and submission_limit %}
         {% if submissions_left > 0 %}
             <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full">
                 {{ _('Submit solution') }}

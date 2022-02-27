@@ -1,4 +1,4 @@
-from chat_box.views import *
+import chat_box.views as chat
 
 from django.conf import settings
 from django.conf.urls import include, url
@@ -280,6 +280,7 @@ urlpatterns = [
     url(r'^mailgun/mail_activate/$', mailgun.MailgunActivationView.as_view(), name='mailgun_activate'),
 
     url(r'^widgets/', include([
+        url(r'^contest_mode$', contests.update_contest_mode, name='contest_mode_ajax'),
         url(r'^rejudge$', widgets.rejudge_submission, name='submission_rejudge'),
         url(r'^single_submission$', submission.single_submission_query, name='submission_single_query'),
         url(r'^submission_testcases$', submission.SubmissionTestCaseQuery.as_view(), name='submission_testcases_query'),
@@ -376,16 +377,16 @@ urlpatterns = [
     url(r'^custom_checker_sample/', about.custom_checker_sample, name='custom_checker_sample'),
 
     url(r'^chat/', include([
-        url(r'^(?P<room_id>\d*)$', login_required(ChatView.as_view()), name='chat'),
-        url(r'^delete/$', delete_message, name='delete_chat_message'),
-        url(r'^post/$', post_message, name='post_chat_message'),
-        url(r'^ajax$', chat_message_ajax, name='chat_message_ajax'),
-        url(r'^online_status/ajax$', online_status_ajax, name='online_status_ajax'),
-        url(r'^get_or_create_room$', get_or_create_room, name='get_or_create_room'),
-        url(r'^update_last_seen$', update_last_seen, name='update_last_seen'),
-        url(r'^online_status/user/ajax$', user_online_status_ajax, name='user_online_status_ajax'),
-        url(r'^toggle_ignore/(?P<user_id>\d+)$', toggle_ignore, name='toggle_ignore'),
-        url(r'^get_unread_boxes$', get_unread_boxes, name='get_unread_boxes'),
+        url(r'^(?P<room_id>\d*)$', login_required(chat.ChatView.as_view()), name='chat'),
+        url(r'^delete/$', chat.delete_message, name='delete_chat_message'),
+        url(r'^post/$', chat.post_message, name='post_chat_message'),
+        url(r'^ajax$', chat.chat_message_ajax, name='chat_message_ajax'),
+        url(r'^online_status/ajax$', chat.online_status_ajax, name='online_status_ajax'),
+        url(r'^get_or_create_room$', chat.get_or_create_room, name='get_or_create_room'),
+        url(r'^update_last_seen$', chat.update_last_seen, name='update_last_seen'),
+        url(r'^online_status/user/ajax$', chat.user_online_status_ajax, name='user_online_status_ajax'),
+        url(r'^toggle_ignore/(?P<user_id>\d+)$', chat.toggle_ignore, name='toggle_ignore'),
+        url(r'^get_unread_boxes$', chat.get_unread_boxes, name='get_unread_boxes'),
     ])),
 
     url(r'^notifications/', 

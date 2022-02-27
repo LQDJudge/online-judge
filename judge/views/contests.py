@@ -15,7 +15,7 @@ from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Case, Count, F, FloatField, IntegerField, Max, Min, Q, Sum, Value, When
 from django.db.models.expressions import CombinedExpression
-from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import date as date_filter
 from django.urls import reverse, reverse_lazy
@@ -46,7 +46,7 @@ from judge.widgets import HeavyPreviewPageDownWidget
 __all__ = ['ContestList', 'ContestDetail', 'ContestRanking', 'ContestJoin', 'ContestLeave', 'ContestCalendar',
            'ContestClone', 'ContestStats', 'ContestMossView', 'ContestMossDelete', 'contest_ranking_ajax',
            'ContestParticipationList', 'ContestParticipationDisqualify', 'get_contest_ranking_list',
-           'base_contest_ranking_list', 'ContestClarificationView']
+           'base_contest_ranking_list', 'ContestClarificationView', 'update_contest_mode']
 
 
 def _find_contest(request, key, private_check=True):
@@ -428,6 +428,7 @@ class ContestLeave(LoginRequiredMixin, ContestMixin, BaseDetailView):
                                    _('You are not in contest "%s".') % contest.key, 404)
 
         profile.remove_contest()
+        request.session['contest_mode'] = True # reset contest_mode
         return HttpResponseRedirect(reverse('contest_view', args=(contest.key,)))
 
 
@@ -660,7 +661,7 @@ def get_contest_ranking_list(request, contest, participation=None, ranking_list=
     problems = list(contest.contest_problems.select_related('problem').defer('problem__description').order_by('order'))
 
     users = ranker(ranking_list(contest, problems), key=attrgetter('points', 'cumtime', 'tiebreaker'))
-    
+
     if show_current_virtual:
         if participation is None and request.user.is_authenticated:
             participation = request.profile.current_contest
@@ -953,3 +954,12 @@ class ContestClarificationAjax(ContestMixin, DetailView):
             cla['order'] = self.object.get_label_for_problem(problems.index(cla['problem']))
 
         return JsonResponse(queryset, safe=False, json_dumps_params={'ensure_ascii': False})
+
+
+def update_contest_mode(request):
+    if not request.is_ajax() or not request.method=='POST':
+        return HttpResponseNotAllowed(['POST'])
+
+    old_mode = request.session.get('contest_mode', True)
+    request.session['contest_mode'] = not old_mode
+    return HttpResponse()

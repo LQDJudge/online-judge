@@ -9,7 +9,7 @@
             }
         </style>
     </noscript>
-    {% if not request.in_contest %}
+    {% if not request.in_contest_mode %}
         <style>
             #search-org {
                 width: 100%;
@@ -131,7 +131,7 @@
             });
         </script>
     {% endcompress %}
-    {% if request.in_contest %}
+    {% if request.in_contest_mode %}
         {% compress js %}
             <script src="{{ static('libs/tablesorter.js') }}" type="text/javascript"></script>
             <script type="text/javascript">
@@ -184,7 +184,7 @@
 
     <div id="common-content">
         {% block before_table %}{% endblock %}
-        {% if not request.in_contest %}
+        {% if not request.in_contest_mode %}
             <div id="content-right" class="problems">
                 <div class="info-float">
                     {% include "problem/search-form.html" %}
@@ -207,7 +207,7 @@
             <table id="problem-table" class="table striped">
                 <thead>
                 <tr>
-                    {% if request.in_contest %}
+                    {% if request.in_contest_mode %}
                         {% if request.user.is_authenticated %}
                             <th class="solved"><i class="fa fa-check"></i></th>
                         {% endif %}
@@ -268,7 +268,7 @@
                             {% if problem.id in completed_problem_ids %}
                                 <td solved="1">
                                     <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-                                        {% if problem.is_public or request.in_contest %}
+                                        {% if problem.is_public or request.in_contest_mode %}
                                             <i class="solved-problem-color fa fa-check-circle"></i>
                                         {% else %}
                                             <i class="solved-problem-color fa fa-lock"></i>
@@ -278,7 +278,7 @@
                             {% elif problem.id in attempted_problems %}
                                 <td solved="0">
                                     <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-                                        {% if problem.is_public or request.in_contest %}
+                                        {% if problem.is_public or request.in_contest_mode %}
                                             <i class="attempted-problem-color fa fa-minus-circle"></i>
                                         {% else %}
                                             <i class="attempted-problem-color fa fa-lock"></i>
@@ -287,7 +287,7 @@
                                 </td>
                             {% else %}
                                 <td solved="-1">
-                                    {% if problem.is_public or request.in_contest %}
+                                    {% if problem.is_public or request.in_contest_mode %}
                                         <i class="unsolved-problem-color fa fa-minus-circle"></i>
                                     {% else %}
                                         <i class="unsolved-problem-color fa fa-lock"></i>
@@ -312,12 +312,12 @@
                             </td>
                         {% endif %}
                         <td class="p">{{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}</td>
-                        {% if not request.in_contest %}
+                        {% if not request.in_contest_mode %}
                             <td class="ac-rate">{{ problem.ac_rate|floatformat(1) }}%</td>
                         {% endif %}
                         <td class="users">
                             <a href="{{ url('ranked_submissions', problem.code) }}">
-                                {% if not request.in_contest or not hide_contest_scoreboard %}
+                                {% if not request.in_contest_mode or not hide_contest_scoreboard %}
                                     {{ problem.user_count }}
                                 {% else %}
                                     ???
@@ -335,7 +335,7 @@
                 {% endfor %}
                 </tbody>
             </table>
-            {% if request.in_contest and request.participation.contest.use_clarifications %}
+            {% if request.in_contest_mode and request.participation.contest.use_clarifications %}
                 <br><br>
                 {% if can_edit_contest %}
                 <div style="float: right; font-size: 1.2em">

@@ -249,7 +249,7 @@ def problem_init_view(request, problem):
         raise Http404()
 
     return render(request, 'problem/yaml.html', {
-        'raw_source': data, 'highlighted_source': highlight_code(data, 'yaml'),
+        'raw_source': data, 'highlighted_source': highlight_code(data, 'yaml', linenos=False),
         'title': _('Generated init.yml for %s') % problem.name,
         'content_title': mark_safe(escape(_('Generated init.yml for %s')) % (
             format_html('<a href="{1}">{0}</a>', problem.name,

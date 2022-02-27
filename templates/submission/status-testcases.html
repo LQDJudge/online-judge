@@ -32,10 +32,10 @@
                 <tr id="overall-row" class="case-row  overall-result-{{submission.result}}">
                     
                     <td><span class="col-title">{{_('Overall: ')}}</span>
-                    {% if request.in_contest and submission.contest_or_none %}
+                    {% if request.in_contest_mode and submission.contest_or_none %}
                         {% with contest=submission.contest_or_none %}
-                            ({{ _('%(points)s/%(total)s points', points=contest.points|roundfloat(3),
-                                  total=contest.problem.points|floatformat(-1)) }})
+                            {{ _('%(points)s/%(total)s', points=contest.points|roundfloat(3),
+                                  total=contest.problem.points|floatformat(-1)) }}
                         {% endwith %}
                     {% else %}
                         {{ _('%(points)s/%(total)s', points=submission.points|roundfloat(3),

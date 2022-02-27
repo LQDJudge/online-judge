@@ -57,7 +57,9 @@ class ContestMiddleware(object):
             profile.update_contest()
             request.participation = profile.current_contest
             request.in_contest = request.participation is not None
+            request.contest_mode = request.session.get('contest_mode', True)
         else:
             request.in_contest = False
             request.participation = None
+        request.in_contest_mode = request.in_contest and request.contest_mode
         return self.get_response(request)

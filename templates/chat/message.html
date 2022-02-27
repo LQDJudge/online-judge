@@ -20,7 +20,9 @@
                     {{_('Delete')}}
                 </a>
                 {% endif %}
-                {{message.body | markdown('comment', MATH_ENGINE)|reference|str|safe }}
+                <div class="message-text message-text-other">
+                    {{message.body | markdown('comment', MATH_ENGINE)|reference|str|safe }}
+                </div>
             </div>
         </span>
     </div>
