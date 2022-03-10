@@ -1,0 +1,93 @@
+<style>
+    .vote_form {
+        border: 3px solid blue;
+        border-radius: 5px;
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0.2em 1em;
+        background: #ebf0ff;
+        color: #2e69ff;
+    }
+</style>
+<form id="id_vote_form" class="vote_form">
+    {% csrf_token %}
+    <input id="id_points" class="vote-form-value" type="hidden" step="1"
+           min="{{ min_possible_vote }}" max="{{ max_possible_vote }}" name="points">
+    <table>
+        <tbody>
+            <tr>
+                <td style="padding-top: 1em; padding-right: 3em">
+                    <span><b>{{_('How difficult is this problem?')}}</b></span>
+                </td>
+                <td>
+                    <div class="vote-rating">
+                        <span class="stars-container">
+                            {% for i in range(1, (max_possible_vote - min_possible_vote) // 100 + 2) %}
+                                <span id="star{{i}}" star-score="{{i * 100}}" class="fa star"></span>
+                            {% endfor %}
+                        </span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span>{{_('This helps us improve the site')}}</span>
+                </td>
+                <td>
+                    <span style="padding-left: 0.2em"><b>{{_('Easy')}}</b></span>
+                    <span style="float: right; padding-right: 0.2em"><b>{{_('Hard')}}</b></span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div id="id_points_error_box">
+        <span id="id_points_error" class="voting-form-error"></span>
+    </div>
+    <div>
+        <input type="hidden" id="id_vote_form_submit_button">
+    </div>
+</form>
+<script>
+    $('.star').hover(
+        (e) => $(e.target).prevAll().addClass('filled-star'),
+        (e) => $(e.target).prevAll().removeClass('filled-star')
+    );
+    $('.star').on('click', function() {
+        $("#id_points").val($(this).attr('star-score'));
+        $('#id_vote_form_submit_button').click();
+        $('#id_vote_form').fadeOut(500);
+    })
+    $('#id_vote_form_submit_button').on('click', function (e) {
+        e.preventDefault();
+        $.ajax({
+            url: '{{ url('vote', object.code) }}',
+            type: 'POST',
+            data: $('#id_vote_form').serialize(),
+            success: function (data) {
+                {% if request.user.is_superuser %}
+                    updateUserVote(voted_points, data.points);
+                {% endif %}
+                voted_points = data.points;
+                voteUpdate();
+                // Forms are auto disabled to prevent resubmission, but we need to allow resubmission here.
+                $('#id_vote_form_submit_button').removeAttr('disabled');
+                var current = $.featherlight.current();
+                current.close();
+            },
+            error: function (data) {
+                let errors = data.responseJSON;
+                if(errors === undefined) {
+                    alert('Unable to delete vote: ' + data.responsetext);
+                }
+
+                if('points' in errors){
+                    $('#id_points_error_box').show();
+                    $('#id_points_error').prop('textContent', errors.points[0]);
+                } else {
+                    $('#id_points_error_box').hide();
+                }
+            }
+        });
+    });
+</script>

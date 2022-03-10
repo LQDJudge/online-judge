@@ -236,3 +236,17 @@ class ProblemAdmin(VersionAdmin):
         if form.cleaned_data.get('change_message'):
             return form.cleaned_data['change_message']
         return super(ProblemAdmin, self).construct_change_message(request, form, *args, **kwargs)
+
+
+class ProblemPointsVoteAdmin(admin.ModelAdmin):
+    list_display = ('points', 'voter', 'problem', 'vote_time')
+    search_fields = ('voter', 'problem')
+    readonly_fields = ('voter', 'problem', 'vote_time')
+
+    def has_change_permission(self, request, obj=None):
+        if obj is None:
+            return request.user.has_perm('judge.edit_own_problem')
+        return obj.problem.is_editable_by(request.user)
+
+    def lookup_allowed(self, key, value):
+        return super().lookup_allowed(key, value) or key in ('problem__code',)

@@ -375,6 +375,25 @@ class Problem(models.Model):
 
     save.alters_data = True
 
+    def can_vote(self, user):
+        if not user.is_authenticated:
+            return False
+
+        # If the user is in contest, nothing should be shown.
+        if user.profile.current_contest:
+            return False
+
+        # If the user is not allowed to vote
+        if user.profile.is_unlisted or user.profile.is_banned_problem_voting:
+            return False
+
+        # If the user is banned from submitting to the problem.
+        if self.banned_users.filter(pk=user.pk).exists():
+            return False
+
+        # If the user has a full AC submission to the problem (solved the problem).
+        return self.submission_set.filter(user=user.profile, result='AC', points=F('problem__points')).exists()
+
     class Meta:
         permissions = (
             ('see_private_problem', 'See hidden problems'),
@@ -448,3 +467,29 @@ class Solution(models.Model):
         )
         verbose_name = _('solution')
         verbose_name_plural = _('solutions')
+
+
+class ProblemPointsVote(models.Model):
+    points = models.IntegerField(
+        verbose_name=_('proposed point value'),
+        help_text=_('The amount of points you think this problem deserves.'),
+        validators=[
+            MinValueValidator(100),
+            MaxValueValidator(600),
+        ],
+    )
+
+    voter = models.ForeignKey(Profile, related_name='problem_points_votes', on_delete=CASCADE, db_index=True)
+    problem = models.ForeignKey(Problem, related_name='problem_points_votes', on_delete=CASCADE, db_index=True)
+    vote_time = models.DateTimeField(
+        verbose_name=_('The time this vote was cast'),
+        auto_now_add=True,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = _('vote')
+        verbose_name_plural = _('votes')
+
+    def __str__(self):
+        return f'{self.voter}: {self.points} for {self.problem.code}'

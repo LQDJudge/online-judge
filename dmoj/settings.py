@@ -162,6 +162,7 @@ else:
                     'children': [
                         'judge.ProblemGroup',
                         'judge.ProblemType',
+                        'judge.ProblemPointsVote',
                     ],
                 },
                 {
