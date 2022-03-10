@@ -239,14 +239,26 @@ class ProblemAdmin(VersionAdmin):
 
 
 class ProblemPointsVoteAdmin(admin.ModelAdmin):
-    list_display = ('points', 'voter', 'problem', 'vote_time')
-    search_fields = ('voter', 'problem')
-    readonly_fields = ('voter', 'problem', 'vote_time')
+    list_display = ('points', 'voter', 'problem', 'problem_code', 'problem_points', 'vote_time')
+    search_fields = ('voter__user__username', 'problem__code',)
+    readonly_fields = ('voter', 'problem', 'problem_code', 'problem_points', 'vote_time')
 
     def has_change_permission(self, request, obj=None):
         if obj is None:
             return request.user.has_perm('judge.edit_own_problem')
         return obj.problem.is_editable_by(request.user)
 
-    def lookup_allowed(self, key, value):
-        return super().lookup_allowed(key, value) or key in ('problem__code',)
+    # def lookup_allowed(self, key, value):
+    #     return key in ('problem')
+
+    def problem_code(self, obj):
+        return obj.problem.code
+
+    problem_code.short_description = 'Problem Code'
+    problem_code.admin_order_field = 'problem__code'
+
+    def problem_points(self, obj):
+        return obj.problem.points
+
+    problem_points.short_description = 'Problem Points'
+    problem_points.admin_order_field = 'problem__points'
