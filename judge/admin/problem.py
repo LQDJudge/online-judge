@@ -239,8 +239,8 @@ class ProblemAdmin(VersionAdmin):
 
 
 class ProblemPointsVoteAdmin(admin.ModelAdmin):
-    list_display = ('points', 'voter', 'problem', 'problem_code', 'problem_points', 'vote_time')
-    search_fields = ('voter__user__username', 'problem__code',)
+    list_display = ('vote_points', 'voter', 'problem_name', 'problem_code', 'problem_points', 'vote_time')
+    search_fields = ('voter__user__username', 'problem__code', 'problem__name')
     readonly_fields = ('voter', 'problem', 'problem_code', 'problem_points', 'vote_time')
 
     def has_change_permission(self, request, obj=None):
@@ -248,17 +248,21 @@ class ProblemPointsVoteAdmin(admin.ModelAdmin):
             return request.user.has_perm('judge.edit_own_problem')
         return obj.problem.is_editable_by(request.user)
 
-    # def lookup_allowed(self, key, value):
-    #     return key in ('problem')
-
     def problem_code(self, obj):
         return obj.problem.code
-
-    problem_code.short_description = 'Problem Code'
+    problem_code.short_description = _('Problem code')
     problem_code.admin_order_field = 'problem__code'
 
     def problem_points(self, obj):
         return obj.problem.points
-
-    problem_points.short_description = 'Problem Points'
+    problem_points.short_description = _('Points')
     problem_points.admin_order_field = 'problem__points'
+
+    def problem_name(self, obj):
+        return obj.problem.name
+    problem_name.short_description = _('Problem name')
+    problem_name.admin_order_field = 'problem__name'
+
+    def vote_points(self, obj):
+        return obj.points
+    vote_points.short_description = _('Vote')
