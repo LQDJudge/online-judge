@@ -25,12 +25,14 @@
     }
 </style>
 
-{% if can_vote %}
+{% if can_vote or request.user.is_superuser %}
     <div class="vote-form" id="id_vote_form_box" style="display: none">
         {% include 'problem/voting-form.html' %}        
     </div>
     <span>
-        <a href="#" class="form-button" id="id_vote_button" data-featherlight="#id_vote_form_box"></a>
+        {% if can_vote %}
+            <a href="#" class="form-button" id="id_vote_button" data-featherlight="#id_vote_form_box"></a>
+        {% endif %}
         {% if request.user.is_superuser %}
             - {% include 'problem/voting-stats.html' %}
         {% endif %}

@@ -349,7 +349,7 @@
 {% endblock %}
 
 {% block post_description_end %}
-    {% if can_vote %}
+    {% if can_vote or request.user.is_superuser %}
         {% include 'problem/voting-controls.html' %}
     {% endif %}
     {% if request.user.is_authenticated and not request.profile.mute %}
