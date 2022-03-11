@@ -438,9 +438,12 @@ def get_unread_boxes(request):
     if (request.method != 'GET'):
         return HttpResponseBadRequest()
 
+    ignored_users = Ignore.get_ignored_users(request.profile)
+
     mess = Message.objects.filter(room=OuterRef('room'),
                                   time__gte=OuterRef('last_seen'))\
             .exclude(author=request.profile)\
+            .exclude(author__in=ignored_users)\
             .order_by().values('room')\
             .annotate(unread_count=Count('pk')).values('unread_count')
 
