@@ -73,7 +73,7 @@
                 // Forms are auto disabled to prevent resubmission, but we need to allow resubmission here.
                 $('#id_vote_form_submit_button').removeAttr('disabled');
                 var current = $.featherlight.current();
-                current.close();
+                if (current) current.close();
             },
             error: function (data) {
                 let errors = data.responseJSON;

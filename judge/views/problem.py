@@ -217,7 +217,7 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, DetailView):
         context['meta_description'] = self.object.summary or metadata[0]
         context['og_image'] = self.object.og_image or metadata[1]
 
-        context['can_vote'] = self.object.can_vote(user)
+        context['can_vote'] = self.object.can_vote(self.request)
         if context['can_vote']:
             try:
                 context['vote'] = ProblemPointsVote.objects.get(voter=user.profile, problem=self.object)
@@ -226,14 +226,11 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, DetailView):
         else:
             context['vote'] = None
 
-        all_votes = list(self.object.problem_points_votes.order_by('points').values_list('points', flat=True))
-
-        context['has_votes'] = len(all_votes) > 0
-
-        # If the user is not currently in contest.
-        if not user.is_authenticated or user.profile.current_contest is None:
+        if user.is_superuser:
+            all_votes = list(self.object.problem_points_votes.order_by('points').values_list('points', flat=True))
             context['all_votes'] = all_votes
-
+            
+        context['has_votes'] = len(all_votes) > 0
         context['max_possible_vote'] = 600
         context['min_possible_vote'] = 100
         return context
@@ -259,7 +256,7 @@ class Vote(ProblemMixin, SingleObjectMixin, View):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        if not self.object.can_vote(request.user):  # Not allowed to vote for some reason.
+        if not self.object.can_vote(request):  # Not allowed to vote for some reason.
             return HttpResponseForbidden('Not allowed to vote on this problem.', content_type='text/plain')
 
         form = ProblemPointsVoteForm(request.POST)

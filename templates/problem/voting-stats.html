@@ -43,12 +43,12 @@
 
 <script>
     let voteChart = null;
-    let data = {{ all_votes }};
+    let allVotes = {{ all_votes }};
 
     function reload_vote_graph() {
         if (voteChart !== null) voteChart.destroy();
 
-        if (data.length === 0) {
+        if (allVotes.length === 0) {
             $('.canvas').hide();
             $('.has_votes_footer').hide();
             $('.no_votes_error').show();
@@ -57,7 +57,7 @@
             $('.has_votes_footer').show();
             $('.no_votes_error').hide();
 
-            data.sort(function(a, b){return a - b});
+            allVotes.sort(function(a, b){return a - b});
             // Give the graph some padding on both sides.
             let min_points = {{ min_possible_vote }};
             let max_points = {{ max_possible_vote }};
@@ -73,18 +73,18 @@
             let total_votes = 0;
             let mean = 0;
 
-            for (let i = 0; i < data.length; i++) {
-                // Assume the data is valid.
-                voteFreq[(data[i] - min_points) / 100]++;
-                max_number_of_votes = Math.max(max_number_of_votes, voteFreq[(data[i] - min_points) / 100]);
-                mean += data[i];
+            for (let i = 0; i < allVotes.length; i++) {
+                // Assume the allVotes is valid.
+                voteFreq[(allVotes[i] - min_points) / 100]++;
+                max_number_of_votes = Math.max(max_number_of_votes, voteFreq[(allVotes[i] - min_points) / 100]);
+                mean += allVotes[i];
                 total_votes++;
             }
             mean = mean / total_votes;
             let half = Math.floor(total_votes / 2);
-            let median = data[half];
+            let median = allVotes[half];
             if (total_votes % 2 === 0) {
-                median = (median + data[half - 1]) / 2;
+                median = (median + allVotes[half - 1]) / 2;
             }
 
             $('.mean_vote').prop('innerText', mean.toFixed(2));
@@ -128,15 +128,15 @@
     }
 
     function updateUserVote(prev_voted_points, voted_points) {
-        let index = data.indexOf(prev_voted_points);
+        let index = allVotes.indexOf(prev_voted_points);
         if (index > -1) {
-            data.splice(index, 1);
+            allVotes.splice(index, 1);
         }
-        data.push(voted_points);
+        allVotes.push(voted_points);
     }
 
     function deleteUserVote(prev_voted_points) {
-        data.splice(data.indexOf(prev_voted_points), 1);
+        allVotes.splice(allVotes.indexOf(prev_voted_points), 1);
     }
     $(function() {
         $('#id_vote_stats_button').featherlight('#id_vote_stats', {

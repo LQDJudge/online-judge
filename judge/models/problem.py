@@ -375,12 +375,13 @@ class Problem(models.Model):
 
     save.alters_data = True
 
-    def can_vote(self, user):
+    def can_vote(self, request):
+        user = request.user
         if not user.is_authenticated:
             return False
 
         # If the user is in contest, nothing should be shown.
-        if user.profile.current_contest:
+        if request.in_contest_mode:
             return False
 
         # If the user is not allowed to vote
