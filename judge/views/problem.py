@@ -226,11 +226,11 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, DetailView):
         else:
             context['vote'] = None
 
+        context['has_votes'] = False
         if user.is_superuser:
             all_votes = list(self.object.problem_points_votes.order_by('points').values_list('points', flat=True))
             context['all_votes'] = all_votes
-            
-        context['has_votes'] = len(all_votes) > 0
+            context['has_votes'] = len(all_votes) > 0
         context['max_possible_vote'] = 600
         context['min_possible_vote'] = 100
         return context
