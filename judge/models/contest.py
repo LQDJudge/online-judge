@@ -101,7 +101,7 @@ class Contest(models.Model):
                                                  related_name='private_contestants+')
     hide_problem_tags = models.BooleanField(verbose_name=_('hide problem tags'),
                                             help_text=_('Whether problem tags should be hidden by default.'),
-                                            default=False)
+                                            default=True)
     run_pretests_only = models.BooleanField(verbose_name=_('run pretests only'),
                                             help_text=_('Whether judges should grade pretests only, versus all '
                                                         'testcases. Commonly set during a contest, then unset '

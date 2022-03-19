@@ -164,7 +164,7 @@
     {% endif %}
     <div><a href="{{ url('chronological_submissions', problem.code) }}">{{ _('All submissions') }}</a></div>
     <div><a href="{{ url('ranked_submissions', problem.code) }}">{{ _('Best submissions') }}</a></div>
-    
+
     {% if not contest_problem or not contest_problem.contest.use_clarifications %}
         <hr>
         <div><a href="{{ url('problem_comments', problem.code) }}">{{ _('Discuss') }}</a></div>
@@ -321,6 +321,9 @@
 {% endblock %}
 
 {% block description %}
+    {% if can_vote and not vote %}
+        {% include 'problem/voting-form.html' %}
+    {% endif %}
     {% if contest_problem and contest_problem.contest.use_clarifications and has_clarifications %}
         <div id="clarification_header_container">
             <i class="fa fa-question-circle"></i>
@@ -346,6 +349,9 @@
 {% endblock %}
 
 {% block post_description_end %}
+    {% if can_vote or request.user.is_superuser %}
+        {% include 'problem/voting-controls.html' %}
+    {% endif %}
     {% if request.user.is_authenticated and not request.profile.mute %}
         <a href="{{ url('new_problem_ticket', problem.code) }}" class="clarify">
             <i class="fa fa-flag" style="margin-right:0.5em"></i>

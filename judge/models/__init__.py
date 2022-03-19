@@ -7,7 +7,7 @@ from judge.models.contest import Contest, ContestMoss, ContestParticipation, Con
 from judge.models.interface import BlogPost, MiscConfig, NavigationBar, validate_regex
 from judge.models.message import PrivateMessage, PrivateMessageThread
 from judge.models.problem import LanguageLimit, License, Problem, ProblemClarification, ProblemGroup, \
-    ProblemTranslation, ProblemType, Solution, TranslatedProblemForeignKeyQuerySet, TranslatedProblemQuerySet
+    ProblemTranslation, ProblemType, Solution, TranslatedProblemForeignKeyQuerySet, TranslatedProblemQuerySet, ProblemPointsVote
 from judge.models.problem_data import CHECKERS, ProblemData, ProblemTestCase, problem_data_storage, \
     problem_directory_file
 from judge.models.profile import Organization, OrganizationRequest, Profile, Friend

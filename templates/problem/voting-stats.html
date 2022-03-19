@@ -1,0 +1,146 @@
+<style>
+    .vote-stats-background {
+        background-color: rgb(255,255,255);
+        padding: 20px;
+        border-radius: 25px;
+        justify-content: center;
+        align-items: center;
+        margin: auto;
+        text-align: center;
+    }
+
+    .canvas {
+        border: 1px;
+        border: solid;
+        border: #000000;
+    }
+
+    .vote-stats-value {
+        margin-right: 1em;
+    }
+
+    .vote-stats-info {
+        font-weight: 500;
+    }
+</style>
+<a href="#" class="form-button" id="id_vote_stats_button">{{ _('Statistics') }}</a>
+<div class="vote-stats-background" id="id_vote_stats" style="display: none;">
+    <script src={{ static('libs/chart.js/Chart.js') }}></script>
+    <span class="vote-stats-info">{{ _('Voting Statistics') }}</span>
+    <br/>
+    <canvas class="canvas" id="id_vote_chart"></canvas>
+    <span id="id_no_votes_error" class="vote-stats-info no_votes_error">{{ _('No Votes Available!') }}</span>
+    <br/>
+    <div id="id_has_votes_footer" class="has_votes_footer">
+        <span class="vote-stats-info">{{ _('Median:') }}</span>
+        <span class="vote-stats-value median_vote" id="id_median_vote"></span>
+        <span class="vote-stats-info">{{ _('Mean:') }}</span>
+        <span class="vote-stats-value mean_vote" id="id_mean_vote"></span>
+        <span class="vote-stats-info">{{ _('Total:') }}</span>
+        <span class="vote-stats-value total_vote" id="id_num_of_votes"></span>
+    </div>
+</div>
+
+<script>
+    let voteChart = null;
+    let allVotes = {{ all_votes }};
+
+    function reload_vote_graph() {
+        if (voteChart !== null) voteChart.destroy();
+
+        if (allVotes.length === 0) {
+            $('.canvas').hide();
+            $('.has_votes_footer').hide();
+            $('.no_votes_error').show();
+        } else {
+            $('.canvas').show();
+            $('.has_votes_footer').show();
+            $('.no_votes_error').hide();
+
+            allVotes.sort(function(a, b){return a - b});
+            // Give the graph some padding on both sides.
+            let min_points = {{ min_possible_vote }};
+            let max_points = {{ max_possible_vote }};
+
+            let xlabels = [];
+            let voteFreq = [];
+            for (let i = min_points; i <= max_points; i += 100) {
+                xlabels.push(i);
+                voteFreq.push(0);
+            }
+
+            let max_number_of_votes = 0;
+            let total_votes = 0;
+            let mean = 0;
+
+            for (let i = 0; i < allVotes.length; i++) {
+                // Assume the allVotes is valid.
+                voteFreq[(allVotes[i] - min_points) / 100]++;
+                max_number_of_votes = Math.max(max_number_of_votes, voteFreq[(allVotes[i] - min_points) / 100]);
+                mean += allVotes[i];
+                total_votes++;
+            }
+            mean = mean / total_votes;
+            let half = Math.floor(total_votes / 2);
+            let median = allVotes[half];
+            if (total_votes % 2 === 0) {
+                median = (median + allVotes[half - 1]) / 2;
+            }
+
+            $('.mean_vote').prop('innerText', mean.toFixed(2));
+            $('.median_vote').prop('innerText', median.toFixed(2));
+            $('.total_vote').prop('innerText', total_votes);
+
+            const voteData = {
+                labels: xlabels,
+                datasets: [{
+                    data: voteFreq,
+                    backgroundColor: 'pink',
+                }]
+            };
+
+            const voteDataConfig = {
+                type: 'bar',
+                data: voteData,
+                options: {
+                    legend: {
+                        display: false
+                    },
+                    responsive: true,
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                precision: 0,
+                                suggestedMax: Math.ceil(max_number_of_votes * 1.2),
+                                beginAtZero: true,
+                            }
+                        }],
+                        xAxes: [{
+                            ticks: {
+                                beginAtZero: false,
+                            }
+                        }]
+                    }
+                }
+            };
+            voteChart = new Chart($('.featherlight-inner .canvas'), voteDataConfig);
+        }
+    }
+
+    function updateUserVote(prev_voted_points, voted_points) {
+        let index = allVotes.indexOf(prev_voted_points);
+        if (index > -1) {
+            allVotes.splice(index, 1);
+        }
+        allVotes.push(voted_points);
+    }
+
+    function deleteUserVote(prev_voted_points) {
+        allVotes.splice(allVotes.indexOf(prev_voted_points), 1);
+    }
+    $(function() {
+        $('#id_vote_stats_button').featherlight('#id_vote_stats', {
+            afterOpen: reload_vote_graph,
+        })
+    });
+</script>

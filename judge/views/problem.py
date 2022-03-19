@@ -12,7 +12,7 @@ from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db import transaction
 from django.db.models import Count, F, Prefetch, Q, Sum, Case, When, IntegerField
 from django.db.utils import ProgrammingError
-from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import get_template
 from django.urls import reverse
@@ -26,10 +26,10 @@ from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
 from judge.comments import CommentedDetailView
-from judge.forms import ProblemCloneForm, ProblemSubmitForm
+from judge.forms import ProblemCloneForm, ProblemSubmitForm, ProblemPointsVoteForm
 from judge.models import ContestProblem, ContestSubmission, Judge, Language, Problem, ProblemClarification, \
-    ProblemGroup, ProblemTranslation, ProblemType, RuntimeVersion, Solution, Submission, SubmissionSource, \
-    TranslatedProblemForeignKeyQuerySet, Organization
+    ProblemGroup, ProblemTranslation, ProblemType, ProblemPointsVote, RuntimeVersion, Solution, Submission, SubmissionSource, \
+    TranslatedProblemForeignKeyQuerySet, Organization 
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.opengraph import generate_opengraph
@@ -216,7 +216,61 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, DetailView):
                                           context['description'], 'problem')
         context['meta_description'] = self.object.summary or metadata[0]
         context['og_image'] = self.object.og_image or metadata[1]
+
+        context['can_vote'] = self.object.can_vote(self.request)
+        if context['can_vote']:
+            try:
+                context['vote'] = ProblemPointsVote.objects.get(voter=user.profile, problem=self.object)
+            except ObjectDoesNotExist:
+                context['vote'] = None
+        else:
+            context['vote'] = None
+
+        context['has_votes'] = False
+        if user.is_superuser:
+            all_votes = list(self.object.problem_points_votes.order_by('points').values_list('points', flat=True))
+            context['all_votes'] = all_votes
+            context['has_votes'] = len(all_votes) > 0
+        context['max_possible_vote'] = 600
+        context['min_possible_vote'] = 100
         return context
+
+class DeleteVote(ProblemMixin, SingleObjectMixin, View):
+    def get(self, request, *args, **kwargs):
+        return HttpResponseForbidden(status=405, content_type='text/plain')
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if not request.user.is_authenticated:
+            return HttpResponseForbidden('Not signed in.', content_type='text/plain')
+        elif self.object.can_vote(request.user):
+            ProblemPointsVote.objects.filter(voter=request.profile, problem=self.object).delete()
+            return HttpResponse('success', content_type='text/plain')
+        else:
+            return HttpResponseForbidden('Not allowed to delete votes on this problem.', content_type='text/plain')
+
+
+class Vote(ProblemMixin, SingleObjectMixin, View):
+    def get(self, request, *args, **kwargs):
+        return HttpResponseForbidden(status=405, content_type='text/plain')
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if not self.object.can_vote(request):  # Not allowed to vote for some reason.
+            return HttpResponseForbidden('Not allowed to vote on this problem.', content_type='text/plain')
+
+        form = ProblemPointsVoteForm(request.POST)
+        if form.is_valid():
+            with transaction.atomic():
+                # Delete any pre existing votes.
+                ProblemPointsVote.objects.filter(voter=request.profile, problem=self.object).delete()
+                vote = form.save(commit=False)
+                vote.voter = request.profile
+                vote.problem = self.object
+                vote.save()
+            return JsonResponse({'points': vote.points})
+        else:
+            return JsonResponse(form.errors, status=400)
 
 
 class ProblemComments(ProblemMixin, TitleMixin, CommentedDetailView):
