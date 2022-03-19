@@ -113,7 +113,7 @@
 
             function checker_precision($checker) {
                 var $td = $checker.parent();
-                var $args = $td.find('input');
+                var $args = $td.closest('table').find('#id_problem-data-checker_args');
                 var $precision = $('<input>', {
                     type: 'number',
                     value: try_parse_json($args.val()).precision || 6,
