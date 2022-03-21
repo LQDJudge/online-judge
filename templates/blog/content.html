@@ -1,18 +1,16 @@
-<section class="{% if post.sticky %}sticky {% endif %}post">
-    <h2 class="title">
-        <a href="{{ url('blog_post', post.id, post.slug) }}">{{ post.title }}</a>
-    </h2>
-    <span style="float: right">
+<section class="{% if post.sticky %}sticky {% endif %}blog-box">
+    <div style="margin-bottom: 0.5em">
         <span class="time">
-            {%- if post.sticky %}<i title="Sticky" class="fa fa-star fa-fw"></i>{% endif -%}
             {% with authors=post.authors.all() %}
                 {%- if authors -%}
+                    <img src="{{gravatar(authors[0])}}" style="width: 1.5em; border-radius: 50%; margin-bottom: -0.3em">
                     <span class="post-authors">{{ link_users(authors) }}</span>
                 {%- endif -%}
             {% endwith %}
-            {{_('posted')}} {{ relative_time(post.publish_on, abs=_('on {time}'), rel=_('{time}')) -}}
+            &#8226; {{ relative_time(post.publish_on, abs=_('on {time}'), rel=_('{time}')) -}}
+            {%- if post.sticky %} &#8226; <i title="Sticky" class="fa fa-star fa-fw"></i>{% endif -%}
         </span>
-        <span>
+        <span style="float: right">
             <a href="{{ url('blog_post', post.id, post.slug) }}#comments" class="blog-comment-count-link">
                 <i class="fa fa-comments blog-comment-icon"></i>
                 <span class="blog-comment-count">
@@ -20,8 +18,10 @@
                 </span>
             </a>
         </span>
-    </span>
-    <div style="clear:both"></div>
+    </div>
+    <h2 class="title">
+        <a href="{{ url('blog_post', post.id, post.slug) }}">{{ post.title }}</a>
+    </h2>
     {% if post.is_organization_private and show_organization_private_icon %}
         <div class="organization-tags">
             {% for org in post.organizations.all() %}
@@ -33,7 +33,7 @@
             {% endfor %}
         </div>
     {% endif %}
-    <div class="summary content-description">
+    <div class="summary content-description blog-description">
         {% cache 86400 'post_summary' post.id %}
             {{ post.summary|default(post.content, true)|markdown('blog', 'svg', lazy_load=True)|reference|str|safe }}
         {% endcache %}

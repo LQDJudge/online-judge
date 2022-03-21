@@ -2,9 +2,9 @@
 
 .blog-content {
     padding-right: 0em;
-    flex: 73.5%;
     vertical-align: top;
     margin-right: 0;
+    width: 100%;
 
     .post {
         border: 1px dotted grey;
@@ -33,7 +33,8 @@
 }
 
 .blog-sidebar {
-    flex: 26.5%;
+    width: 100%;
+    margin-left: auto;
 }
 
 .blog-sidebox {
@@ -88,6 +89,19 @@
     color: #555;
 }
 
+@media (max-width: 799px) {
+    .left-sidebar-header {
+        display: none;
+    }
+    .left-sidebar-item {
+        display: inline-block;
+    }
+    .blog-left-sidebar {
+        text-align: right;
+        padding-right: 1em;
+        margin-bottom: 1em;
+    }
+}
 @media (min-width: 800px) {
     .blog-content, .blog-sidebar {
         display: block !important;
@@ -103,6 +117,28 @@
 
     #blog-container {
         display: flex;
+    }
+
+    .blog-content {
+        max-width: 71.5%;
+        margin-left: 10%;
+    }
+
+    .blog-sidebar {
+        width: 18%;
+    }
+
+    .blog-left-sidebar {
+        width: 8%;
+        margin-right: 1em;
+        position: fixed;
+        height: 100%;
+        margin-top: -4em;
+        padding-top: 4em;
+    }
+
+    .feed-table {
+        font-size: small;
     }
 }
 
@@ -134,4 +170,64 @@
             display: block;
         }
     }
+}
+
+.blog-box {
+    border-bottom: 1px solid black;
+    width: 90%;
+    margin-bottom: 2.5em;
+    padding: 0.5em 1.25em;
+    background-color: white;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.blog-description {
+    max-height: 20em;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    padding-bottom: 1em;
+}
+.problem-feed-name {
+    display: inline;
+    font-weight: bold;
+}
+.problem-feed-name a {
+    color: #0645ad;
+}
+.problem-feed-info-entry {
+    display: inline;
+    float: right;
+}
+.problem-feed-types {
+    color: gray;
+}
+
+.blog-left-sidebar {
+    background-color: #f0f1f3;
+    color: #616161;
+}
+
+.left-sidebar-item {
+    padding: 1em 0.5em;
+    text-align: center;
+}
+.left-sidebar-item:hover {
+    background-color: lightgray;
+    cursor: pointer;
+}
+.sidebar-icon {
+    font-size: x-large;
+    margin-bottom: 0.1em;
+    color: black;
+}
+.left-sidebar-header {
+    text-align: center;
+    padding-bottom: 1em;
+    border-bottom: 1px solid black;
+    color: black;
+    border-radius: 0;
+}
+.feed-table {
+    margin: 0;
 }

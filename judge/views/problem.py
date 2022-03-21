@@ -21,7 +21,7 @@ from django.utils.functional import cached_property
 from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _, gettext_lazy
-from django.views.generic import DetailView, ListView, View
+from django.views.generic import ListView, View
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
@@ -38,6 +38,7 @@ from judge.utils.problems import contest_attempted_ids, contest_completed_ids, h
 from judge.utils.strings import safe_float_or_none, safe_int_or_none
 from judge.utils.tickets import own_ticket_filter
 from judge.utils.views import QueryStringSortMixin, SingleObjectFormView, TitleMixin, generic_message
+from judge.views.blog import FeedView
 
 
 def get_contest_problem(problem, profile):
@@ -155,9 +156,12 @@ class ProblemRaw(ProblemMixin, TitleMixin, TemplateResponseMixin, SingleObjectMi
             ))
 
 
-class ProblemDetail(ProblemMixin, SolvedProblemMixin, DetailView):
+class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
     context_object_name = 'problem'
     template_name = 'problem/problem.html'
+
+    def get_comment_page(self):
+            return 'p:%s' % self.object.code
 
     def get_context_data(self, **kwargs):
         context = super(ProblemDetail, self).get_context_data(**kwargs)
@@ -235,6 +239,7 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, DetailView):
         context['min_possible_vote'] = 100
         return context
 
+
 class DeleteVote(ProblemMixin, SingleObjectMixin, View):
     def get(self, request, *args, **kwargs):
         return HttpResponseForbidden(status=405, content_type='text/plain')
@@ -271,21 +276,6 @@ class Vote(ProblemMixin, SingleObjectMixin, View):
             return JsonResponse({'points': vote.points})
         else:
             return JsonResponse(form.errors, status=400)
-
-
-class ProblemComments(ProblemMixin, TitleMixin, CommentedDetailView):
-    context_object_name = 'problem'
-    template_name = 'problem/comments.html'
-
-    def get_title(self):
-        return _('Disscuss {0}').format(self.object.name)
-
-    def get_content_title(self):
-        return format_html(_(u'Discuss <a href="{1}">{0}</a>'), self.object.name,
-                           reverse('problem_detail', args=[self.object.code]))
-
-    def get_comment_page(self):
-        return 'p:%s' % self.object.code
 
 
 class LatexError(Exception):
@@ -590,6 +580,49 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             else:
                 request.session.pop(key, None)
         return HttpResponseRedirect(request.get_full_path())
+
+
+class ProblemFeed(FeedView):
+    model = Problem
+    context_object_name = 'problems'
+    paginate_by = 50
+    title = _('Problem feed')
+
+    @cached_property
+    def profile(self):
+        if not self.request.user.is_authenticated:
+            return None
+        return self.request.profile
+
+    def get_unsolved_queryset(self):
+        filter = Q(is_public=True)
+        if self.profile is not None:
+            filter |= Q(authors=self.profile)
+            filter |= Q(curators=self.profile)
+            filter |= Q(testers=self.profile)
+        queryset = Problem.objects.filter(filter).select_related('group').defer('description')
+        if not self.request.user.has_perm('see_organization_problem'):
+            filter = Q(is_organization_private=False)
+            if self.profile is not None:
+                filter |= Q(organizations__in=self.profile.organizations.all())
+            queryset = queryset.filter(filter)
+        if self.profile is not None:
+            queryset = queryset.exclude(id__in=Submission.objects.filter(user=self.profile, points=F('problem__points'))
+                                        .values_list('problem__id', flat=True))
+        return queryset.distinct()
+
+    def get_queryset(self):
+        queryset = self.get_unsolved_queryset()
+        return queryset.order_by('?')    
+
+    def get_context_data(self, **kwargs):
+        context = super(ProblemFeed, self).get_context_data(**kwargs)
+        context['first_page_href'] = self.request.path
+        context['page_prefix'] = '?page='
+        context['feed_type'] = 'problem'
+        context['title'] = self.title
+
+        return context
 
 
 class LanguageTemplateAjax(View):

@@ -17,10 +17,8 @@ from judge.utils.tickets import filter_visible_tickets
 from judge.utils.views import TitleMixin
 
 
-class PostList(ListView):
-    model = BlogPost
-    paginate_by = 10
-    context_object_name = 'posts'
+# General view for all content list on home feed
+class FeedView(ListView):
     template_name = 'blog/list.html'
     title = None
 
@@ -28,6 +26,56 @@ class PostList(ListView):
                       allow_empty_first_page=True, **kwargs):
         return DiggPaginator(queryset, per_page, body=6, padding=2,
                              orphans=orphans, allow_empty_first_page=allow_empty_first_page, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(FeedView, self).get_context_data(**kwargs)
+        context['has_clarifications'] = False
+        if self.request.user.is_authenticated:
+            participation = self.request.profile.current_contest
+            if participation:
+                clarifications = ProblemClarification.objects.filter(problem__in=participation.contest.problems.all())
+                context['has_clarifications'] = clarifications.count() > 0
+                context['clarifications'] = clarifications.order_by('-date')
+                if participation.contest.is_editable_by(self.request.user):
+                        context['can_edit_contest'] = True
+
+        context['page_titles'] = CacheDict(lambda page: Comment.get_page_title(page))
+
+        context['user_count'] = lazy(Profile.objects.count, int, int)
+        context['problem_count'] = lazy(Problem.objects.filter(is_public=True).count, int, int)
+        context['submission_count'] = lazy(Submission.objects.count, int, int)
+        context['language_count'] = lazy(Language.objects.count, int, int)
+
+        now = timezone.now()
+
+        # Dashboard stuff
+        # if self.request.user.is_authenticated:
+        #     user = self.request.profile
+        #     context['recently_attempted_problems'] = (Submission.objects.filter(user=user)
+        #                                               .exclude(problem__in=user_completed_ids(user))
+        #                                               .values_list('problem__code', 'problem__name', 'problem__points')
+        #                                               .annotate(points=Max('points'), latest=Max('date'))
+        #                                               .order_by('-latest')
+        #                                               [:settings.DMOJ_BLOG_RECENTLY_ATTEMPTED_PROBLEMS_COUNT])
+        
+        visible_contests = Contest.get_visible_contests(self.request.user).filter(is_visible=True) \
+                                  .order_by('start_time')
+
+        context['current_contests'] = visible_contests.filter(start_time__lte=now, end_time__gt=now)
+        context['future_contests'] = visible_contests.filter(start_time__gt=now)
+
+        visible_contests = Contest.get_visible_contests(self.request.user).filter(is_visible=True)
+
+        context['top_rated'] = Profile.objects.order_by('-rating')[:10]
+        context['top_scorer'] = Profile.objects.order_by('-performance_points')[:10]
+
+        return context
+        
+
+class PostList(FeedView):
+    model = BlogPost
+    paginate_by = 10
+    context_object_name = 'posts'
 
     def get_queryset(self):
         queryset = BlogPost.objects.filter(visible=True, publish_on__lte=timezone.now()) \
@@ -45,25 +93,7 @@ class PostList(ListView):
         context['title'] = self.title or _('Page %d of Posts') % context['page_obj'].number
         context['first_page_href'] = reverse('home')
         context['page_prefix'] = reverse('blog_post_list')
-        context['comments'] = Comment.most_recent(self.request.user, 25)
-        context['new_problems'] = Problem.objects.filter(is_public=True, is_organization_private=False) \
-                                         .order_by('-date', '-id')[:settings.DMOJ_BLOG_NEW_PROBLEM_COUNT]
-        context['page_titles'] = CacheDict(lambda page: Comment.get_page_title(page))
-
-        context['has_clarifications'] = False
-        if self.request.user.is_authenticated:
-            participation = self.request.profile.current_contest
-            if participation:
-                clarifications = ProblemClarification.objects.filter(problem__in=participation.contest.problems.all())
-                context['has_clarifications'] = clarifications.count() > 0
-                context['clarifications'] = clarifications.order_by('-date')
-                if participation.contest.is_editable_by(self.request.user):
-                        context['can_edit_contest'] = True
-        context['user_count'] = lazy(Profile.objects.count, int, int)
-        context['problem_count'] = lazy(Problem.objects.filter(is_public=True).count, int, int)
-        context['submission_count'] = lazy(Submission.objects.count, int, int)
-        context['language_count'] = lazy(Language.objects.count, int, int)
-
+        context['feed_type'] = 'blog'
         context['post_comment_counts'] = {
             int(page[2:]): count for page, count in
             Comment.objects
@@ -71,40 +101,55 @@ class PostList(ListView):
                    .values_list('page').annotate(count=Count('page')).order_by()
         }
 
-        now = timezone.now()
+        return context
 
-        # Dashboard stuff
-        if self.request.user.is_authenticated:
-            user = self.request.profile
-            context['recently_attempted_problems'] = (Submission.objects.filter(user=user)
-                                                      .exclude(problem__in=user_completed_ids(user))
-                                                      .values_list('problem__code', 'problem__name', 'problem__points')
-                                                      .annotate(points=Max('points'), latest=Max('date'))
-                                                      .order_by('-latest')
-                                                      [:settings.DMOJ_BLOG_RECENTLY_ATTEMPTED_PROBLEMS_COUNT])
-        
-        visible_contests = Contest.get_visible_contests(self.request.user).filter(is_visible=True) \
-                                  .order_by('start_time')
 
-        context['current_contests'] = visible_contests.filter(start_time__lte=now, end_time__gt=now)
-        context['future_contests'] = visible_contests.filter(start_time__gt=now)
+class TicketFeed(FeedView):
+    model = Ticket
+    context_object_name = 'tickets'
+    paginate_by = 30
 
-        visible_contests = Contest.get_visible_contests(self.request.user).filter(is_visible=True)
-        if self.request.user.is_authenticated:
-            profile = self.request.profile
-            context['own_open_tickets'] = (Ticket.objects.filter(Q(user=profile) | Q(assignees__in=[profile]), is_open=True).order_by('-id')
-                                           .prefetch_related('linked_item').select_related('user__user'))
+    def get_queryset(self, is_own=False):
+        profile = self.request.profile
+        if is_own:
+            if self.request.user.is_authenticated:
+                return (Ticket.objects.filter(Q(user=profile) | Q(assignees__in=[profile]), is_open=True).order_by('-id')
+                           .prefetch_related('linked_item').select_related('user__user'))
+            else:
+                return []
         else:
-            profile = None
-            context['own_open_tickets'] = []
+            # Superusers better be staffs, not the spell-casting kind either.
+            if self.request.user.is_staff:
+                tickets = (Ticket.objects.order_by('-id').filter(is_open=True).prefetch_related('linked_item')
+                                 .select_related('user__user'))
+                return filter_visible_tickets(tickets, self.request.user, profile)
+            else:
+                return []
 
-        # Superusers better be staffs, not the spell-casting kind either.
-        if self.request.user.is_staff:
-            tickets = (Ticket.objects.order_by('-id').filter(is_open=True).prefetch_related('linked_item')
-                             .select_related('user__user'))
-            context['open_tickets'] = filter_visible_tickets(tickets, self.request.user, profile)[:10]
-        else:
-            context['open_tickets'] = []
+    def get_context_data(self, **kwargs):
+        context = super(TicketFeed, self).get_context_data(**kwargs)
+        context['feed_type'] = 'ticket'
+        context['first_page_href'] = self.request.path
+        context['page_prefix'] = '?page='
+        context['title'] = _('Ticket feed')
+
+        return context
+
+
+class CommentFeed(FeedView):
+    model = Comment
+    context_object_name = 'comments'
+    paginate_by = 50
+
+    def get_queryset(self):
+        return Comment.most_recent(self.request.user, 1000)
+
+    def get_context_data(self, **kwargs):
+        context = super(CommentFeed, self).get_context_data(**kwargs)
+        context['feed_type'] = 'comment'
+        context['first_page_href'] = self.request.path
+        context['page_prefix'] = '?page='
+        context['title'] = _('Comment feed')
 
         return context
 
