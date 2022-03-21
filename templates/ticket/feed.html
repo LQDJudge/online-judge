@@ -1,11 +1,11 @@
 <div class="blog-box">
     <h3 class="problem-feed-name">
+        <a href="{{ ticket.linked_item.get_absolute_url() }}">
+            {{ ticket.linked_item|item_title }}</a>
+        &#183
         <a href="{{ url('ticket', ticket.id) }}">
             {{ ticket.title }}
         </a>
-        -
-        <a href="{{ ticket.linked_item.get_absolute_url() }}">
-            {{ ticket.linked_item|item_title }}</a>
     </h3>
     {% with author=ticket.user %}
         {% if author %}
