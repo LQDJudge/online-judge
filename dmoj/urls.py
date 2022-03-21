@@ -110,13 +110,17 @@ urlpatterns = [
     url(r'^accounts/', include(register_patterns)),
     url(r'^', include('social_django.urls')),
 
+    url(r'^feed/', include([
+        url(r'^problems/$', problem.ProblemFeed.as_view(), name='problem_feed'),
+        url(r'^tickets/$', blog.TicketFeed.as_view(), name='ticket_feed'),
+        url(r'^comments/$', blog.CommentFeed.as_view(), name='comment_feed'),
+    ])),
     url(r'^problems/$', problem.ProblemList.as_view(), name='problem_list'),
     url(r'^problems/random/$', problem.RandomProblem.as_view(), name='problem_random'),
 
     url(r'^problem/(?P<problem>[^/]+)', include([
         url(r'^$', problem.ProblemDetail.as_view(), name='problem_detail'),
         url(r'^/editorial$', problem.ProblemSolution.as_view(), name='problem_editorial'),
-        url(r'^/comments$', problem.ProblemComments.as_view(), name='problem_comments'),
         url(r'^/raw$', problem.ProblemRaw.as_view(), name='problem_raw'),
         url(r'^/pdf$', problem.ProblemPdfView.as_view(), name='problem_pdf'),
         url(r'^/pdf/(?P<language>[a-z-]+)$', problem.ProblemPdfView.as_view(), name='problem_pdf'),

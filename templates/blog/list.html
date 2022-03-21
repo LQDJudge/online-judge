@@ -16,28 +16,8 @@
                 clear: both;
             }
         }
-        .post {
-            margin: 0 2%;
-        }
         .time {
             margin-left: 0;
-        }
-
-        .post:first-child {
-            margin-top: 0.6em;
-        }
-
-        .own-open-tickets .title a, .open-tickets .title a {
-            display: block;
-        }
-
-        .own-open-tickets .object, .open-tickets .object {
-            margin-left: 1em;
-            font-style: italic;
-        }
-
-        .open-tickets .user {
-            margin-left: 1em;
         }
 
         .no-clarifications-message {
@@ -55,6 +35,11 @@
         }
         #add-clarification:hover {
             color: cyan;
+        }
+
+        #content {
+            width: 99%;
+            margin-left: 0;
         }
     </style>
 {% endblock %}
@@ -81,6 +66,35 @@
                 $('.blog-content').hide();
                 $('.blog-sidebar').show();
             });
+            $('.blog-description').on('click', function() {
+                var max_height = $(this).css('max-height');
+                if (max_height !== 'fit-content') {
+                    $(this).css('max-height', 'fit-content');
+                    $(this).parent().css('background-image', 'inherit')
+                        .css('padding-bottom', '0.5em');
+                    $(this).css('cursor', 'auto');
+                }
+            })
+            $('.blog-description').each(function() {
+                if ($(this).prop('scrollHeight') > $(this).height() ) {
+                    $(this).parent().css('background-image', '-webkit-linear-gradient(bottom, lightgray, lightgray 3%, transparent 8%, transparent 100%)');
+                    $(this).parent().css('padding-bottom', '0');
+                    $(this).css('cursor', 'pointer');
+                }
+            });
+            $('.left-sidebar-item').on('click', function() {
+                var url = $(this).attr('data-href');
+                window.location.replace(url);
+            });
+            {% if feed_type == 'blog' %}
+                $('#news-icon').css('color', 'green');
+            {% elif feed_type == 'problem' %}
+                $('#problems-icon').css('color', 'green');
+            {% elif feed_type == 'ticket' %}
+                $('#tickets-icon').css('color', 'green');
+            {% elif feed_type == 'comment' %}
+                $('#comments-icon').css('color', 'green');
+            {% endif %}
         });
     </script>
 {% endblock %}
@@ -90,20 +104,54 @@
     <div id="mobile" class="tabs">
         <ul>
             <li id="blog-tab" class="tab active"><a href="#">
-                <i class="tab-icon fa fa-info-circle"></i> {{ _('Blog') }}
+                <i class="tab-icon fa fa-info-circle"></i> {{ _('Feed') }}
             </a></li>
             <li id="event-tab" class="tab"><a href="#"><i class="tab-icon fa fa-rss"></i> {{ _('Events') }}</a></li>
         </ul>
     </div>
     <div id="blog-container">
-        <div class="blog-content sidebox">
-            <h3>{{ _('News') }} <i class="fa fa-terminal"></i></h3>
-            <div class="sidebox-content">
-                {% set show_organization_private_icon=True %}
+        <div class="blog-left-sidebar">
+            <h3 class="left-sidebar-header">{{_('Content')}}</h3>
+            <div class="left-sidebar-item" data-href="{{url('home')}}">
+                <div class="sidebar-icon" id="news-icon"><i class="fa fa-rss"></i></div>
+                {{_('News')}}
+            </div>
+            <div class="left-sidebar-item" data-href="{{url('problem_feed')}}">
+                <div class="sidebar-icon" id="problems-icon"><i class="fa fa-tasks"></i></div>
+                {{_('Problems')}}
+            </div>
+            <div class="left-sidebar-item" data-href="{{url('comment_feed')}}">
+                <div class="sidebar-icon" id="comments-icon"><i class="fa fa-comments"></i></div>
+                {{_('Comments')}}
+            </div>
+            <div class="left-sidebar-item" data-href="{{url('ticket_feed')}}">
+                <div class="sidebar-icon" id="tickets-icon"><i class="fa fa-question-circle"></i></div>
+                {{_('Tickets')}}
+            </div>
+        </div>
+        <div class="blog-content">
+            {% set show_organization_private_icon=True %}
+            {% if feed_type == 'blog' %}
                 {% for post in posts %}
                     {% include "blog/content.html" %}
                 {% endfor %}
-            </div>
+            {% elif feed_type == 'problem' %}
+                {% for problem in problems %}
+                    {% include "problem/feed.html" %}
+                {% endfor %}
+            {% elif feed_type == 'ticket' %}
+                {% if tickets %}
+                    {% for ticket in tickets %}
+                        {% include "ticket/feed.html" %}
+                    {% endfor %}
+                {% else %}
+                    <h3 style="text-align: center">{{_('You have no ticket')}}</h3>
+                {% endif %}
+            {% elif feed_type == 'comment' %}
+                {% for comment in comments %}
+                    {% include "comments/feed.html" %}
+                {% endfor %}
+            {% endif %}
             {% if page_obj.num_pages > 1 %}
                 <div style="margin-bottom:10px;margin-top:10px">{% include "list-pages.html" %}</div>
             {% endif %}
@@ -178,85 +226,36 @@
                     </div>
                 </div>
             {% endif %}
-
-            {% if own_open_tickets %}
-                <div class="blog-sidebox sidebox">
-                    <h3>{{ _('My open tickets') }} <i class="fa fa-question-circle"></i></h3>
-                    <div class="sidebox-content">
-                        <ul class="own-open-tickets">
-                            {% for ticket in own_open_tickets %}
-                                <li>
-                                    <div class="title">
-                                        <a href="{{ url('ticket', ticket.id) }}">{{ ticket.title }}</a>
-                                    </div>
-                                    <div class="object">
-                                        <a href="{{ ticket.linked_item.get_absolute_url() }}">
-                                            {{ ticket.linked_item|item_title }}</a>
-                                    </div>
-                                    <div>{{ link_user(ticket.user) }}</div>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-            {% endif %}
-
-            {% if open_tickets %}
-                <div class="blog-sidebox sidebox">
-                    <h3>{{ _('New tickets') }} <i class="fa fa-exclamation-circle"></i></h3>
-                    <div class="sidebox-content">
-                        <ul class="open-tickets">
-                            {% for ticket in open_tickets %}
-                                <li>
-                                    <div class="title">
-                                        <a href="{{ url('ticket', ticket.id) }}">{{ ticket.title }}</a>
-                                    </div>
-                                    <div class="object">
-                                        <a href="{{ ticket.linked_item.get_absolute_url() }}">
-                                            {{ ticket.linked_item|item_title }}</a>
-                                    </div>
-                                    <div>{{ link_user(ticket.user) }}</div>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-            {% endif %}
-
             <div class="blog-sidebox sidebox">
-                <h3>{{ _('New problems') }} <i class="fa fa-puzzle-piece"></i>
-                </h3>
-                <div class="sidebox-content">
-                    <ul class="problem-list">
-                        {% for problem in new_problems %}
-                            <li><a href="{{ url('problem_detail', problem.code) }}">{{ problem.name }}</a></li>
-                        {% endfor %}
-                    </ul>
-                    <span class="rssatom">
-                        <a href="{{ url('problem_rss') }}"><span><i class="fa fa-rss"></i></span> RSS</a>
-                        /
-                        <a href="{{ url('problem_atom') }}">Atom</a>
-                    </span>
+                <h3>{{ _('Top Rating') }} <i class="fa fa-trophy"></i></h3>
+                <div class="sidebox-content" style="padding: 0; border: 0">
+                    <table class="table feed-table">
+                        <tbody>
+                            {% for user in top_rated %}
+                                <tr>
+                                    <td style="padding: 7px 2px"><b>{{loop.index}}</b></td>
+                                    <td>{{link_user(user)}}</td>
+                                    <td>{{user.rating}}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            
             <div class="blog-sidebox sidebox">
-                <h3>{{ _('Comment stream') }} <i class="fa fa-comments"></i></h3>
-                <div class="sidebox-content">
-                    <ul>
-                        {% for comment in comments %}
-                            <li>
-                                <span style="padding-left:0.25em" class="poster">
-                                    {{ link_user(comment.author) }}
-                                </span> &rarr;
-                                <a href="{{ comment.link }}#comment-{{ comment.id }}">{{ page_titles[comment.page] }}</a>
-                            </li>{% endfor %}
-                    </ul>
-                    <span class="rssatom">
-                        <a href="{{ url('comment_rss') }}"><span><i class="fa fa-rss"></i></span> RSS</a>
-                        /
-                        <a href="{{ url('comment_atom') }}">Atom</a>
-                    </span>
+                <h3>{{ _('Top Score') }} <i class="fa fa-trophy"></i></h3>
+                <div class="sidebox-content" style="padding: 0; border: 0">
+                    <table class="table feed-table">
+                        <tbody>
+                            {% for user in top_scorer %}
+                                <tr>
+                                    <td style="padding: 7px 2px"><b>{{loop.index}}</b></td>
+                                    <td>{{link_user(user)}}</td>
+                                    <td>{{ user.performance_points|floatformat(0) }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

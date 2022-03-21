@@ -232,7 +232,7 @@ header {
 }
 
 #navigation {
-    position: relative;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
@@ -382,7 +382,7 @@ hr {
 }
 
 #content {
-    margin: 1em auto auto;
+    margin: 4.5em auto 1em auto;
 
     // Header
     width: 90%;

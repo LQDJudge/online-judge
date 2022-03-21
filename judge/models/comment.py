@@ -65,7 +65,9 @@ class Comment(MPTTModel):
         problem_access = CacheDict(lambda code: Problem.objects.get(code=code).is_accessible_by(user))
         contest_access = CacheDict(lambda key: Contest.objects.get(key=key).is_accessible_by(user))
         blog_access = CacheDict(lambda id: BlogPost.objects.get(id=id).can_see(user))
-
+        
+        if n == -1:
+            n = len(queryset)        
         if user.is_superuser:
             return queryset[:n]
         if batch is None:
@@ -105,7 +107,7 @@ class Comment(MPTTModel):
         try:
             link = None
             if self.page.startswith('p:'):
-                link = reverse('problem_comments', args=(self.page[2:],))
+                link = reverse('problem_detail', args=(self.page[2:],))
             elif self.page.startswith('c:'):
                 link = reverse('contest_view', args=(self.page[2:],))
             elif self.page.startswith('b:'):

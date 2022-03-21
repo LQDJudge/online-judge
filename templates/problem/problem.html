@@ -1,5 +1,6 @@
 {% extends "common-content.html" %}
 {% block content_media %}
+    {% include "comments/media-css.html" %}
     <style>
         .title-state {
             font-size: 2em;
@@ -54,10 +55,30 @@
         #clarification_header:hover {
             color: orange;
         }
+
+        #comment-announcement {
+            margin-top: 1em;
+            background-color: lightgray;
+            border-radius: 30px;
+            padding: 0.5em;
+            text-align: center;
+            cursor: pointer;
+            color: dimgrey;
+            font-weight: bold;
+        }
+
+        #comment-announcement:hover {
+            background-color: gray;
+        }
+
+        #comment-section {
+            display: none;
+        }
     </style>
 {% endblock %}
 
 {% block content_js_media %}
+    {% include "comments/media-js.html" %}
     {% if request.in_contest_mode %}
         <script type="text/javascript">
             window.register_contest_notification("{{url('contest_clarification_ajax', request.participation.contest.key)}}");
@@ -79,6 +100,14 @@
                 $('#clarification_header_container').hide();
                 window.scrollTo(0, document.body.scrollHeight);
             })
+            $('#comment-announcement').on('click', function() {
+                $('#comment-section').show();
+                $('#comment-announcement').hide();
+            })
+
+            if (window.location.href.includes('#comment')) {
+                $('#comment-announcement').click();
+            }
         });
     </script>
 {% endblock %}
@@ -164,13 +193,9 @@
     {% endif %}
     <div><a href="{{ url('chronological_submissions', problem.code) }}">{{ _('All submissions') }}</a></div>
     <div><a href="{{ url('ranked_submissions', problem.code) }}">{{ _('Best submissions') }}</a></div>
-
-    {% if not contest_problem or not contest_problem.contest.use_clarifications %}
-        <hr>
-        <div><a href="{{ url('problem_comments', problem.code) }}">{{ _('Discuss') }}</a></div>
-    {% endif %}
     {% if editorial and editorial.is_public and 
             not (request.user.is_authenticated and request.profile.current_contest) %}
+        <hr>
         <div><a href="{{ url('problem_editorial', problem.code) }}">{{ _('Read editorial') }}</a></div>
     {% endif %}
     {% if can_edit_problem %}
@@ -361,6 +386,18 @@
                 {{ _('Report an issue') }}
             {%- endif -%}
         </a>
+        <div style="clear: both"></div>
+    {% endif %}
+    {% if not (contest_problem and contest_problem.contest.use_clarifications) %}
+        <div id="comment-announcement-container">
+            <div id="comment-announcement">
+                {% if has_comments %}
+                    {{_('View comments')}} ({{comment_list.count()}})
+                {% else %}
+                    {{_('Be the first to comment')}}
+                {% endif %}
+            </div>
+        </div>
     {% endif %}
 {% endblock %}
 
@@ -380,6 +417,10 @@
             {% else %}
                 <p class="no-comments-message">{{ _('No clarifications have been made at this time.') }}</p>
             {% endif %}
+        </div>
+    {% else %}
+        <div id="comment-section">
+            {% include "comments/list.html" %}
         </div>
     {% endif %}
     <iframe name="raw_problem" id="raw_problem"></iframe>
