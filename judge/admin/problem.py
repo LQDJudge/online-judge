@@ -239,9 +239,9 @@ class ProblemAdmin(VersionAdmin):
 
 
 class ProblemPointsVoteAdmin(admin.ModelAdmin):
-    list_display = ('vote_points', 'voter', 'problem_name', 'problem_code', 'problem_points', 'vote_time')
+    list_display = ('vote_points', 'voter', 'voter_rating', 'voter_point', 'problem_name', 'problem_code', 'problem_points')
     search_fields = ('voter__user__username', 'problem__code', 'problem__name')
-    readonly_fields = ('voter', 'problem', 'problem_code', 'problem_points', 'vote_time')
+    readonly_fields = ('voter', 'problem', 'problem_code', 'problem_points', 'voter_rating', 'voter_point')
 
     def has_change_permission(self, request, obj=None):
         if obj is None:
@@ -262,6 +262,16 @@ class ProblemPointsVoteAdmin(admin.ModelAdmin):
         return obj.problem.name
     problem_name.short_description = _('Problem name')
     problem_name.admin_order_field = 'problem__name'
+
+    def voter_rating(self, obj):
+        return obj.voter.rating
+    voter_rating.short_description = _('Voter rating')
+    voter_rating.admin_order_field = 'voter__rating'
+
+    def voter_point(self, obj):
+        return round(obj.voter.performance_points)
+    voter_rating.short_description = _('Voter point')
+    voter_rating.admin_order_field = 'voter__performance_points'
 
     def vote_points(self, obj):
         return obj.points
