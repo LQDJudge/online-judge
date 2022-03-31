@@ -66,9 +66,9 @@ class FeedView(ListView):
 
         visible_contests = Contest.get_visible_contests(self.request.user).filter(is_visible=True)
 
-        context['top_rated'] = Profile.objects.order_by('-rating')[:10]
-        context['top_scorer'] = Profile.objects.order_by('-performance_points')[:10]
-
+        context['top_rated'] = Profile.objects.filter(is_unlisted=False).order_by('-rating')[:10]
+        context['top_scorer'] = Profile.objects.filter(is_unlisted=False).order_by('-performance_points')[:10]
+        print(context['top_rated'])
         return context
         
 
