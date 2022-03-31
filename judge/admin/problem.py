@@ -270,8 +270,8 @@ class ProblemPointsVoteAdmin(admin.ModelAdmin):
 
     def voter_point(self, obj):
         return round(obj.voter.performance_points)
-    voter_rating.short_description = _('Voter point')
-    voter_rating.admin_order_field = 'voter__performance_points'
+    voter_point.short_description = _('Voter point')
+    voter_point.admin_order_field = 'voter__performance_points'
 
     def vote_points(self, obj):
         return obj.points
