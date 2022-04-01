@@ -25,6 +25,7 @@ class CommentAdmin(VersionAdmin):
     )
     list_display = ['author', 'linked_page', 'time']
     search_fields = ['author__user__username', 'page', 'body']
+    readonly_fields = ['score']
     actions = ['hide_comment', 'unhide_comment']
     list_filter = ['hidden']
     actions_on_top = True

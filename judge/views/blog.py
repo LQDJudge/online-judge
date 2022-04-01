@@ -68,7 +68,7 @@ class FeedView(ListView):
 
         context['top_rated'] = Profile.objects.filter(is_unlisted=False).order_by('-rating')[:10]
         context['top_scorer'] = Profile.objects.filter(is_unlisted=False).order_by('-performance_points')[:10]
-        print(context['top_rated'])
+
         return context
         
 
