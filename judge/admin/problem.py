@@ -1,4 +1,5 @@
 from operator import attrgetter
+import statistics
 
 from django import forms
 from django.contrib import admin
@@ -132,7 +133,7 @@ class ProblemAdmin(VersionAdmin):
         (_('Justice'), {'fields': ('banned_users',)}),
         (_('History'), {'fields': ('change_message',)}),
     )
-    list_display = ['code', 'name', 'show_authors', 'points', 'vote_cnt', 'vote_mean', 'vote_std', 'is_public', 'show_public']
+    list_display = ['code', 'name', 'show_authors', 'points', 'vote_cnt', 'vote_mean', 'vote_median', 'vote_std', 'is_public', 'show_public']
     ordering = ['code']
     search_fields = ('code', 'name', 'authors__user__username', 'curators__user__username')
     inlines = [LanguageLimitInline, ProblemClarificationInline, ProblemSolutionInline, ProblemTranslationInline]
@@ -255,6 +256,10 @@ class ProblemAdmin(VersionAdmin):
         return obj._vote_cnt
     vote_cnt.admin_order_field = '_vote_cnt'
 
+    def vote_median(self, obj):
+        votes = obj.problem_points_votes.values_list('points', flat=True)
+        return statistics.median(votes) if votes else None        
+
 
 class ProblemPointsVoteAdmin(admin.ModelAdmin):
     list_display = ('vote_points', 'voter', 'voter_rating', 'voter_point', 'problem_name', 'problem_code', 'problem_points')
@@ -265,6 +270,9 @@ class ProblemPointsVoteAdmin(admin.ModelAdmin):
         if obj is None:
             return request.user.has_perm('judge.edit_own_problem')
         return obj.problem.is_editable_by(request.user)
+
+    def lookup_allowed(self, key, value):
+        return True
 
     def problem_code(self, obj):
         return obj.problem.code
