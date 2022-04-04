@@ -3,7 +3,8 @@ from operator import attrgetter
 from django import forms
 from django.contrib import admin
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Avg
+from django.db.models.aggregates import StdDev
 from django.forms import ModelForm
 from django.urls import reverse_lazy
 from django.utils.html import format_html
@@ -131,7 +132,7 @@ class ProblemAdmin(VersionAdmin):
         (_('Justice'), {'fields': ('banned_users',)}),
         (_('History'), {'fields': ('change_message',)}),
     )
-    list_display = ['code', 'name', 'show_authors', 'points', 'is_public', 'show_public']
+    list_display = ['code', 'name', 'show_authors', 'points', 'vote_mean', 'vote_std', 'is_public', 'show_public']
     ordering = ['code']
     search_fields = ('code', 'name', 'authors__user__username', 'curators__user__username')
     inlines = [LanguageLimitInline, ProblemClarificationInline, ProblemSolutionInline, ProblemTranslationInline]
@@ -198,6 +199,10 @@ class ProblemAdmin(VersionAdmin):
 
     def get_queryset(self, request):
         queryset = Problem.objects.prefetch_related('authors__user')
+        queryset = queryset.annotate(
+            _vote_mean=Avg('problem_points_votes__points'),
+            _vote_std=StdDev('problem_points_votes__points')
+        )
         if request.user.has_perm('judge.edit_all_problem'):
             return queryset
 
@@ -236,6 +241,14 @@ class ProblemAdmin(VersionAdmin):
         if form.cleaned_data.get('change_message'):
             return form.cleaned_data['change_message']
         return super(ProblemAdmin, self).construct_change_message(request, form, *args, **kwargs)
+
+    def vote_mean(self, obj):
+        return round(obj._vote_mean, 1) if obj._vote_mean is not None else None
+    vote_mean.admin_order_field = '_vote_mean'
+
+    def vote_std(self, obj):
+        return round(obj._vote_std, 1) if obj._vote_std is not None else None
+    vote_std.admin_order_field = '_vote_std'
 
 
 class ProblemPointsVoteAdmin(admin.ModelAdmin):

@@ -749,7 +749,7 @@ msgstr "giới hạn thời gian"
 
 #: judge/models/contest.py:76 judge/models/problem.py:136
 msgid "publicly visible"
-msgstr "hiển thị công khai"
+msgstr "công khai"
 
 #: judge/models/contest.py:77
 msgid ""
