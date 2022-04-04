@@ -3,7 +3,7 @@ from operator import attrgetter
 from django import forms
 from django.contrib import admin
 from django.db import transaction
-from django.db.models import Q, Avg
+from django.db.models import Q, Avg, Count
 from django.db.models.aggregates import StdDev
 from django.forms import ModelForm
 from django.urls import reverse_lazy
@@ -132,7 +132,7 @@ class ProblemAdmin(VersionAdmin):
         (_('Justice'), {'fields': ('banned_users',)}),
         (_('History'), {'fields': ('change_message',)}),
     )
-    list_display = ['code', 'name', 'show_authors', 'points', 'vote_mean', 'vote_std', 'is_public', 'show_public']
+    list_display = ['code', 'name', 'show_authors', 'points', 'vote_cnt', 'vote_mean', 'vote_std', 'is_public', 'show_public']
     ordering = ['code']
     search_fields = ('code', 'name', 'authors__user__username', 'curators__user__username')
     inlines = [LanguageLimitInline, ProblemClarificationInline, ProblemSolutionInline, ProblemTranslationInline]
@@ -201,7 +201,8 @@ class ProblemAdmin(VersionAdmin):
         queryset = Problem.objects.prefetch_related('authors__user')
         queryset = queryset.annotate(
             _vote_mean=Avg('problem_points_votes__points'),
-            _vote_std=StdDev('problem_points_votes__points')
+            _vote_std=StdDev('problem_points_votes__points'),
+            _vote_cnt=Count('problem_points_votes__points')
         )
         if request.user.has_perm('judge.edit_all_problem'):
             return queryset
@@ -249,6 +250,10 @@ class ProblemAdmin(VersionAdmin):
     def vote_std(self, obj):
         return round(obj._vote_std, 1) if obj._vote_std is not None else None
     vote_std.admin_order_field = '_vote_std'
+
+    def vote_cnt(self, obj):
+        return obj._vote_cnt
+    vote_cnt.admin_order_field = '_vote_cnt'
 
 
 class ProblemPointsVoteAdmin(admin.ModelAdmin):
