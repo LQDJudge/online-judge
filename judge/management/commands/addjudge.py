@@ -15,3 +15,4 @@ class Command(BaseCommand):
         judge.name = options['name']
         judge.auth_key = options['auth_key']
         judge.save()
+

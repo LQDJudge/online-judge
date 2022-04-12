@@ -39,6 +39,7 @@ from judge.utils.strings import safe_float_or_none, safe_int_or_none
 from judge.utils.tickets import own_ticket_filter
 from judge.utils.views import QueryStringSortMixin, SingleObjectFormView, TitleMixin, generic_message
 from judge.views.blog import FeedView
+from judge.ml.collab_filter import CollabFilter
 
 
 def get_contest_problem(problem, profile):
@@ -611,9 +612,44 @@ class ProblemFeed(FeedView):
                                         .values_list('problem__id', flat=True))
         return queryset.distinct()
 
+    # arr = [[], [], ..]
+    def merge_recommendation(self, arr): 
+        idx = [0] * len(arr)
+        stop = False
+        res = []
+        used_pid = set()
+        cnt = 0
+        while not stop:
+            cnt += 1
+            stop = True
+            for i in range(len(arr)):
+                if idx[i] < len(arr[i]):
+                    obj = arr[i][idx[i]]
+                    if type(obj) == tuple:
+                        obj = obj[1]
+                    elif cnt % 3 != 0: # hot problems appear less
+                        continue
+                    if obj not in used_pid:
+                        res.append(obj)
+                        used_pid.add(obj)
+                    idx[i] += 1
+                    stop = False
+        return res
+
+
     def get_queryset(self):
         queryset = self.get_unsolved_queryset()
-        return queryset.order_by('?')    
+        user = self.request.profile
+        if not settings.ML_OUTPUT_PATH or not user:
+            return queryset.order_by('?')
+        
+        cl_model = CollabFilter()
+        dot_rec = cl_model.user_recommendations(user, queryset, cl_model.DOT, 100)
+        cosine_rec = cl_model.user_recommendations(user, queryset, cl_model.COSINE, 100)
+        hot_problems_rec = hot_problems(timedelta(days=7), 10)
+        
+        q = self.merge_recommendation([dot_rec, cosine_rec, hot_problems_rec])
+        return q
 
     def get_context_data(self, **kwargs):
         context = super(ProblemFeed, self).get_context_data(**kwargs)
