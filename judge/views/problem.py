@@ -646,8 +646,9 @@ class ProblemFeed(FeedView):
         cl_model = CollabFilter()
         dot_rec = cl_model.user_recommendations(user, queryset, cl_model.DOT, 100)
         cosine_rec = cl_model.user_recommendations(user, queryset, cl_model.COSINE, 100)
-        hot_problems_rec = hot_problems(timedelta(days=7), 10)
-        
+        hot_problems_rec = [problem for problem in hot_problems(timedelta(days=7), 10)
+                                    if problem in queryset]
+
         q = self.merge_recommendation([dot_rec, cosine_rec, hot_problems_rec])
         return q
 

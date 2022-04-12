@@ -45,7 +45,7 @@ class CollabFilter:
             if pid < len(scores):
                 res.append((scores[pid], problem))
 
-        res.sort(reverse=True)
+        res.sort(reverse=True, key=lambda x: x[0])
         return res[:limit]
 
 
@@ -60,5 +60,5 @@ class CollabFilter:
         for p in problemset:
             if p.id < len(scores):
                 res.append((scores[p.id], p))
-        res.sort(reverse=True)
+        res.sort(reverse=True, key=lambda x: x[0])
         return res[:limit]
