@@ -17,7 +17,7 @@
             <i class="fa fa-tag"></i>
             {% for type in problem.types_list %}
                 <span class="type-tag">{{ type }}</span>{% if not loop.last %}, {% endif %}
-            {% endfor %}, {{problem.points | int}}
+            {% endfor %}, *{{problem.points | int}}
         </div>
     {% endif %}
     <div class='blog-description content-description'>
