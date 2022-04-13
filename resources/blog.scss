@@ -150,6 +150,12 @@
     .feed-table {
         font-size: small;
     }
+
+    .blog-box {
+        border-left: 2px solid black;
+        border-right: 2px solid black;
+        border-radius: 8px;
+    }
 }
 
 #mobile.tabs {
@@ -184,10 +190,7 @@
 
 .blog-box {
     border-bottom: 1px solid black;
-    border-left: 2px solid black;
-    border-right: 2px solid black;
     border-top: 2px solid black;
-    border-radius: 8px;
     margin-bottom: 1em;
     width: 90%;
     padding: 1em 1.25em 0.5em 1.25em;
