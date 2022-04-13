@@ -3,6 +3,13 @@
         <a href="{{ url('problem_detail', problem.code) }}">
             {{ problem.name }}
         </a>
+        {% if problem.id in completed_problem_ids %}
+            <i class="solved-problem-color fa fa-check-circle"></i>
+        {% elif problem.id in attempted_problems %}
+            <i class="attempted-problem-color fa fa-minus-circle"></i>
+        {% else %}
+            <i class="unsolved-problem-color fa fa-minus-circle"></i>
+        {% endif %}
     </h3>
     {% with authors=problem.authors.all() %}
         {% if authors %}
@@ -12,7 +19,7 @@
             </div>
         {% endif %}
     {% endwith %}
-    {% if true %}
+    {% if show_types %}
         <div class="problem-feed-types">
             <i class="fa fa-tag"></i>
             {% for type in problem.types_list %}

@@ -1,19 +1,15 @@
-{% extends "base.html" %}
-{% block title_row %}{% endblock %}
-{% block title_ruler %}{% endblock %}
-
-{% block media %}
-    <link rel="alternate" type="application/atom+xml" href="{{ url('blog_atom') }}" title="Atom Blog Feed">
-    <link rel="alternate" type="application/rss+xml" href="{{ url('blog_rss') }}" title="RSS Blog Feed">
-    <link rel="alternate" type="application/atom+xml" href="{{ url('comment_atom') }}" title="Atom Comment Feed">
-    <link rel="alternate" type="application/rss+xml" href="{{ url('comment_rss') }}" title="RSS Comment Feed">
-    <link rel="alternate" type="application/atom+xml" href="{{ url('problem_atom') }}" title="Atom Problem Feed">
-    <link rel="alternate" type="application/rss+xml" href="{{ url('problem_rss') }}" title="RSS Problem Feed">
+{% extends "three-column-content.html" %}
+{% block three_col_media %}
     {% include "blog/media-css.html" %}
     <style>
-        @media (max-width: 800px) {
+        @media (max-width: 799px) {
             .title {
                 clear: both;
+            }
+        }
+        @media (min-width: 800px) {
+            #event-tab {
+                display: none;
             }
         }
         .time {
@@ -36,237 +32,162 @@
         #add-clarification:hover {
             color: cyan;
         }
-
-        #content {
-            width: 99%;
-            margin-left: 0;
-        }
     </style>
 {% endblock %}
 
-{% block js_media %}
+{% block three_col_js %}
     <script type="text/javascript">
         $(document).ready(function () {
             $('.time-remaining').each(function () {
                 count_down($(this));
             });
 
-            $('.blog-sidebar').hide();
-            $('#blog-tab').find('a').click(function (e) {
+            $('.right-sidebar').hide();
+            $('#event-tab').click(function (e) {
                 e.preventDefault();
-                $('#blog-tab').addClass('active');
-                $('#event-tab').removeClass('active');
-                $('.blog-content').show();
-                $('.blog-sidebar').hide();
-            });
-            $('#event-tab').find('a').click(function (e) {
-                e.preventDefault();
+                $('.left-sidebar-item').removeClass('active');
                 $('#event-tab').addClass('active');
-                $('#blog-tab').removeClass('active');
-                $('.blog-content').hide();
-                $('.blog-sidebar').show();
+                $('.middle-content').hide();
+                $('.right-sidebar').show();
             });
-            $('.blog-description').on('click', function() {
-                var max_height = $(this).css('max-height');
-                if (max_height !== 'fit-content') {
-                    $(this).css('max-height', 'fit-content');
-                    $(this).parent().css('background-image', 'inherit')
-                        .css('padding-bottom', '0.5em');
-                    $(this).css('cursor', 'auto');
-                }
-            })
-            $('.blog-description').each(function() {
-                if ($(this).prop('scrollHeight') > $(this).height() ) {
-                    $(this).parent().css('background-image', '-webkit-linear-gradient(bottom, gray, lightgray 3%, transparent 8%, transparent 100%)');
-                    $(this).parent().css('padding-bottom', '0');
-                    $(this).css('cursor', 'pointer');
-                }
-            });
-            $('.left-sidebar-item').on('click', function() {
-                var url = $(this).attr('data-href');
-                window.location.replace(url);
-            });
-            {% if feed_type == 'blog' %}
-                $('#news-icon').css('color', 'green');
-            {% elif feed_type == 'problem' %}
-                $('#problems-icon').css('color', 'green');
-            {% elif feed_type == 'ticket' %}
-                $('#tickets-icon').css('color', 'green');
-            {% elif feed_type == 'comment' %}
-                $('#comments-icon').css('color', 'green');
-            {% endif %}
         });
     </script>
 {% endblock %}
 
-{% block body %}
-    {% block before_posts %}{% endblock %}
-    <div id="mobile" class="tabs">
-        <ul>
-            <li id="blog-tab" class="tab active"><a href="#">
-                <i class="tab-icon fa fa-info-circle"></i> {{ _('Feed') }}
-            </a></li>
-            <li id="event-tab" class="tab"><a href="#"><i class="tab-icon fa fa-rss"></i> {{ _('Events') }}</a></li>
-        </ul>
+{% block left_sidebar %}
+    <div class="left-sidebar">
+        {{ make_tab_item('blog', 'fa fa-rss', url('home'), _('News')) }}
+        {{ make_tab_item('comment', 'fa fa-comments', url('comment_feed'), _('Comments')) }}
+        {{ make_tab_item('ticket', 'fa fa-question-circle', url('ticket_feed'), _('Tickets')) }}
+        {{ make_tab_item('event', 'fa fa-calendar', '#', _('Events')) }}
     </div>
-    <div id="blog-container">
-        <div class="blog-left-sidebar">
-            <h3 class="left-sidebar-header">{{_('Content')}}</h3>
-            <div class="left-sidebar-item" data-href="{{url('home')}}">
-                <div class="sidebar-icon" id="news-icon"><i class="fa fa-rss"></i></div>
-                {{_('News')}}
-            </div>
-            <div class="left-sidebar-item" data-href="{{url('problem_feed')}}">
-                <div class="sidebar-icon" id="problems-icon"><i class="fa fa-tasks"></i></div>
-                {{_('Problems')}}
-            </div>
-            <div class="left-sidebar-item" data-href="{{url('comment_feed')}}">
-                <div class="sidebar-icon" id="comments-icon"><i class="fa fa-comments"></i></div>
-                {{_('Comments')}}
-            </div>
-            <div class="left-sidebar-item" data-href="{{url('ticket_feed')}}">
-                <div class="sidebar-icon" id="tickets-icon"><i class="fa fa-question-circle"></i></div>
-                {{_('Tickets')}}
-            </div>
-        </div>
-        <div class="blog-content">
-            {% set show_organization_private_icon=True %}
-            {% if feed_type == 'blog' %}
-                {% for post in posts %}
-                    {% include "blog/content.html" %}
-                {% endfor %}
-            {% elif feed_type == 'problem' %}
-                {% for problem in problems %}
-                    {% include "problem/feed.html" %}
-                {% endfor %}
-            {% elif feed_type == 'ticket' %}
-                {% if tickets %}
-                    {% for ticket in tickets %}
-                        {% include "ticket/feed.html" %}
-                    {% endfor %}
-                {% else %}
-                    <h3 style="text-align: center">{{_('You have no ticket')}}</h3>
-                {% endif %}
-            {% elif feed_type == 'comment' %}
-                {% for comment in comments %}
-                    {% include "comments/feed.html" %}
-                {% endfor %}
-            {% endif %}
-            {% if page_obj.num_pages > 1 %}
-                <div style="margin-bottom:10px;margin-top:10px">{% include "list-pages.html" %}</div>
-            {% endif %}
-        </div>
-
-        <div class="blog-sidebar">
-            {% if request.in_contest_mode and request.participation.contest.use_clarifications %}
-                <div class="blog-sidebox sidebox">
-                    <h3>{{ _('Clarifications') }}
-                            <i class="fa fa-question-circle"></i>
-                            {% if can_edit_contest %}
-                            <a href="{{url('new_contest_clarification', request.participation.contest.key)}}" 
-                               class="fa fa-plus-circle" 
-                               id="add-clarification"
-                               title="{{_('Add')}}">
-                            </a>
-                            {% endif %}
-                    </h3>
-                    <div class="sidebox-content">
-                        {% if has_clarifications %}
-                            <ul>
-                                {% for clarification in clarifications %}
-                                    <li class="clarification">
-                                        <a href="{{ url('problem_detail', clarification.problem.code) }}"
-                                           class="problem">
-                                            {{ clarification.problem.name }}
-                                        </a>
-                                        <span class="time">{{ relative_time(clarification.date) }}</span>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <p class="no-clarifications-message">
-                                {{ _('No clarifications have been made at this time.') }}
-                            </p>
-                        {% endif %}
-                    </div>
-                </div>
-            {% endif %}
-            {% if current_contests %}
-                <div class="blog-sidebox sidebox">
-                    <h3>{{ _('Ongoing contests') }} <i class="fa fa-trophy"></i></h3>
-                    <div class="sidebox-content">
-                        {% for contest in current_contests %}
-                            <div class="contest">
-                                <div class="contest-list-title">
-                                    <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
-                                </div>
-                                <div class="time">
-                                    {{ _('Ends in') }} {{ _('%(countdown)s.', countdown=contest.end_time|as_countdown) }}
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-
-            {% if future_contests %}
-                <div class="blog-sidebox sidebox">
-                    <h3>{{ _('Upcoming contests') }} <i class="fa fa-trophy"></i></h3>
-                    <div class="sidebox-content">
-                        {% for contest in future_contests %}
-                            <div class="contest">
-                                <div class="contest-list-title">
-                                    <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
-                                </div>
-                                <div class="time">
-                                    {{ _('Starting in %(countdown)s.', countdown=contest.start_time|as_countdown) }}
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-            <div class="blog-sidebox sidebox">
-                <h3>{{ _('Top Rating') }} <i class="fa fa-trophy"></i></h3>
-                <div class="sidebox-content" style="padding: 0; border: 0">
-                    <table class="table feed-table">
-                        <tbody>
-                            {% for user in top_rated %}
-                                <tr>
-                                    <td style="padding: 7px 2px"><b>{{loop.index}}</b></td>
-                                    <td>{{link_user(user)}}</td>
-                                    <td>{{user.rating}}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="blog-sidebox sidebox">
-                <h3>{{ _('Top Score') }} <i class="fa fa-trophy"></i></h3>
-                <div class="sidebox-content" style="padding: 0; border: 0">
-                    <table class="table feed-table">
-                        <tbody>
-                            {% for user in top_scorer %}
-                                <tr>
-                                    <td style="padding: 7px 2px"><b>{{loop.index}}</b></td>
-                                    <td>{{link_user(user)}}</td>
-                                    <td>{{ user.performance_points|floatformat(0) }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% block after_posts %}{% endblock %}
 {% endblock %}
 
-{% block bodyend %}
-    {{ super() }}
-    {% if REQUIRE_JAX %}
-        {% include "mathjax-load.html" %}
+{% block middle_content %}
+    {% set show_organization_private_icon=True %}
+    {% if page_type == 'blog' %}
+        {% for post in posts %}
+            {% include "blog/content.html" %}
+        {% endfor %}
+    {% elif page_type == 'ticket' %}
+        {% if tickets %}
+            {% for ticket in tickets %}
+                {% include "ticket/feed.html" %}
+            {% endfor %}
+        {% else %}
+            <h3 style="text-align: center">{{_('You have no ticket')}}</h3>
+        {% endif %}
+    {% elif page_type == 'comment' %}
+        {% for comment in comments %}
+            {% include "comments/feed.html" %}
+        {% endfor %}
     {% endif %}
-    {% include "comments/math.html" %}
+    {% if page_obj.num_pages > 1 %}
+        <div style="margin-bottom:10px;margin-top:10px">{% include "list-pages.html" %}</div>
+    {% endif %}
+{% endblock %}
+
+{% block right_sidebar %}
+    <div class="right-sidebar">
+        {% if request.in_contest_mode and request.participation.contest.use_clarifications %}
+            <div class="blog-sidebox sidebox">
+                <h3>{{ _('Clarifications') }}
+                        <i class="fa fa-question-circle"></i>
+                        {% if can_edit_contest %}
+                        <a href="{{url('new_contest_clarification', request.participation.contest.key)}}" 
+                           class="fa fa-plus-circle" 
+                           id="add-clarification"
+                           title="{{_('Add')}}">
+                        </a>
+                        {% endif %}
+                </h3>
+                <div class="sidebox-content">
+                    {% if has_clarifications %}
+                        <ul>
+                            {% for clarification in clarifications %}
+                                <li class="clarification">
+                                    <a href="{{ url('problem_detail', clarification.problem.code) }}"
+                                       class="problem">
+                                        {{ clarification.problem.name }}
+                                    </a>
+                                    <span class="time">{{ relative_time(clarification.date) }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="no-clarifications-message">
+                            {{ _('No clarifications have been made at this time.') }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+        {% if current_contests %}
+            <div class="blog-sidebox sidebox">
+                <h3>{{ _('Ongoing contests') }} <i class="fa fa-trophy"></i></h3>
+                <div class="sidebox-content">
+                    {% for contest in current_contests %}
+                        <div class="contest">
+                            <div class="contest-list-title">
+                                <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
+                            </div>
+                            <div class="time">
+                                {{ _('Ends in') }} {{ _('%(countdown)s.', countdown=contest.end_time|as_countdown) }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        {% if future_contests %}
+            <div class="blog-sidebox sidebox">
+                <h3>{{ _('Upcoming contests') }} <i class="fa fa-trophy"></i></h3>
+                <div class="sidebox-content">
+                    {% for contest in future_contests %}
+                        <div class="contest">
+                            <div class="contest-list-title">
+                                <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
+                            </div>
+                            <div class="time">
+                                {{ _('Starting in %(countdown)s.', countdown=contest.start_time|as_countdown) }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        <div class="blog-sidebox sidebox">
+            <h3>{{ _('Top Rating') }} <i class="fa fa-trophy"></i></h3>
+            <div class="sidebox-content" style="padding: 0; border: 0">
+                <table class="table feed-table">
+                    <tbody>
+                        {% for user in top_rated %}
+                            <tr>
+                                <td style="padding: 7px 2px"><b>{{loop.index}}</b></td>
+                                <td>{{link_user(user)}}</td>
+                                <td>{{user.rating}}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="blog-sidebox sidebox">
+            <h3>{{ _('Top Score') }} <i class="fa fa-trophy"></i></h3>
+            <div class="sidebox-content" style="padding: 0; border: 0">
+                <table class="table feed-table">
+                    <tbody>
+                        {% for user in top_scorer %}
+                            <tr>
+                                <td style="padding: 7px 2px"><b>{{loop.index}}</b></td>
+                                <td>{{link_user(user)}}</td>
+                                <td>{{ user.performance_points|floatformat(0) }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 {% endblock %}

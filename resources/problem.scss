@@ -77,6 +77,7 @@
         flex: 26.5%;
         max-width: unset;
         padding-top: 0;
+        padding-left: 0;
     }
 }
 
@@ -293,3 +294,39 @@ ul.problem-list {
         font-size: 13px;
     }
 }
+
+.problem-feed-option {
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1em;
+    border-radius: 5px;
+    margin-bottom: 1em
+}
+
+.problem-feed-option-item {
+    padding: 10px 15px;
+    border-radius: 2em;
+    font-weight: bold;
+    background: lightgray;
+    margin-right: 1em;
+    color: gray;
+    cursor: pointer;
+}
+
+.pcodecell {
+    text-transform: uppercase;
+}
+
+.problem-feed-option-item.active {
+    background: goldenrod;
+    color: darkblue;
+}
+
+@media (max-width: 799px) {
+    .problem-middle-right {
+        display: flex;
+        flex-direction: column-reverse;
+    }
+}
+

@@ -1,6 +1,5 @@
-{% extends "common-content.html" %}
-
-{% block media %}
+{% extends "three-column-content.html" %}
+{% block three_col_media %}
     <link rel="stylesheet" href="{{ static('libs/nouislider.min.css') }}">
     <noscript>
         <style>
@@ -34,11 +33,15 @@
             ul.problem-list {
                 padding: 0 !important;
             }
+            #content {
+                width: 99%;
+                margin-left: 0;
+            }   
         </style>
     {% endif %}
 {% endblock %}
 
-{% block js_media %}
+{% block three_col_js %}
     <script>
         window.point_start = {{point_start}};
         window.point_end = {{point_end}};
@@ -48,6 +51,13 @@
         <script src="{{ static('libs/nouislider.min.js') }}" type="text/javascript"></script>
         <script>
             $(function () {
+                {% if not request.in_contest_mode %}
+                    // wrap middle and write column
+                    if (window.matchMedia('(max-width: 799px)').matches) {
+                        $('.middle-content').next().addBack().wrapAll('<div class="problem-middle-right"/>');
+                    }
+                {% endif %}
+
                 var $form = $('form#filter-form');
                 var $search = $('#search');
                 var $category = $('#category');
@@ -83,25 +93,13 @@
 
                 $('#go').click(clean_submit);
 
-                $('input#full_text, input#hide_solved, input#show_types, input#show_editorial').click(function () {
+                $('input#full_text, input#hide_solved, input#show_types, input#show_editorial, input#have_editorial').click(function () {
                     prep_form();
                     ($('<form>').attr('action', window.location.pathname + '?' + $form.serialize())
                         .append($('<input>').attr('type', 'hidden').attr('name', 'csrfmiddlewaretoken')
                             .attr('value', $.cookie('csrftoken')))
                         .attr('method', 'POST').appendTo($('body')).submit());
                 });
-
-                var info_float = $('.info-float');
-                var container = $('#content-right');
-                if (window.bad_browser) {
-                    container.css('float', 'right');
-                } else if (!featureTest('position', 'sticky')) {
-                    fix_div(info_float, 55);
-                    $(window).resize(function () {
-                        info_float.width(container.width());
-                    });
-                    info_float.width(container.width());
-                }
 
                 var intFormatter = {
                     to: function (value) {
@@ -159,50 +157,30 @@
                             return (node.hasClass('p') ? text.replace(/p$/, '') : text);
                         }
                     });
-
                     window.register_contest_notification("{{url('contest_clarification_ajax', request.participation.contest.key)}}");
+
+                    {% if request.in_contest_mode %}
+                        $('.left-sidebar').hide();
+                        $('.middle-content').css('max-width', '80%');
+                    {% endif %}
                 });
             </script>
         {% endcompress %}
     {% endif %}
 {% endblock %}
 
-{% block title_ruler %}{% endblock %}
-
-{% block title_row %}
-    {% set tab = 'list' %}
-    {% set title = 'Problems' %}
-    {% include "problem/problem-list-tabs.html" %}
-{% endblock %}
-
-{% block body %}
-    {% if page_obj.num_pages > 1 %}
-        <div style="margin-bottom: 7px; margin-top: 11px;">
-            {% include "list-pages.html" %}
+{% block left_sidebar %}
+    {% if not request.in_contest_mode %}
+        <div class="left-sidebar">
+            {{ make_tab_item('feed', 'fa fa-pagelines', url('problem_feed'), _('Feed')) }}
+            {{ make_tab_item('list', 'fa fa-list', url('problem_list'), _('List')) }}
+            {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_problem_changelist'), _('Admin')) }}
         </div>
     {% endif %}
+{% endblock %}
 
-    <div id="common-content">
-        {% block before_table %}{% endblock %}
-        {% if not request.in_contest_mode %}
-            <div id="content-right" class="problems">
-                <div class="info-float">
-                    {% include "problem/search-form.html" %}
-                    {% if hot_problems %}
-                        <div class="sidebox">
-                            <h3>{{ _('Hot problems') }} <i class="fa fa-fire"></i></h3>
-                            <div class="sidebox-content">
-                                <ul class="problem-list">{% for problem in hot_problems %}
-                                    <li><a href="{{ url('problem_detail', problem.code) }}" class="hot-problem-link">
-                                        {{ problem.name }}
-                                    </a></li>
-                                {% endfor %}</ul>
-                            </div>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        {% endif %}
+{% block middle_content %}
+    {% if in_contest_mode or page_type == 'list' %}
         <div id="content-left" class="problems">
             <table id="problem-table" class="table striped">
                 <thead>
@@ -212,9 +190,7 @@
                             <th class="solved"><i class="fa fa-check"></i></th>
                         {% endif %}
                         <th class="problem">{{ _('Problem') }}</th>
-                        <!-- Luong begin -->
                         <th class="pcode">{{ _('Problem code') }}</th>
-                        <!-- Luong end -->
                         <th class="category">{{ _('Category') }}</th>
                         {% if show_types %}
                             <th>{{ _('Types') }}</th>
@@ -255,7 +231,7 @@
                         </th>
                         {% if show_editorial %}
                         <th class="editorial">
-                            Editorial
+                            {{_('Editorial')}}
                         </th>
                         {% endif %}
                     {% endif %}
@@ -370,18 +346,34 @@
                     </p>
                 {% endif %}
             {% endif %}
-            {% if page_obj.num_pages > 1 %}
-                <div style="margin-top:10px;">{% include "list-pages.html" %}</div>
-            {% endif %}
+            
         </div>
-    </div>
-    <br>
-    <!-- Luong begin -->
-    <script>
-        $(".pcodecell").each(function(idx, elt){
-            var pcode = elt.text;
-            elt.text = pcode.toUpperCase();
-        });
-    </script>
-    <!-- Luong end -->
+    {% elif page_type == 'feed' %}
+        <div class="problem-feed-option">
+            <a href="{{url('problem_feed')}}" class="problem-feed-option-item {{'active' if feed_type=='for_you'}}">
+                {{_('FOR YOU')}}
+            </a>
+            <a href="{{url('problem_feed_new')}}" class="problem-feed-option-item {{'active' if feed_type=='new'}}">
+                {{_('NEW')}}
+            </a>
+        </div>
+        {% for problem in problems %}
+            {% include "problem/feed.html" %}
+        {% endfor %}
+    {% endif %}
+    {% if page_obj.num_pages > 1 %}
+        <div style="margin-top:10px;">{% include "list-pages.html" %}</div>
+    {% endif %}
+{% endblock %}
+
+{% block right_sidebar %}
+    {% if not request.in_contest_mode %}
+        <div class="right-sidebar">
+            <div id="content-right" class="problems">
+                <div class="info-float">
+                    {% include "problem/search-form.html" %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title_row %}{% endblock %}
+{% block title_ruler %}{% endblock %}
+
+{% block media %}
+    <style>
+        #content {
+            width: 98%;
+            margin-left: 0;
+        }
+    </style>
+    {% block three_col_media %}{% endblock %}
+{% endblock %}
+
+{% block js_media %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('.left-sidebar-item').on('click', function() {
+                var url = $(this).attr('data-href');
+                if (url === '#') return;
+                window.location.href = url;
+            });
+            $('.blog-description').on('click', function() {
+                var max_height = $(this).css('max-height');
+                if (max_height !== 'fit-content') {
+                    $(this).css('max-height', 'fit-content');
+                    $(this).parent().css('background-image', 'inherit')
+                        .css('padding-bottom', '0.5em');
+                    $(this).css('cursor', 'auto');
+                }
+            })
+            $('.blog-description').each(function() {
+                if ($(this).prop('scrollHeight') > $(this).height() ) {
+                    $(this).parent().css('background-image', '-webkit-linear-gradient(bottom, gray, lightgray 3%, transparent 8%, transparent 100%)');
+                    $(this).parent().css('padding-bottom', '0');
+                    $(this).css('cursor', 'pointer');
+                }
+            });
+        });
+    </script>
+    {% block three_col_js %}{% endblock %}
+{% endblock %}
+
+{% macro make_tab_item(name, fa, url, text) %}
+    <div class="left-sidebar-item {% if page_type == name %}active{% endif %}" data-href="{{ url }}" id="{{ name }}-tab">
+        <div class="sidebar-icon"><i class="{{ fa }}"></i></div>
+        {{ text }}
+    </div>
+{% endmacro %}
+
+{% block body %}
+    {% block before_posts %}{% endblock %}
+    <div id="three-col-container">
+        {% block left_sidebar %}{% endblock %}
+        <div class="middle-content">
+            {% block middle_content %}{% endblock %}
+        </div>
+        {% block right_sidebar %}{% endblock %}
+    </div>
+    {% block after_posts %}{% endblock %}
+{% endblock %}
+
+{% block bodyend %}
+    {{ super() }}
+    {% if REQUIRE_JAX %}
+        {% include "mathjax-load.html" %}
+    {% endif %}
+    {% include "comments/math.html" %}
+{% endblock %}

@@ -38,7 +38,6 @@ from judge.utils.problems import contest_attempted_ids, contest_completed_ids, h
 from judge.utils.strings import safe_float_or_none, safe_int_or_none
 from judge.utils.tickets import own_ticket_filter
 from judge.utils.views import QueryStringSortMixin, SingleObjectFormView, TitleMixin, generic_message
-from judge.views.blog import FeedView
 from judge.ml.collab_filter import CollabFilter
 
 
@@ -455,10 +454,9 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             queryset = queryset.filter(points__gte=self.point_start)
         if self.point_end is not None:
             queryset = queryset.filter(points__lte=self.point_end)
-        if self.show_editorial:
-            queryset = queryset.annotate(
-                            has_public_editorial=Sum(Case(When(solution__is_public=True, then=1),
-                            default=0, output_field=IntegerField())))
+        queryset = queryset.annotate(
+                        has_public_editorial=Sum(Case(When(solution__is_public=True, then=1),
+                        default=0, output_field=IntegerField())))
 
         return queryset.distinct()
 
@@ -474,6 +472,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         context['show_types'] = 0 if self.in_contest else int(self.show_types)
         context['full_text'] = 0 if self.in_contest else int(self.full_text)
         context['show_editorial'] = 0 if self.in_contest else int(self.show_editorial)
+        context['have_editorial'] = 0 if self.in_contest else int(self.have_editorial)
 
         context['organizations'] = Organization.objects.all()
         context['category'] = self.category
@@ -486,7 +485,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         context['search_query'] = self.search_query
         context['completed_problem_ids'] = self.get_completed_problems()
         context['attempted_problems'] = self.get_attempted_problems()
-
+        context['page_type'] = 'list'
         context.update(self.get_sort_paginate_context())
         if not self.in_contest:
             context.update(self.get_sort_context())
@@ -498,6 +497,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             context['hide_contest_scoreboard'] = self.contest.scoreboard_visibility in \
                 (self.contest.SCOREBOARD_AFTER_CONTEST, self.contest.SCOREBOARD_AFTER_PARTICIPATION)
             context['has_clarifications'] = False
+            
             if self.request.user.is_authenticated:
                 participation = self.request.profile.current_contest
                 if participation:
@@ -537,6 +537,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         self.show_types = self.GET_with_session(request, 'show_types')
         self.full_text = self.GET_with_session(request, 'full_text')
         self.show_editorial = self.GET_with_session(request, 'show_editorial')
+        self.have_editorial = self.GET_with_session(request, 'have_editorial')
         
         self.search_query = None
         self.category = None
@@ -573,44 +574,33 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             return generic_message(request, 'FTS syntax error', e.args[1], status=400)
 
     def post(self, request, *args, **kwargs):
-        to_update = ('hide_solved', 'show_types', 'full_text')
+        to_update = ('hide_solved', 'show_types', 'full_text', 
+            'show_editorial', 'have_editorial')
         for key in to_update:
             if key in request.GET:
                 val = request.GET.get(key) == '1'
                 request.session[key] = val
             else:
-                request.session.pop(key, None)
+                request.session[key] = False
         return HttpResponseRedirect(request.get_full_path())
 
 
-class ProblemFeed(FeedView):
+class ProblemFeed(ProblemList):
     model = Problem
     context_object_name = 'problems'
     paginate_by = 50
     title = _('Problem feed')
+    feed_type = None
 
-    @cached_property
-    def profile(self):
-        if not self.request.user.is_authenticated:
-            return None
-        return self.request.profile
+    def GET_with_session(self, request, key):
+        if not request.GET:
+            return request.session.get(key, key=='hide_solved')
+        return request.GET.get(key, None) == '1'
 
-    def get_unsolved_queryset(self):
-        filter = Q(is_public=True)
-        if self.profile is not None:
-            filter |= Q(authors=self.profile)
-            filter |= Q(curators=self.profile)
-            filter |= Q(testers=self.profile)
-        queryset = Problem.objects.filter(filter).select_related('group').defer('description')
-        if not self.request.user.has_perm('see_organization_problem'):
-            filter = Q(is_organization_private=False)
-            if self.profile is not None:
-                filter |= Q(organizations__in=self.profile.organizations.all())
-            queryset = queryset.filter(filter)
-        if self.profile is not None:
-            queryset = queryset.exclude(id__in=Submission.objects.filter(user=self.profile, points=F('problem__points'))
-                                        .values_list('problem__id', flat=True))
-        return queryset.distinct()
+    def get_paginator(self, queryset, per_page, orphans=0,
+                      allow_empty_first_page=True, **kwargs):
+        return DiggPaginator(queryset, per_page, body=6, padding=2,
+                             orphans=orphans, allow_empty_first_page=allow_empty_first_page, **kwargs)
 
     # arr = [[], [], ..]
     def merge_recommendation(self, arr): 
@@ -636,30 +626,49 @@ class ProblemFeed(FeedView):
                     stop = False
         return res
 
-
     def get_queryset(self):
-        queryset = self.get_unsolved_queryset()
+        queryset = super(ProblemFeed, self).get_queryset()
+        
+        if self.have_editorial:
+            queryset = queryset.filter(has_public_editorial=1)
+
         user = self.request.profile
+
+        if self.feed_type == 'new':
+            return queryset.order_by('-date')
         if not settings.ML_OUTPUT_PATH or not user:
             return queryset.order_by('?')
         
-        cl_model = CollabFilter()
-        dot_rec = cl_model.user_recommendations(user, queryset, cl_model.DOT, 100)
-        cosine_rec = cl_model.user_recommendations(user, queryset, cl_model.COSINE, 100)
-        hot_problems_rec = [problem for problem in hot_problems(timedelta(days=7), 10)
-                                    if problem in queryset]
+        cf_model = CollabFilter('collab_filter')
+        cf_time_model = CollabFilter('collab_filter_time')
+        hot_problems_recommendations = [
+            problem for problem in hot_problems(timedelta(days=7), 20)
+                    if problem in queryset
+        ]
 
-        q = self.merge_recommendation([dot_rec, cosine_rec, hot_problems_rec])
+        q = self.merge_recommendation([
+            cf_model.user_recommendations(user, queryset, cf_model.DOT, 100),
+            cf_model.user_recommendations(user, queryset, cf_model.COSINE, 100),
+            cf_time_model.user_recommendations(user, queryset, cf_time_model.COSINE, 100),
+            cf_time_model.user_recommendations(user, queryset, cf_time_model.DOT, 100),
+            hot_problems_recommendations
+        ])
         return q
 
     def get_context_data(self, **kwargs):
         context = super(ProblemFeed, self).get_context_data(**kwargs)
         context['first_page_href'] = self.request.path
         context['page_prefix'] = '?page='
-        context['feed_type'] = 'problem'
+        context['page_type'] = 'feed'
         context['title'] = self.title
+        context['feed_type'] = self.feed_type
 
         return context
+
+    def get(self, request, *args, **kwargs):
+        if request.in_contest_mode:
+            return HttpResponseRedirect(reverse('problem_list'))
+        return super(ProblemFeed, self).get(request, *args, **kwargs)
 
 
 class LanguageTemplateAjax(View):

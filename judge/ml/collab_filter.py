@@ -6,8 +6,10 @@ import os
 class CollabFilter:
     DOT = 'dot'
     COSINE = 'cosine'
-    def __init__(self):
-        embeddings = np.load(os.path.join(settings.ML_OUTPUT_PATH, 'collab_filter/embeddings.npz'),
+
+    # name = 'collab_filter' or 'collab_filter_time'
+    def __init__(self, name):
+        embeddings = np.load(os.path.join(settings.ML_OUTPUT_PATH, name + '/embeddings.npz'),
             allow_pickle=True)
         arr0, arr1 = embeddings.files
         self.user_embeddings = embeddings[arr0]

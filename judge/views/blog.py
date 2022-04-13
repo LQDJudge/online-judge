@@ -93,7 +93,7 @@ class PostList(FeedView):
         context['title'] = self.title or _('Page %d of Posts') % context['page_obj'].number
         context['first_page_href'] = reverse('home')
         context['page_prefix'] = reverse('blog_post_list')
-        context['feed_type'] = 'blog'
+        context['page_type'] = 'blog'
         context['post_comment_counts'] = {
             int(page[2:]): count for page, count in
             Comment.objects
@@ -128,7 +128,7 @@ class TicketFeed(FeedView):
 
     def get_context_data(self, **kwargs):
         context = super(TicketFeed, self).get_context_data(**kwargs)
-        context['feed_type'] = 'ticket'
+        context['page_type'] = 'ticket'
         context['first_page_href'] = self.request.path
         context['page_prefix'] = '?page='
         context['title'] = _('Ticket feed')
@@ -146,7 +146,7 @@ class CommentFeed(FeedView):
 
     def get_context_data(self, **kwargs):
         context = super(CommentFeed, self).get_context_data(**kwargs)
-        context['feed_type'] = 'comment'
+        context['page_type'] = 'comment'
         context['first_page_href'] = self.request.path
         context['page_prefix'] = '?page='
         context['title'] = _('Comment feed')

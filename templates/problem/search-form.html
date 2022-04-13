@@ -7,13 +7,6 @@
                 <input id="search" type="text" name="search" value="{{ search_query or '' }}"
                        placeholder="{{ _('Search problems...') }}">
             </div>
-            <!-- {% if has_fts %}
-                <div>
-                    <input id="full_text" type="checkbox" name="full_text" value="1"
-                           {% if full_text %}checked{% endif %}>
-                    <label for="full_text">{{ _('Full text search') }}</label>
-                </div>
-            {% endif %} -->
             {% if request.user.is_authenticated %}
                 <div>
                     <input id="hide_solved" type="checkbox" name="hide_solved" value="1"
@@ -26,11 +19,19 @@
                         {% if show_types %} checked{% endif %}>
                 <label for="show_types">{{ _('Show problem types') }}</label>
             </div>
-            <div>
-                <input id="show_editorial" type="checkbox" name="show_editorial" value="1"
-                        {% if show_editorial %} checked{% endif %}>
-                <label for="show_editorial">{{ _('Show editorial') }}</label>
-            </div>
+            {% if page_type == 'list' %}
+                <div>
+                    <input id="show_editorial" type="checkbox" name="show_editorial" value="1"
+                            {% if show_editorial %} checked{% endif %}>
+                    <label for="show_editorial">{{ _('Show editorial') }}</label>
+                </div>
+            {% elif page_type == 'feed' %}
+                <div>
+                    <input id="have_editorial" type="checkbox" name="have_editorial" value="1"
+                            {% if have_editorial %} checked{% endif %}>
+                    <label for="have_editorial">{{ _('Have editorial') }}</label>
+                </div>
+            {% endif %}
             <div class="filter-form-group">
                 <label for="type"><i>{{ _('Organization') }}</i></label>
                 <select id="search-org" name="orgs" multiple>

@@ -1,6 +1,6 @@
 @import "vars";
 
-.blog-content {
+.middle-content {
     padding-right: 0em;
     vertical-align: top;
     margin-right: 0;
@@ -32,9 +32,16 @@
     }
 }
 
-.blog-sidebar {
+.blog-sidebar, .right-sidebar {
     width: 100%;
     margin-left: auto;
+}
+
+.left-sidebar-item.active {
+    color: green;
+    .sidebar-icon {
+        color: green;
+    }
 }
 
 .blog-sidebox {
@@ -95,19 +102,21 @@
     }
     .left-sidebar-item {
         display: inline-block;
+        margin-left: 2em;
     }
-    .blog-left-sidebar {
+    .left-sidebar {
         text-align: right;
         padding-right: 1em;
         margin-bottom: 1em;
+        border-radius: 7px;
     }
 }
 @media (min-width: 800px) {
-    .blog-content, .blog-sidebar {
+    .middle-content, .blog-sidebar, .right-sidebar {
         display: block !important;
     }
 
-    .blog-content {
+    .middle-content {
         margin-right: 1em !important;
     }
 
@@ -115,20 +124,20 @@
         display: none;
     }
 
-    #blog-container {
+    #three-col-container {
         display: flex;
     }
 
-    .blog-content {
+    .middle-content {
         max-width: 71.5%;
         margin-left: 10%;
     }
 
-    .blog-sidebar {
+    .blog-sidebar, .right-sidebar {
         width: 18%;
     }
 
-    .blog-left-sidebar {
+    .left-sidebar {
         width: 8%;
         margin-right: 1em;
         position: fixed;
@@ -203,7 +212,7 @@
     color: gray;
 }
 
-.blog-left-sidebar {
+.left-sidebar {
     background-color: #f0f1f3;
     color: #616161;
 }
