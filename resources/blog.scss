@@ -102,13 +102,13 @@
     }
     .left-sidebar-item {
         display: inline-block;
-        margin-left: 2em;
+        flex: 1;
     }
     .left-sidebar {
         text-align: right;
-        padding-right: 1em;
         margin-bottom: 1em;
         border-radius: 7px;
+        display: flex;
     }
 }
 @media (min-width: 800px) {
