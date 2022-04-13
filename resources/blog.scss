@@ -144,6 +144,7 @@
         height: 100%;
         margin-top: -4em;
         padding-top: 4em;
+        border-right: 3px solid black;
     }
 
     .feed-table {
@@ -183,16 +184,24 @@
 
 .blog-box {
     border-bottom: 1px solid black;
+    border-left: 2px solid black;
+    border-right: 2px solid black;
+    border-top: 2px solid black;
+    border-radius: 8px;
+    margin-bottom: 1em;
     width: 90%;
-    margin-bottom: 2.5em;
-    padding: 0.5em 1.25em;
+    padding: 1em 1.25em 0.5em 1.25em;
     background-color: white;
     margin-left: auto;
     margin-right: auto;
+
+    .title {
+        margin-bottom: 0.2em;
+    }
 }
 
 .blog-description {
-    max-height: 20em;
+    max-height: 30em;
     overflow: hidden;
     overflow-wrap: anywhere;
     padding-bottom: 1em;
