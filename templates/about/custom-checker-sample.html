@@ -142,5 +142,61 @@ int main(int argc, char** argv) {
     }
 }
         </pre>
+        <h2>3. Interactive (CPP)</h2>
+        <hr>
+        <p>
+        Để sử dụng chức năng này, cần viết một chương trình C++ pass vào 1 argument <code>input_file</code> tương ứng file input.
+        </p>
+        <p>
+            Để test chương trình trên máy tính với tư cách thí sinh, có thể dùng lệnh như sau (Windows):
+            <pre class="code2">
+main.exe [input_file]</pre> 
+            hoặc thay bằng <code>./main</code> trên Linux/MacOS.
+        </p>
+        <h2>Return: </h2>
+        <p>
+            Chương trình trả về giá trị:
+            <ul>
+                <li> 0 nếu AC (100% điểm)</li>
+                <li> 1 nếu WA (0 điểm)</li>
+            </ul>
+        </p>
+
+        <h2>Ví dụ: </h2>
+        <p>Chương trình sau dùng để chấm bài toán guessgame: Người chơi phải tìm 1 số bí mật n (n chứa trong file input). Mỗi lần họ được hỏi một số x, và chương trình sẽ trả về "SMALLER", "BIGGER" hoặc "HOLA" dựa trên giá trị của n và x. Cần tìm ra n sau không quá 31 câu hỏi. </p>
+        <pre class="code2">
+#include &ltbits/stdc++.h&gt
+using namespace std;
+
+void read(long long& guess) {
+    if (!(cin &gt&gt guess)) exit(1); // Nếu không có dòng này, chương trình sẽ chờ vô hạn
+    if (guess &lt 1 || guess &gt 2e9) exit(1);
+}
+
+int main(int argc, char *argv[]) {
+    ifstream inp(argv[1]);
+    int N, guesses = 0;
+    long long guess;
+    inp &gt&gt N;
+
+    while (guess != N && guesses &lt 31) {
+        read(guess);
+        if (guess == N) {
+            cout &lt&lt "HOLA" &lt&lt endl;
+        } else if (guess &gt N) {
+            cout &lt&lt "SMALLER" &lt&lt endl;
+        } else {
+            cout &lt&lt "BIGGER" &lt&lt endl;
+        }
+        guesses++;
+    }
+
+    if (guesses &lt= 31)
+        return 0; // AC
+    else {
+        return 1; // WA
+    }
+}
+        </pre>
     </article>
 {% endblock body %}

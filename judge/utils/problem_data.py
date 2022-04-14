@@ -210,9 +210,16 @@ class ProblemDataCompiler(object):
         if self.data.output_prefix is not None:
             init['output_prefix_length'] = self.data.output_prefix
         if self.data.checker:
-            init['checker'] = make_checker(self.data)
+            if self.data.checker == 'interact':
+                init['interactive'] = {
+                    'files': split_path_first(self.data.interactive_judge.name)[1]
+                }
+                init['unbuffered'] = True
+            else:
+                init['checker'] = make_checker(self.data)
         else:
             self.data.checker_args = ''
+
         return init
 
     def compile(self):

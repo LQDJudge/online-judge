@@ -33,6 +33,7 @@ CHECKERS = (
     ('linecount', _('Line-by-line')),
     ('custom', _('Custom checker (PY)')),
     ('customval', _('Custom validator (CPP)')),
+    ('interact', _('Interactive')),
 )
 
 
@@ -61,6 +62,13 @@ class ProblemData(models.Model):
                                         blank=True,
                                         upload_to=problem_directory_file,
                                         validators=[FileExtensionValidator(allowed_extensions=['cpp'])])
+    interactive_judge = models.FileField(verbose_name=_('interactive judge'),
+                                         storage=problem_data_storage,
+                                         null=True,
+                                         blank=True,
+                                         upload_to=problem_directory_file,
+                                         validators=[FileExtensionValidator(allowed_extensions=['cpp'])])
+    
     __original_zipfile = None
 
     def __init__(self, *args, **kwargs):
