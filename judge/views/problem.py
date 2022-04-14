@@ -348,6 +348,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
     all_sorts = sql_sort | manual_sort
     default_desc = frozenset(('date', 'points', 'ac_rate', 'user_count'))
     default_sort = '-date'
+    first_page_href = None
 
     def get_paginator(self, queryset, per_page, orphans=0,
                       allow_empty_first_page=True, **kwargs):
@@ -468,6 +469,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
 
     def get_context_data(self, **kwargs):
         context = super(ProblemList, self).get_context_data(**kwargs)
+        
         context['hide_solved'] = 0 if self.in_contest else int(self.hide_solved)
         context['show_types'] = 0 if self.in_contest else int(self.show_types)
         context['full_text'] = 0 if self.in_contest else int(self.full_text)
@@ -489,10 +491,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         context.update(self.get_sort_paginate_context())
         if not self.in_contest:
             context.update(self.get_sort_context())
-            context['hot_problems'] = hot_problems(timedelta(days=1), 7)
             context['point_start'], context['point_end'], context['point_values'] = self.get_noui_slider_points()
         else:
-            context['hot_problems'] = None
             context['point_start'], context['point_end'], context['point_values'] = 0, 0, {}
             context['hide_contest_scoreboard'] = self.contest.scoreboard_visibility in \
                 (self.contest.SCOREBOARD_AFTER_CONTEST, self.contest.SCOREBOARD_AFTER_PARTICIPATION)
@@ -506,6 +506,12 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
                     context['clarifications'] = clarifications.order_by('-date')
                     if participation.contest.is_editable_by(self.request.user):
                         context['can_edit_contest'] = True
+        
+        context['page_prefix'] = None
+        context['page_suffix'] = suffix = (
+            '?' + self.request.GET.urlencode()) if self.request.GET else ''
+        context['first_page_href'] = (self.first_page_href or '.') + suffix
+        
         return context
 
     def get_noui_slider_points(self):
@@ -657,8 +663,6 @@ class ProblemFeed(ProblemList):
 
     def get_context_data(self, **kwargs):
         context = super(ProblemFeed, self).get_context_data(**kwargs)
-        context['first_page_href'] = self.request.path
-        context['page_prefix'] = '?page='
         context['page_type'] = 'feed'
         context['title'] = self.title
         context['feed_type'] = self.feed_type

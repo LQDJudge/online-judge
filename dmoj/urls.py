@@ -95,10 +95,10 @@ def exception(request):
     raise RuntimeError('@Xyene asked me to cause this')
 
 
-def paged_list_view(view, name):
+def paged_list_view(view, name, **kwargs):
     return include([
-        url(r'^$', view.as_view(), name=name),
-        url(r'^(?P<page>\d+)$', view.as_view(), name=name),
+        url(r'^$', view.as_view(**kwargs), name=name),
+        url(r'^(?P<page>\d+)$', view.as_view(**kwargs), name=name),
     ])
 
 
@@ -114,10 +114,10 @@ urlpatterns = [
         url(r'^tickets/$', blog.TicketFeed.as_view(), name='ticket_feed'),
         url(r'^comments/$', blog.CommentFeed.as_view(), name='comment_feed'),
     ])),
-    url(r'^problems/$', problem.ProblemList.as_view(), name='problem_list'),
+    url(r'^problems/', paged_list_view(problem.ProblemList, 'problem_list')),
     url(r'^problems/random/$', problem.RandomProblem.as_view(), name='problem_random'),
-    url(r'^problems/feed$', problem.ProblemFeed.as_view(feed_type='for_you'), name='problem_feed'),
-    url(r'^problems/feed/new$', problem.ProblemFeed.as_view(feed_type='new'), name='problem_feed_new'),
+    url(r'^problems/feed/', paged_list_view(problem.ProblemFeed, 'problem_feed', feed_type='for_you')),
+    url(r'^problems/feed/new/', paged_list_view(problem.ProblemFeed, 'problem_feed_new', feed_type='new')),
         
     url(r'^problem/(?P<problem>[^/]+)', include([
         url(r'^$', problem.ProblemDetail.as_view(), name='problem_detail'),

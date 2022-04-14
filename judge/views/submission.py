@@ -358,6 +358,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context['my_submissions_link'] = self.get_my_submissions_page()
         context['all_submissions_link'] = self.get_all_submissions_page()
         context['tab'] = self.tab
+
         return context
 
     def get(self, request, *args, **kwargs):
