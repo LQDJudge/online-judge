@@ -594,7 +594,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
 class ProblemFeed(ProblemList):
     model = Problem
     context_object_name = 'problems'
-    paginate_by = 50
+    paginate_by = 20
     title = _('Problem feed')
     feed_type = None
 
