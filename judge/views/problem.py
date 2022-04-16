@@ -591,6 +591,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         return HttpResponseRedirect(request.get_full_path())
 
 
+cf_logger = logging.getLogger('judge.ml.collab_filter')
+
 class ProblemFeed(ProblemList):
     model = Problem
     context_object_name = 'problems'
@@ -645,20 +647,39 @@ class ProblemFeed(ProblemList):
         if not settings.ML_OUTPUT_PATH or not user:
             return queryset.order_by('?')
         
-        cf_model = CollabFilter('collab_filter')
-        cf_time_model = CollabFilter('collab_filter_time')
+        # Logging
+        log_data = {
+            'user': self.request.user.username,
+            'cf': {
+                'dot': {},
+                'cosine': {},
+            },
+            'cf_time': {
+                'dot': {},
+                'cosine': {}
+            },
+        }
+
+        cf_model = CollabFilter('collab_filter', log_time=log_data['cf'])
+        cf_time_model = CollabFilter('collab_filter_time', log_time=log_data['cf_time'])
         hot_problems_recommendations = [
             problem for problem in hot_problems(timedelta(days=7), 20)
                     if problem in queryset
         ]
 
         q = self.merge_recommendation([
-            cf_model.user_recommendations(user, queryset, cf_model.DOT, 100),
-            cf_model.user_recommendations(user, queryset, cf_model.COSINE, 100),
-            cf_time_model.user_recommendations(user, queryset, cf_time_model.COSINE, 100),
-            cf_time_model.user_recommendations(user, queryset, cf_time_model.DOT, 100),
+            cf_model.user_recommendations(user, queryset, cf_model.DOT, 100, 
+                        log_time=log_data['cf']['dot']),
+            cf_model.user_recommendations(user, queryset, cf_model.COSINE, 100,
+                        log_time=log_data['cf']['cosine']),
+            cf_time_model.user_recommendations(user, queryset, cf_time_model.COSINE, 100,
+                        log_time=log_data['cf_time']['cosine']),
+            cf_time_model.user_recommendations(user, queryset, cf_time_model.DOT, 100,
+                        log_time=log_data['cf_time']['dot']),
             hot_problems_recommendations
         ])
+
+        cf_logger.info(log_data)
         return q
 
     def get_context_data(self, **kwargs):

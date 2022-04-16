@@ -1,6 +1,7 @@
 import numpy as np
 from django.conf import settings
 import os
+from dmoj.decorators import timeit
 
 
 class CollabFilter:
@@ -8,7 +9,8 @@ class CollabFilter:
     COSINE = 'cosine'
 
     # name = 'collab_filter' or 'collab_filter_time'
-    def __init__(self, name):
+    @timeit
+    def __init__(self, name, **kwargs):
         embeddings = np.load(os.path.join(settings.ML_OUTPUT_PATH, name + '/embeddings.npz'),
             allow_pickle=True)
         arr0, arr1 = embeddings.files
@@ -34,7 +36,8 @@ class CollabFilter:
         scores = u.dot(V.T)
         return scores
 
-    def user_recommendations(self, user, problems, measure=DOT, limit=None):
+    @timeit
+    def user_recommendations(self, user, problems, measure=DOT, limit=None, **kwargs):
         uid = user.id
         if uid >= len(self.user_embeddings):
             uid = 0
