@@ -67,9 +67,22 @@
                     $category.prop('disabled', !$category.val());
                 }
 
+                function clear_point_interval() {
+                    if ($('#search').val() !== "{{ search_query or '' }}") {
+                        $('#point-start').remove();
+                        $('#point-end').remove();
+                    }
+                }
+
                 function clean_submit() {
                     prep_form();
+                    clear_point_interval();
                     $form.submit();
+                }
+
+                function form_serialize() {
+                    clear_point_interval();
+                    return $form.serialize();
                 }
 
                 $category.select2().css({'visibility': 'visible'}).change(clean_submit);
@@ -95,7 +108,7 @@
 
                 $('input#full_text, input#hide_solved, input#show_types, input#show_editorial, input#have_editorial').click(function () {
                     prep_form();
-                    ($('<form>').attr('action', window.location.pathname + '?' + $form.serialize())
+                    ($('<form>').attr('action', window.location.pathname + '?' + form_serialize())
                         .append($('<input>').attr('type', 'hidden').attr('name', 'csrfmiddlewaretoken')
                             .attr('value', $.cookie('csrftoken')))
                         .attr('method', 'POST').appendTo($('body')).submit());
