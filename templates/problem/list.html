@@ -51,6 +51,18 @@
         <script src="{{ static('libs/nouislider.min.js') }}" type="text/javascript"></script>
         <script>
             $(function () {
+                var info_float = $('.info-float');
+                var container = $('#content-right');
+                if (window.bad_browser) {
+                    container.css('float', 'right');
+                } else if (!featureTest('position', 'sticky')) {
+                    fix_div(info_float, 55);
+                    $(window).resize(function () {
+                        info_float.width(container.width());
+                    });
+                    info_float.width(container.width());
+                }
+
                 {% if not request.in_contest_mode %}
                     // wrap middle and write column
                     if (window.matchMedia('(max-width: 799px)').matches) {
@@ -381,11 +393,9 @@
 
 {% block right_sidebar %}
     {% if not request.in_contest_mode %}
-        <div class="right-sidebar">
-            <div id="content-right" class="problems">
-                <div class="info-float">
-                    {% include "problem/search-form.html" %}
-                </div>
+        <div id="content-right" class="problems right-sidebar">
+            <div class="info-float">
+                {% include "problem/search-form.html" %}
             </div>
         </div>
     {% endif %}
