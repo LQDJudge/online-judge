@@ -742,3 +742,40 @@ math {
 .notification-open #notification {
     color: green !important;
 }
+
+#contest-info {
+    font-size: 1.25em;
+    border: 5px solid $highlight_blue;
+    border-radius: 0 $widget_border_radius $widget_border_radius 0;
+    z-index: 100000;
+    cursor: move;
+    position: fixed;
+    left: 20px;
+    top: 90%;
+    display: none;
+}
+#contest-info-main {
+    border-left: 5px dotted white;
+    background: rgba(0, 0, 0, 0.77);
+    padding: 10px 12px;
+    color: white;
+    display: inline;
+}
+#contest-info-toggle {
+    display: inline;
+    padding: 10px 12px;
+    border-radius: 0 10px 10px 0;
+    cursor: pointer;
+}
+.contest-info-toggle-mode-on {
+    background: rgba(0, 205, 0, 0.57);
+}
+.contest-info-toggle-mode-on:hover {
+    background: rgba(0, 205, 0, 0.97);
+}
+.contest-info-toggle-mode-off {
+    background: rgba(255, 0, 0, 0.57);
+}
+.contest-info-toggle-mode-off:hover {
+    background: rgba(255, 0, 0, 0.97);
+}
