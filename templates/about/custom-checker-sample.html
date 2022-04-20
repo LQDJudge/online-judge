@@ -160,6 +160,7 @@ main.exe [input_file]</pre>
                 <li> 0 nếu AC (100% điểm)</li>
                 <li> 1 nếu WA (0 điểm)</li>
             </ul>
+            Thông tin được in ra trong stderr (bằng cerr) sẽ là feedback hiển thị cho người dùng.
         </p>
 
         <h2>Ví dụ: </h2>
@@ -167,6 +168,11 @@ main.exe [input_file]</pre>
         <pre class="code2">
 #include &ltbits/stdc++.h&gt
 using namespace std;
+
+void quit(string reason) {
+    cerr << reason << endl;
+    exit(1);
+}
 
 void read(long long& guess) {
     if (!(cin &gt&gt guess)) exit(1); // Nếu không có dòng này, chương trình sẽ chờ vô hạn
@@ -179,7 +185,7 @@ int main(int argc, char *argv[]) {
     long long guess;
     inp &gt&gt N;
 
-    while (guess != N && guesses &lt 31) {
+    while (guess != N && guesses &lt= 31) {
         read(guess);
         if (guess == N) {
             cout &lt&lt "HOLA" &lt&lt endl;
@@ -190,10 +196,11 @@ int main(int argc, char *argv[]) {
         }
         guesses++;
     }
-
+    cerr << "Number of used guesses: " << guesses << endl;
     if (guesses &lt= 31)
         return 0; // AC
     else {
+        cerr << "Used too many guesses" << endl;
         return 1; // WA
     }
 }
