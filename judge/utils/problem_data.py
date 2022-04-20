@@ -212,7 +212,8 @@ class ProblemDataCompiler(object):
         if self.data.checker:
             if self.data.checker == 'interact':
                 init['interactive'] = {
-                    'files': split_path_first(self.data.interactive_judge.name)[1]
+                    'files': split_path_first(self.data.interactive_judge.name)[1],
+                    'feedback': True
                 }
                 init['unbuffered'] = True
             else:
