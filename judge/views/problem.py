@@ -1,9 +1,10 @@
 import logging
 import os
 import shutil
-from datetime import timedelta
+from datetime import timedelta, datetime
 from operator import itemgetter
 from random import randrange
+import random
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -161,7 +162,7 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
     template_name = 'problem/problem.html'
 
     def get_comment_page(self):
-            return 'p:%s' % self.object.code
+        return 'p:%s' % self.object.code
 
     def get_context_data(self, **kwargs):
         context = super(ProblemDetail, self).get_context_data(**kwargs)
@@ -611,27 +612,22 @@ class ProblemFeed(ProblemList):
                              orphans=orphans, allow_empty_first_page=allow_empty_first_page, **kwargs)
 
     # arr = [[], [], ..]
-    def merge_recommendation(self, arr): 
-        idx = [0] * len(arr)
-        stop = False
+    def merge_recommendation(self, arr):
+        seed = datetime.now().strftime("%d%m%Y")
+        merged_array = []
+        for a in arr:
+            merged_array += a
+        random.Random(seed).shuffle(merged_array)
+
         res = []
         used_pid = set()
-        cnt = 0
-        while not stop:
-            cnt += 1
-            stop = True
-            for i in range(len(arr)):
-                if idx[i] < len(arr[i]):
-                    obj = arr[i][idx[i]]
-                    if type(obj) == tuple:
-                        obj = obj[1]
-                    elif cnt % 3 != 0: # hot problems appear less
-                        continue
-                    if obj not in used_pid:
-                        res.append(obj)
-                        used_pid.add(obj)
-                    idx[i] += 1
-                    stop = False
+
+        for obj in merged_array:
+            if type(obj) == tuple:
+                obj = obj[1]
+            if obj not in used_pid:
+                res.append(obj)
+                used_pid.add(obj)
         return res
 
     def get_queryset(self):
