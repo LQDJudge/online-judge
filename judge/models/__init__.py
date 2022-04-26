@@ -31,4 +31,6 @@ revisions.register(ProblemPointsVote)
 revisions.register(ContestMoss)
 revisions.register(ProblemData)
 revisions.register(ProblemTestCase)
+revisions.register(ContestParticipation)
+revisions.register(Rating)
 del revisions

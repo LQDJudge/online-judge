@@ -6,6 +6,8 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from mptt.admin import DraggableMPTTAdmin
 from reversion.admin import VersionAdmin
+from reversion_compare.admin import CompareVersionAdmin
+
 
 from judge.dblock import LockModel
 from judge.models import NavigationBar
@@ -58,7 +60,7 @@ class BlogPostForm(ModelForm):
             widgets['summary'] = HeavyPreviewAdminPageDownWidget(preview=reverse_lazy('blog_preview'))
 
 
-class BlogPostAdmin(VersionAdmin):
+class BlogPostAdmin(CompareVersionAdmin):
     fieldsets = (
         (None, {'fields': ('title', 'slug', 'authors', 'visible', 'sticky', 'publish_on',
                            'is_organization_private', 'organizations')}),
@@ -121,7 +123,7 @@ class UserListFilter(admin.SimpleListFilter):
 
 class LogEntryAdmin(admin.ModelAdmin):
     readonly_fields = ('user', 'content_type', 'object_id', 'object_repr', 'action_flag', 'change_message')
-    list_display = ('__str__', 'action_time', 'user', 'content_type', 'object_link')
+    list_display = ('__str__', 'action_time', 'user', 'content_type', 'object_link', 'diff_link')
     search_fields = ('object_repr', 'change_message')
     list_filter = (UserListFilter, 'content_type')
     list_display_links = None
@@ -149,6 +151,18 @@ class LogEntryAdmin(admin.ModelAdmin):
         return link
     object_link.admin_order_field = 'object_repr'
     object_link.short_description = _('object')
+
+    def diff_link(self, obj):
+        if obj.is_deletion():
+            return None
+        ct = obj.content_type
+        try:
+            url = reverse('admin:%s_%s_history' % (ct.app_label, ct.model), args=(obj.object_id,))
+            link = format_html('<a href="{1}">{0}</a>', _('Diff'), url)
+        except NoReverseMatch:
+            link = None
+        return link
+    diff_link.short_description = _('diff')
 
     def queryset(self, request):
         return super().queryset(request).prefetch_related('content_type')

@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _, ungettext
 from reversion.admin import VersionAdmin
+from reversion_compare.admin import CompareVersionAdmin
 
 from django_ace import AceWidget
 from judge.models import Contest, ContestProblem, ContestSubmission, Profile, Rating
@@ -113,7 +114,7 @@ class ContestForm(ModelForm):
             widgets['description'] = HeavyPreviewAdminPageDownWidget(preview=reverse_lazy('contest_preview'))
 
 
-class ContestAdmin(VersionAdmin):
+class ContestAdmin(CompareVersionAdmin):
     fieldsets = (
         (None, {'fields': ('key', 'name', 'authors', 'curators', 'testers')}),
         (_('Settings'), {'fields': ('is_visible', 'use_clarifications', 'hide_problem_tags', 'scoreboard_visibility',
