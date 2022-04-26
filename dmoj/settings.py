@@ -234,6 +234,7 @@ INSTALLED_APPS += (
     'registration',
     'mptt',
     'reversion',
+    'reversion_compare',
     'django_social_share',
     'social_django',
     'compressor',

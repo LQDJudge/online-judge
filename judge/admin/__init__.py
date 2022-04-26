@@ -36,3 +36,4 @@ admin.site.register(ProblemType, ProblemTypeAdmin)
 admin.site.register(Profile, ProfileAdmin)
 admin.site.register(Submission, SubmissionAdmin)
 admin.site.register(Ticket, TicketAdmin)
+admin.site

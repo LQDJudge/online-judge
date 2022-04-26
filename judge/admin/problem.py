@@ -11,6 +11,8 @@ from django.urls import reverse_lazy
 from django.utils.html import format_html
 from django.utils.translation import gettext, gettext_lazy as _, ungettext
 from reversion.admin import VersionAdmin
+from reversion_compare.admin import CompareVersionAdmin
+
 
 from judge.models import LanguageLimit, Problem, ProblemClarification, ProblemTranslation, Profile, Solution
 from judge.widgets import AdminHeavySelect2MultipleWidget, AdminSelect2MultipleWidget, AdminSelect2Widget, \
@@ -117,7 +119,7 @@ class ProblemTranslationInline(admin.StackedInline):
     extra = 0
 
 
-class ProblemAdmin(VersionAdmin):
+class ProblemAdmin(CompareVersionAdmin):
     fieldsets = (
         (None, {
             'fields': (
