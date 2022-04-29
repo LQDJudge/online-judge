@@ -406,6 +406,7 @@ class Problem(models.Model):
             ('change_public_visibility', 'Change is_public field'),
             ('change_manually_managed', 'Change is_manually_managed field'),
             ('see_organization_problem', 'See organization-private problems'),
+            ('suggest_problem_changes', 'Suggest changes to problem'),
         )
         verbose_name = _('problem')
         verbose_name_plural = _('problems')

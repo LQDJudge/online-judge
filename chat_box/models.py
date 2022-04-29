@@ -58,8 +58,8 @@ class Ignore(models.Model):
     @classmethod
     def get_ignored_users(self, user):
         try:
-            return self.objects.get(user=user).ignored_users.all()
-        except Ignore.DoesNotExist:
+            return self.objects.filter(user=user)[0].ignored_users.all()
+        except:
             return Profile.objects.none()
 
     @classmethod
