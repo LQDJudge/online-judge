@@ -77,6 +77,10 @@ class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, Deta
             if Submission.objects.filter(user_id=profile.id, result='AC', problem_id=problem.id,
                                          points=problem.points).exists():
                 return submission
+        if (hasattr(submission, 'contest') and 
+            submission.contest.participation.contest.is_editable_by(self.request.user)):
+            return submission
+    
         raise PermissionDenied()
 
     def get_title(self):
