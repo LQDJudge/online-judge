@@ -1,0 +1,92 @@
+{% extends "three-column-content.html" %}
+{% block three_col_media %}
+    <style>
+        .middle-content {
+            max-width: 50%;
+        }
+        ol {
+            padding-left: 1em;
+        }
+    </style>
+{% endblock %}
+
+{% block three_col_js %}
+    <script type="text/javascript">
+        $(function () {
+            $('.vote-detail').each(function() {
+                $(this).on('click', function() {
+                    var pid = $(this).attr('pid');
+                    $('.detail').hide();
+                    $('#detail-'+pid).show();
+                })
+            })
+        });        
+    </script>
+{% endblock %}
+
+{% block left_sidebar %}
+    <div class="left-sidebar">
+        {{ make_tab_item('problem', 'fa fa-list', url('internal_problem'), _('Problem')) }}
+    </div>
+{% endblock %}
+
+{% block middle_content %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{{_('Problem')}}</th>
+                <th>{{_('Code')}}</th>
+                <th>{{_('Vote count')}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for problem in problems %}
+                <tr>
+                    <td><a href="{{url('problem_detail', problem.code)}}">{{problem.name}}</a></td>
+                    <td><a href="{{url('admin:judge_problem_change', problem.id)}}">{{problem.code}}</a></td>
+                    <td><a href="#" class="vote-detail" pid="{{problem.id}}">{{problem.vote_count}}</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if page_obj.num_pages > 1 %}
+        <div style="margin-top:10px;">{% include "list-pages.html" %}</div>
+    {% endif %}
+{% endblock %}
+
+{% block right_sidebar %}
+    <div style="display: block; width: 100%">
+    <div><a href="{{url('admin:judge_volunteerproblemvote_changelist')}}">{{_('Admin')}}</a></div>
+    {% for problem in problems %}
+        <div class="detail" id="detail-{{problem.id}}" style="display: none;">
+            <h3>{{_('Votes for problem') }} {{problem.name}}</h3>
+            <ol>
+                {% for vote in problem.volunteer_user_votes.order_by('id') %}
+                    <li>
+                        <h4> {{link_user(vote.voter)}} </h4>
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <td style="width:10%">{{_('Knowledge')}}</td>
+                                    <td>{{vote.knowledge_points}}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{_('Thinking')}}</td>
+                                    <td>{{vote.thinking_points}}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{_('Types')}}</td>
+                                    <td>{{vote.types.all() | join(', ')}}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{_('Feedback')}}</td>
+                                    <td>{{vote.feedback}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </li>
+                {% endfor %}
+            </ol>
+        </div>
+    {% endfor %}
+{% endblock %}

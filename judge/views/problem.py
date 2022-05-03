@@ -30,7 +30,7 @@ from judge.comments import CommentedDetailView
 from judge.forms import ProblemCloneForm, ProblemSubmitForm, ProblemPointsVoteForm
 from judge.models import ContestProblem, ContestSubmission, Judge, Language, Problem, ProblemClarification, \
     ProblemGroup, ProblemTranslation, ProblemType, ProblemPointsVote, RuntimeVersion, Solution, Submission, SubmissionSource, \
-    TranslatedProblemForeignKeyQuerySet, Organization 
+    TranslatedProblemForeignKeyQuerySet, Organization , VolunteerProblemVote
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.opengraph import generate_opengraph
@@ -594,6 +594,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
 
 cf_logger = logging.getLogger('judge.ml.collab_filter')
 
+
 class ProblemFeed(ProblemList):
     model = Problem
     context_object_name = 'problems'
@@ -640,6 +641,9 @@ class ProblemFeed(ProblemList):
 
         if self.feed_type == 'new':
             return queryset.order_by('-date')
+        elif user and self.feed_type == 'volunteer':
+            voted_problems = user.volunteer_problem_votes.values_list('problem', flat=True)
+            return queryset.exclude(id__in=voted_problems).order_by('?')
         if not settings.ML_OUTPUT_PATH or not user:
             return queryset.order_by('?')
         

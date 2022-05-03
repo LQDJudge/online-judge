@@ -20,7 +20,7 @@ from judge.sitemap import BlogPostSitemap, ContestSitemap, HomePageSitemap, Orga
     SolutionSitemap, UrlSitemap, UserSitemap
 from judge.views import TitledTemplateView, about, api, blog, comment, contests, language, license, mailgun, \
     notification, organization, preview, problem, problem_manage, ranked_submission, register, stats, status, submission, tasks, \
-    ticket, totp, user, widgets
+    ticket, totp, user, volunteer, widgets, internal
 from judge.views.problem_data import ProblemDataView, ProblemSubmissionDiff, \
     problem_data_file, problem_init_view, ProblemZipUploadView
 from judge.views.register import ActivationView, RegistrationView
@@ -118,6 +118,7 @@ urlpatterns = [
     url(r'^problems/random/$', problem.RandomProblem.as_view(), name='problem_random'),
     url(r'^problems/feed/', paged_list_view(problem.ProblemFeed, 'problem_feed', feed_type='for_you')),
     url(r'^problems/feed/new/', paged_list_view(problem.ProblemFeed, 'problem_feed_new', feed_type='new')),
+    url(r'^problems/feed/volunteer/', paged_list_view(problem.ProblemFeed, 'problem_feed_volunteer', feed_type='volunteer')),
         
     url(r'^problem/(?P<problem>[^/]+)', include([
         url(r'^$', problem.ProblemDetail.as_view(), name='problem_detail'),
@@ -396,6 +397,10 @@ urlpatterns = [
         url(r'^get_unread_boxes$', chat.get_unread_boxes, name='get_unread_boxes'),
     ])),
 
+    url(r'^internal/', include([
+        url(r'^problem$', internal.InternalProblem.as_view(), name='internal_problem'),
+    ])),
+
     url(r'^notifications/', 
         login_required(notification.NotificationList.as_view()),
         name='notification'),
@@ -405,6 +410,10 @@ urlpatterns = [
         url(r'post_file/$', user.import_users_post_file, name='import_users_post_file'),
         url(r'submit/$', user.import_users_submit, name='import_users_submit'),
         url(r'sample/$', user.sample_import_users, name='import_users_sample')
+    ])),
+
+    url(r'^volunteer/', include([
+        url(r'^problem/vote$', volunteer.vote_problem, name='volunteer_problem_vote'),
     ])),
 ]
 

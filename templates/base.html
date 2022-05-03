@@ -260,6 +260,9 @@
                                 {% if request.user.is_staff or request.user.is_superuser %}
                                     <li><a href="{{ url('admin:index') }}">{{ _('Admin') }}</a></li>
                                 {% endif %}
+                                {% if request.user.is_superuser %}
+                                    <li><a href="{{ url('internal_problem') }}">{{ _('Internal') }}</a></li>
+                                {% endif %}
                                 <li><a href="{{ url('user_edit_profile') }}">{{ _('Edit profile') }}</a></li>
                                 {% if request.user.is_impersonate %}
                                     <li><a href="{{ url('impersonate-stop') }}">Stop impersonating</a></li>

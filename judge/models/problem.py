@@ -377,6 +377,7 @@ class Problem(models.Model):
     save.alters_data = True
 
     def can_vote(self, request):
+        return False
         user = request.user
         if not user.is_authenticated:
             return False
