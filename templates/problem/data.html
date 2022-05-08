@@ -32,7 +32,9 @@
                     if (!responseJSON.success) {
                         alert('Fail to upload: ' + responseJSON.error);
                     }
-                    else window.location.reload();
+                    else {
+                        $('#submit-button').click();
+                    }
                 });;
 
             function update_select2() {
