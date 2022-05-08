@@ -76,8 +76,8 @@ class ProblemData(models.Model):
         self.__original_zipfile = self.zipfile
 
     def save(self, *args, **kwargs):
-        if self.zipfile != self.__original_zipfile and self.__original_zipfile:
-            # Delete caches
+        # Delete caches
+        if self.__original_zipfile:
             try: 
                 files = ZipFile(self.__original_zipfile.path).namelist()
                 for file in files:
@@ -85,7 +85,7 @@ class ProblemData(models.Model):
                     cache.delete(cache_key)
             except BadZipFile:
                 pass
-
+        if self.zipfile != self.__original_zipfile and self.__original_zipfile:
             self.__original_zipfile.delete(save=False)
         return super(ProblemData, self).save(*args, **kwargs)
 
