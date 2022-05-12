@@ -120,6 +120,8 @@ def post_message(request):
     ret = {'msg': 'posted'}
     if request.method != 'POST':
         return HttpResponseBadRequest()
+    if len(request.POST['body']) > 5000:
+        return HttpResponseBadRequest()
 
     room = None
     if request.POST['room']:
