@@ -3766,7 +3766,7 @@ msgid ""
 "<b>%(time_limit)s</b> window between <b>%(start_time)s</b> and <b>"
 "%(end_time)s</b>"
 msgstr ""
-"Một thời gian dài <b>%(time_limit)s</b> trong khoản <b>%(start_time)s</b> từ "
+"Kéo dài <b>%(time_limit)s</b> từ <b>%(start_time)s</b> đến "
 "<b>%(end_time)s</b>"
 
 #: templates/contest/contest.html:63
