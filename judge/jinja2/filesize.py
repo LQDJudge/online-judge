@@ -13,24 +13,28 @@ def _format_size(bytes, callback):
     PB = 1 << 50
 
     if bytes < KB:
-        return callback('', bytes)
+        return callback("", bytes)
     elif bytes < MB:
-        return callback('K', bytes / KB)
+        return callback("K", bytes / KB)
     elif bytes < GB:
-        return callback('M', bytes / MB)
+        return callback("M", bytes / MB)
     elif bytes < TB:
-        return callback('G', bytes / GB)
+        return callback("G", bytes / GB)
     elif bytes < PB:
-        return callback('T', bytes / TB)
+        return callback("T", bytes / TB)
     else:
-        return callback('P', bytes / PB)
+        return callback("P", bytes / PB)
 
 
 @registry.filter
 def kbdetailformat(bytes):
-    return avoid_wrapping(_format_size(bytes * 1024, lambda x, y: ['%d %sB', '%.2f %sB'][bool(x)] % (y, x)))
+    return avoid_wrapping(
+        _format_size(
+            bytes * 1024, lambda x, y: ["%d %sB", "%.2f %sB"][bool(x)] % (y, x)
+        )
+    )
 
 
 @registry.filter
 def kbsimpleformat(kb):
-    return _format_size(kb * 1024, lambda x, y: '%.0f%s' % (y, x or 'B'))
+    return _format_size(kb * 1024, lambda x, y: "%.0f%s" % (y, x or "B"))

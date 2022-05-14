@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('chat_box', '0003_auto_20200505_2306'),
+        ("chat_box", "0003_auto_20200505_2306"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='message',
-            name='hidden',
-            field=models.BooleanField(default=False, verbose_name='is hidden'),
+            model_name="message",
+            name="hidden",
+            field=models.BooleanField(default=False, verbose_name="is hidden"),
         ),
     ]

@@ -1,5 +1,9 @@
-from django.template import (Context, Template as DjangoTemplate, TemplateSyntaxError as DjangoTemplateSyntaxError,
-                             VariableDoesNotExist)
+from django.template import (
+    Context,
+    Template as DjangoTemplate,
+    TemplateSyntaxError as DjangoTemplateSyntaxError,
+    VariableDoesNotExist,
+)
 
 from . import registry
 
@@ -24,4 +28,4 @@ def render_django(template, **context):
     try:
         return compile_template(template).render(Context(context))
     except (VariableDoesNotExist, DjangoTemplateSyntaxError):
-        return 'Error rendering: %r' % template
+        return "Error rendering: %r" % template

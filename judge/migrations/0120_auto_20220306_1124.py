@@ -8,27 +8,68 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0119_auto_20220306_0512'),
+        ("judge", "0119_auto_20220306_0512"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='is_banned_problem_voting',
-            field=models.BooleanField(default=False, help_text="User will not be able to vote on problems' point values.", verbose_name='banned from voting'),
+            model_name="profile",
+            name="is_banned_problem_voting",
+            field=models.BooleanField(
+                default=False,
+                help_text="User will not be able to vote on problems' point values.",
+                verbose_name="banned from voting",
+            ),
         ),
         migrations.CreateModel(
-            name='ProblemPointsVote',
+            name="ProblemPointsVote",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('points', models.IntegerField(help_text='The amount of points you think this problem deserves.', validators=[django.core.validators.MinValueValidator(100), django.core.validators.MaxValueValidator(600)], verbose_name='proposed point value')),
-                ('vote_time', models.DateTimeField(auto_now_add=True, verbose_name='The time this vote was cast')),
-                ('problem', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='problem_points_votes', to='judge.Problem')),
-                ('voter', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='problem_points_votes', to='judge.Profile')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "points",
+                    models.IntegerField(
+                        help_text="The amount of points you think this problem deserves.",
+                        validators=[
+                            django.core.validators.MinValueValidator(100),
+                            django.core.validators.MaxValueValidator(600),
+                        ],
+                        verbose_name="proposed point value",
+                    ),
+                ),
+                (
+                    "vote_time",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="The time this vote was cast"
+                    ),
+                ),
+                (
+                    "problem",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="problem_points_votes",
+                        to="judge.Problem",
+                    ),
+                ),
+                (
+                    "voter",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="problem_points_votes",
+                        to="judge.Profile",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'vote',
-                'verbose_name_plural': 'votes',
+                "verbose_name": "vote",
+                "verbose_name_plural": "votes",
             },
         ),
     ]

@@ -5,10 +5,10 @@ from django.db.models.query import QuerySet
 
 
 class SearchQuerySet(QuerySet):
-    DEFAULT = ''
-    BOOLEAN = ' IN BOOLEAN MODE'
-    NATURAL_LANGUAGE = ' IN NATURAL LANGUAGE MODE'
-    QUERY_EXPANSION = ' WITH QUERY EXPANSION'
+    DEFAULT = ""
+    BOOLEAN = " IN BOOLEAN MODE"
+    NATURAL_LANGUAGE = " IN NATURAL LANGUAGE MODE"
+    QUERY_EXPANSION = " WITH QUERY EXPANSION"
 
     def __init__(self, fields=None, **kwargs):
         super(SearchQuerySet, self).__init__(**kwargs)
@@ -25,20 +25,26 @@ class SearchQuerySet(QuerySet):
         # Get the table name and column names from the model
         # in `table_name`.`column_name` style
         columns = [meta.get_field(name).column for name in self._search_fields]
-        full_names = ['%s.%s' %
-                      (connection.ops.quote_name(meta.db_table),
-                       connection.ops.quote_name(column))
-                      for column in columns]
+        full_names = [
+            "%s.%s"
+            % (
+                connection.ops.quote_name(meta.db_table),
+                connection.ops.quote_name(column),
+            )
+            for column in columns
+        ]
 
         # Create the MATCH...AGAINST expressions
-        fulltext_columns = ', '.join(full_names)
-        match_expr = ('MATCH(%s) AGAINST (%%s%s)' % (fulltext_columns, mode))
+        fulltext_columns = ", ".join(full_names)
+        match_expr = "MATCH(%s) AGAINST (%%s%s)" % (fulltext_columns, mode)
 
         # Add the extra SELECT and WHERE options
-        return self.extra(select={'relevance': match_expr},
-                          select_params=[query],
-                          where=[match_expr],
-                          params=[query])
+        return self.extra(
+            select={"relevance": match_expr},
+            select_params=[query],
+            where=[match_expr],
+            params=[query],
+        )
 
 
 class SearchManager(models.Manager):

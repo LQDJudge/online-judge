@@ -24,10 +24,10 @@ class HashFileCache(object):
         return os.path.join(self.root, hash, file)
 
     def get_url(self, hash, file):
-        return urljoin(self.url, '%s/%s' % (hash, file))
+        return urljoin(self.url, "%s/%s" % (hash, file))
 
     def read_file(self, hash, file):
-        return open(self.get_path(hash, file), 'rb')
+        return open(self.get_path(hash, file), "rb")
 
     def read_data(self, hash, file):
         with self.read_file(hash, file) as f:
@@ -35,10 +35,10 @@ class HashFileCache(object):
 
     def cache_data(self, hash, file, data, url=True, gzip=True):
         if gzip and self.gzip:
-            with gzip_open(self.get_path(hash, file + '.gz'), 'wb') as f:
+            with gzip_open(self.get_path(hash, file + ".gz"), "wb") as f:
                 f.write(data)
 
-        with open(self.get_path(hash, file), 'wb') as f:
+        with open(self.get_path(hash, file), "wb") as f:
             f.write(data)
 
         if url:

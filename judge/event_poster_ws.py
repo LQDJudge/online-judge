@@ -5,7 +5,7 @@ import threading
 from django.conf import settings
 from websocket import WebSocketException, create_connection
 
-__all__ = ['EventPostingError', 'EventPoster', 'post', 'last']
+__all__ = ["EventPostingError", "EventPoster", "post", "last"]
 _local = threading.local()
 
 
@@ -20,19 +20,23 @@ class EventPoster(object):
     def _connect(self):
         self._conn = create_connection(settings.EVENT_DAEMON_POST)
         if settings.EVENT_DAEMON_KEY is not None:
-            self._conn.send(json.dumps({'command': 'auth', 'key': settings.EVENT_DAEMON_KEY}))
+            self._conn.send(
+                json.dumps({"command": "auth", "key": settings.EVENT_DAEMON_KEY})
+            )
             resp = json.loads(self._conn.recv())
-            if resp['status'] == 'error':
-                raise EventPostingError(resp['code'])
+            if resp["status"] == "error":
+                raise EventPostingError(resp["code"])
 
     def post(self, channel, message, tries=0):
         try:
-            self._conn.send(json.dumps({'command': 'post', 'channel': channel, 'message': message}))
+            self._conn.send(
+                json.dumps({"command": "post", "channel": channel, "message": message})
+            )
             resp = json.loads(self._conn.recv())
-            if resp['status'] == 'error':
-                raise EventPostingError(resp['code'])
+            if resp["status"] == "error":
+                raise EventPostingError(resp["code"])
             else:
-                return resp['id']
+                return resp["id"]
         except WebSocketException:
             if tries > 10:
                 raise
@@ -43,10 +47,10 @@ class EventPoster(object):
         try:
             self._conn.send('{"command": "last-msg"}')
             resp = json.loads(self._conn.recv())
-            if resp['status'] == 'error':
-                raise EventPostingError(resp['code'])
+            if resp["status"] == "error":
+                raise EventPostingError(resp["code"])
             else:
-                return resp['id']
+                return resp["id"]
         except WebSocketException:
             if tries > 10:
                 raise
@@ -55,7 +59,7 @@ class EventPoster(object):
 
 
 def _get_poster():
-    if 'poster' not in _local.__dict__:
+    if "poster" not in _local.__dict__:
         _local.poster = EventPoster()
     return _local.poster
 

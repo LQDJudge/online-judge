@@ -93,7 +93,7 @@ class BaseContestFormat(six.with_metaclass(ABCMeta)):
     @classmethod
     def best_solution_state(cls, points, total):
         if not points:
-            return 'failed-score'
+            return "failed-score"
         if points == total:
-            return 'full-score'
-        return 'partial-score'
+            return "full-score"
+        return "partial-score"

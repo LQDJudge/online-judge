@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0121_auto_20220415_0135'),
+        ("judge", "0121_auto_20220415_0135"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='contest',
-            name='time_limit',
-            field=models.DurationField(blank=True, help_text='Format hh:mm:ss. For example, if you want a 2-hour contest, enter 02:00:00', null=True, verbose_name='time limit'),
+            model_name="contest",
+            name="time_limit",
+            field=models.DurationField(
+                blank=True,
+                help_text="Format hh:mm:ss. For example, if you want a 2-hour contest, enter 02:00:00",
+                null=True,
+                verbose_name="time limit",
+            ),
         ),
     ]

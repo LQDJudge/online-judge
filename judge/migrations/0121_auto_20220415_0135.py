@@ -9,23 +9,68 @@ import judge.utils.problem_data
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0120_auto_20220306_1124'),
+        ("judge", "0120_auto_20220306_1124"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='problemdata',
-            name='interactive_judge',
-            field=models.FileField(blank=True, null=True, storage=judge.utils.problem_data.ProblemDataStorage(), upload_to=judge.models.problem_data.problem_directory_file, validators=[django.core.validators.FileExtensionValidator(allowed_extensions=['cpp'])], verbose_name='interactive judge'),
+            model_name="problemdata",
+            name="interactive_judge",
+            field=models.FileField(
+                blank=True,
+                null=True,
+                storage=judge.utils.problem_data.ProblemDataStorage(),
+                upload_to=judge.models.problem_data.problem_directory_file,
+                validators=[
+                    django.core.validators.FileExtensionValidator(
+                        allowed_extensions=["cpp"]
+                    )
+                ],
+                verbose_name="interactive judge",
+            ),
         ),
         migrations.AlterField(
-            model_name='problemdata',
-            name='checker',
-            field=models.CharField(blank=True, choices=[('standard', 'Standard'), ('floats', 'Floats'), ('floatsabs', 'Floats (absolute)'), ('floatsrel', 'Floats (relative)'), ('rstripped', 'Non-trailing spaces'), ('sorted', 'Unordered'), ('identical', 'Byte identical'), ('linecount', 'Line-by-line'), ('custom', 'Custom checker (PY)'), ('customval', 'Custom validator (CPP)'), ('interact', 'Interactive')], max_length=10, verbose_name='checker'),
+            model_name="problemdata",
+            name="checker",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("standard", "Standard"),
+                    ("floats", "Floats"),
+                    ("floatsabs", "Floats (absolute)"),
+                    ("floatsrel", "Floats (relative)"),
+                    ("rstripped", "Non-trailing spaces"),
+                    ("sorted", "Unordered"),
+                    ("identical", "Byte identical"),
+                    ("linecount", "Line-by-line"),
+                    ("custom", "Custom checker (PY)"),
+                    ("customval", "Custom validator (CPP)"),
+                    ("interact", "Interactive"),
+                ],
+                max_length=10,
+                verbose_name="checker",
+            ),
         ),
         migrations.AlterField(
-            model_name='problemtestcase',
-            name='checker',
-            field=models.CharField(blank=True, choices=[('standard', 'Standard'), ('floats', 'Floats'), ('floatsabs', 'Floats (absolute)'), ('floatsrel', 'Floats (relative)'), ('rstripped', 'Non-trailing spaces'), ('sorted', 'Unordered'), ('identical', 'Byte identical'), ('linecount', 'Line-by-line'), ('custom', 'Custom checker (PY)'), ('customval', 'Custom validator (CPP)'), ('interact', 'Interactive')], max_length=10, verbose_name='checker'),
+            model_name="problemtestcase",
+            name="checker",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("standard", "Standard"),
+                    ("floats", "Floats"),
+                    ("floatsabs", "Floats (absolute)"),
+                    ("floatsrel", "Floats (relative)"),
+                    ("rstripped", "Non-trailing spaces"),
+                    ("sorted", "Unordered"),
+                    ("identical", "Byte identical"),
+                    ("linecount", "Line-by-line"),
+                    ("custom", "Custom checker (PY)"),
+                    ("customval", "Custom validator (CPP)"),
+                    ("interact", "Interactive"),
+                ],
+                max_length=10,
+                verbose_name="checker",
+            ),
         ),
     ]

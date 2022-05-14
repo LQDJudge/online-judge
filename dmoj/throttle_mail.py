@@ -8,8 +8,8 @@ DEFAULT_THROTTLE = (10, 60)
 
 
 def new_email():
-    cache.add('error_email_throttle', 0, settings.DMOJ_EMAIL_THROTTLING[1])
-    return cache.incr('error_email_throttle')
+    cache.add("error_email_throttle", 0, settings.DMOJ_EMAIL_THROTTLING[1])
+    return cache.incr("error_email_throttle")
 
 
 class ThrottledEmailHandler(AdminEmailHandler):

@@ -7,7 +7,11 @@ from django.db.models import Count
 from django.db.models.expressions import F, Value
 from django.db.models.functions import Coalesce
 from django.forms import ModelForm
-from django.http import HttpResponseForbidden, HttpResponseNotFound, HttpResponseRedirect
+from django.http import (
+    HttpResponseForbidden,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+)
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
@@ -24,50 +28,55 @@ from judge.widgets import HeavyPreviewPageDownWidget
 from judge.jinja2.reference import get_user_from_text
 
 
-
 def add_mention_notifications(comment):
     user_referred = get_user_from_text(comment.body).exclude(id=comment.author.id)
     for user in user_referred:
-        notification_ref = Notification(owner=user,
-                                        comment=comment,
-                                        category='Mention')
+        notification_ref = Notification(owner=user, comment=comment, category="Mention")
         notification_ref.save()
 
-def del_mention_notifications(comment):
-    query = {
-        'comment': comment,
-        'category': 'Mention'
-    }
-    Notification.objects.filter(**query).delete()
 
+def del_mention_notifications(comment):
+    query = {"comment": comment, "category": "Mention"}
+    Notification.objects.filter(**query).delete()
 
 
 class CommentForm(ModelForm):
     class Meta:
         model = Comment
-        fields = ['body', 'parent']
+        fields = ["body", "parent"]
         widgets = {
-            'parent': forms.HiddenInput(),
+            "parent": forms.HiddenInput(),
         }
 
         if HeavyPreviewPageDownWidget is not None:
-            widgets['body'] = HeavyPreviewPageDownWidget(preview=reverse_lazy('comment_preview'),
-                                                         preview_timeout=1000, hide_preview_button=True)
+            widgets["body"] = HeavyPreviewPageDownWidget(
+                preview=reverse_lazy("comment_preview"),
+                preview_timeout=1000,
+                hide_preview_button=True,
+            )
 
     def __init__(self, request, *args, **kwargs):
         self.request = request
         super(CommentForm, self).__init__(*args, **kwargs)
-        self.fields['body'].widget.attrs.update({'placeholder': _('Comment body')})
+        self.fields["body"].widget.attrs.update({"placeholder": _("Comment body")})
 
     def clean(self):
         if self.request is not None and self.request.user.is_authenticated:
             profile = self.request.profile
             if profile.mute:
-                raise ValidationError(_('Your part is silent, little toad.'))
-            elif (not self.request.user.is_staff and
-                  not profile.submission_set.filter(points=F('problem__points')).exists()):
-                raise ValidationError(_('You need to have solved at least one problem '
-                                        'before your voice can be heard.'))
+                raise ValidationError(_("Your part is silent, little toad."))
+            elif (
+                not self.request.user.is_staff
+                and not profile.submission_set.filter(
+                    points=F("problem__points")
+                ).exists()
+            ):
+                raise ValidationError(
+                    _(
+                        "You need to have solved at least one problem "
+                        "before your voice can be heard."
+                    )
+                )
         return super(CommentForm, self).clean()
 
 
@@ -80,10 +89,12 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         return self.comment_page
 
     def is_comment_locked(self):
-        if self.request.user.has_perm('judge.override_comment_lock'):
+        if self.request.user.has_perm("judge.override_comment_lock"):
             return False
-        return (CommentLock.objects.filter(page=self.get_comment_page()).exists()
-            or (self.request.in_contest and self.request.participation.contest.use_clarifications))
+        return CommentLock.objects.filter(page=self.get_comment_page()).exists() or (
+            self.request.in_contest
+            and self.request.participation.contest.use_clarifications
+        )
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
@@ -93,14 +104,16 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         if self.is_comment_locked():
             return HttpResponseForbidden()
 
-        parent = request.POST.get('parent')
+        parent = request.POST.get("parent")
         if parent:
             try:
                 parent = int(parent)
             except ValueError:
                 return HttpResponseNotFound()
             else:
-                if not Comment.objects.filter(hidden=False, id=parent, page=page).exists():
+                if not Comment.objects.filter(
+                    hidden=False, id=parent, page=page
+                ).exists():
                     return HttpResponseNotFound()
 
         form = CommentForm(request, request.POST)
@@ -109,21 +122,22 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
             comment.author = request.profile
             comment.page = page
 
-
-            with LockModel(write=(Comment, Revision, Version), read=(ContentType,)), revisions.create_revision():
+            with LockModel(
+                write=(Comment, Revision, Version), read=(ContentType,)
+            ), revisions.create_revision():
                 revisions.set_user(request.user)
-                revisions.set_comment(_('Posted comment'))
+                revisions.set_comment(_("Posted comment"))
                 comment.save()
 
             # add notification for reply
             if comment.parent and comment.parent.author != comment.author:
-                notification_rep = Notification(owner=comment.parent.author,
-                                            comment=comment,
-                                            category='Reply')
+                notification_rep = Notification(
+                    owner=comment.parent.author, comment=comment, category="Reply"
+                )
                 notification_rep.save()
 
             add_mention_notifications(comment)
-                        
+
             return HttpResponseRedirect(request.path)
 
         context = self.get_context_data(object=self.object, comment_form=form)
@@ -131,25 +145,40 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        return self.render_to_response(self.get_context_data(
-            object=self.object,
-            comment_form=CommentForm(request, initial={'page': self.get_comment_page(), 'parent': None}),
-        ))
+        return self.render_to_response(
+            self.get_context_data(
+                object=self.object,
+                comment_form=CommentForm(
+                    request, initial={"page": self.get_comment_page(), "parent": None}
+                ),
+            )
+        )
 
     def get_context_data(self, **kwargs):
         context = super(CommentedDetailView, self).get_context_data(**kwargs)
         queryset = Comment.objects.filter(hidden=False, page=self.get_comment_page())
-        context['has_comments'] = queryset.exists()
-        context['comment_lock'] = self.is_comment_locked()
-        queryset = queryset.select_related('author__user').defer('author__about').annotate(revisions=Count('versions'))
+        context["has_comments"] = queryset.exists()
+        context["comment_lock"] = self.is_comment_locked()
+        queryset = (
+            queryset.select_related("author__user")
+            .defer("author__about")
+            .annotate(revisions=Count("versions"))
+        )
 
         if self.request.user.is_authenticated:
-            queryset = queryset.annotate(vote_score=Coalesce(RawSQLColumn(CommentVote, 'score'), Value(0)))
+            queryset = queryset.annotate(
+                vote_score=Coalesce(RawSQLColumn(CommentVote, "score"), Value(0))
+            )
             profile = self.request.profile
-            unique_together_left_join(queryset, CommentVote, 'comment', 'voter', profile.id)
-            context['is_new_user'] = (not self.request.user.is_staff and
-                                      not profile.submission_set.filter(points=F('problem__points')).exists())
-        context['comment_list'] = queryset
-        context['vote_hide_threshold'] = settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD
+            unique_together_left_join(
+                queryset, CommentVote, "comment", "voter", profile.id
+            )
+            context["is_new_user"] = (
+                not self.request.user.is_staff
+                and not profile.submission_set.filter(
+                    points=F("problem__points")
+                ).exists()
+            )
+        context["comment_list"] = queryset
+        context["vote_hide_threshold"] = settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD
         return context
-

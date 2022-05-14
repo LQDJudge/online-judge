@@ -4,7 +4,7 @@ from django.utils.safestring import SafeData, mark_safe
 from lxml import html
 from lxml.etree import ParserError, XMLSyntaxError
 
-logger = logging.getLogger('judge.html')
+logger = logging.getLogger("judge.html")
 
 
 class HTMLTreeString(SafeData):
@@ -12,9 +12,11 @@ class HTMLTreeString(SafeData):
         try:
             self._tree = html.fromstring(str, parser=html.HTMLParser(recover=True))
         except (XMLSyntaxError, ParserError) as e:
-            if str and (not isinstance(e, ParserError) or e.args[0] != 'Document is empty'):
-                logger.exception('Failed to parse HTML string')
-            self._tree = html.Element('div')
+            if str and (
+                not isinstance(e, ParserError) or e.args[0] != "Document is empty"
+            ):
+                logger.exception("Failed to parse HTML string")
+            self._tree = html.Element("div")
 
     def __getattr__(self, attr):
         try:
@@ -23,15 +25,15 @@ class HTMLTreeString(SafeData):
             return getattr(str(self), attr)
 
     def __setattr__(self, key, value):
-        if key[0] == '_':
+        if key[0] == "_":
             super(HTMLTreeString, self).__setattr__(key, value)
         setattr(self._tree, key, value)
 
     def __repr__(self):
-        return '<HTMLTreeString %r>' % str(self)
+        return "<HTMLTreeString %r>" % str(self)
 
     def __str__(self):
-        return mark_safe(html.tostring(self._tree, encoding='unicode'))
+        return mark_safe(html.tostring(self._tree, encoding="unicode"))
 
     def __radd__(self, other):
         return other + str(self)

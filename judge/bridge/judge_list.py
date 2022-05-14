@@ -8,9 +8,9 @@ try:
 except ImportError:
     from pyllist import dllist
 
-logger = logging.getLogger('judge.bridge')
+logger = logging.getLogger("judge.bridge")
 
-PriorityMarker = namedtuple('PriorityMarker', 'priority')
+PriorityMarker = namedtuple("PriorityMarker", "priority")
 
 
 class JudgeList(object):
@@ -18,7 +18,9 @@ class JudgeList(object):
 
     def __init__(self):
         self.queue = dllist()
-        self.priority = [self.queue.append(PriorityMarker(i)) for i in range(self.priorities)]
+        self.priority = [
+            self.queue.append(PriorityMarker(i)) for i in range(self.priorities)
+        ]
         self.judges = set()
         self.node_map = {}
         self.submission_map = {}
@@ -32,11 +34,19 @@ class JudgeList(object):
                     id, problem, language, source, judge_id = node.value
                     if judge.can_judge(problem, language, judge_id):
                         self.submission_map[id] = judge
-                        logger.info('Dispatched queued submission %d: %s', id, judge.name)
+                        logger.info(
+                            "Dispatched queued submission %d: %s", id, judge.name
+                        )
                         try:
                             judge.submit(id, problem, language, source)
                         except Exception:
-                            logger.exception('Failed to dispatch %d (%s, %s) to %s', id, problem, language, judge.name)
+                            logger.exception(
+                                "Failed to dispatch %d (%s, %s) to %s",
+                                id,
+                                problem,
+                                language,
+                                judge.name,
+                            )
                             self.judges.remove(judge)
                             return
                         self.queue.remove(node)
@@ -76,14 +86,14 @@ class JudgeList(object):
 
     def on_judge_free(self, judge, submission):
         with self.lock:
-            logger.info('Judge available after grading %d: %s', submission, judge.name)
+            logger.info("Judge available after grading %d: %s", submission, judge.name)
             del self.submission_map[submission]
             judge._working = False
             self._handle_free_judge(judge)
 
     def abort(self, submission):
         with self.lock:
-            logger.info('Abort request: %d', submission)
+            logger.info("Abort request: %d", submission)
             try:
                 self.submission_map[submission].abort()
                 return True
@@ -108,21 +118,33 @@ class JudgeList(object):
                 return
 
             candidates = [
-                judge for judge in self.judges if not judge.working and judge.can_judge(problem, language, judge_id)
+                judge
+                for judge in self.judges
+                if not judge.working and judge.can_judge(problem, language, judge_id)
             ]
             if judge_id:
-                logger.info('Specified judge %s is%savailable', judge_id, ' ' if candidates else ' not ')
+                logger.info(
+                    "Specified judge %s is%savailable",
+                    judge_id,
+                    " " if candidates else " not ",
+                )
             else:
-                logger.info('Free judges: %d', len(candidates))
+                logger.info("Free judges: %d", len(candidates))
             if candidates:
                 # Schedule the submission on the judge reporting least load.
-                judge = min(candidates, key=attrgetter('load'))
-                logger.info('Dispatched submission %d to: %s', id, judge.name)
+                judge = min(candidates, key=attrgetter("load"))
+                logger.info("Dispatched submission %d to: %s", id, judge.name)
                 self.submission_map[id] = judge
                 try:
                     judge.submit(id, problem, language, source)
                 except Exception:
-                    logger.exception('Failed to dispatch %d (%s, %s) to %s', id, problem, language, judge.name)
+                    logger.exception(
+                        "Failed to dispatch %d (%s, %s) to %s",
+                        id,
+                        problem,
+                        language,
+                        judge.name,
+                    )
                     self.judges.discard(judge)
                     return self.judge(id, problem, language, source, judge_id, priority)
             else:
@@ -130,4 +152,4 @@ class JudgeList(object):
                     (id, problem, language, source, judge_id),
                     self.priority[priority],
                 )
-                logger.info('Queued submission: %d', id)
+                logger.info("Queued submission: %d", id)

@@ -3,7 +3,12 @@ from django.contrib.admin.models import LogEntry
 
 from judge.admin.comments import CommentAdmin
 from judge.admin.contest import ContestAdmin, ContestParticipationAdmin, ContestTagAdmin
-from judge.admin.interface import BlogPostAdmin, LicenseAdmin, LogEntryAdmin, NavigationBarAdmin
+from judge.admin.interface import (
+    BlogPostAdmin,
+    LicenseAdmin,
+    LogEntryAdmin,
+    NavigationBarAdmin,
+)
 from judge.admin.organization import OrganizationAdmin, OrganizationRequestAdmin
 from judge.admin.problem import ProblemAdmin, ProblemPointsVoteAdmin
 from judge.admin.profile import ProfileAdmin
@@ -12,10 +17,29 @@ from judge.admin.submission import SubmissionAdmin
 from judge.admin.taxon import ProblemGroupAdmin, ProblemTypeAdmin
 from judge.admin.ticket import TicketAdmin
 from judge.admin.volunteer import VolunteerProblemVoteAdmin
-from judge.models import BlogPost, Comment, CommentLock, Contest, ContestParticipation, \
-    ContestTag, Judge, Language, License, MiscConfig, NavigationBar, Organization, \
-    OrganizationRequest, Problem, ProblemGroup, ProblemPointsVote, ProblemType, Profile, Submission, Ticket, \
-    VolunteerProblemVote
+from judge.models import (
+    BlogPost,
+    Comment,
+    CommentLock,
+    Contest,
+    ContestParticipation,
+    ContestTag,
+    Judge,
+    Language,
+    License,
+    MiscConfig,
+    NavigationBar,
+    Organization,
+    OrganizationRequest,
+    Problem,
+    ProblemGroup,
+    ProblemPointsVote,
+    ProblemType,
+    Profile,
+    Submission,
+    Ticket,
+    VolunteerProblemVote,
+)
 
 
 admin.site.register(BlogPost, BlogPostAdmin)

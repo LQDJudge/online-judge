@@ -14,14 +14,14 @@ from judge.timezone import from_database_time
 from judge.utils.timedelta import nice_repr
 
 
-@register_contest_format('atcoder')
+@register_contest_format("atcoder")
 class AtCoderContestFormat(DefaultContestFormat):
-    name = gettext_lazy('AtCoder')
-    config_defaults = {'penalty': 5}
-    config_validators = {'penalty': lambda x: x >= 0}
-    '''
+    name = gettext_lazy("AtCoder")
+    config_defaults = {"penalty": 5}
+    config_validators = {"penalty": lambda x: x >= 0}
+    """
         penalty: Number of penalty minutes each incorrect submission adds. Defaults to 5.
-    '''
+    """
 
     @classmethod
     def validate(cls, config):
@@ -29,7 +29,9 @@ class AtCoderContestFormat(DefaultContestFormat):
             return
 
         if not isinstance(config, dict):
-            raise ValidationError('AtCoder-styled contest expects no config or dict as config')
+            raise ValidationError(
+                "AtCoder-styled contest expects no config or dict as config"
+            )
 
         for key, value in config.items():
             if key not in cls.config_defaults:
@@ -37,7 +39,9 @@ class AtCoderContestFormat(DefaultContestFormat):
             if not isinstance(value, type(cls.config_defaults[key])):
                 raise ValidationError('invalid type for config key "%s"' % key)
             if not cls.config_validators[key](value):
-                raise ValidationError('invalid value "%s" for config key "%s"' % (value, key))
+                raise ValidationError(
+                    'invalid value "%s" for config key "%s"' % (value, key)
+                )
 
     def __init__(self, contest, config):
         self.config = self.config_defaults.copy()
@@ -51,7 +55,8 @@ class AtCoderContestFormat(DefaultContestFormat):
         format_data = {}
 
         with connection.cursor() as cursor:
-            cursor.execute('''
+            cursor.execute(
+                """
                 SELECT MAX(cs.points) as `score`, (
                     SELECT MIN(csub.date)
                         FROM judge_contestsubmission ccs LEFT OUTER JOIN
@@ -62,21 +67,27 @@ class AtCoderContestFormat(DefaultContestFormat):
                      judge_contestsubmission cs ON (cs.problem_id = cp.id AND cs.participation_id = %s) LEFT OUTER JOIN
                      judge_submission sub ON (sub.id = cs.submission_id)
                 GROUP BY cp.id
-            ''', (participation.id, participation.id))
+            """,
+                (participation.id, participation.id),
+            )
 
             for score, time, prob in cursor.fetchall():
                 time = from_database_time(time)
                 dt = (time - participation.start).total_seconds()
 
                 # Compute penalty
-                if self.config['penalty']:
+                if self.config["penalty"]:
                     # An IE can have a submission result of `None`
-                    subs = participation.submissions.exclude(submission__result__isnull=True) \
-                                                    .exclude(submission__result__in=['IE', 'CE']) \
-                                                    .filter(problem_id=prob)
+                    subs = (
+                        participation.submissions.exclude(
+                            submission__result__isnull=True
+                        )
+                        .exclude(submission__result__in=["IE", "CE"])
+                        .filter(problem_id=prob)
+                    )
                     if score:
                         prev = subs.filter(submission__date__lte=time).count() - 1
-                        penalty += prev * self.config['penalty'] * 60
+                        penalty += prev * self.config["penalty"] * 60
                     else:
                         # We should always display the penalty, even if the user has a score of 0
                         prev = subs.count()
@@ -86,7 +97,7 @@ class AtCoderContestFormat(DefaultContestFormat):
                 if score:
                     cumtime = max(cumtime, dt)
 
-                format_data[str(prob)] = {'time': dt, 'points': score, 'penalty': prev}
+                format_data[str(prob)] = {"time": dt, "points": score, "penalty": prev}
                 points += score
 
         participation.cumtime = cumtime + penalty
@@ -98,17 +109,38 @@ class AtCoderContestFormat(DefaultContestFormat):
     def display_user_problem(self, participation, contest_problem):
         format_data = (participation.format_data or {}).get(str(contest_problem.id))
         if format_data:
-            penalty = format_html('<small style="color:red"> ({penalty})</small>',
-                                  penalty=floatformat(format_data['penalty'])) if format_data['penalty'] else ''
+            penalty = (
+                format_html(
+                    '<small style="color:red"> ({penalty})</small>',
+                    penalty=floatformat(format_data["penalty"]),
+                )
+                if format_data["penalty"]
+                else ""
+            )
             return format_html(
                 '<td class="{state} problem-score-col"><a href="{url}">{points}{penalty}<div class="solving-time">{time}</div></a></td>',
-                state=(('pretest-' if self.contest.run_pretests_only and contest_problem.is_pretested else '') +
-                       self.best_solution_state(format_data['points'], contest_problem.points)),
-                url=reverse('contest_user_submissions',
-                            args=[self.contest.key, participation.user.user.username, contest_problem.problem.code]),
-                points=floatformat(format_data['points']),
+                state=(
+                    (
+                        "pretest-"
+                        if self.contest.run_pretests_only
+                        and contest_problem.is_pretested
+                        else ""
+                    )
+                    + self.best_solution_state(
+                        format_data["points"], contest_problem.points
+                    )
+                ),
+                url=reverse(
+                    "contest_user_submissions",
+                    args=[
+                        self.contest.key,
+                        participation.user.user.username,
+                        contest_problem.problem.code,
+                    ],
+                ),
+                points=floatformat(format_data["points"]),
                 penalty=penalty,
-                time=nice_repr(timedelta(seconds=format_data['time']), 'noday'),
+                time=nice_repr(timedelta(seconds=format_data["time"]), "noday"),
             )
         else:
             return mark_safe('<td class="problem-score-col"></td>')

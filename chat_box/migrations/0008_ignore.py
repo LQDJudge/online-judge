@@ -7,17 +7,33 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0116_auto_20211011_0645'),
-        ('chat_box', '0007_auto_20211112_1255'),
+        ("judge", "0116_auto_20211011_0645"),
+        ("chat_box", "0007_auto_20211112_1255"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Ignore',
+            name="Ignore",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('ignored_users', models.ManyToManyField(to='judge.Profile')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='ignored_chat_users', to='judge.Profile', verbose_name='user')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("ignored_users", models.ManyToManyField(to="judge.Profile")),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="ignored_chat_users",
+                        to="judge.Profile",
+                        verbose_name="user",
+                    ),
+                ),
             ],
         ),
     ]

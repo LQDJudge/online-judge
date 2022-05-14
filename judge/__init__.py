@@ -1,1 +1,1 @@
-default_app_config = 'judge.apps.JudgeAppConfig'
+default_app_config = "judge.apps.JudgeAppConfig"

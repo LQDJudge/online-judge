@@ -9,22 +9,43 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('judge', '0100_auto_20200127_0059'),
+        ("judge", "0100_auto_20200127_0059"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Message',
+            name="Message",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('time', models.DateTimeField(auto_now_add=True, verbose_name='posted time')),
-                ('body', models.TextField(max_length=8192, verbose_name='body of comment')),
-                ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='judge.Profile', verbose_name='user')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "time",
+                    models.DateTimeField(auto_now_add=True, verbose_name="posted time"),
+                ),
+                (
+                    "body",
+                    models.TextField(max_length=8192, verbose_name="body of comment"),
+                ),
+                (
+                    "author",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="judge.Profile",
+                        verbose_name="user",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'message',
-                'verbose_name_plural': 'messages',
-                'ordering': ('-time',),
+                "verbose_name": "message",
+                "verbose_name_plural": "messages",
+                "ordering": ("-time",),
             },
         ),
     ]

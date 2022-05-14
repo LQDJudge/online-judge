@@ -6,13 +6,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0111_contest_decimal_points'),
+        ("judge", "0111_contest_decimal_points"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='contest',
-            name='view_contest_scoreboard',
-            field=models.ManyToManyField(blank=True, help_text='These users will be able to view the scoreboard.', related_name='view_contest_scoreboard', to='judge.Profile', verbose_name='view contest scoreboard'),
+            model_name="contest",
+            name="view_contest_scoreboard",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="These users will be able to view the scoreboard.",
+                related_name="view_contest_scoreboard",
+                to="judge.Profile",
+                verbose_name="view contest scoreboard",
+            ),
         ),
     ]

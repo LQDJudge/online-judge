@@ -7,18 +7,42 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0116_auto_20211011_0645'),
-        ('chat_box', '0005_auto_20211011_0714'),
+        ("judge", "0116_auto_20211011_0645"),
+        ("chat_box", "0005_auto_20211011_0714"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='UserRoom',
+            name="UserRoom",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('last_seen', models.DateTimeField(verbose_name='last seen')),
-                ('room', models.ForeignKey(default=None, null=True, on_delete=django.db.models.deletion.CASCADE, to='chat_box.Room', verbose_name='room id')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='judge.Profile', verbose_name='user')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("last_seen", models.DateTimeField(verbose_name="last seen")),
+                (
+                    "room",
+                    models.ForeignKey(
+                        default=None,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="chat_box.Room",
+                        verbose_name="room id",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="judge.Profile",
+                        verbose_name="user",
+                    ),
+                ),
             ],
         ),
     ]

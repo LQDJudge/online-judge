@@ -21,7 +21,7 @@ class TOTPView(TitleMixin, LoginRequiredMixin, FormView):
 
     def get_form_kwargs(self):
         result = super(TOTPView, self).get_form_kwargs()
-        result['totp_key'] = self.profile.totp_key
+        result["totp_key"] = self.profile.totp_key
         return result
 
     def dispatch(self, request, *args, **kwargs):
@@ -35,12 +35,12 @@ class TOTPView(TitleMixin, LoginRequiredMixin, FormView):
         raise NotImplementedError()
 
     def next_page(self):
-        return HttpResponseRedirect(reverse('user_edit_profile'))
+        return HttpResponseRedirect(reverse("user_edit_profile"))
 
 
 class TOTPEnableView(TOTPView):
-    title = _('Enable Two Factor Authentication')
-    template_name = 'registration/totp_enable.html'
+    title = _("Enable Two Factor Authentication")
+    template_name = "registration/totp_enable.html"
 
     def get(self, request, *args, **kwargs):
         profile = self.profile
@@ -54,20 +54,22 @@ class TOTPEnableView(TOTPView):
 
     def post(self, request, *args, **kwargs):
         if not self.profile.totp_key:
-            return HttpResponseBadRequest('No TOTP key generated on server side?')
+            return HttpResponseBadRequest("No TOTP key generated on server side?")
         return super(TOTPEnableView, self).post(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(TOTPEnableView, self).get_context_data(**kwargs)
-        context['totp_key'] = self.profile.totp_key
-        context['qr_code'] = self.render_qr_code(self.request.user.username, self.profile.totp_key)
+        context["totp_key"] = self.profile.totp_key
+        context["qr_code"] = self.render_qr_code(
+            self.request.user.username, self.profile.totp_key
+        )
         return context
 
     def form_valid(self, form):
         self.profile.is_totp_enabled = True
         self.profile.save()
         # Make sure users don't get prompted to enter code right after enabling:
-        self.request.session['2fa_passed'] = True
+        self.request.session["2fa_passed"] = True
         return self.next_page()
 
     @classmethod
@@ -79,15 +81,17 @@ class TOTPEnableView(TOTPView):
         qr.add_data(uri)
         qr.make(fit=True)
 
-        image = qr.make_image(fill_color='black', back_color='white')
+        image = qr.make_image(fill_color="black", back_color="white")
         buf = BytesIO()
-        image.save(buf, format='PNG')
-        return 'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode('ascii')
+        image.save(buf, format="PNG")
+        return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(
+            "ascii"
+        )
 
 
 class TOTPDisableView(TOTPView):
-    title = _('Disable Two Factor Authentication')
-    template_name = 'registration/totp_disable.html'
+    title = _("Disable Two Factor Authentication")
+    template_name = "registration/totp_disable.html"
 
     def check_skip(self):
         if not self.profile.is_totp_enabled:
@@ -102,21 +106,25 @@ class TOTPDisableView(TOTPView):
 
 
 class TOTPLoginView(SuccessURLAllowedHostsMixin, TOTPView):
-    title = _('Perform Two Factor Authentication')
-    template_name = 'registration/totp_auth.html'
+    title = _("Perform Two Factor Authentication")
+    template_name = "registration/totp_auth.html"
 
     def check_skip(self):
-        return not self.profile.is_totp_enabled or self.request.session.get('2fa_passed', False)
+        return not self.profile.is_totp_enabled or self.request.session.get(
+            "2fa_passed", False
+        )
 
     def next_page(self):
-        redirect_to = self.request.GET.get('next', '')
+        redirect_to = self.request.GET.get("next", "")
         url_is_safe = is_safe_url(
             url=redirect_to,
             allowed_hosts=self.get_success_url_allowed_hosts(),
             require_https=self.request.is_secure(),
         )
-        return HttpResponseRedirect((redirect_to if url_is_safe else '') or reverse('user_page'))
+        return HttpResponseRedirect(
+            (redirect_to if url_is_safe else "") or reverse("user_page")
+        )
 
     def form_valid(self, form):
-        self.request.session['2fa_passed'] = True
+        self.request.session["2fa_passed"] = True
         return self.next_page()

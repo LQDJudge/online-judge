@@ -15,15 +15,17 @@ class SpacelessExtension(Extension):
         https://stackoverflow.com/a/23741298/1090657
     """
 
-    tags = {'spaceless'}
+    tags = {"spaceless"}
 
     def parse(self, parser):
         lineno = next(parser.stream).lineno
-        body = parser.parse_statements(['name:endspaceless'], drop_needle=True)
+        body = parser.parse_statements(["name:endspaceless"], drop_needle=True)
         return nodes.CallBlock(
-            self.call_method('_strip_spaces', [], [], None, None),
-            [], [], body,
+            self.call_method("_strip_spaces", [], [], None, None),
+            [],
+            [],
+            body,
         ).set_lineno(lineno)
 
     def _strip_spaces(self, caller=None):
-        return Markup(re.sub(r'>\s+<', '><', caller().unescape().strip()))
+        return Markup(re.sub(r">\s+<", "><", caller().unescape().strip()))

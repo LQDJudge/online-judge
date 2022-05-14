@@ -47,7 +47,7 @@ from judge.utils.unicode import utf8bytes
 
 log = logging.getLogger(__name__)
 
-API_ENDPOINT = 'https://api.pwnedpasswords.com/range/{}'
+API_ENDPOINT = "https://api.pwnedpasswords.com/range/{}"
 REQUEST_TIMEOUT = 2.0  # 2 seconds
 
 
@@ -61,19 +61,19 @@ def _get_pwned(prefix):
             url=API_ENDPOINT.format(prefix),
             timeout=getattr(
                 settings,
-                'PWNED_PASSWORDS_API_TIMEOUT',
+                "PWNED_PASSWORDS_API_TIMEOUT",
                 REQUEST_TIMEOUT,
             ),
         )
         response.raise_for_status()
     except requests.RequestException:
         # Gracefully handle timeouts and HTTP error response codes.
-        log.warning('Skipped Pwned Passwords check due to error', exc_info=True)
+        log.warning("Skipped Pwned Passwords check due to error", exc_info=True)
         return None
 
     results = {}
     for line in response.text.splitlines():
-        line_suffix, _, times = line.partition(':')
+        line_suffix, _, times = line.partition(":")
         results[line_suffix] = int(times)
 
     return results
@@ -84,7 +84,7 @@ def pwned_password(password):
     Checks a password against the Pwned Passwords database.
     """
     if not isinstance(password, string_types):
-        raise TypeError('Password values to check must be strings.')
+        raise TypeError("Password values to check must be strings.")
     password_hash = hashlib.sha1(utf8bytes(password)).hexdigest().upper()
     prefix, suffix = password_hash[:5], password_hash[5:]
     results = _get_pwned(prefix)
@@ -98,8 +98,9 @@ class PwnedPasswordsValidator(object):
     """
     Password validator which checks the Pwned Passwords database.
     """
+
     DEFAULT_HELP_MESSAGE = _("Your password can't be a commonly used password.")
-    DEFAULT_PWNED_MESSAGE = _('This password is too common.')
+    DEFAULT_PWNED_MESSAGE = _("This password is too common.")
 
     def __init__(self, error_message=None, help_message=None):
         self.help_message = help_message or self.DEFAULT_HELP_MESSAGE
@@ -111,8 +112,8 @@ class PwnedPasswordsValidator(object):
         else:
             singular, plural = error_message
         self.error_message = {
-            'singular': singular,
-            'plural': plural,
+            "singular": singular,
+            "plural": plural,
         }
 
     def validate(self, password, user=None):
@@ -125,12 +126,12 @@ class PwnedPasswordsValidator(object):
         elif amount:
             raise ValidationError(
                 ungettext(
-                    self.error_message['singular'],
-                    self.error_message['plural'],
+                    self.error_message["singular"],
+                    self.error_message["plural"],
                     amount,
                 ),
-                params={'amount': amount},
-                code='pwned_password',
+                params={"amount": amount},
+                code="pwned_password",
             )
 
     def get_help_text(self):

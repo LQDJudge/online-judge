@@ -7,16 +7,31 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0105_auto_20200523_0756'),
+        ("judge", "0105_auto_20200523_0756"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Friend',
+            name="Friend",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('current_user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='following_users', to='judge.Profile')),
-                ('users', models.ManyToManyField(to='judge.Profile')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "current_user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="following_users",
+                        to="judge.Profile",
+                    ),
+                ),
+                ("users", models.ManyToManyField(to="judge.Profile")),
             ],
         ),
     ]

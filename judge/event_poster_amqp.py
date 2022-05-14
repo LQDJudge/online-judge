@@ -6,7 +6,7 @@ import pika
 from django.conf import settings
 from pika.exceptions import AMQPError
 
-__all__ = ['EventPoster', 'post', 'last']
+__all__ = ["EventPoster", "post", "last"]
 
 
 class EventPoster(object):
@@ -15,14 +15,19 @@ class EventPoster(object):
         self._exchange = settings.EVENT_DAEMON_AMQP_EXCHANGE
 
     def _connect(self):
-        self._conn = pika.BlockingConnection(pika.URLParameters(settings.EVENT_DAEMON_AMQP))
+        self._conn = pika.BlockingConnection(
+            pika.URLParameters(settings.EVENT_DAEMON_AMQP)
+        )
         self._chan = self._conn.channel()
 
     def post(self, channel, message, tries=0):
         try:
             id = int(time() * 1000000)
-            self._chan.basic_publish(self._exchange, '',
-                                     json.dumps({'id': id, 'channel': channel, 'message': message}))
+            self._chan.basic_publish(
+                self._exchange,
+                "",
+                json.dumps({"id": id, "channel": channel, "message": message}),
+            )
             return id
         except AMQPError:
             if tries > 10:
@@ -35,7 +40,7 @@ _local = threading.local()
 
 
 def _get_poster():
-    if 'poster' not in _local.__dict__:
+    if "poster" not in _local.__dict__:
         _local.poster = EventPoster()
     return _local.poster
 

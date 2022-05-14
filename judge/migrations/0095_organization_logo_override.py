@@ -6,13 +6,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0094_submissiontestcase_unique_together'),
+        ("judge", "0094_submissiontestcase_unique_together"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='organization',
-            name='logo_override_image',
-            field=models.CharField(blank=True, default='', help_text='This image will replace the default site logo for users viewing the organization.', max_length=150, verbose_name='Logo override image'),
+            model_name="organization",
+            name="logo_override_image",
+            field=models.CharField(
+                blank=True,
+                default="",
+                help_text="This image will replace the default site logo for users viewing the organization.",
+                max_length=150,
+                verbose_name="Logo override image",
+            ),
         ),
     ]

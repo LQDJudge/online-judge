@@ -5,7 +5,7 @@ tests = {}
 filters = {}
 extensions = []
 
-__all__ = ['render_with', 'function', 'filter', 'test', 'extension']
+__all__ = ["render_with", "function", "filter", "test", "extension"]
 
 
 def _store_function(store, func, name=None):
@@ -16,6 +16,7 @@ def _store_function(store, func, name=None):
 
 def _register_function(store, name, func):
     if name is None and func is None:
+
         def decorator(func):
             _store_function(store, func)
             return func
@@ -26,6 +27,7 @@ def _register_function(store, name, func):
             _store_function(store, name)
             return name
         else:
+
             def decorator(func):
                 _store_function(store, func, name)
                 return func

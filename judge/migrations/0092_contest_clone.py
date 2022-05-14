@@ -6,12 +6,24 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0091_compiler_message_ansi2html'),
+        ("judge", "0091_compiler_message_ansi2html"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='contest',
-            options={'permissions': (('see_private_contest', 'See private contests'), ('edit_own_contest', 'Edit own contests'), ('edit_all_contest', 'Edit all contests'), ('clone_contest', 'Clone contest'), ('contest_rating', 'Rate contests'), ('contest_access_code', 'Contest access codes'), ('create_private_contest', 'Create private contests')), 'verbose_name': 'contest', 'verbose_name_plural': 'contests'},
+            name="contest",
+            options={
+                "permissions": (
+                    ("see_private_contest", "See private contests"),
+                    ("edit_own_contest", "Edit own contests"),
+                    ("edit_all_contest", "Edit all contests"),
+                    ("clone_contest", "Clone contest"),
+                    ("contest_rating", "Rate contests"),
+                    ("contest_access_code", "Contest access codes"),
+                    ("create_private_contest", "Create private contests"),
+                ),
+                "verbose_name": "contest",
+                "verbose_name_plural": "contests",
+            },
         ),
     ]

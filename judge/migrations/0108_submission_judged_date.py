@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0107_notification'),
+        ("judge", "0107_notification"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='submission',
-            name='judged_date',
-            field=models.DateTimeField(default=None, null=True, verbose_name='submission judge time'),
+            model_name="submission",
+            name="judged_date",
+            field=models.DateTimeField(
+                default=None, null=True, verbose_name="submission judge time"
+            ),
         ),
     ]

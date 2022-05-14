@@ -6,13 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0118_rating'),
+        ("judge", "0118_rating"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='contest',
-            name='hide_problem_tags',
-            field=models.BooleanField(default=True, help_text='Whether problem tags should be hidden by default.', verbose_name='hide problem tags'),
+            model_name="contest",
+            name="hide_problem_tags",
+            field=models.BooleanField(
+                default=True,
+                help_text="Whether problem tags should be hidden by default.",
+                verbose_name="hide problem tags",
+            ),
         ),
     ]

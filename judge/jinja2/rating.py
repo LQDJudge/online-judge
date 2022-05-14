@@ -14,22 +14,22 @@ def _get_rating_value(func, obj):
         return func(obj.rating)
 
 
-@registry.function('rating_class')
+@registry.function("rating_class")
 def get_rating_class(obj):
-    return _get_rating_value(rating_class, obj) or 'rate-none'
+    return _get_rating_value(rating_class, obj) or "rate-none"
 
 
-@registry.function(name='rating_name')
+@registry.function(name="rating_name")
 def get_name(obj):
-    return _get_rating_value(rating_name, obj) or 'Unrated'
+    return _get_rating_value(rating_name, obj) or "Unrated"
 
 
-@registry.function(name='rating_progress')
+@registry.function(name="rating_progress")
 def get_progress(obj):
     return _get_rating_value(rating_progress, obj) or 0.0
 
 
 @registry.function
-@registry.render_with('user/rating.html')
+@registry.render_with("user/rating.html")
 def rating_number(obj):
-    return {'rating': obj}
+    return {"rating": obj}

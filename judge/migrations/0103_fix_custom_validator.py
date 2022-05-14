@@ -6,13 +6,13 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0102_fix_custom_validator'),
+        ("judge", "0102_fix_custom_validator"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='problemdata',
-            old_name='custom_valid',
-            new_name='custom_validator',
+            model_name="problemdata",
+            old_name="custom_valid",
+            new_name="custom_validator",
         ),
     ]

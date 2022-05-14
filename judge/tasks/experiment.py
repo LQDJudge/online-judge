@@ -2,15 +2,16 @@ from judge.models import SubmissionTestCase, Problem
 
 from collections import defaultdict
 
+
 def generate_report(problem):
     testcases = SubmissionTestCase.objects.filter(submission__problem=problem).all()
-    
+
     score = defaultdict(int)
     total = defaultdict(int)
     rate = defaultdict(int)
 
     for case in testcases.iterator():
-        score[case.case] += int(case.status == 'AC')
+        score[case.case] += int(case.status == "AC")
         total[case.case] += 1
 
     for i in score:

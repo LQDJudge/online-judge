@@ -6,18 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0085_submission_source'),
+        ("judge", "0085_submission_source"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='contest',
-            name='rating_ceiling',
-            field=models.IntegerField(blank=True, help_text='Rating ceiling for contest', null=True, verbose_name='rating ceiling'),
+            model_name="contest",
+            name="rating_ceiling",
+            field=models.IntegerField(
+                blank=True,
+                help_text="Rating ceiling for contest",
+                null=True,
+                verbose_name="rating ceiling",
+            ),
         ),
         migrations.AddField(
-            model_name='contest',
-            name='rating_floor',
-            field=models.IntegerField(blank=True, help_text='Rating floor for contest', null=True, verbose_name='rating floor'),
+            model_name="contest",
+            name="rating_floor",
+            field=models.IntegerField(
+                blank=True,
+                help_text="Rating floor for contest",
+                null=True,
+                verbose_name="rating floor",
+            ),
         ),
     ]

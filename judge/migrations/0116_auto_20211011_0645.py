@@ -6,13 +6,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0115_auto_20210525_0222'),
+        ("judge", "0115_auto_20210525_0222"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='contest',
-            name='format_name',
-            field=models.CharField(choices=[('atcoder', 'AtCoder'), ('default', 'Default'), ('ecoo', 'ECOO'), ('icpc', 'ICPC'), ('ioi', 'IOI')], default='default', help_text='The contest format module to use.', max_length=32, verbose_name='contest format'),
+            model_name="contest",
+            name="format_name",
+            field=models.CharField(
+                choices=[
+                    ("atcoder", "AtCoder"),
+                    ("default", "Default"),
+                    ("ecoo", "ECOO"),
+                    ("icpc", "ICPC"),
+                    ("ioi", "IOI"),
+                ],
+                default="default",
+                help_text="The contest format module to use.",
+                max_length=32,
+                verbose_name="contest format",
+            ),
         ),
     ]

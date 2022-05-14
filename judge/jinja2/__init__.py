@@ -8,19 +8,33 @@ from statici18n.templatetags.statici18n import inlinei18n
 
 from judge.highlight_code import highlight_code
 from judge.user_translations import gettext
-from . import (camo, chat, datetime, filesize, gravatar, language, markdown, rating, reference, render, social,
-               spaceless, submission, timedelta)
+from . import (
+    camo,
+    chat,
+    datetime,
+    filesize,
+    gravatar,
+    language,
+    markdown,
+    rating,
+    reference,
+    render,
+    social,
+    spaceless,
+    submission,
+    timedelta,
+)
 from . import registry
 
-registry.function('str', str)
-registry.filter('str', str)
-registry.filter('json', json.dumps)
-registry.filter('highlight', highlight_code)
-registry.filter('urlquote', urlquote)
-registry.filter('roundfloat', round)
-registry.function('inlinei18n', inlinei18n)
-registry.function('mptt_tree', get_cached_trees)
-registry.function('user_trans', gettext)
+registry.function("str", str)
+registry.filter("str", str)
+registry.filter("json", json.dumps)
+registry.filter("highlight", highlight_code)
+registry.filter("urlquote", urlquote)
+registry.filter("roundfloat", round)
+registry.function("inlinei18n", inlinei18n)
+registry.function("mptt_tree", get_cached_trees)
+registry.function("user_trans", gettext)
 
 
 @registry.function

@@ -6,23 +6,57 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0103_fix_custom_validator'),
+        ("judge", "0103_fix_custom_validator"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='contestproblem',
-            name='output_prefix_override',
-            field=models.IntegerField(blank=True, default=0, null=True, verbose_name='visible testcases'),
+            model_name="contestproblem",
+            name="output_prefix_override",
+            field=models.IntegerField(
+                blank=True, default=0, null=True, verbose_name="visible testcases"
+            ),
         ),
         migrations.AlterField(
-            model_name='problemdata',
-            name='checker',
-            field=models.CharField(blank=True, choices=[('standard', 'Standard'), ('floats', 'Floats'), ('floatsabs', 'Floats (absolute)'), ('floatsrel', 'Floats (relative)'), ('rstripped', 'Non-trailing spaces'), ('sorted', 'Unordered'), ('identical', 'Byte identical'), ('linecount', 'Line-by-line'), ('custom', 'Custom checker (PY)'), ('customval', 'Custom validator (CPP)')], max_length=10, verbose_name='checker'),
+            model_name="problemdata",
+            name="checker",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("standard", "Standard"),
+                    ("floats", "Floats"),
+                    ("floatsabs", "Floats (absolute)"),
+                    ("floatsrel", "Floats (relative)"),
+                    ("rstripped", "Non-trailing spaces"),
+                    ("sorted", "Unordered"),
+                    ("identical", "Byte identical"),
+                    ("linecount", "Line-by-line"),
+                    ("custom", "Custom checker (PY)"),
+                    ("customval", "Custom validator (CPP)"),
+                ],
+                max_length=10,
+                verbose_name="checker",
+            ),
         ),
         migrations.AlterField(
-            model_name='problemtestcase',
-            name='checker',
-            field=models.CharField(blank=True, choices=[('standard', 'Standard'), ('floats', 'Floats'), ('floatsabs', 'Floats (absolute)'), ('floatsrel', 'Floats (relative)'), ('rstripped', 'Non-trailing spaces'), ('sorted', 'Unordered'), ('identical', 'Byte identical'), ('linecount', 'Line-by-line'), ('custom', 'Custom checker (PY)'), ('customval', 'Custom validator (CPP)')], max_length=10, verbose_name='checker'),
+            model_name="problemtestcase",
+            name="checker",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("standard", "Standard"),
+                    ("floats", "Floats"),
+                    ("floatsabs", "Floats (absolute)"),
+                    ("floatsrel", "Floats (relative)"),
+                    ("rstripped", "Non-trailing spaces"),
+                    ("sorted", "Unordered"),
+                    ("identical", "Byte identical"),
+                    ("linecount", "Line-by-line"),
+                    ("custom", "Custom checker (PY)"),
+                    ("customval", "Custom validator (CPP)"),
+                ],
+                max_length=10,
+                verbose_name="checker",
+            ),
         ),
     ]

@@ -8,35 +8,43 @@ from packaging import version
 
 from judge.models import Judge, Language, RuntimeVersion
 
-__all__ = ['status_all', 'status_table']
+__all__ = ["status_all", "status_table"]
 
 
 def get_judges(request):
     if request.user.is_superuser or request.user.is_staff:
-        return True, Judge.objects.order_by('-online', 'name')
+        return True, Judge.objects.order_by("-online", "name")
     else:
         return False, Judge.objects.filter(online=True)
 
 
 def status_all(request):
     see_all, judges = get_judges(request)
-    return render(request, 'status/judge-status.html', {
-        'title': _('Status'),
-        'judges': judges,
-        'see_all_judges': see_all,
-    })
+    return render(
+        request,
+        "status/judge-status.html",
+        {
+            "title": _("Status"),
+            "judges": judges,
+            "see_all_judges": see_all,
+        },
+    )
 
 
 def status_table(request):
     see_all, judges = get_judges(request)
-    return render(request, 'status/judge-status-table.html', {
-        'judges': judges,
-        'see_all_judges': see_all,
-    })
+    return render(
+        request,
+        "status/judge-status-table.html",
+        {
+            "judges": judges,
+            "see_all_judges": see_all,
+        },
+    )
 
 
 class LatestList(list):
-    __slots__ = ('versions', 'is_latest')
+    __slots__ = ("versions", "is_latest")
 
 
 def compare_version_list(x, y):
@@ -61,11 +69,13 @@ def version_matrix(request):
     judges = {judge.id: judge.name for judge in Judge.objects.filter(online=True)}
     languages = Language.objects.filter(judges__online=True).distinct()
 
-    for runtime in RuntimeVersion.objects.filter(judge__online=True).order_by('priority'):
+    for runtime in RuntimeVersion.objects.filter(judge__online=True).order_by(
+        "priority"
+    ):
         matrix[runtime.judge_id][runtime.language_id].append(runtime)
 
     for judge, data in six.iteritems(matrix):
-        name_tuple = judges[judge].rpartition('.')
+        name_tuple = judges[judge].rpartition(".")
         groups[name_tuple[0] or name_tuple[-1]].append((judges[judge], data))
 
     matrix = {}
@@ -103,9 +113,13 @@ def version_matrix(request):
             versions.is_latest = versions.versions == latest[language]
 
     languages = sorted(languages, key=lambda lang: version.parse(lang.name))
-    return render(request, 'status/versions.html', {
-        'title': _('Version matrix'),
-        'judges': sorted(matrix.keys()),
-        'languages': languages,
-        'matrix': matrix,
-    })
+    return render(
+        request,
+        "status/versions.html",
+        {
+            "title": _("Version matrix"),
+            "judges": sorted(matrix.keys()),
+            "languages": languages,
+            "matrix": matrix,
+        },
+    )

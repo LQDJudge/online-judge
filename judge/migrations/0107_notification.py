@@ -7,19 +7,45 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0106_friend'),
+        ("judge", "0106_friend"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Notification',
+            name="Notification",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('time', models.DateTimeField(auto_now_add=True, verbose_name='posted time')),
-                ('read', models.BooleanField(default=False, verbose_name='read')),
-                ('category', models.CharField(max_length=10, verbose_name='category')),
-                ('comment', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='judge.Comment', verbose_name='comment')),
-                ('owner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to='judge.Profile', verbose_name='owner')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "time",
+                    models.DateTimeField(auto_now_add=True, verbose_name="posted time"),
+                ),
+                ("read", models.BooleanField(default=False, verbose_name="read")),
+                ("category", models.CharField(max_length=10, verbose_name="category")),
+                (
+                    "comment",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="judge.Comment",
+                        verbose_name="comment",
+                    ),
+                ),
+                (
+                    "owner",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="notifications",
+                        to="judge.Profile",
+                        verbose_name="owner",
+                    ),
+                ),
             ],
         ),
     ]

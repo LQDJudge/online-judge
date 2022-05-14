@@ -7,13 +7,18 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0109_auto_20201017_1151'),
+        ("judge", "0109_auto_20201017_1151"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='notification',
-            name='author',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='judge.Profile', verbose_name='who trigger, used for non-comment'),
+            model_name="notification",
+            name="author",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="judge.Profile",
+                verbose_name="who trigger, used for non-comment",
+            ),
         ),
     ]

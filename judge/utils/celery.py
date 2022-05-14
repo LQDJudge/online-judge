@@ -12,11 +12,11 @@ class Progress:
 
     def _update_state(self):
         self.task.update_state(
-            state='PROGRESS',
+            state="PROGRESS",
             meta={
-                'done': self._done,
-                'total': self._total,
-                'stage': self._stage,
+                "done": self._done,
+                "total": self._total,
+                "stage": self._stage,
             },
         )
 
@@ -54,12 +54,12 @@ class Progress:
 def task_status_url(result, message=None, redirect=None):
     args = {}
     if message:
-        args['message'] = message
+        args["message"] = message
     if redirect:
-        args['redirect'] = redirect
-    url = reverse('task_status', args=[result.id])
+        args["redirect"] = redirect
+    url = reverse("task_status", args=[result.id])
     if args:
-        url += '?' + urlencode(args)
+        url += "?" + urlencode(args)
     return url
 
 

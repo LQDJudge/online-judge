@@ -1,10 +1,10 @@
 from django.utils.html import escape, mark_safe
 
-__all__ = ['highlight_code']
+__all__ = ["highlight_code"]
 
 
 def _make_pre_code(code):
-    return mark_safe('<pre>' + escape(code) + '</pre>')
+    return mark_safe("<pre>" + escape(code) + "</pre>")
 
 
 def _wrap_code(inner):
@@ -20,19 +20,28 @@ try:
     import pygments.formatters.html
     import pygments.util
 except ImportError:
+
     def highlight_code(code, language, cssclass=None):
         return _make_pre_code(code)
+
 else:
+
     class HtmlCodeFormatter(pygments.formatters.HtmlFormatter):
         def wrap(self, source, outfile):
             return self._wrap_div(self._wrap_pre(_wrap_code(source)))
 
-    def highlight_code(code, language, cssclass='codehilite', linenos=True):
+    def highlight_code(code, language, cssclass="codehilite", linenos=True):
         try:
             lexer = pygments.lexers.get_lexer_by_name(language)
         except pygments.util.ClassNotFound:
             return _make_pre_code(code)
 
         if linenos:
-            return mark_safe(pygments.highlight(code, lexer, HtmlCodeFormatter(cssclass=cssclass, linenos='table')))
-        return mark_safe(pygments.highlight(code, lexer, HtmlCodeFormatter(cssclass=cssclass)))
+            return mark_safe(
+                pygments.highlight(
+                    code, lexer, HtmlCodeFormatter(cssclass=cssclass, linenos="table")
+                )
+            )
+        return mark_safe(
+            pygments.highlight(code, lexer, HtmlCodeFormatter(cssclass=cssclass))
+        )

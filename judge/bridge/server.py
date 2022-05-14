@@ -12,7 +12,9 @@ class Server:
         self._shutdown = threading.Event()
 
     def serve_forever(self):
-        threads = [threading.Thread(target=server.serve_forever) for server in self.servers]
+        threads = [
+            threading.Thread(target=server.serve_forever) for server in self.servers
+        ]
         for thread in threads:
             thread.daemon = True
             thread.start()

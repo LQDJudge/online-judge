@@ -7,21 +7,26 @@ import judge.models.runtime
 
 
 def create_python3(apps, schema_editor):
-    Language = apps.get_model('judge', 'Language')
-    Language.objects.get_or_create(key='PY3', defaults={'name': 'Python 3'})[0]
+    Language = apps.get_model("judge", "Language")
+    Language.objects.get_or_create(key="PY3", defaults={"name": "Python 3"})[0]
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0095_organization_logo_override'),
+        ("judge", "0095_organization_logo_override"),
     ]
 
     operations = [
         migrations.RunPython(create_python3, reverse_code=migrations.RunPython.noop),
         migrations.AlterField(
-            model_name='profile',
-            name='language',
-            field=models.ForeignKey(default=judge.models.runtime.Language.get_default_language_pk, on_delete=django.db.models.deletion.SET_DEFAULT, to='judge.Language', verbose_name='preferred language'),
+            model_name="profile",
+            name="language",
+            field=models.ForeignKey(
+                default=judge.models.runtime.Language.get_default_language_pk,
+                on_delete=django.db.models.deletion.SET_DEFAULT,
+                to="judge.Language",
+                verbose_name="preferred language",
+            ),
         ),
     ]

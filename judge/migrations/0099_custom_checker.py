@@ -8,23 +8,59 @@ import judge.utils.problem_data
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0098_auto_20200123_2136'),
+        ("judge", "0098_auto_20200123_2136"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='problemdata',
-            name='custom_checker',
-            field=models.FileField(blank=True, null=True, storage=judge.utils.problem_data.ProblemDataStorage(), upload_to=judge.models.problem_data.problem_directory_file, verbose_name='custom checker file'),
+            model_name="problemdata",
+            name="custom_checker",
+            field=models.FileField(
+                blank=True,
+                null=True,
+                storage=judge.utils.problem_data.ProblemDataStorage(),
+                upload_to=judge.models.problem_data.problem_directory_file,
+                verbose_name="custom checker file",
+            ),
         ),
         migrations.AlterField(
-            model_name='problemdata',
-            name='checker',
-            field=models.CharField(blank=True, choices=[('standard', 'Standard'), ('floats', 'Floats'), ('floatsabs', 'Floats (absolute)'), ('floatsrel', 'Floats (relative)'), ('rstripped', 'Non-trailing spaces'), ('sorted', 'Unordered'), ('identical', 'Byte identical'), ('linecount', 'Line-by-line'), ('custom', 'Custom checker')], max_length=10, verbose_name='checker'),
+            model_name="problemdata",
+            name="checker",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("standard", "Standard"),
+                    ("floats", "Floats"),
+                    ("floatsabs", "Floats (absolute)"),
+                    ("floatsrel", "Floats (relative)"),
+                    ("rstripped", "Non-trailing spaces"),
+                    ("sorted", "Unordered"),
+                    ("identical", "Byte identical"),
+                    ("linecount", "Line-by-line"),
+                    ("custom", "Custom checker"),
+                ],
+                max_length=10,
+                verbose_name="checker",
+            ),
         ),
         migrations.AlterField(
-            model_name='problemtestcase',
-            name='checker',
-            field=models.CharField(blank=True, choices=[('standard', 'Standard'), ('floats', 'Floats'), ('floatsabs', 'Floats (absolute)'), ('floatsrel', 'Floats (relative)'), ('rstripped', 'Non-trailing spaces'), ('sorted', 'Unordered'), ('identical', 'Byte identical'), ('linecount', 'Line-by-line'), ('custom', 'Custom checker')], max_length=10, verbose_name='checker'),
+            model_name="problemtestcase",
+            name="checker",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("standard", "Standard"),
+                    ("floats", "Floats"),
+                    ("floatsabs", "Floats (absolute)"),
+                    ("floatsrel", "Floats (relative)"),
+                    ("rstripped", "Non-trailing spaces"),
+                    ("sorted", "Unordered"),
+                    ("identical", "Byte identical"),
+                    ("linecount", "Line-by-line"),
+                    ("custom", "Custom checker"),
+                ],
+                max_length=10,
+                verbose_name="checker",
+            ),
         ),
     ]

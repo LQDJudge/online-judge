@@ -46,13 +46,23 @@ from django.core import signing
 from django.forms.models import ModelChoiceIterator
 from django.urls import reverse_lazy
 
-DEFAULT_SELECT2_JS = '//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js'
-DEFAULT_SELECT2_CSS = '//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css'
+DEFAULT_SELECT2_JS = "//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"
+DEFAULT_SELECT2_CSS = (
+    "//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css"
+)
 
-__all__ = ['Select2Widget', 'Select2MultipleWidget', 'Select2TagWidget',
-           'HeavySelect2Widget', 'HeavySelect2MultipleWidget', 'HeavySelect2TagWidget',
-           'AdminSelect2Widget', 'AdminSelect2MultipleWidget', 'AdminHeavySelect2Widget',
-           'AdminHeavySelect2MultipleWidget']
+__all__ = [
+    "Select2Widget",
+    "Select2MultipleWidget",
+    "Select2TagWidget",
+    "HeavySelect2Widget",
+    "HeavySelect2MultipleWidget",
+    "HeavySelect2TagWidget",
+    "AdminSelect2Widget",
+    "AdminSelect2MultipleWidget",
+    "AdminHeavySelect2Widget",
+    "AdminHeavySelect2MultipleWidget",
+]
 
 
 class Select2Mixin(object):
@@ -68,22 +78,22 @@ class Select2Mixin(object):
         """Add select2 data attributes."""
         attrs = super(Select2Mixin, self).build_attrs(base_attrs, extra_attrs)
         if self.is_required:
-            attrs.setdefault('data-allow-clear', 'false')
+            attrs.setdefault("data-allow-clear", "false")
         else:
-            attrs.setdefault('data-allow-clear', 'true')
-            attrs.setdefault('data-placeholder', '')
+            attrs.setdefault("data-allow-clear", "true")
+            attrs.setdefault("data-placeholder", "")
 
-        attrs.setdefault('data-minimum-input-length', 0)
-        if 'class' in attrs:
-            attrs['class'] += ' django-select2'
+        attrs.setdefault("data-minimum-input-length", 0)
+        if "class" in attrs:
+            attrs["class"] += " django-select2"
         else:
-            attrs['class'] = 'django-select2'
+            attrs["class"] = "django-select2"
         return attrs
 
     def optgroups(self, name, value, attrs=None):
         """Add empty option for clearable selects."""
         if not self.is_required and not self.allow_multiple_selected:
-            self.choices = list(chain([('', '')], self.choices))
+            self.choices = list(chain([("", "")], self.choices))
         return super(Select2Mixin, self).optgroups(name, value, attrs=attrs)
 
     @property
@@ -95,8 +105,8 @@ class Select2Mixin(object):
             https://docs.djangoproject.com/en/1.8/topics/forms/media/#media-as-a-dynamic-property
         """
         return forms.Media(
-            js=[settings.SELECT2_JS_URL, 'django_select2.js'],
-            css={'screen': [settings.SELECT2_CSS_URL]},
+            js=[settings.SELECT2_JS_URL, "django_select2.js"],
+            css={"screen": [settings.SELECT2_CSS_URL]},
         )
 
 
@@ -104,8 +114,12 @@ class AdminSelect2Mixin(Select2Mixin):
     @property
     def media(self):
         return forms.Media(
-            js=['admin/js/jquery.init.js', settings.SELECT2_JS_URL, 'django_select2.js'],
-            css={'screen': [settings.SELECT2_CSS_URL]},
+            js=[
+                "admin/js/jquery.init.js",
+                settings.SELECT2_JS_URL,
+                "django_select2.js",
+            ],
+            css={"screen": [settings.SELECT2_CSS_URL]},
         )
 
 
@@ -115,9 +129,9 @@ class Select2TagMixin(object):
     def build_attrs(self, base_attrs, extra_attrs=None):
         """Add select2's tag attributes."""
         extra_attrs = extra_attrs or {}
-        extra_attrs.setdefault('data-minimum-input-length', 1)
-        extra_attrs.setdefault('data-tags', 'true')
-        extra_attrs.setdefault('data-token-separators', [",", " "])
+        extra_attrs.setdefault("data-minimum-input-length", 1)
+        extra_attrs.setdefault("data-tags", "true")
+        extra_attrs.setdefault("data-token-separators", [",", " "])
         return super(Select2TagMixin, self).build_attrs(base_attrs, extra_attrs)
 
 
@@ -182,8 +196,8 @@ class HeavySelect2Mixin(Select2Mixin):
         else:
             self.attrs = {}
 
-        self.data_view = kwargs.pop('data_view', None)
-        self.data_url = kwargs.pop('data_url', None)
+        self.data_view = kwargs.pop("data_view", None)
+        self.data_url = kwargs.pop("data_url", None)
 
         if not (self.data_view or self.data_url):
             raise ValueError('You must ether specify "data_view" or "data_url".')
@@ -201,22 +215,22 @@ class HeavySelect2Mixin(Select2Mixin):
         # encrypt instance Id
         self.widget_id = signing.dumps(id(self))
 
-        attrs['data-field_id'] = self.widget_id
-        attrs.setdefault('data-ajax--url', self.get_url())
-        attrs.setdefault('data-ajax--cache', "true")
-        attrs.setdefault('data-ajax--type', "GET")
-        attrs.setdefault('data-minimum-input-length', 2)
+        attrs["data-field_id"] = self.widget_id
+        attrs.setdefault("data-ajax--url", self.get_url())
+        attrs.setdefault("data-ajax--cache", "true")
+        attrs.setdefault("data-ajax--type", "GET")
+        attrs.setdefault("data-minimum-input-length", 2)
 
-        attrs['class'] += ' django-select2-heavy'
+        attrs["class"] += " django-select2-heavy"
         return attrs
 
     def format_value(self, value):
         result = super(HeavySelect2Mixin, self).format_value(value)
         if isinstance(self.choices, ModelChoiceIterator):
             chosen = copy(self.choices)
-            chosen.queryset = chosen.queryset.filter(pk__in=[
-                int(i) for i in result if isinstance(i, int) or i.isdigit()
-            ])
+            chosen.queryset = chosen.queryset.filter(
+                pk__in=[int(i) for i in result if isinstance(i, int) or i.isdigit()]
+            )
             self.choices = set(chosen)
         return result
 
