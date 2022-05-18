@@ -98,7 +98,7 @@ let META_HEADER = [
     })}
 
     window.load_dynamic_update = function (last_msg) {
-        var receiver = EventReceiver(
+        var receiver = new EventReceiver(
             "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
             ['chat_lobby', 'chat_{{request.profile.id}}'], last_msg, function (message) {
                 var room = (message.type == 'lobby') ? '' : message.room;
@@ -208,8 +208,11 @@ let META_HEADER = [
                     if ($('#message-'+tmp_id).length) {
                         $('#message-'+tmp_id).replaceWith(data);
                     }
-                    else {
+                    else if ($('#body-block-'+tmp_id).length) {
                         $('#body-block-'+tmp_id).replaceWith($body_block);
+                    }
+                    else {
+                        add_new_message(message, room);
                     }
                     resize_emoji($body_block);
                     MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
