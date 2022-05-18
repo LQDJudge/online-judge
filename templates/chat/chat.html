@@ -98,7 +98,7 @@ let META_HEADER = [
     })}
 
     window.load_dynamic_update = function (last_msg) {
-        return new EventReceiver(
+        var receiver = EventReceiver(
             "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
             ['chat_lobby', 'chat_{{request.profile.id}}'], last_msg, function (message) {
                 var room = (message.type == 'lobby') ? '' : message.room;
@@ -110,6 +110,15 @@ let META_HEADER = [
                 }
             }
         );
+        receiver.onwsclose = function (event) {
+            if (event.code == 1001) {
+                console.log('Navigated away');
+                return;
+            }
+            console.log('You probably should refresh?');
+        };
+
+        return receiver;
     }
 
     function refresh_status() {
