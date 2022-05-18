@@ -60,6 +60,11 @@ function EventReceiver(websocket, poller, channels, last_msg, onmessage) {
         this.websocket.onclose = function (event) {
             if (event.code != 1000 && receiver.onwsclose !== null)
                 receiver.onwsclose(event);
+            if (event.code == 1006) {
+                setTimeout(function() {
+                    connect();
+                }, 1000);
+            }
         }
     } else {
         this.websocket = null;
