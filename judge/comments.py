@@ -131,10 +131,22 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
 
             # add notification for reply
             if comment.parent and comment.parent.author != comment.author:
-                notification_rep = Notification(
+                notification_reply = Notification(
                     owner=comment.parent.author, comment=comment, category="Reply"
                 )
-                notification_rep.save()
+                notification_reply.save()
+
+            # add notification for page authors
+            page_authors = comment.page_object.authors.all()
+            for user in page_authors:
+                if user == comment.author:
+                    continue
+                notification = Notification(
+                    owner=user, comment=comment, category="Comment"
+                )
+                notification.save()
+            # except Exception:
+            #     pass
 
             add_mention_notifications(comment)
 

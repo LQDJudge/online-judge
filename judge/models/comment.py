@@ -15,7 +15,7 @@ from reversion.models import Version
 
 from judge.models.contest import Contest
 from judge.models.interface import BlogPost
-from judge.models.problem import Problem
+from judge.models.problem import Problem, Solution
 from judge.models.profile import Profile
 from judge.utils.cachedict import CacheDict
 
@@ -170,6 +170,22 @@ class Comment(MPTTModel):
 
     def get_absolute_url(self):
         return "%s#comment-%d" % (self.link, self.id)
+
+    @cached_property
+    def page_object(self):
+        try:
+            page = self.page
+            if page.startswith("p:"):
+                return Problem.objects.get(code=page[2:])
+            elif page.startswith("c:"):
+                return Contest.objects.get(key=page[2:])
+            elif page.startswith("b:"):
+                return BlogPost.objects.get(id=page[2:])
+            elif page.startswith("s:"):
+                return Solution.objects.get(problem__code=page[2:])
+            return None
+        except ObjectDoesNotExist:
+            return None
 
     def __str__(self):
         return "%(page)s by %(user)s" % {
