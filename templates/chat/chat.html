@@ -110,13 +110,6 @@ let META_HEADER = [
                 }
             }
         );
-        receiver.onwsclose = function (event) {
-            if (event.code == 1001) {
-                console.log('Navigated away');
-                return;
-            }
-            console.log('Refreshing ws');
-        };
 
         return receiver;
     }
