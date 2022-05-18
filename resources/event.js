@@ -35,37 +35,38 @@ function EventReceiver(websocket, poller, channels, last_msg, onmessage) {
 
     this.onwsclose = null;
     if (window.WebSocket) {
-        this.websocket = new WebSocket(websocket);
-        var timeout = setTimeout(function () {
-            receiver.websocket.close();
-            receiver.websocket = null;
-            init_poll();
-        }, 2000);
-        this.websocket.onopen = function (event) {
-            clearTimeout(timeout);
-            this.send(JSON.stringify({
-                command: 'start-msg',
-                start: last_msg
-            }));
-            this.send(JSON.stringify({
-                command: 'set-filter',
-                filter: channels
-            }));
-        };
-        this.websocket.onmessage = function (event) {
-            var data = JSON.parse(event.data);
-            receiver.onmessage(data.message);
-            receiver.last_msg = data.id;
-        };
-        this.websocket.onclose = function (event) {
-            if (event.code != 1000 && receiver.onwsclose !== null)
-                receiver.onwsclose(event);
-            if (event.code == 1006) {
-                setTimeout(function() {
-                    connect();
-                }, 1000);
+        function connect() {
+            this.websocket = new WebSocket(websocket);
+            var timeout = setTimeout(function () {
+                receiver.websocket.close();
+                receiver.websocket = null;
+                init_poll();
+            }, 2000);
+            this.websocket.onopen = function (event) {
+                clearTimeout(timeout);
+                this.send(JSON.stringify({
+                    command: 'start-msg',
+                    start: last_msg
+                }));
+                this.send(JSON.stringify({
+                    command: 'set-filter',
+                    filter: channels
+                }));
+            };
+            this.websocket.onmessage = function (event) {
+                var data = JSON.parse(event.data);
+                receiver.onmessage(data.message);
+                receiver.last_msg = data.id;
+            };
+            this.websocket.onclose = function (event) {
+                if (event.code != 1000 && receiver.onwsclose !== null)
+                    receiver.onwsclose(event);
+                if (event.code == 1006) {
+                    setTimeout(connect, 1000);
+                }
             }
         }
+        connect();
     } else {
         this.websocket = null;
         init_poll();
