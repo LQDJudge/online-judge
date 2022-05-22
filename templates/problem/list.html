@@ -10,17 +10,15 @@
     </noscript>
     {% if not request.in_contest_mode %}
         <style>
-            #search-org {
+            #search-org, #search-author {
                 width: 100%;
             }
             #problem-table th {
                 padding: 0;
             }
-
             a.hot-problem-link:hover > .hot-problem-count {
                 visibility: visible;
             }
-
             span.hot-problem-count {
                 color: #555;
                 font-size: 0.75em;
@@ -29,7 +27,6 @@
                 padding-left: 0.25em;
                 position: relative;
             }
-
             ul.problem-list {
                 padding: 0 !important;
             }
@@ -40,7 +37,6 @@
             .volunteer-types {
                 width: 100%;
             }
-
             .point-input {
                 height: 2em;
                 padding-top: 4px;
@@ -59,18 +55,6 @@
         <script src="{{ static('libs/nouislider.min.js') }}" type="text/javascript"></script>
         <script>
             $(function () {
-                var info_float = $('.info-float');
-                var container = $('#content-right');
-                if (window.bad_browser) {
-                    container.css('float', 'right');
-                } else if (!featureTest('position', 'sticky')) {
-                    fix_div(info_float, 55);
-                    $(window).resize(function () {
-                        info_float.width(container.width());
-                    });
-                    info_float.width(container.width());
-                }
-
                 {% if not request.in_contest_mode %}
                     // wrap middle and write column
                     if (window.matchMedia('(max-width: 799px)').matches) {
@@ -109,6 +93,8 @@
                 $('#types').select2({multiple: 1, placeholder: '{{ _('Filter by type...') }}'})
                     .css({'visibility': 'visible'});
                 $('#search-org').select2({multiple: 1, placeholder: '{{ _('Organizations...') }}'})
+                    .css({'visibility': 'visible'});
+                $('#search-author').select2({multiple: 1, placeholder: '{{ _('Authors') }}...'})
                     .css({'visibility': 'visible'});
 
                 // This is incredibly nasty to do but it's needed because otherwise the select2 steals the focus
@@ -277,7 +263,6 @@
                         {% endif %}
                         <th class="problem">{{ _('Problem') }}</th>
                         <th class="pcode">{{ _('Problem code') }}</th>
-                        <th class="category">{{ _('Category') }}</th>
                         {% if show_types %}
                             <th>{{ _('Types') }}</th>
                         {% endif %}
@@ -293,11 +278,9 @@
                         <th class="problem">
                             <a href="{{ sort_links.name }}">{{ _('Problem') }}{{ sort_order.name }}</a>
                         </th>
-                        <!-- Luong begin -->
                         <th class="pcode">
                             <a href="{{ sort_links.code }}">{{ _('Problem code') }}</a>
                         </th>
-                        <!-- Luong end -->
                         <th class="category">
                             <a href="{{ sort_links.group }}">{{ _('Category') }}{{ sort_order.group }}</a>
                         </th>
@@ -360,12 +343,12 @@
                         <td class="problem">
                             <a href="{{ url('problem_detail', problem.code) }}">{{ problem.i18n_name }}</a>
                         </td>
-                        <!-- Luong begin -->
                         <td class="pcode">
                             <a class="pcodecell" href="{{ url('problem_detail', problem.code) }}">{{ problem.code }}</a>
                         </td>
-                        <!-- Luong end -->
-                        <td class="category">{{ problem.group.full_name }}</td>
+                        {% if not request.in_contest_mode %}
+                            <td class="category">{{ problem.group.full_name }}</td>
+                        {% endif %}
                         {% if show_types %}
                             <td class="types">
                                 {% for type in problem.types_list %}
@@ -460,9 +443,8 @@
 {% block right_sidebar %}
     {% if not request.in_contest_mode %}
         <div id="content-right" class="problems right-sidebar">
-            <div class="info-float">
-                {% include "problem/search-form.html" %}
-            </div>
+            {% include "problem/search-form.html" %}
+            {% include "problem/recent-attempt.html" %}
         </div>
     {% endif %}
 {% endblock %}

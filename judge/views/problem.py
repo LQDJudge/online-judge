@@ -52,6 +52,7 @@ from judge.models import (
     TranslatedProblemForeignKeyQuerySet,
     Organization,
     VolunteerProblemVote,
+    Profile,
 )
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
@@ -129,6 +130,15 @@ class SolvedProblemMixin(object):
             return contest_attempted_ids(self.profile.current_contest)
         else:
             return user_attempted_ids(self.profile) if self.profile is not None else ()
+
+    def get_latest_attempted_problems(self, limit=None):
+        if self.in_contest or not self.profile:
+            return ()
+        result = list(user_attempted_ids(self.profile).values())
+        result = sorted(result, key=lambda d: -d["last_submission"])
+        if limit:
+            result = result[:limit]
+        return result
 
     @cached_property
     def in_contest(self):
@@ -582,6 +592,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
                 Q(organizations__in=self.org_query)
                 | Q(contests__contest__organizations__in=self.org_query)
             )
+        if self.author_query:
+            queryset = queryset.filter(authors__in=self.author_query)
         if self.show_types:
             queryset = queryset.prefetch_related("types")
         if self.category is not None:
@@ -639,6 +651,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         context["have_editorial"] = 0 if self.in_contest else int(self.have_editorial)
 
         context["organizations"] = Organization.objects.all()
+        all_authors_ids = set(Problem.objects.values_list("authors", flat=True))
+        context["all_authors"] = Profile.objects.filter(id__in=all_authors_ids)
         context["category"] = self.category
         context["categories"] = ProblemGroup.objects.all()
         if self.show_types:
@@ -646,9 +660,11 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             context["problem_types"] = ProblemType.objects.all()
         context["has_fts"] = settings.ENABLE_FTS
         context["org_query"] = self.org_query
+        context["author_query"] = self.author_query
         context["search_query"] = self.search_query
         context["completed_problem_ids"] = self.get_completed_problems()
         context["attempted_problems"] = self.get_attempted_problems()
+        context["last_attempted_problems"] = self.get_latest_attempted_problems(15)
         context["page_type"] = "list"
         context.update(self.get_sort_paginate_context())
         if not self.in_contest:
@@ -736,6 +752,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         self.search_query = None
         self.category = None
         self.org_query = []
+        self.author_query = []
         self.selected_types = []
 
         # This actually copies into the instance dictionary...
@@ -749,10 +766,14 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
                 self.selected_types = list(map(int, request.GET.getlist("type")))
             except ValueError:
                 pass
-
         if "orgs" in request.GET:
             try:
                 self.org_query = list(map(int, request.GET.getlist("orgs")))
+            except ValueError:
+                pass
+        if "authors" in request.GET:
+            try:
+                self.author_query = list(map(int, request.GET.getlist("authors")))
             except ValueError:
                 pass
 

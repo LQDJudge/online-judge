@@ -43,6 +43,16 @@
                 </select> 
             </div>
             <div class="filter-form-group">
+                <label for="type"><i>{{ _('Author') }}</i></label>
+                <select id="search-author" name="authors" multiple>
+                    {% for author in all_authors %}
+                        <option value="{{ author.id }}"{% if author.id in author_query %} selected{% endif %}>
+                            {{ author.user.username }}
+                        </option>
+                    {% endfor %}
+                </select> 
+            </div>
+            <div class="filter-form-group">
                 <label for="category"><i>{{ _('Category') }}</i></label>
                 <select id="category" name="category">
                     {% if category %}

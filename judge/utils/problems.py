@@ -88,11 +88,19 @@ def user_attempted_ids(profile):
     result = cache.get(key)
     if result is None:
         result = {
-            id: {"achieved_points": points, "max_points": max_points}
-            for id, max_points, points in (
+            id: {
+                "achieved_points": points,
+                "max_points": max_points,
+                "last_submission": last_submission,
+                "code": problem_code,
+                "name": problem_name,
+            }
+            for id, max_points, problem_code, problem_name, points, last_submission in (
                 Submission.objects.filter(user=profile)
-                .values_list("problem__id", "problem__points")
-                .annotate(points=Max("points"))
+                .values_list(
+                    "problem__id", "problem__points", "problem__code", "problem__name"
+                )
+                .annotate(points=Max("points"), last_submission=Max("id"))
                 .filter(points__lt=F("problem__points"))
             )
         }
