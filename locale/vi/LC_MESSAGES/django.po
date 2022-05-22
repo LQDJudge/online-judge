@@ -4666,10 +4666,8 @@ msgid "Have editorial"
 msgstr "Có hướng dẫn"
 
 #: templates/problem/search-form.html:46
-#, fuzzy
-#| msgid "Authors"
 msgid "Author"
-msgstr "Các tác giả"
+msgstr "Tác giả"
 
 #: templates/problem/search-form.html:59 templates/problem/search-form.html:61
 #: templates/submission/submission-list-tabs.html:4
