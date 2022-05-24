@@ -4366,10 +4366,8 @@ msgid "Value"
 msgstr "Giá trị"
 
 #: templates/problem/feed.html:54
-#, fuzzy
-#| msgid "Total points"
 msgid "Knowledge point"
-msgstr "Tổng điểm"
+msgstr "Độ khó kiến thức"
 
 #: templates/problem/feed.html:62
 msgid "Thinking point"
