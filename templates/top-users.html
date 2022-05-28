@@ -7,7 +7,7 @@
                     {% for user in top_rated %}
                         <tr>
                             <td style="padding: 7px 2px"><b>{{loop.index}}</b></td>
-                            <td>{{link_user(user)}}</td>
+                            <td style="line-break: anywhere">{{link_user(user)}}</td>
                             <td>{{user.rating}}</td>
                         </tr>
                     {% endfor %}

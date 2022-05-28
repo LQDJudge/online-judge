@@ -151,11 +151,8 @@ class OrganizationList(TitleMixin, ListView, OrganizationBase):
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationList, self).get_context_data(**kwargs)
-        context["my_organizations"] = set()
-
-        for organization in context["organizations"]:
-            if self.can_edit_organization(organization) or self.is_member(organization):
-                context["my_organizations"].add(organization)
+        if self.request.profile:
+            context["my_organizations"] = self.request.profile.organizations.all()
 
         return context
 

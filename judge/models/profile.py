@@ -112,6 +112,10 @@ class Organization(models.Model):
     def get_contests_url(self):
         return reverse("organization_contests", args=(self.id, self.slug))
 
+    def save(self, *args, **kwargs):
+        self.members.add(*self.admins.all())
+        super(Organization, self).save(*args, **kwargs)
+
     class Meta:
         ordering = ["name"]
         permissions = (
