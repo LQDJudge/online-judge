@@ -1,13 +1,13 @@
 {% extends "user/users-table.html" %}
 
 {% block before_point_head %}
-    {% if is_admin %}
+    {% if can_edit %}
         <th class="header"></th>
     {% endif %}
 {% endblock %}
 
 {% block before_point %}
-    {% if is_admin %}
+    {% if can_edit %}
         <td>
             <form action="{{ kick_url }}" method="POST" class="kick-form">
                 {% csrf_token %}
