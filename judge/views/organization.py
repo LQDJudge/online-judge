@@ -83,6 +83,13 @@ class OrganizationBase(object):
             self.request.profile in org if self.request.user.is_authenticated else False
         )
 
+    def can_access(self, org):
+        if self.request.user.is_superuser:
+            return True
+        if org is None:
+            org = self.object
+        return self.is_member(org) or self.can_edit_organization(org)
+
 
 class OrganizationMixin(OrganizationBase):
     context_object_name = "organization"
@@ -287,6 +294,8 @@ class OrganizationProblems(ProblemList, OrganizationExternalMixin):
         ret = super().get_organization_from_url(request, *args, **kwargs)
         if ret:
             return ret
+        if not self.can_access(self.organization):
+            return HttpResponseBadRequest()
         self.setup_problem_list(request)
         return super().get(request, *args, **kwargs)
 
@@ -308,6 +317,8 @@ class OrganizationContests(ContestList, OrganizationExternalMixin):
         ret = super().get_organization_from_url(request, *args, **kwargs)
         if ret:
             return ret
+        if not self.can_access(self.organization):
+            return HttpResponseBadRequest()
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
