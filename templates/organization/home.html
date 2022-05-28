@@ -1,12 +1,6 @@
-{% extends "base.html" %}
-
-{% block media %}
+{% extends "three-column-content.html" %}
+{% block three_col_media %}
     <style>
-        {% if request.user.is_authenticated and is_member %}
-            #control-panel {
-                display: none;
-            }
-        {% endif %}
         .leave-organization, .leave-organization:hover {
             color: red;
         }
@@ -25,9 +19,12 @@
     </style>
 {% endblock %}
 
-{% block js_media %}
+{% block three_col_js %}
     <script type="text/javascript">
         $(function () {
+            $('.time-remaining').each(function () {
+                count_down($(this));
+            });
             $('.leave-organization').click(function () {
                 if (confirm('{{ _('Are you sure you want to leave this organization?') }}\n' +
                     {% if organization.is_open %}
@@ -41,32 +38,22 @@
             });
 
             $(document).ready(function () {
-                $('.blog-sidebar').hide();
-                $('#info-tab').find('a').click(function (e) {
-                    e.preventDefault();
-                    $('#info-tab').addClass('active');
-                    $('#detail-tab').removeClass('active');
-                    $('.blog-content').show();
-                    $('.blog-sidebar').hide();
-                });
-                $('#detail-tab').find('a').click(function (e) {
-                    e.preventDefault();
-                    $('#detail-tab').addClass('active');
-                    $('#info-tab').removeClass('active');
-                    $('.blog-content').hide();
-                    $('.blog-sidebar').show();
-                });
                 $('.control-button').click(function(e) {
                     e.preventDefault();
                     $('#control-panel').toggle("fast");
                 })
             });
         });
-
     </script>
 {% endblock %}
 
-{% block title_row %}
+{% block left_sidebar %}
+    {% include "organization/org-left-sidebar.html" %}
+{% endblock %}
+
+{% block title_ruler %}{% endblock %}
+{% block middle_content %}
+    {% block before_posts %}{% endblock %}
     <div class="page-title">
         <div class="tabs">
             <h2>{{title}}</h2>
@@ -85,81 +72,68 @@
                        class="unselectable button">{{ _('Request membership') }}</a>
                 {% endif %}
             {% endif %}
-            <button class="control-button"><i class="fa fa-ellipsis-h"></i></button>
         </div>
     </div>
-{% endblock %}
-{% block title_ruler %} {% endblock %}
-{% block body %}
-    {% block before_posts %}{% endblock %}
-    <div id="mobile" class="tabs">
-        <ul>
-            <li id="info-tab" class="tab active"><a href="#">
-                <i class="tab-icon fa fa-info-circle"></i> {{ _('Info') }}
-            </a></li>
-            <li id="detail-tab" class="tab"><a href="#"><i class="tab-icon fa fa-rss"></i> {{ _('Details') }}</a></li>
-        </ul>
-    </div>
-    <div id="blog-container">
-        <div class="blog-content sidebox">
+    {% if is_member or can_edit %}
+        {% for post in posts %}
+            {% include "blog/content.html" %}
+            {% if posts.paginator.num_pages > 1 %}
+                <div style="margin-bottom:10px;margin-top:10px">{% include "list-pages.html" %}</div>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <div class="blog-sidebox sidebox">
             <h3>{{ _('About') }}<i class="fa fa-info-circle"></i></h3>
             <div class="sidebox-content">
-                <div style="margin: 1.4em;">
+                <div style="margin: 0.3em;">
                     {% cache 3600 'organization_html' organization.id MATH_ENGINE %}
                         {{ organization.about|markdown('organization-about', MATH_ENGINE)|reference|str|safe }}
                     {% endcache %}
                 </div>
             </div>
-            {% if is_member or can_edit %}
-                <br>
-                <h3>{{ _('Organization news') }} <i class="fa fa-terminal"></i></h3>
-                <div class="sidebox-content">
-                    {% for post in posts %}
-                        {% include "blog/content.html" %}
-                    {% else %}
-                        <div style="margin: 1.4em;">
-                            <i>{{ _('There is no news at this time.') }}</i>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
         </div>
+    {% endif %}
+    {% block after_posts %}{% endblock %}
+{% endblock %}
 
-        <div class="blog-sidebar">
+{% block right_sidebar %}
+    <div class="right-sidebar">
+        {% if (is_member or can_edit) %}
+            {% include 'contests-countdown.html' %}
+        {% endif %}
+        {% if is_member or can_edit %}
+            <div class="blog-sidebox sidebox">
+                <h3>{{ _('About') }}<i class="fa fa-info-circle"></i></h3>
+                <div class="sidebox-content">
+                    <div style="margin: 0.3em;">
+                        {% cache 3600 'organization_html' organization.id MATH_ENGINE %}
+                            {{ organization.about|markdown('organization-about', MATH_ENGINE)|reference|str|safe }}
+                        {% endcache %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        {% if can_edit %}
             <div id="control-panel" class="blog-sidebox sidebox">
                 <h3>{{ _('Controls') }} <i class="fa fa-cog"></i></h3>
                 <ul id="control-list" class="sidebox-content" style="padding: 1em;">
-                    {% if can_edit %}
+                    <li>
+                        <div>
+                            <a href="{{ url('edit_organization', organization.id, organization.slug) }}">{{ _('Edit organization') }}</a>
+                        </div>
+                    </li>
+                    {% if not organization.is_open %}
                         <li>
                             <div>
-                                <a href="{{ url('edit_organization', organization.id, organization.slug) }}">{{ _('Edit organization') }}</a>
+                                <a href="{{ url('organization_requests_pending', organization.id, organization.slug) }}">{{ _('View requests') }}</a>
+                                {% if pending_count > 0 %}
+                                    <span id="pending-count-box">
+                                        {{pending_count}}
+                                    </span>
+                                {% endif %}
                             </div>
                         </li>
-                        {% if not organization.is_open %}
-                            <li>
-                                <div>
-                                    <a href="{{ url('organization_requests_pending', organization.id, organization.slug) }}">{{ _('View requests') }}</a>
-                                    {% if pending_count > 0 %}
-                                        <span id="pending-count-box">
-                                            {{pending_count}}
-                                        </span>
-                                    {% endif %}
-                                </div>
-                            </li>
-                        {% endif %}
                     {% endif %}
-                    {% if perms.judge.change_organization %}
-                    <li>
-                        <div>
-                            <a href="{{ url('admin:judge_organization_change', organization.id) }}">{{ _('Admin organization') }}</a>
-                        </div>
-                    </li>
-                    {% endif %}
-                    <li>
-                        <div>
-                            <a href="{{ organization.get_users_url() }}">{{ _('View members') }}</a>
-                        </div>
-                    </li>
                     {% if is_member and not can_edit %}
                     <li>
                         <form method="post" action="{{ url('leave_organization', organization.id, organization.slug) }}">
@@ -170,40 +144,7 @@
                     {% endif %}
                 </ul>
             </div>
-            {% if (is_member or can_edit) %}
-                {% if new_contests %}
-                    <div class="blog-sidebox sidebox">
-                        <h3>{{ _('New private contests') }} <i class="fa fa-trophy"></i>
-                        </h3>
-                        <div class="sidebox-content">
-                            <ul class="problem-list">
-                                {% for contest in new_contests %}
-                                    <li><a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a></li>
-                                {% endfor %}
-                                
-                            </ul>
-                            <hr>
-                            <center><a target="_blank" href="{{url('contest_list')+'?orgs='+str(organization.id)}}">{{_('View all')}}  <i class="fa fa-chevron-right"></i></a></center>
-                        </div>
-                    </div>
-                {% endif %}
-                {% if new_problems %}
-                    <div class="blog-sidebox sidebox">
-                        <h3>{{ _('New private problems') }} <i class="fa fa-puzzle-piece"></i>
-                        </h3>
-                        <div class="sidebox-content">
-                            <ul class="problem-list">
-                                {% for problem in new_problems %}
-                                    <li><a href="{{ url('problem_detail', problem.code) }}">{{ problem.name }}</a></li>
-                                {% endfor %}
-                            </ul>
-                            <hr>
-                            <center><a target="_blank" href="{{url('problem_list')+'?orgs='+str(organization.id)}}">{{_('View all')}}  <i class="fa fa-chevron-right"></i></a></center>
-                        </div>
-                    </div>
-                {% endif %}
-            {% endif %}
-        </div>
+        {% endif %}
+        {% include 'top-users.html' %}
     </div>
-    {% block after_posts %}{% endblock %}
 {% endblock %}

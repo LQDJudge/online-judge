@@ -1,4 +1,4 @@
-{% extends "user/base-users.html" %}
+{% extends "user/base-users-three-col.html" %}
 {% block users_media %}
     <style>
         .kick-form .button {
@@ -34,6 +34,10 @@
             })
         });
     </script>
+{% endblock %}
+
+{% block left_sidebar %}
+    {% include "organization/org-left-sidebar.html" %}
 {% endblock %}
 
 {% block users_table %}{% include "organization/users-table.html" %}{% endblock %}

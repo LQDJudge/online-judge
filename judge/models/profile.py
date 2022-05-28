@@ -106,6 +106,12 @@ class Organization(models.Model):
     def get_users_url(self):
         return reverse("organization_users", args=(self.id, self.slug))
 
+    def get_problems_url(self):
+        return reverse("organization_problems", args=(self.id, self.slug))
+
+    def get_contests_url(self):
+        return reverse("organization_contests", args=(self.id, self.slug))
+
     class Meta:
         ordering = ["name"]
         permissions = (

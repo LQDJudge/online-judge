@@ -19,29 +19,32 @@
                         {% if show_types %} checked{% endif %}>
                 <label for="show_types">{{ _('Show problem types') }}</label>
             </div>
-            {% if page_type == 'list' %}
+            {% if has_show_editorial_option %}
                 <div>
                     <input id="show_editorial" type="checkbox" name="show_editorial" value="1"
                             {% if show_editorial %} checked{% endif %}>
                     <label for="show_editorial">{{ _('Show editorial') }}</label>
                 </div>
-            {% elif page_type == 'feed' %}
+            {% endif %}
+            {% if has_have_editorial_option %}
                 <div>
                     <input id="have_editorial" type="checkbox" name="have_editorial" value="1"
                             {% if have_editorial %} checked{% endif %}>
                     <label for="have_editorial">{{ _('Have editorial') }}</label>
                 </div>
             {% endif %}
-            <div class="filter-form-group">
-                <label for="type"><i>{{ _('Organization') }}</i></label>
-                <select id="search-org" name="orgs" multiple>
-                    {% for org in organizations %}
-                        <option value="{{ org.id }}"{% if org.id in org_query %} selected{% endif %}>
-                            {{ org.name }}
-                        </option>
-                    {% endfor %}
-                </select> 
-            </div>
+            {% if organizations %}
+                <div class="filter-form-group">
+                    <label for="type"><i>{{ _('Organization') }}</i></label>
+                    <select id="search-org" name="orgs" multiple>
+                        {% for org in organizations %}
+                            <option value="{{ org.id }}"{% if org.id in org_query %} selected{% endif %}>
+                                {{ org.name }}
+                            </option>
+                        {% endfor %}
+                    </select> 
+                </div>
+            {% endif %}
             <div class="filter-form-group">
                 <label for="type"><i>{{ _('Author') }}</i></label>
                 <select id="search-author" name="authors" multiple>
@@ -66,7 +69,6 @@
                         </option>
                     {% endfor %}
                 </select>
-
             </div>
             {% if show_types %}
                 <div class="filter-form-group">

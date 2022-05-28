@@ -7,8 +7,14 @@ from django.core.cache.utils import make_template_fragment_key
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Count, Q, Value, BooleanField
+from django.db.utils import ProgrammingError
 from django.forms import Form, modelformset_factory
-from django.http import Http404, HttpResponsePermanentRedirect, HttpResponseRedirect
+from django.http import (
+    Http404,
+    HttpResponsePermanentRedirect,
+    HttpResponseRedirect,
+    HttpResponseBadRequest,
+)
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
@@ -18,6 +24,7 @@ from django.views.generic.detail import (
     SingleObjectMixin,
     SingleObjectTemplateResponseMixin,
 )
+from django.core.paginator import Paginator
 from reversion import revisions
 
 from judge.forms import EditOrganizationForm
@@ -37,11 +44,15 @@ from judge.utils.views import (
     QueryStringSortMixin,
     DiggPaginatorMixin,
 )
+from judge.views.problem import ProblemList
+from judge.views.contests import ContestList
 
 __all__ = [
     "OrganizationList",
     "OrganizationHome",
     "OrganizationUsers",
+    "OrganizationProblems",
+    "OrganizationContests",
     "OrganizationMembershipChange",
     "JoinOrganization",
     "LeaveOrganization",
@@ -111,6 +122,12 @@ class OrganizationDetailView(OrganizationMixin, DetailView):
         context = self.get_context_data(object=self.object)
         return self.render_to_response(context)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["can_edit"] = self.can_edit_organization()
+        context["is_member"] = self.is_member()
+        return context
+
 
 class OrganizationList(TitleMixin, ListView, OrganizationBase):
     model = Organization
@@ -139,19 +156,8 @@ class OrganizationList(TitleMixin, ListView, OrganizationBase):
 class OrganizationHome(OrganizationDetailView):
     template_name = "organization/home.html"
 
-    def get_context_data(self, **kwargs):
-        context = super(OrganizationHome, self).get_context_data(**kwargs)
-        context["title"] = self.object.name
-        context["can_edit"] = self.can_edit_organization()
-        context["is_member"] = self.is_member()
-        context["new_problems"] = Problem.objects.filter(
-            is_public=True, is_organization_private=True, organizations=self.object
-        ).order_by("-date", "-id")[: settings.DMOJ_BLOG_NEW_PROBLEM_COUNT]
-        context["new_contests"] = Contest.objects.filter(
-            is_visible=True, is_organization_private=True, organizations=self.object
-        ).order_by("-end_time", "-id")[: settings.DMOJ_BLOG_NEW_CONTEST_COUNT]
-
-        context["posts"] = (
+    def get_posts(self):
+        posts = (
             BlogPost.objects.filter(
                 visible=True,
                 publish_on__lte=timezone.now(),
@@ -161,6 +167,21 @@ class OrganizationHome(OrganizationDetailView):
             .order_by("-sticky", "-publish_on")
             .prefetch_related("authors__user", "organizations")
         )
+        paginator = Paginator(posts, 10)
+        page_number = self.request.GET.get("page", 1)
+        posts = paginator.get_page(page_number)
+        return posts
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizationHome, self).get_context_data(**kwargs)
+        context["title"] = self.object.name
+        context["new_problems"] = Problem.objects.filter(
+            is_public=True, is_organization_private=True, organizations=self.object
+        ).order_by("-date", "-id")[: settings.DMOJ_BLOG_NEW_PROBLEM_COUNT]
+        context["new_contests"] = Contest.objects.filter(
+            is_visible=True, is_organization_private=True, organizations=self.object
+        ).order_by("-end_time", "-id")[: settings.DMOJ_BLOG_NEW_CONTEST_COUNT]
+        context["posts"] = self.get_posts()
         context["post_comment_counts"] = {
             int(page[2:]): count
             for page, count in Comment.objects.filter(
@@ -173,6 +194,26 @@ class OrganizationHome(OrganizationDetailView):
         context["pending_count"] = OrganizationRequest.objects.filter(
             state="P", organization=self.object
         ).count()
+
+        now = timezone.now()
+        visible_contests = (
+            Contest.get_visible_contests(self.request.user)
+            .filter(
+                is_visible=True, is_organization_private=True, organizations=self.object
+            )
+            .order_by("start_time")
+        )
+        context["current_contests"] = visible_contests.filter(
+            start_time__lte=now, end_time__gt=now
+        )
+        context["future_contests"] = visible_contests.filter(start_time__gt=now)
+        context["top_rated"] = self.object.members.filter(is_unlisted=False).order_by(
+            "-rating"
+        )[:10]
+        context["top_scorer"] = self.object.members.filter(is_unlisted=False).order_by(
+            "-performance_points"
+        )[:10]
+        context["page_type"] = "home"
         return context
 
 
@@ -186,7 +227,7 @@ class OrganizationUsers(QueryStringSortMixin, OrganizationDetailView):
         context = super(OrganizationUsers, self).get_context_data(**kwargs)
         context["title"] = _("%s Members") % self.object.name
         context["partial"] = True
-        context["is_admin"] = self.can_edit_organization()
+        context["can_edit"] = self.can_edit_organization()
         context["kick_url"] = reverse(
             "organization_user_kick", args=[self.object.id, self.object.slug]
         )
@@ -206,7 +247,73 @@ class OrganizationUsers(QueryStringSortMixin, OrganizationDetailView):
             )
         )
         context["first_page_href"] = "."
+        context["page_type"] = "users"
         context.update(self.get_sort_context())
+        return context
+
+
+class OrganizationExternalMixin(OrganizationBase):
+    organization_id = None
+    organization = None
+
+    def get_organization_from_url(self, request, *args, **kwargs):
+        try:
+            self.organization_id = int(kwargs["pk"])
+            self.organization = Organization.objects.get(id=self.organization_id)
+        except:
+            return HttpResponseBadRequest()
+        if self.organization.slug != kwargs["slug"]:
+            return HttpResponsePermanentRedirect(
+                request.get_full_path().replace(kwargs["slug"], self.object.slug)
+            )
+        return None
+
+    def edit_context_data(self, context):
+        context["is_member"] = self.is_member(self.organization)
+        context["can_edit"] = self.can_edit_organization(self.organization)
+        context["organization"] = self.organization
+        context["logo_override_image"] = self.organization.logo_override_image
+        context.pop("organizations")
+
+
+class OrganizationProblems(ProblemList, OrganizationExternalMixin):
+    template_name = "organization/problems.html"
+
+    def get_queryset(self):
+        self.org_query = [self.organization_id]
+        return super().get_normal_queryset()
+
+    def get(self, request, *args, **kwargs):
+        ret = super().get_organization_from_url(request, *args, **kwargs)
+        if ret:
+            return ret
+        self.setup_problem_list(request)
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizationProblems, self).get_context_data(**kwargs)
+        self.edit_context_data(context)
+        context["page_type"] = "problems"
+        return context
+
+
+class OrganizationContests(ContestList, OrganizationExternalMixin):
+    template_name = "organization/contests.html"
+
+    def get_queryset(self):
+        self.org_query = [self.organization_id]
+        return super().get_queryset()
+
+    def get(self, request, *args, **kwargs):
+        ret = super().get_organization_from_url(request, *args, **kwargs)
+        if ret:
+            return ret
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizationContests, self).get_context_data(**kwargs)
+        self.edit_context_data(context)
+        context["page_type"] = "contests"
         return context
 
 

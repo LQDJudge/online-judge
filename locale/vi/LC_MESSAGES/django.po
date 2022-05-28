@@ -4199,11 +4199,11 @@ msgstr "Quản lý"
 
 #: templates/organization/home.html:135
 msgid "Edit organization"
-msgstr "Chỉnh sửa tổ chức"
+msgstr "Chỉnh sửa"
 
 #: templates/organization/home.html:141
 msgid "View requests"
-msgstr "Xem các đơn đăng ký"
+msgstr "Đơn đăng ký"
 
 #: templates/organization/home.html:154
 msgid "Admin organization"

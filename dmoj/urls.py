@@ -588,6 +588,16 @@ urlpatterns = [
                     name="organization_users",
                 ),
                 url(
+                    r"^/problems$",
+                    organization.OrganizationProblems.as_view(),
+                    name="organization_problems",
+                ),
+                url(
+                    r"^/contests$",
+                    organization.OrganizationContests.as_view(),
+                    name="organization_contests",
+                ),
+                url(
                     r"^/join$",
                     organization.JoinOrganization.as_view(),
                     name="join_organization",

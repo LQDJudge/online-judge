@@ -1,0 +1,37 @@
+{% if top_rated %}
+    <div class="blog-sidebox sidebox">
+        <h3>{{ _('Top Rating') }} <i class="fa fa-trophy"></i></h3>
+        <div class="sidebox-content" style="padding: 0; border: 0">
+            <table class="table feed-table">
+                <tbody>
+                    {% for user in top_rated %}
+                        <tr>
+                            <td style="padding: 7px 2px"><b>{{loop.index}}</b></td>
+                            <td>{{link_user(user)}}</td>
+                            <td>{{user.rating}}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+
+{% if top_scorer %}
+    <div class="blog-sidebox sidebox">
+        <h3>{{ _('Top Score') }} <i class="fa fa-trophy"></i></h3>
+        <div class="sidebox-content" style="padding: 0; border: 0">
+            <table class="table feed-table">
+                <tbody>
+                    {% for user in top_scorer %}
+                        <tr>
+                            <td style="padding: 7px 2px"><b>{{loop.index}}</b></td>
+                            <td>{{link_user(user)}}</td>
+                            <td>{{ user.performance_points|floatformat(0) }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}

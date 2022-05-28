@@ -567,6 +567,13 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             )
         ]
 
+    def get_org_query(self, query):
+        return [
+            i
+            for i in query
+            if i in self.profile.organizations.values_list("id", flat=True)
+        ]
+
     def get_normal_queryset(self):
         filter = Q(is_public=True)
         if self.profile is not None:
@@ -588,6 +595,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
                 ).values_list("problem__id", flat=True)
             )
         if self.org_query:
+            self.org_query = self.get_org_query(self.org_query)
             queryset = queryset.filter(
                 Q(organizations__in=self.org_query)
                 | Q(contests__contest__organizations__in=self.org_query)
@@ -650,7 +658,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         context["show_editorial"] = 0 if self.in_contest else int(self.show_editorial)
         context["have_editorial"] = 0 if self.in_contest else int(self.have_editorial)
 
-        context["organizations"] = Organization.objects.all()
+        if self.request.profile:
+            context["organizations"] = self.request.profile.organizations.all()
         all_authors_ids = set(Problem.objects.values_list("authors", flat=True))
         context["all_authors"] = Profile.objects.filter(id__in=all_authors_ids)
         context["category"] = self.category
@@ -702,7 +711,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             ("?" + self.request.GET.urlencode()) if self.request.GET else ""
         )
         context["first_page_href"] = (self.first_page_href or ".") + suffix
-
+        context["has_show_editorial_option"] = True
         return context
 
     def get_noui_slider_points(self):
@@ -811,6 +820,7 @@ cf_logger = logging.getLogger("judge.ml.collab_filter")
 class ProblemFeed(ProblemList):
     model = Problem
     context_object_name = "problems"
+    template_name = "problem/feed.html"
     paginate_by = 20
     title = _("Problem feed")
     feed_type = None
@@ -926,7 +936,8 @@ class ProblemFeed(ProblemList):
         context["page_type"] = "feed"
         context["title"] = self.title
         context["feed_type"] = self.feed_type
-
+        context["has_show_editorial_option"] = False
+        context["has_have_editorial_option"] = False
         return context
 
     def get(self, request, *args, **kwargs):

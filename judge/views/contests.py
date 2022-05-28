@@ -146,9 +146,15 @@ class ContestList(
         self.contest_query = None
         self.org_query = []
 
-        if "orgs" in self.request.GET:
+        if "orgs" in self.request.GET and self.request.profile:
             try:
                 self.org_query = list(map(int, request.GET.getlist("orgs")))
+                self.org_query = [
+                    i
+                    for i in self.org_query
+                    if i
+                    in self.request.profile.organizations.values_list("id", flat=True)
+                ]
             except ValueError:
                 pass
 
@@ -215,7 +221,9 @@ class ContestList(
         context["first_page_href"] = "."
         context["contest_query"] = self.contest_query
         context["org_query"] = self.org_query
-        context["organizations"] = Organization.objects.all()
+        if self.request.profile:
+            context["organizations"] = self.request.profile.organizations.all()
+        context["page_type"] = "list"
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())
         return context
