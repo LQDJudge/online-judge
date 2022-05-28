@@ -81,6 +81,11 @@ class OrganizationAdmin(VersionAdmin):
             return True
         return obj.admins.filter(id=request.profile.id).exists()
 
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        obj = form.instance
+        obj.members.add(*obj.admins.all())
+
 
 class OrganizationRequestAdmin(admin.ModelAdmin):
     list_display = ("username", "organization", "state", "time")

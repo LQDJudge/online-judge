@@ -8,7 +8,7 @@
                         <tr>
                             <td style="padding: 7px 2px"><b>{{loop.index}}</b></td>
                             <td style="line-break: anywhere">{{link_user(user)}}</td>
-                            <td>{{user.rating}}</td>
+                            <td>{{user.rating or '_'}}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
