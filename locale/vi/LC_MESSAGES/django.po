@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-05-30 13:51+0700\n"
+"POT-Creation-Date: 2022-05-30 14:05+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -525,7 +525,7 @@ msgstr "Đăng ký để nhận thông báo về các kỳ thi"
 msgid "Enable experimental features"
 msgstr "Sử dụng các tính năng thử nghiệm"
 
-#: judge/forms.py:87 judge/views/organization.py:387 judge/views/register.py:69
+#: judge/forms.py:86 judge/views/organization.py:402 judge/views/register.py:68
 #, python-brace-format
 msgid "You may not be part of more than {count} public groups."
 msgstr "Bạn không thể tham gia nhiều hơn {count} nhóm công khai."
@@ -534,49 +534,53 @@ msgstr "Bạn không thể tham gia nhiều hơn {count} nhóm công khai."
 msgid "Any judge"
 msgstr ""
 
-#: judge/forms.py:140
+#: judge/forms.py:142
 msgid "Enter usernames separating by space"
-msgstr ""
+msgstr "Nhập các tên đăng nhập, cách nhau bởi dấu cách"
 
-#: judge/forms.py:158
+#: judge/forms.py:143
+msgid "New users"
+msgstr "Thành viên mới"
+
+#: judge/forms.py:160
 #, python-brace-format
 msgid "These usernames don't exist: {usernames}"
-msgstr ""
+msgstr "Các tên đăng nhập này không tồn tại: {usernames}"
 
-#: judge/forms.py:216 judge/views/register.py:31
+#: judge/forms.py:219 judge/views/register.py:31
 #: templates/registration/registration_form.html:139
 #: templates/user/base-users-table.html:5
 #: templates/user/import/table_csv.html:4
 msgid "Username"
 msgstr "Tên đăng nhập"
 
-#: judge/forms.py:217 templates/registration/registration_form.html:151
+#: judge/forms.py:220 templates/registration/registration_form.html:151
 #: templates/registration/registration_form.html:165
 #: templates/user/import/table_csv.html:5
 msgid "Password"
 msgstr "Mật khẩu"
 
-#: judge/forms.py:243
+#: judge/forms.py:246
 msgid "Two Factor Authentication tokens must be 6 decimal digits."
 msgstr "Two Factor Authentication phải chứa 6 chữ số."
 
-#: judge/forms.py:256 templates/registration/totp_auth.html:32
+#: judge/forms.py:259 templates/registration/totp_auth.html:32
 msgid "Invalid Two Factor Authentication token."
 msgstr "Token Two Factor Authentication không hợp lệ."
 
-#: judge/forms.py:263 judge/models/problem.py:151
+#: judge/forms.py:266 judge/models/problem.py:151
 msgid "Problem code must be ^[a-z0-9]+$"
 msgstr "Mã bài phải có dạng ^[a-z0-9]+$"
 
-#: judge/forms.py:270
+#: judge/forms.py:273
 msgid "Problem with code already exists."
 msgstr "Mã bài đã tồn tại."
 
-#: judge/forms.py:277 judge/models/contest.py:89
+#: judge/forms.py:280 judge/models/contest.py:89
 msgid "Contest id must be ^[a-z0-9]+$"
 msgstr "Mã kỳ thi phải có dạng ^[a-z0-9]+$"
 
-#: judge/forms.py:283
+#: judge/forms.py:286
 msgid "Contest with key already exists."
 msgstr "Mã kỳ thi đã tồn tại."
 
@@ -799,8 +803,8 @@ msgid ""
 "Should be set even for organization-private contests, where it determines "
 "whether the contest is visible to members of the specified organizations."
 msgstr ""
-"Đánh dấu ngay cả với các kỳ thi riêng tư của nhóm, quyết định việc kỳ thi "
-"có được hiển thị với các thành viên hay không."
+"Đánh dấu ngay cả với các kỳ thi riêng tư của nhóm, quyết định việc kỳ thi có "
+"được hiển thị với các thành viên hay không."
 
 #: judge/models/contest.py:140
 msgid "contest rated"
@@ -2486,8 +2490,8 @@ msgstr "Bạn phải giải ít nhất 1 bài trước khi được vote."
 msgid "You already voted."
 msgstr "Bạn đã vote."
 
-#: judge/views/comment.py:153 judge/views/organization.py:666
-#: judge/views/organization.py:738
+#: judge/views/comment.py:153 judge/views/organization.py:700
+#: judge/views/organization.py:787
 msgid "Edited from site"
 msgstr "Chỉnh sửa từ web"
 
@@ -2664,84 +2668,84 @@ msgstr "Runtimes"
 msgid "Notifications (%d unseen)"
 msgstr "Thông báo (%d chưa xem)"
 
-#: judge/views/organization.py:117 judge/views/organization.py:123
+#: judge/views/organization.py:129 judge/views/organization.py:135
 msgid "No such organization"
 msgstr "Không có tổ chức như vậy"
 
-#: judge/views/organization.py:118
+#: judge/views/organization.py:130
 #, python-format
 msgid "Could not find an organization with the key \"%s\"."
 msgstr "Không tìm thấy tổ chức với mã \"%s\"."
 
-#: judge/views/organization.py:124
+#: judge/views/organization.py:136
 msgid "Could not find such organization."
 msgstr ""
 
-#: judge/views/organization.py:140
+#: judge/views/organization.py:152
 msgid "Can't edit organization"
 msgstr "Không thể chỉnh sửa tổ chức"
 
-#: judge/views/organization.py:141
+#: judge/views/organization.py:153
 msgid "You are not allowed to edit this organization."
 msgstr "Bạn không được phép chỉnh sửa tổ chức này."
 
-#: judge/views/organization.py:153
+#: judge/views/organization.py:165
 #, fuzzy
 #| msgid "Can't edit organization"
 msgid "Can't access organization"
 msgstr "Không thể chỉnh sửa tổ chức"
 
-#: judge/views/organization.py:154
+#: judge/views/organization.py:166
 msgid "You are not allowed to access this organization."
 msgstr "Bạn không được phép chỉnh sửa tổ chức này."
 
-#: judge/views/organization.py:208 judge/views/register.py:49
+#: judge/views/organization.py:224 judge/views/register.py:49
 #: templates/contest/list.html:109 templates/problem/list-base.html:95
 msgid "Groups"
 msgstr "Nhóm"
 
-#: judge/views/organization.py:283
+#: judge/views/organization.py:299
 #, python-format
 msgid "%s Members"
 msgstr "%s Thành viên"
 
-#: judge/views/organization.py:372 judge/views/organization.py:378
-#: judge/views/organization.py:385
+#: judge/views/organization.py:388 judge/views/organization.py:394
+#: judge/views/organization.py:401
 msgid "Joining group"
 msgstr "Tham gia nhóm"
 
-#: judge/views/organization.py:373
+#: judge/views/organization.py:389
 msgid "You are already in the group."
 msgstr "Bạn đã ở trong nhóm."
 
-#: judge/views/organization.py:378
+#: judge/views/organization.py:394
 msgid "This group is not open."
 msgstr "Nhóm này là nhóm kín."
 
-#: judge/views/organization.py:401
+#: judge/views/organization.py:417
 msgid "Leaving group"
 msgstr "Rời nhóm"
 
-#: judge/views/organization.py:402
+#: judge/views/organization.py:418
 #, python-format
 msgid "You are not in \"%s\"."
 msgstr "Bạn không ở trong \"%s\"."
 
-#: judge/views/organization.py:427
+#: judge/views/organization.py:443
 #, python-format
 msgid "Request to join %s"
 msgstr "Đăng ký tham gia %s"
 
-#: judge/views/organization.py:452
+#: judge/views/organization.py:474
 msgid "Join request detail"
 msgstr "Chi tiết đơn đăng ký"
 
-#: judge/views/organization.py:500
+#: judge/views/organization.py:522
 #, python-format
 msgid "Managing join requests for %s"
 msgstr "Quản lý đơn đăng ký cho %s"
 
-#: judge/views/organization.py:540
+#: judge/views/organization.py:562
 #, python-format
 msgid ""
 "Your organization can only receive %d more members. You cannot approve %d "
@@ -2750,70 +2754,71 @@ msgstr ""
 "Tổ chức chỉ có thể chứa %d thành viên. Bạn không thể chấp thuận nhiều hơn %d "
 "người."
 
-#: judge/views/organization.py:558
+#: judge/views/organization.py:580
 #, python-format
 msgid "Approved %d user."
 msgid_plural "Approved %d users."
 msgstr[0] "Đã chấp thuận %d người."
 
-#: judge/views/organization.py:561
+#: judge/views/organization.py:583
 #, python-format
 msgid "Rejected %d user."
 msgid_plural "Rejected %d users."
 msgstr[0] "Đã từ chối %d người."
 
-#: judge/views/organization.py:595
+#: judge/views/organization.py:623
 #, python-format
 msgid "Add member for %s"
 msgstr ""
 
-#: judge/views/organization.py:607
+#: judge/views/organization.py:635
 #, fuzzy
 #| msgid "Edited from site"
 msgid "Added members from site"
 msgstr "Chỉnh sửa từ web"
 
-#: judge/views/organization.py:625 judge/views/organization.py:633
+#: judge/views/organization.py:653 judge/views/organization.py:661
 msgid "Can't kick user"
 msgstr "Không thể đuổi"
 
-#: judge/views/organization.py:626
+#: judge/views/organization.py:654
 msgid "The user you are trying to kick does not exist!"
 msgstr ""
 
-#: judge/views/organization.py:634
+#: judge/views/organization.py:662
 #, python-format
 msgid "The user you are trying to kick is not in organization: %s."
 msgstr ""
 
-#: judge/views/organization.py:649
+#: judge/views/organization.py:683
 #, fuzzy, python-format
 #| msgid "Editing %s"
 msgid "Edit %s"
 msgstr "Đang chỉnh sửa %s"
 
-#: judge/views/organization.py:677
+#: judge/views/organization.py:717
 #, python-format
 msgid "Add blog for %s"
 msgstr "Thêm bài đăng cho %s"
 
-#: judge/views/organization.py:688
+#: judge/views/organization.py:728
 msgid "Added from site"
 msgstr "Thêm từ web"
 
-#: judge/views/organization.py:713
+#: judge/views/organization.py:762
 msgid "Permission denied"
 msgstr "Truy cập bị từ chối"
 
-#: judge/views/organization.py:714
+#: judge/views/organization.py:763
 msgid "Not allowed to edit this blog"
 msgstr "Bạn không được phép chỉnh sửa bài đăng này."
 
-#: judge/views/organization.py:733
+#: judge/views/organization.py:782
+#, python-format
 msgid "Edit blog %s"
 msgstr "Chỉnh sửa %s"
 
-#: judge/views/organization.py:758
+#: judge/views/organization.py:812
 #, python-format
 msgid "Pending blogs in %s"
 msgstr "Bài đang đợi duyệt trong %s"
@@ -4286,10 +4291,8 @@ msgid "View requests"
 msgstr "Đơn đăng ký"
 
 #: templates/organization/org-right-sidebar.html:43
-#, fuzzy
-#| msgid "View members"
 msgid "Add members"
-msgstr "Xem thành viên"
+msgstr "Thêm thành viên"
 
 #: templates/organization/org-right-sidebar.html:50
 msgid "Add blog"

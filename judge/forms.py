@@ -140,6 +140,7 @@ class AddOrganizationMemberForm(ModelForm):
         max_length=65536,
         widget=forms.Textarea,
         help_text=_("Enter usernames separating by space"),
+        label=_("New users"),
     )
 
     def clean(self):
