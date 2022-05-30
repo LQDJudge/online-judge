@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-05-30 14:05+0700\n"
+"POT-Creation-Date: 2022-05-30 14:09+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -2700,7 +2700,8 @@ msgid "You are not allowed to access this organization."
 msgstr "Bạn không được phép chỉnh sửa tổ chức này."
 
 #: judge/views/organization.py:224 judge/views/register.py:49
-#: templates/contest/list.html:109 templates/problem/list-base.html:95
+#: templates/contest/list.html:109 templates/organization/list.html:31
+#: templates/problem/list-base.html:95 templates/user/user-list-tabs.html:6
 msgid "Groups"
 msgstr "Nhóm"
 
@@ -2769,7 +2770,7 @@ msgstr[0] "Đã từ chối %d người."
 #: judge/views/organization.py:623
 #, python-format
 msgid "Add member for %s"
-msgstr ""
+msgstr "Thêm thành viên cho %s"
 
 #: judge/views/organization.py:635
 #, fuzzy
@@ -4257,11 +4258,6 @@ msgstr "Bạn phải đăng ký thành viên để được tham gia lại."
 msgid "Request membership"
 msgstr "Đăng ký thành viên"
 
-#: templates/organization/list.html:31 templates/problem/search-form.html:38
-#: templates/user/user-list-tabs.html:6
-msgid "Group"
-msgstr ""
-
 #: templates/organization/list.html:39
 #, fuzzy
 #| msgid "Show my tickets only"
@@ -4731,6 +4727,10 @@ msgstr "Hiển thị hướng dẫn"
 #: templates/problem/search-form.html:33
 msgid "Have editorial"
 msgstr "Có hướng dẫn"
+
+#: templates/problem/search-form.html:38
+msgid "Group"
+msgstr ""
 
 #: templates/problem/search-form.html:62 templates/problem/search-form.html:64
 #: templates/submission/submission-list-tabs.html:4
