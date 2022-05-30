@@ -7,8 +7,22 @@
                     <span class="post-authors">{{ link_users(authors) }}</span>
                 {%- endif -%}
             {% endwith %}
-            &#8226; {{ relative_time(post.publish_on, abs=_('on {time}'), rel=_('{time}')) -}}
-            {%- if post.sticky %} &#8226; <i title="Sticky" class="fa fa-star fa-fw"></i>{% endif -%}
+            &#8226;
+            {{ relative_time(post.publish_on, abs=_('on {time}'), rel=_('{time}')) -}}
+            {%- if post.sticky %} &#8226; 
+            <i title="Sticky" class="fa fa-star fa-fw"></i>{% endif -%}
+            {% if post.is_organization_private and show_organization_private_icon %}
+                &#8226;
+                <span>
+                    {% for org in post.organizations.all() %}
+                        <span class="organization-tag" style="display: inherit;">
+                            <a href="{{ org.get_absolute_url() }}">
+                                <i class="fa fa-lock"></i> {{ org.name }}
+                            </a>
+                        </span>
+                    {% endfor %}
+                </span>
+            {% endif %}
         </span>
         <span style="float: right">
             <a href="{{ url('blog_post', post.id, post.slug) }}#comments" class="blog-comment-count-link">
@@ -22,17 +36,6 @@
     <h2 class="title">
         <a href="{{ url('blog_post', post.id, post.slug) }}">{{ post.title }}</a>
     </h2>
-    {% if post.is_organization_private and show_organization_private_icon %}
-        <div class="organization-tags">
-            {% for org in post.organizations.all() %}
-                <span class="organization-tag">
-                    <a href="{{ org.get_absolute_url() }}">
-                        <i class="fa fa-lock"></i> {{ org.name }}
-                    </a>
-                </span>
-            {% endfor %}
-        </div>
-    {% endif %}
     <div class="summary content-description blog-description">
         {% cache 86400 'post_summary' post.id %}
             {{ post.summary|default(post.content, true)|markdown('blog', 'svg', lazy_load=True)|reference|str|safe }}

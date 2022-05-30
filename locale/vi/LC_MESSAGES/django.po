@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-05-30 14:09+0700\n"
+"POT-Creation-Date: 2022-05-30 14:27+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -4277,8 +4277,8 @@ msgid "Controls"
 msgstr "Quản lý"
 
 #: templates/organization/org-right-sidebar.html:24
-msgid "Edit organization"
-msgstr "Chỉnh sửa"
+msgid "Edit group"
+msgstr "Chỉnh sửa nhóm"
 
 #: templates/organization/org-right-sidebar.html:31
 msgid "View requests"
@@ -5570,6 +5570,9 @@ msgstr "Thông tin"
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Chọn tất cả"
+
+#~ msgid "Edit organization"
+#~ msgstr "Chỉnh sửa"
 
 #~ msgid "You may not be part of more than {count} public organizations."
 #~ msgstr "Bạn không thể tham gia nhiều hơn {count} tổ chức công khai."
