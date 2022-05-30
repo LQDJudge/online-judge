@@ -4259,10 +4259,8 @@ msgid "Request membership"
 msgstr "Đăng ký thành viên"
 
 #: templates/organization/list.html:39
-#, fuzzy
-#| msgid "Show my tickets only"
 msgid "Show my groups only"
-msgstr "Chỉ hiển thị các báo cáo dành cho tôi"
+msgstr "Chỉ hiển thị nhóm đang tham gia"
 
 #: templates/organization/list.html:46 templates/status/language-list.html:34
 #: templates/user/import/table_csv.html:6
