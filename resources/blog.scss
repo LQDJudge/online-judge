@@ -51,7 +51,6 @@
     }
 
     ul {
-        list-style: none;
         padding-left: 1em;
         padding-right: 0.5em;
 
@@ -81,6 +80,12 @@
                 }
             }
         }
+    }
+}
+
+.no-dot-blog-sidebox {
+    ul {
+        list-style: none;
     }
 }
 
