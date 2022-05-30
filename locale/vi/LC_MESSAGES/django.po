@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-05-30 14:27+0700\n"
+"POT-Creation-Date: 2022-05-31 05:19+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -594,7 +594,7 @@ msgstr "g:i a j b, Y"
 msgid "{time}"
 msgstr "{time}"
 
-#: judge/jinja2/datetime.py:26 templates/blog/content.html:10
+#: judge/jinja2/datetime.py:26 templates/blog/content.html:11
 #, python-brace-format
 msgid "on {time}"
 msgstr "vào {time}"
@@ -2490,8 +2490,8 @@ msgstr "Bạn phải giải ít nhất 1 bài trước khi được vote."
 msgid "You already voted."
 msgstr "Bạn đã vote."
 
-#: judge/views/comment.py:153 judge/views/organization.py:700
-#: judge/views/organization.py:787
+#: judge/views/comment.py:153 judge/views/organization.py:701
+#: judge/views/organization.py:788
 msgid "Edited from site"
 msgstr "Chỉnh sửa từ web"
 
@@ -2778,48 +2778,48 @@ msgstr "Thêm thành viên cho %s"
 msgid "Added members from site"
 msgstr "Chỉnh sửa từ web"
 
-#: judge/views/organization.py:653 judge/views/organization.py:661
+#: judge/views/organization.py:654 judge/views/organization.py:662
 msgid "Can't kick user"
 msgstr "Không thể đuổi"
 
-#: judge/views/organization.py:654
+#: judge/views/organization.py:655
 msgid "The user you are trying to kick does not exist!"
 msgstr ""
 
-#: judge/views/organization.py:662
+#: judge/views/organization.py:663
 #, python-format
 msgid "The user you are trying to kick is not in organization: %s."
 msgstr ""
 
-#: judge/views/organization.py:683
+#: judge/views/organization.py:684
 #, fuzzy, python-format
 #| msgid "Editing %s"
 msgid "Edit %s"
 msgstr "Đang chỉnh sửa %s"
 
-#: judge/views/organization.py:717
+#: judge/views/organization.py:718
 #, python-format
 msgid "Add blog for %s"
 msgstr "Thêm bài đăng cho %s"
 
-#: judge/views/organization.py:728
+#: judge/views/organization.py:729
 msgid "Added from site"
 msgstr "Thêm từ web"
 
-#: judge/views/organization.py:762
+#: judge/views/organization.py:763
 msgid "Permission denied"
 msgstr "Truy cập bị từ chối"
 
-#: judge/views/organization.py:763
+#: judge/views/organization.py:764
 msgid "Not allowed to edit this blog"
 msgstr "Bạn không được phép chỉnh sửa bài đăng này."
 
-#: judge/views/organization.py:782
+#: judge/views/organization.py:783
 #, python-format
 msgid "Edit blog %s"
 msgstr "Chỉnh sửa %s"
 
-#: judge/views/organization.py:812
+#: judge/views/organization.py:813
 #, python-format
 msgid "Pending blogs in %s"
 msgstr "Bài đang đợi duyệt trong %s"
@@ -2844,7 +2844,7 @@ msgid "Editorial for <a href=\"{1}\">{0}</a>"
 msgstr "Hướng dẫn cho <a href=\"{1}\">{0}</a>"
 
 #: judge/views/problem.py:463 templates/contest/contest.html:79
-#: templates/organization/org-left-sidebar.html:4
+#: templates/extra_js.html:3 templates/organization/org-left-sidebar.html:4
 #: templates/user/user-about.html:28 templates/user/user-tabs.html:5
 #: templates/user/users-table.html:29
 msgid "Problems"
@@ -4061,6 +4061,10 @@ msgstr "Còn"
 #: templates/contests-countdown.html:21
 msgid "Upcoming contests"
 msgstr "Kỳ thi sắp diễn ra"
+
+#: templates/extra_js.html:4
+msgid "Submissions"
+msgstr "Bài nộp"
 
 #: templates/fine_uploader/script.html:4
 msgid "Drop files here to upload"

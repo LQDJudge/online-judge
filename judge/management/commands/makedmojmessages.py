@@ -165,6 +165,13 @@ msgstr ""
             "w",
             encoding="utf-8",
         ) as potfile:
+            potfile.write(
+                """
+msgid ""
+msgstr ""
+
+"Content-Type: text/plain; charset=utf-8\\n"
+                """)
             if self.verbosity > 1:
                 self.stdout.write("processing navigation bar")
             for label in NavigationBar.objects.values_list("label", flat=True):

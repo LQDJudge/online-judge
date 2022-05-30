@@ -1,0 +1,343 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Problems"
+msgstr "Bài tập"
+
+msgid "Submissions"
+msgstr "Bài nộp"
+
+msgid "Users"
+msgstr "Thành viên"
+
+msgid "Contests"
+msgstr "Kỳ thi"
+
+msgid "Groups"
+msgstr "Nhóm"
+
+msgid "About"
+msgstr "Giới thiệu"
+
+msgid "Status"
+msgstr "Máy chấm"
+
+msgid "Suggestions"
+msgstr "Đề xuất ý tưởng"
+
+msgid "Proposal"
+msgstr "Đề xuất bài tập"
+
+msgid "TanKhoa"
+msgstr "Tân Khoa"
+
+msgid "Name"
+msgstr "Đăng ký tên"
+
+msgid "Report"
+msgstr "Báo cáo"
+
+msgid "Bài cơ bản (Basic Problems)"
+msgstr ""
+
+msgid "Bài toán số dư (Modulo)"
+msgstr ""
+
+msgid "Bài toán truy vấn (Query)"
+msgstr ""
+
+msgid "Bài đặc biệt (ad hoc)"
+msgstr ""
+
+msgid "Bảng thưa (SparseTable)"
+msgstr ""
+
+msgid "Bao hàm loại trừ (Inclusion-Exclusion)"
+msgstr ""
+
+msgid "Bao lồi (Convex Hull)"
+msgstr ""
+
+msgid "Cài đặt (Implementation)"
+msgstr ""
+
+msgid "Cặp ghép (Matching)"
+msgstr ""
+
+msgid "Cấu hình tập hợp"
+msgstr ""
+
+msgid "Cây (đồ thị)"
+msgstr ""
+
+msgid "Cây chỉ số nhị phân (Binary Indexed Tree)"
+msgstr ""
+
+msgid "Cây hậu tố (Suffix tree)"
+msgstr ""
+
+msgid "Cây khung nhỏ nhất"
+msgstr ""
+
+msgid "Cây phân đoạn (Segment Tree)"
+msgstr ""
+
+msgid "Cây tiền tố (Trie)"
+msgstr ""
+
+msgid "Cày trâu / Duyệt (Brute-force)"
+msgstr ""
+
+msgid "Centroid Decomposition"
+msgstr ""
+
+msgid "Chặt nhị phân (Binary search)"
+msgstr ""
+
+msgid "Chặt tam phân (Ternary search)"
+msgstr ""
+
+msgid "Chia căn (Sqrt decomposition)"
+msgstr ""
+
+msgid "Chia để trị"
+msgstr ""
+
+msgid "Chu trình Euler (Euler Cycle)"
+msgstr ""
+
+msgid "Chưa phân loại (Uncategorized)"
+msgstr ""
+
+msgid "CTDL Tiêu chuẩn (C++ STL)"
+msgstr ""
+
+msgid "CTDL Đặc biệt (Data Structures)"
+msgstr ""
+
+msgid "Danh sách liên kết (Linked list)"
+msgstr ""
+
+msgid "Dãy con chung dài nhất (LCS)"
+msgstr ""
+
+msgid "Dãy con tăng dài nhất (LIS)"
+msgstr ""
+
+msgid "Dãy lặp"
+msgstr ""
+
+msgid "DFS,BFS (đồ thị)"
+msgstr ""
+
+msgid "Disjoint-set (DSU)"
+msgstr ""
+
+msgid "Duyệt phân tập (Meet-in-the-middle)"
+msgstr ""
+
+msgid "Euclid mở rộng"
+msgstr ""
+
+msgid "Euler tour trên cây"
+msgstr ""
+
+msgid "Hai con trỏ (Two-pointers)"
+msgstr ""
+
+msgid "Hàm băm (Hash)"
+msgstr ""
+
+msgid "Hàm Mobius"
+msgstr ""
+
+msgid "Hình học"
+msgstr ""
+
+msgid "Hoán vị"
+msgstr ""
+
+msgid "Khớp, cầu (đồ thị)"
+msgstr ""
+
+msgid "Khử gauss (Gauss Elimination)"
+msgstr ""
+
+msgid "Lập trình cơ bản"
+msgstr ""
+
+msgid "LCA (Lowest common ancestor)"
+msgstr ""
+
+msgid "LT đồ thị (LQĐ)"
+msgstr ""
+
+msgid "Luồng (Flow)"
+msgstr ""
+
+msgid "Luồng cận dưới"
+msgstr ""
+
+msgid "Luồng mincost"
+msgstr ""
+
+msgid "Lý thuyết trò chơi (Game Theory)"
+msgstr ""
+
+msgid "Lý Thuyết Đồ Thị (Graph Theory)"
+msgstr ""
+
+msgid "Manacher"
+msgstr ""
+
+msgid "Mảng"
+msgstr ""
+
+msgid "Mảng hậu tố (Suffix Array)"
+msgstr ""
+
+msgid "Mảng tổng dồn (Prefix sum)"
+msgstr ""
+
+msgid "Ngăn xếp, hàng đợi (Stack, Queue)"
+msgstr ""
+
+msgid "Ngẫu nhiên (Random)"
+msgstr ""
+
+msgid "Nhân ma trận"
+msgstr ""
+
+msgid "Nhân đa thức (FFT)"
+msgstr ""
+
+msgid "Nhánh cận"
+msgstr ""
+
+msgid "Palindrome tree"
+msgstr ""
+
+msgid "Phân tích thừa số nguyên tố (Prime Factorization)"
+msgstr ""
+
+msgid "Phi hàm Euler (Euler's totient function)"
+msgstr ""
+
+msgid "Quay lui"
+msgstr ""
+
+msgid "Quy hoạch động"
+msgstr ""
+
+msgid "Quy hoạch động bitmask"
+msgstr ""
+
+msgid "Quy hoạch động chữ số"
+msgstr ""
+
+msgid "Quy hoạch động thứ tự từ điển"
+msgstr ""
+
+msgid "Quy hoạch động trạng thái"
+msgstr ""
+
+msgid "Quy hoạch động trên cây"
+msgstr ""
+
+msgid "Quy hoạch động đảo nhãn"
+msgstr ""
+
+msgid "Quy hoạch động đếm"
+msgstr ""
+
+msgid "Rời rạc hóa (Compression)"
+msgstr ""
+
+msgid "Sàng (Sieve)"
+msgstr ""
+
+msgid "Sắp xếp (Sorting)"
+msgstr ""
+
+msgid "Sắp xếp tô pô (Topo Sort)"
+msgstr ""
+
+msgid "Scratch"
+msgstr ""
+
+msgid "Số học (Number Theory)"
+msgstr ""
+
+msgid "Số nguyên tố"
+msgstr ""
+
+msgid "Sweep Line"
+msgstr ""
+
+msgid "Tách chuỗi cây (HLD)"
+msgstr ""
+
+msgid "Tham Lam (Greedy)"
+msgstr ""
+
+msgid "Tháng tư là lời nói dối của em"
+msgstr ""
+
+msgid "Thành phần liên thông"
+msgstr ""
+
+msgid "Thao Tác Bit (bitwise)"
+msgstr ""
+
+msgid "Thuật toán KMP"
+msgstr ""
+
+msgid "Thuật toán Mo"
+msgstr ""
+
+msgid "Tổ hợp"
+msgstr ""
+
+msgid "Toán (Math)"
+msgstr ""
+
+msgid "Tối ưu hóa (Deep-optimize)"
+msgstr ""
+
+msgid "Tương tác (Interactive)"
+msgstr ""
+
+msgid "t_Bài tập (thầy Đông)"
+msgstr ""
+
+msgid "Xác suất (Probability)"
+msgstr ""
+
+msgid "Xâu con (Substring)"
+msgstr ""
+
+msgid "Xâu đối xứng (Palindrome)"
+msgstr ""
+
+msgid "Xây dựng, tìm khuôn (Constructive)"
+msgstr ""
+
+msgid "Xử lí sai số (Precision-fix)"
+msgstr ""
+
+msgid "Xử lí số lớn (Bignum)"
+msgstr ""
+
+msgid "Xử lí xâu (String)"
+msgstr ""
+
+msgid "Z Function"
+msgstr ""
+
+msgid "Đếm Phân Phối"
+msgstr ""
+
+msgid "Đường đi ngắn nhất (đồ thị)"
+msgstr ""
