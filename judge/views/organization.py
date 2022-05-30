@@ -137,7 +137,7 @@ class OrganizationMixin(OrganizationBase):
                 )
         if self.organization.slug != kwargs["slug"]:
             return HttpResponsePermanentRedirect(
-                request.get_full_path().replace(kwargs["slug"], self.object.slug)
+                request.get_full_path().replace(kwargs["slug"], self.organization.slug)
             )
         return super(OrganizationMixin, self).dispatch(request, *args, **kwargs)
 
