@@ -148,7 +148,6 @@
                     if (status_filter.length && 'status' in message &&
                         status_filter.indexOf(message.status) == -1)
                         return;
-
                     var id = message.id;
                     var row = table.find('div#' + id);
                     if (row.length < 1) {

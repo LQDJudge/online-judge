@@ -357,7 +357,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                 language__in=Language.objects.filter(key__in=self.selected_languages)
             )
         if self.selected_statuses:
-            queryset = queryset.filter(result__in=self.selected_statuses)
+            queryset = queryset.filter(
+                Q(result__in=self.selected_statuses) | Q(status__in=self.selected_statuses)
+            )
 
         return queryset
 
@@ -385,11 +387,13 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         return reverse("all_submissions")
 
     def get_searchable_status_codes(self):
-        hidden_codes = ["SC"]
+        all_statuses = list(Submission.RESULT)
+        all_statuses.extend([i for i in Submission.STATUS if i not in all_statuses])
+        hidden_codes = ["SC", "D", "G"]
         if not self.request.user.is_superuser and not self.request.user.is_staff:
             hidden_codes += ["IE"]
         return [
-            (key, value) for key, value in Submission.RESULT if key not in hidden_codes
+            (key, value) for key, value in all_statuses if key not in hidden_codes
         ]
 
     def get_context_data(self, **kwargs):
