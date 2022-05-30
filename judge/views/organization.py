@@ -19,7 +19,14 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _, gettext_lazy, ungettext
-from django.views.generic import DetailView, FormView, ListView, UpdateView, View
+from django.views.generic import (
+    DetailView,
+    FormView,
+    ListView,
+    UpdateView,
+    View,
+    CreateView,
+)
 from django.views.generic.detail import (
     SingleObjectMixin,
     SingleObjectTemplateResponseMixin,
@@ -27,7 +34,12 @@ from django.views.generic.detail import (
 from django.core.paginator import Paginator
 from reversion import revisions
 
-from judge.forms import EditOrganizationForm
+from judge.forms import (
+    EditOrganizationForm,
+    AddOrganizationMemberForm,
+    OrganizationBlogForm,
+    OrganizationAdminBlogForm,
+)
 from judge.models import (
     BlogPost,
     Comment,
@@ -44,6 +56,7 @@ from judge.utils.views import (
     QueryStringSortMixin,
     DiggPaginatorMixin,
 )
+from judge.utils.problems import user_attempted_ids
 from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
 
@@ -73,7 +86,9 @@ class OrganizationBase(object):
             return False
         profile_id = self.request.profile.id
         return (
-            org.admins.filter(id=profile_id).exists() or org.registrant_id == profile_id
+            org.admins.filter(id=profile_id).exists()
+            or org.registrant_id == profile_id
+            or self.request.user.is_superuser
         )
 
     def is_member(self, org=None):
@@ -92,17 +107,20 @@ class OrganizationBase(object):
 
 
 class OrganizationMixin(OrganizationBase):
-    context_object_name = "organization"
-    model = Organization
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["logo_override_image"] = self.object.logo_override_image
+        context["is_member"] = self.is_member(self.organization)
+        context["can_edit"] = self.can_edit_organization(self.organization)
+        context["organization"] = self.organization
+        context["logo_override_image"] = self.organization.logo_override_image
+        if "organizations" in context:
+            context.pop("organizations")
         return context
 
     def dispatch(self, request, *args, **kwargs):
         try:
-            return super(OrganizationMixin, self).dispatch(request, *args, **kwargs)
+            self.organization_id = int(kwargs["pk"])
+            self.organization = Organization.objects.get(id=self.organization_id)
         except Http404:
             key = kwargs.get(self.slug_url_kwarg, None)
             if key:
@@ -117,9 +135,72 @@ class OrganizationMixin(OrganizationBase):
                     _("No such organization"),
                     _("Could not find such organization."),
                 )
+        if self.organization.slug != kwargs["slug"]:
+            return HttpResponsePermanentRedirect(
+                request.get_full_path().replace(kwargs["slug"], self.object.slug)
+            )
+        return super(OrganizationMixin, self).dispatch(request, *args, **kwargs)
 
 
-class OrganizationDetailView(OrganizationMixin, DetailView):
+class AdminOrganizationMixin(OrganizationMixin):
+    def dispatch(self, request, *args, **kwargs):
+        res = super(AdminOrganizationMixin, self).dispatch(request, *args, **kwargs)
+        if self.can_edit_organization(self.organization):
+            return res
+        return generic_message(
+            request,
+            _("Can't edit organization"),
+            _("You are not allowed to edit this organization."),
+            status=403,
+        )
+
+
+class MemberOrganizationMixin(OrganizationMixin):
+    def dispatch(self, request, *args, **kwargs):
+        res = super(MemberOrganizationMixin, self).dispatch(request, *args, **kwargs)
+        if self.can_access(self.organization):
+            return res
+        return generic_message(
+            request,
+            _("Can't access organization"),
+            _("You are not allowed to access this organization."),
+            status=403,
+        )
+
+
+class OrganizationHomeViewContext:
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if not hasattr(self, "organization"):
+            self.organization = self.object
+        if self.can_edit_organization(self.organization):
+            context["pending_count"] = OrganizationRequest.objects.filter(
+                state="P", organization=self.organization
+            ).count()
+            context["pending_blog_count"] = BlogPost.objects.filter(
+                visible=False, organizations=self.organization
+            ).count()
+        else:
+            context["pending_blog_count"] = BlogPost.objects.filter(
+                visible=False,
+                organizations=self.organization,
+                authors=self.request.profile,
+            ).count()
+        context["top_rated"] = self.organization.members.filter(
+            is_unlisted=False
+        ).order_by("-rating")[:10]
+        context["top_scorer"] = self.organization.members.filter(
+            is_unlisted=False
+        ).order_by("-performance_points")[:10]
+        return context
+
+
+class OrganizationDetailView(
+    OrganizationMixin, OrganizationHomeViewContext, DetailView
+):
+    context_object_name = "organization"
+    model = Organization
+
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         if self.object.slug != kwargs["slug"]:
@@ -140,7 +221,7 @@ class OrganizationList(TitleMixin, ListView, OrganizationBase):
     model = Organization
     context_object_name = "organizations"
     template_name = "organization/list.html"
-    title = gettext_lazy("Organizations")
+    title = gettext_lazy("Groups")
 
     def get_queryset(self):
         return (
@@ -180,12 +261,6 @@ class OrganizationHome(OrganizationDetailView):
     def get_context_data(self, **kwargs):
         context = super(OrganizationHome, self).get_context_data(**kwargs)
         context["title"] = self.object.name
-        context["new_problems"] = Problem.objects.filter(
-            is_public=True, is_organization_private=True, organizations=self.object
-        ).order_by("-date", "-id")[: settings.DMOJ_BLOG_NEW_PROBLEM_COUNT]
-        context["new_contests"] = Contest.objects.filter(
-            is_visible=True, is_organization_private=True, organizations=self.object
-        ).order_by("-end_time", "-id")[: settings.DMOJ_BLOG_NEW_CONTEST_COUNT]
         context["posts"] = self.get_posts()
         context["post_comment_counts"] = {
             int(page[2:]): count
@@ -196,9 +271,6 @@ class OrganizationHome(OrganizationDetailView):
             .annotate(count=Count("page"))
             .order_by()
         }
-        context["pending_count"] = OrganizationRequest.objects.filter(
-            state="P", organization=self.object
-        ).count()
 
         now = timezone.now()
         visible_contests = (
@@ -212,12 +284,6 @@ class OrganizationHome(OrganizationDetailView):
             start_time__lte=now, end_time__gt=now
         )
         context["future_contests"] = visible_contests.filter(start_time__gt=now)
-        context["top_rated"] = self.object.members.filter(is_unlisted=False).order_by(
-            "-rating"
-        )[:10]
-        context["top_scorer"] = self.object.members.filter(is_unlisted=False).order_by(
-            "-performance_points"
-        )[:10]
         context["page_type"] = "home"
         return context
 
@@ -232,7 +298,6 @@ class OrganizationUsers(QueryStringSortMixin, OrganizationDetailView):
         context = super(OrganizationUsers, self).get_context_data(**kwargs)
         context["title"] = _("%s Members") % self.object.name
         context["partial"] = True
-        context["can_edit"] = self.can_edit_organization()
         context["kick_url"] = reverse(
             "organization_user_kick", args=[self.object.id, self.object.slug]
         )
@@ -257,31 +322,7 @@ class OrganizationUsers(QueryStringSortMixin, OrganizationDetailView):
         return context
 
 
-class OrganizationExternalMixin(OrganizationBase):
-    organization_id = None
-    organization = None
-
-    def get_organization_from_url(self, request, *args, **kwargs):
-        try:
-            self.organization_id = int(kwargs["pk"])
-            self.organization = Organization.objects.get(id=self.organization_id)
-        except:
-            return HttpResponseBadRequest()
-        if self.organization.slug != kwargs["slug"]:
-            return HttpResponsePermanentRedirect(
-                request.get_full_path().replace(kwargs["slug"], self.object.slug)
-            )
-        return None
-
-    def edit_context_data(self, context):
-        context["is_member"] = self.is_member(self.organization)
-        context["can_edit"] = self.can_edit_organization(self.organization)
-        context["organization"] = self.organization
-        context["logo_override_image"] = self.organization.logo_override_image
-        context.pop("organizations")
-
-
-class OrganizationProblems(ProblemList, OrganizationExternalMixin):
+class OrganizationProblems(LoginRequiredMixin, MemberOrganizationMixin, ProblemList):
     template_name = "organization/problems.html"
 
     def get_queryset(self):
@@ -289,39 +330,35 @@ class OrganizationProblems(ProblemList, OrganizationExternalMixin):
         return super().get_normal_queryset()
 
     def get(self, request, *args, **kwargs):
-        ret = super().get_organization_from_url(request, *args, **kwargs)
-        if ret:
-            return ret
-        if not self.can_access(self.organization):
-            return HttpResponseBadRequest()
         self.setup_problem_list(request)
         return super().get(request, *args, **kwargs)
 
+    def get_latest_attempted_problems(self, limit=None):
+        if self.in_contest or not self.profile:
+            return ()
+        problems = set(self.get_queryset().values_list("code", flat=True))
+        result = list(user_attempted_ids(self.profile).values())
+        result = [i for i in result if i["code"] in problems]
+        result = sorted(result, key=lambda d: -d["last_submission"])
+        if limit:
+            result = result[:limit]
+        return result
+
     def get_context_data(self, **kwargs):
         context = super(OrganizationProblems, self).get_context_data(**kwargs)
-        self.edit_context_data(context)
         context["page_type"] = "problems"
         return context
 
 
-class OrganizationContests(ContestList, OrganizationExternalMixin):
+class OrganizationContests(LoginRequiredMixin, MemberOrganizationMixin, ContestList):
     template_name = "organization/contests.html"
 
     def get_queryset(self):
         self.org_query = [self.organization_id]
         return super().get_queryset()
 
-    def get(self, request, *args, **kwargs):
-        ret = super().get_organization_from_url(request, *args, **kwargs)
-        if ret:
-            return ret
-        if not self.can_access(self.organization):
-            return HttpResponseBadRequest()
-        return super().get(request, *args, **kwargs)
-
     def get_context_data(self, **kwargs):
         context = super(OrganizationContests, self).get_context_data(**kwargs)
-        self.edit_context_data(context)
         context["page_type"] = "contests"
         return context
 
@@ -329,6 +366,9 @@ class OrganizationContests(ContestList, OrganizationExternalMixin):
 class OrganizationMembershipChange(
     LoginRequiredMixin, OrganizationMixin, SingleObjectMixin, View
 ):
+    model = Organization
+    context_object_name = "organization"
+
     def post(self, request, *args, **kwargs):
         org = self.get_object()
         response = self.handle(request, org, request.profile)
@@ -345,23 +385,23 @@ class JoinOrganization(OrganizationMembershipChange):
         if profile.organizations.filter(id=org.id).exists():
             return generic_message(
                 request,
-                _("Joining organization"),
-                _("You are already in the organization."),
+                _("Joining group"),
+                _("You are already in the group."),
             )
 
         if not org.is_open:
             return generic_message(
-                request, _("Joining organization"), _("This organization is not open.")
+                request, _("Joining group"), _("This group is not open.")
             )
 
         max_orgs = settings.DMOJ_USER_MAX_ORGANIZATION_COUNT
         if profile.organizations.filter(is_open=True).count() >= max_orgs:
             return generic_message(
                 request,
-                _("Joining organization"),
-                _(
-                    "You may not be part of more than {count} public organizations."
-                ).format(count=max_orgs),
+                _("Joining group"),
+                _("You may not be part of more than {count} public groups.").format(
+                    count=max_orgs
+                ),
             )
 
         profile.organizations.add(org)
@@ -374,7 +414,7 @@ class LeaveOrganization(OrganizationMembershipChange):
         if not profile.organizations.filter(id=org.id).exists():
             return generic_message(
                 request,
-                _("Leaving organization"),
+                _("Leaving group"),
                 _('You are not in "%s".') % org.short_name,
             )
         profile.organizations.remove(org)
@@ -422,7 +462,13 @@ class RequestJoinOrganization(LoginRequiredMixin, SingleObjectMixin, FormView):
         )
 
 
-class OrganizationRequestDetail(LoginRequiredMixin, TitleMixin, DetailView):
+class OrganizationRequestDetail(
+    LoginRequiredMixin,
+    TitleMixin,
+    OrganizationMixin,
+    OrganizationHomeViewContext,
+    DetailView,
+):
     model = OrganizationRequest
     template_name = "organization/requests/detail.html"
     title = gettext_lazy("Join request detail")
@@ -445,11 +491,11 @@ OrganizationRequestFormSet = modelformset_factory(
 
 
 class OrganizationRequestBaseView(
+    OrganizationDetailView,
     TitleMixin,
     LoginRequiredMixin,
     SingleObjectTemplateResponseMixin,
     SingleObjectMixin,
-    View,
 ):
     model = Organization
     slug_field = "key"
@@ -562,58 +608,43 @@ class OrganizationRequestLog(OrganizationRequestBaseView):
         return context
 
 
-class EditOrganization(LoginRequiredMixin, TitleMixin, OrganizationMixin, UpdateView):
-    template_name = "organization/edit.html"
+class AddOrganizationMember(
+    LoginRequiredMixin,
+    TitleMixin,
+    AdminOrganizationMixin,
+    OrganizationDetailView,
+    UpdateView,
+):
+    template_name = "organization/add-member.html"
     model = Organization
-    form_class = EditOrganizationForm
+    form_class = AddOrganizationMemberForm
 
     def get_title(self):
-        return _("Editing %s") % self.object.name
+        return _("Add member for %s") % self.object.name
 
     def get_object(self, queryset=None):
-        object = super(EditOrganization, self).get_object()
+        object = super(AddOrganizationMember, self).get_object()
         if not self.can_edit_organization(object):
             raise PermissionDenied()
         return object
 
-    def get_form(self, form_class=None):
-        form = super(EditOrganization, self).get_form(form_class)
-        form.fields["admins"].queryset = Profile.objects.filter(
-            Q(organizations=self.object) | Q(admin_of=self.object)
-        ).distinct()
-        return form
-
     def form_valid(self, form):
+        new_users = form.cleaned_data["new_users"]
+        self.object.members.add(*new_users)
         with transaction.atomic(), revisions.create_revision():
-            revisions.set_comment(_("Edited from site"))
+            revisions.set_comment(_("Added members from site"))
             revisions.set_user(self.request.user)
-            return super(EditOrganization, self).form_valid(form)
+            return super(AddOrganizationMember, self).form_valid(form)
 
-    def dispatch(self, request, *args, **kwargs):
-        try:
-            return super(EditOrganization, self).dispatch(request, *args, **kwargs)
-        except PermissionDenied:
-            return generic_message(
-                request,
-                _("Can't edit organization"),
-                _("You are not allowed to edit this organization."),
-                status=403,
-            )
+    def get_success_url(self):
+        return reverse("organization_users", args=[self.object.id, self.object.slug])
 
 
 class KickUserWidgetView(
-    LoginRequiredMixin, OrganizationMixin, SingleObjectMixin, View
+    LoginRequiredMixin, AdminOrganizationMixin, SingleObjectMixin, View
 ):
     def post(self, request, *args, **kwargs):
         organization = self.get_object()
-        if not self.can_edit_organization(organization):
-            return generic_message(
-                request,
-                _("Can't edit organization"),
-                _("You are not allowed to kick people from this organization."),
-                status=403,
-            )
-
         try:
             user = Profile.objects.get(id=request.POST.get("user", None))
         except Profile.DoesNotExist:
@@ -635,3 +666,147 @@ class KickUserWidgetView(
 
         organization.members.remove(user)
         return HttpResponseRedirect(organization.get_users_url())
+
+
+class EditOrganization(
+    LoginRequiredMixin,
+    TitleMixin,
+    AdminOrganizationMixin,
+    OrganizationDetailView,
+    UpdateView,
+):
+    template_name = "organization/edit.html"
+    model = Organization
+    form_class = EditOrganizationForm
+
+    def get_title(self):
+        return _("Edit %s") % self.object.name
+
+    def get_object(self, queryset=None):
+        object = super(EditOrganization, self).get_object()
+        if not self.can_edit_organization(object):
+            raise PermissionDenied()
+        return object
+
+    def get_form(self, form_class=None):
+        form = super(EditOrganization, self).get_form(form_class)
+        form.fields["admins"].queryset = Profile.objects.filter(
+            Q(organizations=self.object) | Q(admin_of=self.object)
+        ).distinct()
+        return form
+
+    def form_valid(self, form):
+        with transaction.atomic(), revisions.create_revision():
+            revisions.set_comment(_("Edited from site"))
+            revisions.set_user(self.request.user)
+            return super(EditOrganization, self).form_valid(form)
+
+
+class AddOrganizationBlog(
+    LoginRequiredMixin,
+    TitleMixin,
+    OrganizationHomeViewContext,
+    MemberOrganizationMixin,
+    CreateView,
+):
+    template_name = "organization/blog/add.html"
+    model = BlogPost
+    form_class = OrganizationBlogForm
+
+    def get_title(self):
+        return _("Add blog for %s") % self.organization.name
+
+    def form_valid(self, form):
+        with transaction.atomic(), revisions.create_revision():
+            res = super(AddOrganizationBlog, self).form_valid(form)
+            self.object.is_organization_private = True
+            self.object.authors.add(self.request.profile)
+            self.object.slug = self.organization.slug + "-" + self.request.user.username
+            self.object.organizations.add(self.organization)
+            self.object.save()
+
+            revisions.set_comment(_("Added from site"))
+            revisions.set_user(self.request.user)
+            return res
+
+
+class EditOrganizationBlog(
+    LoginRequiredMixin,
+    TitleMixin,
+    OrganizationHomeViewContext,
+    MemberOrganizationMixin,
+    UpdateView,
+):
+    template_name = "organization/blog/add.html"
+    model = BlogPost
+
+    def get_form_class(self):
+        if self.can_edit_organization(self.organization):
+            return OrganizationAdminBlogForm
+        return OrganizationBlogForm
+
+    def setup_blog(self, request, *args, **kwargs):
+        try:
+            self.blog_id = kwargs["blog_pk"]
+            self.blog = BlogPost.objects.get(id=self.blog_id)
+            if self.organization not in self.blog.organizations.all():
+                raise Exception("This blog does not belong to this organization")
+            if (
+                self.request.profile not in self.blog.authors.all()
+                and not self.can_edit_organization(self.organization)
+            ):
+                raise Exception("Not allowed to edit this blog")
+        except:
+            return generic_message(
+                request,
+                _("Permission denied"),
+                _("Not allowed to edit this blog"),
+            )
+
+    def get(self, request, *args, **kwargs):
+        res = self.setup_blog(request, *args, **kwargs)
+        if res:
+            return res
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        res = self.setup_blog(request, *args, **kwargs)
+        if res:
+            return res
+        return super().post(request, *args, **kwargs)
+
+    def get_object(self):
+        return self.blog
+
+    def get_title(self):
+        return _("Edit blog %s") % self.object.title
+
+    def form_valid(self, form):
+        with transaction.atomic(), revisions.create_revision():
+            res = super(EditOrganizationBlog, self).form_valid(form)
+            revisions.set_comment(_("Edited from site"))
+            revisions.set_user(self.request.user)
+            return res
+
+
+class PendingBlogs(
+    LoginRequiredMixin,
+    TitleMixin,
+    MemberOrganizationMixin,
+    OrganizationHomeViewContext,
+    ListView,
+):
+    model = BlogPost
+    template_name = "organization/blog/pending.html"
+    context_object_name = "blogs"
+
+    def get_queryset(self):
+        queryset = BlogPost.objects.filter(
+            organizations=self.organization, visible=False
+        )
+        if not self.can_edit_organization(self.organization):
+            queryset = queryset.filter(authors=self.request.profile)
+        return queryset.order_by("publish_on")
+
+    def get_title(self):
+        return _("Pending blogs in %s") % self.organization.name

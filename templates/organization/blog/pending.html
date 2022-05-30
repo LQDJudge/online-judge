@@ -1,0 +1,28 @@
+{% extends "organization/home-base.html" %}
+
+{% block middle_content %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    {{_('Blog')}}
+                </th>
+                <th>
+                    {{_('Author')}}
+                </th>
+                <th>
+                    {{_('Post time')}}
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for blog in blogs %}
+                <tr>
+                    <td><a href="{{url('edit_organization_blog', organization.id, organization.slug, blog.id)}}">{{blog.title}}</a></td>
+                    <td>{{link_users(blog.authors.all())}}</td>
+                    <td>{{- blog.publish_on|date(_("N j, Y, g:i a")) -}}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

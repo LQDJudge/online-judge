@@ -568,6 +568,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         ]
 
     def get_org_query(self, query):
+        if not self.profile:
+            return None
         return [
             i
             for i in query

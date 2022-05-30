@@ -1,0 +1,76 @@
+<div class="right-sidebar">
+    {% if (is_member or can_edit) %}
+        {% include 'contests-countdown.html' %}
+    {% endif %}
+    {% if is_member or can_edit %}
+        <div class="blog-sidebox sidebox">
+            <h3>{{ _('About') }}<i class="fa fa-info-circle"></i></h3>
+            <div class="sidebox-content">
+                <div style="margin: 0.3em;">
+                    {% cache 3600 'organization_html' organization.id MATH_ENGINE %}
+                        {{ organization.about|markdown('organization-about', MATH_ENGINE)|reference|str|safe }}
+                    {% endcache %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    {% if can_edit or is_member %}
+        <div id="control-panel" class="blog-sidebox sidebox">
+            <h3>{{ _('Controls') }} <i class="fa fa-cog"></i></h3>
+            <ul id="control-list" class="sidebox-content" style="padding: 1em;">
+                {% if can_edit %}
+                    <li>
+                        <div>
+                            <a href="{{ url('edit_organization', organization.id, organization.slug) }}">{{ _('Edit organization') }}</a>
+                        </div>
+                    </li>
+                {% endif %}
+                {% if can_edit and not organization.is_open %}
+                    <li>
+                        <div>
+                            <a href="{{ url('organization_requests_pending', organization.id, organization.slug) }}">{{ _('View requests') }}</a>
+                            {% if pending_count > 0 %}
+                                <span id="pending-count-box">
+                                    {{pending_count}}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endif %}
+                {% if can_edit %}
+                    <li>
+                        <div>
+                            <a href="{{ url('add_organization_member', organization.id, organization.slug) }}">{{ _('Add members') }}</a>
+                        </div>
+                    </li>
+                {% endif %}
+                {% if is_member %}
+                    <li>
+                        <div>
+                            <a href="{{ url('add_organization_blog', organization.id, organization.slug) }}">{{ _('Add blog') }}</a>
+                        </div>
+                    </li>
+                {% endif %}
+                <li>
+                    <div>
+                        <a href="{{ url('organization_pending_blogs', organization.id, organization.slug) }}">{{ _('Pending blogs') }}</a>
+                        {% if pending_blog_count > 0 %}
+                            <span id="pending-count-box">
+                                {{pending_blog_count}}
+                            </span>
+                        {% endif %}
+                    </div>
+                </li>
+                {% if is_member and not can_edit %}
+                <li>
+                    <form method="post" action="{{ url('leave_organization', organization.id, organization.slug) }}">
+                        {% csrf_token %}
+                        <a href="#" class="leave-organization">{{ _('Leave group') }}</a>
+                    </form>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    {% endif %}
+    {% include 'top-users.html' %}
+</div>

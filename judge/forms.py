@@ -4,12 +4,13 @@ import pyotp
 from django import forms
 from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import RegexValidator
 from django.db.models import Q
 from django.forms import CharField, ChoiceField, Form, ModelForm
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 from django_ace import AceWidget
 from judge.models import (
@@ -21,6 +22,7 @@ from judge.models import (
     ProblemPointsVote,
     Profile,
     Submission,
+    BlogPost,
 )
 from judge.utils.subscription import newsletter_id
 from judge.widgets import (
@@ -81,9 +83,9 @@ class ProfileForm(ModelForm):
 
         if sum(org.is_open for org in organizations) > max_orgs:
             raise ValidationError(
-                _(
-                    "You may not be part of more than {count} public organizations."
-                ).format(count=max_orgs)
+                _("You may not be part of more than {count} public groups.").format(
+                    count=max_orgs
+                )
             )
 
         return self.cleaned_data
@@ -125,10 +127,78 @@ class ProblemSubmitForm(ModelForm):
 class EditOrganizationForm(ModelForm):
     class Meta:
         model = Organization
-        fields = ["about", "logo_override_image", "admins"]
+        fields = ["about", "logo_override_image", "admins", "is_open"]
         widgets = {"admins": Select2MultipleWidget()}
         if HeavyPreviewPageDownWidget is not None:
             widgets["about"] = HeavyPreviewPageDownWidget(
+                preview=reverse_lazy("organization_preview")
+            )
+
+
+class AddOrganizationMemberForm(ModelForm):
+    new_users = CharField(
+        max_length=65536,
+        widget=forms.Textarea,
+        help_text=_("Enter usernames separating by space"),
+    )
+
+    def clean(self):
+        new_users = self.cleaned_data.get("new_users") or ""
+        usernames = new_users.split()
+        invalid_usernames = []
+        valid_usernames = []
+
+        for username in usernames:
+            try:
+                valid_usernames.append(Profile.objects.get(user__username=username))
+            except ObjectDoesNotExist:
+                invalid_usernames.append(username)
+
+        if invalid_usernames:
+            raise ValidationError(
+                _("These usernames don't exist: {usernames}").format(
+                    usernames=str(invalid_usernames)
+                )
+            )
+        self.cleaned_data["new_users"] = valid_usernames
+        return self.cleaned_data
+
+    class Meta:
+        model = Organization
+        fields = ()
+
+
+class OrganizationBlogForm(ModelForm):
+    class Meta:
+        model = BlogPost
+        fields = ("title", "content", "publish_on")
+        widgets = {
+            "publish_on": forms.HiddenInput,
+        }
+        if HeavyPreviewPageDownWidget is not None:
+            widgets["content"] = HeavyPreviewPageDownWidget(
+                preview=reverse_lazy("organization_preview")
+            )
+
+    def __init__(self, *args, **kwargs):
+        super(OrganizationBlogForm, self).__init__(*args, **kwargs)
+        self.fields["publish_on"].required = False
+        self.fields["publish_on"].is_hidden = True
+
+    def clean(self):
+        self.cleaned_data["publish_on"] = timezone.now()
+        return self.cleaned_data
+
+
+class OrganizationAdminBlogForm(OrganizationBlogForm):
+    class Meta:
+        model = BlogPost
+        fields = ("visible", "sticky", "title", "content", "publish_on")
+        widgets = {
+            "publish_on": forms.HiddenInput,
+        }
+        if HeavyPreviewPageDownWidget is not None:
+            widgets["content"] = HeavyPreviewPageDownWidget(
                 preview=reverse_lazy("organization_preview")
             )
 

@@ -1,0 +1,9 @@
+{% extends "organization/home-base.html" %}
+
+{% block org_js %}
+    {{ form.media.js }}
+{% endblock %}
+
+{% block middle_content %}
+    {% include "organization/form.html" %}
+{% endblock %}

@@ -1,0 +1,26 @@
+.leave-organization, .leave-organization:hover {
+    color: red;
+}
+#control-list li {
+    border-bottom: 1px solid black; 
+}
+#pending-count-box {
+    float: right;
+    text-align: center;
+    background: red;
+    color: white;
+    border-radius: 3px;
+    padding-left: 0.3em;
+    padding-right: 0.3em;
+}
+.org-field-wrapper {
+    input[type=text], textarea {
+        width: 100%;
+    }
+    .select2 {
+        width: 100% !important;
+    }
+}
+.org-field-wrapper {
+    margin-top: 0.4em;
+}

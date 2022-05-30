@@ -1,79 +1,31 @@
-{% extends "three-column-content.html" %}
-{% block three_col_media %}
-    <style>
-        .leave-organization, .leave-organization:hover {
-            color: red;
-        }
-        #control-list li {
-            border-bottom: 1px solid black; 
-        }
-        #pending-count-box {
-            float: right;
-            text-align: center;
-            background: red;
-            color: white;
-            border-radius: 3px;
-            padding-left: 0.3em;
-            padding-right: 0.3em;
-        }
-    </style>
-{% endblock %}
-
-{% block three_col_js %}
-    <script type="text/javascript">
-        $(function () {
-            $('.time-remaining').each(function () {
-                count_down($(this));
-            });
-            $('.leave-organization').click(function () {
-                if (confirm('{{ _('Are you sure you want to leave this organization?') }}\n' +
-                    {% if organization.is_open %}
-                        '{{ _('You will have to rejoin to show up on the organization leaderboard.') }}'
-                    {% else %}
-                        '{{ _('You will have to request membership in order to join again.') }}'
-                    {% endif %}
-                )) {
-                    $(this).parent().submit();
-                }
-            });
-
-            $(document).ready(function () {
-                $('.control-button').click(function(e) {
-                    e.preventDefault();
-                    $('#control-panel').toggle("fast");
-                })
-            });
-        });
-    </script>
-{% endblock %}
-
-{% block left_sidebar %}
-    {% include "organization/org-left-sidebar.html" %}
-{% endblock %}
+{% extends "organization/home-base.html" %}
 
 {% block title_ruler %}{% endblock %}
-{% block middle_content %}
-    {% block before_posts %}{% endblock %}
+
+{% block middle_title %}
     <div class="page-title">
         <div class="tabs">
-            <h2>{{title}}</h2>
-            <span class="spacer"></span>
-        
-            {% if request.user.is_authenticated %}
-                {% if is_member or can_edit %}
-                    
-                {% elif organization.is_open or can_edit %}
-                    <form method="post" action="{{ url('join_organization', organization.id, organization.slug) }}">
-                        {% csrf_token %}
-                        <input type="submit" class="unselectable button" value="{{ _('Join organization') }}" style="margin-right: 1em">
-                    </form>
-                {% else %}
-                    <a href="{{ url('request_organization', organization.id, organization.slug) }}"
-                       class="unselectable button">{{ _('Request membership') }}</a>
-                {% endif %}
+        <h2>{{title}}</h2>
+        <span class="spacer"></span>
+    
+        {% if request.user.is_authenticated %}
+            {% if is_member or can_edit %}
+            {% elif organization.is_open or can_edit %}
+                <form method="post" action="{{ url('join_organization', organization.id, organization.slug) }}">
+                    {% csrf_token %}
+                    <input type="submit" class="unselectable button" value="{{ _('Join') }}" style="margin-right: 1em">
+                </form>
+            {% else %}
+                <a href="{{ url('request_organization', organization.id, organization.slug) }}"
+                   class="unselectable button">{{ _('Request membership') }}</a>
             {% endif %}
-        </div>
+        {% endif %}
     </div>
+    </div>
+{% endblock %}
+
+{% block middle_content %}
+    {% block before_posts %}{% endblock %}
     {% if is_member or can_edit %}
         {% for post in posts %}
             {% include "blog/content.html" %}
@@ -94,57 +46,4 @@
         </div>
     {% endif %}
     {% block after_posts %}{% endblock %}
-{% endblock %}
-
-{% block right_sidebar %}
-    <div class="right-sidebar">
-        {% if (is_member or can_edit) %}
-            {% include 'contests-countdown.html' %}
-        {% endif %}
-        {% if is_member or can_edit %}
-            <div class="blog-sidebox sidebox">
-                <h3>{{ _('About') }}<i class="fa fa-info-circle"></i></h3>
-                <div class="sidebox-content">
-                    <div style="margin: 0.3em;">
-                        {% cache 3600 'organization_html' organization.id MATH_ENGINE %}
-                            {{ organization.about|markdown('organization-about', MATH_ENGINE)|reference|str|safe }}
-                        {% endcache %}
-                    </div>
-                </div>
-            </div>
-        {% endif %}
-        {% if can_edit %}
-            <div id="control-panel" class="blog-sidebox sidebox">
-                <h3>{{ _('Controls') }} <i class="fa fa-cog"></i></h3>
-                <ul id="control-list" class="sidebox-content" style="padding: 1em;">
-                    <li>
-                        <div>
-                            <a href="{{ url('edit_organization', organization.id, organization.slug) }}">{{ _('Edit organization') }}</a>
-                        </div>
-                    </li>
-                    {% if not organization.is_open %}
-                        <li>
-                            <div>
-                                <a href="{{ url('organization_requests_pending', organization.id, organization.slug) }}">{{ _('View requests') }}</a>
-                                {% if pending_count > 0 %}
-                                    <span id="pending-count-box">
-                                        {{pending_count}}
-                                    </span>
-                                {% endif %}
-                            </div>
-                        </li>
-                    {% endif %}
-                    {% if is_member and not can_edit %}
-                    <li>
-                        <form method="post" action="{{ url('leave_organization', organization.id, organization.slug) }}">
-                            {% csrf_token %}
-                            <a href="#" class="leave-organization">{{ _('Leave organization') }}</a>
-                        </form>
-                    </li>
-                    {% endif %}
-                </ul>
-            </div>
-        {% endif %}
-        {% include 'top-users.html' %}
-    </div>
 {% endblock %}

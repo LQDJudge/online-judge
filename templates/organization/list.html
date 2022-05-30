@@ -22,14 +22,13 @@
             {% endif %}
         });
     </script>
-
 {% endblock %}
 
 {% block title_ruler %}{% endblock %}
 
 {% block title_row %}
     {% set tab = 'organizations' %}
-    {% set title = _('Organizations') %}
+    {% set title = _('Group') %}
     {% include "user/user-list-tabs.html" %}
 {% endblock %}
 
@@ -37,7 +36,7 @@
     {% if request.user.is_authenticated %}
     <div style="margin-bottom: 0.5em">
         <input id="show-my-org-checkbox" type="checkbox" style="vertical-align: bottom;">
-        <label for="show-my-org-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show my organizations only') }}</label>
+        <label for="show-my-org-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show my groups only') }}</label>
     </div>
     {% endif %}
     

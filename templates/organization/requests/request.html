@@ -1,6 +1,6 @@
-{% extends "base.html" %}
+{% extends "organization/home-base.html" %}
 
-{% block js_media %}
+{% block org_js %}
     <script type="text/javascript">
         $(function () {
             $('#id_reason').keydown(function (e) {
@@ -12,7 +12,7 @@
     </script>
 {% endblock %}
 
-{% block body %}
+{% block middle_content %}
     <form action="" method="post" class="form-area">
         {% csrf_token %}
         <p><label for="{{ form.reason.id_for_label }}"><b>{{ _('Your reason for joining:') }}</b></label></p>

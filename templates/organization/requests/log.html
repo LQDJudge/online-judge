@@ -1,6 +1,6 @@
-{% extends "base.html" %}
+{% extends "organization/home-base.html" %}
 
-{% block body %}
+{% block middle_content %}
     {% include "organization/requests/tabs.html" %}
 
     {% if requests %}
@@ -16,7 +16,7 @@
                     <td>{{ link_user(r.user) }}</td>
                     <td>
                         <a href="{{ url('request_organization_detail', object.id, object.slug, r.id) }}">
-                            {{- r.time|date(_("N j, Y, H:i")) -}}
+                            {{- r.time|date(_("N j, Y, g:i a")) -}}
                         </a>
                     </td>
                     <td>{{ r.state }}</td>

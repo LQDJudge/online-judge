@@ -1,5 +1,5 @@
-{% extends "base.html" %}
-{% block body %}
+{% extends "organization/home-base.html" %}
+{% block middle_content %}
     {% include "messages.html" %}
     {% include "organization/requests/tabs.html" %}
 
@@ -21,7 +21,7 @@
                     <tr id="request-{{ form.instance.id }}">
                         <td>{{ form.id }}{{ link_user(form.instance.user) }}</td>
                         <td><a href="{{ url('request_organization_detail', object.id, object.slug, form.instance.id) }}">
-                            {{ form.instance.time|date(_("N j, Y, H:i")) }}
+                            {{ form.instance.time|date(_("N j, Y, g:i a")) }}
                         </a></td>
                         <td>{{ form.state }}</td>
                         <td>{{ form.instance.reason|truncatechars(50) }}</td>

@@ -1,14 +1,7 @@
-{% extends "base.html" %}
-{% block media %}
-    <style>
-        th {
-            text-align: left
-        }
-    </style>
-{% endblock %}
+{% extends "organization/home-base.html" %}
 
-{% block body %}
-    <table>
+{% block middle_content %}
+    <table class="table">
         <tr>
             <th>{{ _('User:') }}</th>
             <td>{{ link_user(object.user) }}</td>
@@ -26,10 +19,8 @@
             <td>{{ object.time|date(_("N j, Y, g:i a")) }}</td>
         </tr>
         <tr>
-            <th colspan="2">{{ _('Reason:') }}</th>
-        </tr>
-        <tr>
-            <td colspan="2" style="padding-left: 2em">{{ object.reason }}</td>
+            <th>{{ _('Reason:') }}</th>
+            <td>{{ object.reason }}</td>
         </tr>
     </table>
 {% endblock %}

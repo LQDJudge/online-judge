@@ -46,7 +46,7 @@ class CustomRegistrationForm(RegistrationForm):
     )
     organizations = SortedMultipleChoiceField(
         queryset=Organization.objects.filter(is_open=True),
-        label=_("Organizations"),
+        label=_("Groups"),
         required=False,
         widget=Select2MultipleWidget(attrs={"style": "width:100%"}),
     )
@@ -65,9 +65,9 @@ class CustomRegistrationForm(RegistrationForm):
 
         if sum(org.is_open for org in organizations) > max_orgs:
             raise forms.ValidationError(
-                _(
-                    "You may not be part of more than {count} public organizations."
-                ).format(count=max_orgs)
+                _("You may not be part of more than {count} public groups.").format(
+                    count=max_orgs
+                )
             )
 
         return self.cleaned_data["organizations"]

@@ -35,7 +35,7 @@
             {% endif %}
             {% if organizations %}
                 <div class="filter-form-group">
-                    <label for="type"><i>{{ _('Organization') }}</i></label>
+                    <label for="type"><i>{{ _('Group') }}</i></label>
                     <select id="search-org" name="orgs" multiple>
                         {% for org in organizations %}
                             <option value="{{ org.id }}"{% if org.id in org_query %} selected{% endif %}>

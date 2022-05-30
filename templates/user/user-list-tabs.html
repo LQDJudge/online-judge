@@ -3,7 +3,7 @@
 {% block tabs %}
     {{ make_tab('list', 'fa-trophy', url('user_list'), _('Leaderboard')) }}
     {{ make_tab('friends', 'fa-users', url('user_list') + '?friend=true', _('Friends')) }}
-    {{ make_tab('organizations', 'fa-university', url('organization_list'), _('Organizations')) }}
+    {{ make_tab('organizations', 'fa-university', url('organization_list'), _('Group')) }}
     {% if request.user.is_superuser %}
         {{ make_tab('import', 'fa-table', url('import_users'), _('Import')) }}
     {% endif %}

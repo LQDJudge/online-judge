@@ -1,6 +1,6 @@
-{% extends "base.html" %}
+{% extends "organization/home-base.html" %}
 
-{% block js_media %}
+{% block org_js %}
     {{ form.media.js }}
     <script type="text/javascript">
         window.django = {jQuery: $};
@@ -27,22 +27,15 @@
     </script>
 {% endblock %}
 
-{% block media %}
+{% block three_col_media %}
     {{ form.media.css }}
-    <link rel="stylesheet" href="{{ static('admin/css/widgets.css') }}" type="text/css">
-    <link rel="stylesheet" href="{{ static('admin/css/pagedown.css') }}" type="text/css">
-    <link rel="stylesheet" href="{{ static('problem_edit.css') }}" type="text/css">
     <style>
-        #id_about {
-            width: 500px;
+        #org-field-wrapper-is_open {
+            display: contents;
         }
     </style>
 {% endblock %}
 
-{% block body %}
-    <form action="" method="post" class="form-area" style="width:100%">
-        {% csrf_token %}
-        <table border="0" style="text-align:left">{{ form.as_table() }}</table>
-        <button type="submit">{{ _('Update') }}</button>
-    </form>
+{% block middle_content %}
+    {% include "organization/form.html" %}
 {% endblock %}

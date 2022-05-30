@@ -618,6 +618,26 @@ urlpatterns = [
                     name="organization_user_kick",
                 ),
                 url(
+                    r"^/add_member$",
+                    organization.AddOrganizationMember.as_view(),
+                    name="add_organization_member",
+                ),
+                url(
+                    r"^/blog/add$",
+                    organization.AddOrganizationBlog.as_view(),
+                    name="add_organization_blog",
+                ),
+                url(
+                    r"^/blog/edit/(?P<blog_pk>\d+)$",
+                    organization.EditOrganizationBlog.as_view(),
+                    name="edit_organization_blog",
+                ),
+                url(
+                    r"^/blog/pending$",
+                    organization.PendingBlogs.as_view(),
+                    name="organization_pending_blogs",
+                ),
+                url(
                     r"^/request$",
                     organization.RequestJoinOrganization.as_view(),
                     name="request_organization",

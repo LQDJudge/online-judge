@@ -1,0 +1,24 @@
+<form action="" method="post">
+    {% csrf_token %}
+    {% if form.errors %}
+        <div class="alert alert-danger alert-dismissable">
+            <a href="#" class="close">x</a>
+                {{ form.non_field_errors() }}
+        </div>
+    {% endif %}
+    {% for field in form %}
+        {% if not field.is_hidden %}
+            <div style="margin-bottom: 1em;">
+                {{ field.errors }}
+                <label for="{{field.id_for_label }}"><b>{{ field.label }}:</b></label>
+                <div class="org-field-wrapper" id="org-field-wrapper-{{field.html_name }}">
+                    {{ field }}
+                </div>
+                {% if field.help_text %}
+                    <i>{{ field.help_text|safe }}</i>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endfor %}
+    <button type="submit">{{ _('Save') }}</button>
+</form>
