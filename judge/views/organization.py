@@ -714,6 +714,11 @@ class AddOrganizationBlog(
     model = BlogPost
     form_class = OrganizationBlogForm
 
+    def get_form_class(self):
+        if self.can_edit_organization(self.organization):
+            return OrganizationAdminBlogForm
+        return OrganizationBlogForm
+
     def get_title(self):
         return _("Add blog for %s") % self.organization.name
 

@@ -99,11 +99,10 @@ class PostList(FeedView):
             .order_by("-sticky", "-publish_on")
             .prefetch_related("authors__user", "organizations")
         )
-        if not self.request.user.has_perm("judge.edit_all_post"):
-            filter = Q(is_organization_private=False)
-            if self.request.user.is_authenticated:
-                filter |= Q(organizations__in=self.request.profile.organizations.all())
-            queryset = queryset.filter(filter)
+        filter = Q(is_organization_private=False)
+        if self.request.user.is_authenticated:
+            filter |= Q(organizations__in=self.request.profile.organizations.all())
+        queryset = queryset.filter(filter)
         return queryset
 
     def get_context_data(self, **kwargs):
