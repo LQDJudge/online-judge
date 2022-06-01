@@ -753,11 +753,6 @@ class UserContestSubmissions(ForceContestMixin, UserProblemSubmissions):
             self.contest.name,
         )
 
-    def access_check(self, request):
-        super(UserContestSubmissions, self).access_check(request)
-        if not self.contest.users.filter(user_id=self.profile.id).exists():
-            raise Http404()
-
     def get_content_title(self):
         if self.problem.is_accessible_by(self.request.user):
             return format_html(
