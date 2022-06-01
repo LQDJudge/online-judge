@@ -10,7 +10,7 @@
             {% if submission.contest_time %}
                 {{submission.contest_time}}
             {% else %}
-                {% trans time=submission.date|date(_("N j, Y, g:i a")) %}
+                {% trans time=submission.date|date(_("g:i a d/m/Y")) %}
                     {{ time }}
                 {% endtrans %}
             {% endif %}

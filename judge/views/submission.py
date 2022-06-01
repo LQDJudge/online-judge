@@ -790,7 +790,9 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
 
     def contest_time(self, s):
         if s.contest.participation.live:
-            return s.date - s.contest.participation.real_start
+            if self.contest.time_limit:
+                return s.date - s.contest.participation.real_start
+            return s.date - self.contest.start_time
         return None
 
     def get_context_data(self, **kwargs):
