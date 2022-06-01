@@ -6,7 +6,7 @@
 {% for submission in submissions %}
     <tr>
         {% set can_view = submission_layout(submission, profile_id, request.user, editable_problem_ids, completed_problem_ids) %}
-        <td>
+        <td style="padding-right: 1em">
             {% if submission.contest_time %}
                 {{submission.contest_time}}
             {% else %}

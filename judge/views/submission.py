@@ -506,7 +506,7 @@ class AllUserSubmissions(ConditionalUserTabMixin, UserMixin, SubmissionsListBase
 class ProblemSubmissionsBase(SubmissionsListBase):
     show_problem = False
     dynamic_update = True
-    check_contest_in_access_check = True
+    check_contest_in_access_check = False
 
     def get_queryset(self):
         if (
@@ -535,13 +535,16 @@ class ProblemSubmissionsBase(SubmissionsListBase):
     def access_check_contest(self, request):
         if self.in_contest and not self.contest.can_see_own_scoreboard(request.user):
             raise Http404()
-
-    def access_check(self, request):
-        if not self.problem.is_accessible_by(request.user):
+        if not self.contest.is_accessible_by(request.user):
             raise Http404()
 
+    def access_check(self, request):
         if self.check_contest_in_access_check:
             self.access_check_contest(request)
+        else:
+            is_own = hasattr(self, 'is_own') and self.is_own
+            if not is_own and not self.problem.is_accessible_by(request.user, request.in_contest_mode):
+                raise Http404()
 
     def get(self, request, *args, **kwargs):
         if "problem" not in kwargs:
@@ -740,6 +743,8 @@ class ForceContestMixin(object):
 
 
 class UserContestSubmissions(ForceContestMixin, UserProblemSubmissions):
+    check_contest_in_access_check = True
+
     def get_title(self):
         if self.problem.is_accessible_by(self.request.user):
             return "%s's submissions for %s in %s" % (
@@ -812,3 +817,9 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
             total = floatformat(contest_problem.points, -self.contest.points_precision)
             s.display_point = f"{points} / {total}"
         return context
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return super(UserContestSubmissionsAjax, self).get(request, *args, **kwargs)
+        except Http404:
+            return HttpResponse(_("You don't have permission to access."))

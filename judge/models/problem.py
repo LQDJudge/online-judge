@@ -333,7 +333,7 @@ class Problem(models.Model):
             return True
         return user.has_perm("judge.edit_own_problem") and self.is_editor(user.profile)
 
-    def is_accessible_by(self, user):
+    def is_accessible_by(self, user, in_contest_mode=True):
         # Problem is public.
         if self.is_public:
             # Problem is not private to an organization.
@@ -367,7 +367,7 @@ class Problem(models.Model):
 
         # If user is currently in a contest containing that problem.
         current = user.profile.current_contest_id
-        if current is None:
+        if not in_contest_mode or current is None:
             return False
         from judge.models import ContestProblem
 
