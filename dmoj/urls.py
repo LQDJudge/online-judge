@@ -310,7 +310,6 @@ urlpatterns = [
                     ticket.NewProblemTicketView.as_view(),
                     name="new_problem_ticket",
                 ),
-                url(r"^/vote$", problem.Vote.as_view(), name="vote"),
                 url(
                     r"^/manage/submission",
                     include(
@@ -529,9 +528,16 @@ urlpatterns = [
                     ),
                 ),
                 url(
-                    r"^/submissions/(?P<user>\w+)/(?P<problem>\w+)/",
+                    r"^/submissions/(?P<user>\w+)/(?P<problem>\w+)",
                     paged_list_view(
                         submission.UserContestSubmissions, "contest_user_submissions"
+                    ),
+                ),
+                url(
+                    r"^/submissions/(?P<user>\w+)/(?P<problem>\w+)/ajax",
+                    paged_list_view(
+                        submission.UserContestSubmissionsAjax,
+                        "contest_user_submissions_ajax",
                     ),
                 ),
                 url(

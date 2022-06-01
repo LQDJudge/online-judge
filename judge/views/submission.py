@@ -18,6 +18,7 @@ from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
+from django.template.defaultfilters import floatformat
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -47,6 +48,7 @@ from judge.utils.problem_data import get_problem_case
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
 from judge.utils.views import DiggPaginatorMixin
 from judge.utils.views import TitleMixin
+from judge.utils.timedelta import nice_repr
 
 
 def submission_related(queryset):
@@ -358,7 +360,8 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             )
         if self.selected_statuses:
             queryset = queryset.filter(
-                Q(result__in=self.selected_statuses) | Q(status__in=self.selected_statuses)
+                Q(result__in=self.selected_statuses)
+                | Q(status__in=self.selected_statuses)
             )
 
         return queryset
@@ -392,9 +395,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         hidden_codes = ["SC", "D", "G"]
         if not self.request.user.is_superuser and not self.request.user.is_staff:
             hidden_codes += ["IE"]
-        return [
-            (key, value) for key, value in all_statuses if key not in hidden_codes
-        ]
+        return [(key, value) for key, value in all_statuses if key not in hidden_codes]
 
     def get_context_data(self, **kwargs):
         context = super(SubmissionsListBase, self).get_context_data(**kwargs)
@@ -782,3 +783,30 @@ class UserContestSubmissions(ForceContestMixin, UserProblemSubmissions):
             self.contest.name,
             reverse("contest_view", args=[self.contest.key]),
         )
+
+
+class UserContestSubmissionsAjax(UserContestSubmissions):
+    template_name = "submission/user-ajax.html"
+
+    def contest_time(self, s):
+        if s.contest.participation.live:
+            return s.date - s.contest.participation.real_start
+        return None
+
+    def get_context_data(self, **kwargs):
+        context = super(UserContestSubmissionsAjax, self).get_context_data(**kwargs)
+        context["contest"] = self.contest
+        context["problem"] = self.problem
+        context["profile"] = self.profile
+
+        contest_problem = self.contest.contest_problems.get(problem=self.problem)
+        for s in context["submissions"]:
+            contest_time = self.contest_time(s)
+            if contest_time:
+                s.contest_time = nice_repr(contest_time, "noday")
+            else:
+                s.contest_time = None
+            points = floatformat(s.contest.points, -self.contest.points_precision)
+            total = floatformat(contest_problem.points, -self.contest.points_precision)
+            s.display_point = f"{points} / {total}"
+        return context

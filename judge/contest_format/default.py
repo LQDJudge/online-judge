@@ -55,7 +55,7 @@ class DefaultContestFormat(BaseContestFormat):
         format_data = (participation.format_data or {}).get(str(contest_problem.id))
         if format_data:
             return format_html(
-                '<td class="{state} problem-score-col"><a href="{url}">{points}<div class="solving-time">{time}</div></a></td>',
+                '<td class="{state} problem-score-col"><a data-featherlight="{url}" href="#">{points}<div class="solving-time">{time}</div></a></td>',
                 state=(
                     (
                         "pretest-"
@@ -68,7 +68,7 @@ class DefaultContestFormat(BaseContestFormat):
                     )
                 ),
                 url=reverse(
-                    "contest_user_submissions",
+                    "contest_user_submissions_ajax",
                     args=[
                         self.contest.key,
                         participation.user.user.username,

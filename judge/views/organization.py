@@ -644,6 +644,7 @@ class KickUserWidgetView(
     LoginRequiredMixin, AdminOrganizationMixin, SingleObjectMixin, View
 ):
     model = Organization
+
     def post(self, request, *args, **kwargs):
         organization = self.get_object()
         try:

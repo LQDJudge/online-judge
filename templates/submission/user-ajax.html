@@ -1,0 +1,30 @@
+<h4>
+    {{_('Contest submissions of')}} {{link_user(profile)}}  <a href="{{url('contest_user_submissions', contest.key, profile.user.username, problem.code)}}">#</a>
+</h4>
+<hr>
+<table class="lightbox-submissions"><tbody>
+{% for submission in submissions %}
+    <tr>
+        {% set can_view = submission_layout(submission, profile_id, request.user, editable_problem_ids, completed_problem_ids) %}
+        <td>
+            {% if submission.contest_time %}
+                {{submission.contest_time}}
+            {% else %}
+                {% trans time=submission.date|date(_("N j, Y, g:i a")) %}
+                    {{ time }}
+                {% endtrans %}
+            {% endif %}
+        </td>
+        <td class="case-{{submission.result}}" style="margin-left: 1em">{{submission.display_point}}</td>
+        <td class="case-{{submission.result}}" style="margin-left: 1em">({{submission.short_status}})</td>
+        <td>
+            [{{_('pretests') if submission.contest.is_pretest else _('main tests')}}]
+        </td>
+        {% if can_view %}
+            <td>
+                → <a href="{{url('submission_status', submission.id)}}">{{submission.id}}</a>
+            </td>
+        {% endif %}
+    </tr>
+{% endfor %}
+</tbody></table>

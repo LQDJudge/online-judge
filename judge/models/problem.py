@@ -561,29 +561,6 @@ class Problem(models.Model):
 
     save.alters_data = True
 
-    def can_vote(self, request):
-        return False
-        user = request.user
-        if not user.is_authenticated:
-            return False
-
-        # If the user is in contest, nothing should be shown.
-        if request.in_contest_mode:
-            return False
-
-        # If the user is not allowed to vote
-        if user.profile.is_unlisted or user.profile.is_banned_problem_voting:
-            return False
-
-        # If the user is banned from submitting to the problem.
-        if self.banned_users.filter(pk=user.pk).exists():
-            return False
-
-        # If the user has a full AC submission to the problem (solved the problem).
-        return self.submission_set.filter(
-            user=user.profile, result="AC", points=F("problem__points")
-        ).exists()
-
     class Meta:
         permissions = (
             ("see_private_problem", "See hidden problems"),

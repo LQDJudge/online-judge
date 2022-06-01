@@ -306,76 +306,7 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
         context["meta_description"] = self.object.summary or metadata[0]
         context["og_image"] = self.object.og_image or metadata[1]
 
-        context["can_vote"] = self.object.can_vote(self.request)
-        if context["can_vote"]:
-            try:
-                context["vote"] = ProblemPointsVote.objects.get(
-                    voter=user.profile, problem=self.object
-                )
-            except ObjectDoesNotExist:
-                context["vote"] = None
-        else:
-            context["vote"] = None
-
-        context["has_votes"] = False
-        if user.is_superuser:
-            all_votes = list(
-                self.object.problem_points_votes.order_by("points").values_list(
-                    "points", flat=True
-                )
-            )
-            context["all_votes"] = all_votes
-            context["has_votes"] = len(all_votes) > 0
-        context["max_possible_vote"] = 600
-        context["min_possible_vote"] = 100
         return context
-
-
-class DeleteVote(ProblemMixin, SingleObjectMixin, View):
-    def get(self, request, *args, **kwargs):
-        return HttpResponseForbidden(status=405, content_type="text/plain")
-
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        if not request.user.is_authenticated:
-            return HttpResponseForbidden("Not signed in.", content_type="text/plain")
-        elif self.object.can_vote(request.user):
-            ProblemPointsVote.objects.filter(
-                voter=request.profile, problem=self.object
-            ).delete()
-            return HttpResponse("success", content_type="text/plain")
-        else:
-            return HttpResponseForbidden(
-                "Not allowed to delete votes on this problem.",
-                content_type="text/plain",
-            )
-
-
-class Vote(ProblemMixin, SingleObjectMixin, View):
-    def get(self, request, *args, **kwargs):
-        return HttpResponseForbidden(status=405, content_type="text/plain")
-
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        if not self.object.can_vote(request):  # Not allowed to vote for some reason.
-            return HttpResponseForbidden(
-                "Not allowed to vote on this problem.", content_type="text/plain"
-            )
-
-        form = ProblemPointsVoteForm(request.POST)
-        if form.is_valid():
-            with transaction.atomic():
-                # Delete any pre existing votes.
-                ProblemPointsVote.objects.filter(
-                    voter=request.profile, problem=self.object
-                ).delete()
-                vote = form.save(commit=False)
-                vote.voter = request.profile
-                vote.problem = self.object
-                vote.save()
-            return JsonResponse({"points": vote.points})
-        else:
-            return JsonResponse(form.errors, status=400)
 
 
 class LatexError(Exception):
