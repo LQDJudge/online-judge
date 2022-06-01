@@ -805,6 +805,7 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
         context["contest"] = self.contest
         context["problem"] = self.problem
         context["profile"] = self.profile
+        context["profile_id"] = self.request.profile.id if self.request.profile else None
 
         contest_problem = self.contest.contest_problems.get(problem=self.problem)
         for s in context["submissions"]:
