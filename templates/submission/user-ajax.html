@@ -18,7 +18,11 @@
         <td class="case-{{submission.result}}" style="margin-left: 1em">{{submission.display_point}}</td>
         <td class="case-{{submission.result}}" style="margin-left: 1em">({{submission.short_status}})</td>
         <td>
-            [{{_('pretests') if submission.contest.is_pretest else _('main tests')}}]
+            {% if submission.contest.is_pretest %}
+                [{{_('pretests')}}]
+            {% else %} 
+                [{{_('main tests')}}]
+            {% endif %}
         </td>
         {% if can_view %}
             <td>
