@@ -260,7 +260,7 @@
     {% include "submission/submission-list-tabs.html" %}
 {% endblock %}
 
-{% block media %}
+{% block content_media %}
     {% if perms.judge.change_submission and perms.judge.rejudge_submission %}
         <style>
             td.sub-prop, col.sub-prop {

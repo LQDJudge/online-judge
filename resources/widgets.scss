@@ -433,10 +433,11 @@ ul.select2-selection__rendered {
 }
 
 .sidebox-content {
-    border: 1px solid $border_gray;
+    // border: 1px solid $border_gray;
     border-top: none;
     margin: 0 -5px;
     padding: 1px 0.5em 3px;
+    background: white;
 
     &.sidebox-table {
         border: none;

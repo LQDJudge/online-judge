@@ -31,8 +31,7 @@
             })
             $('.blog-description').each(function() {
                 if ($(this).prop('scrollHeight') > $(this).height() ) {
-                    $(this).parent().css('background-image', '-webkit-linear-gradient(bottom, gray, lightgray 3%, transparent 8%, transparent 100%)');
-                    $(this).parent().css('padding-bottom', '0');
+                    $(this).parent().addClass('pre-expand-blog');
                     $(this).css('cursor', 'pointer');
                 }
             });
@@ -43,8 +42,8 @@
 
 {% macro make_tab_item(name, fa, url, text) %}
     <div class="left-sidebar-item {% if page_type == name %}active{% endif %}" data-href="{{ url }}" id="{{ name }}-tab">
-        <div class="sidebar-icon"><i class="{{ fa }}"></i></div>
-        {{ text }}
+        <span class="sidebar-icon"><i class="{{ fa }}"></i></span>
+        <span>{{ text }}</span>
     </div>
 {% endmacro %}
 
