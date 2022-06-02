@@ -213,6 +213,10 @@
         display: inline-block;
         flex: 1;
         border-radius: 8px;
+        
+        .sidebar-icon {
+            display: none;
+        }
     }
     .left-sidebar {
         text-align: center;
