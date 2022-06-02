@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-06-02 11:58+0700\n"
+"POT-Creation-Date: 2022-06-02 12:17+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -1676,9 +1676,17 @@ msgstr ""
 msgid "input file name"
 msgstr "tên file input"
 
+#: judge/models/problem_data.py:109
+msgid "Leave empty for stdin"
+msgstr "Để trống nếu nhập từ bàn phím"
+
 #: judge/models/problem_data.py:112 judge/models/problem_data.py:190
 msgid "output file name"
 msgstr "tên file output"
+
+#: judge/models/problem_data.py:112
+msgid "Leave empty for stdout"
+msgstr "Để trống nếu xuất ra màn hình"
 
 #: judge/models/problem_data.py:171
 msgid "problem data set"
@@ -4387,6 +4395,19 @@ msgstr "Hướng dẫn"
 msgid "View YAML"
 msgstr "Xem YAML"
 
+#: templates/problem/data.html:454
+msgid "Autofill testcases"
+msgstr "Tự động điền test"
+
+#: templates/problem/data.html:457 templates/problem/problem.html:302
+msgid "Problem type"
+msgid_plural "Problem types"
+msgstr[0] "Dạng bài"
+
+#: templates/problem/data.html:464
+msgid "Fill testcases"
+msgstr "Điền test"
+
 #: templates/problem/data.html:468 templates/problem/data.html:519
 msgid "Apply!"
 msgstr "Lưu!"
@@ -4669,11 +4690,6 @@ msgstr "màn hình"
 msgid "Author:"
 msgid_plural "Authors:"
 msgstr[0] "Tác giả:"
-
-#: templates/problem/problem.html:302
-msgid "Problem type"
-msgid_plural "Problem types"
-msgstr[0] "Dạng bài"
 
 #: templates/problem/problem.html:315
 msgid "Allowed languages"

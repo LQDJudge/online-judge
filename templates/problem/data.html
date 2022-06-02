@@ -451,17 +451,17 @@
         <table class="table">
             {{ data_form.as_table() }}
             <th>
-                <label>Autofill testcases:</label>
+                <label>{{_('Autofill testcases')}}:</label>
             </th>
             <td>
-                Problem type:
+                {{_('Problem type')}}:
                 <select id="problem-type">
                     <option value="ICPC">ICPC</option>
                     <option value="OI">OI</option>
                 </select>
                 <a id="fill-testcases" href="#">
                     <i class="fa fa-circle"></i>
-                    Fill testcases
+                    {{_('Fill testcases')}}
                 </a>
             </td>
         </table>

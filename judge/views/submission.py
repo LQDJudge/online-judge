@@ -542,8 +542,10 @@ class ProblemSubmissionsBase(SubmissionsListBase):
         if self.check_contest_in_access_check:
             self.access_check_contest(request)
         else:
-            is_own = hasattr(self, 'is_own') and self.is_own
-            if not is_own and not self.problem.is_accessible_by(request.user, request.in_contest_mode):
+            is_own = hasattr(self, "is_own") and self.is_own
+            if not is_own and not self.problem.is_accessible_by(
+                request.user, request.in_contest_mode
+            ):
                 raise Http404()
 
     def get(self, request, *args, **kwargs):
@@ -805,7 +807,9 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
         context["contest"] = self.contest
         context["problem"] = self.problem
         context["profile"] = self.profile
-        context["profile_id"] = self.request.profile.id if self.request.profile else None
+        context["profile_id"] = (
+            self.request.profile.id if self.request.profile else None
+        )
 
         contest_problem = self.contest.contest_problems.get(problem=self.problem)
         for s in context["submissions"]:

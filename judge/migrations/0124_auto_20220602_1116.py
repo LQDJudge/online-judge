@@ -6,18 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0123_auto_20220502_2356'),
+        ("judge", "0123_auto_20220502_2356"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='problemdata',
-            name='fileio_input',
-            field=models.TextField(blank=True, null=True, verbose_name='input file name'),
+            model_name="problemdata",
+            name="fileio_input",
+            field=models.TextField(
+                blank=True, null=True, verbose_name="input file name"
+            ),
         ),
         migrations.AddField(
-            model_name='problemdata',
-            name='fileio_output',
-            field=models.TextField(blank=True, null=True, verbose_name='output file name'),
+            model_name="problemdata",
+            name="fileio_output",
+            field=models.TextField(
+                blank=True, null=True, verbose_name="output file name"
+            ),
         ),
     ]

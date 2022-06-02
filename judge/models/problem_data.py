@@ -106,10 +106,16 @@ class ProblemData(models.Model):
         validators=[FileExtensionValidator(allowed_extensions=["cpp"])],
     )
     fileio_input = models.TextField(
-        verbose_name=_("input file name"), blank=True, null=True
+        verbose_name=_("input file name"),
+        blank=True,
+        null=True,
+        help_text=_("Leave empty for stdin"),
     )
     fileio_output = models.TextField(
-        verbose_name=_("output file name"), blank=True, null=True
+        verbose_name=_("output file name"),
+        blank=True,
+        null=True,
+        help_text=_("Leave empty for stdout"),
     )
 
     __original_zipfile = None
