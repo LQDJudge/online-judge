@@ -26,6 +26,7 @@ from django.forms import (
     Select,
     formset_factory,
     FileInput,
+    TextInput,
 )
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
@@ -88,6 +89,8 @@ class ProblemDataForm(ModelForm):
             "custom_checker",
             "custom_validator",
             "interactive_judge",
+            "fileio_input",
+            "fileio_output",
         ]
         widgets = {
             "zipfile": FineUploadFileInput,
@@ -95,6 +98,8 @@ class ProblemDataForm(ModelForm):
             "generator": HiddenInput,
             "output_limit": HiddenInput,
             "output_prefix": HiddenInput,
+            "fileio_input": TextInput,
+            "fileio_output": TextInput,
         }
 
 

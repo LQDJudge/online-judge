@@ -105,6 +105,12 @@ class ProblemData(models.Model):
         upload_to=problem_directory_file,
         validators=[FileExtensionValidator(allowed_extensions=["cpp"])],
     )
+    fileio_input = models.TextField(
+        verbose_name=_("input file name"), blank=True, null=True
+    )
+    fileio_output = models.TextField(
+        verbose_name=_("output file name"), blank=True, null=True
+    )
 
     __original_zipfile = None
 

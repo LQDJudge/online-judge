@@ -61,6 +61,12 @@
 <hr>
 <div align="center" style="position: relative;">
     <div class="problem-info-entry">
+        <b>{{ _('Input:') }}</b> {{ problem.data_files.fileio_input or _('stdin') }}
+    </div>
+    <div class="problem-info-entry">
+        <b>{{ _('Output:') }}</b> {{ problem.data_files.fileio_output or _('stdout') }}
+    </div>
+    <div class="problem-info-entry">
         <b>{{ _('Time Limit:') }}</b> {{ problem.time_limit }}s
         {% for name, limit in problem.language_time_limit %}
             <div class="lang-limit">

@@ -239,6 +239,14 @@ class ProblemDataCompiler(object):
                 init["checker"] = make_checker(self.data)
         else:
             self.data.checker_args = ""
+        if self.data.fileio_input:
+            if "file_io" not in init:
+                init["file_io"] = {}
+            init["file_io"]["input"] = self.data.fileio_input
+        if self.data.fileio_output:
+            if "file_io" not in init:
+                init["file_io"] = {}
+            init["file_io"]["output"] = self.data.fileio_output
 
         return init
 
