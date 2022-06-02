@@ -305,6 +305,12 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
             )
         context["meta_description"] = self.object.summary or metadata[0]
         context["og_image"] = self.object.og_image or metadata[1]
+        if hasattr(self.object, "data_files"):
+            context["fileio_input"] = self.object.data_files.fileio_input
+            context["fileio_output"] = self.object.data_files.fileio_output
+        else:
+            context["fileio_input"] = None
+            context["fileio_output"] = None
 
         return context
 

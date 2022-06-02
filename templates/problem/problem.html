@@ -261,12 +261,12 @@
     <div class="problem-info-entry">
         <i class="fa fa-file-o fa-fw"></i><span class="pi-name">{{ _('Input:') }}</span>
         <span class="pi-value">
-            {{ problem.data_files.fileio_input or _('stdin') }}
+            {{ fileio_input or _('stdin') }}
         </span>
     </div>
     <div class="problem-info-entry">
         <i class="fa fa-file fa-fw"></i><span class="pi-name">{{ _('Output:') }}</span>
-        <span class="pi-value">{{ problem.data_files.fileio_output or _('stdout') }}</span>
+        <span class="pi-value">{{ fileio_output or _('stdout') }}</span>
     </div>
     <div class="problem-lang-limits">
         {% for name, limit in problem.language_memory_limit %}
