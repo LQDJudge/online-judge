@@ -207,6 +207,12 @@ class ProblemRaw(
         context["problem_name"] = self.object.name
         context["url"] = self.request.build_absolute_uri()
         context["description"] = self.object.description
+        if hasattr(self.object, "data_files"):
+            context["fileio_input"] = self.object.data_files.fileio_input
+            context["fileio_output"] = self.object.data_files.fileio_output
+        else:
+            context["fileio_input"] = None
+            context["fileio_output"] = None
         return context
 
     def get(self, request, *args, **kwargs):
