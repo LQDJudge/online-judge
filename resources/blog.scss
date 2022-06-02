@@ -202,6 +202,9 @@
     background-image: -webkit-linear-gradient(bottom, gray, lightgray 3%, transparent 8%, transparent 100%);
     padding-bottom: 0;
 }
+.pre-expand-blog:hover {
+    background-color: #f3f3f3;
+}
 @media (max-width: 799px) {
     .left-sidebar-header {
         display: none;

@@ -20,18 +20,18 @@
                 if (url === '#') return;
                 window.location.href = url;
             });
-            $('.blog-description').on('click', function() {
-                var max_height = $(this).css('max-height');
+            $('.blog-box').on('click', function() {
+                var $description = $(this).children('.blog-description');
+                var max_height = $description.css('max-height');
                 if (max_height !== 'fit-content') {
-                    $(this).css('max-height', 'fit-content');
-                    $(this).parent().css('background-image', 'inherit')
-                        .css('padding-bottom', '0.5em');
+                    $description.css('max-height', 'fit-content');
                     $(this).css('cursor', 'auto');
+                    $(this).removeClass('pre-expand-blog');
                 }
             })
-            $('.blog-description').each(function() {
+            $('.blog-box').each(function() {
                 if ($(this).prop('scrollHeight') > $(this).height() ) {
-                    $(this).parent().addClass('pre-expand-blog');
+                    $(this).addClass('pre-expand-blog');
                     $(this).css('cursor', 'pointer');
                 }
             });
