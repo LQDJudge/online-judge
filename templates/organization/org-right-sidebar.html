@@ -2,18 +2,6 @@
     {% if (is_member or can_edit) %}
         {% include 'contests-countdown.html' %}
     {% endif %}
-    {% if is_member or can_edit %}
-        <div class="blog-sidebox sidebox">
-            <h3>{{ _('About') }}<i class="fa fa-info-circle"></i></h3>
-            <div class="sidebox-content">
-                <div style="margin: 0.3em;">
-                    {% cache 3600 'organization_html' organization.id MATH_ENGINE %}
-                        {{ organization.about|markdown('organization-about', MATH_ENGINE)|reference|str|safe }}
-                    {% endcache %}
-                </div>
-            </div>
-        </div>
-    {% endif %}
     {% if can_edit or is_member %}
         <div id="control-panel" class="blog-sidebox sidebox no-dot-blog-sidebox">
             <h3>{{ _('Controls') }} <i class="fa fa-cog"></i></h3>
@@ -70,6 +58,16 @@
                 </li>
                 {% endif %}
             </ul>
+        </div>
+        <div class="blog-sidebox sidebox">
+            <h3>{{ _('About') }}<i class="fa fa-info-circle"></i></h3>
+            <div class="sidebox-content">
+                <div style="margin: 0.3em;">
+                    {% cache 3600 'organization_html' organization.id MATH_ENGINE %}
+                        {{ organization.about|markdown('organization-about', MATH_ENGINE)|reference|str|safe }}
+                    {% endcache %}
+                </div>
+            </div>
         </div>
     {% endif %}
     {% include 'top-users.html' %}
