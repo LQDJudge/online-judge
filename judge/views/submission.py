@@ -533,10 +533,11 @@ class ProblemSubmissionsBase(SubmissionsListBase):
         )
 
     def access_check_contest(self, request):
-        if self.in_contest and not self.contest.can_see_own_scoreboard(request.user):
-            raise Http404()
-        if not self.contest.is_accessible_by(request.user):
-            raise Http404()
+        if self.in_contest:
+            if not self.contest.can_see_own_scoreboard(request.user):
+                raise Http404()
+            if not self.contest.is_accessible_by(request.user):
+                raise Http404()
 
     def access_check(self, request):
         if self.check_contest_in_access_check:
