@@ -512,7 +512,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
 
     def get_org_query(self, query):
         if not self.profile:
-            return None
+            return []
         return [
             i
             for i in query
@@ -541,6 +541,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             )
         if self.org_query:
             self.org_query = self.get_org_query(self.org_query)
+            print(self.org_query)
             queryset = queryset.filter(
                 Q(organizations__in=self.org_query)
                 | Q(contests__contest__organizations__in=self.org_query)
