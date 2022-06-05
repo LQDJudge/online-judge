@@ -15,6 +15,7 @@ from django.http import (
     HttpResponseRedirect,
     HttpResponseBadRequest,
 )
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
@@ -120,7 +121,7 @@ class OrganizationMixin(OrganizationBase):
     def dispatch(self, request, *args, **kwargs):
         try:
             self.organization_id = int(kwargs["pk"])
-            self.organization = Organization.objects.get(id=self.organization_id)
+            self.organization = get_object_or_404(Organization, id=self.organization_id)
         except Http404:
             key = kwargs.get(self.slug_url_kwarg, None)
             if key:
