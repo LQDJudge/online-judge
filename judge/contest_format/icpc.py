@@ -120,7 +120,7 @@ class ICPCContestFormat(DefaultContestFormat):
                 else ""
             )
             return format_html(
-                '<td class="{state}"><a href="{url}">{points}{penalty}<div class="solving-time">{time}</div></a></td>',
+                '<td class="{state}"><a data-featherlight="{url}" href="#">{points}{penalty}<div class="solving-time">{time}</div></a></td>',
                 state=(
                     (
                         "pretest-"
@@ -133,7 +133,7 @@ class ICPCContestFormat(DefaultContestFormat):
                     )
                 ),
                 url=reverse(
-                    "contest_user_submissions",
+                    "contest_user_submissions_ajax",
                     args=[
                         self.contest.key,
                         participation.user.user.username,
