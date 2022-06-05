@@ -11,6 +11,12 @@
             width: 100%;
         }
 
+        &.pcode {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+
         &.pp {
             text-align: left;
             padding-left: 1em;
@@ -329,3 +335,10 @@ ul.problem-list {
     }
 }
 
+@media (min-width: 800px) {
+    #problem-table {
+        .pcode {
+            min-width: 7em;
+        }
+    }
+}

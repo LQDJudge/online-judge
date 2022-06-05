@@ -47,7 +47,7 @@
                         <a href="{{ sort_links.ac_rate }}">{{ _('AC %%') }}{{ sort_order.ac_rate }}</a>
                     </th>
                     <th class="users">
-                        <a href="{{ sort_links.user_count }}">{{ _('Users') }}{{ sort_order.user_count }}</a>
+                        <a href="{{ sort_links.user_count }}">{{ _('AC #') }}{{ sort_order.user_count }}</a>
                     </th>
                     {% if show_editorial %}
                     <th class="editorial">
@@ -109,7 +109,7 @@
                     {% endif %}
                     <td class="p">{{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}</td>
                     {% if not request.in_contest_mode %}
-                        <td class="ac-rate">{{ problem.ac_rate|floatformat(1) }}%</td>
+                        <td class="ac-rate">{{ problem.ac_rate|floatformat(0) }}%</td>
                     {% endif %}
                     <td class="users">
                         <a href="{{ url('ranked_submissions', problem.code) }}">
