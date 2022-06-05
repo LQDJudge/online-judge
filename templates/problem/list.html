@@ -32,6 +32,9 @@
                     <th class="pcode">
                         <a href="{{ sort_links.code }}">{{ _('Problem code') }}</a>
                     </th>
+                    <th class="category">
+                        <a href="{{ sort_links.group }}">{{ _('Category') }}{{ sort_order.group }}</a>
+                    </th>
                     {% if show_types %}
                         <th>
                             <a href="{{ sort_links.type }}">{{ _('Types') }}{{ sort_order.type }}</a>
@@ -94,6 +97,9 @@
                     <td class="pcode">
                         <a class="pcodecell" href="{{ url('problem_detail', problem.code) }}">{{ problem.code }}</a>
                     </td>
+                    {% if not request.in_contest_mode %}
+                        <td class="category">{{ problem.group.full_name }}</td>
+                    {% endif %}
                     {% if show_types %}
                         <td class="types">
                             {% for type in problem.types_list %}
