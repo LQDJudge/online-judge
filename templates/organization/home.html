@@ -4,23 +4,23 @@
 
 {% block middle_title %}
     <div class="page-title">
-        <div class="tabs">
-        <h2>{{title}}</h2>
-        <span class="spacer"></span>
-    
-        {% if request.user.is_authenticated %}
-            {% if is_member or can_edit %}
-            {% elif organization.is_open or can_edit %}
-                <form method="post" action="{{ url('join_organization', organization.id, organization.slug) }}">
-                    {% csrf_token %}
-                    <input type="submit" class="unselectable button" value="{{ _('Join') }}">
-                </form>
-            {% else %}
-                <a href="{{ url('request_organization', organization.id, organization.slug) }}"
-                   class="unselectable button">{{ _('Request membership') }}</a>
+        <div class="tabs" style="border: none;">
+            <h2><img src="{{logo_override_image}}" style="height: 3rem; vertical-align: middle"> <span>{{title}}</span></h2>
+            <span class="spacer"></span>
+        
+            {% if request.user.is_authenticated %}
+                {% if is_member %}
+                {% elif organization.is_open or can_edit %}
+                    <form method="post" action="{{ url('join_organization', organization.id, organization.slug) }}">
+                        {% csrf_token %}
+                        <input type="submit" class="unselectable button" value="{{ _('Join') }}">
+                    </form>
+                {% else %}
+                    <a href="{{ url('request_organization', organization.id, organization.slug) }}"
+                       class="unselectable button">{{ _('Request membership') }}</a>
+                {% endif %}
             {% endif %}
-        {% endif %}
-    </div>
+        </div>
     </div>
 {% endblock %}
 

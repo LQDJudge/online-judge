@@ -121,7 +121,7 @@ label[for="language"], label[for="status"] {
     padding-top: 0;
 }
 
-@media(max-width: 700px) {
+@media(max-width: 799px) {
     .sub-prop {
         .label {
             display: none;
@@ -133,10 +133,6 @@ label[for="language"], label[for="status"] {
     }
 
     #fake-info-float {
-        display: none;
-    }
-
-    #statistics-table {
         display: none;
     }
 

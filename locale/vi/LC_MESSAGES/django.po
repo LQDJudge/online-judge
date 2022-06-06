@@ -3185,7 +3185,7 @@ msgstr "Chỉnh sửa thông tin"
 
 #: judge/views/user.py:457 templates/user/user-list-tabs.html:4
 msgid "Leaderboard"
-msgstr "Bảng xếp hạng"
+msgstr "Xếp hạng"
 
 #: judge/views/user.py:553
 msgid "Import Users"

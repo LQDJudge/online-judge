@@ -1,4 +1,4 @@
-{% extends "user/base-users.html" %}
+{% extends "user/base-users-three-col.html" %}
 
 {% block users_media %}
     <style>
@@ -18,14 +18,10 @@
 
 {% block title_ruler %}{% endblock %}
 
-{% block title_row %}
-    {% if request.GET.get('friend') == 'true'%}
-        {% set tab = 'friends' %}
-    {% else %}
-        {% set tab = 'list' %}
-    {% endif %}
-    {% set title = 'Leaderboard' %}
-    {% include "user/user-list-tabs.html" %}
+{% block title_row %}{% endblock %}
+
+{% block left_sidebar %}
+    {% include "user/user-left-sidebar.html" %}
 {% endblock %}
 
 {% block users_table %}

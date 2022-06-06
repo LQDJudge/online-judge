@@ -286,7 +286,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     show_problem = True
     title = gettext_lazy("All submissions")
     content_title = gettext_lazy("All submissions")
-    tab = "all_submissions_list"
+    page_type = "all_submissions_list"
     template_name = "submission/list.html"
     context_object_name = "submissions"
     first_page_href = None
@@ -429,7 +429,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["first_page_href"] = (self.first_page_href or ".") + suffix
         context["my_submissions_link"] = self.get_my_submissions_page()
         context["all_submissions_link"] = self.get_all_submissions_page()
-        context["tab"] = self.tab
+        context["page_type"] = self.page_type
 
         return context
 
@@ -460,9 +460,9 @@ class ConditionalUserTabMixin(object):
     def get_context_data(self, **kwargs):
         context = super(ConditionalUserTabMixin, self).get_context_data(**kwargs)
         if self.request.user.is_authenticated and self.request.profile == self.profile:
-            context["tab"] = "my_submissions_tab"
+            context["page_type"] = "my_submissions_tab"
         else:
-            context["tab"] = "user_submissions_tab"
+            context["page_type"] = "user_submissions_tab"
             context["tab_username"] = self.profile.user.username
         return context
 

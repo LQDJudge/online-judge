@@ -461,6 +461,7 @@ class UserList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ListView):
     all_sorts = frozenset(("points", "problem_count", "rating", "performance_points"))
     default_desc = all_sorts
     default_sort = "-performance_points"
+    filter_friend = False
 
     def filter_friend_queryset(self, queryset):
         friends = list(self.request.profile.get_friends())
@@ -484,6 +485,7 @@ class UserList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ListView):
 
         if (self.request.GET.get("friend") == "true") and self.request.profile:
             ret = self.filter_friend_queryset(ret)
+            self.filter_friend = True
         return ret
 
     def get_context_data(self, **kwargs):
@@ -492,6 +494,7 @@ class UserList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ListView):
             context["users"], rank=self.paginate_by * (context["page_obj"].number - 1)
         )
         context["first_page_href"] = "."
+        context["page_type"] = "friends" if self.filter_friend else "list"
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())
         return context
