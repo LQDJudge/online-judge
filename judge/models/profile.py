@@ -112,6 +112,9 @@ class Organization(models.Model):
     def get_contests_url(self):
         return reverse("organization_contests", args=(self.id, self.slug))
 
+    def get_submissions_url(self):
+        return reverse("organization_submissions", args=(self.id, self.slug))
+
     class Meta:
         ordering = ["name"]
         permissions = (

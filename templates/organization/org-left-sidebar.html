@@ -3,6 +3,7 @@
     {% if is_member or can_edit %}
         {{ make_tab_item('problems', 'fa fa-list', organization.get_problems_url(), _('Problems')) }}
         {{ make_tab_item('contests', 'fa fa-trophy', organization.get_contests_url(), _('Contests')) }}
+        {{ make_tab_item('submissions', 'fa fa-book', organization.get_submissions_url(), _('Submissions')) }}
     {% endif %}
     {{ make_tab_item('users', 'fa fa-user', organization.get_users_url(), _('Members')) }}
     {% if perms.judge.change_organization %}

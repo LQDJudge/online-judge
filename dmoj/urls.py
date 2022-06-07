@@ -589,19 +589,29 @@ urlpatterns = [
                     name="organization_home",
                 ),
                 url(
-                    r"^/users$",
-                    organization.OrganizationUsers.as_view(),
-                    name="organization_users",
+                    r"^/users/",
+                    paged_list_view(
+                        organization.OrganizationUsers,
+                        "organization_users",
+                    ),
                 ),
                 url(
-                    r"^/problems$",
-                    organization.OrganizationProblems.as_view(),
-                    name="organization_problems",
+                    r"^/problems/",
+                    paged_list_view(
+                        organization.OrganizationProblems, "organization_problems"
+                    ),
                 ),
                 url(
-                    r"^/contests$",
-                    organization.OrganizationContests.as_view(),
-                    name="organization_contests",
+                    r"^/contests/",
+                    paged_list_view(
+                        organization.OrganizationContests, "organization_contests"
+                    ),
+                ),
+                url(
+                    r"^/submissions/",
+                    paged_list_view(
+                        organization.OrganizationSubmissions, "organization_submissions"
+                    ),
                 ),
                 url(
                     r"^/join$",

@@ -18,6 +18,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _, gettext_lazy, ungettext
 from django.views.generic import (
@@ -50,6 +51,7 @@ from judge.models import (
     Profile,
     Contest,
 )
+from judge import event_poster as event
 from judge.utils.ranker import ranker
 from judge.utils.views import (
     TitleMixin,
@@ -60,6 +62,7 @@ from judge.utils.views import (
 from judge.utils.problems import user_attempted_ids
 from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
+from judge.views.submission import AllSubmissions, SubmissionsListBase
 
 __all__ = [
     "OrganizationList",
@@ -361,6 +364,41 @@ class OrganizationContests(LoginRequiredMixin, MemberOrganizationMixin, ContestL
     def get_context_data(self, **kwargs):
         context = super(OrganizationContests, self).get_context_data(**kwargs)
         context["page_type"] = "contests"
+        return context
+
+
+class OrganizationSubmissions(
+    LoginRequiredMixin, MemberOrganizationMixin, SubmissionsListBase
+):
+    template_name = "organization/submissions.html"
+
+    @cached_property
+    def in_contest(self):
+        return False
+
+    @cached_property
+    def contest(self):
+        return None
+
+    def get_queryset(self):
+        return (
+            super()
+            ._get_queryset()
+            .filter(contest_object__organizations=self.organization)
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizationSubmissions, self).get_context_data(**kwargs)
+        context["dynamic_update"] = context["page_obj"].number == 1
+        context["last_msg"] = event.last()
+        context["stats_update_interval"] = 3600
+        context["page_type"] = "submissions"
+        context["page_prefix"] = None
+        context["page_suffix"] = suffix = (
+            ("?" + self.request.GET.urlencode()) if self.request.GET else ""
+        )
+        context["first_page_href"] = (self.first_page_href or ".") + suffix
+
         return context
 
 
