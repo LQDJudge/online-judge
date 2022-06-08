@@ -389,8 +389,8 @@ class OrganizationSubmissions(
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationSubmissions, self).get_context_data(**kwargs)
-        context["dynamic_update"] = context["page_obj"].number == 1
-        context["last_msg"] = event.last()
+        # context["dynamic_update"] = context["page_obj"].number == 1
+        # context["last_msg"] = event.last()
         context["stats_update_interval"] = 3600
         context["page_type"] = "submissions"
         context["page_prefix"] = None
