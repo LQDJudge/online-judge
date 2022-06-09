@@ -292,13 +292,15 @@
     </style>
 {% endblock %}
 
-{% block middle_content %}
-    {% if page_obj.num_pages > 1 %}
-        <div style="margin-bottom: 6px; margin-top: 11px">
-            {% include "list-pages.html" %}
-        </div>
-    {% endif %}
+{% block middle_title %}
+<div class="page-title">
+    <div class="tabs" style="border: none;">
+        <h2>{{content_title}}</h2>
+    </div>
+</div>
+{% endblock %}
 
+{% block middle_content %}
     <div class="submission">
         <div class="ws-closed">
             <a href="javascript:void(0)">{{ _('You were disconnected. Refresh to show latest updates.') }}</a>

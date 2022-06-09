@@ -18,6 +18,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import format_html
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _, gettext_lazy, ungettext
@@ -400,6 +401,15 @@ class OrganizationSubmissions(
         context["first_page_href"] = (self.first_page_href or ".") + suffix
 
         return context
+
+    def get_content_title(self):
+        return format_html(
+            _('All submissions in <a href="{1}">{0}</a>'),
+            self.organization,
+            reverse(
+                "organization_home", args=[self.organization.id, self.organization.slug]
+            ),
+        )
 
 
 class OrganizationMembershipChange(
