@@ -2,6 +2,7 @@
 
 {% block js_media %}
     <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
+    <script type="text/javascript" src="{{ static('jszip/jszip.min.js') }}"></script>
     {{ form.media.js }}
     {% compress js %}
         <script type="text/javascript">
@@ -13,17 +14,17 @@
 
                 window.previous_template = '';
 
+                function update_submit_area(code) {
+                    window.previous_template = code;
+                    $('textarea#id_source').val(code);
+                    window.ace_source.getSession().setValue(code);
+                }
+
                 function update_language_template() {
                     var source = $('textarea#id_source');
                     if (source.val() == window.previous_template.replace(/\r/g, '') || source.val() == '') {
                         var lang_id = $('#id_language').val();
                         var code = localStorage.getItem('submit:' + $('#id_language').val());
-
-                        function update_submit_area(code) {
-                            window.previous_template = code;
-                            source.val(code);
-                            window.ace_source.getSession().setValue(code);
-                        }
 
                         if (code != null) {
                             update_submit_area(code);
@@ -104,13 +105,14 @@
                     });
                     editor.getSession().setUseWrapMode(true);
                     editor.setFontSize(14);
-                    editor.setPrintMarginColumn(100);
+                    editor.setShowPrintMargin(false);
+                    // editor.setPrintMarginColumn(100);
                     editor.focus();
                 });
 
-                $(window).resize(function () {
-                    $('#ace_source').height(Math.max($(window).height() - 353, 100));
-                }).resize();
+                // $(window).resize(function () {
+                //     $('#ace_source').height(Math.max($(window).height() - 353, 100));
+                // }).resize();
 
                 $('#problem_submit').submit(function (event) {
                     if ($('#id_source').val().length > 65536) {
@@ -119,6 +121,38 @@
                         $('#problem_submit').find(':submit').attr('disabled', false);
                     }
                 });
+
+                function get_source_default(file) {
+                    const reader = new FileReader();
+                    reader.readAsText(file);
+                    reader.onload = function (evt) {
+                        var src = evt.target.result;
+                        update_submit_area(src);
+                    }
+                    reader.onerror = function (evt) {
+                        alert("Fail to upload file");
+                    }
+                }
+
+                function get_source_scratch(file) {
+                    JSZip.loadAsync(file).then(function($content) {
+                        return $content.files["project.json"].async('text');
+                    }).then(function (src) {
+                        update_submit_area(src);
+                    });
+                }
+
+                $('#file-upload').on('click change', function(e) {
+                    var file = $(this)[0].files[0];
+                    if (file) {
+                        if (file.name.endsWith('sb3')) {
+                            get_source_scratch(file);
+                        }
+                        else {
+                            get_source_default(file);
+                        }
+                    }
+                })
             });
         </script>
     {% endcompress %}
@@ -257,6 +291,7 @@
         {% if no_judges %}
             <span style="color: red">{{ _('No judge is available for this problem.') }}</span>
         {% else %}
+            <input type="file" id="file-upload">
             <div class="submit-bar">
                 {{ form.judge }}
                 <input type="submit" value="{{ _('Submit!') }}" class="button"
