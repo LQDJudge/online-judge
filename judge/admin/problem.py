@@ -9,12 +9,15 @@ from django.forms import ModelForm
 from django.urls import reverse_lazy
 from django.utils.html import format_html
 from django.utils.translation import gettext, gettext_lazy as _, ungettext
+from django_ace import AceWidget
+
 from reversion.admin import VersionAdmin
 from reversion_compare.admin import CompareVersionAdmin
 
 
 from judge.models import (
     LanguageLimit,
+    LanguageTemplate,
     Problem,
     ProblemClarification,
     ProblemTranslation,
@@ -98,6 +101,20 @@ class LanguageLimitInline(admin.TabularInline):
     model = LanguageLimit
     fields = ("language", "time_limit", "memory_limit")
     form = LanguageLimitInlineForm
+
+
+class LanguageTemplateInlineForm(ModelForm):
+    class Meta:
+        widgets = {
+            "language": AdminSelect2Widget,
+            "source": AceWidget(width="600px", height="200px", toolbar=False),
+        }
+
+
+class LanguageTemplateInline(admin.TabularInline):
+    model = LanguageTemplate
+    fields = ("language", "source")
+    form = LanguageTemplateInlineForm
 
 
 class ProblemClarificationForm(ModelForm):
@@ -208,6 +225,7 @@ class ProblemAdmin(CompareVersionAdmin):
     )
     inlines = [
         LanguageLimitInline,
+        LanguageTemplateInline,
         ProblemClarificationInline,
         ProblemSolutionInline,
         ProblemTranslationInline,

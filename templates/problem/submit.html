@@ -30,7 +30,8 @@
                             update_submit_area(code);
                         } else {
                             $.get('{{ url('language_template_ajax') }}', {
-                                id: lang_id
+                                id: lang_id,
+                                problem: {{problem_id}}
                             }).done(function (template) {
                                 update_submit_area(template);
                             });

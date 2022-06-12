@@ -639,6 +639,24 @@ class LanguageLimit(models.Model):
         verbose_name_plural = _("language-specific resource limits")
 
 
+class LanguageTemplate(models.Model):
+    problem = models.ForeignKey(
+        Problem,
+        verbose_name=_("problem"),
+        related_name="language_templates",
+        on_delete=CASCADE,
+    )
+    language = models.ForeignKey(
+        Language, verbose_name=_("language"), on_delete=CASCADE
+    )
+    source = models.TextField(verbose_name=_("source code"), max_length=65536)
+
+    class Meta:
+        unique_together = ("problem", "language")
+        verbose_name = _("language-specific template")
+        verbose_name_plural = _("language-specific templates")
+
+
 class Solution(models.Model):
     problem = models.OneToOneField(
         Problem,

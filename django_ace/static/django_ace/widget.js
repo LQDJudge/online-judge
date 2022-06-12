@@ -77,15 +77,17 @@
             mode = widget.getAttribute('data-mode'),
             theme = widget.getAttribute('data-theme'),
             wordwrap = widget.getAttribute('data-wordwrap'),
-            toolbar = prev(widget),
-            main_block = toolbar.parentNode;
+            toolbar = prev(widget);
+        var main_block = div.parentNode.parentNode;
 
-        // Toolbar maximize/minimize button
-        var min_max = toolbar.getElementsByClassName('django-ace-max_min');
-        min_max[0].onclick = function () {
-            minimizeMaximize(widget, main_block, editor);
-            return false;
-        };
+        if (toolbar != null) {
+            // Toolbar maximize/minimize button
+            var min_max = toolbar.getElementsByClassName('django-ace-max_min');
+            min_max[0].onclick = function () {
+                minimizeMaximize(widget, main_block, editor);
+                return false;
+            };
+        }
 
         editor.getSession().setValue(textarea.value);
 

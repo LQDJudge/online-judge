@@ -53,6 +53,7 @@ from judge.models import (
     Organization,
     VolunteerProblemVote,
     Profile,
+    LanguageTemplate,
 )
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
@@ -895,10 +896,21 @@ class ProblemFeed(ProblemList):
 class LanguageTemplateAjax(View):
     def get(self, request, *args, **kwargs):
         try:
-            language = get_object_or_404(Language, id=int(request.GET.get("id", 0)))
+            problem = request.GET.get("problem", None)
+            lang_id = int(request.GET.get("id", 0))
+            res = None
+            if problem:
+                try:
+                    res = LanguageTemplate.objects.get(
+                        language__id=lang_id, problem__id=problem
+                    ).source
+                except ObjectDoesNotExist:
+                    pass
+            if not res:
+                res = get_object_or_404(Language, id=lang_id).template
         except ValueError:
             raise Http404()
-        return HttpResponse(language.template, content_type="text/plain")
+        return HttpResponse(res, content_type="text/plain")
 
 
 class RandomProblem(ProblemList):
@@ -1107,6 +1119,7 @@ def problem_submit(request, problem, submission=None):
             "submissions_left": submissions_left,
             "ACE_URL": settings.ACE_URL,
             "default_lang": default_lang,
+            "problem_id": problem.id,
         },
     )
 

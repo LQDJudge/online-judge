@@ -20,6 +20,7 @@ from judge.models.interface import BlogPost, MiscConfig, NavigationBar, validate
 from judge.models.message import PrivateMessage, PrivateMessageThread
 from judge.models.problem import (
     LanguageLimit,
+    LanguageTemplate,
     License,
     Problem,
     ProblemClarification,
