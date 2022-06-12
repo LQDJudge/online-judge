@@ -69,4 +69,5 @@ revisions.register(ProblemData)
 revisions.register(ProblemTestCase)
 revisions.register(ContestParticipation)
 revisions.register(Rating)
+revisions.register(VolunteerProblemVote)
 del revisions

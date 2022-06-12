@@ -1,5 +1,4 @@
 from operator import attrgetter
-import statistics
 
 from django import forms
 from django.contrib import admin
@@ -197,10 +196,6 @@ class ProblemAdmin(CompareVersionAdmin):
         "name",
         "show_authors",
         "points",
-        "vote_cnt",
-        "vote_mean",
-        "vote_median",
-        "vote_std",
         "is_public",
         "show_public",
     ]
@@ -295,11 +290,6 @@ class ProblemAdmin(CompareVersionAdmin):
 
     def get_queryset(self, request):
         queryset = Problem.objects.prefetch_related("authors__user")
-        queryset = queryset.annotate(
-            _vote_mean=Avg("problem_points_votes__points"),
-            _vote_std=StdDev("problem_points_votes__points"),
-            _vote_cnt=Count("problem_points_votes__points"),
-        )
         if request.user.has_perm("judge.edit_all_problem"):
             return queryset
 
@@ -346,25 +336,6 @@ class ProblemAdmin(CompareVersionAdmin):
         return super(ProblemAdmin, self).construct_change_message(
             request, form, *args, **kwargs
         )
-
-    def vote_mean(self, obj):
-        return round(obj._vote_mean, 1) if obj._vote_mean is not None else None
-
-    vote_mean.admin_order_field = "_vote_mean"
-
-    def vote_std(self, obj):
-        return round(obj._vote_std, 1) if obj._vote_std is not None else None
-
-    vote_std.admin_order_field = "_vote_std"
-
-    def vote_cnt(self, obj):
-        return obj._vote_cnt
-
-    vote_cnt.admin_order_field = "_vote_cnt"
-
-    def vote_median(self, obj):
-        votes = obj.problem_points_votes.values_list("points", flat=True)
-        return statistics.median(votes) if votes else None
 
 
 class ProblemPointsVoteAdmin(admin.ModelAdmin):
