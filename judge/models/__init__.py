@@ -53,6 +53,7 @@ from judge.models.volunteer import VolunteerProblemVote
 revisions.register(Profile, exclude=["points", "last_access", "ip", "rating"])
 revisions.register(Problem, follow=["language_limits"])
 revisions.register(LanguageLimit)
+revisions.register(LanguageTemplate)
 revisions.register(Contest, follow=["contest_problems"])
 revisions.register(ContestProblem)
 revisions.register(Organization)
