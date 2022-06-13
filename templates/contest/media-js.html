@@ -24,9 +24,9 @@
 
         // get information
         $('td a').each(function() {
-            let td = $(this)[0]
-            let link = td['attributes']['href']['value']
-            if (link.includes('submissions')) {
+            var td = $(this)[0];
+            var link = $(this).attr('data-featherlight');
+            if (link && link.includes('submissions')) {
                 let scoreAndTime = (td.innerText.split('\n'))
                 let linkElements = link.split('/')
 
@@ -201,14 +201,6 @@
                 setInterval(update_ranking, 60 * 1000);
             {% endif %}
         {% endif %}
-
-        // $(".problem-score-a").on('click', function(e) {
-        //     var href = $(this).attr('href');
-        //     if (href !== '#') return;
-        //     e.preventDefault();
-
-
-        // })
     });
 
 </script>
