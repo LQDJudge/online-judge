@@ -185,7 +185,6 @@ class ProblemAdmin(CompareVersionAdmin):
                     "code",
                     "name",
                     "is_public",
-                    "is_manually_managed",
                     "date",
                     "authors",
                     "curators",
@@ -253,8 +252,6 @@ class ProblemAdmin(CompareVersionAdmin):
         fields = self.readonly_fields
         if not request.user.has_perm("judge.change_public_visibility"):
             fields += ("is_public",)
-        if not request.user.has_perm("judge.change_manually_managed"):
-            fields += ("is_manually_managed",)
         return fields
 
     def show_authors(self, obj):
