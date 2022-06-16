@@ -20,7 +20,7 @@ def submission_layout(
     if user.has_perm("judge.view_all_submission"):
         can_view = True
 
-    if user.has_perm("judge.view_public_submission"):
+    if submission.problem.is_public and user.has_perm("judge.view_public_submission"):
         can_view = True
 
     if submission.problem_id in completed_problem_ids:
