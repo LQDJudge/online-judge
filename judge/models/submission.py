@@ -230,6 +230,7 @@ class Submission(models.Model):
             ("spam_submission", "Submit without limit"),
             ("view_all_submission", "View all submission"),
             ("resubmit_other", "Resubmit others' submission"),
+            ("view_public_submission", "View public submissions"),
         )
         verbose_name = _("submission")
         verbose_name_plural = _("submissions")

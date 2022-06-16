@@ -88,6 +88,8 @@ class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, Deta
         problem = submission.problem
         if self.request.user.has_perm("judge.view_all_submission"):
             return submission
+        if problem.is_public and self.request.user.has_perm("judge.view_public_submission"):
+            return submission
         if submission.user_id == profile.id:
             return submission
         if problem.is_editor(profile):
