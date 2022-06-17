@@ -218,6 +218,7 @@ class ProblemDataCompiler(object):
                 init["interactive"] = {
                     "files": split_path_first(self.data.interactive_judge.name)[1],
                     "feedback": True,
+                    "type": "lqdoj",
                 }
                 init["unbuffered"] = True
             else:
