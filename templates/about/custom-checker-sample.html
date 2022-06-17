@@ -1,27 +1,17 @@
-{% extends "base.html" %}
-{% block body %}
+{% extends "common-content.html" %}
+{% block description %}
     <style>
         article {
             padding: 2.5em 3.5em;
             font-size: 1.1em;
         }
-        .code2 {
-            color: #333333;
-            background-color: #f7f7f7;
-            font-family: Consolas;
-            line-height: 1.45;
-        }
-        .code2 {
-            padding: 1em;
-        }
         li {
             padding: 0.2em;
         }
+        #content-right {
+            display: none;
+        }
     </style>
-    <script>
-
-    </script>
-
     <article id="py">
         <h2>1. Custom checker (PY)</h2>
         <hr>
@@ -29,9 +19,11 @@
             Đây là checker mặc định của website, cho phép người dùng cập nhật được nhiều thông tin nhất (chi tiết xem ở  bên dưới). Chúng ta cần hoàn thành hàm check dưới đây:
         </p>
 
-        <pre class="code2">
+{{
+"""
 def check(process_output, judge_output, **kwargs):
-    # return True/False</pre>
+    # return True/False
+"""|highlight('py')}}
         
         <p>
             Trong đó, <code>**kwargs</code> có thể chứa các biến sau:
@@ -47,15 +39,16 @@ def check(process_output, judge_output, **kwargs):
             <li><code>execution_time:</code> thời gian chạy</li>
         </ul>
         <h2>Return: </h2>
-        <ol>
+        <ul>
             <li>Cách 1: Trả về True/False</li>
             <li>Cách 2: Trả về một object <code>CheckerResult</code> có thể được gọi như sau <pre class="code2">CheckerResult(case_passed_bool, points_awarded, feedback='')</pre></li>
-        </ol>
+        </ul>
 
         <h2>Ví dụ: </h2>
         <p>Dưới đây là ví dụ cho bài toán: Input gồm 1 số nguyên n. In ra 2 số nguyên a, b sao cho a + b = n.
         </p>
-        <pre class="code2">
+{{
+"""
 from dmoj.result import CheckerResult
 
 
@@ -82,7 +75,8 @@ def check(process_output, judge_output, judge_input, **kwargs):
 
     if (n == a + b):
         return True
-    return wa('a + b != n')</pre>
+    return wa('a + b != n')
+"""| highlight('py')}}        
     </article>
     <article id="cpp">
         <h2>2. Custom validator (CPP)</h2>
@@ -110,8 +104,9 @@ main.exe [input_file] [output_file] [ans_file]</pre>
         <h2>Ví dụ: </h2>
         <p>Chương trình sau dùng để chấm bài toán: Cho n là một số nguyên dương. In ra hai số tự nhiên a, b sao cho a + b = n. </p>
         <p>Nếu in ra a + b = n và a, b >= 0 thì được 100% số điểm, nếu a + b = n nhưng một trong 2 số a, b âm thì được 50% số điểm. </p>
-        <pre class="code2">
-#include &lt;bits/stdc++.h&gt;
+{{
+"""
+#include <bits/stdc++.h>
 using namespace std;
 
 int main(int argc, char** argv) {
@@ -121,12 +116,12 @@ int main(int argc, char** argv) {
 
     int n, a, b, c, d;
     
-    inp &gt;&gt; n;
-    out &gt;&gt; a &gt;&gt; b;
-    ans &gt;&gt; c &gt;&gt; d;
+    inp >> n;
+    out >> a >> b;
+    ans >> c >> d;
 
     if (a + b == c + d) {
-        cout &lt;&lt; a &lt;&lt; &quot; + &quot; &lt;&lt; b &lt;&lt; &quot; = &quot; &lt;&lt; c &lt;&lt; &quot; + &quot; &lt;&lt; d &lt;&lt; endl;
+        cout << a << \" + \" << b << \" = \" << c << \" + \" << d << endl;
             
         if (a >= 0 && b >= 0) {
             return 0; // AC
@@ -137,20 +132,22 @@ int main(int argc, char** argv) {
         }
     }     
     else {
-        cout &lt;&lt; &quot;a + b = &quot; &lt;&lt; a + b &lt;&lt; &quot; != &quot; &lt;&lt; n &lt;&lt; endl;
+        cout << \"a + b = \" << a + b << \" != \" << n << endl;
         return 1; // WA
     }
 }
-        </pre>
+""" | highlight('cpp')}}
+    </article>
+    <article id="interactive">
         <h2>3. Interactive (CPP)</h2>
         <hr>
         <p>
-        Để sử dụng chức năng này, cần viết một chương trình C++ pass vào 1 argument <code>input_file</code> tương ứng file input.
+        Để sử dụng chức năng này, cần viết một chương trình C++ pass vào 2 arguments <code>input_file</code> <code>answer_file</code> tương ứng file input và đáp án (nếu cần thiết).
         </p>
         <p>
             Để test chương trình trên máy tính với tư cách thí sinh, có thể dùng lệnh như sau (Windows):
             <pre class="code2">
-main.exe [input_file]</pre> 
+main.exe [input_file] [answer_file]</pre> 
             hoặc thay bằng <code>./main</code> trên Linux/MacOS.
         </p>
         <h2>Return: </h2>
@@ -159,14 +156,16 @@ main.exe [input_file]</pre>
             <ul>
                 <li> 0 nếu AC (100% điểm)</li>
                 <li> 1 nếu WA (0 điểm)</li>
+                <li> 2 nếu điểm thành phần. Khi đó cần in ra stderr một số thực trong đoạn [0, 1] thể hiện cho tỷ lệ điểm. Nếu điểm < 1 thì hiển thị WA, điểm = 1 thì hiển thị AC. </li>
             </ul>
             Thông tin được in ra trong stderr (bằng cerr) sẽ là feedback hiển thị cho người dùng.
         </p>
 
         <h2>Ví dụ: </h2>
         <p>Chương trình sau dùng để chấm bài toán guessgame: Người chơi phải tìm 1 số bí mật n (n chứa trong file input). Mỗi lần họ được hỏi một số x, và chương trình sẽ trả về "SMALLER", "BIGGER" hoặc "HOLA" dựa trên giá trị của n và x. Cần tìm ra n sau không quá 31 câu hỏi. </p>
-        <pre class="code2">
-#include &ltbits/stdc++.h&gt
+{{
+"""
+#include <bits/stdc++.h>
 using namespace std;
 
 void quit(string reason) {
@@ -175,35 +174,35 @@ void quit(string reason) {
 }
 
 void read(long long& guess) {
-    if (!(cin &gt&gt guess)) exit(1); // Nếu không có dòng này, chương trình sẽ chờ vô hạn
-    if (guess &lt 1 || guess &gt 2e9) exit(1);
+    if (!(cin >> guess)) exit(1); // Nếu không có dòng này, chương trình sẽ chờ vô hạn
+    if (guess < 1 || guess > 2e9) exit(1);
 }
 
 int main(int argc, char *argv[]) {
     ifstream inp(argv[1]);
     int N, guesses = 0;
     long long guess;
-    inp &gt&gt N;
+    inp >> N;
 
-    while (guess != N && guesses &lt= 31) {
+    while (guess != N && guesses <= 31) {
         read(guess);
         if (guess == N) {
-            cout &lt&lt "HOLA" &lt&lt endl;
-        } else if (guess &gt N) {
-            cout &lt&lt "SMALLER" &lt&lt endl;
+            cout << \"HOLA\" << endl;
+        } else if (guess > N) {
+            cout << \"SMALLER\" << endl;
         } else {
-            cout &lt&lt "BIGGER" &lt&lt endl;
+            cout << \"BIGGER\" << endl;
         }
         guesses++;
     }
-    cerr << "Number of used guesses: " << guesses << endl;
-    if (guesses &lt= 31)
+    cerr << \"Number of used guesses: \" << guesses << endl;
+    if (guesses <= 31)
         return 0; // AC
     else {
-        cerr << "Used too many guesses" << endl;
+        cerr << \"Used too many guesses\" << endl;
         return 1; // WA
     }
 }
-        </pre>
+""" | highlight('cpp')}}
     </article>
-{% endblock body %}
+{% endblock %}

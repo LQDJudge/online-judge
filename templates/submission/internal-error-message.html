@@ -13,6 +13,6 @@
     {% if request.profile.id in submission.problem.editor_ids or perms.judge.edit_all_problem %}
         <hr style="float:left;width:30%"><br>
         <h4>{{ _('Error information') }}</h4>
-        <pre><code>{{ submission.error|highlight('pytb') }}</code></pre>
+        <code>{{ submission.error|highlight('pytb', linenos=False) }}</code>
     {% endif %}
 {% endif %}

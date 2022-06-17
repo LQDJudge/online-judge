@@ -6,5 +6,5 @@ register = template.Library()
 
 
 @register.filter
-def highlight(code, language):
-    return highlight_code(code, language)
+def highlight(code, language, linenos=True):
+    return highlight_code(code, language, linenos)
