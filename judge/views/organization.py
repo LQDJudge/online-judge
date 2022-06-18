@@ -238,9 +238,16 @@ class OrganizationList(TitleMixin, ListView, OrganizationBase):
     def get_context_data(self, **kwargs):
         context = super(OrganizationList, self).get_context_data(**kwargs)
         context["my_organizations"] = []
+        context["page_type"] = "organizations"
         if self.request.profile:
-            context["my_organizations"] = self.request.profile.organizations.all()
-
+            context["my_organizations"] = context["organizations"].filter(
+                id__in=self.request.profile.organizations.values("id")
+            )
+        other_organizations = context["organizations"].exclude(
+            id__in=context["my_organizations"]
+        )
+        context["open_organizations"] = other_organizations.filter(is_open=True)
+        context["private_organizations"] = other_organizations.filter(is_open=False)
         return context
 
 

@@ -6,12 +6,24 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0126_languagetemplate'),
+        ("judge", "0126_languagetemplate"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='submission',
-            options={'permissions': (('abort_any_submission', 'Abort any submission'), ('rejudge_submission', 'Rejudge the submission'), ('rejudge_submission_lot', 'Rejudge a lot of submissions'), ('spam_submission', 'Submit without limit'), ('view_all_submission', 'View all submission'), ('resubmit_other', "Resubmit others' submission"), ('view_public_submission', 'View public submissions')), 'verbose_name': 'submission', 'verbose_name_plural': 'submissions'},
+            name="submission",
+            options={
+                "permissions": (
+                    ("abort_any_submission", "Abort any submission"),
+                    ("rejudge_submission", "Rejudge the submission"),
+                    ("rejudge_submission_lot", "Rejudge a lot of submissions"),
+                    ("spam_submission", "Submit without limit"),
+                    ("view_all_submission", "View all submission"),
+                    ("resubmit_other", "Resubmit others' submission"),
+                    ("view_public_submission", "View public submissions"),
+                ),
+                "verbose_name": "submission",
+                "verbose_name_plural": "submissions",
+            },
         ),
     ]
