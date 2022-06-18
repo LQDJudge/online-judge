@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from judge.models.profile import Profile
 
 
-__all__ = ["Message"]
+__all__ = ["Message", "Room", "UserRoom", "Ignore"]
 
 
 class Room(models.Model):
@@ -57,11 +57,12 @@ class UserRoom(models.Model):
 
 
 class Ignore(models.Model):
-    user = models.ForeignKey(
+    user = models.OneToOneField(
         Profile,
         related_name="ignored_chat_users",
         verbose_name=_("user"),
         on_delete=CASCADE,
+        db_index=True,
     )
     ignored_users = models.ManyToManyField(Profile)
 
@@ -79,7 +80,7 @@ class Ignore(models.Model):
     @classmethod
     def get_ignored_users(self, user):
         try:
-            return self.objects.filter(user=user)[0].ignored_users.all()
+            return self.objects.get(user=user).ignored_users.all()
         except:
             return Profile.objects.none()
 
