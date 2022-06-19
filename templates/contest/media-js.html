@@ -56,7 +56,7 @@
         }
     }
 
-    function renew_filter() {
+    function renew_filter(excludeBox=null) {
         var checkboxes = [
             '#show-organizations-checkbox',
             '#show-fullnames-checkbox',
@@ -69,6 +69,7 @@
         ]
 
         for (var i of checkboxes) {
+            if (i === excludeBox) continue;
             var $box = $(i);
             if ($box.is(':checked')) {
                 $box.prop('checked', false);
@@ -79,6 +80,7 @@
 
         var to_update = false;
         for (var i of checkboxes2) {
+            if (i === excludeBox) continue;
             var $box = $(i);
             if ($box.is(':checked')) {
                 to_update = true;
@@ -103,7 +105,7 @@
 
         var is_virtual = [];
         $('.user-name').each(function() {
-            if($(this).children('sup').length) {
+            if($(this).children('sub').length) {
                 is_virtual.push(1);
             }
             else is_virtual.push(0);
@@ -123,6 +125,7 @@
             success: function(HTML) {
                 $('#users-table').html(HTML);
                 highlightFirstSolve();
+                renew_filter("#show-virtual-checkbox");
                 $('#loading-gif').hide();
                 if (!virtual && !friend) {
                     get_initial_rank();
@@ -171,10 +174,10 @@
         });
 
         $('#show-organizations-checkbox').click(function () {
-            $('.organization-column').toggle();
+            $('.organization').toggle();
         });
         $('#show-fullnames-checkbox').click(function () { 
-            $('.fullname-column').toggle();
+            $('.fullname').toggle();
         });
 
         {% if request.user.is_authenticated %}

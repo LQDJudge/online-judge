@@ -6,34 +6,30 @@
     {% if has_rating %}
         <th>{{ _('Rating') }}</th>
     {% endif %}
-    <th class="organization-column">{{ _('Organization') }}</th>
-    <th class="fullname-column" style="display: none;">{{ _('Full Name') }}</th>
 {% endblock %}
 
 {% block after_rank %}
     {% if has_rating %}
         <td>{% if user.participation_rating %}{{ rating_number(user.participation_rating) }}{% endif %}</td>
     {% endif %}
-    <td class="organization-column">
-        {% if user.organization %}
-            <span class="organization"><a href="{{ user.organization.get_absolute_url() }}">
-                {{- user.organization.short_name -}}
-            </a></span>
-        {% endif %}
-    </td>
+{% endblock %}
 
-    <td class="fullname-column" style="display: none;"> 
-        {% if user.user.first_name %}
-            <span class="fullname">
-                {{ user.user.first_name }}
-            </span>
-        {% endif %}
-    </td>
+{% block user_footer %}
+    {% if user.user.first_name %}
+        <div style="color: gray; font-weight: 600; display: none" class="fullname">
+            {{ user.user.first_name if user.user.first_name else ''}}
+        </div>
+    {% endif %}
+    {% if user.organization %}
+        <div class="organization" style="display: none"><a style="color: gray; font-weight: 600" href="{{ user.organization.get_absolute_url() }}">
+            {{- user.organization.short_name -}}
+        </a></div>
+    {% endif %}
 {% endblock %}
 
 {% block user_data %}
     {% if user.participation.virtual %}
-        <sup style="color:grey">[{{user.participation.virtual}}]</sup>
+        <sub style="color:grey">[{{user.participation.virtual}}]</sub>
     {% endif %}
     {% if can_edit %}
         <span class="contest-participation-operation">
