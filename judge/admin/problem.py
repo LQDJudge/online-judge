@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.db import transaction
 from django.db.models import Q, Avg, Count
 from django.db.models.aggregates import StdDev
-from django.forms import ModelForm
+from django.forms import ModelForm, TextInput
 from django.urls import reverse_lazy
 from django.utils.html import format_html
 from django.utils.translation import gettext, gettext_lazy as _, ungettext
@@ -70,6 +70,7 @@ class ProblemForm(ModelForm):
             ),
             "types": AdminSelect2MultipleWidget,
             "group": AdminSelect2Widget,
+            "memory_limit": TextInput(attrs={'size':'20'}),
         }
         if HeavyPreviewAdminPageDownWidget is not None:
             widgets["description"] = HeavyPreviewAdminPageDownWidget(

@@ -215,7 +215,7 @@ class Problem(models.Model):
         verbose_name=_("memory limit"),
         help_text=_(
             "The memory limit for this problem, in kilobytes "
-            "(e.g. 64mb = 65536 kilobytes)."
+            "(e.g. 256mb = 262144 kilobytes)."
         ),
         validators=[
             MinValueValidator(settings.DMOJ_PROBLEM_MIN_MEMORY_LIMIT),
@@ -425,7 +425,7 @@ class Problem(models.Model):
         )
 
     def __str__(self):
-        return self.name
+        return "%s (%s)" % (self.name, self.code)
 
     def get_absolute_url(self):
         return reverse("problem_detail", args=(self.code,))
