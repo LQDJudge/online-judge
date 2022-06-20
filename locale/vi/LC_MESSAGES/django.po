@@ -1419,7 +1419,7 @@ msgstr "Dạng bài, giống như trên trang bài tập"
 
 #: judge/models/problem.py:201
 msgid "The group of problem, shown under Category in the problem list."
-msgstr "Nhóm bài, hiện ở mục "Nhóm bài" trong danh sách bài tập"
+msgstr "Nhóm bài, hiện ở mục Nhóm bài trong danh sách bài tập"
 
 #: judge/models/problem.py:206
 msgid ""
