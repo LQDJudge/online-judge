@@ -96,6 +96,21 @@ class ProblemDataCompiler(object):
                     },
                 }
 
+            if case.checker == "testlib":
+                custom_checker_path = split_path_first(case.custom_validator.name)
+                if len(custom_checker_path) != 2:
+                    raise ProblemDataError(
+                        _("How did you corrupt the custom checker path?")
+                    )
+                return {
+                    "name": "bridged",
+                    "args": {
+                        "files": custom_checker_path[1],
+                        "lang": "CPP14",
+                        "type": "testlib",
+                    },
+                }
+
             if case.checker_args:
                 return {
                     "name": case.checker,
@@ -215,8 +230,11 @@ class ProblemDataCompiler(object):
             init["output_prefix_length"] = self.data.output_prefix
         if self.data.checker:
             if self.data.checker == "interact":
+                interactor_path = split_path_first(self.data.interactive_judge.name)
+                if len(interactor_path) != 2:
+                    raise ProblemDataError(_("How did you corrupt the interactor path?"))
                 init["interactive"] = {
-                    "files": split_path_first(self.data.interactive_judge.name)[1],
+                    "files": interactor_path[1],
                     "feedback": True,
                     "type": "lqdoj",
                 }

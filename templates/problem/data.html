@@ -46,7 +46,6 @@
             update_select2();
 
             function autofill_if_exists($select, file) {
-                console.log(1);
                 if (!$select.val() && ~window.valid_files.indexOf(file))
                     $select.val(file).trigger('change');
             }
@@ -154,7 +153,7 @@
 
                 $checker.change(function () {
                     $tr_checker.toggle($checker.val() == 'custom').change();
-                    $tr_validator.toggle($checker.val() == 'customval').change();
+                    $tr_validator.toggle($checker.val() == 'customval' || $checker.val() == 'testlib').change();
                     $tr_interactive.toggle($checker.val() == 'interact').change();
 
                     $sample.toggle(['custom', 'customval', 'interact'].includes($checker.val())).change();

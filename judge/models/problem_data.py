@@ -40,6 +40,7 @@ CHECKERS = (
     ("custom", _("Custom checker (PY)")),
     ("customval", _("Custom validator (CPP)")),
     ("interact", _("Interactive")),
+    ("testlib", _("Testlib")),
 )
 
 
