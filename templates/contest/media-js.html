@@ -32,7 +32,7 @@
 
                 // get information
                 let problem = linkElements[linkElements.length - 2];
-                let score = parseFloat(scoreAndTime[0]);
+                let score = parseFloat(scoreAndTime[0].replace(',', '.'));
                 let time = scoreAndTime[1];
 
                 if (time) {
