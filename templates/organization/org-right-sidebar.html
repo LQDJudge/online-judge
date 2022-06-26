@@ -70,5 +70,7 @@
             </div>
         </div>
     {% endif %}
-    {% include 'top-users.html' %}
+    {% if is_member or can_edit or organization.is_open %}
+        {% include 'top-users.html' %}
+    {% endif %}
 </div>

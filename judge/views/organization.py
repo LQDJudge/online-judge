@@ -306,6 +306,17 @@ class OrganizationUsers(QueryStringSortMixin, OrganizationDetailView):
     default_desc = all_sorts
     default_sort = "-performance_points"
 
+    def dispatch(self, request, *args, **kwargs):
+        res = super(OrganizationUsers, self).dispatch(request, *args, **kwargs)
+        if self.can_access(self.organization) or self.organization.is_open:
+            return res
+        return generic_message(
+            request,
+            _("Can't access organization"),
+            _("You are not allowed to access this organization."),
+            status=403,
+        )
+
     def get_context_data(self, **kwargs):
         context = super(OrganizationUsers, self).get_context_data(**kwargs)
         context["title"] = _("%s Members") % self.object.name

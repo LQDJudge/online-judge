@@ -70,7 +70,7 @@ class ProblemForm(ModelForm):
             ),
             "types": AdminSelect2MultipleWidget,
             "group": AdminSelect2Widget,
-            "memory_limit": TextInput(attrs={'size':'20'}),
+            "memory_limit": TextInput(attrs={"size": "20"}),
         }
         if HeavyPreviewAdminPageDownWidget is not None:
             widgets["description"] = HeavyPreviewAdminPageDownWidget(

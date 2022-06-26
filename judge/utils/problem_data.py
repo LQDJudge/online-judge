@@ -232,7 +232,9 @@ class ProblemDataCompiler(object):
             if self.data.checker == "interact":
                 interactor_path = split_path_first(self.data.interactive_judge.name)
                 if len(interactor_path) != 2:
-                    raise ProblemDataError(_("How did you corrupt the interactor path?"))
+                    raise ProblemDataError(
+                        _("How did you corrupt the interactor path?")
+                    )
                 init["interactive"] = {
                     "files": interactor_path[1],
                     "feedback": True,
