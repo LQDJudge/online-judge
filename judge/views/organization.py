@@ -51,6 +51,7 @@ from judge.models import (
     Problem,
     Profile,
     Contest,
+    Notification,
 )
 from judge import event_poster as event
 from judge.utils.ranker import ranker
@@ -801,6 +802,24 @@ class AddOrganizationBlog(
 
             revisions.set_comment(_("Added from site"))
             revisions.set_user(self.request.user)
+
+            link = reverse(
+                "edit_organization_blog",
+                args=[self.organization.id, self.organization.slug, self.object.id],
+            )
+            html = (
+                f'<a href="{link}">{self.object.title} - {self.organization.name}</a>'
+            )
+            for user in self.organization.admins.all():
+                if user.id == self.request.profile.id:
+                    continue
+                notification = Notification(
+                    owner=user,
+                    author=self.request.profile,
+                    category="Add blog",
+                    html_link=html,
+                )
+                notification.save()
             return res
 
 
@@ -860,6 +879,24 @@ class EditOrganizationBlog(
             res = super(EditOrganizationBlog, self).form_valid(form)
             revisions.set_comment(_("Edited from site"))
             revisions.set_user(self.request.user)
+
+            link = reverse(
+                "edit_organization_blog",
+                args=[self.organization.id, self.organization.slug, self.object.id],
+            )
+            html = (
+                f'<a href="{link}">{self.object.title} - {self.organization.name}</a>'
+            )
+            for user in self.organization.admins.all():
+                if user.id == self.request.profile.id:
+                    continue
+                notification = Notification(
+                    owner=user,
+                    author=self.request.profile,
+                    category="Edit blog",
+                    html_link=html,
+                )
+                notification.save()
             return res
 
 
