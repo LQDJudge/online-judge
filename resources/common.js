@@ -334,13 +334,6 @@ window.register_contest_notification = function(url) {
                 console.log("Fail to update clarification");
             })
             .done(function(data) {
-                try {
-                    JSON.parse(data);
-                } 
-                catch (e) {
-                    return;
-                }
-                
                 for (i of data) {
                     window.notify_clarification(i);
                 }
