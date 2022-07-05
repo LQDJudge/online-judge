@@ -226,6 +226,11 @@
         border-radius: 7px;
         display: flex;
     }
+    .blog-box {
+        width: 95%;
+        padding-left: 0;
+        padding-right: 0;
+    }
 }
 @media (min-width: 800px) {
     .left-sidebar-item {
