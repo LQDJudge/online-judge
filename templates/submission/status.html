@@ -55,6 +55,7 @@
 {% endblock %}
 
 {% block body %}
+    <div style="clear: both"></div>
     <br>
     <div><a href="{{ url('submission_source', submission.id) }}">{{ _('View source') }}</a></div>
     {% if request.user == submission.user.user or perms.judge.resubmit_other %}
