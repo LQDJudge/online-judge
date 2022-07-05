@@ -30,16 +30,24 @@
             ul.problem-list {
                 padding: 0 !important;
             }
-            #content {
-                width: 99%;
-                margin-left: 0;
-            }
             .volunteer-types {
                 width: 100%;
             }
             .point-input {
                 height: 2em;
                 padding-top: 4px;
+            }
+            @media(min-width: 800px) {
+                #content {
+                    width: 99%;
+                    margin-left: 0;
+                }
+            }
+            @media(max-width: 799px) {
+                #content {
+                    width: 100%;
+                    margin-left: 0;
+                }
             }
         </style>
     {% else %}

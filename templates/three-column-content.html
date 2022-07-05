@@ -4,9 +4,17 @@
 
 {% block media %}
     <style>
-        #content {
-            width: 98%;
-            margin-left: 0;
+        @media(min-width: 800px) {
+            #content {
+                width: 98%;
+                margin-left: 0;
+            }
+        }
+        @media(max-width: 799px) {
+            #content {
+                width: 100%;
+                margin-left: 0;
+            }
         }
     </style>
     {% block three_col_media %}{% endblock %}
