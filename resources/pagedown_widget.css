@@ -59,14 +59,17 @@
 
 .wmd-spacer1 {
     left: 50px;
+    display: None;
 }
 
 .wmd-spacer2 {
     left: 175px;
+    display: None;
 }
 
 .wmd-spacer3 {
     left: 300px;
+    display: None;
 }
 
 .wmd-prompt-background {

@@ -1,14 +1,35 @@
-<div id="{{ id|safe }}-wmd-wrapper" class="wmd-wrapper">
+<div class="wmd-wrapper {% if image_upload_enabled %}image-upload-enabled{% endif %}">
     <div class="wmd-panel">
-        <div id="{{ id|safe }}_wmd_button_bar"></div>
-        <textarea{{ attrs|safe }}>{{ body }}</textarea>
+        <div id="wmd-button-bar-{{ postfix }}"></div>
+        <textarea id="wmd-input-{{ postfix }}" {{ attrs|safe }}>{{ body }}</textarea>
     </div>
-
     {% if show_preview %}
-        <div id="{{ id|safe }}-preview" data-preview-url="{{ preview_url }}" data-textarea-id="{{ id }}"
+        <div id="{{ postfix|safe }}-preview" data-preview-url="{{ preview_url }}" data-textarea-id="wmd-input-{{ postfix }}"
              data-timeout="{{ preview_timeout or '' }}" class="wmd-panel wmd-preview dmmd-preview {{ extra_classes }}">
             <div class="dmmd-preview-update"><i class="fa fa-refresh"></i> Update Preview</div>
             <div class="dmmd-preview-content content-description"></div>
+        </div>
+    {% endif %}
+    {% if image_upload_enabled %}
+        <div class="pagedown-image-upload">
+            <h2>Insert Image</h2>
+            <div class="form-row">
+                <div>
+                    <label class="label">From the web</label>
+                    <input class="url-input" type="text" placeholder="http://" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div>
+                    <label class="label">From your computer</label>
+                    <input class="file-input" type="file" name="image" id="file" data-action="{{ url('pagedown-image-upload') }}" accept="image/*"/>
+                </div>
+            </div>
+            <div class="submit-row">
+                <div class="submit-loading"></div>
+                <input class="submit-input show" type="submit" value="Save" name="_addanother">
+                <p class="deletelink-box"><a href="#" class="close-image-upload deletelink">Cancel</a></p>
+            </div>
         </div>
     {% endif %}
 </div>

@@ -1,7 +1,7 @@
 Django>=2.2,<3
 django_compressor
 django-mptt
-django-pagedown<2
+django-pagedown
 django-registration-redux
 django-reversion
 django-reversion-compare

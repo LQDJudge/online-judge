@@ -12,6 +12,7 @@ from django.utils.functional import lazystr
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import RedirectView
 from django.contrib.auth.decorators import login_required
+from django.conf.urls.static import static as url_static
 
 
 from judge.feed import (
@@ -201,6 +202,7 @@ def paged_list_view(view, name, **kwargs):
 
 
 urlpatterns = [
+    url("", include("pagedown.urls")),
     url(
         r"^$",
         blog.PostList.as_view(template_name="home.html", title=_("Home")),
@@ -1086,7 +1088,7 @@ urlpatterns = [
             ]
         ),
     ),
-]
+] + url_static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 favicon_paths = [
     "apple-touch-icon-180x180.png",

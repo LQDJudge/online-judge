@@ -3,6 +3,7 @@ from django.forms.utils import flatatt
 from django.template.loader import get_template
 from django.utils.encoding import force_text
 from django.utils.html import conditional_escape
+from django.conf import settings
 
 from judge.widgets.mixins import CompressorWidgetMixin
 
@@ -34,8 +35,14 @@ else:
         compress_js = True
 
         def __init__(self, *args, **kwargs):
-            kwargs.setdefault("css", ("pagedown_widget.css",))
             super(PagedownWidget, self).__init__(*args, **kwargs)
+
+        class Media:
+            css = {
+                "all": [
+                    "pagedown_widget.css",
+                ]
+            }
 
     class AdminPagedownWidget(PagedownWidget, admin_widgets.AdminTextareaWidget):
         class Media:
@@ -60,7 +67,8 @@ else:
 
     class HeavyPreviewPageDownWidget(PagedownWidget):
         def __init__(self, *args, **kwargs):
-            kwargs.setdefault("template", "pagedown.html")
+            self.template = "pagedown.html"
+            self.id = kwargs.pop("id", None)
             self.preview_url = kwargs.pop("preview")
             self.preview_timeout = kwargs.pop("preview_timeout", None)
             self.hide_preview_button = kwargs.pop("hide_preview_button", False)
@@ -73,16 +81,21 @@ else:
             if "class" not in final_attrs:
                 final_attrs["class"] = ""
             final_attrs["class"] += " wmd-input"
+            if self.id:
+                final_attrs["id"] = self.id
             return get_template(self.template).render(
                 self.get_template_context(final_attrs, value)
             )
 
         def get_template_context(self, attrs, value):
             return {
+                "image_upload_enabled": getattr(
+                    settings, "PAGEDOWN_IMAGE_UPLOAD_ENABLED", False
+                ),
                 "attrs": flatatt(attrs),
                 "body": conditional_escape(force_text(value)),
-                "id": attrs["id"],
-                "show_preview": self.show_preview,
+                "postfix": attrs["id"],
+                "show_preview": True,
                 "preview_url": self.preview_url,
                 "preview_timeout": self.preview_timeout,
                 "extra_classes": "dmmd-no-button" if self.hide_preview_button else None,
