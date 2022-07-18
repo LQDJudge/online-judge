@@ -604,6 +604,9 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         context["full_text"] = 0 if self.in_contest else int(self.full_text)
         context["show_editorial"] = 0 if self.in_contest else int(self.show_editorial)
         context["have_editorial"] = 0 if self.in_contest else int(self.have_editorial)
+        context["show_solved_only"] = (
+            0 if self.in_contest else int(self.show_solved_only)
+        )
 
         if self.request.profile:
             context["organizations"] = self.request.profile.organizations.all()
@@ -704,6 +707,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         self.full_text = self.GET_with_session(request, "full_text")
         self.show_editorial = self.GET_with_session(request, "show_editorial")
         self.have_editorial = self.GET_with_session(request, "have_editorial")
+        self.show_solved_only = self.GET_with_session(request, "show_solved_only")
 
         self.search_query = None
         self.category = None
@@ -751,6 +755,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             "full_text",
             "show_editorial",
             "have_editorial",
+            "show_solved_only",
         )
         for key in to_update:
             if key in request.GET:
@@ -810,6 +815,9 @@ class ProblemFeed(ProblemList):
         return res
 
     def get_queryset(self):
+        if self.feed_type == "volunteer":
+            self.hide_solved = 0
+            self.show_types = 1
         queryset = super(ProblemFeed, self).get_queryset()
 
         if self.have_editorial:
@@ -823,6 +831,12 @@ class ProblemFeed(ProblemList):
             voted_problems = user.volunteer_problem_votes.values_list(
                 "problem", flat=True
             )
+            if self.show_solved_only:
+                queryset = queryset.filter(
+                    id__in=Submission.objects.filter(
+                        user=self.profile, points=F("problem__points")
+                    ).values_list("problem__id", flat=True)
+                )
             return queryset.exclude(id__in=voted_problems).order_by("?")
         if not settings.ML_OUTPUT_PATH or not user:
             return queryset.order_by("?")
@@ -886,8 +900,6 @@ class ProblemFeed(ProblemList):
         context["has_show_editorial_option"] = False
         context["has_have_editorial_option"] = False
 
-        if self.feed_type == "volunteer":
-            context["problem_types"] = ProblemType.objects.all()
         return context
 
     def get(self, request, *args, **kwargs):

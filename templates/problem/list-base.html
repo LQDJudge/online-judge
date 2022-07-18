@@ -121,7 +121,7 @@
 
                 $('#go').click(clean_submit);
 
-                $('input#full_text, input#hide_solved, input#show_types, input#show_editorial, input#have_editorial').click(function () {
+                $('input#full_text, input#hide_solved, input#show_types, input#show_editorial, input#have_editorial, input#show_solved_only').click(function () {
                     prep_form();
                     ($('<form>').attr('action', window.location.pathname + '?' + form_serialize())
                         .append($('<input>').attr('type', 'hidden').attr('name', 'csrfmiddlewaretoken')
