@@ -155,6 +155,10 @@
                     });
                 }
                 {% if feed_type=='volunteer' and request.user.has_perm('judge.suggest_problem_changes') %}
+                    $(".view-statement-src").on('click', function(e) {
+                        e.preventDefault();
+                        $(this).siblings('.statement-src').toggle();
+                    });
                     $(".edit-btn").on('click', function() {
                         var pid = $(this).attr('pid');
                         $('#volunteer-types-' + pid).css({'width': '100%'});

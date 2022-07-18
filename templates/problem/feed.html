@@ -52,6 +52,8 @@
                     {{ problem.description|markdown("problem", MATH_ENGINE)|reference|str|safe }}
                 {% endcache %}
                 {% if feed_type=='volunteer' and request.user.has_perm('judge.suggest_problem_changes') %}
+                    <a href="#" class="view-statement-src">{{ _('View source') }}</a>
+                    <pre class="statement-src" style="display: none">{{ problem.description|str }}</pre>
                     <hr>
                     <center><h3>{{_('Volunteer form')}}</h3></center>
                     <br>
