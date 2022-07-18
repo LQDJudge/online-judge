@@ -885,6 +885,9 @@ class ProblemFeed(ProblemList):
         context["feed_type"] = self.feed_type
         context["has_show_editorial_option"] = False
         context["has_have_editorial_option"] = False
+
+        if self.feed_type == "volunteer":
+            context["problem_types"] = ProblemType.objects.all()
         return context
 
     def get(self, request, *args, **kwargs):

@@ -14,11 +14,13 @@
                     <label for="hide_solved">{{ _('Hide solved problems') }}</label>
                 </div>
             {% endif %}
-            <div>
-                <input id="show_types" type="checkbox" name="show_types" value="1"
-                        {% if show_types %} checked{% endif %}>
-                <label for="show_types">{{ _('Show problem types') }}</label>
-            </div>
+            {% if feed_type != 'volunteer' %}
+                <div>
+                    <input id="show_types" type="checkbox" name="show_types" value="1"
+                            {% if show_types %} checked{% endif %}>
+                    <label for="show_types">{{ _('Show problem types') }}</label>
+                </div>
+            {% endif %}
             {% if has_show_editorial_option %}
                 <div>
                     <input id="show_editorial" type="checkbox" name="show_editorial" value="1"
