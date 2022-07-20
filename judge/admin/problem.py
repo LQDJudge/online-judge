@@ -346,6 +346,13 @@ class ProblemAdmin(CompareVersionAdmin):
         ):
             self._rescore(request, obj.id)
 
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        # Only rescored if we did not already do so in `save_model`
+        obj = form.instance
+        obj.curators.add(request.profile)
+        obj.save()
+
     def construct_change_message(self, request, form, *args, **kwargs):
         if form.cleaned_data.get("change_message"):
             return form.cleaned_data["change_message"]
