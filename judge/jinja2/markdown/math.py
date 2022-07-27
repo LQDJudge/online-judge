@@ -11,7 +11,7 @@ mistune._pre_tags.append("latex")
 
 class MathInlineGrammar(mistune.InlineGrammar):
     block_math = re.compile(r"^\$\$(.*?)\$\$|^\\\[(.*?)\\\]", re.DOTALL)
-    math = re.compile(r"^~(.*?)~|^\\\((.*?)\\\)", re.DOTALL)
+    math = re.compile(r"^~(.*?)~|\$(.*?)\$|^\\\((.*?)\\\)", re.DOTALL)
     text = re.compile(r"^[\s\S]+?(?=[\\<!\[_*`~$]|\\[\[(]|https?://| {2,}\n|$)")
 
 
