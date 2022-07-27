@@ -39,6 +39,9 @@ class InternalProblem(ListView):
         context = super(InternalProblem, self).get_context_data(**kwargs)
         context["page_type"] = "problem"
         context["title"] = self.title
+        context["page_prefix"] = self.request.path + "?page="
+        context["first_page_href"] = self.request.path
+        
         return context
 
     def get(self, request, *args, **kwargs):
