@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-07-18 12:59+0700\n"
+"POT-Creation-Date: 2022-07-29 15:51+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -141,7 +141,7 @@ msgstr "Trang liên kết"
 msgid "Included contests"
 msgstr ""
 
-#: judge/admin/contest.py:74 judge/admin/volunteer.py:33
+#: judge/admin/contest.py:74 judge/admin/volunteer.py:54
 #: templates/contest/clarification.html:42 templates/contest/contest.html:83
 #: templates/contest/moss.html:43 templates/internal/base.html:29
 #: templates/internal/base.html:37 templates/problem/list.html:15
@@ -264,7 +264,7 @@ msgstr "Mạng Xã Hội"
 msgid "Taxonomy"
 msgstr ""
 
-#: judge/admin/problem.py:205 judge/admin/problem.py:394
+#: judge/admin/problem.py:205 judge/admin/problem.py:401
 #: templates/contest/contest.html:84 templates/problem/data.html:475
 #: templates/problem/list.html:20 templates/problem/list.html:44
 #: templates/user/base-users-table.html:10 templates/user/user-about.html:36
@@ -309,28 +309,28 @@ msgstr[0] "%d bài tập đã được đánh dấu riêng tư."
 msgid "Mark problems as private"
 msgstr "Đánh dấu các bài tập là riêng tư"
 
-#: judge/admin/problem.py:388 judge/admin/submission.py:316
+#: judge/admin/problem.py:395 judge/admin/submission.py:316
 #: templates/problem/list.html:16 templates/problem/list.html:33
 msgid "Problem code"
 msgstr "Mã bài"
 
-#: judge/admin/problem.py:400 judge/admin/submission.py:322
+#: judge/admin/problem.py:407 judge/admin/submission.py:322
 msgid "Problem name"
 msgstr "Tên bài"
 
-#: judge/admin/problem.py:406
+#: judge/admin/problem.py:413
 #, fuzzy
 #| msgid "contest rating"
 msgid "Voter rating"
 msgstr "rating kỳ thi"
 
-#: judge/admin/problem.py:412
+#: judge/admin/problem.py:419
 #, fuzzy
 #| msgid "Total points"
 msgid "Voter point"
 msgstr "Tổng điểm"
 
-#: judge/admin/problem.py:418
+#: judge/admin/problem.py:425
 msgid "Vote"
 msgstr ""
 
@@ -470,6 +470,11 @@ msgstr "Các bài tập trong nhóm này"
 #: judge/admin/taxon.py:40
 msgid "These problems are included in this type of problems"
 msgstr "Các bài tập dạng này"
+
+#: judge/admin/volunteer.py:60 templates/internal/base.html:78
+#: templates/problem/list.html:18 templates/problem/list.html:40
+msgid "Types"
+msgstr "Dạng"
 
 #: judge/apps.py:8
 msgid "Online Judge"
@@ -3438,7 +3443,7 @@ msgstr "Xin chào, <b>%(username)s</b>."
 #: templates/contest/list.html:130 templates/contest/ranking-table.html:49
 #: templates/internal/base.html:59
 #: templates/organization/org-left-sidebar.html:12
-#: templates/problem/left-sidebar.html:5 templates/problem/list-base.html:257
+#: templates/problem/left-sidebar.html:5 templates/problem/list-base.html:261
 #: templates/problem/problem-list-tabs.html:6
 #: templates/submission/info-base.html:12 templates/submission/list.html:386
 #: templates/submission/submission-list-tabs.html:15
@@ -3488,7 +3493,7 @@ msgstr ""
 #: templates/comments/list.html:83 templates/contest/contest-tabs.html:23
 #: templates/contest/tag-title.html:9 templates/flatpages/admin_link.html:3
 #: templates/license.html:10 templates/problem/editorial.html:14
-#: templates/problem/feed.html:58
+#: templates/problem/feed.html:65
 msgid "Edit"
 msgstr "Chỉnh sửa"
 
@@ -3758,7 +3763,7 @@ msgid "Next"
 msgstr "Tiếp"
 
 #: templates/contest/contest-list-tabs.html:21 templates/contest/list.html:128
-#: templates/problem/left-sidebar.html:4 templates/problem/list-base.html:256
+#: templates/problem/left-sidebar.html:4 templates/problem/list-base.html:260
 #: templates/problem/problem-list-tabs.html:5
 msgid "List"
 msgstr "Danh sách"
@@ -4148,12 +4153,7 @@ msgstr ""
 msgid "Thinking"
 msgstr "Bảng xếp hạng"
 
-#: templates/internal/base.html:78 templates/problem/list.html:18
-#: templates/problem/list.html:40
-msgid "Types"
-msgstr "Dạng"
-
-#: templates/internal/base.html:82 templates/problem/feed.html:104
+#: templates/internal/base.html:82 templates/problem/feed.html:111
 #, fuzzy
 #| msgid "Feed"
 msgid "Feedback"
@@ -4486,35 +4486,43 @@ msgstr "MỚI NHẤT"
 msgid "VOLUNTEER"
 msgstr "TÌNH NGUYỆN"
 
-#: templates/problem/feed.html:56
+#: templates/problem/feed.html:22
+msgid "View your votes"
+msgstr "Xem các đơn đã điền của bạn"
+
+#: templates/problem/feed.html:60 templates/submission/status.html:60
+msgid "View source"
+msgstr "Xem mã nguồn"
+
+#: templates/problem/feed.html:63
 msgid "Volunteer form"
 msgstr "Phiếu tình nguyện"
 
-#: templates/problem/feed.html:60
+#: templates/problem/feed.html:67
 msgid "Submit"
 msgstr "Gửi"
 
-#: templates/problem/feed.html:67
+#: templates/problem/feed.html:74
 msgid "Value"
 msgstr "Giá trị"
 
-#: templates/problem/feed.html:74
+#: templates/problem/feed.html:81
 msgid "Knowledge point"
 msgstr "Độ khó kiến thức"
 
-#: templates/problem/feed.html:82
+#: templates/problem/feed.html:89
 msgid "Thinking point"
 msgstr "Độ khó nghĩ"
 
-#: templates/problem/feed.html:90 templates/problem/search-form.html:84
+#: templates/problem/feed.html:97 templates/problem/search-form.html:84
 msgid "Problem types"
 msgstr "Dạng bài"
 
-#: templates/problem/feed.html:107
+#: templates/problem/feed.html:114
 msgid "Any additional note here"
 msgstr "Lưu ý thêm cho admin"
 
-#: templates/problem/left-sidebar.html:3 templates/problem/list-base.html:255
+#: templates/problem/left-sidebar.html:3 templates/problem/list-base.html:259
 msgid "Feed"
 msgstr "Gợi ý"
 
@@ -4522,15 +4530,15 @@ msgstr "Gợi ý"
 msgid "Filter by type..."
 msgstr "Lọc theo dạng..."
 
-#: templates/problem/list-base.html:161 templates/problem/list-base.html:187
+#: templates/problem/list-base.html:165 templates/problem/list-base.html:191
 msgid "Add types..."
 msgstr "Thêm dạng"
 
-#: templates/problem/list-base.html:203
+#: templates/problem/list-base.html:207
 msgid "Fail to vote!"
 msgstr "Hệ thống lỗi!"
 
-#: templates/problem/list-base.html:206
+#: templates/problem/list-base.html:210
 msgid "Successful vote! Thank you!"
 msgstr "Đã gửi thành công! Cảm ơn bạn!"
 
@@ -5254,10 +5262,6 @@ msgstr "AC pretest không đồng nghĩa AC cả bài nhé :))"
 #: templates/submission/status-testcases.html:178
 msgid "Submission aborted!"
 msgstr "Đã hủy chấm bài nộp!"
-
-#: templates/submission/status.html:60
-msgid "View source"
-msgstr "Xem mã nguồn"
 
 #: templates/submission/status.html:89
 msgid "Abort"

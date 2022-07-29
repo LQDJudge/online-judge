@@ -41,7 +41,7 @@ class InternalProblem(ListView):
         context["title"] = self.title
         context["page_prefix"] = self.request.path + "?page="
         context["first_page_href"] = self.request.path
-        
+
         return context
 
     def get(self, request, *args, **kwargs):

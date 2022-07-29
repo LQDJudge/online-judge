@@ -17,6 +17,11 @@
             </a>
         {% endif %}
     </div>
+    {% if request.user.has_perm('judge.suggest_problem_changes') and feed_type == 'volunteer' %}
+        <ul style="margin-bottom: 1em; margin-left: auto">
+            <li><a href="{{url('admin:judge_volunteerproblemvote_changelist')}}">{{_('View your votes')}}</a></li>
+        </ul>
+    {% endif %}
     {% for problem in problems %}
         <div class="blog-box">
             <h3 class="problem-feed-name">
