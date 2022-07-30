@@ -155,6 +155,7 @@ def markdown(value, style, math_engine=None, lazy_load=False):
         inline=AwesomeInlineLexer,
         parse_block_html=1,
         parse_inline_html=1,
+        hard_wrap=True,
     )
     result = markdown(value)
     if post_processors:

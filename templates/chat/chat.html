@@ -266,7 +266,7 @@ let META_HEADER = [
         {% if last_msg and not request.profile.mute %}
         if ($("#chat-input").val().trim()) {
             var body = $('#chat-input').val().trim();
-            body = body.split('\n').join('\n\n');
+            // body = body.split('\n').join('\n\n');
             
             var message = {
                 body: body,
