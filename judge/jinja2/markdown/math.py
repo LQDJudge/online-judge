@@ -65,5 +65,5 @@ class MathRenderer(mistune.Renderer):
 
     def math(self, math):
         if self.mathoid is None or not math:
-            return r"$%s$" % mistune.escape(str(math))
+            return r"~%s~" % mistune.escape(str(math))
         return self.mathoid.inline_math(math)

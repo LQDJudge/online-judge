@@ -20,14 +20,13 @@ logger = logging.getLogger("judge.html")
 
 NOFOLLOW_WHITELIST = settings.NOFOLLOW_EXCLUDED
 
+
 class CodeSafeInlineGrammar(mistune.InlineGrammar):
     double_emphasis = re.compile(r"^\*{2}([\s\S]+?)()\*{2}(?!\*)")  # **word**
     emphasis = re.compile(r"^\*((?:\*\*|[^\*])+?)()\*(?!\*)")  # *word*
 
 
-class AwesomeInlineGrammar(
-    MathInlineGrammar, CodeSafeInlineGrammar
-):
+class AwesomeInlineGrammar(MathInlineGrammar, CodeSafeInlineGrammar):
     pass
 
 
@@ -126,15 +125,18 @@ class AwesomeRenderer(MathRenderer, mistune.Renderer):
 def create_spoiler(value, style):
     respoiler = re.compile(r"(^\|\|(.+)\s+([\s\S]+?)\s*\|\|)", re.MULTILINE)
     matches = re.findall(respoiler, value)
-    html = "<details><summary style=\"color: brown\">" \
-         + "<span class=\"spoiler-summary\">{summary}</span>" \
-         + "</summary>{detail}</details>"
+    html = (
+        '<details><summary style="color: brown">'
+        + '<span class="spoiler-summary">{summary}</span>'
+        + "</summary>{detail}</details>"
+    )
 
     for entire, summary, detail in matches:
         detail = markdown(detail, style)
         new_html = html.format(summary=summary, detail=detail)
         value = value.replace(entire, new_html)
     return value
+
 
 @registry.filter
 def markdown(value, style, math_engine=None, lazy_load=False, hard_wrap=False):
