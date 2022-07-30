@@ -190,7 +190,7 @@ let META_HEADER = [
     }
 
     function check_new_message(message, tmp_id, room) {
-        if (room == "{{room}}") {
+        if (room == room_id) {
             $.get({
                 url: "{{ url('chat_message_ajax') }}",
                 data: {

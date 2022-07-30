@@ -11,8 +11,8 @@ mistune._pre_tags.append("latex")
 
 class MathInlineGrammar(mistune.InlineGrammar):
     block_math = re.compile(r"^\$\$(.*?)\$\$|^\\\[(.*?)\\\]", re.DOTALL)
-    math = re.compile(r"^~(.*?)~|\$(.*?)\$|^\\\((.*?)\\\)", re.DOTALL)
-    text = re.compile(r"^[\s\S]+?(?=[\\<!\[_*`~$]|\\[\[(]|https?://| {2,}\n|$)")
+    math = re.compile(r"^~(.*?)~|^\$(.*?)\$|^\\\((.*?)\\\)", re.DOTALL)
+    text = re.compile(r"^[\s\S]+?(?=[\\<!\[_*`$]|\\[\[(]|https?://| {2,}\n|$)")
 
 
 class MathInlineLexer(mistune.InlineLexer):
@@ -31,7 +31,7 @@ class MathInlineLexer(mistune.InlineLexer):
         return self.renderer.block_math(m.group(1) or m.group(2))
 
     def output_math(self, m):
-        return self.renderer.math(m.group(1) or m.group(2))
+        return self.renderer.math(m.group(1) or m.group(2) or m.group(3))
 
     def output_inline_html(self, m):
         tag = m.group(1)
@@ -60,10 +60,10 @@ class MathRenderer(mistune.Renderer):
 
     def block_math(self, math):
         if self.mathoid is None or not math:
-            return r"\[%s\]" % mistune.escape(str(math))
+            return r"$$%s$$" % mistune.escape(str(math))
         return self.mathoid.display_math(math)
 
     def math(self, math):
         if self.mathoid is None or not math:
-            return r"\(%s\)" % mistune.escape(str(math))
+            return r"$%s$" % mistune.escape(str(math))
         return self.mathoid.inline_math(math)

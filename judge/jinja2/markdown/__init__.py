@@ -12,11 +12,6 @@ from lxml.etree import ParserError, XMLSyntaxError
 from judge.highlight_code import highlight_code
 from judge.jinja2.markdown.lazy_load import lazy_load as lazy_load_processor
 from judge.jinja2.markdown.math import MathInlineGrammar, MathInlineLexer, MathRenderer
-from judge.jinja2.markdown.spoiler import (
-    SpoilerInlineGrammar,
-    SpoilerInlineLexer,
-    SpoilerRenderer,
-)
 from judge.utils.camo import client as camo_client
 from judge.utils.texoid import TEXOID_ENABLED, TexoidRenderer
 from .. import registry
@@ -25,23 +20,22 @@ logger = logging.getLogger("judge.html")
 
 NOFOLLOW_WHITELIST = settings.NOFOLLOW_EXCLUDED
 
-
 class CodeSafeInlineGrammar(mistune.InlineGrammar):
     double_emphasis = re.compile(r"^\*{2}([\s\S]+?)()\*{2}(?!\*)")  # **word**
     emphasis = re.compile(r"^\*((?:\*\*|[^\*])+?)()\*(?!\*)")  # *word*
 
 
 class AwesomeInlineGrammar(
-    MathInlineGrammar, SpoilerInlineGrammar, CodeSafeInlineGrammar
+    MathInlineGrammar, CodeSafeInlineGrammar
 ):
     pass
 
 
-class AwesomeInlineLexer(MathInlineLexer, SpoilerInlineLexer, mistune.InlineLexer):
+class AwesomeInlineLexer(MathInlineLexer, mistune.InlineLexer):
     grammar_class = AwesomeInlineGrammar
 
 
-class AwesomeRenderer(MathRenderer, SpoilerRenderer, mistune.Renderer):
+class AwesomeRenderer(MathRenderer, mistune.Renderer):
     def __init__(self, *args, **kwargs):
         self.nofollow = kwargs.pop("nofollow", True)
         self.texoid = TexoidRenderer() if kwargs.pop("texoid", False) else None
@@ -129,14 +123,28 @@ class AwesomeRenderer(MathRenderer, SpoilerRenderer, mistune.Renderer):
         return super(AwesomeRenderer, self).header(text, level + 2, *args, **kwargs)
 
 
+def create_spoiler(value, style):
+    respoiler = re.compile(r"(^\|\|(.+)\s+([\s\S]+?)\s*\|\|)", re.MULTILINE)
+    matches = re.findall(respoiler, value)
+    html = "<details><summary style=\"color: brown\">" \
+         + "<span class=\"spoiler-summary\">{summary}</span>" \
+         + "</summary>{detail}</details>"
+
+    for entire, summary, detail in matches:
+        detail = markdown(detail, style)
+        new_html = html.format(summary=summary, detail=detail)
+        value = value.replace(entire, new_html)
+    return value
+
 @registry.filter
-def markdown(value, style, math_engine=None, lazy_load=False):
+def markdown(value, style, math_engine=None, lazy_load=False, hard_wrap=False):
     styles = settings.MARKDOWN_STYLES.get(style, settings.MARKDOWN_DEFAULT_STYLE)
     escape = styles.get("safe_mode", True)
     nofollow = styles.get("nofollow", True)
     texoid = TEXOID_ENABLED and styles.get("texoid", False)
     math = hasattr(settings, "MATHOID_URL") and styles.get("math", False)
 
+    value = create_spoiler(value, style)
     post_processors = []
     if styles.get("use_camo", False) and camo_client is not None:
         post_processors.append(camo_client.update_tree)
@@ -155,7 +163,7 @@ def markdown(value, style, math_engine=None, lazy_load=False):
         inline=AwesomeInlineLexer,
         parse_block_html=1,
         parse_inline_html=1,
-        hard_wrap=True,
+        hard_wrap=hard_wrap,
     )
     result = markdown(value)
     if post_processors:
