@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-07-29 15:51+0700\n"
+"POT-Creation-Date: 2022-08-19 11:27+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -40,67 +40,67 @@ msgstr "xem lần cuối"
 msgid "Chat Box"
 msgstr "Chat Box"
 
-#: dmoj/settings.py:365
+#: dmoj/settings.py:362
 msgid "German"
 msgstr ""
 
-#: dmoj/settings.py:366
+#: dmoj/settings.py:363
 msgid "English"
 msgstr ""
 
-#: dmoj/settings.py:367
+#: dmoj/settings.py:364
 msgid "Spanish"
 msgstr ""
 
-#: dmoj/settings.py:368
+#: dmoj/settings.py:365
 msgid "French"
 msgstr ""
 
-#: dmoj/settings.py:369
+#: dmoj/settings.py:366
 msgid "Croatian"
 msgstr ""
 
-#: dmoj/settings.py:370
+#: dmoj/settings.py:367
 msgid "Hungarian"
 msgstr ""
 
-#: dmoj/settings.py:371
+#: dmoj/settings.py:368
 msgid "Japanese"
 msgstr ""
 
-#: dmoj/settings.py:372
+#: dmoj/settings.py:369
 msgid "Korean"
 msgstr ""
 
-#: dmoj/settings.py:373
+#: dmoj/settings.py:370
 msgid "Brazilian Portuguese"
 msgstr ""
 
-#: dmoj/settings.py:374
+#: dmoj/settings.py:371
 msgid "Romanian"
 msgstr ""
 
-#: dmoj/settings.py:375
+#: dmoj/settings.py:372
 msgid "Russian"
 msgstr ""
 
-#: dmoj/settings.py:376
+#: dmoj/settings.py:373
 msgid "Serbian (Latin)"
 msgstr ""
 
-#: dmoj/settings.py:377
+#: dmoj/settings.py:374
 msgid "Turkish"
 msgstr ""
 
-#: dmoj/settings.py:378
+#: dmoj/settings.py:375
 msgid "Vietnamese"
 msgstr "Tiếng Việt"
 
-#: dmoj/settings.py:379
+#: dmoj/settings.py:376
 msgid "Simplified Chinese"
 msgstr ""
 
-#: dmoj/settings.py:380
+#: dmoj/settings.py:377
 msgid "Traditional Chinese"
 msgstr ""
 
@@ -3068,44 +3068,44 @@ msgstr "Ma trận phiên bản"
 msgid "Submission of %(problem)s by %(user)s"
 msgstr "Bài nộp của %(user)s cho bài %(problem)s"
 
-#: judge/views/submission.py:291 judge/views/submission.py:292
+#: judge/views/submission.py:295 judge/views/submission.py:296
 #: templates/problem/problem.html:194
 msgid "All submissions"
 msgstr "Tất cả bài nộp"
 
-#: judge/views/submission.py:484
+#: judge/views/submission.py:488
 msgid "All my submissions"
 msgstr "Tất cả bài nộp của tôi"
 
-#: judge/views/submission.py:485
+#: judge/views/submission.py:489
 #, python-format
 msgid "All submissions by %s"
 msgstr "Tất cả bài nộp của %s"
 
-#: judge/views/submission.py:530
+#: judge/views/submission.py:534
 #, python-format
 msgid "All submissions for %s"
 msgstr "Tất cả bài nộp cho %s"
 
-#: judge/views/submission.py:558
+#: judge/views/submission.py:562
 msgid "Must pass a problem"
 msgstr "Phải làm được một bài"
 
-#: judge/views/submission.py:616
+#: judge/views/submission.py:620
 #, python-format
 msgid "My submissions for %(problem)s"
 msgstr "Bài nộp của tôi cho %(problem)s"
 
-#: judge/views/submission.py:617
+#: judge/views/submission.py:621
 #, python-format
 msgid "%(user)s's submissions for %(problem)s"
 msgstr "Các bài nộp của %(user)s cho %(problem)s"
 
-#: judge/views/submission.py:747
+#: judge/views/submission.py:751
 msgid "Must pass a contest"
 msgstr "Phải qua một kỳ thi"
 
-#: judge/views/submission.py:777
+#: judge/views/submission.py:781
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a href="
@@ -3114,7 +3114,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho <a href=\"{3}\">{2}</a> trong <a "
 "href=\"{5}\">{4}</a>"
 
-#: judge/views/submission.py:789
+#: judge/views/submission.py:793
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for problem {2} in <a href=\"{4}\">{3}"
@@ -3123,7 +3123,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho bài {2} trong <a href=\"{4}\">{3}"
 "</a>"
 
-#: judge/views/submission.py:835
+#: judge/views/submission.py:839
 #, fuzzy
 #| msgid "You do not have the permission to rejudge submissions."
 msgid "You don't have permission to access."
@@ -3421,7 +3421,7 @@ msgstr "Chỉnh sửa thông tin"
 
 #: templates/admin/judge/submission/change_form.html:14
 #: templates/admin/judge/submission/change_form.html:17
-#: templates/submission/source.html:39 templates/submission/status.html:68
+#: templates/submission/source.html:39 templates/submission/status.html:105
 msgid "Rejudge"
 msgstr "Chấm lại"
 
@@ -4490,7 +4490,7 @@ msgstr "TÌNH NGUYỆN"
 msgid "View your votes"
 msgstr "Xem các đơn đã điền của bạn"
 
-#: templates/problem/feed.html:60 templates/submission/status.html:60
+#: templates/problem/feed.html:60
 msgid "View source"
 msgstr "Xem mã nguồn"
 
@@ -5182,7 +5182,7 @@ msgstr "Xem kết quả chấm"
 msgid "View raw source"
 msgstr "Xem mã nguồn"
 
-#: templates/submission/source.html:33 templates/submission/status.html:62
+#: templates/submission/source.html:33 templates/submission/status.html:99
 msgid "Resubmit"
 msgstr "Nộp lại"
 
@@ -5204,11 +5204,11 @@ msgstr "Cảnh báo khi biên dịch"
 
 #: templates/submission/status-testcases.html:23
 msgid "Pretest Execution Results"
-msgstr "Kết quả chạy Pretest"
+msgstr "Kết quả chấm Pretest"
 
 #: templates/submission/status-testcases.html:25
 msgid "Execution Results"
-msgstr "Kết quả chạy"
+msgstr "Kết quả chấm"
 
 #: templates/submission/status-testcases.html:34
 msgid "Overall: "
@@ -5263,7 +5263,11 @@ msgstr "AC pretest không đồng nghĩa AC cả bài nhé :))"
 msgid "Submission aborted!"
 msgstr "Đã hủy chấm bài nộp!"
 
-#: templates/submission/status.html:89
+#: templates/submission/status.html:113
+msgid "Source code"
+msgstr "Mã nguồn"
+
+#: templates/submission/status.html:140
 msgid "Abort"
 msgstr "Hủy chấm"
 
