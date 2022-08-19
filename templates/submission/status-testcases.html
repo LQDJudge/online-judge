@@ -11,18 +11,18 @@
     {% elif submission.status == 'P' %}
         <h4>{{ _('Your submission is being processed...') }}</h4>
     {% elif submission.status == 'CE' %}
-        <h3>{{ _('Compilation Error') }}</h3>
+        <h3><i class="fa fa-exclamation-circle fa-fw"></i>{{ _('Compilation Error') }}</h3>
         <pre>{{ submission.error|ansi2html }}</pre>
     {% else %}
         {% if submission.error %}
-            <h3>{{ _('Compilation Warnings') }}</h3>
+            <h3><i class="fa fa-exclamation-triangle fa-fw"></i>{{ _('Compilation Warnings') }}</h3>
             <pre>{{ submission.error|ansi2html }}</pre>
             <hr><br>
         {% endif %}
         {% if is_pretest %}
-            <h3>{{ _('Pretest Execution Results') }}</h3>
+            <h3><i class="fa fa-check-square-o fa-fw"></i>{{ _('Pretest Execution Results') }}</h3>
         {% else %}
-            <h3>{{ _('Execution Results') }}</h3>
+            <h3><i class="fa fa-check-square-o fa-fw"></i>{{ _('Execution Results') }}</h3>
         {% endif %}
         <br>
         

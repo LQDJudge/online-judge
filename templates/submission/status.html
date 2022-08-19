@@ -25,6 +25,16 @@
         .testcases-table tbody:last-child {
             border-bottom: none;
         }
+
+        .toggle {
+            cursor: pointer;
+            font-weight: 400;
+        }
+
+        #source-header {
+            font-size: 1.54em;
+            margin-bottom: 1em;
+        }
     </style>
 {% endblock %}
 {% block content_js_media %}
@@ -60,6 +70,7 @@
                 if ($(window).scrollTop() + $(window).height() > $(document).height() - 100)
                     $("html, body").animate({scrollTop: $(document).height()}, 0);
             }
+            register_toggle($('#source-header'));
 
             var receiver = new EventReceiver(
                 "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
@@ -99,8 +110,8 @@
     {% endif %}
 
     <br>
-    <br>
-    <div class="source-wrap">
+    <h3 id="source-header" class="toggle closed"><i class="fa fa-chevron-right fa-fw"></i>{{_('Source code')}}</h3>
+    <div class="source-wrap toggled" style="display: none; margin-bottom: 1em">
         <table style="width: 100%">
             <tr>
                 <td class="source-ln" style="width: 0">
@@ -116,11 +127,8 @@
             </tr>
         </table>
     </div>
-    <br>
-    <br>
 
     <div id="test-cases">{% include "submission/status-testcases.html" %}</div>
-
     {% if not submission.is_graded %}
         {% if perms.judge.abort_any_submission %}
             <div id="abort-button">
