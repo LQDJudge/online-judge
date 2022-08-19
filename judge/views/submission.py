@@ -230,6 +230,10 @@ class SubmissionStatus(SubmissionDetailBase):
         context["batches"] = group_test_cases(submission.test_cases.all())
         context["time_limit"] = submission.problem.time_limit
         context["can_see_testcases"] = False
+        context["raw_source"] = submission.source.source.rstrip("\n")
+        context["highlighted_source"] = highlight_code(
+            submission.source.source, submission.language.pygments, linenos=False
+        )
 
         contest = submission.contest_or_none
         prefix_length = 0

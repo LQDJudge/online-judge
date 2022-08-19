@@ -185,6 +185,9 @@ label[for="language"], label[for="status"] {
 
 .source-wrap {
     overflow-x: auto;
+    padding: 1em;
+    border-radius: 10px;
+    border: double 4px darkgray;
 }
 
 .statistics-table {
@@ -234,7 +237,7 @@ label[for="language"], label[for="status"] {
 
     .testcases-table {
         width: 100%;
-        border: 1px solid grey;
+        border: groove;
         border-radius: 0.5em;
         border-spacing: 0;
 
@@ -249,7 +252,7 @@ label[for="language"], label[for="status"] {
         td {
             padding: 0.6em 0.8em;
             width: 18.75%;
-            border-bottom: 0.7px grey solid;
+            
         }
 
         .case-row td:nth-child(2) {

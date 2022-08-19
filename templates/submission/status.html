@@ -1,5 +1,33 @@
 {% extends "submission/info-base.html" %}
-{% block js_media %}
+{% block media %}
+    <style>
+        .line {
+            position: relative;
+        }
+
+        .highlighter {
+            position: absolute;
+            width: 9999px;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        a:active .line .highlighter {
+            background: rgba(255, 212, 0, 0.48);
+        }
+
+        .copy-clipboard {
+            margin-top: 0;
+        }
+
+        .testcases-table tbody:last-child {
+            border-bottom: none;
+        }
+    </style>
+{% endblock %}
+{% block content_js_media %}
     <script type="text/javascript" src="{{ static('event.js') }}"></script>
     {% if not submission.is_graded and last_msg %}
         <script type="text/javascript">$(function () {
@@ -53,11 +81,9 @@
         </script>
     {% endif %}
 {% endblock %}
-
 {% block body %}
     <div style="clear: both"></div>
     <br>
-    <div><a href="{{ url('submission_source', submission.id) }}">{{ _('View source') }}</a></div>
     {% if request.user == submission.user.user or perms.judge.resubmit_other %}
         <div><a href="{{ url('problem_submit', submission.problem.code, submission.id) }}">{{ _('Resubmit') }}</a></div>
     {% endif %}
@@ -73,7 +99,24 @@
     {% endif %}
 
     <br>
-    <hr>
+    <br>
+    <div class="source-wrap">
+        <table style="width: 100%">
+            <tr>
+                <td class="source-ln" style="width: 0">
+                    <div>
+                        {% for line in raw_source.split('\n') %}
+                            <a href="#line-{{ loop.index }}" name="line-{{ loop.index }}">
+                                <pre class="line">{{ loop.index }}</pre>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </td>
+                <td class="source-code">{{ highlighted_source }}</td>
+            </tr>
+        </table>
+    </div>
+    <br>
     <br>
 
     <div id="test-cases">{% include "submission/status-testcases.html" %}</div>
