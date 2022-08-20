@@ -164,7 +164,7 @@
 {% block info_float %}
     {% if request.user.is_authenticated and request.in_contest_mode and submission_limit %}
         {% if submissions_left > 0 %}
-            <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full btn-green">
+            <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full btn-green small">
                 {{ _('Submit solution') }}
             </a>
             <div class="submissions-left">
@@ -175,11 +175,11 @@
                 {% endtrans %}
             </div>
         {% else %}
-            <a class="unselectable button full disabled">{{ _('Submit solution') }}</a>
+            <a class="unselectable button full disabled small">{{ _('Submit solution') }}</a>
             <div class="no-submissions-left submissions-left">{{ _('0 submissions left') }}</div>
         {% endif %}
     {% else %}
-        <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full btn-green">
+        <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full btn-green small">
             {{ _('Submit solution') }}
         </a>
     {% endif %}
