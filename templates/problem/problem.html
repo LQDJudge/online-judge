@@ -164,7 +164,7 @@
 {% block info_float %}
     {% if request.user.is_authenticated and request.in_contest_mode and submission_limit %}
         {% if submissions_left > 0 %}
-            <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full">
+            <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full btn-green">
                 {{ _('Submit solution') }}
             </a>
             <div class="submissions-left">
@@ -179,7 +179,7 @@
             <div class="no-submissions-left submissions-left">{{ _('0 submissions left') }}</div>
         {% endif %}
     {% else %}
-        <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full">
+        <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full btn-green">
             {{ _('Submit solution') }}
         </a>
     {% endif %}

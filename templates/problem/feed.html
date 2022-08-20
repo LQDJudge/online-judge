@@ -5,14 +5,14 @@
 
 {% block middle_content %}
     <div class="problem-feed-option">
-        <a href="{{url('problem_feed')}}" class="problem-feed-option-item {{'active' if feed_type=='for_you'}}">
+        <a href="{{url('problem_feed')}}" class="button small  {{'btn-darkred' if feed_type=='for_you' else 'btn-gray'}}">
             {{_('FOR YOU')}}
         </a>
-        <a href="{{url('problem_feed_new')}}" class="problem-feed-option-item {{'active' if feed_type=='new'}}">
+        <a href="{{url('problem_feed_new')}}" class="button small {{'btn-darkred' if feed_type=='new' else 'btn-gray'}}">
             {{_('NEW')}}
         </a>
         {% if request.user.has_perm('judge.suggest_problem_changes') %}
-            <a href="{{url('problem_feed_volunteer')}}" class="problem-feed-option-item {{'active' if feed_type=='volunteer'}}">
+            <a href="{{url('problem_feed_volunteer')}}" class="button small {{'btn-darkred' if feed_type=='volunteer' else 'btn-gray'}}">
                 {{_('VOLUNTEER')}}
             </a>
         {% endif %}

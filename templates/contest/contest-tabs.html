@@ -33,14 +33,14 @@
                 {# Allow users to leave the virtual contest #}
                 {% if in_contest %}
                     <form action="{{ url('contest_leave', contest.key) }}" method="post"
-                          class="contest-join-pseudotab unselectable button full">
+                          class="contest-join-pseudotab btn-midnightblue">
                         {% csrf_token %}
                         <input type="submit" class="leaving-forever" value="{{ _('Leave contest') }}">
                     </form>
                 {% else %}
                     {# Allow users to virtual join #}
                     <form action="{{ url('contest_join', contest.key) }}" method="post"
-                          class="contest-join-pseudotab unselectable button full">
+                          class="contest-join-pseudotab btn-midnightblue">
                         {% csrf_token %}
                         <input type="submit" value="{{ _('Virtual join') }}">
                     </form>
@@ -49,9 +49,9 @@
                 {# Allow users to leave the contest #}
                 {% if in_contest %}
                     <form action="{{ url('contest_leave', contest.key) }}" method="post"
-                          class="contest-join-pseudotab unselectable button full">
+                          class="contest-join-pseudotab">
                         {% csrf_token %}
-                        <input type="submit" value="
+                        <input type="submit" class="btn-midnightblue" value="
                             {%- if request.participation.spectate %}
                                 {{- _('Stop spectating') -}}
                             {% else %}
@@ -59,16 +59,14 @@
                             {% endif %}">
                     </form>
                 {% elif is_editor or is_tester or live_participation.ended %}
-                    <form action="{{ url('contest_join', contest.key) }}" method="post"
-                          class="contest-join-pseudotab unselectable button full">
+                    <form action="{{ url('contest_join', contest.key) }}" method="post" class="contest-join-pseudotab">
                         {% csrf_token %}
-                        <input type="submit" value="{{ _('Spectate contest') }}">
+                        <input type="submit" class="btn-midnightblue" value="{{ _('Spectate contest') }}">
                     </form>
                 {% else %}
-                    <form action="{{ url('contest_join', contest.key) }}" method="post"
-                          class="contest-join-pseudotab unselectable button full">
+                    <form action="{{ url('contest_join', contest.key) }}" method="post" class="contest-join-pseudotab">
                         {% csrf_token %}
-                        <input type="submit" {% if not has_joined %}class="first-join"{% endif %}
+                        <input type="submit" class="btn-midnightblue {% if not has_joined %}first-join{% endif %}"
                                value="{{ _('Join contest') }}">
                     </form>
                 {% endif %}

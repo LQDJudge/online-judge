@@ -60,7 +60,6 @@
     a {
         margin-right: 5px;
         display: inline-block;
-        padding: 3px 10px;
         vertical-align: middle;
     }
 
@@ -308,6 +307,7 @@ ul.problem-list {
     border-radius: 5px;
     margin-bottom: 1em;
     display: flex;
+    justify-content: space-between;
 }
 
 .problem-feed-option-item {
