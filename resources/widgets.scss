@@ -71,6 +71,12 @@
         background: gray;
     }
 
+    &.btn-hovergray {
+        &:hover {
+            background: lightgray;
+        }
+    }
+
     &.btn-green {
         background: green;
 

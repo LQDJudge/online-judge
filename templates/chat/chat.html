@@ -475,7 +475,10 @@ let META_HEADER = [
             $('.chat-right-panel').show();
         });
 
-        $('#refresh-button').on('click', refresh_status)
+        $('#refresh-button').on('click', function(e) {
+            e.preventDefault();
+            refresh_status();
+        });
 
         setInterval(refresh_status, 2 * 60 * 1000);
 
@@ -585,11 +588,11 @@ let META_HEADER = [
         <div id="chat-online" class="chat-right-panel sidebox">
             <h3 style="display:flex">
                 {{_('Online Users')}}
-                <button id="refresh-button" title="{{_('Refresh')}}">
+                <a href="#" id="refresh-button" title="{{_('Refresh')}}">
                     <img src="/reload.png"
                          width="100%"
                     >
-                </button> 
+                </a> 
             </h3>
             <div id="chat-online-content">
                 <div id="search-container">
