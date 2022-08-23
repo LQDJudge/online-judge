@@ -35,6 +35,12 @@
             font-size: 1.54em;
             margin-bottom: 1em;
         }
+
+        .case-icons i {
+            font-size: large;
+            font-weight: bolder;
+            cursor: pointer;
+        }
     </style>
 {% endblock %}
 {% block content_js_media %}
@@ -55,8 +61,23 @@
                     url: '{{ url('submission_testcases_query') }}',
                     data: {id: '{{ submission.id }}'}
                 }).done(function (data) {
+                    data = $(data);
+                    list.find(".open").each(function() {
+                        var id = $(this).attr("id");
+                        data.find("#" + id).removeClass("closed").addClass("open");
+                        data.find("#" + id + "-output").show();
+                    });
                     list.empty().html(data).find('.toggle').each(function () {
                         register_toggle($(this));
+                    });
+                    $(".case-icons i").each(function() {
+                        $(this).on("click", function() {
+                            var id = "tr#" + $(this).attr("id").split("-")[1];
+                            $(id).click();
+                            $([document.documentElement, document.body]).animate({
+                                    scrollTop: $(id).offset().top - 50
+                                }, 800);
+                        });
                     });
                     setTimeout(function () {
                         blocked = false;
@@ -70,7 +91,6 @@
                 if ($(window).scrollTop() + $(window).height() > $(document).height() - 100)
                     $("html, body").animate({scrollTop: $(document).height()}, 0);
             }
-            register_toggle($('#source-header'));
 
             var receiver = new EventReceiver(
                 "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",

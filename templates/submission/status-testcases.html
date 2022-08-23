@@ -24,13 +24,29 @@
         {% else %}
             <h3><i class="fa fa-check-square-o fa-fw"></i>{{ _('Execution Results') }}</h3>
         {% endif %}
-        <br>
         
+        {% for batch in batches %}
+            <div style="margin-top: 0.5em;">
+                {% if batch.id %}
+                    <b>{{ _('Batch ') }}#{{ loop.index }}: </b>
+                {% endif %}
+                {% for case in batch.cases %}
+                    <span class="case-{{ case.status }} case-icons">
+                        {% if case.status == 'AC' %}
+                            <i id="icon-{{case.id}}" class="icofont-check-circled" title="{{ _('Case') }} #{{ loop.index }} - {{ case.status }}"></i>
+                        {% elif case.status != 'SC' %}
+                            <i id="icon-{{case.id}}" class="icofont-close-circled" title="{{ _('Case') }} #{{ loop.index }} - {{ case.status }}"></i>
+                        {% endif %}
+                    </span>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <br>
+
         <table class="testcases-table">
         {% if submission.is_graded and submission.result != 'AB' %}
             <thead>
                 <tr id="overall-row" class="case-row  overall-result-{{submission.result}}">
-                    
                     <td><span class="col-title">{{_('Overall: ')}}</span>
                     {% if request.in_contest_mode and submission.contest_or_none %}
                         {% with contest=submission.contest_or_none %}

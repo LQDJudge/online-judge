@@ -295,7 +295,7 @@
             <input type="file" id="file-upload">
             <div class="submit-bar">
                 {{ form.judge }}
-                <input type="submit" value="{{ _('Submit!') }}" class="button"
+                <input type="submit" value="{{ _('Submit!') }}" class="button small"
                        {% if request.in_contest and submission_limit and not submissions_left %}disabled{% endif %}>
             </div>
         {% endif %}
