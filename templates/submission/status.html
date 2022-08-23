@@ -45,6 +45,22 @@
 {% endblock %}
 {% block content_js_media %}
     <script type="text/javascript" src="{{ static('event.js') }}"></script>
+    <script type="text/javascript">
+        function setup_icons() {
+            $(".case-icons i").each(function() {
+                $(this).on("click", function() {
+                    var id = "tr#" + $(this).attr("id").split("-")[1];
+                    $(id).click();
+                    $([document.documentElement, document.body]).animate({
+                            scrollTop: $(id).offset().top - 50
+                        }, 800);
+                });
+            });
+        }
+        $(function() {
+            setup_icons();
+        });
+    </script>
     {% if not submission.is_graded and last_msg %}
         <script type="text/javascript">$(function () {
             var blocked = false, request = false;
@@ -70,15 +86,7 @@
                     list.empty().html(data).find('.toggle').each(function () {
                         register_toggle($(this));
                     });
-                    $(".case-icons i").each(function() {
-                        $(this).on("click", function() {
-                            var id = "tr#" + $(this).attr("id").split("-")[1];
-                            $(id).click();
-                            $([document.documentElement, document.body]).animate({
-                                    scrollTop: $(id).offset().top - 50
-                                }, 800);
-                        });
-                    });
+                    setup_icons();
                     setTimeout(function () {
                         blocked = false;
                         if (request)
