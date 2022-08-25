@@ -264,7 +264,7 @@ let META_HEADER = [
         html = html.replaceAll('$body', body).replaceAll('$id', tmp_id);
         var $html = $(html);
         $html.find('.time-with-rel').attr('data-iso', (new Date()).toISOString());
-        add_message($html[0].outerHTML, false);
+        add_message($html[0].outerHTML);
     }
 
     function submit_chat() {
