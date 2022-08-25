@@ -31,6 +31,7 @@ let META_HEADER = [
     window.num_pages = {{paginator.num_pages}};
     window.lock = false;
     window.lock_click_space = false;
+    window.pushed_messages = new Set();
     let isMobile = window.matchMedia("only screen and (max-width: 799px)").matches;
 
     function load_page(page, refresh_html=false) {
@@ -101,12 +102,16 @@ let META_HEADER = [
         var receiver = new EventReceiver(
             "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
             ['chat_lobby', 'chat_{{request.profile.id}}'], last_msg, function (message) {
+                if (window.pushed_messages.has(message.message)) {
+                    return;
+                }
+                window.pushed_messages.add(message.message);
                 var room = (message.type == 'lobby') ? '' : message.room;
                 if (message.author_id == {{request.profile.id}}) {
                     check_new_message(message.message, message.tmp_id, room);
                 }
                 else {
-                    add_new_message(message.message, room);
+                    add_new_message(message.message, room, false);
                 }
             }
         );
@@ -157,13 +162,13 @@ let META_HEADER = [
         merge_authors();
     }
 
-    function add_new_message(message, room) {
+    function add_new_message(message, room, is_self_author) {
         function callback(update) {
             if (!document['hidden']) {
                 if (update) update_last_seen();
                 refresh_status();
             }
-            else {
+            else if (!is_self_author) {
                 window.unread_message++;
                 document.title = "(" + window.unread_message + ") " + "{{ _('New message(s)') }}";
             }
@@ -205,7 +210,7 @@ let META_HEADER = [
                         $('#body-block-'+tmp_id).replaceWith($body_block);
                     }
                     else {
-                        add_new_message(message, room);
+                        add_new_message(message, room, true);
                     }
                     resize_emoji($body_block);
                     MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
