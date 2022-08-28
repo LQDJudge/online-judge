@@ -108,6 +108,10 @@
             if (window.location.href.includes('#comment')) {
                 $('#comment-announcement').click();
             }
+
+            {% if not available_judge %}
+                $('#judge-toggle').click();
+            {% endif %}
         });
     </script>
 {% endblock %}
@@ -330,14 +334,16 @@
     {% endif %}
     {% if problem.is_editable_by(request.user) %}
         <div id="available-judges">
-            <i class="fa fa-database fa-fw"></i><span
-                class="pi-name">{% trans trimmed count=available_judges|length %}
-                Judge:
-                {% pluralize count %}
-                Judges:
-            {% endtrans %}
-            </span>
-            <div class="pi-value judges-value">
+            <div class="toggle closed" id="judge-toggle">
+                <i class="fa fa-chevron-right fa-fw"></i><span
+                    class="pi-name">{% trans trimmed count=available_judges|length %}
+                    Judge:
+                    {% pluralize count %}
+                    Judges:
+                {% endtrans %}
+                </span>
+            </div>
+            <div class="pi-value judges-value toggled" style="display: none;">
                 {% if available_judges %}
                     {% if perms.judge.change_judge %}
                         {% for judge in available_judges %}
@@ -348,7 +354,7 @@
                         {{ available_judges|join(", ") }}
                     {% endif %}
                 {% else %}
-                    <i>{{ _('none available') }}</i>
+                    <i style="color: red">{{ _('none available') }}</i>
                 {% endif %}
             </div>
         </div>

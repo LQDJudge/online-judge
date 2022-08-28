@@ -4750,7 +4750,7 @@ msgstr[0] "Máy chấm:"
 
 #: templates/problem/problem.html:351
 msgid "none available"
-msgstr "không có sẵn"
+msgstr "Bài này chưa có máy chấm"
 
 #: templates/problem/problem.html:363
 #, python-format
