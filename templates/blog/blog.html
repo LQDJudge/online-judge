@@ -8,14 +8,15 @@
     {% include "comments/media-css.html" %}
 {% endblock %}
 
-{% block header %}
-    {% if post.is_editable_by(request.user) %}
-        <div class="title-line-action">[<a href="{{ url('admin:judge_blogpost_change', post.id) }}">{{ _('Edit') }}</a>]</div>
-    {% endif %}
+{% block title_row %}
+{% endblock %}
+
+{% block title_ruler %}
 {% endblock %}
 
 {% block body %}
     <div class="post-full">
+        <div class="post-title">{{ title }}</div>
         <div class="time">
             {% with authors=post.authors.all() %}
                 {% if authors %}
@@ -25,6 +26,9 @@
             <span class="post-time">
                 {% trans time=post.publish_on|date(_("N j, Y, g:i a")) %} posted on {{ time }}{% endtrans %}
             </span>
+            {% if post.is_editable_by(request.user) %}
+                <span> [<a href="{{ url('admin:judge_blogpost_change', post.id) }}">{{ _('Edit') }}</a>]</span>
+            {% endif %}
         </div>
         <div class="body content-description">
             {% cache 86400 'post_content' post.id MATH_ENGINE %}

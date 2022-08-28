@@ -206,6 +206,14 @@
     background-color: #f3f3f3;
 }
 
+.post-full {
+    .post-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        font-family: serif;
+    }
+}
+
 @media (max-width: 799px) {
     .left-sidebar-header {
         display: none;
@@ -229,6 +237,9 @@
     .blog-box {
         padding-left: 5%;
         padding-right: 5%;
+    }
+    .post-title {
+        font-size: 2em;
     }
 }
 @media (min-width: 800px) {
@@ -280,5 +291,19 @@
         border-left: 1.4px solid lightgray;
         border-right: 1.4px solid lightgray;
         border-radius: 8px;
+    }
+
+    .post-full {
+        width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+
+        .content-description {
+            font-size: 18px;
+        }
+
+        .post-title {
+            font-size: 2.5em;
+        }
     }
 }
