@@ -227,18 +227,20 @@
         </ul>
         <div style="float: right; display: inline; font-size: larger;">
             {% if request.user.is_authenticated %}
-            <span title="{{_('Chat')}}">
-                <a id="chat-icon" href="{{ url('chat', '') }}" class="icofont-wechat" aria-hidden="true">
-                </a>
-            </span>
+            <span class="navbar-icons">
+                <span title="{{_('Chat')}}">
+                    <a id="chat-icon" href="{{ url('chat', '') }}" class="icofont-wechat navbar-icon" aria-hidden="true">
+                    </a>
+                </span>
 
-            {% set unseen_cnt = request.profile.count_unseen_notifications %}
-            <span title="{{_('Notification')}}" class="{{ 'notification-open' if unseen_cnt > 0 }}">
-                <a href="{{ url('notification') }}" class="icofont-alarm" id="notification" aria-hidden="true">
-                {% if unseen_cnt > 0 %}    
-                <sub class="unread_boxes">{{unseen_cnt}}</sub>
-                {% endif %}
-                </a>
+                {% set unseen_cnt = request.profile.count_unseen_notifications %}
+                <span title="{{_('Notification')}}" class="{{ 'notification-open' if unseen_cnt > 0 }}">
+                    <a href="{{ url('notification') }}" class="icofont-alarm navbar-icon" id="notification" aria-hidden="true">
+                    {% if unseen_cnt > 0 %}    
+                    <sub class="unread_boxes">{{unseen_cnt}}</sub>
+                    {% endif %}
+                    </a>
+                </span>
             </span>
             {% endif %}
             <span id="user-links">

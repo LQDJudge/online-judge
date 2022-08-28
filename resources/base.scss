@@ -705,10 +705,6 @@ math {
 
 #notification {
     color: lightsteelblue;
-    float: left;
-    margin-top: 0.6em;
-    margin-right: 0.8em;
-    font-size: 1.3em;
 }
 
 #notification:hover {
@@ -717,14 +713,19 @@ math {
 
 #chat-icon {
     color: lightseagreen;
-    float: left;
-    margin-top: 0.6em;
-    margin-right: 0.5em;
-    font-size: 1.3em;
 }
 
 #chat-icon:hover {
     color: darkgreen;
+}
+
+.navbar-icons {
+    font-size: 1.6em;
+    float: left;
+    margin-right: 0.3em;
+}
+.navbar-icon {
+    margin-right: 0.3em;
 }
 
 .unread_boxes {
@@ -782,4 +783,16 @@ math {
 }
 .contest-info-toggle-mode-off:hover {
     background: rgba(255, 0, 0, 0.97);
+}
+
+@media (max-width: 799px) {
+    .navbar-icons {
+        margin-top: 2px;
+    }
+}
+
+@media (min-width: 800px) {
+    .navbar-icons {
+        margin-top: 7px;
+    }
 }
