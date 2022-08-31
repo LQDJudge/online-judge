@@ -256,6 +256,7 @@ urlpatterns = [
                     problem.ProblemPdfView.as_view(),
                     name="problem_pdf",
                 ),
+                url(r"^/pdf_description$", problem.ProblemPdfDescriptionView.as_view(), name="problem_pdf_description"),
                 url(r"^/clone", problem.ProblemClone.as_view(), name="problem_clone"),
                 url(r"^/submit$", problem.problem_submit, name="problem_submit"),
                 url(

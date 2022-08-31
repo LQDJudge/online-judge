@@ -377,6 +377,10 @@
         {{ description|markdown("problem", MATH_ENGINE)|reference|str|safe }}
     {% endcache %}
 
+    {% if problem.pdf_description %}
+        <embed src="{{url('problem_pdf_description', problem.code)}}" width="100%" height="500" type="application/pdf">
+    {% endif %}
+
     {% with license=problem.license %}
         {% if license %}
             <span class="license">

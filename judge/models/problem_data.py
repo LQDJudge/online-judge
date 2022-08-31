@@ -20,12 +20,12 @@ __all__ = [
 problem_data_storage = ProblemDataStorage()
 
 
-def _problem_directory_file(code, filename):
+def problem_directory_file_helper(code, filename):
     return os.path.join(code, os.path.basename(filename))
 
 
 def problem_directory_file(data, filename):
-    return _problem_directory_file(data.problem.code, filename)
+    return problem_directory_file_helper(data.problem.code, filename)
 
 
 CHECKERS = (

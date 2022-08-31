@@ -193,6 +193,7 @@ class ProblemAdmin(CompareVersionAdmin):
                     "is_organization_private",
                     "organizations",
                     "description",
+                    "pdf_description",
                     "license",
                 ),
             },

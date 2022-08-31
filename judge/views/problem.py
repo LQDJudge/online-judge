@@ -402,6 +402,27 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
         return response
 
 
+class ProblemPdfDescriptionView(ProblemMixin, SingleObjectMixin, View):
+    def get(self, request, *args, **kwargs):
+        problem = self.get_object()
+        if not problem.pdf_description:
+            raise Http404()
+        response = HttpResponse()
+        if hasattr(settings, "DMOJ_PDF_PROBLEM_INTERNAL") and request.META.get(
+            "SERVER_SOFTWARE", ""
+        ).startswith("nginx/"):
+            response["X-Accel-Redirect"] = problem.pdf_description.path
+        else:
+            with open(problem.pdf_description.path, "rb") as f:
+                response.content = f.read()
+
+        response["Content-Type"] = "application/pdf"
+        response["Content-Disposition"] = "inline; filename=%s.pdf" % (
+            problem.code,
+        )
+        return response
+
+
 class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView):
     model = Problem
     title = gettext_lazy("Problems")

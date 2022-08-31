@@ -18,6 +18,7 @@ from judge.models.profile import Organization, Profile
 from judge.models.runtime import Language
 from judge.user_translations import gettext as user_gettext
 from judge.utils.raw_sql import RawSQLColumn, unique_together_left_join
+from judge.models.problem_data import problem_data_storage, problem_directory_file_helper
 
 __all__ = [
     "ProblemGroup",
@@ -31,6 +32,8 @@ __all__ = [
     "TranslatedProblemForeignKeyQuerySet",
 ]
 
+def problem_directory_file(data, filename):
+    return problem_directory_file_helper(data.code, filename)
 
 class ProblemType(models.Model):
     name = models.CharField(
@@ -160,7 +163,7 @@ class Problem(models.Model):
         db_index=True,
         help_text=_("The full name of the problem, " "as shown in the problem list."),
     )
-    description = models.TextField(verbose_name=_("problem body"))
+    description = models.TextField(verbose_name=_("problem body"), blank=True)
     authors = models.ManyToManyField(
         Profile,
         verbose_name=_("creators"),
@@ -298,6 +301,13 @@ class Problem(models.Model):
     )
     is_organization_private = models.BooleanField(
         verbose_name=_("private to organizations"), default=False
+    )
+    pdf_description = models.FileField(
+        verbose_name=_("pdf statement"),
+        storage=problem_data_storage,
+        null=True,
+        blank=True,
+        upload_to=problem_directory_file,
     )
 
     def __init__(self, *args, **kwargs):
