@@ -18,7 +18,10 @@ from judge.models.profile import Organization, Profile
 from judge.models.runtime import Language
 from judge.user_translations import gettext as user_gettext
 from judge.utils.raw_sql import RawSQLColumn, unique_together_left_join
-from judge.models.problem_data import problem_data_storage, problem_directory_file_helper
+from judge.models.problem_data import (
+    problem_data_storage,
+    problem_directory_file_helper,
+)
 
 __all__ = [
     "ProblemGroup",
@@ -32,8 +35,10 @@ __all__ = [
     "TranslatedProblemForeignKeyQuerySet",
 ]
 
+
 def problem_directory_file(data, filename):
     return problem_directory_file_helper(data.code, filename)
+
 
 class ProblemType(models.Model):
     name = models.CharField(

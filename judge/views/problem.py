@@ -417,9 +417,7 @@ class ProblemPdfDescriptionView(ProblemMixin, SingleObjectMixin, View):
                 response.content = f.read()
 
         response["Content-Type"] = "application/pdf"
-        response["Content-Disposition"] = "inline; filename=%s.pdf" % (
-            problem.code,
-        )
+        response["Content-Disposition"] = "inline; filename=%s.pdf" % (problem.code,)
         return response
 
 

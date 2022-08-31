@@ -33,11 +33,14 @@ from judge.widgets import (
     HeavyPreviewPageDownWidget,
 )
 
+MEMORY_UNITS = (("KB", "KB"), ("MB", "MB"))
+
 
 class ProblemForm(ModelForm):
     change_message = forms.CharField(
         max_length=256, label="Edit reason", required=False
     )
+    memory_unit = forms.ChoiceField(choices=MEMORY_UNITS)
 
     def __init__(self, *args, **kwargs):
         super(ProblemForm, self).__init__(*args, **kwargs)
@@ -50,6 +53,12 @@ class ProblemForm(ModelForm):
                 "placeholder": gettext("Describe the changes you made (optional)"),
             }
         )
+
+    def clean(self):
+        memory_unit = self.cleaned_data.get("memory_unit", "KB")
+        if memory_unit == "MB":
+            self.cleaned_data["memory_limit"] *= 1024
+        return self.cleaned_data
 
     class Meta:
         widgets = {
@@ -94,13 +103,28 @@ class ProblemCreatorListFilter(admin.SimpleListFilter):
 
 
 class LanguageLimitInlineForm(ModelForm):
+    memory_unit = forms.ChoiceField(choices=MEMORY_UNITS, label=_("Memory unit"))
+
     class Meta:
-        widgets = {"language": AdminSelect2Widget}
+        widgets = {
+            "language": AdminSelect2Widget,
+            "memory_limit": TextInput(attrs={"size": "10"}),
+        }
+
+    def clean(self):
+        if not self.cleaned_data.get("language"):
+            self.cleaned_data["DELETE"] = True
+        if (
+            self.cleaned_data.get("memory_limit")
+            and self.cleaned_data.get("memory_unit") == "MB"
+        ):
+            self.cleaned_data["memory_limit"] *= 1024
+        return self.cleaned_data
 
 
 class LanguageLimitInline(admin.TabularInline):
     model = LanguageLimit
-    fields = ("language", "time_limit", "memory_limit")
+    fields = ("language", "time_limit", "memory_limit", "memory_unit")
     form = LanguageLimitInlineForm
 
 
@@ -204,7 +228,7 @@ class ProblemAdmin(CompareVersionAdmin):
         ),
         (_("Taxonomy"), {"fields": ("types", "group")}),
         (_("Points"), {"fields": (("points", "partial"), "short_circuit")}),
-        (_("Limits"), {"fields": ("time_limit", "memory_limit")}),
+        (_("Limits"), {"fields": ("time_limit", ("memory_limit", "memory_unit"))}),
         (_("Language"), {"fields": ("allowed_languages",)}),
         (_("Justice"), {"fields": ("banned_users",)}),
         (_("History"), {"fields": ("change_message",)}),

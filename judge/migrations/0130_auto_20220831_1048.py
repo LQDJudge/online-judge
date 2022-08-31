@@ -8,18 +8,24 @@ import judge.utils.problem_data
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0129_auto_20220622_1424'),
+        ("judge", "0129_auto_20220622_1424"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='problem',
-            name='pdf_description',
-            field=models.FileField(blank=True, null=True, storage=judge.utils.problem_data.ProblemDataStorage(), upload_to=judge.models.problem.problem_directory_file, verbose_name='pdf statement'),
+            model_name="problem",
+            name="pdf_description",
+            field=models.FileField(
+                blank=True,
+                null=True,
+                storage=judge.utils.problem_data.ProblemDataStorage(),
+                upload_to=judge.models.problem.problem_directory_file,
+                verbose_name="pdf statement",
+            ),
         ),
         migrations.AlterField(
-            model_name='problem',
-            name='description',
-            field=models.TextField(blank=True, verbose_name='problem body'),
+            model_name="problem",
+            name="description",
+            field=models.TextField(blank=True, verbose_name="problem body"),
         ),
     ]
