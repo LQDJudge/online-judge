@@ -409,7 +409,7 @@ class ProblemPdfDescriptionView(ProblemMixin, SingleObjectMixin, View):
             raise Http404()
         response = HttpResponse()
         if request.META.get("SERVER_SOFTWARE", "").startswith("nginx/"):
-            response["X-Accel-Redirect"] = problem.pdf_description
+            response["X-Accel-Redirect"] = problem.pdf_description.path
         else:
             with open(problem.pdf_description.path, "rb") as f:
                 response.content = f.read()
