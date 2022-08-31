@@ -152,7 +152,9 @@
         
         <span class="spacer"></span>
         {% if has_render %}
-        <a href="{{ url('problem_pdf', problem.code) }}" class="view-pdf">
+        <a href="{{ url('problem_pdf', problem.code) }}" class="view-pdf" target="_blank">
+        {% elif problem.pdf_description %}
+        <a href="{{ url('problem_pdf_description', problem.code) }}" class="view-pdf" target="_blank">
         {% else %}
         <a id="pdf_button" class="view-pdf" href='#'>
         {% endif %}
