@@ -16,6 +16,7 @@ from judge.models.choices import ACE_THEMES, MATH_ENGINES_CHOICES, TIMEZONE
 from judge.models.runtime import Language
 from judge.ratings import rating_class
 
+
 __all__ = ["Organization", "Profile", "OrganizationRequest", "Friend"]
 
 
@@ -241,6 +242,12 @@ class Profile(models.Model):
             "read": False,
         }
         return self.notifications.filter(**query).count()
+
+    @cached_property
+    def count_unread_chat_boxes(self):
+        from chat_box.utils import get_unread_boxes
+
+        return get_unread_boxes(self)
 
     _pp_table = [pow(settings.DMOJ_PP_STEP, i) for i in range(settings.DMOJ_PP_ENTRIES)]
 

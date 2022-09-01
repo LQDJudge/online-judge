@@ -1036,11 +1036,6 @@ urlpatterns = [
                     chat.toggle_ignore,
                     name="toggle_ignore",
                 ),
-                url(
-                    r"^get_unread_boxes$",
-                    chat.get_unread_boxes,
-                    name="get_unread_boxes",
-                ),
             ]
         ),
     ),
