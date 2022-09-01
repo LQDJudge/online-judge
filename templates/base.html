@@ -82,6 +82,7 @@
         <script src="{{ static('libs/jquery.unveil.js') }}"></script>
         <script src="{{ static('libs/moment.js') }}"></script>
         <script src="{{ static('libs/select2/select2.js') }}"></script>
+        <script src="https://unpkg.com/@popperjs/core@2"></script>
         {% include "extra_js.html" %}
         <script src="{{ static('common.js') }}"></script>
         <script>
@@ -172,6 +173,21 @@
         <script type="text/javascript">{{ request.profile.user_script|safe }}</script>
     {% endif %}
 
+    <script>
+        $(function() {
+            const popperInstance = Popper.createPopper($('#nav-lang-icon'), $('#lang-dropdown'));
+            $('#nav-lang-icon').click(function(e) {
+                e.preventDefault();
+                $('#lang-dropdown').toggle();
+                popperInstance.update();
+            })
+            $('.lang-dropdown-item').click(function() {
+                $('select[name="language"]').val($(this).attr('value'));
+                $('#form-lang').submit();
+            })
+        });
+    </script>
+
     <noscript>
         <style>
             #content {
@@ -212,8 +228,8 @@
             {% endfor %}
         </ul>
         <div style="float: right; display: inline; font-size: larger;">
-            {% if request.user.is_authenticated %}
             <span class="navbar-icons">
+                {% if request.user.is_authenticated %}
                 <span title="{{_('Chat')}}">
                     <a id="chat-icon" href="{{ url('chat', '') }}" class="icofont-wechat navbar-icon" aria-hidden="true">
                         {% set unread_chat = request.profile.count_unread_chat_boxes %}
@@ -231,11 +247,22 @@
                     {% endif %}
                     </a>
                 </span>
+                {% endif %}
+                <span title="{{_('Language')}}">
+                    <a href="#" class="icofont-globe navbar-icon" id="nav-lang-icon" aria-hidden="true">
+                    <sub class="sub-lang">{{LANGUAGE_CODE}}</sub>
+                    </a>
+                    <div id="lang-dropdown" role="tooltip">
+                        {% for language in language_info_list(LANGUAGES) %}
+                            <div value="{{ language.code }}" class="lang-dropdown-item" style="{{'font-weight: bold' if language.code == LANGUAGE_CODE}}">
+                                {{ language.name_local }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </span>
             </span>
-            {% endif %}
             <span id="user-links">
                 {% if request.user.is_authenticated %}
-                    
                     <ul>
                         <li>
                             <a href="{{ url('user_page') }}">
@@ -341,7 +368,7 @@
             {% if i18n_config.footer %}
                 {{ i18n_config.footer|safe }} |
             {% endif %}
-            <form action="{{ url('set_language') }}" method="post" style="display: inline">
+            <form action="{{ url('set_language') }}" method="post" style="display: inline" id="form-lang">
                 {% csrf_token %}
             <input name="next" type="hidden" value="{{ request.get_full_path() }}">
             <select name="language" onchange="form.submit()" style="height: 1.5em">

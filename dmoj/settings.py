@@ -359,22 +359,8 @@ LOCALE_PATHS = [
 ]
 
 LANGUAGES = [
-    ("de", _("German")),
     ("en", _("English")),
-    ("es", _("Spanish")),
-    ("fr", _("French")),
-    ("hr", _("Croatian")),
-    ("hu", _("Hungarian")),
-    ("ja", _("Japanese")),
-    ("ko", _("Korean")),
-    ("pt", _("Brazilian Portuguese")),
-    ("ro", _("Romanian")),
-    ("ru", _("Russian")),
-    ("sr-latn", _("Serbian (Latin)")),
-    ("tr", _("Turkish")),
     ("vi", _("Vietnamese")),
-    ("zh-hans", _("Simplified Chinese")),
-    ("zh-hant", _("Traditional Chinese")),
 ]
 
 MARKDOWN_ADMIN_EDITABLE_STYLE = {
