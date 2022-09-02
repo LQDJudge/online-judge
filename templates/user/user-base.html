@@ -109,7 +109,7 @@
             <br>
             <div>
                 <form action="{{ url('all_user_submissions', user.user.username) }}">
-                    <input type="submit" value="{{ _('View submissions') }}" class="small" style="width:135px">
+                    <input type="submit" value="{{ _('View submissions') }}" class="small" style="width:135px; padding-left: 1px; padding-right: 1px">
                 </form>
             </div>
             {% if request.user.is_authenticated %}
