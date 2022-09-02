@@ -212,10 +212,8 @@ else:
                     ],
                 },
                 ("judge.BlogPost", "fa-rss-square"),
-                ("judge.Comment", "fa-comment-o"),
                 ("judge.Ticket", "fa-exclamation-circle"),
-                ("flatpages.FlatPage", "fa-file-text-o"),
-                ("judge.Solution", "fa-pencil"),
+                ("admin.LogEntry", "fa-empire"),
             ],
             "dashboard": {
                 "breadcrumbs": True,

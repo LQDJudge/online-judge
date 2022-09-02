@@ -10,6 +10,7 @@ from django.urls import reverse_lazy
 from django.utils.html import format_html
 from django.utils.translation import gettext, gettext_lazy as _, ungettext
 from django_ace import AceWidget
+from django.utils import timezone
 
 from reversion.admin import VersionAdmin
 from reversion_compare.admin import CompareVersionAdmin
@@ -58,6 +59,9 @@ class ProblemForm(ModelForm):
         memory_unit = self.cleaned_data.get("memory_unit", "KB")
         if memory_unit == "MB":
             self.cleaned_data["memory_limit"] *= 1024
+        date = self.cleaned_data.get("date")
+        if not date or date > timezone.now():
+            self.cleaned_data["date"] = timezone.now()
         return self.cleaned_data
 
     class Meta:
@@ -237,11 +241,12 @@ class ProblemAdmin(CompareVersionAdmin):
         "code",
         "name",
         "show_authors",
+        "date",
         "points",
         "is_public",
         "show_public",
     ]
-    ordering = ["code"]
+    ordering = ["-date"]
     search_fields = (
         "code",
         "name",
