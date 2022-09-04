@@ -24,6 +24,7 @@ from judge.models import (
     ProblemTranslation,
     Profile,
     Solution,
+    Notification,
 )
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
@@ -214,12 +215,11 @@ class ProblemAdmin(CompareVersionAdmin):
                     "code",
                     "name",
                     "is_public",
+                    "organizations",
                     "date",
                     "authors",
                     "curators",
                     "testers",
-                    "is_organization_private",
-                    "organizations",
                     "description",
                     "pdf_description",
                     "license",
@@ -370,6 +370,7 @@ class ProblemAdmin(CompareVersionAdmin):
         return form
 
     def save_model(self, request, obj, form, change):
+        form.changed_data.remove("memory_unit")
         super().save_model(request, obj, form, change)
         if form.changed_data and any(
             f in form.changed_data for f in ("is_public", "points", "partial")
@@ -381,7 +382,24 @@ class ProblemAdmin(CompareVersionAdmin):
         # Only rescored if we did not already do so in `save_model`
         obj = form.instance
         obj.curators.add(request.profile)
+        obj.is_organization_private = obj.organizations.count() > 0
         obj.save()
+        # Create notification
+        if "is_public" in form.changed_data:
+            users = set(obj.authors.all())
+            if obj.organizations.count() > 0:
+                for org in obj.organizations.all():
+                    users = users.union(users, set(org.admins.all()))
+            else:
+                admins = Profile.objects.filter(user__is_superuser=True).all()
+                users = users.union(users, admins)
+            link = reverse_lazy("admin:judge_problem_change", args=(obj.id,))
+            html = f"<a href=\"{link}\">{obj.name}</a>"
+            for user in users:
+                notification = Notification(
+                    owner=user, html_link=html, category="Problem public: " + str(obj.is_public), author=request.profile
+                )
+                notification.save()
 
     def construct_change_message(self, request, form, *args, **kwargs):
         if form.cleaned_data.get("change_message"):

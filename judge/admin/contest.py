@@ -192,9 +192,7 @@ class ContestAdmin(CompareVersionAdmin):
             {
                 "fields": (
                     "access_code",
-                    "is_private",
                     "private_contestants",
-                    "is_organization_private",
                     "organizations",
                     "view_contest_scoreboard",
                 )
