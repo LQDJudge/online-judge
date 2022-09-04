@@ -176,7 +176,12 @@ class LogEntryAdmin(admin.ModelAdmin):
         "object_link",
         "diff_link",
     )
-    search_fields = ("object_repr", "change_message", "user__username", "content_type__model")
+    search_fields = (
+        "object_repr",
+        "change_message",
+        "user__username",
+        "content_type__model",
+    )
     list_filter = (UserListFilter, "content_type")
     list_display_links = None
     actions = None

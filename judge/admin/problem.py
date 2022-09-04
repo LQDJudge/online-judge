@@ -394,10 +394,13 @@ class ProblemAdmin(CompareVersionAdmin):
                 admins = Profile.objects.filter(user__is_superuser=True).all()
                 users = users.union(users, admins)
             link = reverse_lazy("admin:judge_problem_change", args=(obj.id,))
-            html = f"<a href=\"{link}\">{obj.name}</a>"
+            html = f'<a href="{link}">{obj.name}</a>'
             for user in users:
                 notification = Notification(
-                    owner=user, html_link=html, category="Problem public: " + str(obj.is_public), author=request.profile
+                    owner=user,
+                    html_link=html,
+                    category="Problem public: " + str(obj.is_public),
+                    author=request.profile,
                 )
                 notification.save()
 
