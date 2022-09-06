@@ -247,9 +247,7 @@ class ContestAdmin(CompareVersionAdmin):
             readonly += ["access_code"]
         if not request.user.has_perm("judge.create_private_contest"):
             readonly += [
-                "is_private",
                 "private_contestants",
-                "is_organization_private",
                 "organizations",
             ]
             if not request.user.has_perm("judge.change_contest_visibility"):
@@ -264,8 +262,8 @@ class ContestAdmin(CompareVersionAdmin):
             "judge.change_contest_visibility"
         ):
             if (
-                not form.cleaned_data["is_private"]
-                and not form.cleaned_data["is_organization_private"]
+                not len(form.cleaned_data["organizations"]) > 0
+                and not len(form.cleaned_data["private_contestants"]) > 0
             ):
                 raise PermissionDenied
             if not request.user.has_perm("judge.create_private_contest"):
