@@ -387,6 +387,7 @@ class ProblemAdmin(CompareVersionAdmin):
         # Create notification
         if "is_public" in form.changed_data:
             users = set(obj.authors.all())
+            users = users.union(users, set(obj.curators.all()))
             if obj.organizations.count() > 0:
                 for org in obj.organizations.all():
                     users = users.union(users, set(org.admins.all()))
