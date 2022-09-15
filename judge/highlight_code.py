@@ -18,6 +18,7 @@ except ImportError:
         return _make_pre_code(code)
 
 else:
+
     def highlight_code(code, language, cssclass="codehilite", linenos=True):
         try:
             lexer = pygments.lexers.get_lexer_by_name(language)
@@ -27,9 +28,17 @@ else:
         if linenos:
             return mark_safe(
                 pygments.highlight(
-                    code, lexer, pygments.formatters.HtmlFormatter(cssclass=cssclass, linenos="table", wrapcode=True)
+                    code,
+                    lexer,
+                    pygments.formatters.HtmlFormatter(
+                        cssclass=cssclass, linenos="table", wrapcode=True
+                    ),
                 )
             )
         return mark_safe(
-            pygments.highlight(code, lexer, pygments.formatters.HtmlFormatter(cssclass=cssclass, wrapcode=True))
+            pygments.highlight(
+                code,
+                lexer,
+                pygments.formatters.HtmlFormatter(cssclass=cssclass, wrapcode=True),
+            )
         )
