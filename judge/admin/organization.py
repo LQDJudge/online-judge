@@ -43,7 +43,7 @@ class OrganizationAdmin(VersionAdmin):
         "name",
         "short_name",
         "is_open",
-        "slots",
+        "creation_date",
         "registrant",
         "show_public",
     )
@@ -52,6 +52,7 @@ class OrganizationAdmin(VersionAdmin):
     actions_on_top = True
     actions_on_bottom = True
     form = OrganizationForm
+    ordering = ["-creation_date"]
 
     def show_public(self, obj):
         return format_html(
