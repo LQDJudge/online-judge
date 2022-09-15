@@ -10,7 +10,7 @@ from judge.jinja2.gravatar import gravatar
 from judge.models import Comment, Contest, Organization, Problem, Profile
 
 
-def _get_user_queryset(term, org_id):
+def _get_user_queryset(term, org_id=None):
     if org_id:
         try:
             qs = Organization.objects.get(id=org_id).members.all()
