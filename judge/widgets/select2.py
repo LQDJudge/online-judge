@@ -45,6 +45,7 @@ from django.conf import settings
 from django.core import signing
 from django.forms.models import ModelChoiceIterator
 from django.urls import reverse_lazy
+from django.utils.http import urlencode
 
 DEFAULT_SELECT2_JS = "//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"
 DEFAULT_SELECT2_CSS = (

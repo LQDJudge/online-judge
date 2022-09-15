@@ -1,3 +1,4 @@
+from itertools import chain
 from django import forms
 from django.conf import settings
 from django.contrib import messages
@@ -39,9 +40,12 @@ from reversion import revisions
 
 from judge.forms import (
     EditOrganizationForm,
+    AddOrganizationForm,
     AddOrganizationMemberForm,
     OrganizationBlogForm,
     OrganizationAdminBlogForm,
+    OrganizationContestForm,
+    ContestProblemFormSet,
 )
 from judge.models import (
     BlogPost,
@@ -52,6 +56,7 @@ from judge.models import (
     Profile,
     Contest,
     Notification,
+    ContestProblem,
 )
 from judge import event_poster as event
 from judge.utils.ranker import ranker
@@ -121,6 +126,7 @@ class OrganizationMixin(OrganizationBase):
         context["logo_override_image"] = self.organization.logo_override_image
         if "organizations" in context:
             context.pop("organizations")
+        print(context)
         return context
 
     def dispatch(self, request, *args, **kwargs):
@@ -374,16 +380,59 @@ class OrganizationProblems(LoginRequiredMixin, MemberOrganizationMixin, ProblemL
         return context
 
 
-class OrganizationContests(LoginRequiredMixin, MemberOrganizationMixin, ContestList):
+class OrganizationContestMixin(
+    LoginRequiredMixin,
+    TitleMixin,
+    OrganizationMixin,
+    OrganizationHomeViewContext,
+):
+    model = Contest
+    form_class = OrganizationContestForm
+
+    def is_contest_editable(self, request, contest):
+        return request.profile in contest.authors.all() or self.can_edit_organization(
+            self.organization
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super(OrganizationContestMixin, self).get_form_kwargs()
+        kwargs["org_id"] = self.organization.id
+        return kwargs
+
+
+class OrganizationContests(
+    OrganizationContestMixin, MemberOrganizationMixin, ContestList
+):
     template_name = "organization/contests.html"
 
     def get_queryset(self):
         self.org_query = [self.organization_id]
         return super().get_queryset()
 
+    def set_editable_contest(self, contest):
+        if not contest:
+            return False
+        contest.is_editable = self.is_contest_editable(self.request, contest)
+
     def get_context_data(self, **kwargs):
         context = super(OrganizationContests, self).get_context_data(**kwargs)
         context["page_type"] = "contests"
+        context["hide_contest_orgs"] = True
+        context.pop("organizations")
+        context["create_url"] = reverse(
+            "organization_contest_add",
+            args=[self.organization.id, self.organization.slug],
+        )
+
+        for participation in context["active_participations"]:
+            self.set_editable_contest(participation.contest)
+        for contest in context["past_contests"]:
+            self.set_editable_contest(contest)
+        for contest in context["current_contests"]:
+            self.set_editable_contest(contest)
+        for contest in context["future_contests"]:
+            self.set_editable_contest(contest)
+        print(context)
         return context
 
 
@@ -770,6 +819,153 @@ class EditOrganization(
             revisions.set_comment(_("Edited from site"))
             revisions.set_user(self.request.user)
             return super(EditOrganization, self).form_valid(form)
+
+
+class AddOrganization(LoginRequiredMixin, TitleMixin, CreateView):
+    template_name = "organization/add.html"
+    model = Organization
+    form_class = AddOrganizationForm
+
+    def get_title(self):
+        return _("Create group")
+
+    def get_form_kwargs(self):
+        kwargs = super(AddOrganization, self).get_form_kwargs()
+        kwargs["request"] = self.request
+        return kwargs
+
+    def form_valid(self, form):
+        if (
+            not self.request.user.is_staff
+            and Organization.objects.filter(registrant=self.request.profile).count()
+            >= settings.DMOJ_USER_MAX_ORGANIZATION_ADD
+        ):
+            return generic_message(
+                self.request,
+                _("Exceeded limit"),
+                _("You created too many groups. You can only create at most %d groups")
+                % settings.DMOJ_USER_MAX_ORGANIZATION_ADD,
+                status=400,
+            )
+        with transaction.atomic(), revisions.create_revision():
+            revisions.set_comment(_("Added from site"))
+            revisions.set_user(self.request.user)
+            res = super(AddOrganization, self).form_valid(form)
+            self.object.admins.add(self.request.profile)
+            self.object.members.add(self.request.profile)
+            self.object.save()
+            return res
+
+
+class AddOrganizationContest(
+    AdminOrganizationMixin, OrganizationContestMixin, CreateView
+):
+    template_name = "organization/contest/add.html"
+
+    def get_title(self):
+        return _("Add contest")
+
+    def form_valid(self, form):
+        with transaction.atomic(), revisions.create_revision():
+            revisions.set_comment(_("Added from site"))
+            revisions.set_user(self.request.user)
+            res = super(AddOrganizationContest, self).form_valid(form)
+            self.object.organizations.add(self.organization)
+            self.object.is_organization_private = True
+            self.object.save()
+            return res
+
+    def get_success_url(self):
+        return reverse(
+            "organization_contest_edit",
+            args=[self.organization.id, self.organization.slug, self.object.key],
+        )
+
+
+class EditOrganizationContest(
+    OrganizationContestMixin, MemberOrganizationMixin, UpdateView
+):
+    template_name = "organization/contest/add.html"
+
+    def setup_contest(self, request, *args, **kwargs):
+        contest_key = kwargs.get("contest", None)
+        if not contest_key:
+            raise Http404()
+        self.contest = get_object_or_404(Contest, key=contest_key)
+        if self.organization not in self.contest.organizations.all():
+            raise Http404()
+        if not self.is_contest_editable(request, self.contest):
+            return generic_message(
+                self.request,
+                _("Permission denied"),
+                _("You are not allowed to edit this contest"),
+                status=400,
+            )
+
+    def get(self, request, *args, **kwargs):
+        res = self.setup_contest(request, *args, **kwargs)
+        if res:
+            return res
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        res = self.setup_contest(request, *args, **kwargs)
+        if res:
+            return res
+        problem_formset = self.get_problem_formset(True)
+        if problem_formset.is_valid():
+            for problem_form in problem_formset.save(commit=False):
+                if problem_form:
+                    problem_form.contest = self.contest
+                    problem_form.save()
+            for problem_form in problem_formset.deleted_objects:
+                problem_form.delete()
+            return super().post(request, *args, **kwargs)
+
+        self.object = self.contest
+        return self.render_to_response(
+            self.get_context_data(
+                problems_form=problem_formset,
+            )
+        )
+
+    def get_title(self):
+        return _("Edit %s") % self.contest.key
+
+    def get_content_title(self):
+        href = reverse("contest_view", args=[self.contest.key])
+        return mark_safe(f'Edit <a href="{href}">{self.contest.key}</a>')
+
+    def get_object(self):
+        return self.contest
+
+    def form_valid(self, form):
+        with transaction.atomic(), revisions.create_revision():
+            revisions.set_comment(_("Edited from site"))
+            revisions.set_user(self.request.user)
+            res = super(EditOrganizationContest, self).form_valid(form)
+            self.object.organizations.add(self.organization)
+            self.object.is_organization_private = True
+            self.object.save()
+            return res
+
+    def get_problem_formset(self, post=False):
+        return ContestProblemFormSet(
+            data=self.request.POST if post else None,
+            prefix="problems",
+            queryset=ContestProblem.objects.filter(contest=self.contest).order_by(
+                "order"
+            ),
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if "problems_form" not in context:
+            context["problems_form"] = self.get_problem_formset()
+        return context
+
+    def get_success_url(self):
+        return self.request.path
 
 
 class AddOrganizationBlog(

@@ -49,6 +49,13 @@
                         {% endif %}
                     </div>
                 </li>
+                {% if can_edit %}
+                    <li>
+                        <div>
+                            <a href="{{ url('organization_contest_add', organization.id, organization.slug) }}">{{ _('Add contest') }}</a>
+                        </div>
+                    </li>
+                {% endif %}
                 {% if is_member and not can_edit %}
                 <li>
                     <form method="post" action="{{ url('leave_organization', organization.id, organization.slug) }}">

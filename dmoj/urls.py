@@ -582,6 +582,11 @@ urlpatterns = [
         name="organization_list",
     ),
     url(
+        r"^organizations/add/$",
+        organization.AddOrganization.as_view(),
+        name="organization_add",
+    ),
+    url(
         r"^organization/(?P<pk>\d+)-(?P<slug>[\w-]*)",
         include(
             [
@@ -608,6 +613,16 @@ urlpatterns = [
                     paged_list_view(
                         organization.OrganizationContests, "organization_contests"
                     ),
+                ),
+                url(
+                    r"^/contest/add",
+                    organization.AddOrganizationContest.as_view(),
+                    name="organization_contest_add",
+                ),
+                url(
+                    r"^/contest/edit/(?P<contest>\w+)",
+                    organization.EditOrganizationContest.as_view(),
+                    name="organization_contest_edit",
                 ),
                 url(
                     r"^/submissions/",

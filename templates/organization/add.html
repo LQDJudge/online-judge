@@ -1,0 +1,18 @@
+{% extends "two-column-content.html" %}
+
+{% block two_col_js %}
+    {{ form.media.js }}
+{% endblock %}
+
+{% block two_col_media %}
+    {{ form.media.css }}
+{% endblock %}
+
+{% block left_sidebar %}
+    {% include "user/user-left-sidebar.html" %}
+{% endblock %}
+
+{% block middle_content %}
+    <center><h2>{{title}}</h2></center>
+    {% include "organization/form.html" %}
+{% endblock %}

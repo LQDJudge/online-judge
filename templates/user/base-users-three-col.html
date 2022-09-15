@@ -1,20 +1,12 @@
-{% extends "three-column-content.html" %}
+{% extends "two-column-content.html" %}
 
-{% block three_col_js %}
+{% block two_col_js %}
     {% block users_js_media %}{% endblock %}
     {% include "user/base-users-js.html" %}
 {% endblock %}
 
-{% block three_col_media %}
+{% block two_col_media %}
     <link href="http://fonts.cdnfonts.com/css/jersey-m54" rel="stylesheet">
-    <style>
-        @media (min-width: 800px) {
-            .middle-content {
-                max-width: none;
-                padding-left: 1em;
-            }
-        }
-    </style>
     {% block users_media %}{% endblock %}
 {% endblock %}
 

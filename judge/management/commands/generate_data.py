@@ -19,11 +19,14 @@ def gen_submissions():
     with connection.cursor() as cursor:
         cursor.execute(query)
         headers = [i[0] for i in cursor.description]
-        with open(os.path.join(settings.ML_DATA_PATH, "submissions.csv"), "w") as csvfile:
+        with open(
+            os.path.join(settings.ML_DATA_PATH, "submissions.csv"), "w"
+        ) as csvfile:
             f = csv.writer(csvfile)
             f.writerow(headers)
             for row in cursor.fetchall():
                 f.writerow(row)
+
 
 def gen_users():
     print("Generating users")

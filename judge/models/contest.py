@@ -759,6 +759,7 @@ class ContestProblem(models.Model):
         help_text=_(
             "Maximum number of submissions for this problem, " "or 0 for no limit."
         ),
+        verbose_name=_("max submissions"),
         default=0,
         validators=[
             MinValueValidator(0, _("Why include a problem you " "can't submit to?"))

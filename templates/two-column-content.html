@@ -1,0 +1,17 @@
+{% extends "three-column-content.html" %}
+
+{% block three_col_js %}
+    {% block two_col_js %}{% endblock %}
+{% endblock %}
+
+{% block three_col_media %}
+    <style>
+        @media (min-width: 800px) {
+            .middle-content {
+                max-width: none;
+                padding-left: 1em;
+            }
+        }
+    </style>
+    {% block two_col_media %}{% endblock %}
+{% endblock %}

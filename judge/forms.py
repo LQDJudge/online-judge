@@ -7,7 +7,14 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import RegexValidator
 from django.db.models import Q
-from django.forms import CharField, ChoiceField, Form, ModelForm
+from django.forms import (
+    CharField,
+    ChoiceField,
+    Form,
+    ModelForm,
+    formset_factory,
+    BaseModelFormSet,
+)
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
@@ -23,6 +30,7 @@ from judge.models import (
     Profile,
     Submission,
     BlogPost,
+    ContestProblem,
 )
 from judge.utils.subscription import newsletter_id
 from judge.widgets import (
@@ -31,6 +39,10 @@ from judge.widgets import (
     PagedownWidget,
     Select2MultipleWidget,
     Select2Widget,
+    HeavySelect2MultipleWidget,
+    HeavySelect2Widget,
+    Select2MultipleWidget,
+    DateTimePickerWidget,
 )
 
 
@@ -127,12 +139,119 @@ class ProblemSubmitForm(ModelForm):
 class EditOrganizationForm(ModelForm):
     class Meta:
         model = Organization
-        fields = ["about", "logo_override_image", "admins", "is_open"]
+        fields = [
+            "name",
+            "slug",
+            "short_name",
+            "about",
+            "logo_override_image",
+            "admins",
+            "is_open",
+        ]
         widgets = {"admins": Select2MultipleWidget()}
         if HeavyPreviewPageDownWidget is not None:
             widgets["about"] = HeavyPreviewPageDownWidget(
                 preview=reverse_lazy("organization_preview")
             )
+
+
+class AddOrganizationForm(ModelForm):
+    class Meta:
+        model = Organization
+        fields = [
+            "name",
+            "slug",
+            "short_name",
+            "about",
+            "logo_override_image",
+            "is_open",
+        ]
+        widgets = {}
+        if HeavyPreviewPageDownWidget is not None:
+            widgets["about"] = HeavyPreviewPageDownWidget(
+                preview=reverse_lazy("organization_preview")
+            )
+
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request", None)
+        super(AddOrganizationForm, self).__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        res = super(AddOrganizationForm, self).save(commit=False)
+        res.registrant = self.request.profile
+        if commit:
+            res.save()
+        return res
+
+
+class OrganizationContestForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        self.org_id = kwargs.pop("org_id", 0)
+        super(OrganizationContestForm, self).__init__(*args, **kwargs)
+        for field in [
+            "authors",
+            "curators",
+            "testers",
+            "private_contestants",
+            "banned_users",
+            "view_contest_scoreboard",
+        ]:
+            self.fields[field].widget.data_url = (
+                self.fields[field].widget.get_url() + "?org_id=1"
+            )
+
+    class Meta:
+        model = Contest
+        fields = (
+            "key",
+            "name",
+            "authors",
+            "curators",
+            "testers",
+            "is_visible",
+            "use_clarifications",
+            "hide_problem_tags",
+            "scoreboard_visibility",
+            "run_pretests_only",
+            "points_precision",
+            "start_time",
+            "end_time",
+            "time_limit",
+            "description",
+            "og_image",
+            "logo_override_image",
+            "summary",
+            "format_name",
+            "format_config",
+            "problem_label_script",
+            "access_code",
+            "private_contestants",
+            "view_contest_scoreboard",
+            "banned_users",
+        )
+        widgets = {
+            "authors": HeavySelect2MultipleWidget(data_view="profile_select2"),
+            "curators": HeavySelect2MultipleWidget(data_view="profile_select2"),
+            "testers": HeavySelect2MultipleWidget(data_view="profile_select2"),
+            "private_contestants": HeavySelect2MultipleWidget(
+                data_view="profile_select2"
+            ),
+            "banned_users": HeavySelect2MultipleWidget(data_view="profile_select2"),
+            "view_contest_scoreboard": HeavySelect2MultipleWidget(
+                data_view="profile_select2"
+            ),
+            "organizations": HeavySelect2MultipleWidget(
+                data_view="organization_select2"
+            ),
+            "tags": Select2MultipleWidget,
+            "description": HeavyPreviewPageDownWidget(
+                preview=reverse_lazy("contest_preview")
+            ),
+            "start_time": DateTimePickerWidget(),
+            "end_time": DateTimePickerWidget(),
+            "format_name": Select2Widget(),
+            "scoreboard_visibility": Select2Widget(),
+        }
 
 
 class AddOrganizationMemberForm(ModelForm):
@@ -291,3 +410,29 @@ class ProblemPointsVoteForm(ModelForm):
     class Meta:
         model = ProblemPointsVote
         fields = ["points"]
+
+
+class ContestProblemForm(ModelForm):
+    class Meta:
+        model = ContestProblem
+        fields = (
+            "order",
+            "problem",
+            "points",
+            "partial",
+            "output_prefix_override",
+            "max_submissions",
+        )
+        widgets = {
+            "problem": HeavySelect2Widget(
+                data_view="problem_select2", attrs={"style": "width:100%"}
+            ),
+        }
+
+
+class ContestProblemFormSet(
+    formset_factory(
+        ContestProblemForm, formset=BaseModelFormSet, extra=6, can_delete=True
+    )
+):
+    model = ContestProblem

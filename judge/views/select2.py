@@ -10,8 +10,14 @@ from judge.jinja2.gravatar import gravatar
 from judge.models import Comment, Contest, Organization, Problem, Profile
 
 
-def _get_user_queryset(term):
-    qs = Profile.objects
+def _get_user_queryset(term, org_id):
+    if org_id:
+        try:
+            qs = Organization.objects.get(id=org_id).members.all()
+        except Exception:
+            raise Http404()
+    else:
+        qs = Profile.objects
     if term.endswith(" "):
         qs = qs.filter(user__username=term.strip())
     else:
@@ -46,9 +52,14 @@ class Select2View(BaseListView):
 
 
 class UserSelect2View(Select2View):
+    def get(self, request, *args, **kwargs):
+        self.org_id = kwargs.get("org_id", request.GET.get("org_id", ""))
+        print(self.org_id)
+        return super(UserSelect2View, self).get(request, *args, **kwargs)
+
     def get_queryset(self):
         return (
-            _get_user_queryset(self.term)
+            _get_user_queryset(self.term, self.org_id)
             .annotate(username=F("user__username"))
             .only("id")
         )

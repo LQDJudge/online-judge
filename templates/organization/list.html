@@ -1,13 +1,6 @@
-{% extends "user/base-users-three-col.html" %}
-{% block users_js_media %}
-    <script type="text/javascript">
-        $(function(){
-            register_all_toggles();
-        });
-    </script>
-{% endblock %}
+{% extends "two-column-content.html" %}
 
-{% block users_media %}
+{% block two_col_media %}
     <style>
         .organization-row {
             display: block;
@@ -62,7 +55,8 @@
     {% endif %}
 {% endmacro %}
 
-{% block users_table %}
+{% block middle_content %}
+    <a style="float: right" class="button small" href="{{url('organization_add')}}">{{_("Create group")}}</a>
     {{ org_list(_('My groups'), my_organizations) }}
     {{ org_list(_('Open groups'), open_organizations) }}
     {{ org_list(_('Private groups'), private_organizations) }}

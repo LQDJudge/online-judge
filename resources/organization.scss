@@ -24,3 +24,6 @@
 .org-field-wrapper {
     margin-top: 0.4em;
 }
+.org-field-wrapper:has(> input[type=checkbox]) {
+    display: contents;
+}

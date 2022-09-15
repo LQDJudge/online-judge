@@ -47,6 +47,7 @@ class OrganizationAdmin(VersionAdmin):
         "registrant",
         "show_public",
     )
+    search_fields = ("name", "short_name", "registrant__user__username")
     prepopulated_fields = {"slug": ("name",)}
     actions_on_top = True
     actions_on_bottom = True

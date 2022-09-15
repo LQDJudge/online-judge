@@ -14,8 +14,8 @@
 {% endblock %}
 
 {% block middle_title %}
-    {% if title %}
-        <center><h2>{{ title }}</h2></center>
+    {% if title or content_title %}
+        <center><h2>{{ content_title if content_title else title }}</h2></center>
         <br/>
     {% endif %}
 {% endblock %}
