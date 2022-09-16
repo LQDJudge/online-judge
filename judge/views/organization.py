@@ -44,8 +44,9 @@ from judge.forms import (
     AddOrganizationMemberForm,
     OrganizationBlogForm,
     OrganizationAdminBlogForm,
-    OrganizationContestForm,
+    EditOrganizationContestForm,
     ContestProblemFormSet,
+    AddOrganizationContestForm,
 )
 from judge.models import (
     BlogPost,
@@ -126,7 +127,6 @@ class OrganizationMixin(OrganizationBase):
         context["logo_override_image"] = self.organization.logo_override_image
         if "organizations" in context:
             context.pop("organizations")
-        print(context)
         return context
 
     def dispatch(self, request, *args, **kwargs):
@@ -387,17 +387,11 @@ class OrganizationContestMixin(
     OrganizationHomeViewContext,
 ):
     model = Contest
-    form_class = OrganizationContestForm
 
     def is_contest_editable(self, request, contest):
         return request.profile in contest.authors.all() or self.can_edit_organization(
             self.organization
         )
-
-    def get_form_kwargs(self):
-        kwargs = super(OrganizationContestMixin, self).get_form_kwargs()
-        kwargs["org_id"] = self.organization.id
-        return kwargs
 
 
 class OrganizationContests(
@@ -432,7 +426,6 @@ class OrganizationContests(
             self.set_editable_contest(contest)
         for contest in context["future_contests"]:
             self.set_editable_contest(contest)
-        print(context)
         return context
 
 
@@ -861,17 +854,26 @@ class AddOrganizationContest(
     AdminOrganizationMixin, OrganizationContestMixin, CreateView
 ):
     template_name = "organization/contest/add.html"
+    form_class = AddOrganizationContestForm
 
     def get_title(self):
         return _("Add contest")
+
+    def get_form_kwargs(self):
+        kwargs = super(AddOrganizationContest, self).get_form_kwargs()
+        kwargs["request"] = self.request
+        return kwargs
 
     def form_valid(self, form):
         with transaction.atomic(), revisions.create_revision():
             revisions.set_comment(_("Added from site"))
             revisions.set_user(self.request.user)
+
             res = super(AddOrganizationContest, self).form_valid(form)
+
             self.object.organizations.add(self.organization)
             self.object.is_organization_private = True
+            self.object.authors.add(self.request.profile)
             self.object.save()
             return res
 
@@ -885,7 +887,8 @@ class AddOrganizationContest(
 class EditOrganizationContest(
     OrganizationContestMixin, MemberOrganizationMixin, UpdateView
 ):
-    template_name = "organization/contest/add.html"
+    template_name = "organization/contest/edit.html"
+    form_class = EditOrganizationContestForm
 
     def setup_contest(self, request, *args, **kwargs):
         contest_key = kwargs.get("contest", None)
@@ -901,6 +904,11 @@ class EditOrganizationContest(
                 _("You are not allowed to edit this contest"),
                 status=400,
             )
+
+    def get_form_kwargs(self):
+        kwargs = super(EditOrganizationContest, self).get_form_kwargs()
+        kwargs["org_id"] = self.organization.id
+        return kwargs
 
     def get(self, request, *args, **kwargs):
         res = self.setup_contest(request, *args, **kwargs)
