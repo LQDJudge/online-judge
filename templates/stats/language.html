@@ -36,20 +36,10 @@
                 Chart.defaults.global.tooltipFontFamily =
                     Chart.defaults.global.tooltipTitleFontFamily =
                         $('body').css('font-family');
-
-            function pie_chart(url, $chart) {
-                $.getJSON(url, function (data) {
-                    draw_pie_chart(data, $chart);
-                });
-            }
-
-            pie_chart('{{ url('language_stats_data_all') }}', $('#lang-all'));
-            pie_chart('{{ url('language_stats_data_ac') }}', $('#lang-ac'));
-            pie_chart('{{ url('stats_data_status') }}', $('#status-counts'));
-
-            $.getJSON('{{ url('language_stats_data_ac_rate') }}', function (data) {
-                draw_bar_chart(data, $('#ac-rate'));
-            });
+            draw_pie_chart({{ data_all }}, $('#lang-all'));
+            draw_pie_chart({{ lang_ac }}, $('#lang-ac'));
+            draw_pie_chart({{ status_counts }}, $('#status-counts'));
+            draw_bar_chart({{ ac_rate }}, $('#ac-rate'));
         });
     </script>
 {% endblock %}
