@@ -886,7 +886,19 @@ urlpatterns = [
                     "^language/",
                     include(
                         [
-                            url("^$", stats.StatLanguage.as_view(), name="language_stats"),
+                            url(
+                                "^$",
+                                stats.StatLanguage.as_view(),
+                                name="language_stats",
+                            ),
+                        ]
+                    ),
+                ),
+                url(
+                    "^site/",
+                    include(
+                        [
+                            url("^$", stats.StatSite.as_view(), name="site_stats"),
                         ]
                     ),
                 ),

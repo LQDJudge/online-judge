@@ -154,7 +154,9 @@ class ProblemData(models.Model):
         if self.zipfile:
             self.zipfile.name = problem_directory_file_helper(new, self.zipfile.name)
         if self.generator:
-            self.generator.name = problem_directory_file_helper(new, self.generator.name)
+            self.generator.name = problem_directory_file_helper(
+                new, self.generator.name
+            )
         if self.custom_checker:
             self.custom_checker.name = problem_directory_file_helper(
                 new, self.custom_checker.name
