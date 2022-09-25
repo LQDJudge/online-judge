@@ -157,7 +157,9 @@ class OrganizationMixin(OrganizationBase):
 class AdminOrganizationMixin(OrganizationMixin):
     def dispatch(self, request, *args, **kwargs):
         res = super(AdminOrganizationMixin, self).dispatch(request, *args, **kwargs)
-        if self.can_edit_organization(self.organization):
+        if not hasattr(self, "organization") or self.can_edit_organization(
+            self.organization
+        ):
             return res
         return generic_message(
             request,
@@ -170,7 +172,7 @@ class AdminOrganizationMixin(OrganizationMixin):
 class MemberOrganizationMixin(OrganizationMixin):
     def dispatch(self, request, *args, **kwargs):
         res = super(MemberOrganizationMixin, self).dispatch(request, *args, **kwargs)
-        if self.can_access(self.organization):
+        if not hasattr(self, "organization") or self.can_access(self.organization):
             return res
         return generic_message(
             request,
