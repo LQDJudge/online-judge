@@ -390,7 +390,7 @@ class OrganizationContestMixin(
 ):
     model = Contest
 
-    def is_contest_editable(self, request, contest):
+    def is_contest_able(self, request, contest):
         return request.profile in contest.authors.all() or self.can_edit_organization(
             self.organization
         )

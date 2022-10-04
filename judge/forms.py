@@ -153,8 +153,6 @@ class EditOrganizationForm(ModelForm):
             widgets["about"] = HeavyPreviewPageDownWidget(
                 preview=reverse_lazy("organization_preview")
             )
-
-
 class AddOrganizationForm(ModelForm):
     class Meta:
         model = Organization
