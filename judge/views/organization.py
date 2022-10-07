@@ -933,8 +933,8 @@ class EditOrganizationContest(
                     problem_form.save()
             for problem_form in problem_formset.deleted_objects:
                 problem_form.delete()
-            return super().post(request, *args, **kwargs)
-
+            super().post(request, *args, **kwargs)
+            return HttpResponseRedirect(reverse("organization_contests", args=(self.organization_id,self.organization.slug) ))
         self.object = self.contest
         return self.render_to_response(
             self.get_context_data(
