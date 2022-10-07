@@ -1,4 +1,6 @@
+from email.policy import default
 import re
+from tabnanny import verbose
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -96,7 +98,12 @@ class BlogPost(models.Model):
         return self.title
 
     def get_absolute_url(self):
-        return reverse("blog_post", args=(self.id, self.slug))
+        try:
+            BlogPost.objects.get(id=self.id)
+            return reverse("blog_post", args=(self.id , self.slug))
+        except BlogPost.DoesNotExist:
+            return reverse("organization_pending_blogs", 
+                args=(self.organizations.first().pk, self.organizations.first().slug))
 
     def can_see(self, user):
         if self.visible and self.publish_on <= timezone.now():
