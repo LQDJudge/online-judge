@@ -1,6 +1,4 @@
-from email.policy import default
 import re
-from tabnanny import verbose
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -98,7 +96,8 @@ class BlogPost(models.Model):
         return self.title
 
     def get_absolute_url(self):
-        return reverse("blog_post", args=(self.id , self.slug))
+        return reverse("blog_post", args=(self.id, self.slug))
+
     def can_see(self, user):
         if self.visible and self.publish_on <= timezone.now():
             if not self.is_organization_private:

@@ -290,19 +290,15 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
         except ObjectDoesNotExist:
             pass
         try:
-            print(self.request.LANGUAGE_CODE)
-            print(ProblemTranslation.objects.last().__dict__)
             translation = self.object.translations.get(
                 language=self.request.LANGUAGE_CODE
             )
         except ProblemTranslation.DoesNotExist:
-            print('DNE')
             context["title"] = self.object.name
             context["language"] = settings.LANGUAGE_CODE
             context["description"] = self.object.description
             context["translated"] = False
         else:
-            print('E')
             context["title"] = translation.name
             context["language"] = self.request.LANGUAGE_CODE
             context["description"] = translation.description

@@ -665,11 +665,6 @@ urlpatterns = [
                     organization.EditOrganizationBlog.as_view(),
                     name="edit_organization_blog",
                 ),
-                # url(
-                #     r"^/blog/deleting$",
-                #     organization.PendingBlogs.as_view(),
-                #     name="organization_pending_blogs",
-                # ),
                 url(
                     r"^/blog/pending$",
                     organization.PendingBlogs.as_view(),
