@@ -152,19 +152,21 @@ class ProblemData(models.Model):
             if e.errno != errno.ENOENT:
                 raise
         if self.zipfile:
-            self.zipfile.name = _problem_directory_file(new, self.zipfile.name)
+            self.zipfile.name = problem_directory_file_helper(new, self.zipfile.name)
         if self.generator:
-            self.generator.name = _problem_directory_file(new, self.generator.name)
+            self.generator.name = problem_directory_file_helper(
+                new, self.generator.name
+            )
         if self.custom_checker:
-            self.custom_checker.name = _problem_directory_file(
+            self.custom_checker.name = problem_directory_file_helper(
                 new, self.custom_checker.name
             )
         if self.custom_checker:
-            self.custom_checker.name = _problem_directory_file(
+            self.custom_checker.name = problem_directory_file_helper(
                 new, self.custom_checker.name
             )
         if self.custom_validator:
-            self.custom_validator.name = _problem_directory_file(
+            self.custom_validator.name = problem_directory_file_helper(
                 new, self.custom_validator.name
             )
         self.save()

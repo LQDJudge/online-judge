@@ -6,28 +6,6 @@
 
 {% block three_col_media %}
     {{ form.media.css }}
-    <style>
-        #org-field-wrapper-scoreboard_visibility,
-        #org-field-wrapper-points_precision,
-        #org-field-wrapper-start_time,
-        #org-field-wrapper-end_time,
-        #org-field-wrapper-time_limit,
-        #org-field-wrapper-format_name {
-            display: inline-flex;
-        }
-        .problems-problem {
-            width: 40%;
-        }
-        input[type=number] {
-            width: 5em;
-        }
-        .middle-content {
-            z-index: 1;
-        }
-        #three-col-container {
-            overflow: auto;
-        }
-    </style>
 {% endblock %}
 
 {% block middle_content %}
@@ -55,36 +33,6 @@
             {% endif %}
         {% endfor %}
 
-        {% if problems_form %}
-        <hr><br>
-        {{ problems_form.management_form }}
-        <i>{{_('If you run out of rows, click Save')}}</i>
-        <table class="table">
-            <thead>
-                <tr>
-                    {% for field in problems_form[0] %}
-                    {% if not field.is_hidden %}
-                        <th>
-                            {{field.label}}
-                        </th>
-                    {% endif %}
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-            {% for form in problems_form %}
-                <tr>
-                    {% for field in form %}
-                        <td class="problems-{{field.name}}" title="
-                                {{ field.help_text|safe if field.help_text }}"
-                            style="{{ 'display:none' if field.is_hidden }}"
-                        >{{field}}<div style="color:red">{{field.errors}}</div></td>
-                        {% endfor %}
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {% endif %}
         <button type="submit">{{ _('Save') }}</button>
     </form>
 {% endblock %}

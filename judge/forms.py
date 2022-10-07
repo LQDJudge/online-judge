@@ -184,10 +184,49 @@ class AddOrganizationForm(ModelForm):
         return res
 
 
-class OrganizationContestForm(ModelForm):
+class AddOrganizationContestForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request", None)
+        super(AddOrganizationContestForm, self).__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        contest = super(AddOrganizationContestForm, self).save(commit=False)
+        old_save_m2m = self.save_m2m
+
+        def save_m2m():
+            for i, problem in enumerate(self.cleaned_data["problems"]):
+                contest_problem = ContestProblem(
+                    contest=contest, problem=problem, points=100, order=i + 1
+                )
+                contest_problem.save()
+                contest.contest_problems.add(contest_problem)
+            old_save_m2m()
+
+        self.save_m2m = save_m2m
+        contest.save()
+        self.save_m2m()
+        return contest
+
+    class Meta:
+        model = Contest
+        fields = (
+            "key",
+            "name",
+            "start_time",
+            "end_time",
+            "problems",
+        )
+        widgets = {
+            "start_time": DateTimePickerWidget(),
+            "end_time": DateTimePickerWidget(),
+            "problems": HeavySelect2MultipleWidget(data_view="problem_select2"),
+        }
+
+
+class EditOrganizationContestForm(ModelForm):
     def __init__(self, *args, **kwargs):
         self.org_id = kwargs.pop("org_id", 0)
-        super(OrganizationContestForm, self).__init__(*args, **kwargs)
+        super(EditOrganizationContestForm, self).__init__(*args, **kwargs)
         for field in [
             "authors",
             "curators",
@@ -203,27 +242,25 @@ class OrganizationContestForm(ModelForm):
     class Meta:
         model = Contest
         fields = (
+            "is_visible",
             "key",
             "name",
+            "start_time",
+            "end_time",
+            "format_name",
             "authors",
             "curators",
             "testers",
-            "is_visible",
+            "time_limit",
             "use_clarifications",
             "hide_problem_tags",
             "scoreboard_visibility",
             "run_pretests_only",
             "points_precision",
-            "start_time",
-            "end_time",
-            "time_limit",
             "description",
             "og_image",
             "logo_override_image",
             "summary",
-            "format_name",
-            "format_config",
-            "problem_label_script",
             "access_code",
             "private_contestants",
             "view_contest_scoreboard",

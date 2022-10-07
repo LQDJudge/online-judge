@@ -47,8 +47,9 @@ from judge.forms import (
     AddOrganizationMemberForm,
     OrganizationBlogForm,
     OrganizationAdminBlogForm,
-    OrganizationContestForm,
+    EditOrganizationContestForm,
     ContestProblemFormSet,
+    AddOrganizationContestForm,
 )
 from judge.models import (
     BlogPost,
@@ -159,7 +160,9 @@ class OrganizationMixin(OrganizationBase):
 class AdminOrganizationMixin(OrganizationMixin):
     def dispatch(self, request, *args, **kwargs):
         res = super(AdminOrganizationMixin, self).dispatch(request, *args, **kwargs)
-        if self.can_edit_organization(self.organization):
+        if not hasattr(self, "organization") or self.can_edit_organization(
+            self.organization
+        ):
             return res
         return generic_message(
             request,
@@ -172,7 +175,7 @@ class AdminOrganizationMixin(OrganizationMixin):
 class MemberOrganizationMixin(OrganizationMixin):
     def dispatch(self, request, *args, **kwargs):
         res = super(MemberOrganizationMixin, self).dispatch(request, *args, **kwargs)
-        if self.can_access(self.organization):
+        if not hasattr(self, "organization") or self.can_access(self.organization):
             return res
         return generic_message(
             request,
@@ -389,17 +392,11 @@ class OrganizationContestMixin(
     OrganizationHomeViewContext,
 ):
     model = Contest
-    form_class = OrganizationContestForm
 
     def is_contest_editable(self, request, contest):
         return request.profile in contest.authors.all() or self.can_edit_organization(
             self.organization
         )
-
-    def get_form_kwargs(self):
-        kwargs = super(OrganizationContestMixin, self).get_form_kwargs()
-        kwargs["org_id"] = self.organization.id
-        return kwargs
 
 
 class OrganizationContests(
@@ -862,17 +859,26 @@ class AddOrganizationContest(
     AdminOrganizationMixin, OrganizationContestMixin, CreateView
 ):
     template_name = "organization/contest/add.html"
+    form_class = AddOrganizationContestForm
 
     def get_title(self):
         return _("Add contest")
+
+    def get_form_kwargs(self):
+        kwargs = super(AddOrganizationContest, self).get_form_kwargs()
+        kwargs["request"] = self.request
+        return kwargs
 
     def form_valid(self, form):
         with transaction.atomic(), revisions.create_revision():
             revisions.set_comment(_("Added from site"))
             revisions.set_user(self.request.user)
+
             res = super(AddOrganizationContest, self).form_valid(form)
+
             self.object.organizations.add(self.organization)
             self.object.is_organization_private = True
+            self.object.authors.add(self.request.profile)
             self.object.save()
             return res
 
@@ -886,7 +892,8 @@ class AddOrganizationContest(
 class EditOrganizationContest(
     OrganizationContestMixin, MemberOrganizationMixin, UpdateView
 ):
-    template_name = "organization/contest/add.html"
+    template_name = "organization/contest/edit.html"
+    form_class = EditOrganizationContestForm
 
     def setup_contest(self, request, *args, **kwargs):
         contest_key = kwargs.get("contest", None)
@@ -902,6 +909,11 @@ class EditOrganizationContest(
                 _("You are not allowed to edit this contest"),
                 status=400,
             )
+
+    def get_form_kwargs(self):
+        kwargs = super(EditOrganizationContest, self).get_form_kwargs()
+        kwargs["org_id"] = self.organization.id
+        return kwargs
 
     def get(self, request, *args, **kwargs):
         res = self.setup_contest(request, *args, **kwargs)
@@ -921,8 +933,8 @@ class EditOrganizationContest(
                     problem_form.save()
             for problem_form in problem_formset.deleted_objects:
                 problem_form.delete()
-            return super().post(request, *args, **kwargs)
-
+            super().post(request, *args, **kwargs)
+            return HttpResponseRedirect(reverse("organization_contests", args=(self.organization_id,self.organization.slug) ))
         self.object = self.contest
         return self.render_to_response(
             self.get_context_data(

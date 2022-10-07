@@ -290,15 +290,19 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
         except ObjectDoesNotExist:
             pass
         try:
+            print(self.request.LANGUAGE_CODE)
+            print(ProblemTranslation.objects.last().__dict__)
             translation = self.object.translations.get(
                 language=self.request.LANGUAGE_CODE
             )
         except ProblemTranslation.DoesNotExist:
+            print('DNE')
             context["title"] = self.object.name
             context["language"] = settings.LANGUAGE_CODE
             context["description"] = self.object.description
             context["translated"] = False
         else:
+            print('E')
             context["title"] = translation.name
             context["language"] = self.request.LANGUAGE_CODE
             context["description"] = translation.description
@@ -845,8 +849,10 @@ class ProblemFeed(ProblemList):
         if self.feed_type == "new":
             return queryset.order_by("-date")
         elif user and self.feed_type == "volunteer":
-            voted_problems = user.volunteer_problem_votes.values_list(
-                "problem", flat=True
+            voted_problems = (
+                user.volunteer_problem_votes.values_list("problem", flat=True)
+                if not bool(self.search_query)
+                else []
             )
             if self.show_solved_only:
                 queryset = queryset.filter(
