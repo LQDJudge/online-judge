@@ -1,0 +1,39 @@
+{% extends "organization/home-base.html" %}
+
+{% block three_col_js %}
+    {{ form.media.js }}
+    {% include "organization/home-js.html" %}
+{% endblock %}
+
+{% block three_col_media %}
+    {{ form.media.css }}
+{% endblock %}
+
+{% block middle_content %}
+<form action="" method="post">
+    {% csrf_token %}
+    {% if form.errors %}
+        <div class="alert alert-danger alert-dismissable">
+            <a href="#" class="close">x</a>
+                {{ form.non_field_errors() }}
+                {{ form.errors }}
+        </div>
+    {% endif %}
+    {% for field in form %}
+        {% if not field.is_hidden %}
+            <div style="margin-bottom: 1em;">
+                {{ field.errors }}
+                <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span style="color:red"> * </span>{% endif %}:</b> </label>
+                <div class="org-field-wrapper" id="org-field-wrapper-{{field.html_name }}">
+                    {{ field }}
+                </div>
+                {% if field.help_text %}
+                    <i style="display: block">{{ field.help_text|safe }}</i>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endfor %}
+    <button type="submit" style="display: inline;" name="action" value="Save" >{{ _('Save') }} </button>
+    <button type="submit" style="background-color: red; float: right;" name="action" value="Delete" > {{ _('Delete') }} </button>
+</form>
+{% endblock %}
