@@ -845,8 +845,10 @@ class ProblemFeed(ProblemList):
         if self.feed_type == "new":
             return queryset.order_by("-date")
         elif user and self.feed_type == "volunteer":
-            voted_problems = user.volunteer_problem_votes.values_list(
-                "problem", flat=True
+            voted_problems = (
+                user.volunteer_problem_votes.values_list("problem", flat=True)
+                if not bool(self.search_query)
+                else []
             )
             if self.show_solved_only:
                 queryset = queryset.filter(

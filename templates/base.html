@@ -282,6 +282,7 @@
                                 {% endif %}
                                 {% if request.user.is_superuser %}
                                     <li><a href="{{ url('internal_problem') }}">{{ _('Internal') }}</a></li>
+                                    <li><a href="{{ url('site_stats') }}">{{ _('Stats') }}</a></li>
                                 {% endif %}
                                 <li><a href="{{ url('user_edit_profile') }}">{{ _('Edit profile') }}</a></li>
                                 {% if request.user.is_impersonate %}

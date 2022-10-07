@@ -1,0 +1,6 @@
+{% extends "tabs-base.html" %}
+
+{% block tabs %}
+    {{ make_tab('language', 'fa-list', url('language_stats'), _('Language')) }}
+    {{ make_tab('site', 'fa-list', url('site_stats'), _('Site')) }}
+{% endblock %}

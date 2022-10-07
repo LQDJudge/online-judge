@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 import mistune
 from django.conf import settings
-from jinja2 import Markup
+from markupsafe import Markup
 from lxml import html
 from lxml.etree import ParserError, XMLSyntaxError
 

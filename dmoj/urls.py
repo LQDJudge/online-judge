@@ -891,27 +891,19 @@ urlpatterns = [
                     "^language/",
                     include(
                         [
-                            url("^$", stats.language, name="language_stats"),
                             url(
-                                "^data/all/$",
-                                stats.language_data,
-                                name="language_stats_data_all",
+                                "^$",
+                                stats.StatLanguage.as_view(),
+                                name="language_stats",
                             ),
-                            url(
-                                "^data/ac/$",
-                                stats.ac_language_data,
-                                name="language_stats_data_ac",
-                            ),
-                            url(
-                                "^data/status/$",
-                                stats.status_data,
-                                name="stats_data_status",
-                            ),
-                            url(
-                                "^data/ac_rate/$",
-                                stats.ac_rate,
-                                name="language_stats_data_ac_rate",
-                            ),
+                        ]
+                    ),
+                ),
+                url(
+                    "^site/",
+                    include(
+                        [
+                            url("^$", stats.StatSite.as_view(), name="site_stats"),
                         ]
                     ),
                 ),
