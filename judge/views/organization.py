@@ -1,4 +1,3 @@
-from itertools import chain
 from django import forms
 from django.conf import settings
 from django.contrib import messages
@@ -1037,7 +1036,7 @@ class EditOrganizationBlog(
     MemberOrganizationMixin,
     UpdateView,
 ):
-    template_name = "organization/blog/add.html"
+    template_name = "organization/blog/edit.html"
     model = BlogPost
 
     def get_form_class(self):
@@ -1063,6 +1062,10 @@ class EditOrganizationBlog(
                 _("Not allowed to edit this blog"),
             )
 
+    def delete_blog(self , request , *args , **kwargs):
+        self.blog_id = kwargs["blog_pk"]
+        BlogPost.objects.get(pk = self.blog_id).delete()
+
     def get(self, request, *args, **kwargs):
         res = self.setup_blog(request, *args, **kwargs)
         if res:
@@ -1073,7 +1076,13 @@ class EditOrganizationBlog(
         res = self.setup_blog(request, *args, **kwargs)
         if res:
             return res
-        return super().post(request, *args, **kwargs)
+        if request.POST['action'] == 'Delete':
+            self.create_notification("Delete blog")
+            self.delete_blog(request , *args , **kwargs)
+            cur_url = reverse("organization_pending_blogs", args=(self.organization_id,self.organization.slug) )
+            return HttpResponseRedirect(cur_url)
+        else:
+            return super().post(request, *args, **kwargs)
 
     def get_object(self):
         return self.blog
@@ -1081,31 +1090,35 @@ class EditOrganizationBlog(
     def get_title(self):
         return _("Edit blog %s") % self.object.title
 
+    def create_notification(self,action):
+        blog = BlogPost.objects.get(pk=self.blog_id)
+        link = reverse(
+            "edit_organization_blog",
+            args=[self.organization.id, self.organization.slug, self.blog_id],
+        )
+        html = (
+            f'<a href="{link}">{blog.title} - {self.organization.name}</a>'
+        )
+        post_authors = blog.authors.all()
+        posible_user = self.organization.admins.all() | post_authors
+        for user in posible_user:
+            if user.id == self.request.profile.id:
+                continue
+            notification = Notification(
+                owner=user,
+                author=self.request.profile,
+                category= action,
+                html_link=html,
+            )
+            notification.save()
+    
     def form_valid(self, form):
         with transaction.atomic(), revisions.create_revision():
             res = super(EditOrganizationBlog, self).form_valid(form)
             revisions.set_comment(_("Edited from site"))
             revisions.set_user(self.request.user)
-
-            link = reverse(
-                "edit_organization_blog",
-                args=[self.organization.id, self.organization.slug, self.object.id],
-            )
-            html = (
-                f'<a href="{link}">{self.object.title} - {self.organization.name}</a>'
-            )
-            for user in self.organization.admins.all():
-                if user.id == self.request.profile.id:
-                    continue
-                notification = Notification(
-                    owner=user,
-                    author=self.request.profile,
-                    category="Edit blog",
-                    html_link=html,
-                )
-                notification.save()
+            self.create_notification("Edit blog")
             return res
-
 
 class PendingBlogs(
     LoginRequiredMixin,

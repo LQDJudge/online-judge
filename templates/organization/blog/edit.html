@@ -1,3 +1,15 @@
+{% extends "organization/home-base.html" %}
+
+{% block three_col_js %}
+    {{ form.media.js }}
+    {% include "organization/home-js.html" %}
+{% endblock %}
+
+{% block three_col_media %}
+    {{ form.media.css }}
+{% endblock %}
+
+{% block middle_content %}
 <form action="" method="post">
     {% csrf_token %}
     {% if form.errors %}
@@ -22,4 +34,6 @@
         {% endif %}
     {% endfor %}
     <button type="submit" style="display: inline;" name="action" value="Save" >{{ _('Save') }} </button>
+    <button type="submit" style="background-color: red; float: right;" name="action" value="Delete" > {{ _('Delete') }} </button>
 </form>
+{% endblock %}
