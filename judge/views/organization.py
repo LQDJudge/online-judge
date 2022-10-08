@@ -1,10 +1,7 @@
-from ast import Delete, arg
-from itertools import chain
 from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
 from django.core.exceptions import PermissionDenied
@@ -19,7 +16,7 @@ from django.http import (
     HttpResponseBadRequest,
 )
 from django.shortcuts import get_object_or_404
-from django.urls import reverse , reverse_lazy
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.functional import cached_property
@@ -32,7 +29,6 @@ from django.views.generic import (
     UpdateView,
     View,
     CreateView,
-    DeleteView,
 )
 from django.views.generic.detail import (
     SingleObjectMixin,
@@ -134,7 +130,7 @@ class OrganizationMixin(OrganizationBase):
 
     def dispatch(self, request, *args, **kwargs):
         try:
-            self.organization_id = int(kwargs["pk"] )
+            self.organization_id = int(kwargs["pk"])
             self.organization = get_object_or_404(Organization, id=self.organization_id)
         except Http404:
             key = kwargs.get(self.slug_url_kwarg, None)
