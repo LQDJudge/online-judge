@@ -88,9 +88,9 @@
                             return;
                         } else if ($col.hasClass('username')) {
                             header.push(clean_text($col.text()));
-                            header.push("Name");
+                            header.push("Full name");
                         } else if ($col.hasClass('problem-score-col')) {
-                            header.push($col.attr("title"));
+                            header.push(clean_text($col.find('.problem-code').tex()));
                         } else {
                             header.push(clean_text($col.text()));
                         }
@@ -153,7 +153,10 @@
         <input id="show-virtual-checkbox" type="checkbox" style="vertical-align: bottom;">
         <label id="show-virtual-label" for="show-virtual-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show virtual participation') }}</label>
         <img src="{{static('loading.gif')}}" style="height: 1em; display:none;" id="loading-gif"></img>
-        <a href="#" onclick="download_ranking_as_csv()" style="float: right;">{{ _('Download as CSV') }}</a>
+        <a href="#" onclick="download_ranking_as_csv()" style="float: right;">
+            <i class="fa fa-download" aria-hidden="true"></i>
+            {{ _('Download as CSV') }}
+        </a>
     </div>
     {% include "contest/ranking-table.html" %}
 {% endblock %}
