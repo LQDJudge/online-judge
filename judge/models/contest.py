@@ -536,8 +536,8 @@ class Contest(models.Model):
         return False
 
     @classmethod
-    def get_visible_contests(cls, user):
-        if not user.is_authenticated:
+    def get_visible_contests(cls, user, *args):
+        if not user.is_authenticated or args == (True,) :
             return (
                 cls.objects.filter(
                     is_visible=True, is_organization_private=False, is_private=False

@@ -70,7 +70,7 @@ class FeedView(ListView):
         now = timezone.now()
 
         visible_contests = (
-            Contest.get_visible_contests(self.request.user)
+            Contest.get_visible_contests(self.request.user, True)
             .filter(is_visible=True)
             .order_by("start_time")
         )
