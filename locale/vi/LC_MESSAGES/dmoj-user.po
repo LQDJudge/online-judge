@@ -63,6 +63,12 @@ msgstr ""
 msgid "biconnected-component"
 msgstr ""
 
+msgid "bignum"
+msgstr ""
+
+msgid "binary-lifting"
+msgstr ""
+
 msgid "binary-search"
 msgstr ""
 
@@ -129,7 +135,7 @@ msgstr ""
 msgid "deep-optimization"
 msgstr ""
 
-msgid "dfs/bfs"
+msgid "dfs/bfs/pfs"
 msgstr ""
 
 msgid "dijkstra"
@@ -210,6 +216,9 @@ msgstr ""
 msgid "extgcd"
 msgstr ""
 
+msgid "Fenwick Tree (Binary Indexed Tree)"
+msgstr ""
+
 msgid "fft/ntt"
 msgstr ""
 
@@ -261,6 +270,9 @@ msgstr ""
 msgid "gomory-hu-tree"
 msgstr ""
 
+msgid "graph"
+msgstr ""
+
 msgid "graph theory"
 msgstr ""
 
@@ -282,9 +294,6 @@ msgstr ""
 msgid "heuristic"
 msgstr ""
 
-msgid "heuristics"
-msgstr ""
-
 msgid "hld"
 msgstr ""
 
@@ -292,6 +301,9 @@ msgid "HSG"
 msgstr ""
 
 msgid "ICPC"
+msgstr ""
+
+msgid "implementation"
 msgstr ""
 
 msgid "inclusion-exclusion"
@@ -330,6 +342,9 @@ msgstr ""
 msgid "local-search"
 msgstr ""
 
+msgid "ltt"
+msgstr ""
+
 msgid "manacher"
 msgstr ""
 
@@ -354,10 +369,16 @@ msgstr ""
 msgid "math-general"
 msgstr ""
 
+msgid "matrix multiplication"
+msgstr ""
+
 msgid "max-clique"
 msgstr ""
 
 msgid "meet-in-the-middle"
+msgstr ""
+
+msgid "Miscellaneous"
 msgstr ""
 
 msgid "mo-general"
@@ -424,6 +445,12 @@ msgid "probability"
 msgstr ""
 
 msgid "randomized"
+msgstr ""
+
+msgid "Range Queries"
+msgstr ""
+
+msgid "recursion"
 msgstr ""
 
 msgid "rmq"
@@ -501,6 +528,9 @@ msgstr ""
 msgid "sqrt-time"
 msgstr ""
 
+msgid "stack-queue"
+msgstr ""
+
 msgid "static-data"
 msgstr ""
 
@@ -516,7 +546,7 @@ msgstr ""
 msgid "sweep-line"
 msgstr ""
 
-msgid "tenary-search"
+msgid "ternary-search"
 msgstr ""
 
 msgid "topo-sort"
@@ -526,6 +556,9 @@ msgid "tortoise-hare"
 msgstr ""
 
 msgid "treap/splay"
+msgstr ""
+
+msgid "Tree - general"
 msgstr ""
 
 msgid "tree-isomorphism"

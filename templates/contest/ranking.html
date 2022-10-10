@@ -86,9 +86,6 @@
 
                         if ($col.hasClass('rating-column')) {
                             return;
-                        } else if ($col.hasClass('username')) {
-                            header.push(clean_text($col.text()));
-                            header.push("Full name");
                         } else if ($col.hasClass('problem-score-col')) {
                             header.push(clean_text($col.find('.problem-code').text()));
                         } else {
