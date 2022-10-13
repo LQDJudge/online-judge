@@ -14,7 +14,7 @@ from judge.models import (
     Contest,
     Language,
     Problem,
-    ProblemClarification,
+    ContestProblemClarification,
     Profile,
     Submission,
     Ticket,
@@ -50,8 +50,8 @@ class FeedView(ListView):
         if self.request.user.is_authenticated:
             participation = self.request.profile.current_contest
             if participation:
-                clarifications = ProblemClarification.objects.filter(
-                    problem__in=participation.contest.problems.all()
+                clarifications = ContestProblemClarification.objects.filter(
+                    problem__in=participation.contest.contest_problems.all()
                 )
                 context["has_clarifications"] = clarifications.count() > 0
                 context["clarifications"] = clarifications.order_by("-date")

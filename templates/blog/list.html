@@ -106,9 +106,9 @@
                         <ul>
                             {% for clarification in clarifications %}
                                 <li class="clarification">
-                                    <a href="{{ url('problem_detail', clarification.problem.code) }}"
+                                    <a href="{{ url('problem_detail', clarification.problem.problem.code) }}"
                                        class="problem">
-                                        {{ clarification.problem.name }}
+                                        {{ clarification.problem.problem.name }}
                                     </a>
                                     <span class="time">{{ relative_time(clarification.date) }}</span>
                                 </li>

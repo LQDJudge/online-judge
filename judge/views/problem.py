@@ -40,7 +40,7 @@ from judge.models import (
     Judge,
     Language,
     Problem,
-    ProblemClarification,
+    ContestProblemClarification,
     ProblemGroup,
     ProblemTranslation,
     ProblemType,
@@ -251,7 +251,7 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
         context["contest_problem"] = contest_problem
 
         if contest_problem:
-            clarifications = self.object.clarifications
+            clarifications = contest_problem.clarifications
             context["has_clarifications"] = clarifications.count() > 0
             context["clarifications"] = clarifications.order_by("-date")
             context["submission_limit"] = contest_problem.max_submissions
@@ -665,8 +665,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             if self.request.user.is_authenticated:
                 participation = self.request.profile.current_contest
                 if participation:
-                    clarifications = ProblemClarification.objects.filter(
-                        problem__in=participation.contest.problems.all()
+                    clarifications = ContestProblemClarification.objects.filter(
+                        problem__in=participation.contest.contest_problems.all()
                     )
                     context["has_clarifications"] = clarifications.count() > 0
                     context["clarifications"] = clarifications.order_by("-date")

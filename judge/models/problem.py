@@ -28,7 +28,6 @@ __all__ = [
     "ProblemType",
     "Problem",
     "ProblemTranslation",
-    "ProblemClarification",
     "License",
     "Solution",
     "TranslatedProblemQuerySet",
@@ -490,10 +489,6 @@ class Problem(models.Model):
     def i18n_name(self, value):
         self._i18n_name = value
 
-    @property
-    def clarifications(self):
-        return ProblemClarification.objects.filter(problem=self)
-
     def update_stats(self):
         self.user_count = (
             self.submission_set.filter(
@@ -611,16 +606,6 @@ class ProblemTranslation(models.Model):
         unique_together = ("problem", "language")
         verbose_name = _("problem translation")
         verbose_name_plural = _("problem translations")
-
-
-class ProblemClarification(models.Model):
-    problem = models.ForeignKey(
-        Problem, verbose_name=_("clarified problem"), on_delete=CASCADE
-    )
-    description = models.TextField(verbose_name=_("clarification body"))
-    date = models.DateTimeField(
-        verbose_name=_("clarification timestamp"), auto_now_add=True
-    )
 
 
 class LanguageLimit(models.Model):

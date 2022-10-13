@@ -65,7 +65,7 @@ from judge.models import (
     Problem,
     Profile,
     Submission,
-    ProblemClarification,
+    ContestProblemClarification,
 )
 from judge.tasks import run_moss
 from judge.utils.celery import redirect_to_task_status
@@ -1179,7 +1179,7 @@ class ContestTagDetail(TitleMixin, ContestTagDetailAjax):
         return _("Contest tag: %s") % self.object.name
 
 
-class ProblemClarificationForm(forms.Form):
+class ContestProblemClarificationForm(forms.Form):
     body = forms.CharField(
         widget=HeavyPreviewPageDownWidget(
             preview=reverse_lazy("comment_preview"),
@@ -1190,12 +1190,12 @@ class ProblemClarificationForm(forms.Form):
 
     def __init__(self, request, *args, **kwargs):
         self.request = request
-        super(ProblemClarificationForm, self).__init__(*args, **kwargs)
+        super(ContestProblemClarificationForm, self).__init__(*args, **kwargs)
         self.fields["body"].widget.attrs.update({"placeholder": _("Issue description")})
 
 
 class NewContestClarificationView(ContestMixin, TitleMixin, SingleObjectFormView):
-    form_class = ProblemClarificationForm
+    form_class = ContestProblemClarificationForm
     template_name = "contest/clarification.html"
 
     def get_form_kwargs(self):
@@ -1225,12 +1225,13 @@ class NewContestClarificationView(ContestMixin, TitleMixin, SingleObjectFormView
         problem_code = self.request.POST["problem"]
         description = form.cleaned_data["body"]
 
-        clarification = ProblemClarification(description=description)
-        clarification.problem = Problem.objects.get(code=problem_code)
+        clarification = ContestProblemClarification(description=description)
+        clarification.problem = get_object_or_404(
+            ContestProblem, contest=self.get_object(), problem__code=problem_code
+        )
         clarification.save()
 
-        link = reverse("home")
-        return HttpResponseRedirect(link)
+        return HttpResponseRedirect(reverse("problem_list"))
 
     def get_title(self):
         return "New clarification for %s" % self.object.name
@@ -1264,26 +1265,27 @@ class ContestClarificationAjax(ContestMixin, DetailView):
             minutes=polling_time
         )
 
-        queryset = list(
-            ProblemClarification.objects.filter(
-                problem__in=self.object.problems.all(), date__gte=last_one_minute
-            ).values("problem", "problem__name", "description")
+        queryset = ContestProblemClarification.objects.filter(
+            problem__in=self.object.contest_problems.all(), date__gte=last_one_minute
         )
 
         problems = list(
             ContestProblem.objects.filter(contest=self.object)
             .order_by("order")
-            .values("problem")
+            .values_list("problem__code", flat=True)
         )
-        problems = [i["problem"] for i in problems]
-        for cla in queryset:
-            cla["order"] = self.object.get_label_for_problem(
-                problems.index(cla["problem"])
-            )
+        res = []
+        for clarification in queryset:
+            value = {
+                "order": self.object.get_label_for_problem(
+                    problems.index(clarification.problem.problem.code)
+                ),
+                "problem__name": clarification.problem.problem.name,
+                "description": clarification.description,
+            }
+            res.append(value)
 
-        return JsonResponse(
-            queryset, safe=False, json_dumps_params={"ensure_ascii": False}
-        )
+        return JsonResponse(res, safe=False, json_dumps_params={"ensure_ascii": False})
 
 
 def update_contest_mode(request):

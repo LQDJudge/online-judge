@@ -29,6 +29,7 @@ __all__ = [
     "ContestProblem",
     "ContestSubmission",
     "Rating",
+    "ContestProblemClarification",
 ]
 
 
@@ -766,6 +767,10 @@ class ContestProblem(models.Model):
         ],
     )
 
+    @property
+    def clarifications(self):
+        return ContestProblemClarification.objects.filter(problem=self)
+
     class Meta:
         unique_together = ("problem", "contest")
         verbose_name = _("contest problem")
@@ -853,3 +858,13 @@ class ContestMoss(models.Model):
         unique_together = ("contest", "problem", "language")
         verbose_name = _("contest moss result")
         verbose_name_plural = _("contest moss results")
+
+
+class ContestProblemClarification(models.Model):
+    problem = models.ForeignKey(
+        ContestProblem, verbose_name=_("clarified problem"), on_delete=CASCADE
+    )
+    description = models.TextField(verbose_name=_("clarification body"))
+    date = models.DateTimeField(
+        verbose_name=_("clarification timestamp"), auto_now_add=True
+    )

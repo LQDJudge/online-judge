@@ -20,7 +20,6 @@ from judge.models import (
     LanguageLimit,
     LanguageTemplate,
     Problem,
-    ProblemClarification,
     ProblemTranslation,
     Profile,
     Solution,
@@ -147,23 +146,6 @@ class LanguageTemplateInline(admin.TabularInline):
     form = LanguageTemplateInlineForm
 
 
-class ProblemClarificationForm(ModelForm):
-    class Meta:
-        if HeavyPreviewPageDownWidget is not None:
-            widgets = {
-                "description": HeavyPreviewPageDownWidget(
-                    preview=reverse_lazy("comment_preview")
-                )
-            }
-
-
-class ProblemClarificationInline(admin.StackedInline):
-    model = ProblemClarification
-    fields = ("description",)
-    form = ProblemClarificationForm
-    extra = 0
-
-
 class ProblemSolutionForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(ProblemSolutionForm, self).__init__(*args, **kwargs)
@@ -256,7 +238,6 @@ class ProblemAdmin(CompareVersionAdmin):
     inlines = [
         LanguageLimitInline,
         LanguageTemplateInline,
-        ProblemClarificationInline,
         ProblemSolutionInline,
         ProblemTranslationInline,
     ]

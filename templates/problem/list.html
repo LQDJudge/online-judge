@@ -150,9 +150,9 @@
                     {% for clarification in clarifications %}
                         <tr>
                             <td>
-                                <a href="{{ url('problem_detail', clarification.problem.code) }}"
+                                <a href="{{ url('problem_detail', clarification.problem.problem.code) }}"
                                    class="problem">
-                                    {{ clarification.problem.name }}
+                                    {{ clarification.problem.problem.name }}
                                 </a>
                             </td>
                             <td class="time">{{ relative_time(clarification.date) }}</td>

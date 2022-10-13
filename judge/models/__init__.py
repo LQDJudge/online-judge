@@ -15,6 +15,7 @@ from judge.models.contest import (
     ContestSubmission,
     ContestTag,
     Rating,
+    ContestProblemClarification,
 )
 from judge.models.interface import BlogPost, MiscConfig, NavigationBar, validate_regex
 from judge.models.message import PrivateMessage, PrivateMessageThread
@@ -23,7 +24,6 @@ from judge.models.problem import (
     LanguageTemplate,
     License,
     Problem,
-    ProblemClarification,
     ProblemGroup,
     ProblemTranslation,
     ProblemType,

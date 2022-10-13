@@ -930,7 +930,12 @@ class EditOrganizationContest(
             for problem_form in problem_formset.deleted_objects:
                 problem_form.delete()
             super().post(request, *args, **kwargs)
-            return HttpResponseRedirect(reverse("organization_contests", args=(self.organization_id,self.organization.slug)))
+            return HttpResponseRedirect(
+                reverse(
+                    "organization_contests",
+                    args=(self.organization_id, self.organization.slug),
+                )
+            )
 
         self.object = self.contest
         return self.render_to_response(
@@ -1062,9 +1067,9 @@ class EditOrganizationBlog(
                 _("Not allowed to edit this blog"),
             )
 
-    def delete_blog(self , request , *args , **kwargs):
+    def delete_blog(self, request, *args, **kwargs):
         self.blog_id = kwargs["blog_pk"]
-        BlogPost.objects.get(pk = self.blog_id).delete()
+        BlogPost.objects.get(pk=self.blog_id).delete()
 
     def get(self, request, *args, **kwargs):
         res = self.setup_blog(request, *args, **kwargs)
@@ -1076,10 +1081,13 @@ class EditOrganizationBlog(
         res = self.setup_blog(request, *args, **kwargs)
         if res:
             return res
-        if request.POST['action'] == 'Delete':
+        if request.POST["action"] == "Delete":
             self.create_notification("Delete blog")
-            self.delete_blog(request , *args , **kwargs)
-            cur_url = reverse("organization_pending_blogs", args=(self.organization_id,self.organization.slug) )
+            self.delete_blog(request, *args, **kwargs)
+            cur_url = reverse(
+                "organization_pending_blogs",
+                args=(self.organization_id, self.organization.slug),
+            )
             return HttpResponseRedirect(cur_url)
         else:
             return super().post(request, *args, **kwargs)
@@ -1090,15 +1098,13 @@ class EditOrganizationBlog(
     def get_title(self):
         return _("Edit blog %s") % self.object.title
 
-    def create_notification(self,action):
+    def create_notification(self, action):
         blog = BlogPost.objects.get(pk=self.blog_id)
         link = reverse(
             "edit_organization_blog",
             args=[self.organization.id, self.organization.slug, self.blog_id],
         )
-        html = (
-            f'<a href="{link}">{blog.title} - {self.organization.name}</a>'
-        )
+        html = f'<a href="{link}">{blog.title} - {self.organization.name}</a>'
         post_authors = blog.authors.all()
         posible_user = self.organization.admins.all() | post_authors
         for user in posible_user:
@@ -1107,11 +1113,11 @@ class EditOrganizationBlog(
             notification = Notification(
                 owner=user,
                 author=self.request.profile,
-                category= action,
+                category=action,
                 html_link=html,
             )
             notification.save()
-    
+
     def form_valid(self, form):
         with transaction.atomic(), revisions.create_revision():
             res = super(EditOrganizationBlog, self).form_valid(form)
@@ -1119,6 +1125,7 @@ class EditOrganizationBlog(
             revisions.set_user(self.request.user)
             self.create_notification("Edit blog")
             return res
+
 
 class PendingBlogs(
     LoginRequiredMixin,
