@@ -441,10 +441,10 @@ def edit_profile(request):
     print(settings.REGISTER_NAME_URL)
     return render(
         request,
-        "user/edit-profile.html", 
+        "user/edit-profile.html",
         {
-            "edit_name_url": settings.REGISTER_NAME_URL,
-            "require_staff_2fa": settings.DMOJ_REQUIRE_STAFF_2FA, 'form_user': form_user,
+            "require_staff_2fa": settings.DMOJ_REQUIRE_STAFF_2FA,
+            "form_user": form_user,
             "form": form,
             "title": _("Edit profile"),
             "profile": profile,

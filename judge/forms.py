@@ -52,12 +52,14 @@ def fix_unicode(string, unsafe=tuple("\u202a\u202b\u202d\u202e")):
         string + (sum(k in unsafe for k in string) - string.count("\u202c")) * "\u202c"
     )
 
+
 class UserForm(ModelForm):
     class Meta:
         model = User
         fields = [
             "first_name",
         ]
+
 
 class ProfileForm(ModelForm):
     if newsletter_id is not None:
