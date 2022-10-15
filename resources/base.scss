@@ -108,7 +108,6 @@ body {
     position: relative;
     min-height: 100%;
     margin: 0 auto;
-    max-width: 107em;
     font-size: $base_font_size;
     line-height: 1.231;
     background: $background_light_gray;
@@ -322,6 +321,7 @@ nav {
                     &:first-child {
                         a.active {
                             border-top: 1px solid $widget_black;
+                            background-color: darkcyan !important;
                         }
                     }
                 }
@@ -477,7 +477,6 @@ noscript #noscript {
 
 #nav-placeholder {
     height: 47px;
-    max-width: 107em;
     background: white;
     border-right: 1px solid $border_gray;
     border-left: 1px solid $border_gray;
