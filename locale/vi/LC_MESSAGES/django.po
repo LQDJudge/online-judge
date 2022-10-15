@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-10-15 23:21+0700\n"
+"POT-Creation-Date: 2022-10-16 00:26+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -302,7 +302,7 @@ msgstr "Email"
 
 #: judge/admin/profile.py:137 judge/views/register.py:37
 #: templates/registration/registration_form.html:173
-#: templates/user/edit-profile.html:122
+#: templates/user/edit-profile.html:118
 msgid "Timezone"
 msgstr "Múi giờ"
 
@@ -466,71 +466,71 @@ msgstr ""
 msgid "IOI"
 msgstr ""
 
-#: judge/forms.py:65
+#: judge/forms.py:68
 msgid "Subscribe to contest updates"
 msgstr "Đăng ký để nhận thông báo về các kỳ thi"
 
-#: judge/forms.py:68
+#: judge/forms.py:71
 msgid "Enable experimental features"
 msgstr "Sử dụng các tính năng thử nghiệm"
 
-#: judge/forms.py:105 judge/views/organization.py:513
+#: judge/forms.py:108 judge/views/organization.py:513
 #: judge/views/register.py:68
 #, python-brace-format
 msgid "You may not be part of more than {count} public groups."
 msgstr "Bạn không thể tham gia nhiều hơn {count} nhóm công khai."
 
-#: judge/forms.py:137
+#: judge/forms.py:140
 msgid "Any judge"
 msgstr ""
 
-#: judge/forms.py:305
+#: judge/forms.py:308
 msgid "Enter usernames separating by space"
 msgstr "Nhập các tên đăng nhập, cách nhau bởi dấu cách"
 
-#: judge/forms.py:306 judge/views/stats.py:166 templates/stats/site.html:27
+#: judge/forms.py:309 judge/views/stats.py:166 templates/stats/site.html:27
 msgid "New users"
 msgstr "Thành viên mới"
 
-#: judge/forms.py:323
+#: judge/forms.py:326
 #, python-brace-format
 msgid "These usernames don't exist: {usernames}"
 msgstr "Các tên đăng nhập này không tồn tại: {usernames}"
 
-#: judge/forms.py:382 judge/views/register.py:31
+#: judge/forms.py:385 judge/views/register.py:31
 #: templates/registration/registration_form.html:139
 #: templates/user/base-users-table.html:5
 #: templates/user/import/table_csv.html:4
 msgid "Username"
 msgstr "Tên đăng nhập"
 
-#: judge/forms.py:383 templates/registration/registration_form.html:151
+#: judge/forms.py:386 templates/registration/registration_form.html:151
 #: templates/registration/registration_form.html:165
 #: templates/user/import/table_csv.html:5
 msgid "Password"
 msgstr "Mật khẩu"
 
-#: judge/forms.py:409
+#: judge/forms.py:412
 msgid "Two Factor Authentication tokens must be 6 decimal digits."
 msgstr "Two Factor Authentication phải chứa 6 chữ số."
 
-#: judge/forms.py:422 templates/registration/totp_auth.html:32
+#: judge/forms.py:425 templates/registration/totp_auth.html:32
 msgid "Invalid Two Factor Authentication token."
 msgstr "Token Two Factor Authentication không hợp lệ."
 
-#: judge/forms.py:429 judge/models/problem.py:158
+#: judge/forms.py:432 judge/models/problem.py:158
 msgid "Problem code must be ^[a-z0-9]+$"
 msgstr "Mã bài phải có dạng ^[a-z0-9]+$"
 
-#: judge/forms.py:436
+#: judge/forms.py:439
 msgid "Problem with code already exists."
 msgstr "Mã bài đã tồn tại."
 
-#: judge/forms.py:443 judge/models/contest.py:90
+#: judge/forms.py:446 judge/models/contest.py:90
 msgid "Contest id must be ^[a-z0-9]+$"
 msgstr "Mã kỳ thi phải có dạng ^[a-z0-9]+$"
 
-#: judge/forms.py:449
+#: judge/forms.py:452
 msgid "Contest with key already exists."
 msgstr "Mã kỳ thi đã tồn tại."
 
@@ -2990,7 +2990,7 @@ msgstr "Các bài nộp tốt nhất cho bài {0} trong <a href=\"{2}\">{1}</a>"
 msgid "A username must contain letters, numbers, or underscores"
 msgstr "Tên đăng nhập phải chứa ký tự, chữ số, hoặc dấu gạch dưới"
 
-#: judge/views/register.py:43 templates/user/edit-profile.html:126
+#: judge/views/register.py:43 templates/user/edit-profile.html:122
 msgid "Preferred language"
 msgstr "Ngôn ngữ ưa thích"
 
@@ -3889,7 +3889,7 @@ msgstr "Khôi phục kết quả"
 msgid "Disqualify"
 msgstr "Hủy kết quả"
 
-#: templates/contest/ranking-table.html:56 templates/user/edit-profile.html:108
+#: templates/contest/ranking-table.html:56 templates/user/edit-profile.html:99
 msgid "Fullname"
 msgstr "Tên đầy đủ"
 
@@ -4862,12 +4862,12 @@ msgid "Default language"
 msgstr "Ngôn ngữ ưa thích"
 
 #: templates/registration/registration_form.html:186
-#: templates/user/edit-profile.html:174
+#: templates/user/edit-profile.html:170
 msgid "Affiliated organizations"
 msgstr "Tổ chức bạn muốn tham gia"
 
 #: templates/registration/registration_form.html:195
-#: templates/user/edit-profile.html:144
+#: templates/user/edit-profile.html:140
 msgid "Notify me about upcoming contests"
 msgstr "Nhận thông báo về các kỳ thi tương lai"
 
@@ -5261,55 +5261,47 @@ msgstr "Top Score"
 msgid "Rank"
 msgstr "Rank"
 
-#: templates/user/edit-profile.html:99
-msgid "Name and School"
-msgstr "Họ tên và Trường"
+#: templates/user/edit-profile.html:103 templates/user/import/table_csv.html:7
+msgid "School"
+msgstr "Trường"
 
-#: templates/user/edit-profile.html:101
-msgid "Enter this form"
-msgstr "Điền vào link này"
-
-#: templates/user/edit-profile.html:102
-msgid "It takes some time for admin to approve"
-msgstr "Ban quản trị sẽ phê duyệt"
-
-#: templates/user/edit-profile.html:113
+#: templates/user/edit-profile.html:109
 msgid "Self-description"
 msgstr "Tự giới thiệu"
 
-#: templates/user/edit-profile.html:121
+#: templates/user/edit-profile.html:117
 msgid "Select your closest major city"
 msgstr "Chọn thành phố gần nhất"
 
-#: templates/user/edit-profile.html:130
+#: templates/user/edit-profile.html:126
 msgid "Editor theme"
 msgstr "Giao diện cho code editor"
 
-#: templates/user/edit-profile.html:135
+#: templates/user/edit-profile.html:131
 msgid "Math engine"
 msgstr ""
 
-#: templates/user/edit-profile.html:159 templates/user/edit-profile.html:160
+#: templates/user/edit-profile.html:155 templates/user/edit-profile.html:156
 msgid "Change your avatar"
 msgstr "Đổi ảnh đại diện"
 
-#: templates/user/edit-profile.html:166
+#: templates/user/edit-profile.html:162
 msgid "Change your password"
 msgstr "Đổi mật khẩu"
 
-#: templates/user/edit-profile.html:183
+#: templates/user/edit-profile.html:179
 msgid "Two Factor Authentication is enabled."
 msgstr "Two Factor Authentication đã được kích hoạt."
 
-#: templates/user/edit-profile.html:190
+#: templates/user/edit-profile.html:186
 msgid "Two Factor Authentication is disabled."
 msgstr "Two Factor Authentication đã được hủy kích hoạt."
 
-#: templates/user/edit-profile.html:195
+#: templates/user/edit-profile.html:191
 msgid "User-script"
 msgstr ""
 
-#: templates/user/edit-profile.html:199
+#: templates/user/edit-profile.html:195
 msgid "Update profile"
 msgstr "Cập nhật thông tin"
 
@@ -5328,10 +5320,6 @@ msgstr ""
 #: templates/user/import/index.html:105 templates/user/user-left-sidebar.html:6
 #: templates/user/user-list-tabs.html:8
 msgid "Import"
-msgstr ""
-
-#: templates/user/import/table_csv.html:7
-msgid "School"
 msgstr ""
 
 #: templates/user/import/table_csv.html:9
@@ -5528,6 +5516,15 @@ msgstr "Thông tin"
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Chọn tất cả"
+
+#~ msgid "Name and School"
+#~ msgstr "Họ tên và Trường"
+
+#~ msgid "Enter this form"
+#~ msgstr "Điền vào link này"
+
+#~ msgid "It takes some time for admin to approve"
+#~ msgstr "Ban quản trị sẽ phê duyệt"
 
 #, fuzzy
 #~| msgid "short name"

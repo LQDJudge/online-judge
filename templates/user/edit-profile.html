@@ -94,10 +94,16 @@
 
             {% csrf_token %}
 
-            <div class="block-header" style="display:flex;">
-                <div style="margin: auto 0;"> {{ _('Fullname') }}: </div>
-                <div style="margin-left: 30px;"> {{ form_user.first_name }} </div>
-            </div>
+            <table class="block-header">
+                <tr>
+                  <td> {{ _('Fullname') }}: </td>
+                  <td> {{ form_user.first_name }} </td>
+                </tr>
+                <tr>
+                    <td> {{ _('School') }}: </td>
+                    <td> {{ form_user.last_name }} </td>
+                </tr>
+              </table>
             <hr>
 
             <div style="padding-top:0.5em" class="block-header">{{ _('Self-description') }}:</div>
