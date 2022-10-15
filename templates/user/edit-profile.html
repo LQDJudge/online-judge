@@ -104,6 +104,12 @@
             </div>
             {% endif %}
 
+            <div class="block-header" style="display:flex;">
+                <div style="margin: auto 0;"> {{ _('Fullname') }}: </div>
+                <div style="margin-left: 30px;"> {{ form_user.first_name }} </div>
+            </div>
+            <hr>
+
             <div style="padding-top:0.5em" class="block-header">{{ _('Self-description') }}:</div>
             {{ form.about }}
             <hr>

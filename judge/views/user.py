@@ -34,7 +34,7 @@ from django.views.generic import DetailView, ListView, TemplateView
 from django.template.loader import render_to_string
 from reversion import revisions
 
-from judge.forms import ProfileForm, newsletter_id
+from judge.forms import UserForm, ProfileForm, newsletter_id
 from judge.models import Profile, Rating, Submission, Friend
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
@@ -384,9 +384,11 @@ def edit_profile(request):
     if profile.mute:
         raise Http404()
     if request.method == "POST":
+        form_user = UserForm(request.POST, instance=request.user)
         form = ProfileForm(request.POST, instance=profile, user=request.user)
-        if form.is_valid():
+        if form_user.is_valid() and form.is_valid():
             with transaction.atomic(), revisions.create_revision():
+                form_user.save()
                 form.save()
                 revisions.set_user(request.user)
                 revisions.set_comment(_("Updated on site"))
@@ -422,6 +424,7 @@ def edit_profile(request):
 
             return HttpResponseRedirect(request.path)
     else:
+        form_user = UserForm(instance=request.user)
         form = ProfileForm(instance=profile, user=request.user)
         if newsletter_id is not None:
             try:
@@ -438,10 +441,10 @@ def edit_profile(request):
     print(settings.REGISTER_NAME_URL)
     return render(
         request,
-        "user/edit-profile.html",
+        "user/edit-profile.html", 
         {
             "edit_name_url": settings.REGISTER_NAME_URL,
-            "require_staff_2fa": settings.DMOJ_REQUIRE_STAFF_2FA,
+            "require_staff_2fa": settings.DMOJ_REQUIRE_STAFF_2FA, 'form_user': form_user,
             "form": form,
             "title": _("Edit profile"),
             "profile": profile,
