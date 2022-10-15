@@ -7,12 +7,12 @@
         .user-gravatar {
             display: block;
             padding-right: 15px;
-            width: 135px;
+            width: 145px;
         }
 
         .user-gravatar img {
-            width: 135px;
-            height: 135px;
+            width: 145px;
+            height: 145px;
             display: block;
             border-radius: 6px;
         }
@@ -62,10 +62,11 @@
         .user-stat {
             text-align: right;
             font-weight: bold;
-            margin-right: 0.5em;
         }
 
         .user-stat-container {
+            display: flex;
+            justify-content: space-between;
             margin-bottom: 0.5em;
         }
 
@@ -89,13 +90,13 @@
     <div class="user-info-page">
         <div class="user-sidebar">
             <div class="user-gravatar">
-                <img src="{{ gravatar(user, 135) }}" width="135px" height="135px">
+                <img src="{{ gravatar(user, 145) }}" width="145px" height="145px">
             </div>
             <br>
             {% if request.user != user.user %}
             <form method="post">
                 {% csrf_token %}
-                <button class="small {{ 'unfollow' if followed else 'follow' }}" style="width:135px">
+                <button class="small {{ 'unfollow' if followed else 'follow' }}" style="width:145px">
                     {% if followed %}
                         <i class="fa fa-remove"></i>
                         {{ _('Unfollow') }}
@@ -109,7 +110,7 @@
             <br>
             <div>
                 <form action="{{ url('all_user_submissions', user.user.username) }}">
-                    <input type="submit" value="{{ _('View submissions') }}" class="small" style="width:135px; padding-left: 1px; padding-right: 1px">
+                    <input type="submit" value="{{ _('View submissions') }}" class="small" style="width:145px; padding-left: 1px; padding-right: 1px">
                 </form>
             </div>
             {% if request.user.is_authenticated %}
@@ -118,7 +119,7 @@
                 <form action="{{ url('get_or_create_room') }}" method="POST">
                     {% csrf_token %}
                     <input type="hidden" value="{{ chat_param(request.profile, user) }}" name="other">
-                    <input type="submit" value="{{ _('Send message') }}" style="width:135px" class="small btn-midnightblue">
+                    <input type="submit" value="{{ _('Send message') }}" style="width:145px" class="small btn-midnightblue">
                 </form>
             </div>
             {% endif %}
