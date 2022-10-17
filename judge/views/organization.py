@@ -35,7 +35,6 @@ from django.views.generic.detail import (
     SingleObjectTemplateResponseMixin,
 )
 from django.core.paginator import Paginator
-from judge.models.profile import OrganizationProfile
 from reversion import revisions
 
 from judge.forms import (
@@ -58,6 +57,7 @@ from judge.models import (
     Contest,
     Notification,
     ContestProblem,
+    OrganizationProfile,
 )
 from judge import event_poster as event
 from judge.utils.ranker import ranker

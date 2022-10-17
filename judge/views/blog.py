@@ -80,7 +80,7 @@ class FeedView(ListView):
             start_time__lte=now, end_time__gt=now
         )
         context["future_contests"] = visible_contests.filter(start_time__gt=now)
-        context["recent_organizations"] = OrganizationProfile.get_organization(self.request.profile)
+        context["recent_organizations"] = OrganizationProfile.get_most_recent_organizations(self.request.profile)
         context["top_rated"] = Profile.objects.filter(is_unlisted=False).order_by(
             "-rating"
         )[:10]

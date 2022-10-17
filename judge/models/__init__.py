@@ -39,7 +39,7 @@ from judge.models.problem_data import (
     problem_data_storage,
     problem_directory_file,
 )
-from judge.models.profile import Organization, OrganizationRequest, Profile, Friend
+from judge.models.profile import Organization, OrganizationRequest, Profile, Friend, OrganizationProfile
 from judge.models.runtime import Judge, Language, RuntimeVersion
 from judge.models.submission import (
     SUBMISSION_RESULT,

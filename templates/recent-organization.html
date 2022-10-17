@@ -1,20 +1,40 @@
+{% block two_col_media %}
+    <style>
+        .organization-row {
+            display: block;
+            padding: 0.5em;
+            border-bottom: 1px gray solid;
+            border-top: none;            
+            color: black;
+            font-weight: bold;
+        }
+        .organization-row:hover {
+            background-color: #f3f3f3;
+        }
+        .org-logo {
+            vertical-align: middle;
+            height: 2em;
+            width: 2em;
+            display: inline-block;
+            margin-right: 0.5em;
+            margin-left: 0.5em;
+        }
+        .toggle {
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}
+
 {% if recent_organizations %}
     <div class="blog-sidebox sidebox">
-        <h3>{{ _('Recent Organization') }} <i class="fa fa-trophy"></i></h3>
-        <div class="sidebox-content" style="padding: 0; border: 0">
-            <table class="table feed-table">
-                <tbody>
-                    {% for organization in recent_organizations %}
-                        <tr>
-                            <td style="padding: 7px 2px">
-                                <a href="{{ url('organization_home', organization.organization.pk, organization.organization.slug) }}"> 
-                                    <b> {{organization.organization}} </b>
-                                </a>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <h3>{{ _('Recently visited organizations') }} <i class="fa fa-users"></i></h3>
+        <div class="organization-container toggled">
+            {% for organization in recent_organizations %}
+                <a href="{{ url('organization_home', organization.organization.pk, organization.organization.slug) }}" class="sidebox-content organization-row" title="{{organization.organization.about}}">
+                    <img class="org-logo" src="{{ organization.organization.logo_override_image or static('icons/icon.png') }}">
+                    <span>{{ organization.organization }}</span>
+                </a>
+            {% endfor %}
+        </div>  
     </div>
 {% endif %}
