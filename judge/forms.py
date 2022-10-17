@@ -58,6 +58,7 @@ class UserForm(ModelForm):
         model = User
         fields = [
             "first_name",
+            "last_name",
         ]
 
 
