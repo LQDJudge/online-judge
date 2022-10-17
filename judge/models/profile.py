@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
+from requests import delete
 from fernet_fields import EncryptedCharField
 from sortedm2m.fields import SortedManyToManyField
 
@@ -422,3 +423,50 @@ class Friend(models.Model):
 
     def __str__(self):
         return str(self.current_user)
+
+
+class OrganizationProfile(models.Model):
+    users = models.ForeignKey(
+        Profile,
+        verbose_name=_("user"),
+        related_name="last_visit",
+        on_delete=models.CASCADE,
+        db_index=True,
+    )
+    organization = models.ForeignKey(
+        Organization,
+        verbose_name=_("organization"),
+        related_name="last_vist",
+        on_delete=models.CASCADE,
+        db_index=True,
+    )
+    last_visit = models.AutoField(
+        verbose_name=_("last visit"), 
+        primary_key=True,
+    )
+
+    @classmethod
+    def is_organization(self, users, organization):
+        return (
+            self.objects.filter(users=users)
+            .filter(organization=organization)
+            .exists()
+        )
+
+    @classmethod
+    def remove_organization(self, users, organization):
+        organizationprofile = self.objects.filter(users=users).filter(
+            organization=organization
+        )
+        organizationprofile.delete()
+
+    @classmethod
+    def add_organization(self, users, organization):
+        if self.is_organization(users, organization):
+            self.remove_organization(users, organization)
+        new_organization = OrganizationProfile(users=users, organization=organization)
+        new_organization.save()
+
+    @classmethod
+    def get_organization(self, users):
+        return self.objects.filter(users=users).order_by("-last_visit")[:5]

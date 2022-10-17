@@ -1,0 +1,20 @@
+{% if recent_organizations %}
+    <div class="blog-sidebox sidebox">
+        <h3>{{ _('Recent Organization') }} <i class="fa fa-trophy"></i></h3>
+        <div class="sidebox-content" style="padding: 0; border: 0">
+            <table class="table feed-table">
+                <tbody>
+                    {% for organization in recent_organizations %}
+                        <tr>
+                            <td style="padding: 7px 2px">
+                                <a href="{{ url('organization_home', organization.organization.pk, organization.organization.slug) }}"> 
+                                    <b> {{organization.organization}} </b>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}

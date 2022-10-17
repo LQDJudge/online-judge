@@ -35,6 +35,7 @@ from django.views.generic.detail import (
     SingleObjectTemplateResponseMixin,
 )
 from django.core.paginator import Paginator
+from judge.models.profile import OrganizationProfile
 from reversion import revisions
 
 from judge.forms import (
@@ -126,6 +127,7 @@ class OrganizationMixin(OrganizationBase):
         context["logo_override_image"] = self.organization.logo_override_image
         if "organizations" in context:
             context.pop("organizations")
+        OrganizationProfile.add_organization(self.request.profile, self.organization)
         return context
 
     def dispatch(self, request, *args, **kwargs):
@@ -261,7 +263,6 @@ class OrganizationList(TitleMixin, ListView, OrganizationBase):
 
 class OrganizationHome(OrganizationDetailView):
     template_name = "organization/home.html"
-
     def get_posts(self):
         posts = (
             BlogPost.objects.filter(
