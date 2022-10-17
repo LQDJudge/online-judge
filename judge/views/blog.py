@@ -200,22 +200,20 @@ class PostView(TitleMixin, CommentedDetailView):
     def get_context_data(self, **kwargs):
         context = super(PostView, self).get_context_data(**kwargs)
         context["og_image"] = self.object.og_image
-        context["valid_user"] = False
-        context["valid_org"] = []
-        for author in self.object.authors.all():
-            if self.request.profile.user == author.user:
-                context["valid_user"] = True
+        context["valid_user_to_show_edit"] = False
+        context["valid_org_to_show_edit"] = []
+        
+        if self.request.profile in self.object.authors.all():
+            context["valid_user_to_show_edit"] = True
 
-        for valid_org in self.object.organizations.all():
-            for admin in valid_org.admins.all():
-                if self.request.profile.user == admin.user:
-                    context["valid_user"] = True
+        for valid_org_to_show_edit in self.object.organizations.all():
+            if self.request.profile in valid_org_to_show_edit.admins.all():
+                context["valid_user_to_show_edit"] = True
 
-        if context["valid_user"]:
+        if context["valid_user_to_show_edit"]:
             for post_org in self.object.organizations.all():
-                for org in self.request.profile.organizations.all():
-                    if post_org == org:
-                        context["valid_org"].append(org)
+                if post_org in self.request.profile.organizations.all():
+                    context["valid_org_to_show_edit"].append(post_org)
 
         return context
 

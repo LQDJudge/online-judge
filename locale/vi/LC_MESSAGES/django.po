@@ -3361,6 +3361,10 @@ msgstr "đã đăng vào %(time)s"
 msgid "Edit"
 msgstr "Chỉnh sửa"
 
+#: templates/blog/blog.html:33
+msgid "Edit in"
+msgstr "Chỉnh sửa trong"
+
 #: templates/blog/dashboard.html:21
 #, python-format
 msgid ""
