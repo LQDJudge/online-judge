@@ -28,20 +28,11 @@
             </span>
             {% if post.is_editable_by(request.user) %}
                 <span> [<a href="{{ url('admin:judge_blogpost_change', post.id) }}">{{ _('Edit') }}</a>]</span>            
-            {% else %}
-                {% for author in post.authors.all() %}
-                    {% if author.user == request.user %}
-                        {% for post_org in post.organizations.all() %}
-                            {% for org in author.organizations.all() %}
-                                {% if org == post_org %}
-                                    <span> [<a href="{{ url('edit_organization_blog', org.id , org.slug , post.id) }}">{{ _('Edit') }}</a>]</span>
-                                {% endif %}
-                            {% endfor %}    
-                        {% endfor %}
-                    {% endif %}
+            {% elif valid_user %}
+                {% for org in valid_org %}
+                    <span> [<a href="{{ url('edit_organization_blog', org.id , org.slug , post.id) }}">{{ _('Edit in') }} {{org.slug}}</a>]</span>
                 {% endfor %}
             {% endif %}
-
         </div>
         <div class="body content-description">
             {% cache 86400 'post_content' post.id MATH_ENGINE %}

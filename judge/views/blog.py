@@ -1,3 +1,4 @@
+from xmlrpc.client import boolean
 from django.conf import settings
 from django.db.models import Count, Max, Q
 from django.http import Http404
@@ -6,6 +7,8 @@ from django.utils import timezone
 from django.utils.functional import lazy
 from django.utils.translation import ugettext as _
 from django.views.generic import ListView
+
+from itertools import chain
 
 from judge.comments import CommentedDetailView
 from judge.models import (
@@ -24,6 +27,7 @@ from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.problems import user_completed_ids
 from judge.utils.tickets import filter_visible_tickets
 from judge.utils.views import TitleMixin
+from judge.views import organization
 
 
 # General view for all content list on home feed
@@ -201,6 +205,23 @@ class PostView(TitleMixin, CommentedDetailView):
     def get_context_data(self, **kwargs):
         context = super(PostView, self).get_context_data(**kwargs)
         context["og_image"] = self.object.og_image
+        context["valid_user"] = False
+        context["valid_org"] = []
+        for author in self.object.authors.all():
+            if self.request.profile.user == author.user:
+                context["valid_user"] = True
+
+        for valid_org in self.object.organizations.all():
+            for admin in valid_org.admins.all():
+                if self.request.profile.user == admin.user:
+                    context["valid_user"] = True
+
+        if context["valid_user"]:
+            for post_org in self.object.organizations.all():
+                for org in self.request.profile.organizations.all():
+                    if post_org == org:
+                        context["valid_org"].append(org)
+
         return context
 
     def get_object(self, queryset=None):
