@@ -1,5 +1,3 @@
-from xmlrpc.client import boolean
-from django.conf import settings
 from django.db.models import Count, Max, Q
 from django.http import Http404
 from django.urls import reverse
@@ -7,8 +5,6 @@ from django.utils import timezone
 from django.utils.functional import lazy
 from django.utils.translation import ugettext as _
 from django.views.generic import ListView
-
-from itertools import chain
 
 from judge.comments import CommentedDetailView
 from judge.models import (
@@ -27,7 +23,6 @@ from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.problems import user_completed_ids
 from judge.utils.tickets import filter_visible_tickets
 from judge.utils.views import TitleMixin
-from judge.views import organization
 
 
 # General view for all content list on home feed
