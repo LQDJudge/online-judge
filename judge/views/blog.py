@@ -19,6 +19,7 @@ from judge.models import (
     Submission,
     Ticket,
 )
+from judge.models.profile import Organization, OrganizationProfile
 from judge.utils.cachedict import CacheDict
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.problems import user_completed_ids
@@ -74,10 +75,12 @@ class FeedView(ListView):
             .filter(is_visible=True)
             .order_by("start_time")
         )
+
         context["current_contests"] = visible_contests.filter(
             start_time__lte=now, end_time__gt=now
         )
         context["future_contests"] = visible_contests.filter(start_time__gt=now)
+        context["recent_organizations"] = OrganizationProfile.get_most_recent_organizations(self.request.profile)
         context["top_rated"] = Profile.objects.filter(is_unlisted=False).order_by(
             "-rating"
         )[:10]

@@ -422,3 +422,39 @@ class Friend(models.Model):
 
     def __str__(self):
         return str(self.current_user)
+
+
+class OrganizationProfile(models.Model):
+    users = models.ForeignKey(
+        Profile,
+        verbose_name=_("user"),
+        related_name="last_visit",
+        on_delete=models.CASCADE,
+        db_index=True,
+    )
+    organization = models.ForeignKey(
+        Organization,
+        verbose_name=_("organization"),
+        related_name="last_vist",
+        on_delete=models.CASCADE,
+    )
+    last_visit = models.AutoField(
+        verbose_name=_("last visit"),
+        primary_key=True,
+    )
+
+    @classmethod
+    def remove_organization(self, users, organization):
+        organizationprofile = self.objects.filter(users=users, organization=organization)
+        if organizationprofile.exists():
+            organizationprofile.delete()
+
+    @classmethod
+    def add_organization(self, users, organization):
+        self.remove_organization(users, organization)
+        new_organization = OrganizationProfile(users=users, organization=organization)
+        new_organization.save()
+
+    @classmethod
+    def get_most_recent_organizations(self, users):
+        return self.objects.filter(users=users).order_by("-last_visit")[:5]

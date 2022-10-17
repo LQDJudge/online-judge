@@ -57,6 +57,7 @@ from judge.models import (
     Contest,
     Notification,
     ContestProblem,
+    OrganizationProfile,
 )
 from judge import event_poster as event
 from judge.utils.ranker import ranker
@@ -126,6 +127,7 @@ class OrganizationMixin(OrganizationBase):
         context["logo_override_image"] = self.organization.logo_override_image
         if "organizations" in context:
             context.pop("organizations")
+        OrganizationProfile.add_organization(self.request.profile, self.organization)
         return context
 
     def dispatch(self, request, *args, **kwargs):
@@ -261,7 +263,6 @@ class OrganizationList(TitleMixin, ListView, OrganizationBase):
 
 class OrganizationHome(OrganizationDetailView):
     template_name = "organization/home.html"
-
     def get_posts(self):
         posts = (
             BlogPost.objects.filter(
