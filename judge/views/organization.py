@@ -127,7 +127,6 @@ class OrganizationMixin(OrganizationBase):
         context["logo_override_image"] = self.organization.logo_override_image
         if "organizations" in context:
             context.pop("organizations")
-        OrganizationProfile.add_organization(self.request.profile, self.organization)
         return context
 
     def dispatch(self, request, *args, **kwargs):
@@ -152,6 +151,11 @@ class OrganizationMixin(OrganizationBase):
             return HttpResponsePermanentRedirect(
                 request.get_full_path().replace(kwargs["slug"], self.organization.slug)
             )
+        if self.request.user.is_authenticated:
+            OrganizationProfile.add_organization(
+                self.request.profile, self.organization
+            )
+
         return super(OrganizationMixin, self).dispatch(request, *args, **kwargs)
 
 
