@@ -445,7 +445,9 @@ class OrganizationProfile(models.Model):
 
     @classmethod
     def remove_organization(self, users, organization):
-        organizationprofile = self.objects.filter(users=users, organization=organization)
+        organizationprofile = self.objects.filter(
+            users=users, organization=organization
+        )
         if organizationprofile.exists():
             organizationprofile.delete()
 

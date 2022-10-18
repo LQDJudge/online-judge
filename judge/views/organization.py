@@ -263,6 +263,7 @@ class OrganizationList(TitleMixin, ListView, OrganizationBase):
 
 class OrganizationHome(OrganizationDetailView):
     template_name = "organization/home.html"
+
     def get_posts(self):
         posts = (
             BlogPost.objects.filter(
