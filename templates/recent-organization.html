@@ -7,6 +7,8 @@
             border-top: none;            
             color: black;
             font-weight: bold;
+            display: flex;
+            align-items: center;
         }
         .organization-row:hover {
             background-color: #f3f3f3;
@@ -17,7 +19,6 @@
             width: 2em;
             display: inline-block;
             margin-right: 0.5em;
-            margin-left: 0.1em;
         }
         .toggle {
             cursor: pointer;
@@ -32,7 +33,7 @@
             {% for organization in recent_organizations %}
                 <a href="{{ url('organization_home', organization.organization.pk, organization.organization.slug) }}" class="sidebox-content organization-row" title="{{organization.organization.about}}">
                     <img class="org-logo" src="{{ organization.organization.logo_override_image or static('icons/icon.png') }}">
-                    <span>{{ organization.organization }}</span>
+                    <span style="word-break: break-all;">{{ organization.organization }}</span>
                 </a>
             {% endfor %}
         </div>  
