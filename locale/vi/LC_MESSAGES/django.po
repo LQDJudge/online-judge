@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-10-18 05:05+0700\n"
+"POT-Creation-Date: 2022-10-18 07:01+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -3108,8 +3108,8 @@ msgstr "Phải qua một kỳ thi"
 #: judge/views/submission.py:781
 #, python-brace-format
 msgid ""
-"<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a "
-"href=\"{5}\">{4}</a>"
+"<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a href="
+"\"{5}\">{4}</a>"
 msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho <a href=\"{3}\">{2}</a> trong <a "
 "href=\"{5}\">{4}</a>"
@@ -3522,8 +3522,8 @@ msgstr ""
 "\n"
 "                                                Bình luận bị ẩn vì có quá "
 "nhiều phản hồi tiêu cực.\n"
-"                                                Nhấn vào <a "
-"href=\"javascript:comment_show_content(%(id)s)\">đây</a> để xem.\n"
+"                                                Nhấn vào <a href="
+"\"javascript:comment_show_content(%(id)s)\">đây</a> để xem.\n"
 "                                            "
 
 #: templates/comments/list.html:121
@@ -3728,8 +3728,8 @@ msgstr "G:i T, j F, Y"
 #: templates/contest/contest.html:59
 #, python-format
 msgid ""
-"<b>%(time_limit)s</b> window between <b>%(start_time)s</b> and "
-"<b>%(end_time)s</b>"
+"<b>%(time_limit)s</b> window between <b>%(start_time)s</b> and <b>"
+"%(end_time)s</b>"
 msgstr ""
 "Kéo dài <b>%(time_limit)s</b> từ <b>%(start_time)s</b> đến <b>%(end_time)s</"
 "b>"
@@ -4746,8 +4746,8 @@ msgid "Submit!"
 msgstr "Nộp bài!"
 
 #: templates/recent-organization.html:30
-msgid "Recently visited organizations"
-msgstr "Các nhóm thăm gần đây"
+msgid "Recent groups"
+msgstr "Nhóm gần đây"
 
 #: templates/registration/activate.html:3
 #, python-format
@@ -5527,6 +5527,9 @@ msgstr "Thông tin"
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Chọn tất cả"
+
+#~ msgid "Recently visited organizations"
+#~ msgstr "Các nhóm thăm gần đây"
 
 #~ msgid "Name and School"
 #~ msgstr "Họ tên và Trường"

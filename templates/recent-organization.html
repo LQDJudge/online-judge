@@ -17,7 +17,7 @@
             width: 2em;
             display: inline-block;
             margin-right: 0.5em;
-            margin-left: 0.5em;
+            margin-left: 0.1em;
         }
         .toggle {
             cursor: pointer;
@@ -27,7 +27,7 @@
 
 {% if recent_organizations %}
     <div class="blog-sidebox sidebox">
-        <h3>{{ _('Recently visited organizations') }} <i class="fa fa-users"></i></h3>
+        <h3>{{ _('Recent groups') }} <i class="fa fa-users"></i></h3>
         <div class="organization-container toggled">
             {% for organization in recent_organizations %}
                 <a href="{{ url('organization_home', organization.organization.pk, organization.organization.slug) }}" class="sidebox-content organization-row" title="{{organization.organization.about}}">
