@@ -27,7 +27,11 @@
                 {% trans time=post.publish_on|date(_("N j, Y, g:i a")) %} posted on {{ time }}{% endtrans %}
             </span>
             {% if post.is_editable_by(request.user) %}
-                <span> [<a href="{{ url('admin:judge_blogpost_change', post.id) }}">{{ _('Edit') }}</a>]</span>
+                <span> [<a href="{{ url('admin:judge_blogpost_change', post.id) }}">{{ _('Edit') }}</a>]</span>            
+            {% elif valid_user_to_show_edit %}
+                {% for org in valid_org_to_show_edit %}
+                    <span> [<a href="{{ url('edit_organization_blog', org.id , org.slug , post.id) }}">{{ _('Edit in') }} {{org.slug}}</a>]</span>
+                {% endfor %}
             {% endif %}
         </div>
         <div class="body content-description">

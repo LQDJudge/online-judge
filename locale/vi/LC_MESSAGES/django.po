@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-10-18 07:01+0700\n"
+"POT-Creation-Date: 2022-10-18 07:19+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -2455,16 +2455,16 @@ msgstr "Giới thiệu"
 msgid "Custom Checker Sample"
 msgstr "Hướng dẫn viết trình chấm"
 
-#: judge/views/blog.py:114
+#: judge/views/blog.py:110
 #, python-format
 msgid "Page %d of Posts"
 msgstr "Trang %d"
 
-#: judge/views/blog.py:169
+#: judge/views/blog.py:165
 msgid "Ticket feed"
 msgstr "Báo cáo"
 
-#: judge/views/blog.py:187
+#: judge/views/blog.py:183
 msgid "Comment feed"
 msgstr "Bình luận"
 
@@ -3366,6 +3366,10 @@ msgstr "đã đăng vào %(time)s"
 #: templates/flatpages/admin_link.html:3 templates/license.html:10
 #: templates/problem/editorial.html:14 templates/problem/feed.html:68
 msgid "Edit"
+msgstr "Chỉnh sửa"
+
+#: templates/blog/blog.html:33
+msgid "Edit in"
 msgstr "Chỉnh sửa"
 
 #: templates/blog/dashboard.html:21
@@ -5528,8 +5532,9 @@ msgstr "Thông tin"
 msgid "Check all"
 msgstr "Chọn tất cả"
 
-#~ msgid "Recently visited organizations"
-#~ msgstr "Các nhóm thăm gần đây"
+#, python-format
+#~ msgid "Edit in %(org_slug)s"
+#~ msgstr "Chỉnh sửa trong %(org_slug)s"
 
 #~ msgid "Name and School"
 #~ msgstr "Họ tên và Trường"
