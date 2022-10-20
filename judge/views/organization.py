@@ -57,6 +57,7 @@ from judge.models import (
     Contest,
     Notification,
     ContestProblem,
+    OrganizationProfile,
 )
 from judge import event_poster as event
 from judge.utils.ranker import ranker
@@ -150,6 +151,11 @@ class OrganizationMixin(OrganizationBase):
             return HttpResponsePermanentRedirect(
                 request.get_full_path().replace(kwargs["slug"], self.organization.slug)
             )
+        if self.request.user.is_authenticated:
+            OrganizationProfile.add_organization(
+                self.request.profile, self.organization
+            )
+
         return super(OrganizationMixin, self).dispatch(request, *args, **kwargs)
 
 

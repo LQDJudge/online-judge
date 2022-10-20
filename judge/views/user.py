@@ -438,7 +438,7 @@ def edit_profile(request):
         form.fields["test_site"].initial = request.user.has_perm("judge.test_site")
 
     tzmap = settings.TIMEZONE_MAP
-    print(settings.REGISTER_NAME_URL)
+
     return render(
         request,
         "user/edit-profile.html",
