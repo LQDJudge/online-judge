@@ -118,7 +118,7 @@ class ECOOContestFormat(DefaultContestFormat):
                 format_html(
                     "<small> +{bonus}</small>", bonus=floatformat(format_data["bonus"])
                 )
-                if format_data["bonus"]
+                if format_data.get("bonus")
                 else ""
             )
 
