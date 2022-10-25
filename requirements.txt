@@ -40,3 +40,4 @@ numpy
 pandas
 markdown
 bleach
+pymdown-extensions
