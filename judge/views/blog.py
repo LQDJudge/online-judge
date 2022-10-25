@@ -207,7 +207,7 @@ class PostView(TitleMixin, CommentedDetailView):
         context["og_image"] = self.object.og_image
         context["valid_user_to_show_edit"] = False
         context["valid_org_to_show_edit"] = []
-        
+
         if self.request.profile in self.object.authors.all():
             context["valid_user_to_show_edit"] = True
 

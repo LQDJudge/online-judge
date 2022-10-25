@@ -41,6 +41,7 @@ else:
             css = {
                 "all": [
                     "pagedown_widget.css",
+                    "markdown.css",
                 ]
             }
 
@@ -50,6 +51,7 @@ else:
                 "all": [
                     "content-description.css",
                     "admin/css/pagedown.css",
+                    "markdown.css",
                 ]
             }
             js = ["admin/js/pagedown.js"]
@@ -114,5 +116,6 @@ else:
                     "pygment-github.css",
                     "table.css",
                     "ranks.css",
+                    "markdown.css",
                 ]
             }

@@ -308,7 +308,6 @@ class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
             metadata = generate_opengraph(
                 "generated-meta-problem:%s:%d" % (context["language"], self.object.id),
                 context["description"],
-                "problem",
             )
         context["meta_description"] = self.object.summary or metadata[0]
         context["og_image"] = self.object.og_image or metadata[1]

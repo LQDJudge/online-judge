@@ -66,7 +66,6 @@ let META_HEADER = [
                     }
 
                     $('.body-block').slice(0, window.messages_per_page).each(function() {
-                        resize_emoji($(this));
                     });
 
                     register_time($('.time-with-rel'));
@@ -153,7 +152,6 @@ let META_HEADER = [
 
     function add_message(data) {
         var $data = $(data);
-        resize_emoji($data.find('.body-block'));
 
         $('#chat-log').append($data);
         $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
@@ -212,7 +210,6 @@ let META_HEADER = [
                     else {
                         add_new_message(message, room, true);
                     }
-                    resize_emoji($body_block);
                     MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
                     register_time($('.time-with-rel'));
                     remove_unread_current_user();
@@ -439,10 +436,6 @@ let META_HEADER = [
         });
         {% endif %}
         
-        $('.body-block').each(function() {
-            resize_emoji($(this));
-        });
-
         $("#chat-log").show();
         $("#chat-log").change(function() {
             $('#chat-log').scrollTop($('#chat-log')[0].scrollHeight);

@@ -20,6 +20,6 @@
         {{link_user(ticket.messages.last().user)}} {{_(' replied')}}
     </div>
     <div class='blog-description content-description'>
-        {{ ticket.messages.last().body |markdown("ticket", MATH_ENGINE)|reference|str|safe }}
+        {{ ticket.messages.last().body |markdown|reference|str|safe }}
     </div>
 </div>

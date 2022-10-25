@@ -38,7 +38,7 @@
     </h2>
     <div class="summary content-description blog-description">
         {% cache 86400 'post_summary' post.id %}
-            {{ post.summary|default(post.content, true)|markdown('blog', 'svg', lazy_load=True)|reference|str|safe }}
+            {{ post.summary|default(post.content, true)|markdown|reference|str|safe }}
         {% endcache %}
     </div>
 </section>

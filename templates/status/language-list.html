@@ -47,7 +47,7 @@
                         {% if language.description %}
                             <div class="content-description">
                                 {% cache 86400 'language_html' language.id %}
-                                    {{ language.description|markdown('language') }}
+                                    {{ language.description|markdown }}
                                 {% endcache %}
                             </div>
                         {% endif %}

@@ -376,7 +376,7 @@
     {% endif %}
 
     {% cache 86400 'problem_html' problem.id MATH_ENGINE LANGUAGE_CODE %}
-        {{ description|markdown("problem", MATH_ENGINE)|reference|str|safe }}
+        {{ description|markdown|reference|str|safe }}
     {% endcache %}
 
     {% if problem.pdf_description %}
@@ -426,7 +426,7 @@
                     <div class="problem-clarification">
                         <div class="time">{{ relative_time(clarification.date) }}</div>
                         <span class="body">
-                            {{ clarification.description|markdown('problem', MATH_ENGINE)|reference }}
+                            {{ clarification.description|markdown|reference }}
                         </span>
                     </div>
                 {% endfor %}

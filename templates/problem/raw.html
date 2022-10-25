@@ -3,8 +3,11 @@
 <head>
     <link rel="stylesheet" href="{{ static('style.css') }}">
     <link rel="stylesheet" href="{{ static('pygment-github.css') }}" type="text/css">
+    <link rel="stylesheet" href="{{ static('markdown.css') }}">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="pygment-github.css" type="text/css">
+    <link rel="stylesheet" href="markdown.css">
+    
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <style>
         html {
@@ -87,7 +90,7 @@
 </div>
 <hr style="clear: both;">
 <div class="content-description printing">
-    {{ description|markdown('problem', 'tex')|reference|absolutify(url)|str|safe }}
+    {{ description|markdown|reference|absolutify(url)|str|safe }}
 </div>
 
 <script type="text/javascript" src="{{ static('mathjax_config.js') }}"></script>

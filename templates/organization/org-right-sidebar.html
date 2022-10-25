@@ -71,7 +71,7 @@
             <div class="sidebox-content">
                 <div style="margin: 0.3em;">
                     {% cache 3600 'organization_html' organization.id MATH_ENGINE %}
-                        {{ organization.about|markdown('organization-about', MATH_ENGINE)|reference|str|safe }}
+                        {{ organization.about|markdown|reference|str|safe }}
                     {% endcache %}
                 </div>
             </div>

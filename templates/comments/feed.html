@@ -13,6 +13,6 @@
         {% endif %}
     {% endwith %}
     <div class='blog-description content-description'>
-        {{ comment.body |markdown("comment", MATH_ENGINE)|reference|str|safe }}
+        {{ comment.body |markdown|reference|str|safe }}
     </div>
 </div>

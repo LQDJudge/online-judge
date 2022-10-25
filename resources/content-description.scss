@@ -1,78 +1,13 @@
 @import "vars";
 
 .content-description {
-    line-height: 1.5em;
+    line-height: 1.6em;
     font-size: 1em;
     font-family: "Segoe UI", "Lucida Grande", Arial, sans-serif;
-
-    p {
-        margin: 1em 0 !important;
-        padding: 0 !important;
-    }
 
     img {
         max-width: 100%;
         height: auto;
-    }
-
-    h1, h2, h3, h4, h5, h6 {
-        font-weight: normal;
-        color: #111;
-        margin-bottom: 0.75em;
-        padding: 0;
-        background: 0;
-    }
-
-    h3, h4, h5, h6 {
-        font-weight: bold;
-    }
-
-    h1 {
-        font-size: 2.5em;
-    }
-
-    h2 {
-        font-size: 2em;
-    }
-
-    h3 {
-        font-size: 1.6em;
-        margin: 0;
-        padding: 0;
-    }
-
-    h4 {
-        font-size: 1.4em;
-        border-bottom: 1px solid #EEE;
-        line-height: 1.225;
-        padding-bottom: 0.3em;
-        padding-top: 0.5em;
-    }
-
-    h5 {
-        font-size: 1.15em;
-        margin-top: 0;
-    }
-
-    h6 {
-        font-size: 0.9em;
-    }
-
-    blockquote {
-        color: #666;
-        margin: 0;
-        padding-left: 1.5em;
-        border-left: 0.5em #EEE solid;
-    }
-
-    hr {
-        display: block;
-        height: 0;
-        border: 0;
-        font-style: italic;
-        border-bottom: 1px solid $border_gray;
-        margin: 25px 0 20px 0;
-        padding: 0;
     }
 
     pre, code, kbd, samp, span.code {

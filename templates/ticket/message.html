@@ -16,7 +16,7 @@
             </div>
         </div>
         <div class="content content-description">
-            {{ message.body|markdown('ticket', MATH_ENGINE)|reference|str|safe }}
+            {{ message.body|markdown|reference|str|safe }}
         </div>
     </div>
 </section>

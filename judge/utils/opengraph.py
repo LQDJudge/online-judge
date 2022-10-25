@@ -5,11 +5,11 @@ from judge.jinja2.markdown import markdown
 from judge.jinja2.reference import reference
 
 
-def generate_opengraph(cache_key, data, style):
+def generate_opengraph(cache_key, data):
     metadata = cache.get(cache_key)
     if metadata is None:
         description = None
-        tree = reference(markdown(data, style)).tree
+        tree = reference(markdown(data)).tree
         for p in tree.iterfind(".//p"):
             text = p.text_content().strip()
             if text:

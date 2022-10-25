@@ -362,42 +362,6 @@ LANGUAGES = [
     ("vi", _("Vietnamese")),
 ]
 
-MARKDOWN_ADMIN_EDITABLE_STYLE = {
-    "safe_mode": False,
-    "use_camo": True,
-    "texoid": True,
-    "math": True,
-}
-
-MARKDOWN_DEFAULT_STYLE = {
-    "safe_mode": True,
-    "nofollow": True,
-    "use_camo": True,
-    "math": True,
-}
-
-MARKDOWN_USER_LARGE_STYLE = {
-    "safe_mode": True,
-    "nofollow": True,
-    "use_camo": True,
-    "math": True,
-}
-
-MARKDOWN_STYLES = {
-    "comment": MARKDOWN_ADMIN_EDITABLE_STYLE,
-    "self-description": MARKDOWN_ADMIN_EDITABLE_STYLE,
-    "problem": MARKDOWN_ADMIN_EDITABLE_STYLE,
-    "contest": MARKDOWN_ADMIN_EDITABLE_STYLE,
-    "language": MARKDOWN_ADMIN_EDITABLE_STYLE,
-    "license": MARKDOWN_ADMIN_EDITABLE_STYLE,
-    "judge": MARKDOWN_ADMIN_EDITABLE_STYLE,
-    "blog": MARKDOWN_ADMIN_EDITABLE_STYLE,
-    "solution": MARKDOWN_ADMIN_EDITABLE_STYLE,
-    "contest_tag": MARKDOWN_ADMIN_EDITABLE_STYLE,
-    "organization-about": MARKDOWN_ADMIN_EDITABLE_STYLE,
-    "ticket": MARKDOWN_ADMIN_EDITABLE_STYLE,
-}
-
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
