@@ -17,6 +17,7 @@ EXTENSIONS = [
     "markdown.extensions.def_list",
     "markdown.extensions.tables",
     "markdown.extensions.admonition",
+    "nl2br",
 ]
 
 ALLOWED_TAGS = bleach.sanitizer.ALLOWED_TAGS + [
@@ -52,10 +53,8 @@ ALLOWED_ATTRS = ["src", "width", "height", "href", "class"]
 
 
 @registry.filter
-def markdown(value, hard_wrap=False):
+def markdown(value):
     extensions = EXTENSIONS
-    if hard_wrap:
-        extensions = EXTENSIONS + ["nl2br"]
     html = _markdown.markdown(value, extensions=extensions)
     html = bleach.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS)
     if not html:
