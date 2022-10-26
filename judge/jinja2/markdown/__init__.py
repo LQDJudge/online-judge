@@ -48,6 +48,8 @@ ALLOWED_TAGS = bleach.sanitizer.ALLOWED_TAGS + [
     "dt",
     "dd",
     "br",
+    "details",
+    "summary"
 ]
 
 ALLOWED_ATTRS = ["src", "width", "height", "href", "class"]
@@ -55,9 +57,12 @@ ALLOWED_ATTRS = ["src", "width", "height", "href", "class"]
 
 @registry.filter
 def markdown(value):
+    print("BEFORE:", value)
     extensions = EXTENSIONS
     html = _markdown.markdown(value, extensions=extensions)
     html = bleach.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS)
     if not html:
         html = escape(value)
+    print("AFTER")
+    print(html)
     return '<div class="md-typeset">%s</div>' % html
