@@ -49,7 +49,7 @@ ALLOWED_TAGS = bleach.sanitizer.ALLOWED_TAGS + [
     "dd",
     "br",
     "details",
-    "summary"
+    "summary",
 ]
 
 ALLOWED_ATTRS = ["src", "width", "height", "href", "class", "open"]
