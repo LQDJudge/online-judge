@@ -55,6 +55,8 @@ class UserRoom(models.Model):
     )
     last_seen = models.DateTimeField(verbose_name=_("last seen"), auto_now_add=True)
 
+    class Meta:
+        unique_together = ("user", "room")
 
 class Ignore(models.Model):
     user = models.OneToOneField(
