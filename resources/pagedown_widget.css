@@ -23,53 +23,108 @@
 }
 
 .wmd-button-row {
-    position: relative;
     margin: 10px 5px 5px;
     padding: 0;
-    height: 20px;
-    overflow-x: none;
-}
-
-.wmd-spacer {
-    width: 1px;
-    height: 20px;
-    margin-left: 14px;
-    position: absolute;
-    display: inline-block;
-    list-style: none;
 }
 
 .wmd-button {
+    display: inline-flex;
+    list-style: none;
     width: 20px;
     height: 20px;
+    background-repeat: no-repeat;
+    background-size: 14px 14px;
+    background-position: center;
+    border-radius: 3px;
+    cursor: pointer;
     padding-left: 2px;
     padding-right: 3px;
-    position: absolute;
-    display: inline-block;
-    list-style: none;
-    cursor: pointer;
 }
 
-.wmd-button > span {
-    background: url(pagedown/wmd-buttons.png) no-repeat 0 0;
+.wmd-bold-button {
+    background-image: url("pagedown/resources/bold.svg");
+}
+
+.wmd-italic-button {
+    background-image: url("pagedown/resources/italic.svg");
+}
+
+.wmd-latex-button {
+    background-image: url("pagedown/resources/latex.svg");
+}
+
+.wmd-latex-button-display {
+    background-image: url("pagedown/resources/latex-display.svg");
+}
+
+.wmd-link-button {
+    background-image: url("pagedown/resources/link.svg");
+}
+
+.wmd-user-reference-button {
+    background-image: url("pagedown/resources/user.svg");
+}
+
+.wmd-quote-button {
+    background-image: url("pagedown/resources/blockquote.svg");
+}
+
+.wmd-code-button {
+    background-image: url("pagedown/resources/code.svg");
+}
+
+.wmd-image-button {
+    background-image: url("pagedown/resources/image.svg");
+}
+
+.wmd-olist-button {
+    background-image: url("pagedown/resources/olist.svg");
+    background-size: 18px;
+}
+
+.wmd-ulist-button {
+    background-image: url("pagedown/resources/ulist.svg");
+    background-size: 18px;
+}
+
+.wmd-heading-button {
+    background-image: url("pagedown/resources/heading.svg");
+}
+
+.wmd-hr-button {
+    background-image: url("pagedown/resources/hr.svg");
+}
+
+.wmd-undo-button {
+    background-image: url("pagedown/resources/undo.svg");
+    background-size: 18px;
+}
+
+.wmd-redo-button {
+    background-image: url("pagedown/resources/redo.svg");
+    background-size: 18px;
+}
+
+.wmd-adnomination-button {
+    background-image: url("pagedown/resources/adnomination.svg");
+}
+
+.wmd-spoiler-button {
+    background-image: url("pagedown/resources/spoiler.svg");
+}
+
+.wmd-button-active:hover {
+    background-color: lightgray;
+}
+
+.wmd-button-inactive {
+    filter: invert(88%) sepia(1%) saturate(0%) hue-rotate(278deg) brightness(98%) contrast(91%);
+}
+
+.wmd-spacer
+{
+    display: inline-flex;
     width: 20px;
-    height: 20px;
-    display: inline-block;
-}
-
-.wmd-spacer1 {
-    left: 50px;
-    display: None;
-}
-
-.wmd-spacer2 {
-    left: 175px;
-    display: None;
-}
-
-.wmd-spacer3 {
-    left: 300px;
-    display: None;
 }
 
 .wmd-prompt-background {
@@ -115,27 +170,4 @@
 
 .wmd-preview:empty {
     display: none;
-}
-
-.wmd-preview h1, .wmd-preview h2, .wmd-preview h3, .wmd-preview h4, .wmd-preview h5, .wmd-preview h6 {
-    font-weight: bold !important;
-    margin-left: 0 !important;
-}
-
-.wmd-preview:not(.dmmd-preview) h1 {
-    font-size: 1.6em !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-.wmd-preview:not(.dmmd-preview) h2 {
-    font-size: 1.4em !important
-}
-
-.wmd-preview:not(.dmmd-preview) h3 {
-    font-size: 1em !important
-}
-
-.wmd-preview:not(.dmmd-preview) h4, .wmd-preview:not(.dmmd-preview) h5, .wmd-preview:not(.dmmd-preview) h6 {
-    font-size: .9em !important
 }
