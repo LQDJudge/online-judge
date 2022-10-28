@@ -23,11 +23,11 @@
 
         italic: "Emphasis <em> Ctrl+I",
         italicexample: "emphasized text",
-		
-		latex: "Latex embed - Ctrl+M",
-		latexexample: "x^2",
-		latexdisplay: "Latex display embed - Ctrl+Space",
-		latexdisplayexample: "f(x)=x^2",
+        
+        latex: "Latex embed - Ctrl+M",
+        latexexample: "x^2",
+        latexdisplay: "Latex display embed - Ctrl+Space",
+        latexdisplayexample: "f(x)=x^2",
 
         link: "Hyperlink <a> Ctrl+L",
         linkdescription: "enter link description here",
@@ -1250,11 +1250,16 @@
             keyEvent = "keypress";
         }
 
+        function doCommand(command) {
+            var fakeButton = {};
+            fakeButton.textOp = bindCommand(command);
+            doClick(fakeButton);
+        }
+
         util.addEvent(inputBox, keyEvent, function (key) {
 
             // Check to see if we have a button key and, if so execute the callback.
             if ((key.ctrlKey || key.metaKey) && !key.altKey && !key.shiftKey) {
-
                 var keyCode = key.charCode || key.keyCode;
                 var keyCodeStr = String.fromCharCode(keyCode).toLowerCase();
 
@@ -1268,12 +1273,12 @@
                     case "l":
                         doClick(buttons.link);
                         break;
-					case "m":
-						doClick(buttons.latex);
-						break;
-					case " ":
-						doClick(buttons.displaylatex);
-						break;
+                    case "m":
+                        doClick(buttons.latex);
+                        break;
+                    case " ":
+                        doClick(buttons.displaylatex);
+                        break;
                     case "q":
                         doClick(buttons.quote);
                         break;
@@ -1306,10 +1311,17 @@
                             doClick(buttons.undo);
                         }
                         break;
+                }
+                switch (keyCode) {
+                    case 221:
+                        doCommand("doIndent");
+                        break;
+                    case 219:
+                        doCommand("doReverseIndent");
+                        break;
                     default:
                         return;
                 }
-
 
                 if (key.preventDefault) {
                     key.preventDefault();
@@ -1321,15 +1333,22 @@
             }
         });
 
-        // Auto-indent on shift-enter
-        util.addEvent(inputBox, "keyup", function (key) {
-            if (key.shiftKey && !key.ctrlKey && !key.metaKey) {
-                var keyCode = key.charCode || key.keyCode;
-                // Character 13 is Enter
-                if (keyCode === 13) {
-                    var fakeButton = {};
-                    fakeButton.textOp = bindCommand("doAutoindent");
-                    doClick(fakeButton);
+        util.addEvent(inputBox, "keydown", function (key) {
+            var keyCode = key.charCode || key.keyCode;
+            // Character 13 is Enter
+            if (keyCode === 13) {
+                doCommand("doAutoindent");
+                key.preventDefault();
+            }
+
+            // Tab
+            if (keyCode === 9) {
+                key.preventDefault();
+                if (key.shiftKey) {
+                    doCommand("doReverseIndent");
+                }
+                else {
+                    doCommand("doIndent");
                 }
             }
         });
@@ -1593,16 +1612,16 @@
         chunk.selection = chunk.selection.replace(/\s+$/, "");
     };
 
-	commandProto.doLatex = function (chunk, postProcessing) {
-		/* This section is almost identical to doBorI below */
-		
+    commandProto.doLatex = function (chunk, postProcessing) {
+        /* This section is almost identical to doBorI below */
+        
         // Get rid of whitespace and fixup newlines.
         chunk.trimWhitespace();
         chunk.selection = chunk.selection.replace(/\n{2,}/g, "\n");
 
         // Look for stars before and after.  Is the chunk already marked up?
         // note that these regex matches cannot fail
-		var starsBefore = /(\$*$)/.exec(chunk.before)[0];
+        var starsBefore = /(\$*$)/.exec(chunk.before)[0];
         var starsAfter = /(^\$*)/.exec(chunk.after)[0];
 
         var prevStars = Math.min(starsBefore.length, starsAfter.length);
@@ -1628,18 +1647,18 @@
         }
 
         return;
-	};
-	
-	commandProto.doLatexDisplay = function (chunk, postProcessing) {
-		/* This section is almost identical to doBorI below */
-		
+    };
+    
+    commandProto.doLatexDisplay = function (chunk, postProcessing) {
+        /* This section is almost identical to doBorI below */
+        
         // Get rid of whitespace and fixup newlines.
         chunk.trimWhitespace();
         chunk.selection = chunk.selection.replace(/\n{2,}/g, "\n");
 
         // Look for stars before and after.  Is the chunk already marked up?
         // note that these regex matches cannot fail
-		var starsBefore = /((?:\${2})*$)/.exec(chunk.before)[0];
+        var starsBefore = /((?:\${2})*$)/.exec(chunk.before)[0];
         var starsAfter = /(^(?:\${2})*)/.exec(chunk.after)[0];
 
         var prevStars = Math.min(starsBefore.length, starsAfter.length);
@@ -1665,8 +1684,8 @@
         }
 
         return;
-	};
-	
+    };
+    
     commandProto.doBold = function (chunk, postProcessing) {
         return this.doBorI(chunk, postProcessing, 2, this.getString("boldexample"));
     };
@@ -1907,10 +1926,37 @@
         }
     };
 
-    // When making a list, hitting shift-enter will put your cursor on the next line
+    commandProto.doIndent = function(chunk, postProcessing) {
+        if (!chunk.selection) {
+            chunk.before += "    ";
+        }
+        else {
+            var selectedLines = chunk.selection.split("\n");
+            for (var i = 1; i < selectedLines.length; i++) {
+                selectedLines[i] = "    " + selectedLines[i];
+            }
+            chunk.selection = selectedLines.join("\n");
+
+            // Indent the current line
+            chunk.before = chunk.before.replace(/(^|\n)([^\^\n]*)$/, "$1    $2")
+        }
+    }
+
+    commandProto.doReverseIndent = function(chunk, postProcessing) {
+        if (chunk.selection) {
+            var selectedLines = chunk.selection.split("\n");
+            for (var i = 1; i < selectedLines.length; i++) {
+                selectedLines[i] = selectedLines[i].replace(/^([ ]{0,4})(.*)$/, "$2");
+            }
+            chunk.selection = selectedLines.join("\n");
+        }
+        // Reindent the current line
+        chunk.before = chunk.before.replace(/(^|\n)([ ]{0,4})(.*)$/, "$1$3");
+    }
+
+    // Hitting enter will put your cursor on the next line
     // at the current indent level.
     commandProto.doAutoindent = function (chunk, postProcessing) {
-
         var commandMgr = this,
             fakeSelection = false;
 
@@ -1930,26 +1976,32 @@
             fakeSelection = true;
         }
 
-        if (/(\n|^)[ ]{0,3}([*+-]|\d+[.])[ \t]+.*\n$/.test(chunk.before)) {
+        if (/(\n|^)[ ]{0,3}([*+-]|\d+[.])[ \t]+.*$/.test(chunk.before)) {
+            var oldChunk = {...chunk};
             if (commandMgr.doList) {
+                chunk.before += "\n";
                 commandMgr.doList(chunk);
+                if (oldChunk.before  == chunk.before + chunk.startTag) {
+                    chunk.startTag = "";
+                    chunk.selection = "";
+                    chunk.before += "\n";
+                }
             }
         }
-        if (/(\n|^)[ ]{0,3}>[ \t]+.*\n$/.test(chunk.before)) {
-            if (commandMgr.doBlockquote) {
-                commandMgr.doBlockquote(chunk);
-            }
+        else if (/(\n|^)[ ]{0,3}>[ \t]+.*$/.test(chunk.before)) {
+            chunk.before += "\n";
+            commandMgr.doBlockquote(chunk);
         }
-        if (/(\n|^)(\t|[ ]{4,}).*\n$/.test(chunk.before)) {
-            if (commandMgr.doCode) {
-                commandMgr.doCode(chunk);
-            }
+        else {
+            var currentLine = chunk.before.split("\n").pop();
+            var indent = currentLine.match(/^\s*/)[0];
+            chunk.before += "\n" + indent;
         }
-        
+
         if (fakeSelection) {
             chunk.after = chunk.selection + chunk.after;
-            chunk.selection = "";
         }
+        chunk.selection = "";
     };
 
     commandProto.doBlockquote = function (chunk, postProcessing) {
@@ -2205,16 +2257,12 @@
 
             return itemText;
         };
-
         chunk.findTags(/(\n|^)*[ ]{0,3}([*+-]|\d+[.])\s+/, null);
-
         if (chunk.before && !/\n$/.test(chunk.before) && !/^\n/.test(chunk.startTag)) {
             chunk.before += chunk.startTag;
             chunk.startTag = "";
         }
-
         if (chunk.startTag) {
-
             var hasDigits = /\d+[.]/.test(chunk.startTag);
             chunk.startTag = "";
             chunk.selection = chunk.selection.replace(/\n[ ]{4}/g, "\n");
@@ -2231,7 +2279,6 @@
         }
 
         var nLinesUp = 1;
-
         chunk.before = chunk.before.replace(previousItemsRegex,
             function (itemText) {
                 if (/^\s*([*+-])/.test(itemText)) {
@@ -2254,14 +2301,12 @@
                 nLinesDown = /[^\n]\n\n[^\n]/.test(itemText) ? 1 : 0;
                 return getPrefixedItem(itemText);
             });
-
         chunk.trimWhitespace(true);
         chunk.skipLines(nLinesUp, nLinesDown, true);
         chunk.startTag = prefix;
         var spaces = prefix.replace(/./g, " ");
         this.wrap(chunk, SETTINGS.lineLength - spaces.length);
         chunk.selection = chunk.selection.replace(/\n/g, "\n" + spaces);
-
     };
 
     commandProto.doHeading = function (chunk, postProcessing) {

@@ -86,9 +86,7 @@ a {
     input, textarea {
         min-width: 100%;
         max-width: 100%;
-
-        // Hack for 4k on Chrome
-        font-size: $base_font_size;
+        font-size: 1em;
     }
 }
 
@@ -133,7 +131,4 @@ a {
 
 .comment-body {
     word-wrap: break-word;
-}
-.highlight {
-    background: #fff897;
 }
