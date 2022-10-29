@@ -58,6 +58,7 @@ class UserRoom(models.Model):
     class Meta:
         unique_together = ("user", "room")
 
+
 class Ignore(models.Model):
     user = models.OneToOneField(
         Profile,

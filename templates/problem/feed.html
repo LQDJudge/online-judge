@@ -26,7 +26,7 @@
         <div class="blog-box">
             <h3 class="problem-feed-name">
                 <a href="{{ url('problem_detail', problem.code) }}">
-                    {{ problem.name }}
+                    {{ problem.i18n_name }}
                 </a>
                 {% if problem.id in completed_problem_ids %}
                     <i class="solved-problem-color fa fa-check-circle"></i>

@@ -115,7 +115,6 @@ class ProblemMixin(object):
         try:
             return super(ProblemMixin, self).get(request, *args, **kwargs)
         except Http404 as e:
-            print(e)
             return self.no_such_problem()
 
 
@@ -558,7 +557,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             )
         if self.org_query:
             self.org_query = self.get_org_query(self.org_query)
-            print(self.org_query)
             queryset = queryset.filter(
                 Q(organizations__in=self.org_query)
                 | Q(contests__contest__organizations__in=self.org_query)
@@ -782,9 +780,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         return HttpResponseRedirect(request.get_full_path())
 
 
-cf_logger = logging.getLogger("judge.ml.collab_filter")
-
-
 class ProblemFeed(ProblemList):
     model = Problem
     context_object_name = "problems"
@@ -859,56 +854,49 @@ class ProblemFeed(ProblemList):
         if not settings.ML_OUTPUT_PATH or not user:
             return queryset.order_by("?")
 
-        # Logging
-        log_data = {
-            "user": self.request.user.username,
-            "cf": {
-                "dot": {},
-                "cosine": {},
-            },
-            "cf_time": {"dot": {}, "cosine": {}},
-        }
+        cf_model = CollabFilter("collab_filter")
+        cf_time_model = CollabFilter("collab_filter_time")
 
-        cf_model = CollabFilter("collab_filter", log_time=log_data["cf"])
-        cf_time_model = CollabFilter("collab_filter_time", log_time=log_data["cf_time"])
+        queryset = queryset.values_list("id", flat=True)
         hot_problems_recommendations = [
-            problem
+            problem.id
             for problem in hot_problems(timedelta(days=7), 20)
-            if problem in queryset
+            if problem.id in set(queryset)
         ]
 
         q = self.merge_recommendation(
             [
-                cf_model.user_recommendations(
-                    user, queryset, cf_model.DOT, 100, log_time=log_data["cf"]["dot"]
-                ),
+                cf_model.user_recommendations(user, queryset, cf_model.DOT, 100),
                 cf_model.user_recommendations(
                     user,
                     queryset,
                     cf_model.COSINE,
                     100,
-                    log_time=log_data["cf"]["cosine"],
                 ),
                 cf_time_model.user_recommendations(
                     user,
                     queryset,
                     cf_time_model.COSINE,
                     100,
-                    log_time=log_data["cf_time"]["cosine"],
                 ),
                 cf_time_model.user_recommendations(
                     user,
                     queryset,
                     cf_time_model.DOT,
                     100,
-                    log_time=log_data["cf_time"]["dot"],
                 ),
                 hot_problems_recommendations,
             ]
         )
+        queryset = Problem.objects.filter(id__in=q)
+        queryset = queryset.add_i18n_name(self.request.LANGUAGE_CODE)
 
-        cf_logger.info(log_data)
-        return q
+        # Reorder results from database to correct positions
+        res = [None for _ in range(len(q))]
+        position_in_q = {i: idx for idx, i in enumerate(q)}
+        for problem in queryset:
+            res[position_in_q[problem.id]] = problem
+        return res
 
     def get_context_data(self, **kwargs):
         context = super(ProblemFeed, self).get_context_data(**kwargs)

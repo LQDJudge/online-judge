@@ -1090,6 +1090,7 @@ urlpatterns = [
             ]
         ),
     ),
+    # url("__debug__/", include("debug_toolbar.urls")), # debug_toolbar use
 ] + url_static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 favicon_paths = [
