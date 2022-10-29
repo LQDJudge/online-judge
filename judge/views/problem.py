@@ -837,7 +837,7 @@ class ProblemFeed(ProblemList):
         user = self.request.profile
 
         if self.feed_type == "new":
-            return queryset.order_by("-date")
+            return queryset.order_by("-date").add_i18n_name(self.request.LANGUAGE_CODE)
         elif user and self.feed_type == "volunteer":
             voted_problems = (
                 user.volunteer_problem_votes.values_list("problem", flat=True)
@@ -850,9 +850,13 @@ class ProblemFeed(ProblemList):
                         user=self.profile, points=F("problem__points")
                     ).values_list("problem__id", flat=True)
                 )
-            return queryset.exclude(id__in=voted_problems).order_by("?")
+            return (
+                queryset.exclude(id__in=voted_problems)
+                .order_by("?")
+                .add_i18n_name(self.request.LANGUAGE_CODE)
+            )
         if not settings.ML_OUTPUT_PATH or not user:
-            return queryset.order_by("?")
+            return queryset.order_by("?").add_i18n_name(self.request.LANGUAGE_CODE)
 
         cf_model = CollabFilter("collab_filter")
         cf_time_model = CollabFilter("collab_filter_time")
