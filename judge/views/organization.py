@@ -449,10 +449,10 @@ class OrganizationSubmissions(
     def contest(self):
         return None
 
-    def get_queryset(self):
+    def _get_queryset(self):
         return (
             super()
-            ._get_queryset()
+            ._get_entire_queryset()
             .filter(contest_object__organizations=self.organization)
         )
 

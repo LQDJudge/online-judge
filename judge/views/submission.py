@@ -51,6 +51,9 @@ from judge.utils.views import TitleMixin
 from judge.utils.timedelta import nice_repr
 
 
+MAX_NUMBER_OF_QUERY_SUBMISSIONS = 50000
+
+
 def submission_related(queryset):
     return queryset.select_related("user__user", "problem", "language").only(
         "id",
@@ -306,7 +309,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         return result
 
     def _get_result_data(self):
-        return get_result_data(self.get_queryset().order_by())
+        return get_result_data(self._get_queryset().order_by())
 
     def access_check(self, request):
         pass
@@ -323,7 +326,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     def contest(self):
         return self.request.profile.current_contest.contest
 
-    def _get_queryset(self):
+    def _get_entire_queryset(self):
         queryset = Submission.objects.all()
         use_straight_join(queryset)
         queryset = submission_related(queryset.order_by("-id"))
@@ -374,8 +377,8 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
 
         return queryset
 
-    def get_queryset(self):
-        queryset = self._get_queryset()
+    def _get_queryset(self):
+        queryset = self._get_entire_queryset()
         if not self.in_contest:
             join_sql_subquery(
                 queryset,
@@ -390,6 +393,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                 alias="visible_problems",
             )
         return queryset
+
+    def get_queryset(self):
+        return self._get_queryset()[:MAX_NUMBER_OF_QUERY_SUBMISSIONS]
 
     def get_my_submissions_page(self):
         return None
@@ -476,10 +482,10 @@ class ConditionalUserTabMixin(object):
 
 
 class AllUserSubmissions(ConditionalUserTabMixin, UserMixin, SubmissionsListBase):
-    def get_queryset(self):
+    def _get_queryset(self):
         return (
             super(AllUserSubmissions, self)
-            .get_queryset()
+            ._get_queryset()
             .filter(user_id=self.profile.id)
         )
 
@@ -516,7 +522,7 @@ class ProblemSubmissionsBase(SubmissionsListBase):
     dynamic_update = True
     check_contest_in_access_check = False
 
-    def get_queryset(self):
+    def _get_queryset(self):
         if (
             self.in_contest
             and not self.contest.contest_problems.filter(
@@ -526,7 +532,7 @@ class ProblemSubmissionsBase(SubmissionsListBase):
             raise Http404()
         return (
             super(ProblemSubmissionsBase, self)
-            ._get_queryset()
+            ._get_entire_queryset()
             .filter(problem_id=self.problem.id)
         )
 
@@ -608,10 +614,10 @@ class UserProblemSubmissions(ConditionalUserTabMixin, UserMixin, ProblemSubmissi
         if not self.is_own:
             self.access_check_contest(request)
 
-    def get_queryset(self):
+    def _get_queryset(self):
         return (
             super(UserProblemSubmissions, self)
-            .get_queryset()
+            ._get_queryset()
             .filter(user_id=self.profile.id)
         )
 
