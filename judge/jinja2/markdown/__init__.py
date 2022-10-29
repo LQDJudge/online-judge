@@ -18,6 +18,7 @@ EXTENSIONS = [
     "markdown.extensions.tables",
     "markdown.extensions.admonition",
     "nl2br",
+    "mdx_breakless_lists",
 ]
 
 ALLOWED_TAGS = bleach.sanitizer.ALLOWED_TAGS + [
