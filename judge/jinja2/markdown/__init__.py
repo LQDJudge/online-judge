@@ -2,6 +2,7 @@ from .. import registry
 import markdown as _markdown
 import bleach
 from django.utils.html import escape
+from bs4 import BeautifulSoup
 
 
 EXTENSIONS = [
@@ -57,10 +58,16 @@ ALLOWED_ATTRS = ["src", "width", "height", "href", "class", "open"]
 
 
 @registry.filter
-def markdown(value):
+def markdown(value, lazy_load=False):
     extensions = EXTENSIONS
     html = _markdown.markdown(value, extensions=extensions)
     html = bleach.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS)
     if not html:
         html = escape(value)
+    if lazy_load:
+        soup = BeautifulSoup(html, features="lxml")
+        for img in soup.findAll("img"):
+            img["data-src"] = img["src"]
+            img["src"] = ""
+        html = str(soup)
     return '<div class="md-typeset">%s</div>' % html

@@ -174,6 +174,12 @@ $(function () {
                 xhr.setRequestHeader('X-CSRFToken', $.cookie('csrftoken'));
         }
     });
+
+    setTimeout(() => {
+        $("[data-src]img").each(function() {
+            $(this).attr("src", $(this).attr("data-src"));
+        })
+    }, "500");
 });
 
 if (!Date.now) {

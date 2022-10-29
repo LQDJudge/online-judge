@@ -38,7 +38,7 @@
         <div class="about-td">
             {% if user.about %}
                 {% cache 86400 'user_about' user.id MATH_ENGINE %}
-                    {{ user.about|markdown|reference|str|safe }}
+                    {{ user.about|markdown(lazy_load=True)|reference|str|safe }}
                 {% endcache %}
             {% endif %}
         </div>

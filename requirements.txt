@@ -42,3 +42,4 @@ markdown
 bleach
 pymdown-extensions
 mdx-breakless-lists
+beautifulsoup4
