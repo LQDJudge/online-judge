@@ -105,8 +105,8 @@
     background-size: 18px;
 }
 
-.wmd-adnomination-button {
-    background-image: url("pagedown/resources/adnomination.svg");
+.wmd-admonition-button {
+    background-image: url("pagedown/resources/admonition.svg");
 }
 
 .wmd-spoiler-button {

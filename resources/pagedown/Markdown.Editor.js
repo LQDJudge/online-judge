@@ -55,7 +55,7 @@
 
         hr: "Horizontal Rule <hr> Ctrl+R",
 
-        adnomination: "Adnomination",
+        admonition: "Admonition",
         spoiler: "Spoiler",
         spoilerSummary: "summary",
         spoilerDetail: "detail",
@@ -1521,7 +1521,7 @@
             buttons.heading = makeButton("wmd-heading-button", getString("heading"), bindCommand("doHeading"));
             buttons.hr = makeButton("wmd-hr-button", getString("hr"), bindCommand("doHorizontalRule"));
             makeSpacer(3);
-            buttons.spoiler = makeButton("wmd-adnomination-button", getString("adnomination"), bindCommand("doAdnomination"));
+            buttons.spoiler = makeButton("wmd-admonition-button", getString("admonition"), bindCommand("doAdmonition"));
             buttons.spoiler = makeButton("wmd-spoiler-button", getString("spoiler"), bindCommand("doSpoiler"));
             makeSpacer(4);
             buttons.undo = makeButton("wmd-undo-button", getString("undo"), null);
@@ -1946,7 +1946,7 @@
         chunk.after = "\n" + chunk.after;
     }
 
-    commandProto.doAdnomination = function(chunk, postProcessing) {
+    commandProto.doAdmonition = function(chunk, postProcessing) {
         chunk.selection = "";
         if (chunk.before && !/\s$/.test(chunk.before)) {
             commandProto.doAutoindent(chunk, postProcessing);
