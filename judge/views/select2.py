@@ -168,7 +168,7 @@ class ChatUserSearchSelect2View(BaseListView):
         return _get_user_queryset(self.term)
 
     def get(self, request, *args, **kwargs):
-        if self.request.user.is_authenticated:
+        if not self.request.user.is_authenticated:
             raise Http404()
         self.request = request
         self.kwargs = kwargs
