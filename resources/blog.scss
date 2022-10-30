@@ -174,8 +174,14 @@
 
 .left-sidebar-item {
     .sidebar-icon {
+        font-size: large;
         width: 1.2em;
         display: inline-block;
+
+        i {
+            position: relative;
+            bottom: -1.5px;
+        }
     }
 }
 .left-sidebar-item:hover {
@@ -280,7 +286,7 @@
     }
 
     .left-sidebar-item {
-        border-radius: 0 2em 2em 0;
+        border-radius: 0 0.5em 0.5em 0;
     }
 
     .feed-table {
