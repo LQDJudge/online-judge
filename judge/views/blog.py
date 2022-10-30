@@ -1,14 +1,26 @@
-from django.db.models import Count, Max, Q
-from django.http import Http404
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.db import IntegrityError, transaction
+from django.db.models import Count, Max, Q, F
+from django.db.models.expressions import F, Value
+from django.db.models.functions import Coalesce
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+)
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import lazy
 from django.utils.translation import ugettext as _
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 
 from judge.comments import CommentedDetailView
+from judge.dblock import LockModel
 from judge.models import (
     BlogPost,
+    BlogVote,
     Comment,
     Contest,
     Language,
@@ -18,6 +30,7 @@ from judge.models import (
     Submission,
     Ticket,
 )
+from judge.utils.raw_sql import RawSQLColumn, unique_together_left_join
 from judge.models.profile import Organization, OrganizationProfile
 from judge.utils.cachedict import CacheDict
 from judge.utils.diggpaginator import DiggPaginator
@@ -219,7 +232,7 @@ class PostView(TitleMixin, CommentedDetailView):
             for post_org in self.object.organizations.all():
                 if post_org in self.request.profile.organizations.all():
                     context["valid_org_to_show_edit"].append(post_org)
-
+                    
         return context
 
     def get_object(self, queryset=None):
@@ -227,3 +240,72 @@ class PostView(TitleMixin, CommentedDetailView):
         if not post.can_see(self.request.user):
             raise Http404()
         return post
+
+@login_required
+def vote_blog(request, delta):
+    if abs(delta) != 1:
+        return HttpResponseBadRequest(
+            _("Messing around, are we?"), content_type="text/plain"
+        )
+
+    if request.method != "POST":
+        return HttpResponseForbidden()
+
+    if "id" not in request.POST:
+        return HttpResponseBadRequest()
+
+    if (
+        not request.user.is_staff
+        and not request.profile.submission_set.filter(
+            points=F("problem__points")
+        ).exists()
+    ):
+        return HttpResponseBadRequest(
+            _("You must solve at least one problem before you can vote."),
+            content_type="text/plain",
+        )
+
+    try:
+        blog_id = int(request.POST["id"])
+    except ValueError:
+        return HttpResponseBadRequest()
+    else:
+        if not BlogPost.objects.filter(id=blog_id).exists():
+            raise Http404()
+
+    vote = BlogVote()
+    vote.blog_id = blog_id
+    vote.voter = request.profile
+    vote.score = delta
+
+    while True:
+        try:
+            vote.save()
+        except IntegrityError:
+            with LockModel(write=(BlogVote,)):
+                try:
+                    vote = BlogVote.objects.get(
+                        blog_id=blog_id, voter=request.profile
+                    )
+                except BlogVote.DoesNotExist:
+                    # We must continue racing in case this is exploited to manipulate votes.
+                    continue
+                if -vote.score != delta:
+                    return HttpResponseBadRequest(
+                        _("You already voted."), content_type="text/plain"
+                    )
+                vote.delete()
+            BlogPost.objects.filter(id=blog_id).update(score=F("score") - vote.score)
+        else:
+            BlogPost.objects.filter(id=blog_id).update(score=F("score") + delta)
+        break
+    return HttpResponse("success", content_type="text/plain")
+
+
+def upvote_blog(request):
+    return vote_blog(request, 1)
+
+
+def downvote_blog(request):
+    return vote_blog(request, -1)
+

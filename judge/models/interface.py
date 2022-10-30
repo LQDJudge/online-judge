@@ -1,7 +1,9 @@
 import re
+from tabnanny import verbose
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import CASCADE
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -82,6 +84,7 @@ class BlogPost(models.Model):
     og_image = models.CharField(
         verbose_name=_("openGraph image"), default="", max_length=150, blank=True
     )
+    score = models.IntegerField(verbose_name=_("vote"), default=0)
     organizations = models.ManyToManyField(
         Organization,
         blank=True,
@@ -125,7 +128,25 @@ class BlogPost(models.Model):
             and self.authors.filter(id=user.profile.id).exists()
         )
 
+    def vote_score(self, user):
+        blogvote = BlogVote.objects.filter(blog=self, voter=user)
+        if blogvote.exists():
+            return blogvote.first().score
+        else:
+            return 0
+
     class Meta:
         permissions = (("edit_all_post", _("Edit all posts")),)
         verbose_name = _("blog post")
         verbose_name_plural = _("blog posts")
+
+
+class BlogVote(models.Model):
+    voter = models.ForeignKey(Profile, related_name="voted_blogs", on_delete=CASCADE)
+    blog = models.ForeignKey(BlogPost, related_name="votes", on_delete=CASCADE)
+    score = models.IntegerField()
+
+    class Meta:
+        unique_together = ["voter", "blog"]
+        verbose_name = _("blog vote")
+        verbose_name_plural = _("blog votes")

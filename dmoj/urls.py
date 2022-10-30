@@ -738,6 +738,8 @@ urlpatterns = [
         ),
     ),
     url(r"^blog/", paged_list_view(blog.PostList, "blog_post_list")),
+    url(r"^post/upvote/$", blog.upvote_blog, name="blog_upvote"),
+    url(r"^post/downvote/$", blog.downvote_blog, name="blog_downvote"),
     url(r"^post/(?P<id>\d+)-(?P<slug>.*)$", blog.PostView.as_view(), name="blog_post"),
     url(r"^license/(?P<key>[-\w.]+)$", license.LicenseDetail.as_view(), name="license"),
     url(
