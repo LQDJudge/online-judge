@@ -3,6 +3,7 @@ import markdown as _markdown
 import bleach
 from django.utils.html import escape
 from bs4 import BeautifulSoup
+from pymdownx import superfences
 
 
 EXTENSIONS = [
@@ -21,6 +22,18 @@ EXTENSIONS = [
     "nl2br",
     "mdx_breakless_lists",
 ]
+
+EXTENSION_CONFIGS = {
+    "pymdownx.superfences": {
+        "custom_fences": [
+            {
+                "name": "sample",
+                "class": "no-border",
+                "format": superfences.fence_code_format,
+            }
+        ]
+    },
+}
 
 ALLOWED_TAGS = bleach.sanitizer.ALLOWED_TAGS + [
     "img",
@@ -60,7 +73,9 @@ ALLOWED_ATTRS = ["src", "width", "height", "href", "class", "open"]
 @registry.filter
 def markdown(value, lazy_load=False):
     extensions = EXTENSIONS
-    html = _markdown.markdown(value, extensions=extensions)
+    html = _markdown.markdown(
+        value, extensions=extensions, extension_configs=EXTENSION_CONFIGS
+    )
     html = bleach.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS)
     if not html:
         html = escape(value)

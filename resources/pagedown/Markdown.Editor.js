@@ -1457,7 +1457,6 @@
                 }
             }
             else {
-                console.log(button);
                 button.classList.remove("wmd-button-active");
                 button.classList.add("wmd-button-inactive");
                 button.onclick = function () { };
@@ -1538,7 +1537,6 @@
         }
 
         function setUndoRedoButtonStates() {
-            console.log(undoManager.canUndo());
             if (undoManager) {
                 setupButton(buttons.undo, undoManager.canUndo());
                 setupButton(buttons.redo, undoManager.canRedo());
