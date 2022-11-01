@@ -812,7 +812,7 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
     template_name = "submission/user-ajax.html"
 
     def contest_time(self, s):
-        if hasattr(s, "contest") and s.contest.participation.live:
+        if s.contest.participation.live:
             if self.contest.time_limit:
                 return s.date - s.contest.participation.real_start
             return s.date - self.contest.start_time
@@ -828,7 +828,10 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
         )
 
         contest_problem = self.contest.contest_problems.get(problem=self.problem)
+        filtered_submissions = []
         for s in context["submissions"]:
+            if not hasattr(s, "contest"):
+                continue
             contest_time = self.contest_time(s)
             if contest_time:
                 s.contest_time = nice_repr(contest_time, "noday")
@@ -837,6 +840,8 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
             points = floatformat(s.contest.points, -self.contest.points_precision)
             total = floatformat(contest_problem.points, -self.contest.points_precision)
             s.display_point = f"{points} / {total}"
+            filtered_submissions.append(s)
+        context["submissions"] = filtered_submissions
         return context
 
     def get(self, request, *args, **kwargs):
