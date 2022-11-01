@@ -9,7 +9,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from judge.judgeapi import abort_submission, judge_submission
-from judge.models.problem import Problem, TranslatedProblemForeignKeyQuerySet
+from judge.models.problem import Problem
 from judge.models.profile import Profile
 from judge.models.runtime import Language
 from judge.utils.unicode import utf8bytes
@@ -119,8 +119,6 @@ class Submission(models.Model):
         on_delete=models.SET_NULL,
         related_name="+",
     )
-
-    objects = TranslatedProblemForeignKeyQuerySet.as_manager()
 
     @classmethod
     def result_class_from_code(cls, result, case_points, case_total):

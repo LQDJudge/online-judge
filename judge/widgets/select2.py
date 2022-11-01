@@ -232,7 +232,10 @@ class HeavySelect2Mixin(Select2Mixin):
             chosen.queryset = chosen.queryset.filter(
                 pk__in=[int(i) for i in result if isinstance(i, int) or i.isdigit()]
             )
-            self.choices = set(chosen)
+            self.choices = {
+                (value if isinstance(value, str) else value.value, label)
+                for value, label in chosen
+            }
         return result
 
 

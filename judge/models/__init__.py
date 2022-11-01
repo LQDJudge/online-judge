@@ -28,7 +28,6 @@ from judge.models.problem import (
     ProblemTranslation,
     ProblemType,
     Solution,
-    TranslatedProblemForeignKeyQuerySet,
     TranslatedProblemQuerySet,
     ProblemPointsVote,
 )

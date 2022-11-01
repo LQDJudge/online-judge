@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db.models import Count
+from django.db.models import Count, FilteredRelation, Q
 from django.db.models.expressions import F, Value
 from django.db.models.functions import Coalesce
 from django.forms import ModelForm
@@ -22,8 +22,7 @@ from reversion import revisions
 from reversion.models import Revision, Version
 
 from judge.dblock import LockModel
-from judge.models import Comment, CommentLock, CommentVote, Notification
-from judge.utils.raw_sql import RawSQLColumn, unique_together_left_join
+from judge.models import Comment, CommentLock, Notification
 from judge.widgets import HeavyPreviewPageDownWidget
 from judge.jinja2.reference import get_user_from_text
 
@@ -178,13 +177,12 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         )
 
         if self.request.user.is_authenticated:
-            queryset = queryset.annotate(
-                vote_score=Coalesce(RawSQLColumn(CommentVote, "score"), Value(0))
-            )
             profile = self.request.profile
-            unique_together_left_join(
-                queryset, CommentVote, "comment", "voter", profile.id
-            )
+            queryset = queryset.annotate(
+                my_vote=FilteredRelation(
+                    "votes", condition=Q(votes__voter_id=profile.id)
+                ),
+            ).annotate(vote_score=Coalesce(F("my_vote__score"), Value(0)))
             context["is_new_user"] = (
                 not self.request.user.is_staff
                 and not profile.submission_set.filter(

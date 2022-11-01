@@ -42,7 +42,6 @@ class Message(models.Model):
         super(Message, self).save(*args, **kwargs)
 
     class Meta:
-        app_label = "chat_box"
         verbose_name = "message"
         verbose_name_plural = "messages"
         ordering = ("-time",)

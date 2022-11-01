@@ -2,7 +2,6 @@ from collections import defaultdict
 from functools import partial
 
 from django.shortcuts import render
-from django.utils import six
 from django.utils.translation import gettext as _
 from packaging import version
 
@@ -74,12 +73,12 @@ def version_matrix(request):
     ):
         matrix[runtime.judge_id][runtime.language_id].append(runtime)
 
-    for judge, data in six.iteritems(matrix):
+    for judge, data in matrix.items():
         name_tuple = judges[judge].rpartition(".")
         groups[name_tuple[0] or name_tuple[-1]].append((judges[judge], data))
 
     matrix = {}
-    for group, data in six.iteritems(groups):
+    for group, data in groups.items():
         if len(data) == 1:
             judge, data = data[0]
             matrix[judge] = data
@@ -102,14 +101,14 @@ def version_matrix(request):
             if ds[i] != rep:
                 matrix[j] = x
 
-    for data in six.itervalues(matrix):
-        for language, versions in six.iteritems(data):
+    for data in matrix.values():
+        for language, versions in data.items():
             versions.versions = [version.parse(runtime.version) for runtime in versions]
             if versions.versions > latest[language]:
                 latest[language] = versions.versions
 
-    for data in six.itervalues(matrix):
-        for language, versions in six.iteritems(data):
+    for data in matrix.values():
+        for language, versions in data.items():
             versions.is_latest = versions.versions == latest[language]
 
     languages = sorted(languages, key=lambda lang: version.parse(lang.name))

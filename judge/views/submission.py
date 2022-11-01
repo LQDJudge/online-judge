@@ -391,6 +391,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                 params=[],
                 join_fields=[("problem_id", "id")],
                 alias="visible_problems",
+                related_model=Problem,
             )
         return queryset
 

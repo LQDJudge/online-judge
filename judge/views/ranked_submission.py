@@ -27,7 +27,7 @@ class RankedSubmissions(ProblemSubmissions):
             constraint = ""
         queryset = (
             super(RankedSubmissions, self)
-            .get_queryset()
+            ._get_queryset()
             .filter(user__is_unlisted=False)
         )
         join_sql_subquery(
@@ -57,6 +57,7 @@ class RankedSubmissions(ProblemSubmissions):
             else [self.problem.id] * 3,
             alias="best_subs",
             join_fields=[("id", "id")],
+            related_model=Submission,
         )
 
         if self.in_contest:
@@ -75,7 +76,9 @@ class RankedSubmissions(ProblemSubmissions):
         )
 
     def _get_result_data(self):
-        return get_result_data(super(RankedSubmissions, self).get_queryset().order_by())
+        return get_result_data(
+            super(RankedSubmissions, self)._get_queryset().order_by()
+        )
 
 
 class ContestRankedSubmission(ForceContestMixin, RankedSubmissions):

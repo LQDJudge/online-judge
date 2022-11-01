@@ -11,7 +11,19 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db import transaction
-from django.db.models import Count, F, Prefetch, Q, Sum, Case, When, IntegerField
+from django.db.models import (
+    BooleanField,
+    Case,
+    CharField,
+    Count,
+    F,
+    FilteredRelation,
+    Prefetch,
+    Q,
+    When,
+    IntegerField,
+)
+from django.db.models.functions import Coalesce
 from django.db.utils import ProgrammingError
 from django.http import (
     Http404,
@@ -49,7 +61,6 @@ from judge.models import (
     Solution,
     Submission,
     SubmissionSource,
-    TranslatedProblemForeignKeyQuerySet,
     Organization,
     VolunteerProblemVote,
     Profile,
@@ -498,10 +509,22 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             .defer("problem__description")
             .order_by("problem__code")
             .annotate(user_count=Count("submission__participation", distinct=True))
+            .annotate(
+                i18n_translation=FilteredRelation(
+                    "problem__translations",
+                    condition=Q(
+                        problem__translations__language=self.request.LANGUAGE_CODE
+                    ),
+                )
+            )
+            .annotate(
+                i18n_name=Coalesce(
+                    F("i18n_translation__name"),
+                    F("problem__name"),
+                    output_field=CharField(),
+                )
+            )
             .order_by("order")
-        )
-        queryset = TranslatedProblemForeignKeyQuerySet.add_problem_i18n_name(
-            queryset, "i18n_name", self.request.LANGUAGE_CODE, "problem__name"
         )
         return [
             {
@@ -593,12 +616,14 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         if self.point_end is not None:
             queryset = queryset.filter(points__lte=self.point_end)
         queryset = queryset.annotate(
-            has_public_editorial=Sum(
-                Case(
-                    When(solution__is_public=True, then=1),
-                    default=0,
-                    output_field=IntegerField(),
-                )
+            has_public_editorial=Case(
+                When(
+                    solution__is_public=True,
+                    solution__publish_on__lte=timezone.now(),
+                    then=True,
+                ),
+                default=False,
+                output_field=BooleanField(),
             )
         )
 

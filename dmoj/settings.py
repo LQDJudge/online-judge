@@ -483,3 +483,5 @@ try:
         exec(f.read(), globals())
 except IOError:
     pass
+
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
