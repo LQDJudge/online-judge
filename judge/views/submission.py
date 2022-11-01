@@ -812,10 +812,13 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
     template_name = "submission/user-ajax.html"
 
     def contest_time(self, s):
-        if s.contest.participation.live:
-            if self.contest.time_limit:
-                return s.date - s.contest.participation.real_start
-            return s.date - self.contest.start_time
+        try:
+            if s.contest.participation.live:
+                if self.contest.time_limit:
+                    return s.date - s.contest.participation.real_start
+                return s.date - self.contest.start_time
+        except RelatedObjectDoesNotExist:
+            return None
         return None
 
     def get_context_data(self, **kwargs):
