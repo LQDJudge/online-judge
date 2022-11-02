@@ -327,7 +327,7 @@ class ProblemAdmin(CompareVersionAdmin):
             access |= Q(authors__id=request.profile.id) | Q(
                 curators__id=request.profile.id
             )
-        return queryset.filter(access).distinct() if access else queryset.none()
+        return queryset.filter(access) if access else queryset.none()
 
     def has_change_permission(self, request, obj=None):
         if request.user.has_perm("judge.edit_all_problem") or obj is None:
