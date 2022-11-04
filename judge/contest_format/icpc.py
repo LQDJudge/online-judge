@@ -113,7 +113,7 @@ class ICPCContestFormat(DefaultContestFormat):
         if format_data:
             penalty = (
                 format_html(
-                    '<small style="color:red"> ({penalty})</small>',
+                    '<small style="color:red"> +{penalty}</small>',
                     penalty=floatformat(format_data["penalty"]),
                 )
                 if format_data["penalty"]
