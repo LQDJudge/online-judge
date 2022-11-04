@@ -72,7 +72,6 @@
         <script src="{{ JQUERY_JS }}"></script>
     {% endif %}
     <link rel="stylesheet" type="text/css" href="{{ static('markdown.css') }}">
-    
     {% compress js %}
         <script>{{ inlinei18n(LANGUAGE_CODE)|safe }}</script>
         {% if INLINE_JQUERY %}
