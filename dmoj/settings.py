@@ -272,6 +272,8 @@ MIDDLEWARE = (
     "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
 )
 
+X_FRAME_OPTIONS = "SAMEORIGIN"
+
 FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
 
 IMPERSONATE_REQUIRE_SUPERUSER = True
