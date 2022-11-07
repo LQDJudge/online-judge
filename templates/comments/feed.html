@@ -13,6 +13,6 @@
         {% endif %}
     {% endwith %}
     <div class='blog-description content-description'>
-        {{ comment.body |markdown|reference|str|safe }}
+        {{ comment.body|markdown(lazy_load=True)|reference|str|safe }}
     </div>
 </div>

@@ -376,7 +376,7 @@
     {% endif %}
 
     {% cache 86400 'problem_html' problem.id MATH_ENGINE LANGUAGE_CODE %}
-        {{ description|markdown|reference|str|safe }}
+        {{ description|markdown(lazy_load=True)|reference|str|safe }}
     {% endcache %}
 
     {% if problem.pdf_description %}
