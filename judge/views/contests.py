@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 import math
 from calendar import Calendar, SUNDAY
@@ -417,13 +418,13 @@ class ContestClone(
     permission_required = "judge.clone_contest"
 
     def form_valid(self, form):
-        contest = self.object
+        tags = self.object.tags.all()
+        organizations = self.object.organizations.all()
+        private_contestants = self.object.private_contestants.all()
+        view_contest_scoreboard = self.object.view_contest_scoreboard.all()
+        contest_problems = self.object.contest_problems.all()
 
-        tags = contest.tags.all()
-        organizations = contest.organizations.all()
-        private_contestants = contest.private_contestants.all()
-        view_contest_scoreboard = contest.view_contest_scoreboard.all()
-        contest_problems = contest.contest_problems.all()
+        contest = deepcopy(self.object)
 
         contest.pk = None
         contest.is_visible = False

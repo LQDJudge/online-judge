@@ -5,6 +5,7 @@ from datetime import timedelta, datetime
 from operator import itemgetter
 from random import randrange
 import random
+from copy import deepcopy
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -1183,11 +1184,12 @@ class ProblemClone(
     permission_required = "judge.clone_problem"
 
     def form_valid(self, form):
-        problem = self.object
+        languages = self.object.allowed_languages.all()
+        language_limits = self.object.language_limits.all()
+        types = self.object.types.all()
 
-        languages = problem.allowed_languages.all()
-        language_limits = problem.language_limits.all()
-        types = problem.types.all()
+        problem = deepcopy(self.object)
+
         problem.pk = None
         problem.is_public = False
         problem.ac_rate = 0
