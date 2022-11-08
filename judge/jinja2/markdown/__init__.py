@@ -82,7 +82,8 @@ def markdown(value, lazy_load=False):
     if lazy_load:
         soup = BeautifulSoup(html, features="lxml")
         for img in soup.findAll("img"):
-            img["data-src"] = img["src"]
-            img["src"] = ""
+            if img.get("src"):
+                img["data-src"] = img["src"]
+                img["src"] = ""
         html = str(soup)
     return '<div class="md-typeset">%s</div>' % html
