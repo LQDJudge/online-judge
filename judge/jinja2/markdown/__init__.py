@@ -85,5 +85,10 @@ def markdown(value, lazy_load=False):
             if img.get("src"):
                 img["data-src"] = img["src"]
                 img["src"] = ""
+        for img in soup.findAll("iframe"):
+            if img.get("src"):
+                img["data-src"] = img["src"]
+                img["src"] = ""
         html = str(soup)
+
     return '<div class="md-typeset">%s</div>' % html

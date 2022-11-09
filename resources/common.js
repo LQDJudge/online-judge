@@ -179,7 +179,10 @@ $(function () {
         $("[data-src]img").each(function() {
             $(this).attr("src", $(this).attr("data-src"));
         })
-    }, "500");
+        $("[data-src]iframe").each(function() {
+            $(this).attr("src", $(this).attr("data-src"));
+        })
+    }, "100");
 });
 
 if (!Date.now) {
