@@ -2,25 +2,15 @@
 
 {% block after_rank_head %}
     <th></th>
-    <th class="header rank">
-        {% if sort_links %}<a href="{{ sort_links.rating }}">{% endif %}
-        <span class="rate-group">
-            <svg class="rate-box" viewBox="0 0 16 16">
-                <circle cx="8" cy="8" r="7" stroke="white"></circle>
-                <path clip-path="url(#rating-clip)" d="M0 16v-4.8h16 0v16z" fill="white"></path>
-            </svg>
-        </span>
-        {%- if sort_links %}{{ sort_order.rating }}</a>{% endif %}
-    </th>
 {% endblock %}
 
 {% block after_rank %}
-    <td><img style="border: 2px solid black; max-width: none; border-radius: 50%" src="{{ gravatar(user, 45) }}" height="45px" width="45px"></td>
-    <td class="rating-td">{% if user.rating %}{{ rating_number(user) }}{% endif %}</td>
+    <td><img style="border: 2px solid lightblue; max-width: none; border-radius: 50%" src="{{ gravatar(user, 45) }}" height="45px" width="45px"></td>
 {% endblock %}
 
-{% block user_data %}
-<span style="color: gray; font-weight: 600">{{ "- (" + user.user.first_name + ")" if user.user.first_name else ''}}</span>
+{% block user_footer %}
+<span style="margin-left: 0.5em">{% if user.rating %}{{ rating_number(user) }}{% endif %}</span>
+<div style="color: gray; font-weight: 600; margin-top: 0.2em">{{ user.user.first_name if user.user.first_name else ''}}</div>
 {% endblock %}
 
 {% block after_point_head %}
@@ -30,6 +20,19 @@
         {%- if sort_links %}{{ sort_order.problem_count }}</a>{% endif %}
     </th>
     <th class="about-column">{{ _('About') }}</th>
+{% endblock %}
+
+{% block username_head_extra %}
+    <span style="margin-left: 0.5em" class="header rank">
+        {% if sort_links %}<a href="{{ sort_links.rating }}">{% endif %}
+        <span class="rate-group">
+            <svg class="rate-box" viewBox="0 0 16 16">
+                <circle cx="8" cy="8" r="7" stroke="white"></circle>
+                <path clip-path="url(#rating-clip)" d="M0 16v-4.8h16 0v16z" fill="white"></path>
+            </svg>
+        </span>
+        {%- if sort_links %}{{ sort_order.rating }}</a>{% endif %}
+    </span>
 {% endblock %}
 
 {% block after_point %}

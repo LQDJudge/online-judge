@@ -35,6 +35,10 @@ img {
     // height: auto
 }
 
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
 .full {
     width: 100% !important;
 }
