@@ -20,6 +20,10 @@
             padding: 1px 6px;
         }
 
+        .contest-group-header {
+            padding-bottom: 1em;
+        }
+
         {% if page_obj and page_obj.number > 1%}
         #ongoing-table {
             display: none;
@@ -275,10 +279,10 @@
         {% endif %}
 
         {% if current_contests %}
-            <h4 class="toggle open">
+            <h3 class="toggle open contest-group-header">
                 <i class="fa fa-chevron-right fa-fw"></i>
                 {{ _('Ongoing Contests') }} 
-            </h4>
+            </h3>
             <div id="ongoing-table" class="toggled">
                 <table class="contest-list table striped">
                     <thead>
@@ -317,10 +321,10 @@
             </div>
         {% endif %}
 
-        <h4 class="toggle open">
+        <h3 class="toggle open contest-group-header">
             <i class="fa fa-chevron-right fa-fw"></i>
             {{ _('Upcoming Contests') }} 
-        </h4>
+        </h3>
         {% if future_contests %}
             <div class="toggled">
                 <table class="contest-list table striped">
@@ -356,7 +360,7 @@
         <br>
 
         {% if past_contests %}
-            <h4>{{ _('Past Contests') }}</h4>
+            <h3 class="contest-group-header">{{ _('Past Contests') }}</h3>
             {% if page_obj and page_obj.num_pages > 1 %}
                 <div style="margin-bottom: 4px;">
                     {% include "list-pages.html" %}
