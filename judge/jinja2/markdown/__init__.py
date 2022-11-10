@@ -7,6 +7,7 @@ from pymdownx import superfences
 
 
 EXTENSIONS = [
+    "pymdownx.arithmatex",
     "pymdownx.magiclink",
     "pymdownx.betterem",
     "pymdownx.details",
@@ -76,11 +77,29 @@ def markdown(value, lazy_load=False):
     html = _markdown.markdown(
         value, extensions=extensions, extension_configs=EXTENSION_CONFIGS
     )
+
+    # Don't clean mathjax
+    hash_script_tag = {}
+    soup = BeautifulSoup(html, "html.parser")
+    for script_tag in soup.find_all("script"):
+        allow_math_types = ["math/tex", "math/tex; mode=display"]
+        if script_tag.attrs.get("type", False) in allow_math_types:
+            hash_script_tag[str(hash(str(script_tag)))] = str(script_tag)
+
+    for hashed_tag in hash_script_tag:
+        tag = hash_script_tag[hashed_tag]
+        html = html.replace(tag, hashed_tag)
+
     html = bleach.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS)
+
+    for hashed_tag in hash_script_tag:
+        tag = hash_script_tag[hashed_tag]
+        html = html.replace(hashed_tag, tag)
+
     if not html:
         html = escape(value)
-    if lazy_load:
-        soup = BeautifulSoup(html, features="lxml")
+    if lazy_load or True:
+        soup = BeautifulSoup(html, features="html.parser")
         for img in soup.findAll("img"):
             if img.get("src"):
                 img["data-src"] = img["src"]
@@ -90,5 +109,4 @@ def markdown(value, lazy_load=False):
                 img["data-src"] = img["src"]
                 img["src"] = ""
         html = str(soup)
-
     return '<div class="md-typeset">%s</div>' % html
