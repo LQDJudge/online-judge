@@ -392,7 +392,8 @@ function registerPopper($trigger, $dropdown) {
         $dropdown.toggle();
         popper.update();
     });
-
+    $dropdown.css("min-width", $trigger.width() + 'px');
+    
     $(document).on("click touchend", function(e) {
         var target = $(e.target);
         if (target.closest($trigger).length === 0 && target.closest($dropdown).length === 0) {
