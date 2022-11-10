@@ -174,21 +174,6 @@
         <script type="text/javascript">{{ request.profile.user_script|safe }}</script>
     {% endif %}
 
-    <script>
-        $(function() {
-            const popperInstance = Popper.createPopper($('#nav-lang-icon'), $('#lang-dropdown'));
-            $('#nav-lang-icon').click(function(e) {
-                e.preventDefault();
-                $('#lang-dropdown').toggle();
-                popperInstance.update();
-            })
-            $('.lang-dropdown-item').click(function() {
-                $('select[name="language"]').val($(this).attr('value'));
-                $('#form-lang').submit();
-            })
-        });
-    </script>
-
     <noscript>
         <style>
             #content {
@@ -228,7 +213,7 @@
                 </li>
             {% endfor %}
         </ul>
-        <div style="float: right; display: inline; font-size: larger;">
+        <div style="float: right; display: inline-flex; font-size: larger; align-items: center; height: 100%;">
             <span class="navbar-icons">
                 {% if request.user.is_authenticated %}
                 <span title="{{_('Chat')}}">
@@ -250,66 +235,60 @@
                 </span>
                 {% endif %}
                 <span title="{{_('Language')}}">
-                    <a href="#" class="icofont-globe navbar-icon" id="nav-lang-icon" aria-hidden="true">
+                    <a class="icofont-globe navbar-icon" id="nav-lang-icon" aria-hidden="true">
                     <sub class="sub-lang">{{LANGUAGE_CODE}}</sub>
                     </a>
-                    <div id="lang-dropdown" role="tooltip">
+                    <div id="lang-dropdown" class="dropdown" role="tooltip">
                         {% for language in language_info_list(LANGUAGES) %}
-                            <div value="{{ language.code }}" class="lang-dropdown-item" style="{{'font-weight: bold' if language.code == LANGUAGE_CODE}}">
+                            <div value="{{ language.code }}" 
+                            class="dropdown-item lang-dropdown-item" style="{{'font-weight: bold' if language.code == LANGUAGE_CODE}}">
                                 {{ language.name_local }}
                             </div>
                         {% endfor %}
                     </div>
                 </span>
             </span>
-            <span id="user-links">
-                {% if request.user.is_authenticated %}
-                    <ul>
-                        <li>
-                            <a href="{{ url('user_page') }}">
-                                <span>
-                                    <img src="{{ gravatar(request.user, 32) }}" height="24" width="24">{# -#}
-                                    <span>
-                                        {%- trans username=request.user.username -%}
-                                            Hello, <b>{{ username }}</b>.
-                                        {%- endtrans %}
-                                    </span>
-                                </span>
-                            </a>
-                            <ul style="width: 150px">
-                                {% if request.user.is_staff or request.user.is_superuser %}
-                                    <li><a href="{{ url('admin:index') }}">{{ _('Admin') }}</a></li>
-                                {% endif %}
-                                {% if request.user.is_superuser %}
-                                    <li><a href="{{ url('internal_problem') }}">{{ _('Internal') }}</a></li>
-                                    <li><a href="{{ url('site_stats') }}">{{ _('Stats') }}</a></li>
-                                {% endif %}
-                                <li><a href="{{ url('user_edit_profile') }}">{{ _('Edit profile') }}</a></li>
-                                {% if request.user.is_impersonate %}
-                                    <li><a href="{{ url('impersonate-stop') }}">Stop impersonating</a></li>
-                                {% else %}
-                                    <li>
-                                        <form action="{{ url('auth_logout') }}" method="POST">
-                                            {% csrf_token %}
-                                            <button type="submit" style="color: red !important">{{ _('Log out') }}</button>
-                                        </form>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </li>
-                    </ul>
-                {% else %}
-                    <span class="anon">
-                        <a href="{{ url('auth_login') }}?next={{ LOGIN_RETURN_PATH|urlencode }}"><b>{{ _('Log in') }}</b></a>
-                        &nbsp;{{ _('or') }}&nbsp;
-                        <a href="{{ url('registration_register') }}"><b>{{ _('Sign up') }}</b></a>
-                    </span>
-                {% endif %}
-            </span>
+            {% if request.user.is_authenticated %}
+                <span id="user-links">
+                    <ul><li><a href="javascript:void(0)">
+                        <span>
+                            <img src="{{ gravatar(request.user, 32) }}" height="24" width="24">{# -#}
+                            <span>
+                                <b class="{{request.profile.css_class}}">{{ request.user.username }}</b>
+                            </span>
+                        </span>
+                    </a></li></ul>
+                </span>
+                <div class="dropdown" id="userlink_dropdown" role="tooptip">
+                    <div class="dropdown-item"><a href="{{ url('user_page') }}">{{ _('Profile') }}</a></div>
+                    {% if request.user.is_staff or request.user.is_superuser %}
+                        <div class="dropdown-item"><a href="{{ url('admin:index') }}">{{ _('Admin') }}</a></div>
+                    {% endif %}
+                    {% if request.user.is_superuser %}
+                        <div class="dropdown-item"><a href="{{ url('internal_problem') }}">{{ _('Internal') }}</a></div>
+                        <div class="dropdown-item"><a href="{{ url('site_stats') }}">{{ _('Stats') }}</a></div>
+                    {% endif %}
+                    <div class="dropdown-item"><a href="{{ url('user_edit_profile') }}">{{ _('Edit profile') }}</a></div>
+                    {% if request.user.is_impersonate %}
+                        <div class="dropdown-item"><a href="{{ url('impersonate-stop') }}">Stop impersonating</a></div>
+                    {% else %}
+                        <div class="dropdown-item">
+                            <a href="#" id="logout" style="color: red !important">{{ _('Log out') }}</a>
+                            <form id="logout-form" action="{{ url('auth_logout') }}" method="POST">
+                                {% csrf_token %}
+                            </form>
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <span class="anon">
+                    <a href="{{ url('auth_login') }}?next={{ LOGIN_RETURN_PATH|urlencode }}"><b>{{ _('Log in') }}</b></a>
+                    &nbsp;{{ _('or') }}&nbsp;
+                    <a href="{{ url('registration_register') }}"><b>{{ _('Sign up') }}</b></a>
+                </span>
+            {% endif %}
         </div>
-        
     </div>
-
     <div id="nav-shadow"></div>
 </nav>
 {% if request.in_contest %}

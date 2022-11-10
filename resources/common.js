@@ -385,3 +385,28 @@ $(function () {
         handler();
     });
 });
+
+function registerPopper($trigger, $dropdown) {
+    const popper = Popper.createPopper($trigger[0], $dropdown[0]);
+    $trigger.click(function(e) {
+        $dropdown.toggle();
+        popper.update();
+    });
+
+    $(document).on("click touchend", function(e) {
+        var target = $(e.target);
+        if (target.closest($trigger).length === 0 && target.closest($dropdown).length === 0) {
+            $dropdown.hide();
+        }
+    })
+}
+
+$(function() {
+    registerPopper($('#nav-lang-icon'), $('#lang-dropdown'));
+    registerPopper($('#user-links'), $('#userlink_dropdown'));
+    $('.lang-dropdown-item').click(function() {
+        $('select[name="language"]').val($(this).attr('value'));
+        $('#form-lang').submit();
+    })
+    $('#logout').on('click', () => $('#logout-form').submit());
+});

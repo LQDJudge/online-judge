@@ -183,10 +183,6 @@ header {
         white-space: nowrap;
     }
 
-    a {
-        color: lightcoral;
-    }
-
     li {
         text-transform: none;
     }
@@ -196,7 +192,6 @@ header {
         margin: 0;
 
         & > li > a > span {
-            font-size: 13px;
             height: 36px;
             padding-top: 8px;
             display: block;
@@ -210,7 +205,6 @@ header {
             }
 
             & > span {
-                color: darkslateblue;
                 vertical-align: middle;
                 display: inline;
                 margin-top: 11px;
@@ -239,6 +233,7 @@ header {
     top: 0;
     left: 0;
     right: 0;
+    height: 48px;
 }
 
 nav {
@@ -317,24 +312,20 @@ nav {
                 left: 5px;
                 display: none;
                 color: #fff;
-                background: darkcyan;
+                background: white;
                 margin: 0 !important;
                 box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
 
-                li {
-                    &:first-child {
-                        a.active {
-                            border-top: 1px solid $widget_black;
-                            background-color: darkcyan !important;
-                        }
-                    }
-                }
 
                 li {
+                    &:hover {
+                        background: lightgray;
+                    }
+
                     display: block;
 
                     a {
-                        color: white !important;
+                        color: black !important;
                     }
                     
                     a, button {
@@ -545,6 +536,7 @@ noscript #noscript {
 
 #user-links {
     height: 100%;
+    padding-right: 1em;
 
     ul {
         margin: 0;
@@ -729,32 +721,37 @@ math {
 #nav-lang-icon:hover {
     color: darkblue;
 }
-#lang-dropdown {
-    padding: 4px 0;
+.dropdown {
     border-radius: 4px;
     border: 0.5px solid lightgray;
     margin-top: 1px;
     background: white;
     display: none;
+
+    a {
+        color: black;
+    }
 }
 
-.lang-dropdown-item {
-    padding-bottom: 0.3em;
-    padding-left: 0.4em;
-    font-size: 0.9em;
+.dropdown-item {
+    font-size: 15px;
+    padding: 6px 8px;
     cursor: pointer;
 }
 
-.lang-dropdown-item:hover {
+.dropdown-item:hover {
     background: lightgray;
 }
 
 .navbar-icons {
+    display: inline-flex;
+    align-items: center;
+    float: left;
+    margin-right: 0.3em;
+
     .navbar-icon {
         font-size: 1.6em;
     }
-    float: left;
-    margin-right: 0.3em;
 }
 .navbar-icon {
     margin-right: 0.3em;
@@ -826,13 +823,16 @@ math {
 }
 
 @media (max-width: 799px) {
-    .navbar-icons {
-        margin-top: 6px;
+    #user-links, .anon {
+        padding-right: 0.5em;
     }
 }
 
 @media (min-width: 800px) {
+    .anon {
+        padding-right: 1em;
+    }
     .navbar-icons {
-        margin-top: 12px;
+        margin-top: 6px;
     }
 }
