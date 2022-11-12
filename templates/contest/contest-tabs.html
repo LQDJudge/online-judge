@@ -74,9 +74,9 @@
         {% endif %}
     {% elif contest.can_join %}
         <form action="{{ url('auth_login') }}" method="get"
-              class="contest-join-pseudotab unselectable button full">
+              class="contest-join-pseudotab unselectable">
             <input type="hidden" name="next" value="{{ LOGIN_RETURN_PATH|urlencode }}">
-            <input type="submit" value="{{ _('Login to participate') }}">
+            <input type="submit" class="btn-midnightblue" value="{{ _('Login to participate') }}">
         </form>
     {% endif %}
 {% endblock %}
