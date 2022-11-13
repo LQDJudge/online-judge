@@ -69,7 +69,6 @@
         ]
 
         for (var i of checkboxes) {
-            if (i === excludeBox) continue;
             var $box = $(i);
             if ($box.is(':checked')) {
                 $box.prop('checked', false);
@@ -80,7 +79,6 @@
 
         var to_update = false;
         for (var i of checkboxes2) {
-            if (i === excludeBox) continue;
             var $box = $(i);
             if ($box.is(':checked')) {
                 to_update = true;
