@@ -410,4 +410,19 @@ $(function() {
         $('#form-lang').submit();
     })
     $('#logout').on('click', () => $('#logout-form').submit());
+
+    $('#nav-darkmode-icon').on('click', function() {
+        if (localStorage.getItem("darkmode") === "true") {
+            localStorage.setItem("darkmode", "false");
+            DarkReader.disable();
+        }
+        else {
+            localStorage.setItem("darkmode", "true");
+            DarkReader.enable();   
+        }
+    })
 });
+
+if (localStorage.getItem("darkmode") === "true") {
+    DarkReader.enable();
+}

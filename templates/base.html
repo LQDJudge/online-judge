@@ -72,6 +72,8 @@
         <script src="{{ JQUERY_JS }}"></script>
     {% endif %}
     <link rel="stylesheet" type="text/css" href="{{ static('markdown.css') }}">
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/darkreader@4.9.58/darkreader.min.js"></script>
     {% compress js %}
         <script>{{ inlinei18n(LANGUAGE_CODE)|safe }}</script>
         {% if INLINE_JQUERY %}
@@ -91,7 +93,6 @@
             });
         </script>
     {% endcompress %}
-    <script src="https://unpkg.com/@popperjs/core@2"></script>
 
     {% block js_media %}{% endblock %}
     {% if request.in_contest %}
@@ -246,6 +247,9 @@
                             </div>
                         {% endfor %}
                     </div>
+                </span>
+                <span title="{{_('Dark Mode')}}">
+                    <span class="icofont-adjust navbar-icon" id="nav-darkmode-icon" aria-hidden="true"></span>
                 </span>
             </span>
             {% if request.user.is_authenticated %}
