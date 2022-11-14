@@ -156,7 +156,7 @@ let META_HEADER = [
         $('#chat-log').append($data);
         $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
         register_time($('.time-with-rel'));
-        MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+        MathJax.typeset();
         merge_authors();
     }
 
@@ -210,7 +210,7 @@ let META_HEADER = [
                     else {
                         add_new_message(message, room, true);
                     }
-                    MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+                    MathJax.typeset();
                     register_time($('.time-with-rel'));
                     remove_unread_current_user();
                     merge_authors();

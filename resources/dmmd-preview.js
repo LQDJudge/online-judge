@@ -36,23 +36,17 @@ $(function () {
                                 success: function () {
                                     $.ajax({
                                         type: 'GET',
-                                        url: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML',
+                                        url: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js',
                                         dataType: 'script',
                                         cache: true,
                                         success: function () {
-                                            MathJax.Hub.Queue(function () {
-                                                $content.find('.tex-image').hide();
-                                                $content.find('.tex-text').show();
-                                            });
+                                            MathJax.typeset();
                                         }
                                     });
                                 }
                             });
                         } else {
-                            MathJax.Hub.Queue(['Typeset', MathJax.Hub, $content[0]], function () {
-                                $content.find('.tex-image').hide();
-                                $content.find('.tex-text').show();
-                            });
+                            MathJax.typeset($content[0]);
                         }
                     }
                 });

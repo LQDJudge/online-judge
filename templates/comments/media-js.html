@@ -55,10 +55,7 @@
             function update_math($comment) {
                 if ('MathJax' in window) {
                     var $body = $comment.find('.comment-body');
-                    MathJax.Hub.Queue(['Typeset', MathJax.Hub, $body[0]], function () {
-                        $body.find('.tex-image').hide();
-                        $body.find('.tex-text').show();
-                    });
+                    MathJax.typeset($body[0]);
                 }
             }
 
@@ -168,7 +165,7 @@
                             window.DjangoPagedown.createEditor($wmd.get(0));
                             if ('MathJax' in window) {
                                 var preview = $('.featherlight div.wmd-preview')[0];
-                                MathJax.Hub.Queue(['Typeset', MathJax.Hub, preview]);
+                                MathJax.typeset(preview);
                             }
                         }
                     }
