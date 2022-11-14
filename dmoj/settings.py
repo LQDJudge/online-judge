@@ -254,9 +254,9 @@ INSTALLED_APPS += (
 
 MIDDLEWARE = (
     "judge.middleware.ShortCircuitMiddleware",
-    "django.middleware.common.CommonMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
+    "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "judge.middleware.DMOJLoginMiddleware",
@@ -273,6 +273,8 @@ MIDDLEWARE = (
 )
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
+
+LANGUAGE_COOKIE_AGE = 8640000
 
 FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
 
