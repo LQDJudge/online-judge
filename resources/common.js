@@ -422,7 +422,3 @@ $(function() {
         }
     })
 });
-
-if (localStorage.getItem("darkmode") === "true") {
-    DarkReader.enable();
-}

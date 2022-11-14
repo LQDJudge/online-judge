@@ -74,6 +74,11 @@
     <link rel="stylesheet" type="text/css" href="{{ static('markdown.css') }}">
     <script src="https://unpkg.com/@popperjs/core@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/darkreader@4.9.58/darkreader.min.js"></script>
+    <script type="text/javascript">
+        if (localStorage.getItem("darkmode") === "true") {
+            DarkReader.enable();
+        }
+    </script>
     {% compress js %}
         <script>{{ inlinei18n(LANGUAGE_CODE)|safe }}</script>
         {% if INLINE_JQUERY %}
