@@ -54,6 +54,7 @@ from judge.models.submission import (
 )
 from judge.models.ticket import Ticket, TicketMessage
 from judge.models.volunteer import VolunteerProblemVote
+from judge.models.pagevote import PageVote, PageVoteVoter
 
 revisions.register(Profile, exclude=["points", "last_access", "ip", "rating"])
 revisions.register(Problem, follow=["language_limits"])
@@ -76,5 +77,6 @@ revisions.register(ProblemData)
 revisions.register(ProblemTestCase)
 revisions.register(ContestParticipation)
 revisions.register(Rating)
+revisions.register(PageVoteVoter)
 revisions.register(VolunteerProblemVote)
 del revisions

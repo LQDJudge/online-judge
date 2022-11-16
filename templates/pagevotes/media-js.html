@@ -1,0 +1,54 @@
+<script src="{{ static('libs/featherlight/featherlight.min.js') }}" type="text/javascript"></script>
+{% compress js %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            function ajax_vote(url, id, delta, on_success) {
+                return $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        id: id
+                    },
+                    success: function (data, textStatus, jqXHR) {
+                        var score = $('.page-vote-full' + ' .pagevote-score').first();
+                        score.text(parseInt(score.text()) + delta);
+                        if (typeof on_success !== 'undefined')
+                            on_success();
+                    },
+                    error: function (data, textStatus, jqXHR) {
+                        alert('Could not vote: ' + data.responseText);
+                    }
+                });
+            }
+
+            var get_$votes = function () {
+                var $post = $('.page-vote-full');
+                return {
+                    upvote: $post.find('.upvote-link').first(),
+                    downvote: $post.find('.downvote-link').first()
+                };
+            };
+
+            window.pagevote_upvote = function (id) {
+                ajax_vote('{{ url('pagevote_upvote') }}', id, 1, function () {
+                    var $votes = get_$votes();
+                    if ($votes.downvote.hasClass('voted'))
+                        $votes.downvote.removeClass('voted');
+                    else
+                        $votes.upvote.addClass('voted');
+                });
+            };
+
+            window.pagevote_downvote = function (id) {
+                ajax_vote('{{ url('pagevote_downvote') }}', id, -1, function () {
+                    var $votes = get_$votes();
+                    if ($votes.upvote.hasClass('voted'))
+                        $votes.upvote.removeClass('voted');
+                    else
+                        $votes.downvote.addClass('voted');
+                });
+            };
+
+        });
+    </script>
+{% endcompress %}
