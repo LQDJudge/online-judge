@@ -7,6 +7,7 @@ from django.utils.translation import ugettext as _
 from django.views.generic import ListView
 
 from judge.comments import CommentedDetailView
+from judge.views.pagevote import PageVoteDetailView
 from judge.models import (
     BlogPost,
     Comment,
@@ -190,7 +191,7 @@ class CommentFeed(FeedView):
         return context
 
 
-class PostView(TitleMixin, CommentedDetailView):
+class PostView(TitleMixin, CommentedDetailView, PageVoteDetailView):
     model = BlogPost
     pk_url_kwarg = "id"
     context_object_name = "post"

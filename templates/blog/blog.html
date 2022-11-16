@@ -2,10 +2,12 @@
 
 {% block js_media %}
     {% include "comments/media-js.html" %}
+    {% include "pagevotes/media-js.html" %}
 {% endblock %}
 
 {% block media %}
     {% include "comments/media-css.html" %}
+    {% include "pagevotes/media-css.html" %}
 {% endblock %}
 
 {% block title_row %}
@@ -46,6 +48,7 @@
         {{ post_to_facebook(request, post, '<i class="fa fa-facebook-official"></i>') }}
         {{ post_to_twitter(request, SITE_NAME + ':', post, '<i class="fa fa-twitter"></i>') }}
     </span>
+    {% include "pagevotes/list.html" %}
     {% include "comments/list.html" %}
 {% endblock %}
 
