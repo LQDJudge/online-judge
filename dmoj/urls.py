@@ -60,6 +60,7 @@ from judge.views import (
     user,
     volunteer,
     pagevote,
+    bookmark,
     widgets,
     internal,
 )
@@ -448,6 +449,8 @@ urlpatterns = [
     ),
     url(r"^pagevotes/upvote/$", pagevote.upvote_page, name="pagevote_upvote"),
     url(r"^pagevotes/downvote/$", pagevote.downvote_page, name="pagevote_downvote"),
+    url(r"^bookmarks/dobookmark/$", bookmark.dobookmark_page, name="dobookmark"),
+    url(r"^bookmarks/undobookmark/$", bookmark.undobookmark_page, name="undobookmark"),
     url(r"^comments/upvote/$", comment.upvote_comment, name="comment_upvote"),
     url(r"^comments/downvote/$", comment.downvote_comment, name="comment_downvote"),
     url(r"^comments/hide/$", comment.comment_hide, name="comment_hide"),

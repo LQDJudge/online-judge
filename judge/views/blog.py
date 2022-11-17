@@ -8,6 +8,7 @@ from django.views.generic import ListView
 
 from judge.comments import CommentedDetailView
 from judge.views.pagevote import PageVoteDetailView, PageVoteListView
+from judge.views.bookmark import BookMarkDetailView, BookMarkListView
 from judge.models import (
     BlogPost,
     Comment,
@@ -93,7 +94,7 @@ class FeedView(ListView):
         return context
 
 
-class PostList(FeedView, PageVoteListView):
+class PostList(FeedView, PageVoteListView, BookMarkListView):
     model = BlogPost
     paginate_by = 10
     context_object_name = "posts"
@@ -194,7 +195,7 @@ class CommentFeed(FeedView):
         return context
 
 
-class PostView(TitleMixin, CommentedDetailView, PageVoteDetailView):
+class PostView(TitleMixin, CommentedDetailView, PageVoteDetailView, BookMarkDetailView):
     model = BlogPost
     pk_url_kwarg = "id"
     context_object_name = "post"

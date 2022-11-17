@@ -20,6 +20,39 @@
                 });
             }
 
+            function ajax_bookmark(url, id, on_success) {
+                return $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        id: id
+                    },
+                    success: function (data, textStatus, jqXHR) {
+                        if (typeof on_success !== 'undefined')
+                            on_success();
+                    },
+                    error: function (data, textStatus, jqXHR) {
+                        alert('Could not bookmark: ' + data.responseText);
+                    }
+                });
+            }
+
+            window.bookmark = function(id) {
+                var $bookmark = $('#bookmark-button-' + id);
+                if ($bookmark.hasClass('bookmarked')) {
+                    ajax_bookmark('{{ url('undobookmark') }}', id, function () {
+                        $bookmark.removeClass('bookmarked');
+                    });
+                } else {
+                    ajax_bookmark('{{ url('dobookmark') }}', id, function () {
+                        if ($bookmark.hasClass('bookmarked'))
+                            $bookmark.removeClass('bookmarked');
+                        $bookmark.addClass('bookmarked');
+                    });
+                }
+            }
+            
+
             var get_$votes = function (id) {
                 var $post = $('#page-vote-' + id);
                 return {
@@ -30,7 +63,6 @@
 
             window.pagevote_upvote = function (id) {
                 var $votes = get_$votes(id);
-                console.log($votes.upvote, $votes.downvote);
                 if ($votes.upvote.hasClass('voted')) {
                     ajax_vote('{{ url('pagevote_downvote') }}', id, -1, function () {
                         $votes.upvote.removeClass('voted');
