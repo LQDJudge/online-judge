@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block user_content %}
-    {% if haspost %}
+    {% if postlist %}
         <div class="bookmark-group">
             <h3 class="unselectable toggle closed">
                 <span class="fa fa-chevron-right fa-fw"></span>{{ _('Bookmarked Posts') }} ({{ postlist|length }})
@@ -34,7 +34,7 @@
         <i>{{ _('You have not yet bookmarked any post.') }}</i>
     {% endif %}
     <hr>
-    {% if hasproblem %}
+    {% if problemlist %}
     <div class="bookmark-group">
         <h3 class="unselectable toggle closed">
             <span class="fa fa-chevron-right fa-fw"></span>{{ _('Bookmarked Problems') }} ({{ problemlist|length }})
@@ -60,7 +60,7 @@
         <i>{{ _('You have not yet bookmarked any problem.') }}</i>
     {% endif %}
     <hr>
-    {% if hascontest %}
+    {% if contestlist %}
     <div class="bookmark-group">
         <h3 class="unselectable toggle closed">
             <span class="fa fa-chevron-right fa-fw"></span>{{ _('Bookmarked Contests') }} ({{ contestlist|length }})

@@ -40,7 +40,6 @@ class BookMark(models.Model):
         except ObjectDoesNotExist:
             return None
 
-
     class Meta:
         verbose_name = _("bookmark")
         verbose_name_plural = _("bookmarks")

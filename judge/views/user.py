@@ -365,10 +365,7 @@ class UserBookMarkPage(UserPage):
         context["postlist"] = pagelist
         context["problemlist"] = problemlist
         context["contestlist"] = contestlist
-
-        context["haspost"] = pagelist.exists()
-        context["hasproblem"] = problemlist.exists()
-        context["hascontest"] = contestlist.exists()        
+               
         return context
 
 
