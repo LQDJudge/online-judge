@@ -71,6 +71,7 @@ from judge.utils.problems import user_attempted_ids
 from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
 from judge.views.submission import AllSubmissions, SubmissionsListBase
+from judge.views.pagevote import PageVoteListView
 
 __all__ = [
     "OrganizationList",
@@ -265,10 +266,11 @@ class OrganizationList(TitleMixin, ListView, OrganizationBase):
         return context
 
 
-class OrganizationHome(OrganizationDetailView):
+class OrganizationHome(OrganizationDetailView, PageVoteListView):
     template_name = "organization/home.html"
+    pagevote_object_name = "posts"
 
-    def get_posts(self):
+    def get_posts_and_page_obj(self):
         posts = (
             BlogPost.objects.filter(
                 visible=True,
@@ -282,12 +284,24 @@ class OrganizationHome(OrganizationDetailView):
         paginator = Paginator(posts, 10)
         page_number = self.request.GET.get("page", 1)
         posts = paginator.get_page(page_number)
-        return posts
+        return posts, paginator.page(page_number)
+
+    def get_comment_page(self, post):
+        return "b:%s" % post.id
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationHome, self).get_context_data(**kwargs)
         context["title"] = self.object.name
-        context["posts"] = self.get_posts()
+        context["posts"], context["page_obj"] = self.get_posts_and_page_obj()
+        context = self.add_pagevote_context_data(context, "posts")
+
+        # Hack: This allows page_obj to have page_range for non-ListView class
+        setattr(
+            context["page_obj"], "page_range", context["posts"].paginator.page_range
+        )
+        context["first_page_href"] = self.request.path
+        context["page_prefix"] = "?page="
+
         context["post_comment_counts"] = {
             int(page[2:]): count
             for page, count in Comment.objects.filter(
@@ -311,6 +325,7 @@ class OrganizationHome(OrganizationDetailView):
         )
         context["future_contests"] = visible_contests.filter(start_time__gt=now)
         context["page_type"] = "home"
+
         return context
 
 

@@ -945,6 +945,7 @@ class ProblemFeed(ProblemList, PageVoteListView):
         context["feed_type"] = self.feed_type
         context["has_show_editorial_option"] = False
         context["has_have_editorial_option"] = False
+        context = self.add_pagevote_context_data(context)
 
         return context
 

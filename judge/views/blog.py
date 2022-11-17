@@ -127,6 +127,7 @@ class PostList(FeedView, PageVoteListView):
             .annotate(count=Count("page"))
             .order_by()
         }
+        context = self.add_pagevote_context_data(context)
 
         return context
 
