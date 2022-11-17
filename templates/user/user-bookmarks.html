@@ -1,0 +1,90 @@
+{% extends "user/user-base.html" %}
+
+{% block title_ruler %}{% endblock %}
+
+{% block title_row %}
+    {% set tab = 'bookmark' %}
+    {% include "user/user-tabs.html" %}
+{% endblock %}
+
+{% block user_content %}
+    {% if haspost %}
+        <div class="bookmark-group">
+            <h3 class="unselectable toggle closed">
+                <span class="fa fa-chevron-right fa-fw"></span>{{ _('Bookmarked Posts') }} ({{ postlist|length }})
+            </h3>
+            <table style="display: none" class="table toggled">
+                <thead>
+                <tr>
+                    <th>{{ _('Post') }}</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for post in postlist %}
+                    <tr>
+                        <td class="bookmark-name">
+                            <a href="{{ url('blog_post', post.bookmark.page_object().id, post.bookmark.page_object().slug) }}">{{ post.bookmark.page_object().title}} </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}    
+        <i>{{ _('You have not yet bookmarked any post.') }}</i>
+    {% endif %}
+    <hr>
+    {% if hasproblem %}
+    <div class="bookmark-group">
+        <h3 class="unselectable toggle closed">
+            <span class="fa fa-chevron-right fa-fw"></span>{{ _('Bookmarked Problems') }} ({{ problemlist|length }})
+        </h3>
+        <table style="display: none" class="table toggled">
+            <thead>
+            <tr>
+                <th>{{ _('Problem') }}</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for problem in problemlist %}
+                <tr>
+                    <td class="bookmark-name">
+                        <a href="{{ url('problem_detail', problem.bookmark.page_object().code) }}">{{ problem.bookmark.page_object().name}} </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}    
+        <i>{{ _('You have not yet bookmarked any problem.') }}</i>
+    {% endif %}
+    <hr>
+    {% if hascontest %}
+    <div class="bookmark-group">
+        <h3 class="unselectable toggle closed">
+            <span class="fa fa-chevron-right fa-fw"></span>{{ _('Bookmarked Contests') }} ({{ contestlist|length }})
+        </h3>
+        <table style="display: none" class="table toggled">
+            <thead>
+            <tr>
+                <th>{{ _('Contest') }}</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for contest in contestlist %}
+                <tr>
+                    <td class="bookmark-name">
+                        <a href="{{ url('contest_view', contest.bookmark.page_object().key) }}">{{ contest.bookmark.page_object().name}} </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}    
+        <i>{{ _('You have not yet bookmarked any contest.') }}</i>
+    {% endif %}
+    <hr>
+
+{% endblock %}

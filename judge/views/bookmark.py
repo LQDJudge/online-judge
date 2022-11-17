@@ -76,10 +76,8 @@ class BookMarkDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         return context
 
 class BookMarkListView(ListView):
-
-    def get_context_data(self, **kwargs):
-        context = super(BookMarkListView, self).get_context_data(**kwargs)
-        for item in context["object_list"]:
+    def add_bookmark_context_data(self, context, obj_list="object_list"):
+        for item in context[obj_list]:
             bookmark, _ = BookMark.objects.get_or_create(
                 page=self.get_comment_page(item)
             )

@@ -72,6 +72,7 @@ from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
 from judge.views.submission import AllSubmissions, SubmissionsListBase
 from judge.views.pagevote import PageVoteListView
+from judge.views.bookmark import BookMarkListView
 
 __all__ = [
     "OrganizationList",
@@ -266,7 +267,7 @@ class OrganizationList(TitleMixin, ListView, OrganizationBase):
         return context
 
 
-class OrganizationHome(OrganizationDetailView, PageVoteListView):
+class OrganizationHome(OrganizationDetailView, PageVoteListView, BookMarkListView):
     template_name = "organization/home.html"
     pagevote_object_name = "posts"
 
@@ -294,6 +295,7 @@ class OrganizationHome(OrganizationDetailView, PageVoteListView):
         context["title"] = self.object.name
         context["posts"], context["page_obj"] = self.get_posts_and_page_obj()
         context = self.add_pagevote_context_data(context, "posts")
+        context = self.add_bookmark_context_data(context, "posts")
 
         # Hack: This allows page_obj to have page_range for non-ListView class
         setattr(

@@ -7,6 +7,7 @@
         {{ make_tab('impersonate', 'fa-eye', url('impersonate-start', user.user.id), _('Impersonate')) }}
     {% endif %}
     {% if user.user == request.user %}
+        {{ make_tab('bookmark', 'fa-bookmark', url('user_bookmark'), _('Bookmark')) }}
         {{ make_tab('edit', 'fa-edit', url('user_edit_profile'), _('Edit profile')) }}
     {% else %}
         {% if perms.auth.change_user %}

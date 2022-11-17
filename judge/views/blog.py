@@ -129,7 +129,7 @@ class PostList(FeedView, PageVoteListView, BookMarkListView):
             .order_by()
         }
         context = self.add_pagevote_context_data(context)
-
+        context = self.add_bookmark_context_data(context)
         return context
 
     def get_comment_page(self, post):

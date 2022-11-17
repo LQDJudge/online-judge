@@ -404,6 +404,7 @@ urlpatterns = [
     ),
     url(r"^user$", user.UserAboutPage.as_view(), name="user_page"),
     url(r"^edit/profile/$", user.edit_profile, name="user_edit_profile"),
+    url(r"^user/bookmarks", user.UserBookMarkPage.as_view(), name="user_bookmark"),
     url(
         r"^user/(?P<user>\w+)",
         include(
