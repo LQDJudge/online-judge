@@ -71,10 +71,6 @@ def vote_page(request, delta):
                 except PageVoteVoter.DoesNotExist:
                     # We must continue racing in case this is exploited to manipulate votes.
                     continue
-                if -vote.score != delta:
-                    return HttpResponseBadRequest(
-                        _("You already voted."), content_type="text/plain"
-                    )
                 vote.delete()
             PageVote.objects.filter(id=pagevote_id).update(
                 score=F("score") - vote.score

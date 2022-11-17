@@ -41,11 +41,13 @@
                     if ($votes.downvote.hasClass('voted')) {
                         delta = 2;
                     }
-                    ajax_vote('{{ url('pagevote_upvote') }}', id, delta, function () {
-                        if ($votes.downvote.hasClass('voted'))
-                            $votes.downvote.removeClass('voted');
-                        $votes.upvote.addClass('voted');
-                    });
+                    for (let i = 0; i < delta; i++) {
+                        ajax_vote('{{ url('pagevote_upvote') }}', id, 1, function () {
+                            if ($votes.downvote.hasClass('voted'))
+                                $votes.downvote.removeClass('voted');
+                            $votes.upvote.addClass('voted');
+                        });
+                    }
                 }
             };
 
@@ -61,11 +63,13 @@
                     if ($votes.upvote.hasClass('voted')) {
                         delta = -2;
                     }
-                    ajax_vote('{{ url('pagevote_downvote') }}', id, delta, function () {
-                        if ($votes.upvote.hasClass('voted'))
-                            $votes.upvote.removeClass('voted');
-                        $votes.downvote.addClass('voted');
-                    });
+                    for (let i = 0; i > delta; i--) {
+                        ajax_vote('{{ url('pagevote_downvote') }}', id, -1, function () {
+                            if ($votes.upvote.hasClass('voted'))
+                                $votes.upvote.removeClass('voted');
+                            $votes.downvote.addClass('voted');
+                        });
+                    }
                 }
             };
 
