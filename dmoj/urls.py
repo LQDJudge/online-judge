@@ -60,6 +60,7 @@ from judge.views import (
     user,
     volunteer,
     pagevote,
+    bookmark,
     widgets,
     internal,
 )
@@ -403,6 +404,7 @@ urlpatterns = [
     ),
     url(r"^user$", user.UserAboutPage.as_view(), name="user_page"),
     url(r"^edit/profile/$", user.edit_profile, name="user_edit_profile"),
+    url(r"^user/bookmarks", user.UserBookMarkPage.as_view(), name="user_bookmark"),
     url(
         r"^user/(?P<user>\w+)",
         include(
@@ -448,6 +450,8 @@ urlpatterns = [
     ),
     url(r"^pagevotes/upvote/$", pagevote.upvote_page, name="pagevote_upvote"),
     url(r"^pagevotes/downvote/$", pagevote.downvote_page, name="pagevote_downvote"),
+    url(r"^bookmarks/dobookmark/$", bookmark.dobookmark_page, name="dobookmark"),
+    url(r"^bookmarks/undobookmark/$", bookmark.undobookmark_page, name="undobookmark"),
     url(r"^comments/upvote/$", comment.upvote_comment, name="comment_upvote"),
     url(r"^comments/downvote/$", comment.downvote_comment, name="comment_downvote"),
     url(r"^comments/hide/$", comment.comment_hide, name="comment_hide"),

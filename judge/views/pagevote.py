@@ -19,6 +19,8 @@ from django.views.generic import View, ListView
 __all__ = [
     "upvote_page",
     "downvote_page",
+    "PageVoteDetailView",
+    "PageVoteListView",
 ]
 
 
@@ -97,21 +99,10 @@ class PageVoteDetailView(TemplateResponseMixin, SingleObjectMixin, View):
             raise NotImplementedError()
         return self.pagevote_page
 
-    # def get(self, request, *args, **kwargs):
-    #     self.object = self.get_object()
-    #     return self.render_to_response(
-    #         self.get_context_data(
-    #             object=self.object,
-    #         )
-    #     )
-
     def get_context_data(self, **kwargs):
         context = super(PageVoteDetailView, self).get_context_data(**kwargs)
-        queryset = PageVote.objects.filter(page=self.get_comment_page())
-        if queryset.exists() == False:
-            pagevote = PageVote(page=self.get_comment_page(), score=0)
-            pagevote.save()
-        context["pagevote"] = queryset.first()
+        queryset = PageVote.objects.get_or_create(page=self.get_comment_page())
+        context["pagevote"] = queryset[0]
         return context
 
 

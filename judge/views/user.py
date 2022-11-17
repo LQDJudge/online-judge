@@ -13,6 +13,7 @@ from django.db import transaction
 from django.db.models import Count, Max, Min
 from django.db.models.fields import DateField
 from django.db.models.functions import Cast, ExtractYear
+from judge.models.bookmark import MakeBookMark
 from django.forms import Form
 from django.http import (
     Http404,
@@ -52,7 +53,7 @@ from judge.utils.views import (
 )
 from .contests import ContestRanking
 
-__all__ = ["UserPage", "UserAboutPage", "UserProblemsPage", "users", "edit_profile"]
+__all__ = ["UserPage", "UserAboutPage", "UserProblemsPage", "UserBookMarkPage", "users", "edit_profile"]
 
 
 def remap_keys(iterable, mapping):
@@ -347,6 +348,24 @@ class UserProblemsPage(UserPage):
         context["pp_breakdown"] = breakdown
         context["pp_has_more"] = has_more
 
+        return context
+
+class UserBookMarkPage(UserPage):
+    template_name = "user/user-bookmarks.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(UserBookMarkPage, self).get_context_data(**kwargs)
+
+        makedownlist = MakeBookMark.objects.filter(user=self.object)
+        pagelist = makedownlist.filter(bookmark__page__startswith='b')
+        problemlist = makedownlist.filter(bookmark__page__startswith='p')
+        contestlist = makedownlist.filter(bookmark__page__startswith='c')
+        
+        context["pagelist"] = makedownlist
+        context["postlist"] = pagelist
+        context["problemlist"] = problemlist
+        context["contestlist"] = contestlist
+               
         return context
 
 

@@ -25,7 +25,10 @@
     </span>
     {% endif %}
     <span class="actionbar-block">
-        <span class="actionbar-button">
+        <span id="bookmark-button-{{bookmark.id}}" 
+            class="bookmark-button actionbar-button {% if bookmark.get_bookmark(request.profile) == True %} bookmarked {% endif %}" 
+            onclick="javascript:bookmark({{ bookmark.id }})"
+        >
             <i class="fa fa-bookmark-o" style="font-size: large;"></i>
             <span class="actionbar-text">{{_("Bookmark")}}</span>
         </span>

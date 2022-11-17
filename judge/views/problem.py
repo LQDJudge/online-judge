@@ -87,6 +87,7 @@ from judge.utils.views import (
 )
 from judge.ml.collab_filter import CollabFilter
 from judge.views.pagevote import PageVoteDetailView, PageVoteListView
+from judge.views.bookmark import BookMarkDetailView, BookMarkListView
 
 
 def get_contest_problem(problem, profile):
@@ -178,6 +179,7 @@ class ProblemSolution(
     TitleMixin,
     CommentedDetailView,
     PageVoteDetailView,
+    BookMarkDetailView,
 ):
     context_object_name = "problem"
     template_name = "problem/editorial.html"
@@ -243,7 +245,7 @@ class ProblemRaw(
 
 
 class ProblemDetail(
-    ProblemMixin, SolvedProblemMixin, CommentedDetailView, PageVoteDetailView
+    ProblemMixin, SolvedProblemMixin, CommentedDetailView, PageVoteDetailView, BookMarkDetailView
 ):
     context_object_name = "problem"
     template_name = "problem/problem.html"
@@ -813,7 +815,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         return HttpResponseRedirect(request.get_full_path())
 
 
-class ProblemFeed(ProblemList, PageVoteListView):
+class ProblemFeed(ProblemList, PageVoteListView, BookMarkListView):
     model = Problem
     context_object_name = "problems"
     template_name = "problem/feed.html"
