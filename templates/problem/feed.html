@@ -64,7 +64,7 @@
                 {% set include_hr = True %}
                 {% set hide_actionbar_comment = True %}
                 {% set pagevote = problem.pagevote %}
-                {% set bookmark = post.bookmark %}
+                {% set bookmark = problem.bookmark %}
                 {% include "actionbar/list.html" %}
 
                 {% if feed_type=='volunteer' and request.user.has_perm('judge.suggest_problem_changes') %}

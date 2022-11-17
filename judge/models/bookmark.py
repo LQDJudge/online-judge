@@ -47,9 +47,12 @@ class BookMark(models.Model):
     def __str__(self):
         return self.page
 
+
 class MakeBookMark(models.Model):
     bookmark = models.ForeignKey(BookMark, related_name="bookmark", on_delete=CASCADE)
-    user = models.ForeignKey(Profile, related_name="user_bookmark", on_delete=CASCADE, db_index=True)
+    user = models.ForeignKey(
+        Profile, related_name="user_bookmark", on_delete=CASCADE, db_index=True
+    )
 
     class Meta:
         unique_together = ["user", "bookmark"]

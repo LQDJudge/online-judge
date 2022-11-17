@@ -41,7 +41,9 @@ def bookmark_page(request, delta):
             raise Http404()
 
     if delta == 0:
-        bookmarklist = MakeBookMark.objects.filter(bookmark=bookmark_page.first(), user=request.profile)
+        bookmarklist = MakeBookMark.objects.filter(
+            bookmark=bookmark_page.first(), user=request.profile
+        )
         if not bookmarklist.exists():
             newbookmark = MakeBookMark(
                 bookmark=bookmark_page.first(),
@@ -49,7 +51,9 @@ def bookmark_page(request, delta):
             )
             newbookmark.save()
     else:
-        bookmarklist = MakeBookMark.objects.filter(bookmark=bookmark_page.first(), user=request.profile)
+        bookmarklist = MakeBookMark.objects.filter(
+            bookmark=bookmark_page.first(), user=request.profile
+        )
         if bookmarklist.exists():
             bookmarklist.delete()
 

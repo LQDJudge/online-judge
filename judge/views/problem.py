@@ -245,7 +245,11 @@ class ProblemRaw(
 
 
 class ProblemDetail(
-    ProblemMixin, SolvedProblemMixin, CommentedDetailView, PageVoteDetailView, BookMarkDetailView
+    ProblemMixin,
+    SolvedProblemMixin,
+    CommentedDetailView,
+    PageVoteDetailView,
+    BookMarkDetailView,
 ):
     context_object_name = "problem"
     template_name = "problem/problem.html"
@@ -948,6 +952,7 @@ class ProblemFeed(ProblemList, PageVoteListView, BookMarkListView):
         context["has_show_editorial_option"] = False
         context["has_have_editorial_option"] = False
         context = self.add_pagevote_context_data(context)
+        context = self.add_bookmark_context_data(context)
 
         return context
 

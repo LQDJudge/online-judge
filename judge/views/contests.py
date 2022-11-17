@@ -383,7 +383,13 @@ class ContestMixin(object):
             )
 
 
-class ContestDetail(ContestMixin, TitleMixin, CommentedDetailView, PageVoteDetailView, BookMarkDetailView):
+class ContestDetail(
+    ContestMixin,
+    TitleMixin,
+    CommentedDetailView,
+    PageVoteDetailView,
+    BookMarkDetailView,
+):
     template_name = "contest/contest.html"
 
     def get_comment_page(self):

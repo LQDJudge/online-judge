@@ -8,19 +8,14 @@
 {% endblock %}
 
 {% block user_content %}
-    {% if postlist %}
+    {% if blogs %}
         <div class="bookmark-group">
             <h3 class="unselectable toggle closed">
-                <span class="fa fa-chevron-right fa-fw"></span>{{ _('Bookmarked Posts') }} ({{ postlist|length }})
+                <span class="fa fa-chevron-right fa-fw"></span>{{ _('Posts') }} ({{ blogs|length }})
             </h3>
             <table style="display: none" class="table toggled">
-                <thead>
-                <tr>
-                    <th>{{ _('Post') }}</th>
-                </tr>
-                </thead>
                 <tbody>
-                {% for post in postlist %}
+                {% for post in blogs %}
                     <tr>
                         <td class="bookmark-name">
                             <a href="{{ url('blog_post', post.bookmark.page_object().id, post.bookmark.page_object().slug) }}">{{ post.bookmark.page_object().title}} </a>
@@ -30,23 +25,15 @@
                 </tbody>
             </table>
         </div>
-    {% else %}    
-        <i>{{ _('You have not yet bookmarked any post.') }}</i>
     {% endif %}
-    <hr>
-    {% if problemlist %}
+    {% if problems %}
     <div class="bookmark-group">
         <h3 class="unselectable toggle closed">
-            <span class="fa fa-chevron-right fa-fw"></span>{{ _('Bookmarked Problems') }} ({{ problemlist|length }})
+            <span class="fa fa-chevron-right fa-fw"></span>{{ _('Problems') }} ({{ problems|length }})
         </h3>
         <table style="display: none" class="table toggled">
-            <thead>
-            <tr>
-                <th>{{ _('Problem') }}</th>
-            </tr>
-            </thead>
             <tbody>
-            {% for problem in problemlist %}
+            {% for problem in problems %}
                 <tr>
                     <td class="bookmark-name">
                         <a href="{{ url('problem_detail', problem.bookmark.page_object().code) }}">{{ problem.bookmark.page_object().name}} </a>
@@ -56,23 +43,16 @@
             </tbody>
         </table>
     </div>
-    {% else %}    
-        <i>{{ _('You have not yet bookmarked any problem.') }}</i>
     {% endif %}
-    <hr>
-    {% if contestlist %}
+    {% if contests %}
     <div class="bookmark-group">
         <h3 class="unselectable toggle closed">
-            <span class="fa fa-chevron-right fa-fw"></span>{{ _('Bookmarked Contests') }} ({{ contestlist|length }})
+            <span class="fa fa-chevron-right fa-fw"></span>{{ _('Contests') }} ({{ contests|length }})
         </h3>
         <table style="display: none" class="table toggled">
-            <thead>
-            <tr>
-                <th>{{ _('Contest') }}</th>
-            </tr>
             </thead>
             <tbody>
-            {% for contest in contestlist %}
+            {% for contest in contests %}
                 <tr>
                     <td class="bookmark-name">
                         <a href="{{ url('contest_view', contest.bookmark.page_object().key) }}">{{ contest.bookmark.page_object().name}} </a>
@@ -82,9 +62,25 @@
             </tbody>
         </table>
     </div>
-    {% else %}    
-        <i>{{ _('You have not yet bookmarked any contest.') }}</i>
     {% endif %}
-    <hr>
+    {% if solutions %}
+    <div class="bookmark-group">
+        <h3 class="unselectable toggle closed">
+            <span class="fa fa-chevron-right fa-fw"></span>{{ _('Editorials') }} ({{ solutions|length }})
+        </h3>
+        <table style="display: none" class="table toggled">
+            </thead>
+            <tbody>
+            {% for solution in solutions %}
+                <tr>
+                    <td class="bookmark-name">
+                        <a href="{{ url('problem_editorial', solution.bookmark.page_object().problem.code) }}">{{ solution.bookmark.page_object().problem.name}} </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 
 {% endblock %}

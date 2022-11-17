@@ -53,7 +53,14 @@ from judge.utils.views import (
 )
 from .contests import ContestRanking
 
-__all__ = ["UserPage", "UserAboutPage", "UserProblemsPage", "UserBookMarkPage", "users", "edit_profile"]
+__all__ = [
+    "UserPage",
+    "UserAboutPage",
+    "UserProblemsPage",
+    "UserBookMarkPage",
+    "users",
+    "edit_profile",
+]
 
 
 def remap_keys(iterable, mapping):
@@ -350,22 +357,19 @@ class UserProblemsPage(UserPage):
 
         return context
 
+
 class UserBookMarkPage(UserPage):
     template_name = "user/user-bookmarks.html"
 
     def get_context_data(self, **kwargs):
         context = super(UserBookMarkPage, self).get_context_data(**kwargs)
 
-        makedownlist = MakeBookMark.objects.filter(user=self.object)
-        pagelist = makedownlist.filter(bookmark__page__startswith='b')
-        problemlist = makedownlist.filter(bookmark__page__startswith='p')
-        contestlist = makedownlist.filter(bookmark__page__startswith='c')
-        
-        context["pagelist"] = makedownlist
-        context["postlist"] = pagelist
-        context["problemlist"] = problemlist
-        context["contestlist"] = contestlist
-               
+        bookmark_list = MakeBookMark.objects.filter(user=self.object)
+        context["blogs"] = bookmark_list.filter(bookmark__page__startswith="b")
+        context["problems"] = bookmark_list.filter(bookmark__page__startswith="p")
+        context["contests"] = bookmark_list.filter(bookmark__page__startswith="c")
+        context["solutions"] = bookmark_list.filter(bookmark__page__startswith="s")
+
         return context
 
 

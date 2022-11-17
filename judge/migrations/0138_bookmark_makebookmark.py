@@ -7,32 +7,67 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0137_auto_20221116_2201'),
+        ("judge", "0137_auto_20221116_2201"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='BookMark',
+            name="BookMark",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('page', models.CharField(db_index=True, max_length=30, verbose_name='associated page')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "page",
+                    models.CharField(
+                        db_index=True, max_length=30, verbose_name="associated page"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'bookmark',
-                'verbose_name_plural': 'bookmarks',
+                "verbose_name": "bookmark",
+                "verbose_name_plural": "bookmarks",
             },
         ),
         migrations.CreateModel(
-            name='MakeBookMark',
+            name="MakeBookMark",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('bookmark', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='bookmark', to='judge.bookmark')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='user_bookmark', to='judge.profile')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "bookmark",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="bookmark",
+                        to="judge.bookmark",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="user_bookmark",
+                        to="judge.profile",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'make bookmark',
-                'verbose_name_plural': 'make bookmarks',
-                'unique_together': {('user', 'bookmark')},
+                "verbose_name": "make bookmark",
+                "verbose_name_plural": "make bookmarks",
+                "unique_together": {("user", "bookmark")},
             },
         ),
     ]
