@@ -13,13 +13,14 @@ from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
 from judge.dblock import LockModel
-from django.views.generic import View
+from django.views.generic import View, ListView
 
 
 __all__ = [
     "upvote_page",
     "downvote_page",
 ]
+
 
 @login_required
 def vote_page(request, delta):
@@ -75,7 +76,9 @@ def vote_page(request, delta):
                         _("You already voted."), content_type="text/plain"
                     )
                 vote.delete()
-            PageVote.objects.filter(id=pagevote_id).update(score=F("score") - vote.score)
+            PageVote.objects.filter(id=pagevote_id).update(
+                score=F("score") - vote.score
+            )
         else:
             PageVote.objects.filter(id=pagevote_id).update(score=F("score") + delta)
         break
@@ -88,6 +91,7 @@ def upvote_page(request):
 
 def downvote_page(request):
     return vote_page(request, -1)
+
 
 class PageVoteDetailView(TemplateResponseMixin, SingleObjectMixin, View):
     pagevote_page = None
@@ -108,13 +112,21 @@ class PageVoteDetailView(TemplateResponseMixin, SingleObjectMixin, View):
     def get_context_data(self, **kwargs):
         context = super(PageVoteDetailView, self).get_context_data(**kwargs)
         queryset = PageVote.objects.filter(page=self.get_comment_page())
-        if (queryset.exists() == False):
-            pagevote = PageVote(
-                page=self.get_comment_page(), score=0
-            )
+        if queryset.exists() == False:
+            pagevote = PageVote(page=self.get_comment_page(), score=0)
             pagevote.save()
         context["pagevote"] = queryset.first()
         return context
 
-    
 
+class PageVoteListView(ListView):
+    pagevote_page = None
+
+    def get_context_data(self, **kwargs):
+        context = super(PageVoteListView, self).get_context_data(**kwargs)
+        for item in context["object_list"]:
+            pagevote, _ = PageVote.objects.get_or_create(
+                page=self.get_comment_page(item)
+            )
+            setattr(item, "pagevote", pagevote)
+        return context

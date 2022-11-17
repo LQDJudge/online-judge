@@ -18,10 +18,12 @@
     </script>
     {% include "contest/media-js.html" %}
     {% include "comments/media-js.html" %}
+    {% include "actionbar/media-css.html" %}
 {% endblock %}
 
 {% block content_media %}
     {% include "comments/media-css.html" %}
+    {% include "actionbar/media-css.html" %}
 {% endblock %}
 
 {% block body %}
@@ -116,15 +118,10 @@
                 </tbody>
             </table>
         </div>
+        <hr>
     {% endif %}
-
-    <hr>
-    <span class="social">
-        {{ post_to_gplus(request, contest, '<i class="fa fa-google-plus-square"></i>') }}
-        {{ post_to_facebook(request, contest, '<i class="fa fa-facebook-official"></i>') }}
-        {{ post_to_twitter(request, SITE_NAME + ':', contest, '<i class="fa fa-twitter"></i>') }}
-    </span>
-
+    {% include "actionbar/list.html" %}
+    <br>
     {% include "comments/list.html" %}
 {% endblock %}
 

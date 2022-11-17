@@ -1,0 +1,47 @@
+<style>
+    .actionbar-button {
+        cursor: pointer;
+        padding: 0.8em;
+        border: 0.2px solid lightgray;
+        border-radius: 5em;
+        font-weight: bold;
+        display: inherit;
+    }
+    .actionbar-block {
+        display: flex;
+        flex: 1;
+        justify-content: center;
+    }
+    .page-vote {
+        display: flex;
+    }
+    .pagevote-score {
+        margin-right: 0.3em;
+    }
+    .like-button {
+        padding-right: 0.5em;
+        border-radius: 5em 0 0 5em;
+    }
+    .actionbar-button:hover {
+        background: lightgray;
+    }
+    .dislike-button {
+        padding-left: 0.5em;
+        border-radius: 0 5em 5em 0;
+        border-left: 0;
+    }
+    .like-button.voted {
+        color: blue;
+    }
+    .dislike-button.voted {
+        color: red;
+    }
+    .actionbar-text {
+        padding-left: 0.4em;
+    }
+    @media (max-width: 799px) {
+        .actionbar-text {
+            display: none;
+        }
+    }
+</style>

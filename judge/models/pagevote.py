@@ -18,7 +18,7 @@ class PageVote(models.Model):
     class Meta:
         verbose_name = _("pagevote")
         verbose_name_plural = _("pagevotes")
-    
+
     def vote_score(self, user):
         page_vote = PageVoteVoter.objects.filter(pagevote=self, voter=user)
         if page_vote.exists():
@@ -28,6 +28,7 @@ class PageVote(models.Model):
 
     def __str__(self):
         return f"pagevote for {self.page}"
+
 
 class PageVoteVoter(models.Model):
     voter = models.ForeignKey(Profile, related_name="voted_page", on_delete=CASCADE)

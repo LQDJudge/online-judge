@@ -1,0 +1,48 @@
+{% set logged_in = request.user.is_authenticated %}
+{% set profile = request.profile if logged_in else None %}
+{% if logged_in %}
+{% if include_hr %}<hr>{% endif %}
+<div class="page-vote">
+    <span class="actionbar-block" style="justify-content: flex-start;">
+        <span id="like-button-{{pagevote.id}}"
+            class="like-button actionbar-button {% if pagevote.vote_score(request.profile) == 1 %}voted{% endif %}" 
+            onclick="javascript:pagevote_upvote({{ pagevote.id }})"
+        >
+            <span class="pagevote-score" id="pagevote-score-{{pagevote.id}}">{{ pagevote.score }}</span>
+            <i class="fa fa-thumbs-o-up" style="font-size: large;"></i>
+            <span class="actionbar-text">{{_("Like")}}</span>
+        </span>
+        <span id="dislike-button-{{pagevote.id}}" class="dislike-button actionbar-button {% if pagevote.vote_score(request.profile) == -1 %}voted{% endif %}" onclick="javascript:pagevote_downvote({{ pagevote.id }})">
+            <i class="fa fa-thumbs-o-down" style="font-size: large;"></i>
+        </span>
+    </span>
+    {% if not hide_actionbar_comment %}
+    <span class="actionbar-block">
+        <span class="actionbar-button">
+            <i class="fa fa-comment-o" style="font-size: large;"></i>
+            <span class="actionbar-text">{{_("Comment")}}</span>
+        </span>
+    </span>
+    {% endif %}
+    <span class="actionbar-block">
+        <span class="actionbar-button">
+            <i class="fa fa-bookmark-o" style="font-size: large;"></i>
+            <span class="actionbar-text">{{_("Bookmark")}}</span>
+        </span>
+    </span>
+    <span class="actionbar-block">
+        <span class="actionbar-button">
+            <i class="fa fa-share" style="font-size: large;"></i>
+            <span class="actionbar-text">{{_("Share")}}</span>
+        </span>
+    </span>
+    {% if actionbar_report_url %}
+        <span class="actionbar-block">
+            <a class="actionbar-button" href="{{actionbar_report_url}}" style="color: black">
+                <i class="fa fa-flag-o" style="font-size: large;"></i>
+                <span class="actionbar-text">{{_("Report")}}</span>
+            </a>
+        </span>
+    {% endif %}
+</div>
+{% endif %}

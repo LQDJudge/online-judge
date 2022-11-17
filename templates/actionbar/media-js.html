@@ -1,0 +1,74 @@
+{% compress js %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            function ajax_vote(url, id, delta, on_success) {
+                return $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        id: id
+                    },
+                    success: function (data, textStatus, jqXHR) {
+                        var score = $('#pagevote-score-' + id);
+                        score.text(parseInt(score.text()) + delta);
+                        if (typeof on_success !== 'undefined')
+                            on_success();
+                    },
+                    error: function (data, textStatus, jqXHR) {
+                        alert('Could not vote: ' + data.responseText);
+                    }
+                });
+            }
+
+            var get_$votes = function (id) {
+                var $post = $('#page-vote-' + id);
+                return {
+                    upvote: $('#like-button-' + id),
+                    downvote: $('#dislike-button-' + id),
+                };
+            };
+
+            window.pagevote_upvote = function (id) {
+                var $votes = get_$votes(id);
+                console.log($votes.upvote, $votes.downvote);
+                if ($votes.upvote.hasClass('voted')) {
+                    ajax_vote('{{ url('pagevote_downvote') }}', id, -1, function () {
+                        $votes.upvote.removeClass('voted');
+                    });
+                }
+                else {
+                    var delta = 1;
+                    if ($votes.downvote.hasClass('voted')) {
+                        delta = 2;
+                    }
+                    ajax_vote('{{ url('pagevote_upvote') }}', id, delta, function () {
+                        if ($votes.downvote.hasClass('voted'))
+                            $votes.downvote.removeClass('voted');
+                        $votes.upvote.addClass('voted');
+                    });
+                }
+            };
+
+            window.pagevote_downvote = function (id) {
+                var $votes = get_$votes(id);
+                if ($votes.downvote.hasClass('voted')) {
+                    ajax_vote('{{ url('pagevote_upvote') }}', id, 1, function () {
+                        $votes.downvote.removeClass('voted');
+                    });
+                }
+                else {
+                    var delta = -1;
+                    if ($votes.upvote.hasClass('voted')) {
+                        delta = -2;
+                    }
+                    ajax_vote('{{ url('pagevote_downvote') }}', id, delta, function () {
+                        if ($votes.upvote.hasClass('voted'))
+                            $votes.upvote.removeClass('voted');
+                        $votes.downvote.addClass('voted');
+                    });
+                }
+            };
+
+        });
+    </script>
+{% endcompress %}

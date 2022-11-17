@@ -2,12 +2,12 @@
 
 {% block js_media %}
     {% include "comments/media-js.html" %}
-    {% include "pagevotes/media-js.html" %}
+    {% include "actionbar/media-js.html" %}
 {% endblock %}
 
 {% block media %}
     {% include "comments/media-css.html" %}
-    {% include "pagevotes/media-css.html" %}
+    {% include "actionbar/media-css.html" %}
 {% endblock %}
 
 {% block title_row %}
@@ -41,14 +41,9 @@
                 {{ post.content|markdown|reference|str|safe}}
             {% endcache %}
         </div>
+        {% include "actionbar/list.html" %}
     </div>
     <hr style="width: 60%; margin:4em auto;">
-    <span class="social">
-        {{ post_to_gplus(request, post, '<i class="fa fa-google-plus-square"></i>') }}
-        {{ post_to_facebook(request, post, '<i class="fa fa-facebook-official"></i>') }}
-        {{ post_to_twitter(request, SITE_NAME + ':', post, '<i class="fa fa-twitter"></i>') }}
-    </span>
-    {% include "pagevotes/list.html" %}
     {% include "comments/list.html" %}
 {% endblock %}
 

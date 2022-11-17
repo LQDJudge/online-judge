@@ -82,6 +82,8 @@ from judge.utils.views import (
     generic_message,
 )
 from judge.widgets import HeavyPreviewPageDownWidget
+from judge.views.pagevote import PageVoteDetailView
+
 
 __all__ = [
     "ContestList",
@@ -380,7 +382,7 @@ class ContestMixin(object):
             )
 
 
-class ContestDetail(ContestMixin, TitleMixin, CommentedDetailView):
+class ContestDetail(ContestMixin, TitleMixin, CommentedDetailView, PageVoteDetailView):
     template_name = "contest/contest.html"
 
     def get_comment_page(self):

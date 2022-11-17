@@ -59,9 +59,11 @@
             }
         </style>
     {% endif %}
+    {% include "actionbar/media-css.html" %}
 {% endblock %}
 
 {% block three_col_js %}
+    {% include "actionbar/media-js.html" %}
     <script>
         window.point_start = {{point_start}};
         window.point_end = {{point_end}};

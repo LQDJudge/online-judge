@@ -86,6 +86,7 @@ from judge.utils.views import (
     generic_message,
 )
 from judge.ml.collab_filter import CollabFilter
+from judge.views.pagevote import PageVoteDetailView, PageVoteListView
 
 
 def get_contest_problem(problem, profile):
@@ -172,7 +173,11 @@ class SolvedProblemMixin(object):
 
 
 class ProblemSolution(
-    SolvedProblemMixin, ProblemMixin, TitleMixin, CommentedDetailView
+    SolvedProblemMixin,
+    ProblemMixin,
+    TitleMixin,
+    CommentedDetailView,
+    PageVoteDetailView,
 ):
     context_object_name = "problem"
     template_name = "problem/editorial.html"
@@ -237,7 +242,9 @@ class ProblemRaw(
             )
 
 
-class ProblemDetail(ProblemMixin, SolvedProblemMixin, CommentedDetailView):
+class ProblemDetail(
+    ProblemMixin, SolvedProblemMixin, CommentedDetailView, PageVoteDetailView
+):
     context_object_name = "problem"
     template_name = "problem/problem.html"
 
@@ -806,7 +813,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         return HttpResponseRedirect(request.get_full_path())
 
 
-class ProblemFeed(ProblemList):
+class ProblemFeed(ProblemList, PageVoteListView):
     model = Problem
     context_object_name = "problems"
     template_name = "problem/feed.html"
@@ -831,6 +838,9 @@ class ProblemFeed(ProblemList):
             allow_empty_first_page=allow_empty_first_page,
             **kwargs
         )
+
+    def get_comment_page(self, problem):
+        return "p:%s" % problem.code
 
     # arr = [[], [], ..]
     def merge_recommendation(self, arr):

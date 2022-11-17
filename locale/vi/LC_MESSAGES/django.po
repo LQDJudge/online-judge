@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-11-10 07:59+0700\n"
+"POT-Creation-Date: 2022-11-17 07:40+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -41,19 +41,19 @@ msgstr "xem lần cuối"
 msgid "Chat Box"
 msgstr "Chat Box"
 
-#: dmoj/settings.py:363
+#: dmoj/settings.py:365
 msgid "Vietnamese"
 msgstr "Tiếng Việt"
 
-#: dmoj/settings.py:364
+#: dmoj/settings.py:366
 msgid "English"
 msgstr ""
 
-#: dmoj/urls.py:131
+#: dmoj/urls.py:132
 msgid "Login"
 msgstr "Đăng nhập"
 
-#: dmoj/urls.py:208 templates/base.html:201
+#: dmoj/urls.py:209 templates/base.html:207
 #: templates/organization/org-left-sidebar.html:2
 msgid "Home"
 msgstr "Trang chủ"
@@ -87,7 +87,7 @@ msgid "Included contests"
 msgstr ""
 
 #: judge/admin/contest.py:74 judge/admin/volunteer.py:54
-#: templates/contest/clarification.html:42 templates/contest/contest.html:83
+#: templates/contest/clarification.html:42 templates/contest/contest.html:85
 #: templates/contest/moss.html:43 templates/internal/base.html:29
 #: templates/internal/base.html:37 templates/problem/list.html:15
 #: templates/problem/list.html:30 templates/problem/list.html:146
@@ -164,7 +164,7 @@ msgstr "Tính toán lại kết quả"
 msgid "username"
 msgstr "tên đăng nhập"
 
-#: judge/admin/contest.py:485 templates/base.html:306
+#: judge/admin/contest.py:485 templates/base.html:315
 msgid "virtual"
 msgstr "ảo"
 
@@ -214,7 +214,7 @@ msgid "Taxonomy"
 msgstr ""
 
 #: judge/admin/problem.py:216 judge/admin/problem.py:434
-#: templates/contest/contest.html:84 templates/problem/data.html:475
+#: templates/contest/contest.html:86 templates/problem/data.html:475
 #: templates/problem/list.html:20 templates/problem/list.html:44
 #: templates/user/base-users-table.html:10 templates/user/user-about.html:36
 #: templates/user/user-about.html:52 templates/user/user-problems.html:58
@@ -226,7 +226,7 @@ msgid "Limits"
 msgstr "Giới hạn"
 
 #: judge/admin/problem.py:218 judge/admin/submission.py:353
-#: templates/base.html:237 templates/stats/tab.html:4
+#: templates/base.html:243 templates/stats/tab.html:4
 #: templates/submission/list.html:342
 msgid "Language"
 msgstr "Ngôn ngữ"
@@ -235,7 +235,7 @@ msgstr "Ngôn ngữ"
 msgid "History"
 msgstr "Lịch sử"
 
-#: judge/admin/problem.py:272 templates/problem/list-base.html:106
+#: judge/admin/problem.py:272 templates/problem/list-base.html:108
 msgid "Authors"
 msgstr "Các tác giả"
 
@@ -535,7 +535,7 @@ msgstr "Mã kỳ thi phải có dạng ^[a-z0-9]+$"
 msgid "Contest with key already exists."
 msgstr "Mã kỳ thi đã tồn tại."
 
-#: judge/jinja2/datetime.py:26 templates/blog/blog.html:27
+#: judge/jinja2/datetime.py:26 templates/blog/blog.html:29
 #: templates/blog/dashboard.html:21
 msgid "N j, Y, g:i a"
 msgstr "g:i a j b, Y"
@@ -579,10 +579,12 @@ msgid "commenter"
 msgstr "người bình luận"
 
 #: judge/models/comment.py:49 judge/models/comment.py:223
+#: judge/models/pagevote.py:13
 msgid "associated page"
 msgstr "trang tương ứng"
 
-#: judge/models/comment.py:53 judge/models/problem.py:686
+#: judge/models/comment.py:53 judge/models/pagevote.py:16
+#: judge/models/problem.py:686
 msgid "votes"
 msgstr "bình chọn"
 
@@ -1265,6 +1267,30 @@ msgstr "thời gian gửi"
 #: judge/models/message.py:33
 msgid "messages in the thread"
 msgstr "tin nhắn trong chuỗi"
+
+#: judge/models/pagevote.py:19
+#, fuzzy
+#| msgid "votes"
+msgid "pagevote"
+msgstr "bình chọn"
+
+#: judge/models/pagevote.py:20
+#, fuzzy
+#| msgid "votes"
+msgid "pagevotes"
+msgstr "bình chọn"
+
+#: judge/models/pagevote.py:40
+#, fuzzy
+#| msgid "volunteer vote"
+msgid "pagevote vote"
+msgstr "vote từ TNV"
+
+#: judge/models/pagevote.py:41
+#, fuzzy
+#| msgid "volunteer votes"
+msgid "pagevote votes"
+msgstr "vote từ TNV"
 
 #: judge/models/problem.py:41
 msgid "problem category ID"
@@ -2469,28 +2495,28 @@ msgstr "Giới thiệu"
 msgid "Custom Checker Sample"
 msgstr "Hướng dẫn viết trình chấm"
 
-#: judge/views/blog.py:115
+#: judge/views/blog.py:116
 #, python-format
 msgid "Page %d of Posts"
 msgstr "Trang %d"
 
-#: judge/views/blog.py:170
+#: judge/views/blog.py:174
 msgid "Ticket feed"
 msgstr "Báo cáo"
 
-#: judge/views/blog.py:188
+#: judge/views/blog.py:192
 msgid "Comment feed"
 msgstr "Bình luận"
 
-#: judge/views/comment.py:40
+#: judge/views/comment.py:40 judge/views/pagevote.py:29
 msgid "Messing around, are we?"
 msgstr "Messing around, are we?"
 
-#: judge/views/comment.py:56
+#: judge/views/comment.py:56 judge/views/pagevote.py:45
 msgid "You must solve at least one problem before you can vote."
 msgstr "Bạn phải giải ít nhất 1 bài trước khi được vote."
 
-#: judge/views/comment.py:87
+#: judge/views/comment.py:87 judge/views/pagevote.py:76
 msgid "You already voted."
 msgstr "Bạn đã vote."
 
@@ -2503,137 +2529,137 @@ msgstr "Chỉnh sửa từ web"
 msgid "Editing comment"
 msgstr "Chỉnh sửa bình luận"
 
-#: judge/views/contests.py:116 judge/views/contests.py:364
-#: judge/views/contests.py:369 judge/views/contests.py:610
+#: judge/views/contests.py:118 judge/views/contests.py:366
+#: judge/views/contests.py:371 judge/views/contests.py:612
 msgid "No such contest"
 msgstr "Không có contest nào như vậy"
 
-#: judge/views/contests.py:117 judge/views/contests.py:365
+#: judge/views/contests.py:119 judge/views/contests.py:367
 #, python-format
 msgid "Could not find a contest with the key \"%s\"."
 msgstr "Không tìm thấy kỳ thi với mã \"%s\"."
 
-#: judge/views/contests.py:136 judge/views/stats.py:178
+#: judge/views/contests.py:138 judge/views/stats.py:178
 #: templates/organization/org-left-sidebar.html:5 templates/stats/site.html:21
 msgid "Contests"
 msgstr "Kỳ thi"
 
-#: judge/views/contests.py:369
+#: judge/views/contests.py:371
 msgid "Could not find such contest."
 msgstr "Không tìm thấy kỳ thi nào như vậy."
 
-#: judge/views/contests.py:377
+#: judge/views/contests.py:379
 #, python-format
 msgid "Access to contest \"%s\" denied"
 msgstr "Truy cập tới kỳ thi \"%s\" bị từ chối"
 
-#: judge/views/contests.py:415
+#: judge/views/contests.py:417
 msgid "Clone Contest"
 msgstr "Nhân bản kỳ thi"
 
-#: judge/views/contests.py:484
+#: judge/views/contests.py:486
 msgid "Contest not ongoing"
 msgstr "Kỳ thi đang không diễn ra"
 
-#: judge/views/contests.py:485
+#: judge/views/contests.py:487
 #, python-format
 msgid "\"%s\" is not currently ongoing."
 msgstr "\"%s\" kỳ thi đang không diễn ra."
 
-#: judge/views/contests.py:492
+#: judge/views/contests.py:494
 msgid "Already in contest"
 msgstr "Đã ở trong kỳ thi"
 
-#: judge/views/contests.py:493
+#: judge/views/contests.py:495
 #, python-format
 msgid "You are already in a contest: \"%s\"."
 msgstr "Bạn đã ở trong kỳ thi: \"%s\"."
 
-#: judge/views/contests.py:503
+#: judge/views/contests.py:505
 msgid "Banned from joining"
 msgstr "Bị cấm tham gia"
 
-#: judge/views/contests.py:505
+#: judge/views/contests.py:507
 msgid ""
 "You have been declared persona non grata for this contest. You are "
 "permanently barred from joining this contest."
 msgstr "Bạn không được phép tham gia kỳ thi này."
 
-#: judge/views/contests.py:594
+#: judge/views/contests.py:596
 #, python-format
 msgid "Enter access code for \"%s\""
 msgstr "Nhập mật khẩu truy cập cho \"%s\""
 
-#: judge/views/contests.py:611
+#: judge/views/contests.py:613
 #, python-format
 msgid "You are not in contest \"%s\"."
 msgstr "Bạn không ở trong kỳ thi \"%s\"."
 
-#: judge/views/contests.py:634
+#: judge/views/contests.py:636
 msgid "ContestCalendar requires integer year and month"
 msgstr "Lịch thi yêu cầu giá trị cho năm và tháng là số nguyên"
 
-#: judge/views/contests.py:692
+#: judge/views/contests.py:694
 #, python-format
 msgid "Contests in %(month)s"
 msgstr "Các kỳ thi trong %(month)s"
 
-#: judge/views/contests.py:693
+#: judge/views/contests.py:695
 msgid "F Y"
 msgstr "F Y"
 
-#: judge/views/contests.py:753
+#: judge/views/contests.py:755
 #, python-format
 msgid "%s Statistics"
 msgstr "%s Thống kê"
 
-#: judge/views/contests.py:1010
+#: judge/views/contests.py:1012
 #, python-format
 msgid "%s Rankings"
 msgstr "%s Bảng điểm"
 
-#: judge/views/contests.py:1021
+#: judge/views/contests.py:1023
 msgid "???"
 msgstr "???"
 
-#: judge/views/contests.py:1037
+#: judge/views/contests.py:1039
 #, python-format
 msgid "Your participation in %s"
 msgstr "Lần tham gia trong %s"
 
-#: judge/views/contests.py:1038
+#: judge/views/contests.py:1040
 #, python-format
 msgid "%s's participation in %s"
 msgstr "Lần tham gia của %s trong %s"
 
-#: judge/views/contests.py:1052
+#: judge/views/contests.py:1054
 msgid "Live"
 msgstr "Trực tiếp"
 
-#: judge/views/contests.py:1071 templates/contest/contest-tabs.html:13
+#: judge/views/contests.py:1073 templates/contest/contest-tabs.html:13
 msgid "Participation"
 msgstr "Lần tham gia"
 
-#: judge/views/contests.py:1120
+#: judge/views/contests.py:1122
 #, python-format
 msgid "%s MOSS Results"
 msgstr "%s Kết quả MOSS"
 
-#: judge/views/contests.py:1156
+#: judge/views/contests.py:1158
 #, python-format
 msgid "Running MOSS for %s..."
 msgstr "Đang chạy MOSS cho %s..."
 
-#: judge/views/contests.py:1179
+#: judge/views/contests.py:1181
 #, python-format
 msgid "Contest tag: %s"
 msgstr "Nhãn kỳ thi: %s"
 
-#: judge/views/contests.py:1194 judge/views/ticket.py:72
+#: judge/views/contests.py:1196 judge/views/ticket.py:72
 msgid "Issue description"
 msgstr "Mô tả vấn đề"
 
-#: judge/views/contests.py:1241
+#: judge/views/contests.py:1243
 #, python-format
 msgid "New clarification for %s"
 msgstr "Thông báo mới cho %s"
@@ -2706,7 +2732,7 @@ msgstr "Bạn không được phép chỉnh sửa tổ chức này."
 
 #: judge/views/organization.py:243 judge/views/register.py:49
 #: judge/views/stats.py:184 templates/contest/list.html:91
-#: templates/problem/list-base.html:104 templates/stats/site.html:33
+#: templates/problem/list-base.html:106 templates/stats/site.html:33
 #: templates/user/user-left-sidebar.html:4 templates/user/user-list-tabs.html:6
 msgid "Groups"
 msgstr "Nhóm"
@@ -2860,60 +2886,60 @@ msgstr "Chỉnh sửa %s"
 msgid "Pending blogs in %s"
 msgstr "Bài đang đợi duyệt trong %s"
 
-#: judge/views/problem.py:121
+#: judge/views/problem.py:122
 msgid "No such problem"
 msgstr "Không có bài nào như vậy"
 
-#: judge/views/problem.py:122
+#: judge/views/problem.py:123
 #, python-format
 msgid "Could not find a problem with the code \"%s\"."
 msgstr "Không tìm thấy bài tập với mã bài \"%s\"."
 
-#: judge/views/problem.py:181
+#: judge/views/problem.py:186
 #, python-brace-format
 msgid "Editorial for {0}"
 msgstr "Hướng dẫn cho {0}"
 
-#: judge/views/problem.py:185
+#: judge/views/problem.py:190
 #, python-brace-format
 msgid "Editorial for <a href=\"{1}\">{0}</a>"
 msgstr "Hướng dẫn cho <a href=\"{1}\">{0}</a>"
 
-#: judge/views/problem.py:434 templates/contest/contest.html:79
+#: judge/views/problem.py:441 templates/contest/contest.html:81
 #: templates/organization/org-left-sidebar.html:4
 #: templates/user/user-about.html:28 templates/user/user-tabs.html:5
 #: templates/user/users-table.html:19
 msgid "Problems"
 msgstr "Bài tập"
 
-#: judge/views/problem.py:814
+#: judge/views/problem.py:821
 msgid "Problem feed"
 msgstr "Bài tập"
 
-#: judge/views/problem.py:1047
+#: judge/views/problem.py:1057
 msgid "Banned from submitting"
 msgstr "Bị cấm nộp bài"
 
-#: judge/views/problem.py:1049
+#: judge/views/problem.py:1059
 msgid ""
 "You have been declared persona non grata for this problem. You are "
 "permanently barred from submitting this problem."
 msgstr "Bạn đã bị cấm nộp bài này."
 
-#: judge/views/problem.py:1072
+#: judge/views/problem.py:1082
 msgid "Too many submissions"
 msgstr "Quá nhiều lần nộp"
 
-#: judge/views/problem.py:1074
+#: judge/views/problem.py:1084
 msgid "You have exceeded the submission limit for this problem."
 msgstr "Bạn đã vượt quá số lần nộp cho bài này."
 
-#: judge/views/problem.py:1153 judge/views/problem.py:1158
+#: judge/views/problem.py:1163 judge/views/problem.py:1168
 #, python-format
 msgid "Submit to %(problem)s"
 msgstr "Nộp bài cho %(problem)s"
 
-#: judge/views/problem.py:1181
+#: judge/views/problem.py:1191
 msgid "Clone Problem"
 msgstr "Nhân bản bài tập"
 
@@ -3052,7 +3078,7 @@ msgstr "Thống kê ngôn ngữ"
 msgid "Submissions"
 msgstr "Bài nộp"
 
-#: judge/views/stats.py:160 templates/blog/list.html:60
+#: judge/views/stats.py:160 templates/blog/list.html:58
 #: templates/comments/list.html:2 templates/stats/site.html:39
 msgid "Comments"
 msgstr "Bình luận"
@@ -3083,7 +3109,7 @@ msgid "Submission of %(problem)s by %(user)s"
 msgstr "Bài nộp của %(user)s cho bài %(problem)s"
 
 #: judge/views/submission.py:298 judge/views/submission.py:299
-#: templates/problem/problem.html:200
+#: templates/problem/problem.html:202
 msgid "All submissions"
 msgstr "Tất cả bài nộp"
 
@@ -3228,7 +3254,7 @@ msgid "Updated on site"
 msgstr "Được cập nhật trên web"
 
 #: judge/views/user.py:449 templates/admin/auth/user/change_form.html:14
-#: templates/admin/auth/user/change_form.html:17 templates/base.html:270
+#: templates/admin/auth/user/change_form.html:17 templates/base.html:280
 #: templates/user/user-tabs.html:10
 msgid "Edit profile"
 msgstr "Chỉnh sửa thông tin"
@@ -3392,6 +3418,30 @@ msgstr "Chủ đề màu sắc"
 msgid "Change color theme"
 msgstr "Đổi chủ đề màu sắc"
 
+#: templates/actionbar/list.html:13
+msgid "Like"
+msgstr "Thích"
+
+#: templates/actionbar/list.html:17
+msgid "Dislike"
+msgstr "Không thích"
+
+#: templates/actionbar/list.html:24
+msgid "Comment"
+msgstr "Bình luận"
+
+#: templates/actionbar/list.html:31
+msgid "Bookmark"
+msgstr "Lưu"
+
+#: templates/actionbar/list.html:37
+msgid "Share"
+msgstr "Chia sẻ"
+
+#: templates/actionbar/list.html:44
+msgid "Report"
+msgstr "Báo cáo"
+
 #: templates/admin/judge/contest/change_form.html:9
 msgid "Are you sure you want to rejudge ALL the submissions?"
 msgstr "Bạn có muốn chấm lại tất cả bài nộp?"
@@ -3440,90 +3490,89 @@ msgstr "Chỉnh sửa thông tin"
 msgid "Rejudge"
 msgstr "Chấm lại"
 
-#: templates/base.html:219 templates/chat/chat.html:579
+#: templates/base.html:225 templates/chat/chat.html:579
 msgid "Chat"
 msgstr "Chat"
 
-#: templates/base.html:229
+#: templates/base.html:235
 msgid "Notification"
 msgstr "Thông báo"
 
-#: templates/base.html:257
-#, python-format
-msgid "Hello, <b>%(username)s</b>."
-msgstr "Xin chào, <b>%(username)s</b>."
+#: templates/base.html:256
+msgid "Dark Mode"
+msgstr ""
 
-#: templates/base.html:262
+#: templates/base.html:272
 msgid "Profile"
 msgstr "Trang cá nhân"
 
-#: templates/base.html:264 templates/chat/chat.html:20
+#: templates/base.html:274 templates/chat/chat.html:20
 #: templates/comments/list.html:89 templates/contest/contest-list-tabs.html:24
 #: templates/contest/list.html:112 templates/contest/ranking-table.html:49
 #: templates/internal/base.html:59
 #: templates/organization/org-left-sidebar.html:12
-#: templates/problem/left-sidebar.html:5 templates/problem/list-base.html:261
+#: templates/problem/left-sidebar.html:5 templates/problem/list-base.html:263
 #: templates/problem/problem-list-tabs.html:6
 #: templates/submission/info-base.html:12 templates/submission/list.html:386
 #: templates/submission/submission-list-tabs.html:15
 msgid "Admin"
 msgstr "Admin"
 
-#: templates/base.html:267
+#: templates/base.html:277
 msgid "Internal"
 msgstr "Nội bộ"
 
-#: templates/base.html:268
+#: templates/base.html:278
 msgid "Stats"
 msgstr "Thống kê"
 
-#: templates/base.html:275
+#: templates/base.html:285
 msgid "Log out"
 msgstr "Đăng xuất"
 
-#: templates/base.html:285
+#: templates/base.html:294
 #: templates/registration/password_reset_complete.html:4
 msgid "Log in"
 msgstr "Đăng nhập"
 
-#: templates/base.html:286 templates/registration/registration_form.html:177
+#: templates/base.html:295 templates/registration/registration_form.html:177
 msgid "or"
 msgstr "hoặc"
 
-#: templates/base.html:287
+#: templates/base.html:296
 msgid "Sign up"
 msgstr "Đăng ký"
 
-#: templates/base.html:300
+#: templates/base.html:309
 msgid "spectating"
 msgstr "đang theo dõi"
 
-#: templates/base.html:312
+#: templates/base.html:321
 msgid "Compete"
 msgstr "Thi"
 
-#: templates/base.html:314
+#: templates/base.html:323
 msgid "General"
 msgstr "Chung"
 
-#: templates/base.html:321
+#: templates/base.html:330
 msgid "This site works best with JavaScript enabled."
 msgstr ""
 
-#: templates/blog/blog.html:27
+#: templates/blog/blog.html:29
 #, python-format
 msgid " posted on %(time)s"
 msgstr "đã đăng vào %(time)s"
 
-#: templates/blog/blog.html:30 templates/comments/list.html:68
+#: templates/blog/blog.html:32 templates/comments/list.html:68
 #: templates/comments/list.html:83 templates/contest/contest-tabs.html:23
 #: templates/contest/list.html:130 templates/contest/tag-title.html:9
 #: templates/flatpages/admin_link.html:3 templates/license.html:10
-#: templates/problem/editorial.html:14 templates/problem/feed.html:68
+#: templates/problem/editorial.html:16 templates/problem/feed.html:76
 msgid "Edit"
 msgstr "Chỉnh sửa"
 
-#: templates/blog/blog.html:33
+#: templates/blog/blog.html:35
 msgid "Edit in"
 msgstr "Chỉnh sửa trong"
 
@@ -3538,33 +3587,33 @@ msgstr ""
 "                                    vào %(time)s\n"
 "                                "
 
-#: templates/blog/list.html:59
+#: templates/blog/list.html:57
 msgid "News"
 msgstr "Tin tức"
 
-#: templates/blog/list.html:61
+#: templates/blog/list.html:59
 msgid "Tickets"
 msgstr "Báo cáo"
 
-#: templates/blog/list.html:62
+#: templates/blog/list.html:60
 msgid "Events"
 msgstr "Sự kiện"
 
-#: templates/blog/list.html:78
+#: templates/blog/list.html:76
 msgid "You have no ticket"
 msgstr "Bạn không có báo cáo"
 
-#: templates/blog/list.html:94 templates/problem/list.html:143
-#: templates/problem/problem.html:423
+#: templates/blog/list.html:92 templates/problem/list.html:143
+#: templates/problem/problem.html:427
 msgid "Clarifications"
 msgstr "Thông báo"
 
-#: templates/blog/list.html:100
+#: templates/blog/list.html:98
 msgid "Add"
 msgstr "Thêm mới"
 
-#: templates/blog/list.html:119 templates/problem/list.html:165
-#: templates/problem/problem.html:434
+#: templates/blog/list.html:118 templates/problem/list.html:165
+#: templates/problem/problem.html:438
 msgid "No clarifications have been made at this time."
 msgstr "Không có thông báo nào."
 
@@ -3652,7 +3701,7 @@ msgstr "bình luận vào {time}"
 msgid "edit %(edits)s"
 msgstr "chỉnh sửa %(edits)s"
 
-#: templates/comments/list.html:51 templates/comments/media-js.html:92
+#: templates/comments/list.html:51 templates/comments/media-js.html:89
 msgid "edited"
 msgstr "đã chỉnh sửa"
 
@@ -3709,12 +3758,12 @@ msgstr "Bình luận bị tắt trong trang này."
 msgid "Replying to comment"
 msgstr "Trả lời bình luận"
 
-#: templates/comments/media-js.html:87
+#: templates/comments/media-js.html:84
 #, python-brace-format
 msgid "edit {edits}"
 msgstr "chỉnh sửa {edits}"
 
-#: templates/comments/media-js.html:90
+#: templates/comments/media-js.html:87
 msgid "original"
 msgstr "original"
 
@@ -3784,7 +3833,7 @@ msgid "Next"
 msgstr "Tiếp"
 
 #: templates/contest/contest-list-tabs.html:21 templates/contest/list.html:110
-#: templates/problem/left-sidebar.html:4 templates/problem/list-base.html:260
+#: templates/problem/left-sidebar.html:4 templates/problem/list-base.html:262
 #: templates/problem/problem-list-tabs.html:5
 msgid "List"
 msgstr "Danh sách"
@@ -3842,49 +3891,49 @@ msgstr "Tham gia kỳ thi"
 msgid "Login to participate"
 msgstr "Đăng nhập để tham gia"
 
-#: templates/contest/contest.html:33
+#: templates/contest/contest.html:35
 #, python-format
 msgid "Spectating, contest ends in %(countdown)s."
 msgstr "Đang theo dõi, kỳ thi còn %(countdown)s."
 
-#: templates/contest/contest.html:35
+#: templates/contest/contest.html:37
 #, python-format
 msgid "Participating virtually, %(countdown)s remaining."
 msgstr "Đang tham gia ảo, còn %(countdown)s."
 
-#: templates/contest/contest.html:37
+#: templates/contest/contest.html:39
 msgid "Participating virtually."
 msgstr "Đang tham gia ảo."
 
-#: templates/contest/contest.html:41
+#: templates/contest/contest.html:43
 #, python-format
 msgid "Starting in %(countdown)s."
 msgstr "Kỳ thi bắt đầu trong %(countdown)s nữa."
 
-#: templates/contest/contest.html:43
+#: templates/contest/contest.html:45
 msgid "Contest is over."
 msgstr "Kỳ thi đã kết thúc."
 
-#: templates/contest/contest.html:47
+#: templates/contest/contest.html:49
 #, python-format
 msgid "Your time is up! Contest ends in %(countdown)s."
 msgstr "Hết giờ! Kỳ thi kết thúc trong %(countdown)s."
 
-#: templates/contest/contest.html:49
+#: templates/contest/contest.html:51
 #, python-format
 msgid "You have %(countdown)s remaining."
 msgstr "Bạn còn %(countdown)s."
 
-#: templates/contest/contest.html:52
+#: templates/contest/contest.html:54
 #, python-format
 msgid "Contest ends in %(countdown)s."
 msgstr "Kỳ thi kết thúc trong %(countdown)s"
 
-#: templates/contest/contest.html:59 templates/contest/contest.html:63
+#: templates/contest/contest.html:61 templates/contest/contest.html:65
 msgid "F j, Y, G:i T"
 msgstr "G:i T, j F, Y"
 
-#: templates/contest/contest.html:59
+#: templates/contest/contest.html:61
 #, python-format
 msgid ""
 "<b>%(time_limit)s</b> window between <b>%(start_time)s</b> and <b>"
@@ -3893,27 +3942,27 @@ msgstr ""
 "Kéo dài <b>%(time_limit)s</b> từ <b>%(start_time)s</b> đến <b>%(end_time)s</"
 "b>"
 
-#: templates/contest/contest.html:63
+#: templates/contest/contest.html:65
 #, python-format
 msgid "<b>%(length)s</b> long starting on <b>%(start_time)s</b>"
 msgstr "Kéo dài <b>%(length)s</b> bắt đầu từ <b>%(start_time)s</b>"
 
-#: templates/contest/contest.html:85
+#: templates/contest/contest.html:87
 msgid "AC Rate"
 msgstr "Tỷ lệ AC"
 
-#: templates/contest/contest.html:86 templates/contest/list.html:242
+#: templates/contest/contest.html:88 templates/contest/list.html:242
 #: templates/contest/list.html:291 templates/contest/list.html:376
 #: templates/problem/list.html:21
 msgid "Users"
 msgstr "Số lượng"
 
-#: templates/contest/contest.html:111 templates/problem/list.html:54
+#: templates/contest/contest.html:113 templates/problem/list.html:54
 #: templates/problem/list.html:126
 msgid "Editorial"
 msgstr "Hướng dẫn"
 
-#: templates/contest/list.html:87 templates/contest/media-js.html:150
+#: templates/contest/list.html:87 templates/contest/media-js.html:148
 msgid "Are you sure you want to join?"
 msgstr "Bạn có chắc tham gia?"
 
@@ -3998,11 +4047,11 @@ msgstr "Không có kỳ thi nào được lên lịch hiện tại."
 msgid "Past Contests"
 msgstr "Kỳ thi trong quá khứ"
 
-#: templates/contest/media-js.html:145
+#: templates/contest/media-js.html:143
 msgid "Are you sure you want to leave?"
 msgstr "Bạn có chắc muốn rời?"
 
-#: templates/contest/media-js.html:146
+#: templates/contest/media-js.html:144
 msgid ""
 "You cannot come back to a virtual participation. You will have to start a "
 "new one."
@@ -4010,7 +4059,7 @@ msgstr ""
 "Bạn không thể quay lại lần tham gia ảo này. Bạn sẽ phải tham gia ảo lại từ "
 "đầu."
 
-#: templates/contest/media-js.html:151
+#: templates/contest/media-js.html:149
 msgid ""
 "Joining a contest starts your timer, after which it becomes unstoppable."
 msgstr "Tham gia kỳ thi sẽ khởi động đồng hồ đếm ngược, và không thể dừng lại."
@@ -4177,7 +4226,7 @@ msgstr ""
 msgid "Thinking"
 msgstr "Bảng xếp hạng"
 
-#: templates/internal/base.html:82 templates/problem/feed.html:114
+#: templates/internal/base.html:82 templates/problem/feed.html:122
 #, fuzzy
 #| msgid "Feed"
 msgid "Feedback"
@@ -4457,7 +4506,7 @@ msgstr "Xem YAML"
 msgid "Autofill testcases"
 msgstr "Tự động điền test"
 
-#: templates/problem/data.html:456 templates/problem/problem.html:308
+#: templates/problem/data.html:456 templates/problem/problem.html:310
 msgid "Problem type"
 msgid_plural "Problem types"
 msgstr[0] "Dạng bài"
@@ -4490,7 +4539,7 @@ msgstr "Pretest?"
 msgid "Add new case"
 msgstr "Thêm test mới"
 
-#: templates/problem/editorial.html:22
+#: templates/problem/editorial.html:24
 msgid ""
 "Remember to use this editorial <b>only</b> when stuck, and <b>not to copy-"
 "paste code from it</b>. Please be respectful to the problem author and "
@@ -4517,55 +4566,55 @@ msgstr "TÌNH NGUYỆN"
 msgid "View your votes"
 msgstr "Xem các đơn đã điền của bạn"
 
-#: templates/problem/feed.html:63
+#: templates/problem/feed.html:71
 msgid "View source"
 msgstr "Xem mã nguồn"
 
-#: templates/problem/feed.html:66
+#: templates/problem/feed.html:74
 msgid "Volunteer form"
 msgstr "Phiếu tình nguyện"
 
-#: templates/problem/feed.html:70
+#: templates/problem/feed.html:78
 msgid "Submit"
 msgstr "Gửi"
 
-#: templates/problem/feed.html:77
+#: templates/problem/feed.html:85
 msgid "Value"
 msgstr "Giá trị"
 
-#: templates/problem/feed.html:84
+#: templates/problem/feed.html:92
 msgid "Knowledge point"
 msgstr "Độ khó kiến thức"
 
-#: templates/problem/feed.html:92
+#: templates/problem/feed.html:100
 msgid "Thinking point"
 msgstr "Độ khó nghĩ"
 
-#: templates/problem/feed.html:100 templates/problem/search-form.html:84
+#: templates/problem/feed.html:108 templates/problem/search-form.html:84
 msgid "Problem types"
 msgstr "Dạng bài"
 
-#: templates/problem/feed.html:117
+#: templates/problem/feed.html:125
 msgid "Any additional note here"
 msgstr "Lưu ý thêm cho admin"
 
-#: templates/problem/left-sidebar.html:3 templates/problem/list-base.html:259
+#: templates/problem/left-sidebar.html:3 templates/problem/list-base.html:261
 msgid "Feed"
 msgstr "Gợi ý"
 
-#: templates/problem/list-base.html:102
+#: templates/problem/list-base.html:104
 msgid "Filter by type..."
 msgstr "Lọc theo dạng..."
 
-#: templates/problem/list-base.html:165 templates/problem/list-base.html:191
+#: templates/problem/list-base.html:167 templates/problem/list-base.html:193
 msgid "Add types..."
 msgstr "Thêm dạng"
 
-#: templates/problem/list-base.html:207
+#: templates/problem/list-base.html:209
 msgid "Fail to vote!"
 msgstr "Hệ thống lỗi!"
 
-#: templates/problem/list-base.html:210
+#: templates/problem/list-base.html:212
 msgid "Successful vote! Thank you!"
 msgstr "Đã gửi thành công! Cảm ơn bạn!"
 
@@ -4667,137 +4716,133 @@ msgstr "Bạn có chắc muốn tính điểm lại %(count)d bài nộp?"
 msgid "Rescore all submissions"
 msgstr "Tính điểm lại các bài nộp"
 
-#: templates/problem/problem.html:165
+#: templates/problem/problem.html:167
 msgid "View as PDF"
 msgstr "Xem PDF"
 
-#: templates/problem/problem.html:174 templates/problem/problem.html:184
-#: templates/problem/problem.html:189
+#: templates/problem/problem.html:176 templates/problem/problem.html:186
+#: templates/problem/problem.html:191
 msgid "Submit solution"
 msgstr "Nộp bài"
 
-#: templates/problem/problem.html:177
+#: templates/problem/problem.html:179
 #, python-format
 msgid "%(counter)s submission left"
 msgid_plural "%(counter)s submissions left"
 msgstr[0] "Còn %(counter)s lần nộp"
 
-#: templates/problem/problem.html:185
+#: templates/problem/problem.html:187
 msgid "0 submissions left"
 msgstr "Còn 0 lần nộp"
 
-#: templates/problem/problem.html:197
+#: templates/problem/problem.html:199
 msgid "My submissions"
 msgstr "Bài nộp của tôi"
 
-#: templates/problem/problem.html:201
+#: templates/problem/problem.html:203
 msgid "Best submissions"
 msgstr "Các bài nộp tốt nhất"
 
-#: templates/problem/problem.html:205
+#: templates/problem/problem.html:207
 msgid "Read editorial"
 msgstr "Xem hướng dẫn"
 
-#: templates/problem/problem.html:210
+#: templates/problem/problem.html:212
 msgid "Manage tickets"
 msgstr "Xử lý báo cáo"
 
-#: templates/problem/problem.html:214
+#: templates/problem/problem.html:216
 msgid "Edit problem"
 msgstr "Chỉnh sửa bài"
 
-#: templates/problem/problem.html:216
+#: templates/problem/problem.html:218
 msgid "Edit test data"
 msgstr "Chỉnh sửa test"
 
-#: templates/problem/problem.html:221
+#: templates/problem/problem.html:223
 msgid "My tickets"
 msgstr "Báo cáo của tôi"
 
-#: templates/problem/problem.html:229
+#: templates/problem/problem.html:231
 msgid "Manage submissions"
 msgstr "Quản lý bài nộp"
 
-#: templates/problem/problem.html:235
+#: templates/problem/problem.html:237
 msgid "Clone problem"
 msgstr "Nhân bản bài"
 
-#: templates/problem/problem.html:242
+#: templates/problem/problem.html:244
 msgid "Points:"
 msgstr "Điểm:"
 
-#: templates/problem/problem.html:245 templates/problem/problem.html:247
+#: templates/problem/problem.html:247 templates/problem/problem.html:249
 msgid "(partial)"
 msgstr "(thành phần)"
 
-#: templates/problem/problem.html:252
+#: templates/problem/problem.html:254
 msgid "Time limit:"
 msgstr "Thời gian:"
 
-#: templates/problem/problem.html:264
+#: templates/problem/problem.html:266
 msgid "Memory limit:"
 msgstr "Bộ nhớ:"
 
-#: templates/problem/problem.html:276 templates/problem/raw.html:67
+#: templates/problem/problem.html:278 templates/problem/raw.html:67
 #: templates/submission/status-testcases.html:157
 msgid "Input:"
 msgstr "Input:"
 
-#: templates/problem/problem.html:278 templates/problem/raw.html:67
+#: templates/problem/problem.html:280 templates/problem/raw.html:67
 msgid "stdin"
 msgstr "bàn phím"
 
-#: templates/problem/problem.html:282 templates/problem/raw.html:70
+#: templates/problem/problem.html:284 templates/problem/raw.html:70
 #: templates/submission/status-testcases.html:161
 msgid "Output:"
 msgstr "Output:"
 
-#: templates/problem/problem.html:283 templates/problem/raw.html:70
+#: templates/problem/problem.html:285 templates/problem/raw.html:70
 msgid "stdout"
 msgstr "màn hình"
 
-#: templates/problem/problem.html:293
+#: templates/problem/problem.html:295
 msgid "Author:"
 msgid_plural "Authors:"
 msgstr[0] "Tác giả:"
 
-#: templates/problem/problem.html:321
+#: templates/problem/problem.html:323
 msgid "Allowed languages"
 msgstr "Ngôn ngữ cho phép"
 
-#: templates/problem/problem.html:329
+#: templates/problem/problem.html:331
 #, python-format
 msgid "No %(lang)s judge online"
 msgstr "Không có máy chấm cho %(lang)s"
 
-#: templates/problem/problem.html:341
+#: templates/problem/problem.html:343
 #: templates/status/judge-status-table.html:2
 msgid "Judge"
 msgid_plural "Judges"
 msgstr[0] "Máy chấm"
 
-#: templates/problem/problem.html:359
+#: templates/problem/problem.html:361
 msgid "none available"
 msgstr "Bài này chưa có máy chấm"
 
-#: templates/problem/problem.html:371
+#: templates/problem/problem.html:373
 #, python-format
 msgid "This problem has %(length)s clarification(s)"
 msgstr "Bài này có %(length)s thông báo"
 
-#: templates/problem/problem.html:400
+#: templates/problem/problem.html:402
 msgid "Request clarification"
 msgstr "Yêu cầu làm rõ đề"
 
-#: templates/problem/problem.html:402
-msgid "Report an issue"
-msgstr "Báo cáo một vấn đề"
-
-#: templates/problem/problem.html:411
+#: templates/problem/problem.html:415
 msgid "View comments"
 msgstr "Xem bình luận"
 
-#: templates/problem/problem.html:413
+#: templates/problem/problem.html:417
 msgid "Be the first to comment"
 msgstr "Bình luận đầu tiên"
 
@@ -5682,6 +5727,12 @@ msgstr "Thông tin"
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Chọn tất cả"
+
+#~ msgid "Hello, <b>%(username)s</b>."
+#~ msgstr "Xin chào, <b>%(username)s</b>."
+
+#~ msgid "Report an issue"
+#~ msgstr "Báo cáo một vấn đề"
 
 #~ msgid "Edit in %(org_slug)s"
 #~ msgstr "Chỉnh sửa trong %(org_slug)s"

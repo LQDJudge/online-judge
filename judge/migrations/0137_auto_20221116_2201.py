@@ -7,39 +7,78 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0136_alter_profile_timezone'),
+        ("judge", "0136_alter_profile_timezone"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='PageVote',
+            name="PageVote",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('page', models.CharField(db_index=True, max_length=30, verbose_name='associated page')),
-                ('score', models.IntegerField(default=0, verbose_name='votes')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "page",
+                    models.CharField(
+                        db_index=True, max_length=30, verbose_name="associated page"
+                    ),
+                ),
+                ("score", models.IntegerField(default=0, verbose_name="votes")),
             ],
             options={
-                'verbose_name': 'pagevote',
-                'verbose_name_plural': 'pagevotes',
+                "verbose_name": "pagevote",
+                "verbose_name_plural": "pagevotes",
             },
         ),
         migrations.AlterField(
-            model_name='problemtranslation',
-            name='language',
-            field=models.CharField(choices=[('vi', 'Vietnamese'), ('en', 'English')], max_length=7, verbose_name='language'),
+            model_name="problemtranslation",
+            name="language",
+            field=models.CharField(
+                choices=[("vi", "Vietnamese"), ("en", "English")],
+                max_length=7,
+                verbose_name="language",
+            ),
         ),
         migrations.CreateModel(
-            name='PageVoteVoter',
+            name="PageVoteVoter",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('score', models.IntegerField()),
-                ('pagevote', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='votes', to='judge.pagevote')),
-                ('voter', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='voted_page', to='judge.profile')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("score", models.IntegerField()),
+                (
+                    "pagevote",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="votes",
+                        to="judge.pagevote",
+                    ),
+                ),
+                (
+                    "voter",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="voted_page",
+                        to="judge.profile",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'pagevote vote',
-                'verbose_name_plural': 'pagevote votes',
-                'unique_together': {('voter', 'pagevote')},
+                "verbose_name": "pagevote vote",
+                "verbose_name_plural": "pagevote votes",
+                "unique_together": {("voter", "pagevote")},
             },
         ),
     ]

@@ -1,6 +1,7 @@
 {% extends "three-column-content.html" %}
 {% block three_col_media %}
     {% include "blog/media-css.html" %}
+    {% include "actionbar/media-css.html" %}
     <style>
         @media (max-width: 799px) {
             .title {
@@ -32,6 +33,7 @@
 {% endblock %}
 
 {% block three_col_js %}
+    {% include "actionbar/media-js.html" %}
     <script type="text/javascript">
         $(document).ready(function () {
             $('.time-remaining').each(function () {

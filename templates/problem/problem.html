@@ -1,6 +1,7 @@
 {% extends "common-content.html" %}
 {% block content_media %}
     {% include "comments/media-css.html" %}
+    {% include "actionbar/media-css.html" %}
     <style>
         .title-state {
             font-size: 2em;
@@ -79,6 +80,7 @@
 
 {% block content_js_media %}
     {% include "comments/media-js.html" %}
+    {% include "actionbar/media-js.html" %}
     {% if request.in_contest_mode %}
         <script type="text/javascript">
             window.register_contest_notification("{{url('contest_clarification_ajax', request.participation.contest.key)}}");
@@ -394,15 +396,17 @@
 
 {% block post_description_end %}
     {% if request.user.is_authenticated and not request.profile.mute %}
-        <a href="{{ url('new_problem_ticket', problem.code) }}" class="clarify">
-            <i class="fa fa-flag" style="margin-right:0.5em"></i>
-            {%- if contest_problem and contest_problem.contest.use_clarifications and request.profile.current_contest.live -%}
+        {%- if contest_problem and contest_problem.contest.use_clarifications and request.profile.current_contest.live -%}
+            <a href="{{ url('new_problem_ticket', problem.code) }}" class="clarify">
+                <i class="fa fa-flag" style="margin-right:0.5em"></i>
                 {{ _('Request clarification') }}
-            {%- else -%}
-                {{ _('Report an issue') }}
-            {%- endif -%}
-        </a>
-        <div style="clear: both"></div>
+            </a>
+            <div style="clear: both"></div>
+        {%- else -%}
+            {% set actionbar_report_url = url('new_problem_ticket', problem.code) %}
+            {% include "actionbar/list.html" %}
+            <br>
+        {%- endif -%}
     {% endif %}
     {% if not (contest_problem and contest_problem.contest.use_clarifications) %}
         <div id="comment-announcement-container">

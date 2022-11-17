@@ -7,7 +7,7 @@ from django.utils.translation import ugettext as _
 from django.views.generic import ListView
 
 from judge.comments import CommentedDetailView
-from judge.views.pagevote import PageVoteDetailView
+from judge.views.pagevote import PageVoteDetailView, PageVoteListView
 from judge.models import (
     BlogPost,
     Comment,
@@ -93,7 +93,7 @@ class FeedView(ListView):
         return context
 
 
-class PostList(FeedView):
+class PostList(FeedView, PageVoteListView):
     model = BlogPost
     paginate_by = 10
     context_object_name = "posts"
@@ -129,6 +129,9 @@ class PostList(FeedView):
         }
 
         return context
+
+    def get_comment_page(self, post):
+        return "b:%s" % post.id
 
 
 class TicketFeed(FeedView):
