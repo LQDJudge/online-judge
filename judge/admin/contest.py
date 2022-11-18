@@ -158,7 +158,10 @@ class ContestAdmin(CompareVersionAdmin):
                 )
             },
         ),
-        (_("Scheduling"), {"fields": ("start_time", "end_time", "time_limit")}),
+        (
+            _("Scheduling"),
+            {"fields": ("start_time", "end_time", "time_limit", "freeze_after")},
+        ),
         (
             _("Details"),
             {
@@ -274,7 +277,8 @@ class ContestAdmin(CompareVersionAdmin):
         # We need this flag because `save_related` deals with the inlines, but does not know if we have already rescored
         self._rescored = False
         if form.changed_data and any(
-            f in form.changed_data for f in ("format_config", "format_name")
+            f in form.changed_data
+            for f in ("format_config", "format_name", "freeze_after")
         ):
             self._rescore(obj.key)
             self._rescored = True

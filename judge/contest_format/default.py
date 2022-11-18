@@ -32,10 +32,19 @@ class DefaultContestFormat(BaseContestFormat):
         points = 0
         format_data = {}
 
-        for result in participation.submissions.values("problem_id").annotate(
+        queryset = participation.submissions
+
+        if self.contest.freeze_after:
+            queryset = queryset.filter(
+                submission__date__lt=participation.start + self.contest.freeze_after
+            )
+
+        queryset = queryset.values("problem_id").annotate(
             time=Max("submission__date"),
             points=Max("points"),
-        ):
+        )
+
+        for result in queryset:
             dt = (result["time"] - participation.start).total_seconds()
             if result["points"]:
                 cumtime += dt
@@ -45,6 +54,7 @@ class DefaultContestFormat(BaseContestFormat):
             }
             points += result["points"]
 
+        self.handle_frozen_state(participation, format_data)
         participation.cumtime = max(cumtime, 0)
         participation.score = points
         participation.tiebreaker = 0
@@ -66,6 +76,7 @@ class DefaultContestFormat(BaseContestFormat):
                     + self.best_solution_state(
                         format_data["points"], contest_problem.points
                     )
+                    + (" frozen" if format_data.get("frozen") else "")
                 ),
                 url=reverse(
                     "contest_user_submissions_ajax",

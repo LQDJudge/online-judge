@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
+from django.db.models import Max
 
 
 class abstractclassmethod(classmethod):
@@ -95,3 +96,17 @@ class BaseContestFormat(metaclass=ABCMeta):
         if points == total:
             return "full-score"
         return "partial-score"
+
+    def handle_frozen_state(self, participation, format_data):
+        if not self.contest.freeze_after:
+            return
+        queryset = participation.submissions.values("problem_id").annotate(
+            time=Max("submission__date")
+        )
+        for result in queryset:
+            problem = str(result["problem_id"])
+            if format_data.get(problem):
+                if result["time"] >= self.contest.freeze_after + participation.start:
+                    format_data[problem]["frozen"] = True
+            else:
+                format_data[problem] = {"time": 0, "points": 0, "frozen": True}

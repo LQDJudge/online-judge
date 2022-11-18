@@ -128,6 +128,14 @@ class Contest(models.Model):
             "Format hh:mm:ss. For example, if you want a 2-hour contest, enter 02:00:00"
         ),
     )
+    freeze_after = models.DurationField(
+        verbose_name=_("freeze after"),
+        blank=True,
+        null=True,
+        help_text=_(
+            "Format hh:mm:ss. For example, if you want to freeze contest after 2 hours, enter 02:00:00"
+        ),
+    )
     is_visible = models.BooleanField(
         verbose_name=_("publicly visible"),
         default=False,

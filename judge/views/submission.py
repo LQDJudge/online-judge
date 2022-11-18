@@ -301,6 +301,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     template_name = "submission/list.html"
     context_object_name = "submissions"
     first_page_href = None
+    include_frozen = False
 
     def get_result_data(self):
         result = self._get_result_data()
@@ -344,6 +345,10 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             queryset = queryset.filter(contest_object=self.contest)
             if not self.contest.can_see_full_scoreboard(self.request.user):
                 queryset = queryset.filter(user=self.request.profile)
+            if self.contest.freeze_after and not self.include_frozen:
+                queryset = queryset.exclude(
+                    date__gte=self.contest.freeze_after + self.contest.start_time
+                )
         else:
             queryset = queryset.select_related("contest_object").defer(
                 "contest_object__description"
@@ -456,6 +461,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         self.selected_languages = set(request.GET.getlist("language"))
         self.selected_statuses = set(request.GET.getlist("status"))
 
+        if request.user.is_superuser:
+            self.include_frozen = True
+
         if "results" in request.GET:
             return JsonResponse(self.get_result_data())
 
@@ -468,6 +476,8 @@ class UserMixin(object):
             raise ImproperlyConfigured("Must pass a user")
         self.profile = get_object_or_404(Profile, user__username=kwargs["user"])
         self.username = kwargs["user"]
+        if self.profile == request.profile:
+            self.include_frozen = True
         return super(UserMixin, self).get(request, *args, **kwargs)
 
 
@@ -837,8 +847,8 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
                 s.contest_time = nice_repr(contest_time, "noday")
             else:
                 s.contest_time = None
-            points = floatformat(s.contest.points, -self.contest.points_precision)
             total = floatformat(contest_problem.points, -self.contest.points_precision)
+            points = floatformat(s.contest.points, -self.contest.points_precision)
             s.display_point = f"{points} / {total}"
             filtered_submissions.append(s)
         context["submissions"] = filtered_submissions

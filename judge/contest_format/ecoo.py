@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy
 
 from judge.contest_format.default import DefaultContestFormat
 from judge.contest_format.registry import register_contest_format
-from judge.timezone import from_database_time
+from judge.timezone import from_database_time, to_database_time
 from judge.utils.timedelta import nice_repr
 
 
@@ -60,6 +60,10 @@ class ECOOContestFormat(DefaultContestFormat):
         points = 0
         format_data = {}
 
+        frozen_time = self.contest.end_time
+        if self.contest.freeze_after:
+            frozen_time = participation.start + self.contest.freeze_after
+
         with connection.cursor() as cursor:
             cursor.execute(
                 """
@@ -77,9 +81,15 @@ class ECOOContestFormat(DefaultContestFormat):
                 FROM judge_contestproblem cp INNER JOIN
                      judge_contestsubmission cs ON (cs.problem_id = cp.id AND cs.participation_id = %s) LEFT OUTER JOIN
                      judge_submission sub ON (sub.id = cs.submission_id)
+                WHERE sub.date < %s
                 GROUP BY cp.id
             """,
-                (participation.id, participation.id, participation.id),
+                (
+                    participation.id,
+                    participation.id,
+                    participation.id,
+                    to_database_time(frozen_time),
+                ),
             )
 
             for score, time, prob, subs, max_score in cursor.fetchall():
@@ -105,6 +115,7 @@ class ECOOContestFormat(DefaultContestFormat):
                 format_data[str(prob)] = {"time": dt, "points": score, "bonus": bonus}
                 points += score
 
+        self.handle_frozen_state(participation, format_data)
         participation.cumtime = cumtime
         participation.score = points
         participation.tiebreaker = 0
@@ -134,6 +145,7 @@ class ECOOContestFormat(DefaultContestFormat):
                     + self.best_solution_state(
                         format_data["points"], contest_problem.points
                     )
+                    + (" frozen" if format_data.get("frozen") else "")
                 ),
                 url=reverse(
                     "contest_user_submissions_ajax",
