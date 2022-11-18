@@ -56,7 +56,7 @@
                 {% endif %}
             {%- endif -%}
         </a>
-        <div id="time">
+        <div class="time">
             {% if contest.time_limit %}
                 {% trans trimmed start_time=contest.start_time|date(_("F j, Y, G:i T")), end_time=contest.end_time|date(_("F j, Y, G:i T")), time_limit=contest.time_limit|timedelta('localized-no-seconds') %}
                     <b>{{ time_limit }}</b> window between <b>{{ start_time }}</b> and <b>{{ end_time }}</b>
@@ -67,6 +67,11 @@
                 {% endtrans %}
             {% endif %}
         </div>
+        {% if contest.freeze_after and contest.freeze_after + contest.start_time < now %}
+            <div class="time" style="margin-top: 0.2em">
+                <b>{{_("Standing was frozen")}}</b> {{_("at")}} <b>{{ (contest.freeze_after + contest.start_time) | date(_("F j, Y, G:i T")) }}</b>
+            </div>
+        {% endif %}
     </div>
 
     <div class="content-description">

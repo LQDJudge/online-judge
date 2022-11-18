@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-11-19 03:12+0700\n"
+"POT-Creation-Date: 2022-11-19 07:11+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -87,7 +87,7 @@ msgid "Included contests"
 msgstr ""
 
 #: judge/admin/contest.py:74 judge/admin/volunteer.py:54
-#: templates/contest/clarification.html:42 templates/contest/contest.html:85
+#: templates/contest/clarification.html:42 templates/contest/contest.html:90
 #: templates/contest/moss.html:43 templates/internal/base.html:29
 #: templates/internal/base.html:37 templates/problem/list.html:15
 #: templates/problem/list.html:30 templates/problem/list.html:146
@@ -214,7 +214,7 @@ msgid "Taxonomy"
 msgstr ""
 
 #: judge/admin/problem.py:216 judge/admin/problem.py:434
-#: templates/contest/contest.html:86 templates/problem/data.html:475
+#: templates/contest/contest.html:91 templates/problem/data.html:475
 #: templates/problem/list.html:20 templates/problem/list.html:44
 #: templates/user/base-users-table.html:10 templates/user/user-about.html:36
 #: templates/user/user-about.html:52 templates/user/user-problems.html:58
@@ -463,7 +463,7 @@ msgstr ""
 msgid "ICPC"
 msgstr ""
 
-#: judge/contest_format/ioi.py:19
+#: judge/contest_format/ioi.py:20
 msgid "IOI"
 msgstr ""
 
@@ -780,8 +780,8 @@ msgid ""
 "Format hh:mm:ss. For example, if you want to freeze contest after 2 hours, "
 "enter 02:00:00"
 msgstr ""
-"Định dạng hh:mm:ss (giờ:phút:giây). Ví dụ, nếu muốn đóng băng kỳ thi sau 2h, hãy "
-"nhập 02:00:00"
+"Định dạng hh:mm:ss (giờ:phút:giây). Ví dụ, nếu muốn đóng băng kỳ thi sau 2h, "
+"hãy nhập 02:00:00"
 
 #: judge/models/contest.py:140 judge/models/problem.py:222
 msgid "publicly visible"
@@ -2942,7 +2942,7 @@ msgstr "Hướng dẫn cho {0}"
 msgid "Editorial for <a href=\"{1}\">{0}</a>"
 msgstr "Hướng dẫn cho <a href=\"{1}\">{0}</a>"
 
-#: judge/views/problem.py:447 templates/contest/contest.html:81
+#: judge/views/problem.py:447 templates/contest/contest.html:86
 #: templates/organization/org-left-sidebar.html:4
 #: templates/user/user-about.html:28 templates/user/user-bookmarks.html:32
 #: templates/user/user-tabs.html:5 templates/user/users-table.html:19
@@ -3980,17 +3980,25 @@ msgstr ""
 msgid "<b>%(length)s</b> long starting on <b>%(start_time)s</b>"
 msgstr "Kéo dài <b>%(length)s</b> bắt đầu từ <b>%(start_time)s</b>"
 
-#: templates/contest/contest.html:87
+#: templates/contest/contest.html:72
+msgid "Standing was frozen"
+msgstr "Bảng điểm đã đóng băng"
+
+#: templates/contest/contest.html:72
+msgid "at"
+msgstr "lúc"
+
+#: templates/contest/contest.html:92
 msgid "AC Rate"
 msgstr "Tỷ lệ AC"
 
-#: templates/contest/contest.html:88 templates/contest/list.html:242
+#: templates/contest/contest.html:93 templates/contest/list.html:242
 #: templates/contest/list.html:291 templates/contest/list.html:376
 #: templates/problem/list.html:21
 msgid "Users"
-msgstr "Số lượng"
+msgstr "Người nộp"
 
-#: templates/contest/contest.html:113 templates/problem/list.html:54
+#: templates/contest/contest.html:118 templates/problem/list.html:54
 #: templates/problem/list.html:126
 msgid "Editorial"
 msgstr "Hướng dẫn"
@@ -4141,6 +4149,11 @@ msgstr "Hủy kết quả"
 msgid "Fullname"
 msgstr "Tên đầy đủ"
 
+#: templates/contest/ranking-table.html:57 templates/user/edit-profile.html:103
+#: templates/user/import/table_csv.html:7
+msgid "School"
+msgstr "Trường"
+
 #: templates/contest/ranking.html:21
 msgid "Are you sure you want to disqualify this participation?"
 msgstr "Bạn có chắc muốn hủy kết quả này?"
@@ -4149,31 +4162,31 @@ msgstr "Bạn có chắc muốn hủy kết quả này?"
 msgid "Are you sure you want to un-disqualify this participation?"
 msgstr "Bạn có chắc muốn khôi phục kết quả này?"
 
-#: templates/contest/ranking.html:135
+#: templates/contest/ranking.html:136
 msgid "View user participation"
 msgstr "Xem các lần tham gia"
 
-#: templates/contest/ranking.html:139
-msgid "Show organizations"
-msgstr "Hiển thị tổ chức"
+#: templates/contest/ranking.html:140
+msgid "Show schools"
+msgstr "Hiển thị trường"
 
-#: templates/contest/ranking.html:143
+#: templates/contest/ranking.html:144
 msgid "Show full name"
 msgstr "Hiển thị họ tên"
 
-#: templates/contest/ranking.html:146
+#: templates/contest/ranking.html:147
 msgid "Show friends only"
 msgstr "Chỉ hiển thị bạn bè"
 
-#: templates/contest/ranking.html:149
+#: templates/contest/ranking.html:150
 msgid "Total score only"
 msgstr "Chỉ hiển thị tổng điểm"
 
-#: templates/contest/ranking.html:151
+#: templates/contest/ranking.html:152
 msgid "Show virtual participation"
 msgstr "Hiển thị tham gia ảo"
 
-#: templates/contest/ranking.html:155
+#: templates/contest/ranking.html:156
 msgid "Download as CSV"
 msgstr "Tải file CSV"
 
@@ -5505,10 +5518,6 @@ msgstr "Top Score"
 msgid "Rank"
 msgstr "Rank"
 
-#: templates/user/edit-profile.html:103 templates/user/import/table_csv.html:7
-msgid "School"
-msgstr "Trường"
-
 #: templates/user/edit-profile.html:109
 msgid "Self-description"
 msgstr "Tự giới thiệu"
@@ -5768,6 +5777,12 @@ msgstr "Thông tin"
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Chọn tất cả"
+
+#~ msgid "Frozen"
+#~ msgstr "Đã đóng băng"
+
+#~ msgid "Show organizations"
+#~ msgstr "Hiển thị tổ chức"
 
 #~ msgid "Dislike"
 #~ msgstr "Không thích"

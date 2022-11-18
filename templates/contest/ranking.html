@@ -103,8 +103,9 @@
                         if ($col.hasClass('rating-column')) {
                             return;
                         } else if ($col.hasClass('user-name')) {
-                            row_data.push(clean_text($col.ignore('.fullname').ignore('.organization').text()));
-                            row_data.push(clean_text($col.ignore('.user').ignore('.organization').text()));
+                            row_data.push(clean_text($col.ignore('.fullname').ignore('.school').text()));
+                            row_data.push(clean_text($col.ignore('.user').ignore('.school').text()));
+                            row_data.push(clean_text($col.ignore('.user').ignore('.fullname').text()));
                         } else {
                             row_data.push(clean_text($col.ignore('.solving-time').text()));
                         }
@@ -135,8 +136,8 @@
                 <input id="search-contest" type="text" placeholder="{{ _('View user participation') }}">
             {% endif %}
         {% endif %}
-        <input id="show-organizations-checkbox" type="checkbox" style="vertical-align: bottom">
-        <label for="show-organizations-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show organizations') }}</label>
+        <input id="show-schools-checkbox" type="checkbox" style="vertical-align: bottom">
+        <label for="show-schools-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show schools') }}</label>
     
         <input id="show-fullnames-checkbox" type="checkbox" style="vertical-align: bottom">
 

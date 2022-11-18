@@ -20,9 +20,9 @@
             {{ user.user.first_name if user.user.first_name else ''}}
         </div>
     {% endif %}
-    {% if user.organization %}
-        <div class="organization" style="display: none"><a style="color: gray; font-weight: 600" href="{{ user.organization.get_absolute_url() }}">
-            {{- user.organization.short_name -}}
+    {% if user.user.last_name %}
+        <div class="school" style="display: none"><a style="color: gray; font-weight: 600">
+            {{- user.user.last_name -}}
         </a></div>
     {% endif %}
 {% endblock %}
@@ -54,6 +54,7 @@
 
 {% block before_point_head %}
     <th class="full-name" style="display:none;">{{ _('Fullname') }}</th>
+    <th class="school" style="display:none;">{{ _('School') }}</th>
     {% for problem in problems %}
         <th class="points header problem-score-col" title="{{ problem.problem.name }}"><a href="{{ url('problem_detail', problem.problem.code) }}">
             {{- contest.get_label_for_problem(loop.index0) }}

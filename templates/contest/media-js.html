@@ -58,7 +58,7 @@
 
     function renew_filter(need_update=true) {
         var checkboxes = [
-            '#show-organizations-checkbox',
+            '#show-schools-checkbox',
             '#show-fullnames-checkbox',
             '#show-total-score-checkbox',
         ];
@@ -171,8 +171,8 @@
             window.location.href = url.replace('__username__', $(this).val());
         });
 
-        $('#show-organizations-checkbox').click(function () {
-            $('.organization').toggle();
+        $('#show-schools-checkbox').click(function () {
+            $('.school').toggle();
         });
         $('#show-fullnames-checkbox').click(function () { 
             $('.fullname').toggle();
