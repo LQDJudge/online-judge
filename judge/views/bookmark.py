@@ -76,7 +76,7 @@ class BookMarkDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         return context
 
 
-class BookMarkListView(ListView):
+class BookMarkListView:
     def add_bookmark_context_data(self, context, obj_list="object_list"):
         for item in context[obj_list]:
             bookmark, _ = BookMark.objects.get_or_create(
