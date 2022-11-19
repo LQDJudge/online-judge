@@ -1,5 +1,36 @@
 <div id="comments" class="comment-area">
     <h2 id="comment-header"><i style="padding-right: 0.3em" class="fa fa-comments"></i>{{ _('Comments') }}</h2>
+    <p> <a href="" id="write-comments" > Write comments </a> </p>
+    {% if request.user.is_authenticated and comment_form and not comment_lock %}
+        <div id="new-comment" class="form-area comment-submit" style="display: none;" >
+            {% block comment_submit_title %}
+                <h3>{{ _('New comment') }}</h3>
+                <hr>
+            {% endblock %}
+            {% if is_new_user %}
+                <div style="margin-bottom: 0" class="alert alert-info">
+                    {{ _('You need to have solved at least one problem before your voice can be heard.') }}
+                </div>
+            {% else %}
+                <form class="comment-submit-form" action="" method="post">
+                    {% csrf_token %}
+                    {% if comment_form.errors %}
+                        <div id="form-errors">
+                            {{ comment_form.non_field_errors() }}
+                            {{ comment_form.parent.errors }}
+                            {% if comment_form.body.errors %}{{ _('Invalid comment body.') }}{% endif %}
+                        </div>
+                    {% endif %}
+                    {{ comment_form.parent }}
+                    <div class="comment-post-wrapper">
+                        <div id="comment-form-body">{{ comment_form.body }}</div>
+                    </div>
+                    <hr>
+                    <input style="float:right" type="submit" value="{{ _('Post!') }}" class="button">
+                </form>
+            {% endif %}
+        </div>
+    {% endif %}
     {% if has_comments %}
         <ul class="comments top-level-comments new-comments">
             {% set logged_in = request.user.is_authenticated %}
@@ -119,37 +150,6 @@
         </ul>
     {% elif not comment_lock %}
         <p class="no-comments-message">{{ _('There are no comments at the moment.') }}</p>
-    {% endif %}
-
-    {% if request.user.is_authenticated and comment_form and not comment_lock %}
-        <div id="new-comment" class="form-area comment-submit">
-            {% block comment_submit_title %}
-                <h3>{{ _('New comment') }}</h3>
-                <hr>
-            {% endblock %}
-            {% if is_new_user %}
-                <div style="margin-bottom: 0" class="alert alert-info">
-                    {{ _('You need to have solved at least one problem before your voice can be heard.') }}
-                </div>
-            {% else %}
-                <form class="comment-submit-form" action="" method="post">
-                    {% csrf_token %}
-                    {% if comment_form.errors %}
-                        <div id="form-errors">
-                            {{ comment_form.non_field_errors() }}
-                            {{ comment_form.parent.errors }}
-                            {% if comment_form.body.errors %}{{ _('Invalid comment body.') }}{% endif %}
-                        </div>
-                    {% endif %}
-                    {{ comment_form.parent }}
-                    <div class="comment-post-wrapper">
-                        <div id="comment-form-body">{{ comment_form.body }}</div>
-                    </div>
-                    <hr>
-                    <input style="float:right" type="submit" value="{{ _('Post!') }}" class="button">
-                </form>
-            {% endif %}
-        </div>
     {% endif %}
 
     {% if comment_lock %}
