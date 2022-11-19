@@ -1,5 +1,5 @@
-function showTooltip(elem, msg) {
-    elem.setAttribute('class', 'btn-clipboard tooltipped tooltipped-s');
+function showTooltip(elem, msg, direction='s') {
+    $(elem).addClass('tooltipped tooltipped-' + direction);
     elem.setAttribute('aria-label', msg);
 }
 function fallbackMessage(action) {

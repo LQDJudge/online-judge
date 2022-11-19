@@ -46,6 +46,7 @@
         {% set bookmark = post.bookmark %}
         {% set hide_actionbar_comment = True %}
         {% set include_hr = True %}
+        {% set share_url = request.build_absolute_uri(post.get_absolute_url()) %}
         {% include "actionbar/list.html" %}
     </div>
 </section>

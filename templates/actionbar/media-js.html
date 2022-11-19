@@ -104,7 +104,21 @@
                     }
                 }
             };
+            $(".actionbar-share").click( function() {
+                link = $(this).attr("share-url") || window.location.href;
+                navigator.clipboard
+                         .writeText(link)
+                         .then(() =>  {
+                            showTooltip(this, "Copied link", 'n');
+                        });
+            });
 
+            $('.actionbar-comment').on('click', function() {
+                if ($('#comment-announcement').length) {
+                    $('#comment-announcement').click();
+                }
+                $('#write-comment').click();
+            })
         });
     </script>
 {% endcompress %}

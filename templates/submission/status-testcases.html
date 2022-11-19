@@ -28,7 +28,7 @@
         {% for batch in batches %}
             <div style="margin-top: 0.5em;">
                 {% if batch.id %}
-                    <b>{{ _('Batch ') }}#{{ loop.index }}: </b>
+                    <b>{{ _('Batch ') }}#{{ batch.id }}: </b>
                 {% endif %}
                 {% for case in batch.cases %}
                     <span class="case-{{ case.status }} case-icons">
@@ -86,7 +86,7 @@
                 {% set batch_AC = (batch.points == batch.total) %}
                 <tr class="case-row" style="background-color: {{ '#d6e8f7' if batch.points == batch.total else 'bisque'}}">
                     <td>
-                        <b>{{ _('Batch ') }}#{{ loop.index }}</b>
+                        <b>{{ _('Batch ') }}#{{ batch.id }}</b>
                     </td>
                     <td>
                         {% if batch_AC %}

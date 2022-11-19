@@ -17,8 +17,8 @@
         </span>
     </span>
     {% if not hide_actionbar_comment %}
-    <span class="actionbar-block" id="comment-button">
-        <span class="actionbar-button">
+    <span class="actionbar-block">
+        <span class="actionbar-button actionbar-comment">
             <i class="fa fa-comment-o" style="font-size: large;"></i>
             <span class="actionbar-text">{{_("Comment")}}</span>
         </span>
@@ -33,8 +33,8 @@
             <span class="actionbar-text">{{_("Bookmark")}}</span>
         </span>
     </span>
-    <span class="actionbar-block" id="share-button" >
-        <span class="actionbar-button">
+    <span class="actionbar-block" >
+        <span class="actionbar-button actionbar-share" style="position: relative" {{"share-url=" + share_url if share_url else ""}}>
             <i class="fa fa-share" style="font-size: large;"></i>
             <span class="actionbar-text">{{_("Share")}}</span>
         </span>

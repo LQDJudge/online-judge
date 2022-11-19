@@ -212,25 +212,12 @@
                 $comment.find('.bad-comment-body').hide();
             };
             
-            $("#share-button").click( function() {
-                navigator.clipboard
-                         .writeText(window.location.href)
-                         .then( () =>  {
-                            alert("Copied link to this post");
-                        });
-            });
-
-            $("#write-comments").click( function(event)  {
+            $("#write-comment").click( function(event)  {
                 event.preventDefault();
                 $("#new-comment").show("slow");
-                $("#write-comments").hide();
+                $("#write-comment").hide();
             });
             
-            $('#comment-button').click( function() {
-                $('#comment-section').show();
-                $('#comment-announcement').hide();    
-            })
-             
         });
     </script>   
 {% endcompress %}
