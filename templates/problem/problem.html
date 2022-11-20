@@ -387,9 +387,10 @@
 
     {% with license=problem.license %}
         {% if license %}
-            <span class="license">
+        <span class="license">
             <a href="{{ url('license', license.key) }}">{{ license.display or license.name }}</a>
         </span>
+        <div style="clear:both"></div>
         {% endif %}
     {% endwith %}
 {% endblock %}
