@@ -289,6 +289,8 @@
                         outFiles.push(file);
                     }
                 }
+                console.log(inFiles);
+                console.log(outFiles);
                 if (inFiles.length == 0) {
                     alert("No input/output files. Make sure your files' suffices are .in(p)/.out");
                     return false;
@@ -329,7 +331,7 @@
                     var $input = $("#id_cases-"+row+"-input_file");
                     $input.select2('destroy').empty().select2({ data: [inFiles[i]] });
                     $input.val(inFiles[i]).change();
-                    var $output = $("#id_cases-"+row+"-input_file");
+                    var $output = $("#id_cases-"+row+"-output_file");
                     $output.select2('destroy').empty().select2({ data: [outFiles[i]] });
                     $output.val(outFiles[i]).change();
                     
