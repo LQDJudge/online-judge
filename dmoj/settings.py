@@ -482,6 +482,8 @@ NEWSLETTER_BATCH_DELAY = 60
 # Number of emails in one batch
 NEWSLETTER_BATCH_SIZE = 100
 
+ML_OUTPUT_PATH = None
+
 try:
     with open(os.path.join(os.path.dirname(__file__), "local_settings.py")) as f:
         exec(f.read(), globals())
