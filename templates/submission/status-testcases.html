@@ -127,14 +127,8 @@
                 </td>
 
                 <td><span class="col-title">{{_('Point')}}: </span>
-                    {% if not batch.id %}
-                        {{ case.points|floatformat }}/{{ case.total|floatformat(0) }}
-                    {% else %}
-                        -
-                    {% endif %}
+                    {{ case.points|floatformat }}/{{ case.total|floatformat }}
                 </td>
-
-
                 <td>
                     {%- if case.status != 'SC' -%}
                         {%- if case.status == 'TLE' -%}

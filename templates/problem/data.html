@@ -82,7 +82,7 @@
                 $table.find('tbody:first tr').each(function () {
                     switch ($(this).attr('data-type')) {
                         case 'C':
-                            $(this).find('input[id$=points], input[id$=pretest]').toggle(!in_batch);
+                            $(this).find('input[id$=pretest]').toggle(!in_batch);
                             break;
                         case 'S':
                             in_batch = true;
@@ -169,7 +169,7 @@
 
                 var $opts = $tr.find('input').slice(2, 6);
                 var $files = $tr.find('select').slice(1, 3);
-                var $checker = $files.end().last();
+                var $delete = $files.end().last();
                 $tr.find('select[id$=type]').change(function () {
                     var $this = $(this), val = $this.val(), disabled;
                     switch (val) {
@@ -178,18 +178,18 @@
                             disabled = val == 'S';
                             $opts.toggle(val == 'S');
                             $files.siblings('.select2').hide();
-                            $checker.toggle(val == 'S');
+                            $delete.toggle(val == 'S');
                             break;
                         default:
                             $opts.toggle(val == 'C');
                             $files.siblings('.select2').toggle(val == 'C');
-                            $checker.toggle(val == 'C');
+                            $delete.toggle(val == 'C');
                             var $prevs = $tr.prevAll('tr[data-type=S], tr[data-type=E]');
                             disabled = $prevs.length && $prevs.get(0).getAttribute('data-type') == 'S';
-                            $tr.find('input[id$=points], input[id$=pretest]').toggle(val == 'C' && !disabled);
+                            $tr.find('input[id$=pretest]').toggle(val == 'C' && !disabled);
                     }
                     $tr.attr('data-type', val).nextUntil('tr[data-type=S], tr[data-type=E], tr[data-type=""]')
-                        .find('input[id$=points], input[id$=pretest]').toggle(!disabled);
+                        .find('input[id$=pretest]').toggle(!disabled);
                 }).change();
 
                 var tooltip_classes = 'tooltipped tooltipped-s';
@@ -278,7 +278,8 @@
                 return false;
             }
 
-            $('a#fill-testcases').click(function () {
+            $('a#fill-testcases').click(function (e) {
+                e.preventDefault();
                 var inFiles = [], outFiles = [];
                 for (let file of window.valid_files) {
                     if (isInpFile(file)) {
@@ -305,30 +306,46 @@
                     window.big_input = true;
                 }
 
-                // add boxes
-                while ($total.val() < inFiles.length) {
+                var batch_starts = $('#batch_starts').val();
+                batch_starts = batch_starts.split(',');
+                batch_starts = batch_starts.filter(e => {
+                    return e.length && e == +e;
+                });
+                batch_starts = new Set(batch_starts.map(x => Math.min(Math.max(1, parseInt(x)), inFiles.length - 1)));
+                batch_starts.add(inFiles.length + 1);
+
+                var numRows = inFiles.length + 2 * batch_starts.size - 2;
+                while ($total.val() < numRows) {
                     $('a#add-case-row').click();
                 }
-                // fill cases
-                for (var i = 0; i < inFiles.length; i++) {
-                    var $select = $("#id_cases-" + i + "-input_file");
-                    $select.select2('destroy').empty().select2({ data: [inFiles[i]] });
-                    $select.val(inFiles[i]).change();
-                }
-                for (var i = 0; i < outFiles.length; i++) {
-                    var $select = $("#id_cases-" + i + "-output_file");
-                    $select.select2('destroy').empty().select2({ data: [outFiles[i]] });
-                    $select.val(outFiles[i]).change();
-                }
 
-                // add points
-                if ($('#problem-type').val() == "ICPC") {
-                    $('#case-table tbody tr td').find('input[id$=points]').val('0').change();
-                    $('#case-table tbody tr td').find('input[id$=points]:visible')
-                        .last().val('100').change();
-                }
-                else {
-                    $('#case-table tbody tr td').find('input[id$=points]').val('1').change()
+                // fill cases
+                var row = 0;
+                for (var i = 0; i < inFiles.length; i++) {
+                    if (batch_starts.has(i + 1)) {
+                        $("#id_cases-"+row+"-type").val('S').change();
+                        row += 1;
+                    }
+                    var $input = $("#id_cases-"+row+"-input_file");
+                    $input.select2('destroy').empty().select2({ data: [inFiles[i]] });
+                    $input.val(inFiles[i]).change();
+                    var $output = $("#id_cases-"+row+"-input_file");
+                    $output.select2('destroy').empty().select2({ data: [outFiles[i]] });
+                    $output.val(outFiles[i]).change();
+                    
+                    if ($("#problem-type").val() == "ICPC") {
+                        $("#id_cases-"+row+"-points").val('0').change();
+                    }
+                    else {
+                        $("#id_cases-"+row+"-points").val('1').change();
+                    }
+                    row += 1;
+
+                    if (batch_starts.has(i + 2)) {
+                        $("#id_cases-"+(row-1)+"-points").val('1').change();
+                        $("#id_cases-"+row+"-type").val('E').change();
+                        row += 1;
+                    }
                 }
                 return false;
             });
@@ -373,6 +390,23 @@
 
 	    // Change to OI if the first row point > 0
 	    if($("#id_cases-0-points").val() != '0') $('#problem-type').val('OI');
+
+        // Change batch_starts based on current tests
+        function update_batch_starts() {
+            var numBatches = 0;
+            var batchStarts = [];
+            $("#case-table tbody:first tr").each(function(idx) {
+                $select = $('#id_cases-' + idx + '-type');
+                if ($select.val() == 'S') {
+                    batchStarts.push(idx + 1 - 2 * numBatches);
+                    numBatches++;
+                }
+            });
+            if (batchStarts) {
+                $("#batch_starts").val(batchStarts.join(', '));
+            }
+        }
+        update_batch_starts();
 
         }).change();
     </script>
@@ -453,15 +487,24 @@
                 <label>{{_('Autofill testcases')}}:</label>
             </th>
             <td>
-                {{_('Problem type')}}:
-                <select id="problem-type">
-                    <option value="ICPC">ICPC</option>
-                    <option value="OI">OI</option>
-                </select>
-                <a id="fill-testcases" href="#">
-                    <i class="fa fa-circle"></i>
-                    {{_('Fill testcases')}}
-                </a>
+                <div>
+                    {{_('Problem type')}}:
+                    <select id="problem-type">
+                        <option value="ICPC">ICPC</option>
+                        <option value="OI">OI</option>
+                    </select>
+                    <a id="fill-testcases" href="#">
+                        <i class="fa fa-circle"></i>
+                        {{_('Fill testcases')}}
+                    </a>
+                </div>
+                <div style="margin-top: 1em;">
+                    {{_("Batch start positions")}}:
+                    <input id="batch_starts">
+                </div>
+                <div>
+                    {{_("Leave empty if not use batch. If you want to divide to three batches [1, 4], [5, 8], [9, 10], enter: 1, 5, 9")}}
+                </div>
             </td>
         </table>
         <input type="submit" value="{{ _('Apply!') }}" class="button" id="submit-button">

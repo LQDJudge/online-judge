@@ -500,8 +500,8 @@ class JudgeHandler(ZlibPacketHandler):
                 total += case.total
             else:
                 if case.batch in batches:
-                    batches[case.batch][0] = min(batches[case.batch][0], case.points)
-                    batches[case.batch][1] = max(batches[case.batch][1], case.total)
+                    batches[case.batch][0] += case.points
+                    batches[case.batch][1] += case.total
                 else:
                     batches[case.batch] = [case.points, case.total]
             memory = max(memory, case.memory)
@@ -513,8 +513,8 @@ class JudgeHandler(ZlibPacketHandler):
             points += batches[i][0]
             total += batches[i][1]
 
-        points = round(points, 1)
-        total = round(total, 1)
+        points = points
+        total = total
         submission.case_points = points
         submission.case_total = total
 

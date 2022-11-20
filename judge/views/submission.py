@@ -161,8 +161,8 @@ class SubmissionSource(SubmissionDetailBase):
 def make_batch(batch, cases):
     result = {"id": batch, "cases": cases}
     if batch:
-        result["points"] = min(map(attrgetter("points"), cases))
-        result["total"] = max(map(attrgetter("total"), cases))
+        result["points"] = sum(map(attrgetter("points"), cases))
+        result["total"] = sum(map(attrgetter("total"), cases))
     return result
 
 

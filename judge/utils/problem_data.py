@@ -122,7 +122,8 @@ class ProblemDataCompiler(object):
             if case.type == "C":
                 data = {}
                 if batch:
-                    case.points = None
+                    if case.points is None:
+                        case.points = 0
                     case.is_pretest = batch["is_pretest"]
                 else:
                     if case.points is None:
