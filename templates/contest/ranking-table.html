@@ -54,7 +54,7 @@
 
 {% block before_point_head %}
     <th class="full-name" style="display:none;">{{ _('Fullname') }}</th>
-    <th class="school" style="display:none;">{{ _('School') }}</th>
+    <th style="display:none;">{{ _('School') }}</th>
     {% for problem in problems %}
         <th class="points header problem-score-col" title="{{ problem.problem.name }}"><a href="{{ url('problem_detail', problem.problem.code) }}">
             {{- contest.get_label_for_problem(loop.index0) }}
