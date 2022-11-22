@@ -543,7 +543,7 @@ urlpatterns = [
                     ),
                 ),
                 url(
-                    r"^/submissions/(?P<user>\w+)/(?P<problem>\w+)/ajax",
+                    r"^/submissions/(?P<participation>\d+)/(?P<problem>\w+)/ajax",
                     paged_list_view(
                         submission.UserContestSubmissionsAjax,
                         "contest_user_submissions_ajax",

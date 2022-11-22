@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-11-20 10:42+0700\n"
+"POT-Creation-Date: 2022-11-22 10:54+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -214,7 +214,7 @@ msgid "Taxonomy"
 msgstr ""
 
 #: judge/admin/problem.py:216 judge/admin/problem.py:434
-#: templates/contest/contest.html:91 templates/problem/data.html:518
+#: templates/contest/contest.html:91 templates/problem/data.html:520
 #: templates/problem/list.html:20 templates/problem/list.html:44
 #: templates/user/base-users-table.html:10 templates/user/user-about.html:36
 #: templates/user/user-about.html:52 templates/user/user-problems.html:58
@@ -466,6 +466,10 @@ msgstr ""
 #: judge/contest_format/ioi.py:20
 msgid "IOI"
 msgstr ""
+
+#: judge/contest_format/new_ioi.py:11
+msgid "New IOI"
+msgstr "IOI mới"
 
 #: judge/forms.py:70
 msgid "Subscribe to contest updates"
@@ -2577,7 +2581,7 @@ msgstr "Không tìm thấy kỳ thi với mã \"%s\"."
 
 #: judge/views/contests.py:139 judge/views/stats.py:178
 #: templates/organization/org-left-sidebar.html:5 templates/stats/site.html:21
-#: templates/user/user-bookmarks.html:50
+#: templates/user/user-bookmarks.html:54
 msgid "Contests"
 msgstr "Kỳ thi"
 
@@ -2944,7 +2948,7 @@ msgstr "Hướng dẫn cho <a href=\"{1}\">{0}</a>"
 
 #: judge/views/problem.py:447 templates/contest/contest.html:86
 #: templates/organization/org-left-sidebar.html:4
-#: templates/user/user-about.html:28 templates/user/user-bookmarks.html:32
+#: templates/user/user-about.html:28 templates/user/user-bookmarks.html:34
 #: templates/user/user-tabs.html:5 templates/user/users-table.html:19
 msgid "Problems"
 msgstr "Bài tập"
@@ -3150,39 +3154,39 @@ msgstr "Bài nộp của %(user)s cho bài %(problem)s"
 msgid "All submissions"
 msgstr "Tất cả bài nộp"
 
-#: judge/views/submission.py:505
+#: judge/views/submission.py:512
 msgid "All my submissions"
 msgstr "Tất cả bài nộp của tôi"
 
-#: judge/views/submission.py:506
+#: judge/views/submission.py:513
 #, python-format
 msgid "All submissions by %s"
 msgstr "Tất cả bài nộp của %s"
 
-#: judge/views/submission.py:551
+#: judge/views/submission.py:558
 #, python-format
 msgid "All submissions for %s"
 msgstr "Tất cả bài nộp cho %s"
 
-#: judge/views/submission.py:579
+#: judge/views/submission.py:586
 msgid "Must pass a problem"
 msgstr "Phải làm được một bài"
 
-#: judge/views/submission.py:637
+#: judge/views/submission.py:644
 #, python-format
 msgid "My submissions for %(problem)s"
 msgstr "Bài nộp của tôi cho %(problem)s"
 
-#: judge/views/submission.py:638
+#: judge/views/submission.py:645
 #, python-format
 msgid "%(user)s's submissions for %(problem)s"
 msgstr "Các bài nộp của %(user)s cho %(problem)s"
 
-#: judge/views/submission.py:768
+#: judge/views/submission.py:775
 msgid "Must pass a contest"
 msgstr "Phải qua một kỳ thi"
 
-#: judge/views/submission.py:798
+#: judge/views/submission.py:805
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a href="
@@ -3191,7 +3195,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho <a href=\"{3}\">{2}</a> trong <a "
 "href=\"{5}\">{4}</a>"
 
-#: judge/views/submission.py:810
+#: judge/views/submission.py:817
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for problem {2} in <a href=\"{4}\">{3}"
@@ -3200,7 +3204,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho bài {2} trong <a href=\"{4}\">{3}"
 "</a>"
 
-#: judge/views/submission.py:861
+#: judge/views/submission.py:927
 #, fuzzy
 #| msgid "You do not have the permission to rejudge submissions."
 msgid "You don't have permission to access."
@@ -4505,7 +4509,7 @@ msgid "There are no requests to approve."
 msgstr "Không có đơn đăng ký."
 
 #: templates/organization/requests/pending.html:17
-#: templates/problem/data.html:521
+#: templates/problem/data.html:523
 msgid "Delete?"
 msgstr "Xóa?"
 
@@ -4550,54 +4554,56 @@ msgstr "Nhập mã bài mới cho bài tập được nhân bản:"
 msgid "Instruction"
 msgstr "Hướng dẫn"
 
-#: templates/problem/data.html:470
+#: templates/problem/data.html:472
 msgid "View YAML"
 msgstr "Xem YAML"
 
-#: templates/problem/data.html:487
+#: templates/problem/data.html:489
 msgid "Autofill testcases"
 msgstr "Tự động điền test"
 
-#: templates/problem/data.html:491 templates/problem/problem.html:310
+#: templates/problem/data.html:493 templates/problem/problem.html:310
 msgid "Problem type"
 msgid_plural "Problem types"
 msgstr[0] "Dạng bài"
 
-#: templates/problem/data.html:498
+#: templates/problem/data.html:500
 msgid "Fill testcases"
 msgstr "Điền test"
 
-#: templates/problem/data.html:502
+#: templates/problem/data.html:504
 msgid "Batch start positions"
 msgstr "Vị trí bắt đầu nhóm"
 
-#: templates/problem/data.html:506
+#: templates/problem/data.html:508
 msgid ""
 "Leave empty if not use batch. If you want to divide to three batches [1, 4], "
 "[5, 8], [9, 10], enter: 1, 5, 9"
-msgstr "Để trống nếu không dùng nhóm. Nếu muốn chia test thành các nhóm [1, 4], [5, 8], [9, 10], nhập: 1, 5, 9"
+msgstr ""
+"Để trống nếu không dùng nhóm. Nếu muốn chia test thành các nhóm [1, 4], [5, "
+"8], [9, 10], nhập: 1, 5, 9"
 
-#: templates/problem/data.html:510 templates/problem/data.html:561
+#: templates/problem/data.html:512 templates/problem/data.html:563
 msgid "Apply!"
 msgstr "Lưu!"
 
-#: templates/problem/data.html:515
+#: templates/problem/data.html:517
 msgid "Type"
 msgstr "Kiểu"
 
-#: templates/problem/data.html:516
+#: templates/problem/data.html:518
 msgid "Input file"
 msgstr "File Input"
 
-#: templates/problem/data.html:517
+#: templates/problem/data.html:519
 msgid "Output file"
 msgstr "File Output"
 
-#: templates/problem/data.html:519
+#: templates/problem/data.html:521
 msgid "Pretest?"
 msgstr "Pretest?"
 
-#: templates/problem/data.html:562
+#: templates/problem/data.html:564
 msgid "Add new case"
 msgstr "Thêm test mới"
 
@@ -5418,11 +5424,19 @@ msgstr ""
 msgid "Contest submissions of"
 msgstr "Các bài nộp của"
 
-#: templates/submission/user-ajax.html:13
+#: templates/submission/user-ajax.html:11
+msgid "Subtask"
+msgstr "Subtask"
+
+#: templates/submission/user-ajax.html:29
+msgid "Total"
+msgstr "Tổng điểm"
+
+#: templates/submission/user-ajax.html:46
 msgid "g:i a d/m/Y"
 msgstr ""
 
-#: templates/submission/user-ajax.html:13
+#: templates/submission/user-ajax.html:46
 #, fuzzy, python-format
 #| msgid ""
 #| "\n"
@@ -5437,11 +5451,11 @@ msgstr ""
 "                                    vào %(time)s\n"
 "                                "
 
-#: templates/submission/user-ajax.html:22
+#: templates/submission/user-ajax.html:55
 msgid "pretests"
 msgstr "pretests"
 
-#: templates/submission/user-ajax.html:24
+#: templates/submission/user-ajax.html:57
 msgid "main tests"
 msgstr "test chính thức"
 
@@ -5736,7 +5750,7 @@ msgstr "Max rating:"
 msgid "Posts"
 msgstr "Bài đăng"
 
-#: templates/user/user-bookmarks.html:69
+#: templates/user/user-bookmarks.html:75
 msgid "Editorials"
 msgstr "Lời giải"
 

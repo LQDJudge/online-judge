@@ -107,7 +107,7 @@ class AtCoderContestFormat(DefaultContestFormat):
 
         self.handle_frozen_state(participation, format_data)
         participation.cumtime = cumtime + penalty
-        participation.score = points
+        participation.score = round(points, self.contest.points_precision)
         participation.tiebreaker = 0
         participation.format_data = format_data
         participation.save()
@@ -141,7 +141,7 @@ class AtCoderContestFormat(DefaultContestFormat):
                     "contest_user_submissions_ajax",
                     args=[
                         self.contest.key,
-                        participation.user.user.username,
+                        participation.id,
                         contest_problem.problem.code,
                     ],
                 ),

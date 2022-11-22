@@ -33,7 +33,7 @@ from django.views.generic import ListView
 
 from judge import event_poster as event
 from judge.highlight_code import highlight_code
-from judge.models import Contest
+from judge.models import Contest, ContestParticipation
 from judge.models import Language
 from judge.models import Problem
 from judge.models import ProblemTestCase
@@ -472,10 +472,17 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
 
 class UserMixin(object):
     def get(self, request, *args, **kwargs):
-        if "user" not in kwargs:
-            raise ImproperlyConfigured("Must pass a user")
-        self.profile = get_object_or_404(Profile, user__username=kwargs["user"])
-        self.username = kwargs["user"]
+        if "user" not in kwargs and "participation" not in kwargs:
+            raise ImproperlyConfigured("Must pass a user or participation")
+        if "user" in kwargs:
+            self.profile = get_object_or_404(Profile, user__username=kwargs["user"])
+            self.username = kwargs["user"]
+        else:
+            self.participation = get_object_or_404(
+                ContestParticipation, id=kwargs["participation"]
+            )
+            self.profile = self.participation.user
+            self.username = self.profile.user.username
         if self.profile == request.profile:
             self.include_frozen = True
         return super(UserMixin, self).get(request, *args, **kwargs)
@@ -828,6 +835,53 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
             return s.date - self.contest.start_time
         return None
 
+    def get_best_subtask_points(self):
+        if self.contest.format_name == "ioi16":
+            contest_problem = self.contest.contest_problems.get(problem=self.problem)
+            best_subtasks = {}
+            total_points = 0
+            problem_points = 0
+            achieved_points = 0
+
+            for (
+                problem_id,
+                pp,
+                time,
+                subtask_points,
+                total_subtask_points,
+                subtask,
+                sub_id,
+            ) in self.contest.format.get_results_by_subtask(
+                self.participation, self.include_frozen
+            ):
+                if contest_problem.id != problem_id or total_subtask_points == 0:
+                    continue
+                if not subtask:
+                    subtask = 0
+                problem_points = pp
+                submission = Submission.objects.get(id=sub_id)
+                best_subtasks[subtask] = {
+                    "submission": submission,
+                    "contest_time": nice_repr(self.contest_time(submission), "noday"),
+                    "points": subtask_points,
+                    "total": total_subtask_points,
+                }
+                total_points += total_subtask_points
+                achieved_points += subtask_points
+            for subtask in best_subtasks.values():
+                subtask["points"] = floatformat(
+                    subtask["points"] / total_points * problem_points,
+                    -self.contest.points_precision,
+                )
+                subtask["total"] = floatformat(
+                    subtask["total"] / total_points * problem_points,
+                    -self.contest.points_precision,
+                )
+            achieved_points = achieved_points / total_points * problem_points
+            if best_subtasks:
+                return best_subtasks, achieved_points, problem_points
+        return None
+
     def get_context_data(self, **kwargs):
         context = super(UserContestSubmissionsAjax, self).get_context_data(**kwargs)
         context["contest"] = self.contest
@@ -852,6 +906,21 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
             s.display_point = f"{points} / {total}"
             filtered_submissions.append(s)
         context["submissions"] = filtered_submissions
+
+        best_subtasks = self.get_best_subtask_points()
+        if best_subtasks:
+            (
+                context["best_subtasks"],
+                context["points"],
+                context["total"],
+            ) = best_subtasks
+            context["points"] = floatformat(
+                context["points"], -self.contest.points_precision
+            )
+            context["total"] = floatformat(
+                context["total"], -self.contest.points_precision
+            )
+            context["subtasks"] = sorted(context["best_subtasks"].keys())
         return context
 
     def get(self, request, *args, **kwargs):

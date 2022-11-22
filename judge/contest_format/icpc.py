@@ -109,7 +109,7 @@ class ICPCContestFormat(DefaultContestFormat):
 
         self.handle_frozen_state(participation, format_data)
         participation.cumtime = max(0, cumtime + penalty)
-        participation.score = score
+        participation.score = round(score, self.contest.points_precision)
         participation.tiebreaker = last  # field is sorted from least to greatest
         participation.format_data = format_data
         participation.save()
@@ -143,7 +143,7 @@ class ICPCContestFormat(DefaultContestFormat):
                     "contest_user_submissions_ajax",
                     args=[
                         self.contest.key,
-                        participation.user.user.username,
+                        participation.id,
                         contest_problem.problem.code,
                     ],
                 ),

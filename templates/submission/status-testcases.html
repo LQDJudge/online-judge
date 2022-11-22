@@ -28,7 +28,7 @@
         {% for batch in batches %}
             <div style="margin-top: 0.5em;">
                 {% if batch.id %}
-                    <b>{{ _('Batch ') }}#{{ batch.id }}: </b>
+                    <b>{{ _('Batch ') }}#{{ batch.id }} ({{batch.points|floatformat}} / {{batch.total|floatformat}}): </b>
                 {% endif %}
                 {% for case in batch.cases %}
                     <span class="case-{{ case.status }} case-icons">
