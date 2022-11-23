@@ -118,8 +118,8 @@
                 return false;
             });
 
-            if (localStorage.getItem("contest_timer_pos")) {
-                data = localStorage.getItem("contest_timer_pos").split(":");
+            if (localStorage.getItem("contest_timer_position")) {
+                data = localStorage.getItem("contest_timer_position").split(":");
                 $("#contest-info").css({
                     left: data[0],
                     top: data[1]
@@ -137,14 +137,13 @@
             $(document).mousemove(function (e) {
                 x_pos = e.screenX;
                 y_pos = e.screenY;
-                x_pos = Math.max(Math.min(x_pos, window.innerWidth), 0);
-                y_pos = Math.max(Math.min(y_pos, window.innerHeight), 0);
-
+                
                 if (selected !== null) {
-                    left_px = (x_pos - x_elem) + 'px';
-                    top_px = (y_pos - y_elem) + 'px';
-
-                    localStorage.setItem("contest_timer_pos", left_px + ":" + top_px);
+                    left_px = (x_pos - x_elem);
+                    top_px = (y_pos - y_elem);
+                    left_px = Math.max(Math.min(left_px, window.innerWidth), 0) / window.innerWidth * 100 + '%';
+                    top_px = Math.max(Math.min(top_px, window.innerHeight), 0) / window.innerHeight * 100 + '%';
+                    localStorage.setItem("contest_timer_position", left_px + ":" + top_px);
 
                     selected.css({
                         left: left_px,
