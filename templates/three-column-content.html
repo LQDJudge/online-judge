@@ -129,32 +129,36 @@
             })
             $('#logout').on('click', () => $('#logout-form').submit());
         }
+
+        function navigateTo($elem) {
+            var url = $elem.attr('data-href') || $elem.attr('href');
+
+            if (url === '#') return;
+            $('.left-sidebar-item').removeClass('active');
+            $elem.addClass('active');
+            $('.middle-right-content').html(loading_page);
+            $.get(url, function(data) {
+                var reload_content = $(data).find('.middle-right-content');
+
+                if (reload_content.length) {
+                    window.history.pushState("", "", url);
+                    $('.middle-right-content').html(reload_content.first().html());
+                    MathJax.typeset($('.middle-right-content')[0]);
+                    onWindowReady();
+                }
+                else {
+                    window.location.href = url;
+                }
+            });
+        }
+
         $(function () {
-            const loading_page = `{% include "loading-page.html" %}`;
             window.addEventListener('popstate', (e) => {
                 window.location.href = e.currentTarget.location.href;
             });
 
             $('.left-sidebar-item').on('click', function() {
-                var url = $(this).attr('data-href');
-
-                if (url === '#') return;
-                $('.left-sidebar-item').removeClass('active');
-                $(this).addClass('active');
-                $('.middle-right-content').html(loading_page);
-                $.get(url, function(data) {
-                    var reload_content = $(data).find('.middle-right-content');
-
-                    if (reload_content.length) {
-                        window.history.pushState("", "", url);
-                        $('.middle-right-content').html(reload_content.first().html());
-                        MathJax.typeset($('.middle-right-content')[0]);
-                        onWindowReady();
-                    }
-                    else {
-                        window.location.href = url;
-                    }
-                });
+                navigateTo($(this));
             });
             $('.blog-box').on('click', function() {
                 var $description = $(this).children('.blog-description');
