@@ -267,6 +267,7 @@
 
     #three-col-container {
         display: flex;
+        flex-direction: column;
     }
 
     .middle-content {

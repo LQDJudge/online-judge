@@ -28,46 +28,6 @@ if (!String.prototype.endsWith) {
     };
 }
 
-// http://stackoverflow.com/a/1060034/1090657
-$(function () {
-    var hidden = 'hidden';
-
-    // Standards:
-    if (hidden in document)
-        document.addEventListener('visibilitychange', onchange);
-    else if ((hidden = 'mozHidden') in document)
-        document.addEventListener('mozvisibilitychange', onchange);
-    else if ((hidden = 'webkitHidden') in document)
-        document.addEventListener('webkitvisibilitychange', onchange);
-    else if ((hidden = 'msHidden') in document)
-        document.addEventListener('msvisibilitychange', onchange);
-    // IE 9 and lower:
-    else if ('onfocusin' in document)
-        document.onfocusin = document.onfocusout = onchange;
-    // All others:
-    else
-        window.onpageshow = window.onpagehide
-            = window.onfocus = window.onblur = onchange;
-
-    function onchange(evt) {
-        var v = 'window-visible', h = 'window-hidden', evtMap = {
-            focus: v, focusin: v, pageshow: v, blur: h, focusout: h, pagehide: h
-        };
-
-        evt = evt || window.event;
-        if (evt.type in evtMap)
-            document.body.className = evtMap[evt.type];
-        else
-            document.body.className = this[hidden] ? 'window-hidden' : 'window-visible';
-
-        if ('$' in window)
-            $(window).trigger('dmoj:' + document.body.className);
-    }
-
-    // set the initial state (but only if browser supports the Page Visibility API)
-    if (document[hidden] !== undefined)
-        onchange({type: document[hidden] ? 'blur' : 'focus'});
-});
 
 function register_toggle(link) {
     link.click(function () {
@@ -120,70 +80,6 @@ window.fix_div = function (div, height) {
             is_moving ? fix() : moving();
     });
 };
-
-$(function () {
-    if (typeof window.orientation !== 'undefined') {
-        $(window).resize(function () {
-            var width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-            // $('#viewport').attr('content', width > 480 ? 'initial-scale=1' : 'width=480');
-        });
-    }
-
-    var $nav_list = $('#nav-list');
-    $('#navicon').click(function (event) {
-        event.stopPropagation();
-        $nav_list.toggle();
-        if ($nav_list.is(':hidden'))
-            $(this).blur().removeClass('hover');
-        else {
-            $(this).addClass('hover');
-            $nav_list.find('li ul').css('left', $('#nav-list').width()).hide();
-        }
-    }).hover(function () {
-        $(this).addClass('hover');
-    }, function () {
-        $(this).removeClass('hover');
-    });
-
-    $nav_list.find('li a .nav-expand').click(function (event) {
-        event.preventDefault();
-        $(this).parent().siblings('ul').css('display', 'block');
-    });
-
-    $nav_list.find('li a').each(function () {
-        if (!$(this).siblings('ul').length)
-            return;
-        $(this).on('contextmenu', function (event) {
-            event.preventDefault();
-        }).on('taphold', function () {
-            $(this).siblings('ul').css('display', 'block');
-        });
-    });
-
-    $nav_list.click(function (event) {
-        event.stopPropagation();
-    });
-
-    $('html').click(function () {
-        $nav_list.hide();
-    });
-
-    $.ajaxSetup({
-        beforeSend: function (xhr, settings) {
-            if (!(/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type)) && !this.crossDomain)
-                xhr.setRequestHeader('X-CSRFToken', $.cookie('csrftoken'));
-        }
-    });
-
-    setTimeout(() => {
-        $("[data-src]img").each(function() {
-            $(this).attr("src", $(this).attr("data-src"));
-        })
-        $("[data-src]iframe").each(function() {
-            $(this).attr("src", $(this).attr("data-src"));
-        })
-    }, "100");
-});
 
 if (!Date.now) {
     Date.now = function () {
@@ -250,15 +146,6 @@ function register_time(elems, limit) { // in hours
         update();
     });
 }
-
-$(function () {
-    register_time($('.time-with-rel'));
-
-    $('form').submit(function (evt) {
-        // Prevent multiple submissions of forms, see #565
-        $("input[type='submit']").prop('disabled', true);
-    });
-});
 
 window.notification_template = {
     icon: '/logo.png'
@@ -355,14 +242,6 @@ window.register_contest_notification = function(url) {
     setInterval(get_clarifications, 60 * 1000);
 }
 
-$(function () {
-    // Close dismissable boxes
-    $("a.close").click(function () {
-        var $closer = $(this);
-        $closer.parent().fadeOut(200);
-    });
-});
-
 $.fn.textWidth = function () {
     var html_org = $(this).html();
     var html_calc = '<span style="white-space: nowrap;">' + html_org + '</span>';
@@ -371,20 +250,6 @@ $.fn.textWidth = function () {
     $(this).html(html_org);
     return width;
 };
-
-$(function () {
-    $('.tabs').each(function () {
-        var $this = $(this), $h2 = $(this).find('h2'), $ul = $(this).find('ul');
-        var cutoff = ($h2.textWidth() || 400) + 20, handler;
-        $ul.children().each(function () {
-            cutoff += $(this).width();
-        });
-        $(window).resize(handler = function () {
-            $this.toggleClass('tabs-no-flex', $this.width() < cutoff);
-        });
-        handler();
-    });
-});
 
 function registerPopper($trigger, $dropdown) {
     const popper = Popper.createPopper($trigger[0], $dropdown[0]);
@@ -402,7 +267,132 @@ function registerPopper($trigger, $dropdown) {
     })
 }
 
-$(function() {
+function onWindowReady() {
+    // http://stackoverflow.com/a/1060034/1090657
+    var hidden = 'hidden';
+
+    // Standards:
+    if (hidden in document)
+        document.addEventListener('visibilitychange', onchange);
+    else if ((hidden = 'mozHidden') in document)
+        document.addEventListener('mozvisibilitychange', onchange);
+    else if ((hidden = 'webkitHidden') in document)
+        document.addEventListener('webkitvisibilitychange', onchange);
+    else if ((hidden = 'msHidden') in document)
+        document.addEventListener('msvisibilitychange', onchange);
+    // IE 9 and lower:
+    else if ('onfocusin' in document)
+        document.onfocusin = document.onfocusout = onchange;
+    // All others:
+    else
+        window.onpageshow = window.onpagehide
+            = window.onfocus = window.onblur = onchange;
+
+    function onchange(evt) {
+        var v = 'window-visible', h = 'window-hidden', evtMap = {
+            focus: v, focusin: v, pageshow: v, blur: h, focusout: h, pagehide: h
+        };
+
+        evt = evt || window.event;
+        if (evt.type in evtMap)
+            document.body.className = evtMap[evt.type];
+        else
+            document.body.className = this[hidden] ? 'window-hidden' : 'window-visible';
+
+        if ('$' in window)
+            $(window).trigger('dmoj:' + document.body.className);
+    }
+
+    $('.tabs').each(function () {
+        var $this = $(this), $h2 = $(this).find('h2'), $ul = $(this).find('ul');
+        var cutoff = ($h2.textWidth() || 400) + 20, handler;
+        $ul.children().each(function () {
+            cutoff += $(this).width();
+        });
+        $(window).resize(handler = function () {
+            $this.toggleClass('tabs-no-flex', $this.width() < cutoff);
+        });
+        handler();
+    });
+
+    // set the initial state (but only if browser supports the Page Visibility API)
+    if (document[hidden] !== undefined)
+        onchange({type: document[hidden] ? 'blur' : 'focus'});
+
+    $("a.close").click(function () {
+        var $closer = $(this);
+        $closer.parent().fadeOut(200);
+    });
+
+    register_time($('.time-with-rel'));
+
+    if (typeof window.orientation !== 'undefined') {
+        $(window).resize(function () {
+            var width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+            // $('#viewport').attr('content', width > 480 ? 'initial-scale=1' : 'width=480');
+        });
+    }
+
+    var $nav_list = $('#nav-list');
+    $('#navicon').click(function (event) {
+        event.stopPropagation();
+        $nav_list.toggle();
+        if ($nav_list.is(':hidden'))
+            $(this).blur().removeClass('hover');
+        else {
+            $(this).addClass('hover');
+            $nav_list.find('li ul').css('left', $('#nav-list').width()).hide();
+        }
+    }).hover(function () {
+        $(this).addClass('hover');
+    }, function () {
+        $(this).removeClass('hover');
+    });
+
+    $nav_list.find('li a .nav-expand').click(function (event) {
+        event.preventDefault();
+        $(this).parent().siblings('ul').css('display', 'block');
+    });
+
+    $nav_list.find('li a').each(function () {
+        if (!$(this).siblings('ul').length)
+            return;
+        $(this).on('contextmenu', function (event) {
+            event.preventDefault();
+        }).on('taphold', function () {
+            $(this).siblings('ul').css('display', 'block');
+        });
+    });
+
+    $nav_list.click(function (event) {
+        event.stopPropagation();
+    });
+
+    $('html').click(function () {
+        $nav_list.hide();
+    });
+
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!(/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type)) && !this.crossDomain)
+                xhr.setRequestHeader('X-CSRFToken', $.cookie('csrftoken'));
+        }
+    });
+
+    setTimeout(() => {
+        $("[data-src]img").each(function() {
+            $(this).attr("src", $(this).attr("data-src"));
+        })
+        $("[data-src]iframe").each(function() {
+            $(this).attr("src", $(this).attr("data-src"));
+        })
+    }, "100");
+
+    $('form').submit(function (evt) {
+        // Prevent multiple submissions of forms, see #565
+        $("input[type='submit']").prop('disabled', true);
+    });
+
     registerPopper($('#nav-lang-icon'), $('#lang-dropdown'));
     registerPopper($('#user-links'), $('#userlink_dropdown'));
     $('.lang-dropdown-item').click(function() {
@@ -410,7 +400,10 @@ $(function() {
         $('#form-lang').submit();
     })
     $('#logout').on('click', () => $('#logout-form').submit());
+}
 
+$(function() {
+    onWindowReady();
     $('#nav-darkmode-icon').on('click', function() {
         if (localStorage.getItem("darkmode") === "true") {
             localStorage.setItem("darkmode", "false");
