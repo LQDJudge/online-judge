@@ -333,6 +333,38 @@ function onWindowReady() {
         });
     }
 
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!(/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type)) && !this.crossDomain)
+                xhr.setRequestHeader('X-CSRFToken', $.cookie('csrftoken'));
+        }
+    });
+
+    setTimeout(() => {
+        $("[data-src]img").each(function() {
+            $(this).attr("src", $(this).attr("data-src"));
+        })
+        $("[data-src]iframe").each(function() {
+            $(this).attr("src", $(this).attr("data-src"));
+        })
+    }, "100");
+
+    $('form').submit(function (evt) {
+        // Prevent multiple submissions of forms, see #565
+        $("input[type='submit']").prop('disabled', true);
+    });
+
+    registerPopper($('#nav-lang-icon'), $('#lang-dropdown'));
+    registerPopper($('#user-links'), $('#userlink_dropdown'));
+    $('.lang-dropdown-item').click(function() {
+        $('select[name="language"]').val($(this).attr('value'));
+        $('#form-lang').submit();
+    })
+    $('#logout').on('click', () => $('#logout-form').submit());
+}
+
+$(function() {
+    onWindowReady();
     var $nav_list = $('#nav-list');
     $('#navicon').click(function (event) {
         event.stopPropagation();
@@ -372,38 +404,7 @@ function onWindowReady() {
         $nav_list.hide();
     });
 
-    $.ajaxSetup({
-        beforeSend: function (xhr, settings) {
-            if (!(/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type)) && !this.crossDomain)
-                xhr.setRequestHeader('X-CSRFToken', $.cookie('csrftoken'));
-        }
-    });
 
-    setTimeout(() => {
-        $("[data-src]img").each(function() {
-            $(this).attr("src", $(this).attr("data-src"));
-        })
-        $("[data-src]iframe").each(function() {
-            $(this).attr("src", $(this).attr("data-src"));
-        })
-    }, "100");
-
-    $('form').submit(function (evt) {
-        // Prevent multiple submissions of forms, see #565
-        $("input[type='submit']").prop('disabled', true);
-    });
-
-    registerPopper($('#nav-lang-icon'), $('#lang-dropdown'));
-    registerPopper($('#user-links'), $('#userlink_dropdown'));
-    $('.lang-dropdown-item').click(function() {
-        $('select[name="language"]').val($(this).attr('value'));
-        $('#form-lang').submit();
-    })
-    $('#logout').on('click', () => $('#logout-form').submit());
-}
-
-$(function() {
-    onWindowReady();
     $('#nav-darkmode-icon').on('click', function() {
         if (localStorage.getItem("darkmode") === "true") {
             localStorage.setItem("darkmode", "false");

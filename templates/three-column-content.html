@@ -9,14 +9,20 @@
                 width: 98%;
                 margin-left: 0;
             }
+            .middle-right-content {
+                display: inline-flex;
+            }
         }
         @media(max-width: 799px) {
             #content {
                 width: 100%;
                 margin-left: 0;
             }
+            .middle-right-content {
+                display: block;
+            }
         }
-        
+
         /* TODO: remove this       */
         #three-col-container {
             display: flex;
@@ -94,45 +100,6 @@
                 });
             }
 
-            var $nav_list = $('#nav-list');
-            $('#navicon').click(function (event) {
-                event.stopPropagation();
-                $nav_list.toggle();
-                if ($nav_list.is(':hidden'))
-                    $(this).blur().removeClass('hover');
-                else {
-                    $(this).addClass('hover');
-                    $nav_list.find('li ul').css('left', $('#nav-list').width()).hide();
-                }
-            }).hover(function () {
-                $(this).addClass('hover');
-            }, function () {
-                $(this).removeClass('hover');
-            });
-
-            $nav_list.find('li a .nav-expand').click(function (event) {
-                event.preventDefault();
-                $(this).parent().siblings('ul').css('display', 'block');
-            });
-
-            $nav_list.find('li a').each(function () {
-                if (!$(this).siblings('ul').length)
-                    return;
-                $(this).on('contextmenu', function (event) {
-                    event.preventDefault();
-                }).on('taphold', function () {
-                    $(this).siblings('ul').css('display', 'block');
-                });
-            });
-
-            $nav_list.click(function (event) {
-                event.stopPropagation();
-            });
-
-            $('html').click(function () {
-                $nav_list.hide();
-            });
-
             $.ajaxSetup({
                 beforeSend: function (xhr, settings) {
                     if (!(/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type)) && !this.crossDomain)
@@ -162,7 +129,8 @@
             })
             $('#logout').on('click', () => $('#logout-form').submit());
         }
-        $(document).ready(function () {
+        $(function () {
+            const loading_page = `{% include "loading-page.html" %}`;
             window.addEventListener('popstate', (e) => {
                 window.location.href = e.currentTarget.location.href;
             });
@@ -173,6 +141,7 @@
                 if (url === '#') return;
                 $('.left-sidebar-item').removeClass('active');
                 $(this).addClass('active');
+                $('.middle-right-content').html(loading_page);
                 $.get(url, function(data) {
                     var reload_content = $(data).find('.middle-right-content');
 
@@ -217,7 +186,7 @@
     {% block before_posts %}{% endblock %}
     <div id="three-col-container">
         {% block left_sidebar %}{% endblock %}
-        <div class="middle-right-content" style="display: inline-flex;">
+        <div class="middle-right-content">
             {% block three_col_media %}{% endblock %}
             {% block three_col_js %}{% endblock %}
             <div class="middle-content">
