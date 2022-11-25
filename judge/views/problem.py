@@ -394,7 +394,7 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
                 maker.title = problem_name
                 assets = ["style.css", "pygment-github.css"]
                 if maker.math_engine == "jax":
-                    assets.append("mathjax_config.js")
+                    assets.append("mathjax3_config.js")
                 for file in assets:
                     maker.load(file, os.path.join(settings.DMOJ_RESOURCES, file))
                 maker.make()

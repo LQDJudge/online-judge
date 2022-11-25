@@ -59,7 +59,7 @@ else:
     class MathJaxPagedownWidget(PagedownWidget):
         class Media:
             js = [
-                "mathjax_config.js",
+                "mathjax3_config.js",
                 "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js",
                 "pagedown_math.js",
             ]

@@ -8,7 +8,7 @@
                     if (!("MathJax" in window)) {
                         $.ajax({
                             type: "GET",
-                            url: '{{ static('mathjax_config.js') }}',
+                            url: '{{ static('mathjax3_config.js') }}',
                             dataType: "script",
                             cache: true,
                             success: function () {
