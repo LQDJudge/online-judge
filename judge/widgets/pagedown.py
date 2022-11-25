@@ -60,7 +60,7 @@ else:
         class Media:
             js = [
                 "mathjax_config.js",
-                "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML",
+                "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js",
                 "pagedown_math.js",
             ]
 

@@ -47,9 +47,9 @@ from django.forms.models import ModelChoiceIterator
 from django.urls import reverse_lazy
 from django.utils.http import urlencode
 
-DEFAULT_SELECT2_JS = "//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"
-DEFAULT_SELECT2_CSS = (
-    "//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css"
+DEFAULT_SELECT2_JS = settings.STATIC_URL + "/libs/select2/select2.js"
+DEFAULT_SELECT2_CSS = settings.STATIC_URL + (
+    "/libs/select2/select2.min.css"
 )
 
 __all__ = [
@@ -106,8 +106,8 @@ class Select2Mixin(object):
             https://docs.djangoproject.com/en/1.8/topics/forms/media/#media-as-a-dynamic-property
         """
         return forms.Media(
-            js=[settings.SELECT2_JS_URL, "django_select2.js"],
-            css={"screen": [settings.SELECT2_CSS_URL]},
+            js=[DEFAULT_SELECT2_JS, "django_select2.js"],
+            css={"screen": [DEFAULT_SELECT2_CSS]},
         )
 
 
@@ -117,10 +117,10 @@ class AdminSelect2Mixin(Select2Mixin):
         return forms.Media(
             js=[
                 "admin/js/jquery.init.js",
-                settings.SELECT2_JS_URL,
+                DEFAULT_SELECT2_JS,
                 "django_select2.js",
             ],
-            css={"screen": [settings.SELECT2_CSS_URL]},
+            css={"screen": [DEFAULT_SELECT2_CSS]},
         )
 
 
