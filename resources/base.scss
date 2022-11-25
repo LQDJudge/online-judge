@@ -804,3 +804,9 @@ math {
         margin-top: 6px;
     }
 }
+
+@media (min-width: 800px) {
+    #event-tab {
+        display: none;
+    }
+}
