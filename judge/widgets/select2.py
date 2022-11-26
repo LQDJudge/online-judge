@@ -47,9 +47,9 @@ from django.forms.models import ModelChoiceIterator
 from django.urls import reverse_lazy
 from django.utils.http import urlencode
 
-DEFAULT_SELECT2_JS = settings.STATIC_URL + "/libs/select2/select2.js"
+DEFAULT_SELECT2_JS = settings.STATIC_URL + "libs/select2/select2.js"
 DEFAULT_SELECT2_CSS = settings.STATIC_URL + (
-    "/libs/select2/select2.min.css"
+    "libs/select2/select2.css"
 )
 
 __all__ = [
