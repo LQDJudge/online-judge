@@ -1,31 +1,4 @@
-{% extends "tabs-base.html" %}
-
-{% block tabs %}
-    {{ make_tab('detail', 'fa-info-circle', url('contest_view', contest.key), _('Info')) }}
-    {% if contest.ended or can_edit %}
-        {{ make_tab('stats', 'fa-pie-chart', url('contest_stats', contest.key), _('Statistics')) }}
-    {% endif %}
-
-    {% if contest.start_time <= now or perms.judge.see_private_contest %}
-        {% if contest.can_see_own_scoreboard(request.user) %}
-            {{ make_tab('ranking', 'fa-bar-chart', url('contest_ranking', contest.key), _('Rankings')) }}
-            {% if request.user.is_authenticated %}
-                {{ make_tab('participation', 'fa-users', url('contest_participation_own', contest.key), _('Participation')) }}
-            {% endif %}
-        {% else %}
-            {{ make_tab('ranking', 'fa-bar-chart', None, _('Hidden Rankings')) }}
-        {% endif %}
-    {% endif %}
-    {% if can_edit %}
-        {% if perms.judge.moss_contest and has_moss_api_key %}
-            {{ make_tab('moss', 'fa-gavel', url('contest_moss', contest.key), _('MOSS')) }}
-        {% endif %}
-        {{ make_tab('edit', 'fa-edit', url('admin:judge_contest_change', contest.id), _('Edit')) }}
-    {% endif %}
-    {% if perms.judge.clone_contest %}
-        {{ make_tab('clone', 'fa-copy', url('contest_clone', contest.key), _('Clone')) }}
-    {% endif %}
-
+<div class="left-sidebar">
     {% if request.user.is_authenticated %}
         {% if contest.can_join or is_editor or is_tester %}
             {% set in_contest = contest.is_in_contest(request.user) %}
@@ -79,4 +52,28 @@
             <input type="submit" class="btn-midnightblue" value="{{ _('Login to participate') }}">
         </form>
     {% endif %}
-{% endblock %}
+    {{ make_tab_item('detail', 'fa fa-info-circle', url('contest_view', contest.key), _('Info')) }}
+    {% if contest.ended or can_edit %}
+        {{ make_tab_item('stats', 'fa fa-pie-chart', url('contest_stats', contest.key), _('Statistics')) }}
+    {% endif %}
+
+    {% if contest.start_time <= now or perms.judge.see_private_contest %}
+        {% if contest.can_see_own_scoreboard(request.user) %}
+            {{ make_tab_item('ranking', 'fa fa-bar-chart', url('contest_ranking', contest.key), _('Rankings')) }}
+            {% if request.user.is_authenticated %}
+                {{ make_tab_item('participation', 'fa fa-users', url('contest_participation_own', contest.key), _('Participation')) }}
+            {% endif %}
+        {% else %}
+            {{ make_tab_item('ranking', 'fa fa-bar-chart', None, _('Hidden Rankings')) }}
+        {% endif %}
+    {% endif %}
+    {% if can_edit %}
+        {% if perms.judge.moss_contest and has_moss_api_key %}
+            {{ make_tab_item('moss', 'fa fa-gavel', url('contest_moss', contest.key), _('MOSS')) }}
+        {% endif %}
+        {{ make_tab_item('edit', 'fa fa-edit', url('admin:judge_contest_change', contest.id), _('Edit')) }}
+    {% endif %}
+    {% if perms.judge.clone_contest %}
+        {{ make_tab_item('clone', 'fa fa-copy', url('contest_clone', contest.key), _('Clone')) }}
+    {% endif %}
+</div>

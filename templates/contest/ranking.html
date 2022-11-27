@@ -1,9 +1,6 @@
-{% extends "user/base-users.html" %}
+{% extends "user/base-users-two-col.html" %}
 
-{% block title_ruler %}{% endblock %}
-
-{% block title_row %}
-    {% set title = contest.name %}
+{% block left_sidebar %}
     {% include "contest/contest-tabs.html" %}
 {% endblock %}
 
@@ -60,7 +57,7 @@
             });
         </script>
     {% endif %}
-    {% if tab == 'ranking' %}
+    {% if page_type == 'ranking' %}
         <script type="text/javascript">
             $.fn.ignore = function(sel) {
                 return this.clone().find(sel || '>*').remove().end();
@@ -128,9 +125,10 @@
     {% include "contest/media-js.html" %}
 {% endblock %}
 
-{% block users_table %}
+{% block before_table %}
+    {% include "contest/contest-datetime.html" %}
     <div style="margin-bottom: 0.5em">
-        {% if tab == 'participation' %}
+        {% if page_type == 'participation' %}
             {% if contest.can_see_full_scoreboard(request.user) %}
                 <input id="search-contest" type="text" placeholder="{{ _('View user participation') }}">
             {% endif %}
@@ -155,5 +153,8 @@
             {{ _('Download as CSV') }}
         </a>
     </div>
+{% endblock %}
+
+{% block users_table %}
     {% include "contest/ranking-table.html" %}
 {% endblock %}

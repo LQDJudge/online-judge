@@ -988,7 +988,7 @@ def contest_ranking_ajax(request, contest, participation=None):
 
 class ContestRankingBase(ContestMixin, TitleMixin, DetailView):
     template_name = "contest/ranking.html"
-    tab = None
+    page_type = None
 
     def get_title(self):
         raise NotImplementedError()
@@ -1008,12 +1008,12 @@ class ContestRankingBase(ContestMixin, TitleMixin, DetailView):
         users, problems = self.get_ranking_list()
         context["users"] = users
         context["problems"] = problems
-        context["tab"] = self.tab
+        context["page_type"] = self.page_type
         return context
 
 
 class ContestRanking(ContestRankingBase):
-    tab = "ranking"
+    page_type = "ranking"
 
     def get_title(self):
         return _("%s Rankings") % self.object.name
@@ -1039,7 +1039,7 @@ class ContestRanking(ContestRankingBase):
 
 
 class ContestParticipationList(LoginRequiredMixin, ContestRankingBase):
-    tab = "participation"
+    page_type = "participation"
 
     def get_title(self):
         if self.profile == self.request.profile:

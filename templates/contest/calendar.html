@@ -1,12 +1,22 @@
-{% extends "base.html" %}
-{% block title_ruler %}{% endblock %}
+{% extends "two-column-content.html" %}
+{% set page_type = 'calendar' %}
 
-{% block title_row %}
-    {% set tab = 'calendar' %}
+{% block left_sidebar %}
     {% include "contest/contest-list-tabs.html" %}
 {% endblock %}
 
-{% block body %}
+{% block middle_content %}
+    <center style="font-size: 1.6em; margin-top: 0.3em;">
+        {% if prev_month %}
+            <a href="{{ url('contest_calendar', prev_month.year, prev_month.month) }}">&laquo; {{ _('Prev') }}</a>
+        {% endif %}
+        {% if not (curr_month.year == now.year and curr_month.month == now.month) %}
+            <a href="{{ url('contest_calendar', now.year, now.month) }}"> {{ _('Today') }}</a>
+        {% endif %}
+        {% if next_month %}
+            <a href="{{ url('contest_calendar', next_month.year, next_month.month) }}">{{ _('Next') }} &raquo;</a>
+        {% endif %}
+    </center>
     <table id="contest-calendar">
         <tr>
             <th>{{ _('Sunday') }}</th>

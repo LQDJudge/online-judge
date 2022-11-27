@@ -106,11 +106,7 @@
 {% endblock %}
 
 {% block left_sidebar %}
-    <div class="left-sidebar">
-        {{ make_tab_item('list', 'fa fa-list', url('contest_list'), _('List')) }}
-        {{ make_tab_item('calendar', 'fa fa-calendar', url('contest_calendar', now.year, now.month), _('Calendar')) }}
-        {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_contest_changelist'), _('Admin')) }}
-    </div>
+    {% include "contest/contest-list-tabs.html" %}
 {% endblock %}
 
 {% macro contest_head(contest) %}

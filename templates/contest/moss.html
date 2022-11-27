@@ -1,14 +1,11 @@
-{% extends "common-content.html" %}
-
-{% block title_ruler %}{% endblock %}
-
-{% block title_row %}
-    {% set tab = 'moss' %}
-    {% set title = contest.name %}
+{% extends "two-column-content.html" %}
+{% set page_type = 'moss' %}
+    
+{% block left_sidebar %}
     {% include "contest/contest-tabs.html" %}
 {% endblock %}
 
-{% block content_media %}
+{% block two_col_media %}
     <style>
         .panes {
             display: flex;
@@ -21,7 +18,7 @@
     </style>
 {% endblock %}
 
-{% block content_js_media %}
+{% block two_col_js %}
     <script type="text/javascript">
         $(function () {
             $('.contest-moss').click(function () {
@@ -35,7 +32,8 @@
         });
     </script>
 {% endblock %}
-{% block body %}
+
+{% block middle_content %}
     {% if has_results %}
         <table class="table">
             <thead>

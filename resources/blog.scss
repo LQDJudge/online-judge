@@ -173,14 +173,13 @@
 }
 
 .left-sidebar-item {
+    display: flex;
+    align-items: center;
     .sidebar-icon {
         font-size: large;
-        width: 1.2em;
         display: inline-block;
-
         i {
-            position: relative;
-            bottom: -1.5px;
+            width: 1.4em;
         }
     }
 }
@@ -271,12 +270,12 @@
     }
 
     .middle-content {
-        max-width: 65%;
-        margin-left: 13%;
+        max-width: 75%;
+        width: -webkit-fill-available;
     }
 
     .blog-sidebar, .right-sidebar {
-        width: 20%;
+        width: 25%;
     }
 
     .left-sidebar {
