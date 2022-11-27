@@ -354,8 +354,6 @@ function onWindowReady() {
         $("input[type='submit']").prop('disabled', true);
     });
 
-    registerPopper($('#nav-lang-icon'), $('#lang-dropdown'));
-    registerPopper($('#user-links'), $('#userlink_dropdown'));
     $('.lang-dropdown-item').click(function() {
         $('select[name="language"]').val($(this).attr('value'));
         $('#form-lang').submit();
@@ -365,6 +363,8 @@ function onWindowReady() {
 
 $(function() {
     onWindowReady();
+    registerPopper($('#nav-lang-icon'), $('#lang-dropdown'));
+    registerPopper($('#user-links'), $('#userlink_dropdown'));
     var $nav_list = $('#nav-list');
     $('#navicon').click(function (event) {
         event.stopPropagation();
