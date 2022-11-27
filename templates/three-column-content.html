@@ -130,6 +130,24 @@
             $('#logout').on('click', () => $('#logout-form').submit());
         }
 
+        function activateBlogBoxOnClick() {
+            $('.blog-box').on('click', function() {
+                var $description = $(this).children('.blog-description');
+                var max_height = $description.css('max-height');
+                if (max_height !== 'fit-content') {
+                    $description.css('max-height', 'fit-content');
+                    $(this).css('cursor', 'auto');
+                    $(this).removeClass('pre-expand-blog');
+                }
+            })
+            $('.blog-box').each(function() {
+                if ($(this).prop('scrollHeight') > $(this).height() ) {
+                    $(this).addClass('pre-expand-blog');
+                    $(this).css('cursor', 'pointer');
+                }
+            });
+        }
+
         function navigateTo($elem) {
             var url = $elem.attr('data-href') || $elem.attr('href');
 
@@ -145,6 +163,7 @@
                     $('.middle-right-content').html(reload_content.first().html());
                     MathJax.typeset($('.middle-right-content')[0]);
                     onWindowReady();
+                    activateBlogBoxOnClick();
                     $('.xdsoft_datetimepicker').hide();
                 }
                 else {
@@ -157,24 +176,10 @@
             window.addEventListener('popstate', (e) => {
                 window.location.href = e.currentTarget.location.href;
             });
+            activateBlogBoxOnClick();
 
             $('.left-sidebar-item').on('click', function() {
                 navigateTo($(this));
-            });
-            $('.blog-box').on('click', function() {
-                var $description = $(this).children('.blog-description');
-                var max_height = $description.css('max-height');
-                if (max_height !== 'fit-content') {
-                    $description.css('max-height', 'fit-content');
-                    $(this).css('cursor', 'auto');
-                    $(this).removeClass('pre-expand-blog');
-                }
-            })
-            $('.blog-box').each(function() {
-                if ($(this).prop('scrollHeight') > $(this).height() ) {
-                    $(this).addClass('pre-expand-blog');
-                    $(this).css('cursor', 'pointer');
-                }
             });
         });
     </script>
