@@ -1,6 +1,10 @@
 {% extends "two-column-content.html" %}
 {% set page_type = 'detail' %}
-    
+
+{% block middle_title %}
+    <h2>{{contest.name}}</h2>
+{% endblock %}
+
 {% block left_sidebar %}
     {% set title = contest.name %}
     {% include "contest/contest-tabs.html" %}
