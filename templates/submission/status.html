@@ -41,6 +41,18 @@
             font-weight: bolder;
             cursor: pointer;
         }
+        @media(max-width: 799px) {
+            .source-ln {
+                display: none;
+            }
+            .source-code {
+                padding-left: 0;
+                font-size: 1em;
+            }
+            .source-wrap {
+                padding: 0.5em;
+            }
+        }
     </style>
 {% endblock %}
 {% block content_js_media %}
