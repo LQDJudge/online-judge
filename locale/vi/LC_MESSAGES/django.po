@@ -3725,10 +3725,8 @@ msgid "users are online"
 msgstr "người đang trực tuyến"
 
 #: templates/comments/list.html:6
-#, fuzzy
-#| msgid "Hide comments"
 msgid "Write comment"
-msgstr "Ẩn bình luận"
+msgstr "Thêm bình luận"
 
 #: templates/comments/list.html:12
 msgid "New comment"
