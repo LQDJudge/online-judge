@@ -46,12 +46,14 @@
             });
         }
 
-        function navigateTo($elem) {
+        function navigateTo($elem, update_sidebar=false) {
             var url = $elem.attr('data-href') || $elem.attr('href');
 
             if (url === '#') return;
-            $('.left-sidebar-item').removeClass('active');
-            $elem.addClass('active');
+            if (update_sidebar) {
+                $('.left-sidebar-item').removeClass('active');
+                $elem.addClass('active');
+            }
             $('.middle-right-content').html(loading_page);
             $.get(url, function(data) {
                 var reload_content = $(data).find('.middle-right-content');
@@ -59,15 +61,28 @@
                 if (reload_content.length) {
                     window.history.pushState("", "", url);
                     $('.middle-right-content').html(reload_content.first().html());
+                    $(document).prop('title', $(data).filter('title').text());
                     MathJax.typeset($('.middle-right-content')[0]);
                     onWindowReady();
                     activateBlogBoxOnClick();
                     $('.xdsoft_datetimepicker').hide();
+                    registerNavigation();
                 }
                 else {
                     window.location.href = url;
                 }
             });
+        }
+
+        function registerNavigation() {
+            $('.pagination a').on('click', function(e) {
+                e.preventDefault();
+                navigateTo($(this));
+            })
+            $('.tabs a').on('click', function(e) {
+                e.preventDefault();
+                navigateTo($(this));
+            })
         }
 
         $(function () {
@@ -77,8 +92,9 @@
             activateBlogBoxOnClick();
 
             $('.left-sidebar-item').on('click', function() {
-                navigateTo($(this));
+                navigateTo($(this), true);
             });
+            registerNavigation();
         });
     </script>
 {% endblock %}
