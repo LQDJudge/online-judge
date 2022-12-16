@@ -1,6 +1,8 @@
 import numpy as np
 from django.conf import settings
 import os
+from django.core.cache import cache
+import hashlib
 
 
 class CollabFilter:
@@ -14,6 +16,7 @@ class CollabFilter:
             allow_pickle=True,
         )
         arr0, arr1 = embeddings.files
+        self.name = name
         self.user_embeddings = embeddings[arr0]
         self.problem_embeddings = embeddings[arr1]
 
@@ -38,6 +41,12 @@ class CollabFilter:
 
     def user_recommendations(self, user, problems, measure=DOT, limit=None, **kwargs):
         uid = user.id
+        problems_hash = hashlib.sha1(str(problems).encode()).hexdigest()
+        cache_key = ":".join(map(str, [self.name, uid, measure, limit, problems_hash]))
+        value = cache.get(cache_key)
+        if value:
+            return value
+
         if uid >= len(self.user_embeddings):
             uid = 0
         scores = self.compute_scores(
@@ -51,7 +60,9 @@ class CollabFilter:
                 res.append((scores[pid], pid))
 
         res.sort(reverse=True, key=lambda x: x[0])
-        return res[:limit]
+        res = res[:limit]
+        cache.set(cache_key, res, 3600)
+        return res
 
     # return a list of pid
     def problems_neighbors(self, problem, problemset, measure=DOT, limit=None):
