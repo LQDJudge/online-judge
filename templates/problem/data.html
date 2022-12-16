@@ -11,31 +11,31 @@
     <script type="text/javascript">
         $(function () {
             $("#problem-data-zipfile_fine_uploader").fineUploader({
-                    request: {
-                        endpoint: "{{url('problem_zip_upload', problem.code)}}",
-                        params: {
-                            'csrfmiddlewaretoken': '{{ csrf_token }}'
-                        }
-                    },
-                    chunking: {
-                        enabled: true,
-                        partSize: 40000000,
-                    },
-                    resume: {
-                        enabled: true
-                    },
-                    validation: {
-                        allowedExtensions: ['zip'],
-                    },
-                }).on('complete', function (event, id, name, responseJSON) {
-                    console.log(responseJSON);
-                    if (!responseJSON.success) {
-                        alert('Fail to upload: ' + responseJSON.error);
+                request: {
+                    endpoint: "{{url('problem_zip_upload', problem.code)}}",
+                    params: {
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
                     }
-                    else {
-                        $('#submit-button').click();
-                    }
-                });;
+                },
+                chunking: {
+                    enabled: true,
+                    partSize: 40000000,
+                },
+                resume: {
+                    enabled: true
+                },
+                validation: {
+                    allowedExtensions: ['zip'],
+                },
+            }).on('complete', function (event, id, name, responseJSON) {
+                console.log(responseJSON);
+                if (!responseJSON.success) {
+                    alert('Fail to upload: ' + responseJSON.error);
+                }
+                else {
+                    $('#submit-button').click();
+                }
+            });;
 
             function update_select2() {
                 $('tbody:not(.extra-row-body) .type-column select').select2({
@@ -43,6 +43,8 @@
                 });
             }
 
+            $("#id_problem-data-checker").select2();
+            $("#problem-type").select2();
             update_select2();
 
             function autofill_if_exists($select, file) {
@@ -289,8 +291,6 @@
                         outFiles.push(file);
                     }
                 }
-                console.log(inFiles);
-                console.log(outFiles);
                 if (inFiles.length == 0) {
                     alert("No input/output files. Make sure your files' suffices are .in(p)/.out");
                     return false;
@@ -349,6 +349,7 @@
                         row += 1;
                     }
                 }
+                update_select2();
                 return false;
             });
 
@@ -491,7 +492,7 @@
             <td>
                 <div>
                     {{_('Problem type')}}:
-                    <select id="problem-type">
+                    <select id="problem-type" style="width: 5em">
                         <option value="ICPC">ICPC</option>
                         <option value="OI">OI</option>
                     </select>
