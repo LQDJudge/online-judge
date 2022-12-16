@@ -75,14 +75,13 @@
         }
 
         function registerNavigation() {
-            $('.pagination a').on('click', function(e) {
-                e.preventDefault();
-                navigateTo($(this));
-            })
-            $('.tabs a').on('click', function(e) {
-                e.preventDefault();
-                navigateTo($(this));
-            })
+            const links = ['.pagination a', '.tabs a', '.problem-feed-option a'];
+            for (link of links) {
+                $(link).on('click', function(e) {
+                    e.preventDefault();
+                    navigateTo($(this));
+                })
+            }
         }
 
         $(function () {

@@ -785,6 +785,11 @@ math {
     z-index: 1000;
 }
 
+select {
+    visibility: hidden;
+    max-height: 0;
+}
+
 @media (max-width: 500px) {
     #notification {
         margin-top: 0.6em;
