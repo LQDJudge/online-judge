@@ -70,3 +70,15 @@ class ContestMiddleware(object):
             request.participation = None
         request.in_contest_mode = request.in_contest and request.contest_mode
         return self.get_response(request)
+
+
+class DarkModeMiddleware(object):
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if "darkmode" in request.GET:
+            return HttpResponseRedirect(
+                reverse("toggle_darkmode") + "?next=" + urlquote(request.path)
+            )
+        return self.get_response(request)

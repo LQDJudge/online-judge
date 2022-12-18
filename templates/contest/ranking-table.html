@@ -16,12 +16,12 @@
 
 {% block user_footer %}
     {% if user.user.first_name %}
-        <div style="color: gray; font-weight: 600; display: none" class="fullname">
+        <div style="font-weight: 600; display: none" class="fullname gray">
             {{ user.user.first_name if user.user.first_name else ''}}
         </div>
     {% endif %}
     {% if user.user.last_name %}
-        <div class="school" style="display: none"><a style="color: gray; font-weight: 600">
+        <div class="school gray" style="display: none"><a style="font-weight: 600">
             {{- user.user.last_name -}}
         </a></div>
     {% endif %}
@@ -29,7 +29,7 @@
 
 {% block user_data %}
     {% if user.participation.virtual %}
-        <sub style="color:grey">[{{user.participation.virtual}}]</sub>
+        <sub class="gray">[{{user.participation.virtual}}]</sub>
     {% endif %}
     {% if can_edit %}
         <span class="contest-participation-operation">

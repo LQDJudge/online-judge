@@ -22,6 +22,7 @@ def get_resource(request):
         scheme = "https"
     else:
         scheme = "http"
+
     return {
         "PYGMENT_THEME": settings.PYGMENT_THEME,
         "INLINE_JQUERY": settings.INLINE_JQUERY,
@@ -30,6 +31,7 @@ def get_resource(request):
         "FONTAWESOME_CSS": settings.FONTAWESOME_CSS,
         "DMOJ_SCHEME": scheme,
         "DMOJ_CANONICAL": settings.DMOJ_CANONICAL,
+        "use_darkmode": request.session.get("darkmode", False) == True,
     }
 
 

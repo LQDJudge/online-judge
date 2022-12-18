@@ -16,7 +16,7 @@
         <span class="content-message">
             <div class="body-block" id="body-block-{{ message.id }}" title="{{ message.time|date('g:i a') }}">
                 {% if request.user.is_staff %}
-                <a class="chatbtn_remove_mess" value="{{message.id}}" style="color:red; cursor: pointer;">
+                <a class="red chatbtn_remove_mess" value="{{message.id}}" style="cursor: pointer;">
                     {{_('Delete')}}
                 </a>
                 {% endif %}

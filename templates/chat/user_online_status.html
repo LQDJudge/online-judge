@@ -26,7 +26,7 @@
     </button>
     <div id="setting-content">
         <li>
-            <a href="{{url('toggle_ignore', other_user.id)}}" style="color: {{'green' if is_ignored else 'red'}}">
+            <a href="{{url('toggle_ignore', other_user.id)}}" class=" {{'green' if is_ignored else 'red'}}">
                 {% if is_ignored %}
                     {{_('Unignore')}}
                 {% else %}

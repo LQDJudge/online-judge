@@ -782,7 +782,7 @@ math {
 }
 
 .featherlight {
-    z-index: 1000;
+    z-index: 1000 !important;
 }
 
 select {
@@ -799,6 +799,60 @@ select {
 .notification-open #notification {
     color: green !important;
 }
+
+.title-row {
+    color: #393630;
+    display: inline;
+}
+
+.gray {
+    color: gray;
+}
+
+.white {
+    color: white;
+}
+
+.black {
+    color: black;
+}
+
+.red {
+    color: red;
+}
+
+.green {
+    color: green;
+}
+
+.grayed {
+    color: #666;
+}
+
+.darkcyan {
+    color: darkcyan;
+}
+
+.peru {
+    color: peru;
+}
+
+.blue {
+    color: blue;
+}
+
+.background-d6e8f7 {
+    background-color: d6e8f7;
+}
+
+.background-bisque {
+    background-color: bisque;
+}
+
+.background-footer {
+    color: #808080;
+}
+
 @media (max-width: 799px) {
     #user-links, .anon {
         padding-right: 0.5em;

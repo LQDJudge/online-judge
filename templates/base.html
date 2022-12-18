@@ -47,6 +47,7 @@
     {% if not INLINE_FONTAWESOME %}
         <link rel="stylesheet" href="{{ FONTAWESOME_CSS }}">
     {% endif %}
+    <link rel="stylesheet" type="text/css" href="{{ static('markdown.css') }}">
     {% compress css %}
         <link rel="stylesheet" href="{{ static('style.css') }}">
         {% if PYGMENT_THEME %}
@@ -68,17 +69,15 @@
         </style>
     {% endif %}
     {% block media %}{% endblock %}
+    {% if use_darkmode %}
+        {% compress css %}
+            <link rel="stylesheet" href="{{ static('darkmode.css') }}">
+        {% endcompress %}
+    {% endif %}
     {% if not INLINE_JQUERY %}
         <script src="{{ JQUERY_JS }}"></script>
     {% endif %}
-    <link rel="stylesheet" type="text/css" href="{{ static('markdown.css') }}">
     <script src="https://unpkg.com/@popperjs/core@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/darkreader@4.9.58/darkreader.min.js"></script>
-    <script type="text/javascript">
-        if (localStorage.getItem("darkmode") === "true") {
-            DarkReader.enable();
-        }
-    </script>
     {% compress js %}
         <script>{{ inlinei18n(LANGUAGE_CODE)|safe }}</script>
         {% if INLINE_JQUERY %}
@@ -255,7 +254,7 @@
                     </div>
                 </span>
                 <span title="{{_('Dark Mode')}}">
-                    <span class="icofont-adjust navbar-icon" id="nav-darkmode-icon" aria-hidden="true"></span>
+                    <a class="icofont-adjust navbar-icon black" id="nav-darkmode-icon" aria-hidden="true" href="?darkmode=1"></a>
                 </span>
             </span>
             {% if request.user.is_authenticated %}
@@ -283,7 +282,7 @@
                         <div class="dropdown-item"><a href="{{ url('impersonate-stop') }}">Stop impersonating</a></div>
                     {% else %}
                         <div class="dropdown-item">
-                            <a href="#" id="logout" style="color: red !important">{{ _('Log out') }}</a>
+                            <a href="#" id="logout" class="red">{{ _('Log out') }}</a>
                             <form id="logout-form" action="{{ url('auth_logout') }}" method="POST">
                                 {% csrf_token %}
                             </form>
@@ -319,9 +318,9 @@
         </div>
         <div id="contest-info-toggle" class="{{'contest-info-toggle-mode-on' if request.contest_mode else 'contest-info-toggle-mode-off'}}">
             {% if request.contest_mode %}
-                <i class="fa fa-toggle-on" style="color: white"></i> {{_('Compete')}}
+                <i class="fa fa-toggle-on white"></i> {{_('Compete')}}
             {% else %}
-                <i class="fa fa-toggle-off" style="color: white"></i> {{_('General')}}
+                <i class="fa fa-toggle-off white"></i> {{_('General')}}
             {% endif %}
         </div>
     </div>
@@ -333,7 +332,7 @@
     <br>
     <main id="content">
         {% block title_row %}
-            <h2 style="color:#393630; display:inline">
+            <h2 class="title-row">
                 {% block content_title %}
                     {% if content_title %}{{ content_title }}{% else %}{{ title }}{% endif %}
                 {% endblock %}
@@ -355,7 +354,7 @@
     <footer>
         <span id="footer-content">
             <br>
-            <a style="color: #808080" target="_blank" href="https://dmoj.ca">proudly powered by <b>DMOJ</b></a><a target="_blank" href="https://github.com/LQDJudge/online-judge"> | developed by LQDJudge team</a> |
+            <a class="background-footer" target="_blank" href="https://dmoj.ca">proudly powered by <b>DMOJ</b></a><a target="_blank" href="https://github.com/LQDJudge/online-judge"> | developed by LQDJudge team</a> |
             {% if i18n_config.footer %}
                 {{ i18n_config.footer|safe }} |
             {% endif %}

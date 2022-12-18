@@ -40,7 +40,6 @@ else:
         class Media:
             css = {
                 "all": [
-                    "pagedown_widget.css",
                     "markdown.css",
                 ]
             }
@@ -49,6 +48,7 @@ else:
         class Media:
             css = {
                 "all": [
+                    "pagedown_widget.css",
                     "content-description.css",
                     "admin/css/pagedown.css",
                     "markdown.css",
@@ -104,7 +104,6 @@ else:
             }
 
         class Media:
-            css = {"all": ["dmmd-preview.css"]}
             js = ["dmmd-preview.js"]
 
     class HeavyPreviewAdminPageDownWidget(
@@ -117,5 +116,6 @@ else:
                     "table.css",
                     "ranks.css",
                     "markdown.css",
+                    "dmmd-preview.css",
                 ]
             }

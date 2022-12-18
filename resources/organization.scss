@@ -27,3 +27,23 @@
 .org-field-wrapper:has(> input[type=checkbox]) {
     display: contents;
 }
+
+.organization-row {
+    display: block;
+    padding: 0.5em;
+    border-bottom: 1px gray solid;
+    border-top: none;            
+    color: black;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.organization-row:hover {
+    background-color: #f3f3f3;
+}
+
+.organization-container {
+    border: 1px gray solid;
+    margin-bottom: 3em;
+}

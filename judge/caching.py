@@ -8,3 +8,4 @@ def finished_submission(sub):
         keys += ["contest_complete:%d" % participation.id]
         keys += ["contest_attempted:%d" % participation.id]
     cache.delete_many(keys)
+

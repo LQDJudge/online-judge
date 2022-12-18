@@ -5,12 +5,6 @@
 
 {% block two_col_media %}
     <style>
-        .time-left {
-            text-align: left;
-            color: #777;
-            padding-top: 0.5em;
-        }
-
         .content-description ul {
             padding: 0 !important;
         }
@@ -116,27 +110,27 @@
         </a>
         <span class="contest-tags">
             {% if not contest.is_visible %}
-                <span style="background-color: #000000; color: #ffffff" class="contest-tag">
+                <span class="contest-tag contest-tag-hidden">
                     <i class="fa fa-eye-slash"></i> {{ _('hidden') }}
                 </span>
             {% endif %}
             {% if contest.is_editable %}
-                <span style="background-color: green" class="contest-tag">
-                    <a href="{{ url('organization_contest_edit', organization.id, organization.slug, contest.key) }}" style="color: white">
+                <span class="contest-tag contest-tag-edit">
+                    <a href="{{ url('organization_contest_edit', organization.id, organization.slug, contest.key) }}" class="white">
                         <i class="fa fa-edit"></i> {{ _('Edit') }}
                     </a>
                 </span>
             {% endif %}
             {% if contest.is_private %}
-                <span style="background-color: #666666; color: #ffffff" class="contest-tag">
+                <span class="contest-tag contest-tag-private">
                     <i class="fa fa-lock"></i> {{ _('private') }}
                 </span>
             {% endif %}
             {% if not hide_contest_orgs %}
                 {% if contest.is_organization_private %}
                     {% for org in contest.organizations.all() %}
-                        <span style="background-color: #cccccc" class="contest-tag">
-                            <a href="{{ org.get_absolute_url() }}" style="color: #000000">
+                        <span class="contest-tag contest-tag-org">
+                            <a href="{{ org.get_absolute_url() }}">
                                 <i class="fa fa-lock"></i> {{ org.name }}
                             </a>
                         </span>
@@ -144,7 +138,7 @@
                 {% endif %}
             {% endif %}
             {% if contest.is_rated %}
-                <span style="background-color: #e54c14; color: #ffffff" class="contest-tag">
+                <span class="contest-tag-rated">
                     <i class="fa fa-bar-chart"></i> {{ _('rated') }}
                 </span>
             {% endif %}
@@ -366,10 +360,10 @@
                 <thead>
                 <tr>
                     <th style="width:90%">
-                        <a style="color: #7dc7ff" href="{{ sort_links.name }}">{{ _('Contest') }}{{ sort_order.name }}</a>
+                        <a class="contest-list-sort" href="{{ sort_links.name }}">{{ _('Contest') }}{{ sort_order.name }}</a>
                     </th>
                     <th>
-                        <a style="color: #7dc7ff" href="{{ sort_links.user_count }}">{{ _('Users') }}{{ sort_order.user_count }}</a>
+                        <a class="contest-list-sort" href="{{ sort_links.user_count }}">{{ _('Users') }}{{ sort_order.user_count }}</a>
                     </th>
                     {% if not request.in_contest %}
                         <th style="width:15%"></th>

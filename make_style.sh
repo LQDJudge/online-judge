@@ -21,3 +21,9 @@ sass resources:sass_processed
 
 echo
 postcss "${FILES[@]}" --verbose --use autoprefixer -d resources
+
+cp sass_processed/pagedown_widget.css resources/pagedown_widget.css
+cp sass_processed/dmmd-preview.css resources/dmmd-preview.css
+cp resources/pagedown_widget.css resources/pagedown/demo/browser/demo.css
+
+

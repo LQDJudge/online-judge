@@ -1,172 +1,174 @@
-body 
-{ 
-	background-color: White;
-}
-
-.wmd-panel
-{
-	margin-left: 25%;
-	margin-right: 25%;
-	width: 50%;
-	min-width: 500px;
+.wmd-panel {
+  margin: 0;
+  width: 100%;
+  min-width: 0;
 }
 
 .wmd-button-bar {
-    width: 100%;
-    background-color: white;
+  width: 100%;
+  background-color: white;
 }
 
 .wmd-input {
-    height: 300px;
-    width: 100%;
-    background: #fff;
-    border: 1px solid DarkGray;
-    font-family: Consolas, "Liberation Mono", Monaco, "Courier New", monospace !important;
+  height: 300px;
+  width: 100%;
+  background: #fff;
+  border: 1px solid DarkGray;
+  font-family: Consolas, "Liberation Mono", Monaco, "Courier New", monospace !important;
 }
 
 .wmd-preview {
-    background: none;
-    word-wrap: break-word;
+  background: none;
+  word-wrap: break-word;
 }
 
 .wmd-button-row {
-    margin: 10px 5px 5px;
-    padding: 0;
+  margin: 10px 5px 5px;
+  padding: 0;
 }
 
 .wmd-button {
-    display: inline-flex;
-    list-style: none;
-    width: 20px;
-    height: 20px;
-    background-repeat: no-repeat;
-    background-size: 14px 14px;
-    background-position: center;
-    border-radius: 3px;
-    cursor: pointer;
-    padding-left: 2px;
-    padding-right: 3px;
+  display: inline-flex;
+  list-style: none;
+  width: 20px;
+  height: 20px;
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
+  background-position: center;
+  border-radius: 3px;
+  cursor: pointer;
+  padding-left: 2px;
+  padding-right: 3px;
 }
 
 .wmd-bold-button {
-    background-image: url("pagedown/resources/bold.svg");
+  background-image: url("/static/pagedown/resources/bold.svg");
 }
 
 .wmd-italic-button {
-    background-image: url("pagedown/resources/italic.svg");
+  background-image: url("/static/pagedown/resources/italic.svg");
 }
 
 .wmd-latex-button {
-    background-image: url("pagedown/resources/latex.svg");
+  background-image: url("/static/pagedown/resources/latex.svg");
 }
 
 .wmd-latex-button-display {
-    background-image: url("pagedown/resources/latex-display.svg");
+  background-image: url("/static/pagedown/resources/latex-display.svg");
 }
 
 .wmd-link-button {
-    background-image: url("pagedown/resources/link.svg");
+  background-image: url("/static/pagedown/resources/link.svg");
 }
 
 .wmd-user-reference-button {
-    background-image: url("pagedown/resources/user.svg");
+  background-image: url("/static/pagedown/resources/user.svg");
 }
 
 .wmd-quote-button {
-    background-image: url("pagedown/resources/blockquote.svg");
+  background-image: url("/static/pagedown/resources/blockquote.svg");
 }
 
 .wmd-code-button {
-    background-image: url("pagedown/resources/code.svg");
+  background-image: url("/static/pagedown/resources/code.svg");
 }
 
 .wmd-image-button {
-    background-image: url("pagedown/resources/image.svg");
+  background-image: url("/static/pagedown/resources/image.svg");
 }
 
 .wmd-olist-button {
-    background-image: url("pagedown/resources/olist.svg");
-    background-size: 18px;
+  background-image: url("/static/pagedown/resources/olist.svg");
+  background-size: 18px;
 }
 
 .wmd-ulist-button {
-    background-image: url("pagedown/resources/ulist.svg");
-    background-size: 18px;
+  background-image: url("/static/pagedown/resources/ulist.svg");
+  background-size: 18px;
 }
 
 .wmd-heading-button {
-    background-image: url("pagedown/resources/heading.svg");
+  background-image: url("/static/pagedown/resources/heading.svg");
 }
 
 .wmd-hr-button {
-    background-image: url("pagedown/resources/hr.svg");
+  background-image: url("/static/pagedown/resources/hr.svg");
 }
 
 .wmd-undo-button {
-    background-image: url("pagedown/resources/undo.svg");
-    background-size: 18px;
+  background-image: url("/static/pagedown/resources/undo.svg");
+  background-size: 18px;
 }
 
 .wmd-redo-button {
-    background-image: url("pagedown/resources/redo.svg");
-    background-size: 18px;
+  background-image: url("/static/pagedown/resources/redo.svg");
+  background-size: 18px;
+}
+
+.wmd-admonition-button {
+  background-image: url("/static/pagedown/resources/admonition.svg");
+}
+
+.wmd-spoiler-button {
+  background-image: url("/static/pagedown/resources/spoiler.svg");
 }
 
 .wmd-button-active:hover {
-    background-color: lightgray;
+  background-color: lightgray;
 }
 
 .wmd-button-inactive {
-    filter: invert(88%) sepia(1%) saturate(0%) hue-rotate(278deg) brightness(98%) contrast(91%);
+  filter: invert(88%) sepia(1%) saturate(0%) hue-rotate(278deg) brightness(98%) contrast(91%);
 }
 
-.wmd-spacer
-{
-    display: inline-flex;
-    width: 20px;
+.wmd-spacer {
+  display: inline-flex;
+  width: 20px;
 }
 
 .wmd-prompt-background {
-    background-color: Black;
+  background-color: Black;
 }
 
 .wmd-prompt-dialog {
-    border: 1px solid #999999;
-    background-color: #F5F5F5;
+  border: 1px solid #999999;
+  background-color: #F5F5F5;
 }
 
 .wmd-prompt-dialog > div {
-    font-size: 0.8em;
-    font-family: arial, helvetica, sans-serif;
+  font-size: 0.8em;
+  font-family: arial, helvetica, sans-serif;
 }
 
-.wmd-prompt-dialog > form > input[type="text"] {
-    border: 1px solid #999999;
-    color: black;
+.wmd-prompt-dialog > form > input[type=text] {
+  border: 1px solid #999999;
+  color: black;
 }
 
-.wmd-prompt-dialog > form > input[type="button"] {
-    border: 1px solid #888888;
-    font-family: trebuchet MS, helvetica, sans-serif;
-    font-size: 0.8em;
-    font-weight: bold;
+.wmd-prompt-dialog > form > input[type=button] {
+  border: 1px solid #888888;
+  font-family: trebuchet MS, helvetica, sans-serif;
+  font-size: 0.8em;
+  font-weight: bold;
 }
 
 .wmd-wrapper {
-    padding-right: 0 !important;
+  padding-right: 0 !important;
 }
 
 .wmd-preview {
-    margin-top: 15px;
-    padding: 7px;
-    background: white;
-    line-height: 1.5em;
-    font-size: 1em;
-    border: 1px solid #a9a9a9;
-    border-radius: 5px;
-    box-sizing: border-box;
+  margin-top: 15px;
+  padding: 7px;
+  background: white;
+  line-height: 1.5em;
+  font-size: 1em;
+  border: 1px solid #a9a9a9;
+  border-radius: 5px;
+  box-sizing: border-box;
 }
 
 .wmd-preview:empty {
-    display: none;
+  display: none;
 }
+
+/*# sourceMappingURL=pagedown_widget.css.map */

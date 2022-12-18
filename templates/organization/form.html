@@ -11,7 +11,7 @@
         {% if not field.is_hidden %}
             <div style="margin-bottom: 1em;">
                 {{ field.errors }}
-                <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span style="color:red"> * </span>{% endif %}:</b> </label>
+                <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b> </label>
                 <div class="org-field-wrapper" id="org-field-wrapper-{{field.html_name }}">
                     {{ field }}
                 </div>

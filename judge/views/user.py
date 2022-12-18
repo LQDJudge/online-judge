@@ -623,3 +623,11 @@ def sample_import_users(request):
     response = HttpResponse(content, content_type="text/plain")
     response["Content-Disposition"] = "attachment; filename={0}".format(filename)
     return response
+
+
+def toggle_darkmode(request):
+    path = request.GET.get("next")
+    if not path:
+        return HttpResponseBadRequest()
+    request.session["darkmode"] = not request.session.get("darkmode", False)
+    return HttpResponseRedirect(path)

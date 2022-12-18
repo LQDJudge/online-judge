@@ -84,7 +84,7 @@
         {% for batch in batches %}
             {% if batch.id %}
                 {% set batch_AC = (batch.points == batch.total) %}
-                <tr class="case-row" style="background-color: {{ '#d6e8f7' if batch.points == batch.total else 'bisque'}}">
+                <tr class="case-row" class= "background-{{ 'd6e8f7' if batch.points == batch.total else 'bisque'}}">
                     <td>
                         <b>{{ _('Batch ') }}#{{ batch.id }}</b>
                     </td>

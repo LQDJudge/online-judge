@@ -19,10 +19,6 @@
             height: 70px
         }
 
-        .grayed {
-            color: #666;
-        }
-
         .inline-header {
             float: left;
             font-size: 1.1em;
@@ -31,7 +27,6 @@
         }
 
         .block-header {
-            color: #666;
             font-size: 1.1em;
         }
 
@@ -94,7 +89,7 @@
 
             {% csrf_token %}
 
-            <table class="block-header">
+            <table class="block-header grayed">
                 <tr>
                   <td> {{ _('Fullname') }}: </td>
                   <td> {{ form_user.first_name }} </td>

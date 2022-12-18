@@ -15,12 +15,6 @@
             vertical-align: middle;
         }
 
-        .problem-clarification {
-            border-bottom: 1px solid #ccc;
-            margin-top: 1em;
-            margin-bottom: 1em;
-        }
-
         .clarifications-area h2 {
             margin-bottom: 20px;
         }
@@ -47,29 +41,6 @@
             visibility: hidden;
             width: 0;
             height: 0;
-        }
-
-        #clarification_header {
-            color: red;
-            cursor: pointer;
-        }
-        #clarification_header:hover {
-            color: orange;
-        }
-
-        #comment-announcement {
-            margin-top: 1em;
-            background-color: lightgray;
-            border-radius: 30px;
-            padding: 0.5em;
-            text-align: center;
-            cursor: pointer;
-            color: dimgrey;
-            font-weight: bold;
-        }
-
-        #comment-announcement:hover {
-            background-color: gray;
         }
 
         #comment-section {
@@ -139,7 +110,7 @@
                 </a>
             {% endif %}
         {% endif %}
-        <h2 style="color:#393630; display: inline-block">{{ title }}</h2>
+        <h2 class="title-row" style="display: inline-block">{{ title }}</h2>
         {% if problem.is_organization_private %}
             <span class="organization-tags">
                 {% for org in problem.organizations.all() %}
@@ -358,7 +329,7 @@
                         {{ available_judges|join(", ") }}
                     {% endif %}
                 {% else %}
-                    <i style="color: red">{{ _('none available') }}</i>
+                    <i class="red">{{ _('none available') }}</i>
                 {% endif %}
             </div>
         </div>

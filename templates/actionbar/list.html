@@ -2,7 +2,7 @@
 {% set profile = request.profile if logged_in else None %}
 {% if logged_in %}
 {% if include_hr %}<hr>{% endif %}
-<div class="page-vote">
+<div class="page-vote actionbar">
     <span class="actionbar-block" style="justify-content: flex-start;">
         <span id="like-button-{{pagevote.id}}"
             class="like-button actionbar-button {% if pagevote.vote_score(request.profile) == 1 %}voted{% endif %}" 
@@ -41,7 +41,7 @@
     </span>
     {% if actionbar_report_url %}
         <span class="actionbar-block">
-            <a class="actionbar-button" href="{{actionbar_report_url}}" style="color: black">
+            <a class="actionbar-button black" href="{{actionbar_report_url}}">
                 <i class="fa fa-flag-o" style="font-size: large;"></i>
                 <span class="actionbar-text">{{_("Report")}}</span>
             </a>

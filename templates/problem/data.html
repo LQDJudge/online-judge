@@ -427,10 +427,6 @@
             width: 1em;
         }
 
-        .bad-file input, .bad-file .select2-selection {
-            border-color: red;
-        }
-
         span.order {
             padding-right: 0.5em;
         }
@@ -481,7 +477,7 @@
             <li>{{ data_form.instance.feedback }}</li>
         </ul>
     {% endif %}
-    <form action="" method="POST" enctype="multipart/form-data">
+    <form class="problem-data-form" action="" method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         {{ cases_formset.management_form }}
         <table class="table">

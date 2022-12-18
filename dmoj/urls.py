@@ -212,6 +212,7 @@ urlpatterns = [
         name="home",
     ),
     url(r"^500/$", exception),
+    url(r"^toggle_darkmode/$", user.toggle_darkmode, name="toggle_darkmode"),
     url(r"^admin/", admin.site.urls),
     url(r"^i18n/", include("django.conf.urls.i18n")),
     url(r"^accounts/", include(register_patterns)),

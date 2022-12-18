@@ -31,7 +31,6 @@ from judge.widgets import (
     AdminSelect2Widget,
     CheckboxSelectMultipleWithSelectAll,
     HeavyPreviewAdminPageDownWidget,
-    HeavyPreviewPageDownWidget,
 )
 
 MEMORY_UNITS = (("KB", "KB"), ("MB", "MB"))

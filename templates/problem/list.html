@@ -135,7 +135,7 @@
             <br><br>
             {% if can_edit_contest %}
             <div style="float: right; font-size: 1.2em">
-                <a href="{{url('new_contest_clarification', request.participation.contest.key)}}"><i class="fa fa-plus-circle" style="color:green"></i> <u>{{_('Add clarifications')}}</u></a>
+                <a href="{{url('new_contest_clarification', request.participation.contest.key)}}"><i class="fa fa-plus-circle" class="green"></i> <u>{{_('Add clarifications')}}</u></a>
             </div>
             {% endif %}
             {% if has_clarifications %}

@@ -573,58 +573,60 @@ let META_HEADER = [
 {% endblock media %}
 
 {% block body %}
-    <div id="mobile" class="tabs">
-        <ul>
-            <li id="chat-tab" class="tab active"><a href="#">
-                <i class="tab-icon fa fa-comments"></i> {{ _('Chat') }}
-            </a></li>
-            <li id="online-tab" class="tab"><a href="#"><i class="tab-icon fa fa-wifi"></i> {{ _('Online Users') }}</a></li>
-        </ul>
-    </div>
-    
-    <div id="chat-container">
-        <div id="chat-online" class="chat-right-panel sidebox">
-            <h3 style="display:flex">
-                {{_('Online Users')}}
-                <a href="#" id="refresh-button" title="{{_('Refresh')}}">
-                    <img src="/reload.png"
-                         width="100%"
-                    >
-                </a> 
-            </h3>
-            <div id="chat-online-content">
-                <div id="search-container">
-                    <center>
-                        <form id="search-form" name="form" action="{{ url('get_or_create_room') }}" method="post">
-                            {% csrf_token %}
-                            <input id="search-handle" type="text" name="search"
-                                   placeholder="{{ _('Search by handle...') }}">
-                        </form>
-                    </center>
-                </div>
-                <div id="chat-online-list">
-                    {% include "chat/online_status.html" %}
+    <div class="chat">
+        <div id="mobile" class="tabs">
+            <ul>
+                <li id="chat-tab" class="tab active"><a href="#">
+                    <i class="tab-icon fa fa-comments"></i> {{ _('Chat') }}
+                </a></li>
+                <li id="online-tab" class="tab"><a href="#"><i class="tab-icon fa fa-wifi"></i> {{ _('Online Users') }}</a></li>
+            </ul>
+        </div>
+        
+        <div id="chat-container">
+            <div id="chat-online" class="chat-right-panel sidebox">
+                <h3 style="display:flex">
+                    {{_('Online Users')}}
+                    <a href="#" id="refresh-button" title="{{_('Refresh')}}">
+                        <img src="/reload.png"
+                             width="100%"
+                        >
+                    </a> 
+                </h3>
+                <div id="chat-online-content">
+                    <div id="search-container">
+                        <center>
+                            <form id="search-form" name="form" action="{{ url('get_or_create_room') }}" method="post">
+                                {% csrf_token %}
+                                <input id="search-handle" type="text" name="search"
+                                       placeholder="{{ _('Search by handle...') }}">
+                            </form>
+                        </center>
+                    </div>
+                    <div id="chat-online-list">
+                        {% include "chat/online_status.html" %}
+                    </div>
                 </div>
             </div>
-        </div>
-        <div id="chat-area" class="chat-left-panel" style="width:100%">
-                <div id="chat-info" style="height: 8%">
-                    {% include 'chat/user_online_status.html' %}
-                </div>
-                <div id="chat-box">
+            <div id="chat-area" class="chat-left-panel" style="width:100%">
+                    <div id="chat-info" style="height: 8%">
+                        {% include 'chat/user_online_status.html' %}
+                    </div>
+                    <div id="chat-box">
 
-                    <img src="{{static('loading.gif')}}" id="loader">
-                    <ul id="chat-log" style="display: none">
-                        {% include 'chat/message_list.html' %}
-                    </ul>
-                </div>
-                <div style="height: 15%">
-                    <a id="emoji-button" href="#" title="{{_('Emoji')}}"><i class="icofont-slightly-smile"></i></a>
-                    <textarea maxlength="5000" id="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
-                </div>
-                <div class="tooltip" role="tooltip">
-                    <emoji-picker></emoji-picker>
-                </div>
+                        <img src="{{static('loading.gif')}}" id="loader">
+                        <ul id="chat-log" style="display: none">
+                            {% include 'chat/message_list.html' %}
+                        </ul>
+                    </div>
+                    <div style="height: 15%">
+                        <a id="emoji-button" href="#" title="{{_('Emoji')}}"><i class="icofont-slightly-smile"></i></a>
+                        <textarea maxlength="5000" id="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
+                    </div>
+                    <div class="tooltip" role="tooltip">
+                        <emoji-picker></emoji-picker>
+                    </div>
+            </div>
         </div>
     </div>
 {% endblock body %}

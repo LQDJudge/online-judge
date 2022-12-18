@@ -403,16 +403,4 @@ $(function() {
     $('html').click(function () {
         $nav_list.hide();
     });
-
-
-    $('#nav-darkmode-icon').on('click', function() {
-        if (localStorage.getItem("darkmode") === "true") {
-            localStorage.setItem("darkmode", "false");
-            DarkReader.disable();
-        }
-        else {
-            localStorage.setItem("darkmode", "true");
-            DarkReader.enable();   
-        }
-    })
 });
