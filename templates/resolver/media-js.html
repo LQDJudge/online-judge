@@ -7,7 +7,7 @@
         var speed = 700;
         var autopress = false;
         $(document).ready(function() {
-            $.getJSON('{{ static('contest.json') }}', function (data) {
+            $.getJSON('{{ contest_json }}', function (data) {
                 console.log("OK");
                 var resolver = new Resolver(data.problem_sub, data.sub_frozen, data.problems, data.users);
                 window.resolver = resolver;
