@@ -842,6 +842,7 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
             total_points = 0
             problem_points = 0
             achieved_points = 0
+            frozen_subtasks = self.contest.format.get_frozen_subtasks()
 
             for (
                 problem_id,
@@ -860,25 +861,38 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
                     subtask = 0
                 problem_points = pp
                 submission = Submission.objects.get(id=sub_id)
-                best_subtasks[subtask] = {
-                    "submission": submission,
-                    "contest_time": nice_repr(self.contest_time(submission), "noday"),
-                    "points": subtask_points,
-                    "total": total_subtask_points,
-                }
+                if subtask in frozen_subtasks.get(str(problem_id), set()):
+                    best_subtasks[subtask] = {
+                        "submission": submission,
+                        "contest_time": nice_repr(
+                            self.contest_time(submission), "noday"
+                        ),
+                        "points": "???",
+                        "total": total_subtask_points,
+                    }
+                else:
+                    best_subtasks[subtask] = {
+                        "submission": submission,
+                        "contest_time": nice_repr(
+                            self.contest_time(submission), "noday"
+                        ),
+                        "points": subtask_points,
+                        "total": total_subtask_points,
+                    }
+                    achieved_points += subtask_points
                 total_points += total_subtask_points
-                achieved_points += subtask_points
             for subtask in best_subtasks.values():
-                subtask["points"] = floatformat(
-                    subtask["points"] / total_points * problem_points,
-                    -self.contest.points_precision,
-                )
+                if subtask["points"] != "???":
+                    subtask["points"] = floatformat(
+                        subtask["points"] / total_points * problem_points,
+                        -self.contest.points_precision,
+                    )
                 subtask["total"] = floatformat(
                     subtask["total"] / total_points * problem_points,
                     -self.contest.points_precision,
                 )
-            achieved_points = achieved_points / total_points * problem_points
-            if best_subtasks:
+            if total_points > 0 and best_subtasks:
+                achieved_points = achieved_points / total_points * problem_points
                 return best_subtasks, achieved_points, problem_points
         return None
 
@@ -914,9 +928,10 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
                 context["points"],
                 context["total"],
             ) = best_subtasks
-            context["points"] = floatformat(
-                context["points"], -self.contest.points_precision
-            )
+            if context["points"] != "???":
+                context["points"] = floatformat(
+                    context["points"], -self.contest.points_precision
+                )
             context["total"] = floatformat(
                 context["total"], -self.contest.points_precision
             )

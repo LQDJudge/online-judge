@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.core.exceptions import PermissionDenied
 from django.db import connection, transaction
 from django.db.models import Q, TextField
-from django.forms import ModelForm, ModelMultipleChoiceField
+from django.forms import ModelForm, ModelMultipleChoiceField, TextInput
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -66,7 +66,13 @@ class ContestTagAdmin(admin.ModelAdmin):
 
 class ContestProblemInlineForm(ModelForm):
     class Meta:
-        widgets = {"problem": AdminHeavySelect2Widget(data_view="problem_select2")}
+        widgets = {
+            "problem": AdminHeavySelect2Widget(data_view="problem_select2"),
+            "frozen_subtasks": TextInput(attrs={"size": "3"}),
+            "points": TextInput(attrs={"size": "1"}),
+            "order": TextInput(attrs={"size": "1"}),
+            "output_prefix_override": TextInput(attrs={"size": "1"}),
+        }
 
 
 class ContestProblemInline(admin.TabularInline):
@@ -79,6 +85,7 @@ class ContestProblemInline(admin.TabularInline):
         "partial",
         "is_pretested",
         "max_submissions",
+        "frozen_subtasks",
         "output_prefix_override",
         "order",
         "rejudge_column",

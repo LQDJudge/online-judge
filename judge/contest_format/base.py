@@ -98,15 +98,22 @@ class BaseContestFormat(metaclass=ABCMeta):
         return "partial-score"
 
     def handle_frozen_state(self, participation, format_data):
-        if not self.contest.freeze_after:
-            return
+        frozen_subtasks = {}
+        if hasattr(self, "get_frozen_subtasks"):
+            frozen_subtasks = self.get_frozen_subtasks()
+
         queryset = participation.submissions.values("problem_id").annotate(
             time=Max("submission__date")
         )
         for result in queryset:
             problem = str(result["problem_id"])
             if format_data.get(problem):
-                if result["time"] >= self.contest.freeze_after + participation.start:
+                is_after_freeze = (
+                    self.contest.freeze_after
+                    and result["time"]
+                    >= self.contest.freeze_after + participation.start
+                )
+                if is_after_freeze or frozen_subtasks.get(problem):
                     format_data[problem]["frozen"] = True
             else:
                 format_data[problem] = {"time": 0, "points": 0, "frozen": True}

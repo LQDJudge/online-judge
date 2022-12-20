@@ -14,6 +14,21 @@ class NewIOIContestFormat(IOIContestFormat):
         cumtime: Specify True if time penalties are to be computed. Defaults to False.
     """
 
+    def get_frozen_subtasks(self):
+        queryset = self.contest.contest_problems.values_list("id", "frozen_subtasks")
+        res = {}
+        for problem_id, frozen_subtasks in queryset:
+            subtasks = set()
+            if frozen_subtasks:
+                frozen_subtasks = frozen_subtasks.split(",")
+                for i in frozen_subtasks:
+                    try:
+                        subtasks.add(int(i))
+                    except Exception as e:
+                        pass
+            res[str(problem_id)] = subtasks
+        return res
+
     def get_results_by_subtask(self, participation, include_frozen=False):
         frozen_time = self.contest.end_time
         if self.contest.freeze_after and not include_frozen:
@@ -65,6 +80,7 @@ class NewIOIContestFormat(IOIContestFormat):
                                   ON (sub.id = cs.submission_id AND sub.status = 'D')
                                       INNER JOIN judge_submissiontestcase tc
                                   ON sub.id = tc.submission_id
+                             WHERE sub.date < %s
                              GROUP BY cp.id, tc.batch, sub.id
                          ) r
                     GROUP BY prob, batch
@@ -73,7 +89,12 @@ class NewIOIContestFormat(IOIContestFormat):
                 WHERE p.max_batch_points = q.batch_points
                 GROUP BY q.prob, q.batch
             """,
-                (participation.id, to_database_time(frozen_time), participation.id),
+                (
+                    participation.id,
+                    to_database_time(frozen_time),
+                    participation.id,
+                    to_database_time(frozen_time),
+                ),
             )
 
             return cursor.fetchall()
@@ -82,6 +103,7 @@ class NewIOIContestFormat(IOIContestFormat):
         cumtime = 0
         score = 0
         format_data = {}
+        frozen_subtasks = self.get_frozen_subtasks()
 
         for (
             problem_id,
@@ -101,10 +123,11 @@ class NewIOIContestFormat(IOIContestFormat):
 
             if format_data.get(problem_id) is None:
                 format_data[problem_id] = {"points": 0, "time": 0, "total_points": 0}
-            format_data[problem_id]["points"] += subtask_points
+            if subtask not in frozen_subtasks.get(problem_id, set()):
+                format_data[problem_id]["points"] += subtask_points
+            format_data[problem_id]["total_points"] += total_subtask_points
             format_data[problem_id]["time"] = max(dt, format_data[problem_id]["time"])
             format_data[problem_id]["problem_points"] = problem_points
-            format_data[problem_id]["total_points"] += total_subtask_points
 
         for problem_data in format_data.values():
             if not problem_data["total_points"]:

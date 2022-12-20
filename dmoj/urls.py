@@ -1099,7 +1099,7 @@ urlpatterns = [
             ]
         ),
     ),
-    url(r"^resolver/(?P<contest>\w+)",resolver.Resolver.as_view(), name="resolver")
+    url(r"^resolver/(?P<contest>\w+)", resolver.Resolver.as_view(), name="resolver"),
 ] + url_static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # if hasattr(settings, "INTERNAL_IPS"):

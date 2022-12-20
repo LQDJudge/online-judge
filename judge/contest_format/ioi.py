@@ -111,7 +111,9 @@ class IOIContestFormat(DefaultContestFormat):
                         contest_problem.problem.code,
                     ],
                 ),
-                points=floatformat(format_data["points"]),
+                points=floatformat(
+                    format_data["points"], -self.contest.points_precision
+                ),
                 time=nice_repr(timedelta(seconds=format_data["time"]), "noday")
                 if self.config["cumtime"]
                 else "",
@@ -122,7 +124,7 @@ class IOIContestFormat(DefaultContestFormat):
     def display_participation_result(self, participation):
         return format_html(
             '<td class="user-points">{points}<div class="solving-time">{cumtime}</div></td>',
-            points=floatformat(participation.score),
+            points=floatformat(participation.score, -self.contest.points_precision),
             cumtime=nice_repr(timedelta(seconds=participation.cumtime), "noday")
             if self.config["cumtime"]
             else "",
