@@ -22,6 +22,9 @@
             {{ make_tab_item('ranking', 'fa fa-bar-chart', None, _('Hidden Rankings')) }}
         {% endif %}
     {% endif %}
+    {% if request.user.is_superuser %}
+    {{ make_tab_item('resolver', 'fa fa-check', url('resolver', contest.key), _('Resolver')) }}
+    {% endif %}
     {% if can_edit %}
         {% if perms.judge.moss_contest and has_moss_api_key %}
             {{ make_tab_item('moss', 'fa fa-gavel', url('contest_moss', contest.key), _('MOSS')) }}
