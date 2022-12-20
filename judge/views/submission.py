@@ -907,19 +907,26 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
 
         contest_problem = self.contest.contest_problems.get(problem=self.problem)
         filtered_submissions = []
-        for s in context["submissions"]:
-            if not hasattr(s, "contest"):
-                continue
-            contest_time = self.contest_time(s)
-            if contest_time:
-                s.contest_time = nice_repr(contest_time, "noday")
-            else:
-                s.contest_time = None
-            total = floatformat(contest_problem.points, -self.contest.points_precision)
-            points = floatformat(s.contest.points, -self.contest.points_precision)
-            s.display_point = f"{points} / {total}"
-            filtered_submissions.append(s)
-        context["submissions"] = filtered_submissions
+
+        # Only show this for some users when using ioi16
+        if self.contest.format_name != "ioi16" or self.include_frozen:
+            for s in context["submissions"]:
+                if not hasattr(s, "contest"):
+                    continue
+                contest_time = self.contest_time(s)
+                if contest_time:
+                    s.contest_time = nice_repr(contest_time, "noday")
+                else:
+                    s.contest_time = None
+                total = floatformat(
+                    contest_problem.points, -self.contest.points_precision
+                )
+                points = floatformat(s.contest.points, -self.contest.points_precision)
+                s.display_point = f"{points} / {total}"
+                filtered_submissions.append(s)
+            context["submissions"] = filtered_submissions
+        else:
+            context["submissions"] = None
 
         best_subtasks = self.get_best_subtask_points()
         if best_subtasks:
