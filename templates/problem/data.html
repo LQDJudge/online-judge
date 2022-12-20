@@ -44,7 +44,6 @@
             }
 
             $("#id_problem-data-checker").select2();
-            $("#problem-type").select2();
             update_select2();
 
             function autofill_if_exists($select, file) {
@@ -391,8 +390,9 @@
                 }
             });
 
-	    // Change to OI if the first row point > 0
-	    if($("#id_cases-0-points").val() != '0') $('#problem-type').val('OI');
+        // Change to OI if the first row point > 0
+        if($("#id_cases-0-points").val() != '0') $('#problem-type').val('OI');
+        $("#problem-type").select2();
 
         // Change batch_starts based on current tests
         function update_batch_starts() {
