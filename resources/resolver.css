@@ -252,7 +252,6 @@
 
 .score {
     font-weight: bold;
-    width: 70px;
     color: var(--theme-text-color);
 }
 

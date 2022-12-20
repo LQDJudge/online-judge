@@ -138,7 +138,7 @@ class NewIOIContestFormat(IOIContestFormat):
                 / problem_data["total_points"]
                 * problem_data["problem_points"]
             )
-            if self.config["cumtime"] and points:
+            if self.config["cumtime"] and problem_data["points"]:
                 cumtime += penalty
             score += problem_data["points"]
 
