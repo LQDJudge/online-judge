@@ -8,8 +8,10 @@
 {% if submission.status != 'IE' %}
     {% if submission.status == 'QU' %}
         <h4>{{ _('We are waiting for a suitable judge to process your submission...') }}</h4>
+        <meta http-equiv="refresh" content="3" >
     {% elif submission.status == 'P' %}
         <h4>{{ _('Your submission is being processed...') }}</h4>
+        <meta http-equiv="refresh" content="3" >
     {% elif submission.status == 'CE' %}
         <h3><i class="fa fa-exclamation-circle fa-fw"></i>{{ _('Compilation Error') }}</h3>
         <pre>{{ submission.error|ansi2html }}</pre>
