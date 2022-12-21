@@ -91,7 +91,7 @@ Most of the steps are similar to Django tutorials. Here are two usual steps:
 
 2. Update styles (using SASS)
  - Change .css/.scss files in `resources` folder
- - ```./make_style && python manage.py collectstatic```
+ - ```./make_style.sh && python manage.py collectstatic```
  - Sometimes you need to `Ctrl + F5` to see the new user interface in browser.
  
 ## Screenshots
