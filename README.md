@@ -53,12 +53,12 @@ source dmojsite/bin/activate
 
 2. Run server:
 ```bash
-python manage.py runserver 0.0.0.0:8000
+python3 manage.py runserver 0.0.0.0:8000
 ```
 
 3. Create a bridge (this is opened in a different terminal with the second step if you are using the same machine)
 ```bash
-python manage.py runbridged
+python3 manage.py runbridged
 ```
 
 4. Create a judge (another terminal)
@@ -83,15 +83,15 @@ node websocket/daemon.js
 Most of the steps are similar to Django tutorials. Here are two usual steps:
 
 1. Update vietnamese translation:
- - If you add any new phrases in the code, ```python manage.py makemessages```
+ - If you add any new phrases in the code, ```python3 manage.py makemessages```
  - go to `locale/vi`
  - modify `.po` file
- - ```python manage.py compilemessages```
- - ```python manage.py compilejsi18n```
+ - ```python3 manage.py compilemessages```
+ - ```python3 manage.py compilejsi18n```
 
 2. Update styles (using SASS)
  - Change .css/.scss files in `resources` folder
- - ```./make_style && python manage.py collectstatic```
+ - ```./make_style.sh && python3 manage.py collectstatic```
  - Sometimes you need to `Ctrl + F5` to see the new user interface in browser.
  
 ## Screenshots
