@@ -136,7 +136,10 @@ class CommentEditForm(ModelForm):
         fields = ["body"]
         widgets = {
             "body": HeavyPreviewPageDownWidget(
-                id="id-edit-comment-body", preview=reverse_lazy("comment_preview")
+                id="id-edit-comment-body",
+                preview=reverse_lazy("comment_preview"),
+                preview_timeout=1000,
+                hide_preview_button=True,
             ),
         }
 

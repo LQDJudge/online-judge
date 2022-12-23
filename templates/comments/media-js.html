@@ -167,7 +167,7 @@
                 afterOpen: function () {
                     register_dmmd_preview($('#id-edit-comment-body-preview'));
                     if ('DjangoPagedown' in window) {
-                        var $wmd = $('.featherlight .wmd-input');
+                        var $wmd = $('.featherlight .wmd-wrapper');
                         if ($wmd.length) {
                             window.DjangoPagedown.createEditor($wmd.get(0));
                             if ('MathJax' in window) {
