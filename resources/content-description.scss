@@ -216,6 +216,13 @@ pre {
     }
 }
 
+@media (max-width: 799px) {
+    .content-description {
+        font-size: 16px;
+        line-height: 1.7em;
+    }
+}
+
 a.view-pdf {
     padding-top: 0.6em;
     display: inline-block;
