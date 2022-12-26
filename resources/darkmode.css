@@ -1321,7 +1321,7 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
 .linenodiv a {
     color: inherit;
 }
-.md-typeset .keys kbd:is() {
+.md-typeset .keys kbd:is {
     color: inherit;
 }
 .md-typeset .keys span {
@@ -5111,7 +5111,7 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
 .linenodiv a {
     color: inherit;
 }
-.md-typeset .keys kbd:is() {
+.md-typeset .keys kbd:is {
     color: inherit;
 }
 .md-typeset .keys span {
