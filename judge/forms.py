@@ -34,7 +34,7 @@ from judge.models import (
     BlogPost,
     ContestProblem,
 )
-from judge.utils.subscription import newsletter_id
+
 from judge.widgets import (
     HeavyPreviewPageDownWidget,
     MathJaxPagedownWidget,
@@ -65,10 +65,6 @@ class UserForm(ModelForm):
 
 
 class ProfileForm(ModelForm):
-    if newsletter_id is not None:
-        newsletter = forms.BooleanField(
-            label=_("Subscribe to contest updates"), initial=False, required=False
-        )
     test_site = forms.BooleanField(
         label=_("Enable experimental features"), initial=False, required=False
     )

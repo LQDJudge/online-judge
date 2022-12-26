@@ -98,7 +98,6 @@ MATHOID_CACHE_URL = False
 TEXOID_GZIP = False
 TEXOID_META_CACHE = "default"
 TEXOID_META_CACHE_TTL = 86400
-DMOJ_NEWSLETTER_ID_ON_REGISTER = 1
 
 BAD_MAIL_PROVIDERS = ()
 BAD_MAIL_PROVIDER_REGEX = ()
@@ -244,7 +243,6 @@ INSTALLED_APPS += (
     "impersonate",
     "django_jinja",
     "chat_box",
-    "newsletter",
     "django.forms",
 )
 
@@ -467,17 +465,6 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 2621440
 FILE_UPLOAD_PERMISSIONS = 0o644
 
 MESSAGES_TO_LOAD = 15
-
-NEWSLETTER_CONFIRM_EMAIL = False
-
-# Amount of seconds to wait between each email. Here 100ms is used.
-NEWSLETTER_EMAIL_DELAY = 0.1
-
-# Amount of seconds to wait between each batch. Here one minute is used.
-NEWSLETTER_BATCH_DELAY = 60
-
-# Number of emails in one batch
-NEWSLETTER_BATCH_SIZE = 100
 
 ML_OUTPUT_PATH = None
 

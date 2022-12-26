@@ -1146,7 +1146,5 @@ handler404 = "judge.views.error.error404"
 handler403 = "judge.views.error.error403"
 handler500 = "judge.views.error.error500"
 
-if "newsletter" in settings.INSTALLED_APPS:
-    urlpatterns.append(url(r"^newsletter/", include("newsletter.urls")))
 if "impersonate" in settings.INSTALLED_APPS:
     urlpatterns.append(url(r"^impersonate/", include("impersonate.urls")))
