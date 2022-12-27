@@ -30,7 +30,6 @@ packaging
 celery
 ansi2html @ git+https://github.com/DMOJ/ansi2html.git
 sqlparse
-django-newsletter
 netaddr
 redis
 lupa

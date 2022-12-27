@@ -127,16 +127,6 @@
                                     <td><span class="fullwidth">{{ form.math_engine }}</span></td>
                                 </tr>
                             {% endif %}
-                            {% if form.newsletter %}
-                                <tr>
-                                    <td colspan="2">
-                                        {{ form.newsletter }}
-                                        <label for="id_newsletter" style="float: unset" class="inline-header grayed">
-                                            {{- _('Notify me about upcoming contests') -}}
-                                        </label>
-                                    </td>
-                                </tr>
-                            {% endif %}
                             <tr>
                                 <td colspan="2">
                                     {{ form.test_site }}

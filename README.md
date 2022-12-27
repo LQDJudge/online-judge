@@ -30,11 +30,6 @@ Support plagiarism detection via [Stanford MOSS](https://theory.stanford.edu/~ai
 Most of the setup are the same as DMOJ installations. You can view the installation guide of DMOJ here: https://docs.dmoj.ca/#/site/installation.
 There is one minor change: Instead of `git clone https://github.com/DMOJ/site.git`, you clone this repo `git clone https://github.com/LQDJudge/online-judge.git`.
 
-### Additional Steps in Production:
-
-1. To use newsletter (email sending), go to admin and create a newsletter.
-2. Change the domain name and website name in Admin page: Navigation Bars/Sites
-
 ### Some frequent difficulties when installation:
 
 1. Missing the `local_settings.py`. You need to copy the `local_settings.py` in order to pass the check.
@@ -100,7 +95,7 @@ Most of the steps are similar to Django tutorials. Here are two usual steps:
 
 Leaderboard with information about contest rating, performance points and real name of all users.
 
-![](https://i.imgur.com/ampxHXM.png)
+![](https://i.imgur.com/SeUiXKQ.png)
 
 ### Admin dashboard
 
@@ -118,4 +113,4 @@ You can write the problems' statement in Markdown with LaTeX figures and formula
 
 Users can communicate with each other and can see who's online.
 
-![](https://i.imgur.com/y9SGCgl.png)
+![](https://i.imgur.com/wvOjlLx.png)
