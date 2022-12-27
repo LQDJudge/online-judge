@@ -125,8 +125,8 @@ class RegistrationView(OldRegistrationView):
         profile.organizations.add(*cleaned_data["organizations"])
         profile.save()
 
-        if newsletter_id is not None and cleaned_data["newsletter"]:
-            Subscription(user=user, newsletter_id=newsletter_id, subscribed=True).save()
+        #if newsletter_id is not None and cleaned_data["newsletter"]:
+        #    Subscription(user=user, newsletter_id=newsletter_id, subscribed=True).save()
         return user
 
     def get_initial(self, *args, **kwargs):

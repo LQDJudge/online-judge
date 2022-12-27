@@ -84,13 +84,6 @@
                 <div class="form-field-error">{{ form.organizations.errors }}</div>
             {% endif %}
 
-            {% if form.newsletter %}
-                <div style="padding-top: 0.5em;">{{ form.newsletter }}
-                    <label for="id_newsletter" style="float: unset;"
-                           class="inline-header grayed">{{ _('Notify me about upcoming contests') }}</label>
-                </div>
-            {% endif %}
-
             {% if form.captcha %}
                 <div style="margin-top: 0.5em">{{ form.captcha }}</div>
                 {% if form.captcha.errors %}
