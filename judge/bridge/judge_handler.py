@@ -36,10 +36,7 @@ SubmissionData = namedtuple(
 
 
 def _ensure_connection():
-    try:
-        db.connection.cursor().execute("SELECT 1").fetchall()
-    except Exception:
-        db.connection.close()
+    db.connection.close_if_unusable_or_obsolete()
 
 
 class JudgeHandler(ZlibPacketHandler):
@@ -903,3 +900,6 @@ class JudgeHandler(ZlibPacketHandler):
                     "language": data["language__key"],
                 },
             )
+
+    def on_cleanup(self):
+        db.connection.close()
