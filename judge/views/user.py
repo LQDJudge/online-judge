@@ -414,21 +414,10 @@ def edit_profile(request):
                 form.save()
                 revisions.set_user(request.user)
                 revisions.set_comment(_("Updated on site"))
-
-            perm = Permission.objects.get(
-                codename="test_site",
-                content_type=ContentType.objects.get_for_model(Profile),
-            )
-            if form.cleaned_data["test_site"]:
-                request.user.user_permissions.add(perm)
-            else:
-                request.user.user_permissions.remove(perm)
-
             return HttpResponseRedirect(request.path)
     else:
         form_user = UserForm(instance=request.user)
         form = ProfileForm(instance=profile, user=request.user)
-        form.fields["test_site"].initial = request.user.has_perm("judge.test_site")
 
     tzmap = settings.TIMEZONE_MAP
 

@@ -65,10 +65,6 @@ class UserForm(ModelForm):
 
 
 class ProfileForm(ModelForm):
-    test_site = forms.BooleanField(
-        label=_("Enable experimental features"), initial=False, required=False
-    )
-
     class Meta:
         model = Profile
         fields = [
