@@ -4436,21 +4436,18 @@ html .md-typeset .footnote-ref{
 .md-typeset .keys kbd:-webkit-any(:before,:after){
     -moz-osx-font-smoothing:initial;
     -webkit-font-smoothing:initial;
-    color:inherit;
     margin:0;
     position:relative
 }
 .md-typeset .keys kbd:-moz-any(:before,:after){
     -moz-osx-font-smoothing:initial;
     -webkit-font-smoothing:initial;
-    color:inherit;
     margin:0;
     position:relative
 }
 .md-typeset .keys kbd:is(:before,:after){
     -moz-osx-font-smoothing:initial;
     -webkit-font-smoothing:initial;
-    color:inherit;
     margin:0;
     position:relative
 }
