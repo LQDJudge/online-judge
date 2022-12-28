@@ -107,7 +107,8 @@ Most of the steps are similar to Django tutorials. Here are two usual steps:
 
 Leaderboard with information about contest rating, performance points and real name of all users.
 
-![](https://i.imgur.com/SeUiXKQ.png)
+![](https://i.imgur.com/ZPBYMFX.png#gh-light-mode-only)
+![](https://i.imgur.com/frahT9E.png#gh-dark-mode-only)
 
 ### Admin dashboard
 
@@ -125,4 +126,5 @@ You can write the problems' statement in Markdown with LaTeX figures and formula
 
 Users can communicate with each other and can see who's online.
 
-![](https://i.imgur.com/wvOjlLx.png)
+![](https://i.imgur.com/fittEN3.png#gh-light-mode-only)
+![](https://i.imgur.com/SXITCuK.png#gh-dark-mode-only)
