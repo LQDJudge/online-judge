@@ -546,7 +546,7 @@ class Contest(models.Model):
 
     @classmethod
     def get_visible_contests(cls, user, show_own_contests_only=False):
-        if not user.is_authenticated or show_own_contests_only:
+        if not user.is_authenticated:
             return (
                 cls.objects.filter(
                     is_visible=True, is_organization_private=False, is_private=False
@@ -556,9 +556,12 @@ class Contest(models.Model):
             )
 
         queryset = cls.objects.defer("description")
-        if not (
-            user.has_perm("judge.see_private_contest")
-            or user.has_perm("judge.edit_all_contest")
+        if (
+            not (
+                user.has_perm("judge.see_private_contest")
+                or user.has_perm("judge.edit_all_contest")
+            )
+            or show_own_contests_only
         ):
             q = Q(is_visible=True)
             q &= (
