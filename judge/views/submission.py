@@ -345,7 +345,10 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             queryset = queryset.filter(contest_object=self.contest)
             if not self.contest.can_see_full_scoreboard(self.request.user):
                 queryset = queryset.filter(user=self.request.profile)
-            if self.contest.format_name == "ioi16":
+            if (
+                self.contest.format_name == "ioi16"
+                and not self.request.user.is_superuser
+            ):
                 queryset = queryset.filter(user=self.request.profile)
             if self.contest.freeze_after and not self.include_frozen:
                 queryset = queryset.exclude(
