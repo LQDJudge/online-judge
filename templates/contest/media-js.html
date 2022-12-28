@@ -118,8 +118,12 @@
         var friend = $('#show-friends-checkbox').is(':checked');
         var virtual = $('#show-virtual-checkbox').is(':checked');
         $('#loading-gif').show();
+        var url = `{{url('contest_ranking_ajax', contest.key)}}?friend=${friend}&virtual=${virtual}`;
+        {% if page_type == 'final_ranking' %}
+            url += "&final=true";
+        {% endif %}
         $.get({
-            url: `{{url('contest_ranking_ajax', contest.key)}}?friend=${friend}&virtual=${virtual}`,
+            url: url,
             success: function(HTML) {
                 $('#users-table').html(HTML);
                 highlightFirstSolve();
@@ -199,7 +203,8 @@
             $('#show-virtual-label').hide();
         {% else %}
             {% if request.in_contest %} 
-                setInterval(update_ranking, 60 * 1000);
+                clearInterval(window.rankingInterval);
+                window.rankingInterval = setInterval(update_ranking, 60 * 1000);
             {% endif %}
         {% endif %}
     });

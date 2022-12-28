@@ -524,6 +524,11 @@ urlpatterns = [
                     name="contest_ranking",
                 ),
                 url(
+                    r"^/final_ranking/$",
+                    contests.ContestFinalRanking.as_view(),
+                    name="contest_final_ranking",
+                ),
+                url(
                     r"^/ranking/ajax$",
                     contests.contest_ranking_ajax,
                     name="contest_ranking_ajax",

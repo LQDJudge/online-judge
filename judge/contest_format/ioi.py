@@ -86,8 +86,13 @@ class IOIContestFormat(DefaultContestFormat):
         participation.format_data = format_data
         participation.save()
 
-    def display_user_problem(self, participation, contest_problem):
-        format_data = (participation.format_data or {}).get(str(contest_problem.id))
+    def display_user_problem(self, participation, contest_problem, show_final=False):
+        if show_final:
+            format_data = (participation.format_data_final or {}).get(
+                str(contest_problem.id)
+            )
+        else:
+            format_data = (participation.format_data or {}).get(str(contest_problem.id))
         if format_data:
             return format_html(
                 '<td class="{state} problem-score-col"><a data-featherlight="{url}" href="#">{points}<div class="solving-time">{time}</div></a></td>',
@@ -121,11 +126,17 @@ class IOIContestFormat(DefaultContestFormat):
         else:
             return mark_safe('<td class="problem-score-col"></td>')
 
-    def display_participation_result(self, participation):
+    def display_participation_result(self, participation, show_final=False):
+        if show_final:
+            score = participation.score_final
+            cumtime = participation.cumtime_final
+        else:
+            score = participation.score
+            cumtime = participation.cumtime
         return format_html(
             '<td class="user-points">{points}<div class="solving-time">{cumtime}</div></td>',
-            points=floatformat(participation.score, -self.contest.points_precision),
-            cumtime=nice_repr(timedelta(seconds=participation.cumtime), "noday")
+            points=floatformat(score, -self.contest.points_precision),
+            cumtime=nice_repr(timedelta(seconds=cumtime), "noday")
             if self.config["cumtime"]
             else "",
         )

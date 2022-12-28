@@ -57,7 +57,7 @@
             });
         </script>
     {% endif %}
-    {% if page_type == 'ranking' %}
+    {% if page_type == 'ranking' or page_type == 'final_ranking' %}
         <script type="text/javascript">
             $.fn.ignore = function(sel) {
                 return this.clone().find(sel || '>*').remove().end();

@@ -61,7 +61,7 @@ class DefaultContestFormat(BaseContestFormat):
         participation.format_data = format_data
         participation.save()
 
-    def display_user_problem(self, participation, contest_problem):
+    def display_user_problem(self, participation, contest_problem, show_final=False):
         format_data = (participation.format_data or {}).get(str(contest_problem.id))
         if format_data:
             return format_html(
@@ -94,7 +94,7 @@ class DefaultContestFormat(BaseContestFormat):
         else:
             return mark_safe('<td class="problem-score-col"></td>')
 
-    def display_participation_result(self, participation):
+    def display_participation_result(self, participation, show_final=False):
         return format_html(
             '<td class="user-points">{points}<div class="solving-time">{cumtime}</div></td>',
             points=floatformat(participation.score, -self.contest.points_precision),

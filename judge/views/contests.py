@@ -877,48 +877,73 @@ ContestRankingProfile = namedtuple(
 BestSolutionData = namedtuple("BestSolutionData", "code points time state is_pretested")
 
 
-def make_contest_ranking_profile(contest, participation, contest_problems):
+def make_contest_ranking_profile(
+    contest, participation, contest_problems, show_final=False
+):
+    if not show_final:
+        points = participation.score
+        cumtime = participation.cumtime
+    else:
+        points = participation.score_final
+        cumtime = participation.cumtime_final
+
     user = participation.user
     return ContestRankingProfile(
         id=user.id,
         user=user.user,
         css_class=user.css_class,
         username=user.username,
-        points=participation.score,
-        cumtime=participation.cumtime,
+        points=points,
+        cumtime=cumtime,
         tiebreaker=participation.tiebreaker,
         organization=user.organization,
         participation_rating=participation.rating.rating
         if hasattr(participation, "rating")
         else None,
         problem_cells=[
-            contest.format.display_user_problem(participation, contest_problem)
+            contest.format.display_user_problem(
+                participation, contest_problem, show_final
+            )
             for contest_problem in contest_problems
         ],
-        result_cell=contest.format.display_participation_result(participation),
+        result_cell=contest.format.display_participation_result(
+            participation, show_final
+        ),
         participation=participation,
     )
 
 
-def base_contest_ranking_list(contest, problems, queryset):
+def base_contest_ranking_list(contest, problems, queryset, show_final=False):
     return [
-        make_contest_ranking_profile(contest, participation, problems)
+        make_contest_ranking_profile(contest, participation, problems, show_final)
         for participation in queryset.select_related("user__user", "rating").defer(
             "user__about", "user__organizations__about"
         )
     ]
 
 
-def contest_ranking_list(contest, problems, queryset=None):
+def contest_ranking_list(contest, problems, queryset=None, show_final=False):
     if not queryset:
         queryset = contest.users.filter(virtual=0)
-    return base_contest_ranking_list(
-        contest,
-        problems,
-        queryset.prefetch_related("user__organizations")
-        .extra(select={"round_score": "round(score, 6)"})
-        .order_by("is_disqualified", "-round_score", "cumtime", "tiebreaker"),
-    )
+
+    if not show_final:
+        return base_contest_ranking_list(
+            contest,
+            problems,
+            queryset.prefetch_related("user__organizations")
+            .extra(select={"round_score": "round(score, 6)"})
+            .order_by("is_disqualified", "-round_score", "cumtime", "tiebreaker"),
+            show_final,
+        )
+    else:
+        return base_contest_ranking_list(
+            contest,
+            problems,
+            queryset.prefetch_related("user__organizations")
+            .extra(select={"round_score": "round(score_final, 6)"})
+            .order_by("is_disqualified", "-round_score", "cumtime_final", "tiebreaker"),
+            show_final,
+        )
 
 
 def get_contest_ranking_list(
@@ -928,6 +953,7 @@ def get_contest_ranking_list(
     ranking_list=contest_ranking_list,
     show_current_virtual=False,
     ranker=ranker,
+    show_final=False,
 ):
     problems = list(
         contest.contest_problems.select_related("problem")
@@ -936,7 +962,7 @@ def get_contest_ranking_list(
     )
 
     users = ranker(
-        ranking_list(contest, problems),
+        ranking_list(contest, problems, show_final=show_final),
         key=attrgetter("points", "cumtime", "tiebreaker"),
     )
 
@@ -955,11 +981,16 @@ def get_contest_ranking_list(
 
 def contest_ranking_ajax(request, contest, participation=None):
     contest, exists = _find_contest(request, contest)
+    show_final = bool(request.GET.get("final", False))
     if not exists:
         return HttpResponseBadRequest("Invalid contest", content_type="text/plain")
 
     if not contest.can_see_full_scoreboard(request.user):
         raise Http404()
+
+    if show_final:
+        if not request.user.is_superuser or contest.format_name != "ioi16":
+            raise Http404()
 
     queryset = contest.users.filter(virtual__gte=0)
     if request.GET.get("friend") == "true" and request.profile:
@@ -973,6 +1004,7 @@ def contest_ranking_ajax(request, contest, participation=None):
         contest,
         participation,
         ranking_list=partial(contest_ranking_list, queryset=queryset),
+        show_final=show_final,
     )
     return render(
         request,
@@ -1037,6 +1069,18 @@ class ContestRanking(ContestRankingBase):
         context = super().get_context_data(**kwargs)
         context["has_rating"] = self.object.ratings.exists()
         return context
+
+
+class ContestFinalRanking(LoginRequiredMixin, ContestRanking):
+    page_type = "final_ranking"
+
+    def get_ranking_list(self):
+        if not self.request.user.is_superuser:
+            raise Http404()
+        if self.object.format_name != "ioi16":
+            raise Http404()
+
+        return get_contest_ranking_list(self.request, self.object, show_final=True)
 
 
 class ContestParticipationList(LoginRequiredMixin, ContestRankingBase):

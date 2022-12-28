@@ -650,6 +650,15 @@ class ContestParticipation(models.Model):
     format_data = JSONField(
         verbose_name=_("contest format specific data"), null=True, blank=True
     )
+    format_data_final = JSONField(
+        verbose_name=_("same as format_data, but including frozen results"),
+        null=True,
+        blank=True,
+    )
+    score_final = models.FloatField(verbose_name=_("final score"), default=0)
+    cumtime_final = models.PositiveIntegerField(
+        verbose_name=_("final cumulative time"), default=0
+    )
 
     def recompute_results(self):
         with transaction.atomic():

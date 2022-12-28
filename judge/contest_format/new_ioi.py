@@ -100,51 +100,73 @@ class NewIOIContestFormat(IOIContestFormat):
             return cursor.fetchall()
 
     def update_participation(self, participation):
-        cumtime = 0
-        score = 0
-        format_data = {}
         frozen_subtasks = self.get_frozen_subtasks()
 
-        for (
-            problem_id,
-            problem_points,
-            time,
-            subtask_points,
-            total_subtask_points,
-            subtask,
-            sub_id,
-        ) in self.get_results_by_subtask(participation):
-            problem_id = str(problem_id)
-            time = from_database_time(time)
-            if self.config["cumtime"]:
-                dt = (time - participation.start).total_seconds()
-            else:
-                dt = 0
+        def calculate_format_data(participation, include_frozen):
+            format_data = {}
+            for (
+                problem_id,
+                problem_points,
+                time,
+                subtask_points,
+                total_subtask_points,
+                subtask,
+                sub_id,
+            ) in self.get_results_by_subtask(participation, include_frozen):
+                problem_id = str(problem_id)
+                time = from_database_time(time)
+                if self.config["cumtime"]:
+                    dt = (time - participation.start).total_seconds()
+                else:
+                    dt = 0
 
-            if format_data.get(problem_id) is None:
-                format_data[problem_id] = {"points": 0, "time": 0, "total_points": 0}
-            if subtask not in frozen_subtasks.get(problem_id, set()):
-                format_data[problem_id]["points"] += subtask_points
-            format_data[problem_id]["total_points"] += total_subtask_points
-            format_data[problem_id]["time"] = max(dt, format_data[problem_id]["time"])
-            format_data[problem_id]["problem_points"] = problem_points
+                if format_data.get(problem_id) is None:
+                    format_data[problem_id] = {
+                        "points": 0,
+                        "time": 0,
+                        "total_points": 0,
+                    }
+                if (
+                    subtask not in frozen_subtasks.get(problem_id, set())
+                    or include_frozen
+                ):
+                    format_data[problem_id]["points"] += subtask_points
+                format_data[problem_id]["total_points"] += total_subtask_points
+                format_data[problem_id]["time"] = max(
+                    dt, format_data[problem_id]["time"]
+                )
+                format_data[problem_id]["problem_points"] = problem_points
 
-        for problem_data in format_data.values():
-            if not problem_data["total_points"]:
-                continue
-            penalty = problem_data["time"]
-            problem_data["points"] = (
-                problem_data["points"]
-                / problem_data["total_points"]
-                * problem_data["problem_points"]
-            )
-            if self.config["cumtime"] and problem_data["points"]:
-                cumtime += penalty
-            score += problem_data["points"]
+            return format_data
 
+        def recalculate_results(format_data):
+            cumtime = 0
+            score = 0
+            for problem_data in format_data.values():
+                if not problem_data["total_points"]:
+                    continue
+                penalty = problem_data["time"]
+                problem_data["points"] = (
+                    problem_data["points"]
+                    / problem_data["total_points"]
+                    * problem_data["problem_points"]
+                )
+                if self.config["cumtime"] and problem_data["points"]:
+                    cumtime += penalty
+                score += problem_data["points"]
+            return score, cumtime
+
+        format_data = calculate_format_data(participation, False)
+        score, cumtime = recalculate_results(format_data)
         self.handle_frozen_state(participation, format_data)
         participation.cumtime = max(cumtime, 0)
         participation.score = round(score, self.contest.points_precision)
         participation.tiebreaker = 0
         participation.format_data = format_data
+
+        format_data_final = calculate_format_data(participation, True)
+        score_final, cumtime_final = recalculate_results(format_data_final)
+        participation.cumtime_final = max(cumtime_final, 0)
+        participation.score_final = round(score_final, self.contest.points_precision)
+        participation.format_data_final = format_data_final
         participation.save()
