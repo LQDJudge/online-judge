@@ -36,6 +36,18 @@ There is one minor change: Instead of `git clone https://github.com/DMOJ/site.gi
 2. Missing the problem folder in `local_settings.py`. You need to create a folder to contain all problem packages and configure in `local_settings.py`.
 3. Missing static folder in `local_settings.py`. Similar to problem folder, make sure to configure `STATIC_FILES` inside `local_settings.py`. 
 4. Missing configure file for judges. Each judge must have a seperate configure file. To create this file, you can run `python dmojauto-conf`. Checkout all sample files here https://github.com/DMOJ/docs/blob/master/sample_files.
+5. Missing timezone data for SQL. If you're using Ubuntu and you're following DMOJ's installation guide for the server, and you are getting the error mentioned in https://github.com/LQDJudge/online-judge/issues/45, then you can follow this method to fix:
+```bash
+mysql
+-- You may have to do this if you haven't set root password for MySQL, replace mypass with your password
+-- SET PASSWORD FOR 'root'@'localhost' = PASSWORD('mypass');
+-- FLUSH PRIVILEGES;
+exit
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -D mysql -u root -p 
+mysql -u root -p -e "flush tables;" mysql
+```
+
+
 
 ## Usage
 
@@ -95,7 +107,8 @@ Most of the steps are similar to Django tutorials. Here are two usual steps:
 
 Leaderboard with information about contest rating, performance points and real name of all users.
 
-![](https://i.imgur.com/SeUiXKQ.png)
+![](https://raw.githubusercontent.com/emladevops/LQDOJ-image/main/brave_SK67WA26FA.png#gh-light-mode-only)
+![](https://raw.githubusercontent.com/emladevops/LQDOJ-image/main/brave_cmqqCnwaFc.png#gh-dark-mode-only)
 
 ### Admin dashboard
 
@@ -113,4 +126,5 @@ You can write the problems' statement in Markdown with LaTeX figures and formula
 
 Users can communicate with each other and can see who's online.
 
-![](https://i.imgur.com/wvOjlLx.png)
+![](https://raw.githubusercontent.com/emladevops/LQDOJ-image/main/brave_kPsC5bJluc.png#gh-light-mode-only)
+![](https://raw.githubusercontent.com/emladevops/LQDOJ-image/main/brave_AtrEzXzEAx.png#gh-dark-mode-only)
