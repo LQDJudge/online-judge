@@ -345,9 +345,12 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             queryset = queryset.filter(contest_object=self.contest)
             if not self.contest.can_see_full_scoreboard(self.request.user):
                 queryset = queryset.filter(user=self.request.profile)
+            if self.contest.format_name == "ioi16":
+                queryset = queryset.filter(user=self.request.profile)
             if self.contest.freeze_after and not self.include_frozen:
                 queryset = queryset.exclude(
-                    date__gte=self.contest.freeze_after + self.contest.start_time
+                    ~Q(user=self.request.profile),
+                    date__gte=self.contest.freeze_after + self.contest.start_time,
                 )
         else:
             queryset = queryset.select_related("contest_object").defer(
@@ -861,7 +864,10 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
                     subtask = 0
                 problem_points = pp
                 submission = Submission.objects.get(id=sub_id)
-                if subtask in frozen_subtasks.get(str(problem_id), set()):
+                if (
+                    subtask in frozen_subtasks.get(str(problem_id), set())
+                    and not self.include_frozen
+                ):
                     best_subtasks[subtask] = {
                         "submission": submission,
                         "contest_time": nice_repr(
