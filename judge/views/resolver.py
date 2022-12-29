@@ -35,7 +35,7 @@ class Resolver(TemplateView):
                 "name": participation.user.user.first_name
                 or participation.user.user.username,
                 "school": participation.user.user.last_name,
-                "last_submission": participation.cumtime,
+                "last_submission": participation.cumtime_final,
                 "problems": {},
             }
             for (
