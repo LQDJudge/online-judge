@@ -45,7 +45,13 @@ Resolver.prototype.substatus = function (problem, subproblem) {
 
 Resolver.prototype.pointstatus = function (point, problem, sub) {
 	if (sub == undefined) {
-		if (point == 100) return 'AC';
+		var total_points = 0
+		for (var i in this.problems[problem]) {
+			total_points += this.problems[problem][i];
+		}
+		total_points = round2(total_points);
+
+		if (point == total_points) return 'AC';
 		if (point == 0) return 'WA';
 		return 'PA';
 	}
@@ -96,11 +102,11 @@ Resolver.prototype.calcOperations = function () {
 					}
 				}
 			}
-			this.rank[id].problem[problemid].old_verdict = this.pointstatus(this.rank[id].problem[problemid].old_point);
+			this.rank[id].problem[problemid].old_verdict = this.pointstatus(this.rank[id].problem[problemid].old_point, problemid);
 			this.rank[id].score += this.rank[id].problem[problemid].old_point;
 			this.rank[id].score = round2(this.rank[id].score)
 			if (this.users[id].problems[problemid].points[1] != -1) {
-				this.rank[id].problem[problemid].new_verdict = this.pointstatus(this.rank[id].problem[problemid].new_point);
+				this.rank[id].problem[problemid].new_verdict = this.pointstatus(this.rank[id].problem[problemid].new_point, problemid);
 			}
 		}
 	}
@@ -273,7 +279,7 @@ Resolver.prototype.operation = function (rankid, problemid, sub) {
 	this.rankarr[rankid].problem[problemid][sub].new_verdict = this.pointstatus(this.rankarr[rankid].problem[problemid][sub].new_point, problemid, sub);
 	this.rankarr[rankid].problem[problemid].new_point =
 		this.rankarr[rankid].problem[problemid].old_point + this.rankarr[rankid].problem[problemid][sub].new_point - this.rankarr[rankid].problem[problemid][sub].old_point;
-	this.rankarr[rankid].problem[problemid].new_verdict = this.pointstatus(this.rankarr[rankid].problem[problemid].new_point);
+	this.rankarr[rankid].problem[problemid].new_verdict = this.pointstatus(this.rankarr[rankid].problem[problemid].new_point, problemid);
 	this.rankarr[rankid].problem[problemid].new_point = round2(this.rankarr[rankid].problem[problemid].new_point)
 	var op = {
 		id: this.operations.length,
