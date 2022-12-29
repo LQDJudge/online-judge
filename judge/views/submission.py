@@ -930,7 +930,7 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
         filtered_submissions = []
 
         # Only show this for some users when using ioi16
-        if self.contest.format_name != "ioi16" or self.include_frozen:
+        if self.contest.format_name != "ioi16" or self.request.user.is_superuser:
             for s in context["submissions"]:
                 if not hasattr(s, "contest"):
                     continue

@@ -13,7 +13,7 @@
             <td class="lightbox-submissions-time case-{{'AC' if cur_subtask.points == cur_subtask.total else ('TLE' if cur_subtask.points == '???' else 'WA')}}">
                 {{ cur_subtask.points }} / {{ cur_subtask.total }}
             </td>
-            {% if cur_subtask.contest_time%}
+            {% if cur_subtask.contest_time %}
             <td>
                 ({{ cur_subtask.contest_time }})
             </td>
