@@ -323,6 +323,8 @@
 {% endblock %}
 
 {% block right_sidebar %}
+{% set hide_sidebar = request.in_contest_mode and request.participation.contest.format_name == "ioi16" and not request.user.is_superuser %}
+{% if not hide_sidebar %}
     <div class="right-sidebar">
         <div class="submission">
             <div class="sidebox">
@@ -368,6 +370,7 @@
             </div>
         </div>
     </div>
+{% endif %}
 {% endblock %}
 
 {% block left_sidebar %}
