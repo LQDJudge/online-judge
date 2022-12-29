@@ -887,9 +887,7 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
                 ):
                     best_subtasks[subtask] = {
                         "submission": None,
-                        "contest_time": nice_repr(
-                            self.contest_time(submission), "noday"
-                        ),
+                        "contest_time": None,
                         "points": "???",
                         "total": total_subtask_points,
                     }
