@@ -3,13 +3,15 @@
     {% include "problem/left-sidebar.html" %}
 {% endblock %}
 
+{% set in_ioi16 = request.in_contest_mode and request.participation.contest.format_name == "ioi16" %}
+
 {% block middle_content %}
     <div id="content-left" class="problems">
         <table id="problem-table" class="table striped">
             <thead>
             <tr>
                 {% if request.in_contest_mode %}
-                    {% if request.user.is_authenticated %}
+                    {% if request.user.is_authenticated and not in_ioi16 %}
                         <th class="solved"><i class="fa fa-check"></i></th>
                     {% endif %}
                     <th class="problem">{{ _('Problem') }}</th>
@@ -18,7 +20,9 @@
                         <th>{{ _('Types') }}</th>
                     {% endif %}
                     <th class="points">{{ _('Points') }}</th>
+                    {% if not in_ioi16 %}
                     <th class="users">{{ _('Users') }}</th>
+                    {% endif %}
                 {% else %}
                     {% if request.user.is_authenticated %}
                         <th class="solved">
@@ -60,7 +64,7 @@
             <tbody>
             {% for problem in object_list %}
                 <tr>
-                    {% if request.user.is_authenticated %}
+                    {% if request.user.is_authenticated and not in_ioi16 %}
                         {% if problem.id in completed_problem_ids %}
                             <td solved="1">
                                 <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
@@ -111,6 +115,7 @@
                     {% if not request.in_contest_mode %}
                         <td class="ac-rate">{{ problem.ac_rate|floatformat(0) }}%</td>
                     {% endif %}
+                    {% if not in_ioi16 %}
                     <td class="users">
                         <a href="{{ url('ranked_submissions', problem.code) }}">
                             {% if not request.in_contest_mode or not hide_contest_scoreboard %}
@@ -120,6 +125,8 @@
                             {% endif %}
                         </a>
                     </td>
+                    {% endif %}
+
                     {% if show_editorial%}
                     <td class="editorial">
                         {% if problem.has_public_editorial %}
