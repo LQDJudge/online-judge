@@ -7,7 +7,16 @@ function Resolver(problem_sub, sub_frozen, problems, users) {
 	this.operations = [];
 	this.frozen_op = 0;
 	this.isshow = [];
+	this.total_points = {};
 	this.delay = false;
+
+	for (var problem in this.problems) {
+		this.total_points[problem] = 0;
+		for (var i in this.problems[problem]) {
+			this.total_points[problem] += this.problems[problem][i];
+		}
+		this.total_points[problem] = round2(this.total_points[problem]);
+	}
 }
 
 function round2(num) {
@@ -45,13 +54,7 @@ Resolver.prototype.substatus = function (problem, subproblem) {
 
 Resolver.prototype.pointstatus = function (point, problem, sub) {
 	if (sub == undefined) {
-		var total_points = 0
-		for (var i in this.problems[problem]) {
-			total_points += this.problems[problem][i];
-		}
-		total_points = round2(total_points);
-
-		if (point == total_points) return 'AC';
+		if (point == this.total_points[problem]) return 'AC';
 		if (point == 0) return 'WA';
 		return 'PA';
 	}

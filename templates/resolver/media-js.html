@@ -76,11 +76,11 @@
                 $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').addClass(resolver.status(tmp.problem[operation.problem_index]));
                 $('#rank-' + operation.user_id + ' .score').text(tmp.score);
                 if (operation.new_rank % 2 == 0) {
-                    let per = tmp.problem[operation.problem_index].old_point;
+                    let per = round2(tmp.problem[operation.problem_index].old_point / resolver.total_points[operation.problem_index] * 100);
                     let linear = `linear-gradient(90deg, ${partially} ${per}%, ${theme_background_color} ${per}%)`;
                     $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score.partially').css("background", linear);
                 } else {
-                    let per = tmp.problem[operation.problem_index].old_point;
+                    let per = round2(tmp.problem[operation.problem_index].old_point / resolver.total_points[operation.problem_index] * 100);;
                     let linear = `linear-gradient(90deg, ${partially} ${per}%, ${untouched} ${per}%)`;
                     $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score.partially').css("background", linear);
                 }
@@ -97,7 +97,7 @@
                         $("#rank-" + i + ' .prob-container').addClass('background-secondary');
                         $("#rank-" + i + ' .problems').addClass('background-secondary');
                         for (let problemid in resolver.rank_frozen[i].problem) {
-                            let per = resolver.rank_frozen[i].problem[problemid].old_point;
+                            let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
                             let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
                             $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
                         }
@@ -111,7 +111,7 @@
                         $("#rank-" + i + ' .prob-container').addClass('background-primary');
                         $("#rank-" + i + ' .problems').addClass('background-primary');
                         for (let problemid in resolver.rank_frozen[i].problem) {
-                            let per = resolver.rank_frozen[i].problem[problemid].old_point;
+                            let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
                             let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
                             $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
                         }
@@ -203,11 +203,11 @@
 
                     if (resolver.status(window.resolver.rank_frozen[i].problem[problem_id]) == 'partially') {
                         if (resolver.rank_frozen[i].rank_show % 2 == 1) {
-                            let per = resolver.rank_frozen[i].problem[problem_id].old_point;
+                            let per = round2(resolver.rank_frozen[i].problem[problem_id].old_point / resolver.total_points[problem_id] * 100);
                             let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
                             $(pro_score).css("background", linear);
                         } else {
-                            let per = resolver.rank_frozen[i].problem[problem_id].old_point;
+                            let per = round2(resolver.rank_frozen[i].problem[problem_id].old_point / resolver.total_points[problem_id] * 100);
                             let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
                             $(pro_score).css("background", linear);
                         }
@@ -409,13 +409,13 @@
             for (let i in resolver.rank_frozen) {
                 if (resolver.rank_frozen[i].rank_show % 2 == 0) {
                     for (let problemid in resolver.rank_frozen[i].problem) {
-                        let per = resolver.rank_frozen[i].problem[problemid].old_point;
+                        let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
                         let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
                         $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
                     }
                 } else {
                     for (let problemid in resolver.rank_frozen[i].problem) {
-                        let per = resolver.rank_frozen[i].problem[problemid].old_point;
+                        let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
                         let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
                         $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
                     }
