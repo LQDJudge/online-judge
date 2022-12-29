@@ -226,9 +226,22 @@ class SubmissionStatus(SubmissionDetailBase):
             return True
         return False
 
+    def get_frozen_subtasks(self):
+        if self.request.user.is_superuser:
+            return set()
+        submission = self.object
+        contest = submission.contest_object
+        if contest and contest.format_name == "ioi16":
+            contest_problem = contest.contest_problems.get(problem=submission.problem)
+            return contest.format.get_frozen_subtasks().get(
+                str(contest_problem.id), set()
+            )
+        return set()
+
     def get_context_data(self, **kwargs):
         context = super(SubmissionStatus, self).get_context_data(**kwargs)
         submission = self.object
+
         context["last_msg"] = event.last()
         context["batches"] = group_test_cases(submission.test_cases.all())
         context["time_limit"] = submission.problem.time_limit
@@ -237,6 +250,7 @@ class SubmissionStatus(SubmissionDetailBase):
         context["highlighted_source"] = highlight_code(
             submission.source.source, submission.language.pygments, linenos=False
         )
+        context["frozen_subtasks"] = self.get_frozen_subtasks()
 
         contest = submission.contest_or_none
         prefix_length = 0
@@ -869,10 +883,10 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
                 submission = Submission.objects.get(id=sub_id)
                 if (
                     subtask in frozen_subtasks.get(str(problem_id), set())
-                    and not self.include_frozen
+                    and not self.request.user.is_superuser
                 ):
                     best_subtasks[subtask] = {
-                        "submission": submission,
+                        "submission": None,
                         "contest_time": nice_repr(
                             self.contest_time(submission), "noday"
                         ),

@@ -1,4 +1,21 @@
 {% set can_view = submission_layout(submission, profile_id, request.user, editable_problem_ids, completed_problem_ids) %}
+{% set hidden = submission.contest_object and submission.contest_object.format_name == "ioi16" and not request.user.is_superuser %}
+{% if hidden %}
+<div class="sub-result TLE">
+    <div class="score">
+        {%- if submission.is_graded -%}
+            ??? / {{ submission.case_total|floatformat(0) }}
+        {%- else -%}
+            <i class="fa fa-spinner fa-pulse"></i>
+        {%- endif -%}
+    </div>
+
+    <div class="state">
+        <span title="?" class="status">?</span> |
+        <span class="language">{{ submission.language.short_display_name }}</span>
+    </div>
+</div>
+{% else %}
 <div class="sub-result {{ submission.result_class }}">
     <div class="score">
         {%- if submission.is_graded -%}
@@ -17,6 +34,7 @@
         <span class="language">{{ submission.language.short_display_name }}</span>
     </div>
 </div>
+{% endif %}
 <div class="sub-info{% if submission.status == 'G' %} sub-info-grading{% endif %}">
     {% if show_problem %}
         <div class="name"><a href="{{ url('problem_detail', submission.problem.code) }}">{{ problem_name }}</a></div>
@@ -33,7 +51,7 @@
     </div>
 </div>
 
-{% if submission.status == 'G' %}
+{% if submission.status == 'G' and not hidden %}
     <div class="sub-testcase">
         {%- if submission.current_testcase > 0 -%}
             {{ _('Point %(point)s / Case #%(case)s', point=submission.points|floatformat(1), case=submission.current_testcase) }}
@@ -61,6 +79,12 @@
     </div></div>
 {% endif %}
 
+{% if hidden %}
+<div class="sub-usage">
+    <div class="time">---</div>
+    <div class="memory">---</div>
+</div>
+{% else %}
 <div class="sub-usage">
     {% if submission.status in ('QU', 'P', 'G', 'CE', 'IE', 'AB') %}
         <div class="time">---</div>
@@ -77,3 +101,4 @@
         <div class="memory">{{ (submission.memory_bytes|filesizeformat(True)).replace('i', '') }}</div>
     {% endif %}
 </div>
+{% endif %}

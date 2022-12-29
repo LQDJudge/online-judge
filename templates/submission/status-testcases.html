@@ -26,6 +26,7 @@
         {% endif %}
         
         {% for batch in batches %}
+            {% if batch.id not in frozen_subtasks %}
             <div style="margin-top: 0.5em;">
                 {% if batch.id %}
                     <b>{{ _('Batch ') }}#{{ batch.id }} ({{batch.points|floatformat}} / {{batch.total|floatformat}}): </b>
@@ -40,11 +41,18 @@
                     </span>
                 {% endfor %}
             </div>
+            {% else %}
+            <div style="margin-top: 0.5em;">
+                {% if batch.id %}
+                    <b>{{ _('Batch ') }}#{{ batch.id }} (??? / {{batch.total|floatformat}})</b>
+                {% endif %}
+            </div>
+            {% endif %}
         {% endfor %}
         <br>
 
         <table class="testcases-table">
-        {% if submission.is_graded and submission.result != 'AB' %}
+        {% if submission.is_graded and submission.result != 'AB' and not frozen_subtasks %}
             <thead>
                 <tr id="overall-row" class="case-row  overall-result-{{submission.result}}">
                     <td><span class="col-title">{{_('Overall: ')}}</span>
@@ -82,6 +90,7 @@
 
         <tbody>
         {% for batch in batches %}
+        {% if batch.id not in frozen_subtasks %}
             {% if batch.id %}
                 {% set batch_AC = (batch.points == batch.total) %}
                 <tr class="case-row background-{{'d6e8f7' if batch.points == batch.total else 'bisque'}}">
@@ -174,6 +183,7 @@
                     </tr>
                 {% endif %}
             {% endfor %}
+        {% endif %}
         {% endfor %}
         </tbody></table>
 

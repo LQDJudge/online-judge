@@ -16,11 +16,13 @@
             <td>
                 ({{ cur_subtask.contest_time }})
             </td> 
+            {% if cur_subtask.submission %}
             {% set can_view = submission_layout(cur_subtask.submission, profile_id, request.user, editable_problem_ids, completed_problem_ids) %}
             {% if can_view %}
             <td>
                 → <a href="{{url('submission_status', cur_subtask.submission.id)}}">{{ cur_subtask.submission.id }}</a>
             </td>
+            {% endif %}
             {% endif %}
         </tr>
     {% endfor %}
