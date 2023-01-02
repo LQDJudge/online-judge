@@ -18,7 +18,7 @@ class Resolver(TemplateView):
         for order, problem_id in problems:
             id_to_order[str(problem_id)] = order
 
-        frozen_subtasks = self.contest.format.get_frozen_subtasks()
+        hidden_subtasks = self.contest.format.get_hidden_subtasks()
         num_problems = len(problems)
         problem_sub = [0] * num_problems
         sub_frozen = [0] * num_problems
@@ -122,10 +122,10 @@ class Resolver(TemplateView):
                         self.contest.points_precision,
                     )
 
-        for i in frozen_subtasks:
+        for i in hidden_subtasks:
             order = id_to_order[i]
-            if frozen_subtasks[i]:
-                sub_frozen[order - 1] = min(frozen_subtasks[i])
+            if hidden_subtasks[i]:
+                sub_frozen[order - 1] = min(hidden_subtasks[i])
             else:
                 sub_frozen[order - 1] = problem_sub[order - 1] + 1
         return {
@@ -143,6 +143,6 @@ class Resolver(TemplateView):
     def get(self, request, *args, **kwargs):
         if request.user.is_superuser:
             self.contest = Contest.objects.get(key=kwargs.get("contest"))
-            if self.contest.format_name == "ioi16":
+            if self.contest.format.has_hidden_subtasks:
                 return super(Resolver, self).get(request, *args, **kwargs)
         return HttpResponseForbidden()

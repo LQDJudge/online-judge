@@ -14,14 +14,18 @@ class NewIOIContestFormat(IOIContestFormat):
         cumtime: Specify True if time penalties are to be computed. Defaults to False.
     """
 
-    def get_frozen_subtasks(self):
-        queryset = self.contest.contest_problems.values_list("id", "frozen_subtasks")
+    def __init__(self, contest, config):
+        super().__init__(contest, config)
+        self.has_hidden_subtasks = True
+
+    def get_hidden_subtasks(self):
+        queryset = self.contest.contest_problems.values_list("id", "hidden_subtasks")
         res = {}
-        for problem_id, frozen_subtasks in queryset:
+        for problem_id, hidden_subtasks in queryset:
             subtasks = set()
-            if frozen_subtasks:
-                frozen_subtasks = frozen_subtasks.split(",")
-                for i in frozen_subtasks:
+            if hidden_subtasks:
+                hidden_subtasks = hidden_subtasks.split(",")
+                for i in hidden_subtasks:
                     try:
                         subtasks.add(int(i))
                     except Exception as e:
@@ -100,7 +104,7 @@ class NewIOIContestFormat(IOIContestFormat):
             return cursor.fetchall()
 
     def update_participation(self, participation):
-        frozen_subtasks = self.get_frozen_subtasks()
+        hidden_subtasks = self.get_hidden_subtasks()
 
         def calculate_format_data(participation, include_frozen):
             format_data = {}
@@ -127,7 +131,7 @@ class NewIOIContestFormat(IOIContestFormat):
                         "total_points": 0,
                     }
                 if (
-                    subtask not in frozen_subtasks.get(problem_id, set())
+                    subtask not in hidden_subtasks.get(problem_id, set())
                     or include_frozen
                 ):
                     format_data[problem_id]["points"] += subtask_points

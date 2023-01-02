@@ -295,7 +295,7 @@ class ContestMixin(object):
         context["meta_description"] = self.object.summary or metadata[0]
         context["og_image"] = self.object.og_image or metadata[1]
         context["has_moss_api_key"] = settings.MOSS_API_KEY is not None
-        context["can_use_resolver"] = self.object.format_name == "ioi16"
+        context["can_use_resolver"] = self.object.format.has_hidden_subtasks
         context["logo_override_image"] = self.object.logo_override_image
         if (
             not context["logo_override_image"]
@@ -989,7 +989,7 @@ def contest_ranking_ajax(request, contest, participation=None):
         raise Http404()
 
     if show_final:
-        if not request.user.is_superuser or contest.format_name != "ioi16":
+        if not request.user.is_superuser or not contest.format.has_hidden_subtasks:
             raise Http404()
 
     queryset = contest.users.filter(virtual__gte=0)

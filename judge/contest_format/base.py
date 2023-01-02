@@ -16,6 +16,9 @@ class BaseContestFormat(metaclass=ABCMeta):
         self.config = config
         self.contest = contest
 
+        # Use in ioi16 to display ranking with hidden subtasks
+        self.has_hidden_subtasks = False
+
     @abstractproperty
     def name(self):
         """
@@ -98,9 +101,9 @@ class BaseContestFormat(metaclass=ABCMeta):
         return "partial-score"
 
     def handle_frozen_state(self, participation, format_data):
-        frozen_subtasks = {}
-        if hasattr(self, "get_frozen_subtasks"):
-            frozen_subtasks = self.get_frozen_subtasks()
+        hidden_subtasks = {}
+        if hasattr(self, "get_hidden_subtasks"):
+            hidden_subtasks = self.get_hidden_subtasks()
 
         queryset = participation.submissions.values("problem_id").annotate(
             time=Max("submission__date")
@@ -113,7 +116,7 @@ class BaseContestFormat(metaclass=ABCMeta):
                     and result["time"]
                     >= self.contest.freeze_after + participation.start
                 )
-                if is_after_freeze or frozen_subtasks.get(problem):
+                if is_after_freeze or hidden_subtasks.get(problem):
                     format_data[problem]["frozen"] = True
             else:
                 format_data[problem] = {"time": 0, "points": 0, "frozen": True}

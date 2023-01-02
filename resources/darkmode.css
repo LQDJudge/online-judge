@@ -1786,6 +1786,9 @@ noscript #noscript {
 .blue {
     color: rgb(51, 125, 255);
 }
+.background-d6e8f7 {
+    background-color: rgb(38, 41, 43);
+}
 .background-bisque {
     background-color: rgb(86, 47, 0);
 }

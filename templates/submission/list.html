@@ -23,7 +23,9 @@
                 window.show_problem = 0;
             {% endif %}
         {% endif %}
-        window.results_json = {{ results_json }};
+        {% if results_json %}
+            window.results_json = {{ results_json }};
+        {% endif %}
     </script>
 
     {% compress js %}
@@ -85,49 +87,51 @@
             });
 
             // Draw the statistics graph.
-            var chart = null;
-            function stats_graph(raw_data) {
-                var colors = {{ results_colors_json }};
+            {% if results_json %}
+                var chart = null;
+                function stats_graph(raw_data) {
+                    var colors = {{ results_colors_json }};
 
-                var ctx = $('#status-graph').find('canvas')[0].getContext('2d');
-                var font = $('body').css('font-family');
-                if (chart !== null) {
-                    chart.destroy();
+                    var ctx = $('#status-graph').find('canvas')[0].getContext('2d');
+                    var font = $('body').css('font-family');
+                    if (chart !== null) {
+                        chart.destroy();
+                    }
+                    chart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            datasets: [{
+                                data: raw_data.categories.map(function(entry) {
+                                    return entry.count;
+                                }),
+                                backgroundColor: raw_data.categories.map(function(entry) {
+                                    return colors[entry.code];
+                                }),
+                            }],
+                            labels: raw_data.categories.map(function(entry) {
+                                return entry.name;
+                            }),
+                        },
+                        options: {
+                            animation: false,
+                            scaleFontFamily: font,
+                            tooltips: {
+                                titleFontFamily: font,
+                                bodyFontFamily: font,
+                            },
+                            legend: {
+                                display: false,
+                            },
+                        },
+                    });
+
+                    $('#total-submission-count').text(raw_data.total);
                 }
-                chart = new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        datasets: [{
-                            data: raw_data.categories.map(function(entry) {
-                                return entry.count;
-                            }),
-                            backgroundColor: raw_data.categories.map(function(entry) {
-                                return colors[entry.code];
-                            }),
-                        }],
-                        labels: raw_data.categories.map(function(entry) {
-                            return entry.name;
-                        }),
-                    },
-                    options: {
-                        animation: false,
-                        scaleFontFamily: font,
-                        tooltips: {
-                            titleFontFamily: font,
-                            bodyFontFamily: font,
-                        },
-                        legend: {
-                            display: false,
-                        },
-                    },
+
+                $(function () {
+                    stats_graph(window.results_json);
                 });
-
-                $('#total-submission-count').text(raw_data.total);
-            }
-
-            $(function () {
-                stats_graph(window.results_json);
-            });
+            {% endif %}
 
             function load_dynamic_update(last_msg) {
                 var _collect = function (e) {
@@ -323,8 +327,7 @@
 {% endblock %}
 
 {% block right_sidebar %}
-{% set hide_sidebar = request.in_contest_mode and request.participation.contest.format_name == "ioi16" and not request.user.is_superuser %}
-{% if not hide_sidebar %}
+{% if results_json %}
     <div class="right-sidebar">
         <div class="submission">
             <div class="sidebox">

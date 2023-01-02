@@ -226,16 +226,18 @@ class SubmissionStatus(SubmissionDetailBase):
             return True
         return False
 
-    def get_frozen_subtasks(self):
+    def get_hidden_subtasks(self):
         if self.request.user.is_superuser:
             return set()
         submission = self.object
         contest = submission.contest_object
-        if contest and contest.format_name == "ioi16":
-            contest_problem = contest.contest_problems.get(problem=submission.problem)
-            return contest.format.get_frozen_subtasks().get(
-                str(contest_problem.id), set()
-            )
+        if contest and contest.format.has_hidden_subtasks:
+            try:
+                return contest.format.get_hidden_subtasks().get(
+                    str(submission.contest.problem.id), set()
+                )
+            except Exception:
+                pass
         return set()
 
     def get_context_data(self, **kwargs):
@@ -250,7 +252,7 @@ class SubmissionStatus(SubmissionDetailBase):
         context["highlighted_source"] = highlight_code(
             submission.source.source, submission.language.pygments, linenos=False
         )
-        context["frozen_subtasks"] = self.get_frozen_subtasks()
+        context["hidden_subtasks"] = self.get_hidden_subtasks()
 
         contest = submission.contest_or_none
         prefix_length = 0
@@ -437,6 +439,13 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             hidden_codes += ["IE"]
         return [(key, value) for key, value in all_statuses if key not in hidden_codes]
 
+    def should_show_result_data(self):
+        return not (
+            self.in_contest
+            and self.contest.format.has_hidden_subtasks
+            and not self.request.user.is_superuser
+        )
+
     def get_context_data(self, **kwargs):
         context = super(SubmissionsListBase, self).get_context_data(**kwargs)
         authenticated = self.request.user.is_authenticated
@@ -458,10 +467,13 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["all_statuses"] = self.get_searchable_status_codes()
         context["selected_statuses"] = self.selected_statuses
 
-        context["results_json"] = mark_safe(json.dumps(self.get_result_data()))
-        context["results_colors_json"] = mark_safe(
-            json.dumps(settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS)
-        )
+        if self.should_show_result_data():
+            context["results_json"] = mark_safe(json.dumps(self.get_result_data()))
+            context["results_colors_json"] = mark_safe(
+                json.dumps(settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS)
+            )
+        else:
+            context["results_json"] = None
 
         context["page_suffix"] = suffix = (
             ("?" + self.request.GET.urlencode()) if self.request.GET else ""
@@ -856,13 +868,13 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
         return None
 
     def get_best_subtask_points(self):
-        if self.contest.format_name == "ioi16":
+        if self.contest.format.has_hidden_subtasks:
             contest_problem = self.contest.contest_problems.get(problem=self.problem)
             best_subtasks = {}
             total_points = 0
             problem_points = 0
             achieved_points = 0
-            frozen_subtasks = self.contest.format.get_frozen_subtasks()
+            hidden_subtasks = self.contest.format.get_hidden_subtasks()
 
             for (
                 problem_id,
@@ -882,7 +894,7 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
                 problem_points = pp
                 submission = Submission.objects.get(id=sub_id)
                 if (
-                    subtask in frozen_subtasks.get(str(problem_id), set())
+                    subtask in hidden_subtasks.get(str(problem_id), set())
                     and not self.request.user.is_superuser
                 ):
                     best_subtasks[subtask] = {
@@ -930,7 +942,7 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
         filtered_submissions = []
 
         # Only show this for some users when using ioi16
-        if self.contest.format_name != "ioi16" or self.request.user.is_superuser:
+        if self.contest.format.has_hidden_subtasks or self.request.user.is_superuser:
             for s in context["submissions"]:
                 if not hasattr(s, "contest"):
                     continue

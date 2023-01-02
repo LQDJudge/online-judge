@@ -1,5 +1,5 @@
 {% set can_view = submission_layout(submission, profile_id, request.user, editable_problem_ids, completed_problem_ids) %}
-{% set hidden = submission.contest_object and submission.contest_object.format_name == "ioi16" and not request.user.is_superuser %}
+{% set hidden = submission.contest_object and submission.contest_object.format.has_hidden_subtasks and not request.user.is_superuser %}
 {% if hidden %}
 <div class="sub-result TLE">
     <div class="score">

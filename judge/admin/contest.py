@@ -68,7 +68,7 @@ class ContestProblemInlineForm(ModelForm):
     class Meta:
         widgets = {
             "problem": AdminHeavySelect2Widget(data_view="problem_select2"),
-            "frozen_subtasks": TextInput(attrs={"size": "3"}),
+            "hidden_subtasks": TextInput(attrs={"size": "3"}),
             "points": TextInput(attrs={"size": "1"}),
             "order": TextInput(attrs={"size": "1"}),
             "output_prefix_override": TextInput(attrs={"size": "1"}),
@@ -85,7 +85,7 @@ class ContestProblemInline(admin.TabularInline):
         "partial",
         "is_pretested",
         "max_submissions",
-        "frozen_subtasks",
+        "hidden_subtasks",
         "output_prefix_override",
         "order",
         "rejudge_column",
