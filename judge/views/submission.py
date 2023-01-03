@@ -158,26 +158,45 @@ class SubmissionSource(SubmissionDetailBase):
         return context
 
 
-def make_batch(batch, cases):
-    result = {"id": batch, "cases": cases}
+def get_hidden_subtasks(request, submission):
+    if request.user.is_superuser:
+        return set()
+    contest = submission.contest_object
+    if contest and contest.format.has_hidden_subtasks:
+        try:
+            return contest.format.get_hidden_subtasks().get(
+                str(submission.contest.problem.id), set()
+            )
+        except Exception:
+            pass
+    return set()
+
+
+def make_batch(batch, cases, include_cases=True):
+    result = {"id": batch}
+    if include_cases:
+        result["cases"] = cases
     if batch:
         result["points"] = sum(map(attrgetter("points"), cases))
         result["total"] = sum(map(attrgetter("total"), cases))
+        result["AC"] = abs(result["points"] - result["total"]) < 1e-5
+
     return result
 
 
-def group_test_cases(cases):
+def group_test_cases(submission, hidden_subtasks, include_cases=True):
+    cases = submission.test_cases.exclude(batch__in=hidden_subtasks)
     result = []
     buf = []
     last = None
     for case in cases:
         if case.batch != last and buf:
-            result.append(make_batch(last, buf))
+            result.append(make_batch(last, buf, include_cases))
             buf = []
         buf.append(case)
         last = case.batch
     if buf:
-        result.append(make_batch(last, buf))
+        result.append(make_batch(last, buf, include_cases))
     return result
 
 
@@ -226,33 +245,21 @@ class SubmissionStatus(SubmissionDetailBase):
             return True
         return False
 
-    def get_hidden_subtasks(self):
-        if self.request.user.is_superuser:
-            return set()
-        submission = self.object
-        contest = submission.contest_object
-        if contest and contest.format.has_hidden_subtasks:
-            try:
-                return contest.format.get_hidden_subtasks().get(
-                    str(submission.contest.problem.id), set()
-                )
-            except Exception:
-                pass
-        return set()
-
     def get_context_data(self, **kwargs):
         context = super(SubmissionStatus, self).get_context_data(**kwargs)
         submission = self.object
 
+        context["hidden_subtasks"] = get_hidden_subtasks(self.request, self.object)
         context["last_msg"] = event.last()
-        context["batches"] = group_test_cases(submission.test_cases.all())
+        context["batches"] = group_test_cases(
+            submission, context["hidden_subtasks"], True
+        )
         context["time_limit"] = submission.problem.time_limit
         context["can_see_testcases"] = False
         context["raw_source"] = submission.source.source.rstrip("\n")
         context["highlighted_source"] = highlight_code(
             submission.source.source, submission.language.pygments, linenos=False
         )
-        context["hidden_subtasks"] = self.get_hidden_subtasks()
 
         contest = submission.contest_or_none
         prefix_length = 0
@@ -439,12 +446,24 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             hidden_codes += ["IE"]
         return [(key, value) for key, value in all_statuses if key not in hidden_codes]
 
-    def should_show_result_data(self):
-        return not (
+    def in_hidden_subtasks_contest(self):
+        return (
             self.in_contest
             and self.contest.format.has_hidden_subtasks
             and not self.request.user.is_superuser
         )
+
+    def modify_attrs(self, submission):
+        # Used to modify submission's info in contest with hidden subtasks
+        batches = group_test_cases(
+            submission, get_hidden_subtasks(self.request, submission), False
+        )
+        setattr(submission, "case_points", sum([i.get("points", 0) for i in batches]))
+        setattr(submission, "batches", batches)
+        if submission.status in ("IE", "CE", "AB"):
+            setattr(submission, "_result_class", submission.result_class)
+        else:
+            setattr(submission, "_result_class", "TLE")
 
     def get_context_data(self, **kwargs):
         context = super(SubmissionsListBase, self).get_context_data(**kwargs)
@@ -467,7 +486,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["all_statuses"] = self.get_searchable_status_codes()
         context["selected_statuses"] = self.selected_statuses
 
-        if self.should_show_result_data():
+        if not self.in_hidden_subtasks_contest():
             context["results_json"] = mark_safe(json.dumps(self.get_result_data()))
             context["results_colors_json"] = mark_safe(
                 json.dumps(settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS)
@@ -483,6 +502,10 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["all_submissions_link"] = self.get_all_submissions_page()
         context["page_type"] = self.page_type
 
+        context["in_hidden_subtasks_contest"] = self.in_hidden_subtasks_contest()
+        if context["in_hidden_subtasks_contest"]:
+            for submission in context["submissions"]:
+                self.modify_attrs(submission)
         return context
 
     def get(self, request, *args, **kwargs):
