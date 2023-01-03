@@ -11,13 +11,12 @@ class abstractclassmethod(classmethod):
 
 
 class BaseContestFormat(metaclass=ABCMeta):
+    has_hidden_subtasks = False
+
     @abstractmethod
     def __init__(self, contest, config):
         self.config = config
         self.contest = contest
-
-        # Use in ioi16 to display ranking with hidden subtasks
-        self.has_hidden_subtasks = False
 
     @abstractproperty
     def name(self):

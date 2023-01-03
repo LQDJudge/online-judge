@@ -10,13 +10,10 @@ from judge.timezone import from_database_time, to_database_time
 class NewIOIContestFormat(IOIContestFormat):
     name = gettext_lazy("New IOI")
     config_defaults = {"cumtime": False}
+    has_hidden_subtasks = True
     """
         cumtime: Specify True if time penalties are to be computed. Defaults to False.
     """
-
-    def __init__(self, contest, config):
-        super().__init__(contest, config)
-        self.has_hidden_subtasks = True
 
     def get_hidden_subtasks(self):
         queryset = self.contest.contest_problems.values_list("id", "hidden_subtasks")
