@@ -160,7 +160,7 @@ class SubmissionSource(SubmissionDetailBase):
 
 def get_hidden_subtasks(request, submission):
     contest = submission.contest_object
-    if contest.is_editable_by(request.user):
+    if contest and contest.is_editable_by(request.user):
         return set()
     if contest and contest.format.has_hidden_subtasks:
         try:
