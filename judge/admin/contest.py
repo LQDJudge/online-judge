@@ -285,7 +285,14 @@ class ContestAdmin(CompareVersionAdmin):
         self._rescored = False
         if form.changed_data and any(
             f in form.changed_data
-            for f in ("format_config", "format_name", "freeze_after")
+            for f in (
+                "start_time",
+                "end_time",
+                "time_limit",
+                "format_config",
+                "format_name",
+                "freeze_after",
+            )
         ):
             self._rescore(obj.key)
             self._rescored = True
