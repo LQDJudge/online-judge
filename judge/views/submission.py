@@ -159,9 +159,9 @@ class SubmissionSource(SubmissionDetailBase):
 
 
 def get_hidden_subtasks(request, submission):
-    if request.user.is_superuser:
-        return set()
     contest = submission.contest_object
+    if contest.is_editable_by(request.user):
+        return set()
     if contest and contest.format.has_hidden_subtasks:
         try:
             return contest.format.get_hidden_subtasks().get(
@@ -369,8 +369,8 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             if not self.contest.can_see_full_scoreboard(self.request.user):
                 queryset = queryset.filter(user=self.request.profile)
             if (
-                self.contest.format_name == "ioi16"
-                and not self.request.user.is_superuser
+                self.contest.format.has_hidden_subtasks
+                and not self.contest.is_editable_by(self.request.user)
             ):
                 queryset = queryset.filter(user=self.request.profile)
             if self.contest.freeze_after and not self.include_frozen:
@@ -450,7 +450,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         return (
             self.in_contest
             and self.contest.format.has_hidden_subtasks
-            and not self.request.user.is_superuser
+            and not self.contest.is_editable_by(self.request.user)
         )
 
     def modify_attrs(self, submission):
@@ -516,7 +516,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         self.selected_languages = set(request.GET.getlist("language"))
         self.selected_statuses = set(request.GET.getlist("status"))
 
-        if request.user.is_superuser:
+        if self.contest and self.contest.is_editable_by(self.request.user):
             self.include_frozen = True
 
         if "results" in request.GET:
@@ -916,10 +916,9 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
                     subtask = 0
                 problem_points = pp
                 submission = Submission.objects.get(id=sub_id)
-                if (
-                    subtask in hidden_subtasks.get(str(problem_id), set())
-                    and not self.request.user.is_superuser
-                ):
+                if subtask in hidden_subtasks.get(
+                    str(problem_id), set()
+                ) and not self.contest.is_editable_by(self.request.user):
                     best_subtasks[subtask] = {
                         "submission": None,
                         "contest_time": None,
@@ -965,7 +964,9 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
         filtered_submissions = []
 
         # Only show this for some users when using ioi16
-        if self.contest.format.has_hidden_subtasks or self.request.user.is_superuser:
+        if not self.contest.format.has_hidden_subtasks or self.contest.is_editable_by(
+            self.request.user
+        ):
             for s in context["submissions"]:
                 if not hasattr(s, "contest"):
                     continue
