@@ -22,9 +22,11 @@
             {{ make_tab_item('ranking', 'fa fa-bar-chart', None, _('Hidden Rankings')) }}
         {% endif %}
     {% endif %}
-    {% if request.user.is_superuser and can_use_resolver %}
-    {{ make_tab_item('resolver', 'fa fa-check', url('resolver', contest.key), _('Resolver')) }}
-    {{ make_tab_item('final_ranking', 'fa fa-bar-chart', url('contest_final_ranking', contest.key), _('Final rankings')) }}
+    {% if request.user.is_superuser and contest_has_hidden_subtasks %}
+        {{ make_tab_item('resolver', 'fa fa-check', url('resolver', contest.key), _('Resolver')) }}
+    {% endif %}
+    {% if show_final_ranking %}
+        {{ make_tab_item('final_ranking', 'fa fa-bar-chart', url('contest_final_ranking', contest.key), _('Final rankings')) }}
     {% endif %}
     {% if can_edit %}
         {% if perms.judge.moss_contest and has_moss_api_key %}

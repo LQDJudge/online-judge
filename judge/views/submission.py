@@ -516,7 +516,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         self.selected_languages = set(request.GET.getlist("language"))
         self.selected_statuses = set(request.GET.getlist("status"))
 
-        if self.contest and self.contest.is_editable_by(self.request.user):
+        if self.in_contest and self.contest.is_editable_by(self.request.user):
             self.include_frozen = True
 
         if "results" in request.GET:

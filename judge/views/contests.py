@@ -295,7 +295,12 @@ class ContestMixin(object):
         context["meta_description"] = self.object.summary or metadata[0]
         context["og_image"] = self.object.og_image or metadata[1]
         context["has_moss_api_key"] = settings.MOSS_API_KEY is not None
-        context["can_use_resolver"] = self.object.format.has_hidden_subtasks
+        context["contest_has_hidden_subtasks"] = self.object.format.has_hidden_subtasks
+        context[
+            "show_final_ranking"
+        ] = self.object.format.has_hidden_subtasks and self.object.is_editable_by(
+            self.request.user
+        )
         context["logo_override_image"] = self.object.logo_override_image
         if (
             not context["logo_override_image"]
@@ -989,7 +994,10 @@ def contest_ranking_ajax(request, contest, participation=None):
         raise Http404()
 
     if show_final:
-        if not request.user.is_superuser or not contest.format.has_hidden_subtasks:
+        if (
+            not contest.is_editable_by(request.user)
+            or not contest.format.has_hidden_subtasks
+        ):
             raise Http404()
 
     queryset = contest.users.filter(virtual__gte=0)
@@ -1075,9 +1083,9 @@ class ContestFinalRanking(LoginRequiredMixin, ContestRanking):
     page_type = "final_ranking"
 
     def get_ranking_list(self):
-        if not self.request.user.is_superuser:
+        if not self.object.is_editable_by(self.request.user):
             raise Http404()
-        if self.object.format_name != "ioi16":
+        if self.object.format.has_hidden_subtasks:
             raise Http404()
 
         return get_contest_ranking_list(self.request, self.object, show_final=True)
@@ -1264,11 +1272,7 @@ class NewContestClarificationView(ContestMixin, TitleMixin, SingleObjectFormView
             return False
         if not self.request.participation.contest == self.get_object():
             return False
-        return (
-            self.request.user.is_superuser
-            or self.request.profile in self.request.participation.contest.authors.all()
-            or self.request.profile in self.request.participation.contest.curators.all()
-        )
+        return self.get_object().is_editable_by(self.request.user)
 
     def get(self, request, *args, **kwargs):
         if not self.is_accessible():
