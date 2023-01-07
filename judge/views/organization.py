@@ -67,7 +67,7 @@ from judge.utils.views import (
     QueryStringSortMixin,
     DiggPaginatorMixin,
 )
-from judge.utils.problems import user_attempted_ids
+from judge.utils.problems import user_attempted_ids, user_completed_ids
 from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
 from judge.views.submission import AllSubmissions, SubmissionsListBase
@@ -388,7 +388,7 @@ class OrganizationProblems(LoginRequiredMixin, MemberOrganizationMixin, ProblemL
         return super().get(request, *args, **kwargs)
 
     def get_latest_attempted_problems(self, limit=None):
-        if self.in_contest or not self.profile:
+        if not self.profile:
             return ()
         problems = set(self.get_queryset().values_list("code", flat=True))
         result = list(user_attempted_ids(self.profile).values())
@@ -398,9 +398,20 @@ class OrganizationProblems(LoginRequiredMixin, MemberOrganizationMixin, ProblemL
             result = result[:limit]
         return result
 
+    def get_completed_problems(self):
+        return user_completed_ids(self.profile) if self.profile is not None else ()
+
+    def get_attempted_problems(self):
+        return user_attempted_ids(self.profile) if self.profile is not None else ()
+
+    @cached_property
+    def in_contest(self):
+        return False
+
     def get_context_data(self, **kwargs):
         context = super(OrganizationProblems, self).get_context_data(**kwargs)
         context["page_type"] = "problems"
+        context["show_contest_mode"] = False
         return context
 
 

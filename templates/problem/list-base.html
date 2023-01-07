@@ -8,7 +8,7 @@
             }
         </style>
     </noscript>
-    {% if not request.in_contest_mode %}
+    {% if not show_contest_mode %}
         <style>
             #search-org, #search-author {
                 width: 100%;
@@ -208,7 +208,7 @@
             });
         </script>
     {% endcompress %}
-    {% if request.in_contest_mode %}
+    {% if show_contest_mode %}
         {% compress js %}
             <script src="{{ static('libs/tablesorter.js') }}" type="text/javascript"></script>
             <script type="text/javascript">
@@ -238,7 +238,7 @@
                     });
                     window.register_contest_notification("{{url('contest_clarification_ajax', request.participation.contest.key)}}");
 
-                    {% if request.in_contest_mode %}
+                    {% if show_contest_mode %}
                         $('.left-sidebar').hide();
                     {% endif %}
                 });
@@ -248,7 +248,7 @@
 {% endblock %}
 
 {% block left_sidebar %}
-    {% if not request.in_contest_mode %}
+    {% if not show_contest_mode %}
         <div class="left-sidebar">
             {{ make_tab_item('feed', 'fa fa-pagelines', url('problem_feed'), _('Feed')) }}
             {{ make_tab_item('list', 'fa fa-list', url('problem_list'), _('List')) }}
@@ -258,7 +258,7 @@
 {% endblock %}
 
 {% block right_sidebar %}
-    {% if not request.in_contest_mode %}
+    {% if not show_contest_mode %}
         <div id="content-right" class="problems right-sidebar">
             {% include "problem/search-form.html" %}
             {% include "problem/recent-attempt.html" %}

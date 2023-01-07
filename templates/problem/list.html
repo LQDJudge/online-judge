@@ -3,14 +3,14 @@
     {% include "problem/left-sidebar.html" %}
 {% endblock %}
 
-{% set has_hidden_subtasks = request.in_contest_mode and request.participation.contest.format.has_hidden_subtasks %}
+{% set has_hidden_subtasks = show_contest_mode and request.participation.contest.format.has_hidden_subtasks %}
 
 {% block middle_content %}
     <div id="content-left" class="problems">
         <table id="problem-table" class="table striped">
             <thead>
             <tr>
-                {% if request.in_contest_mode %}
+                {% if show_contest_mode %}
                     {% if request.user.is_authenticated and not has_hidden_subtasks %}
                         <th class="solved"><i class="fa fa-check"></i></th>
                     {% endif %}
@@ -68,7 +68,7 @@
                         {% if problem.id in completed_problem_ids %}
                             <td solved="1">
                                 <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-                                    {% if problem.is_public or request.in_contest_mode %}
+                                    {% if problem.is_public or show_contest_mode %}
                                         <i class="solved-problem-color fa fa-check-circle"></i>
                                     {% else %}
                                         <i class="solved-problem-color fa fa-lock"></i>
@@ -78,7 +78,7 @@
                         {% elif problem.id in attempted_problems %}
                             <td solved="0">
                                 <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-                                    {% if problem.is_public or request.in_contest_mode %}
+                                    {% if problem.is_public or show_contest_mode %}
                                         <i class="attempted-problem-color fa fa-minus-circle"></i>
                                     {% else %}
                                         <i class="attempted-problem-color fa fa-lock"></i>
@@ -87,7 +87,7 @@
                             </td>
                         {% else %}
                             <td solved="-1">
-                                {% if problem.is_public or request.in_contest_mode %}
+                                {% if problem.is_public or show_contest_mode %}
                                     <i class="unsolved-problem-color fa fa-minus-circle"></i>
                                 {% else %}
                                     <i class="unsolved-problem-color fa fa-lock"></i>
@@ -101,7 +101,7 @@
                     <td class="pcode">
                         <a class="pcodecell" href="{{ url('problem_detail', problem.code) }}">{{ problem.code }}</a>
                     </td>
-                    {% if not request.in_contest_mode %}
+                    {% if not show_contest_mode %}
                         <td class="category">{{ problem.group.full_name }}</td>
                     {% endif %}
                     {% if show_types %}
@@ -112,13 +112,13 @@
                         </td>
                     {% endif %}
                     <td class="p">{{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}</td>
-                    {% if not request.in_contest_mode %}
+                    {% if not show_contest_mode %}
                         <td class="ac-rate">{{ problem.ac_rate|floatformat(0) }}%</td>
                     {% endif %}
                     {% if not has_hidden_subtasks %}
                     <td class="users">
                         <a href="{{ url('ranked_submissions', problem.code) }}">
-                            {% if not request.in_contest_mode or not hide_contest_scoreboard %}
+                            {% if not show_contest_mode or not hide_contest_scoreboard %}
                                 {{ problem.user_count }}
                             {% else %}
                                 ???
@@ -138,7 +138,7 @@
             {% endfor %}
             </tbody>
         </table>
-        {% if request.in_contest_mode and request.participation.contest.use_clarifications %}
+        {% if show_contest_mode and request.participation.contest.use_clarifications %}
             <br><br>
             {% if can_edit_contest %}
             <div style="float: right; font-size: 1.2em">

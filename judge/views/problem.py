@@ -715,6 +715,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         )
         context["first_page_href"] = (self.first_page_href or ".") + suffix
         context["has_show_editorial_option"] = True
+        context["show_contest_mode"] = self.request.in_contest_mode
         return context
 
     def get_noui_slider_points(self):
