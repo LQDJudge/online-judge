@@ -1,4 +1,11 @@
 {% extends "organization/home-base.html" %}
+{% block org_js %}
+    <script type="text/javascript">
+        $(function() {
+            $("select").select2();
+        });
+    </script>
+{% endblock %} 
 {% block middle_content %}
     {% include "messages.html" %}
     {% include "organization/requests/tabs.html" %}
