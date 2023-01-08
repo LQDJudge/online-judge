@@ -46,7 +46,10 @@ exit
 mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -D mysql -u root -p 
 mysql -u root -p -e "flush tables;" mysql
 ```
-
+6. Missing the chat secret key, you must generate a Fernet key, and assign a variable in `local_settings.py` like this
+```python
+CHAT_SECRET_KEY = "81HqDtbqAywKSOumSxxxxxxxxxxxxxxxxx="
+```
 
 
 ## Usage
