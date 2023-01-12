@@ -38,6 +38,15 @@ else:
             super(PagedownWidget, self).__init__(*args, **kwargs)
 
         class Media:
+            extend = False
+            js = [
+                "pagedown/Markdown.Converter.js",
+                "pagedown-extra/pagedown/Markdown.Converter.js",
+                "pagedown/Markdown.Sanitizer.js",
+                "pagedown/Markdown.Editor.js",
+                "pagedown-extra/Markdown.Extra.js",
+                "pagedown_init.js",
+            ]
             css = {
                 "all": [
                     "markdown.css",
