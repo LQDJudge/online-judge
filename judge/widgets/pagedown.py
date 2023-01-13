@@ -61,6 +61,7 @@ else:
                     "content-description.css",
                     "admin/css/pagedown.css",
                     "markdown.css",
+                    "pagedown.css",
                 ]
             }
             js = ["admin/js/pagedown.js"]
