@@ -11,6 +11,12 @@
     bottom: 0;
 }
 
+.ace_editor {
+    overflow: hidden;
+    font: 12px/normal 'Fira Code', 'Monaco', 'Menlo', monospace;
+    direction: 1tr;
+}
+
 .django-ace-widget.loading {
     display: none;
 }
