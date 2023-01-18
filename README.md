@@ -17,11 +17,12 @@ Supported languages:
 - Assembly (x64)
 - AWK
 - C
-- C++03 / C++11 / C++14 / C++17
+- C++03 / C++11 / C++14 / C++17 / C++20
 - Java 11
 - Pascal
 - Perl
 - Python 2 / Python 3
+- PyPy 2 / PyPy 3
 
 Support plagiarism detection via [Stanford MOSS](https://theory.stanford.edu/~aiken/moss/).
 
@@ -37,7 +38,7 @@ There is one minor change: Instead of `git clone https://github.com/DMOJ/site.gi
 3. Missing static folder in `local_settings.py`. Similar to problem folder, make sure to configure `STATIC_FILES` inside `local_settings.py`. 
 4. Missing configure file for judges. Each judge must have a seperate configure file. To create this file, you can run `python dmojauto-conf`. Checkout all sample files here https://github.com/DMOJ/docs/blob/master/sample_files.
 5. Missing timezone data for SQL. If you're using Ubuntu and you're following DMOJ's installation guide for the server, and you are getting the error mentioned in https://github.com/LQDJudge/online-judge/issues/45, then you can follow this method to fix:
-```bash
+```
 mysql
 -- You may have to do this if you haven't set root password for MySQL, replace mypass with your password
 -- SET PASSWORD FOR 'root'@'localhost' = PASSWORD('mypass');
@@ -102,7 +103,7 @@ Most of the steps are similar to Django tutorials. Here are two usual steps:
 2. Update styles (using SASS)
  - Change .css/.scss files in `resources` folder
  - ```./make_style.sh && python3 manage.py collectstatic```
- - Sometimes you need to `Ctrl + F5` to see the new user interface in browser.
+ - Sometimes you need to press `Ctrl + F5` to see the new user interface in browser.
  
 ## Screenshots
 
