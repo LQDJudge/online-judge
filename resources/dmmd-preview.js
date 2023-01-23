@@ -23,6 +23,12 @@ $(function () {
                     csrfmiddlewaretoken: $.cookie('csrftoken')
                 }, function (result) {
                     $content.html(result);
+                    $(".dmmd-preview-content [data-src]img").each(function() {
+                        $(this).attr("src", $(this).attr("data-src"));
+                    })
+                    $(".dmmd-preview-content [data-src]iframe").each(function() {
+                        $(this).attr("src", $(this).attr("data-src"));
+                    })
                     $preview.addClass('dmmd-preview-has-content').removeClass('dmmd-preview-stale');
 
                     var $jax = $content.find('.require-mathjax-support');
