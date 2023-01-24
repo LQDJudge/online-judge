@@ -31,7 +31,7 @@
                 {# Allow users to leave the virtual contest #}
                 {% if in_contest %}
                     <form action="{{ url('contest_leave', contest.key) }}" method="post"
-                          class="contest-join-pseudotab btn-midnightblue">
+                          class="contest-join-pseudotab btn-red">
                         {% csrf_token %}
                         <input type="submit" class="leaving-forever" value="{{ _('Leave contest') }}">
                     </form>
@@ -77,12 +77,19 @@
             <input type="submit" class="btn-midnightblue" value="{{ _('Login to participate') }}">
         </form>
     {% endif %}
-    
+
     <div class="content-description">
         {% cache 3600 'contest_html' contest.id MATH_ENGINE %}
             {{ contest.description|markdown|reference|str|safe }}
         {% endcache %}
     </div>
+    {% if editable_organizations %}
+        <div>
+            {% for org in editable_organizations %}
+                <span> [<a href="{{ url('organization_contest_edit', org.id , org.slug , contest.key) }}">{{ _('Edit in') }} {{org.slug}}</a>]</span>
+            {% endfor %}
+        </div>
+    {% endif %}
 
     {% if contest.ended or request.user.is_superuser or is_editor or is_tester %}
         <hr>

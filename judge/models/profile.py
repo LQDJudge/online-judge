@@ -33,6 +33,7 @@ class Organization(models.Model):
         max_length=128,
         verbose_name=_("organization slug"),
         help_text=_("Organization name shown in URL"),
+        unique=True,
     )
     short_name = models.CharField(
         max_length=20,
@@ -338,6 +339,16 @@ class Profile(models.Model):
 
         ret.add(self.username)
         return ret
+
+    def can_edit_organization(self, org):
+        if not self.user.is_authenticated:
+            return False
+        profile_id = self.id
+        return (
+            org.admins.filter(id=profile_id).exists()
+            or org.registrant_id == profile_id
+            or self.user.is_superuser
+        )
 
     class Meta:
         permissions = (

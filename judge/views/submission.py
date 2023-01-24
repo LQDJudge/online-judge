@@ -49,6 +49,7 @@ from judge.utils.raw_sql import join_sql_subquery, use_straight_join
 from judge.utils.views import DiggPaginatorMixin
 from judge.utils.views import TitleMixin
 from judge.utils.timedelta import nice_repr
+from judge.views.problem import get_problems_in_organization
 
 
 MAX_NUMBER_OF_QUERY_SUBMISSIONS = 50000
@@ -414,6 +415,13 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     def _get_queryset(self):
         queryset = self._get_entire_queryset()
         if not self.in_contest:
+            if self.request.organization:
+                problems = get_problems_in_organization(
+                    self.request, self.request.organization
+                )
+                queryset = queryset.filter(
+                    user__organizations=self.request.organization, problem__in=problems
+                )
             join_sql_subquery(
                 queryset,
                 subquery=str(
@@ -785,7 +793,12 @@ class AllSubmissions(SubmissionsListBase):
         return context
 
     def _get_result_data(self):
-        if self.in_contest or self.selected_languages or self.selected_statuses:
+        if (
+            self.request.organization
+            or self.in_contest
+            or self.selected_languages
+            or self.selected_statuses
+        ):
             return super(AllSubmissions, self)._get_result_data()
 
         key = "global_submission_result_data"

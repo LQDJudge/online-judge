@@ -105,6 +105,14 @@ def get_contest_submission_count(problem, profile, virtual):
     )
 
 
+def get_problems_in_organization(request, organization):
+    problem_list = ProblemList(request=request)
+    problem_list.setup_problem_list(request)
+    problem_list.org_query = [organization.id]
+    problems = problem_list.get_normal_queryset()
+    return problems
+
+
 class ProblemMixin(object):
     model = Problem
     slug_url_kwarg = "problem"
@@ -145,10 +153,13 @@ class SolvedProblemMixin(object):
         else:
             return user_attempted_ids(self.profile) if self.profile is not None else ()
 
-    def get_latest_attempted_problems(self, limit=None):
+    def get_latest_attempted_problems(self, limit=None, queryset=None):
         if self.in_contest or not self.profile:
             return ()
         result = list(user_attempted_ids(self.profile).values())
+        if queryset:
+            queryset_ids = set([i.code for i in queryset])
+            result = filter(lambda i: i["code"] in queryset_ids, result)
         result = sorted(result, key=lambda d: -d["last_submission"])
         if limit:
             result = result[:limit]
@@ -454,6 +465,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
     default_desc = frozenset(("date", "points", "ac_rate", "user_count"))
     default_sort = "-date"
     first_page_href = None
+    filter_organization = False
 
     def get_paginator(
         self, queryset, per_page, orphans=0, allow_empty_first_page=True, **kwargs
@@ -592,6 +604,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
                     user=self.profile, points=F("problem__points")
                 ).values_list("problem__id", flat=True)
             )
+        if not self.org_query and self.request.organization:
+            self.org_query = [self.request.organization.id]
         if self.org_query:
             self.org_query = self.get_org_query(self.org_query)
             queryset = queryset.filter(
@@ -652,6 +666,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
     def get_context_data(self, **kwargs):
         context = super(ProblemList, self).get_context_data(**kwargs)
 
+        if self.request.organization:
+            self.filter_organization = True
         context["hide_solved"] = 0 if self.in_contest else int(self.hide_solved)
         context["show_types"] = 0 if self.in_contest else int(self.show_types)
         context["full_text"] = 0 if self.in_contest else int(self.full_text)
@@ -676,7 +692,9 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         context["search_query"] = self.search_query
         context["completed_problem_ids"] = self.get_completed_problems()
         context["attempted_problems"] = self.get_attempted_problems()
-        context["last_attempted_problems"] = self.get_latest_attempted_problems(15)
+        context["last_attempted_problems"] = self.get_latest_attempted_problems(
+            15, context["problems"] if self.filter_organization else None
+        )
         context["page_type"] = "list"
         context.update(self.get_sort_paginate_context())
         if not self.in_contest:

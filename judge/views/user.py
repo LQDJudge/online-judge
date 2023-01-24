@@ -454,7 +454,7 @@ class UserList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ListView):
         return ret
 
     def get_queryset(self):
-        ret = (
+        queryset = (
             Profile.objects.filter(is_unlisted=False)
             .order_by(self.order, "id")
             .select_related("user")
@@ -467,11 +467,13 @@ class UserList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ListView):
                 "problem_count",
             )
         )
-
+        if self.request.organization:
+            queryset = queryset.filter(organizations=self.request.organization)
         if (self.request.GET.get("friend") == "true") and self.request.profile:
-            ret = self.filter_friend_queryset(ret)
+            queryset = self.filter_friend_queryset(queryset)
             self.filter_friend = True
-        return ret
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super(UserList, self).get_context_data(**kwargs)

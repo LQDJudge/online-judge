@@ -35,6 +35,7 @@ from django.views.generic.detail import (
     SingleObjectTemplateResponseMixin,
 )
 from django.core.paginator import Paginator
+from django.contrib.sites.shortcuts import get_current_site
 from reversion import revisions
 
 from judge.forms import (
@@ -68,11 +69,12 @@ from judge.utils.views import (
     DiggPaginatorMixin,
 )
 from judge.utils.problems import user_attempted_ids, user_completed_ids
-from judge.views.problem import ProblemList
+from judge.views.problem import ProblemList, get_problems_in_organization
 from judge.views.contests import ContestList
 from judge.views.submission import AllSubmissions, SubmissionsListBase
 from judge.views.pagevote import PageVoteListView
 from judge.views.bookmark import BookMarkListView
+
 
 __all__ = [
     "OrganizationList",
@@ -96,14 +98,9 @@ class OrganizationBase(object):
     def can_edit_organization(self, org=None):
         if org is None:
             org = self.object
-        if not self.request.user.is_authenticated:
-            return False
-        profile_id = self.request.profile.id
-        return (
-            org.admins.filter(id=profile_id).exists()
-            or org.registrant_id == profile_id
-            or self.request.user.is_superuser
-        )
+        if self.request.profile:
+            return self.request.profile.can_edit_organization(org)
+        return False
 
     def is_member(self, org=None):
         if org is None:
@@ -293,6 +290,9 @@ class OrganizationHome(OrganizationDetailView, PageVoteListView, BookMarkListVie
     def get_context_data(self, **kwargs):
         context = super(OrganizationHome, self).get_context_data(**kwargs)
         context["title"] = self.object.name
+        context["organization_subdomain"] = (
+            self.object.slug + "." + get_current_site(self.request).domain
+        )
         context["posts"], context["page_obj"] = self.get_posts_and_page_obj()
         context = self.add_pagevote_context_data(context, "posts")
         context = self.add_bookmark_context_data(context, "posts")
@@ -378,6 +378,7 @@ class OrganizationUsers(QueryStringSortMixin, OrganizationDetailView):
 
 class OrganizationProblems(LoginRequiredMixin, MemberOrganizationMixin, ProblemList):
     template_name = "organization/problems.html"
+    filter_organization = True
 
     def get_queryset(self):
         self.org_query = [self.organization_id]
@@ -386,17 +387,6 @@ class OrganizationProblems(LoginRequiredMixin, MemberOrganizationMixin, ProblemL
     def get(self, request, *args, **kwargs):
         self.setup_problem_list(request)
         return super().get(request, *args, **kwargs)
-
-    def get_latest_attempted_problems(self, limit=None):
-        if not self.profile:
-            return ()
-        problems = set(self.get_queryset().values_list("code", flat=True))
-        result = list(user_attempted_ids(self.profile).values())
-        result = [i for i in result if i["code"] in problems]
-        result = sorted(result, key=lambda d: -d["last_submission"])
-        if limit:
-            result = result[:limit]
-        return result
 
     def get_completed_problems(self):
         return user_completed_ids(self.profile) if self.profile is not None else ()
@@ -478,10 +468,11 @@ class OrganizationSubmissions(
         return None
 
     def _get_queryset(self):
+        problems = get_problems_in_organization(self.request, self.organization)
         return (
             super()
             ._get_entire_queryset()
-            .filter(contest_object__organizations=self.organization)
+            .filter(user__organizations=self.organization, problem__in=problems)
         )
 
     def get_context_data(self, **kwargs):

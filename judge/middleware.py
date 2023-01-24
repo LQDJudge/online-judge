@@ -2,6 +2,10 @@ from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.urls import Resolver404, resolve, reverse
 from django.utils.http import urlquote
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import ObjectDoesNotExist
+
+from judge.models import Organization
 
 
 class ShortCircuitMiddleware:
@@ -81,4 +85,31 @@ class DarkModeMiddleware(object):
             return HttpResponseRedirect(
                 reverse("toggle_darkmode") + "?next=" + urlquote(request.path)
             )
+        return self.get_response(request)
+
+
+class SubdomainMiddleware(object):
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        domain = request.get_host()
+        site = get_current_site(request).domain
+        subdomain = domain[: len(domain) - len(site)]
+        request.organization = None
+        if len(subdomain) > 1:
+            subdomain = subdomain[:-1]
+            try:
+                organization = Organization.objects.get(slug=subdomain)
+                if (
+                    request.profile
+                    and organization in request.profile.organizations.all()
+                ):
+                    request.organization = organization
+                elif not request.GET.get("next", None):
+                    return HttpResponseRedirect(
+                        reverse("auth_login") + "?next=" + urlquote(request.path)
+                    )
+            except ObjectDoesNotExist:
+                pass
         return self.get_response(request)

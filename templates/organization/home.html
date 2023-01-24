@@ -13,7 +13,14 @@
 {% block middle_title %}
     <div class="page-title">
         <div class="tabs" style="border: none;">
-            <h2><img src="{{logo_override_image}}" style="height: 3rem; vertical-align: middle"> <span>{{title}}</span></h2>
+            <h2><img src="{{logo_override_image}}" style="height: 3rem; vertical-align: middle">
+                {{title}}
+            </h2>
+            {% if is_member %}
+            <div>
+                <a href="{{organization_subdomain}}" target="_blank">(Subdomain)</a>
+            </div>
+            {% endif %}
             <span class="spacer"></span>
         
             {% if request.user.is_authenticated %}

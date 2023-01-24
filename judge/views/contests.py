@@ -179,6 +179,8 @@ class ContestList(
                 queryset = queryset.filter(
                     Q(key__icontains=query) | Q(name__icontains=query)
                 )
+        if not self.org_query and self.request.organization:
+            self.org_query = [self.request.organization.id]
         if self.org_query:
             queryset = queryset.filter(organizations__in=self.org_query)
 
@@ -404,6 +406,15 @@ class ContestDetail(
     def get_title(self):
         return self.object.name
 
+    def get_editable_organizations(self):
+        if not self.request.profile:
+            return []
+        res = []
+        for organization in self.object.organizations.all():
+            if self.request.profile.can_edit_organization(organization):
+                res.append(organization)
+        return res
+
     def get_context_data(self, **kwargs):
         context = super(ContestDetail, self).get_context_data(**kwargs)
         context["contest_problems"] = (
@@ -421,6 +432,7 @@ class ContestDetail(
             )
             .add_i18n_name(self.request.LANGUAGE_CODE)
         )
+        context["editable_organizations"] = self.get_editable_organizations()
         return context
 
 

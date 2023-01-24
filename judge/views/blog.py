@@ -76,6 +76,10 @@ class FeedView(ListView):
             .filter(is_visible=True)
             .order_by("start_time")
         )
+        if self.request.organization:
+            visible_contests = visible_contests.filter(
+                is_organization_private=True, organizations=self.request.organization
+            )
 
         context["current_contests"] = visible_contests.filter(
             start_time__lte=now, end_time__gt=now
@@ -84,10 +88,14 @@ class FeedView(ListView):
         context[
             "recent_organizations"
         ] = OrganizationProfile.get_most_recent_organizations(self.request.profile)
-        context["top_rated"] = Profile.objects.filter(is_unlisted=False).order_by(
+
+        profile_queryset = Profile.objects
+        if self.request.organization:
+            profile_queryset = self.request.organization.members
+        context["top_rated"] = profile_queryset.filter(is_unlisted=False).order_by(
             "-rating"
         )[:10]
-        context["top_scorer"] = Profile.objects.filter(is_unlisted=False).order_by(
+        context["top_scorer"] = profile_queryset.filter(is_unlisted=False).order_by(
             "-performance_points"
         )[:10]
 
@@ -108,6 +116,8 @@ class PostList(FeedView, PageVoteListView, BookMarkListView):
         filter = Q(is_organization_private=False)
         if self.request.user.is_authenticated:
             filter |= Q(organizations__in=self.request.profile.organizations.all())
+        if self.request.organization:
+            filter &= Q(organizations=self.request.organization)
         queryset = queryset.filter(filter)
         return queryset
 
@@ -184,7 +194,9 @@ class CommentFeed(FeedView):
     paginate_by = 50
 
     def get_queryset(self):
-        return Comment.most_recent(self.request.user, 1000)
+        return Comment.most_recent(
+            self.request.user, 1000, organization=self.request.organization
+        )
 
     def get_context_data(self, **kwargs):
         context = super(CommentFeed, self).get_context_data(**kwargs)

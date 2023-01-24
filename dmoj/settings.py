@@ -262,6 +262,7 @@ MIDDLEWARE = (
     "judge.middleware.DMOJImpersonationMiddleware",
     "judge.middleware.ContestMiddleware",
     "judge.middleware.DarkModeMiddleware",
+    "judge.middleware.SubdomainMiddleware",
     "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
     "judge.social_auth.SocialAuthExceptionMiddleware",
     "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
