@@ -69,7 +69,7 @@ from judge.utils.views import (
     DiggPaginatorMixin,
 )
 from judge.utils.problems import user_attempted_ids, user_completed_ids
-from judge.views.problem import ProblemList, get_problems_in_organization
+from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
 from judge.views.submission import AllSubmissions, SubmissionsListBase
 from judge.views.pagevote import PageVoteListView
@@ -473,11 +473,10 @@ class OrganizationSubmissions(
         return None
 
     def _get_queryset(self):
-        problems = get_problems_in_organization(self.request, self.organization)
         return (
             super()
             ._get_entire_queryset()
-            .filter(user__in=self.organization.members.all(), problem__in=problems)
+            .filter(contest_object__organizations=self.organization)
         )
 
     def get_context_data(self, **kwargs):
