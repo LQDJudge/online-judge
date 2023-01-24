@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 from django.urls import Resolver404, resolve, reverse
 from django.utils.http import urlquote
 from django.contrib.sites.shortcuts import get_current_site
@@ -106,10 +106,13 @@ class SubdomainMiddleware(object):
                     and organization in request.profile.organizations.all()
                 ):
                     request.organization = organization
-                elif not request.GET.get("next", None):
-                    return HttpResponseRedirect(
-                        reverse("auth_login") + "?next=" + urlquote(request.path)
-                    )
+                else:
+                    if request.profile:
+                        raise Http404
+                    if not request.GET.get("next", None):
+                        return HttpResponseRedirect(
+                            reverse("auth_login") + "?next=" + urlquote(request.path)
+                        )
             except ObjectDoesNotExist:
                 pass
         return self.get_response(request)
