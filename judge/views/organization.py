@@ -290,8 +290,13 @@ class OrganizationHome(OrganizationDetailView, PageVoteListView, BookMarkListVie
     def get_context_data(self, **kwargs):
         context = super(OrganizationHome, self).get_context_data(**kwargs)
         context["title"] = self.object.name
+        http = "http" if settings.DMOJ_SSL == 0 else "https"
         context["organization_subdomain"] = (
-            self.object.slug + "." + get_current_site(self.request).domain
+            http
+            + "://"
+            + self.object.slug
+            + "."
+            + get_current_site(self.request).domain
         )
         context["posts"], context["page_obj"] = self.get_posts_and_page_obj()
         context = self.add_pagevote_context_data(context, "posts")
