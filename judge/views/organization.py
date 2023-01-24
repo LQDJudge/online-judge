@@ -477,7 +477,7 @@ class OrganizationSubmissions(
         return (
             super()
             ._get_entire_queryset()
-            .filter(user__organizations=self.organization, problem__in=problems)
+            .filter(user__in=self.organization.members.all(), problem__in=problems)
         )
 
     def get_context_data(self, **kwargs):

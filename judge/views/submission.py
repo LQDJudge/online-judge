@@ -420,7 +420,8 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                     self.request, self.request.organization
                 )
                 queryset = queryset.filter(
-                    user__organizations=self.request.organization, problem__in=problems
+                    user__in=self.request.organization.members.all(),
+                    problem__in=problems,
                 )
             join_sql_subquery(
                 queryset,
