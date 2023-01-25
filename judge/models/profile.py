@@ -34,6 +34,9 @@ class Organization(models.Model):
         verbose_name=_("organization slug"),
         help_text=_("Organization name shown in URL"),
         unique=True,
+        validators=[
+            RegexValidator("^[-a-zA-Z0-9]+$", _("Only alphanumeric and hyphens"))
+        ],
     )
     short_name = models.CharField(
         max_length=20,
