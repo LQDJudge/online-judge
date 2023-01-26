@@ -20,7 +20,7 @@
     <span class="actionbar-block">
         <span class="actionbar-button actionbar-comment">
             <i class="fa fa-comment-o" style="font-size: large;"></i>
-            <span class="actionbar-text">{{_("Comment")}}</span>
+            <span class="actionbar-text">{{_("Comment")}} {% if comment_list.count() %} ({{comment_list.count()}}) {% endif %}</span>
         </span>
     </span>
     {% endif %}
