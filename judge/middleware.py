@@ -114,5 +114,6 @@ class SubdomainMiddleware(object):
                             reverse("auth_login") + "?next=" + urlquote(request.path)
                         )
             except ObjectDoesNotExist:
-                pass
+                scheme = "https" if settings.DMOJ_SSL > 0 else "http"
+                return HttpResponseRedirect(scheme + "://" + site)
         return self.get_response(request)
