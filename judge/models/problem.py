@@ -371,7 +371,7 @@ class Problem(models.Model):
     @classmethod
     def get_visible_problems(cls, user):
         # Do unauthenticated check here so we can skip authentication checks later on.
-        if not user.is_authenticated:
+        if not user.is_authenticated or not user:
             return cls.get_public_problems()
 
         # Conditions for visible problem:
