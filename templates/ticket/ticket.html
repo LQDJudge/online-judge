@@ -144,10 +144,10 @@
 {% endblock %}
 
 {% block content_title %}
-    <div class="status">
+    <span class="status">
         <i class="fa {% if ticket.is_open %}fa-exclamation-circle{% else %}fa-check-circle-o{% endif %}"></i>
-    </div>
-    <div class="title">{{ ticket.title }}</div><small>#{{ ticket.id }}</small>
+    </span>
+    <span class="title">{{ ticket.title }}</span><small>#{{ ticket.id }}</small>
 {% endblock %}
 
 {% block body %}
