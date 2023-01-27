@@ -588,11 +588,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         queryset = Problem.get_visible_problems(self.request.user)
         queryset = queryset.select_related("group")
         if self.profile is not None and self.hide_solved:
-            queryset = queryset.exclude(
-                id__in=Submission.objects.filter(
-                    user=self.profile, points=F("problem__points")
-                ).values_list("problem__id", flat=True)
-            )
+            solved_problems = self.get_completed_problems()
+            queryset = queryset.exclude(id__in=solved_problems)
         if not self.org_query and self.request.organization:
             self.org_query = [self.request.organization.id]
         if self.org_query:
