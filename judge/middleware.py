@@ -4,8 +4,10 @@ from django.urls import Resolver404, resolve, reverse
 from django.utils.http import urlquote
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.translation import gettext as _
 
 from judge.models import Organization
+from judge.utils.views import generic_message
 
 
 class ShortCircuitMiddleware:
@@ -108,12 +110,21 @@ class SubdomainMiddleware(object):
                     request.organization = organization
                 else:
                     if request.profile:
-                        raise Http404
+                        return generic_message(
+                            request,
+                            _("No permission"),
+                            _("You need to join this group first"),
+                            status=404,
+                        )
                     if not request.GET.get("next", None):
                         return HttpResponseRedirect(
                             reverse("auth_login") + "?next=" + urlquote(request.path)
                         )
             except ObjectDoesNotExist:
-                scheme = "https" if settings.DMOJ_SSL > 0 else "http"
-                return HttpResponseRedirect(scheme + "://" + site)
+                return generic_message(
+                    request,
+                    _("No such group"),
+                    _("No such group"),
+                    status=404,
+                )
         return self.get_response(request)

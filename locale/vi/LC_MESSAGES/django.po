@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-01-28 06:15+0700\n"
+"POT-Creation-Date: 2023-01-28 06:23+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -545,6 +545,18 @@ msgstr "{time}"
 #, python-brace-format
 msgid "on {time}"
 msgstr "vào {time}"
+
+#: judge/middleware.py:114
+msgid "No permission"
+msgstr "Không có quyền truy cập"
+
+#: judge/middleware.py:115
+msgid "You need to join this group first"
+msgstr "Bạn phải là thành viên của nhóm."
+
+#: judge/middleware.py:125 judge/middleware.py:126
+msgid "No such group"
+msgstr "Nhóm không tồn tại"
 
 #: judge/models/bookmark.py:17 judge/models/comment.py:49
 #: judge/models/comment.py:226 judge/models/pagevote.py:13
