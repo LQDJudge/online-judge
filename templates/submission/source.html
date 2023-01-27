@@ -1,64 +1,64 @@
 {% extends "submission/info-base.html" %}
 {% block media %}
-    <style>
-        .line {
-            position: relative;
-        }
+  <style>
+    .line {
+      position: relative;
+    }
 
-        .highlighter {
-            position: absolute;
-            width: 9999px;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
-        }
+    .highlighter {
+      position: absolute;
+      width: 9999px;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
 
-        a:active .line .highlighter {
-            background: rgba(255, 212, 0, 0.48);
-        }
+    a:active .line .highlighter {
+      background: rgba(255, 212, 0, 0.48);
+    }
 
-        .copy-clipboard {
-            margin-top: 0;
-        }
-    </style>
+    .copy-clipboard {
+      margin-top: 0;
+    }
+  </style>
 {% endblock %}
 
 {% block body %}
-    <div style="clear: both"></div>
-    <br>
-    <div><a href="{{ url('submission_status', submission.id) }}">{{ _('View status') }}</a></div>
-    <div><a href="{{ url('submission_source_raw', submission.id) }}">{{ _('View raw source') }}</a></div>
-    {% if request.user == submission.user.user or perms.judge.resubmit_other %}
-        <div><a href="{{ url('problem_submit', submission.problem.code, submission.id) }}">{{ _('Resubmit') }}</a></div>
-    {% endif %}
-    {% if perms.judge.rejudge_submission %}
-        <div>
-            <form action="{{ url('submission_rejudge') }}" method="post">
-                {% csrf_token %}
-                <a href="#" onclick="parentNode.submit()">{{ _('Rejudge') }}</a>
-                <input type="hidden" name="id" value="{{ submission.id }}">
-                <input type="hidden" name="path" value="{{ url('submission_status', submission.id) }}">
-            </form>
-        </div>
-    {% endif %}
-    <br>
-    <hr>
-    <br>
-    <div class="source-wrap">
-        <table style="width: 100%">
-            <tr>
-                <td class="source-ln" style="width: 0">
-                    <div>
-                        {% for line in raw_source.split('\n') %}
-                            <a href="#line-{{ loop.index }}" name="line-{{ loop.index }}">
-                                <pre class="line">{{ loop.index }}</pre>
-                            </a>
-                        {% endfor %}
-                    </div>
-                </td>
-                <td class="source-code">{{ highlighted_source }}</td>
-            </tr>
-        </table>
+  <div style="clear: both"></div>
+  <br>
+  <div><a href="{{ url('submission_status', submission.id) }}">{{ _('View status') }}</a></div>
+  <div><a href="{{ url('submission_source_raw', submission.id) }}">{{ _('View raw source') }}</a></div>
+  {% if request.user == submission.user.user or perms.judge.resubmit_other %}
+    <div><a href="{{ url('problem_submit', submission.problem.code, submission.id) }}">{{ _('Resubmit') }}</a></div>
+  {% endif %}
+  {% if perms.judge.rejudge_submission %}
+    <div>
+      <form action="{{ url('submission_rejudge') }}" method="post">
+        {% csrf_token %}
+        <a href="#" onclick="parentNode.submit()">{{ _('Rejudge') }}</a>
+        <input type="hidden" name="id" value="{{ submission.id }}">
+        <input type="hidden" name="path" value="{{ url('submission_status', submission.id) }}">
+      </form>
     </div>
+  {% endif %}
+  <br>
+  <hr>
+  <br>
+  <div class="source-wrap">
+    <table style="width: 100%">
+      <tr>
+        <td class="source-ln" style="width: 0">
+          <div>
+            {% for line in raw_source.split('\n') %}
+              <a href="#line-{{ loop.index }}" name="line-{{ loop.index }}">
+                <pre class="line">{{ loop.index }}</pre>
+              </a>
+            {% endfor %}
+          </div>
+        </td>
+        <td class="source-code">{{ highlighted_source }}</td>
+      </tr>
+    </table>
+  </div>
 {% endblock %}

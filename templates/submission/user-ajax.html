@@ -1,73 +1,73 @@
 <h4>
-    {{_('Contest submissions of')}} {{link_user(profile)}}  <a href="{{url('contest_user_submissions', contest.key, profile.user.username, problem.code)}}">#</a>
+  {{_('Contest submissions of')}} {{link_user(profile)}}  <a href="{{url('contest_user_submissions', contest.key, profile.user.username, problem.code)}}">#</a>
 </h4>
 <hr>
 {% if best_subtasks and subtasks %}
-<table class="lightbox-submissions"><tbody>
+  <table class="lightbox-submissions"><tbody>
     {% for subtask in subtasks %}
-        <tr>
-            {% set cur_subtask = best_subtasks[subtask] %}
-            <td class="lightbox-submissions-time">
-                <b>{{_('Subtask')}} {{subtask}}:</b>
-            </td>
-            <td class="lightbox-submissions-time case-{{'AC' if cur_subtask.points == cur_subtask.total else ('TLE' if cur_subtask.points == '???' else 'WA')}}">
-                {{ cur_subtask.points }} / {{ cur_subtask.total }}
-            </td>
-            {% if cur_subtask.contest_time %}
+      <tr>
+        {% set cur_subtask = best_subtasks[subtask] %}
+        <td class="lightbox-submissions-time">
+          <b>{{_('Subtask')}} {{subtask}}:</b>
+        </td>
+        <td class="lightbox-submissions-time case-{{'AC' if cur_subtask.points == cur_subtask.total else ('TLE' if cur_subtask.points == '???' else 'WA')}}">
+          {{ cur_subtask.points }} / {{ cur_subtask.total }}
+        </td>
+        {% if cur_subtask.contest_time %}
+          <td>
+            ({{ cur_subtask.contest_time }})
+          </td>
+        {% endif %}
+        {% if cur_subtask.submission %}
+          {% set can_view = submission_layout(cur_subtask.submission, profile_id, request.user, editable_problem_ids, completed_problem_ids) %}
+          {% if can_view %}
             <td>
-                ({{ cur_subtask.contest_time }})
+              → <a href="{{url('submission_status', cur_subtask.submission.id)}}">{{ cur_subtask.submission.id }}</a>
             </td>
-            {% endif %}
-            {% if cur_subtask.submission %}
-            {% set can_view = submission_layout(cur_subtask.submission, profile_id, request.user, editable_problem_ids, completed_problem_ids) %}
-            {% if can_view %}
-            <td>
-                → <a href="{{url('submission_status', cur_subtask.submission.id)}}">{{ cur_subtask.submission.id }}</a>
-            </td>
-            {% endif %}
-            {% endif %}
-        </tr>
+          {% endif %}
+        {% endif %}
+      </tr>
     {% endfor %}
     <tr>
-        <td class="lightbox-submissions-time">
-            <b>{{_('Total')}}:</b>
-        </td>
-        <td style="border-top: 1px solid" class="case-{{'AC' if points == total else 'WA'}}">
-            {{ points }} / {{ total }}
-        </td>
+      <td class="lightbox-submissions-time">
+        <b>{{_('Total')}}:</b>
+      </td>
+      <td style="border-top: 1px solid" class="case-{{'AC' if points == total else 'WA'}}">
+        {{ points }} / {{ total }}
+      </td>
     </tr>
-</tbody></table>
-<hr>
+  </tbody></table>
+  <hr>
 {% endif %}
 {% if submissions %}
-<table class="lightbox-submissions"><tbody>
-{% for submission in submissions %}
-    <tr>
+  <table class="lightbox-submissions"><tbody>
+    {% for submission in submissions %}
+      <tr>
         {% set can_view = submission_layout(submission, profile_id, request.user, editable_problem_ids, completed_problem_ids) %}
         <td class="lightbox-submissions-time">
-            {% if submission.contest_time %}
-                {{submission.contest_time}}
-            {% else %}
-                {% trans time=submission.date|date(_("g:i a d/m/Y")) %}
-                    {{ time }}
-                {% endtrans %}
-            {% endif %}
+          {% if submission.contest_time %}
+            {{submission.contest_time}}
+          {% else %}
+            {% trans time=submission.date|date(_("g:i a d/m/Y")) %}
+              {{ time }}
+            {% endtrans %}
+          {% endif %}
         </td>
         <td class="case-{{submission.result}}">{{submission.display_point}}</td>
         <td class="case-{{submission.result}}">({{submission.short_status}})</td>
         <td>
-            {% if submission.contest.is_pretest %}
-                [{{_('pretests')}}]
-            {% else %} 
-                [{{_('main tests')}}]
-            {% endif %}
+          {% if submission.contest.is_pretest %}
+            [{{_('pretests')}}]
+          {% else %}
+            [{{_('main tests')}}]
+          {% endif %}
         </td>
         {% if can_view %}
-            <td>
-                → <a href="{{url('submission_status', submission.id)}}">{{submission.id}}</a>
-            </td>
+          <td>
+            → <a href="{{url('submission_status', submission.id)}}">{{submission.id}}</a>
+          </td>
         {% endif %}
-    </tr>
-{% endfor %}
-</tbody></table>
+      </tr>
+    {% endfor %}
+  </tbody></table>
 {% endif %}

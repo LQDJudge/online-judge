@@ -1,236 +1,236 @@
 {% extends "base.html" %}
 
 {% block js_media %}
-    <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
-    <script type="text/javascript" src="{{ static('jszip/jszip.min.js') }}"></script>
-    {{ form.media.js }}
-    {% compress js %}
-        <script type="text/javascript">
-            $(function () {
-                function format(state) {
-                    if (!state.id) return state.text; // optgroup
-                    return state.text;
-                }
+  <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
+  <script type="text/javascript" src="{{ static('jszip/jszip.min.js') }}"></script>
+  {{ form.media.js }}
+  {% compress js %}
+    <script type="text/javascript">
+      $(function () {
+        function format(state) {
+          if (!state.id) return state.text; // optgroup
+          return state.text;
+        }
 
-                window.previous_template = '';
+        window.previous_template = '';
 
-                function update_submit_area(code) {
-                    window.previous_template = code;
-                    $('textarea#id_source').val(code);
-                    window.ace_source.getSession().setValue(code);
-                }
+        function update_submit_area(code) {
+          window.previous_template = code;
+          $('textarea#id_source').val(code);
+          window.ace_source.getSession().setValue(code);
+        }
 
-                function update_language_template() {
-                    var source = $('textarea#id_source');
-                    if (source.val() == window.previous_template.replace(/\r/g, '') || source.val() == '') {
-                        var lang_id = $('#id_language').val();
-                        var code = localStorage.getItem('submit:' + $('#id_language').val());
+        function update_language_template() {
+          var source = $('textarea#id_source');
+          if (source.val() == window.previous_template.replace(/\r/g, '') || source.val() == '') {
+            var lang_id = $('#id_language').val();
+            var code = localStorage.getItem('submit:' + $('#id_language').val());
 
-                        if (code != null) {
-                            update_submit_area(code);
-                        } else {
-                            $.get('{{ url('language_template_ajax') }}', {
-                                id: lang_id,
-                                problem: {{problem_id}}
-                            }).done(function (template) {
-                                update_submit_area(template);
-                            });
-                        }
-                    }
-                }
+            if (code != null) {
+              update_submit_area(code);
+            } else {
+              $.get('{{ url('language_template_ajax') }}', {
+                id: lang_id,
+                problem: {{problem_id}}
+              }).done(function (template) {
+                update_submit_area(template);
+              });
+            }
+          }
+        }
 
-                function makeDisplayData(data) {
-                    var site_data = data.attr('data-info');
-                    var judge_data = data.attr('data-judge-info');
-                    var display_data = site_data || judge_data;
-                    return display_data;
-                }
+        function makeDisplayData(data) {
+          var site_data = data.attr('data-info');
+          var judge_data = data.attr('data-judge-info');
+          var display_data = site_data || judge_data;
+          return display_data;
+        }
 
-                function formatSelection(state) {
-                    if (!state.id) return state.text; // optgroup
-                    var data = makeDisplayData($("option[data-id=" + state.id + "]"));
-                    return $('<span>').append($('<b>').text(state.text), ' (', data, ')');
-                }
+        function formatSelection(state) {
+          if (!state.id) return state.text; // optgroup
+          var data = makeDisplayData($("option[data-id=" + state.id + "]"));
+          return $('<span>').append($('<b>').text(state.text), ' (', data, ')');
+        }
 
-                // Terrible hack, adapted from https://github.com/select2/select2/issues/4436
-                $.fn.select2.amd.define('select2/data/customAdapter', ['select2/results', 'select2/utils'], function (Result, Utils) {
-                    RefPresenter = function ($element, options, dataAdapter) {
-                        RefPresenter.__super__.constructor.call(this, $element, options, dataAdapter);
-                    };
-                    Utils.Extend(RefPresenter, Result);
-                    RefPresenter.prototype.bind = function (container, $container) {
-                        container.on('results:focus', function (params) {
-                            var data = makeDisplayData($("option[data-id=" + params.data.id + "]"));
-                            $("#result-version-info").text(data);
-                        });
-                        RefPresenter.__super__.bind.call(this, container, $container);
-                    };
-                    return RefPresenter;
-                });
-
-                var customAdapter = $.fn.select2.amd.require('select2/data/customAdapter');
-
-                $("#id_language").select2({
-                    templateResult: format,
-                    templateSelection: formatSelection,
-                    resultsAdapter: customAdapter
-                });
-
-                $('#id_language').on('select2:open', function (evt) {
-                    var dropdown = $('.select2-dropdown');
-                    if (!$('#result-version-info').length)
-                        dropdown.append($("<span id=\"result-version-info\">"));
-                    dropdown.attr('id', 'language-select2');
-                });
-
-                $('#id_judge').on('select2:open', function (evt) {
-                    var dropdown = $('.select2-dropdown');
-                    $('#result-version-info').remove();
-                    dropdown.attr('id', 'judge-select2');
-                });
-
-                $('#id_language').change(function () {
-                    var lang = $("#id_language").find("option:selected").attr('data-ace');
-                    window.ace_source.getSession().setMode("ace/mode/" + lang);
-                    update_language_template();
-                });
-
-                $('#ace_source').on('ace_load', function (e, editor) {
-                    update_language_template();
-                    editor.commands.addCommand({
-                        name: 'save',
-                        bindKey: {win: 'Ctrl-S', mac: 'Command-S'},
-                        exec: function () {
-                            localStorage.setItem('submit:' + $('#id_language').val(), editor.getSession().getValue());
-                        }
-                    });
-                    editor.getSession().setUseWrapMode(true);
-                    editor.setFontSize(14);
-                    editor.setShowPrintMargin(false);
-                    // editor.setPrintMarginColumn(100);
-                    editor.focus();
-                });
-
-                // $(window).resize(function () {
-                //     $('#ace_source').height(Math.max($(window).height() - 353, 100));
-                // }).resize();
-
-                $('#problem_submit').submit(function (event) {
-                    if ($('#id_source').val().length > 65536) {
-                        alert("{{ _('Your source code must contain at most 65536 characters.') }}");
-                        event.preventDefault();
-                        $('#problem_submit').find(':submit').attr('disabled', false);
-                    }
-                });
-
-                function get_source_default(file) {
-                    const reader = new FileReader();
-                    reader.readAsText(file);
-                    reader.onload = function (evt) {
-                        var src = evt.target.result;
-                        update_submit_area(src);
-                    }
-                    reader.onerror = function (evt) {
-                        alert("Fail to upload file");
-                    }
-                }
-
-                function get_source_scratch(file) {
-                    JSZip.loadAsync(file).then(function($content) {
-                        return $content.files["project.json"].async('text');
-                    }).then(function (src) {
-                        update_submit_area(src);
-                    });
-                }
-
-                $('#file-upload').on('click change', function(e) {
-                    var file = $(this)[0].files[0];
-                    if (file) {
-                        if (file.name.endsWith('sb3')) {
-                            get_source_scratch(file);
-                        }
-                        else {
-                            get_source_default(file);
-                        }
-                    }
-                })
+        // Terrible hack, adapted from https://github.com/select2/select2/issues/4436
+        $.fn.select2.amd.define('select2/data/customAdapter', ['select2/results', 'select2/utils'], function (Result, Utils) {
+          RefPresenter = function ($element, options, dataAdapter) {
+            RefPresenter.__super__.constructor.call(this, $element, options, dataAdapter);
+          };
+          Utils.Extend(RefPresenter, Result);
+          RefPresenter.prototype.bind = function (container, $container) {
+            container.on('results:focus', function (params) {
+              var data = makeDisplayData($("option[data-id=" + params.data.id + "]"));
+              $("#result-version-info").text(data);
             });
-        </script>
-    {% endcompress %}
+            RefPresenter.__super__.bind.call(this, container, $container);
+          };
+          return RefPresenter;
+        });
+
+        var customAdapter = $.fn.select2.amd.require('select2/data/customAdapter');
+
+        $("#id_language").select2({
+          templateResult: format,
+          templateSelection: formatSelection,
+          resultsAdapter: customAdapter
+        });
+
+        $('#id_language').on('select2:open', function (evt) {
+          var dropdown = $('.select2-dropdown');
+          if (!$('#result-version-info').length)
+          dropdown.append($("<span id=\"result-version-info\">"));
+          dropdown.attr('id', 'language-select2');
+        });
+
+        $('#id_judge').on('select2:open', function (evt) {
+          var dropdown = $('.select2-dropdown');
+          $('#result-version-info').remove();
+          dropdown.attr('id', 'judge-select2');
+        });
+
+        $('#id_language').change(function () {
+          var lang = $("#id_language").find("option:selected").attr('data-ace');
+          window.ace_source.getSession().setMode("ace/mode/" + lang);
+          update_language_template();
+        });
+
+        $('#ace_source').on('ace_load', function (e, editor) {
+          update_language_template();
+          editor.commands.addCommand({
+            name: 'save',
+            bindKey: {win: 'Ctrl-S', mac: 'Command-S'},
+            exec: function () {
+              localStorage.setItem('submit:' + $('#id_language').val(), editor.getSession().getValue());
+            }
+          });
+          editor.getSession().setUseWrapMode(true);
+          editor.setFontSize(14);
+          editor.setShowPrintMargin(false);
+          // editor.setPrintMarginColumn(100);
+          editor.focus();
+        });
+
+        // $(window).resize(function () {
+        //     $('#ace_source').height(Math.max($(window).height() - 353, 100));
+        // }).resize();
+
+        $('#problem_submit').submit(function (event) {
+          if ($('#id_source').val().length > 65536) {
+            alert("{{ _('Your source code must contain at most 65536 characters.') }}");
+            event.preventDefault();
+            $('#problem_submit').find(':submit').attr('disabled', false);
+          }
+        });
+
+        function get_source_default(file) {
+          const reader = new FileReader();
+          reader.readAsText(file);
+          reader.onload = function (evt) {
+            var src = evt.target.result;
+            update_submit_area(src);
+          }
+          reader.onerror = function (evt) {
+            alert("Fail to upload file");
+          }
+        }
+
+        function get_source_scratch(file) {
+          JSZip.loadAsync(file).then(function($content) {
+            return $content.files["project.json"].async('text');
+          }).then(function (src) {
+            update_submit_area(src);
+          });
+        }
+
+        $('#file-upload').on('click change', function(e) {
+          var file = $(this)[0].files[0];
+          if (file) {
+            if (file.name.endsWith('sb3')) {
+              get_source_scratch(file);
+            }
+            else {
+              get_source_default(file);
+            }
+          }
+        })
+      });
+    </script>
+  {% endcompress %}
 {% endblock %}
 
 {% block media %}
-    {{ form.media.css }}
+  {{ form.media.css }}
 {% endblock %}
 
 {% block body %}
-    <br>
-    {% if not no_judges %}
-        {% if default_lang not in form.fields.language.queryset %}
-            <div class="alert alert-warning alert-dismissable">
-                <a class="close">x</a>
-                {% trans trimmed default_language=default_lang.name %}
-                    <b>Warning!</b> Your default language, <b>{{ default_language }}</b>,
-                    is unavailable for this problem and has been deselected.
-                {% endtrans %}
-            </div>
-        {% endif %}
-
-        {% if request.in_contest and submission_limit %}
-            {% if submissions_left > 0 %}
-                <div class="alert alert-warning alert-dismissable">
-                    <a class="close">x</a>
-                    {% trans left=submissions_left %}
-                        You have {{ left }} submission left
-                        {% pluralize %}
-                        You have {{ left }} submissions left
-                    {% endtrans %}
-                </div>
-            {% else %}
-                <div class="alert alert-warning alert-dismissable">
-                    <a class="close">x</a>
-                    {{ _('You have 0 submissions left') }}
-                </div>
-            {% endif %}
-        {% endif %}
+  <br>
+  {% if not no_judges %}
+    {% if default_lang not in form.fields.language.queryset %}
+      <div class="alert alert-warning alert-dismissable">
+        <a class="close">x</a>
+        {% trans trimmed default_language=default_lang.name %}
+          <b>Warning!</b> Your default language, <b>{{ default_language }}</b>,
+          is unavailable for this problem and has been deselected.
+        {% endtrans %}
+      </div>
     {% endif %}
 
-    <form id="problem_submit" action="" method="post" class="form-area">
-        {% csrf_token %}
-        {{ form.non_field_errors() }}
-        <div id="submit-wrapper">
-            <div id="editor">
-                {{ form.source.errors }}
-                {{ form.source }}
-            </div>
-            {% if not no_judges %}
-                <div id="language">
-                    {{ form.language.errors }}
-                    <div id="language-select">
-                        <select id="id_language" name="language">
-                            {% for lang in form.fields.language.queryset %}
-                                <option value="{{ lang.id }}" data-id="{{ lang.id }}" data-name="{{ lang.name }}"
-                                        data-info="{{ lang.info }}" data-ace="{{ lang.ace }}"
-                                        data-judge-info="{{ runtime_versions(lang.runtime_versions()) }}"
-                                        {% if lang.id == default_lang.id %}selected{% endif %}>{{ lang.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-            {% endif %}
+    {% if request.in_contest and submission_limit %}
+      {% if submissions_left > 0 %}
+        <div class="alert alert-warning alert-dismissable">
+          <a class="close">x</a>
+          {% trans left=submissions_left %}
+            You have {{ left }} submission left
+            {% pluralize %}
+            You have {{ left }} submissions left
+          {% endtrans %}
         </div>
+      {% else %}
+        <div class="alert alert-warning alert-dismissable">
+          <a class="close">x</a>
+          {{ _('You have 0 submissions left') }}
+        </div>
+      {% endif %}
+    {% endif %}
+  {% endif %}
 
-        <hr>
+  <form id="problem_submit" action="" method="post" class="form-area">
+    {% csrf_token %}
+    {{ form.non_field_errors() }}
+    <div id="submit-wrapper">
+      <div id="editor">
+        {{ form.source.errors }}
+        {{ form.source }}
+      </div>
+      {% if not no_judges %}
+        <div id="language">
+          {{ form.language.errors }}
+          <div id="language-select">
+            <select id="id_language" name="language">
+              {% for lang in form.fields.language.queryset %}
+                <option value="{{ lang.id }}" data-id="{{ lang.id }}" data-name="{{ lang.name }}"
+                  data-info="{{ lang.info }}" data-ace="{{ lang.ace }}"
+                  data-judge-info="{{ runtime_versions(lang.runtime_versions()) }}"
+                  {% if lang.id == default_lang.id %}selected{% endif %}>{{ lang.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      {% endif %}
+    </div>
 
-        {% if no_judges %}
-            <span style="color: red">{{ _('No judge is available for this problem.') }}</span>
-        {% else %}
-            <input type="file" id="file-upload">
-            <div class="submit-bar">
-                {{ form.judge }}
-                <input type="submit" value="{{ _('Submit!') }}" class="button small"
-                       {% if request.in_contest and submission_limit and not submissions_left %}disabled{% endif %}>
-            </div>
-        {% endif %}
-    </form>
+    <hr>
+
+    {% if no_judges %}
+      <span style="color: red">{{ _('No judge is available for this problem.') }}</span>
+    {% else %}
+      <input type="file" id="file-upload">
+      <div class="submit-bar">
+        {{ form.judge }}
+        <input type="submit" value="{{ _('Submit!') }}" class="button small"
+          {% if request.in_contest and submission_limit and not submissions_left %}disabled{% endif %}>
+      </div>
+    {% endif %}
+  </form>
 {% endblock %}

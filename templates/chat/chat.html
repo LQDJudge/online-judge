@@ -4,24 +4,24 @@
 {% block title %} {{_('Chat Box')}} {% endblock %}
 {% block js_media %}
 
-<script type="text/javascript" src="{{ static('mathjax3_config.js') }}"></script>
-<script type="text/javascript" src="{{ static('event.js') }}"></script>
-<script src="https://unpkg.com/@popperjs/core@2"></script>
-<script type="module" src="https://unpkg.com/emoji-picker-element@1"></script>
-<script type="text/javascript">
-let message_template = `
+  <script type="text/javascript" src="{{ static('mathjax3_config.js') }}"></script>
+  <script type="text/javascript" src="{{ static('event.js') }}"></script>
+  <script src="https://unpkg.com/@popperjs/core@2"></script>
+  <script type="module" src="https://unpkg.com/emoji-picker-element@1"></script>
+  <script type="text/javascript">
+    let message_template = `
 {% with message=message_template %}
     {% include "chat/message.html" %}
 {% endwith %}  
-`;
-let META_HEADER = [
-    "{{_('Recent')}}",
-    "{{_('Following')}}",
-    "{{_('Admin')}}",
-    "{{_('Other')}}",
-];
-</script>
-<script type="text/javascript">
+    `;
+    let META_HEADER = [
+      "{{_('Recent')}}",
+      "{{_('Following')}}",
+      "{{_('Admin')}}",
+      "{{_('Other')}}",
+    ];
+  </script>
+  <script type="text/javascript">
     window.currentPage = 1;
     window.limit_time = 24;
     window.messages_per_page = 50;
@@ -35,598 +35,598 @@ let META_HEADER = [
     let isMobile = window.matchMedia("only screen and (max-width: 799px)").matches;
 
     function load_page(page, refresh_html=false) {
-        var param = {
-            'page': page,
+      var param = {
+        'page': page,
+      }
+      $.get("{{ url('chat', '') }}" + window.room_id, param)
+        .fail(function() {
+        console.log("Fail to load page " + page);
+      })
+        .done(function(data) {
+        if (refresh_html) {
+          $('#chat-log').html('');
+          $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+          window.lock = true;
         }
-        $.get("{{ url('chat', '') }}" + window.room_id, param)
-            .fail(function() {
-                console.log("Fail to load page " + page);
-            })
-            .done(function(data) {
-                if (refresh_html) {
-                    $('#chat-log').html('');
-                    $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
-                    window.lock = true;
-                }
 
-                window.num_pages = parseInt($('<div>' + data + '</div>').find('#num_pages').html());
-                var time = refresh_html ? 0 : 500;
-                
-                setTimeout(function() {
-                    let $chat_box = $('#chat-box');
-                    let lastMsgPos = scrollTopOfBottom($chat_box)
-                    
-                    $('#loader').hide();
+        window.num_pages = parseInt($('<div>' + data + '</div>').find('#num_pages').html());
+        var time = refresh_html ? 0 : 500;
 
-                    if (refresh_html) {
-                        $('#chat-log').append(data);
-                    }
-                    else {
-                        $('#chat-log').prepend(data);
-                    }
+        setTimeout(function() {
+          let $chat_box = $('#chat-box');
+          let lastMsgPos = scrollTopOfBottom($chat_box)
 
-                    $('.body-block').slice(0, window.messages_per_page).each(function() {
-                    });
+          $('#loader').hide();
 
-                    register_time($('.time-with-rel'));
-                    merge_authors();
+          if (refresh_html) {
+            $('#chat-log').append(data);
+          }
+          else {
+            $('#chat-log').prepend(data);
+          }
 
-                    if (!refresh_html) {
-                        $chat_box.scrollTop(scrollTopOfBottom($chat_box) - lastMsgPos);
-                    }
-                    else {
-                        $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
-                    }
-                    window.lock = false;
-                }, time);
-            })
+          $('.body-block').slice(0, window.messages_per_page).each(function() {
+          });
+
+          register_time($('.time-with-rel'));
+          merge_authors();
+
+          if (!refresh_html) {
+            $chat_box.scrollTop(scrollTopOfBottom($chat_box) - lastMsgPos);
+          }
+          else {
+            $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+          }
+          window.lock = false;
+        }, time);
+      })
     }
 
     function scrollTopOfBottom(container) {
-        return container[0].scrollHeight - container.innerHeight()
+      return container[0].scrollHeight - container.innerHeight()
     }
 
     function scrollContainer(container, loader) {
-        container.scroll(function() {
+      container.scroll(function() {
         if (container.scrollTop() == 0) {
-            if (currentPage < window.num_pages && !window.lock) {
-                currentPage++;
-                loader.show();
-                load_page(currentPage);
-            }
+          if (currentPage < window.num_pages && !window.lock) {
+            currentPage++;
+            loader.show();
+            load_page(currentPage);
+          }
         }
-    })}
+      })}
 
     window.load_dynamic_update = function (last_msg) {
-        var receiver = new EventReceiver(
-            "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
-            ['chat_lobby', 'chat_{{request.profile.id}}'], last_msg, function (message) {
-                if (window.pushed_messages.has(message.message)) {
-                    return;
-                }
-                window.pushed_messages.add(message.message);
-                var room = (message.type == 'lobby') ? '' : message.room;
-                if (message.author_id == {{request.profile.id}}) {
-                    check_new_message(message.message, message.tmp_id, room);
-                }
-                else {
-                    add_new_message(message.message, room, false);
-                }
-            }
-        );
+      var receiver = new EventReceiver(
+        "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
+        ['chat_lobby', 'chat_{{request.profile.id}}'], last_msg, function (message) {
+          if (window.pushed_messages.has(message.message)) {
+            return;
+          }
+          window.pushed_messages.add(message.message);
+          var room = (message.type == 'lobby') ? '' : message.room;
+          if (message.author_id == {{request.profile.id}}) {
+            check_new_message(message.message, message.tmp_id, room);
+          }
+          else {
+            add_new_message(message.message, room, false);
+          }
+        }
+      );
 
-        return receiver;
+      return receiver;
     }
 
     function refresh_status() {
-        $.get("{{url('online_status_ajax')}}")
-            .fail(function() {
-                console.log("Fail to get online status");
-            })
-            .done(function(data) {
-                if (data.status == 403) {
-                    console.log("Fail to retrieve data");
-                }
-                else {
-                    $('#chat-online-list').html(data).find('.toggle').each(function () {
-                        register_toggle($(this));
-                    });
-                    register_click_space();
-                }
-            })
+      $.get("{{url('online_status_ajax')}}")
+        .fail(function() {
+        console.log("Fail to get online status");
+      })
+        .done(function(data) {
+        if (data.status == 403) {
+          console.log("Fail to retrieve data");
+        }
+        else {
+          $('#chat-online-list').html(data).find('.toggle').each(function () {
+            register_toggle($(this));
+          });
+          register_click_space();
+        }
+      })
 
-        var data = {
-            'user': window.other_user_id,
-        };
+      var data = {
+        'user': window.other_user_id,
+      };
 
-        $.get("{{url('user_online_status_ajax')}}", data)
-            .fail(function() {
-                console.log("Fail to get user online status");
-            })
-            .done(function(data) {
-                $('#chat-info').html(data);
-                register_time($('.time-with-rel'));
-                register_setting();
-            })
+      $.get("{{url('user_online_status_ajax')}}", data)
+        .fail(function() {
+        console.log("Fail to get user online status");
+      })
+        .done(function(data) {
+        $('#chat-info').html(data);
+        register_time($('.time-with-rel'));
+        register_setting();
+      })
     }
 
     function add_message(data) {
-        var $data = $(data);
+      var $data = $(data);
 
-        $('#chat-log').append($data);
-        $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
-        register_time($('.time-with-rel'));
-        MathJax.typeset();
-        merge_authors();
+      $('#chat-log').append($data);
+      $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+      register_time($('.time-with-rel'));
+      MathJax.typeset();
+      merge_authors();
     }
 
     function add_new_message(message, room, is_self_author) {
-        function callback(update) {
-            if (!document['hidden']) {
-                if (update) update_last_seen();
-                refresh_status();
-            }
-            else if (!is_self_author) {
-                window.unread_message++;
-                document.title = "(" + window.unread_message + ") " + "{{ _('New message(s)') }}";
-            }
+      function callback(update) {
+        if (!document['hidden']) {
+          if (update) update_last_seen();
+          refresh_status();
         }
+        else if (!is_self_author) {
+          window.unread_message++;
+          document.title = "(" + window.unread_message + ") " + "{{ _('New message(s)') }}";
+        }
+      }
 
-        if (room == window.room_id) {
-            $.get({
-                url: "{{ url('chat_message_ajax') }}",
-                data: {
-                    message: message,
-                },
-                success: function (data) {
-                    add_message(data);
-                    callback(true);
-                },
-                error: function (data) {
-                    console.log('Could not add new message');
-                }
-            });
-        }
-        else {
-            callback(false);
-        }
+      if (room == window.room_id) {
+        $.get({
+          url: "{{ url('chat_message_ajax') }}",
+          data: {
+            message: message,
+          },
+          success: function (data) {
+            add_message(data);
+            callback(true);
+          },
+          error: function (data) {
+            console.log('Could not add new message');
+          }
+        });
+      }
+      else {
+        callback(false);
+      }
     }
 
     function check_new_message(message, tmp_id, room) {
-        if (room == room_id) {
-            $.get({
-                url: "{{ url('chat_message_ajax') }}",
-                data: {
-                    message: message,
-                },
-                success: function (data) {
-                    var $body_block = $(data).find('.body-block');
-                    if ($('#message-'+tmp_id).length) {
-                        $('#message-'+tmp_id).replaceWith(data);
-                    }
-                    else if ($('#body-block-'+tmp_id).length) {
-                        $('#body-block-'+tmp_id).replaceWith($body_block);
-                    }
-                    else {
-                        add_new_message(message, room, true);
-                    }
-                    MathJax.typeset();
-                    register_time($('.time-with-rel'));
-                    remove_unread_current_user();
-                    merge_authors();
-                },
-                error: function (data) {
-                    console.log('Fail to check message');
-                    var $body = $('#body-block-'+tmp_id + ' p');
-                    $body.css('text-decoration', 'line-through');
-                    $body.css('text-decoration-color', 'red');
-                }
-            });
-        }
+      if (room == room_id) {
+        $.get({
+          url: "{{ url('chat_message_ajax') }}",
+          data: {
+            message: message,
+          },
+          success: function (data) {
+            var $body_block = $(data).find('.body-block');
+            if ($('#message-'+tmp_id).length) {
+              $('#message-'+tmp_id).replaceWith(data);
+            }
+            else if ($('#body-block-'+tmp_id).length) {
+              $('#body-block-'+tmp_id).replaceWith($body_block);
+            }
+            else {
+              add_new_message(message, room, true);
+            }
+            MathJax.typeset();
+            register_time($('.time-with-rel'));
+            remove_unread_current_user();
+            merge_authors();
+          },
+          error: function (data) {
+            console.log('Fail to check message');
+            var $body = $('#body-block-'+tmp_id + ' p');
+            $body.css('text-decoration', 'line-through');
+            $body.css('text-decoration-color', 'red');
+          }
+        });
+      }
     }
 
     function merge_authors() {
-        var time_limit = 5; // minutes
-        var last = {
-            username: null,
-            time: null,
-            $content: null
-        };
-        $('.body-message').each(function() {
-            var username = $(this).find(".username a").text().trim();
-            var $body = $(this).find(".content-message .body-block");
-            var time = moment($(this).find(".time-with-rel").attr('data-iso'));
-            var $content = $(this).children('.content-message');
+      var time_limit = 5; // minutes
+      var last = {
+        username: null,
+        time: null,
+        $content: null
+      };
+      $('.body-message').each(function() {
+        var username = $(this).find(".username a").text().trim();
+        var $body = $(this).find(".content-message .body-block");
+        var time = moment($(this).find(".time-with-rel").attr('data-iso'));
+        var $content = $(this).children('.content-message');
 
-            if (username == window.user.name) {
-                $(this).find('.message-text').each(function() {
-                    $(this).removeClass('message-text-other').addClass('message-text-myself');  
-                });
-            }
+        if (username == window.user.name) {
+          $(this).find('.message-text').each(function() {
+            $(this).removeClass('message-text-other').addClass('message-text-myself');
+          });
+        }
 
-            if (username == last.username && time.diff(last.time, 'minutes') <= time_limit) {
-                last.$content.append($body);
-                $(this).parent().remove();
-            }
-            else {
-                last.username = username;
-                last.time = time;
-                last.$content = $content;
-            }
-        });
+        if (username == last.username && time.diff(last.time, 'minutes') <= time_limit) {
+          last.$content.append($body);
+          $(this).parent().remove();
+        }
+        else {
+          last.username = username;
+          last.time = time;
+          last.$content = $content;
+        }
+      });
     }
 
     function add_message_from_template(body, tmp_id) {
-        var html = message_template;
-        html = html.replaceAll('$body', body).replaceAll('$id', tmp_id);
-        var $html = $(html);
-        $html.find('.time-with-rel').attr('data-iso', (new Date()).toISOString());
-        add_message($html[0].outerHTML);
+      var html = message_template;
+      html = html.replaceAll('$body', body).replaceAll('$id', tmp_id);
+      var $html = $(html);
+      $html.find('.time-with-rel').attr('data-iso', (new Date()).toISOString());
+      add_message($html[0].outerHTML);
     }
 
     function submit_chat() {
-        {% if last_msg and not request.profile.mute %}
+      {% if last_msg and not request.profile.mute %}
         if ($("#chat-input").val().trim()) {
-            var body = $('#chat-input').val().trim();
-            // body = body.split('\n').join('\n\n');
-            
-            var message = {
-                body: body,
-                room: window.room_id,
-                tmp_id: Date.now(),
-            };
+          var body = $('#chat-input').val().trim();
+          // body = body.split('\n').join('\n\n');
 
-            $('#chat-input').val('');
+          var message = {
+            body: body,
+            room: window.room_id,
+            tmp_id: Date.now(),
+          };
 
-            add_message_from_template(body, message.tmp_id);
+          $('#chat-input').val('');
 
-            $.post("{{ url('post_chat_message') }}", message)
-                .fail(function(res) {
-                    console.log('Fail to send message');
-                })
-                .done(function(res, status) {
-                    $('#empty_msg').hide();
-                    $('#chat-input').focus();
-                })
+          add_message_from_template(body, message.tmp_id);
+
+          $.post("{{ url('post_chat_message') }}", message)
+            .fail(function(res) {
+            console.log('Fail to send message');
+          })
+            .done(function(res, status) {
+            $('#empty_msg').hide();
+            $('#chat-input').focus();
+          })
         }
-        {% endif %}
+      {% endif %}
     }
 
     function resize_emoji(element) {
-        var html = element.html();
-        html = html.replace(/(\p{Extended_Pictographic})/ug, `<span class="big-emoji">$1</span>`);
-        element.html(html);
+      var html = element.html();
+      html = html.replace(/(\p{Extended_Pictographic})/ug, `<span class="big-emoji">$1</span>`);
+      element.html(html);
     }
 
     function insert_char_after_cursor(elem, char) {
-        var val = elem.value;
-        if (typeof elem.selectionStart == "number" && typeof elem.selectionEnd == "number") {
-            var start = elem.selectionStart;
-            var prefix = elem.value.slice(0, start);
-            var prefix_added = prefix + char;
-            var chars = [...val];
-            chars.splice([...prefix].length, 0, char);
-            elem.value = chars.join('');
-            elem.selectionStart = elem.selectionEnd = prefix_added.length;
-        } else if (document.selection && document.selection.createRange) {
-            var range = document.selection.createRange();
-            elem.focus();
-            range.text = char;
-            range.collapse(false);
-            range.select();
-        }
+      var val = elem.value;
+      if (typeof elem.selectionStart == "number" && typeof elem.selectionEnd == "number") {
+        var start = elem.selectionStart;
+        var prefix = elem.value.slice(0, start);
+        var prefix_added = prefix + char;
+        var chars = [...val];
+        chars.splice([...prefix].length, 0, char);
+        elem.value = chars.join('');
+        elem.selectionStart = elem.selectionEnd = prefix_added.length;
+      } else if (document.selection && document.selection.createRange) {
+        var range = document.selection.createRange();
+        elem.focus();
+        range.text = char;
+        range.collapse(false);
+        range.select();
+      }
     }
 
     function load_room(encrypted_user) {
-        if (window.lock_click_space) return;
+      if (window.lock_click_space) return;
 
-        function callback() {
-            history.replaceState(null, '', "{{url('chat', '')}}" + window.room_id);
-            load_page(window.currentPage, true, refresh_status);
-            update_last_seen();
-            refresh_status();
-            $('#chat-input').focus();
-        }
-        window.lock_click_space = true;
-        if (encrypted_user) {
-            $.get("{{url('get_or_create_room')}}" + `?other=${encrypted_user}`)
-                .done(function(data) {
-                    window.currentPage = 1;
-                    window.room_id = data.room;
-                    window.other_user_id = data.other_user_id;
-                    callback();
-                })
-                .fail(function() {
-                    console.log('Fail to get_or_create_room');
-                })
-        }
-        else {
-            window.currentPage = 1;
-            window.room_id = '';
-            window.other_user_id = '';
-            callback();
-        }
-        window.lock_click_space = false;
+      function callback() {
+        history.replaceState(null, '', "{{url('chat', '')}}" + window.room_id);
+        load_page(window.currentPage, true, refresh_status);
+        update_last_seen();
+        refresh_status();
+        $('#chat-input').focus();
+      }
+      window.lock_click_space = true;
+      if (encrypted_user) {
+        $.get("{{url('get_or_create_room')}}" + `?other=${encrypted_user}`)
+          .done(function(data) {
+          window.currentPage = 1;
+          window.room_id = data.room;
+          window.other_user_id = data.other_user_id;
+          callback();
+        })
+          .fail(function() {
+          console.log('Fail to get_or_create_room');
+        })
+      }
+      else {
+        window.currentPage = 1;
+        window.room_id = '';
+        window.other_user_id = '';
+        callback();
+      }
+      window.lock_click_space = false;
     }
 
     function register_click_space() {
-        $('.click_space').on('click', function(e) {
-            if ($(this).attr('id') == 'click_space_' + window.other_user_id) {
-                return;
-            }
-            var other_user = $(this).attr('value');
-            load_room(other_user);
-        });
-        $('#lobby_row').on('click', function(e) {
-            if (window.room_id) {
-                load_room(null);
-            }
-        });
-        if (isMobile) {
-            $('#chat-tab a').click();
+      $('.click_space').on('click', function(e) {
+        if ($(this).attr('id') == 'click_space_' + window.other_user_id) {
+          return;
         }
+        var other_user = $(this).attr('value');
+        load_room(other_user);
+      });
+      $('#lobby_row').on('click', function(e) {
+        if (window.room_id) {
+          load_room(null);
+        }
+      });
+      if (isMobile) {
+        $('#chat-tab a').click();
+      }
     }
 
     function update_last_seen() {
-        var data = {
-            room: window.room_id
-        };
+      var data = {
+        room: window.room_id
+      };
 
-        $.post("{{ url('update_last_seen') }}", data)
-            .fail(function(data) {
-                console.log('Fail to update last seen');
-            })
-            .done(function(data) {
+      $.post("{{ url('update_last_seen') }}", data)
+        .fail(function(data) {
+        console.log('Fail to update last seen');
+      })
+        .done(function(data) {
 
-            })
+      })
     }
 
     function remove_unread_current_user() {
-        if (window.other_user_id) {
-           $("#unread-count-" + window.other_user_id).hide();
-        }
-        else {
-            $('#unread-count-lobby').hide();
-        }
+      if (window.other_user_id) {
+        $("#unread-count-" + window.other_user_id).hide();
+      }
+      else {
+        $('#unread-count-lobby').hide();
+      }
     }
 
     function register_setting() {
-        $('#setting-button').on('click', function() {
-            $('#setting-content').toggle();
-        });
-        $('#setting-content li').on('click', function() {
-            $(this).children('a')[0].click();
-        })
-        $('#setting-content a').on('click', function() {
-            var href = $(this).attr('href');
-            href += '?next=' + window.location.pathname;
-            $(this).attr('href', href);
-        })
+      $('#setting-button').on('click', function() {
+        $('#setting-content').toggle();
+      });
+      $('#setting-content li').on('click', function() {
+        $(this).children('a')[0].click();
+      })
+      $('#setting-content a').on('click', function() {
+        var href = $(this).attr('href');
+        href += '?next=' + window.location.pathname;
+        $(this).attr('href', href);
+      })
     }
 
     $(function() {
-        $('#loader').hide();
-        merge_authors();
+      $('#loader').hide();
+      merge_authors();
 
-        scrollContainer($('#chat-box'), $('#loader'))
+      scrollContainer($('#chat-box'), $('#loader'))
 
-        {% if request.user.is_staff %}
+      {% if request.user.is_staff %}
         $(document).on("click", ".chatbtn_remove_mess", function() {
-            var elt = $(this);
-            $.ajax({
-                url: "{{ url('delete_chat_message') }}",
-                type: 'post',
-                data: {
-                    message: elt.attr('value'),
-                },
-                dataType: 'json',
-                success: function(data){
-                    var $block = elt.parent();
-                    if ($block.parent().find('.body-block').length > 1) {
-                        $block.remove();
-                    }
-                    else {
-                        elt.closest('li').remove();
-                    }
-                },
-                fail: function(data) {
-                    console.log('Fail to delete');
-                },
-            });
+          var elt = $(this);
+          $.ajax({
+            url: "{{ url('delete_chat_message') }}",
+            type: 'post',
+            data: {
+              message: elt.attr('value'),
+            },
+            dataType: 'json',
+            success: function(data){
+              var $block = elt.parent();
+              if ($block.parent().find('.body-block').length > 1) {
+                $block.remove();
+              }
+              else {
+                elt.closest('li').remove();
+              }
+            },
+            fail: function(data) {
+              console.log('Fail to delete');
+            },
+          });
         });
-        {% endif %}
-        
-        $("#chat-log").show();
-        $("#chat-log").change(function() {
-            $('#chat-log').scrollTop($('#chat-log')[0].scrollHeight);
-        });
-        
-        $('#chat-input').focus();
+      {% endif %}
 
-        $('#chat-input').keydown(function(e) {
-            if (e.keyCode === 13) {
-                if (e.ctrlKey || e.shiftKey) {
-                    insert_char_after_cursor(this, "\n");
-                }
-                else {
-                    e.preventDefault();
-                    submit_chat();
-                }
-                return false
-            }
-            return true
-        });
+      $("#chat-log").show();
+      $("#chat-log").change(function() {
+        $('#chat-log').scrollTop($('#chat-log')[0].scrollHeight);
+      });
 
+      $('#chat-input').focus();
+
+      $('#chat-input').keydown(function(e) {
+        if (e.keyCode === 13) {
+          if (e.ctrlKey || e.shiftKey) {
+            insert_char_after_cursor(this, "\n");
+          }
+          else {
+            e.preventDefault();
+            submit_chat();
+          }
+          return false
+        }
+        return true
+      });
+
+      $('.chat-right-panel').hide();
+      $('#chat-tab').find('a').click(function (e) {
+        e.preventDefault();
+        $('#chat-tab').addClass('active');
+        $('#online-tab').removeClass('active');
+        $('.chat-left-panel').show();
         $('.chat-right-panel').hide();
-        $('#chat-tab').find('a').click(function (e) {
-            e.preventDefault();
-            $('#chat-tab').addClass('active');
-            $('#online-tab').removeClass('active');
-            $('.chat-left-panel').show();
-            $('.chat-right-panel').hide();
-        });
-        $('#online-tab').find('a').click(function (e) {
-            e.preventDefault();
-            $('#online-tab').addClass('active');
-            $('#chat-tab').removeClass('active');
-            $('.chat-left-panel').hide();
-            $('.chat-right-panel').show();
-        });
+      });
+      $('#online-tab').find('a').click(function (e) {
+        e.preventDefault();
+        $('#online-tab').addClass('active');
+        $('#chat-tab').removeClass('active');
+        $('.chat-left-panel').hide();
+        $('.chat-right-panel').show();
+      });
 
-        $('#refresh-button').on('click', function(e) {
-            e.preventDefault();
+      $('#refresh-button').on('click', function(e) {
+        e.preventDefault();
+        refresh_status();
+      });
+
+      setInterval(refresh_status, 2 * 60 * 1000);
+
+      $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+      load_dynamic_update({{last_msg}});
+
+      const button = document.querySelector('#emoji-button')
+      const tooltip = document.querySelector('.tooltip')
+      Popper.createPopper(button, tooltip)
+
+      function toggleEmoji() {
+        tooltip.classList.toggle('shown')
+      }
+      $('#emoji-button').on('click', function(e) {
+        e.preventDefault();
+        toggleEmoji();
+      });
+
+      $('emoji-picker').on('emoji-click', function(e) {
+        var $chat = $('#chat-input').get(0);
+        insert_char_after_cursor($chat, e.detail.unicode);
+        $chat.focus();
+      })
+
+      register_click_space();
+
+      document.addEventListener('keydown', function(e) {
+        if (e.keyCode === 27 && $('.tooltip').hasClass('shown')) {
+          toggleEmoji();
+        }
+      })
+
+      $('#search-handle').replaceWith($('<select>').attr({
+        id: 'search-handle',
+        name: 'other',
+        onchange: 'form.submit()'
+      }));
+
+      var in_user_redirect = false;
+      $('#search-handle').select2({
+        placeholder: '{{ _('Search by handle...') }}',
+        ajax: {
+          url: '{{ url('chat_user_search_select2_ajax') }}'
+        },
+        minimumInputLength: 1,
+        escapeMarkup: function (markup) {
+          return markup;
+        },
+        templateResult: function (data, container) {
+          return $('<span>')
+            .append($('<img>', {
+            'class': 'user-search-image', src: data.gravatar_url,
+            width: 24, height: 24
+          }))
+            .append($('<span>', {'class': data.display_rank + ' user-search-name'}).text(data.text))
+            .append($('<a>', {href: '/user/' + data.text, 'class': 'user-redirect'})
+              .append($('<i>', {'class': 'fa fa-mail-forward'}))
+              .mouseover(function () {
+              in_user_redirect = true;
+            }).mouseout(function () {
+              in_user_redirect = false;
+            }));
+        }
+      }).on('select2:selecting', function () {
+        return !in_user_redirect;
+      });
+
+      // https://stackoverflow.com/questions/42121565/detecting-class-change-without-setinterval
+      if (typeof(MutationObserver) !== undefined) {
+        var observer = new MutationObserver(function (event) {
+          if (!document['hidden'] && window.unread_message > 0) {
+            update_last_seen();
             refresh_status();
-        });
-
-        setInterval(refresh_status, 2 * 60 * 1000);
-
-        $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
-        load_dynamic_update({{last_msg}});
-
-        const button = document.querySelector('#emoji-button')
-        const tooltip = document.querySelector('.tooltip')
-        Popper.createPopper(button, tooltip)
-
-        function toggleEmoji() {
-            tooltip.classList.toggle('shown')
-        }
-        $('#emoji-button').on('click', function(e) {
-            e.preventDefault();
-            toggleEmoji();
-        });
-
-        $('emoji-picker').on('emoji-click', function(e) {
-            var $chat = $('#chat-input').get(0);
-            insert_char_after_cursor($chat, e.detail.unicode);
-            $chat.focus();
+            window.unread_message = 0;
+            document.title = "{{_('Chat Box')}}";
+          }
         })
 
-        register_click_space();
-
-        document.addEventListener('keydown', function(e) {
-            if (e.keyCode === 27 && $('.tooltip').hasClass('shown')) {
-                toggleEmoji();
-            }
+        observer.observe(document.body, {
+          attributes: true,
+          attributeFilter: ['class'],
+          childList: false,
+          characterData: false
         })
-        
-        $('#search-handle').replaceWith($('<select>').attr({
-            id: 'search-handle',
-            name: 'other',
-            onchange: 'form.submit()'
-        }));
-
-        var in_user_redirect = false;
-        $('#search-handle').select2({
-            placeholder: '{{ _('Search by handle...') }}',
-            ajax: {
-                url: '{{ url('chat_user_search_select2_ajax') }}'
-            },
-            minimumInputLength: 1,
-            escapeMarkup: function (markup) {
-                return markup;
-            },
-            templateResult: function (data, container) {
-                return $('<span>')
-                    .append($('<img>', {
-                        'class': 'user-search-image', src: data.gravatar_url,
-                        width: 24, height: 24
-                    }))
-                    .append($('<span>', {'class': data.display_rank + ' user-search-name'}).text(data.text))
-                    .append($('<a>', {href: '/user/' + data.text, 'class': 'user-redirect'})
-                        .append($('<i>', {'class': 'fa fa-mail-forward'}))
-                        .mouseover(function () {
-                            in_user_redirect = true;
-                        }).mouseout(function () {
-                            in_user_redirect = false;
-                        }));
-            }
-        }).on('select2:selecting', function () {
-            return !in_user_redirect;
-        });
-
-        // https://stackoverflow.com/questions/42121565/detecting-class-change-without-setinterval
-        if (typeof(MutationObserver) !== undefined) {
-            var observer = new MutationObserver(function (event) {
-                if (!document['hidden'] && window.unread_message > 0) {
-                    update_last_seen();
-                    refresh_status();
-                    window.unread_message = 0;
-                    document.title = "{{_('Chat Box')}}";
-                }
-            })
-            
-            observer.observe(document.body, {
-                attributes: true, 
-                attributeFilter: ['class'],
-                childList: false, 
-                characterData: false
-            })
-        }
-        register_setting();
+      }
+      register_setting();
     });
-</script>
+  </script>
 
 {% endblock js_media %}
 
 {% block media %}
-    {% include "chat/chat_css.html" %}
+  {% include "chat/chat_css.html" %}
 {% endblock media %}
 
 {% block body %}
-    <div class="chat">
-        <div id="mobile" class="tabs">
-            <ul>
-                <li id="chat-tab" class="tab active"><a href="#">
-                    <i class="tab-icon fa fa-comments"></i> {{ _('Chat') }}
-                </a></li>
-                <li id="online-tab" class="tab"><a href="#"><i class="tab-icon fa fa-wifi"></i> {{ _('Online Users') }}</a></li>
-            </ul>
-        </div>
-        
-        <div id="chat-container">
-            <div id="chat-online" class="chat-right-panel sidebox">
-                <h3 style="display:flex">
-                    {{_('Online Users')}}
-                    <a href="#" id="refresh-button" title="{{_('Refresh')}}">
-                        <img src="/reload.png"
-                             width="100%"
-                        >
-                    </a> 
-                </h3>
-                <div id="chat-online-content">
-                    <div id="search-container">
-                        <center>
-                            <form id="search-form" name="form" action="{{ url('get_or_create_room') }}" method="post">
-                                {% csrf_token %}
-                                <input id="search-handle" type="text" name="search"
-                                       placeholder="{{ _('Search by handle...') }}">
-                            </form>
-                        </center>
-                    </div>
-                    <div id="chat-online-list">
-                        {% include "chat/online_status.html" %}
-                    </div>
-                </div>
-            </div>
-            <div id="chat-area" class="chat-left-panel" style="width:100%">
-                    <div id="chat-info" style="height: 8%">
-                        {% include 'chat/user_online_status.html' %}
-                    </div>
-                    <div id="chat-box">
-
-                        <img src="{{static('loading.gif')}}" id="loader">
-                        <ul id="chat-log" style="display: none">
-                            {% include 'chat/message_list.html' %}
-                        </ul>
-                    </div>
-                    <div style="height: 15%">
-                        <a id="emoji-button" href="#" title="{{_('Emoji')}}"><i class="icofont-slightly-smile"></i></a>
-                        <textarea maxlength="5000" id="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
-                    </div>
-                    <div class="tooltip" role="tooltip">
-                        <emoji-picker></emoji-picker>
-                    </div>
-            </div>
-        </div>
+  <div class="chat">
+    <div id="mobile" class="tabs">
+      <ul>
+        <li id="chat-tab" class="tab active"><a href="#">
+          <i class="tab-icon fa fa-comments"></i> {{ _('Chat') }}
+        </a></li>
+        <li id="online-tab" class="tab"><a href="#"><i class="tab-icon fa fa-wifi"></i> {{ _('Online Users') }}</a></li>
+      </ul>
     </div>
+
+    <div id="chat-container">
+      <div id="chat-online" class="chat-right-panel sidebox">
+        <h3 style="display:flex">
+          {{_('Online Users')}}
+          <a href="#" id="refresh-button" title="{{_('Refresh')}}">
+            <img src="/reload.png"
+              width="100%"
+            >
+          </a>
+        </h3>
+        <div id="chat-online-content">
+          <div id="search-container">
+            <center>
+              <form id="search-form" name="form" action="{{ url('get_or_create_room') }}" method="post">
+                {% csrf_token %}
+                <input id="search-handle" type="text" name="search"
+                  placeholder="{{ _('Search by handle...') }}">
+              </form>
+            </center>
+          </div>
+          <div id="chat-online-list">
+            {% include "chat/online_status.html" %}
+          </div>
+        </div>
+      </div>
+      <div id="chat-area" class="chat-left-panel" style="width:100%">
+        <div id="chat-info" style="height: 8%">
+          {% include 'chat/user_online_status.html' %}
+        </div>
+        <div id="chat-box">
+
+          <img src="{{static('loading.gif')}}" id="loader">
+          <ul id="chat-log" style="display: none">
+            {% include 'chat/message_list.html' %}
+          </ul>
+        </div>
+        <div style="height: 15%">
+          <a id="emoji-button" href="#" title="{{_('Emoji')}}"><i class="icofont-slightly-smile"></i></a>
+          <textarea maxlength="5000" id="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
+        </div>
+        <div class="tooltip" role="tooltip">
+          <emoji-picker></emoji-picker>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock body %}

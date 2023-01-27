@@ -1,427 +1,427 @@
 {% compress js %}
-    <script type="text/javascript">
-        var updateInterval = 2000;
-        var curop = -1;
-        var lintHeight = 100;
-        var bonusHeight = 30;
-        var speed = 700;
-        var autopress = false;
-        $(document).ready(function() {
-            window.data = {{ contest_json }};
-            console.log("OK");
-            var resolver = new Resolver(data.problem_sub, data.sub_frozen, data.problems, data.users);
-            window.resolver = resolver;
-            resolver.calcOperations();
-            resolver.frozen_op = resolver.operations.length - 1;
-            resetCSS();
-            light_theme();
-            show_rank();
-        });
+  <script type="text/javascript">
+    var updateInterval = 2000;
+    var curop = -1;
+    var lintHeight = 100;
+    var bonusHeight = 30;
+    var speed = 700;
+    var autopress = false;
+    $(document).ready(function() {
+      window.data = {{ contest_json }};
+      console.log("OK");
+      var resolver = new Resolver(data.problem_sub, data.sub_frozen, data.problems, data.users);
+      window.resolver = resolver;
+      resolver.calcOperations();
+      resolver.frozen_op = resolver.operations.length - 1;
+      resetCSS();
+      light_theme();
+      show_rank();
+    });
 
-        function updateSelector() {
+    function updateSelector() {
+      $('.show-rank').css('opacity', '0');
+      $('.show-rank').css('z-index', '-1');
+      var operation = resolver.operations[curop];
+      var tmp = resolver.rank_frozen[operation.user_id];
+      if (operation.type != 'delay') {
+        window.scrollTo({
+          top: (resolver.rank_frozen[operation.user_id].rank_show - 6) * lintHeight + bonusHeight,
+          left: 0,
+          behavior: 'smooth'
+        });
+        for (let i in resolver.rank_frozen) {
+          $('#rank-' + i).css({'background-color' : ''});
+          if (resolver.rank_frozen[i].rank_show % 2 == 0) {
+            $('#rank-' + i).removeClass('background-secondary');
+            $("#rank-" + i).addClass('background-primary');
+          } else {
+            $("#rank-" + i).removeClass('background-primary');
+            $("#rank-" + i).addClass('background-secondary');
+          }
+        }
+        $('#rank-' + operation.user_id).css({ "background-color": "#5382DF" });
+      }
+      if (operation.type == 'problem') {
+        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').removeClass(resolver.status(tmp.problem[operation.problem_index]));
+        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').addClass('selected');
+      } else if (operation.type == 'sub') {
+        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).removeClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
+        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .pro-content').removeClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
+        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).addClass('selected');
+        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .p-content').addClass('selected');
+        if (operation.frozen == 'ok') {
+          $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).removeClass('frozen');
+          $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .pro-content').removeClass('frozen');
+        }
+      }
+
+    }
+
+    function getNewData() {
+      var operation = resolver.operations[curop];
+      if (operation.type == 'problem') {
+        var tmp = resolver.rank_frozen[operation.user_id];
+        for (let i in resolver.rank_frozen) {
+          if (resolver.rank_frozen[i].rank_show < operation.old_rank && resolver.rank_frozen[i].rank_show >= operation.new_rank) {
+            resolver.rank_frozen[i].rank_show++;
+          }
+        }
+        tmp.rank_show = operation.new_rank;
+        tmp.score += operation.new_point - operation.old_point;
+        tmp.problem[operation.problem_index].old_verdict = operation.new_verdict;
+        tmp.problem[operation.problem_index].new_verdict = 'NA';
+        tmp.problem[operation.problem_index].old_point = operation.new_point;
+        tmp.score = round2(tmp.score);
+        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').removeClass('selected');
+        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').addClass(resolver.status(tmp.problem[operation.problem_index]));
+        $('#rank-' + operation.user_id + ' .score').text(tmp.score);
+        if (operation.new_rank % 2 == 0) {
+          let per = round2(tmp.problem[operation.problem_index].old_point / resolver.total_points[operation.problem_index] * 100);
+          let linear = `linear-gradient(90deg, ${partially} ${per}%, ${theme_background_color} ${per}%)`;
+          $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score.partially').css("background", linear);
+        } else {
+          let per = round2(tmp.problem[operation.problem_index].old_point / resolver.total_points[operation.problem_index] * 100);;
+          let linear = `linear-gradient(90deg, ${partially} ${per}%, ${untouched} ${per}%)`;
+          $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score.partially').css("background", linear);
+        }
+        for (let i in resolver.rank_frozen) {
+          $('#rank-' + i + ' .rank').text(resolver.rank_frozen[i].rank_show);
+          $("#rank-" + i).css('top', (resolver.rank_frozen[i].rank_show - 1) * lintHeight + bonusHeight);
+          if (resolver.rank_frozen[i].rank_show % 2 == 0) {
+            if (i != operation.user_id) {
+              $("#rank-" + i).removeClass('background-secondary');
+              $("#rank-" + i).addClass('background-primary');
+            }
+            $("#rank-" + i + ' .prob-container').removeClass('background-primary');
+            $("#rank-" + i + ' .problems').removeClass('background-primary');
+            $("#rank-" + i + ' .prob-container').addClass('background-secondary');
+            $("#rank-" + i + ' .problems').addClass('background-secondary');
+            for (let problemid in resolver.rank_frozen[i].problem) {
+              let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
+              let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
+              $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
+            }
+          } else {
+            if (i != operation.user_id) {
+              $("#rank-" + i).removeClass('background-primary');
+              $("#rank-" + i).addClass('background-secondary');
+            }
+            $("#rank-" + i + ' .prob-container').removeClass('background-secondary');
+            $("#rank-" + i + ' .problems').removeClass('background-secondary');
+            $("#rank-" + i + ' .prob-container').addClass('background-primary');
+            $("#rank-" + i + ' .problems').addClass('background-primary');
+            for (let problemid in resolver.rank_frozen[i].problem) {
+              let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
+              let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
+              $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
+            }
+          }
+        }
+      } else if (operation.type == 'sub') {
+        var tmp = resolver.rank_frozen[operation.user_id];
+        tmp.problem[operation.problem_index][operation.problem_sub].old_verdict = operation.new_verdict;
+        tmp.problem[operation.problem_index][operation.problem_sub].new_verdict = 'NA';
+        tmp.problem[operation.problem_index].old_point += operation.new_point - operation.old_point;
+        tmp.problem[operation.problem_index].old_point = round2(tmp.problem[operation.problem_index].old_point);
+        tmp.problem[operation.problem_index][operation.problem_sub].old_point = operation.new_point;
+        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').text(tmp.problem[operation.problem_index].old_point);
+        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + '.s-' + operation.problem_sub + ' .p-content').text(operation.new_point);
+        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).removeClass('selected');
+        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .p-content').removeClass('selected');
+        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).addClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
+        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .p-content').addClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
+      } else if (operation.type == 'show') {
+        $('.show-rank').css('opacity', '1');
+        $('.show-rank').css('z-index', '10000');
+        $('.show-rank .rank-show').text('Rank ' + resolver.rank_frozen[operation.user_id].rank_show);
+        $('.show-rank .name-show').text(resolver.users[operation.user_id].name);
+        $('.show-rank .school-show').text(resolver.users[operation.user_id].school);
+      }
+
+      $('.ac').css("background", "");
+    }
+
+    function resetCSS() {
+      $('.navbar').css('border-radius', '0');
+      $(".hidden-board").css('height', (window.resolver.rank_frozen.length - 1) * lintHeight);
+    }
+
+    function show_rank() {
+      for (let i in window.resolver.rank_frozen) {
+        rank_id = document.createElement('div');
+        $(rank_id).css('position', 'absolute');
+        $(rank_id).css('top', (resolver.rank_frozen[i].rank_show - 1) * lintHeight + bonusHeight);
+        if (resolver.rank_frozen[i].rank_show % 2 == 0) {
+          $(rank_id).addClass('background-primary');
+        } else {
+          $(rank_id).addClass('background-secondary');
+        }
+
+        $(rank_id).attr('id', 'rank-' + i);
+        $(rank_id).addClass('rank-list-item');
+        $(".rank-list").append($(rank_id));
+
+        rank = document.createElement('div');
+        $(rank).addClass('rank');
+        $(rank).text(resolver.rank_frozen[i].rank_show);
+        $(rank_id).append($(rank));
+
+        content = document.createElement('div');
+        $(content).addClass('content');
+        $(rank_id).append($(content));
+
+        info_div = document.createElement('div');
+        $(info_div).addClass('info-container');
+        $(content).append($(info_div));
+
+        name_div = document.createElement('div');
+        $(name_div).addClass('name');
+        $(name_div).text(window.resolver.users[i].name);
+        $(info_div).append($(name_div));
+
+        school_div = document.createElement('div');
+        $(school_div).addClass('school');
+        $(school_div).text("(" + window.resolver.users[i].school + ")");
+        $(info_div).append($(school_div));
+
+        problem_container = document.createElement('div');
+        $(problem_container).addClass('problem-container');
+
+        for (let problem_id in window.resolver.rank_frozen[i].problem) {
+          problems_con = document.createElement('div');
+          $(problems_con).addClass('p-' + problem_id);
+          $(problems_con).addClass('prob-container');
+          if (resolver.rank_frozen[i].rank_show % 2 == 1) {
+            $(problems_con).addClass('background-primary');
+          } else {
+            $(problems_con).addClass('background-secondary');
+          }
+          pro_score = document.createElement('div');
+          $(pro_score).addClass('pro-score');
+          $(pro_score).text(resolver.rank_frozen[i].problem[problem_id].old_point);
+          $(pro_score).addClass(window.resolver.status(window.resolver.rank_frozen[i].problem[problem_id]));
+
+          if (resolver.status(window.resolver.rank_frozen[i].problem[problem_id]) == 'partially') {
+            if (resolver.rank_frozen[i].rank_show % 2 == 1) {
+              let per = round2(resolver.rank_frozen[i].problem[problem_id].old_point / resolver.total_points[problem_id] * 100);
+              let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
+              $(pro_score).css("background", linear);
+            } else {
+              let per = round2(resolver.rank_frozen[i].problem[problem_id].old_point / resolver.total_points[problem_id] * 100);
+              let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
+              $(pro_score).css("background", linear);
+            }
+          }
+          $(problems_con).append($(pro_score));
+          problems = document.createElement('ul');
+          $(problems).addClass('p-' + problem_id);
+          $(problems).addClass('problems');
+
+          for (let j = 1; j <= resolver.problem_sub[problem_id - 1]; j++) {
+            problem = document.createElement('li');
+            $(problem).addClass('item');
+            $(problem).addClass(window.resolver.substatus(window.resolver.rank_frozen[i].problem[problem_id], j));
+            $(problem).addClass('p-' + problem_id);
+            $(problem).addClass('s-' + j);
+            $(problem).addClass('id-' + i);
+            $(problems).append($(problem));
+            p_content = document.createElement('div');
+            $(p_content).addClass(window.resolver.substatus(window.resolver.rank_frozen[i].problem[problem_id], j));
+            $(p_content).addClass('p-content');
+            if (j < resolver.sub_frozen[problem_id - 1]) {
+              $(p_content).text(window.resolver.rank_frozen[i].problem[problem_id][j].old_point);
+            } else {
+              $(p_content).text("?");
+            }
+            $(problem).append($(p_content));
+          }
+          $(problems_con).append($(problems));
+          $(problem_container).append($(problems_con));
+        }
+
+        $(content).append($(problem_container));
+
+        score = document.createElement('div');
+        $(score).addClass('score');
+        $(score).text(window.resolver.rank_frozen[i].score);
+        $(rank_id).append($(score));
+      }
+    }
+
+    var theme = 0;
+
+    $('body').keydown(function (e) {
+      if (e.keyCode == 77) {
+        console.log("Press M!");
+      }
+      if (e.keyCode == 13) {
+        console.log("Press Enter!");
+        if (curop == resolver.operations.length - 1) {
+          console.log("Do Enter Pressed!");
+          resolver.operations = [];
+          curop = -1;
+          resolver.next_operation();
+          if (window.resolver.operations.length == 0) {
+            $('.show-rank').css('visibility', 'hidden');
             $('.show-rank').css('opacity', '0');
-            $('.show-rank').css('z-index', '-1');
-            var operation = resolver.operations[curop];
-            var tmp = resolver.rank_frozen[operation.user_id];
-            if (operation.type != 'delay') {
-                window.scrollTo({
-                    top: (resolver.rank_frozen[operation.user_id].rank_show - 6) * lintHeight + bonusHeight,
-                    left: 0,
-                    behavior: 'smooth'
-                });
-                for (let i in resolver.rank_frozen) {
-                    $('#rank-' + i).css({'background-color' : ''});
-                    if (resolver.rank_frozen[i].rank_show % 2 == 0) {
-                        $('#rank-' + i).removeClass('background-secondary');
-                        $("#rank-" + i).addClass('background-primary');
-                    } else {
-                        $("#rank-" + i).removeClass('background-primary');
-                        $("#rank-" + i).addClass('background-secondary');
-                    }
-                }
-                $('#rank-' + operation.user_id).css({ "background-color": "#5382DF" });
-            }
-            if (operation.type == 'problem') {
-                $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').removeClass(resolver.status(tmp.problem[operation.problem_index]));
-                $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').addClass('selected');
-            } else if (operation.type == 'sub') {
-                $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).removeClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
-                $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .pro-content').removeClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
-                $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).addClass('selected');
-                $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .p-content').addClass('selected');
-                if (operation.frozen == 'ok') {
-                    $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).removeClass('frozen');
-                    $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .pro-content').removeClass('frozen');
-                }
-            }
-
-        }
-
-        function getNewData() {
-            var operation = resolver.operations[curop];
-            if (operation.type == 'problem') {
-                var tmp = resolver.rank_frozen[operation.user_id];
-                for (let i in resolver.rank_frozen) {
-                    if (resolver.rank_frozen[i].rank_show < operation.old_rank && resolver.rank_frozen[i].rank_show >= operation.new_rank) {
-                        resolver.rank_frozen[i].rank_show++;
-                    }
-                }
-                tmp.rank_show = operation.new_rank;
-                tmp.score += operation.new_point - operation.old_point;
-                tmp.problem[operation.problem_index].old_verdict = operation.new_verdict;
-                tmp.problem[operation.problem_index].new_verdict = 'NA';
-                tmp.problem[operation.problem_index].old_point = operation.new_point;
-                tmp.score = round2(tmp.score);
-                $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').removeClass('selected');
-                $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').addClass(resolver.status(tmp.problem[operation.problem_index]));
-                $('#rank-' + operation.user_id + ' .score').text(tmp.score);
-                if (operation.new_rank % 2 == 0) {
-                    let per = round2(tmp.problem[operation.problem_index].old_point / resolver.total_points[operation.problem_index] * 100);
-                    let linear = `linear-gradient(90deg, ${partially} ${per}%, ${theme_background_color} ${per}%)`;
-                    $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score.partially').css("background", linear);
-                } else {
-                    let per = round2(tmp.problem[operation.problem_index].old_point / resolver.total_points[operation.problem_index] * 100);;
-                    let linear = `linear-gradient(90deg, ${partially} ${per}%, ${untouched} ${per}%)`;
-                    $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score.partially').css("background", linear);
-                }
-                for (let i in resolver.rank_frozen) {
-                    $('#rank-' + i + ' .rank').text(resolver.rank_frozen[i].rank_show);
-                    $("#rank-" + i).css('top', (resolver.rank_frozen[i].rank_show - 1) * lintHeight + bonusHeight);
-                    if (resolver.rank_frozen[i].rank_show % 2 == 0) {
-                        if (i != operation.user_id) {
-                            $("#rank-" + i).removeClass('background-secondary');
-                            $("#rank-" + i).addClass('background-primary');
-                        }
-                        $("#rank-" + i + ' .prob-container').removeClass('background-primary');
-                        $("#rank-" + i + ' .problems').removeClass('background-primary');
-                        $("#rank-" + i + ' .prob-container').addClass('background-secondary');
-                        $("#rank-" + i + ' .problems').addClass('background-secondary');
-                        for (let problemid in resolver.rank_frozen[i].problem) {
-                            let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
-                            let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
-                            $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
-                        }
-                    } else {
-                        if (i != operation.user_id) {
-                            $("#rank-" + i).removeClass('background-primary');
-                            $("#rank-" + i).addClass('background-secondary');
-                        }
-                        $("#rank-" + i + ' .prob-container').removeClass('background-secondary');
-                        $("#rank-" + i + ' .problems').removeClass('background-secondary');
-                        $("#rank-" + i + ' .prob-container').addClass('background-primary');
-                        $("#rank-" + i + ' .problems').addClass('background-primary');
-                        for (let problemid in resolver.rank_frozen[i].problem) {
-                            let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
-                            let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
-                            $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
-                        }
-                    }
-                }
-            } else if (operation.type == 'sub') {
-                var tmp = resolver.rank_frozen[operation.user_id];
-                tmp.problem[operation.problem_index][operation.problem_sub].old_verdict = operation.new_verdict;
-                tmp.problem[operation.problem_index][operation.problem_sub].new_verdict = 'NA';
-                tmp.problem[operation.problem_index].old_point += operation.new_point - operation.old_point;
-                tmp.problem[operation.problem_index].old_point = round2(tmp.problem[operation.problem_index].old_point);
-                tmp.problem[operation.problem_index][operation.problem_sub].old_point = operation.new_point;
-                $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').text(tmp.problem[operation.problem_index].old_point);
-                $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + '.s-' + operation.problem_sub + ' .p-content').text(operation.new_point);
-                $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).removeClass('selected');
-                $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .p-content').removeClass('selected');
-                $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).addClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
-                $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .p-content').addClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
-            } else if (operation.type == 'show') {
-                $('.show-rank').css('opacity', '1');
-                $('.show-rank').css('z-index', '10000');
-                $('.show-rank .rank-show').text('Rank ' + resolver.rank_frozen[operation.user_id].rank_show);
-                $('.show-rank .name-show').text(resolver.users[operation.user_id].name);
-                $('.show-rank .school-show').text(resolver.users[operation.user_id].school);
-            }
-
-            $('.ac').css("background", "");
-        }
-
-        function resetCSS() {
-            $('.navbar').css('border-radius', '0');
-            $(".hidden-board").css('height', (window.resolver.rank_frozen.length - 1) * lintHeight);
-        }
-
-        function show_rank() {
-            for (let i in window.resolver.rank_frozen) {
-                rank_id = document.createElement('div');
-                $(rank_id).css('position', 'absolute');
-                $(rank_id).css('top', (resolver.rank_frozen[i].rank_show - 1) * lintHeight + bonusHeight);
-                if (resolver.rank_frozen[i].rank_show % 2 == 0) {
-                    $(rank_id).addClass('background-primary');
-                } else {
-                    $(rank_id).addClass('background-secondary');
-                }
-
-                $(rank_id).attr('id', 'rank-' + i);
-                $(rank_id).addClass('rank-list-item');
-                $(".rank-list").append($(rank_id));
-
-                rank = document.createElement('div');
-                $(rank).addClass('rank');
-                $(rank).text(resolver.rank_frozen[i].rank_show);
-                $(rank_id).append($(rank));
-
-                content = document.createElement('div');
-                $(content).addClass('content');
-                $(rank_id).append($(content));
-
-                info_div = document.createElement('div');
-                $(info_div).addClass('info-container');
-                $(content).append($(info_div));
-
-                name_div = document.createElement('div');
-                $(name_div).addClass('name');
-                $(name_div).text(window.resolver.users[i].name);
-                $(info_div).append($(name_div));
-
-                school_div = document.createElement('div');
-                $(school_div).addClass('school');
-                $(school_div).text("(" + window.resolver.users[i].school + ")");
-                $(info_div).append($(school_div));
-
-                problem_container = document.createElement('div');
-                $(problem_container).addClass('problem-container');
-
-                for (let problem_id in window.resolver.rank_frozen[i].problem) {
-                    problems_con = document.createElement('div');
-                    $(problems_con).addClass('p-' + problem_id);
-                    $(problems_con).addClass('prob-container');
-                    if (resolver.rank_frozen[i].rank_show % 2 == 1) {
-                        $(problems_con).addClass('background-primary');
-                    } else {
-                        $(problems_con).addClass('background-secondary');
-                    }
-                    pro_score = document.createElement('div');
-                    $(pro_score).addClass('pro-score');
-                    $(pro_score).text(resolver.rank_frozen[i].problem[problem_id].old_point);
-                    $(pro_score).addClass(window.resolver.status(window.resolver.rank_frozen[i].problem[problem_id]));
-
-                    if (resolver.status(window.resolver.rank_frozen[i].problem[problem_id]) == 'partially') {
-                        if (resolver.rank_frozen[i].rank_show % 2 == 1) {
-                            let per = round2(resolver.rank_frozen[i].problem[problem_id].old_point / resolver.total_points[problem_id] * 100);
-                            let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
-                            $(pro_score).css("background", linear);
-                        } else {
-                            let per = round2(resolver.rank_frozen[i].problem[problem_id].old_point / resolver.total_points[problem_id] * 100);
-                            let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
-                            $(pro_score).css("background", linear);
-                        }
-                    }
-                    $(problems_con).append($(pro_score));
-                    problems = document.createElement('ul');
-                    $(problems).addClass('p-' + problem_id);
-                    $(problems).addClass('problems');
-
-                    for (let j = 1; j <= resolver.problem_sub[problem_id - 1]; j++) {
-                        problem = document.createElement('li');
-                        $(problem).addClass('item');
-                        $(problem).addClass(window.resolver.substatus(window.resolver.rank_frozen[i].problem[problem_id], j));
-                        $(problem).addClass('p-' + problem_id);
-                        $(problem).addClass('s-' + j);
-                        $(problem).addClass('id-' + i);
-                        $(problems).append($(problem));
-                        p_content = document.createElement('div');
-                        $(p_content).addClass(window.resolver.substatus(window.resolver.rank_frozen[i].problem[problem_id], j));
-                        $(p_content).addClass('p-content');
-                        if (j < resolver.sub_frozen[problem_id - 1]) {
-                            $(p_content).text(window.resolver.rank_frozen[i].problem[problem_id][j].old_point);
-                        } else {
-                            $(p_content).text("?");
-                        }
-                        $(problem).append($(p_content));
-                    }
-                    $(problems_con).append($(problems));
-                    $(problem_container).append($(problems_con));
-                }
-
-                $(content).append($(problem_container));
-
-                score = document.createElement('div');
-                $(score).addClass('score');
-                $(score).text(window.resolver.rank_frozen[i].score);
-                $(rank_id).append($(score));
-            }
-        }
-
-        var theme = 0;
-
-        $('body').keydown(function (e) {
-            if (e.keyCode == 77) {
-                console.log("Press M!");
-            }
-            if (e.keyCode == 13) {
-                console.log("Press Enter!");
-                if (curop == resolver.operations.length - 1) {
-                    console.log("Do Enter Pressed!");
-                    resolver.operations = [];
-                    curop = -1;
-                    resolver.next_operation();
-                    if (window.resolver.operations.length == 0) {
-                        $('.show-rank').css('visibility', 'hidden');
-                        $('.show-rank').css('opacity', '0');
-                        for (let i in resolver.rank_frozen) {
-                            if (resolver.rank_frozen[i].rank_show % 2 == 0) {
-                                $("#rank-" + i).removeClass('background-secondary');
-                                $("#rank-" + i).addClass('background-primary');
-                            } else {
-                                $("#rank-" + i).removeClass('background-primary');
-                                $("#rank-" + i).addClass('background-secondary');
-                            }
-                        }
-                    }
-                    console.log(resolver.operations);
-                    if (resolver.operations.length == 1) {
-                        for (let x in window.resolver.operations) {
-                            curop++;
-                            updateSelector();
-                            setTimeout(function () {
-                                getNewData();
-                            }, 500);
-                        }
-                    } else {
-                        for (let x in window.resolver.operations) {
-                            setTimeout(function () {
-                                curop++;
-                                updateSelector();
-                            }, speed * x);
-                            setTimeout(function () {
-                                getNewData();
-                            }, speed * x + speed / 2);
-                        }
-                    }
-                }
-            }
-            if (e.keyCode == 65) {
-                console.log("A pressed!");
-                if (autopress == false) {
-                    autopress = true;
-                    // for (let x in resolver.operations) {
-                    //     curop++;
-                    //     updateSelector();
-                    //     getNewData();
-                    // }
-                    for (let x in window.resolver.operations) {
-                        setTimeout(function () {
-                            curop++;
-                            updateSelector();
-                        }, speed * x);
-                        setTimeout(function () {
-                            getNewData();
-                        }, speed * x + speed / 2);
-                    }
-                }
-            }
-            if (e.keyCode == 66) {
-                theme = 1 - theme;
-                if (theme) dark_theme();
-                else light_theme();
-            }
-        });
-
-        $('.rank-list').on('click', 'li', function () {
-            if (curop == resolver.operations.length - 1) {
-                var classstr = $(this).attr('class');
-                var index = classstr.indexOf('id-');
-                var useridstr = "";
-                for (let i = index + 3; i < classstr.length; i++) {
-                    useridstr = useridstr + classstr[i];
-                }
-                var userid = parseInt(useridstr);
-                var problemid = classstr[classstr.indexOf('p-') + 2];
-                var sub = parseInt(classstr[classstr.indexOf('s-') + 2]);
-                var rankid = resolver.rank_frozen[userid].rank_show;
-                resolver.operations = [];
-                curop = -1;
-                console.log("Clicked!");
-                resolver.operation(rankid - 1, problemid, sub);
-                if (resolver.operations.length == 1) {
-                    for (let x in window.resolver.operations) {
-                        curop++;
-                        updateSelector();
-                        setTimeout(function () {
-                            getNewData();
-                        }, 500);
-                    }
-                } else {
-                    for (let x in window.resolver.operations) {
-                        setTimeout(function () {
-                            curop++;
-                            updateSelector();
-                        }, speed * x);
-                        setTimeout(function () {
-                            getNewData();
-                        }, speed * x + speed / 2);
-                    }
-                }
-            }
-        });
-
-        var primary_color, secondary_color;
-        var wa, partially, ac, selected, frozen, untouched;
-        var theme_text_color, theme_background_color;
-
-        function dark_theme() {
-            primary_color = "black";
-            secondary_color = '#3e3e3e';
-            frozen = "#34495e";
-            untouched = "#1f1f1f";
-            wa = "#B71C0C";
-            partially = "#A79D03";
-            ac = "#086d08";
-            selected = "rgb(206, 75, 199)";
-            theme_text_color = "white";
-            theme_background_color = "black";
-            set_theme();
-        }
-
-        function light_theme() {
-            primary_color = "#EFF5F5";
-            secondary_color = "#D6E4E5";
-            wa = "#EB6440";
-            partially = "#fff133";
-            ac = "#80ED99";
-            // ac = "green";
-            frozen = "#497174";
-            untouched = "#A7BBC7";
-            selected = "rgb(206, 75, 199)";
-            theme_text_color = "black";
-            theme_background_color = "white";
-            set_theme();
-        }
-
-        function set_theme() {
-            let root = document.querySelector(':root');
-            root.style.setProperty('--primary_color', primary_color);
-            root.style.setProperty('--secondary_color', secondary_color);
-            root.style.setProperty('--wa', wa);
-            root.style.setProperty('--partially', partially);
-            root.style.setProperty('--ac', ac);
-            root.style.setProperty('--selected', selected);
-            root.style.setProperty('--frozen', frozen);
-            root.style.setProperty('--untouched', untouched);
-            root.style.setProperty('--theme-text-color', theme_text_color);
-            root.style.setProperty('--theme-background-color', theme_background_color);
             for (let i in resolver.rank_frozen) {
-                if (resolver.rank_frozen[i].rank_show % 2 == 0) {
-                    for (let problemid in resolver.rank_frozen[i].problem) {
-                        let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
-                        let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
-                        $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
-                    }
-                } else {
-                    for (let problemid in resolver.rank_frozen[i].problem) {
-                        let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
-                        let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
-                        $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
-                    }
-                }
+              if (resolver.rank_frozen[i].rank_show % 2 == 0) {
+                $("#rank-" + i).removeClass('background-secondary');
+                $("#rank-" + i).addClass('background-primary');
+              } else {
+                $("#rank-" + i).removeClass('background-primary');
+                $("#rank-" + i).addClass('background-secondary');
+              }
             }
+          }
+          console.log(resolver.operations);
+          if (resolver.operations.length == 1) {
+            for (let x in window.resolver.operations) {
+              curop++;
+              updateSelector();
+              setTimeout(function () {
+                getNewData();
+              }, 500);
+            }
+          } else {
+            for (let x in window.resolver.operations) {
+              setTimeout(function () {
+                curop++;
+                updateSelector();
+              }, speed * x);
+              setTimeout(function () {
+                getNewData();
+              }, speed * x + speed / 2);
+            }
+          }
         }
+      }
+      if (e.keyCode == 65) {
+        console.log("A pressed!");
+        if (autopress == false) {
+          autopress = true;
+          // for (let x in resolver.operations) {
+          //     curop++;
+          //     updateSelector();
+          //     getNewData();
+          // }
+          for (let x in window.resolver.operations) {
+            setTimeout(function () {
+              curop++;
+              updateSelector();
+            }, speed * x);
+            setTimeout(function () {
+              getNewData();
+            }, speed * x + speed / 2);
+          }
+        }
+      }
+      if (e.keyCode == 66) {
+        theme = 1 - theme;
+        if (theme) dark_theme();
+        else light_theme();
+      }
+    });
 
-    </script>
-{% endcompress %}    
+    $('.rank-list').on('click', 'li', function () {
+      if (curop == resolver.operations.length - 1) {
+        var classstr = $(this).attr('class');
+        var index = classstr.indexOf('id-');
+        var useridstr = "";
+        for (let i = index + 3; i < classstr.length; i++) {
+          useridstr = useridstr + classstr[i];
+        }
+        var userid = parseInt(useridstr);
+        var problemid = classstr[classstr.indexOf('p-') + 2];
+        var sub = parseInt(classstr[classstr.indexOf('s-') + 2]);
+        var rankid = resolver.rank_frozen[userid].rank_show;
+        resolver.operations = [];
+        curop = -1;
+        console.log("Clicked!");
+        resolver.operation(rankid - 1, problemid, sub);
+        if (resolver.operations.length == 1) {
+          for (let x in window.resolver.operations) {
+            curop++;
+            updateSelector();
+            setTimeout(function () {
+              getNewData();
+            }, 500);
+          }
+        } else {
+          for (let x in window.resolver.operations) {
+            setTimeout(function () {
+              curop++;
+              updateSelector();
+            }, speed * x);
+            setTimeout(function () {
+              getNewData();
+            }, speed * x + speed / 2);
+          }
+        }
+      }
+    });
+
+    var primary_color, secondary_color;
+    var wa, partially, ac, selected, frozen, untouched;
+    var theme_text_color, theme_background_color;
+
+    function dark_theme() {
+      primary_color = "black";
+      secondary_color = '#3e3e3e';
+      frozen = "#34495e";
+      untouched = "#1f1f1f";
+      wa = "#B71C0C";
+      partially = "#A79D03";
+      ac = "#086d08";
+      selected = "rgb(206, 75, 199)";
+      theme_text_color = "white";
+      theme_background_color = "black";
+      set_theme();
+    }
+
+    function light_theme() {
+      primary_color = "#EFF5F5";
+      secondary_color = "#D6E4E5";
+      wa = "#EB6440";
+      partially = "#fff133";
+      ac = "#80ED99";
+      // ac = "green";
+      frozen = "#497174";
+      untouched = "#A7BBC7";
+      selected = "rgb(206, 75, 199)";
+      theme_text_color = "black";
+      theme_background_color = "white";
+      set_theme();
+    }
+
+    function set_theme() {
+      let root = document.querySelector(':root');
+      root.style.setProperty('--primary_color', primary_color);
+      root.style.setProperty('--secondary_color', secondary_color);
+      root.style.setProperty('--wa', wa);
+      root.style.setProperty('--partially', partially);
+      root.style.setProperty('--ac', ac);
+      root.style.setProperty('--selected', selected);
+      root.style.setProperty('--frozen', frozen);
+      root.style.setProperty('--untouched', untouched);
+      root.style.setProperty('--theme-text-color', theme_text_color);
+      root.style.setProperty('--theme-background-color', theme_background_color);
+      for (let i in resolver.rank_frozen) {
+        if (resolver.rank_frozen[i].rank_show % 2 == 0) {
+          for (let problemid in resolver.rank_frozen[i].problem) {
+            let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
+            let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
+            $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
+          }
+        } else {
+          for (let problemid in resolver.rank_frozen[i].problem) {
+            let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
+            let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
+            $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
+          }
+        }
+      }
+    }
+
+  </script>
+{% endcompress %}

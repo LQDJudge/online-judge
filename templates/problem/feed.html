@@ -1,141 +1,141 @@
 {% extends "problem/list-base.html" %}
 {% block left_sidebar %}
-    {% include "problem/left-sidebar.html" %}
+  {% include "problem/left-sidebar.html" %}
 {% endblock %}
 
 {% block middle_content %}
-    <div class="problem-feed-option">
-        <a href="{{url('problem_feed')}}" class="button small  {{'btn-midnightblue' if feed_type=='for_you' else 'btn-gray'}}">
-            {{_('FOR YOU')}}
+  <div class="problem-feed-option">
+    <a href="{{url('problem_feed')}}" class="button small  {{'btn-midnightblue' if feed_type=='for_you' else 'btn-gray'}}">
+      {{_('FOR YOU')}}
+    </a>
+    <a href="{{url('problem_feed_new')}}" class="button small {{'btn-midnightblue' if feed_type=='new' else 'btn-gray'}}">
+      {{_('NEW')}}
+    </a>
+    {% if request.user.has_perm('judge.suggest_problem_changes') %}
+      <a href="{{url('problem_feed_volunteer')}}" class="button small {{'btn-midnightblue' if feed_type=='volunteer' else 'btn-gray'}}">
+        {{_('VOLUNTEER')}}
+      </a>
+    {% endif %}
+  </div>
+  {% if request.user.has_perm('judge.suggest_problem_changes') and feed_type == 'volunteer' %}
+    <ul style="margin-bottom: 1em; margin-left: auto">
+      <li><a href="{{url('admin:judge_volunteerproblemvote_changelist')}}">{{_('View your votes')}}</a></li>
+    </ul>
+  {% endif %}
+  {% for problem in problems %}
+    <div class="blog-box">
+      <h3 class="problem-feed-name">
+        <a href="{{ url('problem_detail', problem.code) }}">
+          {{ problem.i18n_name }}
         </a>
-        <a href="{{url('problem_feed_new')}}" class="button small {{'btn-midnightblue' if feed_type=='new' else 'btn-gray'}}">
-            {{_('NEW')}}
-        </a>
-        {% if request.user.has_perm('judge.suggest_problem_changes') %}
-            <a href="{{url('problem_feed_volunteer')}}" class="button small {{'btn-midnightblue' if feed_type=='volunteer' else 'btn-gray'}}">
-                {{_('VOLUNTEER')}}
-            </a>
+        {% if problem.id in completed_problem_ids %}
+          <i class="solved-problem-color fa fa-check-circle"></i>
+        {% elif problem.id in attempted_problems %}
+          <i class="attempted-problem-color fa fa-minus-circle"></i>
+        {% else %}
+          <i class="unsolved-problem-color fa fa-minus-circle"></i>
         {% endif %}
-    </div>
-    {% if request.user.has_perm('judge.suggest_problem_changes') and feed_type == 'volunteer' %}
-        <ul style="margin-bottom: 1em; margin-left: auto">
-            <li><a href="{{url('admin:judge_volunteerproblemvote_changelist')}}">{{_('View your votes')}}</a></li>
-        </ul>
-    {% endif %}
-    {% for problem in problems %}
-        <div class="blog-box">
-            <h3 class="problem-feed-name">
-                <a href="{{ url('problem_detail', problem.code) }}">
-                    {{ problem.i18n_name }}
-                </a>
-                {% if problem.id in completed_problem_ids %}
-                    <i class="solved-problem-color fa fa-check-circle"></i>
-                {% elif problem.id in attempted_problems %}
-                    <i class="attempted-problem-color fa fa-minus-circle"></i>
-                {% else %}
-                    <i class="unsolved-problem-color fa fa-minus-circle"></i>
-                {% endif %}
-            </h3>
-            {% with authors=problem.authors.all() %}
-                {% if authors %}
-                    <div class="problem-feed-info-entry">
-                        <i class="fa fa-pencil-square-o fa-fw"></i>
-                        <span class="pi-value">{{ link_users(authors) }}</span>
-                    </div>
-                {% endif %}
-            {% endwith %}
-            {% if show_types %}
-                <div class="problem-feed-types">
-                    <i class="fa fa-tag"></i>
-                    {% for type in problem.types_list %}
-                        <span class="type-tag">{{ type }}</span>{% if not loop.last %}, {% endif %}
-                    {% endfor %}, *{{problem.points | int}}
-                </div>
-            {% endif %}
-            <div class="blog-description">
-                <div class='content-description'>
-                    {% cache 86400 'problem_html' problem.id MATH_ENGINE LANGUAGE_CODE %}
-                        {{ problem.description|markdown(lazy_load=True)|reference|str|safe }}
-                    {% endcache %}
-                    {% if problem.pdf_description %}
-                        <embed src="{{url('problem_pdf_description', problem.code)}}" width="100%" height="500" type="application/pdf" style="margin-top: 0.5em">
-                    {% endif %}
-                </div>
-                {% set include_hr = True %}
-                {% set hide_actionbar_comment = True %}
-                {% set pagevote = problem.pagevote %}
-                {% set bookmark = problem.bookmark %}
-                {% set share_url = request.build_absolute_uri(problem.get_absolute_url()) %}
-                {% include "actionbar/list.html" %}
-
-                {% if feed_type=='volunteer' and request.user.has_perm('judge.suggest_problem_changes') %}
-                    <br>
-                    <a href="#" class="view-statement-src">{{ _('View source') }}</a>
-                    <pre class="statement-src" style="display: none">{{ problem.description|str }}</pre>
-                    <hr>
-                    <center><h3>{{_('Volunteer form')}}</h3></center>
-                    <br>
-                    <button class="edit-btn" id="edit-{{problem.id}}" pid="{{problem.id}}" style="float: right">{{_('Edit')}}</button>
-                    <form class="volunteer-form" id="form-{{problem.id}}" pid="{{problem.id}}" style="display: none;" method="POST">
-                        <input type="submit" class="volunteer-submit-btn" id="submit-{{problem.id}}" pid="{{problem.id}}" pcode="{{problem.code}}" style="float: right" value="{{_('Submit')}}">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>
-                                    </th>
-                                    <th>
-                                        {{_('Value')}}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td width="30%">
-                                        <label for="knowledge_point-{{problem.id}}"><i>{{ _('Knowledge point') }}</i></label>
-                                    </td>
-                                    <td>
-                                        <input id="knowledge_point-{{problem.id}}" type="number" class="point-input" required>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td width="30%">
-                                        <label for="thinking_point-{{problem.id}}"><i>{{ _('Thinking point') }}</i></label>
-                                    </td>
-                                    <td>
-                                        <input id="thinking_point-{{problem.id}}" type="number" class="point-input" required>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td width="30%">
-                                        <label for="types"><i>{{ _('Problem types') }}</i></label>
-                                    </td>
-                                    <td>
-                                        <select id="volunteer-types-{{problem.id}}" name="types" multiple>
-                                            {% for type in problem_types %}
-                                                <option value="{{ type.id }}"{% if type in problem.types.all() %} selected{% endif %}>
-                                                    {{ type.full_name }}
-                                                </option>
-                                            {% endfor %}
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td width="30%">
-                                        <label for="feedback"><i>{{ _('Feedback') }}</i></label>
-                                    </td>
-                                    <td>
-                                        <textarea id="feedback-{{problem.id}}" rows="2" style="width: 100%" placeholder="{{_('Any additional note here')}}"></textarea>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </form>
-                    <center id="thank-{{problem.id}}" style="display: none; margin-top: 3em"></center>
-                {% endif %}
-            </div>
+      </h3>
+      {% with authors=problem.authors.all() %}
+        {% if authors %}
+          <div class="problem-feed-info-entry">
+            <i class="fa fa-pencil-square-o fa-fw"></i>
+            <span class="pi-value">{{ link_users(authors) }}</span>
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% if show_types %}
+        <div class="problem-feed-types">
+          <i class="fa fa-tag"></i>
+          {% for type in problem.types_list %}
+            <span class="type-tag">{{ type }}</span>{% if not loop.last %}, {% endif %}
+          {% endfor %}, *{{problem.points | int}}
         </div>
-    {% endfor %}
-    {% if page_obj.num_pages > 1 %}
-        <div style="margin-top:10px;">{% include "list-pages.html" %}</div>
-    {% endif %}
+      {% endif %}
+      <div class="blog-description">
+        <div class='content-description'>
+          {% cache 86400 'problem_html' problem.id MATH_ENGINE LANGUAGE_CODE %}
+            {{ problem.description|markdown(lazy_load=True)|reference|str|safe }}
+          {% endcache %}
+          {% if problem.pdf_description %}
+            <embed src="{{url('problem_pdf_description', problem.code)}}" width="100%" height="500" type="application/pdf" style="margin-top: 0.5em">
+          {% endif %}
+        </div>
+        {% set include_hr = True %}
+        {% set hide_actionbar_comment = True %}
+        {% set pagevote = problem.pagevote %}
+        {% set bookmark = problem.bookmark %}
+        {% set share_url = request.build_absolute_uri(problem.get_absolute_url()) %}
+        {% include "actionbar/list.html" %}
+
+        {% if feed_type=='volunteer' and request.user.has_perm('judge.suggest_problem_changes') %}
+          <br>
+          <a href="#" class="view-statement-src">{{ _('View source') }}</a>
+          <pre class="statement-src" style="display: none">{{ problem.description|str }}</pre>
+          <hr>
+          <center><h3>{{_('Volunteer form')}}</h3></center>
+          <br>
+          <button class="edit-btn" id="edit-{{problem.id}}" pid="{{problem.id}}" style="float: right">{{_('Edit')}}</button>
+          <form class="volunteer-form" id="form-{{problem.id}}" pid="{{problem.id}}" style="display: none;" method="POST">
+            <input type="submit" class="volunteer-submit-btn" id="submit-{{problem.id}}" pid="{{problem.id}}" pcode="{{problem.code}}" style="float: right" value="{{_('Submit')}}">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>
+                  </th>
+                  <th>
+                    {{_('Value')}}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td width="30%">
+                    <label for="knowledge_point-{{problem.id}}"><i>{{ _('Knowledge point') }}</i></label>
+                  </td>
+                  <td>
+                    <input id="knowledge_point-{{problem.id}}" type="number" class="point-input" required>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="30%">
+                    <label for="thinking_point-{{problem.id}}"><i>{{ _('Thinking point') }}</i></label>
+                  </td>
+                  <td>
+                    <input id="thinking_point-{{problem.id}}" type="number" class="point-input" required>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="30%">
+                    <label for="types"><i>{{ _('Problem types') }}</i></label>
+                  </td>
+                  <td>
+                    <select id="volunteer-types-{{problem.id}}" name="types" multiple>
+                      {% for type in problem_types %}
+                        <option value="{{ type.id }}"{% if type in problem.types.all() %} selected{% endif %}>
+                          {{ type.full_name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="30%">
+                    <label for="feedback"><i>{{ _('Feedback') }}</i></label>
+                  </td>
+                  <td>
+                    <textarea id="feedback-{{problem.id}}" rows="2" style="width: 100%" placeholder="{{_('Any additional note here')}}"></textarea>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </form>
+          <center id="thank-{{problem.id}}" style="display: none; margin-top: 3em"></center>
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+  {% if page_obj.num_pages > 1 %}
+    <div style="margin-top:10px;">{% include "list-pages.html" %}</div>
+  {% endif %}
 {% endblock %}

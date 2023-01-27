@@ -1,40 +1,40 @@
 <style>
-    @media(max-width: 799px) {
-        .middle-right-content {
-            margin-left: 8px;
-            margin-right: 8px;
-        }
+  @media(max-width: 799px) {
+    .middle-right-content {
+      margin-left: 8px;
+      margin-right: 8px;
     }
+  }
 </style>
 <div class="left-sidebar">
-    {{ make_tab_item('detail', 'fa fa-info-circle', url('contest_view', contest.key), _('Info')) }}
-    {% if contest.ended or can_edit %}
-        {{ make_tab_item('stats', 'fa fa-pie-chart', url('contest_stats', contest.key), _('Statistics')) }}
-    {% endif %}
+  {{ make_tab_item('detail', 'fa fa-info-circle', url('contest_view', contest.key), _('Info')) }}
+  {% if contest.ended or can_edit %}
+    {{ make_tab_item('stats', 'fa fa-pie-chart', url('contest_stats', contest.key), _('Statistics')) }}
+  {% endif %}
 
-    {% if contest.start_time <= now or perms.judge.see_private_contest %}
-        {% if contest.can_see_own_scoreboard(request.user) %}
-            {{ make_tab_item('ranking', 'fa fa-bar-chart', url('contest_ranking', contest.key), _('Rankings')) }}
-            {% if request.user.is_authenticated %}
-                {{ make_tab_item('participation', 'fa fa-users', url('contest_participation_own', contest.key), _('Participation')) }}
-            {% endif %}
-        {% else %}
-            {{ make_tab_item('ranking', 'fa fa-bar-chart', None, _('Hidden Rankings')) }}
-        {% endif %}
+  {% if contest.start_time <= now or perms.judge.see_private_contest %}
+    {% if contest.can_see_own_scoreboard(request.user) %}
+      {{ make_tab_item('ranking', 'fa fa-bar-chart', url('contest_ranking', contest.key), _('Rankings')) }}
+      {% if request.user.is_authenticated %}
+        {{ make_tab_item('participation', 'fa fa-users', url('contest_participation_own', contest.key), _('Participation')) }}
+      {% endif %}
+    {% else %}
+      {{ make_tab_item('ranking', 'fa fa-bar-chart', None, _('Hidden Rankings')) }}
     {% endif %}
-    {% if request.user.is_superuser and contest_has_hidden_subtasks %}
-        {{ make_tab_item('resolver', 'fa fa-check', url('resolver', contest.key), _('Resolver')) }}
+  {% endif %}
+  {% if request.user.is_superuser and contest_has_hidden_subtasks %}
+    {{ make_tab_item('resolver', 'fa fa-check', url('resolver', contest.key), _('Resolver')) }}
+  {% endif %}
+  {% if show_final_ranking %}
+    {{ make_tab_item('final_ranking', 'fa fa-bar-chart', url('contest_final_ranking', contest.key), _('Final rankings')) }}
+  {% endif %}
+  {% if can_edit %}
+    {% if perms.judge.moss_contest and has_moss_api_key %}
+      {{ make_tab_item('moss', 'fa fa-gavel', url('contest_moss', contest.key), _('MOSS')) }}
     {% endif %}
-    {% if show_final_ranking %}
-        {{ make_tab_item('final_ranking', 'fa fa-bar-chart', url('contest_final_ranking', contest.key), _('Final rankings')) }}
-    {% endif %}
-    {% if can_edit %}
-        {% if perms.judge.moss_contest and has_moss_api_key %}
-            {{ make_tab_item('moss', 'fa fa-gavel', url('contest_moss', contest.key), _('MOSS')) }}
-        {% endif %}
-        {{ make_tab_item('edit', 'fa fa-edit', url('admin:judge_contest_change', contest.id), _('Edit')) }}
-    {% endif %}
-    {% if perms.judge.clone_contest %}
-        {{ make_tab_item('clone', 'fa fa-copy', url('contest_clone', contest.key), _('Clone')) }}
-    {% endif %}
+    {{ make_tab_item('edit', 'fa fa-edit', url('admin:judge_contest_change', contest.id), _('Edit')) }}
+  {% endif %}
+  {% if perms.judge.clone_contest %}
+    {{ make_tab_item('clone', 'fa fa-copy', url('contest_clone', contest.key), _('Clone')) }}
+  {% endif %}
 </div>

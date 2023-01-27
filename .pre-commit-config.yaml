@@ -1,0 +1,9 @@
+repos:
+  - repo: https://github.com/rtts/djhtml
+    rev: 'main'  # replace with the latest tag on GitHub
+    hooks:
+      - id: djhtml
+        entry: djhtml -i -t 2
+        files: templates/.
+      - id: djcss
+        types: [scss]

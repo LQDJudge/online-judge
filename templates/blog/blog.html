@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
 {% block js_media %}
-    {% include "comments/media-js.html" %}
-    {% include "actionbar/media-js.html" %}
+  {% include "comments/media-js.html" %}
+  {% include "actionbar/media-js.html" %}
 {% endblock %}
 
 {% block media %}
-    {% include "comments/media-css.html" %}
-    {% include "actionbar/media-css.html" %}
+  {% include "comments/media-css.html" %}
+  {% include "actionbar/media-css.html" %}
 {% endblock %}
 
 {% block title_row %}
@@ -17,41 +17,41 @@
 {% endblock %}
 
 {% block body %}
-    <div class="post-full">
-        <div class="post-title">{{ title }}</div>
-        <div class="time">
-            {% with authors=post.authors.all() %}
-                {% if authors %}
-                    <span class="post-authors">{{ link_users(authors) }}</span>
-                {% endif %}
-            {% endwith %}
-            <span class="post-time">
-                {% trans time=post.publish_on|date(_("N j, Y, g:i a")) %} posted on {{ time }}{% endtrans %}
-            </span>
-            {% if post.is_editable_by(request.user) %}
-                <span> [<a href="{{ url('admin:judge_blogpost_change', post.id) }}">{{ _('Edit') }}</a>]</span>
-            {% endif %}
-            {% if valid_user_to_show_edit %}
-                {% for org in valid_org_to_show_edit %}
-                    <span> [<a href="{{ url('edit_organization_blog', org.id , org.slug , post.id) }}">{{ _('Edit in') }} {{org.slug}}</a>]</span>
-                {% endfor %}
-            {% endif %}
-        </div>
-        <div class="body content-description">
-            {% cache 86400 'post_content' post.id MATH_ENGINE %}
-                {{ post.content|markdown|reference|str|safe}}
-            {% endcache %}
-        </div>
-        {% include "actionbar/list.html" %}
+  <div class="post-full">
+    <div class="post-title">{{ title }}</div>
+    <div class="time">
+      {% with authors=post.authors.all() %}
+        {% if authors %}
+          <span class="post-authors">{{ link_users(authors) }}</span>
+        {% endif %}
+      {% endwith %}
+      <span class="post-time">
+        {% trans time=post.publish_on|date(_("N j, Y, g:i a")) %} posted on {{ time }}{% endtrans %}
+      </span>
+      {% if post.is_editable_by(request.user) %}
+        <span> [<a href="{{ url('admin:judge_blogpost_change', post.id) }}">{{ _('Edit') }}</a>]</span>
+      {% endif %}
+      {% if valid_user_to_show_edit %}
+        {% for org in valid_org_to_show_edit %}
+          <span> [<a href="{{ url('edit_organization_blog', org.id , org.slug , post.id) }}">{{ _('Edit in') }} {{org.slug}}</a>]</span>
+        {% endfor %}
+      {% endif %}
     </div>
-    <hr style="width: 60%; margin:4em auto;">
-    {% include "comments/list.html" %}
+    <div class="body content-description">
+      {% cache 86400 'post_content' post.id MATH_ENGINE %}
+        {{ post.content|markdown|reference|str|safe}}
+      {% endcache %}
+    </div>
+    {% include "actionbar/list.html" %}
+  </div>
+  <hr style="width: 60%; margin:4em auto;">
+  {% include "comments/list.html" %}
 {% endblock %}
 
 {% block bodyend %}
-    {{ super() }}
-    {% if REQUIRE_JAX %}
-        {% include "mathjax-load.html" %}
-    {% endif %}
-    {% include "comments/math.html" %}
+  {{ super() }}
+  {% if REQUIRE_JAX %}
+    {% include "mathjax-load.html" %}
+  {% endif %}
+  {% include "comments/math.html" %}
 {% endblock %}

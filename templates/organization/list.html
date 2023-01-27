@@ -1,49 +1,49 @@
 {% extends "two-column-content.html" %}
 
 {% block two_col_media %}
-    <style>
-        .organization-container .organization-row:last-child {
-            border-bottom: none;
-        }
-        
-        .org-logo {
-            vertical-align: middle;
-            height: 2em;
-            width: 2em;
-            display: inline-block;
-            margin-right: 1em;
-            margin-left: 0.5em;
-        }
-        .toggle {
-            cursor: pointer;
-        }
-    </style>
+  <style>
+    .organization-container .organization-row:last-child {
+      border-bottom: none;
+    }
+
+    .org-logo {
+      vertical-align: middle;
+      height: 2em;
+      width: 2em;
+      display: inline-block;
+      margin-right: 1em;
+      margin-left: 0.5em;
+    }
+    .toggle {
+      cursor: pointer;
+    }
+  </style>
 {% endblock %}
 
 {% block title_ruler %}{% endblock %}
 
 {% block left_sidebar %}
-    {% include "user/user-left-sidebar.html" %}
+  {% include "user/user-left-sidebar.html" %}
 {% endblock %}
 
 {% macro org_list(title, queryset) %}
-    {% if queryset %}
-        <h3 style="padding-bottom: 1em" class="toggle open"><i class="fa fa-chevron-right fa-fw"></i> {{title}} ({{queryset.count()}})</h3>
-        <div class="organization-container toggled">
-            {% for org in queryset %}
-                <a href="{{ org.get_absolute_url() }}" class="organization-row" title="{{org.about}}">
-                    <img class="org-logo" data-src="{{ org.logo_override_image or static('icons/icon.png') }}">
-                    <span style="margin-right: auto">{{ org.name }}</span>
-                    <span style="font-weight: normal"><i>{{ org.member_count }} {{_('members')}}</i></span>
-                </a>
-            {% endfor %}
-        </div>
-    {% endif %}
+  {% if queryset %}
+    <h3 style="padding-bottom: 1em" class="toggle open"><i class="fa fa-chevron-right fa-fw"></i> {{title}} ({{queryset.count()}})</h3>
+    <div class="organization-container toggled">
+      {% for org in queryset %}
+        <a href="{{ org.get_absolute_url() }}" class="organization-row" title="{{org.about}}">
+          <img class="org-logo" data-src="{{ org.logo_override_image or static('icons/icon.png') }}">
+          <span style="margin-right: auto">{{ org.name }}</span>
+          <span style="font-weight: normal"><i>{{ org.member_count }} {{_('members')}}</i></span>
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
 {% endmacro %}
 
 {% block middle_content %}
-    <a style="float: right" class="button small" href="{{url('organization_add')}}">{{_("Create group")}}</a>
-    {{ org_list(_('My groups'), my_organizations) }}
-    {{ org_list(_('Open groups'), open_organizations) }}
-    {{ org_list(_('Private groups'), private_organizations) }}
+  <a style="float: right" class="button small" href="{{url('organization_add')}}">{{_("Create group")}}</a>
+  {{ org_list(_('My groups'), my_organizations) }}
+  {{ org_list(_('Open groups'), open_organizations) }}
+  {{ org_list(_('Private groups'), private_organizations) }}
 {% endblock %}

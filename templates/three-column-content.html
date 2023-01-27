@@ -3,129 +3,129 @@
 {% block title_ruler %}{% endblock %}
 
 {% block media %}
-    <style>
-        @media(min-width: 800px) {
-            #content {
-                width: 98%;
-                margin-left: 0;
-            }
-            .middle-right-content {
-                margin-left: 13%;
-                display: inline-flex;
-            }
-        }
-        @media(max-width: 799px) {
-            #content {
-                width: 100%;
-                margin-left: 0;
-            }
-            .middle-right-content {
-                display: block;
-            }
-        }
-    </style>
+  <style>
+    @media(min-width: 800px) {
+      #content {
+        width: 98%;
+        margin-left: 0;
+      }
+      .middle-right-content {
+        margin-left: 13%;
+        display: inline-flex;
+      }
+    }
+    @media(max-width: 799px) {
+      #content {
+        width: 100%;
+        margin-left: 0;
+      }
+      .middle-right-content {
+        display: block;
+      }
+    }
+  </style>
 {% endblock %}
 
 {% block js_media %}
-    <script type="text/javascript">
-        function activateBlogBoxOnClick() {
-            $('.blog-box').on('click', function() {
-                var $description = $(this).children('.blog-description');
-                var max_height = $description.css('max-height');
-                if (max_height !== 'fit-content') {
-                    $description.css('max-height', 'fit-content');
-                    $(this).css('cursor', 'auto');
-                    $(this).removeClass('pre-expand-blog');
-                }
-            })
-            $('.blog-box').each(function() {
-                if ($(this).prop('scrollHeight') > $(this).height() ) {
-                    $(this).addClass('pre-expand-blog');
-                    $(this).css('cursor', 'pointer');
-                }
-            });
+  <script type="text/javascript">
+    function activateBlogBoxOnClick() {
+      $('.blog-box').on('click', function() {
+        var $description = $(this).children('.blog-description');
+        var max_height = $description.css('max-height');
+        if (max_height !== 'fit-content') {
+          $description.css('max-height', 'fit-content');
+          $(this).css('cursor', 'auto');
+          $(this).removeClass('pre-expand-blog');
         }
-
-        function navigateTo($elem, update_sidebar=false) {
-            var url = $elem.attr('data-href') || $elem.attr('href');
-
-            if (url === '#') return;
-            if (update_sidebar) {
-                $('.left-sidebar-item').removeClass('active');
-                $elem.addClass('active');
-            }
-            $('.middle-right-content').html(loading_page);
-            $.get(url, function(data) {
-                var reload_content = $(data).find('.middle-right-content');
-
-                if (reload_content.length) {
-                    window.history.pushState("", "", url);
-                    $('.middle-right-content').html(reload_content.first().html());
-                    $(document).prop('title', $(data).filter('title').text());
-                    MathJax.typeset($('.middle-right-content')[0]);
-                    onWindowReady();
-                    activateBlogBoxOnClick();
-                    $('.xdsoft_datetimepicker').hide();
-                    registerNavigation();
-                }
-                else {
-                    window.location.href = url;
-                }
-            });
+      })
+      $('.blog-box').each(function() {
+        if ($(this).prop('scrollHeight') > $(this).height() ) {
+          $(this).addClass('pre-expand-blog');
+          $(this).css('cursor', 'pointer');
         }
+      });
+    }
 
-        function registerNavigation() {
-            const links = ['.pagination a', '.tabs li a', '.problem-feed-option a'];
-            for (link of links) {
-                $(link).on('click', function(e) {
-                    e.preventDefault();
-                    navigateTo($(this));
-                })
-            }
+    function navigateTo($elem, update_sidebar=false) {
+      var url = $elem.attr('data-href') || $elem.attr('href');
+
+      if (url === '#') return;
+      if (update_sidebar) {
+        $('.left-sidebar-item').removeClass('active');
+        $elem.addClass('active');
+      }
+      $('.middle-right-content').html(loading_page);
+      $.get(url, function(data) {
+        var reload_content = $(data).find('.middle-right-content');
+
+        if (reload_content.length) {
+          window.history.pushState("", "", url);
+          $('.middle-right-content').html(reload_content.first().html());
+          $(document).prop('title', $(data).filter('title').text());
+          MathJax.typeset($('.middle-right-content')[0]);
+          onWindowReady();
+          activateBlogBoxOnClick();
+          $('.xdsoft_datetimepicker').hide();
+          registerNavigation();
         }
+        else {
+          window.location.href = url;
+        }
+      });
+    }
 
-        $(function () {
-            window.addEventListener('popstate', (e) => {
-                window.location.href = e.currentTarget.location.href;
-            });
-            activateBlogBoxOnClick();
+    function registerNavigation() {
+      const links = ['.pagination a', '.tabs li a', '.problem-feed-option a'];
+      for (link of links) {
+        $(link).on('click', function(e) {
+          e.preventDefault();
+          navigateTo($(this));
+        })
+      }
+    }
 
-            $('.left-sidebar-item').on('click', function() {
-                navigateTo($(this), true);
-            });
-            registerNavigation();
-        });
-    </script>
+    $(function () {
+      window.addEventListener('popstate', (e) => {
+        window.location.href = e.currentTarget.location.href;
+      });
+      activateBlogBoxOnClick();
+
+      $('.left-sidebar-item').on('click', function() {
+        navigateTo($(this), true);
+      });
+      registerNavigation();
+    });
+  </script>
 {% endblock %}
 
 {% macro make_tab_item(name, fa, url, text) %}
-    <div class="left-sidebar-item {% if page_type == name %}active{% endif %}" data-href="{{ url }}" id="{{ name }}-tab">
-        <span class="sidebar-icon"><i class="{{ fa }}"></i></span>
-        <span>{{ text }}</span>
-    </div>
+  <div class="left-sidebar-item {% if page_type == name %}active{% endif %}" data-href="{{ url }}" id="{{ name }}-tab">
+    <span class="sidebar-icon"><i class="{{ fa }}"></i></span>
+    <span>{{ text }}</span>
+  </div>
 {% endmacro %}
 
 {% block body %}
-    {% block before_posts %}{% endblock %}
-    <div id="three-col-container">
-        {% block left_sidebar %}{% endblock %}
-        <div class="middle-right-content">
-            {% block three_col_media %}{% endblock %}
-            {% block three_col_js %}{% endblock %}
-            <div class="middle-content">
-                {% block middle_title %}{% endblock %}
-                {% block middle_content %}{% endblock %}
-            </div>
-            {% block right_sidebar %}{% endblock %}
-        </div>
+  {% block before_posts %}{% endblock %}
+  <div id="three-col-container">
+    {% block left_sidebar %}{% endblock %}
+    <div class="middle-right-content">
+      {% block three_col_media %}{% endblock %}
+      {% block three_col_js %}{% endblock %}
+      <div class="middle-content">
+        {% block middle_title %}{% endblock %}
+        {% block middle_content %}{% endblock %}
+      </div>
+      {% block right_sidebar %}{% endblock %}
     </div>
-    {% block after_posts %}{% endblock %}
+  </div>
+  {% block after_posts %}{% endblock %}
 {% endblock %}
 
 {% block bodyend %}
-    {{ super() }}
-    {% if REQUIRE_JAX %}
-        {% include "mathjax-load.html" %}
-    {% endif %}
-    {% include "comments/math.html" %}
+  {{ super() }}
+  {% if REQUIRE_JAX %}
+    {% include "mathjax-load.html" %}
+  {% endif %}
+  {% include "comments/math.html" %}
 {% endblock %}

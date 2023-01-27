@@ -1,14 +1,14 @@
 {% extends "organization/home-base.html" %}
 
 {% block three_col_js %}
-    {{ form.media.js }}
-    {% include "organization/home-js.html" %}
+  {{ form.media.js }}
+  {% include "organization/home-js.html" %}
 {% endblock %}
 
 {% block three_col_media %}
-    {{ form.media.css }}
+  {{ form.media.css }}
 {% endblock %}
 
 {% block middle_content %}
-    {% include "organization/form.html" %}
+  {% include "organization/form.html" %}
 {% endblock %}

@@ -1,212 +1,212 @@
 <script src="//cdn.jsdelivr.net/npm/featherlight@1.7.14/release/featherlight.min.js" type="text/javascript" charset="utf-8"></script>
 <script type="text/javascript">
-    function isFaster(time1, time2) {
-        let arr1 = time1.split(':');
-        let arr2 = time2.split(':');
+  function isFaster(time1, time2) {
+    let arr1 = time1.split(':');
+    let arr2 = time2.split(':');
 
-        for (let i in arr1) {
-            let val1 = parseInt(arr1[i]);   
-            let val2 = parseInt(arr2[i]);
-            if (val1 < val2) return true;
-            if (val1 > val2) return false;
-        }
-        return false;
+    for (let i in arr1) {
+      let val1 = parseInt(arr1[i]);
+      let val2 = parseInt(arr2[i]);
+      if (val1 < val2) return true;
+      if (val1 > val2) return false;
     }
+    return false;
+  }
 
-    function scoretimeComparison(sub1, sub2) {
-        if (!sub2) return true;
-        return sub1['score'] > sub2['score'] || (sub1['score'] === sub2['score'] && isFaster(sub1['time'], sub2['time']));
-    }
+  function scoretimeComparison(sub1, sub2) {
+    if (!sub2) return true;
+    return sub1['score'] > sub2['score'] || (sub1['score'] === sub2['score'] && isFaster(sub1['time'], sub2['time']));
+  }
 
-    function highlightFirstSolve() {
-        // bucket to store submissions by problems
-        let bestSubmissions = {};
+  function highlightFirstSolve() {
+    // bucket to store submissions by problems
+    let bestSubmissions = {};
+
+    // get information
+    $('td a').each(function() {
+      var td = $(this)[0];
+      var link = $(this).attr('data-featherlight');
+      if (link && link.includes('submissions')) {
+        let scoreAndTime = (td.innerText.split('\n'))
+        let linkElements = link.split('/')
 
         // get information
-        $('td a').each(function() {
-            var td = $(this)[0];
-            var link = $(this).attr('data-featherlight');
-            if (link && link.includes('submissions')) {
-                let scoreAndTime = (td.innerText.split('\n'))
-                let linkElements = link.split('/')
+        let problem = linkElements[linkElements.length - 2];
+        let score = parseFloat(scoreAndTime[0].replace(',', '.'));
+        let time = scoreAndTime[1];
 
-                // get information
-                let problem = linkElements[linkElements.length - 2];
-                let score = parseFloat(scoreAndTime[0].replace(',', '.'));
-                let time = scoreAndTime[1];
+        if (time) {
+          let curSubmission = {
+            'td': $(this).parent(),
+            'score': score,
+            'time': time
+          }
 
-                if (time) {
-                    let curSubmission = {
-                        'td': $(this).parent(),
-                        'score': score,
-                        'time': time 
-                    }
+          // update best submissions
+          let curBest = bestSubmissions[problem]
 
-                    // update best submissions
-                    let curBest = bestSubmissions[problem]
-
-                    if (scoretimeComparison(curSubmission, curBest) && score) {
-                        bestSubmissions[problem] = curSubmission;
-                    } 
-                }
-            }
-        })
-        for (let problem in bestSubmissions) {
-            bestSubmissions[problem]['td'].addClass('first-solve')
+          if (scoretimeComparison(curSubmission, curBest) && score) {
+            bestSubmissions[problem] = curSubmission;
+          }
         }
+      }
+    })
+    for (let problem in bestSubmissions) {
+      bestSubmissions[problem]['td'].addClass('first-solve')
+    }
+  }
+
+  function renew_filter(need_update=true) {
+    var checkboxes = [
+      '#show-schools-checkbox',
+      '#show-fullnames-checkbox',
+      '#show-total-score-checkbox',
+    ];
+
+    var checkboxes2 = [
+      '#show-friends-checkbox',
+      '#show-virtual-checkbox'
+    ]
+
+    for (var i of checkboxes) {
+      var $box = $(i);
+      if ($box.is(':checked')) {
+        $box.prop('checked', false);
+        $box.click();
+        $box.prop('checked', true);
+      }
     }
 
-    function renew_filter(need_update=true) {
-        var checkboxes = [
-            '#show-schools-checkbox',
-            '#show-fullnames-checkbox',
-            '#show-total-score-checkbox',
-        ];
-
-        var checkboxes2 = [
-            '#show-friends-checkbox',
-            '#show-virtual-checkbox'
-        ]
-
-        for (var i of checkboxes) {
-            var $box = $(i);
-            if ($box.is(':checked')) {
-                $box.prop('checked', false);
-                $box.click();
-                $box.prop('checked', true);
-            }
-        }
-
-        var to_update = false;
-        for (var i of checkboxes2) {
-            var $box = $(i);
-            if ($box.is(':checked')) {
-                to_update = true;
-            }
-        }
-        if (to_update && need_update) {
-            update_ranking();
-        }
+    var to_update = false;
+    for (var i of checkboxes2) {
+      var $box = $(i);
+      if ($box.is(':checked')) {
+        to_update = true;
+      }
     }
-
-    function get_initial_rank() {
-        var ranks = $('.rank-td').map(function() {return this.innerHTML}).get();
-        var usernames = $('.user-name .rating a').map(function() {return this.text}).get();
-        window.user_rank = new Map();
-        for (var i = 0; i < ranks.length; i++) {
-            window.user_rank[usernames[i]] = ranks[i];
-        }
+    if (to_update && need_update) {
+      update_ranking();
     }
+  }
 
-    function add_initial_friend_rank() {
-        var usernames = $('.user-name .rating a').map(function() {return this.text}).get();
-
-        var is_virtual = [];
-        $('.user-name').each(function() {
-            if($(this).children('sub').length) {
-                is_virtual.push(1);
-            }
-            else is_virtual.push(0);
-        });
-
-        $('.rank-td').each(function(i) {
-            if (!is_virtual[i]) this.innerHTML += ' (' + window.user_rank[usernames[i]] + ')';
-        });
+  function get_initial_rank() {
+    var ranks = $('.rank-td').map(function() {return this.innerHTML}).get();
+    var usernames = $('.user-name .rating a').map(function() {return this.text}).get();
+    window.user_rank = new Map();
+    for (var i = 0; i < ranks.length; i++) {
+      window.user_rank[usernames[i]] = ranks[i];
     }
+  }
 
-    function update_ranking() {
-        var friend = $('#show-friends-checkbox').is(':checked');
-        var virtual = $('#show-virtual-checkbox').is(':checked');
-        $('#loading-gif').show();
-        var url = `{{url('contest_ranking_ajax', contest.key)}}?friend=${friend}&virtual=${virtual}`;
-        {% if page_type == 'final_ranking' %}
-            url += "&final=true";
-        {% endif %}
-        $.get({
-            url: url,
-            success: function(HTML) {
-                $('#users-table').html(HTML);
-                highlightFirstSolve();
-                renew_filter(false);
-                $('#loading-gif').hide();
-                if (!virtual && !friend) {
-                    get_initial_rank();
-                }
-                if (friend) {
-                    add_initial_friend_rank();
-                }
-            },
-            fail: function() {
-                console.log('Fail to update ranking');
-            }
-        });
-    }
+  function add_initial_friend_rank() {
+    var usernames = $('.user-name .rating a').map(function() {return this.text}).get();
 
-    $(function () {
-        $('.leaving-forever').click(function () {
-            return confirm('{{ _('Are you sure you want to leave?') }}\n' +
-                '{{ _('You cannot come back to a virtual participation. You will have to start a new one.') }}');
-        });
-
-        $('.first-join').click(function () {
-            return confirm('{{ _('Are you sure you want to join?') }}\n' +
-                '{{ _('Joining a contest starts your timer, after which it becomes unstoppable.') }}');
-        });
-
-        var url = '{{ url('contest_participation', contest.key, '__username__') }}';
-        var placeholder = $('#search-contest').replaceWith($('<select>').attr({
-            id: 'search-contest'
-        })).attr('placeholder');
-
-        $('#search-contest').select2({
-            placeholder: placeholder,
-            ajax: {
-                url: '{{ url('contest_user_search_select2_ajax', contest.key) }}'
-            },
-            minimumInputLength: 1,
-            escapeMarkup: function (markup) {
-                return markup;
-            },
-            templateResult: function (data, container) {
-                return ('<img class="user-search-image" src="' + data.gravatar_url + '" width="24" height="24">' +
-                    '<span class="' + data.display_rank + ' user-search-name">' + data.text + '</span>');
-            }
-        }).on('change', function () {
-            window.location.href = url.replace('__username__', $(this).val());
-        });
-
-        $('#show-schools-checkbox').click(function () {
-            $('.school').toggle();
-        });
-        $('#show-fullnames-checkbox').click(function () { 
-            $('.fullname').toggle();
-        });
-
-        {% if request.user.is_authenticated %}
-            $('#show-friends-checkbox').click(function() {
-                update_ranking();
-            })
-        {% endif %}
-        $('#show-virtual-checkbox').click(function() {
-            update_ranking();
-        })
-        $('#show-total-score-checkbox').click(function() {
-            $('.problem-score-col').toggle();    
-        })
-
-        highlightFirstSolve();
-        renew_filter();
-        get_initial_rank();
-
-        {% if participation_tab %}
-            $('#show-virtual-checkbox').hide();
-            $('#show-virtual-label').hide();
-        {% else %}
-            {% if request.in_contest %} 
-                clearInterval(window.rankingInterval);
-                window.rankingInterval = setInterval(update_ranking, 60 * 1000);
-            {% endif %}
-        {% endif %}
+    var is_virtual = [];
+    $('.user-name').each(function() {
+      if($(this).children('sub').length) {
+        is_virtual.push(1);
+      }
+      else is_virtual.push(0);
     });
+
+    $('.rank-td').each(function(i) {
+      if (!is_virtual[i]) this.innerHTML += ' (' + window.user_rank[usernames[i]] + ')';
+    });
+  }
+
+  function update_ranking() {
+    var friend = $('#show-friends-checkbox').is(':checked');
+    var virtual = $('#show-virtual-checkbox').is(':checked');
+    $('#loading-gif').show();
+    var url = `{{url('contest_ranking_ajax', contest.key)}}?friend=${friend}&virtual=${virtual}`;
+    {% if page_type == 'final_ranking' %}
+      url += "&final=true";
+    {% endif %}
+    $.get({
+      url: url,
+      success: function(HTML) {
+        $('#users-table').html(HTML);
+        highlightFirstSolve();
+        renew_filter(false);
+        $('#loading-gif').hide();
+        if (!virtual && !friend) {
+          get_initial_rank();
+        }
+        if (friend) {
+          add_initial_friend_rank();
+        }
+      },
+      fail: function() {
+        console.log('Fail to update ranking');
+      }
+    });
+  }
+
+  $(function () {
+    $('.leaving-forever').click(function () {
+      return confirm('{{ _('Are you sure you want to leave?') }}\n' +
+        '{{ _('You cannot come back to a virtual participation. You will have to start a new one.') }}');
+    });
+
+    $('.first-join').click(function () {
+      return confirm('{{ _('Are you sure you want to join?') }}\n' +
+        '{{ _('Joining a contest starts your timer, after which it becomes unstoppable.') }}');
+    });
+
+    var url = '{{ url('contest_participation', contest.key, '__username__') }}';
+    var placeholder = $('#search-contest').replaceWith($('<select>').attr({
+      id: 'search-contest'
+    })).attr('placeholder');
+
+    $('#search-contest').select2({
+      placeholder: placeholder,
+      ajax: {
+        url: '{{ url('contest_user_search_select2_ajax', contest.key) }}'
+      },
+      minimumInputLength: 1,
+      escapeMarkup: function (markup) {
+        return markup;
+      },
+      templateResult: function (data, container) {
+        return ('<img class="user-search-image" src="' + data.gravatar_url + '" width="24" height="24">' +
+          '<span class="' + data.display_rank + ' user-search-name">' + data.text + '</span>');
+      }
+    }).on('change', function () {
+      window.location.href = url.replace('__username__', $(this).val());
+    });
+
+    $('#show-schools-checkbox').click(function () {
+      $('.school').toggle();
+    });
+    $('#show-fullnames-checkbox').click(function () {
+      $('.fullname').toggle();
+    });
+
+    {% if request.user.is_authenticated %}
+      $('#show-friends-checkbox').click(function() {
+        update_ranking();
+      })
+    {% endif %}
+    $('#show-virtual-checkbox').click(function() {
+      update_ranking();
+    })
+    $('#show-total-score-checkbox').click(function() {
+      $('.problem-score-col').toggle();
+    })
+
+    highlightFirstSolve();
+    renew_filter();
+    get_initial_rank();
+
+    {% if participation_tab %}
+      $('#show-virtual-checkbox').hide();
+      $('#show-virtual-label').hide();
+    {% else %}
+      {% if request.in_contest %}
+        clearInterval(window.rankingInterval);
+        window.rankingInterval = setInterval(update_ranking, 60 * 1000);
+      {% endif %}
+    {% endif %}
+  });
 
 </script>

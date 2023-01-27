@@ -1,107 +1,107 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <link rel="stylesheet" href="{{ static('style.css') }}">
     <link rel="stylesheet" href="{{ static('pygment-github.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ static('markdown.css') }}">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="pygment-github.css" type="text/css">
     <link rel="stylesheet" href="markdown.css">
-    
+
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <style>
-        html {
-            background: white;
-        }
+      html {
+        background: white;
+      }
 
-        body {
-            overflow: hidden;
-            page-break-after: always;
-            background: white;
-        }
+      body {
+        overflow: hidden;
+        page-break-after: always;
+        background: white;
+      }
 
-        tr {
-            page-break-inside: avoid;
-        }
+      tr {
+        page-break-inside: avoid;
+      }
 
-        #info-table {
-            width: auto;
-            background: white;
-        }
+      #info-table {
+        width: auto;
+        background: white;
+      }
 
-        #info-table td {
-            text-align: left;
-        }
+      #info-table td {
+        text-align: left;
+      }
 
-        #info-table td.value {
-            min-width: 10em;
-        }
+      #info-table td.value {
+        min-width: 10em;
+      }
 
-        #info-table td.key {
-            font-weight: bold;
-        }
+      #info-table td.key {
+        font-weight: bold;
+      }
 
-        .lang-limit {
-            margin-left: 1.5em;
-        }
+      .lang-limit {
+        margin-left: 1.5em;
+      }
 
-        .lang-name:after {
-            content: ": ";
-        }
+      .lang-name:after {
+        content: ": ";
+      }
 
-        .problem-info-entry {
-            vertical-align: top;
-            float: center;
-            padding: 0.6em;
-            display: inline-block;
-            text-align: left;
-        }
+      .problem-info-entry {
+        vertical-align: top;
+        float: center;
+        padding: 0.6em;
+        display: inline-block;
+        text-align: left;
+      }
     </style>
-</head>
+  </head>
 
-<body>
-<h2 style="color:#393630; display: inline-block;">{{ problem_name }}</h2>
-<hr>
-<div align="center" style="position: relative;">
-    <div class="problem-info-entry">
+  <body>
+    <h2 style="color:#393630; display: inline-block;">{{ problem_name }}</h2>
+    <hr>
+    <div align="center" style="position: relative;">
+      <div class="problem-info-entry">
         <b>{{ _('Input:') }}</b> {{ fileio_input or _('stdin') }}
-    </div>
-    <div class="problem-info-entry">
+      </div>
+      <div class="problem-info-entry">
         <b>{{ _('Output:') }}</b> {{ fileio_output or _('stdout') }}
-    </div>
-    <div class="problem-info-entry">
+      </div>
+      <div class="problem-info-entry">
         <b>{{ _('Time Limit:') }}</b> {{ problem.time_limit }}s
         {% for name, limit in problem.language_time_limit %}
-            <div class="lang-limit">
-                <span class="lang-name">{{ name }}</span>
-                <span>{{ limit }}s</span>
-            </div>
+          <div class="lang-limit">
+            <span class="lang-name">{{ name }}</span>
+            <span>{{ limit }}s</span>
+          </div>
         {% endfor %}
-    </div>
-    <div class="problem-info-entry">
+      </div>
+      <div class="problem-info-entry">
         <b>{{ _('Memory Limit:') }}</b> {{ problem.memory_limit|kbsimpleformat}}
         {% for name, limit in problem.language_memory_limit %}
-            <div class="lang-limit">
-                <span class="lang-name">{{ name }}</span>
-                <span>{{ limit|kbsimpleformat }}</span>
-            </div>
+          <div class="lang-limit">
+            <span class="lang-name">{{ name }}</span>
+            <span>{{ limit|kbsimpleformat }}</span>
+          </div>
         {% endfor %}
+      </div>
     </div>
-</div>
-<hr style="clear: both;">
-<div class="content-description printing">
-    {{ description|markdown|reference|absolutify(url)|str|safe }}
-</div>
+    <hr style="clear: both;">
+    <div class="content-description printing">
+      {{ description|markdown|reference|absolutify(url)|str|safe }}
+    </div>
 
-<script type="text/javascript" src="{{ static('mathjax3_config.js') }}"></script>
-<script type="text/javascript" src="mathjax3_config.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"></script>
-<script type="text/javascript">
-    MathJax.Hub.Register.StartupHook("End", function () {
+    <script type="text/javascript" src="{{ static('mathjax3_config.js') }}"></script>
+    <script type="text/javascript" src="mathjax3_config.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"></script>
+    <script type="text/javascript">
+      MathJax.Hub.Register.StartupHook("End", function () {
         if (typeof window.callPhantom === 'function')
-            window.callPhantom({'action': 'snapshot'});
+        window.callPhantom({'action': 'snapshot'});
         document.body.classList.add('math-loaded');
-    });
-</script>
-</body>
+      });
+    </script>
+  </body>
 </html>

@@ -1,115 +1,115 @@
 {% extends "three-column-content.html" %}
 {% block three_col_media %}
-    {% include "blog/media-css.html" %}
-    {% include "actionbar/media-css.html" %}
-    <style>
-        @media (max-width: 799px) {
-            .title {
-                clear: both;
-            }
-        }
-        .time {
-            margin-left: 0;
-        }
+  {% include "blog/media-css.html" %}
+  {% include "actionbar/media-css.html" %}
+  <style>
+    @media (max-width: 799px) {
+      .title {
+        clear: both;
+      }
+    }
+    .time {
+      margin-left: 0;
+    }
 
-        .no-clarifications-message {
-            font-style: italic;
-            text-align: center;
-        }
-    </style>
+    .no-clarifications-message {
+      font-style: italic;
+      text-align: center;
+    }
+  </style>
 {% endblock %}
 
 {% block three_col_js %}
-    {% include "actionbar/media-js.html" %}
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $('.time-remaining').each(function () {
-                count_down($(this));
-            });
+  {% include "actionbar/media-js.html" %}
+  <script type="text/javascript">
+    $(document).ready(function () {
+      $('.time-remaining').each(function () {
+        count_down($(this));
+      });
 
-            $('.right-sidebar').hide();
-            $('#event-tab').click(function (e) {
-                e.preventDefault();
-                $('.left-sidebar-item').removeClass('active');
-                $('#event-tab').addClass('active');
-                $('.middle-content').hide();
-                $('.right-sidebar').show();
-            });
-        });
-    </script>
+      $('.right-sidebar').hide();
+      $('#event-tab').click(function (e) {
+        e.preventDefault();
+        $('.left-sidebar-item').removeClass('active');
+        $('#event-tab').addClass('active');
+        $('.middle-content').hide();
+        $('.right-sidebar').show();
+      });
+    });
+  </script>
 {% endblock %}
 
 {% block left_sidebar %}
-    <div class="left-sidebar">
-        {{ make_tab_item('blog', 'fa fa-rss', url('home'), _('News')) }}
-        {{ make_tab_item('comment', 'fa fa-comments', url('comment_feed'), _('Comments')) }}
-        {{ make_tab_item('ticket', 'fa fa-question-circle', url('ticket_feed'), _('Tickets')) }}
-        {{ make_tab_item('event', 'fa fa-calendar', '#', _('Events')) }}
-    </div>
+  <div class="left-sidebar">
+    {{ make_tab_item('blog', 'fa fa-rss', url('home'), _('News')) }}
+    {{ make_tab_item('comment', 'fa fa-comments', url('comment_feed'), _('Comments')) }}
+    {{ make_tab_item('ticket', 'fa fa-question-circle', url('ticket_feed'), _('Tickets')) }}
+    {{ make_tab_item('event', 'fa fa-calendar', '#', _('Events')) }}
+  </div>
 {% endblock %}
 
 {% block middle_content %}
-    {% set show_organization_private_icon=True %}
-    {% if page_type == 'blog' %}
-        {% for post in posts %}
-            {% include "blog/content.html" %}
-        {% endfor %}
-    {% elif page_type == 'ticket' %}
-        {% if tickets %}
-            {% for ticket in tickets %}
-                {% include "ticket/feed.html" %}
-            {% endfor %}
-        {% else %}
-            <h3 style="text-align: center">{{_('You have no ticket')}}</h3>
-        {% endif %}
-    {% elif page_type == 'comment' %}
-        {% for comment in comments %}
-            {% include "comments/feed.html" %}
-        {% endfor %}
+  {% set show_organization_private_icon=True %}
+  {% if page_type == 'blog' %}
+    {% for post in posts %}
+      {% include "blog/content.html" %}
+    {% endfor %}
+  {% elif page_type == 'ticket' %}
+    {% if tickets %}
+      {% for ticket in tickets %}
+        {% include "ticket/feed.html" %}
+      {% endfor %}
+    {% else %}
+      <h3 style="text-align: center">{{_('You have no ticket')}}</h3>
     {% endif %}
-    {% if page_obj.num_pages > 1 %}
-        <div style="margin-bottom:10px;margin-top:10px">{% include "list-pages.html" %}</div>
-    {% endif %}
+  {% elif page_type == 'comment' %}
+    {% for comment in comments %}
+      {% include "comments/feed.html" %}
+    {% endfor %}
+  {% endif %}
+  {% if page_obj.num_pages > 1 %}
+    <div style="margin-bottom:10px;margin-top:10px">{% include "list-pages.html" %}</div>
+  {% endif %}
 {% endblock %}
 
 {% block right_sidebar %}
-    <div class="right-sidebar">
-        {% if request.in_contest_mode and request.participation.contest.use_clarifications %}
-            <div class="blog-sidebox sidebox">
-                <h3>{{ _('Clarifications') }}
-                    <i class="fa fa-question-circle"></i>
-                    {% if can_edit_contest %}
-                        <a href="{{url('new_contest_clarification', request.participation.contest.key)}}" 
-                           class="fa fa-plus-circle" 
-                           id="add-clarification"
-                           title="{{_('Add')}}"
-                           style="color: lightcyan">
-                        </a>
-                    {% endif %}
-                </h3>
-                <div class="sidebox-content">
-                    {% if has_clarifications %}
-                        <ul>
-                            {% for clarification in clarifications %}
-                                <li class="clarification">
-                                    <a href="{{ url('problem_detail', clarification.problem.problem.code) }}"
-                                       class="problem">
-                                        {{ clarification.problem.problem.name }}
-                                    </a>
-                                    <span class="time">{{ relative_time(clarification.date) }}</span>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="no-clarifications-message">
-                            {{ _('No clarifications have been made at this time.') }}
-                        </p>
-                    {% endif %}
-                </div>
-            </div>
-        {% endif %}
-        {% include 'contests-countdown.html' %}
-        {% include 'recent-organization.html' %}
-        {% include 'top-users.html' %}
-    </div>
+  <div class="right-sidebar">
+    {% if request.in_contest_mode and request.participation.contest.use_clarifications %}
+      <div class="blog-sidebox sidebox">
+        <h3>{{ _('Clarifications') }}
+          <i class="fa fa-question-circle"></i>
+          {% if can_edit_contest %}
+            <a href="{{url('new_contest_clarification', request.participation.contest.key)}}"
+              class="fa fa-plus-circle"
+              id="add-clarification"
+              title="{{_('Add')}}"
+              style="color: lightcyan">
+            </a>
+          {% endif %}
+        </h3>
+        <div class="sidebox-content">
+          {% if has_clarifications %}
+            <ul>
+              {% for clarification in clarifications %}
+                <li class="clarification">
+                  <a href="{{ url('problem_detail', clarification.problem.problem.code) }}"
+                    class="problem">
+                    {{ clarification.problem.problem.name }}
+                  </a>
+                  <span class="time">{{ relative_time(clarification.date) }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="no-clarifications-message">
+              {{ _('No clarifications have been made at this time.') }}
+            </p>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+    {% include 'contests-countdown.html' %}
+    {% include 'recent-organization.html' %}
+    {% include 'top-users.html' %}
+  </div>
 {% endblock %}

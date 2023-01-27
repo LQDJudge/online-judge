@@ -1,23 +1,23 @@
 <script type="text/javascript">
-    $(function () {
-        $('.time-remaining').each(function () {
-            count_down($(this));
-        });
-        $('.leave-organization').click(function () {
-            if (confirm('{{ _('Are you sure you want to leave this organization?') }}\n' +
-                {% if organization.is_open %}
-                    '{{ _('You will have to rejoin to show up on the organization leaderboard.') }}'
-                {% else %}
-                    '{{ _('You will have to request membership in order to join again.') }}'
-                {% endif %}
-            )) {
-                $(this).parent().submit();
-            }
-        });
-
-        $('#control-panel a').on('click', function(e) {
-            e.preventDefault();
-            navigateTo($(this));
-        })
+  $(function () {
+    $('.time-remaining').each(function () {
+      count_down($(this));
     });
+    $('.leave-organization').click(function () {
+      if (confirm('{{ _('Are you sure you want to leave this organization?') }}\n' +
+        {% if organization.is_open %}
+          '{{ _('You will have to rejoin to show up on the organization leaderboard.') }}'
+        {% else %}
+          '{{ _('You will have to request membership in order to join again.') }}'
+        {% endif %}
+      )) {
+        $(this).parent().submit();
+      }
+    });
+
+    $('#control-panel a').on('click', function(e) {
+      e.preventDefault();
+      navigateTo($(this));
+    })
+  });
 </script>
