@@ -134,10 +134,7 @@
                 {% if node.score <= vote_hide_threshold %}
                   <div class="comment-body bad-comment-body">
                     <p>
-                      {% trans id=node.id %}
-                        This comment is hidden due to too much negative feedback.
-                        Click <a href="javascript:comment_show_content({{ id }})">here</a> to view it.
-                      {% endtrans %}
+                      {% trans id=node.id %}This comment is hidden due to too much negative feedback. Click <a href="javascript:comment_show_content({{ id }})">here</a> to view it.{% endtrans %}
                     </p>
                   </div>
                 {% endif %}

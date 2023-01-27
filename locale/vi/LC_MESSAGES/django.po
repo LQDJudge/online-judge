@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-01-28 06:23+0700\n"
+"POT-Creation-Date: 2023-01-28 06:34+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -546,15 +546,15 @@ msgstr "{time}"
 msgid "on {time}"
 msgstr "vào {time}"
 
-#: judge/middleware.py:114
+#: judge/middleware.py:115
 msgid "No permission"
 msgstr "Không có quyền truy cập"
 
-#: judge/middleware.py:115
+#: judge/middleware.py:116
 msgid "You need to join this group first"
 msgstr "Bạn phải là thành viên của nhóm."
 
-#: judge/middleware.py:125 judge/middleware.py:126
+#: judge/middleware.py:126 judge/middleware.py:127
 msgid "No such group"
 msgstr "Nhóm không tồn tại"
 
@@ -3816,34 +3816,18 @@ msgid "Hide"
 msgstr "Ẩn"
 
 #: templates/comments/list.html:137
-#, fuzzy, python-format
-#| msgid ""
-#| "\n"
-#| "                                                This comment is hidden "
-#| "due to too much negative feedback.\n"
-#| "                                                Click <a href="
-#| "\"javascript:comment_show_content(%(id)s)\">here</a> to view it.\n"
-#| "                                            "
 msgid ""
-"\n"
-"                        This comment is hidden due to too much negative "
-"feedback.\n"
-"                        Click <a href=\"javascript:"
-"comment_show_content(%(id)s)\">here</a> to view it.\n"
-"                      "
+"This comment is hidden due to too much negative feedback. Click <a href="
+"\"javascript:comment_show_content(%(id)s)\">here</a> to view it."
 msgstr ""
-"\n"
-"                                                Bình luận bị ẩn vì có quá "
-"nhiều phản hồi tiêu cực.\n"
-"                                                Nhấn vào <a href="
-"\"javascript:comment_show_content(%(id)s)\">đây</a> để xem.\n"
-"                                            "
+"Bình luận bị ẩn vì nhiều phản hồi tiêu cực. Nhấp vào <a href="
+"\"javascript:comment_show_content(%(id)s)\">đây</a> để mở."
 
-#: templates/comments/list.html:157
+#: templates/comments/list.html:154
 msgid "There are no comments at the moment."
 msgstr "Không có bình luận nào."
 
-#: templates/comments/list.html:162
+#: templates/comments/list.html:159
 msgid "Comments are disabled on this page."
 msgstr "Bình luận bị tắt trong trang này."
 
