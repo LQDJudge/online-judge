@@ -18,7 +18,9 @@
       </h2>
       {% if is_member %}
         <div>
-          <a href="{{organization_subdomain}}" target="_blank">(Subdomain)</a>
+          <a href="{{organization_subdomain}}" target="_blank">
+            {{_('Subdomain')}}
+          </a>
         </div>
       {% endif %}
       <span class="spacer"></span>
