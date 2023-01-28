@@ -238,6 +238,10 @@ def hot_problems(duration, limit):
 def get_related_problems(profile, problem, limit=8):
     if not profile or not settings.ML_OUTPUT_PATH:
         return None
+    cache_key = "related_problems:%d:%d" % (profile.id, problem.id)
+    qs = cache.get(cache_key)
+    if qs is not None:
+        return qs
     problemset = Problem.get_visible_problems(profile.user).values_list("id", flat=True)
     problemset = problemset.exclude(id__in=user_completed_ids(profile))
     problemset = problemset.exclude(id=problem.id)
@@ -249,4 +253,6 @@ def get_related_problems(profile, problem, limit=8):
     seed = datetime.now().strftime("%d%m%Y")
     random.Random(seed).shuffle(results)
     results = results[:limit]
-    return [Problem.objects.get(id=i) for i in results]
+    results = [Problem.objects.get(id=i) for i in results]
+    cache.set(cache_key, results, 21600)
+    return results
