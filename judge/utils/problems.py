@@ -1,6 +1,8 @@
 from collections import defaultdict
 from math import e
 import os, zipfile
+from datetime import datetime
+import random
 
 from django.conf import settings
 from django.core.cache import cache
@@ -10,6 +12,8 @@ from django.utils import timezone
 from django.utils.translation import gettext as _, gettext_noop
 
 from judge.models import Problem, Submission
+from judge.ml.collab_filter import CollabFilter
+
 
 __all__ = [
     "contest_completed_ids",
@@ -229,3 +233,20 @@ def hot_problems(duration, limit):
 
         cache.set(cache_key, qs, 900)
     return qs
+
+
+def get_related_problems(profile, problem, limit=8):
+    if not profile:
+        return None
+    problemset = Problem.get_visible_problems(profile.user).values_list("id", flat=True)
+    problemset = problemset.exclude(id__in=user_completed_ids(profile))
+    problemset = problemset.exclude(id=problem.id)
+    cf_model = CollabFilter("collab_filter")
+    results = cf_model.problem_neighbors(
+        problem, problemset, CollabFilter.DOT, limit
+    ) + cf_model.problem_neighbors(problem, problemset, CollabFilter.COSINE, limit)
+    results = list(set([i[1] for i in results]))
+    seed = datetime.now().strftime("%d%m%Y")
+    random.Random(seed).shuffle(results)
+    results = results[:limit]
+    return [Problem.objects.get(id=i) for i in results]

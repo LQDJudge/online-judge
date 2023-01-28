@@ -76,6 +76,7 @@ from judge.utils.problems import (
     hot_problems,
     user_attempted_ids,
     user_completed_ids,
+    get_related_problems,
 )
 from judge.utils.strings import safe_float_or_none, safe_int_or_none
 from judge.utils.tickets import own_ticket_filter
@@ -352,6 +353,10 @@ class ProblemDetail(
         else:
             context["fileio_input"] = None
             context["fileio_output"] = None
+        if not self.in_contest:
+            context["related_problems"] = get_related_problems(
+                self.profile, self.object
+            )
 
         return context
 

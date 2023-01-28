@@ -73,13 +73,9 @@
         $('#clarification_header_container').hide();
         window.scrollTo(0, document.body.scrollHeight);
       })
-      $('#comment-announcement').on('click', function() {
-        $('#comment-section').show();
-        $('#comment-announcement').hide();
-      })
 
       if (window.location.href.includes('#comment')) {
-        $('#comment-announcement').click();
+        $('#comment-section').show();
       }
 
       {% if not available_judges %}
@@ -380,17 +376,6 @@
       <br>
     {%- endif -%}
   {% endif %}
-  {% if not (contest_problem and contest_problem.contest.use_clarifications) %}
-    <div id="comment-announcement-container">
-      <div id="comment-announcement">
-        {% if has_comments %}
-          {{_('View comments')}} ({{comment_list.count()}})
-        {% else %}
-          {{_('Be the first to comment')}}
-        {% endif %}
-      </div>
-    </div>
-  {% endif %}
 {% endblock %}
 
 {% block comments %}
@@ -415,6 +400,7 @@
       {% include "comments/list.html" %}
     </div>
   {% endif %}
+  {% include "problem/related_problems.html" %}
   <iframe name="raw_problem" id="raw_problem"></iframe>
 {% endblock %}
 

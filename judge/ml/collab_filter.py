@@ -65,7 +65,7 @@ class CollabFilter:
         return res
 
     # return a list of pid
-    def problems_neighbors(self, problem, problemset, measure=DOT, limit=None):
+    def problem_neighbors(self, problem, problemset, measure=DOT, limit=None):
         pid = problem.id
         if pid >= len(self.problem_embeddings):
             return None
@@ -74,7 +74,7 @@ class CollabFilter:
         )
         res = []
         for p in problemset:
-            if p.id < len(scores):
-                res.append((scores[p.id], p))
+            if p < len(scores):
+                res.append((scores[p], p))
         res.sort(reverse=True, key=lambda x: x[0])
         return res[:limit]

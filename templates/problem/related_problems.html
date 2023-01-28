@@ -1,0 +1,19 @@
+{% if related_problems %}
+  <div class="content-description">
+    <h4>{{_('Recommended problems')}}:</h4>
+    <ul style="list-style-type: none; margin: 0.3em;">
+      {% for problem in related_problems %}
+        <li>
+          {% if problem.id in completed_problem_ids %}
+            <i class="solved-problem-color fa fa-check-circle"></i>
+          {% elif problem.id in attempted_problems %}
+            <i class="attempted-problem-color fa fa-minus-circle"></i>
+          {% else %}
+            <i class="unsolved-problem-color fa fa-minus-circle"></i>
+          {% endif %}
+          <a href="{{url('problem_detail', problem.code)}}">{{ problem.name }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
