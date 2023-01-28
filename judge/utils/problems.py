@@ -236,7 +236,7 @@ def hot_problems(duration, limit):
 
 
 def get_related_problems(profile, problem, limit=8):
-    if not profile:
+    if not profile or not settings.ML_OUTPUT_PATH:
         return None
     problemset = Problem.get_visible_problems(profile.user).values_list("id", flat=True)
     problemset = problemset.exclude(id__in=user_completed_ids(profile))
