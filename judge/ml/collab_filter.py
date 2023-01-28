@@ -68,7 +68,7 @@ class CollabFilter:
     def problem_neighbors(self, problem, problemset, measure=DOT, limit=None):
         pid = problem.id
         if pid >= len(self.problem_embeddings):
-            return None
+            return []
         scores = self.compute_scores(
             self.problem_embeddings[pid], self.problem_embeddings, measure
         )
