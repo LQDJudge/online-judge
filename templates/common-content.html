@@ -6,7 +6,6 @@
 
 {% block js_media %}
   {% compress js %}
-    <script src="{{ static('libs/clipboard/clipboard.js') }}"></script>
     <script type="text/javascript">
       $(function () {
         var info_float = $('.info-float');
@@ -23,6 +22,7 @@
           }
         }
 
+        // TODO: remove this
         var copyButton;
         $('pre code').each(function () {
           $(this).parent().before($('<div>', {'class': 'copy-clipboard'})
