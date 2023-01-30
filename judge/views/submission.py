@@ -266,7 +266,7 @@ class SubmissionStatus(SubmissionDetailBase):
         can_see_testcases = self.access_testcases_in_contest()
 
         if contest is not None:
-            prefix_length = contest.problem.output_prefix_override
+            prefix_length = contest.problem.output_prefix_override or 0
 
         if contest is None or prefix_length > 0 or can_see_testcases:
             context["cases_data"] = get_cases_data(submission)
