@@ -469,6 +469,9 @@ MESSAGES_TO_LOAD = 15
 
 ML_OUTPUT_PATH = None
 
+# Use subdomain for organizations
+USE_SUBDOMAIN = False
+
 try:
     with open(os.path.join(os.path.dirname(__file__), "local_settings.py")) as f:
         exec(f.read(), globals())

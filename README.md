@@ -90,6 +90,8 @@ celery -A dmoj_celery worker
 node websocket/daemon.js
 ```
 
+7. To use subdomain for each organization, go to admin page -> navigation bar -> sites, add domain name (e.g, "localhost:8000"). Then go to add `USE_SUBDOMAIN = True` to local_settings.py.
+
 ## Deploy
 Most of the steps are similar to Django tutorials. Here are two usual steps:
 

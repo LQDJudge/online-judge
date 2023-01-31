@@ -95,10 +95,13 @@ class SubdomainMiddleware(object):
         self.get_response = get_response
 
     def __call__(self, request):
+        request.organization = None
+        if not settings.USE_SUBDOMAIN:
+            return self.get_response(request)
+
         domain = request.get_host()
         site = get_current_site(request).domain
         subdomain = domain[: len(domain) - len(site)]
-        request.organization = None
         if len(subdomain) > 1:
             subdomain = subdomain[:-1]
             try:
