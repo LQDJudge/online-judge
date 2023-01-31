@@ -8,51 +8,180 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0147_alter_profile_timezone'),
+        ("judge", "0147_alter_profile_timezone"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Course',
+            name="Course",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=128, verbose_name='course name')),
-                ('about', models.TextField(verbose_name='organization description')),
-                ('ending_time', models.DateTimeField(verbose_name='ending time')),
-                ('is_public', models.BooleanField(default=False, verbose_name='publicly visible')),
-                ('slug', models.SlugField(help_text='Course name shown in URL', max_length=128, unique=True, validators=[django.core.validators.RegexValidator('^[-a-zA-Z0-9]+$', 'Only alphanumeric and hyphens')], verbose_name='course slug')),
-                ('is_open', models.BooleanField(default=False, verbose_name='public registration')),
-                ('image_url', models.CharField(blank=True, default='', max_length=150, verbose_name='course image')),
-                ('organizations', models.ManyToManyField(blank=True, help_text='If private, only these organizations may see the course', to='judge.Organization', verbose_name='organizations')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=128, verbose_name="course name")),
+                ("about", models.TextField(verbose_name="organization description")),
+                ("ending_time", models.DateTimeField(verbose_name="ending time")),
+                (
+                    "is_public",
+                    models.BooleanField(default=False, verbose_name="publicly visible"),
+                ),
+                (
+                    "slug",
+                    models.SlugField(
+                        help_text="Course name shown in URL",
+                        max_length=128,
+                        unique=True,
+                        validators=[
+                            django.core.validators.RegexValidator(
+                                "^[-a-zA-Z0-9]+$", "Only alphanumeric and hyphens"
+                            )
+                        ],
+                        verbose_name="course slug",
+                    ),
+                ),
+                (
+                    "is_open",
+                    models.BooleanField(
+                        default=False, verbose_name="public registration"
+                    ),
+                ),
+                (
+                    "image_url",
+                    models.CharField(
+                        blank=True,
+                        default="",
+                        max_length=150,
+                        verbose_name="course image",
+                    ),
+                ),
+                (
+                    "organizations",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="If private, only these organizations may see the course",
+                        to="judge.Organization",
+                        verbose_name="organizations",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='CourseRole',
+            name="CourseRole",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('role', models.CharField(choices=[('ST', 'Student'), ('AS', 'Assistant'), ('TE', 'Teacher')], default='ST', max_length=2)),
-                ('course', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='judge.course', verbose_name='course')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='user_of_course', to='judge.profile', verbose_name='user')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "role",
+                    models.CharField(
+                        choices=[
+                            ("ST", "Student"),
+                            ("AS", "Assistant"),
+                            ("TE", "Teacher"),
+                        ],
+                        default="ST",
+                        max_length=2,
+                    ),
+                ),
+                (
+                    "course",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="judge.course",
+                        verbose_name="course",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="user_of_course",
+                        to="judge.profile",
+                        verbose_name="user",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='CourseResource',
+            name="CourseResource",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('files', models.FileField(blank=True, null=True, upload_to='', verbose_name='course files')),
-                ('description', models.CharField(blank=True, max_length=150, verbose_name='description')),
-                ('order', models.IntegerField(default=None, null=True)),
-                ('is_public', models.BooleanField(default=False, verbose_name='publicly visible')),
-                ('course', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='judge.course', verbose_name='course')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "files",
+                    models.FileField(
+                        blank=True, null=True, upload_to="", verbose_name="course files"
+                    ),
+                ),
+                (
+                    "description",
+                    models.CharField(
+                        blank=True, max_length=150, verbose_name="description"
+                    ),
+                ),
+                ("order", models.IntegerField(default=None, null=True)),
+                (
+                    "is_public",
+                    models.BooleanField(default=False, verbose_name="publicly visible"),
+                ),
+                (
+                    "course",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="judge.course",
+                        verbose_name="course",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='CourseAssignment',
+            name="CourseAssignment",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('points', models.FloatField(verbose_name='points')),
-                ('contest', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='judge.contest', verbose_name='contest')),
-                ('course', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='judge.course', verbose_name='course')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("points", models.FloatField(verbose_name="points")),
+                (
+                    "contest",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="judge.contest",
+                        verbose_name="contest",
+                    ),
+                ),
+                (
+                    "course",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="judge.course",
+                        verbose_name="course",
+                    ),
+                ),
             ],
         ),
     ]
