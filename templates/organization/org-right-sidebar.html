@@ -56,7 +56,7 @@
             </div>
           </li>
         {% endif %}
-        {% if is_member and not can_edit %}
+        {% if is_member and not is_admin %}
           <li>
             <form method="post" action="{{ url('leave_organization', organization.id, organization.slug) }}">
               {% csrf_token %}

@@ -109,6 +109,13 @@ class OrganizationBase(object):
             self.request.profile in org if self.request.user.is_authenticated else False
         )
 
+    def is_admin(self, org=None):
+        if org is None:
+            org = self.object
+        if self.request.profile:
+            return org.admins.filter(id=self.request.profile.id).exists()
+        return False
+
     def can_access(self, org):
         if self.request.user.is_superuser:
             return True
@@ -121,6 +128,7 @@ class OrganizationMixin(OrganizationBase):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["is_member"] = self.is_member(self.organization)
+        context["is_admin"] = self.is_admin(self.organization)
         context["can_edit"] = self.can_edit_organization(self.organization)
         context["organization"] = self.organization
         context["logo_override_image"] = self.organization.logo_override_image
