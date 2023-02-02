@@ -365,22 +365,27 @@ class ProblemAdmin(CompareVersionAdmin):
         obj.is_organization_private = obj.organizations.count() > 0
         obj.save()
         # Create notification
-        if "is_public" in form.changed_data:
+        if "is_public" in form.changed_data or "organizations" in form.changed_data:
             users = set(obj.authors.all())
             users = users.union(users, set(obj.curators.all()))
+            orgs = []
             if obj.organizations.count() > 0:
                 for org in obj.organizations.all():
                     users = users.union(users, set(org.admins.all()))
+                    orgs.append(org.name)
             else:
                 admins = Profile.objects.filter(user__is_superuser=True).all()
                 users = users.union(users, admins)
             link = reverse_lazy("admin:judge_problem_change", args=(obj.id,))
             html = f'<a href="{link}">{obj.name}</a>'
+            category = "Problem public: " + str(obj.is_public)
+            if orgs:
+                category += " (" + ", ".join(orgs) + ")"
             for user in users:
                 notification = Notification(
                     owner=user,
                     html_link=html,
-                    category="Problem public: " + str(obj.is_public),
+                    category=category,
                     author=request.profile,
                 )
                 notification.save()
