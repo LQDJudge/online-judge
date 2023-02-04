@@ -10,6 +10,9 @@ from judge.models import Organization
 from judge.utils.views import generic_message
 
 
+USED_DOMAINS = ["www"]
+
+
 class ShortCircuitMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -101,33 +104,37 @@ class SubdomainMiddleware(object):
 
         domain = request.get_host()
         site = get_current_site(request).domain
-        subdomain = domain[: len(domain) - len(site)]
-        if len(subdomain) > 1:
-            subdomain = subdomain[:-1]
-            try:
-                organization = Organization.objects.get(slug=subdomain)
-                if (
-                    request.profile
-                    and organization in request.profile.organizations.all()
-                ):
-                    request.organization = organization
-                else:
-                    if request.profile:
-                        return generic_message(
-                            request,
-                            _("No permission"),
-                            _("You need to join this group first"),
-                            status=404,
-                        )
-                    if not request.GET.get("next", None):
-                        return HttpResponseRedirect(
-                            reverse("auth_login") + "?next=" + urlquote(request.path)
-                        )
-            except ObjectDoesNotExist:
-                return generic_message(
-                    request,
-                    _("No such group"),
-                    _("No such group"),
-                    status=404,
-                )
+        subdomain = domain[: len(domain) - len(site)].lower()
+
+        if len(subdomain) <= 1:
+            return self.get_response(request)
+
+        subdomain = subdomain[:-1]
+
+        if subdomain in USED_DOMAINS:
+            return self.get_response(request)
+
+        try:
+            organization = Organization.objects.get(slug=subdomain)
+            if request.profile and organization in request.profile.organizations.all():
+                request.organization = organization
+            else:
+                if request.profile:
+                    return generic_message(
+                        request,
+                        _("No permission"),
+                        _("You need to join this group first"),
+                        status=404,
+                    )
+                if not request.GET.get("next", None):
+                    return HttpResponseRedirect(
+                        reverse("auth_login") + "?next=" + urlquote(request.path)
+                    )
+        except ObjectDoesNotExist:
+            return generic_message(
+                request,
+                _("No such group"),
+                _("No such group"),
+                status=404,
+            )
         return self.get_response(request)
