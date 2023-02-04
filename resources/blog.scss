@@ -32,7 +32,8 @@
     }
 }
 
-.blog-sidebar, .right-sidebar {
+.blog-sidebar,
+.right-sidebar {
     width: 100%;
     margin-left: auto;
 }
@@ -41,6 +42,7 @@
     color: green;
     font-weight: bold;
     background-color: lightgreen;
+
     .sidebar-icon {
         color: green;
     }
@@ -157,17 +159,21 @@
     padding-bottom: 1em;
     clear: both;
 }
+
 .problem-feed-name {
     display: inline;
     font-weight: bold;
 }
+
 .problem-feed-name a {
     color: #0645ad;
 }
+
 .problem-feed-info-entry {
     display: inline;
     float: right;
 }
+
 .problem-feed-types {
     color: gray;
 }
@@ -175,24 +181,30 @@
 .left-sidebar-item {
     display: flex;
     align-items: center;
+
     .sidebar-icon {
         font-size: large;
         display: inline-block;
+
         i {
             width: 1.4em;
         }
     }
 }
+
 .left-sidebar-item:hover {
     background-color: #e3e3e3;
     cursor: pointer;
 }
+
 .left-sidebar-item.active:hover {
     background-color: lightgreen;
 }
+
 .sidebar-icon {
     color: black;
 }
+
 .left-sidebar-header {
     text-align: center;
     padding-bottom: 1em;
@@ -200,13 +212,27 @@
     color: black;
     border-radius: 0;
 }
+
 .feed-table {
     margin: 0;
 }
+
 .pre-expand-blog {
-    background-image: -webkit-linear-gradient(bottom, gray, lightgray 3%, transparent 8%, transparent 100%);
+    position: relative;
     padding-bottom: 0;
 }
+
+.pre-expand-blog::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    content: "";
+    background-image: -webkit-linear-gradient(bottom, gray, lightgray 3%, transparent 8%, transparent 100%);
+    border-radius: 8px;
+}
+
 .pre-expand-blog:hover {
     background-color: #f3f3f3;
 }
@@ -224,35 +250,43 @@
     .left-sidebar-header {
         display: none;
     }
+
     .left-sidebar-item {
         padding: 0.8em 0.2em 0.8em 0.2em;
         display: inline-block;
         flex: 1;
         border-radius: 8px;
-        
+
         .sidebar-icon {
             display: none;
         }
     }
+
     .left-sidebar {
         text-align: center;
         margin-bottom: 1em;
         border-radius: 7px;
         display: flex;
     }
+
     .blog-box {
         padding-left: 5%;
         padding-right: 5%;
     }
+
     .post-title {
         font-size: 2em;
     }
 }
+
 @media (min-width: 800px) {
     .left-sidebar-item {
         padding: 0.8em 0.2em 0.8em 1em;
     }
-    .middle-content, .blog-sidebar, .right-sidebar {
+
+    .middle-content,
+    .blog-sidebar,
+    .right-sidebar {
         display: block !important;
     }
 
@@ -274,7 +308,8 @@
         width: -webkit-fill-available;
     }
 
-    .blog-sidebar, .right-sidebar {
+    .blog-sidebar,
+    .right-sidebar {
         width: 25%;
     }
 
