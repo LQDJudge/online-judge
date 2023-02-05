@@ -402,6 +402,9 @@ msgstr ""
 msgid "monotonic-queue"
 msgstr ""
 
+msgid "mst"
+msgstr ""
+
 msgid "multiplicative"
 msgstr ""
 
@@ -553,6 +556,9 @@ msgid "topo-sort"
 msgstr ""
 
 msgid "tortoise-hare"
+msgstr ""
+
+msgid "Training"
 msgstr ""
 
 msgid "treap/splay"

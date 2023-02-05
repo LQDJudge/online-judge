@@ -1938,16 +1938,11 @@ noscript #noscript {
     border-bottom-color: rgb(140, 130, 115);
     color: rgb(232, 230, 227);
 }
-.pre-expand-blog::before {
-    background-image: -webkit-linear-gradient(bottom,
-    rgb(96, 104, 108),
-    rgb(49, 53, 55) 3%,
-    rgba(0, 0, 0, 0) 8%,
-    rgba(0, 0, 0, 0) 100%);
+.show-more {
+    color: white;
+    background: linear-gradient(rgba(24, 26, 27, 0) 1%, rgb(31, 33, 35) 95%, rgb(31, 33, 35) 100%);
 }
-.pre-expand-blog:hover {
-    background-color: rgb(31, 33, 35);
-}
+
 @media (min-width: 800px) {
     .blog-box {
         border-left-color: rgb(60, 65, 68);

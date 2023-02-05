@@ -32,21 +32,20 @@
 {% block js_media %}
 <script type="text/javascript">
   function activateBlogBoxOnClick() {
-    $('.blog-box').on('click', function () {
-      var $description = $(this).children('.blog-description');
+    $('.show-more').on('click', function () {
+      var $description = $(this).parent().children('.blog-description');
       var max_height = $description.css('max-height');
       if (max_height !== 'fit-content') {
         $description.css('max-height', 'fit-content');
-        $(this).css('cursor', 'auto');
-        $(this).removeClass('pre-expand-blog');
-        $(this).find('.actionbar').show();
+        $(this).parent().css('cursor', 'auto');
+        $(this).parent().removeClass('pre-expand-blog');
+        console.log($(this).parent());
+        $(this).hide();
       }
     })
     $('.blog-box').each(function () {
       if ($(this).prop('scrollHeight') > $(this).height()) {
         $(this).addClass('pre-expand-blog');
-        $(this).css('cursor', 'pointer');
-        $(this).find('.actionbar').hide();
       }
     });
   }
