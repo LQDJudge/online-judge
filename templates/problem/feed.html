@@ -138,7 +138,7 @@
     {% set pagevote = problem.pagevote %}
     {% set bookmark = problem.bookmark %}
     {% set hide_actionbar_comment = True %}
-    {% set include_hr = True %}
+    {% set include_hr = False %}
     {% set share_url = request.build_absolute_uri(problem.get_absolute_url()) %}
     {% include "actionbar/list.html" %}
   </div>
