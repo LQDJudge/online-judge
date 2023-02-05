@@ -152,6 +152,10 @@
     }
 }
 
+.blog-box:hover {
+    border-color: #8a8a8a;
+}
+
 .blog-description {
     max-height: 30em;
     overflow: hidden;
@@ -230,8 +234,8 @@
     padding: 0px 12px;
     margin-top: 5px;
     position: absolute;
-    inset: 50% 0px 60px;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 1%, #f3f3f3 95%, #f3f3f3 100%);
+    inset: 50% 0px 52px;
+    background: linear-gradient(transparent, white);
     display: flex;
     -webkit-box-pack: end;
     justify-content: flex-end;

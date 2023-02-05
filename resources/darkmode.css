@@ -1940,7 +1940,7 @@ noscript #noscript {
 }
 .show-more {
     color: white;
-    background: linear-gradient(rgba(24, 26, 27, 0) 1%, rgb(31, 33, 35) 95%, rgb(31, 33, 35) 100%);
+    background: linear-gradient(rgba(0, 0, 0, 0), rgb(24, 26, 27));
 }
 
 @media (min-width: 800px) {
