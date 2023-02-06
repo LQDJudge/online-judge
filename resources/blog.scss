@@ -228,6 +228,7 @@
 }
 
 .show-more {
+    display: flex;
     color: black;
     font-style: italic;
     font-size: 16px;
@@ -237,7 +238,6 @@
     position: absolute;
     inset: 50% 0px 0px;
     background: linear-gradient(transparent, white);
-    display: flex;
     -webkit-box-pack: end;
     justify-content: flex-end;
     align-items: flex-end;

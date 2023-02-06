@@ -42,10 +42,18 @@
         $blogbox.removeClass('pre-expand-blog');
         $(this).hide();
       }
-    })
+    });
+
     $('.blog-box').each(function () {
-      if ($(this).prop('scrollHeight') > $(this).height()) {
+      var $precontent = $(this).children('.blog-description').height();
+      var $content = $(this).children().children('.content-description').height();
+      if ($content == undefined) {
+        $content = $(this).children().children('.md-typeset').height()
+      }
+      if ($content > $precontent - 30) {
         $(this).addClass('pre-expand-blog');
+      } else {
+        $(this).children().children('.show-more').hide();
       }
     });
   }
