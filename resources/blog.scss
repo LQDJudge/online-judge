@@ -162,6 +162,7 @@
     overflow-wrap: anywhere;
     padding-bottom: 1em;
     clear: both;
+    position: relative;
 }
 
 .problem-feed-name {
@@ -234,7 +235,7 @@
     padding: 0px 12px;
     margin-top: 5px;
     position: absolute;
-    inset: 50% 0px 52px;
+    inset: 50% 0px 0px;
     background: linear-gradient(transparent, white);
     display: flex;
     -webkit-box-pack: end;

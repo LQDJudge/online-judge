@@ -42,8 +42,8 @@
       {{ post.summary|default(post.content, true)|markdown(lazy_load=True)|reference|str|safe }}
       {% endcache %}
     </div>
+    <div class="show-more"> {{_("...More")}} </div>
   </div>
-  <div class="show-more"> {{_("...More")}} </div>
   <div class="actionbar-box">
     {% set pagevote = post.pagevote %}
     {% set bookmark = post.bookmark %}
