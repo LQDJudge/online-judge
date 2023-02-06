@@ -14,5 +14,6 @@
   {% endwith %}
   <div class='blog-description content-description'>
     {{ comment.body|markdown(lazy_load=True)|reference|str|safe }}
+    <div class="show-more"></div>
   </div>
 </div>
