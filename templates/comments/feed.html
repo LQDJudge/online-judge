@@ -5,15 +5,15 @@
     </a>
   </h3>
   {% with author=comment.author %}
-    {% if author %}
-      <div class="problem-feed-info-entry">
-        <i class="fa fa-pencil-square-o fa-fw"></i>
-        <span class="pi-value">{{ link_user(author) }}</span>
-      </div>
-    {% endif %}
+  {% if author %}
+  <div class="problem-feed-info-entry">
+    <i class="fa fa-pencil-square-o fa-fw"></i>
+    <span class="pi-value">{{ link_user(author) }}</span>
+  </div>
+  {% endif %}
   {% endwith %}
   <div class='blog-description content-description'>
     {{ comment.body|markdown(lazy_load=True)|reference|str|safe }}
-    <div class="show-more"></div>
+    <div class="show-more"> {{_("...More")}} </div>
   </div>
 </div>
