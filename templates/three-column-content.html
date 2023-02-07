@@ -32,15 +32,14 @@
 {% block js_media %}
 <script type="text/javascript">
   function activateBlogBoxOnClick() {
-    $('.show-more').on('click', function () {
-      var $blogbox = $(this).parent().parent();
-      var $description = $blogbox.children('.blog-description');
+    $('.blog-box').on('click', function () {
+      var $description = $(this).children('.blog-description');
       var max_height = $description.css('max-height');
       if (max_height !== 'fit-content') {
         $description.css('max-height', 'fit-content');
-        $blogbox.css('cursor', 'auto');
-        $blogbox.removeClass('pre-expand-blog');
-        $(this).hide();
+        $(this).css('cursor', 'auto');
+        $(this).removeClass('pre-expand-blog');
+        $(this).children().children('.show-more').hide();
       }
     });
 
@@ -52,6 +51,7 @@
       }
       if ($content > $precontent - 30) {
         $(this).addClass('pre-expand-blog');
+        $(this).css('cursor', 'pointer');
       } else {
         $(this).children().children('.show-more').hide();
       }
