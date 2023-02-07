@@ -259,6 +259,10 @@
 
 
 @media (max-width: 799px) {
+    .actionbar-box {
+        margin: 8px 0;
+    }
+
     .left-sidebar-header {
         display: none;
     }
@@ -284,6 +288,7 @@
     .blog-box {
         padding-left: 5%;
         padding-right: 5%;
+        margin-bottom: 0;
     }
 
     .post-title {

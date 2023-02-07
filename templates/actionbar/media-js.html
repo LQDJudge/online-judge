@@ -37,7 +37,8 @@
         });
       }
 
-      window.bookmark = function(id) {
+      window.bookmark = function(id, e) {
+        e.stopPropagation();
         var $bookmark = $('#bookmark-button-' + id);
         if ($bookmark.hasClass('bookmarked')) {
           ajax_bookmark('{{ url('undobookmark') }}', id, function () {
@@ -61,7 +62,8 @@
         };
       };
 
-      window.pagevote_upvote = function (id) {
+      window.pagevote_upvote = function (id, e) {
+        e.stopPropagation();
         var $votes = get_$votes(id);
         if ($votes.upvote.hasClass('voted')) {
           ajax_vote('{{ url('pagevote_downvote') }}', id, -1, function () {
@@ -83,7 +85,8 @@
         }
       };
 
-      window.pagevote_downvote = function (id) {
+      window.pagevote_downvote = function (id, e) {
+        e.stopPropagation();
         var $votes = get_$votes(id);
         if ($votes.downvote.hasClass('voted')) {
           ajax_vote('{{ url('pagevote_upvote') }}', id, 1, function () {
@@ -104,7 +107,8 @@
           }
         }
       };
-      $(".actionbar-share").click( function() {
+      $(".actionbar-share").click(function(e) {
+        e.stopPropagation();
         link = $(this).attr("share-url") || window.location.href;
         navigator.clipboard
           .writeText(link)
