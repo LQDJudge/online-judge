@@ -39,6 +39,7 @@ from judge.models import (
     Submission,
     Ticket,
     VolunteerProblemVote,
+    Course,
 )
 
 
@@ -64,3 +65,4 @@ admin.site.register(Profile, ProfileAdmin)
 admin.site.register(Submission, SubmissionAdmin)
 admin.site.register(Ticket, TicketAdmin)
 admin.site.register(VolunteerProblemVote, VolunteerProblemVoteAdmin)
+admin.site.register(Course)
