@@ -257,6 +257,12 @@
     }
 }
 
+.middle-right-content.wrapper {
+    padding: 1em 0;
+    background: white;
+    border-radius: 1em;
+}
+
 
 @media (max-width: 799px) {
     .actionbar-box {
@@ -332,14 +338,15 @@
 
     .left-sidebar {
         width: 11%;
+        max-width: 11%;
+        min-width: 11%;
         position: fixed;
         height: 100%;
         margin-top: -4em;
         padding-top: 4em;
-    }
-
-    .left-sidebar-item {
-        border-radius: 0 0.5em 0.5em 0;
+        border-right: 1px solid lightgray;
+        box-shadow: 0px -10px 2px 0px rgb(0 0 0 / 50%);
+        background: white;
     }
 
     .feed-table {

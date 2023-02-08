@@ -36,7 +36,7 @@ img {
 }
 
 * {
-  -webkit-tap-highlight-color: transparent;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .full {
@@ -327,7 +327,7 @@ nav {
                     a {
                         color: black !important;
                     }
-                    
+
                     a, button {
                         padding: 8px 20px 8px 8px !important;
                         font-size: 0.8em;
@@ -377,7 +377,7 @@ hr {
 }
 
 #content {
-    margin: 4.5em auto 1em auto;
+    margin: 3.2em auto 1em auto;
 
     // Header
     width: 90%;
@@ -388,6 +388,12 @@ hr {
     .title {
         color: #393630;
     }
+}
+
+#content.wrapper {
+    background: white;
+    padding: 2em;
+    border-radius: 1em;
 }
 
 footer {
@@ -558,7 +564,7 @@ noscript #noscript {
     margin: 0 auto;
     border-right: 1px solid $border_gray;
     border-left: 1px solid $border_gray;
-    background: white;
+    background: #f1f2f2;
 }
 
 // border-bottom: 1px solid rgb(204, 204, 204)

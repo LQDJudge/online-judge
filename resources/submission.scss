@@ -5,7 +5,7 @@
 }
 
 #submissions-table {
-    background: rgba(0, 0, 0, .01);
+    background: white;
 }
 
 .submission-row {
@@ -212,8 +212,8 @@ label[for="language"], label[for="status"] {
     }
 
     // .batch-cases .case-row td b {
-    //     font-weight: 500;
-    // }
+        //     font-weight: 500;
+        // }
 
     .case-info {
         margin: 0;
@@ -252,7 +252,7 @@ label[for="language"], label[for="status"] {
         td {
             padding: 0.6em 0.8em;
             width: 18.75%;
-            
+
         }
 
         .case-row td:nth-child(2) {
@@ -288,7 +288,7 @@ label[for="language"], label[for="status"] {
 }
 
 .overall-result-WA {
-    background: linear-gradient(45deg, yellow, red);   
+    background: linear-gradient(45deg, yellow, red);
 }
 
 .overall-result-TLE {

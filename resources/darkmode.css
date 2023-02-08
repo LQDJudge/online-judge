@@ -1622,6 +1622,10 @@ hr {
 #content .title {
     color: rgb(199, 194, 187);
 }
+#content.wrapper {
+    background-image: initial;
+    background-color: rgb(24, 26, 27);
+}
 footer {
     border-top-color: rgb(62, 68, 70);
     background-image: initial;
@@ -1687,7 +1691,7 @@ noscript #noscript {
     border-right-color: rgb(62, 68, 70);
     border-left-color: rgb(62, 68, 70);
     background-image: initial;
-    background-color: rgb(24, 26, 27);
+    background-color: rgb(32, 34, 36);
 }
 .MathJax:focus {
     outline-color: initial;
@@ -1802,6 +1806,10 @@ noscript #noscript {
 .table.striped tr:nth-child(2n) {
     background-image: initial;
     background-color: rgb(29, 31, 32);
+}
+.table.striped tr:nth-child(2n+1) {
+    background-image: initial;
+    background-color: rgb(24, 26, 27);
 }
 .table td:first-child {
     border-color: rgb(62, 68, 70);
@@ -1919,6 +1927,9 @@ noscript #noscript {
     border-top-color: rgb(60, 65, 68);
     background-color: rgb(24, 26, 27);
 }
+.blog-box:hover {
+    border-color: rgb(81, 88, 91);
+}
 .problem-feed-name a {
     color: rgb(102, 177, 250);
 }
@@ -1939,11 +1950,22 @@ noscript #noscript {
     color: rgb(232, 230, 227);
 }
 .show-more {
-    color: white;
-    background: linear-gradient(rgba(0, 0, 0, 0), rgb(24, 26, 27));
+    color: rgb(232, 230, 227);
+    background-image: linear-gradient(rgba(0, 0, 0, 0),
+    rgb(24, 26, 27));
+    background-color: initial;
 }
-
+.middle-right-content.wrapper {
+    background-image: initial;
+    background-color: rgb(24, 26, 27);
+}
 @media (min-width: 800px) {
+    .left-sidebar {
+        border-right-color: rgb(60, 65, 68);
+        box-shadow: rgba(0, 0, 0, 0.5) 0px -10px 2px 0px;
+        background-image: initial;
+        background-color: rgb(24, 26, 27);
+    }
     .blog-box {
         border-left-color: rgb(60, 65, 68);
         border-right-color: rgb(60, 65, 68);
@@ -2570,6 +2592,8 @@ a.close:hover {
     border-bottom-color: rgb(62, 68, 70);
     border-left-color: rgb(62, 68, 70);
     border-top-color: initial;
+    background-image: initial;
+    background-color: rgb(24, 26, 27);
 }
 .sidebox-content.sidebox-table {
     border-color: initial;
@@ -2732,7 +2756,7 @@ a.voted {
 }
 #submissions-table {
     background-image: initial;
-    background-color: rgba(0, 0, 0, 0.01);
+    background-color: rgb(24, 26, 27);
 }
 .submission-row {
     border-left-color: rgb(62, 68, 70);
@@ -2970,6 +2994,10 @@ a.voted {
     background-image: initial;
     background-color: rgba(204, 0, 0, 0.8);
     color: rgb(232, 230, 227);
+}
+.chat {
+    background-image: initial;
+    background-color: rgb(24, 26, 27);
 }
 #emoji-button {
     color: rgb(204, 200, 193);

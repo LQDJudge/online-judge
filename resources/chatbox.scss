@@ -1,3 +1,6 @@
+.chat {
+    background: white;
+}
 #chat-log p {
     margin: 0;
     padding-top: 0.1em;
@@ -101,7 +104,7 @@
     margin-bottom: 1.5px;
 }
 .info-circle {
-    position: absolute; 
+    position: absolute;
     cx: 86%;
     cy: 80%;
     r: 6px;
@@ -146,8 +149,8 @@
     display: inline-flex;
 }
 .status-circle {
-    position: absolute; 
-    bottom: 0; 
+    position: absolute;
+    bottom: 0;
     right: 0;
     cx: 18px;
     cy: 18px;
