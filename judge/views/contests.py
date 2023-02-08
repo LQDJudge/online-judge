@@ -1097,9 +1097,8 @@ class ContestFinalRanking(LoginRequiredMixin, ContestRanking):
     def get_ranking_list(self):
         if not self.object.is_editable_by(self.request.user):
             raise Http404()
-        if self.object.format.has_hidden_subtasks:
+        if not self.object.format.has_hidden_subtasks:
             raise Http404()
-
         return get_contest_ranking_list(self.request, self.object, show_final=True)
 
 

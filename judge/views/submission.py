@@ -783,7 +783,6 @@ class AllSubmissions(SubmissionsListBase):
 
     def get_context_data(self, **kwargs):
         context = super(AllSubmissions, self).get_context_data(**kwargs)
-        print(self.request.organization)
         context["dynamic_update"] = (
             context["page_obj"].number == 1
         ) and not self.request.organization
