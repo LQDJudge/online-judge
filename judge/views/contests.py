@@ -149,6 +149,9 @@ class ContestList(
     def get(self, request, *args, **kwargs):
         self.contest_query = None
         self.org_query = []
+        self.show_orgs = 0
+        if request.GET.get("show_orgs"):
+            self.show_orgs = 1
 
         if "orgs" in self.request.GET and self.request.profile:
             try:
@@ -182,6 +185,8 @@ class ContestList(
                 )
         if not self.org_query and self.request.organization:
             self.org_query = [self.request.organization.id]
+        if self.show_orgs:
+            queryset = queryset.filter(organizations=None)
         if self.org_query:
             queryset = queryset.filter(organizations__in=self.org_query)
 
@@ -228,6 +233,7 @@ class ContestList(
         context["first_page_href"] = "."
         context["contest_query"] = self.contest_query
         context["org_query"] = self.org_query
+        context["show_orgs"] = int(self.show_orgs)
         if self.request.profile:
             if self.request.user.is_superuser:
                 context["organizations"] = Organization.objects.all()
