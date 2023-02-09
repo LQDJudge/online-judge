@@ -149,16 +149,20 @@ class ContestList(
     def get(self, request, *args, **kwargs):
         self.contest_query = None
         self.org_query = []
+        self.show_orgs = 0
+        if request.GET.get("show_orgs"):
+            self.show_orgs = 1
 
         if "orgs" in self.request.GET and self.request.profile:
             try:
                 self.org_query = list(map(int, request.GET.getlist("orgs")))
-                self.org_query = [
-                    i
-                    for i in self.org_query
-                    if i
-                    in self.request.profile.organizations.values_list("id", flat=True)
-                ]
+                if not self.request.user.is_superuser:
+                    self.org_query = [
+                        i
+                        for i in self.org_query
+                        if i
+                        in self.request.profile.organizations.values_list("id", flat=True)
+                    ]
             except ValueError:
                 pass
 
@@ -181,6 +185,8 @@ class ContestList(
                 )
         if not self.org_query and self.request.organization:
             self.org_query = [self.request.organization.id]
+        if self.show_orgs:
+            queryset = queryset.filter(organizations=None)
         if self.org_query:
             queryset = queryset.filter(organizations__in=self.org_query)
 
@@ -227,8 +233,12 @@ class ContestList(
         context["first_page_href"] = "."
         context["contest_query"] = self.contest_query
         context["org_query"] = self.org_query
+        context["show_orgs"] = int(self.show_orgs)
         if self.request.profile:
-            context["organizations"] = self.request.profile.organizations.all()
+            if self.request.user.is_superuser:
+                context["organizations"] = Organization.objects.all()
+            else:
+                context["organizations"] = self.request.profile.organizations.all()
         context["page_type"] = "list"
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())

@@ -18,6 +18,10 @@
       padding-bottom: 1em;
     }
 
+    #show-btn {
+      margin-top: 0.5em;
+    }
+
     {% if page_obj and page_obj.number > 1%}
       #ongoing-table {
         display: none;
@@ -71,6 +75,10 @@
   <script src="{{ static('libs/featherlight/featherlight.min.js') }}" type="text/javascript"></script>
   <script type="text/javascript">
     $(document).ready(function () {
+      var $form = $('form#filter-form');
+      $('input#show_orgs').click(function () {
+        $form.submit();
+      });
       $('.time-remaining').each(function () {
         count_down($(this));
       });
@@ -215,6 +223,10 @@
         </select>
       {% endif %}
       <button id="search-btn" class="btn-green small"> {{ _('Search')}} </button>
+      {% if organizations %}
+        <input id="show_orgs" type="checkbox" name="show_orgs" value="1" {% if show_orgs %}checked{% endif %}>
+        <label for="show_orgs">{{ _('Hide organization contests') }}</label>
+      {% endif %}
       {% if create_url %}
         <a href="{{create_url}}" class="button small" style="float: right"><i class="fa fa-plus"></i> {{ _('Create')}}</a>
       {% endif %}
