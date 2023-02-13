@@ -1,3 +1,6 @@
+import time
+import logging
+
 from django.conf import settings
 from django.http import HttpResponseRedirect, Http404
 from django.urls import Resolver404, resolve, reverse
@@ -138,3 +141,24 @@ class SubdomainMiddleware(object):
                 status=404,
             )
         return self.get_response(request)
+
+
+class SlowRequestMiddleware(object):
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        logger = logging.getLogger("judge.slow_request")
+        start_time = time.time()
+        response = self.get_response(request)
+        response_time = time.time() - start_time
+        if response_time > 9:
+            message = {
+                "message": "Slow request",
+                "path": request.path,
+                "response_time": response_time * 1000,
+                "method": request.method,
+                "profile": request.profile,
+            }
+            logger.info(message)
+        return response

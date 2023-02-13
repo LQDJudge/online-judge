@@ -247,6 +247,7 @@ INSTALLED_APPS += (
 )
 
 MIDDLEWARE = (
+    "judge.middleware.SlowRequestMiddleware",
     "judge.middleware.ShortCircuitMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
