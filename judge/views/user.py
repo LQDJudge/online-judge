@@ -449,8 +449,8 @@ class UserList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ListView):
     filter_friend = False
 
     def filter_friend_queryset(self, queryset):
-        friends = list(self.request.profile.get_friends())
-        ret = queryset.filter(user__username__in=friends)
+        friends = self.request.profile.get_friends()
+        ret = queryset.filter(id__in=friends)
         return ret
 
     def get_queryset(self):

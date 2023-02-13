@@ -333,14 +333,12 @@ class Profile(models.Model):
     def css_class(self):
         return self.get_user_css_class(self.display_rank, self.rating)
 
-    def get_friends(self):  # list of usernames, including you
-        friend_obj = self.following_users.all()
-        ret = set()
-
+    def get_friends(self):  # list of ids, including you
+        friend_obj = self.following_users.prefetch_related("users")
+        ret = []
         if friend_obj:
-            ret = set(friend.username for friend in friend_obj[0].users.all())
-
-        ret.add(self.username)
+            ret = [friend.id for friend in friend_obj[0].users.all()]
+        ret.append(self.id)
         return ret
 
     def can_edit_organization(self, org):
@@ -395,7 +393,9 @@ class OrganizationRequest(models.Model):
 class Friend(models.Model):
     users = models.ManyToManyField(Profile)
     current_user = models.ForeignKey(
-        Profile, related_name="following_users", on_delete=CASCADE
+        Profile,
+        related_name="following_users",
+        on_delete=CASCADE,
     )
 
     @classmethod

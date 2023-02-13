@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-02-09 10:57+0700\n"
+"POT-Creation-Date: 2023-02-13 09:44+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -3261,7 +3261,7 @@ msgstr "Bài nộp của %(user)s cho bài %(problem)s"
 msgid "All submissions"
 msgstr "Tất cả bài nộp"
 
-#: judge/views/submission.py:571
+#: judge/views/submission.py:571 judge/views/submission.py:576
 msgid "All my submissions"
 msgstr "Tất cả bài nộp của tôi"
 
@@ -3269,6 +3269,10 @@ msgstr "Tất cả bài nộp của tôi"
 #, python-format
 msgid "All submissions by %s"
 msgstr "Tất cả bài nộp của %s"
+
+#: judge/views/submission.py:578
+msgid "All submissions by <a href=\"{1}\">{0}</a>"
+msgstr "Tất cả bài nộp của <a href=\"{1}\">{0}</a>"
 
 #: judge/views/submission.py:617
 #, python-format

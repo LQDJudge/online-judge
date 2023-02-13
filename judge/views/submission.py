@@ -439,6 +439,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     def get_my_submissions_page(self):
         return None
 
+    def get_friend_submissions_page(self):
+        return None
+
     def get_all_submissions_page(self):
         return reverse("all_submissions")
 
@@ -503,6 +506,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         )
         context["first_page_href"] = (self.first_page_href or ".") + suffix
         context["my_submissions_link"] = self.get_my_submissions_page()
+        context["friend_submissions_link"] = self.get_friend_submissions_page()
         context["all_submissions_link"] = self.get_all_submissions_page()
         context["page_type"] = self.page_type
 
@@ -558,7 +562,21 @@ class ConditionalUserTabMixin(object):
         return context
 
 
-class AllUserSubmissions(ConditionalUserTabMixin, UserMixin, SubmissionsListBase):
+class GeneralSubmissions(SubmissionsListBase):
+    def get_my_submissions_page(self):
+        if self.request.user.is_authenticated:
+            return reverse(
+                "all_user_submissions", kwargs={"user": self.request.user.username}
+            )
+        return None
+
+    def get_friend_submissions_page(self):
+        if self.request.user.is_authenticated:
+            return reverse("all_friend_submissions")
+        return None
+
+
+class AllUserSubmissions(ConditionalUserTabMixin, UserMixin, GeneralSubmissions):
     def _get_queryset(self):
         return (
             super(AllUserSubmissions, self)
@@ -573,24 +591,37 @@ class AllUserSubmissions(ConditionalUserTabMixin, UserMixin, SubmissionsListBase
 
     def get_content_title(self):
         if self.request.user.is_authenticated and self.request.profile == self.profile:
-            return format_html("All my submissions")
+            return format_html(_("All my submissions"))
         return format_html(
-            'All submissions by <a href="{1}">{0}</a>',
+            _('All submissions by <a href="{1}">{0}</a>'),
             self.username,
             reverse("user_page", args=[self.username]),
         )
-
-    def get_my_submissions_page(self):
-        if self.request.user.is_authenticated:
-            return reverse(
-                "all_user_submissions", kwargs={"user": self.request.user.username}
-            )
 
     def get_context_data(self, **kwargs):
         context = super(AllUserSubmissions, self).get_context_data(**kwargs)
         context["dynamic_update"] = context["page_obj"].number == 1
         context["dynamic_user_id"] = self.profile.id
         context["last_msg"] = event.last()
+        return context
+
+
+class AllFriendSubmissions(LoginRequiredMixin, GeneralSubmissions):
+    def _get_queryset(self):
+        friends = self.request.profile.get_friends()
+        return (
+            super(AllFriendSubmissions, self)
+            ._get_queryset()
+            .filter(user_id__in=friends)
+        )
+
+    def get_title(self):
+        return _("All friend submissions")
+
+    def get_context_data(self, **kwargs):
+        context = super(AllFriendSubmissions, self).get_context_data(**kwargs)
+        context["dynamic_update"] = False
+        context["page_type"] = "friend_tab"
         return context
 
 
@@ -772,14 +803,8 @@ def single_submission_query(request):
     return single_submission(request, int(request.GET["id"]), bool(show_problem))
 
 
-class AllSubmissions(SubmissionsListBase):
+class AllSubmissions(GeneralSubmissions):
     stats_update_interval = 3600
-
-    def get_my_submissions_page(self):
-        if self.request.user.is_authenticated:
-            return reverse(
-                "all_user_submissions", kwargs={"user": self.request.user.username}
-            )
 
     def get_context_data(self, **kwargs):
         context = super(AllSubmissions, self).get_context_data(**kwargs)

@@ -388,6 +388,9 @@
     {% if page_type == 'user_submissions_tab' %}
       {{ make_tab_item('user_submissions_tab', 'fa fa-user', None, _("%(user)s", user=tab_username)) }}
     {% endif %}
+    {% if friend_submissions_link %}
+      {{ make_tab_item('friend_tab', 'fa fa-user', friend_submissions_link, _('Friends')) }}
+    {% endif %}
     {% if perms.judge.change_submission %}
       {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_submission_changelist'), _('Admin')) }}
     {% endif %}

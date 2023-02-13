@@ -161,7 +161,9 @@ class ContestList(
                         i
                         for i in self.org_query
                         if i
-                        in self.request.profile.organizations.values_list("id", flat=True)
+                        in self.request.profile.organizations.values_list(
+                            "id", flat=True
+                        )
                     ]
             except ValueError:
                 pass
@@ -1024,8 +1026,8 @@ def contest_ranking_ajax(request, contest, participation=None):
 
     queryset = contest.users.filter(virtual__gte=0)
     if request.GET.get("friend") == "true" and request.profile:
-        friends = list(request.profile.get_friends())
-        queryset = queryset.filter(user__user__username__in=friends)
+        friends = request.profile.get_friends()
+        queryset = queryset.filter(user_id__in=friends)
     if request.GET.get("virtual") != "true":
         queryset = queryset.filter(virtual=0)
 

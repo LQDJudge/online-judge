@@ -370,6 +370,10 @@ urlpatterns = [
         paged_list_view(submission.AllUserSubmissions, "all_user_submissions"),
     ),
     url(
+        r"^submissions/friends/",
+        paged_list_view(submission.AllFriendSubmissions, "all_friend_submissions"),
+    ),
+    url(
         r"^src/(?P<submission>\d+)/raw$",
         submission.SubmissionSourceRaw.as_view(),
         name="submission_source_raw",
@@ -487,7 +491,7 @@ urlpatterns = [
         ),
     ),
     url(r"^contests/", paged_list_view(contests.ContestList, "contest_list")),
-    url(r"^course/", paged_list_view(course.CourseList, "course_list" )),
+    url(r"^course/", paged_list_view(course.CourseList, "course_list")),
     url(
         r"^contests/(?P<year>\d+)/(?P<month>\d+)/$",
         contests.ContestCalendar.as_view(),
