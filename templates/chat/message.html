@@ -21,7 +21,7 @@
           </a>
         {% endif %}
         <div class="message-text message-text-other">
-          {{message.body|markdown(lazy_load=True)|reference|str|safe }}
+          {{message.body|markdown(lazy_load=False)|reference|str|safe }}
         </div>
       </div>
     </span>
