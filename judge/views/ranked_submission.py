@@ -7,7 +7,7 @@ from judge.utils.problems import get_result_data
 from judge.utils.raw_sql import join_sql_subquery
 from judge.views.submission import ForceContestMixin, ProblemSubmissions
 
-__all__ = ["RankedSubmissions", "ContestRankedSubmission"]
+__all__ = ["RankedSubmissions"]
 
 
 class RankedSubmissions(ProblemSubmissions):
@@ -78,41 +78,4 @@ class RankedSubmissions(ProblemSubmissions):
     def _get_result_data(self):
         return get_result_data(
             super(RankedSubmissions, self)._get_queryset().order_by()
-        )
-
-
-class ContestRankedSubmission(ForceContestMixin, RankedSubmissions):
-    def get_title(self):
-        if self.problem.is_accessible_by(self.request.user):
-            return _("Best solutions for %(problem)s in %(contest)s") % {
-                "problem": self.problem_name,
-                "contest": self.contest.name,
-            }
-        return _("Best solutions for problem %(number)s in %(contest)s") % {
-            "number": self.get_problem_number(self.problem),
-            "contest": self.contest.name,
-        }
-
-    def get_content_title(self):
-        if self.problem.is_accessible_by(self.request.user):
-            return format_html(
-                _('Best solutions for <a href="{1}">{0}</a> in <a href="{3}">{2}</a>'),
-                self.problem_name,
-                reverse("problem_detail", args=[self.problem.code]),
-                self.contest.name,
-                reverse("contest_view", args=[self.contest.key]),
-            )
-        return format_html(
-            _('Best solutions for problem {0} in <a href="{2}">{1}</a>'),
-            self.get_problem_number(self.problem),
-            self.contest.name,
-            reverse("contest_view", args=[self.contest.key]),
-        )
-
-    def _get_result_data(self):
-        return get_result_data(
-            Submission.objects.filter(
-                problem_id=self.problem.id,
-                contest__participation__contest_id=self.contest.id,
-            )
         )

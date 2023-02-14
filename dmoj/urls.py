@@ -543,13 +543,6 @@ urlpatterns = [
                 url(r"^/leave$", contests.ContestLeave.as_view(), name="contest_leave"),
                 url(r"^/stats$", contests.ContestStats.as_view(), name="contest_stats"),
                 url(
-                    r"^/rank/(?P<problem>\w+)/",
-                    paged_list_view(
-                        ranked_submission.ContestRankedSubmission,
-                        "contest_ranked_submissions",
-                    ),
-                ),
-                url(
                     r"^/submissions/(?P<user>\w+)/(?P<problem>\w+)",
                     paged_list_view(
                         submission.UserContestSubmissions, "contest_user_submissions"
