@@ -263,6 +263,7 @@ class EditOrganizationContestForm(ModelForm):
             "curators",
             "testers",
             "time_limit",
+            "freeze_after",
             "use_clarifications",
             "hide_problem_tags",
             "scoreboard_visibility",
