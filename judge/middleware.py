@@ -155,7 +155,7 @@ class SlowRequestMiddleware(object):
         if response_time > 9:
             message = {
                 "message": "Slow request",
-                "path": request.path,
+                "url": request.build_absolute_uri(),
                 "response_time": response_time * 1000,
                 "method": request.method,
                 "profile": request.profile,
