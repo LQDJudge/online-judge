@@ -404,10 +404,11 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                 language__in=Language.objects.filter(key__in=self.selected_languages)
             )
         if self.selected_statuses:
-            queryset = queryset.filter(
-                Q(result__in=self.selected_statuses)
-                | Q(status__in=self.selected_statuses)
-            )
+            submission_results = [i for i, _ in Submission.RESULT]
+            if self.selected_statuses[0] in submission_results:
+                queryset = queryset.filter(result__in=self.selected_statuses)
+            else:
+                queryset = queryset.filter(status__in=self.selected_statuses)
 
         return queryset
 
@@ -521,8 +522,8 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         if check is not None:
             return check
 
-        self.selected_languages = set(request.GET.getlist("language"))
-        self.selected_statuses = set(request.GET.getlist("status"))
+        self.selected_languages = request.GET.getlist("language")
+        self.selected_statuses = request.GET.getlist("status")
 
         if self.in_contest and self.contest.is_editable_by(self.request.user):
             self.include_frozen = True
@@ -816,15 +817,14 @@ class AllSubmissions(GeneralSubmissions):
         return context
 
     def _get_result_data(self):
-        if (
-            self.request.organization
-            or self.in_contest
-            or self.selected_languages
-            or self.selected_statuses
-        ):
+        if self.request.organization or self.in_contest:
             return super(AllSubmissions, self)._get_result_data()
 
         key = "global_submission_result_data"
+        if self.selected_statuses:
+            key += ":" + ",".join(self.selected_statuses)
+        if self.selected_languages:
+            key += ":" + ",".join(self.selected_languages)
         result = cache.get(key)
         if result:
             return result
