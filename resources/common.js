@@ -362,7 +362,6 @@ function onWindowReady() {
 
     var copyButton;
     $('pre code').each(function () {
-        console.log($(this));
         $(this).parent().before($('<div>', {'class': 'copy-clipboard'})
                 .append(copyButton = $('<span>', {
                 'class': 'btn-clipboard',
