@@ -828,7 +828,16 @@ class AllSubmissions(GeneralSubmissions):
         result = cache.get(key)
         if result:
             return result
-        result = super(AllSubmissions, self)._get_result_data()
+        queryset = Submission.objects
+        if self.selected_languages:
+            queryset = queryset.filter(language__in=self.selected_languages)
+        if self.selected_statuses:
+            submission_results = [i for i, _ in Submission.RESULT]
+            if self.selected_statuses[0] in submission_results:
+                queryset = queryset.filter(result__in=self.selected_statuses)
+            else:
+                queryset = queryset.filter(status__in=self.selected_statuses)
+        result = get_result_data(queryset)
         cache.set(key, result, self.stats_update_interval)
         return result
 
