@@ -1,9 +1,11 @@
 {% set logged_in = request.user.is_authenticated %}
 {% set profile = request.profile if logged_in else None %}
+{% set hide_texts_on_mobile = (not hide_actionbar_comment) or actionbar_report_url %}
 {% if logged_in %}
   {% if include_hr %}
-    <hr>{% endif %}
-  <div class="page-vote actionbar">
+    <hr>
+  {% endif %}
+  <div class="page-vote actionbar {{'hide_texts_on_mobile' if hide_texts_on_mobile}} ">
     <span class="actionbar-block" style="justify-content: flex-start;">
       <span id="like-button-{{pagevote.id}}"
         class="like-button actionbar-button {% if pagevote.vote_score(request.profile) == 1 %}voted{% endif %}"
@@ -22,33 +24,39 @@
       <span class="actionbar-block">
         <span class="actionbar-button actionbar-comment">
           <i class="fa fa-comment-o" style="font-size: large;"></i>
-          <span class="actionbar-text">{{_("Comment")}} {% if comment_list.count() %} ({{comment_list.count()}}) {% endif
-            %}</span>
-            </span>
+          <span class="actionbar-text">
+            {{_("Comment")}}
+          </span>
+          {% if comment_list.count() %}
+            <span>
+              ({{comment_list.count()}})
             </span>
           {% endif %}
-            <span class="actionbar-block">
-              <span id="bookmark-button-{{bookmark.id}}"
-                class="bookmark-button actionbar-button {% if bookmark.get_bookmark(request.profile) == True %} bookmarked {% endif %}"
-                onclick="javascript:bookmark({{ bookmark.id }}, event)">
-                <i class="fa fa-bookmark-o" style="font-size: large;"></i>
-                <span class="actionbar-text">{{_("Bookmark")}}</span>
-              </span>
-            </span>
-            <span class="actionbar-block" style="justify-content: flex-end;">
-              <span class="actionbar-button actionbar-share" style="position: relative"
-                {{"share-url=" + share_url if share_url else ""}}>
-                <i class=" fa fa-share" style="font-size: large;"></i>
-                <span class="actionbar-text">{{_("Share")}}</span>
-              </span>
-            </span>
-            {% if actionbar_report_url %}
-              <span class="actionbar-block">
-                <a class="actionbar-button black" href="{{actionbar_report_url}}">
-                  <i class="fa fa-flag-o" style="font-size: large;"></i>
-                  <span class="actionbar-text">{{_("Report")}}</span>
-                </a>
-              </span>
-            {% endif %}
-          </div>
+        </span>
+      </span>
     {% endif %}
+    <span class="actionbar-block">
+      <span id="bookmark-button-{{bookmark.id}}"
+        class="bookmark-button actionbar-button {% if bookmark.get_bookmark(request.profile) == True %} bookmarked {% endif %}"
+        onclick="javascript:bookmark({{ bookmark.id }}, event)">
+        <i class="fa fa-bookmark-o" style="font-size: large;"></i>
+        <span class="actionbar-text">{{_("Bookmark")}}</span>
+      </span>
+    </span>
+    <span class="actionbar-block" style="justify-content: flex-end;">
+      <span class="actionbar-button actionbar-share" style="position: relative"
+        {{"share-url=" + share_url if share_url else ""}}>
+        <i class=" fa fa-share" style="font-size: large;"></i>
+        <span class="actionbar-text">{{_("Share")}}</span>
+      </span>
+    </span>
+    {% if actionbar_report_url %}
+      <span class="actionbar-block">
+        <a class="actionbar-button black" href="{{actionbar_report_url}}">
+          <i class="fa fa-flag-o" style="font-size: large;"></i>
+          <span class="actionbar-text">{{_("Report")}}</span>
+        </a>
+      </span>
+    {% endif %}
+  </div>
+{% endif %}

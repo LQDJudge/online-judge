@@ -1622,10 +1622,6 @@ hr {
 #content .title {
     color: rgb(199, 194, 187);
 }
-#content.wrapper {
-    background-image: initial;
-    background-color: rgb(24, 26, 27);
-}
 footer {
     border-top-color: rgb(62, 68, 70);
     background-image: initial;
@@ -1690,8 +1686,6 @@ noscript #noscript {
 #page-container {
     border-right-color: rgb(62, 68, 70);
     border-left-color: rgb(62, 68, 70);
-    background-image: initial;
-    background-color: rgb(32, 34, 36);
 }
 .MathJax:focus {
     outline-color: initial;
@@ -1702,7 +1696,7 @@ noscript #noscript {
         border-right-color: initial;
     }
 }
-@media (max-width: 760px) {
+@media (max-width: 799px) {
     #navicon {
         color: rgb(129, 175, 255);
     }
@@ -1798,6 +1792,16 @@ noscript #noscript {
 }
 .background-footer {
     color: rgb(152, 143, 129);
+}
+@media (min-width: 800px) {
+    #page-container {
+        background-image: initial;
+        background-color: rgb(32, 34, 36);
+    }
+    #content.wrapper {
+        background-image: initial;
+        background-color: rgb(24, 26, 27);
+    }
 }
 .table {
     background-image: initial;
@@ -3812,9 +3816,6 @@ mjx-merror {
 }
 mjx-assistive-mml {
     border-color: initial !important;
-}
-.recently-attempted ul {
-    list-style-image: initial;
 }
 
 /* Override Style */

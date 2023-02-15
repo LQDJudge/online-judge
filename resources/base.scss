@@ -390,12 +390,6 @@ hr {
     }
 }
 
-#content.wrapper {
-    background: white;
-    padding: 2em;
-    border-radius: 1em;
-}
-
 footer {
     text-align: center;
     height: 40px;
@@ -564,7 +558,6 @@ noscript #noscript {
     margin: 0 auto;
     border-right: 1px solid $border_gray;
     border-left: 1px solid $border_gray;
-    background: #f1f2f2;
 }
 
 // border-bottom: 1px solid rgb(204, 204, 204)
@@ -601,7 +594,7 @@ math {
     }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 799px) {
     #navigation {
         height: 36px;
     }
@@ -865,17 +858,22 @@ select {
     }
 }
 
-@media (min-width: 800px) {
+@media(min-width: 800px) {
     .anon {
         padding-right: 1em;
     }
     .navbar-icons {
         margin-top: 6px;
     }
-}
-
-@media (min-width: 800px) {
+    #page-container {
+        background: #f1f2f2;
+    }
     #event-tab {
         display: none;
+    }
+    #content.wrapper {
+        background: white;
+        padding: 2em;
+        border-radius: 1em;
     }
 }
