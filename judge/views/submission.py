@@ -830,7 +830,9 @@ class AllSubmissions(GeneralSubmissions):
             return result
         queryset = Submission.objects
         if self.selected_languages:
-            queryset = queryset.filter(language__in=self.selected_languages)
+            queryset = queryset.filter(
+                language__in=Language.objects.filter(key__in=self.selected_languages)
+            )
         if self.selected_statuses:
             submission_results = [i for i, _ in Submission.RESULT]
             if self.selected_statuses[0] in submission_results:
