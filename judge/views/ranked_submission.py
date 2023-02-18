@@ -27,7 +27,7 @@ class RankedSubmissions(ProblemSubmissions):
             constraint = ""
         queryset = (
             super(RankedSubmissions, self)
-            ._get_queryset()
+            .get_queryset()
             .filter(user__is_unlisted=False)
         )
         join_sql_subquery(
@@ -76,6 +76,4 @@ class RankedSubmissions(ProblemSubmissions):
         )
 
     def _get_result_data(self):
-        return get_result_data(
-            super(RankedSubmissions, self)._get_queryset().order_by()
-        )
+        return get_result_data(super(RankedSubmissions, self).get_queryset().order_by())

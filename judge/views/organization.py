@@ -480,7 +480,7 @@ class OrganizationSubmissions(
     def contest(self):
         return None
 
-    def _get_queryset(self):
+    def get_queryset(self):
         return (
             super()
             ._get_entire_queryset()

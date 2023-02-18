@@ -23,25 +23,23 @@
     ];
   </script>
   <script type="text/javascript">
-    window.currentPage = 1;
     window.limit_time = 24;
-    window.messages_per_page = 50;
     window.room_id = "{{room if room else ''}}";
     window.unread_message = 0;
     window.other_user_id = "{{other_user.id if other_user else ''}}";
-    window.num_pages = {{paginator.num_pages}};
     window.lock = false;
     window.lock_click_space = false;
     window.pushed_messages = new Set();
     let isMobile = window.matchMedia("only screen and (max-width: 799px)").matches;
 
-    function load_page(page, refresh_html=false) {
+    function load_next_page(last_id, refresh_html=false) {
       var param = {
-        'page': page,
+        'last_id': last_id,
+        'only_messages': true,
       }
       $.get("{{ url('chat', '') }}" + window.room_id, param)
         .fail(function() {
-        console.log("Fail to load page " + page);
+        console.log("Fail to load page, last_id = " + last_id);
       })
         .done(function(data) {
         if (refresh_html) {
@@ -49,11 +47,10 @@
           $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
           window.lock = true;
         }
-
-        window.num_pages = parseInt($('<div>' + data + '</div>').find('#num_pages').html());
-        var time = refresh_html ? 0 : 500;
+        var time = refresh_html ? 0 : 200;
 
         setTimeout(function() {
+          $(".has_next").remove();
           let $chat_box = $('#chat-box');
           let lastMsgPos = scrollTopOfBottom($chat_box)
 
@@ -66,9 +63,6 @@
             $('#chat-log').prepend(data);
           }
 
-          $('.body-block').slice(0, window.messages_per_page).each(function() {
-          });
-
           register_time($('.time-with-rel'));
           merge_authors();
 
@@ -79,6 +73,7 @@
             $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
           }
           window.lock = false;
+          window.has_next = parseInt($(".has_next").attr("value"));
         }, time);
       })
     }
@@ -90,10 +85,12 @@
     function scrollContainer(container, loader) {
       container.scroll(function() {
         if (container.scrollTop() == 0) {
-          if (currentPage < window.num_pages && !window.lock) {
-            currentPage++;
+          if (!window.lock && window.has_next) {
             loader.show();
-            load_page(currentPage);
+            var message_ids = $('.message').map(function() {
+              return parseInt($(this).attr('message-id'));
+            }).get();
+            load_next_page(Math.min(...message_ids));
           }
         }
       })}
@@ -323,7 +320,7 @@
 
       function callback() {
         history.replaceState(null, '', "{{url('chat', '')}}" + window.room_id);
-        load_page(window.currentPage, true, refresh_status);
+        load_next_page(null, true);
         update_last_seen();
         refresh_status();
         $('#chat-input').focus();
@@ -332,7 +329,6 @@
       if (encrypted_user) {
         $.get("{{url('get_or_create_room')}}" + `?other=${encrypted_user}`)
           .done(function(data) {
-          window.currentPage = 1;
           window.room_id = data.room;
           window.other_user_id = data.other_user_id;
           callback();
@@ -342,7 +338,6 @@
         })
       }
       else {
-        window.currentPage = 1;
         window.room_id = '';
         window.other_user_id = '';
         callback();
@@ -408,6 +403,7 @@
     $(function() {
       $('#loader').hide();
       merge_authors();
+      window.has_next = parseInt($(".has_next").attr("value"));
 
       scrollContainer($('#chat-box'), $('#loader'))
 

@@ -47,11 +47,9 @@ from judge.utils.problems import user_editable_ids
 from judge.utils.problem_data import get_problem_case
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
 from judge.utils.views import DiggPaginatorMixin
+from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.utils.views import TitleMixin
 from judge.utils.timedelta import nice_repr
-
-
-MAX_NUMBER_OF_QUERY_SUBMISSIONS = 50000
 
 
 def submission_related(queryset):
@@ -333,7 +331,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         return result
 
     def _get_result_data(self):
-        return get_result_data(self._get_queryset().order_by())
+        return get_result_data(self.get_queryset().order_by())
 
     def access_check(self, request):
         pass
@@ -412,7 +410,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
 
         return queryset
 
-    def _get_queryset(self):
+    def get_queryset(self):
         queryset = self._get_entire_queryset()
         if not self.in_contest:
             if self.request.organization:
@@ -433,9 +431,6 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                 related_model=Problem,
             )
         return queryset
-
-    def get_queryset(self):
-        return self._get_queryset()[:MAX_NUMBER_OF_QUERY_SUBMISSIONS]
 
     def get_my_submissions_page(self):
         return None
@@ -578,10 +573,10 @@ class GeneralSubmissions(SubmissionsListBase):
 
 
 class AllUserSubmissions(ConditionalUserTabMixin, UserMixin, GeneralSubmissions):
-    def _get_queryset(self):
+    def get_queryset(self):
         return (
             super(AllUserSubmissions, self)
-            ._get_queryset()
+            .get_queryset()
             .filter(user_id=self.profile.id)
         )
 
@@ -608,12 +603,10 @@ class AllUserSubmissions(ConditionalUserTabMixin, UserMixin, GeneralSubmissions)
 
 
 class AllFriendSubmissions(LoginRequiredMixin, GeneralSubmissions):
-    def _get_queryset(self):
+    def get_queryset(self):
         friends = self.request.profile.get_friends()
         return (
-            super(AllFriendSubmissions, self)
-            ._get_queryset()
-            .filter(user_id__in=friends)
+            super(AllFriendSubmissions, self).get_queryset().filter(user_id__in=friends)
         )
 
     def get_title(self):
@@ -631,7 +624,7 @@ class ProblemSubmissionsBase(SubmissionsListBase):
     dynamic_update = True
     check_contest_in_access_check = False
 
-    def _get_queryset(self):
+    def get_queryset(self):
         if (
             self.in_contest
             and not self.contest.contest_problems.filter(
@@ -723,10 +716,10 @@ class UserProblemSubmissions(ConditionalUserTabMixin, UserMixin, ProblemSubmissi
         if not self.is_own:
             self.access_check_contest(request)
 
-    def _get_queryset(self):
+    def get_queryset(self):
         return (
             super(UserProblemSubmissions, self)
-            ._get_queryset()
+            .get_queryset()
             .filter(user_id=self.profile.id)
         )
 
@@ -804,8 +797,12 @@ def single_submission_query(request):
     return single_submission(request, int(request.GET["id"]), bool(show_problem))
 
 
-class AllSubmissions(GeneralSubmissions):
+class AllSubmissions(InfinitePaginationMixin, GeneralSubmissions):
     stats_update_interval = 3600
+
+    @property
+    def use_infinite_pagination(self):
+        return not self.in_contest
 
     def get_context_data(self, **kwargs):
         context = super(AllSubmissions, self).get_context_data(**kwargs)

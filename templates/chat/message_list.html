@@ -1,3 +1,4 @@
+<div class="has_next" style="display: none;" value="{{1 if has_next else 0}}"></div>
 {% if object_list %}
   <div style="display: none" id="num_pages">{{num_pages}}</div>
   {% for message in object_list | reverse%}

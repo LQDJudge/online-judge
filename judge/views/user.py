@@ -44,12 +44,12 @@ from judge.utils.problems import contest_completed_ids, user_completed_ids
 from judge.utils.ranker import ranker
 from judge.utils.unicode import utf8text
 from judge.utils.views import (
-    DiggPaginatorMixin,
     QueryStringSortMixin,
     TitleMixin,
     generic_message,
     SingleObjectFormView,
 )
+from judge.utils.infinite_paginator import InfinitePaginationMixin
 from .contests import ContestRanking
 
 __all__ = [
@@ -437,7 +437,7 @@ def edit_profile(request):
     )
 
 
-class UserList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ListView):
+class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListView):
     model = Profile
     title = gettext_lazy("Leaderboard")
     context_object_name = "users"

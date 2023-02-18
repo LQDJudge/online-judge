@@ -1,4 +1,4 @@
-<li class="message" id="message-{{ message.id }}">
+<li class="message" id="message-{{ message.id }}" message-id="{{ message.id }}">
   <a href="{{ url('user_page', message.author.user.username) }}">
     <img src="{{ gravatar(message.author, 135) }}" class="profile-pic">
   </a>

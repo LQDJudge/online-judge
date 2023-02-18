@@ -48,16 +48,26 @@ class ChatView(ListView):
         super().__init__()
         self.room_id = None
         self.room = None
-        self.paginate_by = 50
         self.messages = None
-        self.paginator = None
+        self.page_size = 20
 
     def get_queryset(self):
         return self.messages
 
+    def has_next(self):
+        try:
+            msg = Message.objects.filter(room=self.room_id).earliest("id")
+        except Exception as e:
+            return False
+        return msg not in self.messages
+
     def get(self, request, *args, **kwargs):
         request_room = kwargs["room_id"]
-        page = request.GET.get("page")
+        try:
+            last_id = int(request.GET.get("last_id"))
+        except Exception:
+            last_id = 1e15
+        only_messages = request.GET.get("only_messages")
 
         if request_room:
             try:
@@ -69,23 +79,20 @@ class ChatView(ListView):
         else:
             request_room = None
 
-        if request_room != self.room_id or not self.messages:
-            self.room_id = request_room
-            self.messages = Message.objects.filter(hidden=False, room=self.room_id)
-            self.paginator = Paginator(self.messages, self.paginate_by)
-
-        if page == None:
+        self.room_id = request_room
+        self.messages = Message.objects.filter(
+            hidden=False, room=self.room_id, id__lt=last_id
+        )[: self.page_size]
+        if not only_messages:
             update_last_seen(request, **kwargs)
             return super().get(request, *args, **kwargs)
-
-        cur_page = self.paginator.get_page(page)
 
         return render(
             request,
             "chat/message_list.html",
             {
-                "object_list": cur_page.object_list,
-                "num_pages": self.paginator.num_pages,
+                "object_list": self.messages,
+                "has_next": self.has_next(),
             },
         )
 
@@ -96,6 +103,7 @@ class ChatView(ListView):
         context["last_msg"] = event.last()
         context["status_sections"] = get_status_context(self.request)
         context["room"] = self.room_id
+        context["has_next"] = self.has_next()
         context["unread_count_lobby"] = get_unread_count(None, self.request.profile)
         if self.room:
             users_room = [self.room.user_one, self.room.user_two]
