@@ -41,9 +41,7 @@ from judge.models import ProblemTranslation
 from judge.models import Profile
 from judge.models import Submission
 from judge.utils.problems import get_result_data
-from judge.utils.problems import user_authored_ids
-from judge.utils.problems import user_completed_ids
-from judge.utils.problems import user_editable_ids
+from judge.utils.problems import user_completed_ids, user_editable_ids, user_tester_ids
 from judge.utils.problem_data import get_problem_case
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
 from judge.utils.views import DiggPaginatorMixin
@@ -476,11 +474,11 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["completed_problem_ids"] = (
             user_completed_ids(self.request.profile) if authenticated else []
         )
-        context["authored_problem_ids"] = (
-            user_authored_ids(self.request.profile) if authenticated else []
-        )
         context["editable_problem_ids"] = (
             user_editable_ids(self.request.profile) if authenticated else []
+        )
+        context["tester_problem_ids"] = (
+            user_tester_ids(self.request.profile) if authenticated else []
         )
 
         context["all_languages"] = Language.objects.all().values_list("key", "name")
@@ -769,13 +767,13 @@ def single_submission(request, submission_id, show_problem=True):
         "submission/row.html",
         {
             "submission": submission,
-            "authored_problem_ids": user_authored_ids(request.profile)
-            if authenticated
-            else [],
             "completed_problem_ids": user_completed_ids(request.profile)
             if authenticated
             else [],
             "editable_problem_ids": user_editable_ids(request.profile)
+            if authenticated
+            else [],
+            "tester_problem_ids": user_tester_ids(request.profile)
             if authenticated
             else [],
             "show_problem": show_problem,

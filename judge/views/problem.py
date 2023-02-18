@@ -482,13 +482,10 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             padding=2,
             orphans=orphans,
             allow_empty_first_page=allow_empty_first_page,
+            count=queryset.values("pk").count() if not self.in_contest else None,
             **kwargs
         )
         if not self.in_contest:
-            # Get the number of pages and then add in this magic.
-            # noinspection PyStatementEffect
-            paginator.num_pages
-
             queryset = queryset.add_i18n_name(self.request.LANGUAGE_CODE)
             sort_key = self.order.lstrip("-")
             if sort_key in self.sql_sort:
@@ -670,8 +667,12 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
 
         if self.request.profile:
             context["organizations"] = self.request.profile.organizations.all()
-        all_authors_ids = set(Problem.objects.values_list("authors", flat=True))
-        context["all_authors"] = Profile.objects.filter(id__in=all_authors_ids)
+        all_authors_ids = Problem.objects.values_list("authors", flat=True)
+        context["all_authors"] = (
+            Profile.objects.filter(id__in=all_authors_ids)
+            .select_related("user")
+            .values("id", "user__username")
+        )
         context["category"] = self.category
         context["categories"] = ProblemGroup.objects.all()
         if self.show_types:
