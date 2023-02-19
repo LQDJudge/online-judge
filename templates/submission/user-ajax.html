@@ -19,7 +19,7 @@
           </td>
         {% endif %}
         {% if cur_subtask.submission %}
-          {% set can_view = submission_layout(cur_subtask.submission, profile_id, request.user, editable_problem_ids, completed_problem_ids) %}
+          {% set can_view = submission_layout(cur_subtask.submission, profile_id, request.user, editable_problem_ids, completed_problem_ids, tester_problem_ids) %}
           {% if can_view %}
             <td>
               → <a href="{{url('submission_status', cur_subtask.submission.id)}}">{{ cur_subtask.submission.id }}</a>
@@ -43,7 +43,7 @@
   <table class="lightbox-submissions"><tbody>
     {% for submission in submissions %}
       <tr>
-        {% set can_view = submission_layout(submission, profile_id, request.user, editable_problem_ids, completed_problem_ids) %}
+        {% set can_view = submission_layout(submission, profile_id, request.user, editable_problem_ids, completed_problem_ids, tester_problem_ids) %}
         <td class="lightbox-submissions-time">
           {% if submission.contest_time %}
             {{submission.contest_time}}
