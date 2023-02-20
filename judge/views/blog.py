@@ -156,7 +156,7 @@ class TicketFeed(HomeFeedView):
 class CommentFeed(HomeFeedView):
     model = Comment
     context_object_name = "comments"
-    paginate_by = 8
+    paginate_by = 15
     feed_content_template_name = "comments/feed.html"
 
     def get_queryset(self):
