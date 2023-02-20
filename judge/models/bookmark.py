@@ -3,10 +3,7 @@ from django.db.models import CASCADE
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ObjectDoesNotExist
 
-from judge.models import Profile
-from judge.models.contest import Contest
-from judge.models.interface import BlogPost
-from judge.models.problem import Problem, Solution
+from judge.models.profile import Profile
 
 __all__ = ["BookMark"]
 
@@ -26,6 +23,10 @@ class BookMark(models.Model):
             return False
 
     def page_object(self):
+        from judge.models.contest import Contest
+        from judge.models.interface import BlogPost
+        from judge.models.problem import Problem, Solution
+
         try:
             page = self.page
             if page.startswith("p:"):

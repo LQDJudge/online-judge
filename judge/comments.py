@@ -22,7 +22,7 @@ from reversion import revisions
 from reversion.models import Revision, Version
 
 from judge.dblock import LockModel
-from judge.models import Comment, CommentLock, Notification
+from judge.models import Comment, Notification
 from judge.widgets import HeavyPreviewPageDownWidget
 from judge.jinja2.reference import get_user_from_text
 
@@ -90,7 +90,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
     def is_comment_locked(self):
         if self.request.user.has_perm("judge.override_comment_lock"):
             return False
-        return CommentLock.objects.filter(page=self.get_comment_page()).exists() or (
+        return (
             self.request.in_contest
             and self.request.participation.contest.use_clarifications
         )
@@ -99,7 +99,6 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         page = self.get_comment_page()
-
         if self.is_comment_locked():
             return HttpResponseForbidden()
 
@@ -110,9 +109,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
             except ValueError:
                 return HttpResponseNotFound()
             else:
-                if not Comment.objects.filter(
-                    hidden=False, id=parent, page=page
-                ).exists():
+                if not self.object.comments.filter(hidden=False, id=parent).exists():
                     return HttpResponseNotFound()
 
         form = CommentForm(request, request.POST)
@@ -120,6 +117,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
             comment = form.save(commit=False)
             comment.author = request.profile
             comment.page = page
+            comment.linked_object = self.object
 
             with LockModel(
                 write=(Comment, Revision, Version), read=(ContentType,)
@@ -136,7 +134,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
                 notification_reply.save()
 
             # add notification for page authors
-            page_authors = comment.page_object.authors.all()
+            page_authors = comment.linked_object.authors.all()
             for user in page_authors:
                 if user == comment.author:
                     continue
@@ -149,7 +147,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
 
             add_mention_notifications(comment)
 
-            return HttpResponseRedirect(request.path)
+            return HttpResponseRedirect(comment.get_absolute_url())
 
         context = self.get_context_data(object=self.object, comment_form=form)
         return self.render_to_response(context)
@@ -159,15 +157,13 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         return self.render_to_response(
             self.get_context_data(
                 object=self.object,
-                comment_form=CommentForm(
-                    request, initial={"page": self.get_comment_page(), "parent": None}
-                ),
+                comment_form=CommentForm(request, initial={"parent": None}),
             )
         )
 
     def get_context_data(self, **kwargs):
         context = super(CommentedDetailView, self).get_context_data(**kwargs)
-        queryset = Comment.objects.filter(hidden=False, page=self.get_comment_page())
+        queryset = self.object.comments
         context["has_comments"] = queryset.exists()
         context["comment_lock"] = self.is_comment_locked()
         queryset = (

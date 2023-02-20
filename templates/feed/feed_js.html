@@ -1,0 +1,30 @@
+<script>
+  window.page = {{page_obj.number}};
+  window.has_next_page = {{1 if page_obj.has_next() else 0}};
+  window.loading_page = false;
+  $(function() {
+    $(window).on("scroll", function() {
+      if (window.loading_page || !window.has_next_page) return;
+      var distanceFromBottom = $(document).height() - ($(window).scrollTop() + $(window).height());
+      if (distanceFromBottom < 500) {
+        window.loading_page = true;
+        var params = {
+          "only_content": 1,
+          "page": window.page + 1,
+        };
+
+        $.get("{{feed_content_url}}", params)
+          .done(function(data) {
+          $(".has_next").remove();
+          $(".middle-content").append(data);
+          window.loading_page = false;
+          window.has_next_page = parseInt($(".has_next").attr("value"));
+          window.page++;
+          MathJax.typeset($('.middle-content')[0]);
+          onWindowReady();
+          activateBlogBoxOnClick();
+        })
+      }
+    });
+  });
+</script>

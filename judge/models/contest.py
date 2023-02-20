@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.translation import gettext, gettext_lazy as _
+from django.contrib.contenttypes.fields import GenericRelation
 from jsonfield import JSONField
 from lupa import LuaRuntime
 from moss import (
@@ -297,6 +298,7 @@ class Contest(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(10)],
         help_text=_("Number of digits to round points to."),
     )
+    comments = GenericRelation("Comment")
 
     @cached_property
     def format_class(self):

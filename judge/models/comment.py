@@ -9,6 +9,8 @@ from django.db.models import CASCADE
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 from reversion.models import Version
@@ -44,6 +46,9 @@ class VersionRelation(GenericRelation):
 class Comment(MPTTModel):
     author = models.ForeignKey(Profile, verbose_name=_("commenter"), on_delete=CASCADE)
     time = models.DateTimeField(verbose_name=_("posted time"), auto_now_add=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    linked_object = GenericForeignKey("content_type", "object_id")
     page = models.CharField(
         max_length=30,
         verbose_name=_("associated page"),
@@ -66,6 +71,9 @@ class Comment(MPTTModel):
     class Meta:
         verbose_name = _("comment")
         verbose_name_plural = _("comments")
+        indexes = [
+            models.Index(fields=["content_type", "object_id"]),
+        ]
 
     class MPTTMeta:
         order_insertion_by = ["-time"]
@@ -82,13 +90,9 @@ class Comment(MPTTModel):
         if organization:
             queryset = queryset.filter(author__in=organization.members.all())
 
-        problem_access = CacheDict(
-            lambda code: Problem.objects.get(code=code).is_accessible_by(user)
-        )
-        contest_access = CacheDict(
-            lambda key: Contest.objects.get(key=key).is_accessible_by(user)
-        )
-        blog_access = CacheDict(lambda id: BlogPost.objects.get(id=id).can_see(user))
+        problem_access = CacheDict(lambda p: p.is_accessible_by(user))
+        contest_access = CacheDict(lambda c: c.is_accessible_by(user))
+        blog_access = CacheDict(lambda b: b.can_see(user))
 
         if n == -1:
             n = len(queryset)
@@ -102,111 +106,52 @@ class Comment(MPTTModel):
             if not slice:
                 break
             for comment in slice:
-                if comment.page.startswith("p:") or comment.page.startswith("s:"):
-                    try:
-                        if problem_access[comment.page[2:]]:
-                            output.append(comment)
-                    except Problem.DoesNotExist:
-                        pass
-                elif comment.page.startswith("c:"):
-                    try:
-                        if contest_access[comment.page[2:]]:
-                            output.append(comment)
-                    except Contest.DoesNotExist:
-                        pass
-                elif comment.page.startswith("b:"):
-                    try:
-                        if blog_access[comment.page[2:]]:
-                            output.append(comment)
-                    except BlogPost.DoesNotExist:
-                        pass
-                else:
-                    output.append(comment)
+                if isinstance(comment.linked_object, Problem):
+                    if problem_access[comment.linked_object]:
+                        output.append(comment)
+                elif isinstance(comment.linked_object, Contest):
+                    if contest_access[comment.linked_object]:
+                        output.append(comment)
+                elif isinstance(comment.linked_object, BlogPost):
+                    if blog_access[comment.linked_object]:
+                        output.append(comment)
+                elif isinstance(comment.linked_object, Solution):
+                    if problem_access[comment.linked_object.problem]:
+                        output.append(comment)
                 if len(output) >= n:
                     return output
         return output
 
     @cached_property
-    def link(self):
-        try:
-            link = None
-            if self.page.startswith("p:"):
-                link = reverse("problem_detail", args=(self.page[2:],))
-            elif self.page.startswith("c:"):
-                link = reverse("contest_view", args=(self.page[2:],))
-            elif self.page.startswith("b:"):
-                key = "blog_slug:%s" % self.page[2:]
-                slug = cache.get(key)
-                if slug is None:
-                    try:
-                        slug = BlogPost.objects.get(id=self.page[2:]).slug
-                    except ObjectDoesNotExist:
-                        slug = ""
-                    cache.set(key, slug, 3600)
-                link = reverse("blog_post", args=(self.page[2:], slug))
-            elif self.page.startswith("s:"):
-                link = reverse("problem_editorial", args=(self.page[2:],))
-        except Exception:
-            link = "invalid"
-        return link
-
-    @classmethod
-    def get_page_title(cls, page):
-        try:
-            if page.startswith("p:"):
-                return Problem.objects.values_list("name", flat=True).get(code=page[2:])
-            elif page.startswith("c:"):
-                return Contest.objects.values_list("name", flat=True).get(key=page[2:])
-            elif page.startswith("b:"):
-                return BlogPost.objects.values_list("title", flat=True).get(id=page[2:])
-            elif page.startswith("s:"):
-                return _("Editorial for %s") % Problem.objects.values_list(
-                    "name", flat=True
-                ).get(code=page[2:])
-            return "<unknown>"
-        except ObjectDoesNotExist:
-            return "<deleted>"
+    def page_title(self):
+        if isinstance(self.linked_object, Problem):
+            return self.linked_object.name
+        elif isinstance(self.linked_object, Contest):
+            return self.linked_object.name
+        elif isinstance(self.linked_object, Solution):
+            return _("Editorial for ") + self.linked_object.problem.name
+        elif isinstance(self.linked_object, BlogPost):
+            return self.linked_object.title
 
     @cached_property
-    def page_title(self):
-        return self.get_page_title(self.page)
+    def link(self):
+        if isinstance(self.linked_object, Problem):
+            return reverse("problem_detail", args=(self.linked_object.code,))
+        elif isinstance(self.linked_object, Contest):
+            return reverse("contest_view", args=(self.linked_object.key,))
+        elif isinstance(self.linked_object, Solution):
+            return reverse("problem_editorial", args=(self.linked_object.problem.code,))
+        elif isinstance(self.linked_object, BlogPost):
+            return reverse(
+                "blog_post",
+                args=(
+                    self.object_id,
+                    self.linked_object.slug,
+                ),
+            )
 
     def get_absolute_url(self):
         return "%s#comment-%d" % (self.link, self.id)
-
-    @cached_property
-    def page_object(self):
-        try:
-            page = self.page
-            if page.startswith("p:"):
-                return Problem.objects.get(code=page[2:])
-            elif page.startswith("c:"):
-                return Contest.objects.get(key=page[2:])
-            elif page.startswith("b:"):
-                return BlogPost.objects.get(id=page[2:])
-            elif page.startswith("s:"):
-                return Solution.objects.get(problem__code=page[2:])
-            return None
-        except ObjectDoesNotExist:
-            return None
-
-    def __str__(self):
-        return "%(page)s by %(user)s" % {
-            "page": self.page,
-            "user": self.author.user.username,
-        }
-
-        # Only use this when queried with
-        # .prefetch_related(Prefetch('votes', queryset=CommentVote.objects.filter(voter_id=profile_id)))
-        # It's rather stupid to put a query specific property on the model, but the alternative requires
-        # digging Django internals, and could not be guaranteed to work forever.
-        # Hence it is left here for when the alternative breaks.
-        # @property
-        # def vote_score(self):
-        #    queryset = self.votes.all()
-        #    if not queryset:
-        #        return 0
-        #    return queryset[0].score
 
 
 class CommentVote(models.Model):

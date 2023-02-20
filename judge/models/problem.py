@@ -13,6 +13,8 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from judge.fulltext import SearchQuerySet
+from judge.models.pagevote import PageVote
+from judge.models.bookmark import BookMark
 from judge.models.profile import Organization, Profile
 from judge.models.runtime import Language
 from judge.user_translations import gettext as user_gettext
@@ -268,6 +270,7 @@ class Problem(models.Model):
 
     objects = TranslatedProblemQuerySet.as_manager()
     tickets = GenericRelation("Ticket")
+    comments = GenericRelation("Comment")
 
     organizations = models.ManyToManyField(
         Organization,
@@ -443,6 +446,18 @@ class Problem(models.Model):
     @cached_property
     def usable_common_names(self):
         return set(self.usable_languages.values_list("common_name", flat=True))
+
+    @cached_property
+    def pagevote(self):
+        page = "p:%s" % self.code
+        pagevote, _ = PageVote.objects.get_or_create(page=page)
+        return pagevote
+
+    @cached_property
+    def bookmark(self):
+        page = "p:%s" % self.code
+        bookmark, _ = BookMark.objects.get_or_create(page=page)
+        return bookmark
 
     @property
     def usable_languages(self):
@@ -644,7 +659,7 @@ class LanguageTemplate(models.Model):
 class Solution(models.Model):
     problem = models.OneToOneField(
         Problem,
-        on_delete=SET_NULL,
+        on_delete=CASCADE,
         verbose_name=_("associated problem"),
         null=True,
         blank=True,
@@ -654,6 +669,7 @@ class Solution(models.Model):
     publish_on = models.DateTimeField(verbose_name=_("publish date"))
     authors = models.ManyToManyField(Profile, verbose_name=_("authors"), blank=True)
     content = models.TextField(verbose_name=_("editorial content"))
+    comments = GenericRelation("Comment")
 
     def get_absolute_url(self):
         problem = self.problem

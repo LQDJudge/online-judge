@@ -4,6 +4,7 @@
 
 {% block org_js %}
   {% include "actionbar/media-js.html" %}
+  {% include "feed/feed_js.html" %}
 {% endblock %}
 
 {% block middle_title %}
@@ -40,12 +41,7 @@
 {% block middle_content %}
   {% block before_posts %}{% endblock %}
   {% if is_member or can_edit %}
-    {% for post in posts %}
-      {% include "blog/content.html" %}
-    {% endfor %}
-    {% if posts.paginator.num_pages > 1 %}
-      <div style="margin-bottom:10px;margin-top:10px">{% include "list-pages.html" %}</div>
-    {% endif %}
+    {% include "blog/content.html" %}
   {% else %}
     <div class="blog-sidebox sidebox">
       <h3>{{ _('About') }}<i class="fa fa-info-circle"></i></h3>

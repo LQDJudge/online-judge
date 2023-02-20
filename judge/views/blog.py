@@ -7,8 +7,8 @@ from django.utils.translation import ugettext as _
 from django.views.generic import ListView
 
 from judge.comments import CommentedDetailView
-from judge.views.pagevote import PageVoteDetailView, PageVoteListView
-from judge.views.bookmark import BookMarkDetailView, BookMarkListView
+from judge.views.pagevote import PageVoteDetailView
+from judge.views.bookmark import BookMarkDetailView
 from judge.models import (
     BlogPost,
     Comment,
@@ -26,28 +26,16 @@ from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.problems import user_completed_ids
 from judge.utils.tickets import filter_visible_tickets
 from judge.utils.views import TitleMixin
+from judge.views.feed import FeedView
 
 
 # General view for all content list on home feed
-class FeedView(ListView):
+class HomeFeedView(FeedView):
     template_name = "blog/list.html"
     title = None
 
-    def get_paginator(
-        self, queryset, per_page, orphans=0, allow_empty_first_page=True, **kwargs
-    ):
-        return DiggPaginator(
-            queryset,
-            per_page,
-            body=6,
-            padding=2,
-            orphans=orphans,
-            allow_empty_first_page=allow_empty_first_page,
-            **kwargs
-        )
-
     def get_context_data(self, **kwargs):
-        context = super(FeedView, self).get_context_data(**kwargs)
+        context = super(HomeFeedView, self).get_context_data(**kwargs)
         context["has_clarifications"] = False
         if self.request.user.is_authenticated:
             participation = self.request.profile.current_contest
@@ -60,17 +48,7 @@ class FeedView(ListView):
                 if participation.contest.is_editable_by(self.request.user):
                     context["can_edit_contest"] = True
 
-        context["page_titles"] = CacheDict(lambda page: Comment.get_page_title(page))
-
-        context["user_count"] = lazy(Profile.objects.count, int, int)
-        context["problem_count"] = lazy(
-            Problem.objects.filter(is_public=True).count, int, int
-        )
-        context["submission_count"] = lazy(Submission.objects.count, int, int)
-        context["language_count"] = lazy(Language.objects.count, int, int)
-
         now = timezone.now()
-
         visible_contests = (
             Contest.get_visible_contests(self.request.user, show_own_contests_only=True)
             .filter(is_visible=True)
@@ -102,10 +80,12 @@ class FeedView(ListView):
         return context
 
 
-class PostList(FeedView, PageVoteListView, BookMarkListView):
+class PostList(HomeFeedView):
     model = BlogPost
-    paginate_by = 10
+    paginate_by = 4
     context_object_name = "posts"
+    feed_content_template_name = "blog/content.html"
+    url_name = "blog_post_list"
 
     def get_queryset(self):
         queryset = (
@@ -121,13 +101,23 @@ class PostList(FeedView, PageVoteListView, BookMarkListView):
         queryset = queryset.filter(filter)
         return queryset
 
+    def get_feed_context(self, object_list):
+        post_comment_counts = {
+            int(page[2:]): count
+            for page, count in Comment.objects.filter(
+                page__in=["b:%d" % post.id for post in object_list], hidden=False
+            )
+            .values_list("page")
+            .annotate(count=Count("page"))
+            .order_by()
+        }
+        return {"post_comment_counts": post_comment_counts}
+
     def get_context_data(self, **kwargs):
         context = super(PostList, self).get_context_data(**kwargs)
         context["title"] = (
             self.title or _("Page %d of Posts") % context["page_obj"].number
         )
-        context["first_page_href"] = reverse("home")
-        context["page_prefix"] = reverse("blog_post_list")
         context["page_type"] = "blog"
         context["post_comment_counts"] = {
             int(page[2:]): count
@@ -138,18 +128,17 @@ class PostList(FeedView, PageVoteListView, BookMarkListView):
             .annotate(count=Count("page"))
             .order_by()
         }
-        context = self.add_pagevote_context_data(context)
-        context = self.add_bookmark_context_data(context)
         return context
 
     def get_comment_page(self, post):
         return "b:%s" % post.id
 
 
-class TicketFeed(FeedView):
+class TicketFeed(HomeFeedView):
     model = Ticket
     context_object_name = "tickets"
-    paginate_by = 30
+    paginate_by = 8
+    feed_content_template_name = "ticket/feed.html"
 
     def get_queryset(self, is_own=True):
         profile = self.request.profile
@@ -181,30 +170,25 @@ class TicketFeed(FeedView):
     def get_context_data(self, **kwargs):
         context = super(TicketFeed, self).get_context_data(**kwargs)
         context["page_type"] = "ticket"
-        context["first_page_href"] = self.request.path
-        context["page_prefix"] = "?page="
         context["title"] = _("Ticket feed")
-
         return context
 
 
-class CommentFeed(FeedView):
+class CommentFeed(HomeFeedView):
     model = Comment
     context_object_name = "comments"
-    paginate_by = 50
+    paginate_by = 8
+    feed_content_template_name = "comments/feed.html"
 
     def get_queryset(self):
         return Comment.most_recent(
-            self.request.user, 1000, organization=self.request.organization
+            self.request.user, 100, organization=self.request.organization
         )
 
     def get_context_data(self, **kwargs):
         context = super(CommentFeed, self).get_context_data(**kwargs)
-        context["page_type"] = "comment"
-        context["first_page_href"] = self.request.path
-        context["page_prefix"] = "?page="
         context["title"] = _("Comment feed")
-
+        context["page_type"] = "comment"
         return context
 
 

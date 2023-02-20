@@ -107,15 +107,15 @@
           }
         }
       };
-      $(".actionbar-share").click(function(e) {
+      window.actionbar_share = function(element, e) {
         e.stopPropagation();
-        link = $(this).attr("share-url") || window.location.href;
+        link = $(element).attr("share-url") || window.location.href;
         navigator.clipboard
           .writeText(link)
           .then(() =>  {
-          showTooltip(this, "Copied link", 'n');
+          showTooltip(element, "Copied link", 'n');
         });
-      });
+      };
 
       $('.actionbar-comment').on('click', function() {
         $('#comment-section').show();

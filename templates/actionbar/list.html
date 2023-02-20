@@ -45,7 +45,7 @@
     </span>
     <span class="actionbar-block" style="justify-content: flex-end;">
       <span class="actionbar-button actionbar-share" style="position: relative"
-        {{"share-url=" + share_url if share_url else ""}}>
+        {{"share-url=" + share_url if share_url else ""}} onclick="javascript:actionbar_share(this, event)">
         <i class=" fa fa-share" style="font-size: large;"></i>
         <span class="actionbar-text">{{_("Share")}}</span>
       </span>

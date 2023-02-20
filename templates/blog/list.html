@@ -20,6 +20,7 @@
 
 {% block three_col_js %}
   {% include "actionbar/media-js.html" %}
+  {% include "feed/feed_js.html" %}
   <script type="text/javascript">
     $(document).ready(function () {
       $('.time-remaining').each(function () {
@@ -50,24 +51,15 @@
 {% block middle_content %}
   {% set show_organization_private_icon=True %}
   {% if page_type == 'blog' %}
-    {% for post in posts %}
-      {% include "blog/content.html" %}
-    {% endfor %}
+    {% include "blog/content.html" %}
   {% elif page_type == 'ticket' %}
     {% if tickets %}
-      {% for ticket in tickets %}
-        {% include "ticket/feed.html" %}
-      {% endfor %}
+      {% include "ticket/feed.html" %}
     {% else %}
       <h3 style="text-align: center">{{_('You have no ticket')}}</h3>
     {% endif %}
   {% elif page_type == 'comment' %}
-    {% for comment in comments %}
-      {% include "comments/feed.html" %}
-    {% endfor %}
-  {% endif %}
-  {% if page_obj.num_pages > 1 %}
-    <div style="margin-bottom:10px;margin-top:10px">{% include "list-pages.html" %}</div>
+    {% include "comments/feed.html" %}
   {% endif %}
 {% endblock %}
 

@@ -87,8 +87,9 @@ from judge.utils.views import (
     generic_message,
 )
 from judge.ml.collab_filter import CollabFilter
-from judge.views.pagevote import PageVoteDetailView, PageVoteListView
-from judge.views.bookmark import BookMarkDetailView, BookMarkListView
+from judge.views.pagevote import PageVoteDetailView
+from judge.views.bookmark import BookMarkDetailView
+from judge.views.feed import FeedView
 
 
 def get_contest_problem(problem, profile):
@@ -197,31 +198,34 @@ class ProblemSolution(
     template_name = "problem/editorial.html"
 
     def get_title(self):
-        return _("Editorial for {0}").format(self.object.name)
+        return _("Editorial for {0}").format(self.problem.name)
 
     def get_content_title(self):
         return format_html(
             _('Editorial for <a href="{1}">{0}</a>'),
-            self.object.name,
-            reverse("problem_detail", args=[self.object.code]),
+            self.problem.name,
+            reverse("problem_detail", args=[self.problem.code]),
         )
+
+    def get_object(self):
+        self.problem = super().get_object()
+        solution = get_object_or_404(Solution, problem=self.problem)
+        return solution
 
     def get_context_data(self, **kwargs):
         context = super(ProblemSolution, self).get_context_data(**kwargs)
-
-        solution = get_object_or_404(Solution, problem=self.object)
-
+        solution = self.get_object()
         if (
             not solution.is_public or solution.publish_on > timezone.now()
         ) and not self.request.user.has_perm("judge.see_private_solution"):
             raise Http404()
 
         context["solution"] = solution
-        context["has_solved_problem"] = self.object.id in self.get_completed_problems()
+        context["has_solved_problem"] = self.problem.id in self.get_completed_problems()
         return context
 
     def get_comment_page(self):
-        return "s:" + self.object.code
+        return "s:" + self.problem.code
 
 
 class ProblemRaw(
@@ -830,11 +834,12 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         return HttpResponseRedirect(request.get_full_path())
 
 
-class ProblemFeed(ProblemList, PageVoteListView, BookMarkListView):
+class ProblemFeed(ProblemList, FeedView):
     model = Problem
     context_object_name = "problems"
     template_name = "problem/feed.html"
-    paginate_by = 20
+    feed_content_template_name = "problem/feed/problems.html"
+    paginate_by = 4
     title = _("Problem feed")
     feed_type = None
 
@@ -842,19 +847,6 @@ class ProblemFeed(ProblemList, PageVoteListView, BookMarkListView):
         if not request.GET:
             return request.session.get(key, key == "hide_solved")
         return request.GET.get(key, None) == "1"
-
-    def get_paginator(
-        self, queryset, per_page, orphans=0, allow_empty_first_page=True, **kwargs
-    ):
-        return DiggPaginator(
-            queryset,
-            per_page,
-            body=6,
-            padding=2,
-            orphans=orphans,
-            allow_empty_first_page=allow_empty_first_page,
-            **kwargs
-        )
 
     def get_comment_page(self, problem):
         return "p:%s" % problem.code
@@ -962,8 +954,6 @@ class ProblemFeed(ProblemList, PageVoteListView, BookMarkListView):
         context["feed_type"] = self.feed_type
         context["has_show_editorial_option"] = False
         context["has_have_editorial_option"] = False
-        context = self.add_pagevote_context_data(context)
-        context = self.add_bookmark_context_data(context)
 
         return context
 

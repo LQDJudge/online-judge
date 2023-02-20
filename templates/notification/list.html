@@ -29,7 +29,7 @@
           </td>
           <td>
             {% if notification.comment %}
-              <a href="{{ notification.comment.link }}#comment-{{ notification.comment.id }}">{{ page_titles[notification.comment.page] }}</a>
+              <a href="{{ notification.comment.link }}#comment-{{ notification.comment.id }}">{{ notification.comment.page_title }}</a>
             {% else %}
               {% autoescape off %}
                 {{notification.html_link}}

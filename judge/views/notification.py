@@ -42,7 +42,6 @@ class NotificationList(ListView):
         context["unseen_count"] = self.unseen_cnt
         context["title"] = _("Notifications (%d unseen)" % context["unseen_count"])
         context["has_notifications"] = self.queryset.exists()
-        context["page_titles"] = CacheDict(lambda page: Comment.get_page_title(page))
         return context
 
     def get(self, request, *args, **kwargs):

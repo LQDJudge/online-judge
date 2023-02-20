@@ -55,6 +55,7 @@
 
 {% block three_col_js %}
   {% include "actionbar/media-js.html" %}
+  {% block problem_list_js %}{% endblock %}
   <script>
     window.point_start = {{point_start}};
     window.point_end = {{point_end}};

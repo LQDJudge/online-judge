@@ -74,13 +74,3 @@ class BookMarkDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         queryset = BookMark.objects.get_or_create(page=self.get_comment_page())
         context["bookmark"] = queryset[0]
         return context
-
-
-class BookMarkListView:
-    def add_bookmark_context_data(self, context, obj_list="object_list"):
-        for item in context[obj_list]:
-            bookmark, _ = BookMark.objects.get_or_create(
-                page=self.get_comment_page(item)
-            )
-            setattr(item, "bookmark", bookmark)
-        return context

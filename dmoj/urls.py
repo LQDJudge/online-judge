@@ -231,18 +231,19 @@ urlpatterns = [
     url(r"^problems/", paged_list_view(problem.ProblemList, "problem_list")),
     url(r"^problems/random/$", problem.RandomProblem.as_view(), name="problem_random"),
     url(
-        r"^problems/feed/",
-        paged_list_view(problem.ProblemFeed, "problem_feed", feed_type="for_you"),
+        r"^problems/feed/$",
+        problem.ProblemFeed.as_view(feed_type="for_you"),
+        name="problem_feed",
     ),
     url(
-        r"^problems/feed/new/",
-        paged_list_view(problem.ProblemFeed, "problem_feed_new", feed_type="new"),
+        r"^problems/feed/new/$",
+        problem.ProblemFeed.as_view(feed_type="new"),
+        name="problem_feed_new",
     ),
     url(
-        r"^problems/feed/volunteer/",
-        paged_list_view(
-            problem.ProblemFeed, "problem_feed_volunteer", feed_type="volunteer"
-        ),
+        r"^problems/feed/volunteer/$",
+        problem.ProblemFeed.as_view(feed_type="volunteer"),
+        name="problem_feed_volunteer",
     ),
     url(
         r"^problem/(?P<problem>[^/]+)",
@@ -750,7 +751,7 @@ urlpatterns = [
             ]
         ),
     ),
-    url(r"^blog/", paged_list_view(blog.PostList, "blog_post_list")),
+    url(r"^blog/", blog.PostList.as_view(), name="blog_post_list"),
     url(r"^post/(?P<id>\d+)-(?P<slug>.*)$", blog.PostView.as_view(), name="blog_post"),
     url(r"^license/(?P<key>[-\w.]+)$", license.LicenseDetail.as_view(), name="license"),
     url(

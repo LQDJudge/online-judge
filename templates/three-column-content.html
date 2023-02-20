@@ -67,12 +67,13 @@
         $('.left-sidebar-item').removeClass('active');
         $elem.addClass('active');
       }
+      $(window).off("scroll");
       $('.middle-right-content').html(loading_page);
       $.get(url, function (data) {
         var reload_content = $(data).find('.middle-right-content');
-
         if (reload_content.length) {
           window.history.pushState("", "", url);
+          $('html, body').animate({scrollTop: 0}, 'fast');
           $('.middle-right-content').html(reload_content.first().html());
           if (reload_content.hasClass("wrapper")) {
             $('.middle-right-content').addClass("wrapper");
@@ -86,6 +87,7 @@
           activateBlogBoxOnClick();
           $('.xdsoft_datetimepicker').hide();
           registerNavigation();
+
         }
         else {
           window.location.href = url;
