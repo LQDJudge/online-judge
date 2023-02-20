@@ -98,7 +98,6 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        page = self.get_comment_page()
         if self.is_comment_locked():
             return HttpResponseForbidden()
 
@@ -116,7 +115,6 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         if form.is_valid():
             comment = form.save(commit=False)
             comment.author = request.profile
-            comment.page = page
             comment.linked_object = self.object
 
             with LockModel(

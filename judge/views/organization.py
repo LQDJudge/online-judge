@@ -269,18 +269,6 @@ class OrganizationHome(OrganizationHomeView, FeedView):
     def get_comment_page(self, post):
         return "b:%s" % post.id
 
-    def get_feed_context(self, object_list):
-        post_comment_counts = {
-            int(page[2:]): count
-            for page, count in Comment.objects.filter(
-                page__in=["b:%d" % post.id for post in object_list], hidden=False
-            )
-            .values_list("page")
-            .annotate(count=Count("page"))
-            .order_by()
-        }
-        return {"post_comment_counts": post_comment_counts}
-
     def get_context_data(self, **kwargs):
         context = super(OrganizationHome, self).get_context_data(**kwargs)
         context["title"] = self.organization.name
@@ -292,15 +280,6 @@ class OrganizationHome(OrganizationHomeView, FeedView):
             + "."
             + get_current_site(self.request).domain
         )
-        context["post_comment_counts"] = {
-            int(page[2:]): count
-            for page, count in Comment.objects.filter(
-                page__in=["b:%d" % post.id for post in context["posts"]], hidden=False
-            )
-            .values_list("page")
-            .annotate(count=Count("page"))
-            .order_by()
-        }
 
         now = timezone.now()
         visible_contests = (

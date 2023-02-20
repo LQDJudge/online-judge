@@ -24,10 +24,6 @@ from judge.utils.cachedict import CacheDict
 
 __all__ = ["Comment", "CommentLock", "CommentVote", "Notification"]
 
-comment_validator = RegexValidator(
-    r"^[pcs]:[a-z0-9]+$|^b:\d+$", _(r"Page code must be ^[pcs]:[a-z0-9]+$|^b:\d+$")
-)
-
 
 class VersionRelation(GenericRelation):
     def __init__(self):
@@ -49,12 +45,6 @@ class Comment(MPTTModel):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     linked_object = GenericForeignKey("content_type", "object_id")
-    page = models.CharField(
-        max_length=30,
-        verbose_name=_("associated page"),
-        db_index=True,
-        validators=[comment_validator],
-    )
     score = models.IntegerField(verbose_name=_("votes"), default=0)
     body = models.TextField(verbose_name=_("body of comment"), max_length=8192)
     hidden = models.BooleanField(verbose_name=_("hide the comment"), default=0)
@@ -170,7 +160,6 @@ class CommentLock(models.Model):
         max_length=30,
         verbose_name=_("associated page"),
         db_index=True,
-        validators=[comment_validator],
     )
 
     class Meta:

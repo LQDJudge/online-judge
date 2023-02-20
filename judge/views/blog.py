@@ -101,33 +101,12 @@ class PostList(HomeFeedView):
         queryset = queryset.filter(filter)
         return queryset
 
-    def get_feed_context(self, object_list):
-        post_comment_counts = {
-            int(page[2:]): count
-            for page, count in Comment.objects.filter(
-                page__in=["b:%d" % post.id for post in object_list], hidden=False
-            )
-            .values_list("page")
-            .annotate(count=Count("page"))
-            .order_by()
-        }
-        return {"post_comment_counts": post_comment_counts}
-
     def get_context_data(self, **kwargs):
         context = super(PostList, self).get_context_data(**kwargs)
         context["title"] = (
             self.title or _("Page %d of Posts") % context["page_obj"].number
         )
         context["page_type"] = "blog"
-        context["post_comment_counts"] = {
-            int(page[2:]): count
-            for page, count in Comment.objects.filter(
-                page__in=["b:%d" % post.id for post in context["posts"]], hidden=False
-            )
-            .values_list("page")
-            .annotate(count=Count("page"))
-            .order_by()
-        }
         return context
 
     def get_comment_page(self, post):
