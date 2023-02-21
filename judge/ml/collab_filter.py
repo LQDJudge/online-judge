@@ -41,7 +41,7 @@ class CollabFilter:
 
     def user_recommendations(self, user, problems, measure=DOT, limit=None, **kwargs):
         uid = user.id
-        problems_hash = hashlib.sha1(str(problems).encode()).hexdigest()
+        problems_hash = hashlib.sha1(str(list(problems)).encode()).hexdigest()
         cache_key = ":".join(map(str, [self.name, uid, measure, limit, problems_hash]))
         value = cache.get(cache_key)
         if value:
