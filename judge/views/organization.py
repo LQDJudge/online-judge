@@ -139,7 +139,9 @@ class OrganizationMixin(OrganizationBase):
             self.organization_id = int(kwargs["pk"])
             self.organization = get_object_or_404(Organization, id=self.organization_id)
         except Http404:
-            key = kwargs.get(self.slug_url_kwarg, None)
+            key = None
+            if hasattr(self, "slug_url_kwarg"):
+                key = kwargs.get(self.slug_url_kwarg, None)
             if key:
                 return generic_message(
                     request,
