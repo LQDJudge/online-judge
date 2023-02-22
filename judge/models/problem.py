@@ -559,6 +559,9 @@ class Problem(models.Model):
         return result
 
     def save(self, *args, **kwargs):
+        self.pdf_description.name = problem_directory_file_helper(
+            self.code, self.pdf_description.name
+        )
         super(Problem, self).save(*args, **kwargs)
         if self.code != self.__original_code:
             try:

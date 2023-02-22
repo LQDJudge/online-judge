@@ -63,7 +63,6 @@ from judge.models import (
     Submission,
     SubmissionSource,
     Organization,
-    VolunteerProblemVote,
     Profile,
     LanguageTemplate,
 )
