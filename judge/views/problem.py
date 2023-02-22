@@ -947,6 +947,12 @@ class ProblemFeed(ProblemList, FeedView):
             res[position_in_q[problem.id]] = problem
         return res
 
+    def get_feed_context(self, object_list):
+        return {
+            "completed_problem_ids": self.get_completed_problems(),
+            "attempted_problems": self.get_attempted_problems(),
+        }
+
     def get_context_data(self, **kwargs):
         context = super(ProblemFeed, self).get_context_data(**kwargs)
         context["page_type"] = "feed"
