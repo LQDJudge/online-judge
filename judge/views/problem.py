@@ -765,7 +765,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         )
 
     def GET_with_session(self, request, key):
-        if not request.GET:
+        if not request.GET.get(key):
             return request.session.get(key, False)
         return request.GET.get(key, None) == "1"
 
@@ -842,11 +842,6 @@ class ProblemFeed(ProblemList, FeedView):
     paginate_by = 4
     title = _("Problem feed")
     feed_type = None
-
-    def GET_with_session(self, request, key):
-        if not request.GET:
-            return request.session.get(key, key == "hide_solved")
-        return request.GET.get(key, None) == "1"
 
     def get_comment_page(self, problem):
         return "p:%s" % problem.code
