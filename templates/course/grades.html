@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        table {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        table th {
+            border: 1px solid black;
+            padding: 5px;
+        }
+        table td {
+            border: 1px solid black;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Grades</h1>
+    <!-- {% for something in object_list %}
+        <h2> {{ something }} </h2>
+    {% endfor %} -->
+
+    <table>
+        <tr>
+            <th>Name</th>
+            {% for contest in contests %}
+                <th>{{ contest }}(%)</th>
+            {% endfor %}
+            <th>Progress</th>
+        </tr>
+        {% for student in object_list %}
+            <tr>
+                {% for data in student %}
+                    <td>{{ data }}</td>
+                {% endfor %}
+            </tr>    
+        {% endfor %}
+    </table>
+
+</body>
+</html>

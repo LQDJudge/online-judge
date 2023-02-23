@@ -77,7 +77,7 @@ class Course(models.Model):
 
     @classmethod
     def get_students(cls,course):
-        return CourseRole.objects.filter(course=course, role="ST").values("user")
+        return CourseRole.objects.filter(course=course, role="ST")
 
     @classmethod
     def get_assistants(cls,course):
@@ -104,7 +104,7 @@ class Course(models.Model):
 
 
 class CourseRole(models.Model):
-    course = models.OneToOneField(
+    course = models.ForeignKey(
         Course,
         verbose_name=_("course"),
         on_delete=models.CASCADE,
@@ -167,7 +167,7 @@ class CourseResource(models.Model):
 
 
 class CourseAssignment(models.Model):
-    course = models.OneToOneField(
+    course = models.ForeignKey(
         Course,
         verbose_name=_("course"),
         on_delete=models.CASCADE,

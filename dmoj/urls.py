@@ -487,7 +487,6 @@ urlpatterns = [
         ),
     ),
     url(r"^contests/", paged_list_view(contests.ContestList, "contest_list")),
-    url(r"^course/", paged_list_view(course.CourseList, "course_list" )),
     url(
         r"^contests/(?P<year>\d+)/(?P<month>\d+)/$",
         contests.ContestCalendar.as_view(),
@@ -591,6 +590,24 @@ urlpatterns = [
                 ),
             ]
         ),
+    ),
+    url(r"^courses/", paged_list_view(course.CourseList, "course_list" )),
+    url(
+        r"^courses/(?P<slug>[\w-]*)",
+        include(
+            [
+                url(
+                    r"^$", 
+                    course.CourseDetail.as_view(), 
+                    name="course_detail"
+                ),
+                url(
+                    r"^/grades$",
+                    course.CourseStudentResults.as_view(),
+                    name="grades"
+                ),
+            ]
+        )
     ),
     url(
         r"^organizations/$",

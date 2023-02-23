@@ -449,6 +449,13 @@ class Contest(models.Model):
             "profile_id", flat=True
         )
 
+    @cached_property
+    def total_points(self):
+        total = 0
+        for problem in self.problems.all():
+            total += problem.points
+        return total
+
     def __str__(self):
         return self.name
 
@@ -543,7 +550,7 @@ class Contest(models.Model):
             return True
 
         return False
-
+    
     @classmethod
     def get_visible_contests(cls, user, show_own_contests_only=False):
         if not user.is_authenticated:

@@ -9,11 +9,11 @@
 <body>
     <h1>Enrolling</h1>
     {% for course in enrolling %}
-        <h2> {{ course }} </h2>
+        <h2><a href="{{ url('course_detail',course.name) }}"> {{ course }} </a></h2>
     {% endfor %}
     <h1> Available </h1>
     {% for course in available %}
-        <h2> {{ course }} </h2>
+        <h2><a href="{{ url('course_detail',course.name) }}"> {{ course }} </a></h2>
     {% endfor %}
 </body>
 </html>
