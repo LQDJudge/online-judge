@@ -42,6 +42,8 @@ from judge.models import (
     Course,
 )
 
+from judge.models.course import CourseResource
+
 
 admin.site.register(BlogPost, BlogPostAdmin)
 admin.site.register(Comment, CommentAdmin)
@@ -66,3 +68,4 @@ admin.site.register(Submission, SubmissionAdmin)
 admin.site.register(Ticket, TicketAdmin)
 admin.site.register(VolunteerProblemVote, VolunteerProblemVoteAdmin)
 admin.site.register(Course)
+admin.site.register(CourseResource)

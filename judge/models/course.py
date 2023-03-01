@@ -58,9 +58,7 @@ class Course(models.Model):
         return self.name
 
     @classmethod
-    def is_editable_by(course, profile):
-        if profile.is_superuser:
-            return True
+    def is_editable_by(cls, course, profile):
         userquery = CourseRole.objects.filter(course=course, user=profile)
         if userquery.exists():
             if userquery[0].role == "AS" or userquery[0].role == "TE":
@@ -68,7 +66,7 @@ class Course(models.Model):
         return False
 
     @classmethod
-    def is_accessible_by(cls,course, profile):
+    def is_accessible_by(cls, course, profile):
         userqueryset = CourseRole.objects.filter(course=course, user=profile)
         if userqueryset.exists():
             return True
@@ -76,35 +74,35 @@ class Course(models.Model):
             return False
 
     @classmethod
-    def get_students(cls,course):
+    def get_students(cls, course):
         return CourseRole.objects.filter(course=course, role="ST").values("user")
 
     @classmethod
-    def get_assistants(cls,course):
+    def get_assistants(cls, course):
         return CourseRole.objects.filter(course=course, role="AS").values("user")
 
     @classmethod
-    def get_teachers(cls,course):
+    def get_teachers(cls, course):
         return CourseRole.objects.filter(course=course, role="TE").values("user")
 
     @classmethod
-    def add_student(cls,course, profiles):
+    def add_student(cls, course, profiles):
         for profile in profiles:
             CourseRole.make_role(course=course, user=profile, role="ST")
 
     @classmethod
-    def add_teachers(cls,course, profiles):
+    def add_teachers(cls, course, profiles):
         for profile in profiles:
             CourseRole.make_role(course=course, user=profile, role="TE")
 
     @classmethod
-    def add_assistants(cls,course, profiles):
+    def add_assistants(cls, course, profiles):
         for profile in profiles:
             CourseRole.make_role(course=course, user=profile, role="AS")
 
 
 class CourseRole(models.Model):
-    course = models.OneToOneField(
+    course = models.ForeignKey(
         Course,
         verbose_name=_("course"),
         on_delete=models.CASCADE,
@@ -142,7 +140,7 @@ class CourseRole(models.Model):
 
 
 class CourseResource(models.Model):
-    course = models.OneToOneField(
+    course = models.ForeignKey(
         Course,
         verbose_name=_("course"),
         on_delete=models.CASCADE,
@@ -165,15 +163,18 @@ class CourseResource(models.Model):
         default=False,
     )
 
+    def __str__(self):
+        return f"Resource - {self.pk}"
+
 
 class CourseAssignment(models.Model):
-    course = models.OneToOneField(
+    course = models.ForeignKey(
         Course,
         verbose_name=_("course"),
         on_delete=models.CASCADE,
         db_index=True,
     )
-    contest = models.OneToOneField(
+    contest = models.ForeignKey(
         Contest,
         verbose_name=_("contest"),
         on_delete=models.CASCADE,

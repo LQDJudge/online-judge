@@ -492,7 +492,39 @@ urlpatterns = [
         ),
     ),
     url(r"^contests/", paged_list_view(contests.ContestList, "contest_list")),
-    url(r"^course/", paged_list_view(course.CourseList, "course_list")),
+    url(r"^courses/", paged_list_view(course.CourseList, "course_list")),
+    url(
+        r"^courses/(?P<pk>\d+)-(?P<slug>[\w-]*)",
+        include(
+            [
+                url(
+                    r"^$",
+                    course.CourseHome.as_view(),
+                    name="course_home",
+                ),
+                url(
+                    r"^/resource/$",
+                    course.CourseResourceList.as_view(),
+                    name="course_resource",
+                ),
+                url(
+                    r"^/resource_edit/$",
+                    course.CourseResourceEdit.as_view(),
+                    name="course_resource_edit",
+                ),
+                url(
+                    r"^/resource/(?P<pk>\d+)/$",
+                    course.CourseResouceDetail.as_view(),
+                    name="course_resource_detail",
+                ),
+                url(
+                    r"^/resource/(?P<pk>\d+)/edit",
+                    course.CourseResourceDetailEdit.as_view(),
+                    name="course_resource_detail_edit",
+                ),
+            ]
+        ),
+    ),
     url(
         r"^contests/(?P<year>\d+)/(?P<month>\d+)/$",
         contests.ContestCalendar.as_view(),

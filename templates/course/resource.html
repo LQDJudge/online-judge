@@ -1,0 +1,11 @@
+<h1> {{ course.name }}'s Resource </h1>
+
+<ul>
+    {% for resource in object_list %}
+        <li> 
+            <a href="/courses/{{ course.pk }}-{{ course.slug }}/resource/{{ resource.pk }}"> {{ resource }} </a> 
+        </li>
+    {% endfor %}
+</ul>
+
+<a href="/courses/{{ course.pk }}-{{ course.slug }}/resource_edit"> Edit resources</a>

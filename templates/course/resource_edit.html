@@ -1,0 +1,33 @@
+{{ course }}
+
+<form id="resource-form" method="post" action="">
+    {% csrf_token %}
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Delete</th>
+            <th>Order</th>
+            <th>Public</th>
+            <th>Edit link</th>
+        </tr>
+        {% for resource in object_list %}
+        <tr>
+            <td> {{ resource }} </td>
+            <td> <input type="checkbox" name="resource-{{ resource.pk }}-delete" id="resource-{{ resource.pk }}-delete">
+            </td>
+            <td> <input type="number" name="resource-{{ resource.pk }}-order" value="{{
+                resource.order }}" id="resource-{{ resource.pk }}-order"> </a></td>
+            {% if resource.is_public %}
+            <td> <input type="checkbox" name="resource-{{ resource.pk }}-public" id="resource-{{ resource.pk }}-public"
+                    checked=""> </a></td>
+            {% else %}
+            <td> <input type="checkbox" name="resource-{{ resource.pk }}-public" id="resource-{{ resource.pk }}-public">
+                </a></td>
+            {% endif %}
+            <td> <a href="/courses/{{ course.pk }}-{{ course.slug }}/resource/{{ resource.pk }}/edit"> Edit </a></td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <button type="submit">Save</button>
+</form>
