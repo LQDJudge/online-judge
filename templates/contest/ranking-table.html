@@ -1,79 +1,77 @@
 {% extends "user/base-users-table.html" %}
 
-{% set friends = request.profile.get_friends() if request.user.is_authenticated else {} %}
-
 {% block after_rank_head %}
-    {% if has_rating %}
-        <th class="rating-column">{{ _('Rating') }}</th>
-    {% endif %}
+  {% if has_rating %}
+    <th class="rating-column">{{ _('Rating') }}</th>
+  {% endif %}
 {% endblock %}
 
 {% block after_rank %}
-    {% if has_rating %}
-        <td class="rating-column">{% if user.participation_rating %}{{ rating_number(user.participation_rating) }}{% endif %}</td>
-    {% endif %}
+  {% if has_rating %}
+    <td class="rating-column">{% if user.participation_rating %}{{ rating_number(user.participation_rating) }}{% endif %}</td>
+  {% endif %}
 {% endblock %}
 
 {% block user_footer %}
-    {% if user.user.first_name %}
-        <div style="font-weight: 600; display: none" class="fullname gray">
-            {{ user.user.first_name if user.user.first_name else ''}}
-        </div>
-    {% endif %}
-    {% if user.user.last_name %}
-        <div class="school gray" style="display: none"><a style="font-weight: 600">
-            {{- user.user.last_name -}}
-        </a></div>
-    {% endif %}
+  {% if user.user.first_name %}
+    <div style="font-weight: 600; display: none" class="fullname gray">
+      {{ user.user.first_name if user.user.first_name else ''}}
+    </div>
+  {% endif %}
+  {% if user.user.last_name %}
+    <div class="school gray" style="display: none"><a style="font-weight: 600">
+      {{- user.user.last_name -}}
+    </a></div>
+  {% endif %}
 {% endblock %}
 
 {% block user_data %}
-    {% if user.participation.virtual %}
-        <sub class="gray">[{{user.participation.virtual}}]</sub>
-    {% endif %}
-    {% if can_edit %}
-        <span class="contest-participation-operation">
-            <form action="{{ url('contest_participation_disqualify', contest.key) }}" method="post">
-                {% csrf_token %}
-                <input type="hidden" name="participation" value="{{ user.participation.id }}">
-                {% if user.participation.is_disqualified %}
-                    <a href="#" title="{{ _('Un-Disqualify') }}"
-                       class="un-disqualify-participation"><i class="fa fa-undo fa-fw"></i></a>
-                {% else %}
-                    <a href="#" title="{{ _('Disqualify') }}"
-                       class="disqualify-participation"><i class="fa fa-trash fa-fw"></i></a>
-                {% endif %}
-            </form>
-            {% if perms.judge.change_contestparticipation %}
-                <a href="{{ url('admin:judge_contestparticipation_change', user.participation.id) }}"
-                   title="{{ _('Admin') }}" class="edit-participation"><i class="fa fa-cog fa-fw"></i></a>
-            {% endif %}
-        </span>
-    {% endif %}
+  {% if user.participation.virtual %}
+    <sub class="gray">[{{user.participation.virtual}}]</sub>
+  {% endif %}
+  {% if can_edit %}
+    <span class="contest-participation-operation">
+      <form action="{{ url('contest_participation_disqualify', contest.key) }}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="participation" value="{{ user.participation.id }}">
+        {% if user.participation.is_disqualified %}
+          <a href="#" title="{{ _('Un-Disqualify') }}"
+            class="un-disqualify-participation"><i class="fa fa-undo fa-fw"></i></a>
+        {% else %}
+          <a href="#" title="{{ _('Disqualify') }}"
+            class="disqualify-participation"><i class="fa fa-trash fa-fw"></i></a>
+        {% endif %}
+      </form>
+      {% if perms.judge.change_contestparticipation %}
+        <a href="{{ url('admin:judge_contestparticipation_change', user.participation.id) }}"
+          title="{{ _('Admin') }}" class="edit-participation"><i class="fa fa-cog fa-fw"></i></a>
+      {% endif %}
+    </span>
+  {% endif %}
 {% endblock %}
 
 {% block before_point_head %}
-    <th class="full-name" style="display:none;">{{ _('Fullname') }}</th>
-    <th style="display:none;">{{ _('School') }}</th>
-    {% for problem in problems %}
-        <th class="points header problem-score-col" title="{{ problem.problem.name }}"><a href="{{ url('problem_detail', problem.problem.code) }}">
-            {{- contest.get_label_for_problem(loop.index0) }}
-            <div class="point-denominator">{{ problem.points }}</div>
-            <div class="problem-code" style="display: none;">{{ problem.problem.code }}</div>
-        </a></th>
-    {% endfor %}
+  <th class="full-name" style="display:none;">{{ _('Fullname') }}</th>
+  <th style="display:none;">{{ _('School') }}</th>
+  {% for problem in problems %}
+    <th class="points header problem-score-col" title="{{ problem.problem.name }}"><a href="{{ url('problem_detail', problem.problem.code) }}">
+      {{- contest.get_label_for_problem(loop.index0) }}
+      <div class="point-denominator">{{ problem.points }}</div>
+      <div class="problem-code" style="display: none;">{{ problem.problem.code }}</div>
+    </a></th>
+  {% endfor %}
 {% endblock %}
 
 {% block row_extra %}
-    class="{{ 'disqualified' if user.participation.is_disqualified }} {{'highlight' if user.username == request.user.username}}"
+  class="{{ 'disqualified' if user.participation.is_disqualified }} {{'highlight' if user.username == request.user.username}}"
 {% endblock %}
 
 {% block before_point %}
-    {% for cell in user.problem_cells %}
-        {{ cell }}
-    {% endfor %}
+  {% for cell in user.problem_cells %}
+    {{ cell }}
+  {% endfor %}
 {% endblock %}
 
 {% block point %}
-    {{ user.result_cell }}
+  {{ user.result_cell }}
 {% endblock %}

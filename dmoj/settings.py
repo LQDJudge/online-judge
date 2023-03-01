@@ -247,6 +247,7 @@ INSTALLED_APPS += (
 )
 
 MIDDLEWARE = (
+    "judge.middleware.SlowRequestMiddleware",
     "judge.middleware.ShortCircuitMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -262,6 +263,7 @@ MIDDLEWARE = (
     "judge.middleware.DMOJImpersonationMiddleware",
     "judge.middleware.ContestMiddleware",
     "judge.middleware.DarkModeMiddleware",
+    "judge.middleware.SubdomainMiddleware",
     "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
     "judge.social_auth.SocialAuthExceptionMiddleware",
     "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
@@ -467,6 +469,9 @@ FILE_UPLOAD_PERMISSIONS = 0o644
 MESSAGES_TO_LOAD = 15
 
 ML_OUTPUT_PATH = None
+
+# Use subdomain for organizations
+USE_SUBDOMAIN = False
 
 try:
     with open(os.path.join(os.path.dirname(__file__), "local_settings.py")) as f:

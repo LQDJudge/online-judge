@@ -63,7 +63,6 @@ from judge.models import (
     Submission,
     SubmissionSource,
     Organization,
-    VolunteerProblemVote,
     Profile,
     LanguageTemplate,
 )
@@ -76,6 +75,7 @@ from judge.utils.problems import (
     hot_problems,
     user_attempted_ids,
     user_completed_ids,
+    get_related_problems,
 )
 from judge.utils.strings import safe_float_or_none, safe_int_or_none
 from judge.utils.tickets import own_ticket_filter
@@ -86,8 +86,9 @@ from judge.utils.views import (
     generic_message,
 )
 from judge.ml.collab_filter import CollabFilter
-from judge.views.pagevote import PageVoteDetailView, PageVoteListView
-from judge.views.bookmark import BookMarkDetailView, BookMarkListView
+from judge.views.pagevote import PageVoteDetailView
+from judge.views.bookmark import BookMarkDetailView
+from judge.views.feed import FeedView
 
 
 def get_contest_problem(problem, profile):
@@ -103,6 +104,14 @@ def get_contest_submission_count(problem, profile, virtual):
         .filter(problem__problem=problem, participation__virtual=virtual)
         .count()
     )
+
+
+def get_problems_in_organization(request, organization):
+    problem_list = ProblemList(request=request)
+    problem_list.setup_problem_list(request)
+    problem_list.org_query = [organization.id]
+    problems = problem_list.get_normal_queryset()
+    return problems
 
 
 class ProblemMixin(object):
@@ -145,10 +154,13 @@ class SolvedProblemMixin(object):
         else:
             return user_attempted_ids(self.profile) if self.profile is not None else ()
 
-    def get_latest_attempted_problems(self, limit=None):
+    def get_latest_attempted_problems(self, limit=None, queryset=None):
         if self.in_contest or not self.profile:
             return ()
         result = list(user_attempted_ids(self.profile).values())
+        if queryset:
+            queryset_ids = set([i.code for i in queryset])
+            result = filter(lambda i: i["code"] in queryset_ids, result)
         result = sorted(result, key=lambda d: -d["last_submission"])
         if limit:
             result = result[:limit]
@@ -185,31 +197,34 @@ class ProblemSolution(
     template_name = "problem/editorial.html"
 
     def get_title(self):
-        return _("Editorial for {0}").format(self.object.name)
+        return _("Editorial for {0}").format(self.problem.name)
 
     def get_content_title(self):
         return format_html(
             _('Editorial for <a href="{1}">{0}</a>'),
-            self.object.name,
-            reverse("problem_detail", args=[self.object.code]),
+            self.problem.name,
+            reverse("problem_detail", args=[self.problem.code]),
         )
+
+    def get_object(self):
+        self.problem = super().get_object()
+        solution = get_object_or_404(Solution, problem=self.problem)
+        return solution
 
     def get_context_data(self, **kwargs):
         context = super(ProblemSolution, self).get_context_data(**kwargs)
-
-        solution = get_object_or_404(Solution, problem=self.object)
-
+        solution = self.get_object()
         if (
             not solution.is_public or solution.publish_on > timezone.now()
         ) and not self.request.user.has_perm("judge.see_private_solution"):
             raise Http404()
 
         context["solution"] = solution
-        context["has_solved_problem"] = self.object.id in self.get_completed_problems()
+        context["has_solved_problem"] = self.problem.id in self.get_completed_problems()
         return context
 
     def get_comment_page(self):
-        return "s:" + self.object.code
+        return "s:" + self.problem.code
 
 
 class ProblemRaw(
@@ -341,6 +356,10 @@ class ProblemDetail(
         else:
             context["fileio_input"] = None
             context["fileio_output"] = None
+        if not self.in_contest:
+            context["related_problems"] = get_related_problems(
+                self.profile, self.object
+            )
 
         return context
 
@@ -454,6 +473,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
     default_desc = frozenset(("date", "points", "ac_rate", "user_count"))
     default_sort = "-date"
     first_page_href = None
+    filter_organization = False
 
     def get_paginator(
         self, queryset, per_page, orphans=0, allow_empty_first_page=True, **kwargs
@@ -465,13 +485,10 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             padding=2,
             orphans=orphans,
             allow_empty_first_page=allow_empty_first_page,
+            count=queryset.values("pk").count() if not self.in_contest else None,
             **kwargs
         )
         if not self.in_contest:
-            # Get the number of pages and then add in this magic.
-            # noinspection PyStatementEffect
-            paginator.num_pages
-
             queryset = queryset.add_i18n_name(self.request.LANGUAGE_CODE)
             sort_key = self.order.lstrip("-")
             if sort_key in self.sql_sort:
@@ -573,25 +590,13 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         ]
 
     def get_normal_queryset(self):
-        filter = Q(is_public=True)
-        if self.profile is not None:
-            filter |= Q(authors=self.profile)
-            filter |= Q(curators=self.profile)
-            filter |= Q(testers=self.profile)
-        queryset = (
-            Problem.objects.filter(filter).select_related("group").defer("description")
-        )
-        if not self.request.user.has_perm("see_organization_problem"):
-            filter = Q(is_organization_private=False)
-            if self.profile is not None:
-                filter |= Q(organizations__in=self.profile.organizations.all())
-            queryset = queryset.filter(filter)
+        queryset = Problem.get_visible_problems(self.request.user)
+        queryset = queryset.select_related("group")
         if self.profile is not None and self.hide_solved:
-            queryset = queryset.exclude(
-                id__in=Submission.objects.filter(
-                    user=self.profile, points=F("problem__points")
-                ).values_list("problem__id", flat=True)
-            )
+            solved_problems = self.get_completed_problems()
+            queryset = queryset.exclude(id__in=solved_problems)
+        if not self.org_query and self.request.organization:
+            self.org_query = [self.request.organization.id]
         if self.org_query:
             self.org_query = self.get_org_query(self.org_query)
             queryset = queryset.filter(
@@ -652,6 +657,8 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
     def get_context_data(self, **kwargs):
         context = super(ProblemList, self).get_context_data(**kwargs)
 
+        if self.request.organization:
+            self.filter_organization = True
         context["hide_solved"] = 0 if self.in_contest else int(self.hide_solved)
         context["show_types"] = 0 if self.in_contest else int(self.show_types)
         context["full_text"] = 0 if self.in_contest else int(self.full_text)
@@ -663,8 +670,12 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
 
         if self.request.profile:
             context["organizations"] = self.request.profile.organizations.all()
-        all_authors_ids = set(Problem.objects.values_list("authors", flat=True))
-        context["all_authors"] = Profile.objects.filter(id__in=all_authors_ids)
+        all_authors_ids = Problem.objects.values_list("authors", flat=True)
+        context["all_authors"] = (
+            Profile.objects.filter(id__in=all_authors_ids)
+            .select_related("user")
+            .values("id", "user__username")
+        )
         context["category"] = self.category
         context["categories"] = ProblemGroup.objects.all()
         if self.show_types:
@@ -676,7 +687,9 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         context["search_query"] = self.search_query
         context["completed_problem_ids"] = self.get_completed_problems()
         context["attempted_problems"] = self.get_attempted_problems()
-        context["last_attempted_problems"] = self.get_latest_attempted_problems(15)
+        context["last_attempted_problems"] = self.get_latest_attempted_problems(
+            15, context["problems"] if self.filter_organization else None
+        )
         context["page_type"] = "list"
         context.update(self.get_sort_paginate_context())
         if not self.in_contest:
@@ -751,7 +764,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         )
 
     def GET_with_session(self, request, key):
-        if not request.GET:
+        if not request.GET.get(key):
             return request.session.get(key, False)
         return request.GET.get(key, None) == "1"
 
@@ -820,31 +833,14 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         return HttpResponseRedirect(request.get_full_path())
 
 
-class ProblemFeed(ProblemList, PageVoteListView, BookMarkListView):
+class ProblemFeed(ProblemList, FeedView):
     model = Problem
     context_object_name = "problems"
     template_name = "problem/feed.html"
-    paginate_by = 20
+    feed_content_template_name = "problem/feed/problems.html"
+    paginate_by = 4
     title = _("Problem feed")
     feed_type = None
-
-    def GET_with_session(self, request, key):
-        if not request.GET:
-            return request.session.get(key, key == "hide_solved")
-        return request.GET.get(key, None) == "1"
-
-    def get_paginator(
-        self, queryset, per_page, orphans=0, allow_empty_first_page=True, **kwargs
-    ):
-        return DiggPaginator(
-            queryset,
-            per_page,
-            body=6,
-            padding=2,
-            orphans=orphans,
-            allow_empty_first_page=allow_empty_first_page,
-            **kwargs
-        )
 
     def get_comment_page(self, problem):
         return "p:%s" % problem.code
@@ -945,6 +941,12 @@ class ProblemFeed(ProblemList, PageVoteListView, BookMarkListView):
             res[position_in_q[problem.id]] = problem
         return res
 
+    def get_feed_context(self, object_list):
+        return {
+            "completed_problem_ids": self.get_completed_problems(),
+            "attempted_problems": self.get_attempted_problems(),
+        }
+
     def get_context_data(self, **kwargs):
         context = super(ProblemFeed, self).get_context_data(**kwargs)
         context["page_type"] = "feed"
@@ -952,8 +954,6 @@ class ProblemFeed(ProblemList, PageVoteListView, BookMarkListView):
         context["feed_type"] = self.feed_type
         context["has_show_editorial_option"] = False
         context["has_have_editorial_option"] = False
-        context = self.add_pagevote_context_data(context)
-        context = self.add_bookmark_context_data(context)
 
         return context
 

@@ -1,186 +1,186 @@
 {% extends "submission/info-base.html" %}
 {% block media %}
-    <style>
-        .line {
-            position: relative;
-        }
+  <style>
+    .line {
+      position: relative;
+    }
 
-        .highlighter {
-            position: absolute;
-            width: 9999px;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
-        }
+    .highlighter {
+      position: absolute;
+      width: 9999px;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
 
-        a:active .line .highlighter {
-            background: rgba(255, 212, 0, 0.48);
-        }
+    a:active .line .highlighter {
+      background: rgba(255, 212, 0, 0.48);
+    }
 
-        .copy-clipboard {
-            margin-top: 0;
-        }
+    .copy-clipboard {
+      margin-top: 0;
+    }
 
-        .testcases-table tbody:last-child {
-            border-bottom: none;
-        }
+    .testcases-table tbody:last-child {
+      border-bottom: none;
+    }
 
-        .toggle {
-            cursor: pointer;
-            font-weight: 400;
-        }
+    .toggle {
+      cursor: pointer;
+      font-weight: 400;
+    }
 
-        #source-header {
-            font-size: 1.54em;
-            margin-bottom: 1em;
-        }
+    #source-header {
+      font-size: 1.54em;
+      margin-bottom: 1em;
+    }
 
-        .case-icons i {
-            font-size: large;
-            font-weight: bolder;
-            cursor: pointer;
-        }
-        @media(max-width: 799px) {
-            .source-ln {
-                display: none;
-            }
-            .source-code {
-                -webkit-text-size-adjust: none;
-                padding-left: 0;
-            }
-            .source-wrap {
-                padding: 0.7em;
-            }
-        }
-    </style>
+    .case-icons i {
+      font-size: large;
+      font-weight: bolder;
+      cursor: pointer;
+    }
+    @media(max-width: 799px) {
+      .source-ln {
+        display: none;
+      }
+      .source-code {
+        -webkit-text-size-adjust: none;
+        padding-left: 0;
+      }
+      .source-wrap {
+        padding: 0.7em;
+      }
+    }
+  </style>
 {% endblock %}
 {% block content_js_media %}
-    <script type="text/javascript" src="{{ static('event.js') }}"></script>
-    <script type="text/javascript">
-        function setup_icons() {
-            $(".case-icons i").each(function() {
-                $(this).on("click", function() {
-                    var id = "tr#" + $(this).attr("id").split("-")[1];
-                    $(id).click();
-                    $([document.documentElement, document.body]).animate({
-                            scrollTop: $(id).offset().top - 50
-                        }, 800);
-                });
-            });
+  <script type="text/javascript" src="{{ static('event.js') }}"></script>
+  <script type="text/javascript">
+    function setup_icons() {
+      $(".case-icons i").each(function() {
+        $(this).on("click", function() {
+          var id = "tr#" + $(this).attr("id").split("-")[1];
+          $(id).click();
+          $([document.documentElement, document.body]).animate({
+            scrollTop: $(id).offset().top - 50
+          }, 800);
+        });
+      });
+    }
+    $(function() {
+      setup_icons();
+    });
+  </script>
+  {% if not submission.is_graded and last_msg %}
+    <script type="text/javascript">$(function () {
+      var blocked = false, request = false;
+      var list = $('#test-cases');
+
+      function update() {
+        if (blocked) {
+          request = true;
+          return;
         }
-        $(function() {
-            setup_icons();
+        request = false;
+        blocked = true;
+        $.ajax({
+          url: '{{ url('submission_testcases_query') }}',
+          data: {id: '{{ submission.id }}'}
+        }).done(function (data) {
+          data = $(data);
+          list.find(".open").each(function() {
+            var id = $(this).attr("id");
+            data.find("#" + id).removeClass("closed").addClass("open");
+            data.find("#" + id + "-output").show();
+          });
+          list.empty().html(data).find('.toggle').each(function () {
+            register_toggle($(this));
+          });
+          setup_icons();
+          setTimeout(function () {
+            blocked = false;
+            if (request)
+            update();
+          }, 500);
+        }).fail(function (data) {
+          console.log('Failed to update testcases!');
         });
+
+        if ($(window).scrollTop() + $(window).height() > $(document).height() - 100)
+        $("html, body").animate({scrollTop: $(document).height()}, 0);
+      }
+
+      var receiver = new EventReceiver(
+        "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
+        ['sub_{{ submission.id_secret }}'], {{ last_msg }}, function (message) {
+          switch (message.type) {
+            case 'internal-error':
+            case 'grading-end':
+            case 'compile-error':
+              $('#abort-button').remove();
+              $('#grading-label').remove();
+            case 'test-case':
+            case 'grading-begin':
+            case 'processing':
+              update();
+          }
+        }
+      )
+    });
     </script>
-    {% if not submission.is_graded and last_msg %}
-        <script type="text/javascript">$(function () {
-            var blocked = false, request = false;
-            var list = $('#test-cases');
-
-            function update() {
-                if (blocked) {
-                    request = true;
-                    return;
-                }
-                request = false;
-                blocked = true;
-                $.ajax({
-                    url: '{{ url('submission_testcases_query') }}',
-                    data: {id: '{{ submission.id }}'}
-                }).done(function (data) {
-                    data = $(data);
-                    list.find(".open").each(function() {
-                        var id = $(this).attr("id");
-                        data.find("#" + id).removeClass("closed").addClass("open");
-                        data.find("#" + id + "-output").show();
-                    });
-                    list.empty().html(data).find('.toggle').each(function () {
-                        register_toggle($(this));
-                    });
-                    setup_icons();
-                    setTimeout(function () {
-                        blocked = false;
-                        if (request)
-                            update();
-                    }, 500);
-                }).fail(function (data) {
-                    console.log('Failed to update testcases!');
-                });
-
-                if ($(window).scrollTop() + $(window).height() > $(document).height() - 100)
-                    $("html, body").animate({scrollTop: $(document).height()}, 0);
-            }
-
-            var receiver = new EventReceiver(
-                "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
-                ['sub_{{ submission.id_secret }}'], {{ last_msg }}, function (message) {
-                    switch (message.type) {
-                        case 'internal-error':
-                        case 'grading-end':
-                        case 'compile-error':
-                            $('#abort-button').remove();
-                            $('#grading-label').remove();
-                        case 'test-case':
-                        case 'grading-begin':
-                        case 'processing':
-                            update();
-                    }
-                }
-            )
-        });
-        </script>
-    {% endif %}
+  {% endif %}
 {% endblock %}
 {% block body %}
-    <div style="clear: both"></div>
-    <br>
-    {% if request.user == submission.user.user or perms.judge.resubmit_other %}
-        <div><a href="{{ url('problem_submit', submission.problem.code, submission.id) }}">{{ _('Resubmit') }}</a></div>
-    {% endif %}
-    {% if perms.judge.rejudge_submission %}
-        <div>
-            <form action="{{ url('submission_rejudge') }}" method="post">
-                {% csrf_token %}
-                <a href="#" onclick="parentNode.submit()">{{ _('Rejudge') }}</a>
-                <input type="hidden" name="id" value="{{ submission.id }}">
-                <input type="hidden" name="path" value="{{ url('submission_status', submission.id) }}">
-            </form>
-        </div>
-    {% endif %}
-
-    <br>
-    <h3 id="source-header" class="toggle closed"><i class="fa fa-chevron-right fa-fw"></i>{{_('Source code')}}</h3>
-    <div class="source-wrap toggled" style="display: none; margin-bottom: 1em">
-        <table style="width: 100%">
-            <tr>
-                <td class="source-ln" style="width: 0">
-                    <div>
-                        {% for line in raw_source.split('\n') %}
-                            <a href="#line-{{ loop.index }}" name="line-{{ loop.index }}">
-                                <pre class="line">{{ loop.index }}</pre>
-                            </a>
-                        {% endfor %}
-                    </div>
-                </td>
-                <td class="source-code">{{ highlighted_source }}</td>
-            </tr>
-        </table>
+  <div style="clear: both"></div>
+  <br>
+  {% if request.user == submission.user.user or perms.judge.resubmit_other %}
+    <div><a href="{{ url('problem_submit', submission.problem.code, submission.id) }}">{{ _('Resubmit') }}</a></div>
+  {% endif %}
+  {% if perms.judge.rejudge_submission %}
+    <div>
+      <form action="{{ url('submission_rejudge') }}" method="post">
+        {% csrf_token %}
+        <a href="#" onclick="parentNode.submit()">{{ _('Rejudge') }}</a>
+        <input type="hidden" name="id" value="{{ submission.id }}">
+        <input type="hidden" name="path" value="{{ url('submission_status', submission.id) }}">
+      </form>
     </div>
+  {% endif %}
 
-    <div id="test-cases">{% include "submission/status-testcases.html" %}</div>
-    {% if not submission.is_graded %}
-        {% if perms.judge.abort_any_submission %}
-            <div id="abort-button">
-                <br>
-                <hr>
-                <br>
-                <form action="{{ url('submission_abort', submission.id) }}" method="post">
-                    {% csrf_token %}
-                    <input style="float:left" type="submit" value="{{ _('Abort') }}" class="button">
-                    <br><br>
-                </form>
-            </div>
-        {% endif %}
+  <br>
+  <h3 id="source-header" class="toggle closed"><i class="fa fa-chevron-right fa-fw"></i>{{_('Source code')}}</h3>
+  <div class="source-wrap toggled" style="display: none; margin-bottom: 1em">
+    <table style="width: 100%">
+      <tr>
+        <td class="source-ln" style="width: 0">
+          <div>
+            {% for line in raw_source.split('\n') %}
+              <a href="#line-{{ loop.index }}" name="line-{{ loop.index }}">
+                <pre class="line">{{ loop.index }}</pre>
+              </a>
+            {% endfor %}
+          </div>
+        </td>
+        <td class="source-code">{{ highlighted_source }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <div id="test-cases">{% include "submission/status-testcases.html" %}</div>
+  {% if not submission.is_graded %}
+    {% if perms.judge.abort_any_submission %}
+      <div id="abort-button">
+        <br>
+        <hr>
+        <br>
+        <form action="{{ url('submission_abort', submission.id) }}" method="post">
+          {% csrf_token %}
+          <input style="float:left" type="submit" value="{{ _('Abort') }}" class="button">
+          <br><br>
+        </form>
+      </div>
     {% endif %}
+  {% endif %}
 {% endblock %}

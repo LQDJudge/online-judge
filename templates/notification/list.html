@@ -2,49 +2,49 @@
 
 {% block body %}
 
-{% if not has_notifications %}
+  {% if not has_notifications %}
 
-<h2 style="text-align: center;">{{ _('You have no notifications') }}</h2>
+    <h2 style="text-align: center;">{{ _('You have no notifications') }}</h2>
 
-{% else %}
+  {% else %}
     <table class="table">
-    <tr>
+      <tr>
         <th>{{ _('User') }}</th>
         <th>{{ _('Activity') }}</th>
         <th>{{ _('Link') }}</th>
         <th>{{ _('Time') }}</th>
-    </tr>
-    {% for notification in notifications %}
-    <tr class="{{ 'highlight' if not notification.seen }}">    
-        <td>
+      </tr>
+      {% for notification in notifications %}
+        <tr class="{{ 'highlight' if not notification.seen }}">
+          <td>
             {% if notification.comment %}
-                {{ link_user(notification.comment.author) }}
+              {{ link_user(notification.comment.author) }}
             {% else %}
-                {{ link_user(notification.author) }}
+              {{ link_user(notification.author) }}
             {% endif %}
-            
-        </td>
-        <td>
+
+          </td>
+          <td>
             {{ notification.category }}
-        </td>
-        <td>
+          </td>
+          <td>
             {% if notification.comment %}
-                <a href="{{ notification.comment.link }}#comment-{{ notification.comment.id }}">{{ page_titles[notification.comment.page] }}</a>
+              <a href="{{ notification.comment.link }}#comment-{{ notification.comment.id }}">{{ notification.comment.page_title }}</a>
             {% else %}
-                {% autoescape off %}
-                    {{notification.html_link}}
-                {% endautoescape %}
+              {% autoescape off %}
+                {{notification.html_link}}
+              {% endautoescape %}
             {% endif %}
-        </td>
-        <td>
+          </td>
+          <td>
             {{ relative_time(notification.time) }}
-        </td>
-    </tr>
-    {% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
     </table>
-{% endif %}
+  {% endif %}
 
 {% endblock %}
 
-<!-- 
+<!--
           -->

@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
 {% block js_media %}
-    {% compress js %}
-        {% include "stats/media-js.html" %}
-    {% endcompress %}
+  {% compress js %}
+    {% include "stats/media-js.html" %}
+  {% endcompress %}
 {% endblock %}
 
 {% block content_title %}{% endblock %}
 {% block title_ruler %}{% endblock %}
 
 {% block body %}
-    {% include "stats/tab.html" %}
-    {% block chart_body %}{% endblock %}
+  {% include "stats/tab.html" %}
+  {% block chart_body %}{% endblock %}
 {% endblock %}

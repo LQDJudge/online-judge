@@ -1,54 +1,54 @@
 {% extends "base.html" %}
 
 {% block media %}
-    {{ form.media.css }}
-    <style>
-        form#clarification-form {
-            display: block;
-            margin: 0 auto;
-            width: 100%;
-            max-width: 750px;
-            padding-top: 1em;
-        }
+  {{ form.media.css }}
+  <style>
+    form#clarification-form {
+      display: block;
+      margin: 0 auto;
+      width: 100%;
+      max-width: 750px;
+      padding-top: 1em;
+    }
 
-        #id_title {
-            width: 100%;
-        }
+    #id_title {
+      width: 100%;
+    }
 
-        form#clarification-form .submit {
-            margin: 10px 0 0 auto;
-        }
-    </style>
+    form#clarification-form .submit {
+      margin: 10px 0 0 auto;
+    }
+  </style>
 {% endblock %}
 
 {% block js_media %}
-{{ form.media.js }}
-<script>
+  {{ form.media.js }}
+  <script>
     $(function() {
-        $('#problem-select').select2({width: '40em'});
+      $('#problem-select').select2({width: '40em'});
     });
-</script>
+  </script>
 {% endblock %}
 
 {% block body %}
-    <form id="clarification-form" action="" method="POST" class="form-area">
-        {% csrf_token %}
-        {% if form.body.errors %}
-            <div class="form-errors">
-                {{ form.body.errors }}
-            </div>
-        {% endif %}
-        <h4>
-            <span>{{_('Problem')}}: </span>
-            <select name="problem" id="problem-select">
-                {% for problem in problems %}
-                    <option value="{{ problem.problem.code }}" class="point-dropdown">
-                        {{ problem.order }}. {{problem.problem.name}}
-                    </option>
-                {% endfor %}
-            </select>
-        </h4>
-        <div class="body-block">{{ form.body }}</div>
-        <button type="submit" class="submit">{{ _('Create') }}</button>
-    </form>
+  <form id="clarification-form" action="" method="POST" class="form-area">
+    {% csrf_token %}
+    {% if form.body.errors %}
+      <div class="form-errors">
+        {{ form.body.errors }}
+      </div>
+    {% endif %}
+    <h4>
+      <span>{{_('Problem')}}: </span>
+      <select name="problem" id="problem-select">
+        {% for problem in problems %}
+          <option value="{{ problem.problem.code }}" class="point-dropdown">
+            {{ problem.order }}. {{problem.problem.name}}
+          </option>
+        {% endfor %}
+      </select>
+    </h4>
+    <div class="body-block">{{ form.body }}</div>
+    <button type="submit" class="submit">{{ _('Create') }}</button>
+  </form>
 {% endblock %}

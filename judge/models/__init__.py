@@ -56,6 +56,7 @@ from judge.models.ticket import Ticket, TicketMessage
 from judge.models.volunteer import VolunteerProblemVote
 from judge.models.pagevote import PageVote, PageVoteVoter
 from judge.models.bookmark import BookMark, MakeBookMark
+from judge.models.course import Course
 
 revisions.register(Profile, exclude=["points", "last_access", "ip", "rating"])
 revisions.register(Problem, follow=["language_limits"])
@@ -81,4 +82,5 @@ revisions.register(Rating)
 revisions.register(PageVoteVoter)
 revisions.register(VolunteerProblemVote)
 revisions.register(MakeBookMark)
+revisions.register(Course)
 del revisions

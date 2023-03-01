@@ -1,7 +1,9 @@
-{% if not request.in_contest_mode %}
-    <div class="left-sidebar">
-        {{ make_tab_item('feed', 'fa fa-pagelines', url('problem_feed'), _('Feed')) }}
-        {{ make_tab_item('list', 'fa fa-list', url('problem_list'), _('List')) }}
-        {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_problem_changelist'), _('Admin')) }}
-    </div>
+{% if not show_contest_mode %}
+  <div class="left-sidebar">
+    {{ make_tab_item('feed', 'fa fa-pagelines', url('problem_feed'), _('Feed')) }}
+    {{ make_tab_item('list', 'fa fa-list', url('problem_list'), _('List')) }}
+    {% if request.user.is_superuser %}
+      {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_problem_changelist'), _('Admin')) }}
+    {% endif %}
+  </div>
 {% endif %}

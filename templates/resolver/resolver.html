@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE }}">
 
-<head>
+  <head>
     <title>Contest Resolver</title>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,29 +14,29 @@
     <script src="{{ static('libs/jquery-3.4.1.min.js') }}"></script>
     <script src="{{ static('resolver.js') }}"></script>
     <!-- <script src="{{ static('resolver-main.js') }}"></script> -->
-</head>
+  </head>
 
-<body class="app">
+  <body class="app">
     <div class="hidden-board">
     </div>
 
     <div class="info-bar">
-        <div class="rank">Rank</div>
-        <div class="content">
-            <div class="name">Name</div>
-        </div>
-        <div class="score">Score</div>
+      <div class="rank">Rank</div>
+      <div class="content">
+        <div class="name">Name</div>
+      </div>
+      <div class="score">Score</div>
     </div>
 
     <div class="rank-list">
     </div>
 
     <div class="show-rank">
-        <div class="rank-show"> X </div>
-        <div class="name-show"> Y </div>
-        <div class="school-show"> Z </div>
+      <div class="rank-show"> X </div>
+      <div class="name-show"> Y </div>
+      <div class="school-show"> Z </div>
     </div>
     {% include "resolver/media-js.html" %}
-</body>
+  </body>
 
 </html>

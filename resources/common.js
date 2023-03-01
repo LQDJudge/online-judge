@@ -359,6 +359,32 @@ function onWindowReady() {
         $('#form-lang').submit();
     })
     $('#logout').on('click', () => $('#logout-form').submit());
+
+    var copyButton;
+    $('pre code').each(function () {
+        $(this).parent().before($('<div>', {'class': 'copy-clipboard'})
+                .append(copyButton = $('<span>', {
+                'class': 'btn-clipboard',
+                'data-clipboard-text': $(this).text(),
+                'title': 'Click to copy'
+            }).text('Copy')));
+
+        $(copyButton.get(0)).mouseleave(function () {
+            $(this).attr('class', 'btn-clipboard');
+            $(this).removeAttr('aria-label');
+        });
+
+        var curClipboard = new Clipboard(copyButton.get(0));
+
+        curClipboard.on('success', function (e) {
+            e.clearSelection();
+            showTooltip(e.trigger, 'Copied!');
+        });
+
+        curClipboard.on('error', function (e) {
+            showTooltip(e.trigger, fallbackMessage(e.action));
+        });
+    });
 }
 
 $(function() {

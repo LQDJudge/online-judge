@@ -1,19 +1,19 @@
 {% extends "user/users-table.html" %}
 
 {% block before_point_head %}
-    {% if can_edit %}
-        <th class="header"></th>
-    {% endif %}
+  {% if can_edit %}
+    <th class="header"></th>
+  {% endif %}
 {% endblock %}
 
 {% block before_point %}
-    {% if can_edit %}
-        <td>
-            <form action="{{ kick_url }}" method="POST" class="kick-form">
-                {% csrf_token %}
-                <input type="hidden" name="user" value="{{ user.id }}">
-                <a href="#" class="button small">{{ _('Kick') }}</a>
-            </form>
-        </td>
-    {% endif %}
+  {% if can_edit %}
+    <td>
+      <form action="{{ kick_url }}" method="POST" class="kick-form">
+        {% csrf_token %}
+        <input type="hidden" name="user" value="{{ user.id }}">
+        <a href="#" class="button small">{{ _('Kick') }}</a>
+      </form>
+    </td>
+  {% endif %}
 {% endblock %}

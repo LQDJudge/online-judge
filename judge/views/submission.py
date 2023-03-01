@@ -41,17 +41,13 @@ from judge.models import ProblemTranslation
 from judge.models import Profile
 from judge.models import Submission
 from judge.utils.problems import get_result_data
-from judge.utils.problems import user_authored_ids
-from judge.utils.problems import user_completed_ids
-from judge.utils.problems import user_editable_ids
+from judge.utils.problems import user_completed_ids, user_editable_ids, user_tester_ids
 from judge.utils.problem_data import get_problem_case
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
 from judge.utils.views import DiggPaginatorMixin
+from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.utils.views import TitleMixin
 from judge.utils.timedelta import nice_repr
-
-
-MAX_NUMBER_OF_QUERY_SUBMISSIONS = 50000
 
 
 def submission_related(queryset):
@@ -266,7 +262,7 @@ class SubmissionStatus(SubmissionDetailBase):
         can_see_testcases = self.access_testcases_in_contest()
 
         if contest is not None:
-            prefix_length = contest.problem.output_prefix_override
+            prefix_length = contest.problem.output_prefix_override or 0
 
         if contest is None or prefix_length > 0 or can_see_testcases:
             context["cases_data"] = get_cases_data(submission)
@@ -333,7 +329,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         return result
 
     def _get_result_data(self):
-        return get_result_data(self._get_queryset().order_by())
+        return get_result_data(self.get_queryset().order_by())
 
     def access_check(self, request):
         pass
@@ -404,16 +400,21 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                 language__in=Language.objects.filter(key__in=self.selected_languages)
             )
         if self.selected_statuses:
-            queryset = queryset.filter(
-                Q(result__in=self.selected_statuses)
-                | Q(status__in=self.selected_statuses)
-            )
+            submission_results = [i for i, _ in Submission.RESULT]
+            if self.selected_statuses[0] in submission_results:
+                queryset = queryset.filter(result__in=self.selected_statuses)
+            else:
+                queryset = queryset.filter(status__in=self.selected_statuses)
 
         return queryset
 
-    def _get_queryset(self):
+    def get_queryset(self):
         queryset = self._get_entire_queryset()
         if not self.in_contest:
+            if self.request.organization:
+                queryset = queryset.filter(
+                    contest_object__organizations=self.request.organization
+                )
             join_sql_subquery(
                 queryset,
                 subquery=str(
@@ -429,10 +430,10 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             )
         return queryset
 
-    def get_queryset(self):
-        return self._get_queryset()[:MAX_NUMBER_OF_QUERY_SUBMISSIONS]
-
     def get_my_submissions_page(self):
+        return None
+
+    def get_friend_submissions_page(self):
         return None
 
     def get_all_submissions_page(self):
@@ -473,11 +474,11 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["completed_problem_ids"] = (
             user_completed_ids(self.request.profile) if authenticated else []
         )
-        context["authored_problem_ids"] = (
-            user_authored_ids(self.request.profile) if authenticated else []
-        )
         context["editable_problem_ids"] = (
             user_editable_ids(self.request.profile) if authenticated else []
+        )
+        context["tester_problem_ids"] = (
+            user_tester_ids(self.request.profile) if authenticated else []
         )
 
         context["all_languages"] = Language.objects.all().values_list("key", "name")
@@ -499,6 +500,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         )
         context["first_page_href"] = (self.first_page_href or ".") + suffix
         context["my_submissions_link"] = self.get_my_submissions_page()
+        context["friend_submissions_link"] = self.get_friend_submissions_page()
         context["all_submissions_link"] = self.get_all_submissions_page()
         context["page_type"] = self.page_type
 
@@ -513,8 +515,8 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         if check is not None:
             return check
 
-        self.selected_languages = set(request.GET.getlist("language"))
-        self.selected_statuses = set(request.GET.getlist("status"))
+        self.selected_languages = request.GET.getlist("language")
+        self.selected_statuses = request.GET.getlist("status")
 
         if self.in_contest and self.contest.is_editable_by(self.request.user):
             self.include_frozen = True
@@ -554,11 +556,25 @@ class ConditionalUserTabMixin(object):
         return context
 
 
-class AllUserSubmissions(ConditionalUserTabMixin, UserMixin, SubmissionsListBase):
-    def _get_queryset(self):
+class GeneralSubmissions(SubmissionsListBase):
+    def get_my_submissions_page(self):
+        if self.request.user.is_authenticated:
+            return reverse(
+                "all_user_submissions", kwargs={"user": self.request.user.username}
+            )
+        return None
+
+    def get_friend_submissions_page(self):
+        if self.request.user.is_authenticated:
+            return reverse("all_friend_submissions")
+        return None
+
+
+class AllUserSubmissions(ConditionalUserTabMixin, UserMixin, GeneralSubmissions):
+    def get_queryset(self):
         return (
             super(AllUserSubmissions, self)
-            ._get_queryset()
+            .get_queryset()
             .filter(user_id=self.profile.id)
         )
 
@@ -569,18 +585,12 @@ class AllUserSubmissions(ConditionalUserTabMixin, UserMixin, SubmissionsListBase
 
     def get_content_title(self):
         if self.request.user.is_authenticated and self.request.profile == self.profile:
-            return format_html("All my submissions")
+            return format_html(_("All my submissions"))
         return format_html(
-            'All submissions by <a href="{1}">{0}</a>',
+            _('All submissions by <a href="{1}">{0}</a>'),
             self.username,
             reverse("user_page", args=[self.username]),
         )
-
-    def get_my_submissions_page(self):
-        if self.request.user.is_authenticated:
-            return reverse(
-                "all_user_submissions", kwargs={"user": self.request.user.username}
-            )
 
     def get_context_data(self, **kwargs):
         context = super(AllUserSubmissions, self).get_context_data(**kwargs)
@@ -590,12 +600,29 @@ class AllUserSubmissions(ConditionalUserTabMixin, UserMixin, SubmissionsListBase
         return context
 
 
+class AllFriendSubmissions(LoginRequiredMixin, GeneralSubmissions):
+    def get_queryset(self):
+        friends = self.request.profile.get_friends()
+        return (
+            super(AllFriendSubmissions, self).get_queryset().filter(user_id__in=friends)
+        )
+
+    def get_title(self):
+        return _("All friend submissions")
+
+    def get_context_data(self, **kwargs):
+        context = super(AllFriendSubmissions, self).get_context_data(**kwargs)
+        context["dynamic_update"] = False
+        context["page_type"] = "friend_tab"
+        return context
+
+
 class ProblemSubmissionsBase(SubmissionsListBase):
     show_problem = False
     dynamic_update = True
     check_contest_in_access_check = False
 
-    def _get_queryset(self):
+    def get_queryset(self):
         if (
             self.in_contest
             and not self.contest.contest_problems.filter(
@@ -687,10 +714,10 @@ class UserProblemSubmissions(ConditionalUserTabMixin, UserMixin, ProblemSubmissi
         if not self.is_own:
             self.access_check_contest(request)
 
-    def _get_queryset(self):
+    def get_queryset(self):
         return (
             super(UserProblemSubmissions, self)
-            ._get_queryset()
+            .get_queryset()
             .filter(user_id=self.profile.id)
         )
 
@@ -740,13 +767,13 @@ def single_submission(request, submission_id, show_problem=True):
         "submission/row.html",
         {
             "submission": submission,
-            "authored_problem_ids": user_authored_ids(request.profile)
-            if authenticated
-            else [],
             "completed_problem_ids": user_completed_ids(request.profile)
             if authenticated
             else [],
             "editable_problem_ids": user_editable_ids(request.profile)
+            if authenticated
+            else [],
+            "tester_problem_ids": user_tester_ids(request.profile)
             if authenticated
             else [],
             "show_problem": show_problem,
@@ -768,31 +795,46 @@ def single_submission_query(request):
     return single_submission(request, int(request.GET["id"]), bool(show_problem))
 
 
-class AllSubmissions(SubmissionsListBase):
+class AllSubmissions(InfinitePaginationMixin, GeneralSubmissions):
     stats_update_interval = 3600
 
-    def get_my_submissions_page(self):
-        if self.request.user.is_authenticated:
-            return reverse(
-                "all_user_submissions", kwargs={"user": self.request.user.username}
-            )
+    @property
+    def use_infinite_pagination(self):
+        return not self.in_contest
 
     def get_context_data(self, **kwargs):
         context = super(AllSubmissions, self).get_context_data(**kwargs)
-        context["dynamic_update"] = context["page_obj"].number == 1
+        context["dynamic_update"] = (
+            context["page_obj"].number == 1
+        ) and not self.request.organization
         context["last_msg"] = event.last()
         context["stats_update_interval"] = self.stats_update_interval
         return context
 
     def _get_result_data(self):
-        if self.in_contest or self.selected_languages or self.selected_statuses:
+        if self.request.organization or self.in_contest:
             return super(AllSubmissions, self)._get_result_data()
 
         key = "global_submission_result_data"
+        if self.selected_statuses:
+            key += ":" + ",".join(self.selected_statuses)
+        if self.selected_languages:
+            key += ":" + ",".join(self.selected_languages)
         result = cache.get(key)
         if result:
             return result
-        result = super(AllSubmissions, self)._get_result_data()
+        queryset = Submission.objects
+        if self.selected_languages:
+            queryset = queryset.filter(
+                language__in=Language.objects.filter(key__in=self.selected_languages)
+            )
+        if self.selected_statuses:
+            submission_results = [i for i, _ in Submission.RESULT]
+            if self.selected_statuses[0] in submission_results:
+                queryset = queryset.filter(result__in=self.selected_statuses)
+            else:
+                queryset = queryset.filter(status__in=self.selected_statuses)
+        result = get_result_data(queryset)
         cache.set(key, result, self.stats_update_interval)
         return result
 

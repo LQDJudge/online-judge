@@ -1,51 +1,62 @@
 {% set logged_in = request.user.is_authenticated %}
 {% set profile = request.profile if logged_in else None %}
+{% set hide_texts_on_mobile = (not hide_actionbar_comment) or actionbar_report_url %}
 {% if logged_in %}
-{% if include_hr %}<hr>{% endif %}
-<div class="page-vote actionbar">
+  {% if include_hr %}
+    <hr>
+  {% endif %}
+  <div class="page-vote actionbar {{'hide_texts_on_mobile' if hide_texts_on_mobile}} ">
     <span class="actionbar-block" style="justify-content: flex-start;">
-        <span id="like-button-{{pagevote.id}}"
-            class="like-button actionbar-button {% if pagevote.vote_score(request.profile) == 1 %}voted{% endif %}" 
-            onclick="javascript:pagevote_upvote({{ pagevote.id }})"
-        >
-            <span class="pagevote-score" id="pagevote-score-{{pagevote.id}}">{{ pagevote.score }}</span>
-            <i class="fa fa-thumbs-o-up" style="font-size: large;"></i>
-            <span class="actionbar-text">{{_("Like")}}</span>
-        </span>
-        <span id="dislike-button-{{pagevote.id}}" class="dislike-button actionbar-button {% if pagevote.vote_score(request.profile) == -1 %}voted{% endif %}" onclick="javascript:pagevote_downvote({{ pagevote.id }})">
-            <i class="fa fa-thumbs-o-down" style="font-size: large;"></i>
-        </span>
+      <span id="like-button-{{pagevote.id}}"
+        class="like-button actionbar-button {% if pagevote.vote_score(request.profile) == 1 %}voted{% endif %}"
+        onclick="javascript:pagevote_upvote({{ pagevote.id }}, event)">
+        <span class="pagevote-score" id="pagevote-score-{{pagevote.id}}">{{ pagevote.score }}</span>
+        <i class="fa fa-thumbs-o-up" style="font-size: large;"></i>
+        <span class="actionbar-text">{{_("Like")}}</span>
+      </span>
+      <span id="dislike-button-{{pagevote.id}}"
+        class="dislike-button actionbar-button {% if pagevote.vote_score(request.profile) == -1 %}voted{% endif %}"
+        onclick="javascript:pagevote_downvote({{ pagevote.id }}, event)">
+        <i class="fa fa-thumbs-o-down" style="font-size: large;"></i>
+      </span>
     </span>
     {% if not hide_actionbar_comment %}
-    <span class="actionbar-block">
+      <span class="actionbar-block">
         <span class="actionbar-button actionbar-comment">
-            <i class="fa fa-comment-o" style="font-size: large;"></i>
-            <span class="actionbar-text">{{_("Comment")}}</span>
+          <i class="fa fa-comment-o" style="font-size: large;"></i>
+          <span class="actionbar-text">
+            {{_("Comment")}}
+          </span>
+          {% if comment_list.count() %}
+            <span style="margin-left: 0.2em">
+              ({{comment_list.count()}})
+            </span>
+          {% endif %}
         </span>
-    </span>
+      </span>
     {% endif %}
     <span class="actionbar-block">
-        <span id="bookmark-button-{{bookmark.id}}" 
-            class="bookmark-button actionbar-button {% if bookmark.get_bookmark(request.profile) == True %} bookmarked {% endif %}" 
-            onclick="javascript:bookmark({{ bookmark.id }})"
-        >
-            <i class="fa fa-bookmark-o" style="font-size: large;"></i>
-            <span class="actionbar-text">{{_("Bookmark")}}</span>
-        </span>
+      <span id="bookmark-button-{{bookmark.id}}"
+        class="bookmark-button actionbar-button {% if bookmark.get_bookmark(request.profile) == True %} bookmarked {% endif %}"
+        onclick="javascript:bookmark({{ bookmark.id }}, event)">
+        <i class="fa fa-bookmark-o" style="font-size: large;"></i>
+        <span class="actionbar-text">{{_("Bookmark")}}</span>
+      </span>
     </span>
-    <span class="actionbar-block" >
-        <span class="actionbar-button actionbar-share" style="position: relative" {{"share-url=" + share_url if share_url else ""}}>
-            <i class="fa fa-share" style="font-size: large;"></i>
-            <span class="actionbar-text">{{_("Share")}}</span>
-        </span>
+    <span class="actionbar-block" style="justify-content: flex-end;">
+      <span class="actionbar-button actionbar-share" style="position: relative"
+        {{"share-url=" + share_url if share_url else ""}} onclick="javascript:actionbar_share(this, event)">
+        <i class=" fa fa-share" style="font-size: large;"></i>
+        <span class="actionbar-text">{{_("Share")}}</span>
+      </span>
     </span>
     {% if actionbar_report_url %}
-        <span class="actionbar-block">
-            <a class="actionbar-button black" href="{{actionbar_report_url}}">
-                <i class="fa fa-flag-o" style="font-size: large;"></i>
-                <span class="actionbar-text">{{_("Report")}}</span>
-            </a>
-        </span>
+      <span class="actionbar-block">
+        <a class="actionbar-button black" href="{{actionbar_report_url}}">
+          <i class="fa fa-flag-o" style="font-size: large;"></i>
+          <span class="actionbar-text">{{_("Report")}}</span>
+        </a>
+      </span>
     {% endif %}
-</div>
+  </div>
 {% endif %}

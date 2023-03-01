@@ -1,143 +1,143 @@
 {% extends "base.html" %}
 
 {% block media %}
-    {% block user_media %}{% endblock %}
+  {% block user_media %}{% endblock %}
 
-    <style>
-        .user-gravatar {
-            display: block;
-            padding-right: 15px;
-            width: 145px;
-        }
+  <style>
+    .user-gravatar {
+      display: block;
+      padding-right: 15px;
+      width: 145px;
+    }
 
-        .user-gravatar img {
-            width: 145px;
-            height: 145px;
-            display: block;
-            border-radius: 6px;
-        }
+    .user-gravatar img {
+      width: 145px;
+      height: 145px;
+      display: block;
+      border-radius: 6px;
+    }
 
-        .page-title {
-            display: -webkit-box;
-            display: -webkit-flex;
-            display: -ms-flexbox;
-            display: flex;
-        }
+    .page-title {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+    }
 
-        .user-info {
-            font-size: 1.4em;
-            line-height: 1.225;
-            font-weight: 500;
-        }
+    .user-info {
+      font-size: 1.4em;
+      line-height: 1.225;
+      font-weight: 500;
+    }
 
-        .user-info-container {
-            display: grid;
-            grid-column-gap: .5rem;
-            grid-row-gap: 1rem;
-            grid-template-columns: repeat(6, minmax(10rem, 1fr));
-        }
+    .user-info-container {
+      display: grid;
+      grid-column-gap: .5rem;
+      grid-row-gap: 1rem;
+      grid-template-columns: repeat(6, minmax(10rem, 1fr));
+    }
 
-        .user-info-card {
-            align-items: center;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            padding: 1rem;
-        }
+    .user-info-card {
+      align-items: center;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+    }
 
-        .user-info-body {
-            font-weight: bold;
-        }
+    .user-info-body {
+      font-weight: bold;
+    }
 
-        @media (max-width: 500px) {
-            .user-info-container {
-                grid-template-columns: repeat(2, minmax(10rem, 1fr));
-            }
-        }
+    @media (max-width: 500px) {
+      .user-info-container {
+        grid-template-columns: repeat(2, minmax(10rem, 1fr));
+      }
+    }
 
-        .user-stat {
-            text-align: right;
-            font-weight: bold;
-        }
+    .user-stat {
+      text-align: right;
+      font-weight: bold;
+    }
 
-        .user-stat-container {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5em;
-        }
+    .user-stat-container {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5em;
+    }
 
-        #awards img {
-            height: 105px;
-            margin-right: 1em;
-            margin-left: 1em;
-        }
+    #awards img {
+      height: 105px;
+      margin-right: 1em;
+      margin-left: 1em;
+    }
 
-        .bookmark-group {
-            margin-bottom: 1em;
-        }
-    </style>
+    .bookmark-group {
+      margin-bottom: 1em;
+    }
+  </style>
 {% endblock %}
 
 {% block js_media %}
-    {% block user_js_media %}{% endblock %}
+  {% block user_js_media %}{% endblock %}
 {% endblock %}
 
 {% block body %}
-    <div class="user-info-page">
-        <div class="user-sidebar">
-            <div class="user-gravatar">
-                <img src="{{ gravatar(user, 145) }}" width="145px" height="145px">
-            </div>
-            <br>
-            {% if request.user != user.user %}
-            <form method="post">
-                {% csrf_token %}
-                <button class="small {{ 'unfollow' if followed else 'follow' }}" style="width:145px">
-                    {% if followed %}
-                        <i class="fa fa-remove"></i>
-                        {{ _('Unfollow') }}
-                    {% else %}
-                        <i class="fa fa-user-plus"></i>
-                        {{ _('Follow') }}
-                    {% endif %}
-                </button>
-            </form>
+  <div class="user-info-page">
+    <div class="user-sidebar">
+      <div class="user-gravatar">
+        <img src="{{ gravatar(user, 145) }}" width="145px" height="145px">
+      </div>
+      <br>
+      {% if request.user != user.user %}
+        <form method="post">
+          {% csrf_token %}
+          <button class="small {{ 'unfollow' if followed else 'follow' }}" style="width:145px">
+            {% if followed %}
+              <i class="fa fa-remove"></i>
+              {{ _('Unfollow') }}
+            {% else %}
+              <i class="fa fa-user-plus"></i>
+              {{ _('Follow') }}
             {% endif %}
-            <br>
-            <div>
-                <form action="{{ url('all_user_submissions', user.user.username) }}">
-                    <input type="submit" value="{{ _('View submissions') }}" class="small" style="width:145px; padding-left: 1px; padding-right: 1px">
-                </form>
-            </div>
-            {% if request.user.is_authenticated %}
-            <br>
-            <div>
-                <form action="{{ url('get_or_create_room') }}" method="POST">
-                    {% csrf_token %}
-                    <input type="hidden" value="{{ chat_param(request.profile, user) }}" name="other">
-                    <input type="submit" value="{{ _('Send message') }}" style="width:145px" class="small btn-midnightblue">
-                </form>
-            </div>
-            {% endif %}
-
-            {% if ratings %}
-                <br>
-                <div style="border: 3px dashed darkgray; padding: 0.3em; margin-right: 15px; border-radius: 6px;">
-                    <div class="user-stat-container">
-                        <div class="user-stat-header">{{_('Contests written')}}:</div>
-                        <div class="user-stat">{{ratings|length}}</div>
-                    </div>
-                    <div class="user-stat-container">
-                        <div class="user-stat-header">{{ _('Min. rating:') }}</div>
-                        <div class="user-stat">{{ rating_number(min_rating) }}</div>
-                    </div>
-                    <div class="user-stat-container">
-                        <div class="user-stat-header">{{ _('Max rating:') }}</div>
-                        <div class="user-stat">{{ rating_number(max_rating) }}</div>
-                    </div>
-                </div>
-            {% endif %}
+          </button>
+        </form>
+      {% endif %}
+      <br>
+      <div>
+        <form action="{{ url('all_user_submissions', user.user.username) }}">
+          <input type="submit" value="{{ _('View submissions') }}" class="small" style="width:145px; padding-left: 1px; padding-right: 1px">
+        </form>
+      </div>
+      {% if request.user.is_authenticated %}
+        <br>
+        <div>
+          <form action="{{ url('get_or_create_room') }}" method="POST">
+            {% csrf_token %}
+            <input type="hidden" value="{{ chat_param(request.profile, user) }}" name="other">
+            <input type="submit" value="{{ _('Send message') }}" style="width:145px" class="small btn-midnightblue">
+          </form>
         </div>
-        <div class="user-content">{% block user_content %}{% endblock %}</div>
+      {% endif %}
+
+      {% if ratings %}
+        <br>
+        <div style="border: 3px dashed darkgray; padding: 0.3em; margin-right: 15px; border-radius: 6px;">
+          <div class="user-stat-container">
+            <div class="user-stat-header">{{_('Contests written')}}:</div>
+            <div class="user-stat">{{ratings|length}}</div>
+          </div>
+          <div class="user-stat-container">
+            <div class="user-stat-header">{{ _('Min. rating:') }}</div>
+            <div class="user-stat">{{ rating_number(min_rating) }}</div>
+          </div>
+          <div class="user-stat-container">
+            <div class="user-stat-header">{{ _('Max rating:') }}</div>
+            <div class="user-stat">{{ rating_number(max_rating) }}</div>
+          </div>
+        </div>
+      {% endif %}
     </div>
+    <div class="user-content">{% block user_content %}{% endblock %}</div>
+  </div>
 {% endblock %}

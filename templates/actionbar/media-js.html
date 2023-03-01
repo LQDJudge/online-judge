@@ -1,124 +1,126 @@
 {% compress js %}
-    <script type="text/javascript">
-        $(document).ready(function () {
-            function ajax_vote(url, id, delta, on_success) {
-                return $.ajax({
-                    url: url,
-                    type: 'POST',
-                    data: {
-                        id: id
-                    },
-                    success: function (data, textStatus, jqXHR) {
-                        var score = $('#pagevote-score-' + id);
-                        score.text(parseInt(score.text()) + delta);
-                        if (typeof on_success !== 'undefined')
-                            on_success();
-                    },
-                    error: function (data, textStatus, jqXHR) {
-                        alert('Could not vote: ' + data.responseText);
-                    }
-                });
-            }
-
-            function ajax_bookmark(url, id, on_success) {
-                return $.ajax({
-                    url: url,
-                    type: 'POST',
-                    data: {
-                        id: id
-                    },
-                    success: function (data, textStatus, jqXHR) {
-                        if (typeof on_success !== 'undefined')
-                            on_success();
-                    },
-                    error: function (data, textStatus, jqXHR) {
-                        alert('Could not bookmark: ' + data.responseText);
-                    }
-                });
-            }
-
-            window.bookmark = function(id) {
-                var $bookmark = $('#bookmark-button-' + id);
-                if ($bookmark.hasClass('bookmarked')) {
-                    ajax_bookmark('{{ url('undobookmark') }}', id, function () {
-                        $bookmark.removeClass('bookmarked');
-                    });
-                } else {
-                    ajax_bookmark('{{ url('dobookmark') }}', id, function () {
-                        if ($bookmark.hasClass('bookmarked'))
-                            $bookmark.removeClass('bookmarked');
-                        $bookmark.addClass('bookmarked');
-                    });
-                }
-            }
-            
-
-            var get_$votes = function (id) {
-                var $post = $('#page-vote-' + id);
-                return {
-                    upvote: $('#like-button-' + id),
-                    downvote: $('#dislike-button-' + id),
-                };
-            };
-
-            window.pagevote_upvote = function (id) {
-                var $votes = get_$votes(id);
-                if ($votes.upvote.hasClass('voted')) {
-                    ajax_vote('{{ url('pagevote_downvote') }}', id, -1, function () {
-                        $votes.upvote.removeClass('voted');
-                    });
-                }
-                else {
-                    var delta = 1;
-                    if ($votes.downvote.hasClass('voted')) {
-                        delta = 2;
-                    }
-                    for (let i = 0; i < delta; i++) {
-                        ajax_vote('{{ url('pagevote_upvote') }}', id, 1, function () {
-                            if ($votes.downvote.hasClass('voted'))
-                                $votes.downvote.removeClass('voted');
-                            $votes.upvote.addClass('voted');
-                        });
-                    }
-                }
-            };
-
-            window.pagevote_downvote = function (id) {
-                var $votes = get_$votes(id);
-                if ($votes.downvote.hasClass('voted')) {
-                    ajax_vote('{{ url('pagevote_upvote') }}', id, 1, function () {
-                        $votes.downvote.removeClass('voted');
-                    });
-                }
-                else {
-                    var delta = -1;
-                    if ($votes.upvote.hasClass('voted')) {
-                        delta = -2;
-                    }
-                    for (let i = 0; i > delta; i--) {
-                        ajax_vote('{{ url('pagevote_downvote') }}', id, -1, function () {
-                            if ($votes.upvote.hasClass('voted'))
-                                $votes.upvote.removeClass('voted');
-                            $votes.downvote.addClass('voted');
-                        });
-                    }
-                }
-            };
-            $(".actionbar-share").click( function() {
-                link = $(this).attr("share-url") || window.location.href;
-                navigator.clipboard
-                         .writeText(link)
-                         .then(() =>  {
-                            showTooltip(this, "Copied link", 'n');
-                        });
-            });
-
-            $('.actionbar-comment').on('click', function() {
-                if ($('#comment-announcement').length) {
-                    $('#comment-announcement').click();
-                }
-                $('#write-comment').click();
-            })
+  <script type="text/javascript">
+    $(document).ready(function () {
+      function ajax_vote(url, id, delta, on_success) {
+        return $.ajax({
+          url: url,
+          type: 'POST',
+          data: {
+            id: id
+          },
+          success: function (data, textStatus, jqXHR) {
+            var score = $('#pagevote-score-' + id);
+            score.text(parseInt(score.text()) + delta);
+            if (typeof on_success !== 'undefined')
+            on_success();
+          },
+          error: function (data, textStatus, jqXHR) {
+            alert('Could not vote: ' + data.responseText);
+          }
         });
-    </script>
+      }
+
+      function ajax_bookmark(url, id, on_success) {
+        return $.ajax({
+          url: url,
+          type: 'POST',
+          data: {
+            id: id
+          },
+          success: function (data, textStatus, jqXHR) {
+            if (typeof on_success !== 'undefined')
+            on_success();
+          },
+          error: function (data, textStatus, jqXHR) {
+            alert('Could not bookmark: ' + data.responseText);
+          }
+        });
+      }
+
+      window.bookmark = function(id, e) {
+        e.stopPropagation();
+        var $bookmark = $('#bookmark-button-' + id);
+        if ($bookmark.hasClass('bookmarked')) {
+          ajax_bookmark('{{ url('undobookmark') }}', id, function () {
+            $bookmark.removeClass('bookmarked');
+          });
+        } else {
+          ajax_bookmark('{{ url('dobookmark') }}', id, function () {
+            if ($bookmark.hasClass('bookmarked'))
+            $bookmark.removeClass('bookmarked');
+            $bookmark.addClass('bookmarked');
+          });
+        }
+      }
+
+
+      var get_$votes = function (id) {
+        var $post = $('#page-vote-' + id);
+        return {
+          upvote: $('#like-button-' + id),
+          downvote: $('#dislike-button-' + id),
+        };
+      };
+
+      window.pagevote_upvote = function (id, e) {
+        e.stopPropagation();
+        var $votes = get_$votes(id);
+        if ($votes.upvote.hasClass('voted')) {
+          ajax_vote('{{ url('pagevote_downvote') }}', id, -1, function () {
+            $votes.upvote.removeClass('voted');
+          });
+        }
+        else {
+          var delta = 1;
+          if ($votes.downvote.hasClass('voted')) {
+            delta = 2;
+          }
+          for (let i = 0; i < delta; i++) {
+            ajax_vote('{{ url('pagevote_upvote') }}', id, 1, function () {
+              if ($votes.downvote.hasClass('voted'))
+              $votes.downvote.removeClass('voted');
+              $votes.upvote.addClass('voted');
+            });
+          }
+        }
+      };
+
+      window.pagevote_downvote = function (id, e) {
+        e.stopPropagation();
+        var $votes = get_$votes(id);
+        if ($votes.downvote.hasClass('voted')) {
+          ajax_vote('{{ url('pagevote_upvote') }}', id, 1, function () {
+            $votes.downvote.removeClass('voted');
+          });
+        }
+        else {
+          var delta = -1;
+          if ($votes.upvote.hasClass('voted')) {
+            delta = -2;
+          }
+          for (let i = 0; i > delta; i--) {
+            ajax_vote('{{ url('pagevote_downvote') }}', id, -1, function () {
+              if ($votes.upvote.hasClass('voted'))
+              $votes.upvote.removeClass('voted');
+              $votes.downvote.addClass('voted');
+            });
+          }
+        }
+      };
+      window.actionbar_share = function(element, e) {
+        e.stopPropagation();
+        link = $(element).attr("share-url") || window.location.href;
+        navigator.clipboard
+          .writeText(link)
+          .then(() =>  {
+          showTooltip(element, "Copied link", 'n');
+        });
+      };
+
+      $('.actionbar-comment').on('click', function() {
+        $('#comment-section').show();
+        $('#write-comment').click();
+      })
+    });
+  </script>
 {% endcompress %}

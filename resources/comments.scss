@@ -278,3 +278,9 @@ a {
         color: rgb(180, 180, 7);
     }
 }
+
+@media (max-width: 799px) {
+    .hide_texts_on_mobile .actionbar-text {
+        display: none;
+    }
+}

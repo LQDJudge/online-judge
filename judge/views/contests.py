@@ -149,16 +149,22 @@ class ContestList(
     def get(self, request, *args, **kwargs):
         self.contest_query = None
         self.org_query = []
+        self.show_orgs = 0
+        if request.GET.get("show_orgs"):
+            self.show_orgs = 1
 
         if "orgs" in self.request.GET and self.request.profile:
             try:
                 self.org_query = list(map(int, request.GET.getlist("orgs")))
-                self.org_query = [
-                    i
-                    for i in self.org_query
-                    if i
-                    in self.request.profile.organizations.values_list("id", flat=True)
-                ]
+                if not self.request.user.is_superuser:
+                    self.org_query = [
+                        i
+                        for i in self.org_query
+                        if i
+                        in self.request.profile.organizations.values_list(
+                            "id", flat=True
+                        )
+                    ]
             except ValueError:
                 pass
 
@@ -179,6 +185,10 @@ class ContestList(
                 queryset = queryset.filter(
                     Q(key__icontains=query) | Q(name__icontains=query)
                 )
+        if not self.org_query and self.request.organization:
+            self.org_query = [self.request.organization.id]
+        if self.show_orgs:
+            queryset = queryset.filter(organizations=None)
         if self.org_query:
             queryset = queryset.filter(organizations__in=self.org_query)
 
@@ -225,8 +235,12 @@ class ContestList(
         context["first_page_href"] = "."
         context["contest_query"] = self.contest_query
         context["org_query"] = self.org_query
+        context["show_orgs"] = int(self.show_orgs)
         if self.request.profile:
-            context["organizations"] = self.request.profile.organizations.all()
+            if self.request.user.is_superuser:
+                context["organizations"] = Organization.objects.all()
+            else:
+                context["organizations"] = self.request.profile.organizations.all()
         context["page_type"] = "list"
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())
@@ -404,6 +418,15 @@ class ContestDetail(
     def get_title(self):
         return self.object.name
 
+    def get_editable_organizations(self):
+        if not self.request.profile:
+            return []
+        res = []
+        for organization in self.object.organizations.all():
+            if self.request.profile.can_edit_organization(organization):
+                res.append(organization)
+        return res
+
     def get_context_data(self, **kwargs):
         context = super(ContestDetail, self).get_context_data(**kwargs)
         context["contest_problems"] = (
@@ -421,6 +444,7 @@ class ContestDetail(
             )
             .add_i18n_name(self.request.LANGUAGE_CODE)
         )
+        context["editable_organizations"] = self.get_editable_organizations()
         return context
 
 
@@ -1002,8 +1026,8 @@ def contest_ranking_ajax(request, contest, participation=None):
 
     queryset = contest.users.filter(virtual__gte=0)
     if request.GET.get("friend") == "true" and request.profile:
-        friends = list(request.profile.get_friends())
-        queryset = queryset.filter(user__user__username__in=friends)
+        friends = request.profile.get_friends()
+        queryset = queryset.filter(user_id__in=friends)
     if request.GET.get("virtual") != "true":
         queryset = queryset.filter(virtual=0)
 
@@ -1085,9 +1109,8 @@ class ContestFinalRanking(LoginRequiredMixin, ContestRanking):
     def get_ranking_list(self):
         if not self.object.is_editable_by(self.request.user):
             raise Http404()
-        if self.object.format.has_hidden_subtasks:
+        if not self.object.format.has_hidden_subtasks:
             raise Http404()
-
         return get_contest_ranking_list(self.request, self.object, show_final=True)
 
 

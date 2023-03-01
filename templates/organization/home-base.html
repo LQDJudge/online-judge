@@ -1,21 +1,21 @@
 {% extends "three-column-content.html" %}
 
 {% block three_col_js %}
-    {% include "organization/home-js.html" %}
-    {% block org_js %}{% endblock %} 
+  {% include "organization/home-js.html" %}
+  {% block org_js %}{% endblock %}
 {% endblock %}
 
 {% block left_sidebar %}
-    {% include "organization/org-left-sidebar.html" %}
+  {% include "organization/org-left-sidebar.html" %}
 {% endblock %}
 
 {% block right_sidebar %}
-    {% include "organization/org-right-sidebar.html" %}
+  {% include "organization/org-right-sidebar.html" %}
 {% endblock %}
 
 {% block middle_title %}
-    {% if title or content_title %}
-        <center><h2>{{ content_title if content_title else title }}</h2></center>
-        <br/>
-    {% endif %}
+  {% if title or content_title %}
+    <center><h2>{{ content_title if content_title else title }}</h2></center>
+    <br/>
+  {% endif %}
 {% endblock %}

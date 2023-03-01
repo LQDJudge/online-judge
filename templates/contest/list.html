@@ -1,404 +1,414 @@
 {% extends "two-column-content.html" %}
 {% block meta %}
-    <meta name="description" content="The {{ SITE_NAME }}'s contest list - past, present, and future.">
+  <meta name="description" content="The {{ SITE_NAME }}'s contest list - past, present, and future.">
 {% endblock %}
 
 {% block two_col_media %}
-    <style>
-        .content-description ul {
-            padding: 0 !important;
-        }
+  <style>
+    .content-description ul {
+      padding: 0 !important;
+    }
 
-        .btn-contest {
-            display: inline-block;
-            padding: 1px 6px;
-        }
+    .btn-contest {
+      display: inline-block;
+      padding: 1px 6px;
+    }
 
-        .contest-group-header {
-            padding-bottom: 1em;
-        }
+    .contest-group-header {
+      padding-bottom: 1em;
+    }
 
-        {% if page_obj and page_obj.number > 1%}
-        #ongoing-table {
-            display: none;
-        }
-        {% endif %}
+    {% if page_obj and page_obj.number > 1%}
+      #ongoing-table {
+        display: none;
+      }
+    {% endif %}
 
-        @media (max-width: 500px) {
-            #search-contest, #search-org, #search-btn {
-                width: 100%;
-                margin-bottom: 0.5em;
-            }
-            #search-contest {
-                height: 2.5em;
-            }
-            #search-btn {
-                margin-top: 0.5em;
-            }
-            #filter-form input {
-                padding-left: 8px;
-            }
-        }
+    @media (max-width: 500px) {
+      #search-contest, #search-org, #search-btn {
+        width: 100%;
+        margin-bottom: 0.5em;
+      }
+      #search-contest {
+        height: 2.5em;
+      }
+      #search-btn {
+        margin-top: 0.5em;
+      }
+      #filter-form input {
+        padding-left: 8px;
+      }
+    }
 
-        @media (min-width: 500px) {
-            #filter-form input {
-                margin: 0 0.5em 0 0!important;
-                padding-left: 8px;
-                padding-top: 8px;
-            }
-            #search-contest {
-                width: 30%;
-                height: 2.3em;
-                margin-right: 1em;
-                margin-bottom: 0;
-                padding-top: 4px !important;
-            }
+    @media (min-width: 500px) {
+      #filter-form input {
+        margin: 0 0.5em 0 0!important;
+        padding-left: 8px;
+        padding-top: 8px;
+      }
+      #search-contest {
+        width: 30%;
+        height: 2.3em;
+        margin-right: 1em;
+        margin-bottom: 0;
+        padding-top: 4px !important;
+      }
 
-            #search-org {
-                width: 40%;
-            }
+      #search-org {
+        width: 40%;
+      }
 
-            #search-btn {
-                display: inline-block;
-                height: 2.3em;
-                margin-left: 0.5em;
-            }
-        }
-    </style>
+      #search-btn {
+        display: inline-block;
+        height: 2.3em;
+        margin-left: 0.5em;
+      }
+    }
+  </style>
 {% endblock %}
 
 {% block two_col_js %}
-    <script src="{{ static('libs/featherlight/featherlight.min.js') }}" type="text/javascript"></script>
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $('.time-remaining').each(function () {
-                count_down($(this));
-            });
+  <script src="{{ static('libs/featherlight/featherlight.min.js') }}" type="text/javascript"></script>
+  <script type="text/javascript">
+    $(document).ready(function () {
+      var $form = $('form#filter-form');
+      $('input#show_orgs').click(function () {
+        $form.submit();
+      });
+      $('.time-remaining').each(function () {
+        count_down($(this));
+      });
 
-            $('.contest-tag').find('a[data-featherlight]').featherlight();
+      $('.contest-tag').find('a[data-featherlight]').featherlight();
 
-            $('.join-warning').click(function () {
-                return confirm('{{ _('Are you sure you want to join?') }}\n' +
-                    '{{ _('Joining a contest for the first time starts your timer, after which it becomes unstoppable.') }}');
-            });
+      $('.join-warning').click(function () {
+        return confirm('{{ _('Are you sure you want to join?') }}\n' +
+          '{{ _('Joining a contest for the first time starts your timer, after which it becomes unstoppable.') }}');
+      });
 
-            $('#search-org').select2({multiple: 1, placeholder: '{{ _('Groups') }}...'})
-                    .css({'visibility': 'visible'});
+      $('#search-org').select2({multiple: 1, placeholder: '{{ _('Groups') }}...'})
+        .css({'visibility': 'visible'});
 
-            // var tooltip_classes = 'tooltipped tooltipped-e';
-            //
-            // $('.contest-tag').each(function () {
-            //     var link = $(this);//
-            //     link.mouseenter(function (e) {
-            //         link.addClass(tooltip_classes).attr('aria-label', link.attr('data-description'));
-            //     }).mouseleave(function (e) {
-            //         link.removeClass(tooltip_classes).removeAttr('aria-label');
-            //     });
-            // });
-        });
-    </script>
+      // var tooltip_classes = 'tooltipped tooltipped-e';
+      //
+      // $('.contest-tag').each(function () {
+      //     var link = $(this);//
+      //     link.mouseenter(function (e) {
+      //         link.addClass(tooltip_classes).attr('aria-label', link.attr('data-description'));
+      //     }).mouseleave(function (e) {
+      //         link.removeClass(tooltip_classes).removeAttr('aria-label');
+      //     });
+      // });
+    });
+  </script>
 {% endblock %}
 
 {% block left_sidebar %}
-    {% include "contest/contest-list-tabs.html" %}
+  {% include "contest/contest-list-tabs.html" %}
 {% endblock %}
 
 {% macro contest_head(contest) %}
-    {% spaceless %}
-        <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title">
-            {{- contest.name -}}
-        </a>
-        <span class="contest-tags">
-            {% if not contest.is_visible %}
-                <span class="contest-tag contest-tag-hidden">
-                    <i class="fa fa-eye-slash"></i> {{ _('hidden') }}
-                </span>
-            {% endif %}
-            {% if contest.is_editable %}
-                <span class="contest-tag contest-tag-edit">
-                    <a href="{{ url('organization_contest_edit', organization.id, organization.slug, contest.key) }}" class="white">
-                        <i class="fa fa-edit"></i> {{ _('Edit') }}
-                    </a>
-                </span>
-            {% endif %}
-            {% if contest.is_private %}
-                <span class="contest-tag contest-tag-private">
-                    <i class="fa fa-lock"></i> {{ _('private') }}
-                </span>
-            {% endif %}
-            {% if not hide_contest_orgs %}
-                {% if contest.is_organization_private %}
-                    {% for org in contest.organizations.all() %}
-                        <span class="contest-tag contest-tag-org">
-                            <a href="{{ org.get_absolute_url() }}">
-                                <i class="fa fa-lock"></i> {{ org.name }}
-                            </a>
-                        </span>
-                    {% endfor %}
-                {% endif %}
-            {% endif %}
-            {% if contest.is_rated %}
-                <span class="contest-tag-rated">
-                    <i class="fa fa-bar-chart"></i> {{ _('rated') }}
-                </span>
-            {% endif %}
-            {% for tag in contest.tags.all() %}
-                <span style="background-color: {{ tag.color }}" class="contest-tag">
-                    <a href="{{ url('contest_tag', tag.name) }}"
-                       style="color: {{ tag.text_color }}"
-                       data-featherlight="{{ url('contest_tag_ajax', tag.name) }}">
-                        {{- tag.name -}}
-                    </a>
-                </span>
-            {% endfor %}
+  {% spaceless %}
+    <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title">
+      {{- contest.name -}}
+    </a>
+    <span class="contest-tags">
+      {% if not contest.is_visible %}
+        <span class="contest-tag contest-tag-hidden">
+          <i class="fa fa-eye-slash"></i> {{ _('hidden') }}
         </span>
-    {% endspaceless %}
+      {% endif %}
+      {% if contest.is_editable %}
+        <span class="contest-tag contest-tag-edit">
+          <a href="{{ url('organization_contest_edit', organization.id, organization.slug, contest.key) }}" class="white">
+            <i class="fa fa-edit"></i> {{ _('Edit') }}
+          </a>
+        </span>
+      {% endif %}
+      {% if contest.is_private %}
+        <span class="contest-tag contest-tag-private">
+          <i class="fa fa-lock"></i> {{ _('private') }}
+        </span>
+      {% endif %}
+      {% if not hide_contest_orgs %}
+        {% if contest.is_organization_private %}
+          {% for org in contest.organizations.all() %}
+            <span class="contest-tag contest-tag-org">
+              <a href="{{ org.get_absolute_url() }}">
+                <i class="fa fa-lock"></i> {{ org.name }}
+              </a>
+            </span>
+          {% endfor %}
+        {% endif %}
+      {% endif %}
+      {% if contest.is_rated %}
+        <span class="contest-tag contest-tag-rated">
+          <i class="fa fa-bar-chart"></i> {{ _('rated') }}
+        </span>
+      {% endif %}
+      {% for tag in contest.tags.all() %}
+        <span style="background-color: {{ tag.color }}" class="contest-tag">
+          <a href="{{ url('contest_tag', tag.name) }}"
+            style="color: {{ tag.text_color }}"
+            data-featherlight="{{ url('contest_tag_ajax', tag.name) }}">
+            {{- tag.name -}}
+          </a>
+        </span>
+      {% endfor %}
+    </span>
+  {% endspaceless %}
 {% endmacro %}
 
 {% macro time_left(contest) %}
-    <div class="time time-left">
-        {% if contest.time_limit %}
-            {{ contest.start_time|date(_("M j, Y, G:i")) }} -
-            {{ contest.end_time|date(_("M j, Y, G:i")) }}
-        {% else %}
-            {{ contest.start_time|date(_("M j, Y, G:i")) }}
-        {% endif %}
-        <br>
-        {% if contest.time_limit %}
-            {% trans time_limit=contest.time_limit|timedelta('localized-no-seconds') %}{{ time_limit }} window{% endtrans %}
-        {% else %}
-            {% trans duration=contest.contest_window_length|timedelta('localized-no-seconds') %}{{ duration }} long{% endtrans %}
-        {% endif %}
-    </div>
+  <div class="time time-left">
+    {% if contest.time_limit %}
+      {{ contest.start_time|date(_("M j, Y, G:i")) }} -
+      {{ contest.end_time|date(_("M j, Y, G:i")) }}
+    {% else %}
+      {{ contest.start_time|date(_("M j, Y, G:i")) }}
+    {% endif %}
+    <br>
+    {% if contest.time_limit %}
+      {% trans time_limit=contest.time_limit|timedelta('localized-no-seconds') %}{{ time_limit }} window{% endtrans %}
+    {% else %}
+      {% trans duration=contest.contest_window_length|timedelta('localized-no-seconds') %}{{ duration }} long{% endtrans %}
+    {% endif %}
+  </div>
 {% endmacro %}
 
 {% macro user_count(contest, user) %}
-    {% if contest.can_see_own_scoreboard(user) %}
-        <a href="{{ url('contest_ranking', contest.key) }}">{{ contest.user_count }}</a>
-    {% else %}
-        {{ contest.user_count }}
-    {% endif %}
+  {% if contest.can_see_own_scoreboard(user) %}
+    <a href="{{ url('contest_ranking', contest.key) }}">{{ contest.user_count }}</a>
+  {% else %}
+    {{ contest.user_count }}
+  {% endif %}
 {% endmacro %}
 
 {% macro contest_join(contest, request) %}
-    {% if not request.in_contest %}
-        <td>
-            {% if request.profile in contest.authors.all() or request.profile in contest.curators.all() or request.profile in contest.testers.all() %}
-                <form action="{{ url('contest_join', contest.key) }}" method="post">
-                    {% csrf_token %}
-                    <input type="submit" class="unselectable button full small"
-                           value="{{ _('Spectate') }}">
-                </form>
-            {% else %}
-                <form action="{{ url('contest_join', contest.key) }}" method="post">
-                    {% csrf_token %}
-                    <input type="submit" class="unselectable button full small join-warning"
-                           value="{{ _('Join') }}">
-                </form>
-            {% endif %}
-        </td>
-    {% endif %}
+  {% if not request.in_contest %}
+    <td>
+      {% if request.profile in contest.authors.all() or request.profile in contest.curators.all() or request.profile in contest.testers.all() %}
+        <form action="{{ url('contest_join', contest.key) }}" method="post">
+          {% csrf_token %}
+          <input type="submit" class="unselectable button full small"
+            value="{{ _('Spectate') }}">
+        </form>
+      {% else %}
+        <form action="{{ url('contest_join', contest.key) }}" method="post">
+          {% csrf_token %}
+          <input type="submit" class="unselectable button full small join-warning"
+            value="{{ _('Join') }}">
+        </form>
+      {% endif %}
+    </td>
+  {% endif %}
 {% endmacro %}
 
 {% block middle_content %}
-    <div class="content-description">
-        <form id="filter-form">
-            <input id="search-contest" type="text" name="contest" value="{{ contest_query or '' }}"
-                   placeholder="{{ _('Search contests...') }}">
-            {% if organizations %}
-                <select id="search-org" name="orgs" multiple>
-                    {% for org in organizations %}
-                        <option value="{{ org.id }}"{% if org.id in org_query %} selected{% endif %}>
-                            {{ org.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            {% endif %}
-            <button id="search-btn" class="btn-green small"> {{ _('Search')}} </button>
-            {% if create_url %}
-                <a href="{{create_url}}" class="button small" style="float: right"><i class="fa fa-plus"></i> {{ _('Create')}}</a>
-            {% endif %}
-        </form>
-        {% if active_participations %}
-            <h3 class="toggle open contest-group-header">
-                <i class="fa fa-chevron-right fa-fw"></i>
-                {{ _('Active Contests') }} 
-            </h3>
-            <div class="toggled">
-                <table class="contest-list table striped">
-                    <thead>
-                    <tr>
-                        <th style="width:90%">{{ _('Contest') }}</th>
-                        <th>{{ _('Users') }}</th>
-                        {% if not request.in_contest %}
-                            <th style="width:15%"></th>
-                        {% endif %}
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for participation in active_participations %}
-                        {% with contest=participation.contest %}
-                            <tr>
-                                <td>
-                                    <div class="contest-block">
-                                        {{ contest_head(contest) }}
-                                        {% if contest.start_time %}
-                                            <br>
-                                            {% if contest.time_limit %}
-                                                <span class="time">
-                                                    {% trans countdown=participation.end_time|as_countdown %}Window ends in {{countdown}}{% endtrans %}
-                                                </span>
-                                            {% elif contest.time_before_end %}
-                                                <span class="time">{% trans countdown=contest.end_time|as_countdown %}Ends in {{countdown}}{% endtrans %}</span>
-                                            {% endif %}
-                                            {{ time_left(contest) }}
-                                        {% endif %}
-                                    </div>
-                                </td>
-                                <td>
-                                    {{ user_count(contest, request.user) }}
-                                </td>
-                                {{ contest_join(contest, request) }}
-                            </tr>
-                        {% endwith %}
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <br>
-        {% endif %}
-
-        {% if current_contests %}
-            <h3 class="toggle open contest-group-header">
-                <i class="fa fa-chevron-right fa-fw"></i>
-                {{ _('Ongoing Contests') }} 
-            </h3>
-            <div id="ongoing-table" class="toggled">
-                <table class="contest-list table striped">
-                    <thead>
-                    <tr>
-                        <th style="width:90%">{{ _('Contest') }}</th>
-                        <th>{{ _('Users') }}</th>
-                        {% if not request.in_contest %}
-                            <th style="width:15%"></th>
-                        {% endif %}
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for contest in current_contests %}
-                        <tr>
-                            <td>
-                                <div class="contest-block">
-                                    {{ contest_head(contest) }}
-                                    {% if contest.start_time %}
-                                        <br>
-                                        {% if contest.time_before_end %}
-                                            <span class="time">{% trans countdown=contest.end_time|as_countdown %}Ends in {{countdown}}{% endtrans %}</span>
-                                        {% endif %}
-                                        {{ time_left(contest) }}
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td>
-                                {{ user_count(contest, request.user) }}
-                            </td>
-                            {{ contest_join(contest, request) }}
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-                <br>
-            </div>
-        {% endif %}
-
-        <h3 class="toggle open contest-group-header">
-            <i class="fa fa-chevron-right fa-fw"></i>
-            {{ _('Upcoming Contests') }} 
-        </h3>
-        {% if future_contests %}
-            <div class="toggled">
-                <table class="contest-list table striped">
-                    <thead>
-                    <tr>
-                        <th>{{ _('Contest') }}</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for contest in future_contests %}
-                        <tr>
-                            <td>
-                                <div class="contest-block">
-                                    {{ contest_head(contest) }}
-                                    {% if contest.start_time %}
-                                        <br>
-                                        {% if contest.time_before_start %}
-                                            <span class="time">{{ _('Starting in %(countdown)s.', countdown=contest.start_time|as_countdown) }}</span>
-                                        {% endif %}
-                                        {{ time_left(contest) }}
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <i>{{ _('There are no scheduled contests at this time.') }}</i>
-            <br>
-        {% endif %}
-        <br>
-
-        {% if past_contests %}
-            <h3 class="contest-group-header">{{ _('Past Contests') }}</h3>
-            {% if page_obj and page_obj.num_pages > 1 %}
-                <div style="margin-bottom: 4px;">
-                    {% include "list-pages.html" %}
-                </div>
-            {% endif %}
-            <table class="contest-list table striped">
-                <thead>
+  <div class="content-description">
+    <form id="filter-form">
+      <input id="search-contest" type="text" name="contest" value="{{ contest_query or '' }}"
+        placeholder="{{ _('Search contests...') }}">
+      {% if organizations %}
+        <select id="search-org" name="orgs" multiple>
+          {% for org in organizations %}
+            <option value="{{ org.id }}"{% if org.id in org_query %} selected{% endif %}>
+              {{ org.name }}
+            </option>
+          {% endfor %}
+        </select>
+      {% endif %}
+      <button id="search-btn" class="btn-green small"> {{ _('Search')}} </button>
+      {% if organizations %}
+        <div>
+          <input id="show_orgs" type="checkbox" name="show_orgs" value="1" {% if show_orgs %}checked{% endif %}>
+          <label for="show_orgs">{{ _('Hide organization contests') }}</label>
+        </div>
+      {% endif %}
+      {% if create_url %}
+        <a href="{{create_url}}" class="button small" style="float: right"><i class="fa fa-plus"></i> {{ _('Create')}}</a>
+      {% endif %}
+    </form>
+    {% if active_participations %}
+      <h3 class="toggle open contest-group-header">
+        <i class="fa fa-chevron-right fa-fw"></i>
+        {{ _('Active Contests') }}
+      </h3>
+      <div class="toggled">
+        <table class="contest-list table striped">
+          <thead>
+            <tr>
+              <th style="width:90%">{{ _('Contest') }}</th>
+              <th>{{ _('Users') }}</th>
+              {% if not request.in_contest %}
+                <th style="width:15%"></th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for participation in active_participations %}
+              {% with contest=participation.contest %}
                 <tr>
-                    <th style="width:90%">
-                        <a class="contest-list-sort" href="{{ sort_links.name }}">{{ _('Contest') }}{{ sort_order.name }}</a>
-                    </th>
-                    <th>
-                        <a class="contest-list-sort" href="{{ sort_links.user_count }}">{{ _('Users') }}{{ sort_order.user_count }}</a>
-                    </th>
-                    {% if not request.in_contest %}
-                        <th style="width:15%"></th>
-                    {% endif %}
-                </tr>
-                </thead>
-                <tbody>
-                {% for contest in past_contests %}
-                    <tr>
-                        <td>
-                            <div class="contest-block">
-                                {{ contest_head(contest) }}
-                                {{ time_left(contest) }}
-                            </div>
-                        </td>
-                        <td>
-                            {{ user_count(contest, request.user) }}
-                        </td>
-                        {% if not request.in_contest %}
-                        <td><form action="{{ url('contest_join', contest.key) }}" method="post">
-                                    {% csrf_token %}
-                                    <input type="submit" class="unselectable button full small"
-                                           value="{{ _('Virtual join') }}">
-                            </form>
-                        </td>
+                  <td>
+                    <div class="contest-block">
+                      {{ contest_head(contest) }}
+                      {% if contest.start_time %}
+                        <br>
+                        {% if contest.time_limit %}
+                          <span class="time">
+                            {% trans countdown=participation.end_time|as_countdown %}Window ends in {{countdown}}{% endtrans %}
+                          </span>
+                        {% elif contest.time_before_end %}
+                          <span class="time">{% trans countdown=contest.end_time|as_countdown %}Ends in {{countdown}}{% endtrans %}</span>
                         {% endif %}
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            {% if page_obj and page_obj.num_pages > 1 %}
-                <div style="margin-top: 10px;">
-                    {% include "list-pages.html" %}
-                </div>
+                        {{ time_left(contest) }}
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td>
+                    {{ user_count(contest, request.user) }}
+                  </td>
+                  {{ contest_join(contest, request) }}
+                </tr>
+              {% endwith %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <br>
+    {% endif %}
+
+    {% if current_contests %}
+      <h3 class="toggle open contest-group-header">
+        <i class="fa fa-chevron-right fa-fw"></i>
+        {{ _('Ongoing Contests') }}
+      </h3>
+      <div id="ongoing-table" class="toggled">
+        <table class="contest-list table striped">
+          <thead>
+            <tr>
+              <th style="width:90%">{{ _('Contest') }}</th>
+              <th>{{ _('Users') }}</th>
+              {% if not request.in_contest %}
+                <th style="width:15%"></th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for contest in current_contests %}
+              <tr>
+                <td>
+                  <div class="contest-block">
+                    {{ contest_head(contest) }}
+                    {% if contest.start_time %}
+                      <br>
+                      {% if contest.time_before_end %}
+                        <span class="time">{% trans countdown=contest.end_time|as_countdown %}Ends in {{countdown}}{% endtrans %}</span>
+                      {% endif %}
+                      {{ time_left(contest) }}
+                    {% endif %}
+                  </div>
+                </td>
+                <td>
+                  {{ user_count(contest, request.user) }}
+                </td>
+                {{ contest_join(contest, request) }}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <br>
+      </div>
+    {% endif %}
+
+    <h3 class="toggle open contest-group-header">
+      <i class="fa fa-chevron-right fa-fw"></i>
+      {{ _('Upcoming Contests') }}
+    </h3>
+    {% if future_contests %}
+      <div class="toggled">
+        <table class="contest-list table striped">
+          <thead>
+            <tr>
+              <th>{{ _('Contest') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for contest in future_contests %}
+              <tr>
+                <td>
+                  <div class="contest-block">
+                    {{ contest_head(contest) }}
+                    {% if contest.start_time %}
+                      <br>
+                      {% if contest.time_before_start %}
+                        <span class="time">{{ _('Starting in %(countdown)s.', countdown=contest.start_time|as_countdown) }}</span>
+                      {% endif %}
+                      {{ time_left(contest) }}
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <i>{{ _('There are no scheduled contests at this time.') }}</i>
+      <br>
+    {% endif %}
+    <br>
+
+    {% if past_contests %}
+      <h3 class="contest-group-header">{{ _('Past Contests') }}</h3>
+      {% if page_obj and page_obj.num_pages > 1 %}
+        <div style="margin-bottom: 4px;">
+          {% include "list-pages.html" %}
+        </div>
+      {% endif %}
+      <table class="contest-list table striped">
+        <thead>
+          <tr>
+            <th style="width:90%">
+              <a class="contest-list-sort" href="{{ sort_links.name }}">{{ _('Contest') }}{{ sort_order.name }}</a>
+            </th>
+            <th>
+              <a class="contest-list-sort" href="{{ sort_links.user_count }}">{{ _('Users') }}{{ sort_order.user_count }}</a>
+            </th>
+            {% if not request.in_contest %}
+              <th style="width:15%"></th>
             {% endif %}
-        {% endif %}
-    </div>
+          </tr>
+        </thead>
+        <tbody>
+          {% for contest in past_contests %}
+            <tr>
+              <td>
+                <div class="contest-block">
+                  {{ contest_head(contest) }}
+                  {{ time_left(contest) }}
+                </div>
+              </td>
+              <td>
+                {{ user_count(contest, request.user) }}
+              </td>
+              {% if not request.in_contest %}
+                <td><form action="{{ url('contest_join', contest.key) }}" method="post">
+                  {% csrf_token %}
+                  <input type="submit" class="unselectable button full small"
+                    value="{{ _('Virtual join') }}">
+                </form>
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if page_obj and page_obj.num_pages > 1 %}
+        <div style="margin-top: 10px;">
+          {% include "list-pages.html" %}
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
 {% endblock %}

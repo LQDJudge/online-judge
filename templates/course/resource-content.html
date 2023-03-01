@@ -1,0 +1,12 @@
+<h1> {{ object }} </h1>
+<h2> This resource belong to {{ object.course }}</h2>
+
+<h3> {{ object.description }}</h3>
+
+<div>
+    {% if object.files != None %}
+        <div> <a href="{{ object.files.url}}" target="_blank"> See files </a> </div>
+    {% endif %}
+    <div> <a href="/courses/{{ object.course.pk }}-{{ object.course.slug }}/resource/{{ object.pk }}/edit"> Edit
+            Resource </a> </div>
+</div>

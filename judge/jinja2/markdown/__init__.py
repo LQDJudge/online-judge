@@ -98,7 +98,7 @@ def markdown(value, lazy_load=False):
 
     if not html:
         html = escape(value)
-    if lazy_load or True:
+    if lazy_load:
         soup = BeautifulSoup(html, features="html.parser")
         for img in soup.findAll("img"):
             if img.get("src"):

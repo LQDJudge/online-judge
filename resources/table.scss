@@ -12,6 +12,10 @@
         background: #f7f7f7;
     }
 
+    &.striped tr:nth-child(odd) {
+        background: white;
+    }
+
     td:first-child {
         border-color: $border_gray;
         border-width: 1px 1px 0 1px;

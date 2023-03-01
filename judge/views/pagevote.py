@@ -104,13 +104,3 @@ class PageVoteDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         queryset = PageVote.objects.get_or_create(page=self.get_comment_page())
         context["pagevote"] = queryset[0]
         return context
-
-
-class PageVoteListView:
-    def add_pagevote_context_data(self, context, obj_list="object_list"):
-        for item in context[obj_list]:
-            pagevote, _ = PageVote.objects.get_or_create(
-                page=self.get_comment_page(item)
-            )
-            setattr(item, "pagevote", pagevote)
-        return context

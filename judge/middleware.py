@@ -1,7 +1,19 @@
+import time
+import logging
+
 from django.conf import settings
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 from django.urls import Resolver404, resolve, reverse
 from django.utils.http import urlquote
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import ObjectDoesNotExist
+from django.utils.translation import gettext as _
+
+from judge.models import Organization
+from judge.utils.views import generic_message
+
+
+USED_DOMAINS = ["www"]
 
 
 class ShortCircuitMiddleware:
@@ -82,3 +94,71 @@ class DarkModeMiddleware(object):
                 reverse("toggle_darkmode") + "?next=" + urlquote(request.path)
             )
         return self.get_response(request)
+
+
+class SubdomainMiddleware(object):
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        request.organization = None
+        if not settings.USE_SUBDOMAIN:
+            return self.get_response(request)
+
+        domain = request.get_host()
+        site = get_current_site(request).domain
+        subdomain = domain[: len(domain) - len(site)].lower()
+
+        if len(subdomain) <= 1:
+            return self.get_response(request)
+
+        subdomain = subdomain[:-1]
+
+        if subdomain in USED_DOMAINS:
+            return self.get_response(request)
+
+        try:
+            organization = Organization.objects.get(slug=subdomain)
+            if request.profile and organization in request.profile.organizations.all():
+                request.organization = organization
+            else:
+                if request.profile:
+                    return generic_message(
+                        request,
+                        _("No permission"),
+                        _("You need to join this group first"),
+                        status=404,
+                    )
+                if not request.GET.get("next", None):
+                    return HttpResponseRedirect(
+                        reverse("auth_login") + "?next=" + urlquote(request.path)
+                    )
+        except ObjectDoesNotExist:
+            return generic_message(
+                request,
+                _("No such group"),
+                _("No such group"),
+                status=404,
+            )
+        return self.get_response(request)
+
+
+class SlowRequestMiddleware(object):
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        logger = logging.getLogger("judge.slow_request")
+        start_time = time.time()
+        response = self.get_response(request)
+        response_time = time.time() - start_time
+        if response_time > 9:
+            message = {
+                "message": "Slow request",
+                "url": request.build_absolute_uri(),
+                "response_time": response_time * 1000,
+                "method": request.method,
+                "profile": request.profile,
+            }
+            logger.info(message)
+        return response

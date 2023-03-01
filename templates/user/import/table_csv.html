@@ -1,24 +1,24 @@
 <thead>
-    <tr>
-        <th>{{_('ID')}}</th>
-        <th>{{_('Username')}}</th>
-        <th>{{_('Password')}}</th>
-        <th>{{_('Name')}}</th>
-        <th>{{_('School')}}</th>
-        <th>{{_('Email')}}</th>
-        <th>{{_('Organizations')}}</th>
-    </tr>
+  <tr>
+    <th>{{_('ID')}}</th>
+    <th>{{_('Username')}}</th>
+    <th>{{_('Password')}}</th>
+    <th>{{_('Name')}}</th>
+    <th>{{_('School')}}</th>
+    <th>{{_('Email')}}</th>
+    <th>{{_('Organizations')}}</th>
+  </tr>
 </thead>
 <tbody>
-    {% for i in data %}
+  {% for i in data %}
     <tr>
-        <td>{{loop.index}}</td>
-        <td>{{i.username}}</td>
-        <td>{{i.password}}</td>
-        <td>{{i.name}}</td>
-        <td>{{i.school}}</td>
-        <td>{{i.email}}</td>
-        <td>{{i.organizations}}</td>
+      <td>{{loop.index}}</td>
+      <td>{{i.username}}</td>
+      <td>{{i.password}}</td>
+      <td>{{i.name}}</td>
+      <td>{{i.school}}</td>
+      <td>{{i.email}}</td>
+      <td>{{i.organizations}}</td>
     </tr>
-    {% endfor %}
+  {% endfor %}
 </tbody>

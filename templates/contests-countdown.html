@@ -1,35 +1,35 @@
 {% if current_contests %}
-    <div class="blog-sidebox sidebox">
-        <h3>{{ _('Ongoing contests') }} <i class="fa fa-trophy"></i></h3>
-        <div class="sidebox-content">
-            {% for contest in current_contests %}
-                <div class="contest">
-                    <div class="contest-list-title">
-                        <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
-                    </div>
-                    <div class="time">
-                        {{ _('Ends in') }} {{ _('%(countdown)s.', countdown=contest.end_time|as_countdown) }}
-                    </div>
-                </div>
-            {% endfor %}
+  <div class="blog-sidebox sidebox">
+    <h3>{{ _('Ongoing contests') }} <i class="fa fa-trophy"></i></h3>
+    <div class="sidebox-content">
+      {% for contest in current_contests %}
+        <div class="contest">
+          <div class="contest-list-title">
+            <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
+          </div>
+          <div class="time">
+            {{ _('Ends in') }} {{ _('%(countdown)s.', countdown=contest.end_time|as_countdown) }}
+          </div>
         </div>
+      {% endfor %}
     </div>
+  </div>
 {% endif %}
 
 {% if future_contests %}
-    <div class="blog-sidebox sidebox">
-        <h3>{{ _('Upcoming contests') }} <i class="fa fa-trophy"></i></h3>
-        <div class="sidebox-content">
-            {% for contest in future_contests %}
-                <div class="contest">
-                    <div class="contest-list-title">
-                        <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
-                    </div>
-                    <div class="time">
-                        {{ _('Starting in %(countdown)s.', countdown=contest.start_time|as_countdown) }}
-                    </div>
-                </div>
-            {% endfor %}
+  <div class="blog-sidebox sidebox">
+    <h3>{{ _('Upcoming contests') }} <i class="fa fa-trophy"></i></h3>
+    <div class="sidebox-content">
+      {% for contest in future_contests %}
+        <div class="contest">
+          <div class="contest-list-title">
+            <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
+          </div>
+          <div class="time">
+            {{ _('Starting in %(countdown)s.', countdown=contest.start_time|as_countdown) }}
+          </div>
         </div>
+      {% endfor %}
     </div>
+  </div>
 {% endif %}

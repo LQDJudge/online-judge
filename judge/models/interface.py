@@ -5,10 +5,14 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.utils.functional import cached_property
+from django.contrib.contenttypes.fields import GenericRelation
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
 from judge.models.profile import Organization, Profile
+from judge.models.pagevote import PageVote
+from judge.models.bookmark import BookMark
 
 __all__ = ["MiscConfig", "validate_regex", "NavigationBar", "BlogPost"]
 
@@ -91,6 +95,7 @@ class BlogPost(models.Model):
     is_organization_private = models.BooleanField(
         verbose_name=_("private to organizations"), default=False
     )
+    comments = GenericRelation("Comment")
 
     def __str__(self):
         return self.title
@@ -124,6 +129,18 @@ class BlogPost(models.Model):
             user.has_perm("judge.change_blogpost")
             and self.authors.filter(id=user.profile.id).exists()
         )
+
+    @cached_property
+    def pagevote(self):
+        page = "b:%s" % self.id
+        pagevote, _ = PageVote.objects.get_or_create(page=page)
+        return pagevote
+
+    @cached_property
+    def bookmark(self):
+        page = "b:%s" % self.id
+        bookmark, _ = BookMark.objects.get_or_create(page=page)
+        return bookmark
 
     class Meta:
         permissions = (("edit_all_post", _("Edit all posts")),)

@@ -1,17 +1,17 @@
 <h2>Votes</h2>
 <table class="table">
-    <thead>
+  <thead>
     <tr>
-        <th>Voter</th>
-        <th>Score</th>
+      <th>Voter</th>
+      <th>Score</th>
     </tr>
-    </thead>
-    <tbody>
+  </thead>
+  <tbody>
     {% for vote in votes %}
-        <tr>
-            <td>{{ link_user(vote.voter) }}</td>
-            <td>{{ vote.score }}</td>
-        </tr>
+      <tr>
+        <td>{{ link_user(vote.voter) }}</td>
+        <td>{{ vote.score }}</td>
+      </tr>
     {% endfor %}
-    </tbody>
+  </tbody>
 </table>

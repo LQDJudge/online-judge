@@ -44,12 +44,12 @@ from judge.utils.problems import contest_completed_ids, user_completed_ids
 from judge.utils.ranker import ranker
 from judge.utils.unicode import utf8text
 from judge.utils.views import (
-    DiggPaginatorMixin,
     QueryStringSortMixin,
     TitleMixin,
     generic_message,
     SingleObjectFormView,
 )
+from judge.utils.infinite_paginator import InfinitePaginationMixin
 from .contests import ContestRanking
 
 __all__ = [
@@ -437,7 +437,7 @@ def edit_profile(request):
     )
 
 
-class UserList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ListView):
+class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListView):
     model = Profile
     title = gettext_lazy("Leaderboard")
     context_object_name = "users"
@@ -449,12 +449,12 @@ class UserList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ListView):
     filter_friend = False
 
     def filter_friend_queryset(self, queryset):
-        friends = list(self.request.profile.get_friends())
-        ret = queryset.filter(user__username__in=friends)
+        friends = self.request.profile.get_friends()
+        ret = queryset.filter(id__in=friends)
         return ret
 
     def get_queryset(self):
-        ret = (
+        queryset = (
             Profile.objects.filter(is_unlisted=False)
             .order_by(self.order, "id")
             .select_related("user")
@@ -467,11 +467,13 @@ class UserList(QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ListView):
                 "problem_count",
             )
         )
-
+        if self.request.organization:
+            queryset = queryset.filter(organizations=self.request.organization)
         if (self.request.GET.get("friend") == "true") and self.request.profile:
-            ret = self.filter_friend_queryset(ret)
+            queryset = self.filter_friend_queryset(queryset)
             self.filter_friend = True
-        return ret
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super(UserList, self).get_context_data(**kwargs)

@@ -22,11 +22,23 @@ class CommentForm(ModelForm):
 
 class CommentAdmin(VersionAdmin):
     fieldsets = (
-        (None, {"fields": ("author", "page", "parent", "score", "hidden")}),
+        (
+            None,
+            {
+                "fields": (
+                    "author",
+                    "parent",
+                    "score",
+                    "hidden",
+                    "content_type",
+                    "object_id",
+                )
+            },
+        ),
         ("Content", {"fields": ("body",)}),
     )
-    list_display = ["author", "linked_page", "time"]
-    search_fields = ["author__user__username", "page", "body"]
+    list_display = ["author", "linked_object", "time"]
+    search_fields = ["author__user__username", "body"]
     readonly_fields = ["score"]
     actions = ["hide_comment", "unhide_comment"]
     list_filter = ["hidden"]
@@ -65,16 +77,6 @@ class CommentAdmin(VersionAdmin):
         )
 
     unhide_comment.short_description = _("Unhide comments")
-
-    def linked_page(self, obj):
-        link = obj.link
-        if link is not None:
-            return format_html('<a href="{0}">{1}</a>', link, obj.page)
-        else:
-            return format_html("{0}", obj.page)
-
-    linked_page.short_description = _("Associated page")
-    linked_page.admin_order_field = "page"
 
     def save_model(self, request, obj, form, change):
         super(CommentAdmin, self).save_model(request, obj, form, change)

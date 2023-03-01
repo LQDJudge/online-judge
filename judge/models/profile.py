@@ -33,6 +33,10 @@ class Organization(models.Model):
         max_length=128,
         verbose_name=_("organization slug"),
         help_text=_("Organization name shown in URL"),
+        unique=True,
+        validators=[
+            RegexValidator("^[-a-zA-Z0-9]+$", _("Only alphanumeric and hyphens"))
+        ],
     )
     short_name = models.CharField(
         max_length=20,
@@ -329,15 +333,23 @@ class Profile(models.Model):
     def css_class(self):
         return self.get_user_css_class(self.display_rank, self.rating)
 
-    def get_friends(self):  # list of usernames, including you
-        friend_obj = self.following_users.all()
-        ret = set()
-
+    def get_friends(self):  # list of ids, including you
+        friend_obj = self.following_users.prefetch_related("users")
+        ret = []
         if friend_obj:
-            ret = set(friend.username for friend in friend_obj[0].users.all())
-
-        ret.add(self.username)
+            ret = [friend.id for friend in friend_obj[0].users.all()]
+        ret.append(self.id)
         return ret
+
+    def can_edit_organization(self, org):
+        if not self.user.is_authenticated:
+            return False
+        profile_id = self.id
+        return (
+            org.admins.filter(id=profile_id).exists()
+            or org.registrant_id == profile_id
+            or self.user.is_superuser
+        )
 
     class Meta:
         permissions = (
@@ -381,7 +393,9 @@ class OrganizationRequest(models.Model):
 class Friend(models.Model):
     users = models.ManyToManyField(Profile)
     current_user = models.ForeignKey(
-        Profile, related_name="following_users", on_delete=CASCADE
+        Profile,
+        related_name="following_users",
+        on_delete=CASCADE,
     )
 
     @classmethod

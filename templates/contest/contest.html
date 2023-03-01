@@ -2,134 +2,140 @@
 {% set page_type = 'detail' %}
 
 {% block middle_title %}
-    <h2>{{contest.name}}</h2>
+  <h2>{{contest.name}}</h2>
 {% endblock %}
 
 {% block left_sidebar %}
-    {% set title = contest.name %}
-    {% include "contest/contest-tabs.html" %}
+  {% set title = contest.name %}
+  {% include "contest/contest-tabs.html" %}
 {% endblock %}
 
 {% block two_col_js %}
-    {% include "contest/media-js.html" %}
-    {% include "comments/media-js.html" %}
-    {% include "actionbar/media-js.html" %}
+  {% include "contest/media-js.html" %}
+  {% include "comments/media-js.html" %}
+  {% include "actionbar/media-js.html" %}
 {% endblock %}
 
 {% block two_col_media %}
-    {% include "comments/media-css.html" %}
-    {% include "actionbar/media-css.html" %}
+  {% include "comments/media-css.html" %}
 {% endblock %}
 
 {% block middle_content %}
-    {% include "contest/contest-datetime.html" %}
+  {% include "contest/contest-datetime.html" %}
 
-    {% if request.user.is_authenticated %}
-        {% if contest.can_join or is_editor or is_tester %}
-            {% set in_contest = contest.is_in_contest(request.user) %}
-            {% if contest.ended %}
-                {# Allow users to leave the virtual contest #}
-                {% if in_contest %}
-                    <form action="{{ url('contest_leave', contest.key) }}" method="post"
-                          class="contest-join-pseudotab btn-midnightblue">
-                        {% csrf_token %}
-                        <input type="submit" class="leaving-forever" value="{{ _('Leave contest') }}">
-                    </form>
-                {% else %}
-                    {# Allow users to virtual join #}
-                    <form action="{{ url('contest_join', contest.key) }}" method="post"
-                          class="contest-join-pseudotab btn-midnightblue">
-                        {% csrf_token %}
-                        <input type="submit" value="{{ _('Virtual join') }}">
-                    </form>
-                {% endif %}
-            {% else %}
-                {# Allow users to leave the contest #}
-                {% if in_contest %}
-                    <form action="{{ url('contest_leave', contest.key) }}" method="post"
-                          class="contest-join-pseudotab">
-                        {% csrf_token %}
-                        <input type="submit" class="btn-midnightblue" value="
-                            {%- if request.participation.spectate %}
-                                {{- _('Stop spectating') -}}
-                            {% else %}
-                                {{- _('Leave contest') -}}
-                            {% endif %}">
-                    </form>
-                {% elif is_editor or is_tester or live_participation.ended %}
-                    <form action="{{ url('contest_join', contest.key) }}" method="post" class="contest-join-pseudotab">
-                        {% csrf_token %}
-                        <input type="submit" class="btn-midnightblue" value="{{ _('Spectate contest') }}">
-                    </form>
-                {% else %}
-                    <form action="{{ url('contest_join', contest.key) }}" method="post" class="contest-join-pseudotab">
-                        {% csrf_token %}
-                        <input type="submit" class="btn-midnightblue {% if not has_joined %}first-join{% endif %}"
-                               value="{{ _('Join contest') }}">
-                    </form>
-                {% endif %}
-            {% endif %}
+  {% if request.user.is_authenticated %}
+    {% if contest.can_join or is_editor or is_tester %}
+      {% set in_contest = contest.is_in_contest(request.user) %}
+      {% if contest.ended %}
+        {# Allow users to leave the virtual contest #}
+        {% if in_contest %}
+          <form action="{{ url('contest_leave', contest.key) }}" method="post"
+            class="contest-join-pseudotab btn-red">
+            {% csrf_token %}
+            <input type="submit" class="leaving-forever" value="{{ _('Leave contest') }}">
+          </form>
+        {% else %}
+          {# Allow users to virtual join #}
+          <form action="{{ url('contest_join', contest.key) }}" method="post"
+            class="contest-join-pseudotab btn-midnightblue">
+            {% csrf_token %}
+            <input type="submit" value="{{ _('Virtual join') }}">
+          </form>
         {% endif %}
-    {% elif contest.can_join %}
-        <form action="{{ url('auth_login') }}" method="get"
-              class="contest-join-pseudotab unselectable">
-            <input type="hidden" name="next" value="{{ LOGIN_RETURN_PATH|urlencode }}">
-            <input type="submit" class="btn-midnightblue" value="{{ _('Login to participate') }}">
-        </form>
+      {% else %}
+        {# Allow users to leave the contest #}
+        {% if in_contest %}
+          <form action="{{ url('contest_leave', contest.key) }}" method="post"
+            class="contest-join-pseudotab">
+            {% csrf_token %}
+            <input type="submit" class="btn-midnightblue" value="
+              {%- if request.participation.spectate %}
+                {{- _('Stop spectating') -}}
+              {% else %}
+                {{- _('Leave contest') -}}
+              {% endif %}">
+          </form>
+        {% elif is_editor or is_tester or live_participation.ended %}
+          <form action="{{ url('contest_join', contest.key) }}" method="post" class="contest-join-pseudotab">
+            {% csrf_token %}
+            <input type="submit" class="btn-midnightblue" value="{{ _('Spectate contest') }}">
+          </form>
+        {% else %}
+          <form action="{{ url('contest_join', contest.key) }}" method="post" class="contest-join-pseudotab">
+            {% csrf_token %}
+            <input type="submit" class="btn-midnightblue {% if not has_joined %}first-join{% endif %}"
+              value="{{ _('Join contest') }}">
+          </form>
+        {% endif %}
+      {% endif %}
     {% endif %}
-    
-    <div class="content-description">
-        {% cache 3600 'contest_html' contest.id MATH_ENGINE %}
-            {{ contest.description|markdown|reference|str|safe }}
-        {% endcache %}
-    </div>
+  {% elif contest.can_join %}
+    <form action="{{ url('auth_login') }}" method="get"
+      class="contest-join-pseudotab unselectable">
+      <input type="hidden" name="next" value="{{ LOGIN_RETURN_PATH|urlencode }}">
+      <input type="submit" class="btn-midnightblue" value="{{ _('Login to participate') }}">
+    </form>
+  {% endif %}
 
-    {% if contest.ended or request.user.is_superuser or is_editor or is_tester %}
-        <hr>
-        <div class="contest-problems">
-            <h2 style="margin-bottom: 0.2em"><i class="fa fa-fw fa-question-circle"></i>{{ _('Problems') }} </h2>
-            <table id="contest-problems" class="table">
-                <thead>
-                <tr>
-                    <th>{{ _('Problem') }}</th>
-                    <th>{{ _('Points') }}</th>
-                    <th>{{ _('AC Rate') }}</th>
-                    <th>{{ _('Users') }}</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for problem in contest_problems %}
-                    <tr>
-                        <td>
-                            {% if problem.is_public %}
-                                <a href="{{ url('problem_detail', problem.code) }}">{{ problem.i18n_name }}</a>
-                            {% else %}
-                                {{ problem.i18n_name }}
-                            {% endif %}
-                        </td>
-                        <td>{{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}</td>
-                        <td>{{ problem.ac_rate|floatformat(1) }}%</td>
-                        <td>
-                            {% if problem.is_public %}
-                                <a href="{{ url('ranked_submissions', problem.code) }}">{{ problem.user_count }}</a>
-                            {% else %}
-                                {{ problem.user_count }}
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if problem.is_public and problem.has_public_editorial %}
-                                <a href="{{ url('problem_editorial', problem.code) }}">{{ _('Editorial') }}</a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <hr>
-    {% endif %}
-    {% include "actionbar/list.html" %}
-    <br>
-    {% include "comments/list.html" %}
+  <div class="content-description">
+    {% cache 3600 'contest_html' contest.id MATH_ENGINE %}
+      {{ contest.description|markdown|reference|str|safe }}
+    {% endcache %}
+  </div>
+  {% if editable_organizations %}
+    <div>
+      {% for org in editable_organizations %}
+        <span> [<a href="{{ url('organization_contest_edit', org.id , org.slug , contest.key) }}">{{ _('Edit in') }} {{org.slug}}</a>]</span>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if contest.ended or request.user.is_superuser or is_editor or is_tester %}
+    <hr>
+    <div class="contest-problems">
+      <h2 style="margin-bottom: 0.2em"><i class="fa fa-fw fa-question-circle"></i>{{ _('Problems') }} </h2>
+      <table id="contest-problems" class="table">
+        <thead>
+          <tr>
+            <th>{{ _('Problem') }}</th>
+            <th>{{ _('Points') }}</th>
+            <th>{{ _('AC Rate') }}</th>
+            <th>{{ _('Users') }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for problem in contest_problems %}
+            <tr>
+              <td>
+                {% if problem.is_public %}
+                  <a href="{{ url('problem_detail', problem.code) }}">{{ problem.i18n_name }}</a>
+                {% else %}
+                  {{ problem.i18n_name }}
+                {% endif %}
+              </td>
+              <td>{{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}</td>
+              <td>{{ problem.ac_rate|floatformat(1) }}%</td>
+              <td>
+                {% if problem.is_public %}
+                  <a href="{{ url('ranked_submissions', problem.code) }}">{{ problem.user_count }}</a>
+                {% else %}
+                  {{ problem.user_count }}
+                {% endif %}
+              </td>
+              <td>
+                {% if problem.is_public and problem.has_public_editorial %}
+                  <a href="{{ url('problem_editorial', problem.code) }}">{{ _('Editorial') }}</a>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <hr>
+  {% endif %}
+  {% include "actionbar/list.html" %}
+  <br>
+  {% include "comments/list.html" %}
 {% endblock %}

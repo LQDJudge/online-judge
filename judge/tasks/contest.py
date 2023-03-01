@@ -20,6 +20,23 @@ def rescore_contest(self, contest_key):
         self, participations.count(), stage=_("Recalculating contest scores")
     ) as p:
         for participation in participations.iterator():
+            for contest_submission in participation.submissions.iterator():
+                submission = contest_submission.submission
+                contest_problem = contest_submission.problem
+                contest_submission.points = round(
+                    submission.case_points
+                    / submission.case_total
+                    * contest_problem.points
+                    if submission.case_total > 0
+                    else 0,
+                    3,
+                )
+                if (
+                    not contest_problem.partial
+                    and contest_submission.points != contest_problem.points
+                ):
+                    contest_submission.points = 0
+                contest_submission.save()
             participation.recompute_results()
             rescored += 1
             if rescored % 10 == 0:

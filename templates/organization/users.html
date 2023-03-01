@@ -1,46 +1,46 @@
 {% extends "user/base-users-two-col.html" %}
 {% block users_media %}
-    <style>
-        .kick-form .button {
-            margin: -8px 0;
-            padding: 3px 12px;
-        }
-        #users-table td:nth-child(3), #users-table th:nth-child(3) {
-            text-align: left;
-        }
-        #users-table td:nth-child(2), #users-table th:nth-child(2) {
-            border-right: none;
-        }
-        .rank-td {
-            font-family: "Jersey M54";
-            font-size: large;
-        }
-        .user-points, .user-problem-count, .rating-td {
-            font-family: cursive;
-        }
-    </style>
+  <style>
+    .kick-form .button {
+      margin: -8px 0;
+      padding: 3px 12px;
+    }
+    #users-table td:nth-child(3), #users-table th:nth-child(3) {
+      text-align: left;
+    }
+    #users-table td:nth-child(2), #users-table th:nth-child(2) {
+      border-right: none;
+    }
+    .rank-td {
+      font-family: "Jersey M54";
+      font-size: large;
+    }
+    .user-points, .user-problem-count, .rating-td {
+      font-family: cursive;
+    }
+  </style>
 
-    {% if can_edit %}
-        <style>#users-table td:nth-child(3), #users-table th:nth-child(3) {
-            border-right: none;
-        }
-        </style>
-    {% endif %}
+  {% if can_edit %}
+    <style>#users-table td:nth-child(3), #users-table th:nth-child(3) {
+      border-right: none;
+    }
+    </style>
+  {% endif %}
 {% endblock %}
 
 {% block users_js_media %}
-    <script type="text/javascript">
-        $(function () {
-            $('form.kick-form').find('a.button').click(function () {
-                $(this).parent().submit();
-                return false;
-            })
-        });
-    </script>
+  <script type="text/javascript">
+    $(function () {
+      $('form.kick-form').find('a.button').click(function () {
+        $(this).parent().submit();
+        return false;
+      })
+    });
+  </script>
 {% endblock %}
 
 {% block left_sidebar %}
-    {% include "organization/org-left-sidebar.html" %}
+  {% include "organization/org-left-sidebar.html" %}
 {% endblock %}
 
 {% block users_table %}{% include "organization/users-table.html" %}{% endblock %}

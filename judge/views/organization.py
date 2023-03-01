@@ -35,6 +35,7 @@ from django.views.generic.detail import (
     SingleObjectTemplateResponseMixin,
 )
 from django.core.paginator import Paginator
+from django.contrib.sites.shortcuts import get_current_site
 from reversion import revisions
 
 from judge.forms import (
@@ -71,8 +72,7 @@ from judge.utils.problems import user_attempted_ids, user_completed_ids
 from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
 from judge.views.submission import AllSubmissions, SubmissionsListBase
-from judge.views.pagevote import PageVoteListView
-from judge.views.bookmark import BookMarkListView
+from judge.views.feed import FeedView
 
 __all__ = [
     "OrganizationList",
@@ -96,14 +96,9 @@ class OrganizationBase(object):
     def can_edit_organization(self, org=None):
         if org is None:
             org = self.object
-        if not self.request.user.is_authenticated:
-            return False
-        profile_id = self.request.profile.id
-        return (
-            org.admins.filter(id=profile_id).exists()
-            or org.registrant_id == profile_id
-            or self.request.user.is_superuser
-        )
+        if self.request.profile:
+            return self.request.profile.can_edit_organization(org)
+        return False
 
     def is_member(self, org=None):
         if org is None:
@@ -111,6 +106,13 @@ class OrganizationBase(object):
         return (
             self.request.profile in org if self.request.user.is_authenticated else False
         )
+
+    def is_admin(self, org=None):
+        if org is None:
+            org = self.object
+        if self.request.profile:
+            return org.admins.filter(id=self.request.profile.id).exists()
+        return False
 
     def can_access(self, org):
         if self.request.user.is_superuser:
@@ -124,6 +126,7 @@ class OrganizationMixin(OrganizationBase):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["is_member"] = self.is_member(self.organization)
+        context["is_admin"] = self.is_admin(self.organization)
         context["can_edit"] = self.can_edit_organization(self.organization)
         context["organization"] = self.organization
         context["logo_override_image"] = self.organization.logo_override_image
@@ -136,7 +139,9 @@ class OrganizationMixin(OrganizationBase):
             self.organization_id = int(kwargs["pk"])
             self.organization = get_object_or_404(Organization, id=self.organization_id)
         except Http404:
-            key = kwargs.get(self.slug_url_kwarg, None)
+            key = None
+            if hasattr(self, "slug_url_kwarg"):
+                key = kwargs.get(self.slug_url_kwarg, None)
             if key:
                 return generic_message(
                     request,
@@ -189,7 +194,7 @@ class MemberOrganizationMixin(OrganizationMixin):
         )
 
 
-class OrganizationHomeViewContext:
+class OrganizationHomeView(OrganizationMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if not hasattr(self, "organization"):
@@ -213,28 +218,6 @@ class OrganizationHomeViewContext:
         context["top_scorer"] = self.organization.members.filter(
             is_unlisted=False
         ).order_by("-performance_points")[:10]
-        return context
-
-
-class OrganizationDetailView(
-    OrganizationMixin, OrganizationHomeViewContext, DetailView
-):
-    context_object_name = "organization"
-    model = Organization
-
-    def get(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        if self.object.slug != kwargs["slug"]:
-            return HttpResponsePermanentRedirect(
-                request.get_full_path().replace(kwargs["slug"], self.object.slug)
-            )
-        context = self.get_context_data(object=self.object)
-        return self.render_to_response(context)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["can_edit"] = self.can_edit_organization()
-        context["is_member"] = self.is_member()
         return context
 
 
@@ -267,58 +250,46 @@ class OrganizationList(TitleMixin, ListView, OrganizationBase):
         return context
 
 
-class OrganizationHome(OrganizationDetailView, PageVoteListView, BookMarkListView):
+class OrganizationHome(OrganizationHomeView, FeedView):
     template_name = "organization/home.html"
-    pagevote_object_name = "posts"
+    paginate_by = 4
+    context_object_name = "posts"
+    feed_content_template_name = "blog/content.html"
 
-    def get_posts_and_page_obj(self):
-        posts = (
+    def get_queryset(self):
+        return (
             BlogPost.objects.filter(
                 visible=True,
                 publish_on__lte=timezone.now(),
                 is_organization_private=True,
-                organizations=self.object,
+                organizations=self.organization,
             )
             .order_by("-sticky", "-publish_on")
             .prefetch_related("authors__user", "organizations")
         )
-        paginator = Paginator(posts, 10)
-        page_number = self.request.GET.get("page", 1)
-        posts = paginator.get_page(page_number)
-        return posts, paginator.page(page_number)
 
     def get_comment_page(self, post):
         return "b:%s" % post.id
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationHome, self).get_context_data(**kwargs)
-        context["title"] = self.object.name
-        context["posts"], context["page_obj"] = self.get_posts_and_page_obj()
-        context = self.add_pagevote_context_data(context, "posts")
-        context = self.add_bookmark_context_data(context, "posts")
-
-        # Hack: This allows page_obj to have page_range for non-ListView class
-        setattr(
-            context["page_obj"], "page_range", context["posts"].paginator.page_range
+        context["title"] = self.organization.name
+        http = "http" if settings.DMOJ_SSL == 0 else "https"
+        context["organization_subdomain"] = (
+            http
+            + "://"
+            + self.organization.slug
+            + "."
+            + get_current_site(self.request).domain
         )
-        context["first_page_href"] = self.request.path
-        context["page_prefix"] = "?page="
-
-        context["post_comment_counts"] = {
-            int(page[2:]): count
-            for page, count in Comment.objects.filter(
-                page__in=["b:%d" % post.id for post in context["posts"]], hidden=False
-            )
-            .values_list("page")
-            .annotate(count=Count("page"))
-            .order_by()
-        }
 
         now = timezone.now()
         visible_contests = (
             Contest.get_visible_contests(self.request.user)
             .filter(
-                is_visible=True, is_organization_private=True, organizations=self.object
+                is_visible=True,
+                is_organization_private=True,
+                organizations=self.organization,
             )
             .order_by("start_time")
         )
@@ -331,11 +302,27 @@ class OrganizationHome(OrganizationDetailView, PageVoteListView, BookMarkListVie
         return context
 
 
-class OrganizationUsers(QueryStringSortMixin, OrganizationDetailView):
+class OrganizationUsers(QueryStringSortMixin, OrganizationMixin, FeedView):
     template_name = "organization/users.html"
     all_sorts = frozenset(("points", "problem_count", "rating", "performance_points"))
     default_desc = all_sorts
     default_sort = "-performance_points"
+    context_object_name = "users"
+
+    def get_queryset(self):
+        return ranker(
+            self.organization.members.filter(is_unlisted=False)
+            .order_by(self.order, "id")
+            .select_related("user")
+            .only(
+                "display_rank",
+                "user__username",
+                "points",
+                "rating",
+                "performance_points",
+                "problem_count",
+            )
+        )
 
     def dispatch(self, request, *args, **kwargs):
         res = super(OrganizationUsers, self).dispatch(request, *args, **kwargs)
@@ -350,26 +337,13 @@ class OrganizationUsers(QueryStringSortMixin, OrganizationDetailView):
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationUsers, self).get_context_data(**kwargs)
-        context["title"] = _("%s Members") % self.object.name
+        context["title"] = _("%s Members") % self.organization.name
         context["partial"] = True
         context["kick_url"] = reverse(
-            "organization_user_kick", args=[self.object.id, self.object.slug]
+            "organization_user_kick",
+            args=[self.organization.id, self.organization.slug],
         )
 
-        context["users"] = ranker(
-            self.get_object()
-            .members.filter(is_unlisted=False)
-            .order_by(self.order, "id")
-            .select_related("user")
-            .only(
-                "display_rank",
-                "user__username",
-                "points",
-                "rating",
-                "performance_points",
-                "problem_count",
-            )
-        )
         context["first_page_href"] = "."
         context["page_type"] = "users"
         context.update(self.get_sort_context())
@@ -378,6 +352,7 @@ class OrganizationUsers(QueryStringSortMixin, OrganizationDetailView):
 
 class OrganizationProblems(LoginRequiredMixin, MemberOrganizationMixin, ProblemList):
     template_name = "organization/problems.html"
+    filter_organization = True
 
     def get_queryset(self):
         self.org_query = [self.organization_id]
@@ -386,17 +361,6 @@ class OrganizationProblems(LoginRequiredMixin, MemberOrganizationMixin, ProblemL
     def get(self, request, *args, **kwargs):
         self.setup_problem_list(request)
         return super().get(request, *args, **kwargs)
-
-    def get_latest_attempted_problems(self, limit=None):
-        if not self.profile:
-            return ()
-        problems = set(self.get_queryset().values_list("code", flat=True))
-        result = list(user_attempted_ids(self.profile).values())
-        result = [i for i in result if i["code"] in problems]
-        result = sorted(result, key=lambda d: -d["last_submission"])
-        if limit:
-            result = result[:limit]
-        return result
 
     def get_completed_problems(self):
         return user_completed_ids(self.profile) if self.profile is not None else ()
@@ -418,8 +382,7 @@ class OrganizationProblems(LoginRequiredMixin, MemberOrganizationMixin, ProblemL
 class OrganizationContestMixin(
     LoginRequiredMixin,
     TitleMixin,
-    OrganizationMixin,
-    OrganizationHomeViewContext,
+    OrganizationHomeView,
 ):
     model = Contest
 
@@ -477,7 +440,7 @@ class OrganizationSubmissions(
     def contest(self):
         return None
 
-    def _get_queryset(self):
+    def get_queryset(self):
         return (
             super()
             ._get_entire_queryset()
@@ -610,8 +573,7 @@ class RequestJoinOrganization(LoginRequiredMixin, SingleObjectMixin, FormView):
 class OrganizationRequestDetail(
     LoginRequiredMixin,
     TitleMixin,
-    OrganizationMixin,
-    OrganizationHomeViewContext,
+    OrganizationHomeView,
     DetailView,
 ):
     model = OrganizationRequest
@@ -636,7 +598,8 @@ OrganizationRequestFormSet = modelformset_factory(
 
 
 class OrganizationRequestBaseView(
-    OrganizationDetailView,
+    DetailView,
+    OrganizationHomeView,
     TitleMixin,
     LoginRequiredMixin,
     SingleObjectTemplateResponseMixin,
@@ -757,7 +720,7 @@ class AddOrganizationMember(
     LoginRequiredMixin,
     TitleMixin,
     AdminOrganizationMixin,
-    OrganizationDetailView,
+    OrganizationHomeView,
     UpdateView,
 ):
     template_name = "organization/add-member.html"
@@ -819,7 +782,7 @@ class EditOrganization(
     LoginRequiredMixin,
     TitleMixin,
     AdminOrganizationMixin,
-    OrganizationDetailView,
+    OrganizationHomeView,
     UpdateView,
 ):
     template_name = "organization/edit.html"
@@ -1020,7 +983,7 @@ class EditOrganizationContest(
 class AddOrganizationBlog(
     LoginRequiredMixin,
     TitleMixin,
-    OrganizationHomeViewContext,
+    OrganizationHomeView,
     MemberOrganizationMixin,
     CreateView,
 ):
@@ -1071,7 +1034,7 @@ class AddOrganizationBlog(
 class EditOrganizationBlog(
     LoginRequiredMixin,
     TitleMixin,
-    OrganizationHomeViewContext,
+    OrganizationHomeView,
     MemberOrganizationMixin,
     UpdateView,
 ):
@@ -1165,7 +1128,7 @@ class PendingBlogs(
     LoginRequiredMixin,
     TitleMixin,
     MemberOrganizationMixin,
-    OrganizationHomeViewContext,
+    OrganizationHomeView,
     ListView,
 ):
     model = BlogPost

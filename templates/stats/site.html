@@ -1,65 +1,65 @@
 {% extends "stats/base.html" %}
 {% block media %}
-    <style>
-        .graph {
-            padding-bottom: 3em;
-        }
-    </style>
+  <style>
+    .graph {
+      padding-bottom: 3em;
+    }
+  </style>
 {% endblock %}
 
 {% block chart_body %}
-    <div class="graph">
-        <div id="submissions" class="chart">
-            <canvas width="90%" height="300"></canvas>
-        </div>
-        <center><h3>{{ _('Submissions') }}</h3></center>
+  <div class="graph">
+    <div id="submissions" class="chart">
+      <canvas width="90%" height="300"></canvas>
     </div>
-    <div class="graph">
-        <div id="contests" class="chart">
-            <canvas width="90%" height="300"></canvas>
-        </div>
-        <center><h3>{{ _('Contests') }}</h3></center>
+    <center><h3>{{ _('Submissions') }}</h3></center>
+  </div>
+  <div class="graph">
+    <div id="contests" class="chart">
+      <canvas width="90%" height="300"></canvas>
     </div>
-    <div class="graph">
-        <div id="new_users" class="chart">
-            <canvas width="90%" height="300"></canvas>
-        </div>
-        <center><h3>{{ _('New users') }}</h3></center>
+    <center><h3>{{ _('Contests') }}</h3></center>
+  </div>
+  <div class="graph">
+    <div id="new_users" class="chart">
+      <canvas width="90%" height="300"></canvas>
     </div>
-    <div class="graph">
-        <div id="groups" class="chart">
-            <canvas width="90%" height="300"></canvas>
-        </div>
-        <center><h3>{{ _('Groups') }}</h3></center>
+    <center><h3>{{ _('New users') }}</h3></center>
+  </div>
+  <div class="graph">
+    <div id="groups" class="chart">
+      <canvas width="90%" height="300"></canvas>
     </div>
-    <div class="graph">
-        <div id="comments" class="chart">
-            <canvas width="90%" height="300"></canvas>
-        </div>
-        <center><h3>{{ _('Comments') }}</h3></center>
+    <center><h3>{{ _('Groups') }}</h3></center>
+  </div>
+  <div class="graph">
+    <div id="comments" class="chart">
+      <canvas width="90%" height="300"></canvas>
     </div>
-    <div class="graph">
-        <div id="chat_messages" class="chart">
-            <canvas width="90%" height="300"></canvas>
-        </div>
-        <center><h3>{{ _('Chat messages') }}</h3></center>
+    <center><h3>{{ _('Comments') }}</h3></center>
+  </div>
+  <div class="graph">
+    <div id="chat_messages" class="chart">
+      <canvas width="90%" height="300"></canvas>
     </div>
+    <center><h3>{{ _('Chat messages') }}</h3></center>
+  </div>
 {% endblock %}
 
 {% block bodyend %}
-    <script type="text/javascript">
-        $(function () {
-            Chart.defaults.global.scaleFontFamily =
-                Chart.defaults.global.tooltipFontFamily =
-                    Chart.defaults.global.tooltipTitleFontFamily =
-                        $('body').css('font-family');
+  <script type="text/javascript">
+    $(function () {
+      Chart.defaults.global.scaleFontFamily =
+      Chart.defaults.global.tooltipFontFamily =
+      Chart.defaults.global.tooltipTitleFontFamily =
+      $('body').css('font-family');
 
-            draw_timeline({{submissions}}, $('#submissions'));
-            draw_timeline({{new_users}}, $('#new_users'));
-            draw_timeline({{comments}}, $('#comments'));
-            draw_timeline({{chat_messages}}, $('#chat_messages'));
-            draw_timeline({{contests}}, $('#contests'));
-            draw_timeline({{groups}}, $('#groups'));
-        });
-    </script>
+      draw_timeline({{submissions}}, $('#submissions'));
+      draw_timeline({{new_users}}, $('#new_users'));
+      draw_timeline({{comments}}, $('#comments'));
+      draw_timeline({{chat_messages}}, $('#chat_messages'));
+      draw_timeline({{contests}}, $('#contests'));
+      draw_timeline({{groups}}, $('#groups'));
+    });
+  </script>
 {% endblock %}

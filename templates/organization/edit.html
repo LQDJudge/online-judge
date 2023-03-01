@@ -1,36 +1,36 @@
 {% extends "organization/home-base.html" %}
 
 {% block org_js %}
-    {{ form.media.js }}
-    <script type="text/javascript">
-        window.django = {jQuery: $};
+  {{ form.media.js }}
+  <script type="text/javascript">
+    window.django = {jQuery: $};
 
-        function pluralidx(count) {
-            return (count == 1) ? 0 : 1;
-        }
+    function pluralidx(count) {
+      return (count == 1) ? 0 : 1;
+    }
 
-        function gettext(msgid) {
-            return msgid;
-        }
+    function gettext(msgid) {
+      return msgid;
+    }
 
-        function interpolate(fmt, obj, named) {
-            if (named) {
-                return fmt.replace(/%\(\w+\)s/g, function (match) {
-                    return String(obj[match.slice(2, -2)])
-                });
-            } else {
-                return fmt.replace(/%s/g, function (match) {
-                    return String(obj.shift())
-                });
-            }
-        }
-    </script>
+    function interpolate(fmt, obj, named) {
+      if (named) {
+        return fmt.replace(/%\(\w+\)s/g, function (match) {
+          return String(obj[match.slice(2, -2)])
+        });
+      } else {
+        return fmt.replace(/%s/g, function (match) {
+          return String(obj.shift())
+        });
+      }
+    }
+  </script>
 {% endblock %}
 
 {% block three_col_media %}
-    {{ form.media.css }}
+  {{ form.media.css }}
 {% endblock %}
 
 {% block middle_content %}
-    {% include "organization/form.html" %}
+  {% include "organization/form.html" %}
 {% endblock %}

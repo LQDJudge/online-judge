@@ -1,18 +1,22 @@
-<div class="blog-box">
+{% for comment in comments %}
+  <div class="blog-box">
     <h3 class="problem-feed-name">
-        <a href="{{ comment.link }}#comment-{{ comment.id }}">
-            {{ page_titles[comment.page] }}
-        </a>
+      <a href="{{ comment.get_absolute_url() }}">
+        {{ comment.page_title }}
+      </a>
     </h3>
     {% with author=comment.author %}
-        {% if author %}
-            <div class="problem-feed-info-entry">
-                <i class="fa fa-pencil-square-o fa-fw"></i>
-                <span class="pi-value">{{ link_user(author) }}</span>
-            </div>
-        {% endif %}
+      {% if author %}
+        <div class="problem-feed-info-entry">
+          <i class="fa fa-pencil-square-o fa-fw"></i>
+          <span class="pi-value">{{ link_user(author) }}</span>
+        </div>
+      {% endif %}
     {% endwith %}
     <div class='blog-description content-description'>
-        {{ comment.body|markdown(lazy_load=True)|reference|str|safe }}
+      {{ comment.body|markdown(lazy_load=True)|reference|str|safe }}
+      <div class="show-more"> {{_("...More")}} </div>
     </div>
-</div>
+  </div>
+{% endfor %}
+{% include "feed/has_next.html" %}

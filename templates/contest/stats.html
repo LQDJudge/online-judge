@@ -2,82 +2,82 @@
 {% set page_type = 'stats' %}
 
 {% block left_sidebar %}
-    {% include "contest/contest-tabs.html" %}
+  {% include "contest/contest-tabs.html" %}
 {% endblock %}
 
 {% block two_col_js %}
+  <script type="text/javascript">
+    window.stats = {{ stats }};
+  </script>
+  {% compress js %}
+    {% include "stats/media-js.html" %}
     <script type="text/javascript">
-        window.stats = {{ stats }};
-    </script>
-    {% compress js %}
-        {% include "stats/media-js.html" %}
-        <script type="text/javascript">
-            $(function () {
-                draw_stacked_bar_chart(window.stats.problem_status_count, $('#problem-status-count'));
-                draw_bar_chart(window.stats.problem_ac_rate, $('#problem-ac-rate'));
-                pts_hist = draw_histogram(window.stats.problem_point[0], $('#problem-point'));
-                draw_pie_chart(window.stats.language_count, $('#language-count'));
-                draw_bar_chart(window.stats.language_ac_rate, $('#language-ac-rate'));
-                
-                $('#problem-point-select').change(function() {
-                    pts_hist.destroy();
-                    problem = $(this).val();
-                    pts_hist = draw_histogram(window.stats.problem_point[problem], 
-                        $('#problem-point'));
-                })
+      $(function () {
+        draw_stacked_bar_chart(window.stats.problem_status_count, $('#problem-status-count'));
+        draw_bar_chart(window.stats.problem_ac_rate, $('#problem-ac-rate'));
+        pts_hist = draw_histogram(window.stats.problem_point[0], $('#problem-point'));
+        draw_pie_chart(window.stats.language_count, $('#language-count'));
+        draw_bar_chart(window.stats.language_ac_rate, $('#language-ac-rate'));
 
-                $('#problem-point-select').select2({
-                    width: '10em',
-                });
-            });
-            
-        </script>
-    {% endcompress %}
-    {% include "contest/media-js.html" %}
+        $('#problem-point-select').change(function() {
+          pts_hist.destroy();
+          problem = $(this).val();
+          pts_hist = draw_histogram(window.stats.problem_point[problem],
+            $('#problem-point'));
+        })
+
+        $('#problem-point-select').select2({
+          width: '10em',
+        });
+      });
+
+    </script>
+  {% endcompress %}
+  {% include "contest/media-js.html" %}
 {% endblock %}
 
 {% block two_col_media %}
-    <style>
-        .chart {
-            margin: 10px 0;
-        }
-    </style>
+  <style>
+    .chart {
+      margin: 10px 0;
+    }
+  </style>
 {% endblock %}
 
 {% block middle_content %}
-    <h3>{{ _('Problem Status Distribution') }}</h3>
-    <div id="problem-status-count" class="chart">
-        <canvas></canvas>
-    </div>
+  <h3>{{ _('Problem Status Distribution') }}</h3>
+  <div id="problem-status-count" class="chart">
+    <canvas></canvas>
+  </div>
 
-    <h3>{{ _('Problem AC Rate') }}</h3>
-    <div id="problem-ac-rate" class="chart">
-        <canvas></canvas>
-    </div>
-    
-    <h3>
-        {{ _('Problem Point Distribution') }}: 
-        <select id="problem-point-select">
-            {% for name in problems %}
-                <option value="{{ loop.index0 }}" class="point-dropdown">
-                    {{ name }}
-                </option>
-            {% endfor %}
-        </select>
-    </h3>
+  <h3>{{ _('Problem AC Rate') }}</h3>
+  <div id="problem-ac-rate" class="chart">
+    <canvas></canvas>
+  </div>
 
-    <div id="problem-point" class="chart">
-        <canvas></canvas>
-    </div>
+  <h3>
+    {{ _('Problem Point Distribution') }}:
+    <select id="problem-point-select">
+      {% for name in problems %}
+        <option value="{{ loop.index0 }}" class="point-dropdown">
+          {{ name }}
+        </option>
+      {% endfor %}
+    </select>
+  </h3>
 
-    <h3>{{ _('Submissions by Language') }}</h3>
-    <div id="language-count" class="chart">
-        <canvas width="400" height="300"></canvas>
-        <ul class="legend"></ul>
-    </div>
+  <div id="problem-point" class="chart">
+    <canvas></canvas>
+  </div>
 
-    <h3>{{ _('Language AC Rate') }}</h3>
-    <div id="language-ac-rate" class="chart">
-        <canvas></canvas>
-    </div>
+  <h3>{{ _('Submissions by Language') }}</h3>
+  <div id="language-count" class="chart">
+    <canvas width="400" height="300"></canvas>
+    <ul class="legend"></ul>
+  </div>
+
+  <h3>{{ _('Language AC Rate') }}</h3>
+  <div id="language-ac-rate" class="chart">
+    <canvas></canvas>
+  </div>
 {% endblock %}

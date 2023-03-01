@@ -3,55 +3,56 @@
 {% block title_ruler %}{% endblock %}
 
 {% block org_js %}
-    {% include "actionbar/media-js.html" %}
-{% endblock %}
-
-{% block three_col_media %}
-    {% include "actionbar/media-css.html" %}
+  {% include "actionbar/media-js.html" %}
+  {% include "feed/feed_js.html" %}
 {% endblock %}
 
 {% block middle_title %}
-    <div class="page-title">
-        <div class="tabs" style="border: none;">
-            <h2><img src="{{logo_override_image}}" style="height: 3rem; vertical-align: middle"> <span>{{title}}</span></h2>
-            <span class="spacer"></span>
-        
-            {% if request.user.is_authenticated %}
-                {% if is_member %}
-                {% elif organization.is_open or can_edit %}
-                    <form method="post" action="{{ url('join_organization', organization.id, organization.slug) }}">
-                        {% csrf_token %}
-                        <input type="submit" class="unselectable button" value="{{ _('Join') }}">
-                    </form>
-                {% else %}
-                    <a href="{{ url('request_organization', organization.id, organization.slug) }}"
-                       class="unselectable button">{{ _('Request membership') }}</a>
-                {% endif %}
-            {% endif %}
+  <div class="page-title">
+    <div class="tabs" style="border: none;">
+      <h2><img src="{{logo_override_image}}" style="height: 3rem; vertical-align: middle">
+        {{title}}
+      </h2>
+      {% if is_member %}
+        <div>
+          <a href="{{organization_subdomain}}" target="_blank">
+            {{_('Subdomain')}}
+          </a>
         </div>
+      {% endif %}
+      <span class="spacer"></span>
+
+      {% if request.user.is_authenticated %}
+        {% if is_member %}
+        {% elif organization.is_open or can_edit %}
+          <form method="post" action="{{ url('join_organization', organization.id, organization.slug) }}">
+            {% csrf_token %}
+            <input type="submit" class="unselectable button" value="{{ _('Join') }}">
+          </form>
+        {% else %}
+          <a href="{{ url('request_organization', organization.id, organization.slug) }}"
+            class="unselectable button">{{ _('Request membership') }}</a>
+        {% endif %}
+      {% endif %}
     </div>
+  </div>
 {% endblock %}
 
 {% block middle_content %}
-    {% block before_posts %}{% endblock %}
-    {% if is_member or can_edit %}
-        {% for post in posts %}
-            {% include "blog/content.html" %}
-        {% endfor %}
-        {% if posts.paginator.num_pages > 1 %}
-            <div style="margin-bottom:10px;margin-top:10px">{% include "list-pages.html" %}</div>
-        {% endif %}
-    {% else %}
-        <div class="blog-sidebox sidebox">
-            <h3>{{ _('About') }}<i class="fa fa-info-circle"></i></h3>
-            <div class="sidebox-content">
-                <div style="margin: 0.3em;">
-                    {% cache 3600 'organization_html' organization.id MATH_ENGINE %}
-                        {{ organization.about|markdown|reference|str|safe }}
-                    {% endcache %}
-                </div>
-            </div>
+  {% block before_posts %}{% endblock %}
+  {% if is_member or can_edit %}
+    {% include "blog/content.html" %}
+  {% else %}
+    <div class="blog-sidebox sidebox">
+      <h3>{{ _('About') }}<i class="fa fa-info-circle"></i></h3>
+      <div class="sidebox-content">
+        <div style="margin: 0.3em;">
+          {% cache 3600 'organization_html' organization.id MATH_ENGINE %}
+            {{ organization.about|markdown|reference|str|safe }}
+          {% endcache %}
         </div>
-    {% endif %}
-    {% block after_posts %}{% endblock %}
+      </div>
+    </div>
+  {% endif %}
+  {% block after_posts %}{% endblock %}
 {% endblock %}

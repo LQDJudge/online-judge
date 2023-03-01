@@ -41,7 +41,7 @@ class CollabFilter:
 
     def user_recommendations(self, user, problems, measure=DOT, limit=None, **kwargs):
         uid = user.id
-        problems_hash = hashlib.sha1(str(problems).encode()).hexdigest()
+        problems_hash = hashlib.sha1(str(list(problems)).encode()).hexdigest()
         cache_key = ":".join(map(str, [self.name, uid, measure, limit, problems_hash]))
         value = cache.get(cache_key)
         if value:
@@ -65,16 +65,16 @@ class CollabFilter:
         return res
 
     # return a list of pid
-    def problems_neighbors(self, problem, problemset, measure=DOT, limit=None):
+    def problem_neighbors(self, problem, problemset, measure=DOT, limit=None):
         pid = problem.id
         if pid >= len(self.problem_embeddings):
-            return None
+            return []
         scores = self.compute_scores(
             self.problem_embeddings[pid], self.problem_embeddings, measure
         )
         res = []
         for p in problemset:
-            if p.id < len(scores):
-                res.append((scores[p.id], p))
+            if p < len(scores):
+                res.append((scores[p], p))
         res.sort(reverse=True, key=lambda x: x[0])
         return res[:limit]

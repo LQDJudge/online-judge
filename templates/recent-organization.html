@@ -1,28 +1,28 @@
 {% block two_col_media %}
-    <style>
-        .org-logo {
-            vertical-align: middle;
-            height: 2em;
-            width: 2em;
-            display: inline-block;
-            margin-right: 0.5em;
-        }
-        .toggle {
-            cursor: pointer;
-        }
-    </style>
+  <style>
+    .org-logo {
+      vertical-align: middle;
+      height: 2em;
+      width: 2em;
+      display: inline-block;
+      margin-right: 0.5em;
+    }
+    .toggle {
+      cursor: pointer;
+    }
+  </style>
 {% endblock %}
 
 {% if recent_organizations %}
-    <div class="blog-sidebox sidebox">
-        <h3>{{ _('Recent groups') }} <i class="fa fa-users"></i></h3>
-        <div class="toggled">
-            {% for organization in recent_organizations %}
-                <a href="{{ url('organization_home', organization.organization.pk, organization.organization.slug) }}" class="sidebox-content organization-row" title="{{organization.organization.about}}">
-                    <img class="org-logo" data-src="{{ organization.organization.logo_override_image or static('icons/icon.png') }}">
-                    <span style="word-break: break-word;">{{ organization.organization }}</span>
-                </a>
-            {% endfor %}
-        </div>  
+  <div class="blog-sidebox sidebox">
+    <h3>{{ _('Recent groups') }} <i class="fa fa-users"></i></h3>
+    <div class="toggled">
+      {% for organization in recent_organizations %}
+        <a href="{{ url('organization_home', organization.organization.pk, organization.organization.slug) }}" class="sidebox-content organization-row" title="{{organization.organization.about}}">
+          <img class="org-logo" data-src="{{ organization.organization.logo_override_image or static('icons/icon.png') }}">
+          <span style="word-break: break-word;">{{ organization.organization }}</span>
+        </a>
+      {% endfor %}
     </div>
+  </div>
 {% endif %}

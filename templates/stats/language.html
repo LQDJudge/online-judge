@@ -1,45 +1,45 @@
 {% extends "stats/base.html" %}
 {% block media %}
-    <style>
-        .chart {
-            margin: 10px 0;
-        }
-    </style>
+  <style>
+    .chart {
+      margin: 10px 0;
+    }
+  </style>
 {% endblock %}
 
 {% block chart_body %}
-    <h3>{{ _('Submission Statistics') }}</h3>
-    <div id="status-counts" class="chart">
-        <canvas width="400" height="300"></canvas>
-    </div>
+  <h3>{{ _('Submission Statistics') }}</h3>
+  <div id="status-counts" class="chart">
+    <canvas width="400" height="300"></canvas>
+  </div>
 
-    <h3>{{ _('Submissions by Language') }}</h3>
-    <div id="lang-all" class="chart">
-        <canvas width="400" height="300"></canvas>
-    </div>
+  <h3>{{ _('Submissions by Language') }}</h3>
+  <div id="lang-all" class="chart">
+    <canvas width="400" height="300"></canvas>
+  </div>
 
-    <h3>{{ _('AC Submissions by Language') }}</h3>
-    <div id="lang-ac" class="chart">
-        <canvas width="400" height="300"></canvas>
-    </div>
+  <h3>{{ _('AC Submissions by Language') }}</h3>
+  <div id="lang-ac" class="chart">
+    <canvas width="400" height="300"></canvas>
+  </div>
 
-    <h3>{{ _('Language AC Rate') }}</h3>
-    <div id="ac-rate" class="chart">
-        <canvas><canvas>
+  <h3>{{ _('Language AC Rate') }}</h3>
+  <div id="ac-rate" class="chart">
+    <canvas><canvas>
     </div>
 {% endblock %}
 
 {% block bodyend %}
-    <script type="text/javascript">
-        $(function () {
-            Chart.defaults.global.scaleFontFamily =
-                Chart.defaults.global.tooltipFontFamily =
-                    Chart.defaults.global.tooltipTitleFontFamily =
-                        $('body').css('font-family');
-            draw_pie_chart({{ data_all }}, $('#lang-all'));
-            draw_pie_chart({{ lang_ac }}, $('#lang-ac'));
-            draw_pie_chart({{ status_counts }}, $('#status-counts'));
-            draw_bar_chart({{ ac_rate }}, $('#ac-rate'));
-        });
-    </script>
+  <script type="text/javascript">
+    $(function () {
+      Chart.defaults.global.scaleFontFamily =
+      Chart.defaults.global.tooltipFontFamily =
+      Chart.defaults.global.tooltipTitleFontFamily =
+      $('body').css('font-family');
+      draw_pie_chart({{ data_all }}, $('#lang-all'));
+      draw_pie_chart({{ lang_ac }}, $('#lang-ac'));
+      draw_pie_chart({{ status_counts }}, $('#status-counts'));
+      draw_bar_chart({{ ac_rate }}, $('#ac-rate'));
+    });
+  </script>
 {% endblock %}

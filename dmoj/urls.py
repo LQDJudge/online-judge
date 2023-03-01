@@ -64,6 +64,7 @@ from judge.views import (
     widgets,
     internal,
     resolver,
+    course,
 )
 from judge.views.problem_data import (
     ProblemDataView,
@@ -230,18 +231,19 @@ urlpatterns = [
     url(r"^problems/", paged_list_view(problem.ProblemList, "problem_list")),
     url(r"^problems/random/$", problem.RandomProblem.as_view(), name="problem_random"),
     url(
-        r"^problems/feed/",
-        paged_list_view(problem.ProblemFeed, "problem_feed", feed_type="for_you"),
+        r"^problems/feed/$",
+        problem.ProblemFeed.as_view(feed_type="for_you"),
+        name="problem_feed",
     ),
     url(
-        r"^problems/feed/new/",
-        paged_list_view(problem.ProblemFeed, "problem_feed_new", feed_type="new"),
+        r"^problems/feed/new/$",
+        problem.ProblemFeed.as_view(feed_type="new"),
+        name="problem_feed_new",
     ),
     url(
-        r"^problems/feed/volunteer/",
-        paged_list_view(
-            problem.ProblemFeed, "problem_feed_volunteer", feed_type="volunteer"
-        ),
+        r"^problems/feed/volunteer/$",
+        problem.ProblemFeed.as_view(feed_type="volunteer"),
+        name="problem_feed_volunteer",
     ),
     url(
         r"^problem/(?P<problem>[^/]+)",
@@ -369,6 +371,10 @@ urlpatterns = [
         paged_list_view(submission.AllUserSubmissions, "all_user_submissions"),
     ),
     url(
+        r"^submissions/friends/",
+        paged_list_view(submission.AllFriendSubmissions, "all_friend_submissions"),
+    ),
+    url(
         r"^src/(?P<submission>\d+)/raw$",
         submission.SubmissionSourceRaw.as_view(),
         name="submission_source_raw",
@@ -486,6 +492,39 @@ urlpatterns = [
         ),
     ),
     url(r"^contests/", paged_list_view(contests.ContestList, "contest_list")),
+    url(r"^courses/", paged_list_view(course.CourseList, "course_list")),
+    url(
+        r"^courses/(?P<pk>\d+)-(?P<slug>[\w-]*)",
+        include(
+            [
+                url(
+                    r"^$",
+                    course.CourseHome.as_view(),
+                    name="course_home",
+                ),
+                url(
+                    r"^/resource/$",
+                    course.CourseResourceList.as_view(),
+                    name="course_resource",
+                ),
+                url(
+                    r"^/resource_edit/$",
+                    course.CourseResourceEdit.as_view(),
+                    name="course_resource_edit",
+                ),
+                url(
+                    r"^/resource/(?P<pk>\d+)/$",
+                    course.CourseResouceDetail.as_view(),
+                    name="course_resource_detail",
+                ),
+                url(
+                    r"^/resource/(?P<pk>\d+)/edit",
+                    course.CourseResourceDetailEdit.as_view(),
+                    name="course_resource_detail_edit",
+                ),
+            ]
+        ),
+    ),
     url(
         r"^contests/(?P<year>\d+)/(?P<month>\d+)/$",
         contests.ContestCalendar.as_view(),
@@ -536,13 +575,6 @@ urlpatterns = [
                 url(r"^/join$", contests.ContestJoin.as_view(), name="contest_join"),
                 url(r"^/leave$", contests.ContestLeave.as_view(), name="contest_leave"),
                 url(r"^/stats$", contests.ContestStats.as_view(), name="contest_stats"),
-                url(
-                    r"^/rank/(?P<problem>\w+)/",
-                    paged_list_view(
-                        ranked_submission.ContestRankedSubmission,
-                        "contest_ranked_submissions",
-                    ),
-                ),
                 url(
                     r"^/submissions/(?P<user>\w+)/(?P<problem>\w+)",
                     paged_list_view(
@@ -751,7 +783,7 @@ urlpatterns = [
             ]
         ),
     ),
-    url(r"^blog/", paged_list_view(blog.PostList, "blog_post_list")),
+    url(r"^blog/", blog.PostList.as_view(), name="blog_post_list"),
     url(r"^post/(?P<id>\d+)-(?P<slug>.*)$", blog.PostView.as_view(), name="blog_post"),
     url(r"^license/(?P<key>[-\w.]+)$", license.LicenseDetail.as_view(), name="license"),
     url(

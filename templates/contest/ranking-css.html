@@ -1,102 +1,102 @@
 <style>
-    #users-table .username {
-        min-width: 15em;
-    }
+  #users-table .username {
+    min-width: 15em;
+  }
 
-    #users-table td {
-        height: 2.5em;
-    }
+  #users-table td {
+    height: 2.5em;
+  }
 
-    #users-table a {
-        display: block;
-    }
+  #users-table a {
+    display: block;
+  }
 
-    .userinfo a, .user-name a, .user-name form {
-        display: inline !important;
-    }
+  .userinfo a, .user-name a, .user-name form {
+    display: inline !important;
+  }
 
-    #users-table td a:hover {
-        text-decoration: underline;
-    }
+  #users-table td a:hover {
+    text-decoration: underline;
+  }
 
-    .rank {
-        min-width: 2.5em
-    }
+  .rank {
+    min-width: 2.5em
+  }
 
-    .points {
-        min-width: 2.5em;
-    }
-    
-    .start-time {
-        display: none;
-    }
+  .points {
+    min-width: 2.5em;
+  }
 
-    .user-name {
-        position: relative;
-        padding-left: 2em !important;
-    }
+  .start-time {
+    display: none;
+  }
 
-    .organization-column {
-        display: none;
-        text-align: left !important;
-        border-right: none !important;
-    }
+  .user-name {
+    position: relative;
+    padding-left: 2em !important;
+  }
 
+  .organization-column {
+    display: none;
+    text-align: left !important;
+    border-right: none !important;
+  }
+
+  .featherlight-content {
+    border-radius: 10px;
+    height: 80%;
+    width:  60%;
+    overflow: auto;
+  }
+
+  .select2-selection__arrow {
+    display: none;
+  }
+
+  .select2-selection__rendered {
+    cursor: text;
+    overflow: initial !important
+  }
+
+  .select2-results__option {
+    white-space: nowrap;
+  }
+
+  #search-contest, #search-contest + .select2 {
+    margin-top: 0.5em;
+  }
+
+  #search-contest {
+    width: 200px;
+    height: 2.3em;
+  }
+  html.with-featherlight {
+    overflow: unset;
+  }
+
+  @media (max-width: 799px) {
     .featherlight-content {
-        border-radius: 10px;
-        height: 80%;
-        width:  60%;
-        overflow: auto;
+      width:  95%;
     }
-
-    .select2-selection__arrow {
-        display: none;
+    #users-table .username {
+      min-width: fit-content;
     }
-
-    .select2-selection__rendered {
-        cursor: text;
-        overflow: initial !important
-    }
-
-    .select2-results__option {
-        white-space: nowrap;
-    }
-
-    #search-contest, #search-contest + .select2 {
-        margin-top: 0.5em;
-    }
-
-    #search-contest {
-        width: 200px;
-        height: 2.3em;
-    }
-    html.with-featherlight {
-        overflow: unset;
-    }
-    
-    @media (max-width: 799px) {
-        .featherlight-content {
-            width:  95%;
-        }
-        #users-table .username {
-            min-width: fit-content;
-        }
-    }
+  }
 </style>
 
 {% if has_rating %}
-    <style>#users-table .rate-box {
-        font-size: 0.85em;
-        float: left;
-    }
+  <style>#users-table .rate-box {
+    font-size: 0.85em;
+    float: left;
+  }
 
     #users-table td:nth-child(1) .rating {
-        margin-left: 1.25em;
-        display: block;
+      margin-left: 1.25em;
+      display: block;
     }
 
     #users-table td:nth-child(2) a {
-        display: block;
+      display: block;
     }
-    </style>
+  </style>
 {% endif %}

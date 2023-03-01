@@ -6,13 +6,15 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.core.cache import cache
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
-from django.db.models import CASCADE, F, FilteredRelation, Q, SET_NULL
+from django.db.models import CASCADE, F, FilteredRelation, Q, SET_NULL, Exists, OuterRef
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from judge.fulltext import SearchQuerySet
+from judge.models.pagevote import PageVote
+from judge.models.bookmark import BookMark
 from judge.models.profile import Organization, Profile
 from judge.models.runtime import Language
 from judge.user_translations import gettext as user_gettext
@@ -268,6 +270,7 @@ class Problem(models.Model):
 
     objects = TranslatedProblemQuerySet.as_manager()
     tickets = GenericRelation("Ticket")
+    comments = GenericRelation("Comment")
 
     organizations = models.ManyToManyField(
         Organization,
@@ -369,9 +372,9 @@ class Problem(models.Model):
         )
 
     @classmethod
-    def get_visible_problems(cls, user):
+    def get_visible_problems(cls, user, profile=None):
         # Do unauthenticated check here so we can skip authentication checks later on.
-        if not user.is_authenticated:
+        if not user.is_authenticated or not user:
             return cls.get_public_problems()
 
         # Conditions for visible problem:
@@ -383,7 +386,7 @@ class Problem(models.Model):
         #           - not is_organization_private or in organization or `judge.see_organization_problem`
         #           - author or curator or tester
         queryset = cls.objects.defer("description")
-
+        profile = profile or user.profile
         if not (
             user.has_perm("judge.see_private_problem")
             or user.has_perm("judge.edit_all_problem")
@@ -393,13 +396,25 @@ class Problem(models.Model):
                 # Either not organization private or in the organization.
                 q &= Q(is_organization_private=False) | Q(
                     is_organization_private=True,
-                    organizations__in=user.profile.organizations.all(),
+                    organizations__in=profile.organizations.all(),
                 )
 
             # Authors, curators, and testers should always have access, so OR at the very end.
-            q |= Q(authors=user.profile)
-            q |= Q(curators=user.profile)
-            q |= Q(testers=user.profile)
+            filter = Exists(
+                Problem.authors.through.objects.filter(
+                    problem=OuterRef("pk"), profile=profile
+                )
+            )
+            filter |= Exists(
+                Problem.curators.through.objects.filter(
+                    problem=OuterRef("pk"), profile=profile
+                )
+            )
+            filter |= Exists(
+                Problem.testers.through.objects.filter(
+                    problem=OuterRef("pk"), profile=profile
+                )
+            )
             queryset = queryset.filter(q)
 
         return queryset
@@ -431,6 +446,18 @@ class Problem(models.Model):
     @cached_property
     def usable_common_names(self):
         return set(self.usable_languages.values_list("common_name", flat=True))
+
+    @cached_property
+    def pagevote(self):
+        page = "p:%s" % self.code
+        pagevote, _ = PageVote.objects.get_or_create(page=page)
+        return pagevote
+
+    @cached_property
+    def bookmark(self):
+        page = "p:%s" % self.code
+        bookmark, _ = BookMark.objects.get_or_create(page=page)
+        return bookmark
 
     @property
     def usable_languages(self):
@@ -532,6 +559,10 @@ class Problem(models.Model):
         return result
 
     def save(self, *args, **kwargs):
+        if self.pdf_description:
+            self.pdf_description.name = problem_directory_file_helper(
+                self.code, self.pdf_description.name
+            )
         super(Problem, self).save(*args, **kwargs)
         if self.code != self.__original_code:
             try:
@@ -632,7 +663,7 @@ class LanguageTemplate(models.Model):
 class Solution(models.Model):
     problem = models.OneToOneField(
         Problem,
-        on_delete=SET_NULL,
+        on_delete=CASCADE,
         verbose_name=_("associated problem"),
         null=True,
         blank=True,
@@ -642,6 +673,7 @@ class Solution(models.Model):
     publish_on = models.DateTimeField(verbose_name=_("publish date"))
     authors = models.ManyToManyField(Profile, verbose_name=_("authors"), blank=True)
     content = models.TextField(verbose_name=_("editorial content"))
+    comments = GenericRelation("Comment")
 
     def get_absolute_url(self):
         problem = self.problem

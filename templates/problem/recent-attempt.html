@@ -1,22 +1,22 @@
 {% if last_attempted_problems%}
-    <div class="sidebox">
-        <h3>{{ _('Last unsolved') }} <i class="fa fa-bullseye"></i>
-        </h3>
-        <div class="sidebox-content" style="padding: 0; border: 0">
-            <table class="table feed-table">
-                <tbody>
-                    {% for problem in last_attempted_problems %}
-                        <tr>
-                            <td>
-                                <a href="{{ url('problem_detail', problem.code) }}">{{ problem.name }}</a>
-                            </td>
-                            <td>
-                                <a href="{{ url('submission_status', problem.last_submission) }}">{{ problem.last_submission }}</a>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+  <div class="sidebox">
+    <h3>{{ _('Last unsolved') }} <i class="fa fa-bullseye"></i>
+    </h3>
+    <div class="sidebox-content" style="padding: 0; border: 0">
+      <table class="table feed-table">
+        <tbody>
+          {% for problem in last_attempted_problems %}
+            <tr>
+              <td>
+                <a href="{{ url('problem_detail', problem.code) }}">{{ problem.name }}</a>
+              </td>
+              <td>
+                <a href="{{ url('submission_status', problem.last_submission) }}">{{ problem.last_submission }}</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </div>
 {% endif %}

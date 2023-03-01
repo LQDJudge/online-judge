@@ -1,563 +1,563 @@
 {% extends "base.html" %}
 
 {% block js_media %}
-    <script type="text/javascript">
-        window.valid_files = {{valid_files_json}};
-        window.big_input = (window.valid_files.length > 100);
-    </script>
-    <script type="text/javascript" src="{{ static('jquery-ui.min.js') }}"></script>
-    <script type="text/javascript" src="{{ static('libs/featherlight/featherlight.min.js') }}"></script>
-    <script type="text/javascript" src="{{ static('fine-uploader/jquery.fine-uploader.js') }}"></script>
-    <script type="text/javascript">
-        $(function () {
-            $("#problem-data-zipfile_fine_uploader").fineUploader({
-                request: {
-                    endpoint: "{{url('problem_zip_upload', problem.code)}}",
-                    params: {
-                        'csrfmiddlewaretoken': '{{ csrf_token }}'
-                    }
-                },
-                chunking: {
-                    enabled: true,
-                    partSize: 40000000,
-                },
-                resume: {
-                    enabled: true
-                },
-                validation: {
-                    allowedExtensions: ['zip'],
-                },
-            }).on('complete', function (event, id, name, responseJSON) {
-                console.log(responseJSON);
-                if (!responseJSON.success) {
-                    alert('Fail to upload: ' + responseJSON.error);
-                }
-                else {
-                    $('#submit-button').click();
-                }
-            });;
-
-            function update_select2() {
-                $('tbody:not(.extra-row-body) .type-column select').select2({
-                    minimumResultsForSearch: -1
-                });
-            }
-
-            $("#id_problem-data-checker").select2();
-            update_select2();
-
-            function autofill_if_exists($select, file) {
-                if (!$select.val() && ~window.valid_files.indexOf(file))
-                    $select.val(file).trigger('change');
-            }
-
-            var $table = $('#case-table');
-            $table.on('add-row', function (e, $tr) {
-                // update_select2();
-                $tr.find('input').filter('[id$=file]').each(function () {
-                    var $select, val = $(this).replaceWith($select = $('<select>').attr({
-                        id: $(this).attr('id'),
-                        name: $(this).attr('name'),
-                        style: 'width: 100%'
-                    })).val();
-                    $select.select2({
-                        data: window.big_input ? [val] : window.valid_files,
-                        allowClear: true,
-                        placeholder: ''
-                    }).val(val).trigger('change').on('change', function () {
-                        var val = $select.val();
-                        if (val) {
-                            if ($select.attr('id').endsWith('input_file'))
-                                autofill_if_exists($tr.find('select[id$=output_file]'), val.replace(/in(?!.*?in)/, 'out'));
-                            else
-                                autofill_if_exists($tr.find('select[id$=input_file]'), val.replace(/out(?!.*?out)/, 'in'));
-                        }
-                    });
-                });
-            });
-
-            var order = 0;
-
-            function handle_table_reorder() {
-                var in_batch = false;
-                $table.find('tbody:first tr').each(function () {
-                    switch ($(this).attr('data-type')) {
-                        case 'C':
-                            $(this).find('input[id$=pretest]').toggle(!in_batch);
-                            break;
-                        case 'S':
-                            in_batch = true;
-                            break;
-                        case 'E':
-                            in_batch = false;
-                    }
-                });
-            }
-
-            function try_parse_json(json) {
-                try {
-                    return JSON.parse(json);
-                } catch (e) {
-                    return {};
-                }
-            }
-
-            function swap_row($a, $b) {
-                var $a_order = $a.find('input[id$=order]'), $b_order = $b.find('input[id$=order]');
-                var order = $a_order.val();
-                $a_order.val($b_order.val());
-                $b_order.val(order);
-                $b.after($a);
-                $a.find('span.order').text($a_order.val());
-                $b.find('span.order').text($b_order.val());
-                handle_table_reorder();
-            }
-
-            function checker_precision($checker) {
-                var $td = $checker.parent();
-                var $args = $td.closest('table').find('#id_problem-data-checker_args');
-                var $precision = $('<input>', {
-                    type: 'number',
-                    value: try_parse_json($args.val()).precision || 6,
-                    title: 'precision (decimal digits)',
-                    style: 'width: 4em'
-                }).change(function () {
-                    if ($checker.val().startsWith('floats'))
-                        $args.val(JSON.stringify({precision: parseInt($(this).val())}));
-                    else
-                        $args.val('');
-                }).appendTo($td);
-
-                $checker.change(function () {
-                    $precision.toggle($checker.val().startsWith('floats')).change();
-                }).change();
-            }
-
-            (function toggle_custom() {
-                let $checker = $('#id_problem-data-checker')
-                
-                let $custom_checker = $('#id_problem-data-custom_checker')
-                let $validator = $('#id_problem-data-custom_validator')
-                let $interactive = $('#id_problem-data-interactive_judge')
-
-                $tr_checker = $custom_checker.parent().parent();
-                $tr_validator = $validator.parent().parent()
-                $tr_interactive = $interactive.parent().parent()
-
-                $td = $checker.parent();
-                var $sample = $("<a/>",{
-                    text: "{{_('Instruction')}}",
-                    style: "margin-left:3em;",
-                    target: "_blank",
-                    href: "{{url('custom_checker_sample')}}"
-                }).appendTo($td);
-
-                $checker.change(function () {
-                    $tr_checker.toggle($checker.val() == 'custom').change();
-                    $tr_validator.toggle($checker.val() == 'customval' || $checker.val() == 'testlib').change();
-                    $tr_interactive.toggle($checker.val() == 'interact').change();
-
-                    $sample.toggle(['custom', 'customval', 'interact'].includes($checker.val())).change();
-                }).change();
-            })();
-
-            checker_precision($('#id_problem-data-checker'));
-            
-            $table.on('add-row', function (e, $tr) {
-                var $order = $tr.find('input').filter('[id$=order]').attr('type', 'hidden').val(++order);
-                $order.after($('<span>', {'class': 'order'}).text($order.val()))
-                    .after($('<i>', {'class': 'fa fa-fw fa-lg fa-ellipsis-v'}));
-
-                var $opts = $tr.find('input').slice(2, 6);
-                var $files = $tr.find('select').slice(1, 3);
-                var $delete = $files.end().last();
-                $tr.find('select[id$=type]').change(function () {
-                    var $this = $(this), val = $this.val(), disabled;
-                    switch (val) {
-                        case 'S':
-                        case 'E':
-                            disabled = val == 'S';
-                            $opts.toggle(val == 'S');
-                            $files.siblings('.select2').hide();
-                            $delete.toggle(val == 'S');
-                            break;
-                        default:
-                            $opts.toggle(val == 'C');
-                            $files.siblings('.select2').toggle(val == 'C');
-                            $delete.toggle(val == 'C');
-                            var $prevs = $tr.prevAll('tr[data-type=S], tr[data-type=E]');
-                            disabled = $prevs.length && $prevs.get(0).getAttribute('data-type') == 'S';
-                            $tr.find('input[id$=pretest]').toggle(val == 'C' && !disabled);
-                    }
-                    $tr.attr('data-type', val).nextUntil('tr[data-type=S], tr[data-type=E], tr[data-type=""]')
-                        .find('input[id$=pretest]').toggle(!disabled);
-                }).change();
-
-                var tooltip_classes = 'tooltipped tooltipped-s';
-                $tr.find('a.edit-generator-args').mouseover(function () {
-                    switch ($tr.attr('data-type')) {
-                        case 'C':
-                        case 'S':
-                            var $this = $(this).addClass(tooltip_classes);
-                            $this.attr('aria-label', $this.prev().val() || '(none)');
-                    }
-                }).mouseout(function () {
-                    $(this).removeClass(tooltip_classes).removeAttr('aria-label');
-                }).featherlight($('.generator-args-editor'), {
-                    beforeOpen: function () {
-                        switch ($tr.attr('data-type')) {
-                            case 'C':
-                            case 'S':
-                                return true;
-                            default:
-                                return false;
-                        }
-                    },
-                    afterOpen: function () {
-                        var $input = this.$currentTarget.prev();
-                        this.$instance.find('.generator-args-editor')
-                            .find('textarea').val($input.val()).end()
-                            .find('.button').click(function () {
-                            $input.val($(this).prev().val());
-                            $.featherlight.current().close();
-                        }).end()
-                            .show();
-                    }
-                });
-
-                checker_precision($tr.find('select[id$=checker]'));
-            }).find('tbody:first').find('tr').each(function () {
-                $table.trigger('add-row', [$(this)]);
-            });
-
-            $('form').submit(function () {
-                $table.find('tbody:first').find('tr').each(function () {
-                    var filled = false;
-                    $(this).find('input, select').each(function () {
-                        var $this = $(this);
-                        if (!$this.attr('name'))
-                            return;
-                        if ($this.attr('type') === 'checkbox')
-                            filled |= $this.is(':checked');
-                        else if (!$this.attr('name').endsWith('order'))
-                            filled |= !!$this.val();
-                    });
-                    if (!filled)
-                        $(this).find('input[id$=order]').val('');
-                });
-            });
-
-            var $total = $('#id_cases-TOTAL_FORMS');
-
-            $('a#add-case-row').click(function () {
-                var $tr;
-                $table.find('tbody:first').append($tr = $($table.find('.extra-row-body').html()
-                    .replace(/__prefix__/g, $total.val())));
-                $tr.find('.type-column select option[value="C"]').attr('selected', true);
-                $total.val(parseInt($total.val()) + 1);
-                $table.trigger('add-row', [$tr]);
-                window.scrollBy(0, $tr.height());
-                return false;
-            });
-
-            function isInpFile(x) {
-                let tail = ['.in', '.inp', '.IN', '.INP']
-                for (let i of tail) {
-                    if (x.endsWith(i)) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-            function isOutFile(x) {
-                let tail = ['.out', '.OUT', '.ans', '.ANS']
-                for (let i of tail) {
-                    if (x.endsWith(i)) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            $('a#fill-testcases').click(function (e) {
-                e.preventDefault();
-                var inFiles = [], outFiles = [];
-                for (let file of window.valid_files) {
-                    if (isInpFile(file)) {
-                        inFiles.push(file);
-                    }
-                    if (isOutFile(file)) {
-                        outFiles.push(file);
-                    }
-                }
-                if (inFiles.length == 0) {
-                    alert("No input/output files. Make sure your files' suffices are .in(p)/.out");
-                    return false;
-                }
-                if (inFiles.length != outFiles.length) {
-                    alert("The input files do not match the output files!");
-                    return false;
-                }
-                
-                inFiles.sort();
-                outFiles.sort();
-
-                // big number of input
-                if (inFiles.length > 100) {
-                    window.big_input = true;
-                }
-
-                var batch_starts = $('#batch_starts').val();
-                batch_starts = batch_starts.split(',');
-                batch_starts = batch_starts.filter(e => {
-                    return e.length && e == +e;
-                });
-                batch_starts = new Set(batch_starts.map(x => Math.min(Math.max(1, parseInt(x)), inFiles.length - 1)));
-                batch_starts.add(inFiles.length + 1);
-
-                var numRows = inFiles.length + 2 * batch_starts.size - 2;
-                while ($total.val() < numRows) {
-                    $('a#add-case-row').click();
-                }
-
-                // fill cases
-                var row = 0;
-                for (var i = 0; i < inFiles.length; i++) {
-                    if (batch_starts.has(i + 1)) {
-                        $("#id_cases-"+row+"-type").val('S').change();
-                        row += 1;
-                    }
-                    var $input = $("#id_cases-"+row+"-input_file");
-                    $input.select2('destroy').empty().select2({ data: [inFiles[i]] });
-                    $input.val(inFiles[i]).change();
-                    var $output = $("#id_cases-"+row+"-output_file");
-                    $output.select2('destroy').empty().select2({ data: [outFiles[i]] });
-                    $output.val(outFiles[i]).change();
-                    
-                    if ($("#problem-type").val() == "ICPC") {
-                        $("#id_cases-"+row+"-points").val('0').change();
-                    }
-                    else {
-                        $("#id_cases-"+row+"-points").val('1').change();
-                    }
-                    row += 1;
-
-                    if (batch_starts.has(i + 2)) {
-                        $("#id_cases-"+(row-1)+"-points").val('1').change();
-                        $("#id_cases-"+row+"-type").val('E').change();
-                        row += 1;
-                    }
-                }
-                update_select2();
-                return false;
-            });
-
-            var oldIndex;
-             $('#case-table tbody').sortable({
-                itemSelector: 'tr',
-                handle: 'i.fa-ellipsis-v',
-                start: function (event, ui) {
-                    $item = ui.item;
-                    oldIndex = $item.index();
-                },
-                stop: function (event, ui) {
-                    $item = ui.item;
-                    var newIndex = $item.index();
-                    if (newIndex > oldIndex) {
-                        var order = parseInt($item.parent().children().slice(oldIndex, newIndex).each(function () {
-                            var $order = $(this).find('input[id$=order]');
-                            $order.val(parseInt($order.val()) - 1).siblings('span.order').text($order.val());
-                        }).last().after($item).find('input[id$=order]').val());
-                        $item.find('input[id$=order]').val(order + 1).siblings('span.order').text(order + 1);
-                    } else if (newIndex < oldIndex) {
-                        var order = parseInt($item.parent().children().slice(newIndex + 1, oldIndex + 1).each(function () {
-                            var $order = $(this).find('input[id$=order]');
-                            $order.val(parseInt($order.val()) + 1).siblings('span.order').text($order.val());
-                        }).first().before($item).find('input[id$=order]').val());
-                        $item.find('input[id$=order]').val(order - 1).siblings('span.order').text(order - 1);
-                    }
-                    if (newIndex != oldIndex)
-                        handle_table_reorder();
-                }
-            });
-
-            $('input#delete-all').change(function() {
-                if (this.checked) {
-                    $("input[name$='DELETE']").attr('checked', true);
-                }
-                else {
-                    $("input[name$='DELETE']").attr('checked', false);
-                }
-            });
-
-        // Change to OI if the first row point > 0
-        if($("#id_cases-0-points").val() != '0') $('#problem-type').val('OI');
-        $("#problem-type").select2();
-
-        // Change batch_starts based on current tests
-        function update_batch_starts() {
-            var numBatches = 0;
-            var batchStarts = [];
-            $("#case-table tbody:first tr").each(function(idx) {
-                $select = $('#id_cases-' + idx + '-type');
-                if ($select.val() == 'S') {
-                    batchStarts.push(idx + 1 - 2 * numBatches);
-                    numBatches++;
-                }
-            });
-            if (batchStarts) {
-                $("#batch_starts").val(batchStarts.join(', '));
-            }
+  <script type="text/javascript">
+    window.valid_files = {{valid_files_json}};
+    window.big_input = (window.valid_files.length > 100);
+  </script>
+  <script type="text/javascript" src="{{ static('jquery-ui.min.js') }}"></script>
+  <script type="text/javascript" src="{{ static('libs/featherlight/featherlight.min.js') }}"></script>
+  <script type="text/javascript" src="{{ static('fine-uploader/jquery.fine-uploader.js') }}"></script>
+  <script type="text/javascript">
+    $(function () {
+      $("#problem-data-zipfile_fine_uploader").fineUploader({
+        request: {
+          endpoint: "{{url('problem_zip_upload', problem.code)}}",
+          params: {
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+          }
+        },
+        chunking: {
+          enabled: true,
+          partSize: 40000000,
+        },
+        resume: {
+          enabled: true
+        },
+        validation: {
+          allowedExtensions: ['zip'],
+        },
+      }).on('complete', function (event, id, name, responseJSON) {
+        console.log(responseJSON);
+        if (!responseJSON.success) {
+          alert('Fail to upload: ' + responseJSON.error);
         }
-        update_batch_starts();
+        else {
+          $('#submit-button').click();
+        }
+      });;
 
+      function update_select2() {
+        $('tbody:not(.extra-row-body) .type-column select').select2({
+          minimumResultsForSearch: -1
+        });
+      }
+
+      $("#id_problem-data-checker").select2();
+      update_select2();
+
+      function autofill_if_exists($select, file) {
+        if (!$select.val() && ~window.valid_files.indexOf(file))
+        $select.val(file).trigger('change');
+      }
+
+      var $table = $('#case-table');
+      $table.on('add-row', function (e, $tr) {
+        // update_select2();
+        $tr.find('input').filter('[id$=file]').each(function () {
+          var $select, val = $(this).replaceWith($select = $('<select>').attr({
+            id: $(this).attr('id'),
+            name: $(this).attr('name'),
+            style: 'width: 100%'
+          })).val();
+          $select.select2({
+            data: window.big_input ? [val] : window.valid_files,
+            allowClear: true,
+            placeholder: ''
+          }).val(val).trigger('change').on('change', function () {
+            var val = $select.val();
+            if (val) {
+              if ($select.attr('id').endsWith('input_file'))
+              autofill_if_exists($tr.find('select[id$=output_file]'), val.replace(/in(?!.*?in)/, 'out'));
+              else
+              autofill_if_exists($tr.find('select[id$=input_file]'), val.replace(/out(?!.*?out)/, 'in'));
+            }
+          });
+        });
+      });
+
+      var order = 0;
+
+      function handle_table_reorder() {
+        var in_batch = false;
+        $table.find('tbody:first tr').each(function () {
+          switch ($(this).attr('data-type')) {
+            case 'C':
+              $(this).find('input[id$=pretest]').toggle(!in_batch);
+              break;
+            case 'S':
+              in_batch = true;
+              break;
+            case 'E':
+              in_batch = false;
+          }
+        });
+      }
+
+      function try_parse_json(json) {
+        try {
+          return JSON.parse(json);
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function swap_row($a, $b) {
+        var $a_order = $a.find('input[id$=order]'), $b_order = $b.find('input[id$=order]');
+        var order = $a_order.val();
+        $a_order.val($b_order.val());
+        $b_order.val(order);
+        $b.after($a);
+        $a.find('span.order').text($a_order.val());
+        $b.find('span.order').text($b_order.val());
+        handle_table_reorder();
+      }
+
+      function checker_precision($checker) {
+        var $td = $checker.parent();
+        var $args = $td.closest('table').find('#id_problem-data-checker_args');
+        var $precision = $('<input>', {
+          type: 'number',
+          value: try_parse_json($args.val()).precision || 6,
+          title: 'precision (decimal digits)',
+          style: 'width: 4em'
+        }).change(function () {
+          if ($checker.val().startsWith('floats'))
+          $args.val(JSON.stringify({precision: parseInt($(this).val())}));
+          else
+          $args.val('');
+        }).appendTo($td);
+
+        $checker.change(function () {
+          $precision.toggle($checker.val().startsWith('floats')).change();
         }).change();
-    </script>
-    {% include 'fine_uploader/script.html' %}
+      }
+
+      (function toggle_custom() {
+        let $checker = $('#id_problem-data-checker')
+
+        let $custom_checker = $('#id_problem-data-custom_checker')
+        let $validator = $('#id_problem-data-custom_validator')
+        let $interactive = $('#id_problem-data-interactive_judge')
+
+        $tr_checker = $custom_checker.parent().parent();
+        $tr_validator = $validator.parent().parent()
+        $tr_interactive = $interactive.parent().parent()
+
+        $td = $checker.parent();
+        var $sample = $("<a/>",{
+          text: "{{_('Instruction')}}",
+          style: "margin-left:3em;",
+          target: "_blank",
+          href: "{{url('custom_checker_sample')}}"
+        }).appendTo($td);
+
+        $checker.change(function () {
+          $tr_checker.toggle($checker.val() == 'custom').change();
+          $tr_validator.toggle($checker.val() == 'customval' || $checker.val() == 'testlib').change();
+          $tr_interactive.toggle($checker.val() == 'interact').change();
+
+          $sample.toggle(['custom', 'customval', 'interact'].includes($checker.val())).change();
+        }).change();
+      })();
+
+      checker_precision($('#id_problem-data-checker'));
+
+      $table.on('add-row', function (e, $tr) {
+        var $order = $tr.find('input').filter('[id$=order]').attr('type', 'hidden').val(++order);
+        $order.after($('<span>', {'class': 'order'}).text($order.val()))
+          .after($('<i>', {'class': 'fa fa-fw fa-lg fa-ellipsis-v'}));
+
+        var $opts = $tr.find('input').slice(2, 6);
+        var $files = $tr.find('select').slice(1, 3);
+        var $delete = $files.end().last();
+        $tr.find('select[id$=type]').change(function () {
+          var $this = $(this), val = $this.val(), disabled;
+          switch (val) {
+            case 'S':
+            case 'E':
+              disabled = val == 'S';
+              $opts.toggle(val == 'S');
+              $files.siblings('.select2').hide();
+              $delete.toggle(val == 'S');
+              break;
+            default:
+              $opts.toggle(val == 'C');
+              $files.siblings('.select2').toggle(val == 'C');
+              $delete.toggle(val == 'C');
+              var $prevs = $tr.prevAll('tr[data-type=S], tr[data-type=E]');
+              disabled = $prevs.length && $prevs.get(0).getAttribute('data-type') == 'S';
+              $tr.find('input[id$=pretest]').toggle(val == 'C' && !disabled);
+          }
+          $tr.attr('data-type', val).nextUntil('tr[data-type=S], tr[data-type=E], tr[data-type=""]')
+            .find('input[id$=pretest]').toggle(!disabled);
+        }).change();
+
+        var tooltip_classes = 'tooltipped tooltipped-s';
+        $tr.find('a.edit-generator-args').mouseover(function () {
+          switch ($tr.attr('data-type')) {
+            case 'C':
+            case 'S':
+              var $this = $(this).addClass(tooltip_classes);
+              $this.attr('aria-label', $this.prev().val() || '(none)');
+          }
+        }).mouseout(function () {
+          $(this).removeClass(tooltip_classes).removeAttr('aria-label');
+        }).featherlight($('.generator-args-editor'), {
+          beforeOpen: function () {
+            switch ($tr.attr('data-type')) {
+              case 'C':
+              case 'S':
+                return true;
+              default:
+                return false;
+            }
+          },
+          afterOpen: function () {
+            var $input = this.$currentTarget.prev();
+            this.$instance.find('.generator-args-editor')
+              .find('textarea').val($input.val()).end()
+              .find('.button').click(function () {
+              $input.val($(this).prev().val());
+              $.featherlight.current().close();
+            }).end()
+              .show();
+          }
+        });
+
+        checker_precision($tr.find('select[id$=checker]'));
+      }).find('tbody:first').find('tr').each(function () {
+        $table.trigger('add-row', [$(this)]);
+      });
+
+      $('form').submit(function () {
+        $table.find('tbody:first').find('tr').each(function () {
+          var filled = false;
+          $(this).find('input, select').each(function () {
+            var $this = $(this);
+            if (!$this.attr('name'))
+            return;
+            if ($this.attr('type') === 'checkbox')
+            filled |= $this.is(':checked');
+            else if (!$this.attr('name').endsWith('order'))
+            filled |= !!$this.val();
+          });
+          if (!filled)
+          $(this).find('input[id$=order]').val('');
+        });
+      });
+
+      var $total = $('#id_cases-TOTAL_FORMS');
+
+      $('a#add-case-row').click(function () {
+        var $tr;
+        $table.find('tbody:first').append($tr = $($table.find('.extra-row-body').html()
+            .replace(/__prefix__/g, $total.val())));
+        $tr.find('.type-column select option[value="C"]').attr('selected', true);
+        $total.val(parseInt($total.val()) + 1);
+        $table.trigger('add-row', [$tr]);
+        window.scrollBy(0, $tr.height());
+        return false;
+      });
+
+      function isInpFile(x) {
+        let tail = ['.in', '.inp', '.IN', '.INP']
+        for (let i of tail) {
+          if (x.endsWith(i)) {
+            return true;
+          }
+        }
+        return false;
+      }
+      function isOutFile(x) {
+        let tail = ['.out', '.OUT', '.ans', '.ANS']
+        for (let i of tail) {
+          if (x.endsWith(i)) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      $('a#fill-testcases').click(function (e) {
+        e.preventDefault();
+        var inFiles = [], outFiles = [];
+        for (let file of window.valid_files) {
+          if (isInpFile(file)) {
+            inFiles.push(file);
+          }
+          if (isOutFile(file)) {
+            outFiles.push(file);
+          }
+        }
+        if (inFiles.length == 0) {
+          alert("No input/output files. Make sure your files' suffices are .in(p)/.out");
+          return false;
+        }
+        if (inFiles.length != outFiles.length) {
+          alert("The input files do not match the output files!");
+          return false;
+        }
+
+        inFiles.sort();
+        outFiles.sort();
+
+        // big number of input
+        if (inFiles.length > 100) {
+          window.big_input = true;
+        }
+
+        var batch_starts = $('#batch_starts').val();
+        batch_starts = batch_starts.split(',');
+        batch_starts = batch_starts.filter(e => {
+          return e.length && e == +e;
+        });
+        batch_starts = new Set(batch_starts.map(x => Math.min(Math.max(1, parseInt(x)), inFiles.length - 1)));
+        batch_starts.add(inFiles.length + 1);
+
+        var numRows = inFiles.length + 2 * batch_starts.size - 2;
+        while ($total.val() < numRows) {
+          $('a#add-case-row').click();
+        }
+
+        // fill cases
+        var row = 0;
+        for (var i = 0; i < inFiles.length; i++) {
+          if (batch_starts.has(i + 1)) {
+            $("#id_cases-"+row+"-type").val('S').change();
+            row += 1;
+          }
+          var $input = $("#id_cases-"+row+"-input_file");
+          $input.select2('destroy').empty().select2({ data: [inFiles[i]] });
+          $input.val(inFiles[i]).change();
+          var $output = $("#id_cases-"+row+"-output_file");
+          $output.select2('destroy').empty().select2({ data: [outFiles[i]] });
+          $output.val(outFiles[i]).change();
+
+          if ($("#problem-type").val() == "ICPC") {
+            $("#id_cases-"+row+"-points").val('0').change();
+          }
+          else {
+            $("#id_cases-"+row+"-points").val('1').change();
+          }
+          row += 1;
+
+          if (batch_starts.has(i + 2)) {
+            $("#id_cases-"+(row-1)+"-points").val('1').change();
+            $("#id_cases-"+row+"-type").val('E').change();
+            row += 1;
+          }
+        }
+        update_select2();
+        return false;
+      });
+
+      var oldIndex;
+      $('#case-table tbody').sortable({
+        itemSelector: 'tr',
+        handle: 'i.fa-ellipsis-v',
+        start: function (event, ui) {
+          $item = ui.item;
+          oldIndex = $item.index();
+        },
+        stop: function (event, ui) {
+          $item = ui.item;
+          var newIndex = $item.index();
+          if (newIndex > oldIndex) {
+            var order = parseInt($item.parent().children().slice(oldIndex, newIndex).each(function () {
+              var $order = $(this).find('input[id$=order]');
+              $order.val(parseInt($order.val()) - 1).siblings('span.order').text($order.val());
+            }).last().after($item).find('input[id$=order]').val());
+            $item.find('input[id$=order]').val(order + 1).siblings('span.order').text(order + 1);
+          } else if (newIndex < oldIndex) {
+            var order = parseInt($item.parent().children().slice(newIndex + 1, oldIndex + 1).each(function () {
+              var $order = $(this).find('input[id$=order]');
+              $order.val(parseInt($order.val()) + 1).siblings('span.order').text($order.val());
+            }).first().before($item).find('input[id$=order]').val());
+            $item.find('input[id$=order]').val(order - 1).siblings('span.order').text(order - 1);
+          }
+          if (newIndex != oldIndex)
+          handle_table_reorder();
+        }
+      });
+
+      $('input#delete-all').change(function() {
+        if (this.checked) {
+          $("input[name$='DELETE']").attr('checked', true);
+        }
+        else {
+          $("input[name$='DELETE']").attr('checked', false);
+        }
+      });
+
+      // Change to OI if the first row point > 0
+      if($("#id_cases-0-points").val() != '0') $('#problem-type').val('OI');
+      $("#problem-type").select2();
+
+      // Change batch_starts based on current tests
+      function update_batch_starts() {
+        var numBatches = 0;
+        var batchStarts = [];
+        $("#case-table tbody:first tr").each(function(idx) {
+          $select = $('#id_cases-' + idx + '-type');
+          if ($select.val() == 'S') {
+            batchStarts.push(idx + 1 - 2 * numBatches);
+            numBatches++;
+          }
+        });
+        if (batchStarts) {
+          $("#batch_starts").val(batchStarts.join(', '));
+        }
+      }
+      update_batch_starts();
+
+    }).change();
+  </script>
+  {% include 'fine_uploader/script.html' %}
 {% endblock %}
 
 {% block media %}
-    <link href="{{ static ('fine-uploader/fine-uploader.css') }}" rel="stylesheet">
-    <style>
-        #case-table .select2 {
-            text-align: initial;
-        }
+  <link href="{{ static ('fine-uploader/fine-uploader.css') }}" rel="stylesheet">
+  <style>
+    #case-table .select2 {
+      text-align: initial;
+    }
 
-        .order-column {
-            width: 1em;
-        }
+    .order-column {
+      width: 1em;
+    }
 
-        span.order {
-            padding-right: 0.5em;
-        }
+    span.order {
+      padding-right: 0.5em;
+    }
 
-        body.dragging, body.dragging * {
-            cursor: move !important;
-        }
+    body.dragging, body.dragging * {
+      cursor: move !important;
+    }
 
-        .dragged {
-            position: absolute;
-            opacity: 0.5;
-            z-index: 2000;
-        }
+    .dragged {
+      position: absolute;
+      opacity: 0.5;
+      z-index: 2000;
+    }
 
-        i.fa-ellipsis-v {
-            cursor: move;
-        }
+    i.fa-ellipsis-v {
+      cursor: move;
+    }
 
-        #case-table tbody td {
-            white-space: nowrap;
-        }
+    #case-table tbody td {
+      white-space: nowrap;
+    }
 
-        .type-column {
-            width: 8em;
-        }
+    .type-column {
+      width: 8em;
+    }
 
-        ul.errorlist {
-            border: 3px red solid;
-            border-radius: 5px;
-            padding-top: 1em;
-            padding-bottom: 1em;
-            background: #e99;
-        }
-    </style>
+    ul.errorlist {
+      border: 3px red solid;
+      border-radius: 5px;
+      padding-top: 1em;
+      padding-bottom: 1em;
+      background: #e99;
+    }
+  </style>
 {% endblock %}
 
 {% block header %}
-    {% if data_form.instance.has_yml %}
-        <div class="title-line-action">
-            [<a href="{{ url('problem_data_init', problem.code) }}">{{ _('View YAML') }}</a>]
-        </div>
-    {% endif %}
+  {% if data_form.instance.has_yml %}
+    <div class="title-line-action">
+      [<a href="{{ url('problem_data_init', problem.code) }}">{{ _('View YAML') }}</a>]
+    </div>
+  {% endif %}
 {% endblock %}
 
 {% block body %}
-    {% if data_form.instance.feedback %}
-        <ul class="errorlist">
-            <li>{{ data_form.instance.feedback }}</li>
-        </ul>
-    {% endif %}
-    <form class="problem-data-form" action="" method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ cases_formset.management_form }}
-        <table class="table">
-            {{ data_form.as_table() }}
-            <th>
-                <label>{{_('Autofill testcases')}}:</label>
+  {% if data_form.instance.feedback %}
+    <ul class="errorlist">
+      <li>{{ data_form.instance.feedback }}</li>
+    </ul>
+  {% endif %}
+  <form class="problem-data-form" action="" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ cases_formset.management_form }}
+    <table class="table">
+      {{ data_form.as_table() }}
+      <th>
+        <label>{{_('Autofill testcases')}}:</label>
+      </th>
+      <td>
+        <div>
+          {{_('Problem type')}}:
+          <select id="problem-type" style="width: 5em">
+            <option value="ICPC">ICPC</option>
+            <option value="OI">OI</option>
+          </select>
+          <a id="fill-testcases" href="#">
+            <i class="fa fa-circle"></i>
+            {{_('Fill testcases')}}
+          </a>
+        </div>
+        <div style="margin-top: 1em;">
+          {{_("Batch start positions")}}:
+          <input id="batch_starts">
+        </div>
+        <div>
+          {{_("Leave empty if not use batch. If you want to divide to three batches [1, 4], [5, 8], [9, 10], enter: 1, 5, 9")}}
+        </div>
+      </td>
+    </table>
+    <input type="submit" value="{{ _('Apply!') }}" class="button" id="submit-button">
+    <table id="case-table" class="table">
+      <thead>
+        <tr>
+          <th class="order-column"></th>
+          <th class="type-column">{{ _('Type') }}</th>
+          <th>{{ _('Input file') }}</th>
+          <th>{{ _('Output file') }}</th>
+          <th>{{ _('Points') }}</th>
+          <th>{{ _('Pretest?') }}</th>
+          {% if cases_formset.can_delete %}
+            <th>{{ _('Delete?') }}
+              <br>
+              <input type="checkbox" name="delete-all" id="delete-all">
             </th>
-            <td>
-                <div>
-                    {{_('Problem type')}}:
-                    <select id="problem-type" style="width: 5em">
-                        <option value="ICPC">ICPC</option>
-                        <option value="OI">OI</option>
-                    </select>
-                    <a id="fill-testcases" href="#">
-                        <i class="fa fa-circle"></i>
-                        {{_('Fill testcases')}}
-                    </a>
-                </div>
-                <div style="margin-top: 1em;">
-                    {{_("Batch start positions")}}:
-                    <input id="batch_starts">
-                </div>
-                <div>
-                    {{_("Leave empty if not use batch. If you want to divide to three batches [1, 4], [5, 8], [9, 10], enter: 1, 5, 9")}}
-                </div>
-            </td>
-        </table>
-        <input type="submit" value="{{ _('Apply!') }}" class="button" id="submit-button">
-        <table id="case-table" class="table">
-            <thead>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for form in all_case_forms %}
+          {% if form.non_field_errors() %}
             <tr>
-                <th class="order-column"></th>
-                <th class="type-column">{{ _('Type') }}</th>
-                <th>{{ _('Input file') }}</th>
-                <th>{{ _('Output file') }}</th>
-                <th>{{ _('Points') }}</th>
-                <th>{{ _('Pretest?') }}</th>
-                {% if cases_formset.can_delete %}
-                    <th>{{ _('Delete?') }}
-                        <br>
-                        <input type="checkbox" name="delete-all" id="delete-all"> 
-                    </th>
-                {% endif %}
+              <td colspan="{{ 9 + cases_formset.can_delete }}">{{ form.non_field_errors() }}</td>
             </tr>
-            </thead>
-            <tbody>
-            {% for form in all_case_forms %}
-                {% if form.non_field_errors() %}
-                    <tr>
-                        <td colspan="{{ 9 + cases_formset.can_delete }}">{{ form.non_field_errors() }}</td>
-                    </tr>
-                {% endif %}
-                {% if form.prefix and '__prefix__' in form.prefix %}
-                    </tbody>
-                    <tbody class="extra-row-body" style="display: none">
-                {% endif %}
-                <tr data-type="{{ form['type'].value() }}">
-                    <td>
-                        {{ form.id }}{{ form.order.errors }}{{ form.order }}
-                    </td>
-                    <td class="type-column">{{ form.type.errors }}{{ form.type }}</td>
-                    <td{% if not (form.empty_permitted or form['type'].value() != 'C' or
-                                  form['input_file'].value() in valid_files) %} class="bad-file"{% endif %}>
-                        {{ form.input_file.errors }}{{ form.input_file }}
-                    </td>
-                    <td{% if not (form.empty_permitted or form['type'].value() != 'C' or
-                                  form['output_file'].value() in valid_files) %} class="bad-file"{% endif %}>
-                        {{ form.output_file.errors }}{{ form.output_file }}
-                    </td>
-                    <td>{{ form.points.errors }}{{ form.points }}</td>
-                    <td>{{ form.is_pretest.errors }}{{ form.is_pretest }}</td>
-                    {% if cases_formset.can_delete %}
-                        <td>{{ form.DELETE }}</td>
-                    {% endif %}
-                </tr>
-            {% endfor %}
+          {% endif %}
+          {% if form.prefix and '__prefix__' in form.prefix %}
             </tbody>
-        </table>
-        <input type="submit" value="{{ _('Apply!') }}" class="button" id="submit-button">
-        <a id="add-case-row" href="#"><i class="fa fa-plus"></i> {{ _('Add new case') }}</a>
-    </form>
+            <tbody class="extra-row-body" style="display: none">
+          {% endif %}
+          <tr data-type="{{ form['type'].value() }}">
+            <td>
+              {{ form.id }}{{ form.order.errors }}{{ form.order }}
+            </td>
+            <td class="type-column">{{ form.type.errors }}{{ form.type }}</td>
+            <td{% if not (form.empty_permitted or form['type'].value() != 'C' or
+              form['input_file'].value() in valid_files) %} class="bad-file"{% endif %}>
+        {{ form.input_file.errors }}{{ form.input_file }}
+      </td>
+      <td{% if not (form.empty_permitted or form['type'].value() != 'C' or
+form['output_file'].value() in valid_files) %} class="bad-file"{% endif %}>
+  {{ form.output_file.errors }}{{ form.output_file }}
+</td>
+<td>{{ form.points.errors }}{{ form.points }}</td>
+<td>{{ form.is_pretest.errors }}{{ form.is_pretest }}</td>
+{% if cases_formset.can_delete %}
+  <td>{{ form.DELETE }}</td>
+{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+<input type="submit" value="{{ _('Apply!') }}" class="button" id="submit-button">
+<a id="add-case-row" href="#"><i class="fa fa-plus"></i> {{ _('Add new case') }}</a>
+</form>
 {% endblock %}

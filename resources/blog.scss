@@ -32,7 +32,8 @@
     }
 }
 
-.blog-sidebar, .right-sidebar {
+.blog-sidebar,
+.right-sidebar {
     width: 100%;
     margin-left: auto;
 }
@@ -41,6 +42,7 @@
     color: green;
     font-weight: bold;
     background-color: lightgreen;
+
     .sidebar-icon {
         color: green;
     }
@@ -143,11 +145,16 @@
     background-color: white;
     margin-left: auto;
     margin-right: auto;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 
     .title {
         margin-bottom: 0.2em;
         font-weight: 500;
     }
+}
+
+.blog-box:hover {
+    border-color: #8a8a8a;
 }
 
 .blog-description {
@@ -156,18 +163,23 @@
     overflow-wrap: anywhere;
     padding-bottom: 1em;
     clear: both;
+    position: relative;
 }
+
 .problem-feed-name {
     display: inline;
     font-weight: bold;
 }
+
 .problem-feed-name a {
     color: #0645ad;
 }
+
 .problem-feed-info-entry {
     display: inline;
     float: right;
 }
+
 .problem-feed-types {
     color: gray;
 }
@@ -175,24 +187,30 @@
 .left-sidebar-item {
     display: flex;
     align-items: center;
+
     .sidebar-icon {
         font-size: large;
         display: inline-block;
+
         i {
             width: 1.4em;
         }
     }
 }
+
 .left-sidebar-item:hover {
     background-color: #e3e3e3;
     cursor: pointer;
 }
+
 .left-sidebar-item.active:hover {
     background-color: lightgreen;
 }
+
 .sidebar-icon {
     color: black;
 }
+
 .left-sidebar-header {
     text-align: center;
     padding-bottom: 1em;
@@ -200,15 +218,36 @@
     color: black;
     border-radius: 0;
 }
+
 .feed-table {
     margin: 0;
 }
+
 .pre-expand-blog {
-    background-image: -webkit-linear-gradient(bottom, gray, lightgray 3%, transparent 8%, transparent 100%);
+    position: relative;
     padding-bottom: 0;
 }
-.pre-expand-blog:hover {
-    background-color: #f3f3f3;
+
+.show-more {
+    display: flex;
+    color: black;
+    font-style: italic;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 0px 12px;
+    margin-top: 5px;
+    position: absolute;
+    inset: 50% 0px 0px;
+    background: linear-gradient(transparent, white);
+    -webkit-box-pack: end;
+    justify-content: flex-end;
+    align-items: flex-end;
+    cursor: pointer;
+    padding: 16px 16px;
+}
+
+.actionbar-box {
+    margin: 8px 16px;
 }
 
 .post-full {
@@ -219,40 +258,59 @@
     }
 }
 
+.middle-right-content.wrapper {
+    padding: 1em 0;
+    background: white;
+    border-radius: 1em;
+}
+
 
 @media (max-width: 799px) {
+    .actionbar-box {
+        margin: 8px 0;
+    }
+
     .left-sidebar-header {
         display: none;
     }
+
     .left-sidebar-item {
         padding: 0.8em 0.2em 0.8em 0.2em;
         display: inline-block;
         flex: 1;
         border-radius: 8px;
-        
+
         .sidebar-icon {
             display: none;
         }
     }
+
     .left-sidebar {
         text-align: center;
         margin-bottom: 1em;
         border-radius: 7px;
         display: flex;
     }
+
     .blog-box {
         padding-left: 5%;
         padding-right: 5%;
+        margin-bottom: 0;
     }
+
     .post-title {
         font-size: 2em;
     }
 }
+
 @media (min-width: 800px) {
     .left-sidebar-item {
         padding: 0.8em 0.2em 0.8em 1em;
     }
-    .middle-content, .blog-sidebar, .right-sidebar {
+
+    .middle-content,
+    .blog-sidebar,
+    .right-sidebar {
         display: block !important;
     }
 
@@ -274,20 +332,22 @@
         width: -webkit-fill-available;
     }
 
-    .blog-sidebar, .right-sidebar {
+    .blog-sidebar,
+    .right-sidebar {
         width: 25%;
     }
 
     .left-sidebar {
         width: 11%;
+        max-width: 11%;
+        min-width: 11%;
         position: fixed;
         height: 100%;
         margin-top: -4em;
         padding-top: 4em;
-    }
-
-    .left-sidebar-item {
-        border-radius: 0 0.5em 0.5em 0;
+        border-right: 1px solid lightgray;
+        box-shadow: 0px -10px 2px 0px rgb(0 0 0 / 50%);
+        background: white;
     }
 
     .feed-table {
@@ -297,7 +357,7 @@
     .blog-box {
         border-left: 1.4px solid lightgray;
         border-right: 1.4px solid lightgray;
-        border-radius: 8px;
+        border-radius: 16px;
     }
 
     .post-full {
