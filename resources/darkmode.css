@@ -1930,6 +1930,7 @@ noscript #noscript {
     border-bottom-color: rgb(60, 65, 68);
     border-top-color: rgb(60, 65, 68);
     background-color: rgb(24, 26, 27);
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 5px;
 }
 .blog-box:hover {
     border-color: rgb(81, 88, 91);
@@ -2601,6 +2602,9 @@ a.close:hover {
 }
 .sidebox-content.sidebox-table {
     border-color: initial;
+}
+.sidebox {
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 5px;
 }
 .ws-closed {
     background-image: initial;
@@ -3816,6 +3820,12 @@ mjx-merror {
 }
 mjx-assistive-mml {
     border-color: initial !important;
+}
+mjx-stretchy-v > mjx-ext {
+    border-color: transparent;
+}
+.recently-attempted ul {
+    list-style-image: initial;
 }
 
 /* Override Style */
