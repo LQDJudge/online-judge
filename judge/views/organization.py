@@ -147,12 +147,14 @@ class OrganizationMixin(OrganizationBase):
                     request,
                     _("No such organization"),
                     _('Could not find an organization with the key "%s".') % key,
+                    status=403,
                 )
             else:
                 return generic_message(
                     request,
                     _("No such organization"),
                     _("Could not find such organization."),
+                    status=403,
                 )
         if self.organization.slug != kwargs["slug"]:
             return HttpResponsePermanentRedirect(
@@ -326,6 +328,8 @@ class OrganizationUsers(QueryStringSortMixin, OrganizationMixin, FeedView):
 
     def dispatch(self, request, *args, **kwargs):
         res = super(OrganizationUsers, self).dispatch(request, *args, **kwargs)
+        if res.status_code != 200:
+            return res
         if self.can_access(self.organization) or self.organization.is_open:
             return res
         return generic_message(
