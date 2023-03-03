@@ -1575,7 +1575,7 @@ nav ul li button:link {
 nav ul li a:hover,
 nav ul li button:hover {
     border-top-color: rgb(199, 70, 8);
-    color: rgb(239, 120, 120);
+    color: rgb(232, 230, 227);
     background-image: initial;
     background-color: rgba(24, 26, 27, 0.25);
 }
@@ -2034,16 +2034,6 @@ ul.problem-list {
 #problem-table th a {
     color: inherit;
 }
-.problem-feed-option-item {
-    background-image: initial;
-    background-color: rgb(49, 53, 55);
-    color: rgb(152, 143, 129);
-}
-.problem-feed-option-item.active {
-    background-image: initial;
-    background-color: rgb(27, 73, 88);
-    color: rgb(121, 170, 255);
-}
 .problem-data-form .bad-file input,
 .problem-data-form .bad-file .select2-selection {
     border-color: rgb(179, 0, 0);
@@ -2479,9 +2469,10 @@ input[type="text"]:focus, input[type="password"]:focus {
 .tabs > ul > li.active > span:hover,
 .tabs > ul > li.active > a,
 .tabs > ul > li.active > span {
-    color: rgb(232, 230, 227);
-    background-color: rgb(24, 26, 27);
-    border-color: rgb(62, 68, 70) rgb(62, 68, 70) transparent;
+    color: rgb(205, 200, 194);
+    border-bottom-color: rgb(126, 117, 103);
+    background-image: initial;
+    background-color: transparent;
 }
 .tabs {
     border-bottom-color: rgb(62, 68, 70);
@@ -2504,9 +2495,12 @@ input[type="text"]:focus, input[type="password"]:focus {
 }
 .tabs > ul > li > a,
 .tabs > ul > li > span {
-    border-color: transparent;
     color: rgb(178, 172, 162);
     text-decoration-color: initial;
+}
+.tabs > ul > li > a:hover,
+.tabs > ul > li > span:hover {
+    border-bottom-color: rgb(0, 217, 0);
 }
 ul.pagination a:hover {
     color: rgb(232, 230, 227);
@@ -2586,16 +2580,14 @@ a.close:hover {
 }
 .sidebox h3 {
     background-image: initial;
+    background-color: rgb(24, 26, 27);
+}
+.sidebox h3 .fa {
+    background-image: initial;
     background-color: rgb(3, 66, 54);
     color: rgb(232, 230, 227);
 }
-.sidebox h3 .fa {
-    color: rgb(232, 230, 227);
-}
 .sidebox-content {
-    border-right-color: rgb(62, 68, 70);
-    border-bottom-color: rgb(62, 68, 70);
-    border-left-color: rgb(62, 68, 70);
     border-top-color: initial;
     background-image: initial;
     background-color: rgb(24, 26, 27);
@@ -3029,14 +3021,11 @@ a.voted {
         border-bottom-color: initial;
     }
 }
-.info-pic {
-    border-color: rgb(62, 68, 70);
-}
 .info-circle {
     stroke: rgb(232, 230, 227);
 }
 #chat-info {
-    border-bottom-color: rgb(72, 78, 81);
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 3px;
 }
 #refresh-button {
     background-image: initial;
@@ -3095,7 +3084,7 @@ a.voted {
     color: rgb(232, 230, 227);
 }
 .organization-row {
-    border-bottom-color: rgb(84, 91, 94);
+    border-bottom-color: rgb(62, 68, 70);
     border-top-color: initial;
     color: rgb(232, 230, 227);
 }
@@ -3103,7 +3092,7 @@ a.voted {
     background-color: rgb(31, 33, 35);
 }
 .organization-container {
-    border-color: rgb(84, 91, 94);
+    border-color: rgb(62, 68, 70);
 }
 .ticket-container #content > h2:first-child small {
     color: rgb(168, 160, 149);

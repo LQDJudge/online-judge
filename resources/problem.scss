@@ -364,32 +364,8 @@ ul.problem-list {
     }
 }
 
-.problem-feed-option {
-    width: 90%;
-    margin-left: 2.5%;
-    padding-bottom: 1em;
-    border-radius: 5px;
-    display: flex;
-    justify-content: space-between;
-}
-
-.problem-feed-option-item {
-    padding: 10px 15px;
-    border-radius: 1em;
-    font-weight: bold;
-    background: lightgray;
-    margin-right: 1em;
-    color: gray;
-    cursor: pointer;
-}
-
 .pcodecell {
     text-transform: uppercase;
-}
-
-.problem-feed-option-item.active {
-    background: lightblue;
-    color: darkblue;
 }
 
 .problem-data-form {

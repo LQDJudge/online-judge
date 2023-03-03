@@ -1,7 +1,7 @@
 {% if other_user %}
   <div class="status-container" style="height: 100%">
     <img src="{{ gravatar(other_user.user, 135) }}" class="info-pic">
-    <svg style="position:absolute; height:100%; width: 110%">
+    <svg style="position:absolute; height:100%; width: 100%">
       <circle class="info-circle"
         fill="{{'green' if other_online else 'red'}}"/>
     </svg>
@@ -9,9 +9,9 @@
 {% endif %}
 <span class="info-name username">
   {% if other_user %}
-    <a href="{{url('user_page', other_user)}}">{{other_user.user.username}}</a>
+    {{link_user(other_user)}}
   {% else%}
-    <a href="#" style="margin-left: 3em">{{ _('Lobby') }}</a>
+    {{ _('Lobby') }}
   {% endif %}
 </span>
 <span class="spacer"></span>

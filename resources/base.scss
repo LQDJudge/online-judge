@@ -289,7 +289,7 @@ nav {
 
                 &:hover {
                     border-top: 2px solid #9c3706;
-                    color: lightcoral;
+                    color: black;
                     background: rgba(255, 255, 255, 0.25);
                     margin: 0;
                 }
@@ -377,7 +377,8 @@ hr {
 }
 
 #content {
-    margin: 3.2em auto 1em auto;
+    margin: 48px auto 1em auto;
+    padding-top: 1em;
 
     // Header
     width: 90%;

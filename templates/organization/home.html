@@ -44,7 +44,7 @@
     {% include "blog/content.html" %}
   {% else %}
     <div class="blog-sidebox sidebox">
-      <h3>{{ _('About') }}<i class="fa fa-info-circle"></i></h3>
+      <h3><i class="fa fa-info-circle"></i>{{ _('About') }}</h3>
       <div class="sidebox-content">
         <div style="margin: 0.3em;">
           {% cache 3600 'organization_html' organization.id MATH_ENGINE %}

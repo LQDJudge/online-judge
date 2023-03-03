@@ -15,7 +15,7 @@
 
 {% if recent_organizations %}
   <div class="blog-sidebox sidebox">
-    <h3>{{ _('Recent groups') }} <i class="fa fa-users"></i></h3>
+    <h3><i class="fa fa-users"></i>{{ _('Recent groups') }}</h3>
     <div class="toggled">
       {% for organization in recent_organizations %}
         <a href="{{ url('organization_home', organization.organization.pk, organization.organization.slug) }}" class="sidebox-content organization-row" title="{{organization.organization.about}}">

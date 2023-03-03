@@ -96,7 +96,7 @@
     }
 
     function registerNavigation() {
-      const links = ['.pagination a', '.tabs li a', '.problem-feed-option a'];
+      const links = ['.pagination a', '.tabs li a'];
       for (link of links) {
         $(link).on('click', function (e) {
           e.preventDefault();

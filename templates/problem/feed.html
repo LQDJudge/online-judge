@@ -7,20 +7,20 @@
 {% endblock %}
 
 {% block middle_content %}
-  <div class="problem-feed-option">
-    <a href="{{url('problem_feed')}}"
-      class="button small {{'btn-midnightblue' if feed_type=='for_you' else 'btn-gray'}}">
-      {{_('FOR YOU')}}
-    </a>
-    <a href="{{url('problem_feed_new')}}" class="button small {{'btn-midnightblue' if feed_type=='new' else 'btn-gray'}}">
-      {{_('NEW')}}
-    </a>
-    {% if request.user.has_perm('judge.suggest_problem_changes') %}
-      <a href="{{url('problem_feed_volunteer')}}"
-        class="button small {{'btn-midnightblue' if feed_type=='volunteer' else 'btn-gray'}}">
-        {{_('VOLUNTEER')}}
-      </a>
-    {% endif %}
+  <div class="tabs tabs-no-flex" style="width: 90%;margin-left: auto;margin-right: auto;">
+    <ul>
+      <li class="{{'active' if feed_type=='for_you'}}">
+        <a href="{{url('problem_feed')}}">{{_('FOR YOU')}}</a>
+      </li>
+      <li class="{{'active' if feed_type=='new'}}">
+        <a href="{{url('problem_feed_new')}}">{{_('NEW')}}</a>
+      </li>
+      {% if request.user.has_perm('judge.suggest_problem_changes') %}
+        <li class="{{'active' if feed_type=='volunteer'}}">
+          <a href="{{url('problem_feed_volunteer')}}">{{_('VOLUNTEER')}}</a>
+        </li>
+      {% endif %}
+    </ul>
   </div>
   {% if request.user.has_perm('judge.suggest_problem_changes') and feed_type == 'volunteer' %}
     <ul style="margin-bottom: 1em; margin-left: auto">

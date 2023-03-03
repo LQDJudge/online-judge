@@ -2,7 +2,7 @@
     color: red;
 }
 #control-list li {
-    border-bottom: 1px solid black; 
+    border-bottom: 1px solid black;
 }
 #pending-count-box {
     float: right;
@@ -31,8 +31,8 @@
 .organization-row {
     display: block;
     padding: 0.5em;
-    border-bottom: 1px gray solid;
-    border-top: none;            
+    border-bottom: 1px #ccc solid;
+    border-top: none;
     color: black;
     font-weight: 500;
     display: flex;
@@ -44,6 +44,7 @@
 }
 
 .organization-container {
-    border: 1px gray solid;
+    border: 1px #ccc solid;
     margin-bottom: 3em;
+    border-radius: 5px;
 }

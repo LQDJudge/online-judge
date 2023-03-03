@@ -215,12 +215,11 @@ input {
 
 // Bootstrap-y tabs
 .ul_tab_a_active {
-    color: black;
+    color: #045343;
     cursor: default;
-    background-color: #fff;
-    border: 1px solid $border_gray;
-    border-bottom-color: transparent;
-    border-image: none;
+    font-weight: bold;
+    border-bottom: 3px solid #045343;
+    background: transparent;
 }
 
 .tabs {
@@ -267,7 +266,6 @@ input {
         overflow-y: hidden;
 
         > li {
-            margin-bottom: -1px;
             position: relative;
             display: block;
 
@@ -284,16 +282,19 @@ input {
             }
 
             > a, > span {
-                margin-right: 2px;
+                margin-right: 10px;
                 line-height: 1.42857;
-                border: 1px solid transparent;
-                border-radius: $widget_border_radius $widget_border_radius 0 0;
                 position: relative;
                 display: block;
-                padding: 10px 15px;
+                padding: 5px 5px;
                 color: #555;
                 text-decoration: none;
                 white-space: nowrap;
+                font-weight: bold;
+
+                &:hover {
+                    border-bottom: 3px solid green;
+                }
             }
         }
     }
@@ -474,28 +475,30 @@ ul.select2-selection__rendered {
 }
 
 .sidebox h3 {
-    margin: 0 -5px;
-    background: #045343;
     border-radius: $widget_border_radius $widget_border_radius 0 0;
-    color: white;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 10px;
+    padding-bottom: 10px;
     padding-left: 7px;
     font-size: 1.3em;
-}
+    font-weight: bold;
+    background: white;
+    display: flex;
 
-.sidebox h3 .fa {
-    color: white;
-    float: right;
-    margin: 0.2em 0.4em 0 0;
+    .fa {
+        background: #045343;
+        color: white;
+        padding: 4px;
+        margin-right: 8px;
+        border-radius: 5px;
+        font-size: smaller;
+    }
 }
 
 .sidebox-content {
-    border: 1px solid $border_gray;
     border-top: none;
-    margin: 0 -5px;
     padding: 1px 0.5em 3px;
     background: white;
+    border-radius: 0 0 $widget_border_radius $widget_border_radius;
 
     &.sidebox-table {
         border: none;
@@ -510,8 +513,7 @@ ul.select2-selection__rendered {
 .sidebox {
     border-top-left-radius: $widget_border_radius;
     border-top-right-radius: $widget_border_radius;
-    padding: 0 5px !important;
-    margin-bottom: 1.5em !important;
+    margin-bottom: 1.5em;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 

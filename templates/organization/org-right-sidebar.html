@@ -4,8 +4,8 @@
   {% endif %}
   {% if can_edit or is_member %}
     <div id="control-panel" class="blog-sidebox sidebox no-dot-blog-sidebox">
-      <h3>{{ _('Controls') }} <i class="fa fa-cog"></i></h3>
-      <ul id="control-list" class="sidebox-content" style="padding: 1em;">
+      <h3><i class="fa fa-cog"></i>{{ _('Controls') }}</h3>
+      <ul id="control-list" class="sidebox-content" style="margin: 0;">
         {% if can_edit %}
           <li>
             <div>
@@ -67,7 +67,7 @@
       </ul>
     </div>
     <div class="blog-sidebox sidebox">
-      <h3>{{ _('About') }}<i class="fa fa-info-circle"></i></h3>
+      <h3><i class="fa fa-info-circle"></i>{{ _('About') }}</h3>
       <div class="sidebox-content">
         <div style="margin: 0.3em;">
           {% cache 3600 'organization_html' organization.id MATH_ENGINE %}

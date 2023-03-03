@@ -91,3 +91,9 @@
 #users-table th a {
     color: white;
 }
+
+.feed-table {
+    td, td:first-child, tr:last-child td, tr:last-child td:first-child {
+        border-width: 1px 0 0 0;
+    }
+}
