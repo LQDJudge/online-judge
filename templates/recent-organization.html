@@ -10,15 +10,18 @@
     .toggle {
       cursor: pointer;
     }
+    .organization-row:last-child {
+      border-bottom: none;
+    }
   </style>
 {% endblock %}
 
 {% if recent_organizations %}
   <div class="blog-sidebox sidebox">
     <h3><i class="fa fa-users"></i>{{ _('Recent groups') }}</h3>
-    <div class="toggled">
+    <div class="toggled sidebox-content">
       {% for organization in recent_organizations %}
-        <a href="{{ url('organization_home', organization.organization.pk, organization.organization.slug) }}" class="sidebox-content organization-row" title="{{organization.organization.about}}">
+        <a href="{{ url('organization_home', organization.organization.pk, organization.organization.slug) }}" class="organization-row" title="{{organization.organization.about}}">
           <img class="org-logo" data-src="{{ organization.organization.logo_override_image or static('icons/icon.png') }}">
           <span style="word-break: break-word;">{{ organization.organization }}</span>
         </a>
