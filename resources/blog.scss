@@ -32,12 +32,6 @@
     }
 }
 
-.blog-sidebar,
-.right-sidebar {
-    width: 100%;
-    margin-left: auto;
-}
-
 .left-sidebar-item.active {
     color: green;
     font-weight: bold;
@@ -266,6 +260,12 @@
 
 
 @media (max-width: 799px) {
+    .blog-sidebar,
+    .right-sidebar {
+        width: 100%;
+        margin-left: auto;
+    }
+
     .actionbar-box {
         margin: 8px 0;
     }
@@ -314,8 +314,13 @@
         display: block !important;
     }
 
+    .blog-sidebar,
+    .right-sidebar {
+        flex: 25%;
+    }
+
     .middle-content {
-        margin-right: 1em !important;
+        margin-right: 2% !important;
     }
 
     #mobile.tabs {
@@ -328,13 +333,7 @@
     }
 
     .middle-content {
-        max-width: 75%;
-        width: -webkit-fill-available;
-    }
-
-    .blog-sidebar,
-    .right-sidebar {
-        width: 25%;
+        flex: 75%;
     }
 
     .left-sidebar {
