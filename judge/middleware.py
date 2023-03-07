@@ -1,5 +1,8 @@
 import time
 import logging
+import random
+import json
+from datetime import datetime
 
 from django.conf import settings
 from django.http import HttpResponseRedirect, Http404
@@ -148,17 +151,23 @@ class SlowRequestMiddleware(object):
         self.get_response = get_response
 
     def __call__(self, request):
-        logger = logging.getLogger("judge.slow_request")
+        logger = logging.getLogger("judge.request_time")
+        logger_slow = logging.getLogger("judge.slow_request")
         start_time = time.time()
         response = self.get_response(request)
         response_time = time.time() - start_time
+        url_name = resolve(request.path).url_name
+
+        message = {
+            "url_name": url_name,
+            "response_time": response_time * 1000,
+            "profile": request.user.username,
+            "date": datetime.now().strftime("%Y/%m/%d"),
+            "url": request.build_absolute_uri(),
+            "method": request.method,
+        }
         if response_time > 9:
-            message = {
-                "message": "Slow request",
-                "url": request.build_absolute_uri(),
-                "response_time": response_time * 1000,
-                "method": request.method,
-                "profile": request.profile,
-            }
-            logger.info(message)
+            logger_slow.info(json.dumps(message))
+        if random.random() < 0.1:
+            logger.info(json.dumps(message))
         return response

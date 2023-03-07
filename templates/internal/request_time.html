@@ -1,0 +1,28 @@
+{% extends "two-column-content.html" %}
+
+{% block left_sidebar %}
+  {% include "internal/left-sidebar.html" %}
+{% endblock %}
+
+{% block middle_content %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>URL Name</th>
+        <th>Pattern</th>
+        <th><a href="{{current_path}}?order=time">Time (ms)</a></th>
+        <th><a href="{{current_path}}?order=count">Count</a></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for page in pages %}
+        <tr>
+          <td><a href="{{detail_path}}?url_name={{page['url_name']}}">{{page['url_name']}}</a></td>
+          <td>{{page['pattern']}}</td>
+          <td>{{page['time'] | floatformat(2)}}</td>
+          <td>{{page['count']}}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

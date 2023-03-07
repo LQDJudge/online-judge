@@ -25,9 +25,7 @@
 {% endblock %}
 
 {% block left_sidebar %}
-  <div class="left-sidebar">
-    {{ make_tab_item('problem', 'fa fa-list', url('internal_problem'), _('Problem')) }}
-  </div>
+  {% include "internal/left-sidebar.html" %}
 {% endblock %}
 
 {% block middle_content %}

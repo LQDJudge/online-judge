@@ -1069,6 +1069,26 @@ urlpatterns = [
                     internal.InternalProblem.as_view(),
                     name="internal_problem",
                 ),
+                url(
+                    r"^request_time$",
+                    internal.InternalRequestTime.as_view(),
+                    name="internal_request_time",
+                ),
+                url(
+                    r"^request_time_detail$",
+                    internal.InternalRequestTimeDetail.as_view(),
+                    name="internal_request_time_detail",
+                ),
+                url(
+                    r"^internal_slow_request$",
+                    internal.InternalSlowRequest.as_view(),
+                    name="internal_slow_request",
+                ),
+                url(
+                    r"^internal_slow_request_detail$",
+                    internal.InternalSlowRequestDetail.as_view(),
+                    name="internal_slow_request_detail",
+                ),
             ]
         ),
     ),

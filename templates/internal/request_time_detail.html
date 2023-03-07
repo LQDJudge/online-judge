@@ -1,0 +1,36 @@
+{% extends "two-column-content.html" %}
+
+{% block left_sidebar %}
+  {% include "internal/left-sidebar.html" %}
+{% endblock %}
+
+{% block middle_content %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Profile</th>
+        <th>URL</th>
+        <th>Method</th>
+        <th><a href="{{current_path}}?order=response_time&url_name={{url_name}}">Time (ms)</a></th>
+        <th><a href="{{current_path}}?order=date&url_name={{url_name}}">Date</a></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for request in requests %}
+        <tr>
+          <td>
+            {% if request['profile'] %}
+              <a href="/user/{{request['profile']}}">{{request['profile']}}</a>
+            {% else %}
+              None
+            {% endif %}
+          </td>
+          <td>{{request['url']}}</td>
+          <td>{{request['method']}}</td>
+          <td>{{request['response_time'] | floatformat(2)}}</td>
+          <td>{{request['date']}}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
