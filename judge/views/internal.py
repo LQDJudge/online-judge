@@ -90,7 +90,6 @@ class InternalRequestTime(ListView, InternalView, RequestTimeMixin):
                     "time": 0,
                     "count": 0,
                     "url_name": url_name,
-                    "pattern": reverse(url_name) if url_name else None,
                 }
             old_sum = table[url_name]["time"] * table[url_name]["count"]
             table[url_name]["count"] += 1
