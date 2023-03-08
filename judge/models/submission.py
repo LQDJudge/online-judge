@@ -233,6 +233,11 @@ class Submission(models.Model):
         verbose_name = _("submission")
         verbose_name_plural = _("submissions")
 
+        indexes = [
+            models.Index(fields=["problem", "user", "-points"]),
+            models.Index(fields=["contest_object", "problem", "user", "-points"]),
+        ]
+
 
 class SubmissionSource(models.Model):
     submission = models.OneToOneField(

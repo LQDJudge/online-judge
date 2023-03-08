@@ -21,49 +21,40 @@ PPBreakdown = namedtuple(
 def get_pp_breakdown(user, start=0, end=settings.DMOJ_PP_ENTRIES):
     with connection.cursor() as cursor:
         cursor.execute(
-            """
-            SELECT submission.problem_code,
-                   submission.problem_name,
-                   submission.max_points,
-                   submission.sub_id,
-                   submission.sub_date,
-                   submission.case_points,
-                   submission.case_total,
-                   submission.result,
+            f"""
+            SELECT max_points_table.problem_code,
+                   max_points_table.problem_name,
+                   max_points_table.max_points,
+                   judge_submission.id,
+                   judge_submission.date,
+                   judge_submission.case_points,
+                   judge_submission.case_total,
+                   judge_submission.result,
                    judge_language.short_name,
                    judge_language.key
-            FROM
-              (SELECT max_points_table.problem_code problem_code,
-                     max_points_table.problem_name problem_name,
-                     max_points_table.max_points max_points,
-                     judge_submission.id sub_id,
-                     judge_submission.date sub_date,
-                     judge_submission.case_points case_points,
-                     judge_submission.case_total case_total,
-                     judge_submission.result result,
-                     judge_submission.language_id language_id
-                FROM judge_submission
-                JOIN (
-                      SELECT judge_problem.id problem_id,
-                             judge_problem.name problem_name,
-                             judge_problem.code problem_code,
-                             MAX(judge_submission.points) AS max_points
-                        FROM judge_problem
-                       INNER JOIN judge_submission
-                          ON (judge_problem.id = judge_submission.problem_id)
-                       WHERE (judge_problem.is_public = True AND judge_problem.is_organization_private = False AND judge_submission.points IS NOT NULL AND judge_submission.user_id = %s)
-                       GROUP BY judge_problem.id
-                      HAVING MAX(judge_submission.points) > 0.0
-                     ) AS max_points_table
-                  ON (judge_submission.problem_id = max_points_table.problem_id AND judge_submission.points = max_points_table.max_points AND judge_submission.user_id = %s)
-               GROUP BY max_points_table.problem_id
-               ORDER BY max_points DESC, judge_submission.date DESC
-               LIMIT %s
-               OFFSET %s
-            ) AS submission
-            JOIN judge_language
-              ON submission.language_id = judge_language.id
-            ORDER BY submission.max_points DESC, submission.sub_date DESC;
+            FROM (
+                SELECT judge_problem.id problem_id,
+                       judge_problem.name problem_name,
+                       judge_problem.code problem_code,
+                       MAX(judge_submission.points) AS max_points
+                FROM judge_problem
+                INNER JOIN judge_submission ON (judge_problem.id = judge_submission.problem_id)
+                WHERE (judge_problem.is_public AND
+                       NOT judge_problem.is_organization_private AND
+                       judge_submission.points IS NOT NULL AND
+                       judge_submission.user_id = %s)
+                GROUP BY judge_problem.id
+                HAVING MAX(judge_submission.points) > 0.0
+            ) AS max_points_table
+            INNER JOIN judge_submission ON (
+                judge_submission.problem_id = max_points_table.problem_id AND
+                judge_submission.points = max_points_table.max_points AND
+                judge_submission.user_id = %s
+            )
+            INNER JOIN judge_language ON (judge_submission.language_id = judge_language.id)
+            GROUP BY max_points_table.problem_id
+            ORDER BY max_points DESC, judge_submission.date DESC
+            LIMIT %s OFFSET %s
         """,
             (user.id, user.id, end - start + 1, start),
         )
