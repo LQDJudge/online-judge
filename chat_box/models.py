@@ -31,7 +31,7 @@ class Message(models.Model):
     author = models.ForeignKey(Profile, verbose_name=_("user"), on_delete=CASCADE)
     time = models.DateTimeField(verbose_name=_("posted time"), auto_now_add=True)
     body = models.TextField(verbose_name=_("body of comment"), max_length=8192)
-    hidden = models.BooleanField(verbose_name="is hidden", default=False, db_index=True)
+    hidden = models.BooleanField(verbose_name="is hidden", default=False)
     room = models.ForeignKey(
         Room, verbose_name="room id", on_delete=CASCADE, default=None, null=True
     )
@@ -44,7 +44,10 @@ class Message(models.Model):
     class Meta:
         verbose_name = "message"
         verbose_name_plural = "messages"
-        ordering = ("-time",)
+        ordering = ("-id",)
+        indexes = [
+            models.Index(fields=["hidden", "room", "-id"]),
+        ]
 
 
 class UserRoom(models.Model):
