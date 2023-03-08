@@ -18,7 +18,7 @@ class InternalView(object):
         return HttpResponseForbidden()
 
 
-class InternalProblem(ListView, InternalView):
+class InternalProblem(InternalView, ListView):
     model = Problem
     title = _("Internal problems")
     template_name = "internal/problem.html"
@@ -72,7 +72,7 @@ class RequestTimeMixin(object):
         return requests
 
 
-class InternalRequestTime(ListView, InternalView, RequestTimeMixin):
+class InternalRequestTime(InternalView, ListView, RequestTimeMixin):
     title = _("Request times")
     template_name = "internal/request_time.html"
     context_object_name = "pages"
