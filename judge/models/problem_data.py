@@ -118,6 +118,11 @@ class ProblemData(models.Model):
         null=True,
         help_text=_("Leave empty for stdout"),
     )
+    output_only = models.BooleanField(
+        verbose_name=_("is output only"),
+        help_text=_("Support output-only problem"),
+        null=True,
+    )
 
     __original_zipfile = None
 

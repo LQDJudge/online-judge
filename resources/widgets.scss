@@ -210,8 +210,12 @@ input {
 
 .copy-clipboard {
     position: relative;
+}
+
+.md-typeset .copy-clipboard {
     margin-top: 1.5em;
 }
+
 
 // Bootstrap-y tabs
 .ul_tab_a_active {

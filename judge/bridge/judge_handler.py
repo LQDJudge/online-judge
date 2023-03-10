@@ -3,6 +3,7 @@ import json
 import logging
 import threading
 import time
+import os
 from collections import deque, namedtuple
 from operator import itemgetter
 
@@ -10,6 +11,7 @@ from django import db
 from django.conf import settings
 from django.utils import timezone
 from django.db.models import F
+from django.core.cache import cache
 
 from judge import event_poster as event
 from judge.bridge.base_handler import ZlibPacketHandler, proxy_list
@@ -567,6 +569,13 @@ class JudgeHandler(ZlibPacketHandler):
             participation = submission.contest.participation
             event.post("contest_%d" % participation.contest_id, {"type": "update"})
         self._post_update_submission(submission.id, "grading-end", done=True)
+
+        # Clean up submission source file (if any)
+        source_file = cache.get(f"submission_source_file:{submission.id}")
+        if source_file:
+            filepath = os.path.join(settings.DMOJ_SUBMISSION_ROOT, source_file)
+            if os.path.exists(filepath):
+                os.remove(filepath)
 
     def on_compile_error(self, packet):
         logger.info(

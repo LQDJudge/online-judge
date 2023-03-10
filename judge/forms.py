@@ -1,6 +1,8 @@
+import os
+import secrets
 from operator import attrgetter
-
 import pyotp
+
 from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -16,8 +18,9 @@ from django.forms import (
     ModelForm,
     formset_factory,
     BaseModelFormSet,
+    FileField,
 )
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
@@ -115,14 +118,23 @@ class ProfileForm(ModelForm):
             )
 
 
+def file_size_validator(file):
+    limit = 10 * 1024 * 1024
+    if file.size > limit:
+        raise ValidationError("File too large. Size should not exceed 10MB.")
+
+
 class ProblemSubmitForm(ModelForm):
     source = CharField(
         max_length=65536, widget=AceWidget(theme="twilight", no_ace_media=True)
     )
     judge = ChoiceField(choices=(), widget=forms.HiddenInput(), required=False)
+    source_file = FileField(required=False, validators=[file_size_validator])
 
-    def __init__(self, *args, judge_choices=(), **kwargs):
+    def __init__(self, *args, judge_choices=(), request=None, **kwargs):
         super(ProblemSubmitForm, self).__init__(*args, **kwargs)
+        self.source_file_name = None
+        self.request = request
         self.fields["language"].empty_label = None
         self.fields["language"].label_from_instance = attrgetter("display_name")
         self.fields["language"].queryset = Language.objects.filter(
@@ -134,6 +146,24 @@ class ProblemSubmitForm(ModelForm):
                 attrs={"style": "width: 150px", "data-placeholder": _("Any judge")},
             )
             self.fields["judge"].choices = judge_choices
+
+    def clean(self):
+        if "source_file" in self.files:
+            if self.cleaned_data["language"].key == "OUTPUT" and self.files[
+                "source_file"
+            ].name.endswith(".zip"):
+                self.source_file_name = secrets.token_hex(16) + ".zip"
+                filepath = os.path.join(
+                    settings.DMOJ_SUBMISSION_ROOT, self.source_file_name
+                )
+                with open(filepath, "wb+") as destination:
+                    for chunk in self.files["source_file"].chunks():
+                        destination.write(chunk)
+                self.cleaned_data["source"] = self.request.build_absolute_uri(
+                    reverse("submission_source_file", args=(self.source_file_name,))
+                )
+            del self.files["source_file"]
+        return self.cleaned_data
 
     class Meta:
         model = Submission

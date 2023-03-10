@@ -30,6 +30,7 @@ from django.utils.translation import gettext_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView
 from django.views.generic import ListView
+from django.views import View
 
 from judge import event_poster as event
 from judge.highlight_code import highlight_code
@@ -1049,3 +1050,16 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
             return super(UserContestSubmissionsAjax, self).get(request, *args, **kwargs)
         except Http404:
             return HttpResponse(_("You don't have permission to access."))
+
+
+class SubmissionSourceFileView(View):
+    def get(self, request, filename):
+        filepath = os.path.join(settings.DMOJ_SUBMISSION_ROOT, filename)
+        if not os.path.exists(filepath):
+            raise Http404("File not found")
+        response = HttpResponse()
+        with open(filepath, "rb") as f:
+            response.content = f.read()
+        response["Content-Type"] = "application/octet-stream"
+        response["Content-Disposition"] = "attachment; filename=%s" % (filename,)
+        return response

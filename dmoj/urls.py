@@ -394,6 +394,11 @@ urlpatterns = [
         ),
     ),
     url(
+        r"^submission_source_file/(?P<filename>(\w|\.)+)",
+        submission.SubmissionSourceFileView.as_view(),
+        name="submission_source_file",
+    ),
+    url(
         r"^users/",
         include(
             [

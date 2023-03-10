@@ -254,6 +254,8 @@ class ProblemDataCompiler(object):
             if "file_io" not in init:
                 init["file_io"] = {}
             init["file_io"]["output"] = self.data.fileio_output
+        if self.data.output_only:
+            init["output_only"] = True
 
         return init
 

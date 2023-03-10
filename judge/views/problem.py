@@ -7,6 +7,7 @@ from random import randrange
 import random
 from copy import deepcopy
 
+from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -486,7 +487,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             orphans=orphans,
             allow_empty_first_page=allow_empty_first_page,
             count=queryset.values("pk").count() if not self.in_contest else None,
-            **kwargs
+            **kwargs,
         )
         if not self.in_contest:
             queryset = queryset.add_i18n_name(self.request.LANGUAGE_CODE)
@@ -1039,8 +1040,10 @@ def problem_submit(request, problem, submission=None):
     if request.method == "POST":
         form = ProblemSubmitForm(
             request.POST,
+            request.FILES,
             judge_choices=judge_choices,
             instance=Submission(user=profile, problem=problem),
+            request=request,
         )
         if form.is_valid():
             if (
@@ -1114,6 +1117,7 @@ def problem_submit(request, problem, submission=None):
 
             # Save a query
             model.source = source
+            cache.set(f"submission_source_file:{model.id}", form.source_file_name, 3600)
             model.judge(rejudge=False, judge_id=form.cleaned_data["judge"])
 
             return HttpResponseRedirect(
