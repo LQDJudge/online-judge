@@ -1,3 +1,4 @@
+import errno
 from operator import attrgetter
 from math import sqrt
 
@@ -561,16 +562,18 @@ class Problem(models.Model):
     def save(self, *args, **kwargs):
         super(Problem, self).save(*args, **kwargs)
         if self.code != self.__original_code:
-            try:
-                problem_data = self.data_files
-            except AttributeError:
-                pass
-            else:
-                problem_data._update_code(self.__original_code, self.code)
+            if hasattr(self, "data_files") or self.pdf_description:
+                try:
+                    problem_data_storage.rename(self.__original_code, self.code)
+                except OSError as e:
+                    if e.errno != errno.ENOENT:
+                        raise
                 if self.pdf_description:
                     self.pdf_description.name = problem_directory_file_helper(
                         self.code, self.pdf_description.name
                     )
+                if hasattr(self, "data_files"):
+                    self.data_files._update_code(self.__original_code, self.code)
 
     save.alters_data = True
 

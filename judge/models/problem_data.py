@@ -151,11 +151,6 @@ class ProblemData(models.Model):
         return problem_data_storage.exists("%s/init.yml" % self.problem.code)
 
     def _update_code(self, original, new):
-        try:
-            problem_data_storage.rename(original, new)
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
         if self.zipfile:
             self.zipfile.name = problem_directory_file_helper(new, self.zipfile.name)
         if self.generator:
