@@ -408,7 +408,7 @@
       scrollContainer($('#chat-box'), $('#loader'))
 
       {% if request.user.is_staff %}
-        $(".chat_remove").on("click", function() {
+        $(document).on("click", ".chat_remove", function() {
           var elt = $(this);
           $.ajax({
             url: "{{ url('delete_chat_message') }}",
@@ -431,7 +431,7 @@
             },
           });
         });
-        $(".chat_mute").on("click", function() {
+        $(document).on("click", ".chat_mute", function() {
           if (confirm("{{_('Mute this user and delete all messages?')}}")) {
             var elt = $(this);
             $.ajax({
