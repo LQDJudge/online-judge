@@ -128,19 +128,41 @@ def delete_message(request):
     ret = {"delete": "done"}
 
     if request.method == "GET":
-        return JsonResponse(ret)
+        return HttpResponseBadRequest()
 
-    if request.user.is_staff:
-        try:
-            messid = int(request.POST.get("message"))
-            mess = Message.objects.get(id=messid)
-        except:
-            return HttpResponseBadRequest()
+    if not request.user.is_staff:
+        return HttpResponseBadRequest()
 
-        mess.hidden = True
-        mess.save()
+    try:
+        messid = int(request.POST.get("message"))
+        mess = Message.objects.get(id=messid)
+    except:
+        return HttpResponseBadRequest()
 
-        return JsonResponse(ret)
+    mess.hidden = True
+    mess.save()
+
+    return JsonResponse(ret)
+
+
+def mute_message(request):
+    ret = {"mute": "done"}
+
+    if request.method == "GET":
+        return HttpResponseBadRequest()
+
+    if not request.user.is_staff:
+        return HttpResponseBadRequest()
+
+    try:
+        messid = int(request.POST.get("message"))
+        mess = Message.objects.get(id=messid)
+    except:
+        return HttpResponseBadRequest()
+
+    mess.author.mute = True
+    mess.author.save()
+    Message.objects.filter(room=None, author=mess.author).update(hidden=True)
 
     return JsonResponse(ret)
 

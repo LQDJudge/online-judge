@@ -1035,6 +1035,7 @@ urlpatterns = [
                     name="chat",
                 ),
                 url(r"^delete/$", chat.delete_message, name="delete_chat_message"),
+                url(r"^mute/$", chat.mute_message, name="mute_chat_message"),
                 url(r"^post/$", chat.post_message, name="post_chat_message"),
                 url(r"^ajax$", chat.chat_message_ajax, name="chat_message_ajax"),
                 url(

@@ -16,8 +16,11 @@
     <span class="content-message">
       <div class="body-block" id="body-block-{{ message.id }}" title="{{ message.time|date('g:i a') }}">
         {% if request.user.is_staff %}
-          <a class="red chatbtn_remove_mess" value="{{message.id}}" style="cursor: pointer;">
+          <a class="red chatbtn_remove_mess chat_remove" value="{{message.id}}" style="cursor: pointer;">
             {{_('Delete')}}
+          </a>
+          <a class="red chatbtn_remove_mess chat_mute" value="{{message.id}}" style="cursor: pointer;">
+            {{_('Mute')}}
           </a>
         {% endif %}
         <div class="message-text message-text-other">
