@@ -136,7 +136,7 @@
                 </td>
 
                 <td><span class="col-title">{{_('Point')}}: </span>
-                  {{ case.points|floatformat }}/{{ case.total|floatformat }}
+                  {{ case.points|floatformat(2) }}/{{ case.total|floatformat }}
                 </td>
                 <td>
                   {%- if case.status != 'SC' -%}
