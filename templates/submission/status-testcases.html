@@ -70,7 +70,7 @@
             <td><span class="case-{{submission.result}}">{{submission.long_status}}</span></td>
 
             <td><span class="col-title">{{_('Point: ')}}</span>
-              {{ submission.case_points|floatformat(2) }}/{{ submission.case_total|floatformat(0) }}
+              {{ submission.case_points|roundfloat(2)|floatformat }}/{{ submission.case_total|floatformat(0) }}
 
             </td>
 
@@ -108,7 +108,7 @@
                   <span class="col-title">
                     {{_('Point')}}:
                   </span>
-                  {{ _('%(points)s/%(total)s', points=batch.points|floatformat(2), total=batch.total|floatformat(0)) }}
+                  {{ _('%(points)s/%(total)s', points=case.points|roundfloat(2)|floatformat, total=batch.total|floatformat(0)) }}
                 </td>
                 <td></td>
                 <td></td>
@@ -136,7 +136,7 @@
                 </td>
 
                 <td><span class="col-title">{{_('Point')}}: </span>
-                  {{ case.points|floatformat(2) }}/{{ case.total|floatformat }}
+                  {{ case.points|roundfloat(2)|floatformat }}/{{ case.total|floatformat }}
                 </td>
                 <td>
                   {%- if case.status != 'SC' -%}
