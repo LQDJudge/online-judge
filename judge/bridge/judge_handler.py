@@ -571,11 +571,11 @@ class JudgeHandler(ZlibPacketHandler):
         self._post_update_submission(submission.id, "grading-end", done=True)
 
         # Clean up submission source file (if any)
-        source_file = cache.get(f"submission_source_file:{submission.id}")
-        if source_file:
-            filepath = os.path.join(settings.DMOJ_SUBMISSION_ROOT, source_file)
-            if os.path.exists(filepath):
-                os.remove(filepath)
+        # source_file = cache.get(f"submission_source_file:{submission.id}")
+        # if source_file:
+        #     filepath = os.path.join(settings.DMOJ_SUBMISSION_ROOT, source_file)
+        #     if os.path.exists(filepath):
+        #         os.remove(filepath)
 
     def on_compile_error(self, packet):
         logger.info(

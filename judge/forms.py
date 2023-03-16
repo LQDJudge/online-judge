@@ -119,9 +119,9 @@ class ProfileForm(ModelForm):
 
 
 def file_size_validator(file):
-    limit = 10 * 1024 * 1024
+    limit = 1 * 1024 * 1024
     if file.size > limit:
-        raise ValidationError("File too large. Size should not exceed 10MB.")
+        raise ValidationError("File too large. Size should not exceed 1MB.")
 
 
 class ProblemSubmitForm(ModelForm):
