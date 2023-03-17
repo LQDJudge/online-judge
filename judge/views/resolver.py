@@ -47,6 +47,7 @@ class Resolver(TemplateView):
                 subtask,
                 sub_id,
             ) in self.contest.format.get_results_by_subtask(participation, True):
+                subtask = subtask or 1
                 problem_id = str(problem_id)
                 order = id_to_order[problem_id]
                 problem_sub[order - 1] = max(problem_sub[order - 1], subtask)
@@ -69,6 +70,7 @@ class Resolver(TemplateView):
                 subtask,
                 sub_id,
             ) in self.contest.format.get_results_by_subtask(participation, True):
+                subtask = subtask or 1
                 problem_id = str(problem_id)
                 order = id_to_order[problem_id]
                 points_map[(order, subtask)] = subtask_points
@@ -86,6 +88,7 @@ class Resolver(TemplateView):
                 subtask,
                 sub_id,
             ) in self.contest.format.get_results_by_subtask(participation, False):
+                subtask = subtask or 1
                 problem_id = str(problem_id)
                 order = id_to_order[problem_id]
                 frozen_points_map[(order, subtask)] = subtask_points
