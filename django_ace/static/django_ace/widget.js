@@ -162,7 +162,7 @@
         ]);
 
         window[widget.id] = editor;
-        $(widget).trigger('ace_load', [editor]);
+        setTimeout(() => $(widget).trigger('ace_load', [editor]), 100);
     }
 
     function init() {
