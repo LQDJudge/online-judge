@@ -1194,7 +1194,9 @@ def problem_submit(request, problem, submission=None):
             "ACE_URL": settings.ACE_URL,
             "default_lang": default_lang,
             "problem_id": problem.id,
-            "output_only": problem.data_files.output_only,
+            "output_only": problem.data_files.output_only
+            if hasattr(problem, "data_files")
+            else False,
         },
     )
 
