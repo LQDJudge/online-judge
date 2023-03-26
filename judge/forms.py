@@ -131,10 +131,11 @@ class ProblemSubmitForm(ModelForm):
     judge = ChoiceField(choices=(), widget=forms.HiddenInput(), required=False)
     source_file = FileField(required=False, validators=[file_size_validator])
 
-    def __init__(self, *args, judge_choices=(), request=None, **kwargs):
+    def __init__(self, *args, judge_choices=(), request=None, problem=None, **kwargs):
         super(ProblemSubmitForm, self).__init__(*args, **kwargs)
         self.source_file_name = None
         self.request = request
+        self.problem = problem
         self.fields["language"].empty_label = None
         self.fields["language"].label_from_instance = attrgetter("display_name")
         self.fields["language"].queryset = Language.objects.filter(
@@ -149,7 +150,10 @@ class ProblemSubmitForm(ModelForm):
 
     def clean(self):
         if "source_file" in self.files:
-            if self.cleaned_data["language"].key in ["OUTPUT", "SCAT"]:
+            if (
+                self.cleaned_data["language"].key in ["OUTPUT", "SCAT"]
+                and self.problem.data_files.output_only
+            ):
                 filename = self.files["source_file"].name
                 if filename.endswith(".zip") or filename.endswith(".sb3"):
                     self.source_file_name = (

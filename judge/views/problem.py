@@ -1044,6 +1044,7 @@ def problem_submit(request, problem, submission=None):
             judge_choices=judge_choices,
             instance=Submission(user=profile, problem=problem),
             request=request,
+            problem=problem,
         )
         if form.is_valid():
             if (
