@@ -153,9 +153,15 @@
             if (file.name.endsWith('zip')) {
               update_submit_area(file.name);
             }
-            else if (file.name.endsWith('sb3')) {
-              get_source_scratch(file);
-            }
+            {% if output_only %}
+              else if (file.name.endsWith('sb3')) {
+                update_submit_area(file.name);
+              }
+            {% else %}
+              else if (file.name.endsWith('sb3')) {
+                get_source_scratch(file);
+              }
+            {% endif %}
             else {
               get_source_default(file);
             }
