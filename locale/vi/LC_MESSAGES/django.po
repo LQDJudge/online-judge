@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-03-16 11:07+0700\n"
+"POT-Creation-Date: 2023-03-26 10:11+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -372,7 +372,7 @@ msgstr "Bạn không có quyền chấm lại nhiều bài nộp như vậy."
 msgid "Rejudge the selected submissions"
 msgstr "Chấm lại các bài nộp đã chọn"
 
-#: judge/admin/submission.py:304 judge/views/problem_manage.py:212
+#: judge/admin/submission.py:304 judge/views/problem_manage.py:221
 #, python-format
 msgid "%d submission were successfully rescored."
 msgid_plural "%d submissions were successfully rescored."
@@ -2527,11 +2527,11 @@ msgstr "Tính lại điểm kỳ thi"
 msgid "Running MOSS"
 msgstr "Đang chạy MOSS"
 
-#: judge/tasks/submission.py:45
+#: judge/tasks/submission.py:47
 msgid "Modifying submissions"
 msgstr "Chỉnh sửa bài nộp"
 
-#: judge/tasks/submission.py:65
+#: judge/tasks/submission.py:67
 msgid "Recalculating user points"
 msgstr "Tính lại điểm người dùng"
 
@@ -3097,7 +3097,7 @@ msgstr "Bạn đã vượt quá số lần nộp cho bài này."
 msgid "Submit to %(problem)s"
 msgstr "Nộp bài cho %(problem)s"
 
-#: judge/views/problem.py:1204
+#: judge/views/problem.py:1207
 msgid "Clone Problem"
 msgstr "Nhân bản bài tập"
 
@@ -3143,17 +3143,17 @@ msgstr "File init.yml cho %s"
 msgid "Managing submissions for %s"
 msgstr "Quản lý bài nộp cho %s"
 
-#: judge/views/problem_manage.py:120
+#: judge/views/problem_manage.py:132
 #, python-format
 msgid "Rejudging selected submissions for %s..."
 msgstr "Đang chấm lại các bài nộp cho %s..."
 
-#: judge/views/problem_manage.py:181
+#: judge/views/problem_manage.py:190
 #, python-format
 msgid "Rescoring all submissions for %s..."
 msgstr "Đang tính điểm lại các bài nộp cho %s..."
 
-#: judge/views/problem_manage.py:196
+#: judge/views/problem_manage.py:205
 #, python-format
 msgid "Successfully scheduled %d submission for rejudging."
 msgid_plural "Successfully scheduled %d submissions for rejudging."
@@ -4812,24 +4812,28 @@ msgstr "Lọc theo ngôn ngữ:"
 msgid "Filter by result:"
 msgstr "Lọc theo kết quả:"
 
-#: templates/problem/manage_submission.html:163
+#: templates/problem/manage_submission.html:161
+msgid "In current contest"
+msgstr "Trong kỳ thi hiện tại"
+
+#: templates/problem/manage_submission.html:167
 msgid "Action"
 msgstr "Hành động"
 
-#: templates/problem/manage_submission.html:165
+#: templates/problem/manage_submission.html:169
 msgid "Rejudge selected submissions"
 msgstr "Chấm lại những bài nộp này"
 
-#: templates/problem/manage_submission.html:170
+#: templates/problem/manage_submission.html:174
 msgid "Download selected submissions"
 msgstr "Tải các bài nộp này"
 
-#: templates/problem/manage_submission.html:176
+#: templates/problem/manage_submission.html:180
 #, python-format
 msgid "Are you sure you want to rescore %(count)d submissions?"
 msgstr "Bạn có chắc muốn tính điểm lại %(count)d bài nộp?"
 
-#: templates/problem/manage_submission.html:177
+#: templates/problem/manage_submission.html:181
 msgid "Rescore all submissions"
 msgstr "Tính điểm lại các bài nộp"
 
@@ -5022,11 +5026,11 @@ msgstr "Lọc"
 msgid "Random"
 msgstr "Ngẫu nhiên"
 
-#: templates/problem/submit.html:120
+#: templates/problem/submit.html:124
 msgid "Your source code must contain at most 65536 characters."
 msgstr "Code phải chứa không quá 65536 ký tự."
 
-#: templates/problem/submit.html:175
+#: templates/problem/submit.html:179
 #, python-format
 msgid ""
 "<b>Warning!</b> Your default language, <b>%(default_language)s</b>, is "
@@ -5035,7 +5039,7 @@ msgstr ""
 "<b>Cẩn thận!</b> Ngôn ngữ ưa thích của bạn, <b>%(default_language)s</b>, "
 "không được sử dụng trong bài này."
 
-#: templates/problem/submit.html:186
+#: templates/problem/submit.html:190
 #, fuzzy, python-format
 #| msgid ""
 #| "\n"
@@ -5058,15 +5062,15 @@ msgstr[0] ""
 "                        Bạn còn %(left)s lần nộp\n"
 "                        "
 
-#: templates/problem/submit.html:195
+#: templates/problem/submit.html:199
 msgid "You have 0 submissions left"
 msgstr "Bạn đã hết lần nộp"
 
-#: templates/problem/submit.html:229
+#: templates/problem/submit.html:233
 msgid "No judge is available for this problem."
 msgstr "Không có máy chấm có thể chấm bài này."
 
-#: templates/problem/submit.html:235
+#: templates/problem/submit.html:239
 msgid "Submit!"
 msgstr "Nộp bài!"
 

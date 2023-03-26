@@ -78,6 +78,13 @@ class ManageProblemSubmissionView(TitleMixin, ManageProblemSubmissionMixin, Deta
             )
         ]
         context["results"] = sorted(map(itemgetter(0), Submission.RESULT))
+        context["in_contest"] = False
+        if (
+            self.request.in_contest_mode
+            and self.object in self.request.participation.contest.problems.all()
+        ):
+            context["in_contest"] = True
+
         return context
 
 
@@ -102,18 +109,26 @@ class BaseActionSubmissionsView(
         except ValueError:
             return HttpResponseBadRequest()
 
+        contest = None
+        try:
+            in_contest = bool(self.request.POST.get("in_contest", False))
+            if in_contest:
+                contest = self.request.participation.contest
+        except (KeyError, ValueError):
+            return HttpResponseBadRequest()
+
         return self.generate_response(
-            id_range, languages, self.request.POST.getlist("result")
+            id_range, languages, self.request.POST.getlist("result"), contest
         )
 
-    def generate_response(self, id_range, languages, results):
+    def generate_response(self, id_range, languages, results, contest):
         raise NotImplementedError()
 
 
 class ActionSubmissionsView(BaseActionSubmissionsView):
-    def rejudge_response(self, id_range, languages, results):
+    def rejudge_response(self, id_range, languages, results, contest):
         status = rejudge_problem_filter.delay(
-            self.object.id, id_range, languages, results
+            self.object.id, id_range, languages, results, contest
         )
         return redirect_to_task_status(
             status,
@@ -124,12 +139,11 @@ class ActionSubmissionsView(BaseActionSubmissionsView):
             ),
         )
 
-    def download_response(self, id_range, languages, results):
-        if not self.request.user.is_superuser:
-            raise Http404
-
+    def download_response(self, id_range, languages, results, contest):
         queryset = Submission.objects.filter(problem_id=self.object.id)
-        submissions = apply_submission_filter(queryset, id_range, languages, results)
+        submissions = apply_submission_filter(
+            queryset, id_range, languages, results, contest
+        )
 
         with tempfile.SpooledTemporaryFile() as tmp:
             with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -155,20 +169,20 @@ class ActionSubmissionsView(BaseActionSubmissionsView):
             )
             return response
 
-    def generate_response(self, id_range, languages, results):
+    def generate_response(self, id_range, languages, results, contest):
         action = self.request.POST.get("action")
         if action == "rejudge":
-            return self.rejudge_response(id_range, languages, results)
+            return self.rejudge_response(id_range, languages, results, contest)
         elif action == "download":
-            return self.download_response(id_range, languages, results)
+            return self.download_response(id_range, languages, results, contest)
         else:
             return Http404()
 
 
 class PreviewActionSubmissionsView(BaseActionSubmissionsView):
-    def generate_response(self, id_range, languages, results):
+    def generate_response(self, id_range, languages, results, contest):
         queryset = apply_submission_filter(
-            self.object.submission_set.all(), id_range, languages, results
+            self.object.submission_set.all(), id_range, languages, results, contest
         )
         return HttpResponse(str(queryset.count()))
 

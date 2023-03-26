@@ -157,6 +157,10 @@
               {% endfor %}
             </select>
           </div>
+          {% if in_contest %}
+            <label for="in-contest" name="in_contest">{{ _('In current contest') }}:</label>
+            <input type="checkbox" name="in_contest">
+          {% endif %}
         </form>
       </div>
       <div class="pane">
