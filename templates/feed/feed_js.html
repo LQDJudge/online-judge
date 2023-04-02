@@ -3,6 +3,17 @@
   window.has_next_page = {{1 if page_obj.has_next() else 0}};
   window.loading_page = false;
   $(function() {
+    function getQueryParams() {
+      var queryParams = {};
+      var query = window.location.search.substring(1);
+      var vars = query.split("&");
+      for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split("=");
+        queryParams[pair[0]] = decodeURIComponent(pair[1]);
+      }
+      return queryParams;
+    }
+
     $(window).on("scroll", function() {
       if (window.loading_page || !window.has_next_page) return;
       var distanceFromBottom = $(document).height() - ($(window).scrollTop() + $(window).height());
@@ -12,6 +23,8 @@
           "only_content": 1,
           "page": window.page + 1,
         };
+
+        params = Object.assign({}, getQueryParams(), params);
 
         $.get("{{feed_content_url}}", params)
           .done(function(data) {
