@@ -36,7 +36,7 @@ EXTENSION_CONFIGS = {
     },
 }
 
-ALLOWED_TAGS = bleach.sanitizer.ALLOWED_TAGS + [
+ALLOWED_TAGS = list(bleach.sanitizer.ALLOWED_TAGS) + [
     "img",
     "center",
     "iframe",
