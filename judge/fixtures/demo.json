@@ -147,25 +147,8 @@
     },
     {
         "fields": {
-            "author": 1,
-            "body": "This is your first comment!",
-            "hidden": false,
-            "level": 0,
-            "lft": 1,
-            "page": "b:1",
-            "parent": null,
-            "rght": 2,
-            "score": 0,
-            "time": "2017-12-02T08:46:54.007Z",
-            "tree_id": 1
-        },
-        "model": "judge.comment",
-        "pk": 1
-    },
-    {
-        "fields": {
-            "domain": "localhost:8081",
-            "name": "DMOJ: Modern Online Judge"
+            "domain": "localhost:8000",
+            "name": "LQDOJ"
         },
         "model": "sites.site",
         "pk": 1
