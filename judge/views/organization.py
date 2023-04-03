@@ -624,10 +624,7 @@ class OrganizationRequestBaseView(
         return organization
 
     def get_content_title(self):
-        href = reverse("organization_home", args=[self.object.id, self.object.slug])
-        return mark_safe(
-            f'Manage join requests for <a href="{href}">{self.object.name}</a>'
-        )
+        return _("Manage join requests")
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationRequestBaseView, self).get_context_data(**kwargs)

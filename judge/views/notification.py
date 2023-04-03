@@ -40,7 +40,7 @@ class NotificationList(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["unseen_count"] = self.unseen_cnt
-        context["title"] = _("Notifications (%d unseen)" % context["unseen_count"])
+        context["title"] = _("Notifications (%d unseen)") % context["unseen_count"]
         context["has_notifications"] = self.queryset.exists()
         return context
 

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-03-26 10:11+0700\n"
+"POT-Creation-Date: 2023-04-03 23:54+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -372,7 +372,7 @@ msgstr "Bạn không có quyền chấm lại nhiều bài nộp như vậy."
 msgid "Rejudge the selected submissions"
 msgstr "Chấm lại các bài nộp đã chọn"
 
-#: judge/admin/submission.py:304 judge/views/problem_manage.py:221
+#: judge/admin/submission.py:304 judge/views/problem_manage.py:226
 #, python-format
 msgid "%d submission were successfully rescored."
 msgid_plural "%d submissions were successfully rescored."
@@ -473,57 +473,57 @@ msgstr "IOI mới"
 msgid "You may not be part of more than {count} public groups."
 msgstr "Bạn không thể tham gia nhiều hơn {count} nhóm công khai."
 
-#: judge/forms.py:146
+#: judge/forms.py:147
 msgid "Any judge"
 msgstr ""
 
-#: judge/forms.py:340
+#: judge/forms.py:346
 msgid "Enter usernames separating by space"
 msgstr "Nhập các tên đăng nhập, cách nhau bởi dấu cách"
 
-#: judge/forms.py:341 judge/views/stats.py:166 templates/stats/site.html:27
+#: judge/forms.py:347 judge/views/stats.py:166 templates/stats/site.html:27
 msgid "New users"
 msgstr "Thành viên mới"
 
-#: judge/forms.py:358
+#: judge/forms.py:364
 #, python-brace-format
 msgid "These usernames don't exist: {usernames}"
 msgstr "Các tên đăng nhập này không tồn tại: {usernames}"
 
-#: judge/forms.py:417 judge/views/register.py:30
+#: judge/forms.py:423 judge/views/register.py:30
 #: templates/registration/registration_form.html:34
 #: templates/user/base-users-table.html:5
 #: templates/user/import/table_csv.html:4
 msgid "Username"
 msgstr "Tên đăng nhập"
 
-#: judge/forms.py:418 templates/registration/registration_form.html:46
+#: judge/forms.py:424 templates/registration/registration_form.html:46
 #: templates/registration/registration_form.html:60
 #: templates/user/import/table_csv.html:5
 msgid "Password"
 msgstr "Mật khẩu"
 
-#: judge/forms.py:444
+#: judge/forms.py:450
 msgid "Two Factor Authentication tokens must be 6 decimal digits."
 msgstr "Two Factor Authentication phải chứa 6 chữ số."
 
-#: judge/forms.py:457 templates/registration/totp_auth.html:32
+#: judge/forms.py:463 templates/registration/totp_auth.html:32
 msgid "Invalid Two Factor Authentication token."
 msgstr "Token Two Factor Authentication không hợp lệ."
 
-#: judge/forms.py:464 judge/models/problem.py:133
+#: judge/forms.py:470 judge/models/problem.py:133
 msgid "Problem code must be ^[a-z0-9]+$"
 msgstr "Mã bài phải có dạng ^[a-z0-9]+$"
 
-#: judge/forms.py:471
+#: judge/forms.py:477
 msgid "Problem with code already exists."
 msgstr "Mã bài đã tồn tại."
 
-#: judge/forms.py:478 judge/models/contest.py:91
+#: judge/forms.py:484 judge/models/contest.py:91
 msgid "Contest id must be ^[a-z0-9]+$"
 msgstr "Mã kỳ thi phải có dạng ^[a-z0-9]+$"
 
-#: judge/forms.py:484
+#: judge/forms.py:490
 msgid "Contest with key already exists."
 msgstr "Mã kỳ thi đã tồn tại."
 
@@ -2263,7 +2263,7 @@ msgid "judge"
 msgstr "máy chấm"
 
 #: judge/models/submission.py:20 judge/models/submission.py:47
-#: judge/utils/problems.py:123
+#: judge/utils/problems.py:114
 msgid "Accepted"
 msgstr "Accepted"
 
@@ -2292,7 +2292,7 @@ msgid "Runtime Error"
 msgstr "Runtime Error"
 
 #: judge/models/submission.py:27 judge/models/submission.py:41
-#: judge/models/submission.py:55 judge/utils/problems.py:127
+#: judge/models/submission.py:55 judge/utils/problems.py:118
 msgid "Compile Error"
 msgstr "Compile Error"
 
@@ -2583,19 +2583,19 @@ msgstr ""
 msgid "How did you corrupt the interactor path?"
 msgstr "How did you corrupt the custom checker path?"
 
-#: judge/utils/problems.py:124
+#: judge/utils/problems.py:115
 msgid "Wrong"
 msgstr "Sai"
 
-#: judge/utils/problems.py:130
+#: judge/utils/problems.py:121
 msgid "Timeout"
 msgstr "Quá thời gian"
 
-#: judge/utils/problems.py:133
+#: judge/utils/problems.py:124
 msgid "Error"
 msgstr "Lỗi"
 
-#: judge/utils/problems.py:150
+#: judge/utils/problems.py:141
 msgid "Can't pass both queryset and keyword filters"
 msgstr ""
 
@@ -2671,8 +2671,8 @@ msgstr "Bạn phải giải ít nhất 1 bài trước khi được vote."
 msgid "You already voted."
 msgstr "Bạn đã vote."
 
-#: judge/views/comment.py:158 judge/views/organization.py:814
-#: judge/views/organization.py:960 judge/views/organization.py:1125
+#: judge/views/comment.py:158 judge/views/organization.py:811
+#: judge/views/organization.py:957 judge/views/organization.py:1122
 msgid "Edited from site"
 msgstr "Chỉnh sửa từ web"
 
@@ -2936,12 +2936,16 @@ msgstr "Đăng ký tham gia %s"
 msgid "Join request detail"
 msgstr "Chi tiết đơn đăng ký"
 
-#: judge/views/organization.py:634
+#: judge/views/organization.py:627
+msgid "Manage join requests"
+msgstr "Quản lý đơn đăng ký"
+
+#: judge/views/organization.py:631
 #, python-format
 msgid "Managing join requests for %s"
 msgstr "Quản lý đơn đăng ký cho %s"
 
-#: judge/views/organization.py:674
+#: judge/views/organization.py:671
 #, python-format
 msgid ""
 "Your organization can only receive %d more members. You cannot approve %d "
@@ -2950,96 +2954,96 @@ msgstr ""
 "Tổ chức chỉ có thể chứa %d thành viên. Bạn không thể chấp thuận nhiều hơn %d "
 "người."
 
-#: judge/views/organization.py:692
+#: judge/views/organization.py:689
 #, python-format
 msgid "Approved %d user."
 msgid_plural "Approved %d users."
 msgstr[0] "Đã chấp thuận %d người."
 
-#: judge/views/organization.py:695
+#: judge/views/organization.py:692
 #, python-format
 msgid "Rejected %d user."
 msgid_plural "Rejected %d users."
 msgstr[0] "Đã từ chối %d người."
 
-#: judge/views/organization.py:735
+#: judge/views/organization.py:732
 #, python-format
 msgid "Add member for %s"
 msgstr "Thêm thành viên cho %s"
 
-#: judge/views/organization.py:747
+#: judge/views/organization.py:744
 #, fuzzy
 #| msgid "Edited from site"
 msgid "Added members from site"
 msgstr "Chỉnh sửa từ web"
 
-#: judge/views/organization.py:767 judge/views/organization.py:775
+#: judge/views/organization.py:764 judge/views/organization.py:772
 msgid "Can't kick user"
 msgstr "Không thể đuổi"
 
-#: judge/views/organization.py:768
+#: judge/views/organization.py:765
 msgid "The user you are trying to kick does not exist!"
 msgstr ""
 
-#: judge/views/organization.py:776
+#: judge/views/organization.py:773
 #, python-format
 msgid "The user you are trying to kick is not in organization: %s."
 msgstr ""
 
-#: judge/views/organization.py:797 judge/views/organization.py:949
+#: judge/views/organization.py:794 judge/views/organization.py:946
 #, fuzzy, python-format
 #| msgid "Editing %s"
 msgid "Edit %s"
 msgstr "Đang chỉnh sửa %s"
 
-#: judge/views/organization.py:825 templates/organization/list.html:45
+#: judge/views/organization.py:822 templates/organization/list.html:45
 msgid "Create group"
 msgstr "Tạo nhóm"
 
-#: judge/views/organization.py:840
+#: judge/views/organization.py:837
 msgid "Exceeded limit"
 msgstr ""
 
-#: judge/views/organization.py:841
+#: judge/views/organization.py:838
 #, python-format
 msgid "You created too many groups. You can only create at most %d groups"
 msgstr ""
 
-#: judge/views/organization.py:846 judge/views/organization.py:871
-#: judge/views/organization.py:1015
+#: judge/views/organization.py:843 judge/views/organization.py:868
+#: judge/views/organization.py:1012
 msgid "Added from site"
 msgstr "Thêm từ web"
 
-#: judge/views/organization.py:862
+#: judge/views/organization.py:859
 #: templates/organization/org-right-sidebar.html:55
 msgid "Add contest"
 msgstr "Thêm kỳ thi"
 
-#: judge/views/organization.py:905 judge/views/organization.py:1067
+#: judge/views/organization.py:902 judge/views/organization.py:1064
 msgid "Permission denied"
 msgstr "Truy cập bị từ chối"
 
-#: judge/views/organization.py:906
+#: judge/views/organization.py:903
 #, fuzzy
 #| msgid "You are not allowed to edit this organization."
 msgid "You are not allowed to edit this contest"
 msgstr "Bạn không được phép chỉnh sửa tổ chức này."
 
-#: judge/views/organization.py:1004
+#: judge/views/organization.py:1001
 #, python-format
 msgid "Add blog for %s"
 msgstr "Thêm bài đăng cho %s"
 
-#: judge/views/organization.py:1068
+#: judge/views/organization.py:1065
 msgid "Not allowed to edit this blog"
 msgstr "Bạn không được phép chỉnh sửa bài đăng này."
 
-#: judge/views/organization.py:1100
+#: judge/views/organization.py:1097
 #, python-format
 msgid "Edit blog %s"
 msgstr "Chỉnh sửa %s"
 
-#: judge/views/organization.py:1151
+#: judge/views/organization.py:1148
 #, python-format
 msgid "Pending blogs in %s"
 msgstr "Bài đang đợi duyệt trong %s"
@@ -3074,30 +3078,30 @@ msgstr "Bài tập"
 msgid "Problem feed"
 msgstr "Bài tập"
 
-#: judge/views/problem.py:1069
+#: judge/views/problem.py:1070
 msgid "Banned from submitting"
 msgstr "Bị cấm nộp bài"
 
-#: judge/views/problem.py:1071
+#: judge/views/problem.py:1072
 msgid ""
 "You have been declared persona non grata for this problem. You are "
 "permanently barred from submitting this problem."
 msgstr "Bạn đã bị cấm nộp bài này."
 
-#: judge/views/problem.py:1094
+#: judge/views/problem.py:1095
 msgid "Too many submissions"
 msgstr "Quá nhiều lần nộp"
 
-#: judge/views/problem.py:1096
+#: judge/views/problem.py:1097
 msgid "You have exceeded the submission limit for this problem."
 msgstr "Bạn đã vượt quá số lần nộp cho bài này."
 
-#: judge/views/problem.py:1176 judge/views/problem.py:1181
+#: judge/views/problem.py:1177 judge/views/problem.py:1182
 #, python-format
 msgid "Submit to %(problem)s"
 msgstr "Nộp bài cho %(problem)s"
 
-#: judge/views/problem.py:1207
+#: judge/views/problem.py:1208
 msgid "Clone Problem"
 msgstr "Nhân bản bài tập"
 
@@ -3143,17 +3147,17 @@ msgstr "File init.yml cho %s"
 msgid "Managing submissions for %s"
 msgstr "Quản lý bài nộp cho %s"
 
-#: judge/views/problem_manage.py:132
+#: judge/views/problem_manage.py:135
 #, python-format
 msgid "Rejudging selected submissions for %s..."
 msgstr "Đang chấm lại các bài nộp cho %s..."
 
-#: judge/views/problem_manage.py:190
+#: judge/views/problem_manage.py:195
 #, python-format
 msgid "Rescoring all submissions for %s..."
 msgstr "Đang tính điểm lại các bài nộp cho %s..."
 
-#: judge/views/problem_manage.py:205
+#: judge/views/problem_manage.py:210
 #, python-format
 msgid "Successfully scheduled %d submission for rejudging."
 msgid_plural "Successfully scheduled %d submissions for rejudging."
@@ -5030,7 +5034,7 @@ msgstr "Ngẫu nhiên"
 msgid "Your source code must contain at most 65536 characters."
 msgstr "Code phải chứa không quá 65536 ký tự."
 
-#: templates/problem/submit.html:179
+#: templates/problem/submit.html:185
 #, python-format
 msgid ""
 "<b>Warning!</b> Your default language, <b>%(default_language)s</b>, is "
@@ -5039,7 +5043,7 @@ msgstr ""
 "<b>Cẩn thận!</b> Ngôn ngữ ưa thích của bạn, <b>%(default_language)s</b>, "
 "không được sử dụng trong bài này."
 
-#: templates/problem/submit.html:190
+#: templates/problem/submit.html:196
 #, fuzzy, python-format
 #| msgid ""
 #| "\n"
@@ -5062,15 +5066,15 @@ msgstr[0] ""
 "                        Bạn còn %(left)s lần nộp\n"
 "                        "
 
-#: templates/problem/submit.html:199
+#: templates/problem/submit.html:205
 msgid "You have 0 submissions left"
 msgstr "Bạn đã hết lần nộp"
 
-#: templates/problem/submit.html:233
+#: templates/problem/submit.html:239
 msgid "No judge is available for this problem."
 msgstr "Không có máy chấm có thể chấm bài này."
 
-#: templates/problem/submit.html:239
+#: templates/problem/submit.html:245
 msgid "Submit!"
 msgstr "Nộp bài!"
 
