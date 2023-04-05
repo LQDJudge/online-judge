@@ -2,6 +2,8 @@ import os
 import secrets
 from operator import attrgetter
 import pyotp
+import time
+import datetime
 
 from django import forms
 from django.conf import settings
@@ -148,26 +150,33 @@ class ProblemSubmitForm(ModelForm):
             )
             self.fields["judge"].choices = judge_choices
 
+    def allow_url_as_source(self):
+        key = self.cleaned_data["language"].key
+        filename = self.files["source_file"].name
+        if key == "OUTPUT" and self.problem.data_files.output_only:
+            return filename.endswith(".zip")
+        if key == "SCAT":
+            return filename.endswith(".sb3")
+        return False
+
     def clean(self):
         if "source_file" in self.files:
-            if (
-                self.cleaned_data["language"].key in ["OUTPUT", "SCAT"]
-                and self.problem.data_files.output_only
-            ):
+            if self.allow_url_as_source():
                 filename = self.files["source_file"].name
-                if filename.endswith(".zip") or filename.endswith(".sb3"):
-                    self.source_file_name = (
-                        secrets.token_hex(16) + "." + filename.split(".")[-1]
-                    )
-                    filepath = os.path.join(
-                        settings.DMOJ_SUBMISSION_ROOT, self.source_file_name
-                    )
-                    with open(filepath, "wb+") as destination:
-                        for chunk in self.files["source_file"].chunks():
-                            destination.write(chunk)
-                    self.cleaned_data["source"] = self.request.build_absolute_uri(
-                        reverse("submission_source_file", args=(self.source_file_name,))
-                    )
+                now = datetime.datetime.now()
+                timestamp = str(int(time.mktime(now.timetuple())))
+                self.source_file_name = (
+                    timestamp + secrets.token_hex(5) + "." + filename.split(".")[-1]
+                )
+                filepath = os.path.join(
+                    settings.DMOJ_SUBMISSION_ROOT, self.source_file_name
+                )
+                with open(filepath, "wb+") as destination:
+                    for chunk in self.files["source_file"].chunks():
+                        destination.write(chunk)
+                self.cleaned_data["source"] = self.request.build_absolute_uri(
+                    reverse("submission_source_file", args=(self.source_file_name,))
+                )
             del self.files["source_file"]
         return self.cleaned_data
 

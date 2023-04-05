@@ -2,7 +2,6 @@
 
 {% block js_media %}
   <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
-  <script type="text/javascript" src="{{ static('jszip/jszip.min.js') }}"></script>
   {{ form.media.js }}
   {% compress js %}
     <script type="text/javascript">
@@ -139,29 +138,15 @@
           }
         }
 
-        function get_source_scratch(file) {
-          JSZip.loadAsync(file).then(function($content) {
-            return $content.files["project.json"].async('text');
-          }).then(function (src) {
-            update_submit_area(src);
-          });
-        }
-
         $('#id_source_file').on('click change', function(e) {
           var file = $(this)[0].files[0];
           if (file) {
             if (file.name.endsWith('zip')) {
               update_submit_area(file.name);
             }
-            {% if output_only %}
-              else if (file.name.endsWith('sb3')) {
-                update_submit_area(file.name);
-              }
-            {% else %}
-              else if (file.name.endsWith('sb3')) {
-                get_source_scratch(file);
-              }
-            {% endif %}
+            else if (file.name.endsWith('sb3')) {
+              update_submit_area(file.name);
+            }
             else {
               get_source_default(file);
             }
