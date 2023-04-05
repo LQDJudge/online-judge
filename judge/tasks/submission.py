@@ -27,7 +27,7 @@ def rejudge_problem_filter(
     self, problem_id, id_range=None, languages=None, results=None, contest=None
 ):
     queryset = Submission.objects.filter(problem_id=problem_id)
-    queryset = apply_submission_filter(queryset, id_range, languages, contest)
+    queryset = apply_submission_filter(queryset, id_range, languages, results, contest)
 
     rejudged = 0
     with Progress(self, queryset.count()) as p:
