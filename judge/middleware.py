@@ -156,18 +156,21 @@ class SlowRequestMiddleware(object):
         start_time = time.time()
         response = self.get_response(request)
         if response.status_code == 200:
-            response_time = time.time() - start_time
-            url_name = resolve(request.path).url_name
-            message = {
-                "url_name": url_name,
-                "response_time": response_time * 1000,
-                "profile": request.user.username,
-                "date": datetime.now().strftime("%Y/%m/%d"),
-                "url": request.build_absolute_uri(),
-                "method": request.method,
-            }
-            if response_time > 9:
-                logger_slow.info(json.dumps(message))
-            if random.random() < 0.1:
-                logger.info(json.dumps(message))
+            try:
+                response_time = time.time() - start_time
+                url_name = resolve(request.path).url_name
+                message = {
+                    "url_name": url_name,
+                    "response_time": response_time * 1000,
+                    "profile": request.user.username,
+                    "date": datetime.now().strftime("%Y/%m/%d"),
+                    "url": request.build_absolute_uri(),
+                    "method": request.method,
+                }
+                if response_time > 9:
+                    logger_slow.info(json.dumps(message))
+                if random.random() < 0.1:
+                    logger.info(json.dumps(message))
+            except Exception:
+                pass
         return response
