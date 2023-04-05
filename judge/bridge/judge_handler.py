@@ -15,7 +15,7 @@ from django.core.cache import cache
 
 from judge import event_poster as event
 from judge.bridge.base_handler import ZlibPacketHandler, proxy_list
-from judge.caching import finished_submission
+from judge.utils.problems import finished_submission
 from judge.models import (
     Judge,
     Language,

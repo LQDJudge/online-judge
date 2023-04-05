@@ -8,7 +8,7 @@ from django.core.cache.utils import make_template_fragment_key
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from .caching import finished_submission
+from judge.utils.problems import finished_submission
 from .models import (
     BlogPost,
     Comment,
