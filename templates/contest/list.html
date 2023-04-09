@@ -360,7 +360,9 @@
     <br>
 
     {% if past_contests %}
-      <h3 class="contest-group-header">{{ _('Past Contests') }}</h3>
+      <h3 class="toggle open contest-group-header">
+        {{ _('Past Contests') }}
+      </h3>
       {% if page_obj and page_obj.num_pages > 1 %}
         <div style="margin-bottom: 4px;">
           {% include "list-pages.html" %}
