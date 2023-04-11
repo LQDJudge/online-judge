@@ -166,6 +166,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         context["comment_lock"] = self.is_comment_locked()
         queryset = (
             queryset.select_related("author__user")
+            .filter(hidden=False)
             .defer("author__about")
             .annotate(revisions=Count("versions"))
         )
