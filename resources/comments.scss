@@ -37,6 +37,11 @@ a {
         border: 1px solid #CCC;
     }
 
+    .comment-img {
+        display: flex;
+        margin-right: 4px;
+    }
+
     .new-comments .comment-display {
         display: flex;
         margin-top: -0.25em !important;
@@ -47,9 +52,8 @@ a {
     }
 
     .new-comments .comment .detail {
-        margin: 0px 15px 0px;
         width: 100%;
-        max-width: calc(100% - 134px);
+        padding-right: 1em;
     }
 
     .new-comments .comment-edits {
@@ -64,6 +68,7 @@ a {
         border-bottom: 1px #888 solid;
         color: #888;
         text-align: right;
+        align-items: center;
     }
 
     .previous-revision, .next-revision {
@@ -80,8 +85,8 @@ a {
     }
 
     .new-comments .gravatar {
-        width: 75px;
-        max-width: 75px;
+        width: 1.5em;
+        border-radius: 50%;
     }
 
     .new-comments .vote {

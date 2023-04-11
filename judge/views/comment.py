@@ -30,6 +30,8 @@ from judge.utils.views import TitleMixin
 from judge.widgets import MathJaxPagedownWidget, HeavyPreviewPageDownWidget
 from judge.comments import add_mention_notifications, del_mention_notifications
 
+import json
+
 __all__ = [
     "upvote_comment",
     "downvote_comment",
@@ -188,7 +190,12 @@ class CommentRevisionAjax(CommentMixin, DetailView):
             )
         except ValueError:
             raise Http404
-        context["revision"] = revisions[wanted]
+        revision = revisions[wanted]
+        data = json.loads(revision.serialized_data)
+        try:
+            context["body"] = data[0]["fields"]["body"]
+        except Exception:
+            context["body"] = ""
         return context
 
     def get_object(self, queryset=None):
