@@ -64,16 +64,16 @@
                     class="downvote-link fa fa-chevron-down fa-fw"></a>
                 {% endif %}
               </div>
-              {% with author=node.author, user=node.author.user %}
-                <a href="{{ url('user_page', user.username) }}" class="user">
-                  <img src="{{ gravatar(author, 135) }}" class="gravatar">
-                </a>
-              {% endwith %}
             </div>
             <div class="detail">
               <div class="header">
-                {{ link_user(node.author) }}&nbsp;
-                {{ relative_time(node.time, abs=_('commented on {time}'), rel=_('commented {time}')) }}
+                {% with author=node.author, user=node.author.user %}
+                  <a href="{{ url('user_page', user.username) }}" class="user comment-img">
+                    <img src="{{ gravatar(author, 135) }}" class="gravatar">
+                  </a>
+                {% endwith %}
+                {{ link_user(node.author) }},&nbsp;
+                {{ relative_time(node.time, abs=_('{time}'), rel=_('{time}')) }}
                 <span class="comment-spacer"></span>
                 <span class="comment-operation">
                   {% if node.revisions > 1 %}
