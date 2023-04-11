@@ -137,9 +137,11 @@ def get_comment(request, limit=10):
     queryset = page_obj.comments
     replies =  len(queryset.filter(parent=comment_obj))
     queryset = (
-            queryset.filter(parent=comment_obj)[offset:offset+limit].select_related("author__user")
+            queryset.filter(parent=comment_obj, hidden=False)[offset:offset+limit]
+            .select_related("author__user")
             .defer("author__about")
-            .annotate(revisions=Count("versions")).annotate(count_replies=Count("replies"))
+            .annotate(revisions=Count("versions"))
+            .annotate(count_replies=Count("replies"))
         )
     if request.user.is_authenticated:
         profile = request.profile

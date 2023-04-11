@@ -164,8 +164,8 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         queryset = self.object.comments
         context["replies"] = len(queryset.filter(parent=None))
         queryset = (
-            queryset.filter(parent=None)[:10].select_related("author__user")
-            .filter(hidden=False)
+            queryset.filter(parent=None, hidden=False)[:10]
+            .select_related("author__user")
             .defer("author__about")
             .annotate(revisions=Count("versions"))
             .annotate(count_replies=Count("replies"))
@@ -186,7 +186,6 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
                 ).exists()
             )
         context["comment_list"] = queryset
-        # context["comment_count"] = len(queryset)
         context["vote_hide_threshold"] = settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD
         context["comment_root_id"] = 0
         context["offset"] = 10

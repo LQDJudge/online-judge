@@ -23,16 +23,16 @@
                     title="{{ _('Please login to vote') }}" class="downvote-link fa fa-chevron-down fa-fw"></a>
                 {% endif %}
             </div>
-            {% with author=node.author, user=node.author.user %}
-            <a href="{{ url('user_page', user.username) }}" class="user">
-                <img src="{{ gravatar(author, 135) }}" class="gravatar">
-            </a>
-            {% endwith %}
         </div>
         <div class="detail">
             <div class="header">
-                {{ link_user(node.author) }}&nbsp;
-                {{ relative_time(node.time, abs=_('commented on {time}'), rel=_('commented {time}')) }}
+                {% with author=node.author, user=node.author.user %}
+                <a href="{{ url('user_page', user.username) }}" class="user comment-img">
+                    <img src="{{ gravatar(author, 135) }}" class="gravatar">
+                </a>
+                {% endwith %}
+                {{ link_user(node.author) }},&nbsp;
+                {{ relative_time(node.time, abs=_('{time}'), rel=_('{time}')) }}
                 <span class="comment-spacer"></span>
                 <span class="comment-operation">
                     {% if node.revisions > 1 %}
@@ -101,21 +101,24 @@
     <!-- {{ node.count_replies }} 
     {{node.revisions - 1}} -->
     {% if node.revisions == 1 %}
-        {% set real_replies = node.count_replies - node.revisions + 1 %}
+    {% set real_replies = node.count_replies - node.revisions + 1 %}
     {% else %}
-        {% set real_replies = node.count_replies - node.revisions + 2 %}
+    {% set real_replies = node.count_replies - node.revisions + 2 %}
     {% endif %}
 
     {% if real_replies > 1 %}
-        <a href="javascript:comment_reply({{ node.id }}, {{ object.id }})" class="show_more_reply"> {{ real_replies }} {{ _(' Replies ') }} </a>
+    <a href="javascript:comment_reply({{ node.id }}, {{ object.id }})" class="show_more_reply"> {{ real_replies }} {{
+        _(' Replies ') }} </a>
     {% elif real_replies %}
-        <a href="javascript:comment_reply({{ node.id }}, {{ object.id }})" class="show_more_reply"> {{ real_replies }} {{ _(' Reply ') }} </a>
-    {% endif %} 
+    <a href="javascript:comment_reply({{ node.id }}, {{ object.id }})" class="show_more_reply"> {{ real_replies }} {{
+        _(' Reply ') }} </a>
+    {% endif %}
 </li>
 <ul id="comment-{{ node.id }}-reply" class="reply-comment" hidden></ul>
 <ul id="comment-{{ node.id }}-children" class="comments"> </ul>
 {% endfor %}
 
 {% if replies - offset > 0 %}
-    <a href="javascript:comment_show_more({{ comment_root_id }}, {{ object.id }}, {{ offset }} )" class="show_more_comment"> {{ replies - offset }} Replies More</a>
+<a href="javascript:comment_show_more({{ comment_root_id }}, {{ object.id }}, {{ offset }} )" class="show_more_comment">
+    {{ replies - offset }} Replies More</a>
 {% endif %}
