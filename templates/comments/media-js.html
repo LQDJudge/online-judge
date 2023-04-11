@@ -120,6 +120,55 @@
         });
       }
 
+      window.comment_reply = function (id, page) {
+        ajax_get_reply('{{ url('comment_reply') }}', id, page);
+      }
+
+      function ajax_get_reply(url, id, page) {
+        return $.ajax({
+          url: url,
+          type: 'GET',
+          data: {
+            id: id,
+            page: page,
+          },
+          success: function(data) {
+            var $comment = $("#comment-" + id + "-children");
+            var $comment_show_btn = $("#comment-" + id  + " .show_more_reply");
+            console.log($comment_show_btn);
+            $comment_show_btn.hide();
+            $comment.append(data);
+          }
+        })
+      }
+
+      window.comment_show_more = function (id, page, offset) {
+        ajax_comment_show_more('{{ url('comment_show_more') }}', id, page, offset);
+      }
+
+      function ajax_comment_show_more(url, id, page, offset) {
+        return $.ajax({
+          url: url,
+          type: 'GET',
+          data: {
+            id: id,
+            page: page,
+            offset: offset,
+          },
+          success: function(data) {
+            var $comment_show_btn = $("#comment-" + id  + " .show_more_comment");
+            $comment_show_btn.hide();
+            if (id == 0) {
+              var $comment = $("#comment-" + id);
+              $comment.append(data);
+            } else {
+              var $comment = $("#comment-" + id + "-children");
+              $comment.append(data);
+            }
+          }
+        })
+      }
+
       var get_$votes = function (id) {
         var $comment = $('#comment-' + id);
         return {

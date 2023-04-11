@@ -121,6 +121,18 @@ a {
         margin: -50px 23px 10px -40px;
         padding-top: 50px;
     }
+
+    .show_more_reply {
+        font-weight: bold;
+        display: block;
+        margin: 16px 40px;
+    }
+
+    .show_more_comment {
+        font-weight: bold;
+        display: block;
+        margin: 0 -40px;
+    }
 }
 
 .no-comments-message {

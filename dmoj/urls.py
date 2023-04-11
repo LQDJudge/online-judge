@@ -1,5 +1,6 @@
 import chat_box.views as chat
 
+from django.urls import include, path
 from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
@@ -468,6 +469,8 @@ urlpatterns = [
     url(r"^comments/upvote/$", comment.upvote_comment, name="comment_upvote"),
     url(r"^comments/downvote/$", comment.downvote_comment, name="comment_downvote"),
     url(r"^comments/hide/$", comment.comment_hide, name="comment_hide"),
+    url(r"^comments/reply/$", comment.get_reply, name="comment_reply"),
+    url(r"^comments/showmore/$", comment.get_showmore, name="comment_show_more"),
     url(
         r"^comments/(?P<id>\d+)/",
         include(

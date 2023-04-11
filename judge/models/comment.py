@@ -56,6 +56,7 @@ class Comment(MPTTModel):
         related_name="replies",
         on_delete=CASCADE,
     )
+    
     versions = VersionRelation()
 
     class Meta:

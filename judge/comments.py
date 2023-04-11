@@ -162,14 +162,14 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
     def get_context_data(self, **kwargs):
         context = super(CommentedDetailView, self).get_context_data(**kwargs)
         queryset = self.object.comments
+        context["replies"] = len(queryset.filter(parent=None))
+        queryset = (
+            queryset.filter(parent=None)[:10].select_related("author__user")
+            .defer("author__about")
+            .annotate(revisions=Count("versions")).annotate(count_replies=Count("replies"))
+        )
         context["has_comments"] = queryset.exists()
         context["comment_lock"] = self.is_comment_locked()
-        queryset = (
-            queryset.select_related("author__user")
-            .defer("author__about")
-            .annotate(revisions=Count("versions"))
-        )
-
         if self.request.user.is_authenticated:
             profile = self.request.profile
             queryset = queryset.annotate(
@@ -184,6 +184,10 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
                 ).exists()
             )
         context["comment_list"] = queryset
-        context["comment_count"] = len(queryset)
+        # context["comment_count"] = len(queryset)
         context["vote_hide_threshold"] = settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD
+        context["comment_root_id"] = 0
+        context["offset"] = 10
+        context["limit"] = 10
+        
         return context
