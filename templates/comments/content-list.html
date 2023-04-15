@@ -98,20 +98,19 @@
     </div>
     </div>
 
-    <!-- {{ node.count_replies }} 
-    {{node.revisions - 1}} -->
     {% if node.revisions == 1 %}
     {% set real_replies = node.count_replies - node.revisions + 1 %}
     {% else %}
     {% set real_replies = node.count_replies - node.revisions + 2 %}
     {% endif %}
-
     {% if real_replies > 1 %}
-    <a href="javascript:comment_reply({{ node.id }}, {{ object.id }})" class="show_more_reply"> {{ real_replies }} {{
-        _(' Replies ') }} </a>
+    <a href="javascript:comment_reply({{ node.id }}, {{ object.id }})" class="show_more_reply"> 
+        {{ _(' View ') }}  {{ real_replies }} {{ _(' replies ') }} 
+    </a>
     {% elif real_replies %}
-    <a href="javascript:comment_reply({{ node.id }}, {{ object.id }})" class="show_more_reply"> {{ real_replies }} {{
-        _(' Reply ') }} </a>
+    <a href="javascript:comment_reply({{ node.id }}, {{ object.id }})" class="show_more_reply"> 
+        {{ _(' View ') }} {{ real_replies }} {{_(' reply ') }} 
+    </a>
     {% endif %}
 </li>
 <ul id="comment-{{ node.id }}-reply" class="reply-comment" hidden></ul>
@@ -120,5 +119,5 @@
 
 {% if replies - offset > 0 %}
 <a href="javascript:comment_show_more({{ comment_root_id }}, {{ object.id }}, {{ offset }} )" class="show_more_comment">
-    {{ replies - offset }} Replies More</a>
+    {{ _(' View ') }} {{ replies - offset }} {{ _(' comments more ') }}</a>
 {% endif %}

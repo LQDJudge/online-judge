@@ -421,7 +421,16 @@ STATICFILES_DIRS = [
 STATIC_URL = "/static/"
 
 # Define a cache
-CACHES = {}
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+        "LOCATION": [
+            "172.19.26.240:11211",
+            "172.19.26.242:11212",
+            "172.19.26.244:11213",
+        ],
+    }
+}
 
 # Authentication
 AUTHENTICATION_BACKENDS = (

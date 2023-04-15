@@ -156,13 +156,15 @@
             offset: offset,
           },
           success: function(data) {
-            var $comment_show_btn = $("#comment-" + id  + " .show_more_comment");
-            $comment_show_btn.hide();
             if (id == 0) {
               var $comment = $("#comment-" + id);
+              var $comment_show_btn = $("#comment-" + id  + " .show_more_comment");
+              $comment_show_btn.hide();
               $comment.append(data);
             } else {
               var $comment = $("#comment-" + id + "-children");
+              var $comment_show_btn = $("#comment-" + id  + "-children" + " .show_more_comment");
+              $comment_show_btn.hide();
               $comment.append(data);
             }
           }

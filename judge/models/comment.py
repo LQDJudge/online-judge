@@ -112,6 +112,14 @@ class Comment(MPTTModel):
                 if len(output) >= n:
                     return output
         return output
+    
+    @cached_property
+    def get_replies(self, ):
+        return self.replies
+
+    @cached_property
+    def get_revisions(self):
+        return self.versions
 
     @cached_property
     def page_title(self):
