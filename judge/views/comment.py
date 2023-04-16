@@ -113,7 +113,7 @@ def upvote_comment(request):
 def downvote_comment(request):
     return vote_comment(request, -1)
 
-def get_comment(request, limit=10):
+def get_comments(request, limit=10):
     try:
         comment_id = int(request.GET["id"])
         page_id = int(request.GET["page"])
@@ -135,12 +135,16 @@ def get_comment(request, limit=10):
         comment_obj = None
     page_obj = BlogPost.objects.get(pk=page_id)
     queryset = page_obj.comments
-    replies =  len(queryset.filter(parent=comment_obj))
+    queryset = queryset.filter(parent=comment_obj, hidden=False)
+    comment_count = len(queryset)
     queryset = (
-            queryset.filter(parent=comment_obj, hidden=False)
+            queryset
             .select_related("author__user")
-            .defer("author__about")[offset:offset+limit]
-            # .annotate(revisions=Count("versions"), count_replies=Count("replies"))
+            .defer("author__about")
+            .annotate(
+                count_replies=Count("replies", distinct=True), 
+                revisions=Count("versions", distinct=True),
+            )[offset:offset+limit]
         )
     if request.user.is_authenticated:
         profile = request.profile
@@ -160,18 +164,18 @@ def get_comment(request, limit=10):
             "perms": PermWrapper(request.user),
             "object": page_obj,
             "offset": offset + min(len(queryset), limit), 
-            "replies": replies,
-            "limit": limit
+            "limit": limit,
+            "comment_count": comment_count
         }
     )
     
     return HttpResponse(comment_html)
 
-def get_showmore(request):
-    return get_comment(request)
+def get_show_more(request):
+    return get_comments(request)
 
-def get_reply(request):
-    return get_comment(request)
+def get_replies(request):
+    return get_comments(request)
 
 class CommentMixin(object):
     model = Comment

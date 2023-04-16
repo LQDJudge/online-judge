@@ -162,13 +162,15 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
     def get_context_data(self, **kwargs):
         context = super(CommentedDetailView, self).get_context_data(**kwargs)
         queryset = self.object.comments
-        context["replies"] = len(queryset.filter(parent=None))
+        queryset = queryset.filter(parent=None, hidden=False)
+        comment_count = len(queryset)
         queryset = (
-            queryset.filter(parent=None, hidden=False)[:10]
-            .select_related("author__user")
+            queryset.select_related("author__user")
             .defer("author__about")
-            # .annotate(count_replies=Count("replies"))
-            # .annotate(revisions=Count("versions"))
+            .annotate(
+                count_replies=Count("replies", distinct=True), 
+                revisions=Count("versions", distinct=True),
+            )[:10]
         )
         context["has_comments"] = queryset.exists()
         context["comment_lock"] = self.is_comment_locked()
@@ -190,5 +192,5 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         context["comment_root_id"] = 0
         context["offset"] = 10
         context["limit"] = 10
-        
+        context["comment_count"] = comment_count
         return context

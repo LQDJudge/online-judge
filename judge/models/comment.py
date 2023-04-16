@@ -114,12 +114,13 @@ class Comment(MPTTModel):
         return output
     
     @cached_property
-    def get_replies(self, ):
-        return self.replies
+    def get_replies(self):
+        query = Comment.filter(parent=self)
+        return len(query)
 
     @cached_property
     def get_revisions(self):
-        return self.versions
+        return self.versions.count()
 
     @cached_property
     def page_title(self):

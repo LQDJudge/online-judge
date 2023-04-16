@@ -120,8 +120,12 @@
         });
       }
 
-      window.comment_reply = function (id, page) {
-        ajax_get_reply('{{ url('comment_reply') }}', id, page);
+      window.comment_get_replies = function (id, page) {
+        var $comment_show_btn = $("#comment-" + id  + " .show_more_reply");
+        $comment_show_btn.hide();
+        var $comment = $("#comment-" + id + "-children");
+        $comment.append("<p class='loading'> Loading... </p>");
+        ajax_get_reply('{{ url('comment_get_replies') }}', id, page);
       }
 
       function ajax_get_reply(url, id, page) {
@@ -133,16 +137,26 @@
             page: page,
           },
           success: function(data) {
+            var $comment_loading = $("#comment-" + id + "-children .loading");
+            $comment_loading.hide();
             var $comment = $("#comment-" + id + "-children");
-            var $comment_show_btn = $("#comment-" + id  + " .show_more_reply");
-            console.log($comment_show_btn);
-            $comment_show_btn.hide();
             $comment.append(data);
           }
         })
       }
 
       window.comment_show_more = function (id, page, offset) {
+        if (id == 0) {
+          var $comment_show_btn = $("#comment-" + id  + " .show_more_comment");
+          $comment_show_btn.hide();
+          var $comment = $("#comment-" + id);
+          $comment.append("<p class='loading'> Loading... </p>");
+        } else {
+          var $comment_show_btn = $("#comment-" + id  + "-children" + " .show_more_comment");
+          $comment_show_btn.hide();
+          var $comment = $("#comment-" + id + "-children");
+          $comment.append("<p class='loading'> Loading... </p>");
+        }
         ajax_comment_show_more('{{ url('comment_show_more') }}', id, page, offset);
       }
 
@@ -157,14 +171,14 @@
           },
           success: function(data) {
             if (id == 0) {
+              var $comment_loading = $("#comment-" + id + " .loading");
+              $comment_loading.hide();
               var $comment = $("#comment-" + id);
-              var $comment_show_btn = $("#comment-" + id  + " .show_more_comment");
-              $comment_show_btn.hide();
               $comment.append(data);
             } else {
+              var $comment_loading = $("#comment-" + id + "-children .loading");
+              $comment_loading.hide();
               var $comment = $("#comment-" + id + "-children");
-              var $comment_show_btn = $("#comment-" + id  + "-children" + " .show_more_comment");
-              $comment_show_btn.hide();
               $comment.append(data);
             }
           }
