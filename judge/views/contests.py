@@ -847,6 +847,7 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
                 continue
             problem_idx = codes.index(problem_code)
             bin_idx = math.floor(point * self.POINT_BIN / max_point)
+            bin_idx = max(min(bin_idx, self.POINT_BIN), 0)
             counter[problem_idx][bin_idx] += count
         for i in range(num_problems):
             problem_points[i] = [
