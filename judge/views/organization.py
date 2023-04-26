@@ -304,15 +304,18 @@ class OrganizationHome(OrganizationHomeView, FeedView):
         return context
 
 
-class OrganizationUsers(QueryStringSortMixin, OrganizationMixin, ListView):
+class OrganizationUsers(
+    DiggPaginatorMixin, QueryStringSortMixin, OrganizationMixin, ListView
+):
     template_name = "organization/users.html"
     all_sorts = frozenset(("points", "problem_count", "rating", "performance_points"))
     default_desc = all_sorts
     default_sort = "-performance_points"
+    paginate_by = 100
     context_object_name = "users"
 
     def get_queryset(self):
-        return ranker(
+        return (
             self.organization.members.filter(is_unlisted=False)
             .order_by(self.order, "id")
             .select_related("user")
@@ -346,6 +349,9 @@ class OrganizationUsers(QueryStringSortMixin, OrganizationMixin, ListView):
         context["kick_url"] = reverse(
             "organization_user_kick",
             args=[self.organization.id, self.organization.slug],
+        )
+        context["users"] = ranker(
+            context["users"], rank=self.paginate_by * (context["page_obj"].number - 1)
         )
 
         context["first_page_href"] = "."
