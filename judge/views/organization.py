@@ -304,7 +304,7 @@ class OrganizationHome(OrganizationHomeView, FeedView):
         return context
 
 
-class OrganizationUsers(QueryStringSortMixin, OrganizationMixin, FeedView):
+class OrganizationUsers(QueryStringSortMixin, OrganizationMixin, ListView):
     template_name = "organization/users.html"
     all_sorts = frozenset(("points", "problem_count", "rating", "performance_points"))
     default_desc = all_sorts
