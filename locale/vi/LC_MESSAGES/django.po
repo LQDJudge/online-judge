@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-03 23:54+0700\n"
+"POT-Creation-Date: 2023-04-26 15:39+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -467,63 +467,63 @@ msgstr ""
 msgid "New IOI"
 msgstr "IOI mới"
 
-#: judge/forms.py:105 judge/views/organization.py:514
+#: judge/forms.py:107 judge/views/organization.py:514
 #: judge/views/register.py:62
 #, python-brace-format
 msgid "You may not be part of more than {count} public groups."
 msgstr "Bạn không thể tham gia nhiều hơn {count} nhóm công khai."
 
-#: judge/forms.py:147
+#: judge/forms.py:149
 msgid "Any judge"
 msgstr ""
 
-#: judge/forms.py:346
+#: judge/forms.py:355
 msgid "Enter usernames separating by space"
 msgstr "Nhập các tên đăng nhập, cách nhau bởi dấu cách"
 
-#: judge/forms.py:347 judge/views/stats.py:166 templates/stats/site.html:27
+#: judge/forms.py:356 judge/views/stats.py:166 templates/stats/site.html:27
 msgid "New users"
 msgstr "Thành viên mới"
 
-#: judge/forms.py:364
+#: judge/forms.py:373
 #, python-brace-format
 msgid "These usernames don't exist: {usernames}"
 msgstr "Các tên đăng nhập này không tồn tại: {usernames}"
 
-#: judge/forms.py:423 judge/views/register.py:30
+#: judge/forms.py:432 judge/views/register.py:30
 #: templates/registration/registration_form.html:34
 #: templates/user/base-users-table.html:5
 #: templates/user/import/table_csv.html:4
 msgid "Username"
 msgstr "Tên đăng nhập"
 
-#: judge/forms.py:424 templates/registration/registration_form.html:46
+#: judge/forms.py:433 templates/registration/registration_form.html:46
 #: templates/registration/registration_form.html:60
 #: templates/user/import/table_csv.html:5
 msgid "Password"
 msgstr "Mật khẩu"
 
-#: judge/forms.py:450
+#: judge/forms.py:459
 msgid "Two Factor Authentication tokens must be 6 decimal digits."
 msgstr "Two Factor Authentication phải chứa 6 chữ số."
 
-#: judge/forms.py:463 templates/registration/totp_auth.html:32
+#: judge/forms.py:472 templates/registration/totp_auth.html:32
 msgid "Invalid Two Factor Authentication token."
 msgstr "Token Two Factor Authentication không hợp lệ."
 
-#: judge/forms.py:470 judge/models/problem.py:133
+#: judge/forms.py:479 judge/models/problem.py:133
 msgid "Problem code must be ^[a-z0-9]+$"
 msgstr "Mã bài phải có dạng ^[a-z0-9]+$"
 
-#: judge/forms.py:477
+#: judge/forms.py:486
 msgid "Problem with code already exists."
 msgstr "Mã bài đã tồn tại."
 
-#: judge/forms.py:484 judge/models/contest.py:91
+#: judge/forms.py:493 judge/models/contest.py:91
 msgid "Contest id must be ^[a-z0-9]+$"
 msgstr "Mã kỳ thi phải có dạng ^[a-z0-9]+$"
 
-#: judge/forms.py:490
+#: judge/forms.py:499
 msgid "Contest with key already exists."
 msgstr "Mã kỳ thi đã tồn tại."
 
@@ -533,6 +533,7 @@ msgid "N j, Y, g:i a"
 msgstr "g:i a j b, Y"
 
 #: judge/jinja2/datetime.py:26 templates/chat/message.html:13
+#: templates/comments/list.html:76
 #, python-brace-format
 msgid "{time}"
 msgstr "{time}"
@@ -2659,24 +2660,24 @@ msgstr "Báo cáo"
 msgid "Comment feed"
 msgstr "Bình luận"
 
-#: judge/views/comment.py:40 judge/views/pagevote.py:31
+#: judge/views/comment.py:42 judge/views/pagevote.py:31
 msgid "Messing around, are we?"
 msgstr "Messing around, are we?"
 
-#: judge/views/comment.py:56 judge/views/pagevote.py:47
+#: judge/views/comment.py:58 judge/views/pagevote.py:47
 msgid "You must solve at least one problem before you can vote."
 msgstr "Bạn phải giải ít nhất 1 bài trước khi được vote."
 
-#: judge/views/comment.py:87
+#: judge/views/comment.py:89
 msgid "You already voted."
 msgstr "Bạn đã vote."
 
-#: judge/views/comment.py:158 judge/views/organization.py:811
+#: judge/views/comment.py:165 judge/views/organization.py:811
 #: judge/views/organization.py:957 judge/views/organization.py:1122
 msgid "Edited from site"
 msgstr "Chỉnh sửa từ web"
 
-#: judge/views/comment.py:179
+#: judge/views/comment.py:186
 msgid "Editing comment"
 msgstr "Chỉnh sửa bình luận"
 
@@ -2765,53 +2766,53 @@ msgstr "F Y"
 msgid "%s Statistics"
 msgstr "%s Thống kê"
 
-#: judge/views/contests.py:1084
+#: judge/views/contests.py:1085
 #, python-format
 msgid "%s Rankings"
 msgstr "%s Bảng điểm"
 
-#: judge/views/contests.py:1095
+#: judge/views/contests.py:1096
 msgid "???"
 msgstr "???"
 
-#: judge/views/contests.py:1122
+#: judge/views/contests.py:1123
 #, python-format
 msgid "Your participation in %s"
 msgstr "Lần tham gia trong %s"
 
-#: judge/views/contests.py:1123
+#: judge/views/contests.py:1124
 #, python-format
 msgid "%s's participation in %s"
 msgstr "Lần tham gia của %s trong %s"
 
-#: judge/views/contests.py:1137
+#: judge/views/contests.py:1138
 msgid "Live"
 msgstr "Trực tiếp"
 
-#: judge/views/contests.py:1156 templates/contest/contest-tabs.html:19
+#: judge/views/contests.py:1157 templates/contest/contest-tabs.html:19
 msgid "Participation"
 msgstr "Lần tham gia"
 
-#: judge/views/contests.py:1205
+#: judge/views/contests.py:1206
 #, python-format
 msgid "%s MOSS Results"
 msgstr "%s Kết quả MOSS"
 
-#: judge/views/contests.py:1241
+#: judge/views/contests.py:1242
 #, python-format
 msgid "Running MOSS for %s..."
 msgstr "Đang chạy MOSS cho %s..."
 
-#: judge/views/contests.py:1264
+#: judge/views/contests.py:1265
 #, python-format
 msgid "Contest tag: %s"
 msgstr "Nhãn kỳ thi: %s"
 
-#: judge/views/contests.py:1279 judge/views/ticket.py:72
+#: judge/views/contests.py:1280 judge/views/ticket.py:72
 msgid "Issue description"
 msgstr "Mô tả vấn đề"
 
-#: judge/views/contests.py:1322
+#: judge/views/contests.py:1323
 #, python-format
 msgid "New clarification for %s"
 msgstr "Thông báo mới cho %s"
@@ -3871,11 +3872,6 @@ msgstr "Đăng!"
 msgid "Please login to vote"
 msgstr "Đăng nhập để vote"
 
-#: templates/comments/list.html:76
-#, python-brace-format
-msgid "commented on {time}"
-msgstr "bình luận vào {time}"
-
 #: templates/comments/list.html:85
 #, python-format
 msgid "edit %(edits)s"
@@ -4099,7 +4095,7 @@ msgstr "Nhân bản"
 msgid "Leave contest"
 msgstr "Rời kỳ thi"
 
-#: templates/contest/contest.html:42 templates/contest/list.html:399
+#: templates/contest/contest.html:42 templates/contest/list.html:401
 msgid "Virtual join"
 msgstr "Tham gia ảo"
 
@@ -4124,7 +4120,7 @@ msgid "AC Rate"
 msgstr "Tỷ lệ AC"
 
 #: templates/contest/contest.html:103 templates/contest/list.html:242
-#: templates/contest/list.html:291 templates/contest/list.html:376
+#: templates/contest/list.html:291 templates/contest/list.html:378
 #: templates/problem/list.html:24
 msgid "Users"
 msgstr "Người nộp"
@@ -4193,7 +4189,7 @@ msgid "Active Contests"
 msgstr "Kỳ thi bạn đang tham gia"
 
 #: templates/contest/list.html:241 templates/contest/list.html:290
-#: templates/contest/list.html:333 templates/contest/list.html:373
+#: templates/contest/list.html:333 templates/contest/list.html:375
 msgid "Contest"
 msgstr "Kỳ thi"
 
@@ -4219,7 +4215,7 @@ msgstr "Kỳ thi sắp tới"
 msgid "There are no scheduled contests at this time."
 msgstr "Không có kỳ thi nào được lên lịch hiện tại."
 
-#: templates/contest/list.html:363
+#: templates/contest/list.html:364
 msgid "Past Contests"
 msgstr "Kỳ thi trong quá khứ"
 
@@ -4357,9 +4353,13 @@ msgstr "Còn"
 msgid "Upcoming contests"
 msgstr "Kỳ thi sắp diễn ra"
 
+#: templates/feed/has_next.html:3
+msgid "View more"
+msgstr "Xem thêm"
+
 #: templates/fine_uploader/script.html:4
 msgid "Drop files here to upload"
-msgstr ""
+msgstr "Kéo file vào đây để tải lên"
 
 #: templates/fine_uploader/script.html:7
 msgid "Upload file"
@@ -4367,15 +4367,15 @@ msgstr "Tải file lên"
 
 #: templates/fine_uploader/script.html:23
 msgid "Cancel"
-msgstr ""
+msgstr "Hủy"
 
 #: templates/fine_uploader/script.html:24
 msgid "Retry"
-msgstr ""
+msgstr "Thử lại"
 
 #: templates/fine_uploader/script.html:26
 msgid "Pause"
-msgstr ""
+msgstr "Dừng"
 
 #: templates/fine_uploader/script.html:27
 msgid "Continue"
@@ -4383,13 +4383,11 @@ msgstr "Tiếp tục"
 
 #: templates/internal/left-sidebar.html:3
 msgid "Average speed"
-msgstr ""
+msgstr "Tốc độ trung bình"
 
 #: templates/internal/left-sidebar.html:4
-#, fuzzy
-#| msgid "View requests"
 msgid "Slow requests"
-msgstr "Đơn đăng ký"
+msgstr "Requests chậm"
 
 #: templates/internal/problem.html:36
 msgid "Code"
@@ -5030,11 +5028,11 @@ msgstr "Lọc"
 msgid "Random"
 msgstr "Ngẫu nhiên"
 
-#: templates/problem/submit.html:124
+#: templates/problem/submit.html:123
 msgid "Your source code must contain at most 65536 characters."
 msgstr "Code phải chứa không quá 65536 ký tự."
 
-#: templates/problem/submit.html:185
+#: templates/problem/submit.html:170
 #, python-format
 msgid ""
 "<b>Warning!</b> Your default language, <b>%(default_language)s</b>, is "
@@ -5043,7 +5041,7 @@ msgstr ""
 "<b>Cẩn thận!</b> Ngôn ngữ ưa thích của bạn, <b>%(default_language)s</b>, "
 "không được sử dụng trong bài này."
 
-#: templates/problem/submit.html:196
+#: templates/problem/submit.html:181
 #, fuzzy, python-format
 #| msgid ""
 #| "\n"
@@ -5066,15 +5064,15 @@ msgstr[0] ""
 "                        Bạn còn %(left)s lần nộp\n"
 "                        "
 
-#: templates/problem/submit.html:205
+#: templates/problem/submit.html:190
 msgid "You have 0 submissions left"
 msgstr "Bạn đã hết lần nộp"
 
-#: templates/problem/submit.html:239
+#: templates/problem/submit.html:224
 msgid "No judge is available for this problem."
 msgstr "Không có máy chấm có thể chấm bài này."
 
-#: templates/problem/submit.html:245
+#: templates/problem/submit.html:230
 msgid "Submit!"
 msgstr "Nộp bài!"
 
@@ -5865,6 +5863,9 @@ msgstr "Thông tin"
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Chọn tất cả"
+
+#~ msgid "commented on {time}"
+#~ msgstr "bình luận vào {time}"
 
 #~ msgid "Associated page"
 #~ msgstr "Trang liên kết"
