@@ -853,6 +853,13 @@ select {
     color: #808080;
 }
 
+.view-next-page {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
 @media (max-width: 799px) {
     #user-links, .anon {
         padding-right: 0.5em;
@@ -876,5 +883,8 @@ select {
         background: white;
         padding: 2em;
         border-radius: 1em;
+    }
+    .view-next-page {
+        display: none;
     }
 }

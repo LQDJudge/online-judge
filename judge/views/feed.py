@@ -27,6 +27,7 @@ class FeedView(InfinitePaginationMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["has_next_page"] = context["page_obj"].has_next()
         try:
             context["feed_content_url"] = reverse(self.url_name)
         except Exception as e:
