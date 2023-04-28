@@ -194,7 +194,7 @@ class ProblemSolution(
     PageVoteDetailView,
     BookMarkDetailView,
 ):
-    context_object_name = "problem"
+    context_object_name = "solution"
     template_name = "problem/editorial.html"
 
     def get_title(self):
@@ -220,7 +220,7 @@ class ProblemSolution(
         ) and not self.request.user.has_perm("judge.see_private_solution"):
             raise Http404()
 
-        context["solution"] = solution
+        context["problem"] = self.problem
         context["has_solved_problem"] = self.problem.id in self.get_completed_problems()
         return context
 
