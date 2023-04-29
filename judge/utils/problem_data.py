@@ -335,7 +335,9 @@ def get_problem_case(problem, files):
                     if next_char:
                         s += next_char
                     else:
-                        raise Exception("File %s is not able to decode in utf-8" % file)
+                        s = f"File {file} is not able to decode in utf-8"
+                        s = s.encode("utf-8")
+                        break
             qs = get_visible_content(s)
         cache.set(cache_key, qs, 86400)
         result[file] = qs
