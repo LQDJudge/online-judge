@@ -1118,7 +1118,6 @@ def problem_submit(request, problem, submission=None):
 
             # Save a query
             model.source = source
-            cache.set(f"submission_source_file:{model.id}", form.source_file_name, 3600)
             model.judge(rejudge=False, judge_id=form.cleaned_data["judge"])
 
             return HttpResponseRedirect(
