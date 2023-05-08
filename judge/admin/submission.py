@@ -206,6 +206,11 @@ class SubmissionAdmin(admin.ModelAdmin):
             "problem__code",
         )
 
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if "case_points" in form.changed_data or "case_total" in form.changed_data:
+            obj.update_contest()
+
     def judge(self, request, queryset):
         if not request.user.has_perm(
             "judge.rejudge_submission"
