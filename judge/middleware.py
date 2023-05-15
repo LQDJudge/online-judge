@@ -17,6 +17,7 @@ from judge.utils.views import generic_message
 
 
 USED_DOMAINS = ["www"]
+URL_NAMES_BYPASS_SUBDOMAIN = ["submission_source_file"]
 
 
 class ShortCircuitMiddleware:
@@ -117,7 +118,10 @@ class SubdomainMiddleware(object):
 
         subdomain = subdomain[:-1]
 
-        if subdomain in USED_DOMAINS:
+        if (
+            subdomain in USED_DOMAINS
+            or resolve(request.path).url_name in URL_NAMES_BYPASS_SUBDOMAIN
+        ):
             return self.get_response(request)
 
         try:
