@@ -118,8 +118,11 @@
       };
 
       $('.actionbar-comment').on('click', function() {
-        $('#comment-section').show();
-        $('#write-comment').click();
+        if ($('#comment-section').css('display') == 'none') {
+          $('#comment-section').show();
+        } else {
+          $('#write-comment').click();
+        }
       })
     });
   </script>
