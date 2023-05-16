@@ -120,21 +120,21 @@
         });
       }
 
-      window.comment_get_replies = function (id, page) {
+      window.comment_get_replies = function (id, parrent_none) {
         var $comment_show_btn = $("#comment-" + id  + " .show_more_reply");
         $comment_show_btn.hide();
         var $comment = $("#comment-" + id + "-children");
         $comment.append("<p class='loading'> Loading... </p>");
-        ajax_get_reply('{{ url('comment_get_replies') }}', id, page);
+        ajax_get_reply('{{ url('comment_get_replies') }}', id, parrent_none);
       }
 
-      function ajax_get_reply(url, id, page) {
+      function ajax_get_reply(url, id, parrent_none) {
         return $.ajax({
           url: url,
           type: 'GET',
           data: {
             id: id,
-            page: page,
+            parrent_none: parrent_none,
           },
           success: function(data) {
             var $comment_loading = $("#comment-" + id + "-children .loading");
@@ -145,11 +145,12 @@
         })
       }
 
-      window.comment_show_more = function (id, page, offset) {
-        if (id == 0) {
-          var $comment_show_btn = $("#comment-" + id  + " .show_more_comment");
+      window.comment_show_more = function (id, parrent_none, offset) {
+        console.log(parrent_none)
+        if (parrent_none == 1) {
+          var $comment_show_btn = $("#comment-0"  + " .show_more_comment");
           $comment_show_btn.hide();
-          var $comment = $("#comment-" + id);
+          var $comment = $("#comment-0");
           $comment.append("<p class='loading'> Loading... </p>");
         } else {
           var $comment_show_btn = $("#comment-" + id  + "-children" + " .show_more_comment");
@@ -157,23 +158,23 @@
           var $comment = $("#comment-" + id + "-children");
           $comment.append("<p class='loading'> Loading... </p>");
         }
-        ajax_comment_show_more('{{ url('comment_show_more') }}', id, page, offset);
+        ajax_comment_show_more('{{ url('comment_show_more') }}', id, parrent_none, offset);
       }
 
-      function ajax_comment_show_more(url, id, page, offset) {
+      function ajax_comment_show_more(url, id, parrent_none, offset) {
         return $.ajax({
           url: url,
           type: 'GET',
           data: {
             id: id,
-            page: page,
+            parrent_none: parrent_none,
             offset: offset,
           },
           success: function(data) {
-            if (id == 0) {
-              var $comment_loading = $("#comment-" + id + " .loading");
+            if (parrent_none == 1) {
+              var $comment_loading = $("#comment-0" + " .loading");
               $comment_loading.hide();
-              var $comment = $("#comment-" + id);
+              var $comment = $("#comment-0");
               $comment.append(data);
             } else {
               var $comment_loading = $("#comment-" + id + "-children .loading");

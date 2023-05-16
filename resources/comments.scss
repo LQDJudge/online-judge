@@ -129,14 +129,24 @@ a {
 
     .show_more_reply {
         font-weight: bold;
-        display: block;
+        display: flex;
         margin: 16px 40px;
+        align-items: center;
+
+        svg {
+            margin-right: 4px;
+        }
     }
 
     .show_more_comment {
         font-weight: bold;
-        display: block;
+        display: flex;
         margin: 16px -40px;
+        align-items: center;
+
+        svg {
+            margin-right: 4px;
+        }
     }
 }
 

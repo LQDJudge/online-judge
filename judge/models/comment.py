@@ -151,7 +151,7 @@ class Comment(MPTTModel):
             )
 
     def get_absolute_url(self):
-        return "%s#comment-%d" % (self.link, self.id)
+        return "%s?comment-id=%d#comment-%d" % (self.link, self.id, self.id)
 
 
 class CommentVote(models.Model):
