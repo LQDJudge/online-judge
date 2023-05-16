@@ -157,7 +157,7 @@
               <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
               <path d="M6 9l6 6l6 -6"></path>
           </svg>
-          {{ comment_count - offset }} comment more
+          {{ comment_count - offset }} {{ _('comment more') }}
         </a>
       {% elif comment_more > 1 %}
         <a href="javascript:comment_show_more({{ comment_root_id }}, {{ comment_parrent_none }}, {{ offset }}, {{ comment_remove }})" class="show_more_comment">
@@ -165,7 +165,7 @@
               <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
               <path d="M6 9l6 6l6 -6"></path>
           </svg>
-          {{ comment_count - offset }} comments more
+          {{ comment_count - offset }} {{ _('comments more') }}
         </a>
       {% endif %}
     {% else %}

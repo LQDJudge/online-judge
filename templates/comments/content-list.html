@@ -104,14 +104,14 @@
             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
             <path d="M15 11l4 4l-4 4m4 -4h-11a4 4 0 0 1 0 -8h1"></path>
          </svg> 
-        {{ node.count_replies }} {{_(' replies ') }} </a>
+        {{ node.count_replies }} {{ _('replies') }} </a>
     {% elif node.count_replies %}
     <a href="javascript:comment_get_replies({{ node.id }}, 0)" class="show_more_reply"> 
         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-arrow-forward" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
             <path d="M15 11l4 4l-4 4m4 -4h-11a4 4 0 0 1 0 -8h1"></path>
          </svg>
-        {{ node.count_replies }} {{_(' reply ') }} </a>
+        {{ node.count_replies }} {{ _('reply') }} </a>
     {% endif %}
 </li>
 <ul id="comment-{{ node.id }}-reply" class="reply-comment" hidden></ul>
@@ -127,13 +127,13 @@
         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
         <path d="M6 9l6 6l6 -6"></path>
      </svg>
-    {{ comment_count - offset }} comment more</a>
+    {{ comment_count - offset }} {{ _('comment more') }}</a>
 {% elif comment_more > 1 %}
 <a href="javascript:comment_show_more({{ comment_root_id }}, {{ comment_parrent_none }}, {{ offset }}, {{ comment_remove }})" class="show_more_comment">
     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-down" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
         <path d="M6 9l6 6l6 -6"></path>
     </svg>
-    {{ comment_count - offset }} comments more</a>
+    {{ comment_count - offset }} {{ _('comments more') }}</a>
 {% endif %}
 
