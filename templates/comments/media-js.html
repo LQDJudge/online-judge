@@ -119,6 +119,10 @@
           }
         });
       }
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      const comment_remove = urlParams.get('comment-id');
+      console.log(comment_remove);
 
       window.comment_get_replies = function (id, parrent_none) {
         var $comment_show_btn = $("#comment-" + id  + " .show_more_reply");
@@ -145,7 +149,7 @@
         })
       }
 
-      window.comment_show_more = function (id, parrent_none, offset) {
+      window.comment_show_more = function (id, parrent_none, offset, comment_remove) {
         console.log(parrent_none)
         if (parrent_none == 1) {
           var $comment_show_btn = $("#comment-0"  + " .show_more_comment");
@@ -158,10 +162,10 @@
           var $comment = $("#comment-" + id + "-children");
           $comment.append("<p class='loading'> Loading... </p>");
         }
-        ajax_comment_show_more('{{ url('comment_show_more') }}', id, parrent_none, offset);
+        ajax_comment_show_more('{{ url('comment_show_more') }}', id, parrent_none, offset, comment_remove);
       }
 
-      function ajax_comment_show_more(url, id, parrent_none, offset) {
+      function ajax_comment_show_more(url, id, parrent_none, offset, comment_remove) {
         return $.ajax({
           url: url,
           type: 'GET',
@@ -169,6 +173,7 @@
             id: id,
             parrent_none: parrent_none,
             offset: offset,
+            comment_remove: comment_remove,
           },
           success: function(data) {
             if (parrent_none == 1) {

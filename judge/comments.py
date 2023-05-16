@@ -11,6 +11,7 @@ from django.http import (
     HttpResponseForbidden,
     HttpResponseNotFound,
     HttpResponseRedirect,
+    Http404,
 )
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
@@ -154,7 +155,10 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         pre_query = None
         if "comment-id" in  request.GET:
             comment_id = int(request.GET["comment-id"])
-            comment_obj = Comment.objects.get(pk=comment_id)
+            try:
+                comment_obj = Comment.objects.get(pk=comment_id)
+            except Comment.DoesNotExist:
+                raise Http404
             pre_query = comment_obj
             while comment_obj is not None:
                 pre_query = comment_obj
@@ -174,7 +178,9 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         queryset = queryset.filter(parent=None, hidden=False)
         queryset_all = None
         comment_count = len(queryset)
+        context["comment_remove"] = -1
         if (pre_query != None):
+            comment_remove = pre_query.id
             queryset_all = pre_query.get_descendants(include_self=True)
             queryset_all = (
                 queryset_all.select_related("author__user")
@@ -182,6 +188,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
                 .defer("author__about")
                 .annotate(revisions=Count("versions", distinct=True))
             )
+            context["comment_remove"] = comment_remove
         else:
             queryset = (
                 queryset.select_related("author__user")
@@ -227,7 +234,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
             context["comment_root_id"] = 0
         context["comment_parrent_none"] = 1
         if (pre_query != None):
-            context["offset"] = 0
+            context["offset"] = 1
         else:
             context["offset"] = 10
         

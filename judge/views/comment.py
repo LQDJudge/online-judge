@@ -123,8 +123,11 @@ def get_comments(request, limit=10):
         if comment_id and not Comment.objects.filter(id=comment_id).exists():
             raise Http404()
     offset = 0
-    if "offset" in  request.GET:
+    if "offset" in request.GET:
         offset = int(request.GET["offset"])
+    comment_remove = -1
+    if "comment_remove" in request.GET:
+        comment_remove = int(request.GET["comment_remove"])
     comment_root_id = 0
     if (comment_id):
         comment_obj = Comment.objects.get(pk=comment_id)
@@ -134,6 +137,8 @@ def get_comments(request, limit=10):
     queryset = comment_obj.linked_object.comments
     if parrent_none:
         queryset = queryset.filter(parent=None, hidden=False)
+        if (comment_remove != -1):
+            queryset.get(pk=comment_remove).delete()
     else:
         queryset = queryset.filter(parent=comment_obj, hidden=False)
     comment_count = len(queryset)
@@ -165,6 +170,7 @@ def get_comments(request, limit=10):
             "limit": limit,
             "comment_count": comment_count,
             "comment_parrent_none": parrent_none,
+            "comment_remove": comment_remove,
         }
     )
 
