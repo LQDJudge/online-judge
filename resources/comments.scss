@@ -126,6 +126,28 @@ a {
         margin: -50px 23px 10px -40px;
         padding-top: 50px;
     }
+
+    .show_more_reply {
+        font-weight: bold;
+        display: flex;
+        margin: 16px 40px;
+        align-items: center;
+
+        svg {
+            margin-right: 4px;
+        }
+    }
+
+    .show_more_comment {
+        font-weight: bold;
+        display: flex;
+        margin: 16px -40px;
+        align-items: center;
+
+        svg {
+            margin-right: 4px;
+        }
+    }
 }
 
 .no-comments-message {
