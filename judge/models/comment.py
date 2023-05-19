@@ -56,7 +56,6 @@ class Comment(MPTTModel):
         related_name="replies",
         on_delete=CASCADE,
     )
-    
     versions = VersionRelation()
 
     class Meta:
@@ -112,15 +111,6 @@ class Comment(MPTTModel):
                 if len(output) >= n:
                     return output
         return output
-    
-    @cached_property
-    def get_replies(self):
-        query = Comment.filter(parent=self)
-        return len(query)
-
-    @cached_property
-    def get_revisions(self):
-        return self.versions.count()
 
     @cached_property
     def page_title(self):
@@ -151,7 +141,7 @@ class Comment(MPTTModel):
             )
 
     def get_absolute_url(self):
-        return "%s?comment-id=%d#comment-%d" % (self.link, self.id, self.id)
+        return "%s#comment-%d" % (self.link, self.id)
 
 
 class CommentVote(models.Model):

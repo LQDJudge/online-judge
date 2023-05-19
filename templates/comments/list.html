@@ -36,15 +36,14 @@
       {% endif %}
     </div>
   {% endif %}
-  {% if has_comments or comment_all_list %}
-    <ul class="comments top-level-comments new-comments" id="comment-0">
+  {% if has_comments %}
+    <ul class="comments top-level-comments new-comments">
       {% set logged_in = request.user.is_authenticated %}
       {% set profile = request.profile if logged_in else None %}
-      {% if comment_all_list %}
-      {% for node in mptt_tree(comment_all_list) recursive %}
+      {% for node in mptt_tree(comment_list) recursive %}
         <li id="comment-{{ node.id }}" data-revision="{{ node.revisions - 1 }}"
-        data-max-revision="{{ node.revisions - 1 }}"
-        data-revision-ajax="{{ url('comment_revision_ajax', node.id) }}" class="comment">
+          data-max-revision="{{ node.revisions - 1 }}"
+          data-revision-ajax="{{ url('comment_revision_ajax', node.id) }}" class="comment">
           <div class="comment-display{% if node.score <= vote_hide_threshold %} bad-comment{% endif %}">
             <div class="info">
               <div class="vote">
@@ -150,28 +149,6 @@
           {% endif %}
         {% endwith %}
       {% endfor %}
-      {% set comment_more = comment_count - offset %}
-      {% if comment_more == 1 %}
-        <a href="javascript:comment_show_more({{ comment_root_id }}, {{ comment_parrent_none }}, {{ offset }}, {{ comment_remove }})" class="show_more_comment">
-          <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-down" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-              <path d="M6 9l6 6l6 -6"></path>
-          </svg>
-          {{ comment_count - offset }} {{ _('comment more') }}
-        </a>
-      {% elif comment_more > 1 %}
-        <a href="javascript:comment_show_more({{ comment_root_id }}, {{ comment_parrent_none }}, {{ offset }}, {{ comment_remove }})" class="show_more_comment">
-          <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-down" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-              <path d="M6 9l6 6l6 -6"></path>
-          </svg>
-          {{ comment_count - offset }} {{ _('comments more') }}
-        </a>
-      {% endif %}
-    {% else %}
-      {% include "comments/content-list.html" %}
-    {% endif %}
-
     </ul>
   {% elif not comment_lock %}
     <p class="no-comments-message">{{ _('There are no comments at the moment.') }}</p>
