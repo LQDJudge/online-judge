@@ -33,9 +33,6 @@ msgstr "Đề xuất bài tập"
 msgid "TanKhoa"
 msgstr "Tân Khoa"
 
-msgid "Name"
-msgstr "Đăng ký tên"
-
 msgid "Report"
 msgstr "Báo cáo"
 
@@ -345,6 +342,9 @@ msgstr ""
 msgid "ltt"
 msgstr ""
 
+msgid "Luyện tập"
+msgstr ""
+
 msgid "manacher"
 msgstr ""
 
@@ -593,3 +593,6 @@ msgstr ""
 
 msgid "z-function"
 msgstr ""
+
+#~ msgid "Name"
+#~ msgstr "Đăng ký tên"
