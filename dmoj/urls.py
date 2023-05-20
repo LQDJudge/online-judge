@@ -1,6 +1,5 @@
 import chat_box.views as chat
 
-from django.urls import include, path
 from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
@@ -207,7 +206,6 @@ def paged_list_view(view, name, **kwargs):
 
 
 urlpatterns = [
-    path('__debug__/', include('debug_toolbar.urls')),
     url("", include("pagedown.urls")),
     url(
         r"^$",

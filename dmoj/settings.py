@@ -219,7 +219,6 @@ else:
     }
 
 INSTALLED_APPS += (
-    "debug_toolbar",
     "django.contrib.admin",
     "judge",
     "django.contrib.auth",
@@ -249,7 +248,6 @@ INSTALLED_APPS += (
 )
 
 MIDDLEWARE = (
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "judge.middleware.SlowRequestMiddleware",
     "judge.middleware.ShortCircuitMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -423,12 +421,7 @@ STATICFILES_DIRS = [
 STATIC_URL = "/static/"
 
 # Define a cache
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
-        "LOCATION": "127.0.0.1:11211",
-    }
-}
+CACHES = {}
 
 # Authentication
 AUTHENTICATION_BACKENDS = (
@@ -488,9 +481,3 @@ except IOError:
     pass
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
-
-INTERNAL_IPS = [
-    # ...
-    "127.0.0.1",
-    # ...
-]
