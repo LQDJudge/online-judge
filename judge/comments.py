@@ -217,7 +217,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         if self.request.user.is_authenticated:
             context["is_new_user"] = (
                 not self.request.user.is_staff
-                and not profile.submission_set.filter(
+                and not self.request.profile.submission_set.filter(
                     points=F("problem__points")
                 ).exists()
             )
