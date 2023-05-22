@@ -468,6 +468,8 @@ urlpatterns = [
     url(r"^comments/upvote/$", comment.upvote_comment, name="comment_upvote"),
     url(r"^comments/downvote/$", comment.downvote_comment, name="comment_downvote"),
     url(r"^comments/hide/$", comment.comment_hide, name="comment_hide"),
+    url(r"^comments/get_replies/$", comment.get_replies, name="comment_get_replies"),
+    url(r"^comments/show_more/$", comment.get_show_more, name="comment_show_more"),
     url(
         r"^comments/(?P<id>\d+)/",
         include(
