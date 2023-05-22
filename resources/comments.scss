@@ -306,6 +306,10 @@ a {
     }
 }
 
+.show_more_comment {
+    margin-left: -20px;
+}
+
 @media (max-width: 799px) {
     .hide_texts_on_mobile .actionbar-text {
         display: none;

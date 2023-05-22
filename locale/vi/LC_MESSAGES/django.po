@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-05-16 16:17+0700\n"
+"POT-Creation-Date: 2023-05-22 23:06+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -41,19 +41,19 @@ msgstr "xem lần cuối"
 msgid "LQDOJ Chat"
 msgstr ""
 
-#: dmoj/settings.py:365
+#: dmoj/settings.py:363
 msgid "Vietnamese"
 msgstr "Tiếng Việt"
 
-#: dmoj/settings.py:366
+#: dmoj/settings.py:364
 msgid "English"
 msgstr ""
 
-#: dmoj/urls.py:136
+#: dmoj/urls.py:135
 msgid "Login"
 msgstr "Đăng nhập"
 
-#: dmoj/urls.py:214 templates/base.html:209
+#: dmoj/urls.py:212 templates/base.html:209
 #: templates/organization/org-left-sidebar.html:2
 msgid "Home"
 msgstr "Trang chủ"
@@ -426,20 +426,20 @@ msgstr "Dạng"
 msgid "Online Judge"
 msgstr ""
 
-#: judge/comments.py:61
+#: judge/comments.py:64
 msgid "Comment body"
 msgstr "Nội dung bình luận"
 
-#: judge/comments.py:67 judge/views/ticket.py:78
+#: judge/comments.py:70 judge/views/ticket.py:78
 msgid "Your part is silent, little toad."
 msgstr "Bạn không được phép bình luận."
 
-#: judge/comments.py:76 templates/comments/list.html:17
+#: judge/comments.py:79 templates/comments/list.html:17
 msgid ""
 "You need to have solved at least one problem before your voice can be heard."
 msgstr "Bạn phải giải ít nhất một bài trước khi được phép bình luận."
 
-#: judge/comments.py:125
+#: judge/comments.py:128
 msgid "Posted comment"
 msgstr "Bình luận đã đăng"
 
@@ -533,7 +533,7 @@ msgid "N j, Y, g:i a"
 msgstr "g:i a j b, Y"
 
 #: judge/jinja2/datetime.py:26 templates/chat/message.html:13
-#: templates/comments/content-list.html:35 templates/comments/list.html:77
+#: templates/comments/content-list.html:36
 #, python-brace-format
 msgid "{time}"
 msgstr "{time}"
@@ -2514,11 +2514,11 @@ msgstr "Tính lại điểm kỳ thi"
 msgid "Running MOSS"
 msgstr "Đang chạy MOSS"
 
-#: judge/tasks/submission.py:47
+#: judge/tasks/submission.py:49
 msgid "Modifying submissions"
 msgstr "Chỉnh sửa bài nộp"
 
-#: judge/tasks/submission.py:67
+#: judge/tasks/submission.py:69
 msgid "Recalculating user points"
 msgstr "Tính lại điểm người dùng"
 
@@ -2658,12 +2658,12 @@ msgstr "Bạn phải giải ít nhất 1 bài trước khi được vote."
 msgid "You already voted."
 msgstr "Bạn đã vote."
 
-#: judge/views/comment.py:243 judge/views/organization.py:817
+#: judge/views/comment.py:255 judge/views/organization.py:817
 #: judge/views/organization.py:963 judge/views/organization.py:1128
 msgid "Edited from site"
 msgstr "Chỉnh sửa từ web"
 
-#: judge/views/comment.py:264
+#: judge/views/comment.py:276
 msgid "Editing comment"
 msgstr "Chỉnh sửa bình luận"
 
@@ -3288,8 +3288,8 @@ msgstr "Phải qua một kỳ thi"
 #: judge/views/submission.py:903
 #, python-brace-format
 msgid ""
-"<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a "
-"href=\"{5}\">{4}</a>"
+"<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a href="
+"\"{5}\">{4}</a>"
 msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho <a href=\"{3}\">{2}</a> trong <a "
 "href=\"{5}\">{4}</a>"
@@ -3502,7 +3502,7 @@ msgid "Profile"
 msgstr "Trang cá nhân"
 
 #: templates/base.html:276 templates/chat/chat.html:21
-#: templates/comments/content-list.html:80 templates/comments/list.html:126
+#: templates/comments/content-list.html:81
 #: templates/contest/contest-list-tabs.html:4
 #: templates/contest/ranking-table.html:47 templates/internal/problem.html:57
 #: templates/organization/org-left-sidebar.html:12
@@ -3559,12 +3559,12 @@ msgstr ""
 msgid " posted on %(time)s"
 msgstr "đã đăng vào %(time)s"
 
-#: templates/blog/blog.html:31 templates/comments/content-list.html:61
-#: templates/comments/content-list.html:75 templates/comments/list.html:105
-#: templates/comments/list.html:120 templates/contest/contest-tabs.html:35
-#: templates/contest/list.html:124 templates/contest/tag-title.html:9
-#: templates/flatpages/admin_link.html:3 templates/license.html:10
-#: templates/problem/editorial.html:15 templates/problem/feed/problems.html:50
+#: templates/blog/blog.html:31 templates/comments/content-list.html:62
+#: templates/comments/content-list.html:76
+#: templates/contest/contest-tabs.html:35 templates/contest/list.html:124
+#: templates/contest/tag-title.html:9 templates/flatpages/admin_link.html:3
+#: templates/license.html:10 templates/problem/editorial.html:15
+#: templates/problem/feed/problems.html:50
 msgid "Edit"
 msgstr "Chỉnh sửa"
 
@@ -3699,66 +3699,54 @@ msgstr "Tắt thông báo"
 msgid "users are online"
 msgstr "người đang trực tuyến"
 
-#: templates/comments/content-list.html:13
 #: templates/comments/content-list.html:14
-#: templates/comments/content-list.html:22
-#: templates/comments/content-list.html:23 templates/comments/list.html:55
-#: templates/comments/list.html:64
+#: templates/comments/content-list.html:15
+#: templates/comments/content-list.html:23
+#: templates/comments/content-list.html:24
 msgid "Please login to vote"
 msgstr "Đăng nhập để vote"
 
-#: templates/comments/content-list.html:43 templates/comments/list.html:86
+#: templates/comments/content-list.html:44
 #, python-format
 msgid "edit %(edits)s"
 msgstr "chỉnh sửa %(edits)s"
 
-#: templates/comments/content-list.html:45 templates/comments/list.html:88
-#: templates/comments/media-js.html:96
+#: templates/comments/content-list.html:46 templates/comments/media-js.html:96
 msgid "edited"
 msgstr "đã chỉnh sửa"
 
-#: templates/comments/content-list.html:54 templates/comments/list.html:97
-#: templates/notification/list.html:14
+#: templates/comments/content-list.html:55 templates/notification/list.html:14
 msgid "Link"
 msgstr "Link"
 
-#: templates/comments/content-list.html:65
-#: templates/comments/content-list.html:71 templates/comments/list.html:110
-#: templates/comments/list.html:117
+#: templates/comments/content-list.html:66
+#: templates/comments/content-list.html:72
 msgid "Reply"
 msgstr "Phản hồi"
 
-#: templates/comments/content-list.html:78 templates/comments/list.html:123
+#: templates/comments/content-list.html:79
 msgid "Hide"
 msgstr "Ẩn"
 
-#: templates/comments/content-list.html:92
+#: templates/comments/content-list.html:94
 #, fuzzy, python-format
 #| msgid ""
-#| "This comment is hidden due to too much negative feedback. Click <a "
-#| "href=\"javascript:comment_show_content(%(id)s)\">here</a> to view it."
+#| "This comment is hidden due to too much negative feedback. Click <a href="
+#| "\"javascript:comment_show_content(%(id)s)\">here</a> to view it."
 msgid ""
 "This comment is hidden due to too much negative feedback. Click <a\n"
-"                            href=\"javascript:"
-"comment_show_content(%(id)s)\">here</a> to view it."
+"                href=\"javascript:comment_show_content(%(id)s)\">here</a> to "
+"view it."
 msgstr ""
 "Bình luận bị ẩn vì nhiều phản hồi tiêu cực. Nhấp vào <a href=\"javascript:"
 "comment_show_content(%(id)s)\">đây</a> để mở."
 
-#: templates/comments/content-list.html:107
+#: templates/comments/content-list.html:109
 msgid "replies"
 msgstr "phản hồi"
 
-#: templates/comments/content-list.html:114
-msgid "reply"
-msgstr "phản hồi"
-
-#: templates/comments/content-list.html:130 templates/comments/list.html:160
-msgid "comment more"
-msgstr "bình luận nữa"
-
-#: templates/comments/content-list.html:137 templates/comments/list.html:168
-msgid "comments more"
+#: templates/comments/content-list.html:129
+msgid "more comments"
 msgstr "bình luận nữa"
 
 #: templates/comments/list.html:6
@@ -3777,20 +3765,11 @@ msgstr "Nội dung không hợp lệ."
 msgid "Post!"
 msgstr "Đăng!"
 
-#: templates/comments/list.html:138
-#, python-format
-msgid ""
-"This comment is hidden due to too much negative feedback. Click <a "
-"href=\"javascript:comment_show_content(%(id)s)\">here</a> to view it."
-msgstr ""
-"Bình luận bị ẩn vì nhiều phản hồi tiêu cực. Nhấp vào <a href=\"javascript:"
-"comment_show_content(%(id)s)\">đây</a> để mở."
-
-#: templates/comments/list.html:177
+#: templates/comments/list.html:44
 msgid "There are no comments at the moment."
 msgstr "Không có bình luận nào."
 
-#: templates/comments/list.html:182
+#: templates/comments/list.html:49
 msgid "Comments are disabled on this page."
 msgstr "Bình luận bị tắt trong trang này."
 
@@ -3918,8 +3897,8 @@ msgstr "G:i T, j F, Y"
 #: templates/contest/contest-datetime.html:39
 #, python-format
 msgid ""
-"<b>%(time_limit)s</b> window between <b>%(start_time)s</b> and "
-"<b>%(end_time)s</b>"
+"<b>%(time_limit)s</b> window between <b>%(start_time)s</b> and <b>"
+"%(end_time)s</b>"
 msgstr ""
 "Kéo dài <b>%(time_limit)s</b> từ <b>%(start_time)s</b> đến <b>%(end_time)s</"
 "b>"
@@ -5752,6 +5731,22 @@ msgstr "Thông tin"
 msgid "Check all"
 msgstr "Chọn tất cả"
 
+#~ msgid "reply"
+#~ msgstr "phản hồi"
+
+#~ msgid "comment more"
+#~ msgstr "bình luận nữa"
+
+#~ msgid "comments more"
+#~ msgstr "bình luận nữa"
+
+#~ msgid ""
+#~ "This comment is hidden due to too much negative feedback. Click <a href="
+#~ "\"javascript:comment_show_content(%(id)s)\">here</a> to view it."
+#~ msgstr ""
+#~ "Bình luận bị ẩn vì nhiều phản hồi tiêu cực. Nhấp vào <a href=\"javascript:"
+#~ "comment_show_content(%(id)s)\">đây</a> để mở."
+
 #, fuzzy
 #~| msgid "short name"
 #~ msgid "first name"
@@ -5804,7 +5799,6 @@ msgstr "Chọn tất cả"
 #~ msgid "Django administration"
 #~ msgstr "Quản trị viên Django"
 
-#, python-format
 #~ msgid ""
 #~ "Please enter the correct %(username)s and password for an admin account. "
 #~ "Note that both fields may be case-sensitive."
@@ -5812,7 +5806,6 @@ msgstr "Chọn tất cả"
 #~ "Hãy nhập %(username)s và mật khẩu hợp lệ cho tài khoản quản trị. Chú ý cả "
 #~ "hai trường có phân biệt chữ Hoa-thường."
 
-#, python-format
 #~ msgid ""
 #~ "Please enter the correct %(username)s and password for an user account. "
 #~ "Note that both fields may be case-sensitive."

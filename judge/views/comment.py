@@ -110,46 +110,52 @@ def vote_comment(request, delta):
 def upvote_comment(request):
     return vote_comment(request, 1)
 
+
 def downvote_comment(request):
     return vote_comment(request, -1)
+
 
 def get_comments(request, limit=10):
     try:
         comment_id = int(request.GET["id"])
-        parrent_none = int(request.GET["parrent_none"])
+        parent_none = int(request.GET["parent_none"])
     except ValueError:
         return HttpResponseBadRequest()
     else:
         if comment_id and not Comment.objects.filter(id=comment_id).exists():
             raise Http404()
+
     offset = 0
     if "offset" in request.GET:
         offset = int(request.GET["offset"])
-    comment_remove = -1
-    if "comment_remove" in request.GET:
-        comment_remove = int(request.GET["comment_remove"])
+    
+    target_comment = -1
+    if "target_comment" in request.GET:
+        target_comment = int(request.GET["target_comment"])
+    
     comment_root_id = 0
-    if (comment_id):
+    
+    if comment_id:
         comment_obj = Comment.objects.get(pk=comment_id)
         comment_root_id = comment_obj.id
     else:
         comment_obj = None
+    
     queryset = comment_obj.linked_object.comments
-    if parrent_none:
+    if parent_none:
         queryset = queryset.filter(parent=None, hidden=False)
-        if (comment_remove != -1):
-            queryset.get(pk=comment_remove).delete()
+        queryset = queryset.exclude(pk=target_comment)
     else:
         queryset = queryset.filter(parent=comment_obj, hidden=False)
     comment_count = len(queryset)
     queryset = (
-            queryset.select_related("author__user")
-            .defer("author__about")
-            .annotate(
-                count_replies=Count("replies", distinct=True), 
-                revisions=Count("versions", distinct=True),
-            )[offset:offset+limit]
-        )
+        queryset.select_related("author__user")
+        .defer("author__about")
+        .annotate(
+            count_replies=Count("replies", distinct=True), 
+            revisions=Count("versions", distinct=True),
+        )[offset:offset+limit]
+    )
     if request.user.is_authenticated:
         profile = request.profile
         queryset = queryset.annotate(
@@ -157,6 +163,8 @@ def get_comments(request, limit=10):
                 "votes", condition=Q(votes__voter_id=profile.id)
             ),
         ).annotate(vote_score=Coalesce(F("my_vote__score"), Value(0)))
+
+    new_offset = offset + min(len(queryset), limit)
 
     comment_html = loader.render_to_string(
         "comments/content-list.html", 
@@ -166,21 +174,25 @@ def get_comments(request, limit=10):
             "comment_list": queryset, 
             "vote_hide_threshold" : settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD,
             "perms": PermWrapper(request.user),
-            "offset": offset + min(len(queryset), limit), 
+            "offset": new_offset, 
             "limit": limit,
             "comment_count": comment_count,
-            "comment_parrent_none": parrent_none,
-            "comment_remove": comment_remove,
+            "comment_parent_none": parent_none,
+            "target_comment": target_comment,
+            "comment_more": comment_count - new_offset
         }
     )
 
     return HttpResponse(comment_html)
 
+
 def get_show_more(request):
     return get_comments(request)
 
+
 def get_replies(request):
     return get_comments(request)
+
 
 class CommentMixin(object):
     model = Comment

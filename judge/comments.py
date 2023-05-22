@@ -28,6 +28,9 @@ from judge.widgets import HeavyPreviewPageDownWidget
 from judge.jinja2.reference import get_user_from_text
 
 
+DEFAULT_OFFSET = 10
+
+
 def add_mention_notifications(comment):
     user_referred = get_user_from_text(comment.body).exclude(id=comment.author.id)
     for user in user_referred:
@@ -152,92 +155,90 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         return self.render_to_response(context)
 
     def get(self, request, *args, **kwargs):
-        pre_query = None
+        target_comment = None
         if "comment-id" in  request.GET:
             comment_id = int(request.GET["comment-id"])
             try:
-                comment_obj = Comment.objects.get(pk=comment_id)
+                comment_obj = Comment.objects.get(id=comment_id)
             except Comment.DoesNotExist:
                 raise Http404
-            pre_query = comment_obj
-            while comment_obj is not None:
-                pre_query = comment_obj
-                comment_obj = comment_obj.parent                        
+            target_comment = comment_obj.get_root()
         self.object = self.get_object()
         return self.render_to_response(
             self.get_context_data(
                 object=self.object,
-                pre_query=pre_query,
+                target_comment=target_comment,
                 comment_form=CommentForm(request, initial={"parent": None}),
             )
         )
 
-    def get_context_data(self, pre_query=None, **kwargs):
-        context = super(CommentedDetailView, self).get_context_data(**kwargs)
-        queryset = self.object.comments
-        queryset = queryset.filter(parent=None, hidden=False)
-        queryset_all = None
-        comment_count = len(queryset)
-        context["comment_remove"] = -1
-        if (pre_query != None):
-            comment_remove = pre_query.id
-            queryset_all = pre_query.get_descendants(include_self=True)
-            queryset_all = (
-                queryset_all.select_related("author__user")
+    def _get_queryset(self, target_comment):
+        if target_comment != None:
+            queryset = target_comment.get_descendants(include_self=True)
+            queryset = (
+                queryset.select_related("author__user")
                 .filter(hidden=False)
                 .defer("author__about")
-                .annotate(revisions=Count("versions", distinct=True))
+                .annotate(
+                    revisions=Count("versions", distinct=True)
+                )
             )
-            context["comment_remove"] = comment_remove
         else:
+            queryset = self.object.comments
+            queryset = queryset.filter(parent=None, hidden=False)
             queryset = (
                 queryset.select_related("author__user")
                 .defer("author__about")
                 .filter(hidden=False)
                 .annotate(
-                    count_replies=Count("replies", distinct=True), 
+                    count_replies=Count("replies", distinct=True),
                     revisions=Count("versions", distinct=True),
-                )[:10]
+                )[:DEFAULT_OFFSET]
             )
-            
+
         if self.request.user.is_authenticated:
             profile = self.request.profile
-            if (pre_query != None):
-                queryset_all = queryset_all.annotate(
-                    my_vote=FilteredRelation(
-                        "votes", condition=Q(votes__voter_id=profile.id)
-                    ),
-                ).annotate(vote_score=Coalesce(F("my_vote__score"), Value(0)))
-            else:
-                queryset = queryset.annotate(
-                    my_vote=FilteredRelation(
-                        "votes", condition=Q(votes__voter_id=profile.id)
-                    ),
-                ).annotate(vote_score=Coalesce(F("my_vote__score"), Value(0)))
+            queryset = queryset.annotate(
+                my_vote=FilteredRelation(
+                    "votes", condition=Q(votes__voter_id=profile.id)
+                ),
+            ).annotate(vote_score=Coalesce(F("my_vote__score"), Value(0)))
             
+        return queryset
+
+    def get_context_data(self, target_comment=None, **kwargs):
+        context = super(CommentedDetailView, self).get_context_data(**kwargs)
+        queryset = self._get_queryset(target_comment)
+        comment_count = self.object.comments.filter(parent=None, hidden=False).count()
+        context["target_comment"] = -1
+        if (target_comment != None):
+            context["target_comment"] = target_comment.id
+        
+        if self.request.user.is_authenticated:
             context["is_new_user"] = (
                 not self.request.user.is_staff
                 and not profile.submission_set.filter(
                     points=F("problem__points")
                 ).exists()
             )
-        
+
         context["has_comments"] = queryset.exists()
         context["comment_lock"] = self.is_comment_locked()
         context["comment_list"] = queryset
-        context["comment_all_list"] = queryset_all
 
         context["vote_hide_threshold"] = settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD
         if queryset.exists():
             context["comment_root_id"] = queryset[0].id
         else: 
             context["comment_root_id"] = 0
-        context["comment_parrent_none"] = 1
-        if (pre_query != None):
-            context["offset"] = 1
+        context["comment_parent_none"] = 1
+        if target_comment != None:
+            context["offset"] = 0
+            context["comment_more"] = comment_count - 1
         else:
-            context["offset"] = 10
+            context["offset"] = DEFAULT_OFFSET
+            context["comment_more"] = comment_count - DEFAULT_OFFSET
         
-        context["limit"] = 10
+        context["limit"] = DEFAULT_OFFSET
         context["comment_count"] = comment_count
         return context

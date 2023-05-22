@@ -121,24 +121,23 @@
       }
       const queryString = window.location.search;
       const urlParams = new URLSearchParams(queryString);
-      const comment_remove = urlParams.get('comment-id');
-      console.log(comment_remove);
+      const target_comment = urlParams.get('comment-id');
 
-      window.comment_get_replies = function (id, parrent_none) {
+      window.comment_get_replies = function (id, parent_none) {
         var $comment_show_btn = $("#comment-" + id  + " .show_more_reply");
         $comment_show_btn.hide();
         var $comment = $("#comment-" + id + "-children");
         $comment.append("<p class='loading'> Loading... </p>");
-        ajax_get_reply('{{ url('comment_get_replies') }}', id, parrent_none);
+        ajax_get_reply('{{ url('comment_get_replies') }}', id, parent_none);
       }
 
-      function ajax_get_reply(url, id, parrent_none) {
+      function ajax_get_reply(url, id, parent_none) {
         return $.ajax({
           url: url,
           type: 'GET',
           data: {
             id: id,
-            parrent_none: parrent_none,
+            parent_none: parent_none,
           },
           success: function(data) {
             var $comment_loading = $("#comment-" + id + "-children .loading");
@@ -149,9 +148,8 @@
         })
       }
 
-      window.comment_show_more = function (id, parrent_none, offset, comment_remove) {
-        console.log(parrent_none)
-        if (parrent_none == 1) {
+      window.comment_show_more = function (id, parent_none, offset, target_comment) {
+        if (parent_none == 1) {
           var $comment_show_btn = $("#comment-0"  + " .show_more_comment");
           $comment_show_btn.hide();
           var $comment = $("#comment-0");
@@ -162,21 +160,21 @@
           var $comment = $("#comment-" + id + "-children");
           $comment.append("<p class='loading'> Loading... </p>");
         }
-        ajax_comment_show_more('{{ url('comment_show_more') }}', id, parrent_none, offset, comment_remove);
+        ajax_comment_show_more('{{ url('comment_show_more') }}', id, parent_none, offset, target_comment);
       }
 
-      function ajax_comment_show_more(url, id, parrent_none, offset, comment_remove) {
+      function ajax_comment_show_more(url, id, parent_none, offset, target_comment) {
         return $.ajax({
           url: url,
           type: 'GET',
           data: {
             id: id,
-            parrent_none: parrent_none,
+            parent_none: parent_none,
             offset: offset,
-            comment_remove: comment_remove,
+            target_comment: target_comment,
           },
           success: function(data) {
-            if (parrent_none == 1) {
+            if (parent_none == 1) {
               var $comment_loading = $("#comment-0" + " .loading");
               $comment_loading.hide();
               var $comment = $("#comment-0");
