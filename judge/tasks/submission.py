@@ -1,7 +1,6 @@
 from celery import shared_task
 from django.core.cache import cache
 from django.utils.translation import gettext as _
-from time import sleep
 
 from judge.models import Problem, Profile, Submission
 from judge.utils.celery import Progress
@@ -35,7 +34,6 @@ def rejudge_problem_filter(
         for submission in queryset.iterator():
             submission.judge(rejudge=True, batch_rejudge=True)
             rejudged += 1
-            sleep(0.1)
             if rejudged % 10 == 0:
                 p.done = rejudged
     return rejudged
