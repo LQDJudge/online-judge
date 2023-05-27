@@ -56,7 +56,7 @@ def judge_request(packet, reply=True):
         return result
 
 
-def judge_submission(submission, rejudge=False, batch_rejudge=False, judge_id=None, delete_testcases=True):
+def judge_submission(submission, rejudge=False, batch_rejudge=False, judge_id=None):
     from .models import ContestSubmission, Submission, SubmissionTestCase
 
     CONTEST_SUBMISSION_PRIORITY = 0
@@ -101,8 +101,7 @@ def judge_submission(submission, rejudge=False, batch_rejudge=False, judge_id=No
     ):
         return False
 
-    if delete_testcases:
-        SubmissionTestCase.objects.filter(submission_id=submission.id).delete()
+    SubmissionTestCase.objects.filter(submission_id=submission.id).delete()
 
     try:
         response = judge_request(

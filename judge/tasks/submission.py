@@ -2,7 +2,7 @@ from celery import shared_task
 from django.core.cache import cache
 from django.utils.translation import gettext as _
 
-from judge.models import Problem, Profile, Submission, SubmissionTestCase
+from judge.models import Problem, Profile, Submission
 from judge.utils.celery import Progress
 
 __all__ = ("apply_submission_filter", "rejudge_problem_filter", "rescore_problem")
@@ -30,15 +30,9 @@ def rejudge_problem_filter(
     queryset = apply_submission_filter(queryset, id_range, languages, results, contest)
 
     rejudged = 0
-    with Progress(self, queryset.count() * 2) as p:
-        for submission in queryset:
-            SubmissionTestCase.objects.filter(submission_id=submission.id).delete()
-            rejudged += 1
-            if rejudged % 10 == 0:
-                p.done = rejudged
-
+    with Progress(self, queryset.count()) as p:
         for submission in queryset.iterator():
-            submission.judge(rejudge=True, batch_rejudge=True, delete_testcases=False)
+            submission.judge(rejudge=True, batch_rejudge=True)
             rejudged += 1
             if rejudged % 10 == 0:
                 p.done = rejudged
