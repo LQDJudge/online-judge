@@ -946,6 +946,7 @@ class ProblemFeed(ProblemList, FeedView):
         return {
             "completed_problem_ids": self.get_completed_problems(),
             "attempted_problems": self.get_attempted_problems(),
+            "show_types": self.show_types,
         }
 
     def get_context_data(self, **kwargs):
