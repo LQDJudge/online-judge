@@ -560,6 +560,10 @@
         return !in_user_redirect;
       });
 
+      $("#chat-input").on("keyup", function() {
+        $("#chat-input").scrollTop($("#chat-input")[0].scrollHeight);
+      });
+
       // https://stackoverflow.com/questions/42121565/detecting-class-change-without-setinterval
       if (typeof(MutationObserver) !== undefined) {
         var observer = new MutationObserver(function (event) {
