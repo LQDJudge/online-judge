@@ -67,14 +67,15 @@
   <div class="right-sidebar">
     {% if request.in_contest_mode and request.participation.contest.use_clarifications %}
       <div class="blog-sidebox sidebox">
-        <h3>{{ _('Clarifications') }}
+        <h3>
           <i class="fa fa-question-circle"></i>
+          {{ _('Clarifications') }}
           {% if can_edit_contest %}
             <a href="{{url('new_contest_clarification', request.participation.contest.key)}}"
               class="fa fa-plus-circle"
               id="add-clarification"
               title="{{_('Add')}}"
-              style="color: lightcyan">
+              style="color: lightcyan; margin-left: auto;">
             </a>
           {% endif %}
         </h3>

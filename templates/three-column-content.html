@@ -5,24 +5,20 @@
 
 {% block media %}
   <style>
-    @media(min-width: 800px) {
-      #content {
-        width: 98%;
-        margin-left: 0;
-      }
+    #content {
+      width: 100%;
+      margin-left: 0;
+    }
 
+    @media(min-width: 800px) {
       .middle-right-content {
         margin-left: 13%;
         display: flex;
+        margin-right: 2%;
       }
     }
 
     @media(max-width: 799px) {
-      #content {
-        width: 100%;
-        margin-left: 0;
-      }
-
       .middle-right-content {
         display: block;
       }

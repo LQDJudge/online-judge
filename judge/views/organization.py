@@ -450,13 +450,6 @@ class OrganizationSubmissions(
     def contest(self):
         return None
 
-    def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .filter(contest_object__organizations=self.organization)
-        )
-
     def get_context_data(self, **kwargs):
         context = super(OrganizationSubmissions, self).get_context_data(**kwargs)
         # context["dynamic_update"] = context["page_obj"].number == 1
