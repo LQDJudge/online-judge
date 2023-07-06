@@ -351,7 +351,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     def _get_entire_queryset(self):
         organization = self.organization or self.request.organization
         if organization:
-            queryset = Submission.objects.filter(contest_object__organizations=organization)
+            queryset = Submission.objects.filter(
+                contest_object__organizations=organization
+            )
         else:
             queryset = Submission.objects.all()
         use_straight_join(queryset)

@@ -156,7 +156,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
 
     def get(self, request, *args, **kwargs):
         target_comment = None
-        if "comment-id" in  request.GET:
+        if "comment-id" in request.GET:
             comment_id = int(request.GET["comment-id"])
             try:
                 comment_obj = Comment.objects.get(id=comment_id)
@@ -179,9 +179,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
                 queryset.select_related("author__user")
                 .filter(hidden=False)
                 .defer("author__about")
-                .annotate(
-                    revisions=Count("versions", distinct=True)
-                )
+                .annotate(revisions=Count("versions", distinct=True))
             )
         else:
             queryset = self.object.comments
@@ -203,7 +201,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
                     "votes", condition=Q(votes__voter_id=profile.id)
                 ),
             ).annotate(vote_score=Coalesce(F("my_vote__score"), Value(0)))
-            
+
         return queryset
 
     def get_context_data(self, target_comment=None, **kwargs):
@@ -211,9 +209,9 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         queryset = self._get_queryset(target_comment)
         comment_count = self.object.comments.filter(parent=None, hidden=False).count()
         context["target_comment"] = -1
-        if (target_comment != None):
+        if target_comment != None:
             context["target_comment"] = target_comment.id
-        
+
         if self.request.user.is_authenticated:
             context["is_new_user"] = (
                 not self.request.user.is_staff
@@ -229,7 +227,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         context["vote_hide_threshold"] = settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD
         if queryset.exists():
             context["comment_root_id"] = queryset[0].id
-        else: 
+        else:
             context["comment_root_id"] = 0
         context["comment_parent_none"] = 1
         if target_comment != None:
@@ -238,7 +236,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         else:
             context["offset"] = DEFAULT_OFFSET
             context["comment_more"] = comment_count - DEFAULT_OFFSET
-        
+
         context["limit"] = DEFAULT_OFFSET
         context["comment_count"] = comment_count
         return context

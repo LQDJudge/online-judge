@@ -441,7 +441,7 @@ class OrganizationSubmissions(
     LoginRequiredMixin, MemberOrganizationMixin, SubmissionsListBase
 ):
     template_name = "organization/submissions.html"
-    
+
     @cached_property
     def in_contest(self):
         return False

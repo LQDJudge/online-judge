@@ -56,7 +56,7 @@ class Comment(MPTTModel):
         related_name="replies",
         on_delete=CASCADE,
     )
-    
+
     versions = VersionRelation()
 
     class Meta:
@@ -112,7 +112,7 @@ class Comment(MPTTModel):
                 if len(output) >= n:
                     return output
         return output
-    
+
     @cached_property
     def get_replies(self):
         query = Comment.filter(parent=self)

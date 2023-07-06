@@ -68,7 +68,7 @@ class Course(models.Model):
         return False
 
     @classmethod
-    def is_accessible_by(cls,course, profile):
+    def is_accessible_by(cls, course, profile):
         userqueryset = CourseRole.objects.filter(course=course, user=profile)
         if userqueryset.exists():
             return True
@@ -76,29 +76,29 @@ class Course(models.Model):
             return False
 
     @classmethod
-    def get_students(cls,course):
+    def get_students(cls, course):
         return CourseRole.objects.filter(course=course, role="ST").values("user")
 
     @classmethod
-    def get_assistants(cls,course):
+    def get_assistants(cls, course):
         return CourseRole.objects.filter(course=course, role="AS").values("user")
 
     @classmethod
-    def get_teachers(cls,course):
+    def get_teachers(cls, course):
         return CourseRole.objects.filter(course=course, role="TE").values("user")
 
     @classmethod
-    def add_student(cls,course, profiles):
+    def add_student(cls, course, profiles):
         for profile in profiles:
             CourseRole.make_role(course=course, user=profile, role="ST")
 
     @classmethod
-    def add_teachers(cls,course, profiles):
+    def add_teachers(cls, course, profiles):
         for profile in profiles:
             CourseRole.make_role(course=course, user=profile, role="TE")
 
     @classmethod
-    def add_assistants(cls,course, profiles):
+    def add_assistants(cls, course, profiles):
         for profile in profiles:
             CourseRole.make_role(course=course, user=profile, role="AS")
 

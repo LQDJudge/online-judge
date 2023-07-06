@@ -128,19 +128,19 @@ def get_comments(request, limit=10):
     offset = 0
     if "offset" in request.GET:
         offset = int(request.GET["offset"])
-    
+
     target_comment = -1
     if "target_comment" in request.GET:
         target_comment = int(request.GET["target_comment"])
-    
+
     comment_root_id = 0
-    
+
     if comment_id:
         comment_obj = Comment.objects.get(pk=comment_id)
         comment_root_id = comment_obj.id
     else:
         comment_obj = None
-    
+
     queryset = comment_obj.linked_object.comments
     if parent_none:
         queryset = queryset.filter(parent=None, hidden=False)
@@ -152,35 +152,33 @@ def get_comments(request, limit=10):
         queryset.select_related("author__user")
         .defer("author__about")
         .annotate(
-            count_replies=Count("replies", distinct=True), 
+            count_replies=Count("replies", distinct=True),
             revisions=Count("versions", distinct=True),
-        )[offset:offset+limit]
+        )[offset : offset + limit]
     )
     if request.user.is_authenticated:
         profile = request.profile
         queryset = queryset.annotate(
-            my_vote=FilteredRelation(
-                "votes", condition=Q(votes__voter_id=profile.id)
-            ),
+            my_vote=FilteredRelation("votes", condition=Q(votes__voter_id=profile.id)),
         ).annotate(vote_score=Coalesce(F("my_vote__score"), Value(0)))
 
     new_offset = offset + min(len(queryset), limit)
 
     comment_html = loader.render_to_string(
-        "comments/content-list.html", 
+        "comments/content-list.html",
         {
             "request": request,
-            "comment_root_id": comment_root_id, 
-            "comment_list": queryset, 
-            "vote_hide_threshold" : settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD,
+            "comment_root_id": comment_root_id,
+            "comment_list": queryset,
+            "vote_hide_threshold": settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD,
             "perms": PermWrapper(request.user),
-            "offset": new_offset, 
+            "offset": new_offset,
             "limit": limit,
             "comment_count": comment_count,
             "comment_parent_none": parent_none,
             "target_comment": target_comment,
-            "comment_more": comment_count - new_offset
-        }
+            "comment_more": comment_count - new_offset,
+        },
     )
 
     return HttpResponse(comment_html)
