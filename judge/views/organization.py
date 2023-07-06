@@ -441,7 +441,7 @@ class OrganizationSubmissions(
     LoginRequiredMixin, MemberOrganizationMixin, SubmissionsListBase
 ):
     template_name = "organization/submissions.html"
-
+    
     @cached_property
     def in_contest(self):
         return False
@@ -453,7 +453,7 @@ class OrganizationSubmissions(
     def get_queryset(self):
         return (
             super()
-            ._get_entire_queryset()
+            .get_queryset()
             .filter(contest_object__organizations=self.organization)
         )
 

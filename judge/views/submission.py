@@ -322,6 +322,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     context_object_name = "submissions"
     first_page_href = None
     include_frozen = False
+    organization = None
 
     def get_result_data(self):
         result = self._get_result_data()
@@ -348,7 +349,11 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         return self.request.profile.current_contest.contest
 
     def _get_entire_queryset(self):
-        queryset = Submission.objects.all()
+        organization = self.organization or self.request.organization
+        if organization:
+            queryset = Submission.objects.filter(contest_object__organizations=organization)
+        else:
+            queryset = Submission.objects.all()
         use_straight_join(queryset)
         queryset = submission_related(queryset.order_by("-id"))
         if self.show_problem:
@@ -412,10 +417,6 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     def get_queryset(self):
         queryset = self._get_entire_queryset()
         if not self.in_contest:
-            if self.request.organization:
-                queryset = queryset.filter(
-                    contest_object__organizations=self.request.organization
-                )
             join_sql_subquery(
                 queryset,
                 subquery=str(
