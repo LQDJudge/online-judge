@@ -76,7 +76,7 @@
       <input type="submit" class="btn-midnightblue" value="{{ _('Login to participate') }}">
     </form>
   {% endif %}
-
+  <div style="clear: both"></div>
   <div class="content-description">
     {% cache 3600 'contest_html' contest.id MATH_ENGINE %}
       {{ contest.description|markdown|reference|str|safe }}
