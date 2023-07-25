@@ -3,6 +3,36 @@
 {% block js_media %}
   <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
   {{ form.media.js }}
+  <script type="text/javascript">
+    function update_submit_area(code) {
+      window.previous_template = code;
+      $('textarea#id_source').val(code);
+      window.ace_source.getSession().setValue(code);
+    }
+
+    function update_language_template() {
+      {% if output_only %}
+        window.ace_source.env.editor.setReadOnly(true);
+      {% else %}
+        var source = $('textarea#id_source');
+        if (source.val() == window.previous_template.replace(/\r/g, '') || source.val() == '') {
+          var lang_id = $('#id_language').val();
+          var code = localStorage.getItem('submit:' + $('#id_language').val());
+
+          if (code != null) {
+            update_submit_area(code);
+          } else {
+            $.get('{{ url('language_template_ajax') }}', {
+              id: lang_id,
+              problem: {{problem_id}}
+            }).done(function (template) {
+              update_submit_area(template);
+            });
+          }
+        }
+      {% endif %}
+    }
+  </script>
   {% compress js %}
     <script type="text/javascript">
       $(function () {
@@ -12,35 +42,6 @@
         }
 
         window.previous_template = '';
-
-        function update_submit_area(code) {
-          window.previous_template = code;
-          $('textarea#id_source').val(code);
-          window.ace_source.getSession().setValue(code);
-        }
-
-        function update_language_template() {
-          {% if output_only %}
-            window.ace_source.env.editor.setReadOnly(true);
-          {% else %}
-            var source = $('textarea#id_source');
-            if (source.val() == window.previous_template.replace(/\r/g, '') || source.val() == '') {
-              var lang_id = $('#id_language').val();
-              var code = localStorage.getItem('submit:' + $('#id_language').val());
-
-              if (code != null) {
-                update_submit_area(code);
-              } else {
-                $.get('{{ url('language_template_ajax') }}', {
-                  id: lang_id,
-                  problem: {{problem_id}}
-                }).done(function (template) {
-                  update_submit_area(template);
-                });
-              }
-            }
-          {% endif %}
-        }
 
         function makeDisplayData(data) {
           var site_data = data.attr('data-info');
