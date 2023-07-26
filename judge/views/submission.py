@@ -404,8 +404,16 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                 )
 
         if self.selected_languages:
+            # Note (DMOJ): MariaDB can't optimize this subquery for some insane, unknown reason,
+            # so we are forcing an eager evaluation to get the IDs right here.
+            # Otherwise, with multiple language filters, MariaDB refuses to use an index
+            # (or runs the subquery for every submission, which is even more horrifying to think about).
             queryset = queryset.filter(
-                language__in=Language.objects.filter(key__in=self.selected_languages)
+                language__in=list(
+                    Language.objects.filter(
+                        key__in=self.selected_languages
+                    ).values_list("id", flat=True)
+                )
             )
         if self.selected_statuses:
             submission_results = [i for i, _ in Submission.RESULT]

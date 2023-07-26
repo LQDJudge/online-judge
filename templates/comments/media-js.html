@@ -30,6 +30,7 @@
   {% endif %}
   <script type="text/javascript">
     $(document).ready(function () {
+      let loading_gif = "<img src=\"{{static('loading.gif')}}\" style=\"height: 1.5em; margin-bottom: 3px\" class=\"loading\">";
       window.reply_comment = function (parent) {
         var $comment_reply = $('#comment-' + parent + '-reply');
         var reply_id = 'reply-' + parent;
@@ -127,7 +128,7 @@
         var $comment_show_btn = $("#comment-" + id  + " .show_more_reply");
         $comment_show_btn.hide();
         var $comment = $("#comment-" + id + "-children");
-        $comment.append("<p class='loading'> Loading... </p>");
+        $comment.append(loading_gif);
         ajax_get_reply('{{ url('comment_get_replies') }}', id, parent_none);
       }
 
@@ -153,12 +154,12 @@
           var $comment_show_btn = $("#comment-0"  + " .show_more_comment");
           $comment_show_btn.hide();
           var $comment = $("#comment-0");
-          $comment.append("<p class='loading'> Loading... </p>");
+          $comment.append(loading_gif);
         } else {
           var $comment_show_btn = $("#comment-" + id  + "-children" + " .show_more_comment");
           $comment_show_btn.hide();
           var $comment = $("#comment-" + id + "-children");
-          $comment.append("<p class='loading'> Loading... </p>");
+          $comment.append(loading_gif);
         }
         ajax_comment_show_more('{{ url('comment_show_more') }}', id, parent_none, offset, target_comment);
       }

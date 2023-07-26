@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-05-22 23:06+0700\n"
+"POT-Creation-Date: 2023-07-26 22:55+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -231,7 +231,7 @@ msgstr "Ngôn ngữ"
 msgid "History"
 msgstr "Lịch sử"
 
-#: judge/admin/problem.py:271 templates/problem/list-base.html:100
+#: judge/admin/problem.py:271 templates/problem/list-base.html:99
 msgid "Authors"
 msgstr "Các tác giả"
 
@@ -467,7 +467,7 @@ msgstr ""
 msgid "New IOI"
 msgstr "IOI mới"
 
-#: judge/forms.py:107 judge/views/organization.py:520
+#: judge/forms.py:107 judge/views/organization.py:513
 #: judge/views/register.py:62
 #, python-brace-format
 msgid "You may not be part of more than {count} public groups."
@@ -2514,11 +2514,11 @@ msgstr "Tính lại điểm kỳ thi"
 msgid "Running MOSS"
 msgstr "Đang chạy MOSS"
 
-#: judge/tasks/submission.py:49
+#: judge/tasks/submission.py:47
 msgid "Modifying submissions"
 msgstr "Chỉnh sửa bài nộp"
 
-#: judge/tasks/submission.py:69
+#: judge/tasks/submission.py:67
 msgid "Recalculating user points"
 msgstr "Tính lại điểm người dùng"
 
@@ -2658,12 +2658,12 @@ msgstr "Bạn phải giải ít nhất 1 bài trước khi được vote."
 msgid "You already voted."
 msgstr "Bạn đã vote."
 
-#: judge/views/comment.py:255 judge/views/organization.py:817
-#: judge/views/organization.py:963 judge/views/organization.py:1128
+#: judge/views/comment.py:253 judge/views/organization.py:810
+#: judge/views/organization.py:956 judge/views/organization.py:1121
 msgid "Edited from site"
 msgstr "Chỉnh sửa từ web"
 
-#: judge/views/comment.py:276
+#: judge/views/comment.py:274
 msgid "Editing comment"
 msgstr "Chỉnh sửa bình luận"
 
@@ -2877,7 +2877,7 @@ msgstr "Bạn không được phép chỉnh sửa tổ chức này."
 
 #: judge/views/organization.py:230 judge/views/register.py:48
 #: judge/views/stats.py:184 templates/contest/list.html:89
-#: templates/problem/list-base.html:98 templates/stats/site.html:33
+#: templates/problem/list-base.html:97 templates/stats/site.html:33
 #: templates/user/user-left-sidebar.html:4 templates/user/user-list-tabs.html:6
 msgid "Groups"
 msgstr "Nhóm"
@@ -2887,52 +2887,52 @@ msgstr "Nhóm"
 msgid "%s Members"
 msgstr "%s Thành viên"
 
-#: judge/views/organization.py:476
+#: judge/views/organization.py:469
 #, python-brace-format
 msgid "All submissions in <a href=\"{1}\">{0}</a>"
 msgstr "Bài nộp trong <a href=\"{1}\">{0}</a>"
 
-#: judge/views/organization.py:506 judge/views/organization.py:512
-#: judge/views/organization.py:519
+#: judge/views/organization.py:499 judge/views/organization.py:505
+#: judge/views/organization.py:512
 msgid "Joining group"
 msgstr "Tham gia nhóm"
 
-#: judge/views/organization.py:507
+#: judge/views/organization.py:500
 msgid "You are already in the group."
 msgstr "Bạn đã ở trong nhóm."
 
-#: judge/views/organization.py:512
+#: judge/views/organization.py:505
 msgid "This group is not open."
 msgstr "Nhóm này là nhóm kín."
 
-#: judge/views/organization.py:535
+#: judge/views/organization.py:528
 msgid "Leaving group"
 msgstr "Rời nhóm"
 
-#: judge/views/organization.py:536
+#: judge/views/organization.py:529
 #, python-format
 msgid "You are not in \"%s\"."
 msgstr "Bạn không ở trong \"%s\"."
 
-#: judge/views/organization.py:561
+#: judge/views/organization.py:554
 #, python-format
 msgid "Request to join %s"
 msgstr "Đăng ký tham gia %s"
 
-#: judge/views/organization.py:591
+#: judge/views/organization.py:584
 msgid "Join request detail"
 msgstr "Chi tiết đơn đăng ký"
 
-#: judge/views/organization.py:633
+#: judge/views/organization.py:626
 msgid "Manage join requests"
 msgstr "Quản lý đơn đăng ký"
 
-#: judge/views/organization.py:637
+#: judge/views/organization.py:630
 #, python-format
 msgid "Managing join requests for %s"
 msgstr "Quản lý đơn đăng ký cho %s"
 
-#: judge/views/organization.py:677
+#: judge/views/organization.py:670
 #, python-format
 msgid ""
 "Your organization can only receive %d more members. You cannot approve %d "
@@ -2941,96 +2941,96 @@ msgstr ""
 "Tổ chức chỉ có thể chứa %d thành viên. Bạn không thể chấp thuận nhiều hơn %d "
 "người."
 
-#: judge/views/organization.py:695
+#: judge/views/organization.py:688
 #, python-format
 msgid "Approved %d user."
 msgid_plural "Approved %d users."
 msgstr[0] "Đã chấp thuận %d người."
 
-#: judge/views/organization.py:698
+#: judge/views/organization.py:691
 #, python-format
 msgid "Rejected %d user."
 msgid_plural "Rejected %d users."
 msgstr[0] "Đã từ chối %d người."
 
-#: judge/views/organization.py:738
+#: judge/views/organization.py:731
 #, python-format
 msgid "Add member for %s"
 msgstr "Thêm thành viên cho %s"
 
-#: judge/views/organization.py:750
+#: judge/views/organization.py:743
 #, fuzzy
 #| msgid "Edited from site"
 msgid "Added members from site"
 msgstr "Chỉnh sửa từ web"
 
-#: judge/views/organization.py:770 judge/views/organization.py:778
+#: judge/views/organization.py:763 judge/views/organization.py:771
 msgid "Can't kick user"
 msgstr "Không thể đuổi"
 
-#: judge/views/organization.py:771
+#: judge/views/organization.py:764
 msgid "The user you are trying to kick does not exist!"
 msgstr ""
 
-#: judge/views/organization.py:779
+#: judge/views/organization.py:772
 #, python-format
 msgid "The user you are trying to kick is not in organization: %s."
 msgstr ""
 
-#: judge/views/organization.py:800 judge/views/organization.py:952
+#: judge/views/organization.py:793 judge/views/organization.py:945
 #, fuzzy, python-format
 #| msgid "Editing %s"
 msgid "Edit %s"
 msgstr "Đang chỉnh sửa %s"
 
-#: judge/views/organization.py:828 templates/organization/list.html:45
+#: judge/views/organization.py:821 templates/organization/list.html:45
 msgid "Create group"
 msgstr "Tạo nhóm"
 
-#: judge/views/organization.py:843
+#: judge/views/organization.py:836
 msgid "Exceeded limit"
 msgstr ""
 
-#: judge/views/organization.py:844
+#: judge/views/organization.py:837
 #, python-format
 msgid "You created too many groups. You can only create at most %d groups"
 msgstr ""
 
-#: judge/views/organization.py:849 judge/views/organization.py:874
-#: judge/views/organization.py:1018
+#: judge/views/organization.py:842 judge/views/organization.py:867
+#: judge/views/organization.py:1011
 msgid "Added from site"
 msgstr "Thêm từ web"
 
-#: judge/views/organization.py:865
+#: judge/views/organization.py:858
 #: templates/organization/org-right-sidebar.html:55
 msgid "Add contest"
 msgstr "Thêm kỳ thi"
 
-#: judge/views/organization.py:908 judge/views/organization.py:1070
+#: judge/views/organization.py:901 judge/views/organization.py:1063
 msgid "Permission denied"
 msgstr "Truy cập bị từ chối"
 
-#: judge/views/organization.py:909
+#: judge/views/organization.py:902
 #, fuzzy
 #| msgid "You are not allowed to edit this organization."
 msgid "You are not allowed to edit this contest"
 msgstr "Bạn không được phép chỉnh sửa tổ chức này."
 
-#: judge/views/organization.py:1007
+#: judge/views/organization.py:1000
 #, python-format
 msgid "Add blog for %s"
 msgstr "Thêm bài đăng cho %s"
 
-#: judge/views/organization.py:1071
+#: judge/views/organization.py:1064
 msgid "Not allowed to edit this blog"
 msgstr "Bạn không được phép chỉnh sửa bài đăng này."
 
-#: judge/views/organization.py:1103
+#: judge/views/organization.py:1096
 #, python-format
 msgid "Edit blog %s"
 msgstr "Chỉnh sửa %s"
 
-#: judge/views/organization.py:1154
+#: judge/views/organization.py:1147
 #, python-format
 msgid "Pending blogs in %s"
 msgstr "Bài đang đợi duyệt trong %s"
@@ -3065,30 +3065,30 @@ msgstr "Bài tập"
 msgid "Problem feed"
 msgstr "Bài tập"
 
-#: judge/views/problem.py:1070
+#: judge/views/problem.py:1071
 msgid "Banned from submitting"
 msgstr "Bị cấm nộp bài"
 
-#: judge/views/problem.py:1072
+#: judge/views/problem.py:1073
 msgid ""
 "You have been declared persona non grata for this problem. You are "
 "permanently barred from submitting this problem."
 msgstr "Bạn đã bị cấm nộp bài này."
 
-#: judge/views/problem.py:1095
+#: judge/views/problem.py:1096
 msgid "Too many submissions"
 msgstr "Quá nhiều lần nộp"
 
-#: judge/views/problem.py:1097
+#: judge/views/problem.py:1098
 msgid "You have exceeded the submission limit for this problem."
 msgstr "Bạn đã vượt quá số lần nộp cho bài này."
 
-#: judge/views/problem.py:1176 judge/views/problem.py:1181
+#: judge/views/problem.py:1177 judge/views/problem.py:1182
 #, python-format
 msgid "Submit to %(problem)s"
 msgstr "Nộp bài cho %(problem)s"
 
-#: judge/views/problem.py:1207
+#: judge/views/problem.py:1208
 msgid "Clone Problem"
 msgstr "Nhân bản bài tập"
 
@@ -3242,50 +3242,50 @@ msgstr "Bài nộp của %(user)s cho bài %(problem)s"
 msgid "All submissions"
 msgstr "Tất cả bài nộp"
 
-#: judge/views/submission.py:584 judge/views/submission.py:589
+#: judge/views/submission.py:590 judge/views/submission.py:595
 msgid "All my submissions"
 msgstr "Tất cả bài nộp của tôi"
 
-#: judge/views/submission.py:585
+#: judge/views/submission.py:591
 #, python-format
 msgid "All submissions by %s"
 msgstr "Tất cả bài nộp của %s"
 
-#: judge/views/submission.py:591
+#: judge/views/submission.py:597
 #, python-brace-format
 msgid "All submissions by <a href=\"{1}\">{0}</a>"
 msgstr "Tất cả bài nộp của <a href=\"{1}\">{0}</a>"
 
-#: judge/views/submission.py:612
+#: judge/views/submission.py:618
 #, fuzzy
 #| msgid "All submissions"
 msgid "All friend submissions"
 msgstr "Tất cả bài nộp"
 
-#: judge/views/submission.py:641
+#: judge/views/submission.py:647
 #, python-format
 msgid "All submissions for %s"
 msgstr "Tất cả bài nộp cho %s"
 
-#: judge/views/submission.py:669
+#: judge/views/submission.py:675
 msgid "Must pass a problem"
 msgstr "Phải làm được một bài"
 
-#: judge/views/submission.py:727
+#: judge/views/submission.py:733
 #, python-format
 msgid "My submissions for %(problem)s"
 msgstr "Bài nộp của tôi cho %(problem)s"
 
-#: judge/views/submission.py:728
+#: judge/views/submission.py:734
 #, python-format
 msgid "%(user)s's submissions for %(problem)s"
 msgstr "Các bài nộp của %(user)s cho %(problem)s"
 
-#: judge/views/submission.py:873
+#: judge/views/submission.py:879
 msgid "Must pass a contest"
 msgstr "Phải qua một kỳ thi"
 
-#: judge/views/submission.py:903
+#: judge/views/submission.py:909
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a href="
@@ -3294,7 +3294,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho <a href=\"{3}\">{2}</a> trong <a "
 "href=\"{5}\">{4}</a>"
 
-#: judge/views/submission.py:915
+#: judge/views/submission.py:921
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for problem {2} in <a href=\"{4}\">{3}"
@@ -3303,7 +3303,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho bài {2} trong <a href=\"{4}\">{3}"
 "</a>"
 
-#: judge/views/submission.py:1052
+#: judge/views/submission.py:1058
 #, fuzzy
 #| msgid "You do not have the permission to rejudge submissions."
 msgid "You don't have permission to access."
@@ -3485,7 +3485,7 @@ msgstr "Chỉnh sửa thông tin"
 msgid "Rejudge"
 msgstr "Chấm lại"
 
-#: templates/base.html:227 templates/chat/chat.html:596
+#: templates/base.html:227 templates/chat/chat.html:600
 msgid "Chat"
 msgstr "Chat"
 
@@ -3608,21 +3608,21 @@ msgstr "Sự kiện"
 msgid "You have no ticket"
 msgstr "Bạn không có báo cáo"
 
-#: templates/blog/list.html:70 templates/problem/list.html:150
+#: templates/blog/list.html:72 templates/problem/list.html:150
 #: templates/problem/problem.html:383
 msgid "Clarifications"
 msgstr "Thông báo"
 
-#: templates/blog/list.html:76
+#: templates/blog/list.html:77
 msgid "Add"
 msgstr "Thêm mới"
 
-#: templates/blog/list.html:96 templates/problem/list.html:172
+#: templates/blog/list.html:97 templates/problem/list.html:172
 #: templates/problem/problem.html:394
 msgid "No clarifications have been made at this time."
 msgstr "Không có thông báo nào."
 
-#: templates/chat/chat.html:5 templates/chat/chat.html:570
+#: templates/chat/chat.html:5 templates/chat/chat.html:574
 msgid "Chat Box"
 msgstr "Chat Box"
 
@@ -3646,21 +3646,21 @@ msgstr "Tin nhắn mới"
 msgid "Mute this user and delete all messages?"
 msgstr "Mute người dùng này và xóa tất cả tin nhắn chung?"
 
-#: templates/chat/chat.html:536 templates/chat/chat.html:613
+#: templates/chat/chat.html:536 templates/chat/chat.html:617
 #: templates/user/base-users-js.html:10
 #: templates/user/base-users-two-col.html:19
 msgid "Search by handle..."
 msgstr "Tìm kiếm theo tên..."
 
-#: templates/chat/chat.html:598 templates/chat/chat.html:605
+#: templates/chat/chat.html:602 templates/chat/chat.html:609
 msgid "Online Users"
 msgstr "Trực tuyến"
 
-#: templates/chat/chat.html:634
+#: templates/chat/chat.html:638
 msgid "Emoji"
 msgstr ""
 
-#: templates/chat/chat.html:635
+#: templates/chat/chat.html:639
 msgid "Enter your message"
 msgstr "Nhập tin nhắn"
 
@@ -3741,13 +3741,15 @@ msgstr ""
 "Bình luận bị ẩn vì nhiều phản hồi tiêu cực. Nhấp vào <a href=\"javascript:"
 "comment_show_content(%(id)s)\">đây</a> để mở."
 
-#: templates/comments/content-list.html:109
-msgid "replies"
-msgstr "phản hồi"
+#: templates/comments/content-list.html:111
+msgid "reply"
+msgid_plural "replies"
+msgstr[0] "phản hồi"
 
-#: templates/comments/content-list.html:129
-msgid "more comments"
-msgstr "bình luận nữa"
+#: templates/comments/content-list.html:136
+msgid "more comment"
+msgid_plural "more comments"
+msgstr[0] "bình luận nữa"
 
 #: templates/comments/list.html:6
 msgid "Write comment"
@@ -4584,19 +4586,19 @@ msgstr "Lưu ý thêm cho admin"
 msgid "Feed"
 msgstr "Gợi ý"
 
-#: templates/problem/list-base.html:96
+#: templates/problem/list-base.html:95
 msgid "Filter by type..."
 msgstr "Lọc theo dạng..."
 
-#: templates/problem/list-base.html:159 templates/problem/list-base.html:185
+#: templates/problem/list-base.html:158 templates/problem/list-base.html:184
 msgid "Add types..."
 msgstr "Thêm dạng"
 
-#: templates/problem/list-base.html:201
+#: templates/problem/list-base.html:200
 msgid "Fail to vote!"
 msgstr "Hệ thống lỗi!"
 
-#: templates/problem/list-base.html:204
+#: templates/problem/list-base.html:203
 msgid "Successful vote! Thank you!"
 msgstr "Đã gửi thành công! Cảm ơn bạn!"
 
@@ -4891,11 +4893,11 @@ msgstr "Lọc"
 msgid "Random"
 msgstr "Ngẫu nhiên"
 
-#: templates/problem/submit.html:123
+#: templates/problem/submit.html:124
 msgid "Your source code must contain at most 65536 characters."
 msgstr "Code phải chứa không quá 65536 ký tự."
 
-#: templates/problem/submit.html:170
+#: templates/problem/submit.html:171
 #, python-format
 msgid ""
 "<b>Warning!</b> Your default language, <b>%(default_language)s</b>, is "
@@ -4904,7 +4906,7 @@ msgstr ""
 "<b>Cẩn thận!</b> Ngôn ngữ ưa thích của bạn, <b>%(default_language)s</b>, "
 "không được sử dụng trong bài này."
 
-#: templates/problem/submit.html:181
+#: templates/problem/submit.html:182
 #, fuzzy, python-format
 #| msgid ""
 #| "\n"
@@ -4927,15 +4929,15 @@ msgstr[0] ""
 "                        Bạn còn %(left)s lần nộp\n"
 "                        "
 
-#: templates/problem/submit.html:190
+#: templates/problem/submit.html:191
 msgid "You have 0 submissions left"
 msgstr "Bạn đã hết lần nộp"
 
-#: templates/problem/submit.html:224
+#: templates/problem/submit.html:225
 msgid "No judge is available for this problem."
 msgstr "Không có máy chấm có thể chấm bài này."
 
-#: templates/problem/submit.html:230
+#: templates/problem/submit.html:231
 msgid "Submit!"
 msgstr "Nộp bài!"
 
@@ -5731,7 +5733,7 @@ msgstr "Thông tin"
 msgid "Check all"
 msgstr "Chọn tất cả"
 
-#~ msgid "reply"
+#~ msgid "replies"
 #~ msgstr "phản hồi"
 
 #~ msgid "comment more"
