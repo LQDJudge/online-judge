@@ -123,11 +123,21 @@ class JudgeHandler(ZlibPacketHandler):
 
     def _authenticate(self, id, key):
         try:
-            judge = Judge.objects.get(name=id, is_blocked=False)
+            judge = Judge.objects.get(name=id)
         except Judge.DoesNotExist:
-            result = False
+            if settings.BRIDGED_AUTO_CREATE_JUDGE:
+                judge = Judge()
+                judge.name = id
+                judge.auth_key = key
+                judge.save()
+                result = True
+            else:
+                result = False
         else:
-            result = hmac.compare_digest(judge.auth_key, key)
+            if judge.is_blocked:
+                result = False
+            else:
+                result = hmac.compare_digest(judge.auth_key, key)
 
         if not result:
             json_log.warning(
