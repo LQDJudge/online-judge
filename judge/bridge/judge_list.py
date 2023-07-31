@@ -89,6 +89,7 @@ class JudgeList(object):
             logger.info("Judge available after grading %d: %s", submission, judge.name)
             del self.submission_map[submission]
             judge._working = False
+            judge._working_data = {}
             self._handle_free_judge(judge)
 
     def abort(self, submission):

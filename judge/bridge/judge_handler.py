@@ -64,6 +64,7 @@ class JudgeHandler(ZlibPacketHandler):
             "handshake": self.on_handshake,
         }
         self._working = False
+        self._working_data = {}
         self._no_response_job = None
         self._problems = []
         self.executors = {}
@@ -110,16 +111,24 @@ class JudgeHandler(ZlibPacketHandler):
             self._make_json_log(action="disconnect", info="judge disconnected")
         )
         if self._working:
-            Submission.objects.filter(id=self._working).update(
-                status="IE", result="IE", error=""
+            self.judges.judge(
+                self._working,
+                self._working_data["problem"],
+                self._working_data["language"],
+                self._working_data["source"],
+                None,
+                0,
             )
-            json_log.error(
-                self._make_json_log(
-                    sub=self._working,
-                    action="close",
-                    info="IE due to shutdown on grading",
-                )
-            )
+            # Submission.objects.filter(id=self._working).update(
+            #     status="IE", result="IE", error=""
+            # )
+            # json_log.error(
+            #     self._make_json_log(
+            #         sub=self._working,
+            #         action="close",
+            #         info="IE due to shutdown on grading",
+            #     )
+            # )
 
     def _authenticate(self, id, key):
         try:
@@ -319,6 +328,11 @@ class JudgeHandler(ZlibPacketHandler):
     def submit(self, id, problem, language, source):
         data = self.get_related_submission_data(id)
         self._working = id
+        self._working_data = {
+            "problem": problem,
+            "language": language,
+            "source": source,
+        }
         self._no_response_job = threading.Timer(20, self._kill_if_no_response)
         self.send(
             {
