@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-07-26 22:55+0700\n"
+"POT-Creation-Date: 2023-08-01 12:22+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -210,7 +210,7 @@ msgid "Taxonomy"
 msgstr ""
 
 #: judge/admin/problem.py:215 judge/admin/problem.py:438
-#: templates/contest/contest.html:101 templates/problem/data.html:517
+#: templates/contest/contest.html:101 templates/problem/data.html:533
 #: templates/problem/list.html:22 templates/problem/list.html:48
 #: templates/user/base-users-table.html:10 templates/user/user-about.html:36
 #: templates/user/user-about.html:52 templates/user/user-problems.html:58
@@ -1783,11 +1783,11 @@ msgstr "file zip chứa test"
 msgid "generator file"
 msgstr "file tạo test"
 
-#: judge/models/problem_data.py:69 judge/models/problem_data.py:205
+#: judge/models/problem_data.py:69 judge/models/problem_data.py:238
 msgid "output prefix length"
 msgstr "độ dài hiển thị output"
 
-#: judge/models/problem_data.py:72 judge/models/problem_data.py:208
+#: judge/models/problem_data.py:72 judge/models/problem_data.py:241
 msgid "output limit length"
 msgstr "giới hạn hiển thị output"
 
@@ -1795,15 +1795,15 @@ msgstr "giới hạn hiển thị output"
 msgid "init.yml generation feedback"
 msgstr "phản hồi của quá trình tạo file init.yml"
 
-#: judge/models/problem_data.py:78 judge/models/problem_data.py:211
+#: judge/models/problem_data.py:78 judge/models/problem_data.py:244
 msgid "checker"
 msgstr "trình chấm"
 
-#: judge/models/problem_data.py:81 judge/models/problem_data.py:214
+#: judge/models/problem_data.py:81 judge/models/problem_data.py:247
 msgid "checker arguments"
 msgstr "các biến trong trình chấm"
 
-#: judge/models/problem_data.py:83 judge/models/problem_data.py:216
+#: judge/models/problem_data.py:83 judge/models/problem_data.py:249
 msgid "checker arguments as a JSON object"
 msgstr "các biến trong trình chấm theo dạng JSON"
 
@@ -1819,7 +1819,7 @@ msgstr "file trình chấm"
 msgid "interactive judge"
 msgstr ""
 
-#: judge/models/problem_data.py:110 judge/models/problem_data.py:196
+#: judge/models/problem_data.py:110 judge/models/problem_data.py:229
 msgid "input file name"
 msgstr "tên file input"
 
@@ -1827,7 +1827,7 @@ msgstr "tên file input"
 msgid "Leave empty for stdin"
 msgstr "Để trống nếu nhập từ bàn phím"
 
-#: judge/models/problem_data.py:116 judge/models/problem_data.py:199
+#: judge/models/problem_data.py:116 judge/models/problem_data.py:232
 msgid "output file name"
 msgstr "tên file output"
 
@@ -1843,39 +1843,55 @@ msgstr "Output-only?"
 msgid "Support output-only problem"
 msgstr "Dùng cho các bài output-only (nộp bằng file zip)"
 
-#: judge/models/problem_data.py:180
+#: judge/models/problem_data.py:127
+msgid "is IOI signature"
+msgstr "Nộp bài bằng hàm?"
+
+#: judge/models/problem_data.py:128
+msgid "Use IOI Signature"
+msgstr "Nộp bài bằng hàm như IOI"
+
+#: judge/models/problem_data.py:132
+msgid "signature handler"
+msgstr "File xử lý hàm"
+
+#: judge/models/problem_data.py:140
+msgid "signature header"
+msgstr "File định nghĩa hàm"
+
+#: judge/models/problem_data.py:213
 msgid "problem data set"
 msgstr "tập hợp dữ liệu bài"
 
-#: judge/models/problem_data.py:184
+#: judge/models/problem_data.py:217
 msgid "case position"
 msgstr "vị trí test"
 
-#: judge/models/problem_data.py:187
+#: judge/models/problem_data.py:220
 msgid "case type"
 msgstr "loại test"
 
-#: judge/models/problem_data.py:189
+#: judge/models/problem_data.py:222
 msgid "Normal case"
 msgstr "Test bình thường"
 
-#: judge/models/problem_data.py:190
+#: judge/models/problem_data.py:223
 msgid "Batch start"
 msgstr "Bắt đầu nhóm"
 
-#: judge/models/problem_data.py:191
+#: judge/models/problem_data.py:224
 msgid "Batch end"
 msgstr "Kết thúc nhóm"
 
-#: judge/models/problem_data.py:201
+#: judge/models/problem_data.py:234
 msgid "generator arguments"
 msgstr "biến trong file sinh test"
 
-#: judge/models/problem_data.py:202
+#: judge/models/problem_data.py:235
 msgid "point value"
 msgstr "điểm"
 
-#: judge/models/problem_data.py:203
+#: judge/models/problem_data.py:236
 msgid "case is pretest?"
 msgstr "test là pretest?"
 
@@ -2565,10 +2581,18 @@ msgid "How did you corrupt the generator path?"
 msgstr ""
 
 #: judge/utils/problem_data.py:237
+msgid "Invalid interactor judge"
+msgstr ""
+
+#: judge/utils/problem_data.py:249
 #, fuzzy
-#| msgid "How did you corrupt the custom checker path?"
-msgid "How did you corrupt the interactor path?"
-msgstr "How did you corrupt the custom checker path?"
+#| msgid "Invalid Return"
+msgid "Invalid signature handler"
+msgstr "Invalid Return"
+
+#: judge/utils/problem_data.py:254
+msgid "Invalid signature header"
+msgstr ""
 
 #: judge/utils/problems.py:115
 msgid "Wrong"
@@ -2629,7 +2653,7 @@ msgstr "%h:%m"
 msgid "About"
 msgstr "Giới thiệu"
 
-#: judge/views/about.py:20
+#: judge/views/about.py:251
 msgid "Custom Checker Sample"
 msgstr "Hướng dẫn viết trình chấm"
 
@@ -3104,27 +3128,27 @@ msgstr ""
 msgid "Your zip file is invalid!"
 msgstr "File Zip không hợp lệ!"
 
-#: judge/views/problem_data.py:165
+#: judge/views/problem_data.py:169
 #, python-brace-format
 msgid "Comparing submissions for {0}"
 msgstr "So sánh các bài nộp cho {0}"
 
-#: judge/views/problem_data.py:169
+#: judge/views/problem_data.py:173
 #, python-brace-format
 msgid "Comparing submissions for <a href=\"{1}\">{0}</a>"
 msgstr "So sánh các bài nộp cho <a href=\"{1}\">{0}</a>"
 
-#: judge/views/problem_data.py:206
+#: judge/views/problem_data.py:210
 #, python-brace-format
 msgid "Editing data for {0}"
 msgstr "Chỉnh sửa dữ liệu cho {0}"
 
-#: judge/views/problem_data.py:210
+#: judge/views/problem_data.py:214
 #, python-format
 msgid "Editing data for %s"
 msgstr "Chỉnh sửa dữ liệu cho %s"
 
-#: judge/views/problem_data.py:340 judge/views/problem_data.py:342
+#: judge/views/problem_data.py:344 judge/views/problem_data.py:346
 #, python-format
 msgid "Generated init.yml for %s"
 msgstr "File init.yml cho %s"
@@ -3242,50 +3266,50 @@ msgstr "Bài nộp của %(user)s cho bài %(problem)s"
 msgid "All submissions"
 msgstr "Tất cả bài nộp"
 
-#: judge/views/submission.py:590 judge/views/submission.py:595
+#: judge/views/submission.py:595 judge/views/submission.py:600
 msgid "All my submissions"
 msgstr "Tất cả bài nộp của tôi"
 
-#: judge/views/submission.py:591
+#: judge/views/submission.py:596
 #, python-format
 msgid "All submissions by %s"
 msgstr "Tất cả bài nộp của %s"
 
-#: judge/views/submission.py:597
+#: judge/views/submission.py:602
 #, python-brace-format
 msgid "All submissions by <a href=\"{1}\">{0}</a>"
 msgstr "Tất cả bài nộp của <a href=\"{1}\">{0}</a>"
 
-#: judge/views/submission.py:618
+#: judge/views/submission.py:623
 #, fuzzy
 #| msgid "All submissions"
 msgid "All friend submissions"
 msgstr "Tất cả bài nộp"
 
-#: judge/views/submission.py:647
+#: judge/views/submission.py:652
 #, python-format
 msgid "All submissions for %s"
 msgstr "Tất cả bài nộp cho %s"
 
-#: judge/views/submission.py:675
+#: judge/views/submission.py:680
 msgid "Must pass a problem"
 msgstr "Phải làm được một bài"
 
-#: judge/views/submission.py:733
+#: judge/views/submission.py:738
 #, python-format
 msgid "My submissions for %(problem)s"
 msgstr "Bài nộp của tôi cho %(problem)s"
 
-#: judge/views/submission.py:734
+#: judge/views/submission.py:739
 #, python-format
 msgid "%(user)s's submissions for %(problem)s"
 msgstr "Các bài nộp của %(user)s cho %(problem)s"
 
-#: judge/views/submission.py:879
+#: judge/views/submission.py:884
 msgid "Must pass a contest"
 msgstr "Phải qua một kỳ thi"
 
-#: judge/views/submission.py:909
+#: judge/views/submission.py:914
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a href="
@@ -3294,7 +3318,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho <a href=\"{3}\">{2}</a> trong <a "
 "href=\"{5}\">{4}</a>"
 
-#: judge/views/submission.py:921
+#: judge/views/submission.py:926
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for problem {2} in <a href=\"{4}\">{3}"
@@ -3303,7 +3327,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho bài {2} trong <a href=\"{4}\">{3}"
 "</a>"
 
-#: judge/views/submission.py:1058
+#: judge/views/submission.py:1063
 #, fuzzy
 #| msgid "You do not have the permission to rejudge submissions."
 msgid "You don't have permission to access."
@@ -3711,7 +3735,7 @@ msgstr "Đăng nhập để vote"
 msgid "edit %(edits)s"
 msgstr "chỉnh sửa %(edits)s"
 
-#: templates/comments/content-list.html:46 templates/comments/media-js.html:96
+#: templates/comments/content-list.html:46 templates/comments/media-js.html:97
 msgid "edited"
 msgstr "đã chỉnh sửa"
 
@@ -3735,8 +3759,8 @@ msgstr "Ẩn"
 #| "\"javascript:comment_show_content(%(id)s)\">here</a> to view it."
 msgid ""
 "This comment is hidden due to too much negative feedback. Click <a\n"
-"                href=\"javascript:comment_show_content(%(id)s)\">here</a> to "
-"view it."
+"                  href=\"javascript:comment_show_content(%(id)s)\">here</a> "
+"to view it."
 msgstr ""
 "Bình luận bị ẩn vì nhiều phản hồi tiêu cực. Nhấp vào <a href=\"javascript:"
 "comment_show_content(%(id)s)\">đây</a> để mở."
@@ -3775,16 +3799,16 @@ msgstr "Không có bình luận nào."
 msgid "Comments are disabled on this page."
 msgstr "Bình luận bị tắt trong trang này."
 
-#: templates/comments/media-js.html:39
+#: templates/comments/media-js.html:40
 msgid "Replying to comment"
 msgstr "Trả lời bình luận"
 
-#: templates/comments/media-js.html:91
+#: templates/comments/media-js.html:92
 #, python-brace-format
 msgid "edit {edits}"
 msgstr "chỉnh sửa {edits}"
 
-#: templates/comments/media-js.html:94
+#: templates/comments/media-js.html:95
 msgid "original"
 msgstr "original"
 
@@ -4424,7 +4448,7 @@ msgid "There are no requests to approve."
 msgstr "Không có đơn đăng ký."
 
 #: templates/organization/requests/pending.html:24
-#: templates/problem/data.html:520
+#: templates/problem/data.html:536
 msgid "Delete?"
 msgstr "Xóa?"
 
@@ -4465,32 +4489,32 @@ msgstr "Đuổi"
 msgid "Enter a new code for the cloned problem:"
 msgstr "Nhập mã bài mới cho bài tập được nhân bản:"
 
-#: templates/problem/data.html:149
+#: templates/problem/data.html:154 templates/problem/data.html:161
 msgid "Instruction"
 msgstr "Hướng dẫn"
 
-#: templates/problem/data.html:469
+#: templates/problem/data.html:485
 msgid "View YAML"
 msgstr "Xem YAML"
 
-#: templates/problem/data.html:486
+#: templates/problem/data.html:502
 msgid "Autofill testcases"
 msgstr "Tự động điền test"
 
-#: templates/problem/data.html:490 templates/problem/problem.html:276
+#: templates/problem/data.html:506 templates/problem/problem.html:276
 msgid "Problem type"
 msgid_plural "Problem types"
 msgstr[0] "Dạng bài"
 
-#: templates/problem/data.html:497
+#: templates/problem/data.html:513
 msgid "Fill testcases"
 msgstr "Điền test"
 
-#: templates/problem/data.html:501
+#: templates/problem/data.html:517
 msgid "Batch start positions"
 msgstr "Vị trí bắt đầu nhóm"
 
-#: templates/problem/data.html:505
+#: templates/problem/data.html:521
 msgid ""
 "Leave empty if not use batch. If you want to divide to three batches [1, 4], "
 "[5, 8], [9, 10], enter: 1, 5, 9"
@@ -4498,27 +4522,27 @@ msgstr ""
 "Để trống nếu không dùng nhóm. Nếu muốn chia test thành các nhóm [1, 4], [5, "
 "8], [9, 10], nhập: 1, 5, 9"
 
-#: templates/problem/data.html:509 templates/problem/data.html:560
+#: templates/problem/data.html:525 templates/problem/data.html:576
 msgid "Apply!"
 msgstr "Lưu!"
 
-#: templates/problem/data.html:514
+#: templates/problem/data.html:530
 msgid "Type"
 msgstr "Kiểu"
 
-#: templates/problem/data.html:515
+#: templates/problem/data.html:531
 msgid "Input file"
 msgstr "File Input"
 
-#: templates/problem/data.html:516
+#: templates/problem/data.html:532
 msgid "Output file"
 msgstr "File Output"
 
-#: templates/problem/data.html:518
+#: templates/problem/data.html:534
 msgid "Pretest?"
 msgstr "Pretest?"
 
-#: templates/problem/data.html:561
+#: templates/problem/data.html:577
 msgid "Add new case"
 msgstr "Thêm test mới"
 
@@ -5732,6 +5756,11 @@ msgstr "Thông tin"
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Chọn tất cả"
+
+#, fuzzy
+#~| msgid "How did you corrupt the custom checker path?"
+#~ msgid "How did you corrupt the interactor path?"
+#~ msgstr "How did you corrupt the custom checker path?"
 
 #~ msgid "replies"
 #~ msgstr "phản hồi"

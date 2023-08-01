@@ -93,6 +93,9 @@ class ProblemDataForm(ModelForm):
             "fileio_input",
             "fileio_output",
             "output_only",
+            "use_ioi_signature",
+            "signature_handler",
+            "signature_header",
         ]
         widgets = {
             "zipfile": FineUploadFileInput,
@@ -103,6 +106,7 @@ class ProblemDataForm(ModelForm):
             "fileio_input": TextInput,
             "fileio_output": TextInput,
             "output_only": CheckboxInput,
+            "use_ioi_signature": CheckboxInput,
         }
 
 

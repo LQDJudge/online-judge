@@ -233,9 +233,7 @@ class ProblemDataCompiler(object):
             if self.data.checker == "interact":
                 interactor_path = split_path_first(self.data.interactive_judge.name)
                 if len(interactor_path) != 2:
-                    raise ProblemDataError(
-                        _("How did you corrupt the interactor path?")
-                    )
+                    raise ProblemDataError(_("Invalid interactor judge"))
                 init["interactive"] = {
                     "files": interactor_path[1],
                     "feedback": True,
@@ -256,7 +254,18 @@ class ProblemDataCompiler(object):
             init["file_io"]["output"] = self.data.fileio_output
         if self.data.output_only:
             init["output_only"] = True
+        if self.data.use_ioi_signature:
+            handler_path = split_path_first(self.data.signature_handler.name)
+            if len(handler_path) != 2:
+                raise ProblemDataError(_("Invalid signature handler"))
+            header_path = split_path_first(self.data.signature_header.name)
+            if len(header_path) != 2:
+                raise ProblemDataError(_("Invalid signature header"))
 
+            init["signature_grader"] = {
+                "entry": handler_path[1],
+                "header": header_path[1],
+            }
         return init
 
     def compile(self):

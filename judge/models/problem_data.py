@@ -123,6 +123,27 @@ class ProblemData(models.Model):
         help_text=_("Support output-only problem"),
         null=True,
     )
+    use_ioi_signature = models.BooleanField(
+        verbose_name=_("is IOI signature"),
+        help_text=_("Use IOI Signature"),
+        null=True,
+    )
+    signature_handler = models.FileField(
+        verbose_name=_("signature handler"),
+        storage=problem_data_storage,
+        null=True,
+        blank=True,
+        upload_to=problem_directory_file,
+        validators=[FileExtensionValidator(allowed_extensions=["cpp"])],
+    )
+    signature_header = models.FileField(
+        verbose_name=_("signature header"),
+        storage=problem_data_storage,
+        null=True,
+        blank=True,
+        upload_to=problem_directory_file,
+        validators=[FileExtensionValidator(allowed_extensions=["h"])],
+    )
 
     __original_zipfile = None
 
@@ -168,6 +189,18 @@ class ProblemData(models.Model):
         if self.custom_validator:
             self.custom_validator.name = problem_directory_file_helper(
                 new, self.custom_validator.name
+            )
+        if self.interactive_judge:
+            self.interactive_judge.name = problem_directory_file_helper(
+                new, self.interactive_judge.name
+            )
+        if self.signature_header:
+            self.signature_header.name = problem_directory_file_helper(
+                new, self.signature_header.name
+            )
+        if self.signature_handler:
+            self.signature_handler.name = problem_directory_file_helper(
+                new, self.signature_handler.name
             )
         self.save()
 
