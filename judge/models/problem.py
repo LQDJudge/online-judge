@@ -14,8 +14,8 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from judge.fulltext import SearchQuerySet
-from judge.models.pagevote import PageVote
-from judge.models.bookmark import BookMark
+from judge.models.pagevote import PageVotable
+from judge.models.bookmark import Bookmarkable
 from judge.models.profile import Organization, Profile
 from judge.models.runtime import Language
 from judge.user_translations import gettext as user_gettext
@@ -124,7 +124,7 @@ class TranslatedProblemQuerySet(SearchQuerySet):
         )
 
 
-class Problem(models.Model):
+class Problem(models.Model, PageVotable, Bookmarkable):
     code = models.CharField(
         max_length=20,
         verbose_name=_("problem code"),
@@ -549,22 +549,6 @@ class Problem(models.Model):
         cache.set(key, result)
         return result
 
-    def get_or_create_pagevote(self):
-        if self.pagevote.count():
-            return self.pagevote.first()
-        new_pagevote = PageVote()
-        new_pagevote.linked_object = self
-        new_pagevote.save()
-        return new_pagevote
-
-    def get_or_create_bookmark(self):
-        if self.bookmark.count():
-            return self.bookmark.first()
-        new_bookmark = BookMark()
-        new_bookmark.linked_object = self
-        new_bookmark.save()
-        return new_bookmark
-
     def save(self, *args, **kwargs):
         super(Problem, self).save(*args, **kwargs)
         if self.code != self.__original_code:
@@ -669,7 +653,7 @@ class LanguageTemplate(models.Model):
         verbose_name_plural = _("language-specific templates")
 
 
-class Solution(models.Model):
+class Solution(models.Model, PageVotable, Bookmarkable):
     problem = models.OneToOneField(
         Problem,
         on_delete=CASCADE,

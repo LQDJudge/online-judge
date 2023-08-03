@@ -48,3 +48,13 @@ class PageVoteVoter(models.Model):
         unique_together = ["voter", "pagevote"]
         verbose_name = _("pagevote vote")
         verbose_name_plural = _("pagevote votes")
+
+
+class PageVotable:
+    def get_or_create_pagevote(self):
+        if self.pagevote.count():
+            return self.pagevote.first()
+        new_pagevote = PageVote()
+        new_pagevote.linked_object = self
+        new_pagevote.save()
+        return new_pagevote

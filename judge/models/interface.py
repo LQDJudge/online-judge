@@ -11,8 +11,8 @@ from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
 from judge.models.profile import Organization, Profile
-from judge.models.pagevote import PageVote
-from judge.models.bookmark import BookMark
+from judge.models.pagevote import PageVotable
+from judge.models.bookmark import Bookmarkable
 
 __all__ = ["MiscConfig", "validate_regex", "NavigationBar", "BlogPost"]
 
@@ -74,7 +74,7 @@ class NavigationBar(MPTTModel):
             return pattern
 
 
-class BlogPost(models.Model):
+class BlogPost(models.Model, PageVotable, Bookmarkable):
     title = models.CharField(verbose_name=_("post title"), max_length=100)
     authors = models.ManyToManyField(Profile, verbose_name=_("authors"), blank=True)
     slug = models.SlugField(verbose_name=_("slug"))
@@ -131,22 +131,6 @@ class BlogPost(models.Model):
             user.has_perm("judge.change_blogpost")
             and self.authors.filter(id=user.profile.id).exists()
         )
-
-    def get_or_create_pagevote(self):
-        if self.pagevote.count():
-            return self.pagevote.first()
-        new_pagevote = PageVote()
-        new_pagevote.linked_object = self
-        new_pagevote.save()
-        return new_pagevote
-
-    def get_or_create_bookmark(self):
-        if self.bookmark.count():
-            return self.bookmark.first()
-        new_bookmark = BookMark()
-        new_bookmark.linked_object = self
-        new_bookmark.save()
-        return new_bookmark
 
     class Meta:
         permissions = (("edit_all_post", _("Edit all posts")),)

@@ -22,6 +22,8 @@ from judge.models.problem import Problem
 from judge.models.profile import Organization, Profile
 from judge.models.submission import Submission
 from judge.ratings import rate_contest
+from judge.models.pagevote import PageVotable
+from judge.models.bookmark import Bookmarkable
 
 __all__ = [
     "Contest",
@@ -75,7 +77,7 @@ class ContestTag(models.Model):
         verbose_name_plural = _("contest tags")
 
 
-class Contest(models.Model):
+class Contest(models.Model, PageVotable, Bookmarkable):
     SCOREBOARD_VISIBLE = "V"
     SCOREBOARD_AFTER_CONTEST = "C"
     SCOREBOARD_AFTER_PARTICIPATION = "P"

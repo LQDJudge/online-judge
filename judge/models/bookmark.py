@@ -53,3 +53,13 @@ class MakeBookMark(models.Model):
         unique_together = ["user", "bookmark"]
         verbose_name = _("make bookmark")
         verbose_name_plural = _("make bookmarks")
+
+
+class Bookmarkable:
+    def get_or_create_bookmark(self):
+        if self.bookmark.count():
+            return self.bookmark.first()
+        new_bookmark = BookMark()
+        new_bookmark.linked_object = self
+        new_bookmark.save()
+        return new_bookmark

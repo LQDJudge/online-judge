@@ -101,6 +101,5 @@ class PageVoteDetailView(TemplateResponseMixin, SingleObjectMixin, View):
 
     def get_context_data(self, **kwargs):
         context = super(PageVoteDetailView, self).get_context_data(**kwargs)
-        queryset = self.object.pagevote
-        context["pagevote"] = queryset.first()
+        context["pagevote"] = self.object.get_or_create_pagevote()
         return context
