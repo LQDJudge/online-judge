@@ -86,11 +86,6 @@ class CommentForm(ModelForm):
 class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
     comment_page = None
 
-    def get_comment_page(self):
-        if self.comment_page is None:
-            raise NotImplementedError()
-        return self.comment_page
-
     def is_comment_locked(self):
         if self.request.user.has_perm("judge.override_comment_lock"):
             return False

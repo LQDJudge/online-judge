@@ -224,9 +224,6 @@ class ProblemSolution(
         context["has_solved_problem"] = self.problem.id in self.get_completed_problems()
         return context
 
-    def get_comment_page(self):
-        return "s:" + self.problem.code
-
 
 class ProblemRaw(
     ProblemMixin, TitleMixin, TemplateResponseMixin, SingleObjectMixin, View
@@ -269,9 +266,6 @@ class ProblemDetail(
 ):
     context_object_name = "problem"
     template_name = "problem/problem.html"
-
-    def get_comment_page(self):
-        return "p:%s" % self.object.code
 
     def get_context_data(self, **kwargs):
         context = super(ProblemDetail, self).get_context_data(**kwargs)
@@ -842,9 +836,6 @@ class ProblemFeed(ProblemList, FeedView):
     paginate_by = 4
     title = _("Problem feed")
     feed_type = None
-
-    def get_comment_page(self, problem):
-        return "p:%s" % problem.code
 
     # arr = [[], [], ..]
     def merge_recommendation(self, arr):

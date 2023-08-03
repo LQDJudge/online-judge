@@ -71,6 +71,6 @@ def undobookmark_page(request):
 class BookMarkDetailView(TemplateResponseMixin, SingleObjectMixin, View):
     def get_context_data(self, **kwargs):
         context = super(BookMarkDetailView, self).get_context_data(**kwargs)
-        queryset = BookMark.objects.get_or_create(page=self.get_comment_page())
-        context["bookmark"] = queryset[0]
+        queryset = self.object.bookmark
+        context["bookmark"] = queryset.first()
         return context

@@ -412,9 +412,6 @@ class ContestDetail(
 ):
     template_name = "contest/contest.html"
 
-    def get_comment_page(self):
-        return "c:%s" % self.object.key
-
     def get_title(self):
         return self.object.name
 

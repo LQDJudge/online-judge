@@ -109,9 +109,6 @@ class PostList(HomeFeedView):
         context["page_type"] = "blog"
         return context
 
-    def get_comment_page(self, post):
-        return "b:%s" % post.id
-
 
 class TicketFeed(HomeFeedView):
     model = Ticket
@@ -179,9 +176,6 @@ class PostView(TitleMixin, CommentedDetailView, PageVoteDetailView, BookMarkDeta
 
     def get_title(self):
         return self.object.title
-
-    def get_comment_page(self):
-        return "b:%s" % self.object.id
 
     def get_context_data(self, **kwargs):
         context = super(PostView, self).get_context_data(**kwargs)

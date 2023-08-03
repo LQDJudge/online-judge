@@ -272,6 +272,8 @@ class Problem(models.Model):
     objects = TranslatedProblemQuerySet.as_manager()
     tickets = GenericRelation("Ticket")
     comments = GenericRelation("Comment")
+    pagevote = GenericRelation("PageVote")
+    bookmark = GenericRelation("BookMark")
 
     organizations = models.ManyToManyField(
         Organization,
@@ -448,18 +450,6 @@ class Problem(models.Model):
     def usable_common_names(self):
         return set(self.usable_languages.values_list("common_name", flat=True))
 
-    @cached_property
-    def pagevote(self):
-        page = "p:%s" % self.code
-        pagevote, _ = PageVote.objects.get_or_create(page=page)
-        return pagevote
-
-    @cached_property
-    def bookmark(self):
-        page = "p:%s" % self.code
-        bookmark, _ = BookMark.objects.get_or_create(page=page)
-        return bookmark
-
     @property
     def usable_languages(self):
         return self.allowed_languages.filter(
@@ -558,6 +548,22 @@ class Problem(models.Model):
         result = self._get_limits("memory_limit")
         cache.set(key, result)
         return result
+
+    def get_or_create_pagevote(self):
+        if self.pagevote.count():
+            return self.pagevote.first()
+        new_pagevote = PageVote()
+        new_pagevote.linked_object = self
+        new_pagevote.save()
+        return new_pagevote
+
+    def get_or_create_bookmark(self):
+        if self.bookmark.count():
+            return self.bookmark.first()
+        new_bookmark = BookMark()
+        new_bookmark.linked_object = self
+        new_bookmark.save()
+        return new_bookmark
 
     def save(self, *args, **kwargs):
         super(Problem, self).save(*args, **kwargs)
@@ -677,6 +683,8 @@ class Solution(models.Model):
     authors = models.ManyToManyField(Profile, verbose_name=_("authors"), blank=True)
     content = models.TextField(verbose_name=_("editorial content"))
     comments = GenericRelation("Comment")
+    pagevote = GenericRelation("PageVote")
+    bookmark = GenericRelation("BookMark")
 
     def get_absolute_url(self):
         problem = self.problem

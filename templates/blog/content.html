@@ -46,8 +46,8 @@
       <div class="show-more"> {{_("...More")}} </div>
     </div>
     <div class="actionbar-box">
-      {% set pagevote = post.pagevote %}
-      {% set bookmark = post.bookmark %}
+      {% set pagevote = post.get_or_create_pagevote() %}
+      {% set bookmark = post.get_or_create_bookmark() %}
       {% set hide_actionbar_comment = True %}
       {% set include_hr = False %}
       {% set share_url = request.build_absolute_uri(post.get_absolute_url()) %}

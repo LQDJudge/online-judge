@@ -270,9 +270,6 @@ class OrganizationHome(OrganizationHomeView, FeedView):
             .prefetch_related("authors__user", "organizations")
         )
 
-    def get_comment_page(self, post):
-        return "b:%s" % post.id
-
     def get_context_data(self, **kwargs):
         context = super(OrganizationHome, self).get_context_data(**kwargs)
         context["title"] = self.organization.name

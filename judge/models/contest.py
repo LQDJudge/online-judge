@@ -299,6 +299,8 @@ class Contest(models.Model):
         help_text=_("Number of digits to round points to."),
     )
     comments = GenericRelation("Comment")
+    pagevote = GenericRelation("PageVote")
+    bookmark = GenericRelation("BookMark")
 
     @cached_property
     def format_class(self):

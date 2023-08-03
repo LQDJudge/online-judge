@@ -16,10 +16,11 @@
       <table style="display: none" class="table toggled">
         <tbody>
           {% for post in blogs %}
-            {% if post.bookmark.page_object() %}
+            {% set object = post.bookmark.linked_object %}
+            {% if object %}
               <tr>
                 <td class="bookmark-name">
-                  <a href="{{ url('blog_post', post.bookmark.page_object().id, post.bookmark.page_object().slug) }}">{{ post.bookmark.page_object().title}} </a>
+                  <a href="{{ url('blog_post', object.id, object.slug) }}">{{ object.title}} </a>
                 </td>
               </tr>
             {% endif %}
@@ -36,10 +37,11 @@
       <table style="display: none" class="table toggled">
         <tbody>
           {% for problem in problems %}
-            {% if problem.bookmark.page_object() %}
+            {% set object = problem.bookmark.linked_object %}
+            {% if object %}
               <tr>
                 <td class="bookmark-name">
-                  <a href="{{ url('problem_detail', problem.bookmark.page_object().code) }}">{{ problem.bookmark.page_object().name}} </a>
+                  <a href="{{ url('problem_detail', object.code) }}">{{ object.name}} </a>
                 </td>
               </tr>
             {% endif %}
@@ -57,10 +59,11 @@
       </thead>
       <tbody>
         {% for contest in contests %}
-          {% if contest.bookmark.page_object() %}
+          {% set object = contest.bookmark.linked_object %}
+          {% if object %}
             <tr>
               <td class="bookmark-name">
-                <a href="{{ url('contest_view', contest.bookmark.page_object().key) }}">{{ contest.bookmark.page_object().name}} </a>
+                <a href="{{ url('contest_view', object.key) }}">{{ object.name}} </a>
               </td>
             </tr>
           {% endif %}
@@ -78,10 +81,11 @@
       </thead>
       <tbody>
         {% for solution in solutions %}
-          {% if solution.bookmark.page_object() %}
+          {% set object = solution.bookmark.linked_object %}
+          {% if object %}
             <tr>
               <td class="bookmark-name">
-                <a href="{{ url('problem_editorial', solution.bookmark.page_object().problem.code) }}">{{ solution.bookmark.page_object().problem.name}} </a>
+                <a href="{{ url('problem_editorial', object.problem.code) }}">{{ object.problem.name}} </a>
               </td>
             </tr>
           {% endif %}
