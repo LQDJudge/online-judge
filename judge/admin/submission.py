@@ -194,13 +194,6 @@ class SubmissionAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 
-    def has_change_permission(self, request, obj=None):
-        if not request.user.has_perm("judge.edit_own_problem"):
-            return False
-        if request.user.has_perm("judge.edit_all_problem") or obj is None:
-            return True
-        return obj.problem.is_editor(request.profile)
-
     def lookup_allowed(self, key, value):
         return super(SubmissionAdmin, self).lookup_allowed(key, value) or key in (
             "problem__code",
