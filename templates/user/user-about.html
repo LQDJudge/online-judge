@@ -59,7 +59,7 @@
         {{user.user.first_name}}{% if user.user.last_name %}    ({{user.user.last_name}}){% endif %}
       </p>
     {% endif %}
-    <!-- asdasd -->
+    
     {% if perms.judge.change_profile %}
       {% with notes=user.notes %}
         {% if notes %}
