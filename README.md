@@ -44,7 +44,7 @@ $ npm install -g sass postcss-cli postcss autoprefixer
 ```
 
 - Bước 2: tạo DB
-    - Server đang dùng MariaDB ≥ 10.5, các bạn cũng có thể dùng Mysql nếu bị conflict (anh chưa test version rõ lắm)
+    - Server đang dùng MariaDB ≥ 10.5, các bạn cũng có thể dùng Mysql nếu bị conflict
     - Nếu các bạn chạy lệnh dưới này xong mà version mariadb bị cũ (< 10.5) thì có thể tra google cách cài MariaDB mới nhất (10.5 hoặc 10.6).
     - Các bạn có thể thấy version MariaDB bằng cách gõ lệnh `sudo mysql` (Ctrl + C để quit)
 
