@@ -59,16 +59,6 @@
         {{user.user.first_name}}{% if user.user.last_name %}    ({{user.user.last_name}}){% endif %}
       </p>
     {% endif %}
-    {% with orgs=user.organizations.all() %}
-      {% if orgs %}
-        <p style="margin-top: 0"><i class="fa fa-university"></i> {{ _('From') }}
-          {% for org in orgs -%}
-            <a href="{{ org.get_absolute_url() }}">{{ org.name }}</a>
-            {%- if not loop.last %}, {% endif %}
-          {% endfor %}
-        </p>
-      {% endif %}
-    {% endwith %}
     {% if perms.judge.change_profile %}
       {% with notes=user.notes %}
         {% if notes %}
@@ -78,7 +68,6 @@
         {% endif %}
       {% endwith %}
     {% endif%}
-
     {% if user.about %}
       <h4>{{ _('About') }}</h4>
       {% cache 86400 'user_about' user.id MATH_ENGINE %}
