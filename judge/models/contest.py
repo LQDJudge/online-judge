@@ -542,10 +542,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
             return True
 
         # If the user is a contest organizer or curator
-        if (
-            user.has_perm("judge.edit_own_contest")
-            and user.profile.id in self.editor_ids
-        ):
+        if user.profile.id in self.editor_ids:
             return True
 
         return False
