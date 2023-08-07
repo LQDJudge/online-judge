@@ -3753,7 +3753,6 @@ msgid "Hide"
 msgstr "Ẩn"
 
 #: templates/comments/content-list.html:94
-#, fuzzy, python-format
 #| msgid ""
 #| "This comment is hidden due to too much negative feedback. Click <a href="
 #| "\"javascript:comment_show_content(%(id)s)\">here</a> to view it."
