@@ -74,7 +74,6 @@ class ProfileForm(ModelForm):
         model = Profile
         fields = [
             "about",
-            "organizations",
             "timezone",
             "language",
             "ace_theme",
@@ -98,26 +97,9 @@ class ProfileForm(ModelForm):
                 attrs={"style": "max-width:700px;min-width:700px;width:700px"},
             )
 
-    def clean(self):
-        organizations = self.cleaned_data.get("organizations") or []
-        max_orgs = settings.DMOJ_USER_MAX_ORGANIZATION_COUNT
-
-        if sum(org.is_open for org in organizations) > max_orgs:
-            raise ValidationError(
-                _("You may not be part of more than {count} public groups.").format(
-                    count=max_orgs
-                )
-            )
-
-        return self.cleaned_data
-
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user", None)
         super(ProfileForm, self).__init__(*args, **kwargs)
-        if not user.has_perm("judge.edit_all_organization"):
-            self.fields["organizations"].queryset = Organization.objects.filter(
-                Q(is_open=True) | Q(id__in=user.profile.organizations.all()),
-            )
 
 
 def file_size_validator(file):
