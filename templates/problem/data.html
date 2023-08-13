@@ -166,12 +166,12 @@
         $checker.change(function () {
           $tr_checker.toggle($checker.val() == 'custom').change();
           $tr_validator.toggle($checker.val() == 'customval' || $checker.val() == 'testlib').change();
+          $tr_interactive.toggle($checker.val() == 'interact').change();
 
           $sample.toggle(['custom', 'customval', 'interact'].includes($checker.val())).change();
         }).change();
 
         $ioi_signature.change(function() {
-          $tr_interactive.toggle($ioi_signature.is(':checked')).change();
           $tr_sig_header.toggle($ioi_signature.is(':checked')).change();
           $tr_sig_handler.toggle($ioi_signature.is(':checked')).change();
         }).change();
