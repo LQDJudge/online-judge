@@ -474,12 +474,31 @@ class ContestCloneForm(Form):
         max_length=20,
         validators=[RegexValidator("^[a-z0-9]+$", _("Contest id must be ^[a-z0-9]+$"))],
     )
+    organization = ChoiceField(choices=(), required=True)
+
+    def __init__(self, *args, org_choices=(), profile=None, **kwargs):
+        super(ContestCloneForm, self).__init__(*args, **kwargs)
+        self.fields["organization"].widget = Select2Widget(
+            attrs={"style": "width: 100%", "data-placeholder": _("Group")},
+        )
+        self.fields["organization"].choices = org_choices
+        self.profile = profile
 
     def clean_key(self):
         key = self.cleaned_data["key"]
         if Contest.objects.filter(key=key).exists():
             raise ValidationError(_("Contest with key already exists."))
         return key
+
+    def clean_organization(self):
+        organization_id = self.cleaned_data["organization"]
+        try:
+            organization = Organization.objects.get(id=organization_id)
+        except Exception:
+            raise ValidationError(_("Group doesn't exist."))
+        if not organization.admins.filter(id=self.profile.id).exists():
+            raise ValidationError(_("You don't have permission in this group."))
+        return organization
 
 
 class ProblemPointsVoteForm(ModelForm):
