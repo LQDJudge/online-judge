@@ -508,7 +508,13 @@
       }
       $('#emoji-button').on('click', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         toggleEmoji();
+      });
+
+      // Đóng bảng emoji khi click bất kỳ chỗ nào trên màn hình
+      document.addEventListener("click", function() {
+        tooltip.classList.remove('shown'); // Ẩn bảng emoji
       });
 
       $('emoji-picker').on('emoji-click', function(e) {
