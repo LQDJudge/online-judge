@@ -1894,6 +1894,7 @@ noscript #noscript {
 }
 .left-sidebar-item {
     border-color: rgb(60, 65, 68);
+    background-color: rgb(24, 26, 27);
 }
 .left-sidebar-item.active {
     color: rgb(114, 255, 114);

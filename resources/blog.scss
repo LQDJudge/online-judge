@@ -180,10 +180,7 @@
 .left-sidebar-item {
     display: flex;
     align-items: center;
-    border: 2px solid rgb(24, 26, 27);
-    border-radius: 15px;
-    margin-bottom: 10px;
-    margin-left: 10px;
+    border-radius: .5em;
 
     .sidebar-icon {
         font-size: large;
@@ -292,6 +289,7 @@
         margin-bottom: 1em;
         border-radius: 7px;
         display: flex;
+        background: inherit;
     }
 
     .blog-box {
@@ -307,6 +305,11 @@
 
 @media (min-width: 800px) {
     .left-sidebar-item {
+        margin-bottom: 10px;
+        margin-left: 10px;
+        border: 1px solid lightgray;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        background-color: white;
         padding: 0.8em 0.2em 0.8em 1em;
     }
 
