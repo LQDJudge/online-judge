@@ -1892,6 +1892,10 @@ noscript #noscript {
 .middle-content .post .title a:hover {
     color: rgb(255, 70, 70) !important;
 }
+.left-sidebar-item {
+    border-color: rgb(60, 65, 68);
+    background-color: rgb(24, 26, 27);
+}
 .left-sidebar-item.active {
     color: rgb(114, 255, 114);
     background-color: rgb(40, 111, 17);
@@ -1966,10 +1970,11 @@ noscript #noscript {
 }
 @media (min-width: 800px) {
     .left-sidebar {
-        border-right-color: rgb(60, 65, 68);
-        box-shadow: rgba(0, 0, 0, 0.5) 0px -10px 2px 0px;
+        /* border-right-color: rgb(60, 65, 68); */
+        /* box-shadow: rgba(0, 0, 0, 0.5) 0px -10px 2px 0px; */
         background-image: initial;
-        background-color: rgb(24, 26, 27);
+        
+        /* background-color: rgb(24, 26, 27); */
     }
     .blog-box {
         border-left-color: rgb(60, 65, 68);
