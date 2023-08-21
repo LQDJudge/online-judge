@@ -55,7 +55,6 @@ rabbitmq.on('ready', function () {
     rabbitmq.queue('', {exclusive: true}, function (q) {
         q.bind(argv._[1], '#');
         q.subscribe(function (data) {
-        	console.log(data);
             message = JSON.parse(data.data.toString('utf8'));
             messages.push(message);
             if (messages.length > max_queue)
