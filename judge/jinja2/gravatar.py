@@ -14,9 +14,10 @@ def gravatar(profile, size=80, default=None, profile_image=None, email=None):
         return profile_image
     if profile and profile.profile_image:
         return profile.profile_image.url
-    if default is None and profile:
-        default = profile.mute
-    email = email or profile.user.email
+    if profile:
+        email = email or profile.user.email
+        if default is None:
+            default = profile.mute
     gravatar_url = (
         "//www.gravatar.com/avatar/"
         + hashlib.md5(utf8bytes(email.strip().lower())).hexdigest()
