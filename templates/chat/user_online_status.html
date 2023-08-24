@@ -1,6 +1,6 @@
 {% if other_user %}
   <div class="status-container" style="height: 100%">
-    <img src="{{ gravatar(other_user.user, 135) }}" class="info-pic">
+    <img src="{{ gravatar(other_user, 135) }}" class="info-pic">
     <svg style="position:absolute; height:100%; width: 100%">
       <circle class="info-circle"
         fill="{{'green' if other_online else 'red'}}"/>

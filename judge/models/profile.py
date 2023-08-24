@@ -1,4 +1,5 @@
 from operator import mul
+import os
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -25,6 +26,12 @@ class EncryptedNullCharField(EncryptedCharField):
         if not value:
             return None
         return super(EncryptedNullCharField, self).get_prep_value(value)
+
+
+def profile_image_path(profile, filename):
+    tail = filename.split(".")[-1]
+    new_filename = f"user_{profile.id}.{tail}"
+    return os.path.join(settings.DMOJ_PROFILE_IMAGE_ROOT, new_filename)
 
 
 class Organization(models.Model):
@@ -229,6 +236,7 @@ class Profile(models.Model):
         blank=True,
         help_text=_("Notes for administrators regarding this user."),
     )
+    profile_image = models.ImageField(upload_to=profile_image_path, null=True)
 
     @cached_property
     def organization(self):

@@ -263,7 +263,7 @@
             <span id="user-links">
               <ul><li><a href="javascript:void(0)">
                 <span>
-                  <img src="{{ gravatar(request.user, 32) }}" height="24" width="24">{# -#}
+                  <img src="{{ gravatar(request.profile, 32) }}" height="24" width="24">{# -#}
                   <span>
                     <b class="{{request.profile.css_class}}">{{ request.user.username }}</b>
                   </span>

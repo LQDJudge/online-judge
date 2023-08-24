@@ -50,6 +50,7 @@ from judge.widgets import (
     HeavySelect2Widget,
     Select2MultipleWidget,
     DateTimePickerWidget,
+    ImageWidget,
 )
 from judge.tasks import rescore_contest
 
@@ -78,12 +79,14 @@ class ProfileForm(ModelForm):
             "language",
             "ace_theme",
             "user_script",
+            "profile_image",
         ]
         widgets = {
             "user_script": AceWidget(theme="github"),
             "timezone": Select2Widget(attrs={"style": "width:200px"}),
             "language": Select2Widget(attrs={"style": "width:200px"}),
             "ace_theme": Select2Widget(attrs={"style": "width:200px"}),
+            "profile_image": ImageWidget,
         }
 
         has_math_config = bool(settings.MATHOID_URL)
@@ -100,12 +103,22 @@ class ProfileForm(ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user", None)
         super(ProfileForm, self).__init__(*args, **kwargs)
+        self.fields["profile_image"].required = False
+
+    def clean_profile_image(self):
+        profile_image = self.cleaned_data.get("profile_image")
+        if profile_image:
+            if profile_image.size > 5 * 1024 * 1024:
+                raise ValidationError(
+                    _("File size exceeds the maximum allowed limit of 5MB.")
+                )
+        return profile_image
 
 
 def file_size_validator(file):
-    limit = 1 * 1024 * 1024
+    limit = 10 * 1024 * 1024
     if file.size > limit:
-        raise ValidationError("File too large. Size should not exceed 1MB.")
+        raise ValidationError("File too large. Size should not exceed 10MB.")
 
 
 class ProblemSubmitForm(ModelForm):

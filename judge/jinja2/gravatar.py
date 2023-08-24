@@ -9,14 +9,14 @@ from . import registry
 
 
 @registry.function
-def gravatar(email, size=80, default=None):
-    if isinstance(email, Profile):
-        if default is None:
-            default = email.mute
-        email = email.user.email
-    elif isinstance(email, AbstractUser):
-        email = email.email
-
+def gravatar(profile, size=80, default=None):
+    assert isinstance(profile, Profile), "profile should be Profile"
+    profile_image = profile.profile_image
+    if profile_image:
+        return profile_image.url
+    if default is None:
+        default = profile.mute
+    email = profile.user.email
     gravatar_url = (
         "//www.gravatar.com/avatar/"
         + hashlib.md5(utf8bytes(email.strip().lower())).hexdigest()
