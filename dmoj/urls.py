@@ -76,7 +76,6 @@ from judge.views.problem_data import (
 from judge.views.register import ActivationView, RegistrationView
 from judge.views.select2 import (
     AssigneeSelect2View,
-    ChatUserSearchSelect2View,
     CommentSelect2View,
     ContestSelect2View,
     ContestUserSearchSelect2View,
@@ -807,11 +806,6 @@ urlpatterns = [
                                 r"^user_search$",
                                 UserSearchSelect2View.as_view(),
                                 name="user_search_select2_ajax",
-                            ),
-                            url(
-                                r"^user_search_chat$",
-                                ChatUserSearchSelect2View.as_view(),
-                                name="chat_user_search_select2_ajax",
                             ),
                             url(
                                 r"^contest_users/(?P<contest>\w+)$",
