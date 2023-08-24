@@ -42,8 +42,8 @@
 {% block left_sidebar %}
   <div class="left-sidebar">
     {{ make_tab_item('blog', 'fa fa-rss', url('home'), _('News')) }}
-    {{ make_tab_item('comment', 'fa fa-comments', url('comment_feed'), _('Comments')) }}
-    {{ make_tab_item('ticket', 'fa fa-question-circle', url('ticket_feed'), _('Tickets')) }}
+    {{ make_tab_item('comment', 'fa fa-comments', url('comment_feed'), _('Comment')) }}
+    {{ make_tab_item('ticket', 'fa fa-question-circle', url('ticket_feed'), _('Ticket')) }}
     {{ make_tab_item('event', 'fa fa-calendar', '#', _('Events')) }}
   </div>
 {% endblock %}

@@ -313,6 +313,11 @@
         padding: 0.8em 0.2em 0.8em 1em;
     }
 
+    .sidebar-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     .middle-content,
     .blog-sidebar,
     .right-sidebar {

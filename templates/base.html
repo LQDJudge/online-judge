@@ -271,24 +271,38 @@
               </a></li></ul>
             </span>
             <div class="dropdown" id="userlink_dropdown" role="tooptip">
-              <div class="dropdown-item"><a href="{{ url('user_page') }}">{{ _('Profile') }}</a></div>
+              <a href="{{ url('user_page') }}">
+                <div class="dropdown-item">{{ _('Profile') }}</div>
+              </a>
               {% if request.user.is_staff or request.user.is_superuser %}
-                <div class="dropdown-item"><a href="{{ url('admin:index') }}">{{ _('Admin') }}</a></div>
+                <a href="{{ url('admin:index') }}">
+                  <div class="dropdown-item">{{ _('Admin') }}</div>
+                </a>
               {% endif %}
               {% if request.user.is_superuser %}
-                <div class="dropdown-item"><a href="{{ url('internal_problem') }}">{{ _('Internal') }}</a></div>
-                <div class="dropdown-item"><a href="{{ url('site_stats') }}">{{ _('Stats') }}</a></div>
+                <a href="{{ url('internal_problem') }}">
+                  <div class="dropdown-item">{{ _('Internal') }}</div>
+                </a>
+                <a href="{{ url('site_stats') }}">
+                  <div class="dropdown-item">{{ _('Stats') }}</div>
+                </a>
               {% endif %}
-              <div class="dropdown-item"><a href="{{ url('user_edit_profile') }}">{{ _('Edit profile') }}</a></div>
+              <a href="{{ url('user_edit_profile') }}">
+                <div class="dropdown-item">{{ _('Edit profile') }}</div>
+              </a>
               {% if request.user.is_impersonate %}
-                <div class="dropdown-item"><a href="{{ url('impersonate-stop') }}">Stop impersonating</a></div>
+                <a href="{{ url('impersonate-stop') }}">
+                  <div class="dropdown-item">Stop impersonating</div>
+                </a>
               {% else %}
-                <div class="dropdown-item">
-                  <a href="#" id="logout" class="red">{{ _('Log out') }}</a>
-                  <form id="logout-form" action="{{ url('auth_logout') }}" method="POST">
-                    {% csrf_token %}
-                  </form>
-                </div>
+                <a href="#" id="logout" class="red">
+                  <div class="dropdown-item">
+                    {{ _('Log out') }}
+                    <form id="logout-form" action="{{ url('auth_logout') }}" method="POST">
+                      {% csrf_token %}
+                    </form>
+                  </div>
+                </a>
               {% endif %}
             </div>
           {% else %}

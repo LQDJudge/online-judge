@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-24 10:09+0700\n"
+"POT-Creation-Date: 2023-08-24 23:09+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -160,7 +160,7 @@ msgstr "Tính toán lại kết quả"
 msgid "username"
 msgstr "tên đăng nhập"
 
-#: judge/admin/contest.py:503 templates/base.html:317
+#: judge/admin/contest.py:503 templates/base.html:331
 msgid "virtual"
 msgstr "ảo"
 
@@ -467,73 +467,73 @@ msgstr ""
 msgid "New IOI"
 msgstr "IOI mới"
 
-#: judge/forms.py:112
+#: judge/forms.py:113
 msgid "File size exceeds the maximum allowed limit of 5MB."
 msgstr "File tải lên không được quá 5MB."
 
-#: judge/forms.py:142
+#: judge/forms.py:144
 msgid "Any judge"
 msgstr ""
 
-#: judge/forms.py:348
+#: judge/forms.py:350
 msgid "Enter usernames separating by space"
 msgstr "Nhập các tên đăng nhập, cách nhau bởi dấu cách"
 
-#: judge/forms.py:349 judge/views/stats.py:166 templates/stats/site.html:27
+#: judge/forms.py:351 judge/views/stats.py:166 templates/stats/site.html:27
 msgid "New users"
 msgstr "Thành viên mới"
 
-#: judge/forms.py:366
+#: judge/forms.py:368
 #, python-brace-format
 msgid "These usernames don't exist: {usernames}"
 msgstr "Các tên đăng nhập này không tồn tại: {usernames}"
 
-#: judge/forms.py:425 judge/views/register.py:30
+#: judge/forms.py:427 judge/views/register.py:30
 #: templates/registration/registration_form.html:34
 #: templates/user/base-users-table.html:5
 #: templates/user/import/table_csv.html:4
 msgid "Username"
 msgstr "Tên đăng nhập"
 
-#: judge/forms.py:426 templates/registration/registration_form.html:46
+#: judge/forms.py:428 templates/registration/registration_form.html:46
 #: templates/registration/registration_form.html:60
 #: templates/user/import/table_csv.html:5
 msgid "Password"
 msgstr "Mật khẩu"
 
-#: judge/forms.py:452
+#: judge/forms.py:454
 msgid "Two Factor Authentication tokens must be 6 decimal digits."
 msgstr "Two Factor Authentication phải chứa 6 chữ số."
 
-#: judge/forms.py:465 templates/registration/totp_auth.html:32
+#: judge/forms.py:467 templates/registration/totp_auth.html:32
 msgid "Invalid Two Factor Authentication token."
 msgstr "Token Two Factor Authentication không hợp lệ."
 
-#: judge/forms.py:472 judge/models/problem.py:133
+#: judge/forms.py:474 judge/models/problem.py:133
 msgid "Problem code must be ^[a-z0-9]+$"
 msgstr "Mã bài phải có dạng ^[a-z0-9]+$"
 
-#: judge/forms.py:479
+#: judge/forms.py:481
 msgid "Problem with code already exists."
 msgstr "Mã bài đã tồn tại."
 
-#: judge/forms.py:486 judge/models/contest.py:93
+#: judge/forms.py:488 judge/models/contest.py:93
 msgid "Contest id must be ^[a-z0-9]+$"
 msgstr "Mã kỳ thi phải có dạng ^[a-z0-9]+$"
 
-#: judge/forms.py:493 templates/problem/search-form.html:46
+#: judge/forms.py:495 templates/problem/search-form.html:46
 msgid "Group"
 msgstr ""
 
-#: judge/forms.py:501
+#: judge/forms.py:503
 msgid "Contest with key already exists."
 msgstr "Mã kỳ thi đã tồn tại."
 
-#: judge/forms.py:509
+#: judge/forms.py:511
 msgid "Group doesn't exist."
 msgstr ""
 
-#: judge/forms.py:511
+#: judge/forms.py:513
 #, fuzzy
 #| msgid "You do not have the permission to rejudge submissions."
 msgid "You don't have permission in this group."
@@ -3248,8 +3248,8 @@ msgstr "Thống kê ngôn ngữ"
 msgid "Submissions"
 msgstr "Bài nộp"
 
-#: judge/views/stats.py:160 templates/blog/list.html:45
-#: templates/comments/list.html:4 templates/stats/site.html:39
+#: judge/views/stats.py:160 templates/comments/list.html:4
+#: templates/stats/site.html:39
 msgid "Comments"
 msgstr "Bình luận"
 
@@ -3430,22 +3430,22 @@ msgstr "j M, Y"
 msgid "M j, Y, G:i"
 msgstr "j M, Y, G:i"
 
-#: judge/views/user.py:414
+#: judge/views/user.py:416
 msgid "Updated on site"
 msgstr "Được cập nhật trên web"
 
-#: judge/views/user.py:429 templates/admin/auth/user/change_form.html:14
-#: templates/admin/auth/user/change_form.html:17 templates/base.html:282
+#: judge/views/user.py:431 templates/admin/auth/user/change_form.html:14
+#: templates/admin/auth/user/change_form.html:17 templates/base.html:291
 #: templates/user/user-tabs.html:11
 msgid "Edit profile"
 msgstr "Chỉnh sửa thông tin"
 
-#: judge/views/user.py:440 templates/user/user-left-sidebar.html:2
+#: judge/views/user.py:442 templates/user/user-left-sidebar.html:2
 #: templates/user/user-list-tabs.html:4
 msgid "Leaderboard"
 msgstr "Xếp hạng"
 
-#: judge/views/user.py:541
+#: judge/views/user.py:543
 msgid "Import Users"
 msgstr ""
 
@@ -3462,7 +3462,7 @@ msgstr "Kinh độ / Vĩ độ không hợp lệ"
 msgid "Like"
 msgstr "Thích"
 
-#: templates/actionbar/list.html:28
+#: templates/actionbar/list.html:28 templates/blog/list.html:45
 msgid "Comment"
 msgstr "Bình luận"
 
@@ -3538,11 +3538,11 @@ msgstr "Thông báo"
 msgid "Dark Mode"
 msgstr ""
 
-#: templates/base.html:274
+#: templates/base.html:275
 msgid "Profile"
 msgstr "Trang cá nhân"
 
-#: templates/base.html:276 templates/chat/chat.html:21
+#: templates/base.html:279 templates/chat/chat.html:21
 #: templates/comments/content-list.html:81
 #: templates/contest/contest-list-tabs.html:4
 #: templates/contest/ranking-table.html:47 templates/internal/problem.html:57
@@ -3554,44 +3554,44 @@ msgstr "Trang cá nhân"
 msgid "Admin"
 msgstr "Admin"
 
-#: templates/base.html:279
+#: templates/base.html:284
 msgid "Internal"
 msgstr "Nội bộ"
 
-#: templates/base.html:280
+#: templates/base.html:287
 msgid "Stats"
 msgstr "Thống kê"
 
-#: templates/base.html:287
+#: templates/base.html:300
 msgid "Log out"
 msgstr "Đăng xuất"
 
-#: templates/base.html:296
+#: templates/base.html:310
 #: templates/registration/password_reset_complete.html:4
 msgid "Log in"
 msgstr "Đăng nhập"
 
-#: templates/base.html:297 templates/registration/registration_form.html:72
+#: templates/base.html:311 templates/registration/registration_form.html:72
 msgid "or"
 msgstr "hoặc"
 
-#: templates/base.html:298
+#: templates/base.html:312
 msgid "Sign up"
 msgstr "Đăng ký"
 
-#: templates/base.html:311
+#: templates/base.html:325
 msgid "spectating"
 msgstr "đang theo dõi"
 
-#: templates/base.html:323
+#: templates/base.html:337
 msgid "Compete"
 msgstr "Thi"
 
-#: templates/base.html:325
+#: templates/base.html:339
 msgid "General"
 msgstr "Chung"
 
-#: templates/base.html:332
+#: templates/base.html:346
 msgid "This site works best with JavaScript enabled."
 msgstr ""
 
@@ -3638,7 +3638,7 @@ msgid "News"
 msgstr "Tin tức"
 
 #: templates/blog/list.html:46
-msgid "Tickets"
+msgid "Ticket"
 msgstr "Báo cáo"
 
 #: templates/blog/list.html:47
