@@ -118,7 +118,7 @@
 {% macro make_tab_item(name, fa, url, text) %}
   <div class="left-sidebar-item {% if page_type == name %}active{% endif %}" data-href="{{ url }}" id="{{ name }}-tab">
     <span class="sidebar-icon"><i class="{{ fa }}"></i></span>
-    <span>{{ text }}</span>
+    <span class="sidebar-text">{{ text }}</span>
   </div>
 {% endmacro %}
 

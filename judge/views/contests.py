@@ -453,9 +453,19 @@ class ContestClone(
     form_class = ContestCloneForm
     permission_required = "judge.clone_contest"
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["org_choices"] = tuple(
+            Organization.objects.filter(admins=self.request.profile).values_list(
+                "id", "name"
+            )
+        )
+        kwargs["profile"] = self.request.profile
+        return kwargs
+
     def form_valid(self, form):
         tags = self.object.tags.all()
-        organizations = self.object.organizations.all()
+        organization = form.cleaned_data["organization"]
         private_contestants = self.object.private_contestants.all()
         view_contest_scoreboard = self.object.view_contest_scoreboard.all()
         contest_problems = self.object.contest_problems.all()
@@ -469,7 +479,7 @@ class ContestClone(
         contest.save()
 
         contest.tags.set(tags)
-        contest.organizations.set(organizations)
+        contest.organizations.set([organization])
         contest.private_contestants.set(private_contestants)
         contest.view_contest_scoreboard.set(view_contest_scoreboard)
         contest.authors.add(self.request.profile)
@@ -480,7 +490,14 @@ class ContestClone(
         ContestProblem.objects.bulk_create(contest_problems)
 
         return HttpResponseRedirect(
-            reverse("admin:judge_contest_change", args=(contest.id,))
+            reverse(
+                "organization_contest_edit",
+                args=(
+                    organization.id,
+                    organization.slug,
+                    contest.key,
+                ),
+            )
         )
 
 
