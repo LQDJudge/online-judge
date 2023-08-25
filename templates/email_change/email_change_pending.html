@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block body %}
+  {% if request.profile.email_change_pending %}
+    <p>{{ _('An email was sent to') }} {{request.profile.email_change_pending}}. {{_('If you don\'t see it, kindly check your spam folder as well.')}}</p>
+  {% endif %}
+{% endblock %}

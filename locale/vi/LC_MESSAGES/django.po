@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-24 23:09+0700\n"
+"POT-Creation-Date: 2023-08-26 03:32+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -21,7 +21,7 @@ msgstr ""
 #: chat_box/models.py:31 chat_box/models.py:54 chat_box/models.py:68
 #: judge/admin/interface.py:150 judge/models/contest.py:636
 #: judge/models/contest.py:845 judge/models/course.py:115
-#: judge/models/profile.py:374 judge/models/profile.py:452
+#: judge/models/profile.py:375 judge/models/profile.py:453
 msgid "user"
 msgstr "người dùng"
 
@@ -49,11 +49,27 @@ msgstr "Tiếng Việt"
 msgid "English"
 msgstr ""
 
-#: dmoj/urls.py:135
+#: dmoj/urls.py:108
+msgid "Activation key invalid"
+msgstr "Mã kích hoạt không hợp lệ"
+
+#: dmoj/urls.py:113
+msgid "Register"
+msgstr "Đăng ký"
+
+#: dmoj/urls.py:120
+msgid "Registration Completed"
+msgstr "Đăng ký hoàn thành"
+
+#: dmoj/urls.py:128
+msgid "Registration not allowed"
+msgstr "Đăng ký không thành công"
+
+#: dmoj/urls.py:136
 msgid "Login"
 msgstr "Đăng nhập"
 
-#: dmoj/urls.py:212 templates/base.html:209
+#: dmoj/urls.py:216 templates/base.html:209
 #: templates/organization/org-left-sidebar.html:2
 msgid "Home"
 msgstr "Trang chủ"
@@ -293,13 +309,13 @@ msgid "User"
 msgstr "Thành viên"
 
 #: judge/admin/profile.py:132 templates/registration/registration_form.html:40
-#: templates/user/import/table_csv.html:8
+#: templates/user/edit-profile.html:116 templates/user/import/table_csv.html:8
 msgid "Email"
 msgstr "Email"
 
 #: judge/admin/profile.py:138 judge/views/register.py:36
 #: templates/registration/registration_form.html:68
-#: templates/user/edit-profile.html:119
+#: templates/user/edit-profile.html:140
 msgid "Timezone"
 msgstr "Múi giờ"
 
@@ -497,7 +513,7 @@ msgstr "Tên đăng nhập"
 
 #: judge/forms.py:428 templates/registration/registration_form.html:46
 #: templates/registration/registration_form.html:60
-#: templates/user/import/table_csv.html:5
+#: templates/user/edit-profile.html:108 templates/user/import/table_csv.html:5
 msgid "Password"
 msgstr "Mật khẩu"
 
@@ -1972,7 +1988,7 @@ msgid ""
 msgstr "Ảnh này sẽ thay thế logo mặc định khi ở trong tổ chức."
 
 #: judge/models/profile.py:136 judge/models/profile.py:165
-#: judge/models/profile.py:380 judge/models/profile.py:459
+#: judge/models/profile.py:381 judge/models/profile.py:460
 msgid "organization"
 msgstr ""
 
@@ -2078,35 +2094,35 @@ msgstr "ghi chú nội bộ"
 msgid "Notes for administrators regarding this user."
 msgstr "Ghi chú riêng cho quản trị viên."
 
-#: judge/models/profile.py:367
+#: judge/models/profile.py:368
 msgid "user profile"
 msgstr "thông tin người dùng"
 
-#: judge/models/profile.py:368
+#: judge/models/profile.py:369
 msgid "user profiles"
 msgstr "thông tin người dùng"
 
-#: judge/models/profile.py:384
+#: judge/models/profile.py:385
 msgid "request time"
 msgstr "thời gian đăng ký"
 
-#: judge/models/profile.py:387
+#: judge/models/profile.py:388
 msgid "state"
 msgstr "trạng thái"
 
-#: judge/models/profile.py:394
+#: judge/models/profile.py:395
 msgid "reason"
 msgstr "lý do"
 
-#: judge/models/profile.py:397
+#: judge/models/profile.py:398
 msgid "organization join request"
 msgstr "đơn đăng ký tham gia"
 
-#: judge/models/profile.py:398
+#: judge/models/profile.py:399
 msgid "organization join requests"
 msgstr "đơn đăng ký tham gia"
 
-#: judge/models/profile.py:464
+#: judge/models/profile.py:465
 #, fuzzy
 #| msgid "last seen"
 msgid "last visit"
@@ -2839,6 +2855,55 @@ msgstr "Mô tả vấn đề"
 msgid "New clarification for %s"
 msgstr "Thông báo mới cho %s"
 
+#: judge/views/email.py:19
+#, fuzzy
+#| msgid "Email"
+msgid "New Email"
+msgstr "Email"
+
+#: judge/views/email.py:23
+#, fuzzy
+#| msgid "Contest with key already exists."
+msgid "An account with this email already exists."
+msgstr "Mã kỳ thi đã tồn tại."
+
+#: judge/views/email.py:41
+#, python-brace-format
+msgid "{settings.SITE_NAME} - Email Change Request"
+msgstr ""
+
+#: judge/views/email.py:43
+msgid ""
+"We have received a request to change your email to this email. Click the "
+"button below to change your email:"
+msgstr ""
+"Chúng tôi đã nhận được yêu cầu thay đổi địa chỉ email của bạn thành địa chỉ "
+"email này. Vui lòng nhấp vào nút bên dưới để thay đổi địa chỉ email của bạn:"
+
+#: judge/views/email.py:44
+msgid "Email Change"
+msgstr "Thay đổi Email"
+
+#: judge/views/email.py:45
+msgid "Change Email"
+msgstr "Thay đổi Email"
+
+#: judge/views/email.py:56 templates/user/edit-profile.html:120
+msgid "Change email"
+msgstr "Thay đổi email"
+
+#: judge/views/email.py:76
+msgid "Success"
+msgstr "Thành công"
+
+#: judge/views/email.py:78
+msgid "Invalid"
+msgstr "Không hợp lệ"
+
+#: judge/views/email.py:83
+msgid "Email change pending"
+msgstr "Yêu cầu thay đổi email đang đợi xác thực."
+
 #: judge/views/error.py:17
 msgid "404 error"
 msgstr "Lỗi 404"
@@ -2902,19 +2967,17 @@ msgid "You are not allowed to edit this organization."
 msgstr "Bạn không được phép chỉnh sửa tổ chức này."
 
 #: judge/views/organization.py:193 judge/views/organization.py:337
-#, fuzzy
-#| msgid "Can't edit organization"
 msgid "Can't access organization"
-msgstr "Không thể chỉnh sửa tổ chức"
+msgstr "Không thể truy cập nhóm"
 
 #: judge/views/organization.py:194 judge/views/organization.py:338
 msgid "You are not allowed to access this organization."
 msgstr "Bạn không được phép chỉnh sửa tổ chức này."
 
-#: judge/views/organization.py:230 judge/views/register.py:48
-#: judge/views/stats.py:184 templates/contest/list.html:89
-#: templates/problem/list-base.html:97 templates/stats/site.html:33
-#: templates/user/user-left-sidebar.html:4 templates/user/user-list-tabs.html:6
+#: judge/views/organization.py:230 judge/views/stats.py:184
+#: templates/contest/list.html:89 templates/problem/list-base.html:97
+#: templates/stats/site.html:33 templates/user/user-left-sidebar.html:4
+#: templates/user/user-list-tabs.html:6
 msgid "Groups"
 msgstr "Nhóm"
 
@@ -2941,7 +3004,7 @@ msgstr "Bạn đã ở trong nhóm."
 msgid "This group is not open."
 msgstr "Nhóm này là nhóm kín."
 
-#: judge/views/organization.py:510 judge/views/register.py:62
+#: judge/views/organization.py:510
 #, python-brace-format
 msgid "You may not be part of more than {count} public groups."
 msgstr "Bạn không thể tham gia nhiều hơn {count} nhóm công khai."
@@ -3205,11 +3268,11 @@ msgstr "Các bài nộp tốt nhất cho <a href=\"{1}\">{0}</a>"
 msgid "A username must contain letters, numbers, or underscores"
 msgstr "Tên đăng nhập phải chứa ký tự, chữ số, hoặc dấu gạch dưới"
 
-#: judge/views/register.py:42 templates/user/edit-profile.html:123
+#: judge/views/register.py:42 templates/user/edit-profile.html:144
 msgid "Preferred language"
 msgstr "Ngôn ngữ ưa thích"
 
-#: judge/views/register.py:73
+#: judge/views/register.py:54
 #, python-format
 msgid ""
 "The email address \"%s\" is already taken. Only one registration is allowed "
@@ -3217,7 +3280,7 @@ msgid ""
 msgstr ""
 "Email \"%s\" đã được sử dụng. Mỗi email chỉ có thể đăng ký một tài khoản."
 
-#: judge/views/register.py:85
+#: judge/views/register.py:66
 msgid ""
 "Your email provider is not allowed due to history of abuse. Please use a "
 "reputable email provider."
@@ -3225,11 +3288,11 @@ msgstr ""
 "Your email provider is not allowed due to history of abuse. Please use a "
 "reputable email provider."
 
-#: judge/views/register.py:93 judge/views/register.py:131
+#: judge/views/register.py:74 judge/views/register.py:111
 msgid "Registration"
 msgstr "Đăng ký"
 
-#: judge/views/register.py:145
+#: judge/views/register.py:125
 msgid "Authentication failure"
 msgstr "Xác thực thất bại"
 
@@ -4185,11 +4248,11 @@ msgstr "Khôi phục kết quả"
 msgid "Disqualify"
 msgstr "Hủy kết quả"
 
-#: templates/contest/ranking-table.html:54 templates/user/edit-profile.html:96
+#: templates/contest/ranking-table.html:54 templates/user/edit-profile.html:100
 msgid "Fullname"
 msgstr "Tên đầy đủ"
 
-#: templates/contest/ranking-table.html:55 templates/user/edit-profile.html:100
+#: templates/contest/ranking-table.html:55 templates/user/edit-profile.html:104
 #: templates/user/import/table_csv.html:7
 msgid "School"
 msgstr "Trường"
@@ -4262,6 +4325,26 @@ msgstr "Còn"
 msgid "Upcoming contests"
 msgstr "Kỳ thi sắp diễn ra"
 
+#: templates/email_change/email_change.html:19
+msgid "Verify Email"
+msgstr "Xác thực Email"
+
+#: templates/email_change/email_change_failure.html:3
+msgid "Invalid reset link."
+msgstr "Đường dẫn không hợp lệ"
+
+#: templates/email_change/email_change_pending.html:4
+msgid "An email was sent to"
+msgstr "Email đã được gửi đến"
+
+#: templates/email_change/email_change_pending.html:4
+msgid "If you don't see it, kindly check your spam folder as well."
+msgstr "Nếu bạn không tìm thấy nó, vui lòng kiểm tra thư mục spam của bạn."
+
+#: templates/email_change/email_change_success.html:3
+msgid "Your email was sucessfully changed to"
+msgstr "Bạn đã đổi email thành công."
+
 #: templates/feed/has_next.html:3
 msgid "View more"
 msgstr "Xem thêm"
@@ -4289,6 +4372,10 @@ msgstr "Dừng"
 #: templates/fine_uploader/script.html:27
 msgid "Continue"
 msgstr "Tiếp tục"
+
+#: templates/general_email.html:15
+msgid "Dear"
+msgstr "Xin chào"
 
 #: templates/internal/left-sidebar.html:3
 msgid "Average speed"
@@ -4504,6 +4591,10 @@ msgstr "Từ chối"
 #: templates/organization/users-table.html:15
 msgid "Kick"
 msgstr "Đuổi"
+
+#: templates/pagedown.html:9
+msgid "Update Preview"
+msgstr "Cập nhật xem trước"
 
 #: templates/problem/clone.html:37
 msgid "Enter a new code for the cloned problem:"
@@ -4994,6 +5085,37 @@ msgstr "%(key)s không phải mã xác thực hợp lệ."
 msgid "Your account has been successfully activated."
 msgstr "Tài khoản được kích hoạt thành công."
 
+#: templates/registration/activation_email.html:2
+msgid "Account activation"
+msgstr "Kích hoạt tài khoản"
+
+#: templates/registration/activation_email.html:3
+#, python-format
+msgid ""
+"Thanks for registering! We're glad to have you. The last step is activating "
+"your account. Please activate your account in the next %(expiration_days)d "
+"days."
+msgstr ""
+"Cảm ơn bạn đã đăng ký! Chúng tôi rất vui được chào đón bạn. Bước cuối cùng "
+"là kích hoạt tài khoản của bạn. Vui lòng kích hoạt tài khoản trong vòng "
+"%(expiration_days)d ngày."
+
+#: templates/registration/activation_email.html:5
+msgid "Activate"
+msgstr "Kích hoạt"
+
+#: templates/registration/activation_email.html:10
+msgid ""
+"Alternatively, you can reply to this message to activate your account. Your "
+"reply must keep the following text intact for this to work:"
+msgstr ""
+"Hoặc bạn có thể trả lời tin nhắn này để kích hoạt tài khoản của bạn. Email "
+"trả lời của bạn phải giữ nguyên đoạn văn sau đây:"
+
+#: templates/registration/activation_email.html:16
+msgid "See you soon!"
+msgstr "Hẹn sớm gặp lại bạn!"
+
 #: templates/registration/login.html:9
 msgid "Invalid username or password."
 msgstr "Tên đăng nhập hoặc mật khẩu không hợp lệ."
@@ -5032,6 +5154,7 @@ msgid "Your password has been set.  You may go ahead and log in now"
 msgstr "Mật khẩu đã được cập nhật. Hãy thử đăng nhập lại"
 
 #: templates/registration/password_reset_confirm.html:9
+#: templates/registration/password_reset_email.html:5
 msgid "Reset Password"
 msgstr "Reset mật khẩu"
 
@@ -5039,7 +5162,7 @@ msgstr "Reset mật khẩu"
 msgid ""
 "We've emailed you instructions for setting your password. You should be "
 "receiving them shortly."
-msgstr "Kiểm tra email để xem hướng dẫn đặt mật khẩu."
+msgstr "Chúng tôi đã gửi email cho bạn để đặt lại mật khẩu."
 
 #: templates/registration/password_reset_done.html:5
 msgid ""
@@ -5047,13 +5170,25 @@ msgid ""
 "you registered with, and check your spam folder."
 msgstr "Nếu bạn không nhận được email, hãy kiểm tra hộp thư rác (spam)."
 
+#: templates/registration/password_reset_email.html:2
+msgid "Password Reset"
+msgstr "Đặt lại mật khẩu"
+
+#: templates/registration/password_reset_email.html:3
+msgid ""
+"We have received a request to reset your password. Click the button below to "
+"reset your password:"
+msgstr ""
+"Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu của bạn. Nhấn vào nút bên "
+"dưới để đặt lại mật khẩu của bạn:"
+
 #: templates/registration/password_reset_email.txt:1
 #, python-format
 msgid ""
 "You're receiving this email because you requested a password reset for your "
 "user account at %(site_name)s."
 msgstr ""
-"Bạn nhận được email này vì bạn đã yêu cầu reset mật khẩu tại %(site_name)s."
+"Bạn nhận được email này vì bạn đã yêu cầu đặt lại mật khẩu tại %(site_name)s."
 
 #: templates/registration/password_reset_email.txt:3
 msgid "Please go to the following page and choose a new password:"
@@ -5075,7 +5210,7 @@ msgstr "%(site_name)s team"
 #: templates/registration/password_reset_subject.txt:1
 #, python-format
 msgid "Password reset on %(site_name)s"
-msgstr "Reset mật khẩu trên %(site_name)s"
+msgstr "Đặt lại mật khẩu trên %(site_name)s"
 
 #: templates/registration/profile_creation.html:36
 #: templates/registration/username_select.html:7
@@ -5089,8 +5224,9 @@ msgstr "Đăng ký hiện tại đã bị dừng. Hãy liên hệ admin."
 #: templates/registration/registration_complete.html:3
 msgid ""
 "You have successfully been registered. An email has been sent to the email "
-"address you provided to confirm your registration."
-msgstr "Bạn đã đăng ký thành công. Kiểm tra email để hoàn thành việc xác thực."
+"address you provided to confirm your registration. If you don't see it, "
+"kindly check your spam folder as well."
+msgstr "Bạn đã đăng ký thành công. Kiểm tra email để hoàn thành việc xác thực. Nếu bạn không tìm thấy nó, vui lòng kiểm tra thư mục spam của bạn."
 
 #: templates/registration/registration_form.html:61
 msgid "(again, for confirmation)"
@@ -5106,21 +5242,9 @@ msgstr "chọn từ bản đồ"
 
 #: templates/registration/registration_form.html:78
 msgid "Default language"
-msgstr "Ngôn ngữ ưa thích"
+msgstr "Ngôn ngữ mặc định"
 
-#: templates/registration/registration_form.html:81
-msgid "Affiliated organizations"
-msgstr "Tổ chức bạn muốn tham gia"
-
-#: templates/registration/registration_form.html:97
-msgid "By registering, you agree to our"
-msgstr "Bạn đồng ý với"
-
-#: templates/registration/registration_form.html:98
-msgid "Terms & Conditions"
-msgstr "Điều khoản của chúng tôi"
-
-#: templates/registration/registration_form.html:101
+#: templates/registration/registration_form.html:89
 msgid "Register!"
 msgstr "Đăng ký!"
 
@@ -5128,7 +5252,7 @@ msgstr "Đăng ký!"
 #: templates/registration/totp_disable.html:45
 #: templates/registration/totp_enable.html:83
 msgid "Enter the 6-digit code generated by your app:"
-msgstr ""
+msgstr "Nhập mã xác thực gồm 6 chữ số từ app bạn chọn"
 
 #: templates/registration/totp_auth.html:41
 #, python-format
@@ -5516,43 +5640,51 @@ msgstr "Top Score"
 msgid "Rank"
 msgstr "Rank"
 
-#: templates/user/edit-profile.html:104
-msgid "Avatar"
-msgstr "Ảnh đại diện"
-
-#: templates/user/edit-profile.html:110
-msgid "Self-description"
-msgstr "Tự giới thiệu"
-
-#: templates/user/edit-profile.html:118
-msgid "Select your closest major city"
-msgstr "Chọn thành phố gần nhất"
-
-#: templates/user/edit-profile.html:127
-msgid "Editor theme"
-msgstr "Giao diện cho code editor"
-
-#: templates/user/edit-profile.html:132
-msgid "Math engine"
-msgstr ""
-
-#: templates/user/edit-profile.html:139
+#: templates/user/edit-profile.html:111
 msgid "Change your password"
 msgstr "Đổi mật khẩu"
 
-#: templates/user/edit-profile.html:150
+#: templates/user/edit-profile.html:125
+msgid "Avatar"
+msgstr "Ảnh đại diện"
+
+#: templates/user/edit-profile.html:131
+msgid "Self-description"
+msgstr "Tự giới thiệu"
+
+#: templates/user/edit-profile.html:139
+msgid "Select your closest major city"
+msgstr "Chọn thành phố gần nhất"
+
+#: templates/user/edit-profile.html:148
+msgid "Editor theme"
+msgstr "Giao diện cho code editor"
+
+#: templates/user/edit-profile.html:153
+msgid "Math engine"
+msgstr ""
+
+#: templates/user/edit-profile.html:164
 msgid "Two Factor Authentication is enabled."
 msgstr "Two Factor Authentication đã được kích hoạt."
 
-#: templates/user/edit-profile.html:157
-msgid "Two Factor Authentication is disabled."
-msgstr "Two Factor Authentication đã được hủy kích hoạt."
+#: templates/user/edit-profile.html:168
+msgid "Disable"
+msgstr "Tắt"
 
-#: templates/user/edit-profile.html:162
+#: templates/user/edit-profile.html:171
+msgid "Two Factor Authentication is disabled."
+msgstr "Two Factor Authentication chưa kích hoạt."
+
+#: templates/user/edit-profile.html:172
+msgid "Enable"
+msgstr "Bật"
+
+#: templates/user/edit-profile.html:176
 msgid "User-script"
 msgstr ""
 
-#: templates/user/edit-profile.html:166
+#: templates/user/edit-profile.html:180
 msgid "Update profile"
 msgstr "Cập nhật thông tin"
 
@@ -5768,6 +5900,15 @@ msgstr "Thông tin"
 msgid "Check all"
 msgstr "Chọn tất cả"
 
+#~ msgid "Affiliated organizations"
+#~ msgstr "Tổ chức bạn muốn tham gia"
+
+#~ msgid "By registering, you agree to our"
+#~ msgstr "Bạn đồng ý với"
+
+#~ msgid "Terms & Conditions"
+#~ msgstr "Điều khoản của chúng tôi"
+
 #~ msgid "Change your avatar"
 #~ msgstr "Đổi ảnh đại diện"
 
@@ -5874,9 +6015,6 @@ msgstr "Chọn tất cả"
 
 #~ msgid "Color theme"
 #~ msgstr "Chủ đề màu sắc"
-
-#~ msgid "Change color theme"
-#~ msgstr "Đổi chủ đề màu sắc"
 
 #~ msgid "commented on {time}"
 #~ msgstr "bình luận vào {time}"

@@ -78,12 +78,6 @@
       <div class="block-header">{{ _('Default language') }}</div>
       <span class="fullwidth">{{ form.language }}</span>
 
-      <div class="block-header">{{ _('Affiliated organizations') }}</div>
-      {{ form.organizations }}
-      {% if form.organizations.errors %}
-        <div class="form-field-error">{{ form.organizations.errors }}</div>
-      {% endif %}
-
       {% if form.captcha %}
         <div style="margin-top: 0.5em">{{ form.captcha }}</div>
         {% if form.captcha.errors %}
@@ -92,12 +86,6 @@
       {% endif %}
 
       <hr>
-      {% if tos_url %}
-        <span class="tos-section">
-          {{ _('By registering, you agree to our') }}
-          <a href="{{ tos_url }}">{{ _('Terms & Conditions') }}</a>.
-        </span>
-      {% endif %}
       <button style="float:right;" type="submit">{{ _('Register!') }}</button>
     </form>
   </div>

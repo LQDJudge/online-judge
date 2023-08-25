@@ -237,6 +237,7 @@ class Profile(models.Model):
         help_text=_("Notes for administrators regarding this user."),
     )
     profile_image = models.ImageField(upload_to=profile_image_path, null=True)
+    email_change_pending = models.EmailField(blank=True, null=True)
 
     @cached_property
     def organization(self):

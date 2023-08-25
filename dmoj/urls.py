@@ -65,6 +65,7 @@ from judge.views import (
     internal,
     resolver,
     course,
+    email,
 )
 from judge.views.problem_data import (
     ProblemDataView,
@@ -104,19 +105,19 @@ register_patterns = [
     # confusing 404.
     url(
         r"^activate/(?P<activation_key>\w+)/$",
-        ActivationView.as_view(title="Activation key invalid"),
+        ActivationView.as_view(title=_("Activation key invalid")),
         name="registration_activate",
     ),
     url(
         r"^register/$",
-        RegistrationView.as_view(title="Register"),
+        RegistrationView.as_view(title=_("Register")),
         name="registration_register",
     ),
     url(
         r"^register/complete/$",
         TitledTemplateView.as_view(
             template_name="registration/registration_complete.html",
-            title="Registration Completed",
+            title=_("Registration Completed"),
         ),
         name="registration_complete",
     ),
@@ -124,7 +125,7 @@ register_patterns = [
         r"^register/closed/$",
         TitledTemplateView.as_view(
             template_name="registration/registration_closed.html",
-            title="Registration not allowed",
+            title=_("Registration not allowed"),
         ),
         name="registration_disallowed",
     ),
@@ -182,6 +183,17 @@ register_patterns = [
             template_name="registration/password_reset_done.html",
         ),
         name="password_reset_done",
+    ),
+    url(r"^email/change/$", email.email_change_view, name="email_change"),
+    url(
+        r"^email/change/verify/(?P<uidb64>[0-9A-Za-z]+)-(?P<token>.+)/$",
+        email.verify_email_view,
+        name="email_change_verify",
+    ),
+    url(
+        r"^email/change/pending$",
+        email.email_change_pending_view,
+        name="email_change_pending",
     ),
     url(r"^social/error/$", register.social_auth_error, name="social_auth_error"),
     url(r"^2fa/$", totp.TOTPLoginView.as_view(), name="login_2fa"),

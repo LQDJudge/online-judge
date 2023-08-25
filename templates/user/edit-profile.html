@@ -47,6 +47,10 @@
       display: flex;
       justify-content: center;
     }
+
+    .main-info tr td {
+      padding-bottom: 1em;
+    }
   </style>
 {% endblock %}
 
@@ -91,7 +95,7 @@
 
       {% csrf_token %}
 
-      <table class="block-header grayed">
+      <table class="block-header grayed main-info">
         <tr>
           <td> {{ _('Fullname') }}: </td>
           <td> {{ form_user.first_name }} </td>
@@ -101,8 +105,25 @@
           <td> {{ form_user.last_name }} </td>
         </tr>
         <tr>
-          <td style="padding-top: 1em">{{ _('Avatar') }}: </td>
-          <td style="padding-top: 1em">{{ form.profile_image }}</td>
+          <td> {{ _('Password') }}: </td>
+          <td>
+            <a href="{{ url('password_change') }}">
+              {{ _('Change your password') }}
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td> {{ _('Email') }}: </td>
+          <td>
+            {{ request.user.email }}
+            <a href="{{ url('email_change') }}">
+              ({{ _('Change email') }})
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td>{{ _('Avatar') }}: </td>
+          <td>{{ form.profile_image }}</td>
         </tr>
       </table>
       <hr>
@@ -133,29 +154,22 @@
                   <td><span class="fullwidth">{{ form.math_engine }}</span></td>
                 </tr>
               {% endif %}
-              <tr>
-                <td colspan="2">
-                  <a href="{{ url('password_change') }}" class="inline-header">
-                    {{ _('Change your password') }}
-                  </a>
-                </td>
-              </tr>
             </table>
           </td>
         </tr>
       </table>
-
+      <br>
       <div>
         {% if profile.is_totp_enabled %}
           {{ _('Two Factor Authentication is enabled.') }}
           {% if require_staff_2fa and request.user.is_staff %}
             <a id="disable-2fa-button" class="button inline-button">Disable</a>
           {% else %}
-            <a href="{{ url('disable_2fa') }}" class="button inline-button">Disable</a>
+            <a href="{{ url('disable_2fa') }}" class="button inline-button">{{_('Disable')}}</a>
           {% endif %}
         {% else %}
           {{ _('Two Factor Authentication is disabled.') }}
-          <a href="{{ url('enable_2fa') }}" class="button inline-button">Enable</a>
+          <a href="{{ url('enable_2fa') }}" class="button inline-button">{{_('Enable')}}</a>
         {% endif %}
       </div>
       <br><hr>
