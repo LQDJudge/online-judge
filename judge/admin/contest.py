@@ -71,7 +71,6 @@ class ContestProblemInlineForm(ModelForm):
             "hidden_subtasks": TextInput(attrs={"size": "3"}),
             "points": TextInput(attrs={"size": "1"}),
             "order": TextInput(attrs={"size": "1"}),
-            "output_prefix_override": TextInput(attrs={"size": "1"}),
         }
 
 
@@ -86,7 +85,7 @@ class ContestProblemInline(admin.TabularInline):
         "is_pretested",
         "max_submissions",
         "hidden_subtasks",
-        "output_prefix_override",
+        "show_testcases",
         "order",
         "rejudge_column",
     )

@@ -528,7 +528,7 @@ class ContestProblemForm(ModelForm):
             "problem",
             "points",
             "partial",
-            "output_prefix_override",
+            "show_testcases",
             "max_submissions",
         )
         widgets = {

@@ -109,6 +109,13 @@ class Organization(models.Model):
                 "Organization membership test must be Profile or primany key"
             )
 
+    def delete(self, *args, **kwargs):
+        contests = self.contest_set
+        for contest in contests.all():
+            if contest.organizations.count() == 1:
+                contest.delete()
+        super().delete(*args, **kwargs)
+
     def __str__(self):
         return self.name
 
