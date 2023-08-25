@@ -538,9 +538,37 @@ class ContestProblemForm(ModelForm):
         }
 
 
+class ContestProblemModelFormSet(BaseModelFormSet):
+    def is_valid(self):
+        valid = super().is_valid()
+
+        if not valid:
+            return valid
+
+        problems = set()
+        duplicates = []
+
+        for form in self.forms:
+            if form.cleaned_data and not form.cleaned_data.get("DELETE", False):
+                problem = form.cleaned_data.get("problem")
+                if problem in problems:
+                    duplicates.append(problem)
+                else:
+                    problems.add(problem)
+
+        if duplicates:
+            for form in self.forms:
+                problem = form.cleaned_data.get("problem")
+                if problem in duplicates:
+                    form.add_error("problem", _("This problem is duplicated."))
+            return False
+
+        return True
+
+
 class ContestProblemFormSet(
     formset_factory(
-        ContestProblemForm, formset=BaseModelFormSet, extra=6, can_delete=True
+        ContestProblemForm, formset=ContestProblemModelFormSet, extra=6, can_delete=True
     )
 ):
     model = ContestProblem

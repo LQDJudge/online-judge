@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-26 03:42+0700\n"
+"POT-Creation-Date: 2023-08-26 05:31+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -554,6 +554,10 @@ msgstr ""
 #| msgid "You do not have the permission to rejudge submissions."
 msgid "You don't have permission in this group."
 msgstr "Bạn không có quyền chấm lại bài."
+
+#: judge/forms.py:563
+msgid "This problem is duplicated."
+msgstr "Bài này bị lặp"
 
 #: judge/jinja2/datetime.py:26 templates/blog/blog.html:28
 #: templates/blog/dashboard.html:21
@@ -2883,19 +2887,19 @@ msgstr "Thay đổi Email"
 msgid "Change Email"
 msgstr "Thay đổi Email"
 
-#: judge/views/email.py:65 templates/user/edit-profile.html:120
+#: judge/views/email.py:71 templates/user/edit-profile.html:120
 msgid "Change email"
 msgstr "Thay đổi email"
 
-#: judge/views/email.py:89
+#: judge/views/email.py:94
 msgid "Success"
 msgstr "Thành công"
 
-#: judge/views/email.py:93
+#: judge/views/email.py:98
 msgid "Invalid"
 msgstr "Không hợp lệ"
 
-#: judge/views/email.py:102
+#: judge/views/email.py:107
 msgid "Email change pending"
 msgstr "Yêu cầu thay đổi email đang đợi xác thực."
 
@@ -4426,8 +4430,8 @@ msgstr "Hoạt động"
 
 #: templates/organization/blog/edit.html:36
 #: templates/organization/contest/add.html:36
-#: templates/organization/contest/edit.html:87
-#: templates/organization/form.html:24
+#: templates/organization/contest/edit.html:86
+#: templates/organization/form.html:23
 msgid "Save"
 msgstr "Lưu"
 
@@ -4441,12 +4445,15 @@ msgid "Author"
 msgstr "Tác giả"
 
 #: templates/organization/blog/pending.html:14
-#, fuzzy
-#| msgid "posted time"
 msgid "Post time"
-msgstr "thời gian đăng"
+msgstr "Thời gian đăng"
 
-#: templates/organization/contest/edit.html:61
+#: templates/organization/contest/edit.html:40
+#: templates/organization/form.html:6
+msgid "Please fix below errors"
+msgstr "Vui lòng sửa các lỗi bên dưới"
+
+#: templates/organization/contest/edit.html:60
 msgid "If you run out of rows, click Save"
 msgstr "Ấn nút lưu lại nếu cần thêm hàng"
 

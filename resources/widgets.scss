@@ -606,6 +606,14 @@ ul.select2-selection__rendered {
     background: gray;
 }
 
+ul.errorlist {
+    margin: 0px;
+    text-align: right;
+    list-style: none;
+    padding: 0px;
+    color: red;
+}
+
 .registration-form {
     .sortedm2m-container, .sortedm2m-container p.selector-filter {
         width: 300px;
@@ -680,12 +688,6 @@ ul.select2-selection__rendered {
         background: unset;
         max-width: 450px;
         width: 450px;
-    }
-
-    ul.errorlist {
-        margin: 0px;
-        text-align: right;
-        list-style: none;
     }
 
     .full-textfield {

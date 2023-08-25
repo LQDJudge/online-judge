@@ -926,8 +926,12 @@ class EditOrganizationContest(
             super().post(request, *args, **kwargs)
             return HttpResponseRedirect(
                 reverse(
-                    "organization_contests",
-                    args=(self.organization_id, self.organization.slug),
+                    "organization_contest_edit",
+                    args=(
+                        self.organization_id,
+                        self.organization.slug,
+                        self.contest.key,
+                    ),
                 )
             )
 
