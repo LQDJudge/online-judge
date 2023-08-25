@@ -17,7 +17,7 @@
       display: inline-flex;
     }
     .problems-problem {
-      width: 40%;
+      max-width: 60vh;
     }
     input[type=number] {
       width: 5em;
@@ -63,7 +63,7 @@
         <tr>
           {% for field in problems_form[0] %}
             {% if not field.is_hidden %}
-              <th>
+              <th class="problems-{{field.name}}">
                 {{field.label}}
               </th>
             {% endif %}

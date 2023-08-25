@@ -533,7 +533,7 @@ class ContestProblemForm(ModelForm):
         )
         widgets = {
             "problem": HeavySelect2Widget(
-                data_view="problem_select2", attrs={"style": "width:100%"}
+                data_view="problem_select2", attrs={"style": "width: 100%"}
             ),
         }
 
