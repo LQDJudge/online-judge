@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-26 03:32+0700\n"
+"POT-Creation-Date: 2023-08-26 03:42+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -69,7 +69,7 @@ msgstr "Đăng ký không thành công"
 msgid "Login"
 msgstr "Đăng nhập"
 
-#: dmoj/urls.py:216 templates/base.html:209
+#: dmoj/urls.py:224 templates/base.html:209
 #: templates/organization/org-left-sidebar.html:2
 msgid "Home"
 msgstr "Trang chủ"
@@ -2855,24 +2855,23 @@ msgstr "Mô tả vấn đề"
 msgid "New clarification for %s"
 msgstr "Thông báo mới cho %s"
 
-#: judge/views/email.py:19
+#: judge/views/email.py:20
 #, fuzzy
 #| msgid "Email"
 msgid "New Email"
 msgstr "Email"
 
-#: judge/views/email.py:23
+#: judge/views/email.py:25
 #, fuzzy
 #| msgid "Contest with key already exists."
 msgid "An account with this email already exists."
 msgstr "Mã kỳ thi đã tồn tại."
 
-#: judge/views/email.py:41
-#, python-brace-format
-msgid "{settings.SITE_NAME} - Email Change Request"
-msgstr ""
-
 #: judge/views/email.py:43
+msgid "Email Change Request"
+msgstr "Thay đổi Email"
+
+#: judge/views/email.py:46
 msgid ""
 "We have received a request to change your email to this email. Click the "
 "button below to change your email:"
@@ -2880,27 +2879,27 @@ msgstr ""
 "Chúng tôi đã nhận được yêu cầu thay đổi địa chỉ email của bạn thành địa chỉ "
 "email này. Vui lòng nhấp vào nút bên dưới để thay đổi địa chỉ email của bạn:"
 
-#: judge/views/email.py:44
+#: judge/views/email.py:48
 msgid "Email Change"
 msgstr "Thay đổi Email"
 
-#: judge/views/email.py:45
+#: judge/views/email.py:49
 msgid "Change Email"
 msgstr "Thay đổi Email"
 
-#: judge/views/email.py:56 templates/user/edit-profile.html:120
+#: judge/views/email.py:65 templates/user/edit-profile.html:120
 msgid "Change email"
 msgstr "Thay đổi email"
 
-#: judge/views/email.py:76
+#: judge/views/email.py:89
 msgid "Success"
 msgstr "Thành công"
 
-#: judge/views/email.py:78
+#: judge/views/email.py:93
 msgid "Invalid"
 msgstr "Không hợp lệ"
 
-#: judge/views/email.py:83
+#: judge/views/email.py:102
 msgid "Email change pending"
 msgstr "Yêu cầu thay đổi email đang đợi xác thực."
 
@@ -5116,6 +5115,11 @@ msgstr ""
 msgid "See you soon!"
 msgstr "Hẹn sớm gặp lại bạn!"
 
+#: templates/registration/activation_email_subject.txt:1
+#, python-format
+msgid "Activate your %(SITE_NAME)s account"
+msgstr "Kích hoạt tài khoản %(SITE_NAME)s"
+
 #: templates/registration/login.html:9
 msgid "Invalid username or password."
 msgstr "Tên đăng nhập hoặc mật khẩu không hợp lệ."
@@ -5226,7 +5230,9 @@ msgid ""
 "You have successfully been registered. An email has been sent to the email "
 "address you provided to confirm your registration. If you don't see it, "
 "kindly check your spam folder as well."
-msgstr "Bạn đã đăng ký thành công. Kiểm tra email để hoàn thành việc xác thực. Nếu bạn không tìm thấy nó, vui lòng kiểm tra thư mục spam của bạn."
+msgstr ""
+"Bạn đã đăng ký thành công. Kiểm tra email để hoàn thành việc xác thực. Nếu "
+"bạn không tìm thấy nó, vui lòng kiểm tra thư mục spam của bạn."
 
 #: templates/registration/registration_form.html:61
 msgid "(again, for confirmation)"
@@ -5899,6 +5905,9 @@ msgstr "Thông tin"
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Chọn tất cả"
+
+#~ msgid "{settings.SITE_NAME} - Email Change Request"
+#~ msgstr "{settings.SITE_NAME} - Thay đổi email"
 
 #~ msgid "Affiliated organizations"
 #~ msgstr "Tổ chức bạn muốn tham gia"

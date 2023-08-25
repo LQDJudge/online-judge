@@ -40,7 +40,7 @@ def email_change_view(request):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
 
         # Send the email to the user
-        subject = _(f"{settings.SITE_NAME} - Email Change Request")
+        subject = settings.SITE_NAME + " - " + _("Email Change Request")
         email_contexts = {
             "message": _(
                 "We have received a request to change your email to this email. Click the button below to change your email:"
