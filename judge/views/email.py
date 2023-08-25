@@ -80,10 +80,9 @@ def verify_email_view(request, uidb64, token):
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
     if user is not None and default_token_generator.check_token(user, token):
-        # Update the user's email address
         profile = Profile.objects.get(user=user)
         new_email = profile.email_change_pending
-        if new_email:
+        if new_email and not User.objects.filter(email=new_email).exists():
             user.email = new_email
             profile.email_change_pending = None
             user.save()
