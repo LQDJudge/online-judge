@@ -52,7 +52,13 @@ def email_change_view(request):
             ),
         }
         message = render_email_message(request, email_contexts)
-        send_mail(subject, message, settings.EMAIL_HOST_USER, [new_email])
+        send_mail(
+            subject,
+            message,
+            settings.EMAIL_HOST_USER,
+            [new_email],
+            html_message=message,
+        )
         profile.email_change_pending = new_email
         profile.save()
         return redirect("email_change_pending")
