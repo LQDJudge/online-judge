@@ -43,9 +43,9 @@
 
     #center-float {
       position: relative;
-      margin: 0 auto auto -28.5em;
-      left: 60%;
-      width: 700px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
     }
   </style>
 {% endblock %}
@@ -79,11 +79,13 @@
 
 {% block body %}
   <div id="center-float">
-    <form id="edit-form" action="" method="post" class="form-area">
-      {% if form.errors %}
+    <form id="edit-form" action="" method="post" class="form-area" enctype="multipart/form-data">
+      {% if form.errors or form_user.errors %}
         <div class="alert alert-danger alert-dismissable">
           <a href="#" class="close">x</a>
-          {{ form.non_field_errors() }}
+          {{ form.errors }}
+          <br>
+          {{ form_user.errors }}
         </div>
       {% endif %}
 
@@ -97,6 +99,10 @@
         <tr>
           <td> {{ _('School') }}: </td>
           <td> {{ form_user.last_name }} </td>
+        </tr>
+        <tr>
+          <td style="padding-top: 1em">{{ _('Avatar') }}: </td>
+          <td style="padding-top: 1em">{{ form.profile_image }}</td>
         </tr>
       </table>
       <hr>
@@ -127,12 +133,6 @@
                   <td><span class="fullwidth">{{ form.math_engine }}</span></td>
                 </tr>
               {% endif %}
-              <tr>
-                <td colspan="2">
-                  <a href="http://www.gravatar.com/" title="{{ _('Change your avatar') }}"
-                    target="_blank" class="inline-header">{{ _('Change your avatar') }}</a>
-                </td>
-              </tr>
               <tr>
                 <td colspan="2">
                   <a href="{{ url('password_change') }}" class="inline-header">

@@ -499,16 +499,26 @@
       $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
       load_dynamic_update({{last_msg}});
 
-      const button = document.querySelector('#emoji-button')
-      const tooltip = document.querySelector('.tooltip')
-      Popper.createPopper(button, tooltip)
+      const button = document.querySelector('#emoji-button');
+      const tooltip = document.querySelector('.tooltip');
+      Popper.createPopper(button, tooltip, {
+        placement: 'left-end',
+      });
 
       function toggleEmoji() {
         tooltip.classList.toggle('shown')
       }
       $('#emoji-button').on('click', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         toggleEmoji();
+      });
+
+      // Đóng bảng emoji khi click bất kỳ chỗ nào trên màn hình
+      document.addEventListener("click", function(e) {
+        if (!tooltip.contains(e.target)) {
+          tooltip.classList.remove('shown'); // Ẩn bảng emoji
+        }
       });
 
       $('emoji-picker').on('emoji-click', function(e) {
@@ -629,7 +639,7 @@
         </div>
         <div id="chat-box">
 
-          <img src="{{static('loading.gif')}}" id="loader">
+          <img src="{{static('loading.gif')}}" id="loader" height="2em">
           <ul id="chat-log" style="display: none">
             {% include 'chat/message_list.html' %}
           </ul>

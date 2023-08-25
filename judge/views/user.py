@@ -402,12 +402,12 @@ class UserPerformancePointsAjax(UserProblemsPage):
 
 @login_required
 def edit_profile(request):
-    profile = Profile.objects.get(user=request.user)
-    if profile.mute:
-        raise Http404()
+    profile = request.profile
     if request.method == "POST":
         form_user = UserForm(request.POST, instance=request.user)
-        form = ProfileForm(request.POST, instance=profile, user=request.user)
+        form = ProfileForm(
+            request.POST, request.FILES, instance=profile, user=request.user
+        )
         if form_user.is_valid() and form.is_valid():
             with transaction.atomic(), revisions.create_revision():
                 form_user.save()

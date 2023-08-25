@@ -1,0 +1,13 @@
+{% if widget.is_initial %}
+  <div>
+    <a href="{{widget.value.url}}" target=_blank>
+      <img src="{{widget.value.url}}" width="{{widget.width}}" height="{{widget.height}}" style="border-radius: 3px;">
+    </a>
+    <div>
+      {{ widget.input_text }}:
+{% endif %}
+<input type="{{ widget.type }}" name="{{ widget.name }}">
+{% if widget.is_initial %}
+  </div>
+  </div>
+{% endif %}
