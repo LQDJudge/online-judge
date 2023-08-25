@@ -2856,10 +2856,8 @@ msgid "New clarification for %s"
 msgstr "Thông báo mới cho %s"
 
 #: judge/views/email.py:20
-#, fuzzy
-#| msgid "Email"
 msgid "New Email"
-msgstr "Email"
+msgstr "Email mới"
 
 #: judge/views/email.py:25
 #, fuzzy
