@@ -9,6 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.auth.hashers import check_password
 
 from urllib.parse import urlencode, urlunparse, urlparse
 
@@ -18,6 +19,11 @@ from judge.utils.email_render import render_email_message
 
 class EmailChangeForm(forms.Form):
     new_email = forms.EmailField(label=_("New Email"))
+    password = forms.CharField(label=_("Password"), widget=forms.PasswordInput)
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
 
     def clean_new_email(self):
         new_email = self.cleaned_data.get("new_email")
@@ -25,10 +31,16 @@ class EmailChangeForm(forms.Form):
             raise forms.ValidationError(_("An account with this email already exists."))
         return new_email
 
+    def clean_password(self):
+        password = self.cleaned_data.get("password")
+        if not self.user.check_password(password):
+            raise forms.ValidationError("Invalid password")
+        return password
+
 
 @login_required
 def email_change_view(request):
-    form = EmailChangeForm(request.POST or None)
+    form = EmailChangeForm(request.POST or None, user=request.user)
 
     if request.method == "POST" and form.is_valid():
         new_email = request.POST.get("new_email")
