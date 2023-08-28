@@ -42,6 +42,11 @@
 
       return receiver;
     }
+    let message_template = `
+{% with message=message_template %}
+  {% include "chat/message.html" %}
+{% endwith %}  
+    `;
     $(function() {
       load_dynamic_update({{last_msg}});
     });
