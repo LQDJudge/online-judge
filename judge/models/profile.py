@@ -183,6 +183,7 @@ class Profile(models.Model):
             ("setter", "Problem Setter"),
             ("admin", "Admin"),
         ),
+        db_index=True,
     )
     mute = models.BooleanField(
         verbose_name=_("comment mute"),

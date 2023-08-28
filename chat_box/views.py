@@ -21,6 +21,7 @@ from django.db.models import (
     Exists,
     Count,
     IntegerField,
+    F,
 )
 from django.db.models.functions import Coalesce
 from django.utils import timezone
@@ -34,7 +35,7 @@ from judge.jinja2.gravatar import gravatar
 from judge.models import Friend
 
 from chat_box.models import Message, Profile, Room, UserRoom, Ignore
-from chat_box.utils import encrypt_url, decrypt_url
+from chat_box.utils import encrypt_url, decrypt_url, encrypt_channel
 
 import json
 
@@ -49,7 +50,8 @@ class ChatView(ListView):
         self.room_id = None
         self.room = None
         self.messages = None
-        self.page_size = 20
+        self.first_page_size = 20  # only for first request
+        self.follow_up_page_size = 50
 
     def get_queryset(self):
         return self.messages
@@ -63,10 +65,12 @@ class ChatView(ListView):
 
     def get(self, request, *args, **kwargs):
         request_room = kwargs["room_id"]
+        page_size = self.follow_up_page_size
         try:
             last_id = int(request.GET.get("last_id"))
         except Exception:
             last_id = 1e15
+            page_size = self.first_page_size
         only_messages = request.GET.get("only_messages")
 
         if request_room:
@@ -80,11 +84,12 @@ class ChatView(ListView):
             request_room = None
 
         self.room_id = request_room
-        self.messages = Message.objects.filter(
-            hidden=False, room=self.room_id, id__lt=last_id
-        )[: self.page_size]
+        self.messages = (
+            Message.objects.filter(hidden=False, room=self.room_id, id__lt=last_id)
+            .select_related("author", "author__user")
+            .defer("author__about", "author__user_script")[:page_size]
+        )
         if not only_messages:
-            update_last_seen(request, **kwargs)
             return super().get(request, *args, **kwargs)
 
         return render(
@@ -101,10 +106,14 @@ class ChatView(ListView):
 
         context["title"] = self.title
         context["last_msg"] = event.last()
-        context["status_sections"] = get_status_context(self.request)
+        context["status_sections"] = get_status_context(self.request.profile)
         context["room"] = self.room_id
         context["has_next"] = self.has_next()
         context["unread_count_lobby"] = get_unread_count(None, self.request.profile)
+        context["chat_channel"] = encrypt_channel(
+            "chat_" + str(self.request.profile.id)
+        )
+        context["chat_lobby_channel"] = encrypt_channel("chat_lobby")
         if self.room:
             users_room = [self.room.user_one, self.room.user_two]
             users_room.remove(self.request.profile)
@@ -187,7 +196,7 @@ def post_message(request):
 
     if not room:
         event.post(
-            "chat_lobby",
+            encrypt_channel("chat_lobby"),
             {
                 "type": "lobby",
                 "author_id": request.profile.id,
@@ -199,7 +208,7 @@ def post_message(request):
     else:
         for user in room.users():
             event.post(
-                "chat_" + str(user.id),
+                encrypt_channel("chat_" + str(user.id)),
                 {
                     "type": "private",
                     "author_id": request.profile.id,
@@ -208,6 +217,10 @@ def post_message(request):
                     "tmp_id": request.POST.get("tmp_id"),
                 },
             )
+            if user != request.profile:
+                UserRoom.objects.filter(user=user, room=room).update(
+                    unread_count=F("unread_count") + 1
+                )
 
     return JsonResponse(ret)
 
@@ -254,15 +267,12 @@ def update_last_seen(request, **kwargs):
         room_id = request.POST.get("room")
     else:
         return HttpResponseBadRequest()
-
     try:
         profile = request.profile
         room = None
         if room_id:
-            room = Room.objects.get(id=int(room_id))
+            room = Room.objects.filter(id=int(room_id)).first()
     except Room.DoesNotExist:
-        return HttpResponseBadRequest()
-    except Exception as e:
         return HttpResponseBadRequest()
 
     if room and not room.contain(profile):
@@ -270,19 +280,20 @@ def update_last_seen(request, **kwargs):
 
     user_room, _ = UserRoom.objects.get_or_create(user=profile, room=room)
     user_room.last_seen = timezone.now()
+    user_room.unread_count = 0
     user_room.save()
 
     return JsonResponse({"msg": "updated"})
 
 
 def get_online_count():
-    last_two_minutes = timezone.now() - timezone.timedelta(minutes=2)
-    return Profile.objects.filter(last_access__gte=last_two_minutes).count()
+    last_5_minutes = timezone.now() - timezone.timedelta(minutes=5)
+    return Profile.objects.filter(last_access__gte=last_5_minutes).count()
 
 
 def get_user_online_status(user):
     time_diff = timezone.now() - user.last_access
-    is_online = time_diff <= timezone.timedelta(minutes=2)
+    is_online = time_diff <= timezone.timedelta(minutes=5)
     return is_online
 
 
@@ -319,47 +330,51 @@ def user_online_status_ajax(request):
         )
 
 
-def get_online_status(request_user, queryset, rooms=None):
-    if not queryset:
+def get_online_status(profile, other_profile_ids, rooms=None):
+    if not other_profile_ids:
         return None
-    last_two_minutes = timezone.now() - timezone.timedelta(minutes=2)
+    joined_ids = ",".join([str(id) for id in other_profile_ids])
+    other_profiles = Profile.objects.raw(
+        f"SELECT * from judge_profile where id in ({joined_ids}) order by field(id,{joined_ids})"
+    )
+    last_5_minutes = timezone.now() - timezone.timedelta(minutes=5)
     ret = []
-
     if rooms:
-        unread_count = get_unread_count(rooms, request_user)
+        unread_count = get_unread_count(rooms, profile)
         count = {}
         for i in unread_count:
             count[i["other_user"]] = i["unread_count"]
-
-    for user in queryset:
+    for other_profile in other_profiles:
         is_online = False
-        if user.last_access >= last_two_minutes:
+        if other_profile.last_access >= last_5_minutes:
             is_online = True
-        user_dict = {"user": user, "is_online": is_online}
-        if rooms and user.id in count:
-            user_dict["unread_count"] = count[user.id]
-        user_dict["url"] = encrypt_url(request_user.id, user.id)
+        user_dict = {"user": other_profile, "is_online": is_online}
+        if rooms and other_profile.id in count:
+            user_dict["unread_count"] = count[other_profile.id]
+        user_dict["url"] = encrypt_url(profile.id, other_profile.id)
         ret.append(user_dict)
     return ret
 
 
-def get_status_context(request, include_ignored=False):
+def get_status_context(profile, include_ignored=False):
     if include_ignored:
-        ignored_users = Profile.objects.none()
+        ignored_users = []
         queryset = Profile.objects
     else:
-        ignored_users = Ignore.get_ignored_users(request.profile)
+        ignored_users = list(
+            Ignore.get_ignored_users(profile).values_list("id", flat=True)
+        )
         queryset = Profile.objects.exclude(id__in=ignored_users)
 
-    last_two_minutes = timezone.now() - timezone.timedelta(minutes=2)
+    last_5_minutes = timezone.now() - timezone.timedelta(minutes=5)
     recent_profile = (
-        Room.objects.filter(Q(user_one=request.profile) | Q(user_two=request.profile))
+        Room.objects.filter(Q(user_one=profile) | Q(user_two=profile))
         .annotate(
             last_msg_time=Subquery(
                 Message.objects.filter(room=OuterRef("pk")).values("time")[:1]
             ),
             other_user=Case(
-                When(user_one=request.profile, then="user_two"),
+                When(user_one=profile, then="user_two"),
                 default="user_one",
             ),
         )
@@ -369,50 +384,49 @@ def get_status_context(request, include_ignored=False):
         .values("other_user", "id")[:20]
     )
 
-    recent_profile_id = [str(i["other_user"]) for i in recent_profile]
-    joined_id = ",".join(recent_profile_id)
+    recent_profile_ids = [str(i["other_user"]) for i in recent_profile]
     recent_rooms = [int(i["id"]) for i in recent_profile]
-    recent_list = None
-    if joined_id:
-        recent_list = Profile.objects.raw(
-            f"SELECT * from judge_profile where id in ({joined_id}) order by field(id,{joined_id})"
-        )
     friend_list = (
-        Friend.get_friend_profiles(request.profile)
-        .exclude(id__in=recent_profile_id)
+        Friend.get_friend_profiles(profile)
+        .exclude(id__in=recent_profile_ids)
         .exclude(id__in=ignored_users)
         .order_by("-last_access")
+        .values_list("id", flat=True)
     )
+
     admin_list = (
         queryset.filter(display_rank="admin")
         .exclude(id__in=friend_list)
-        .exclude(id__in=recent_profile_id)
+        .exclude(id__in=recent_profile_ids)
+        .values_list("id", flat=True)
     )
+
     all_user_status = (
-        queryset.filter(display_rank="user", last_access__gte=last_two_minutes)
+        queryset.filter(last_access__gte=last_5_minutes)
         .annotate(is_online=Case(default=True, output_field=BooleanField()))
         .order_by("-rating")
         .exclude(id__in=friend_list)
         .exclude(id__in=admin_list)
-        .exclude(id__in=recent_profile_id)[:30]
+        .exclude(id__in=recent_profile_ids)
+        .values_list("id", flat=True)[:30]
     )
 
     return [
         {
             "title": "Recent",
-            "user_list": get_online_status(request.profile, recent_list, recent_rooms),
+            "user_list": get_online_status(profile, recent_profile_ids, recent_rooms),
         },
         {
             "title": "Following",
-            "user_list": get_online_status(request.profile, friend_list),
+            "user_list": get_online_status(profile, friend_list),
         },
         {
             "title": "Admin",
-            "user_list": get_online_status(request.profile, admin_list),
+            "user_list": get_online_status(profile, admin_list),
         },
         {
             "title": "Other",
-            "user_list": get_online_status(request.profile, all_user_status),
+            "user_list": get_online_status(profile, all_user_status),
         },
     ]
 
@@ -423,7 +437,7 @@ def online_status_ajax(request):
         request,
         "chat/online_status.html",
         {
-            "status_sections": get_status_context(request),
+            "status_sections": get_status_context(request.profile),
             "unread_count_lobby": get_unread_count(None, request.profile),
         },
     )
@@ -447,7 +461,6 @@ def get_or_create_room(request):
         return HttpResponseBadRequest()
 
     request_id, other_id = decrypt_url(decrypted_other_id)
-
     if not other_id or not request_id or request_id != request.profile.id:
         return HttpResponseBadRequest()
 
@@ -475,48 +488,31 @@ def get_or_create_room(request):
 
 def get_unread_count(rooms, user):
     if rooms:
-        mess = (
-            Message.objects.filter(
-                room=OuterRef("room"), time__gte=OuterRef("last_seen")
-            )
-            .exclude(author=user)
-            .order_by()
-            .values("room")
-            .annotate(unread_count=Count("pk"))
-            .values("unread_count")
-        )
-
-        return (
-            UserRoom.objects.filter(user=user, room__in=rooms)
-            .annotate(
-                unread_count=Coalesce(Subquery(mess, output_field=IntegerField()), 0),
-                other_user=Case(
-                    When(room__user_one=user, then="room__user_two"),
-                    default="room__user_one",
-                ),
-            )
-            .filter(unread_count__gte=1)
-            .values("other_user", "unread_count")
-        )
-    else:  # lobby
-        mess = (
-            Message.objects.filter(room__isnull=True, time__gte=OuterRef("last_seen"))
-            .exclude(author=user)
-            .order_by()
-            .values("room")
-            .annotate(unread_count=Count("pk"))
-            .values("unread_count")
-        )
-
         res = (
-            UserRoom.objects.filter(user=user, room__isnull=True)
-            .annotate(
-                unread_count=Coalesce(Subquery(mess, output_field=IntegerField()), 0),
+            UserRoom.objects.filter(user=user, room__in=rooms, unread_count__gt=0)
+            .select_related("room__user_one", "room__user_two")
+            .values("unread_count", "room__user_one", "room__user_two")
+        )
+        for ur in res:
+            ur["other_user"] = (
+                ur["room__user_one"]
+                if ur["room__user_two"] == user.id
+                else ur["room__user_two"]
             )
-            .values_list("unread_count", flat=True)
+        return res
+    else:  # lobby
+        user_room = UserRoom.objects.filter(user=user, room__isnull=True).first()
+        if not user_room:
+            return 0
+        last_seen = user_room.last_seen
+        res = (
+            Message.objects.filter(room__isnull=True, time__gte=last_seen)
+            .exclude(author=user)
+            .exclude(hidden=True)
+            .count()
         )
 
-        return res[0] if len(res) else 0
+        return res
 
 
 @login_required
