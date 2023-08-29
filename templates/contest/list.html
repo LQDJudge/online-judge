@@ -278,11 +278,11 @@
       <br>
     {% endif %}
 
+    <h3 class="toggle open contest-group-header">
+      <i class="fa fa-chevron-right fa-fw"></i>
+      {{ _('Ongoing Contests') }}
+    </h3>
     {% if current_contests %}
-      <h3 class="toggle open contest-group-header">
-        <i class="fa fa-chevron-right fa-fw"></i>
-        {{ _('Ongoing Contests') }}
-      </h3>
       <div id="ongoing-table" class="toggled">
         <table class="contest-list table striped">
           <thead>
@@ -317,6 +317,11 @@
             {% endfor %}
           </tbody>
         </table>
+        <br>
+      </div>
+    {% else %}
+      <div class="toggled">
+        <i> {{ _('There is no ongoing contest at this time.') }} </i>
         <br>
       </div>
     {% endif %}
@@ -354,15 +359,17 @@
         </table>
       </div>
     {% else %}
-      <i>{{ _('There are no scheduled contests at this time.') }}</i>
-      <br>
+      <div class="toggled">
+        <i>{{ _('There is no scheduled contest at this time.') }}</i>
+        <br>
+      </div>
     {% endif %}
     <br>
 
+    <h3 class="toggle open contest-group-header">
+      {{ _('Past Contests') }}
+    </h3>
     {% if past_contests %}
-      <h3 class="toggle open contest-group-header">
-        {{ _('Past Contests') }}
-      </h3>
       {% if page_obj and page_obj.num_pages > 1 %}
         <div style="margin-bottom: 4px;">
           {% include "list-pages.html" %}
@@ -411,6 +418,11 @@
           {% include "list-pages.html" %}
         </div>
       {% endif %}
+    {% else %}
+      <div class="toggled">
+        <i> {{ _('There is no past contest.') }} </i>
+        <br>
+      </div>
     {% endif %}
   </div>
 {% endblock %}
