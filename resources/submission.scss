@@ -1,3 +1,4 @@
+@import "vars";
 .info-float {
     position: sticky;
     top: 60px;
@@ -20,6 +21,11 @@
 
     &:first-of-type {
         border-top: #ccc 1px solid;
+        border-top-left-radius: $widget_border_radius;
+        border-top-right-radius: $widget_border_radius;
+        .sub-result {
+            border-top-left-radius: $widget_border_radius;
+        }
     }
 
     > div {
