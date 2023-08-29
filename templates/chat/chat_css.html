@@ -102,12 +102,22 @@
       float: inherit;
     }
     #search-container {
-      margin-bottom: 0.4em;
+      padding: 1em;
     }
     #setting {
       position: relative;
     }
-
+    .status-user {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      flex-grow: 1;
+    }
+    .wrapline {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
 
     @media (min-width: 800px) {
       #page-container {

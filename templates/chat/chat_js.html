@@ -5,6 +5,8 @@
     "{{_('Admin')}}",
     "{{_('Other')}}",
   ];
+  let isMobile = window.matchMedia("only screen and (max-width: 799px)").matches;
+
   function load_next_page(last_id, refresh_html=false) {
     var param = {
       'last_id': last_id,
@@ -82,6 +84,7 @@
           register_toggle($(this));
         });
         register_click_space();
+        color_selected_room();
       }
     })
 
@@ -207,6 +210,9 @@
   }
 
   function add_message_from_template(body, tmp_id) {
+    if (window.room_id) {
+      $("#last_msg-" + window.room_id).html(body);
+    }
     var html = message_template;
     html = html.replaceAll('$body', body).replaceAll('$id', tmp_id);
     var $html = $(html);
@@ -267,6 +273,11 @@
     }
   }
 
+  function color_selected_room() {
+    $(".status-row").removeClass("selected-status-row");
+    $("#click_space_" + window.other_user_id).addClass("selected-status-row");
+  }
+
   function load_room(encrypted_user) {
     if (window.lock_click_space) return;
 
@@ -283,6 +294,7 @@
         .done(function(data) {
         window.room_id = data.room;
         window.other_user_id = data.other_user_id;
+        color_selected_room();
         callback();
       })
         .fail(function() {
@@ -292,6 +304,7 @@
     else {
       window.room_id = '';
       window.other_user_id = '';
+      color_selected_room();
       callback();
     }
     window.lock_click_space = false;
@@ -494,7 +507,7 @@
 
     var in_user_redirect = false;
     $('#search-handle').select2({
-      placeholder: '{{ _('Search by handle...') }}',
+      placeholder: '<i class="fa fa-search"></i> {{ _('Search by handle...') }}',
       ajax: {
         url: '{{ url('chat_user_search_select2_ajax') }}'
       },
@@ -544,5 +557,6 @@
       })
     }
     register_setting();
+    color_selected_room();
   });
 </script>

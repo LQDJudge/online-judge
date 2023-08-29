@@ -18,14 +18,21 @@ class Room(models.Model):
         Profile, related_name="user_two", verbose_name="user 2", on_delete=CASCADE
     )
 
+    @cache_wrapper(prefix="Rc")
     def contain(self, profile):
         return self.user_one == profile or self.user_two == profile
 
+    @cache_wrapper(prefix="Rou")
     def other_user(self, profile):
         return self.user_one if profile == self.user_two else self.user_two
 
+    @cache_wrapper(prefix="Rus")
     def users(self):
         return [self.user_one, self.user_two]
+
+    @cache_wrapper(prefix="Rlmb")
+    def last_message_body(self):
+        return self.message_set.first().body
 
 
 class Message(models.Model):

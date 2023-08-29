@@ -20,7 +20,6 @@
     window.lock = false;
     window.lock_click_space = false;
     window.pushed_messages = new Set();
-    let isMobile = window.matchMedia("only screen and (max-width: 799px)").matches;
 
     window.load_dynamic_update = function (last_msg) {
       var receiver = new EventReceiver(
@@ -71,25 +70,20 @@
 
     <div id="chat-container">
       <div id="chat-online" class="chat-right-panel sidebox">
-        <h3>
-          <i class="fa fa-users"></i>{{_('Online Users')}}
-        </h3>
         <div id="chat-online-content">
           <div id="search-container">
-            <center>
-              <form id="search-form" name="form" action="{{ url('get_or_create_room') }}" method="post">
-                {% csrf_token %}
-                <input id="search-handle" type="text" name="search"
-                  placeholder="{{ _('Search by handle...') }}">
-              </form>
-            </center>
+            <form id="chat-search-form" name="form" action="{{ url('get_or_create_room') }}" method="post">
+              {% csrf_token %}
+              <input id="search-handle" type="text" name="search"
+                placeholder="{{ _('Search by handle...') }}">
+            </form>
           </div>
           <div id="chat-online-list">
             {% include "chat/online_status.html" %}
           </div>
         </div>
       </div>
-      <div id="chat-area" class="chat-left-panel" style="width:100%">
+      <div id="chat-area" class="chat-left-panel">
         <div id="chat-info" style="height: 10%">
           {% include 'chat/user_online_status.html' %}
         </div>

@@ -5,9 +5,10 @@ from django.db.models.query import QuerySet
 import hashlib
 
 MAX_NUM_CHAR = 15
+NONE_RESULT = "__None__"
 
 
-def cache_wrapper(prefix, timeout=86400):
+def cache_wrapper(prefix, timeout=None):
     def arg_to_str(arg):
         if hasattr(arg, "id"):
             return str(arg.id)
@@ -31,8 +32,11 @@ def cache_wrapper(prefix, timeout=86400):
             cache_key = get_key(func, *args, **kwargs)
             result = cache.get(cache_key)
             if result is not None:
+                if result == NONE_RESULT:
+                    result = None
                 return result
-
+            if result is None:
+                result = NONE_RESULT
             result = func(*args, **kwargs)
             cache.set(cache_key, result, timeout)
             return result

@@ -22,6 +22,7 @@ from django.db.models import (
     Count,
     IntegerField,
     F,
+    Max,
 )
 from django.db.models.functions import Coalesce
 from django.utils import timezone
@@ -206,6 +207,7 @@ def post_message(request):
             },
         )
     else:
+        Room.last_message_body.dirty(room)
         for user in room.users():
             event.post(
                 encrypt_channel("chat_" + str(user.id)),
@@ -342,15 +344,31 @@ def get_online_status(profile, other_profile_ids, rooms=None):
     if rooms:
         unread_count = get_unread_count(rooms, profile)
         count = {}
+        last_msg = {}
+        room_of_user = {}
         for i in unread_count:
-            count[i["other_user"]] = i["unread_count"]
+            room = Room.objects.get(id=i["room"])
+            other_profile = room.other_user(profile)
+            count[other_profile.id] = i["unread_count"]
+        for room in rooms:
+            room = Room.objects.get(id=room)
+            other_profile = room.other_user(profile)
+            last_msg[other_profile.id] = room.last_message_body()
+            room_of_user[other_profile.id] = room.id
+
     for other_profile in other_profiles:
         is_online = False
         if other_profile.last_access >= last_5_minutes:
             is_online = True
         user_dict = {"user": other_profile, "is_online": is_online}
-        if rooms and other_profile.id in count:
-            user_dict["unread_count"] = count[other_profile.id]
+        if rooms:
+            user_dict.update(
+                {
+                    "unread_count": count.get(other_profile.id),
+                    "last_msg": last_msg.get(other_profile.id),
+                    "room": room_of_user.get(other_profile.id),
+                }
+            )
         user_dict["url"] = encrypt_url(profile.id, other_profile.id)
         ret.append(user_dict)
     return ret
@@ -386,17 +404,9 @@ def get_status_context(profile, include_ignored=False):
 
     recent_profile_ids = [str(i["other_user"]) for i in recent_profile]
     recent_rooms = [int(i["id"]) for i in recent_profile]
-    friend_list = (
-        Friend.get_friend_profiles(profile)
-        .exclude(id__in=recent_profile_ids)
-        .exclude(id__in=ignored_users)
-        .order_by("-last_access")
-        .values_list("id", flat=True)
-    )
 
     admin_list = (
         queryset.filter(display_rank="admin")
-        .exclude(id__in=friend_list)
         .exclude(id__in=recent_profile_ids)
         .values_list("id", flat=True)
     )
@@ -405,7 +415,6 @@ def get_status_context(profile, include_ignored=False):
         queryset.filter(last_access__gte=last_5_minutes)
         .annotate(is_online=Case(default=True, output_field=BooleanField()))
         .order_by("-rating")
-        .exclude(id__in=friend_list)
         .exclude(id__in=admin_list)
         .exclude(id__in=recent_profile_ids)
         .values_list("id", flat=True)[:30]
@@ -415,10 +424,6 @@ def get_status_context(profile, include_ignored=False):
         {
             "title": "Recent",
             "user_list": get_online_status(profile, recent_profile_ids, recent_rooms),
-        },
-        {
-            "title": "Following",
-            "user_list": get_online_status(profile, friend_list),
         },
         {
             "title": "Admin",
@@ -488,18 +493,9 @@ def get_or_create_room(request):
 
 def get_unread_count(rooms, user):
     if rooms:
-        res = (
-            UserRoom.objects.filter(user=user, room__in=rooms, unread_count__gt=0)
-            .select_related("room__user_one", "room__user_two")
-            .values("unread_count", "room__user_one", "room__user_two")
-        )
-        for ur in res:
-            ur["other_user"] = (
-                ur["room__user_one"]
-                if ur["room__user_two"] == user.id
-                else ur["room__user_two"]
-            )
-        return res
+        return UserRoom.objects.filter(
+            user=user, room__in=rooms, unread_count__gt=0
+        ).values("unread_count", "room")
     else:  # lobby
         user_room = UserRoom.objects.filter(user=user, room__isnull=True).first()
         if not user_room:

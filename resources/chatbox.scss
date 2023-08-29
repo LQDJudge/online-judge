@@ -39,15 +39,15 @@
 #chat-online {
     border-right: 1px solid #ccc;
     padding-bottom: 0 !important;
-    min-width: 25%;
     border-bottom: 0;
+    font-size: 1.2em;
 }
 #chat-online-content {
     margin-bottom: 0;
     overflow: hidden;
     overflow-wrap: break-word;
     overflow-y: auto;
-    max-height: calc(100% - 44px);
+    max-height: 100%;
 }
 #chat-box {
     /*border: 1px solid #ccc;*/
@@ -75,6 +75,14 @@
     padding: 0;
     width: 100%;
 }
+.selected-status-row {
+    background-color: lightgray;
+}
+.status_last_message {
+    color: darkgray;
+    font-size: 0.8em;
+}
+
 @media (min-width: 800px) {
     #chat-container {
         display: flex;
@@ -86,6 +94,10 @@
     }
     #chat-online {
         margin: 0;
+        width: 35%;
+    }
+    #chat-area {
+        flex-grow: 1;
     }
     .chat-left-panel, .chat-right-panel {
         display: block !important;
@@ -138,29 +150,29 @@
     transition: 1.5s ease-in-out;
 }
 .status-pic {
-    height: 1.3em;
-    width: 1.3em;
-    border-radius: 0.3em;
+    height: 32px;
+    width: 32px;
+    border-radius: 50%;
 }
 .status-container {
     position: relative;
     display: inline-flex;
+    flex: 0 0 auto;
 }
 .status-circle {
     position: absolute;
     bottom: 0;
     right: 0;
-    cx: 18px;
-    cy: 18px;
+    cx: 27px;
+    cy: 27px;
     r: 4.5px;
     stroke: white;
     stroke-width: 1;
 }
 .status-row {
     display: flex;
-    font-size: 15px;
-    padding: 0.2em 0.2em 0.2em 1em;
-    border-radius: 4px;
+    padding: 15px;
+    gap: 0.5em;
 }
 .status-row:hover {
     background: lightgray;
@@ -168,6 +180,7 @@
 }
 .status-list {
     padding: 0;
+    margin: 0;
 }
 .status-section-title {
     cursor: pointer;
@@ -200,6 +213,7 @@
         background-color: darkcyan;
         border-radius: 2px;
         padding: 0 0.5em;
+        align-self: flex-end;
     }
     #setting-content {
         display: none;
@@ -225,7 +239,7 @@
 
 @media (max-width: 799px) {
     #chat-area {
-        height: 500px;
+        height: calc(100vh - 50px);
     }
     #emoji-button {
         display: none;

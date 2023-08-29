@@ -47,11 +47,6 @@ else:
                 "pagedown-extra/Markdown.Extra.js",
                 "pagedown_init.js",
             ]
-            css = {
-                "all": [
-                    "markdown.css",
-                ]
-            }
 
     class AdminPagedownWidget(PagedownWidget, admin_widgets.AdminTextareaWidget):
         class Media:
@@ -60,7 +55,6 @@ else:
                     "pagedown_widget.css",
                     "content-description.css",
                     "admin/css/pagedown.css",
-                    "markdown.css",
                     "pagedown.css",
                 ]
             }
@@ -125,7 +119,6 @@ else:
                     "pygment-github.css",
                     "table.css",
                     "ranks.css",
-                    "markdown.css",
                     "dmmd-preview.css",
                 ]
             }
