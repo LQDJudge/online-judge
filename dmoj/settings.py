@@ -477,16 +477,16 @@ ML_OUTPUT_PATH = None
 # Use subdomain for organizations
 USE_SUBDOMAIN = False
 
-try:
-    with open(os.path.join(os.path.dirname(__file__), "local_settings.py")) as f:
-        exec(f.read(), globals())
-except IOError:
-    pass
-
-DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
-
 # Chat
 CHAT_SECRET_KEY = "QUdVFsxk6f5-Hd8g9BXv81xMqvIZFRqMl-KbRzztW-U="
 
 # Nginx
 META_REMOTE_ADDRESS_KEY = "REMOTE_ADDR"
+
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
+try:
+    with open(os.path.join(os.path.dirname(__file__), "local_settings.py")) as f:
+        exec(f.read(), globals())
+except IOError:
+    pass
