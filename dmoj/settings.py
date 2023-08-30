@@ -487,3 +487,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # Chat
 CHAT_SECRET_KEY = "QUdVFsxk6f5-Hd8g9BXv81xMqvIZFRqMl-KbRzztW-U="
+
+# Nginx
+META_REMOTE_ADDRESS_KEY = "REMOTE_ADDR"
