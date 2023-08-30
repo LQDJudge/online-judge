@@ -3008,19 +3008,13 @@ a.voted {
     background-image: initial;
     background-color: rgb(20, 22, 22);
 }
-#emoji-button {
-    color: rgb(169, 166, 160);
-}
-#emoji-button:hover {
-    color: rgb(126, 119, 107);
-}
 #chat-online {
     border-right-color: rgb(51, 56, 58);
     border-bottom-color: initial;
 }
 #chat-input {
-    border-color: initial;
     color: rgb(193, 191, 188);
+    border-color: rgb(132, 97, 16);
 }
 .selected-status-row {
     background-color: rgb(41, 44, 46);
@@ -3035,9 +3029,6 @@ a.voted {
         border-left-color: rgb(51, 56, 58);
         border-bottom-color: initial;
     }
-}
-.info-circle {
-    stroke: rgb(193, 191, 188);
 }
 #chat-info {
     box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 3px;
@@ -3067,6 +3058,13 @@ a.voted {
     background-image: initial;
     background-color: rgb(0, 88, 169);
     color: rgb(193, 191, 188);
+}
+.chat-input-icon {
+    color: rgb(170, 166, 161);
+}
+.chat-input-icon:hover {
+    background-image: initial;
+    background-color: rgb(41, 44, 46);
 }
 .chat .active-span {
     color: rgb(140, 134, 125);
@@ -3728,19 +3726,6 @@ code .il {
 .sr-only {
     border-color: initial;
 }
-::-webkit-scrollbar-track {
-    background-color: transparent;
-}
-::-webkit-scrollbar-thumb {
-    background-color: rgb(33, 41, 45);
-    border-color: transparent;
-}
-::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(50, 65, 68);
-}
-.body-message {
-    border-bottom-color: rgb(50, 54, 56);
-}
 .CtxtMenu_InfoContent {
     border-color: initial;
     background-color: rgb(28, 30, 32);
@@ -3837,6 +3822,15 @@ mjx-merror {
 }
 mjx-assistive-mml {
     border-color: initial !important;
+}
+mjx-stretchy-v > mjx-ext {
+    border-color: transparent;
+}
+.recently-attempted ul {
+    list-style-image: initial;
+}
+.organization-row:last-child {
+    border-bottom-color: initial;
 }
 
 /* Override Style */

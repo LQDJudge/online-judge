@@ -223,6 +223,7 @@
   function submit_chat() {
     {% if last_msg and not request.profile.mute %}
       if ($("#chat-input").val().trim()) {
+        $('#chat-input-container').height('auto');
         var body = $('#chat-input').val().trim();
         // body = body.split('\n').join('\n\n');
 
@@ -438,7 +439,6 @@
       return true
     });
 
-    $('.chat-right-panel').hide();
     $('#chat-tab').find('a').click(function (e) {
       e.preventDefault();
       $('#chat-tab').addClass('active');
@@ -558,5 +558,11 @@
     }
     register_setting();
     color_selected_room();
+
+    $('#chat-input').on('input', function () {
+      $('#chat-input-container').height('auto');
+      $('#chat-input-container').height((this.scrollHeight) + 'px');
+    });
+    $('#submit-button').on('click', submit_chat);
   });
 </script>

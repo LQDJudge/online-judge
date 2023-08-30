@@ -84,18 +84,22 @@
         </div>
       </div>
       <div id="chat-area" class="chat-left-panel">
-        <div id="chat-info" style="height: 10%">
+        <div id="chat-info">
           {% include 'chat/user_online_status.html' %}
         </div>
         <div id="chat-box">
           <img src="{{static('loading.gif')}}" id="loader">
-          <ul id="chat-log" style="display: none">
+          <ul id="chat-log">
             {% include 'chat/message_list.html' %}
           </ul>
         </div>
-        <div style="height: 15%">
-          <a id="emoji-button" href="#" title="{{_('Emoji')}}"><i class="icofont-slightly-smile"></i></a>
+        <div id="chat-input-container">
           <textarea maxlength="5000" id="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
+          <div class="chat-input-icon" id="emoji-button" href="#" title="{{_('Emoji')}}"><i class="icofont-slightly-smile"></i>
+          </div>
+          <div class="chat-input-icon" id="submit-button">
+            <i class="fa fa-play"></i>
+          </div>
         </div>
         <div class="tooltip" role="tooltip">
           <emoji-picker></emoji-picker>

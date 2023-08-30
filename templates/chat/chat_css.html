@@ -64,7 +64,6 @@
     .body-message {
       padding-left: 3em;
       padding-bottom: 0.5em;
-      border-bottom: 1px dotted lightgray;
     }
     .user-time {
       margin-bottom: 0.3em;
@@ -118,11 +117,68 @@
       white-space: nowrap;
       text-overflow: ellipsis;
     }
+    #chat-input-container {
+      display: flex;
+      align-items: center;
+      gap: 1em;
+    }
+    #chat-input {
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      transition: box-shadow 0.3s ease-in-out;
+      width: 80%;
+      resize: none;
+      height: 100%;
+    }
+    #chat-input:focus {
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      outline: none;
+    }
+    .chat-input-icon {
+      font-size: 16px;
+      border-radius: 50%;
+      width: 2em;
+      height: 2em;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 2px solid;
+    }
+    .chat-input-icon:hover {
+      cursor: pointer;
+    }
+    #chat-area {
+      display: flex;
+      flex-direction: column;
+    }
+    .info-circle {
+      position: absolute;
+      cx: 5px;
+      cy: 5px;
+      r: 5px;
+      stroke: white;
+      stroke-width: 1;
+    }
+    .info-pic {
+      border-radius: 50%;
+      margin-left: 1em;
+    }
+    #chat-info {
+      height: 10%;
+    }
 
     @media (min-width: 800px) {
       #page-container {
         position:fixed;
         overflow:hidden;
+      }
+      #chat-input-container {
+        padding-left: 10%;
+      }
+      #chat-area {
+        padding-bottom: 1.5em;
       }
     }
     @media (max-width: 799px) {
@@ -138,6 +194,9 @@
       }
       .active-span {
         display: none;
+      }
+      #chat-info {
+        height: 5%;
       }
     }
   </style>
