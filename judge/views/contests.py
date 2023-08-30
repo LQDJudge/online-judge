@@ -1357,9 +1357,7 @@ class ContestClarificationAjax(ContestMixin, DetailView):
             raise Http404()
 
         polling_time = 1  # minute
-        last_one_minute = last_five_minutes = timezone.now() - timezone.timedelta(
-            minutes=polling_time
-        )
+        last_one_minute = timezone.now() - timezone.timedelta(minutes=polling_time)
 
         queryset = ContestProblemClarification.objects.filter(
             problem__in=self.object.contest_problems.all(), date__gte=last_one_minute
