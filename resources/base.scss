@@ -191,11 +191,19 @@ header {
         display: block;
         margin: 0;
 
-        & > li > a > span {
+        & > li > span {
             height: 36px;
             padding-top: 8px;
             display: block;
             white-space: nowrap;
+            cursor: pointer;
+
+            &:hover {
+                border-top: 2px solid #9c3706;
+                color: black;
+                background: rgba(255, 255, 255, 0.25);
+                margin: 0;
+            }
 
             & > img {
                 vertical-align: middle;

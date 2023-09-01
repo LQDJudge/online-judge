@@ -261,14 +261,14 @@
           </span>
           {% if request.user.is_authenticated %}
             <span id="user-links">
-              <ul><li><a href="javascript:void(0)">
+              <ul><li>
                 <span>
                   <img src="{{ gravatar(request.profile, 32) }}" height="24" width="24">{# -#}
                   <span>
                     <b class="{{request.profile.css_class}}">{{ request.user.username }}</b>
                   </span>
                 </span>
-              </a></li></ul>
+              </li></ul>
             </span>
             <div class="dropdown" id="userlink_dropdown" role="tooptip">
               <a href="{{ url('user_page') }}">

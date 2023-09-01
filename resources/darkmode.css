@@ -1541,6 +1541,12 @@ header {
 #user-links {
     color: rgb(146, 141, 132);
 }
+#user-links > ul > li > span:hover {
+    border-top-color: rgb(165, 58, 7);
+    color: rgb(193, 191, 188);
+    background-image: initial;
+    background-color: rgba(20, 22, 22, 0.25);
+}
 #nav-shadow {
     background-image: linear-gradient(rgb(41, 44, 46),
     rgba(0, 0, 0, 0));
@@ -1792,6 +1798,9 @@ noscript #noscript {
 }
 .background-footer {
     color: rgb(126, 119, 107);
+}
+#loading-bar {
+    background-color: rgb(101, 38, 33);
 }
 @media (min-width: 800px) {
     #page-container {
@@ -3822,15 +3831,6 @@ mjx-merror {
 }
 mjx-assistive-mml {
     border-color: initial !important;
-}
-mjx-stretchy-v > mjx-ext {
-    border-color: transparent;
-}
-.recently-attempted ul {
-    list-style-image: initial;
-}
-.organization-row:last-child {
-    border-bottom-color: initial;
 }
 
 /* Override Style */
