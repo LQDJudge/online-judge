@@ -128,7 +128,7 @@ location /profile_images/ {
 }
 ```
 
-1. Quy trình dev:
+6. Quy trình dev:
     1. Sau khi thay đổi code thì django tự build lại, các bạn chỉ cần F5
     2. Một số style nằm trong các file .scss. Các bạn cần recompile css thì mới thấy được thay đổi.
 
