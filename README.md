@@ -119,9 +119,9 @@ python3 manage.py runserver 0.0.0.0:8000
 4. Đối với nginx, sau khi config xong theo guide của DMOJ, bạn cần thêm location như sau để sử dụng được tính năng profile image, thay thế `path/to/oj` thành đường dẫn nơi bạn đã clone source code.
 
 ```
-    location /profile_images/ {
-        root /path/to/oj;
-    }
+location /profile_images/ {
+    root /path/to/oj;
+}
 ```
 
 ```jsx
