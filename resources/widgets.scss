@@ -269,6 +269,15 @@ input {
         overflow-x: auto;
         overflow-y: hidden;
 
+        &::-webkit-scrollbar {
+            width: 0.1rem; // Adjust the width as needed
+            background-color: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: transparent;
+        }
+
         > li {
             position: relative;
             display: block;
