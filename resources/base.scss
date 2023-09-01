@@ -233,7 +233,7 @@ header {
     top: 0;
     left: 0;
     right: 0;
-    height: 48px;
+    height: $navbar_height;
 }
 
 nav {
@@ -377,7 +377,7 @@ hr {
 }
 
 #content {
-    margin: 48px auto 1em auto;
+    margin: $navbar_height auto 1em auto;
     padding-top: 1em;
 
     // Header
@@ -858,6 +858,16 @@ select {
     margin-right: auto;
     margin-top: 1em;
     margin-bottom: 1em;
+}
+
+#loading-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    background-color: #993932;
+    width: 0;
+    z-index: 9999;
 }
 
 @media (max-width: 799px) {
