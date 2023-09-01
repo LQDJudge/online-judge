@@ -116,17 +116,16 @@ python3 manage.py runserver 0.0.0.0:8000
 1. (WSL) có thể tải ứng dụng Terminal trong Windows Store
 2. (WSL) mỗi lần mở ubuntu, các bạn cần chạy lệnh sau để mariadb khởi động: `sudo service mysql restart` (tương tự cho một số service khác như memcached, celery)
 3. Sau khi cài đặt, các bạn chỉ cần activate virtual env và chạy lệnh runserver là ok
-4. Đối với nginx, sau khi config xong theo guide của DMOJ, bạn cần thêm location như sau để sử dụng được tính năng profile image, thay thế `path/to/oj` thành đường dẫn nơi bạn đã clone source code.
+```jsx
+. dmojsite/bin/activate
+python3 manage.py runserver
+```
+5. Đối với nginx, sau khi config xong theo guide của DMOJ, bạn cần thêm location như sau để sử dụng được tính năng profile image, thay thế `path/to/oj` thành đường dẫn nơi bạn đã clone source code.
 
 ```
 location /profile_images/ {
     root /path/to/oj;
 }
-```
-
-```jsx
-. dmojsite/bin/activate
-python3 manage.py runserver
 ```
 
 1. Quy trình dev:
