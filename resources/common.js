@@ -389,6 +389,7 @@ function onWindowReady() {
         $("#loading-bar").show();
         $("#loading-bar").animate({ width: "100%" }, 1500, function() {
             $(this).hide();
+            $("#loading-bar").css({ width: 0});
         });    
     });
 }
