@@ -80,6 +80,7 @@ class ProfileForm(ModelForm):
             "ace_theme",
             "user_script",
             "profile_image",
+            "css_background",
         ]
         widgets = {
             "user_script": AceWidget(theme="github"),
@@ -87,6 +88,7 @@ class ProfileForm(ModelForm):
             "language": Select2Widget(attrs={"style": "width:200px"}),
             "ace_theme": Select2Widget(attrs={"style": "width:200px"}),
             "profile_image": ImageWidget,
+            "css_background": forms.TextInput(),
         }
 
         has_math_config = bool(settings.MATHOID_URL)

@@ -246,6 +246,13 @@ class Profile(models.Model):
     )
     profile_image = models.ImageField(upload_to=profile_image_path, null=True)
     email_change_pending = models.EmailField(blank=True, null=True)
+    css_background = models.TextField(
+        verbose_name=_("Custom background"),
+        null=True,
+        blank=True,
+        help_text=_('CSS custom background properties: url("image_url"), color, etc'),
+        max_length=300,
+    )
 
     @cached_property
     def organization(self):

@@ -193,6 +193,15 @@
         }
       </style>
     </noscript>
+    {% if request.profile.css_background %}
+      <style>
+        @media(min-width: 800px) {
+          #page-container {
+            background: {{request.profile.css_background|safe}};
+          }
+        }
+      </style>
+    {% endif %}
   </head>
   <body>
     <svg width="0" height="0" style="display: block">

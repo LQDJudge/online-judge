@@ -173,6 +173,10 @@
         {% endif %}
       </div>
       <br><hr>
+      <span class="block-header">{{ _('CSS background') }}:</span>
+      {{ form.css_background }}
+      <div><i>{{form.css_background.help_text}}</i></div>
+      <br><br>
       <div class="block-header">{{ _('User-script') }}:</div>
       {{ form.user_script }}
       <hr>
