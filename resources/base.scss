@@ -232,7 +232,7 @@ header {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
+    right: 10px;
     height: 48px;
 }
 
@@ -288,7 +288,7 @@ nav {
                 }
 
                 &:hover {
-                    border-top: 2px solid #9c3706;
+                    border-top: 2px solid #045343;
                     color: black;
                     background: rgba(255, 255, 255, 0.25);
                     margin: 0;
@@ -296,8 +296,8 @@ nav {
 
                 &.active {
                     // color: #FFF;
-                    border-top: 2px solid #9c3706;
-                    color: #9c3706;
+                    border-top: 2px solid #045343;
+                    color: #045343;
                     background: white;
                 }
 
@@ -705,11 +705,11 @@ math {
 }
 
 #chat-icon {
-    color: lightseagreen;
+    color: #045343;
 }
 
 #chat-icon:hover {
-    color: darkgreen;
+    color: green;
 }
 
 #nav-lang-icon {
@@ -887,4 +887,56 @@ select {
     .view-next-page {
         display: none;
     }
+}
+
+.colored-text {
+    color: #045343;
+}
+
+.bold-text {
+    font-weight: bold;
+}
+
+.non-italics {
+    font-style: normal;
+}
+
+.margin-label{
+    margin-bottom: 2.5px;
+}
+
+::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+    color: #045343;
+    opacity: 1; /* Firefox */
+    text-align: center;
+}
+
+:-ms-input-placeholder { /* Internet Explorer 10-11 */
+    color: #045343;
+    text-align: center;
+}
+
+::-ms-input-placeholder { /* Microsoft Edge */
+    color: #045343;
+    text-align: center;
+}
+
+input::placeholder{
+    color: #045343;
+    text-align: center;
+}
+
+::-webkit-input-placeholder {
+    color: #045343;
+    text-align: center;
+}
+
+:-moz-placeholder { /* Firefox 18- */
+    color: #045343;
+    text-align: center;
+}
+
+::-moz-placeholder {  /* Firefox 19+ */
+    color: #045343;
+    text-align: center;
 }
