@@ -1724,10 +1724,10 @@ noscript #noscript {
     color: rgb(148, 142, 134);
 }
 #chat-icon {
-    color: rgb(72, 187, 180);
+    color: rgb(170, 166, 161);
 }
 #chat-icon:hover {
-    color: rgb(166, 163, 157);
+    color: rgb(95, 212, 95);
 }
 #nav-lang-icon {
     color: rgb(42, 104, 212);
@@ -1811,6 +1811,24 @@ noscript #noscript {
         background-image: initial;
         background-color: rgb(20, 22, 22);
     }
+}
+.colored-text {
+    color: rgb(193, 191, 188);
+}
+::-webkit-input-placeholder {
+    color: rgb(170, 166, 161);
+}
+::placeholder {
+    color: rgb(170, 166, 161);
+}
+input::-webkit-input-placeholder {
+    color: rgb(170, 166, 161);
+}
+input::placeholder {
+    color: rgb(170, 166, 161);
+}
+::-webkit-input-placeholder {
+    color: rgb(170, 166, 161);
 }
 .table {
     background-image: initial;
@@ -1902,11 +1920,11 @@ noscript #noscript {
     color: rgb(212, 58, 58) !important;
 }
 .left-sidebar-item.active {
-    color: rgb(95, 212, 95);
-    background-color: rgb(33, 92, 14);
+    color: rgb(193, 191, 188);
+    background-color: rgb(2, 55, 45);
 }
 .left-sidebar-item.active .sidebar-icon {
-    color: rgb(95, 212, 95);
+    color: rgb(193, 191, 188);
 }
 .blog-sidebox .contest {
     border-bottom-color: rgb(51, 56, 58);
@@ -1954,7 +1972,7 @@ noscript #noscript {
     background-color: rgb(33, 36, 37);
 }
 .left-sidebar-item.active:hover {
-    background-color: rgb(33, 92, 14);
+    background-color: rgb(2, 55, 45);
 }
 .sidebar-icon {
     color: rgb(193, 191, 188);
@@ -2383,7 +2401,7 @@ a.user-redirect:hover {
     color: rgb(186, 75, 60); 
 }
 .button, button, input[type="submit"] {
-    background-color: rgb(166, 66, 0);
+    background-color: rgb(2, 55, 45);
     border-color: transparent;
     box-shadow: rgba(0, 0, 0, 0.02) 0px 1px 3px 0px;
     text-decoration-color: initial;
@@ -2427,16 +2445,24 @@ a.user-redirect:hover {
     background-image: initial;
     background-color: rgb(0, 0, 92); 
 }
+.button.btn-darkGreen, button.btn-darkGreen, input[type="submit"].btn-darkGreen {
+    background-image: initial;
+    background-color: rgb(2, 55, 45); 
+}
+.button.btn-darkGreen:hover, button.btn-darkGreen:hover, input[type="submit"].btn-darkGreen:hover {
+    background-image: initial;
+    background-color: rgb(2, 55, 45); 
+}
 .button:hover, button:hover, input[type="submit"]:hover {
-    background-color: rgb(144, 60, 2);
+    background-color: rgb(2, 55, 45);
     box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px; 
 }
 .button:focus, button:focus, input[type="submit"]:focus {
-    background-color: rgb(144, 60, 2);
+    background-color: rgb(2, 55, 45);
     box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px; 
 }
 .button:active, button:active, input[type="submit"]:hover {
-    background-color: rgb(133, 53, 0);
+    background-color: rgb(2, 55, 45);
     box-shadow: rgba(0, 0, 0, 0.06) 0px 2px 4px; 
 }
 input[type="text"], input[type="password"], input[type="email"], input[type="number"] {
