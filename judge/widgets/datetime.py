@@ -16,8 +16,8 @@ class DateTimePickerWidget(forms.DateTimeInput):
 
     @property
     def media(self):
-        css_url = "https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.min.css"
-        js_url = "https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.full.min.js"
+        css_url = "/static/datetime-picker/datetimepicker.min.css"
+        js_url = "/static/datetime-picker/datetimepicker.full.min.js"
         return forms.Media(
             js=[js_url],
             css={"screen": [css_url]},

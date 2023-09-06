@@ -542,10 +542,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
             return True
 
         # If the user is a contest organizer or curator
-        if (
-            user.has_perm("judge.edit_own_contest")
-            and user.profile.id in self.editor_ids
-        ):
+        if hasattr(user, "profile") and user.profile.id in self.editor_ids:
             return True
 
         return False
@@ -775,12 +772,9 @@ class ContestProblem(models.Model):
     partial = models.BooleanField(default=True, verbose_name=_("partial"))
     is_pretested = models.BooleanField(default=False, verbose_name=_("is pretested"))
     order = models.PositiveIntegerField(db_index=True, verbose_name=_("order"))
-    output_prefix_override = models.IntegerField(
-        help_text=_("0 to not show testcases, 1 to show"),
+    show_testcases = models.BooleanField(
         verbose_name=_("visible testcases"),
-        null=True,
-        blank=True,
-        default=0,
+        default=False,
     )
     max_submissions = models.IntegerField(
         help_text=_(

@@ -193,6 +193,15 @@
         }
       </style>
     </noscript>
+    {% if request.profile.css_background %}
+      <style>
+        @media(min-width: 800px) {
+          #page-container {
+            background: {{request.profile.css_background|safe}};
+          }
+        }
+      </style>
+    {% endif %}
   </head>
   <body>
     <svg width="0" height="0" style="display: block">
@@ -202,7 +211,7 @@
     </svg>
     <nav id="navigation" class="unselectable">
       <div id="nav-container">
-        <a id="navicon" href="javascript:void(0)"><i class="fa fa-bars"></i></a>
+        <span id="navicon"><i class="fa fa-bars"></i></span>
         <ul id="nav-list">
           <li class="home-nav-element"><a href="{{ url('home') }}">{% include "site-logo-fragment.html" %}</a></li>
           <li class="home-nav-element"><span class="nav-divider"></span></li>
@@ -261,34 +270,48 @@
           </span>
           {% if request.user.is_authenticated %}
             <span id="user-links">
-              <ul><li><a href="javascript:void(0)">
+              <ul><li>
                 <span>
-                  <img src="{{ gravatar(request.user, 32) }}" height="24" width="24">{# -#}
+                  <img src="{{ gravatar(request.profile, 32) }}" height="24" width="24">{# -#}
                   <span>
                     <b class="{{request.profile.css_class}}">{{ request.user.username }}</b>
                   </span>
                 </span>
-              </a></li></ul>
+              </li></ul>
             </span>
             <div class="dropdown" id="userlink_dropdown" role="tooptip">
-              <div class="dropdown-item"><a href="{{ url('user_page') }}">{{ _('Profile') }}</a></div>
+              <a href="{{ url('user_page') }}">
+                <div class="dropdown-item">{{ _('Profile') }}</div>
+              </a>
               {% if request.user.is_staff or request.user.is_superuser %}
-                <div class="dropdown-item"><a href="{{ url('admin:index') }}">{{ _('Admin') }}</a></div>
+                <a href="{{ url('admin:index') }}">
+                  <div class="dropdown-item">{{ _('Admin') }}</div>
+                </a>
               {% endif %}
               {% if request.user.is_superuser %}
-                <div class="dropdown-item"><a href="{{ url('internal_problem') }}">{{ _('Internal') }}</a></div>
-                <div class="dropdown-item"><a href="{{ url('site_stats') }}">{{ _('Stats') }}</a></div>
+                <a href="{{ url('internal_problem') }}">
+                  <div class="dropdown-item">{{ _('Internal') }}</div>
+                </a>
+                <a href="{{ url('site_stats') }}">
+                  <div class="dropdown-item">{{ _('Stats') }}</div>
+                </a>
               {% endif %}
-              <div class="dropdown-item"><a href="{{ url('user_edit_profile') }}">{{ _('Edit profile') }}</a></div>
+              <a href="{{ url('user_edit_profile') }}">
+                <div class="dropdown-item">{{ _('Edit profile') }}</div>
+              </a>
               {% if request.user.is_impersonate %}
-                <div class="dropdown-item"><a href="{{ url('impersonate-stop') }}">Stop impersonating</a></div>
+                <a href="{{ url('impersonate-stop') }}">
+                  <div class="dropdown-item">Stop impersonating</div>
+                </a>
               {% else %}
-                <div class="dropdown-item">
-                  <a href="#" id="logout" class="red">{{ _('Log out') }}</a>
-                  <form id="logout-form" action="{{ url('auth_logout') }}" method="POST">
-                    {% csrf_token %}
-                  </form>
-                </div>
+                <a href="#" id="logout" class="red">
+                  <div class="dropdown-item">
+                    {{ _('Log out') }}
+                    <form id="logout-form" action="{{ url('auth_logout') }}" method="POST">
+                      {% csrf_token %}
+                    </form>
+                  </div>
+                </a>
               {% endif %}
             </div>
           {% else %}
@@ -302,6 +325,7 @@
       </div>
       <div id="nav-shadow"></div>
     </nav>
+    <div id="loading-bar"></div>
     {% if request.in_contest %}
       <div id="contest-info">
         <div id="contest-info-main">

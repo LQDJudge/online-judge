@@ -1,4 +1,5 @@
 from operator import mul
+import os
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -25,6 +26,12 @@ class EncryptedNullCharField(EncryptedCharField):
         if not value:
             return None
         return super(EncryptedNullCharField, self).get_prep_value(value)
+
+
+def profile_image_path(profile, filename):
+    tail = filename.split(".")[-1]
+    new_filename = f"user_{profile.id}.{tail}"
+    return os.path.join(settings.DMOJ_PROFILE_IMAGE_ROOT, new_filename)
 
 
 class Organization(models.Model):
@@ -102,6 +109,13 @@ class Organization(models.Model):
                 "Organization membership test must be Profile or primany key"
             )
 
+    def delete(self, *args, **kwargs):
+        contests = self.contest_set
+        for contest in contests.all():
+            if contest.organizations.count() == 1:
+                contest.delete()
+        super().delete(*args, **kwargs)
+
     def __str__(self):
         return self.name
 
@@ -169,6 +183,7 @@ class Profile(models.Model):
             ("setter", "Problem Setter"),
             ("admin", "Admin"),
         ),
+        db_index=True,
     )
     mute = models.BooleanField(
         verbose_name=_("comment mute"),
@@ -228,6 +243,15 @@ class Profile(models.Model):
         null=True,
         blank=True,
         help_text=_("Notes for administrators regarding this user."),
+    )
+    profile_image = models.ImageField(upload_to=profile_image_path, null=True)
+    email_change_pending = models.EmailField(blank=True, null=True)
+    css_background = models.TextField(
+        verbose_name=_("Custom background"),
+        null=True,
+        blank=True,
+        help_text=_('CSS custom background properties: url("image_url"), color, etc'),
+        max_length=300,
     )
 
     @cached_property

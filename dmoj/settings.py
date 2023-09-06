@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+import datetime
 import os
 import tempfile
 
@@ -83,6 +84,7 @@ DMOJ_STATS_SUBMISSION_RESULT_COLORS = {
     "CE": "#42586d",
     "ERR": "#ffa71c",
 }
+DMOJ_PROFILE_IMAGE_ROOT = "profile_images"
 
 MARKDOWN_STYLES = {}
 MARKDOWN_DEFAULT_STYLE = {}
@@ -475,10 +477,16 @@ ML_OUTPUT_PATH = None
 # Use subdomain for organizations
 USE_SUBDOMAIN = False
 
+# Chat
+CHAT_SECRET_KEY = "QUdVFsxk6f5-Hd8g9BXv81xMqvIZFRqMl-KbRzztW-U="
+
+# Nginx
+META_REMOTE_ADDRESS_KEY = "REMOTE_ADDR"
+
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
 try:
     with open(os.path.join(os.path.dirname(__file__), "local_settings.py")) as f:
         exec(f.read(), globals())
 except IOError:
     pass
-
-DEFAULT_AUTO_FIELD = "django.db.models.AutoField"

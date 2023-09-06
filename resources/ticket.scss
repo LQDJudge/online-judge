@@ -150,14 +150,6 @@
         padding: 7px;
     }
 
-    .message .content :first-child {
-        margin-top: 0;
-    }
-
-    .message .content :last-child {
-        margin-bottom: 0;
-    }
-
     .new-message .detail {
         padding: 8px 10px;
     }
@@ -173,5 +165,11 @@
     .user-container .username {
         padding-left: 0.5em;
         padding-top: 1.65em;
+    }
+}
+
+@media (max-width: 799px) {
+    .ticket-container {
+        flex-direction: column-reverse;
     }
 }

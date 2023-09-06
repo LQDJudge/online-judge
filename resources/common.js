@@ -385,6 +385,13 @@ function onWindowReady() {
             showTooltip(e.trigger, fallbackMessage(e.action));
         });
     });
+    $('a').click(function() {
+        $("#loading-bar").show();
+        $("#loading-bar").animate({ width: "100%" }, 1500, function() {
+            $(this).hide();
+            $("#loading-bar").css({ width: 0});
+        });    
+    });
 }
 
 $(function() {
@@ -429,4 +436,5 @@ $(function() {
     $('html').click(function () {
         $nav_list.hide();
     });
+
 });

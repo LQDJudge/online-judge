@@ -1,9 +1,10 @@
 from django.db import models
-from django.db.models import CASCADE
+from django.db.models import CASCADE, Q
 from django.utils.translation import gettext_lazy as _
 
 
 from judge.models.profile import Profile
+from judge.caching import cache_wrapper
 
 
 __all__ = ["Message", "Room", "UserRoom", "Ignore"]
@@ -17,19 +18,28 @@ class Room(models.Model):
         Profile, related_name="user_two", verbose_name="user 2", on_delete=CASCADE
     )
 
+    @cache_wrapper(prefix="Rc")
     def contain(self, profile):
         return self.user_one == profile or self.user_two == profile
 
+    @cache_wrapper(prefix="Rou")
     def other_user(self, profile):
         return self.user_one if profile == self.user_two else self.user_two
 
+    @cache_wrapper(prefix="Rus")
     def users(self):
         return [self.user_one, self.user_two]
+
+    @cache_wrapper(prefix="Rlmb")
+    def last_message_body(self):
+        return self.message_set.first().body
 
 
 class Message(models.Model):
     author = models.ForeignKey(Profile, verbose_name=_("user"), on_delete=CASCADE)
-    time = models.DateTimeField(verbose_name=_("posted time"), auto_now_add=True)
+    time = models.DateTimeField(
+        verbose_name=_("posted time"), auto_now_add=True, db_index=True
+    )
     body = models.TextField(verbose_name=_("body of comment"), max_length=8192)
     hidden = models.BooleanField(verbose_name="is hidden", default=False)
     room = models.ForeignKey(
@@ -56,6 +66,7 @@ class UserRoom(models.Model):
         Room, verbose_name="room id", on_delete=CASCADE, default=None, null=True
     )
     last_seen = models.DateTimeField(verbose_name=_("last seen"), auto_now_add=True)
+    unread_count = models.IntegerField(default=0, db_index=True)
 
     class Meta:
         unique_together = ("user", "room")
@@ -74,11 +85,9 @@ class Ignore(models.Model):
     @classmethod
     def is_ignored(self, current_user, new_friend):
         try:
-            return (
-                current_user.ignored_chat_users.get()
-                .ignored_users.filter(id=new_friend.id)
-                .exists()
-            )
+            return current_user.ignored_chat_users.ignored_users.filter(
+                id=new_friend.id
+            ).exists()
         except:
             return False
 
@@ -88,6 +97,16 @@ class Ignore(models.Model):
             return self.objects.get(user=user).ignored_users.all()
         except:
             return Profile.objects.none()
+
+    @classmethod
+    def get_ignored_rooms(self, user):
+        try:
+            ignored_users = self.objects.get(user=user).ignored_users.all()
+            return Room.objects.filter(Q(user_one=user) | Q(user_two=user)).filter(
+                Q(user_one__in=ignored_users) | Q(user_two__in=ignored_users)
+            )
+        except:
+            return Room.objects.none()
 
     @classmethod
     def add_ignore(self, current_user, friend):

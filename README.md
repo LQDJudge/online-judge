@@ -31,6 +31,197 @@ Support plagiarism detection via [Stanford MOSS](https://theory.stanford.edu/~ai
 Most of the setup are the same as DMOJ installations. You can view the installation guide of DMOJ here: https://docs.dmoj.ca/#/site/installation.
 There is one minor change: Instead of `git clone https://github.com/DMOJ/site.git`, you clone this repo `git clone https://github.com/LQDJudge/online-judge.git`.
 
+
+- Bước 1: cài các thư viện cần thiết
+    - $ ở đây nghĩa là sudo. Ví dụ dòng đầu nghĩa là chạy lệnh `sudo apt update`
+
+```jsx
+$ apt update
+$ apt install git gcc g++ make python3-dev python3-pip libxml2-dev libxslt1-dev zlib1g-dev gettext curl redis-server
+$ curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+$ apt install nodejs
+$ npm install -g sass postcss-cli postcss autoprefixer
+```
+
+- Bước 2: tạo DB
+    - Server đang dùng MariaDB ≥ 10.5, các bạn cũng có thể dùng Mysql nếu bị conflict
+    - Nếu các bạn chạy lệnh dưới này xong mà version mariadb bị cũ (< 10.5) thì có thể tra google cách cài MariaDB mới nhất (10.5 hoặc 10.6).
+    - Các bạn có thể thấy version MariaDB bằng cách gõ lệnh `sudo mysql` (Ctrl + C để quit)
+
+```jsx
+$ apt update
+$ apt install mariadb-server libmysqlclient-dev
+```
+
+- Bước 3: tạo table trong DB
+    - Các bạn có thể thay tên table và password
+
+```jsx
+$ sudo mysql
+mariadb> CREATE DATABASE dmoj DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_general_ci;
+mariadb> GRANT ALL PRIVILEGES ON dmoj.* TO 'dmoj'@'localhost' IDENTIFIED BY '<password>';
+mariadb> exit
+```
+
+- Bước 4: Cài đặt môi trường ảo (virtual env) và pull code
+    - Nếu `pip3 install mysqlclient` bị lỗi thì thử chạy `sudo pip3 install mysqlclient==2.1.1`
+
+```jsx
+$ python3 -m venv dmojsite
+$ . dmojsite/bin/activate
+
+(dmojsite) $ git clone https://github.com/LQDJudge/online-judge.git
+(dmojsite) $ cd online-judge
+(dmojsite) $ git submodule init
+(dmojsite) $ git submodule update
+(dmojsite) $ pip3 install -r requirements.txt
+(dmojsite) $ pip3 install mysqlclient
+(dmojsite) $ pre-commit install
+```
+
+- Bước 5: tạo local_settings.py. Đây là file để custom setting cho Django. Các bạn tạo file vào `online-judge/dmoj/local_settings.py`
+    - File mẫu: https://github.com/DMOJ/docs/blob/master/sample_files/local_settings.py
+    - Nếu bạn đổi tên hoặc mật khẩu table databases thì thay đổi thông tin tương ứng trong `Databases`
+    - Sau khi xong, chạy lệnh `(dmojsite) $ python3 manage.py check` để kiểm tra
+- Bước 6: Compile CSS và translation
+    - Giải thích:
+        - Lệnh 1 và 2 gọi sau mỗi lần thay đổi 1 file css hoặc file js (file html thì không cần)
+        - Lệnh 3 và 4 gọi sau mỗi lần thay đổi file dịch
+    - Note: Sau khi chạy lệnh này, folder tương ứng với STATIC_ROOT trong local_settings phải được tạo. Nếu chưa được tạo thì mình cần tạo folder đó trước khi chạy 2 lệnh đầu.
+
+```jsx
+(dmojsite) $ ./make_style.sh
+(dmojsite) $ python3 manage.py collectstatic
+(dmojsite) $ python3 manage.py compilemessages
+(dmojsite) $ python3 manage.py compilejsi18n
+```
+
+- Bước 7: Thêm dữ liệu vào DB
+
+```jsx
+(dmojsite) $ python3 manage.py migrate
+(dmojsite) $ python3 manage.py loaddata navbar
+(dmojsite) $ python3 manage.py loaddata language_small
+(dmojsite) $ python3 manage.py loaddata demo
+```
+
+- Bước 8: Chạy site. Đến đây thì cơ bản đã hoàn thành (chưa có judge, websocket, celery). Các bạn có thể truy cập tại `localhost:8000`
+
+```jsx
+python3 manage.py runserver 0.0.0.0:8000
+```
+
+**Một số lưu ý:**
+
+1. (WSL) có thể tải ứng dụng Terminal trong Windows Store
+2. (WSL) mỗi lần mở ubuntu, các bạn cần chạy lệnh sau để mariadb khởi động: `sudo service mysql restart` (tương tự cho một số service khác như memcached, celery)
+3. Sau khi cài đặt, các bạn chỉ cần activate virtual env và chạy lệnh runserver là ok
+```jsx
+. dmojsite/bin/activate
+python3 manage.py runserver
+```
+5. Đối với nginx, sau khi config xong theo guide của DMOJ, bạn cần thêm location như sau để sử dụng được tính năng profile image, thay thế `path/to/oj` thành đường dẫn nơi bạn đã clone source code.
+
+```
+location /profile_images/ {
+    root /path/to/oj;
+}
+```
+
+6. Quy trình dev:
+    1. Sau khi thay đổi code thì django tự build lại, các bạn chỉ cần F5
+    2. Một số style nằm trong các file .scss. Các bạn cần recompile css thì mới thấy được thay đổi.
+
+**Optional:**
+
+************Alias:************ Các bạn có thể lưu các alias này để sau này dùng cho nhanh
+
+- mtrans: để generate translation khi các bạn add một string trong code
+- trans: compile translation (sau khi bạn đã dịch tiếng Việt)
+- cr: chuyển tới folder OJ
+- pr: chạy server
+- sm: restart service (chủ yếu dùng cho WSL)
+- sd: activate virtual env
+- css: compile các file css
+
+```jsx
+alias mtrans='python3 manage.py makemessages -l vi && python3 manage.py makedmojmessages -l vi'
+alias pr='python3 manage.py runserver'
+alias sd='source ~/LQDOJ/dmojsite/bin/activate'
+alias sm='sudo service mysql restart && sudo service redis-server start && sudo service memcached start'
+alias trans='python3 manage.py compilemessages -l vi && python3 manage.py compilejsi18n -l vi'
+alias cr='cd ~/LQDOJ/online-judge'
+alias css='./make_style.sh && python3 manage.py collectstatic --noinput'
+```
+
+**Memcached:** dùng cho in-memory cache
+
+```jsx
+$ sudo apt install memcached
+```
+
+**Websocket:** dùng để live update (như chat)
+
+- Tạo file online-judge/websocket/config.js
+
+```jsx
+module.exports = {
+    get_host: '127.0.0.1',
+    get_port: 15100,
+    post_host: '127.0.0.1',
+    post_port: 15101,
+    http_host: '127.0.0.1',
+    http_port: 15102,
+    long_poll_timeout: 29000,
+};
+```
+
+- Cài các thư viện
+
+```jsx
+(dmojsite) $ npm install qu ws simplesets
+(dmojsite) $ pip3 install websocket-client
+```
+
+- Khởi động (trong 1 tab riêng)
+
+```jsx
+(dmojsite) $ node websocket/daemon.js
+```
+
+**************Celery:************** (dùng cho một số task như batch rejudge_
+
+```jsx
+celery -A dmoj_celery worker
+```
+
+**************Judge:**************
+
+- Cài đặt ở 1 folder riêng bên ngoài site:
+
+```jsx
+$ apt install python3-dev python3-pip build-essential libseccomp-dev
+$ git clone https://github.com/LQDJudge/judge-server.git
+$ cd judge-server
+$ sudo pip3 install -e .
+```
+
+- Tạo một file judge.yml ở bên ngoài folder judge-server (file mẫu https://github.com/DMOJ/docs/blob/master/sample_files/judge_conf.yml)
+- Thêm judge vào site bằng UI: Admin → Judge → Thêm Judge → nhập id và key (chỉ cần thêm 1 lần) hoặc dùng lệnh `(dmojsite) $ python3 managed.py addjudge <id> <key>`.
+- Chạy Bridge (cầu nối giữa judge và site) trong 1 tab riêng trong folder online-judge:
+
+```jsx
+(dmojsite) $ python3 managed.py runbridged
+```
+
+- Khởi động Judge (trong 1 tab riêng):
+
+```jsx
+$ dmoj -c judge.yml localhost
+```
+
+- Lưu ý: mỗi lần sau này muốn chạy judge thì mở 1 tab cho bridge và n tab cho judge. Mỗi judge cần 1 file yml khác nhau (chứa authentication khác nhau)
+
 ### Some frequent difficulties when installation:
 
 1. Missing the `local_settings.py`. You need to copy the `local_settings.py` in order to pass the check.

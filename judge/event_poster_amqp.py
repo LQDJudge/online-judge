@@ -16,7 +16,7 @@ class EventPoster(object):
 
     def _connect(self):
         self._conn = pika.BlockingConnection(
-            pika.URLParameters(settings.EVENT_DAEMON_AMQP)
+            pika.URLParameters(settings.EVENT_DAEMON_AMQP),
         )
         self._chan = self._conn.channel()
 
@@ -25,7 +25,7 @@ class EventPoster(object):
             id = int(time() * 1000000)
             self._chan.basic_publish(
                 self._exchange,
-                "",
+                "#",
                 json.dumps({"id": id, "channel": channel, "message": message}),
             )
             return id

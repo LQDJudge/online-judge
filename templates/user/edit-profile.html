@@ -43,9 +43,13 @@
 
     #center-float {
       position: relative;
-      margin: 0 auto auto -28.5em;
-      left: 60%;
-      width: 700px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .main-info tr td {
+      padding-bottom: 1em;
     }
   </style>
 {% endblock %}
@@ -79,17 +83,19 @@
 
 {% block body %}
   <div id="center-float">
-    <form id="edit-form" action="" method="post" class="form-area">
-      {% if form.errors %}
+    <form id="edit-form" action="" method="post" class="form-area" enctype="multipart/form-data">
+      {% if form.errors or form_user.errors %}
         <div class="alert alert-danger alert-dismissable">
           <a href="#" class="close">x</a>
-          {{ form.non_field_errors() }}
+          {{ form.errors }}
+          <br>
+          {{ form_user.errors }}
         </div>
       {% endif %}
 
       {% csrf_token %}
 
-      <table class="block-header grayed">
+      <table class="block-header grayed main-info">
         <tr>
           <td> {{ _('Fullname') }}: </td>
           <td> {{ form_user.first_name }} </td>
@@ -97,6 +103,27 @@
         <tr>
           <td> {{ _('School') }}: </td>
           <td> {{ form_user.last_name }} </td>
+        </tr>
+        <tr>
+          <td> {{ _('Password') }}: </td>
+          <td>
+            <a href="{{ url('password_change') }}">
+              {{ _('Change your password') }}
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td> {{ _('Email') }}: </td>
+          <td>
+            {{ request.user.email }}
+            <a href="{{ url('email_change') }}">
+              ({{ _('Change email') }})
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td>{{ _('Avatar') }}: </td>
+          <td>{{ form.profile_image }}</td>
         </tr>
       </table>
       <hr>
@@ -127,38 +154,29 @@
                   <td><span class="fullwidth">{{ form.math_engine }}</span></td>
                 </tr>
               {% endif %}
-              <tr>
-                <td colspan="2">
-                  <a href="http://www.gravatar.com/" title="{{ _('Change your avatar') }}"
-                    target="_blank" class="inline-header">{{ _('Change your avatar') }}</a>
-                </td>
-              </tr>
-              <tr>
-                <td colspan="2">
-                  <a href="{{ url('password_change') }}" class="inline-header">
-                    {{ _('Change your password') }}
-                  </a>
-                </td>
-              </tr>
             </table>
           </td>
         </tr>
       </table>
-
+      <br>
       <div>
         {% if profile.is_totp_enabled %}
           {{ _('Two Factor Authentication is enabled.') }}
           {% if require_staff_2fa and request.user.is_staff %}
             <a id="disable-2fa-button" class="button inline-button">Disable</a>
           {% else %}
-            <a href="{{ url('disable_2fa') }}" class="button inline-button">Disable</a>
+            <a href="{{ url('disable_2fa') }}" class="button inline-button">{{_('Disable')}}</a>
           {% endif %}
         {% else %}
           {{ _('Two Factor Authentication is disabled.') }}
-          <a href="{{ url('enable_2fa') }}" class="button inline-button">Enable</a>
+          <a href="{{ url('enable_2fa') }}" class="button inline-button">{{_('Enable')}}</a>
         {% endif %}
       </div>
       <br><hr>
+      <span class="block-header">{{ _('CSS background') }}:</span>
+      {{ form.css_background }}
+      <div><i>{{form.css_background.help_text}}</i></div>
+      <br><br>
       <div class="block-header">{{ _('User-script') }}:</div>
       {{ form.user_script }}
       <hr>

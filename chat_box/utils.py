@@ -1,10 +1,12 @@
 from cryptography.fernet import Fernet
+import hmac
+import hashlib
 
 from django.conf import settings
-from django.db.models import OuterRef, Count, Subquery, IntegerField
+from django.db.models import OuterRef, Count, Subquery, IntegerField, Q
 from django.db.models.functions import Coalesce
 
-from chat_box.models import Ignore, Message, UserRoom
+from chat_box.models import Ignore, Message, UserRoom, Room
 
 secret_key = settings.CHAT_SECRET_KEY
 fernet = Fernet(secret_key)
@@ -24,25 +26,22 @@ def decrypt_url(message_encrypted):
         return None, None
 
 
-def get_unread_boxes(profile):
-    ignored_users = Ignore.get_ignored_users(profile)
-
-    mess = (
-        Message.objects.filter(room=OuterRef("room"), time__gte=OuterRef("last_seen"))
-        .exclude(author=profile)
-        .exclude(author__in=ignored_users)
-        .order_by()
-        .values("room")
-        .annotate(unread_count=Count("pk"))
-        .values("unread_count")
+def encrypt_channel(channel):
+    return (
+        hmac.new(
+            settings.CHAT_SECRET_KEY.encode(),
+            channel.encode(),
+            hashlib.sha512,
+        ).hexdigest()[:16]
+        + "%s" % channel
     )
 
+
+def get_unread_boxes(profile):
+    ignored_rooms = Ignore.get_ignored_rooms(profile)
     unread_boxes = (
-        UserRoom.objects.filter(user=profile, room__isnull=False)
-        .annotate(
-            unread_count=Coalesce(Subquery(mess, output_field=IntegerField()), 0),
-        )
-        .filter(unread_count__gte=1)
+        UserRoom.objects.filter(user=profile, unread_count__gt=0)
+        .exclude(room__in=ignored_rooms)
         .count()
     )
 

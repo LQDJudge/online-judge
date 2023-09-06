@@ -3,7 +3,7 @@ import json
 
 from django.views.generic import ListView
 from django.utils.translation import gettext as _, gettext_lazy
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import HttpResponseForbidden
 from django.urls import reverse
 
@@ -38,13 +38,19 @@ class InternalProblem(InternalView, ListView):
             **kwargs
         )
 
+    def get_search_query(self):
+        return self.request.GET.get("q") or self.request.POST.get("q")
+
     def get_queryset(self):
-        queryset = (
-            Problem.objects.annotate(vote_count=Count("volunteer_user_votes"))
-            .filter(vote_count__gte=1)
-            .order_by("-vote_count")
-        )
-        return queryset
+        queryset = Problem.objects.annotate(
+            vote_count=Count("volunteer_user_votes")
+        ).filter(vote_count__gte=1)
+        query = self.get_search_query()
+        if query:
+            queryset = queryset.filter(
+                Q(code__icontains=query) | Q(name__icontains=query)
+            )
+        return queryset.order_by("-vote_count")
 
     def get_context_data(self, **kwargs):
         context = super(InternalProblem, self).get_context_data(**kwargs)
@@ -52,6 +58,7 @@ class InternalProblem(InternalView, ListView):
         context["title"] = self.title
         context["page_prefix"] = self.request.path + "?page="
         context["first_page_href"] = self.request.path
+        context["query"] = self.get_search_query()
 
         return context
 

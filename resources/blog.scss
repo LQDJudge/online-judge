@@ -181,6 +181,7 @@
 .left-sidebar-item {
     display: flex;
     align-items: center;
+    border-radius: .5em;
 
     .sidebar-icon {
         font-size: large;
@@ -278,7 +279,6 @@
         padding: 0.8em 0.2em 0.8em 0.2em;
         display: inline-block;
         flex: 1;
-        border-radius: 8px;
 
         .sidebar-icon {
             display: none;
@@ -290,6 +290,7 @@
         margin-bottom: 1em;
         border-radius: 7px;
         display: flex;
+        background: inherit;
     }
 
     .blog-box {
@@ -305,7 +306,17 @@
 
 @media (min-width: 800px) {
     .left-sidebar-item {
+        margin-bottom: 10px;
+        margin-left: 10px;
+        border: 1px solid lightgray;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        background-color: white;
         padding: 0.8em 0.2em 0.8em 1em;
+    }
+
+    .sidebar-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .middle-content,
@@ -345,9 +356,7 @@
         height: 100%;
         margin-top: -4em;
         padding-top: 4em;
-        border-right: 1px solid lightgray;
-        box-shadow: 0px -10px 2px 0px rgb(0 0 0 / 50%);
-        background: white;
+        border-right: 1px;
     }
 
     .feed-table {

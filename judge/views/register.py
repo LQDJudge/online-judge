@@ -15,7 +15,7 @@ from registration.backends.default.views import (
 from registration.forms import RegistrationForm
 from sortedm2m.forms import SortedMultipleChoiceField
 
-from judge.models import Language, Organization, Profile, TIMEZONE
+from judge.models import Language, Profile, TIMEZONE
 from judge.utils.recaptcha import ReCaptchaField, ReCaptchaWidget
 from judge.widgets import Select2MultipleWidget, Select2Widget
 
@@ -43,28 +43,9 @@ class CustomRegistrationForm(RegistrationForm):
         empty_label=None,
         widget=Select2Widget(attrs={"style": "width:100%"}),
     )
-    organizations = SortedMultipleChoiceField(
-        queryset=Organization.objects.filter(is_open=True),
-        label=_("Groups"),
-        required=False,
-        widget=Select2MultipleWidget(attrs={"style": "width:100%"}),
-    )
 
     if ReCaptchaField is not None:
         captcha = ReCaptchaField(widget=ReCaptchaWidget())
-
-    def clean_organizations(self):
-        organizations = self.cleaned_data.get("organizations") or []
-        max_orgs = settings.DMOJ_USER_MAX_ORGANIZATION_COUNT
-
-        if sum(org.is_open for org in organizations) > max_orgs:
-            raise forms.ValidationError(
-                _("You may not be part of more than {count} public groups.").format(
-                    count=max_orgs
-                )
-            )
-
-        return self.cleaned_data["organizations"]
 
     def clean_email(self):
         if User.objects.filter(email=self.cleaned_data["email"]).exists():
@@ -116,7 +97,6 @@ class RegistrationView(OldRegistrationView):
         cleaned_data = form.cleaned_data
         profile.timezone = cleaned_data["timezone"]
         profile.language = cleaned_data["language"]
-        profile.organizations.add(*cleaned_data["organizations"])
         profile.save()
         return user
 

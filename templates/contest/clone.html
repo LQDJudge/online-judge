@@ -25,17 +25,32 @@
   </style>
 {% endblock %}
 
+{% block js_media %}
+  <script type="text/javascript">
+    $(function() {
+      $("#id_organization").select2();
+    });
+  </script>
+{% endblock %}
+
 {% block body %}
   <form id="contest-clone-panel" action="" method="post" class="form-area">
     {% csrf_token %}
-    {% if form.errors %}
+    {% if form.key.errors %}
       <div id="form-errors">
-        {{ form.key.errors }}
+        <div>{{ form.key.errors }}</div>
       </div>
     {% endif %}
 
     <div><label class="inline-header grayed">{{ _('Enter a new key for the cloned contest:') }}</label></div>
     <div id="contest-key-container"><span class="fullwidth">{{ form.key }}</span></div>
+    <div><label class="inline-header grayed">{{ _('Group:') }}</label></div>
+    {{form.organization}}
+    {% if form.organization.errors %}
+      <div id="form-errors">
+        <div>{{ form.organization.errors }}</div>
+      </div>
+    {% endif %}
     <hr>
     <button style="float: right;" type="submit">{{ _('Clone!') }}</button>
   </form>

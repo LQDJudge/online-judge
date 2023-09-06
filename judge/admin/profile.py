@@ -3,6 +3,7 @@ from django.forms import ModelForm
 from django.utils.html import format_html
 from django.utils.translation import gettext, gettext_lazy as _, ungettext
 from reversion.admin import VersionAdmin
+from django.contrib.auth.admin import UserAdmin as OldUserAdmin
 
 from django_ace import AceWidget
 from judge.models import Profile
@@ -167,3 +168,38 @@ class ProfileAdmin(VersionAdmin):
                 "javascript", request.profile.ace_theme
             )
         return form
+
+
+class UserAdmin(OldUserAdmin):
+    # Customize the fieldsets for adding and editing users
+    fieldsets = (
+        (None, {"fields": ("username", "password")}),
+        ("Personal Info", {"fields": ("first_name", "last_name", "email")}),
+        (
+            "Permissions",
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                )
+            },
+        ),
+        ("Important dates", {"fields": ("last_login", "date_joined")}),
+    )
+
+    readonly_fields = ("last_login", "date_joined")
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = self.readonly_fields
+        if not request.user.is_superuser:
+            fields += (
+                "is_staff",
+                "is_active",
+                "is_superuser",
+                "groups",
+                "user_permissions",
+            )
+        return fields

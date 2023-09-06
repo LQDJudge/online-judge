@@ -1,8 +1,3 @@
-{% if submission.contest_or_none %}
-  {% set prefix_length = submission.contest_or_none.problem.output_prefix_override %}
-{% else %}
-  {% set prefix_length = None %}
-{% endif %}
 {% set is_pretest = submission.is_pretested %}
 
 {% if submission.status != 'IE' %}

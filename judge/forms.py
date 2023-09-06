@@ -50,6 +50,7 @@ from judge.widgets import (
     HeavySelect2Widget,
     Select2MultipleWidget,
     DateTimePickerWidget,
+    ImageWidget,
 )
 from judge.tasks import rescore_contest
 
@@ -78,12 +79,16 @@ class ProfileForm(ModelForm):
             "language",
             "ace_theme",
             "user_script",
+            "profile_image",
+            "css_background",
         ]
         widgets = {
             "user_script": AceWidget(theme="github"),
             "timezone": Select2Widget(attrs={"style": "width:200px"}),
             "language": Select2Widget(attrs={"style": "width:200px"}),
             "ace_theme": Select2Widget(attrs={"style": "width:200px"}),
+            "profile_image": ImageWidget,
+            "css_background": forms.TextInput(),
         }
 
         has_math_config = bool(settings.MATHOID_URL)
@@ -100,12 +105,22 @@ class ProfileForm(ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user", None)
         super(ProfileForm, self).__init__(*args, **kwargs)
+        self.fields["profile_image"].required = False
+
+    def clean_profile_image(self):
+        profile_image = self.cleaned_data.get("profile_image")
+        if profile_image:
+            if profile_image.size > 5 * 1024 * 1024:
+                raise ValidationError(
+                    _("File size exceeds the maximum allowed limit of 5MB.")
+                )
+        return profile_image
 
 
 def file_size_validator(file):
-    limit = 1 * 1024 * 1024
+    limit = 10 * 1024 * 1024
     if file.size > limit:
-        raise ValidationError("File too large. Size should not exceed 1MB.")
+        raise ValidationError("File too large. Size should not exceed 10MB.")
 
 
 class ProblemSubmitForm(ModelForm):
@@ -474,12 +489,31 @@ class ContestCloneForm(Form):
         max_length=20,
         validators=[RegexValidator("^[a-z0-9]+$", _("Contest id must be ^[a-z0-9]+$"))],
     )
+    organization = ChoiceField(choices=(), required=True)
+
+    def __init__(self, *args, org_choices=(), profile=None, **kwargs):
+        super(ContestCloneForm, self).__init__(*args, **kwargs)
+        self.fields["organization"].widget = Select2Widget(
+            attrs={"style": "width: 100%", "data-placeholder": _("Group")},
+        )
+        self.fields["organization"].choices = org_choices
+        self.profile = profile
 
     def clean_key(self):
         key = self.cleaned_data["key"]
         if Contest.objects.filter(key=key).exists():
             raise ValidationError(_("Contest with key already exists."))
         return key
+
+    def clean_organization(self):
+        organization_id = self.cleaned_data["organization"]
+        try:
+            organization = Organization.objects.get(id=organization_id)
+        except Exception:
+            raise ValidationError(_("Group doesn't exist."))
+        if not organization.admins.filter(id=self.profile.id).exists():
+            raise ValidationError(_("You don't have permission in this group."))
+        return organization
 
 
 class ProblemPointsVoteForm(ModelForm):
@@ -496,19 +530,47 @@ class ContestProblemForm(ModelForm):
             "problem",
             "points",
             "partial",
-            "output_prefix_override",
+            "show_testcases",
             "max_submissions",
         )
         widgets = {
             "problem": HeavySelect2Widget(
-                data_view="problem_select2", attrs={"style": "width:100%"}
+                data_view="problem_select2", attrs={"style": "width: 100%"}
             ),
         }
 
 
+class ContestProblemModelFormSet(BaseModelFormSet):
+    def is_valid(self):
+        valid = super().is_valid()
+
+        if not valid:
+            return valid
+
+        problems = set()
+        duplicates = []
+
+        for form in self.forms:
+            if form.cleaned_data and not form.cleaned_data.get("DELETE", False):
+                problem = form.cleaned_data.get("problem")
+                if problem in problems:
+                    duplicates.append(problem)
+                else:
+                    problems.add(problem)
+
+        if duplicates:
+            for form in self.forms:
+                problem = form.cleaned_data.get("problem")
+                if problem in duplicates:
+                    form.add_error("problem", _("This problem is duplicated."))
+            return False
+
+        return True
+
+
 class ContestProblemFormSet(
     formset_factory(
-        ContestProblemForm, formset=BaseModelFormSet, extra=6, can_delete=True
+        ContestProblemForm, formset=ContestProblemModelFormSet, extra=6, can_delete=True
     )
 ):
     model = ContestProblem
