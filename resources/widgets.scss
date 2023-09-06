@@ -220,8 +220,10 @@ input {
     position: relative;
 }
 
-.md-typeset .btn-clipboard {
+.md-typeset .admonition .btn-clipboard,
+.md-typeset details .btn-clipboard {
     right: -0.6rem;
+    border-radius: 0 0 0 4px;
 }
 
 
