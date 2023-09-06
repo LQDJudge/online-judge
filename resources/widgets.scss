@@ -30,7 +30,7 @@
 .button, button, input[type=submit] {
     align-items: center;
     background-clip: padding-box;
-    background-color: #fa6400;
+    background-color: #045343;
     border: 1px solid transparent;
     border-radius: .25rem;
     box-shadow: rgba(0, 0, 0, 0.02) 0 1px 3px 0;
@@ -101,6 +101,14 @@
         }
     }
 
+    &.btn-darkGreen {
+        background: #045343;
+
+        &:hover {
+            background: #045343;
+        }
+    }
+
     // class = "unselectable button full small" only appear in online-judge/templates/contest/list.html
     // this attribute center buttons in contest list (including "Join", "Virutal Join", "Spectable")
     &.unselectable.button.full.small {
@@ -113,18 +121,18 @@
 }
 
 .button:hover, button:hover, input[type=submit]:hover {
-    background-color: #fb8332;
+    background-color: #045343;
     box-shadow: rgba(0, 0, 0, 0.1) 0 4px 12px;
     transform: translateY(-1px);
 }
 
 .button:focus, button:focus, input[type=submit]:focus {
-    background-color: #fb8332;
+    background-color: #045343;
     box-shadow: rgba(0, 0, 0, 0.1) 0 4px 12px;
 }
 
 .button:active, button:active, input[type=submit]:hover {
-    background-color: #c85000;
+    background-color: #045343;
     box-shadow: rgba(0, 0, 0, .06) 0 2px 4px;
     transform: translateY(0);
 }

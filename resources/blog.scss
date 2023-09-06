@@ -33,11 +33,12 @@
 }
 
 .left-sidebar-item.active {
-    color: green;
+    color: white;
     font-weight: bold;
-    background-color: lightgreen;
+    background-color: #045343;
+
     .sidebar-icon {
-        color: green;
+        color: white;
     }
 }
 
@@ -198,7 +199,7 @@
 }
 
 .left-sidebar-item.active:hover {
-    background-color: lightgreen;
+    background-color: #045343;
 }
 
 .sidebar-icon {

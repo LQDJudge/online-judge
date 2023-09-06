@@ -331,11 +331,11 @@
     <div class="right-sidebar">
       <div class="submission">
         <div class="sidebox">
-          <h3><i class="fa fa-search"></i>{{ _('Filter submissions') }}</h3>
+          <h3 class="colored-text"><i class="fa fa-search"></i>{{ _('Filter submissions') }}</h3>
           <div class="sidebox-content">
             <form id="filter-form" name="form" action="" method="get">
               <div class="filter-form-group">
-                <label for="status"><i>{{ _('Status') }}</i></label>
+                <label class="bold-text margin-label" for="status"><i class="non-italics" >{{ _('Status') }}</i></label>
                 <select id="status" name="status" multiple>
                   {% for id, name in all_statuses %}
                     <option {% if id in selected_statuses %}selected{% endif %}
@@ -344,7 +344,7 @@
                 </select>
               </div>
               <div class="filter-form-group">
-                <label for="language"><i>{{ _('Language') }}</i></label>
+                <label class="bold-text margin-label" for="language"><i class="non-italics">{{ _('Language') }}</i></label>
                 <select id="language" name="language" multiple>
                   {% for code, name in all_languages %}
                     <option {% if code in selected_languages %}selected{% endif %}
@@ -352,7 +352,7 @@
                   {% endfor %}
                 </select>
               </div>
-              <div class="form-submit-group">
+              <div class="form-submit-group" >
                 <a id="go" onclick="form.submit()" class="button small">{{ _('Go') }}</a>
               </div>
             </form>
@@ -360,12 +360,12 @@
         </div>
         <div class="sidebox">
           <div id="statistics-table">
-            <h3><i class="fa fa-pie-chart"></i>{{ _('Statistics') }}</h3>
+            <h3 class="colored-text"><i class="fa fa-pie-chart"></i>{{ _('Statistics') }}</h3>
             <div class="sidebox-content">
               <div id="status-graph">
                 <canvas width="230" height="170"></canvas>
               </div>
-              <div class="total">
+              <div class="total colored-text bold-text">
                 {{ _('Total:') }} <span id="total-submission-count"></span>
               </div>
             </div>
