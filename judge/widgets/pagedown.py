@@ -52,6 +52,7 @@ else:
         class Media:
             css = {
                 "all": [
+                    "markdown.css",
                     "pagedown_widget.css",
                     "content-description.css",
                     "admin/css/pagedown.css",
