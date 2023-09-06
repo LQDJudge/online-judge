@@ -51,7 +51,7 @@
     }
 
     pre.no-border {
-        margin-top: -0.7em;
+        margin-top: 0.4em;
         padding: 0.5em;
         border: none;
         background-color: inherit;
@@ -137,7 +137,7 @@
 
     .linenos {
         width: 4%;
-        
+
         pre {
             color: rgba(0,0,0,.26);
             background-color: rgba(0,0,0,.07);
@@ -166,8 +166,8 @@
 textarea,
 pre {
     -moz-tab-size : 4;
-      -o-tab-size : 4;
-         tab-size : 4;
+    -o-tab-size : 4;
+    tab-size : 4;
 }
 
 
