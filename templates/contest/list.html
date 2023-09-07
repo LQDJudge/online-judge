@@ -5,6 +5,33 @@
 
 {% block two_col_media %}
   <style>
+    .list-contest {
+      box-shadow: 0px 4px 8px rgba(4, 83, 67, 0.2), 0px 6px 20px rgba(4, 83, 67, 0.19);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
+      width: 100%;
+      box-sizing: border-box;
+      display: flex;
+    }
+
+    .info-contest {
+      flex: 1;
+    }
+
+    .participate-button {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .contest-title {
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 150%;
+      margin-bottom: 10px;
+    }
+
     .content-description ul {
       padding: 0 !important;
     }
@@ -109,7 +136,7 @@
 
 {% macro contest_head(contest) %}
   {% spaceless %}
-    <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title">
+    <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title" style="margin-right: 5px;">
       {{- contest.name -}}
     </a>
     <span class="contest-tags">
@@ -186,21 +213,19 @@
 
 {% macro contest_join(contest, request) %}
   {% if not request.in_contest %}
-    <td>
-      {% if request.profile in contest.authors.all() or request.profile in contest.curators.all() or request.profile in contest.testers.all() %}
-        <form action="{{ url('contest_join', contest.key) }}" method="post">
-          {% csrf_token %}
-          <input type="submit" class="unselectable button full small"
-            value="{{ _('Spectate') }}">
-        </form>
-      {% else %}
-        <form action="{{ url('contest_join', contest.key) }}" method="post">
-          {% csrf_token %}
-          <input type="submit" class="unselectable button full small join-warning"
-            value="{{ _('Join') }}">
-        </form>
-      {% endif %}
-    </td>
+    {% if request.profile in contest.authors.all() or request.profile in contest.curators.all() or request.profile in contest.testers.all() %}
+      <form action="{{ url('contest_join', contest.key) }}" method="post">
+        {% csrf_token %}
+        <input type="submit" class="unselectable button full small"
+          value="{{ _('Spectate') }}">
+      </form>
+    {% else %}
+      <form action="{{ url('contest_join', contest.key) }}" method="post">
+        {% csrf_token %}
+        <input type="submit" class="unselectable button full small join-warning"
+          value="{{ _('Join') }}">
+      </form>
+    {% endif %}
   {% endif %}
 {% endmacro %}
 
@@ -284,39 +309,38 @@
     </h3>
     {% if current_contests %}
       <div id="ongoing-table" class="toggled">
-        <table class="contest-list table striped">
-          <thead>
-            <tr>
-              <th style="width:90%">{{ _('Contest') }}</th>
-              <th>{{ _('Users') }}</th>
-              {% if not request.in_contest %}
-                <th style="width:15%"></th>
+        {% for contest in current_contests %}
+          <div class="list-contest">
+            <div class="info-contest" style="flex: 1.5">
+              <div class="contest-title">Kì thi:</div>
+              {{ contest_head(contest) }}
+            </div>
+            <div class="info-contest" style="flex: 1.5">
+              <div class="contest-title">Thời gian:</div>
+              <div class="contest-block">
+                {% if contest.start_time %}
+                  {% if contest.time_before_end %}
+                    <span class="time">{% trans countdown=contest.end_time|as_countdown %}Ends in {{countdown}}{% endtrans %}</span>
+                  {% endif %}
+                  {{ time_left(contest) }}
+                {% endif %}
+              </div>
+            </div>
+            <div class="info-contest">
+              <div class="contest-title">Định dạng:</div>
+              {% if contest.format_name == "default" %} IOI
+              {% else %} {{ contest.format_name|upper }}
               {% endif %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for contest in current_contests %}
-              <tr>
-                <td>
-                  <div class="contest-block">
-                    {{ contest_head(contest) }}
-                    {% if contest.start_time %}
-                      <br>
-                      {% if contest.time_before_end %}
-                        <span class="time">{% trans countdown=contest.end_time|as_countdown %}Ends in {{countdown}}{% endtrans %}</span>
-                      {% endif %}
-                      {{ time_left(contest) }}
-                    {% endif %}
-                  </div>
-                </td>
-                <td>
-                  {{ user_count(contest, request.user) }}
-                </td>
-                {{ contest_join(contest, request) }}
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </div>
+            <div class="info-contest">
+              <div class="contest-title">Người tham gia:</div>
+              {{ user_count(contest, request.user) }}
+            </div>
+            <div class="participate-button">
+              {{ contest_join(contest, request) }}
+            </div>
+          </div>
+        {% endfor %}
         <br>
       </div>
     {% else %}
@@ -332,31 +356,31 @@
     </h3>
     {% if future_contests %}
       <div class="toggled">
-        <table class="contest-list table striped">
-          <thead>
-            <tr>
-              <th>{{ _('Contest') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for contest in future_contests %}
-              <tr>
-                <td>
-                  <div class="contest-block">
-                    {{ contest_head(contest) }}
-                    {% if contest.start_time %}
-                      <br>
-                      {% if contest.time_before_start %}
-                        <span class="time">{{ _('Starting in %(countdown)s.', countdown=contest.start_time|as_countdown) }}</span>
-                      {% endif %}
-                      {{ time_left(contest) }}
-                    {% endif %}
-                  </div>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        {% for contest in future_contests %}
+          <div class="list-contest">
+            <div class="info-contest" style="flex: 1.5">
+              <div class="contest-title">Kì thi:</div>
+              {{ contest_head(contest) }}
+            </div>
+            <div class="info-contest" style="flex: 1.5">
+              <div class="contest-title">Thời gian:</div>
+              <div class="contest-block">
+                {% if contest.start_time %}
+                  {% if contest.time_before_start %}
+                    <span class="time">{{ _('Starting in %(countdown)s.', countdown=contest.start_time|as_countdown) }}</span>
+                  {% endif %}
+                  {{ time_left(contest) }}
+                {% endif %}
+              </div>
+            </div>
+            <div class="info-contest">
+              <div class="contest-title">Định dạng:</div>
+              {% if contest.format_name == "default" %} IOI
+              {% else %} {{ contest.format_name|upper }}
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
       </div>
     {% else %}
       <div class="toggled">
@@ -371,48 +395,44 @@
     </h3>
     {% if past_contests %}
       {% if page_obj and page_obj.num_pages > 1 %}
-        <div style="margin-bottom: 4px;">
+        <div style="margin-bottom: 10px;">
           {% include "list-pages.html" %}
         </div>
       {% endif %}
-      <table class="contest-list table striped">
-        <thead>
-          <tr>
-            <th style="width:90%">
-              <a class="contest-list-sort" href="{{ sort_links.name }}">{{ _('Contest') }}{{ sort_order.name }}</a>
-            </th>
-            <th>
-              <a class="contest-list-sort" href="{{ sort_links.user_count }}">{{ _('Users') }}{{ sort_order.user_count }}</a>
-            </th>
-            {% if not request.in_contest %}
-              <th style="width:15%"></th>
+
+      {% for contest in past_contests %}
+        <div class="list-contest">
+          <div class="info-contest" style="flex: 1.5">
+            <div class="contest-title">Kì thi:</div>
+            {{ contest_head(contest) }}
+          </div>
+          <div class="info-contest" style="flex: 1.5">
+            <div class="contest-title">Thời gian:</div>
+            <div class="contest-block">
+              {{ time_left(contest) }}
+            </div>
+          </div>
+          <div class="info-contest">
+            <div class="contest-title">Định dạng:</div>
+            {% if contest.format_name == "default" %} IOI
+            {% else %} {{ contest.format_name|upper }}
             {% endif %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for contest in past_contests %}
-            <tr>
-              <td>
-                <div class="contest-block">
-                  {{ contest_head(contest) }}
-                  {{ time_left(contest) }}
-                </div>
-              </td>
-              <td>
-                {{ user_count(contest, request.user) }}
-              </td>
-              {% if not request.in_contest %}
-                <td><form action="{{ url('contest_join', contest.key) }}" method="post">
-                  {% csrf_token %}
-                  <input type="submit" class="unselectable button full small"
-                    value="{{ _('Virtual join') }}">
-                </form>
-                </td>
-              {% endif %}
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </div>
+          <div class="info-contest">
+            <div class="contest-title">Người tham gia:</div>
+            {{ user_count(contest, request.user) }}
+          </div>
+          {% if not request.in_contest %}
+            <div class="participate-button">
+              <form action="{{ url('contest_join', contest.key) }}" method="post">
+                {% csrf_token %}
+                <input type="submit" class="unselectable button full small"
+                  value="{{ _('Virtual join') }}">
+              </form>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
       {% if page_obj and page_obj.num_pages > 1 %}
         <div style="margin-top: 10px;">
           {% include "list-pages.html" %}

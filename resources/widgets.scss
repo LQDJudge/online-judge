@@ -326,11 +326,14 @@ input {
 // Bootstrap-y pagination
 ul.pagination a:hover {
     color: #FFF;
-    background: rgba(0, 0, 0, 0.55);
+    background: #0aa082;
+    border: none;
 }
 
 ul.pagination {
-    display: inline-block;
+    align-items: center;
+    justify-content: center;
+    display: flex;
     padding-left: 0;
     margin: 0;
     border-radius: $widget_border_radius;
@@ -339,33 +342,35 @@ ul.pagination {
         li {
             display: inline;
 
-            &:first-child > {
-                a, span {
-                    margin-left: 0;
-                    border-top-left-radius: $widget_border_radius;
-                    border-bottom-left-radius: $widget_border_radius;
-                }
-            }
+            // &:first-child > {
+                //     a, span {
+                    //         margin-left: 0;
+                    //         border-top-left-radius: $widget_border_radius;
+                    //         border-bottom-left-radius: $widget_border_radius;
+                    //     }
+                // }
 
-            &:last-child > {
-                a, span {
-                    margin-left: 0;
-                    border-top-right-radius: $widget_border_radius;
-                    border-bottom-right-radius: $widget_border_radius;
-                }
-            }
+            // &:last-child > {
+                //     a, span {
+                    //         margin-left: 0;
+                    //         border-top-right-radius: $widget_border_radius;
+                    //         border-bottom-right-radius: $widget_border_radius;
+                    //     }
+                // }
 
             > {
                 a, span {
                     position: relative;
                     float: left;
                     padding: 4px 12px;
+                    margin-right: 5px;
+                    font-weight: bold;
                     line-height: 1.42857;
                     text-decoration: none;
-                    color: #FFF;
-                    background-color: $widget_black;
-                    border: 1px solid #505050;
-                    margin-left: -1px;
+                    color: #045343;
+                    background-color: white;
+                    border: 2px solid #045343;
+                    border-radius: 10px;
                 }
             }
         }
@@ -373,22 +378,22 @@ ul.pagination {
         .disabled-page > {
             a {
                 color: #888;
-                background-color: $widget_black;
-                border-color: #282828;
+                background-color: #04534380;
+                border-color: #04534380;
             }
 
             span {
                 color: #888;
-                background-color: $widget_black;
-                border-color: #505050;
+                background-color: #04534380;
+                border-color: #04534380;
             }
         }
 
         .active-page > {
             a {
                 z-index: 2;
-                color: black;
-                background-color: #7dc7ff;
+                color: white;
+                background-color: #045343;
                 border-color: transparent;
                 cursor: default;
             }
