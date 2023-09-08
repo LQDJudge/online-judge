@@ -35,7 +35,7 @@
 .left-sidebar-item.active {
     color: white;
     font-weight: bold;
-    background-color: #045343;
+    background-color: $theme_color;
 
     .sidebar-icon {
         color: white;
@@ -199,7 +199,7 @@
 }
 
 .left-sidebar-item.active:hover {
-    background-color: #045343;
+    background-color: $theme_color;
 }
 
 .sidebar-icon {

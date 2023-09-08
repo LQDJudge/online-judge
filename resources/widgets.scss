@@ -30,7 +30,7 @@
 .button, button, input[type=submit] {
     align-items: center;
     background-clip: padding-box;
-    background-color: #045343;
+    background-color: $theme_color;
     border: 1px solid transparent;
     border-radius: .25rem;
     box-shadow: rgba(0, 0, 0, 0.02) 0 1px 3px 0;
@@ -102,11 +102,7 @@
     }
 
     &.btn-darkGreen {
-        background: #045343;
-
-        &:hover {
-            background: #045343;
-        }
+        background: $theme_color;
     }
 
     // class = "unselectable button full small" only appear in online-judge/templates/contest/list.html
@@ -121,18 +117,18 @@
 }
 
 .button:hover, button:hover, input[type=submit]:hover {
-    background-color: #045343;
+    background-color: $theme_color;
     box-shadow: rgba(0, 0, 0, 0.1) 0 4px 12px;
     transform: translateY(-1px);
 }
 
 .button:focus, button:focus, input[type=submit]:focus {
-    background-color: #045343;
+    background-color: $theme_color;
     box-shadow: rgba(0, 0, 0, 0.1) 0 4px 12px;
 }
 
 .button:active, button:active, input[type=submit]:hover {
-    background-color: #045343;
+    background-color: $theme_color;
     box-shadow: rgba(0, 0, 0, .06) 0 2px 4px;
     transform: translateY(0);
 }
@@ -229,10 +225,10 @@ input {
 
 // Bootstrap-y tabs
 .ul_tab_a_active {
-    color: #045343;
+    color: $theme_color;
     cursor: default;
     font-weight: bold;
-    border-bottom: 3px solid #045343;
+    border-bottom: 3px solid $theme_color;
     background: transparent;
 }
 
@@ -367,9 +363,9 @@ ul.pagination {
                     font-weight: bold;
                     line-height: 1.42857;
                     text-decoration: none;
-                    color: #045343;
+                    color: $theme_color;
                     background-color: white;
-                    border: 2px solid #045343;
+                    border: 2px solid $theme_color;
                     border-radius: 10px;
                 }
             }
@@ -393,7 +389,7 @@ ul.pagination {
             a {
                 z-index: 2;
                 color: white;
-                background-color: #045343;
+                background-color: $theme_color;
                 border-color: transparent;
                 cursor: default;
             }
@@ -513,7 +509,7 @@ ul.select2-selection__rendered {
     display: flex;
 
     .fa {
-        background: #045343;
+        background: $theme_color;
         color: white;
         padding: 4px;
         margin-right: 8px;

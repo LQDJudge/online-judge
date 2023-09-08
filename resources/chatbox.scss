@@ -1,3 +1,5 @@
+@import "vars";
+
 .chat {
     background: white;
 }
@@ -179,7 +181,7 @@
     color: white;
 }
 .chat-input-icon {
-    color: #045343;
+    color: $theme_color;
 }
 .chat-input-icon:hover {
     background: lightgray;

@@ -558,11 +558,5 @@
     }
     register_setting();
     color_selected_room();
-
-    $('#chat-input').on('input', function () {
-      $('#chat-input-container').height('auto');
-      $('#chat-input-container').height((this.scrollHeight) + 'px');
-    });
-    $('#submit-button').on('click', submit_chat);
   });
 </script>
