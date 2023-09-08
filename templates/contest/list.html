@@ -243,11 +243,11 @@
           {% with contest=participation.contest %}
             <div class="list-contest">
               <div class="info-contest" style="flex: 1.5">
-                <div class="contest-title">Kì thi:</div>
+                <div class="contest-title"> {{ _('Contests') }} </div>
                 {{ contest_head(contest) }}
               </div>
               <div class="info-contest" style="flex: 1.5">
-                <div class="contest-title">Thời gian:</div>
+                <div class="contest-title"> {{ _('Time') }} </div>
                 <div class="contest-block">
                   {% if contest.start_time %}
                     {% if contest.time_limit %}
@@ -262,13 +262,11 @@
                 </div>
               </div>
               <div class="info-contest">
-                <div class="contest-title">Định dạng:</div>
-                {% if contest.format_name == "default" %} IOI
-                {% else %} {{ contest.format_name|upper }}
-                {% endif %}
+                <div class="contest-title"> {{ _('Format') }} </div>
+                {{ contest.format.name }}
               </div>
               <div class="info-contest">
-                <div class="contest-title">Người tham gia:</div>
+                <div class="contest-title"> {{ _('Users') }} </div>
                 {{ user_count(contest, request.user) }}
               </div>
               <div class="participate-button">
@@ -290,11 +288,11 @@
         {% for contest in current_contests %}
           <div class="list-contest">
             <div class="info-contest" style="flex: 1.5">
-              <div class="contest-title">Kì thi:</div>
+              <div class="contest-title"> {{ _('Contests') }} </div>
               {{ contest_head(contest) }}
             </div>
             <div class="info-contest" style="flex: 1.5">
-              <div class="contest-title">Thời gian:</div>
+              <div class="contest-title"> {{ _('Time') }} </div>
               <div class="contest-block">
                 {% if contest.start_time %}
                   {% if contest.time_before_end %}
@@ -305,13 +303,11 @@
               </div>
             </div>
             <div class="info-contest">
-              <div class="contest-title">Định dạng:</div>
-              {% if contest.format_name == "default" %} IOI
-              {% else %} {{ contest.format_name|upper }}
-              {% endif %}
+              <div class="contest-title"> {{ _('Format') }} </div>
+              {{ contest.format.name }}
             </div>
             <div class="info-contest">
-              <div class="contest-title">Người tham gia:</div>
+              <div class="contest-title"> {{ _('Users') }} </div>
               {{ user_count(contest, request.user) }}
             </div>
             <div class="participate-button">
@@ -337,11 +333,11 @@
         {% for contest in future_contests %}
           <div class="list-contest">
             <div class="info-contest" style="flex: 1.5">
-              <div class="contest-title">Kì thi:</div>
+              <div class="contest-title"> {{ _('Contests') }} </div>
               {{ contest_head(contest) }}
             </div>
             <div class="info-contest" style="flex: 1.5">
-              <div class="contest-title">Thời gian:</div>
+              <div class="contest-title"> {{ _('Time') }} </div>
               <div class="contest-block">
                 {% if contest.start_time %}
                   {% if contest.time_before_start %}
@@ -352,10 +348,8 @@
               </div>
             </div>
             <div class="info-contest">
-              <div class="contest-title">Định dạng:</div>
-              {% if contest.format_name == "default" %} IOI
-              {% else %} {{ contest.format_name|upper }}
-              {% endif %}
+              <div class="contest-title"> {{ _('Format') }} </div>
+              {{ contest.format.name }}
             </div>
           </div>
         {% endfor %}
@@ -381,23 +375,21 @@
       {% for contest in past_contests %}
         <div class="list-contest">
           <div class="info-contest" style="flex: 1.5">
-            <div class="contest-title">Kì thi:</div>
+            <div class="contest-title"> {{ _('Contests') }} </div>
             {{ contest_head(contest) }}
           </div>
           <div class="info-contest" style="flex: 1.5">
-            <div class="contest-title">Thời gian:</div>
+            <div class="contest-title"> {{ _('Time') }} </div>
             <div class="contest-block">
               {{ time_left(contest, false) }}
             </div>
           </div>
           <div class="info-contest">
-            <div class="contest-title">Định dạng:</div>
-            {% if contest.format_name == "default" %} IOI
-            {% else %} {{ contest.format_name|upper }}
-            {% endif %}
+            <div class="contest-title"> {{ _('Format') }} </div>
+            {{ contest.format.name }}
           </div>
           <div class="info-contest">
-            <div class="contest-title">Người tham gia:</div>
+            <div class="contest-title"> {{ _('Users') }} </div>
             {{ user_count(contest, request.user) }}
           </div>
           {% if not request.in_contest %}
