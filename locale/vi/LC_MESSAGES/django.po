@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-02 07:40+0700\n"
+"POT-Creation-Date: 2023-09-08 22:40+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -21,7 +21,7 @@ msgstr ""
 #: chat_box/models.py:39 chat_box/models.py:64 chat_box/models.py:79
 #: judge/admin/interface.py:150 judge/models/contest.py:636
 #: judge/models/contest.py:842 judge/models/course.py:115
-#: judge/models/profile.py:384 judge/models/profile.py:462
+#: judge/models/profile.py:390 judge/models/profile.py:468
 msgid "user"
 msgstr "người dùng"
 
@@ -1993,7 +1993,7 @@ msgid ""
 msgstr "Ảnh này sẽ thay thế logo mặc định khi ở trong tổ chức."
 
 #: judge/models/profile.py:143 judge/models/profile.py:172
-#: judge/models/profile.py:390 judge/models/profile.py:469
+#: judge/models/profile.py:396 judge/models/profile.py:475
 msgid "organization"
 msgstr ""
 
@@ -2099,43 +2099,43 @@ msgstr "ghi chú nội bộ"
 msgid "Notes for administrators regarding this user."
 msgstr "Ghi chú riêng cho quản trị viên."
 
-#: judge/models/profile.py:249
+#: judge/models/profile.py:250
 msgid "Custom background"
 msgstr "Background tự chọn"
 
-#: judge/models/profile.py:249
+#: judge/models/profile.py:253
 msgid "CSS custom background properties: url(\"image_url\"), color, etc"
 msgstr "CSS background tự chọn. Ví dụ: url(\"image_url\"), white, ..."
 
-#: judge/models/profile.py:377
+#: judge/models/profile.py:383
 msgid "user profile"
 msgstr "thông tin người dùng"
 
-#: judge/models/profile.py:378
+#: judge/models/profile.py:384
 msgid "user profiles"
 msgstr "thông tin người dùng"
 
-#: judge/models/profile.py:394
+#: judge/models/profile.py:400
 msgid "request time"
 msgstr "thời gian đăng ký"
 
-#: judge/models/profile.py:397
+#: judge/models/profile.py:403
 msgid "state"
 msgstr "trạng thái"
 
-#: judge/models/profile.py:404
+#: judge/models/profile.py:410
 msgid "reason"
 msgstr "lý do"
 
-#: judge/models/profile.py:407
+#: judge/models/profile.py:413
 msgid "organization join request"
 msgstr "đơn đăng ký tham gia"
 
-#: judge/models/profile.py:408
+#: judge/models/profile.py:414
 msgid "organization join requests"
 msgstr "đơn đăng ký tham gia"
 
-#: judge/models/profile.py:474
+#: judge/models/profile.py:480
 #, fuzzy
 #| msgid "last seen"
 msgid "last visit"
@@ -2983,7 +2983,7 @@ msgid "You are not allowed to access this organization."
 msgstr "Bạn không được phép chỉnh sửa tổ chức này."
 
 #: judge/views/organization.py:230 judge/views/stats.py:184
-#: templates/contest/list.html:89 templates/problem/list-base.html:97
+#: templates/contest/list.html:93 templates/problem/list-base.html:97
 #: templates/stats/site.html:33 templates/user/user-left-sidebar.html:4
 #: templates/user/user-list-tabs.html:6
 msgid "Groups"
@@ -3400,8 +3400,8 @@ msgstr "Phải qua một kỳ thi"
 #: judge/views/submission.py:914
 #, python-brace-format
 msgid ""
-"<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a href="
-"\"{5}\">{4}</a>"
+"<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a "
+"href=\"{5}\">{4}</a>"
 msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho <a href=\"{3}\">{2}</a> trong <a "
 "href=\"{5}\">{4}</a>"
@@ -3673,7 +3673,7 @@ msgstr "đã đăng vào %(time)s"
 
 #: templates/blog/blog.html:31 templates/comments/content-list.html:62
 #: templates/comments/content-list.html:76
-#: templates/contest/contest-tabs.html:35 templates/contest/list.html:124
+#: templates/contest/contest-tabs.html:35 templates/contest/list.html:129
 #: templates/contest/tag-title.html:9 templates/flatpages/admin_link.html:3
 #: templates/license.html:10 templates/problem/editorial.html:15
 #: templates/problem/feed/problems.html:50
@@ -3949,7 +3949,7 @@ msgstr "Thứ sáu"
 msgid "Saturday"
 msgstr "Thứ bảy"
 
-#: templates/contest/clarification.html:52 templates/contest/list.html:229
+#: templates/contest/clarification.html:52 templates/contest/list.html:232
 #: templates/organization/new.html:10 templates/ticket/new.html:38
 msgid "Create"
 msgstr "Tạo mới"
@@ -4014,8 +4014,8 @@ msgstr "G:i T, j F, Y"
 #: templates/contest/contest-datetime.html:39
 #, python-format
 msgid ""
-"<b>%(time_limit)s</b> window between <b>%(start_time)s</b> and <b>"
-"%(end_time)s</b>"
+"<b>%(time_limit)s</b> window between <b>%(start_time)s</b> and "
+"<b>%(end_time)s</b>"
 msgstr ""
 "Kéo dài <b>%(time_limit)s</b> từ <b>%(start_time)s</b> đến <b>%(end_time)s</"
 "b>"
@@ -4075,7 +4075,7 @@ msgstr "Nhân bản"
 msgid "Leave contest"
 msgstr "Rời kỳ thi"
 
-#: templates/contest/contest.html:42 templates/contest/list.html:408
+#: templates/contest/contest.html:42 templates/contest/list.html:400
 msgid "Virtual join"
 msgstr "Tham gia ảo"
 
@@ -4099,9 +4099,7 @@ msgstr "Đăng nhập để tham gia"
 msgid "AC Rate"
 msgstr "Tỷ lệ AC"
 
-#: templates/contest/contest.html:103 templates/contest/list.html:242
-#: templates/contest/list.html:291 templates/contest/list.html:385
-#: templates/problem/list.html:24
+#: templates/contest/contest.html:103 templates/problem/list.html:24
 msgid "Users"
 msgstr "Người nộp"
 
@@ -4110,11 +4108,11 @@ msgstr "Người nộp"
 msgid "Editorial"
 msgstr "Hướng dẫn"
 
-#: templates/contest/list.html:85 templates/contest/media-js.html:152
+#: templates/contest/list.html:89 templates/contest/media-js.html:152
 msgid "Are you sure you want to join?"
 msgstr "Bạn có chắc tham gia?"
 
-#: templates/contest/list.html:86
+#: templates/contest/list.html:90
 msgid ""
 "Joining a contest for the first time starts your timer, after which it "
 "becomes unstoppable."
@@ -4122,88 +4120,83 @@ msgstr ""
 "Tham gia kỳ thi lần đầu sẽ kích hoạt thời gian đếm ngược, không thể dừng lại "
 "sau đó."
 
-#: templates/contest/list.html:118
+#: templates/contest/list.html:123
 msgid "hidden"
 msgstr "ẩn"
 
-#: templates/contest/list.html:130
+#: templates/contest/list.html:135
 msgid "private"
 msgstr "riêng tư"
 
-#: templates/contest/list.html:146
+#: templates/contest/list.html:151
 msgid "rated"
 msgstr "rated"
 
-#: templates/contest/list.html:172
+#: templates/contest/list.html:177
 #, python-format
 msgid "%(time_limit)s window"
 msgstr "Cửa sổ thi dài %(time_limit)s"
 
-#: templates/contest/list.html:174
+#: templates/contest/list.html:179
 #, python-format
 msgid "%(duration)s long"
 msgstr "Kéo dài %(duration)s"
 
-#: templates/contest/list.html:194
+#: templates/contest/list.html:198
 msgid "Spectate"
 msgstr "Theo dõi"
 
-#: templates/contest/list.html:200 templates/organization/home.html:30
+#: templates/contest/list.html:204 templates/organization/home.html:30
 msgid "Join"
 msgstr "Tham gia"
 
-#: templates/contest/list.html:211
+#: templates/contest/list.html:214
 msgid "Search contests..."
 msgstr "Tìm kiếm kỳ thi..."
 
-#: templates/contest/list.html:221 templates/internal/problem.html:33
+#: templates/contest/list.html:224 templates/internal/problem.html:33
 msgid "Search"
 msgstr "Tìm kiếm"
 
-#: templates/contest/list.html:225
+#: templates/contest/list.html:228
 msgid "Hide organization contests"
 msgstr "Ẩn các kỳ thi riêng tư của nhóm"
 
-#: templates/contest/list.html:235
+#: templates/contest/list.html:238
 msgid "Active Contests"
 msgstr "Kỳ thi bạn đang tham gia"
 
-#: templates/contest/list.html:241 templates/contest/list.html:290
-#: templates/contest/list.html:338 templates/contest/list.html:382
-msgid "Contest"
-msgstr "Kỳ thi"
-
-#: templates/contest/list.html:259
+#: templates/contest/list.html:255
 #, python-format
 msgid "Window ends in %(countdown)s"
 msgstr "Cửa số thi còn %(countdown)s"
 
-#: templates/contest/list.html:262 templates/contest/list.html:306
+#: templates/contest/list.html:258 templates/contest/list.html:299
 #, python-format
 msgid "Ends in %(countdown)s"
 msgstr "Kết thúc trong %(countdown)s"
 
-#: templates/contest/list.html:283
+#: templates/contest/list.html:284
 msgid "Ongoing Contests"
 msgstr "Kỳ thi đang diễn ra"
 
-#: templates/contest/list.html:324
+#: templates/contest/list.html:322
 msgid "There is no ongoing contest at this time."
 msgstr "Không có kỳ thi nào đang diễn ra hiện tại."
 
-#: templates/contest/list.html:331
+#: templates/contest/list.html:329
 msgid "Upcoming Contests"
 msgstr "Kỳ thi sắp tới"
 
-#: templates/contest/list.html:363
+#: templates/contest/list.html:359
 msgid "There is no scheduled contest at this time."
 msgstr "Không có kỳ thi nào được lên lịch hiện tại."
 
-#: templates/contest/list.html:370
+#: templates/contest/list.html:366
 msgid "Past Contests"
 msgstr "Kỳ thi trong quá khứ"
 
-#: templates/contest/list.html:423
+#: templates/contest/list.html:413
 msgid "There is no past contest."
 msgstr "Không có kỳ thi nào trong quá khứ."
 
@@ -4728,7 +4721,7 @@ msgid "Thinking point"
 msgstr "Độ khó nghĩ"
 
 #: templates/problem/feed/problems.html:83
-#: templates/problem/search-form.html:83
+#: templates/problem/search-form.html:68
 msgid "Problem types"
 msgstr "Dạng bài"
 
@@ -4756,7 +4749,7 @@ msgstr "Hệ thống lỗi!"
 msgid "Successful vote! Thank you!"
 msgstr "Đã gửi thành công! Cảm ơn bạn!"
 
-#: templates/problem/list.html:40 templates/problem/search-form.html:67
+#: templates/problem/list.html:40 templates/problem/search-form.html:79
 #: templates/user/user-problems.html:57
 msgid "Category"
 msgstr "Nhóm bài"
@@ -5024,7 +5017,7 @@ msgstr "Hiển thị hướng dẫn"
 msgid "Have editorial"
 msgstr "Có hướng dẫn"
 
-#: templates/problem/search-form.html:70 templates/problem/search-form.html:72
+#: templates/problem/search-form.html:82 templates/problem/search-form.html:84
 #: templates/submission/list.html:381
 #: templates/submission/submission-list-tabs.html:4
 msgid "All"
@@ -5930,6 +5923,9 @@ msgstr "Thông tin"
 msgid "Check all"
 msgstr "Chọn tất cả"
 
+#~ msgid "Contest"
+#~ msgstr "Kỳ thi"
+
 #~ msgid "0 to not show testcases, 1 to show"
 #~ msgstr "0 để ẩn test, 1 để hiện"
 
@@ -5966,8 +5962,8 @@ msgstr "Chọn tất cả"
 #~ msgstr "bình luận nữa"
 
 #~ msgid ""
-#~ "This comment is hidden due to too much negative feedback. Click <a href="
-#~ "\"javascript:comment_show_content(%(id)s)\">here</a> to view it."
+#~ "This comment is hidden due to too much negative feedback. Click <a "
+#~ "href=\"javascript:comment_show_content(%(id)s)\">here</a> to view it."
 #~ msgstr ""
 #~ "Bình luận bị ẩn vì nhiều phản hồi tiêu cực. Nhấp vào <a href=\"javascript:"
 #~ "comment_show_content(%(id)s)\">đây</a> để mở."
