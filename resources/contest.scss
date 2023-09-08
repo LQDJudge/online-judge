@@ -9,6 +9,14 @@
     box-sizing: border-box;
     display: flex;
 
+    .info-contest:first-child {
+        margin-right: 25px;
+    }
+
+    .info-contest:nth-child(2) {
+        margin-right: 5px;
+    }
+
     .info-contest {
         flex: 1;
     }

@@ -5,6 +5,10 @@
 
 {% block two_col_media %}
   <style>
+    .non-padding-top {
+      padding-top: 0;
+    }
+
     .content-description ul {
       padding: 0 !important;
     }
@@ -112,7 +116,8 @@
     <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title" style="margin-right: 5px;">
       {{- contest.name -}}
     </a>
-    <span class="contest-tags">
+    <br>
+    <div class="contest-tags" style="margin-top: 5px;">
       {% if not contest.is_visible %}
         <span class="contest-tag contest-tag-hidden">
           <i class="fa fa-eye-slash"></i> {{ _('hidden') }}
@@ -155,12 +160,12 @@
           </a>
         </span>
       {% endfor %}
-    </span>
+    </div>
   {% endspaceless %}
 {% endmacro %}
 
-{% macro time_left(contest) %}
-  <div class="time time-left">
+{% macro time_left(contest, padding_top = true) %}
+  <div class="time time-left {{ 'non-padding-top' if padding_top == false }}">
     {% if contest.time_limit %}
       {{ contest.start_time|date(_("M j, Y, G:i")) }} -
       {{ contest.end_time|date(_("M j, Y, G:i")) }}
@@ -382,7 +387,7 @@
           <div class="info-contest" style="flex: 1.5">
             <div class="contest-title">Thời gian:</div>
             <div class="contest-block">
-              {{ time_left(contest) }}
+              {{ time_left(contest, false) }}
             </div>
           </div>
           <div class="info-contest">
