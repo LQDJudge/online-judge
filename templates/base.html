@@ -252,9 +252,9 @@
               </span>
             {% endif %}
             <span title="{{_('Language')}}">
-              <a class="icofont-globe navbar-icon" id="nav-lang-icon" aria-hidden="true">
+              <div class="icofont-globe navbar-icon" id="nav-lang-icon" aria-hidden="true">
                 <sub class="sub-lang">{{LANGUAGE_CODE}}</sub>
-              </a>
+              </div>
               <div id="lang-dropdown" class="dropdown" role="tooltip">
                 {% for language in language_info_list(LANGUAGES) %}
                   <div value="{{ language.code }}"

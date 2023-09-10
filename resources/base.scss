@@ -713,7 +713,7 @@ math {
 }
 
 #chat-icon {
-    color: #045343;
+    color: $theme_color;
 }
 
 #chat-icon:hover {
@@ -924,37 +924,37 @@ select {
 }
 
 ::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
-    color: #045343;
+    color: $theme_color;
     opacity: 1; /* Firefox */
     text-align: center;
 }
 
 :-ms-input-placeholder { /* Internet Explorer 10-11 */
-    color: #045343;
+    color: $theme_color;
     text-align: center;
 }
 
 ::-ms-input-placeholder { /* Microsoft Edge */
-    color: #045343;
+    color: $theme_color;
     text-align: center;
 }
 
 input::placeholder{
-    color: #045343;
+    color: $theme_color;
     text-align: center;
 }
 
 ::-webkit-input-placeholder {
-    color: #045343;
+    color: $theme_color;
     text-align: center;
 }
 
 :-moz-placeholder { /* Firefox 18- */
-    color: #045343;
+    color: $theme_color;
     text-align: center;
 }
 
 ::-moz-placeholder {  /* Firefox 19+ */
-    color: #045343;
+    color: $theme_color;
     text-align: center;
 }

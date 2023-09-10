@@ -2554,28 +2554,29 @@ input[type="text"]:focus, input[type="password"]:focus {
 ul.pagination a:hover {
     color: rgb(193, 191, 188);
     background-image: initial;
-    background-color: rgba(0, 0, 0, 0.55);
+    background-color: rgb(7, 106, 86);
+    border-color: initial;
 }
 ul.pagination > li > a,
 ul.pagination > li > span {
     text-decoration-color: initial;
-    color: rgb(193, 191, 188);
-    background-color: rgb(0, 0, 83);
-    border-color: rgb(95, 88, 77);
+    color: rgb(170, 166, 161);
+    background-color: rgb(20, 22, 22);
+    border-color: rgb(105, 97, 85);
 }
 ul.pagination > .disabled-page > a {
     color: rgb(130, 123, 113);
-    background-color: rgb(0, 0, 83);
-    border-color: rgb(105, 98, 86);
+    background-color: rgba(2, 55, 45, 0.5);
+    border-color: rgba(105, 97, 85, 0.5);
 }
 ul.pagination > .disabled-page > span {
     color: rgb(130, 123, 113);
-    background-color: rgb(0, 0, 83);
-    border-color: rgb(95, 88, 77);
+    background-color: rgba(2, 55, 45, 0.5);
+    border-color: rgba(105, 97, 85, 0.5);
 }
 ul.pagination > .active-page > a {
     color: rgb(193, 191, 188);
-    background-color: rgb(0, 61, 107);
+    background-color: rgb(2, 55, 45);
     border-color: transparent;
 }
 ul.pagination > .active-page > span {
@@ -2921,6 +2922,10 @@ a.voted {
 }
 .submission-info .submission-date {
     color: rgb(126, 119, 107);
+}
+.list-contest {
+    box-shadow: rgba(2, 55, 45, 0.2) 0px 4px 8px,
+    rgba(2, 55, 45, 0.19) 0px 6px 20px;
 }
 #contest-calendar th {
     border-bottom-color: rgb(51, 56, 58);

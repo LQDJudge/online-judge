@@ -134,7 +134,7 @@ class ContestList(
     QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ContestListMixin, ListView
 ):
     model = Contest
-    paginate_by = 20
+    paginate_by = 10
     template_name = "contest/list.html"
     title = gettext_lazy("Contests")
     context_object_name = "past_contests"

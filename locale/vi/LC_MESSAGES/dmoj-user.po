@@ -15,11 +15,14 @@ msgstr "Thành viên"
 msgid "Contests"
 msgstr "Kỳ thi"
 
-msgid "Groups"
-msgstr "Nhóm"
+msgid "Chat"
+msgstr ""
 
 msgid "About"
 msgstr "Giới thiệu"
+
+msgid "Groups"
+msgstr "Nhóm"
 
 msgid "Status"
 msgstr "Máy chấm"
