@@ -403,17 +403,17 @@ class Problem(models.Model, PageVotable, Bookmarkable):
                 )
 
             # Authors, curators, and testers should always have access, so OR at the very end.
-            filter = Exists(
+            q |= Exists(
                 Problem.authors.through.objects.filter(
                     problem=OuterRef("pk"), profile=profile
                 )
             )
-            filter |= Exists(
+            q |= Exists(
                 Problem.curators.through.objects.filter(
                     problem=OuterRef("pk"), profile=profile
                 )
             )
-            filter |= Exists(
+            q |= Exists(
                 Problem.testers.through.objects.filter(
                     problem=OuterRef("pk"), profile=profile
                 )

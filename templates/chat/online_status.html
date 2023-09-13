@@ -27,11 +27,18 @@
                 fill="{{'green' if user.is_online else 'red'}}"/>
             </svg>
           </div>
-          <span style="padding-left:0.3em" class="username {{ user.user.css_class }}">
-            {{ user.user.username }}
-          </span>
-          <span class="spacer">
-            <span class="unread-count" id="unread-count-{{user.user.id}}">{{user.unread_count if user.unread_count}}</span>
+          <div class="status-user">
+            <span class="username {{ user.user.css_class }} wrapline">
+              {{ user.user.username }}
+            </span>
+            {% if user.last_msg %}
+              <span class="status_last_message wrapline" {% if user.room %}id="last_msg-{{user.room}}"{% endif %}>
+                {{ user.last_msg }}
+              </span>
+            {% endif %}
+          </div>
+          <span class="unread-count" id="unread-count-{{user.user.id}}">
+            {{user.unread_count if user.unread_count}}
           </span>
         </li>
       {% endfor %}

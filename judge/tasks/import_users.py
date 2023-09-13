@@ -1,5 +1,6 @@
 import csv
 from tempfile import mktemp
+import re
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -41,6 +42,11 @@ def csv_to_dict(csv_file):
     return res
 
 
+def is_valid_username(username):
+    match = re.match(r"\w+", username)
+    return match is not None and match.group() == username
+
+
 # return result log
 def import_users(users):
     log = ""
@@ -48,17 +54,18 @@ def import_users(users):
         cur_log = str(i + 1) + ". "
 
         username = row["username"]
+        if not is_valid_username(username):
+            log += username + ": Invalid username\n"
+            continue
+
         cur_log += username + ": "
-
         pwd = row["password"]
-
         user, created = User.objects.get_or_create(
             username=username,
             defaults={
                 "is_active": True,
             },
         )
-
         profile, _ = Profile.objects.get_or_create(
             user=user,
             defaults={

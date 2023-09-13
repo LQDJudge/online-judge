@@ -80,6 +80,7 @@ class ProfileForm(ModelForm):
             "ace_theme",
             "user_script",
             "profile_image",
+            "css_background",
         ]
         widgets = {
             "user_script": AceWidget(theme="github"),
@@ -87,6 +88,7 @@ class ProfileForm(ModelForm):
             "language": Select2Widget(attrs={"style": "width:200px"}),
             "ace_theme": Select2Widget(attrs={"style": "width:200px"}),
             "profile_image": ImageWidget,
+            "css_background": forms.TextInput(),
         }
 
         has_math_config = bool(settings.MATHOID_URL)
@@ -528,19 +530,47 @@ class ContestProblemForm(ModelForm):
             "problem",
             "points",
             "partial",
-            "output_prefix_override",
+            "show_testcases",
             "max_submissions",
         )
         widgets = {
             "problem": HeavySelect2Widget(
-                data_view="problem_select2", attrs={"style": "width:100%"}
+                data_view="problem_select2", attrs={"style": "width: 100%"}
             ),
         }
 
 
+class ContestProblemModelFormSet(BaseModelFormSet):
+    def is_valid(self):
+        valid = super().is_valid()
+
+        if not valid:
+            return valid
+
+        problems = set()
+        duplicates = []
+
+        for form in self.forms:
+            if form.cleaned_data and not form.cleaned_data.get("DELETE", False):
+                problem = form.cleaned_data.get("problem")
+                if problem in problems:
+                    duplicates.append(problem)
+                else:
+                    problems.add(problem)
+
+        if duplicates:
+            for form in self.forms:
+                problem = form.cleaned_data.get("problem")
+                if problem in duplicates:
+                    form.add_error("problem", _("This problem is duplicated."))
+            return False
+
+        return True
+
+
 class ContestProblemFormSet(
     formset_factory(
-        ContestProblemForm, formset=BaseModelFormSet, extra=6, can_delete=True
+        ContestProblemForm, formset=ContestProblemModelFormSet, extra=6, can_delete=True
     )
 ):
     model = ContestProblem

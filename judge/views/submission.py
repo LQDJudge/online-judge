@@ -259,13 +259,13 @@ class SubmissionStatus(SubmissionDetailBase):
         )
 
         contest = submission.contest_or_none
-        prefix_length = 0
+        show_testcases = False
         can_see_testcases = self.access_testcases_in_contest()
 
         if contest is not None:
-            prefix_length = contest.problem.output_prefix_override or 0
+            show_testcases = contest.problem.show_testcases or False
 
-        if contest is None or prefix_length > 0 or can_see_testcases:
+        if contest is None or show_testcases or can_see_testcases:
             context["cases_data"] = get_cases_data(submission)
             context["can_see_testcases"] = True
         try:

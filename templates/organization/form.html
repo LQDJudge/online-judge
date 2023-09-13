@@ -3,8 +3,7 @@
   {% if form.errors %}
     <div class="alert alert-danger alert-dismissable">
       <a href="#" class="close">x</a>
-      {{ form.non_field_errors() }}
-      {{ form.errors }}
+      {{ _("Please fix below errors") }}
     </div>
   {% endif %}
   {% for field in form %}

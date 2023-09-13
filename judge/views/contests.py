@@ -134,7 +134,7 @@ class ContestList(
     QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ContestListMixin, ListView
 ):
     model = Contest
-    paginate_by = 20
+    paginate_by = 10
     template_name = "contest/list.html"
     title = gettext_lazy("Contests")
     context_object_name = "past_contests"
@@ -1357,9 +1357,7 @@ class ContestClarificationAjax(ContestMixin, DetailView):
             raise Http404()
 
         polling_time = 1  # minute
-        last_one_minute = last_five_minutes = timezone.now() - timezone.timedelta(
-            minutes=polling_time
-        )
+        last_one_minute = timezone.now() - timezone.timedelta(minutes=polling_time)
 
         queryset = ContestProblemClarification.objects.filter(
             problem__in=self.object.contest_problems.all(), date__gte=last_one_minute

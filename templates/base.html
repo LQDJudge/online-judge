@@ -193,6 +193,15 @@
         }
       </style>
     </noscript>
+    {% if request.profile.css_background %}
+      <style>
+        @media(min-width: 800px) {
+          #page-container {
+            background: {{request.profile.css_background|safe}};
+          }
+        }
+      </style>
+    {% endif %}
   </head>
   <body>
     <svg width="0" height="0" style="display: block">
@@ -202,7 +211,7 @@
     </svg>
     <nav id="navigation" class="unselectable">
       <div id="nav-container">
-        <a id="navicon" href="javascript:void(0)"><i class="fa fa-bars"></i></a>
+        <span id="navicon"><i class="fa fa-bars"></i></span>
         <ul id="nav-list">
           <li class="home-nav-element"><a href="{{ url('home') }}">{% include "site-logo-fragment.html" %}</a></li>
           <li class="home-nav-element"><span class="nav-divider"></span></li>
@@ -243,9 +252,9 @@
               </span>
             {% endif %}
             <span title="{{_('Language')}}">
-              <a class="icofont-globe navbar-icon" id="nav-lang-icon" aria-hidden="true">
+              <div class="icofont-globe navbar-icon" id="nav-lang-icon" aria-hidden="true">
                 <sub class="sub-lang">{{LANGUAGE_CODE}}</sub>
-              </a>
+              </div>
               <div id="lang-dropdown" class="dropdown" role="tooltip">
                 {% for language in language_info_list(LANGUAGES) %}
                   <div value="{{ language.code }}"
@@ -261,14 +270,14 @@
           </span>
           {% if request.user.is_authenticated %}
             <span id="user-links">
-              <ul><li><a href="javascript:void(0)">
+              <ul><li>
                 <span>
                   <img src="{{ gravatar(request.profile, 32) }}" height="24" width="24">{# -#}
                   <span>
                     <b class="{{request.profile.css_class}}">{{ request.user.username }}</b>
                   </span>
                 </span>
-              </a></li></ul>
+              </li></ul>
             </span>
             <div class="dropdown" id="userlink_dropdown" role="tooptip">
               <a href="{{ url('user_page') }}">
@@ -316,6 +325,7 @@
       </div>
       <div id="nav-shadow"></div>
     </nav>
+    <div id="loading-bar"></div>
     {% if request.in_contest %}
       <div id="contest-info">
         <div id="contest-info-main">

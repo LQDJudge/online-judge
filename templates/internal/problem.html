@@ -29,6 +29,11 @@
 {% endblock %}
 
 {% block middle_content %}
+  <form>
+    <label for="name">{{_('Search')}}:</label>
+    <input type="text" name="q" value="{{query}}">
+  </form>
+  <br>
   <table class="table">
     <thead>
       <tr>
