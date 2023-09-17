@@ -3149,6 +3149,9 @@ a.voted {
 .organization-container {
     border-color: rgb(62, 68, 70);
 }
+.org-help-text {
+    color: rgb(152, 143, 129);
+}
 .ticket-container #content > h2:first-child small {
     color: rgb(168, 160, 149);
 }
@@ -3865,14 +3868,268 @@ mjx-merror {
 mjx-assistive-mml {
     border-color: initial !important;
 }
-mjx-stretchy-v > mjx-ext {
-    border-color: transparent;
+.xdsoft_datetimepicker {
+    box-shadow: rgba(0, 0, 0, 0.51) 0px 5px 15px -5px;
+    background-image: initial;
+    background-color: rgb(24, 26, 27);
+    border-color: rgb(62, 68, 70) rgb(62, 68, 70) rgb(67, 73, 76);
+    color: rgb(200, 195, 188);
 }
-.recently-attempted ul {
-    list-style-image: initial;
+.xdsoft_datetimepicker iframe {
+    background-image: initial;
+    background-color: transparent;
+    border-color: initial;
 }
-.organization-row:last-child {
-    border-bottom-color: initial;
+.xdsoft_datetimepicker button {
+    border-color: initial !important;
+}
+.xdsoft_noselect::selection {
+    background-image: initial;
+    background-color: transparent;
+}
+.xdsoft_datetimepicker.xdsoft_inline {
+    box-shadow: none;
+}
+.xdsoft_datetimepicker .xdsoft_label i,
+.xdsoft_datetimepicker .xdsoft_prev,
+.xdsoft_datetimepicker .xdsoft_next,
+.xdsoft_datetimepicker .xdsoft_today_button {
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjMwIj48ZGVmcz48ZmlsdGVyIGlkPSJkYXJrcmVhZGVyLWltYWdlLWZpbHRlciI+PGZlQ29sb3JNYXRyaXggdHlwZT0ibWF0cml4IiB2YWx1ZXM9IjAuMjQ5IC0wLjYxNCAtMC42NzIgMC4wMDAgMS4wMzUgLTAuNjQ2IDAuMjg4IC0wLjY2NCAwLjAwMCAxLjAyMCAtMC42MzYgLTAuNjA5IDAuMjUwIDAuMDAwIDAuOTk0IDAuMDAwIDAuMDAwIDAuMDAwIDEuMDAwIDAuMDAwIiAvPjwvZmlsdGVyPjwvZGVmcz48aW1hZ2Ugd2lkdGg9IjEwMCIgaGVpZ2h0PSIzMCIgZmlsdGVyPSJ1cmwoI2RhcmtyZWFkZXItaW1hZ2UtZmlsdGVyKSIgeGxpbms6aHJlZj0iZGF0YTppbWFnZS9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUFHUUFBQUFlQ0FZQUFBRGFXN3Z6QUFBQUdYUkZXSFJUYjJaMGQyRnlaUUJCWkc5aVpTQkpiV0ZuWlZKbFlXUjVjY2xsUEFBQUF5SnBWRmgwV0UxTU9tTnZiUzVoWkc5aVpTNTRiWEFBQUFBQUFEdy9lSEJoWTJ0bGRDQmlaV2RwYmowaTc3dS9JaUJwWkQwaVZ6Vk5NRTF3UTJWb2FVaDZjbVZUZWs1VVkzcHJZemxrSWo4K0lEeDRPbmh0Y0cxbGRHRWdlRzFzYm5NNmVEMGlZV1J2WW1VNmJuTTZiV1YwWVM4aUlIZzZlRzF3ZEdzOUlrRmtiMkpsSUZoTlVDQkRiM0psSURVdU15MWpNREV4SURZMkxqRTBOVFkyTVN3Z01qQXhNaTh3TWk4d05pMHhORG8xTmpveU55QWdJQ0FnSUNBZ0lqNGdQSEprWmpwU1JFWWdlRzFzYm5NNmNtUm1QU0pvZEhSd09pOHZkM2QzTG5jekxtOXlaeTh4T1RrNUx6QXlMekl5TFhKa1ppMXplVzUwWVhndGJuTWpJajRnUEhKa1pqcEVaWE5qY21sd2RHbHZiaUJ5WkdZNllXSnZkWFE5SWlJZ2VHMXNibk02ZUcxd1BTSm9kSFJ3T2k4dmJuTXVZV1J2WW1VdVkyOXRMM2hoY0M4eExqQXZJaUI0Yld4dWN6cDRiWEJOVFQwaWFIUjBjRG92TDI1ekxtRmtiMkpsTG1OdmJTOTRZWEF2TVM0d0wyMXRMeUlnZUcxc2JuTTZjM1JTWldZOUltaDBkSEE2THk5dWN5NWhaRzlpWlM1amIyMHZlR0Z3THpFdU1DOXpWSGx3WlM5U1pYTnZkWEpqWlZKbFppTWlJSGh0Y0RwRGNtVmhkRzl5Vkc5dmJEMGlRV1J2WW1VZ1VHaHZkRzl6YUc5d0lFTlROaUFvVjJsdVpHOTNjeWtpSUhodGNFMU5Pa2x1YzNSaGJtTmxTVVE5SW5odGNDNXBhV1E2UTBOQlJqSTFOak0wTTBVd01URkZORGs0TmtGR016SkZRa1F6UWpFd1JVSWlJSGh0Y0UxTk9rUnZZM1Z0Wlc1MFNVUTlJbmh0Y0M1a2FXUTZRME5CUmpJMU5qUTBNMFV3TVRGRk5EazROa0ZHTXpKRlFrUXpRakV3UlVJaVBpQThlRzF3VFUwNlJHVnlhWFpsWkVaeWIyMGdjM1JTWldZNmFXNXpkR0Z1WTJWSlJEMGllRzF3TG1scFpEcERRMEZHTWpVMk1UUXpSVEF4TVVVME9UZzJRVVl6TWtWQ1JETkNNVEJGUWlJZ2MzUlNaV1k2Wkc5amRXMWxiblJKUkQwaWVHMXdMbVJwWkRwRFEwRkdNalUyTWpRelJUQXhNVVUwT1RnMlFVWXpNa1ZDUkROQ01UQkZRaUl2UGlBOEwzSmtaanBFWlhOamNtbHdkR2x2Ymo0Z1BDOXlaR1k2VWtSR1BpQThMM2c2ZUcxd2JXVjBZVDRnUEQ5NGNHRmphMlYwSUdWdVpEMGljaUkvUG9ORVA1NEFBQUlPU1VSQlZIamE3SnE5VHNNd0VNY3hyWkQ0V3BCWWVLVUNlK2tUTUNBQ0haaDRCRmZITy9BQUlIWkdGaFlrQkJzU0VxeHNMQ0FnWEtoYlhZT1R4aDlwZkpWUCtxdXRuWjVzLzVMejJZNUkwM1FoV2ppMkdJY2dBb2tXZ2ZDeE52Y09DQ0dLcWlTcWhVcDBsYUhPbmUwNXZkRXlHTWZrZHhKRFZqZ3dEbEVRZ1lRQmd4K1VMSmFXU1hYUzZyL0VSNUZCVlI4VmZHZnRUS2NJVE5zK2ExWHBjRm9FeFJFSURGMTRBVklGeGdRVVMraDUyMGNkdWQ2d05rQzBVQnc2QkNPL0hvQ1l3QmhEOFFDa1EveDFtd0R5RDRwbGg0RDZERFYwVEFHeW80SGNhd0xJQkJTTERrSGVIME1nMnlWUDNsNFRRTVpRRERzRU9sL01nSFFxaE1OdUUwRCtvQmgwQ0lyOE1BS3lhekJIOVd5QnVLeERXZ2JYZmpOZjMyVFoxS1dtL0FwMW9Tay9SNTNVdFE1eFRoM0xVbE1tVDhndDZnNTFROXArU29ieGdKUS9xbXNmWmhXeXdHRlNsMHlCakNMSkNNZ1hhaWwzYjcrcnVtZFZKMllSc3M0Y04rcjZxQUhEa1BXalBqZEpDRjRuOVJtQUQvVjlBL1dwNE5RYXNzRGp3bEI2WEJpQ3hjSlFXbVpaYjhUSEZpbGZ5L2xmclR2TGdocTJUcVRIclJNVEtOSjBzSWhkbzE1UlQrUnB5V3dGZFk5NlVaL0xkUUtCR2pjWHBjYzFBbFNGRWZMbW91RCsxa251eEJEVVZydk9CbW9PQy9yRWNON09ReEtWZUpUQ2lBZFV6VUpoQTJPZXo5UVRrcDcyT1RWY3hEY1hZOGlLTmt4R0FKWG1KQ09Rd09hNmRoeVhzT2E2WHdFR0FLZGViNUVUM3JRZEFBQUFBRWxGVGtTdVFtQ0MiIC8+PC9zdmc+");
+}
+.xdsoft_datetimepicker .xdsoft_next,
+.xdsoft_datetimepicker .xdsoft_prev,
+.xdsoft_datetimepicker .xdsoft_today_button {
+    background-color: transparent;
+    border-color: initial;
+    outline-color: initial;
+}
+.xdsoft_datetimepicker .xdsoft_timepicker .xdsoft_time_box {
+    border-bottom-color: rgb(58, 62, 65);
+}
+.xdsoft_datetimepicker .xdsoft_timepicker .xdsoft_time_box > div > div {
+    background-image: initial;
+    background-color: rgb(30, 32, 33);
+    border-top-color: rgb(58, 62, 65);
+    color: rgb(168, 160, 149);
+}
+.xdsoft_datetimepicker .xdsoft_label {
+    background-color: rgb(24, 26, 27);
+}
+.xdsoft_datetimepicker .xdsoft_label:hover > span {
+    text-decoration-color: initial;
+}
+.xdsoft_datetimepicker .xdsoft_label > .xdsoft_select {
+    border-color: rgb(62, 68, 70);
+    background-image: initial;
+    background-color: rgb(24, 26, 27);
+}
+.xdsoft_datetimepicker .xdsoft_label > .xdsoft_select > div > .xdsoft_option:hover {
+    color: rgb(232, 230, 227);
+    background-image: initial;
+    background-color: rgb(204, 102, 0);
+}
+.xdsoft_datetimepicker .xdsoft_label > .xdsoft_select > div > .xdsoft_option {
+    text-decoration-color: initial !important;
+}
+.xdsoft_datetimepicker .xdsoft_label > .xdsoft_select > div > .xdsoft_option.xdsoft_current {
+    background-image: initial;
+    background-color: rgb(0, 101, 173);
+    box-shadow: rgb(18, 114, 183) 0px 1px 3px 0px inset;
+    color: rgb(232, 230, 227);
+}
+.xdsoft_datetimepicker .xdsoft_calendar td,
+.xdsoft_datetimepicker .xdsoft_calendar th {
+    background-image: initial;
+    background-color: rgb(30, 32, 33);
+    border-color: rgb(58, 62, 65);
+    color: rgb(168, 160, 149);
+}
+.xdsoft_datetimepicker .xdsoft_calendar th {
+    background-image: initial;
+    background-color: rgb(32, 35, 36);
+}
+.xdsoft_datetimepicker .xdsoft_calendar td.xdsoft_today {
+    color: rgb(61, 174, 255);
+}
+.xdsoft_datetimepicker .xdsoft_calendar td.xdsoft_highlighted_default {
+    background-image: initial;
+    background-color: rgb(78, 40, 0);
+    box-shadow: rgb(136, 68, 0) 0px 1px 4px 0px inset;
+    color: rgb(232, 230, 227);
+}
+.xdsoft_datetimepicker .xdsoft_calendar td.xdsoft_highlighted_mint {
+    background-image: initial;
+    background-color: rgb(0, 88, 31);
+    box-shadow: rgb(0, 177, 22) 0px 1px 4px 0px inset;
+    color: rgb(232, 230, 227);
+}
+.xdsoft_datetimepicker .xdsoft_calendar td.xdsoft_default,
+.xdsoft_datetimepicker .xdsoft_calendar td.xdsoft_current,
+.xdsoft_datetimepicker .xdsoft_timepicker .xdsoft_time_box > div > div.xdsoft_current {
+    background-image: initial;
+    background-color: rgb(0, 101, 173);
+    box-shadow: rgb(18, 114, 183) 0px 1px 3px 0px inset;
+    color: rgb(232, 230, 227);
+}
+.xdsoft_datetimepicker .xdsoft_calendar td:hover,
+.xdsoft_datetimepicker .xdsoft_timepicker .xdsoft_time_box > div > div:hover {
+    color: rgb(232, 230, 227) !important;
+    background-image: initial !important;
+    background-color: rgb(204, 102, 0) !important;
+    box-shadow: none !important;
+}
+.xdsoft_datetimepicker .xdsoft_calendar td.xdsoft_current.xdsoft_disabled:hover,
+.xdsoft_datetimepicker .xdsoft_timepicker .xdsoft_time_box > div > div.xdsoft_current.xdsoft_disabled:hover {
+    background-image: initial !important;
+    background-color: rgb(0, 101, 173) !important;
+    box-shadow: rgb(18, 114, 183) 0px 1px 3px 0px inset !important;
+    color: rgb(232, 230, 227) !important;
+}
+.xdsoft_datetimepicker .xdsoft_calendar td.xdsoft_disabled:hover,
+.xdsoft_datetimepicker .xdsoft_timepicker .xdsoft_time_box > div > div.xdsoft_disabled:hover {
+    color: inherit !important;
+    background-image: inherit !important;
+    background-color: inherit !important;
+    box-shadow: inherit !important;
+}
+.xdsoft_datetimepicker .xdsoft_calendar th {
+    color: rgb(168, 160, 149);
+}
+.xdsoft_datetimepicker .xdsoft_copyright {
+    color: rgb(200, 195, 188) !important;
+}
+.xdsoft_datetimepicker .xdsoft_copyright a {
+    color: rgb(221, 218, 214) !important;
+}
+.xdsoft_datetimepicker .xdsoft_copyright a:hover {
+    color: rgb(178, 172, 162) !important;
+}
+.xdsoft_time_box {
+    border-color: rgb(62, 68, 70);
+}
+.xdsoft_scrollbar > .xdsoft_scroller {
+    background-image: initial !important;
+    background-color: rgb(53, 57, 59) !important;
+}
+.xdsoft_datetimepicker.xdsoft_dark {
+    box-shadow: rgba(24, 26, 27, 0.51) 0px 5px 15px -5px;
+    background-image: initial;
+    background-color: rgb(0, 0, 0);
+    border-color: rgb(123, 114, 101) rgb(123, 114, 101) rgb(118, 109, 97);
+    color: rgb(200, 195, 188);
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_timepicker .xdsoft_time_box {
+    border-bottom-color: rgb(129, 120, 106);
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_timepicker .xdsoft_time_box > div > div {
+    background-image: initial;
+    background-color: rgb(8, 8, 8);
+    border-top-color: rgb(129, 120, 106);
+    color: rgb(168, 160, 149);
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_label {
+    background-color: rgb(0, 0, 0);
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_label > .xdsoft_select {
+    border-color: rgb(123, 114, 101);
+    background-image: initial;
+    background-color: rgb(0, 0, 0);
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_label > .xdsoft_select > div > .xdsoft_option:hover {
+    color: rgb(232, 230, 227);
+    background-image: initial;
+    background-color: rgb(0, 102, 204);
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_label > .xdsoft_select > div > .xdsoft_option.xdsoft_current {
+    background-image: initial;
+    background-color: rgb(163, 68, 0);
+    box-shadow: rgb(141, 50, 0) 0px 1px 3px 0px inset;
+    color: rgb(232, 230, 227);
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_label i,
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_prev,
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_next,
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_today_button {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAAAeCAYAAADaW7vzAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6QUExQUUzOTA0M0UyMTFFNDlBM0FFQTJENTExRDVBODYiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6QUExQUUzOTE0M0UyMTFFNDlBM0FFQTJENTExRDVBODYiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpBQTFBRTM4RTQzRTIxMUU0OUEzQUVBMkQ1MTFENUE4NiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpBQTFBRTM4RjQzRTIxMUU0OUEzQUVBMkQ1MTFENUE4NiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pp0VxGEAAAIASURBVHja7JrNSgMxEMebtgh+3MSLr1T1Xn2CHoSKB08+QmR8Bx9A8e7RixdB9CKCoNdexIugxFlJa7rNZneTbLIpM/CnNLsdMvNjM8l0mRCiQ9Ye61IKCAgZAUnH+mU3MMZaHYChBnJUDzWOFZdVfc5+ZFLbrWDeXPwbxIqrLLfaeS0hEBVGIRQCEiZoHQwtlGSByCCdYBl8g8egTTAWoKQMRBRBcZxYlhzhKegqMOageErsCHVkk3hXIFooDgHB1KkHIHVgzKB4ADJQ/A1jAFmAYhkQqA5TOBtocrKrgXwQA8gcFIuAIO8sQSA7hidvPwaQGZSaAYHOUWJABhWWw2EMIH9QagQERU4SArJXo0ZZL18uvaxejXt/Em8xjVBXmvFr1KVm/AJ10tRe2XnraNqaJvKE3KHuUbfK1E+VHB0q40/y3sdQSxY4FHWeKJCunP8UyDdqJZenT3ntVV5jIYCAh20vT7ioP8tpf6E2lfEMwERe+whV1MHjwZB7PBiCxcGQWwKZKD62lfGNnP/1poFAA60T7rF1UgcKd2id3KDeUS+oLWV8DfWAepOfq00CgQabi9zjcgJVYVD7PVzQUAUGAQkbNJTBICDhgwYTjDYD6XeW08ZKh+A4pYkzenOxXUbvZcWz7E8ykRMnIHGX1XPl+1m2vPYpL+2qdb8CDAARlKFEz/ZVkAAAAABJRU5ErkJggg==");
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_calendar td,
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_calendar th {
+    background-image: initial;
+    background-color: rgb(8, 8, 8);
+    border-color: rgb(129, 120, 106);
+    color: rgb(168, 160, 149);
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_calendar th {
+    background-image: initial;
+    background-color: rgb(11, 11, 12);
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_calendar td.xdsoft_today {
+    color: rgb(255, 142, 61);
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_calendar td.xdsoft_highlighted_default {
+    background-image: initial;
+    background-color: rgb(78, 40, 0);
+    box-shadow: rgb(136, 68, 0) 0px 1px 4px 0px inset;
+    color: rgb(232, 230, 227);
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_calendar td.xdsoft_highlighted_mint {
+    background-image: initial;
+    background-color: rgb(0, 88, 31);
+    box-shadow: rgb(0, 177, 22) 0px 1px 4px 0px inset;
+    color: rgb(232, 230, 227);
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_calendar td.xdsoft_default,
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_calendar td.xdsoft_current,
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_timepicker .xdsoft_time_box > div > div.xdsoft_current {
+    background-image: initial;
+    background-color: rgb(163, 68, 0);
+    box-shadow: rgb(141, 50, 0) 0px 1px 3px 0px inset;
+    color: rgb(232, 230, 227);
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_calendar td:hover,
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_timepicker .xdsoft_time_box > div > div:hover {
+    color: rgb(232, 230, 227) !important;
+    background-image: initial !important;
+    background-color: rgb(0, 102, 204) !important;
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_calendar th {
+    color: rgb(168, 160, 149);
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_copyright {
+    color: rgb(200, 195, 188) !important;
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_copyright a {
+    color: rgb(221, 218, 214) !important;
+}
+.xdsoft_datetimepicker.xdsoft_dark .xdsoft_copyright a:hover {
+    color: rgb(178, 172, 162) !important;
+}
+.xdsoft_dark .xdsoft_time_box {
+    border-color: rgb(123, 114, 101);
+}
+.xdsoft_dark .xdsoft_scrollbar > .xdsoft_scroller {
+    background-image: initial !important;
+    background-color: rgb(38, 42, 43) !important;
+}
+.xdsoft_datetimepicker .xdsoft_save_selected {
+    color: rgb(185, 179, 169);
+    border-color: rgb(58, 62, 65) !important;
+}
+.xdsoft_datetimepicker .blue-gradient-button {
+    color: rgb(156, 148, 135);
+    border-color: rgb(59, 64, 66);
+    background-image: linear-gradient(rgb(24, 26, 27) 0px,
+    rgb(19, 34, 42) 73%);
+    background-color: initial;
+}
+.xdsoft_datetimepicker .blue-gradient-button:hover,
+.xdsoft_datetimepicker .blue-gradient-button:focus,
+.xdsoft_datetimepicker .blue-gradient-button:hover span,
+.xdsoft_datetimepicker .blue-gradient-button:focus span {
+    color: rgb(185, 179, 169);
+    background-image: linear-gradient(rgb(19, 34, 42) 0px,
+    rgb(24, 26, 27) 73%);
+    background-color: initial;
 }
 
 /* Override Style */

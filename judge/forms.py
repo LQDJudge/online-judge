@@ -308,6 +308,7 @@ class EditOrganizationContestForm(ModelForm):
             "freeze_after",
             "use_clarifications",
             "hide_problem_tags",
+            "public_scoreboard",
             "scoreboard_visibility",
             "run_pretests_only",
             "points_precision",
