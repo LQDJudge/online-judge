@@ -1973,9 +1973,11 @@ input::placeholder {
 }
 .left-sidebar-item:hover {
     background-color: rgb(40, 43, 45);
+    color: rgb(232, 230, 227);
 }
 .left-sidebar-item.active:hover {
     background-color: rgb(3, 66, 54);
+    color: rgb(232, 230, 227);
 }
 .sidebar-icon {
     color: rgb(232, 230, 227);
@@ -3870,9 +3872,6 @@ mjx-merror {
 }
 mjx-assistive-mml {
     border-color: initial !important;
-}
-mjx-stretchy-v > mjx-ext {
-    border-color: transparent;
 }
 .recently-attempted ul {
     list-style-image: initial;
