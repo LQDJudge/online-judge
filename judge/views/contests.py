@@ -278,6 +278,10 @@ class ContestMixin(object):
     def can_edit(self):
         return self.object.is_editable_by(self.request.user)
 
+    @cached_property
+    def can_access(self):
+        return self.object.is_accessible_by(self.request.user)
+
     def should_bypass_access_check(self, contest):
         return False
 
@@ -304,6 +308,7 @@ class ContestMixin(object):
         context["is_editor"] = self.is_editor
         context["is_tester"] = self.is_tester
         context["can_edit"] = self.can_edit
+        context["can_access"] = self.can_access
 
         if not self.object.og_image or not self.object.summary:
             metadata = generate_opengraph(
