@@ -64,7 +64,7 @@ mariadb> exit
 ```
 
 - Bước 4: Cài đặt môi trường ảo (virtual env) và pull code
-    - Nếu `pip3 install mysqlclient` bị lỗi thì thử chạy `sudo pip3 install mysqlclient==2.1.1`
+    - Nếu `pip3 install mysqlclient` bị lỗi thì thử chạy `pip3 install mysqlclient==2.1.1`
 
 ```jsx
 $ python3 -m venv dmojsite
