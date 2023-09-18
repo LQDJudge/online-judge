@@ -296,7 +296,7 @@ nav {
                 }
 
                 &:hover {
-                    border-top: 2px solid #045343;
+                    border-top: 2px solid #9c3706;
                     color: black;
                     background: rgba(255, 255, 255, 0.25);
                     margin: 0;
@@ -304,8 +304,8 @@ nav {
 
                 &.active {
                     // color: #FFF;
-                    border-top: 2px solid #045343;
-                    color: #045343;
+                    border-top: 2px solid #9c3706;
+                    color: #9c3706;
                     background: white;
                 }
 
@@ -713,7 +713,7 @@ math {
 }
 
 #chat-icon {
-    color: $theme_color;
+    color: #045343;
 }
 
 #chat-icon:hover {
@@ -924,37 +924,37 @@ select {
 }
 
 ::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
-    color: $theme_color;
+    color: #045343;
     opacity: 1; /* Firefox */
     text-align: center;
 }
 
 :-ms-input-placeholder { /* Internet Explorer 10-11 */
-    color: $theme_color;
+    color: #045343;
     text-align: center;
 }
 
 ::-ms-input-placeholder { /* Microsoft Edge */
-    color: $theme_color;
+    color: #045343;
     text-align: center;
 }
 
 input::placeholder{
-    color: $theme_color;
+    color: #045343;
     text-align: center;
 }
 
 ::-webkit-input-placeholder {
-    color: $theme_color;
+    color: #045343;
     text-align: center;
 }
 
 :-moz-placeholder { /* Firefox 18- */
-    color: $theme_color;
+    color: #045343;
     text-align: center;
 }
 
 ::-moz-placeholder {  /* Firefox 19+ */
-    color: $theme_color;
+    color: #045343;
     text-align: center;
 }
