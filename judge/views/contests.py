@@ -107,9 +107,10 @@ __all__ = [
 ]
 
 
-def _find_contest(request, key, private_check=True):
+def _find_contest(request, key):
     try:
         contest = Contest.objects.get(key=key)
+        private_check = not contest.public_scoreboard
         if private_check and not contest.is_accessible_by(request.user):
             raise ObjectDoesNotExist()
     except ObjectDoesNotExist:
@@ -277,6 +278,13 @@ class ContestMixin(object):
     def can_edit(self):
         return self.object.is_editable_by(self.request.user)
 
+    @cached_property
+    def can_access(self):
+        return self.object.is_accessible_by(self.request.user)
+
+    def should_bypass_access_check(self, contest):
+        return False
+
     def get_context_data(self, **kwargs):
         context = super(ContestMixin, self).get_context_data(**kwargs)
         if self.request.user.is_authenticated:
@@ -300,6 +308,7 @@ class ContestMixin(object):
         context["is_editor"] = self.is_editor
         context["is_tester"] = self.is_tester
         context["can_edit"] = self.can_edit
+        context["can_access"] = self.can_access
 
         if not self.object.og_image or not self.object.summary:
             metadata = generate_opengraph(
@@ -338,6 +347,9 @@ class ContestMixin(object):
         ):
             return contest
 
+        if self.should_bypass_access_check(contest):
+            return contest
+
         try:
             contest.access_check(self.request.user)
         except Contest.PrivateContest:
@@ -351,30 +363,6 @@ class ContestMixin(object):
             raise Http404()
         else:
             return contest
-
-        if contest.is_private or contest.is_organization_private:
-            private_contest_error = PrivateContestError(
-                contest.name,
-                contest.is_private,
-                contest.is_organization_private,
-                contest.organizations.all(),
-            )
-            if profile is None:
-                raise private_contest_error
-            if user.has_perm("judge.edit_all_contest"):
-                return contest
-            if not (
-                contest.is_organization_private
-                and contest.organizations.filter(
-                    id__in=profile.organizations.all()
-                ).exists()
-            ) and not (
-                contest.is_private
-                and contest.private_contestants.filter(id=profile.id).exists()
-            ):
-                raise private_contest_error
-
-        return contest
 
     def dispatch(self, request, *args, **kwargs):
         try:
@@ -1094,6 +1082,9 @@ class ContestRankingBase(ContestMixin, TitleMixin, DetailView):
 
 class ContestRanking(ContestRankingBase):
     page_type = "ranking"
+
+    def should_bypass_access_check(self, contest):
+        return contest.public_scoreboard
 
     def get_title(self):
         return _("%s Rankings") % self.object.name
