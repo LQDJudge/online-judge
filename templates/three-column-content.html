@@ -56,7 +56,7 @@
     }
 
     function navigateTo($elem, update_sidebar = false) {
-      var url = $elem.attr('data-href') || $elem.attr('href');
+      var url = $elem.attr('href');
 
       if (url === '#') return;
       if (update_sidebar) {
@@ -83,7 +83,7 @@
           activateBlogBoxOnClick();
           $('.xdsoft_datetimepicker').hide();
           registerNavigation();
-
+          $("#loading-bar").hide().css({ width: 0});
         }
         else {
           window.location.href = url;
@@ -107,7 +107,8 @@
       });
       activateBlogBoxOnClick();
 
-      $('.left-sidebar-item').on('click', function () {
+      $('.left-sidebar-item').on('click', function (e) {
+        e.preventDefault();
         navigateTo($(this), true);
       });
       registerNavigation();
@@ -116,10 +117,10 @@
 {% endblock %}
 
 {% macro make_tab_item(name, fa, url, text) %}
-  <div class="left-sidebar-item {% if page_type == name %}active{% endif %}" data-href="{{ url }}" id="{{ name }}-tab">
+  <a class="left-sidebar-item {% if page_type == name %}active{% endif %}" href="{{ url }}" id="{{ name }}-tab">
     <span class="sidebar-icon"><i class="{{ fa }}"></i></span>
     <span class="sidebar-text">{{ text }}</span>
-  </div>
+  </a>
 {% endmacro %}
 
 {% block body %}

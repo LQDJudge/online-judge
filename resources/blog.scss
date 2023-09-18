@@ -182,6 +182,7 @@
     display: flex;
     align-items: center;
     border-radius: .5em;
+    color: black;
 
     .sidebar-icon {
         font-size: large;
@@ -196,10 +197,12 @@
 .left-sidebar-item:hover {
     background-color: #e3e3e3;
     cursor: pointer;
+    color: black;
 }
 
 .left-sidebar-item.active:hover {
     background-color: $theme_color;
+    color: white;
 }
 
 .sidebar-icon {
