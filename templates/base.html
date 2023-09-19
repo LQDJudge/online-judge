@@ -213,28 +213,70 @@
       <div id="nav-container">
         <span id="navicon"><i class="fa fa-bars"></i></span>
         <ul id="nav-list">
-          <li class="home-nav-element"><a href="{{ url('home') }}">{% include "site-logo-fragment.html" %}</a></li>
+          <li style="margin-right:1.5em" class="home-nav-element"><a href="{{ url('home') }}">{% include "site-logo-fragment.html" %}</a></li>
           <li class="home-nav-element"><span class="nav-divider"></span></li>
           <li class="home-menu-item"><a href="{{ url('home') }}" class="nav-home">{{ _('Home') }}</a></li>
           {% for node in mptt_tree(nav_bar) recursive %}
-            <li>
-              <a href="{{ node.path }}" class="nav-{{ node.key }}{% if node.key in nav_tab %} active{% endif %}">
-                {{ user_trans(node.label) }}
-                {% if not node.is_leaf_node %}
-                  <div href="javascript:void(0)" class="nav-expand">></div>
-                {% endif %}
-              </a>
-              {% with children=node.get_children() %}
-                {% if children %}<ul>{{ loop(children) }}</ul>{% endif %}
-              {% endwith %}
-            </li>
+            {% if node.key != "chat" %}
+              <li>
+                <a href="{{ node.path }}" id="fa-icon-links" class="normal-text nav-{{ node.key }}{% if node.key in nav_tab %} active{% endif %}" style="font-size: smaller; margin-right: 1.5em; text-align: left;">
+                  {% if node.key == "problems" %}
+                    {% if node.key not in nav_tab %}
+                      <i id="fa-icon" class="fa fa-pencil"></i>
+                    {% else %}
+                      <i id="fa-icon-active" class="fa fa-pencil"></i>
+                    {% endif %}
+                  {% endif %}
+
+                  {% if node.key == "submit" %}
+                    {% if node.key not in nav_tab %}
+                      <i id="fa-icon" class="fa fa-neuter"></i>
+                    {% else %}
+                      <i id="fa-icon-active" class="fa fa-neuter"></i>
+                    {% endif %}
+                  {% endif %}
+
+                  {% if node.key == "user" %}
+                    {% if node.key not in nav_tab %}
+                      <i id="fa-icon" class="fa fa-user"></i>
+                    {% else %}
+                      <i id="fa-icon-active" class="fa fa-user"></i>
+                    {% endif %}
+                  {% endif %}
+
+                  {% if node.key == "contest" %}
+                    {% if node.key not in nav_tab %}
+                      <i id="fa-icon" class="fa fa-graduation-cap"></i>
+                    {% else %}
+                      <i id="fa-icon-active" class="fa fa-graduation-cap"></i>
+                    {% endif %}
+                  {% endif %}
+                  {% if node.key == "about" %}
+                    {% if node.key not in nav_tab %}
+                      <i id="fa-icon" class="fa fa-group"></i>
+                    {% else %}
+                      <i id="fa-icon-active" class="fa fa-group"></i>
+                    {% endif %}
+                  {% endif %}
+
+                  {{ user_trans(node.label) }}
+                  {% if not node.is_leaf_node %}
+                    <div href="javascript:void(0)" class="nav-expand">></div>
+                  {% endif %}
+                </a>
+                {% with children=node.get_children() %}
+                  {% if children %}<ul>{{ loop(children) }}</ul>{% endif %}
+                {% endwith %}
+              </li>
+            {% endif %}
           {% endfor %}
         </ul>
+
         <div style="float: right; display: inline-flex; font-size: larger; align-items: center; height: 100%;">
           <span class="navbar-icons">
             {% if request.user.is_authenticated %}
               <span title="{{_('Chat')}}">
-                <a id="chat-icon" href="{{ url('chat', '') }}" class="icofont-wechat navbar-icon" aria-hidden="true">
+                <a id="chat-icon" href="{{ url('chat', '') }}" class="fa fa-wechat navbar-icon" aria-hidden="true" style="font-size: 22.5px;">
                   {% set unread_chat = request.profile.count_unread_chat_boxes %}
                   {% if unread_chat %}
                     <sub class="unread_boxes">{{unread_chat}}</sub>
@@ -244,7 +286,7 @@
 
               {% set unseen_cnt = request.profile.count_unseen_notifications %}
               <span title="{{_('Notification')}}" class="{{ 'notification-open' if unseen_cnt > 0 }}">
-                <a href="{{ url('notification') }}" class="icofont-alarm navbar-icon" id="notification" aria-hidden="true">
+                <a href="{{ url('notification') }}" class="fa fa-bell-o navbar-icon" id="notification" aria-hidden="true" style="font-size: 22.5px;">
                   {% if unseen_cnt > 0 %}
                     <sub class="unread_boxes">{{unseen_cnt}}</sub>
                   {% endif %}
@@ -252,8 +294,13 @@
               </span>
             {% endif %}
             <span title="{{_('Language')}}">
-              <div class="icofont-globe navbar-icon" id="nav-lang-icon" aria-hidden="true">
-                <sub class="sub-lang">{{LANGUAGE_CODE}}</sub>
+              <div class="navbar-icon" id="nav-lang-icon" aria-hidden="true" style="font-size: 22.5px;">
+                {% if LANGUAGE_CODE == "vi" %}
+                  <h4 class="normal-text" style="color: black;">Tiếng Việt</h4>
+                {% endif %}
+                {% if LANGUAGE_CODE == "en" %}
+                  <h4 class="normal-text" style="color: black;">English</h4>
+                {% endif %}
               </div>
               <div id="lang-dropdown" class="dropdown" role="tooltip">
                 {% for language in language_info_list(LANGUAGES) %}
@@ -265,11 +312,11 @@
               </div>
             </span>
             <span title="{{_('Dark Mode')}}">
-              <a class="icofont-adjust navbar-icon black" id="nav-darkmode-icon" aria-hidden="true" href="?darkmode=1"></a>
+              <a class="fa fa-moon-o navbar-icon black" id="nav-darkmode-icon" aria-hidden="true" href="?darkmode=1" style="font-size: 22.5px;"></a>
             </span>
           </span>
           {% if request.user.is_authenticated %}
-            <span id="user-links">
+            <span id="user-links" class="navbar-icons">
               <ul><li>
                 <span>
                   <img src="{{ gravatar(request.profile, 32) }}" height="24" width="24">{# -#}
@@ -315,10 +362,9 @@
               {% endif %}
             </div>
           {% else %}
-            <span class="anon">
-              <a href="{{ url('auth_login') }}?next={{ LOGIN_RETURN_PATH|urlencode }}"><b>{{ _('Log in') }}</b></a>
-              &nbsp;{{ _('or') }}&nbsp;
-              <a href="{{ url('registration_register') }}"><b>{{ _('Sign up') }}</b></a>
+            <span class="anon navbar-icons">
+              <a href="{{ url('auth_login') }}?next={{ LOGIN_RETURN_PATH|urlencode }}" style="margin-right: 20px;"><h4 class="normal-text">{{ _('Log in') }}</h4></a>
+              <a href="{{ url('registration_register') }}"><h4 class="normal-text">{{ _('Sign up') }}</h4></a>
             </span>
           {% endif %}
         </div>
