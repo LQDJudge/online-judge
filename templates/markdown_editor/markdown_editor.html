@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block media %}
+  <style>
+    main {
+      overflow: hidden;
+    }
+    .left-markdown{
+      float: left;
+      width: 47%;
+      height: 620px;
+      /* background-color: #acabab;  */
+      padding: 20px;
+    }
+    .right-markdown{
+      float: right;
+      width: 47%;
+      height: 620px;
+      background-color: #6b6b6b;
+      /* #f0f0f0;  */
+      padding: 20px;
+    }
+  </style>
+{% endblock %}
+
+{% block body %}
+  <script>
+    $(document).ready(function(){
+      $("#inputField").on("keyup", function() {
+        const csrfToken = "{{ csrf_token }}";
+        $.ajax({
+          url: "{{url('blog_preview')}}",
+          type: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken,  // Include the CSRF token in the headers
+          },
+          data: {
+            preview: $(this).val()
+          },
+          success: function(data) {
+            $('#display').html(data)
+            // data sẽ là html nó render, thế vào phần bên phải
+          },
+          error: function(error) {
+            alert(error);
+            console.log(error.message)
+          }
+        })
+      });
+    });
+  </script>
+  <div class="left-markdown">
+    <form id="post-form" method="POST" >
+      {% csrf_token %}
+      <textarea  id="inputField" cols="105" rows="40" value=" "></textarea>
+    </form>
+  </div>
+  <div class="right-markdown" id="display"></div>
+{% endblock %}
+
