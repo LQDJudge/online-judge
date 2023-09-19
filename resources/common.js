@@ -387,9 +387,8 @@ function onWindowReady() {
     });
     $('a').click(function() {
         $("#loading-bar").show();
-        $("#loading-bar").animate({ width: "100%" }, 1500, function() {
-            $(this).hide();
-            $("#loading-bar").css({ width: 0});
+        $("#loading-bar").animate({ width: "100%" }, 2000, function() {
+            $(this).hide().css({ width: 0});
         });    
     });
 }

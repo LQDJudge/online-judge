@@ -1,7 +1,4 @@
 <div class="right-sidebar">
-  {% if (is_member or can_edit) %}
-    {% include 'contests-countdown.html' %}
-  {% endif %}
   {% if can_edit or is_member %}
     <div id="control-panel" class="blog-sidebox sidebox no-dot-blog-sidebox">
       <h3><i class="fa fa-cog"></i>{{ _('Controls') }}</h3>
@@ -66,6 +63,11 @@
         {% endif %}
       </ul>
     </div>
+  {% endif %}
+  {% if (is_member or can_edit) %}
+    {% include 'contests-countdown.html' %}
+  {% endif %}
+  {% if can_edit or is_member %}
     <div class="blog-sidebox sidebox">
       <h3><i class="fa fa-info-circle"></i>{{ _('About') }}</h3>
       <div class="sidebox-content">

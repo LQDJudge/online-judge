@@ -158,6 +158,7 @@ class ContestAdmin(CompareVersionAdmin):
                     "is_visible",
                     "use_clarifications",
                     "hide_problem_tags",
+                    "public_scoreboard",
                     "scoreboard_visibility",
                     "run_pretests_only",
                     "points_precision",

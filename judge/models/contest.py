@@ -167,6 +167,11 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         related_name="view_contest_scoreboard",
         help_text=_("These users will be able to view the scoreboard."),
     )
+    public_scoreboard = models.BooleanField(
+        verbose_name=_("public scoreboard"),
+        help_text=_("Ranking page is public even for private contests."),
+        default=False,
+    )
     use_clarifications = models.BooleanField(
         verbose_name=_("no comments"),
         help_text=_("Use clarification system instead of comments."),

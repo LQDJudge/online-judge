@@ -23,113 +23,113 @@ _______|_______/__/ ____ \__\__|___\__\__|___\__\____
 
 /* User-Agent Style */
 html {
-    background-color: #141616 !important;
+    background-color: #181a1b !important;
 }
 html {
     color-scheme: dark !important;
 }
-html, body, input, textarea, select, button, dialog {
-    background-color: #141616;
+html, body {
+    background-color: #181a1b;
 }
-html, body, input, textarea, select, button {
-    border-color: #5f594e;
-    color: #c1bfbc;
+html, body {
+    border-color: #736b5e;
+    color: #e8e6e3;
 }
 a {
-    color: #2a78d4;
+    color: #3391ff;
 }
 table {
-    border-color: #464c4e;
+    border-color: #545b5e;
 }
 ::placeholder {
-    color: #948e86;
+    color: #b2aba1;
 }
 input:-webkit-autofill,
 textarea:-webkit-autofill,
 select:-webkit-autofill {
-    background-color: #353800 !important;
-    color: #c1bfbc !important;
+    background-color: #404400 !important;
+    color: #e8e6e3 !important;
 }
 ::-webkit-scrollbar {
-    background-color: #1b1d1e;
-    color: #8e887f;
+    background-color: #202324;
+    color: #aba499;
 }
 ::-webkit-scrollbar-thumb {
-    background-color: #393d40;
+    background-color: #454a4d;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background-color: #484e51;
+    background-color: #575e62;
 }
 ::-webkit-scrollbar-thumb:active {
-    background-color: #3c4143;
+    background-color: #484e51;
 }
 ::-webkit-scrollbar-corner {
-    background-color: #141616;
+    background-color: #181a1b;
 }
 ::selection {
-    background-color: #00408d !important;
-    color: #c1bfbc !important;
+    background-color: #004daa !important;
+    color: #e8e6e3 !important;
 }
 ::-moz-selection {
-    background-color: #00408d !important;
-    color: #c1bfbc !important;
+    background-color: #004daa !important;
+    color: #e8e6e3 !important;
 }
 
 /* Invert Style */
 .jfk-bubble.gtx-bubble, .captcheck_answer_label > input + img, span#closed_text > img[src^="https://www.gstatic.com/images/branding/googlelogo"], span[data-href^="https://www.hcaptcha.com/"] > #icon, #bit-notification-bar-iframe, ::-webkit-calendar-picker-indicator {
-    filter: invert(100%) hue-rotate(180deg) brightness(83%) contrast(90%) !important;
+    filter: invert(100%) hue-rotate(180deg) contrast(90%) !important;
 }
 
 /* Variables Style */
 :root {
-   --darkreader-neutral-background: #101112;
-   --darkreader-neutral-text: #b3b0ac;
-   --darkreader-selection-background: #00408d;
-   --darkreader-selection-text: #c1bfbc;
+   --darkreader-neutral-background: #131516;
+   --darkreader-neutral-text: #d8d4cf;
+   --darkreader-selection-background: #004daa;
+   --darkreader-selection-text: #e8e6e3;
 }
 
 /* Modified CSS */
 :root, [data-md-color-scheme="default"] {
     --darkreader-bg--md-default-fg-color: rgba(0, 0, 0, 0.87);
-    --darkreader-text--md-default-fg-color: rgba(193, 191, 188, 0.87);
+    --darkreader-text--md-default-fg-color: rgba(232, 230, 227, 0.87);
     --darkreader-bg--md-default-fg-color--light: rgba(0, 0, 0, 0.54);
-    --darkreader-text--md-default-fg-color--light: rgba(193, 191, 188, 0.54);
-    --darkreader-border--md-default-fg-color--light: rgba(116, 108, 95, 0.54);
+    --darkreader-text--md-default-fg-color--light: rgba(232, 230, 227, 0.54);
+    --darkreader-border--md-default-fg-color--light: rgba(140, 130, 115, 0.54);
     --darkreader-bg--md-default-fg-color--lighter: rgba(0, 0, 0, 0.32);
-    --darkreader-text--md-default-fg-color--lighter: rgba(193, 191, 188, 0.32);
-    --darkreader-border--md-default-fg-color--lighter: rgba(116, 108, 95, 0.32);
+    --darkreader-text--md-default-fg-color--lighter: rgba(232, 230, 227, 0.32);
+    --darkreader-border--md-default-fg-color--lighter: rgba(140, 130, 115, 0.32);
     --darkreader-bg--md-default-fg-color--lightest: rgba(0, 0, 0, 0.07);
-    --darkreader-text--md-default-fg-color--lightest: rgba(193, 191, 188, 0.07);
-    --darkreader-border--md-default-fg-color--lightest: rgba(116, 108, 95, 0.07);
-    --darkreader-bg--md-default-bg-color: #141616;
-    --darkreader-text--md-default-bg-color: #c1bfbc;
-    --darkreader-border--md-default-bg-color: #282b2d;
+    --darkreader-text--md-default-fg-color--lightest: rgba(232, 230, 227, 0.07);
+    --darkreader-border--md-default-fg-color--lightest: rgba(140, 130, 115, 0.07);
+    --darkreader-bg--md-default-bg-color: #181a1b;
+    --darkreader-text--md-default-bg-color: #e8e6e3;
+    --darkreader-border--md-default-bg-color: #303436;
     --md-default-bg-color--light: hsla(0,0%,100%,.7);
     --md-default-bg-color--lighter: hsla(0,0%,100%,.3);
     --md-default-bg-color--lightest: hsla(0,0%,100%,.12);
-    --darkreader-bg--md-primary-fg-color: #2a3678;
-    --darkreader-text--md-primary-fg-color: #5a7ba8;
-    --darkreader-border--md-primary-fg-color: #27326f;
+    --darkreader-bg--md-primary-fg-color: #334191;
+    --darkreader-text--md-primary-fg-color: #6d94cb;
+    --darkreader-border--md-primary-fg-color: #2f3c86;
     --md-primary-fg-color--light: #5d6cc0;
-    --darkreader-bg--md-primary-fg-color--dark: #20296b;
-    --darkreader-text--md-primary-bg-color: #c1bfbc;
-    --darkreader-text--md-primary-bg-color--light: rgba(193, 191, 188, 0.7);
-    --darkreader-bg--md-accent-fg-color: #011481;
-    --darkreader-text--md-accent-fg-color: #4581d3;
-    --darkreader-border--md-accent-fg-color: #01147f;
-    --darkreader-bg--md-accent-fg-color--transparent: rgba(1, 20, 129, 0.1);
-    --darkreader-bg--md-accent-bg-color: #141616;
-    --darkreader-text--md-accent-bg-color: #c1bfbc;
+    --darkreader-bg--md-primary-fg-color--dark: #263281;
+    --darkreader-text--md-primary-bg-color: #e8e6e3;
+    --darkreader-text--md-primary-bg-color--light: rgba(232, 230, 227, 0.7);
+    --darkreader-bg--md-accent-fg-color: #01189b;
+    --darkreader-text--md-accent-fg-color: #539bfe;
+    --darkreader-border--md-accent-fg-color: #011899;
+    --darkreader-bg--md-accent-fg-color--transparent: rgba(1, 24, 155, 0.1);
+    --darkreader-bg--md-accent-bg-color: #181a1b;
+    --darkreader-text--md-accent-bg-color: #e8e6e3;
     --md-accent-bg-color--light: hsla(0,0%,100%,.7);
-    --darkreader-text--md-code-fg-color: #9e9a92;
-    --darkreader-bg--md-code-bg-color: #191b1b;
-    --darkreader-bg--md-code-hl-color: rgba(127, 127, 0, 0.5);
-    --darkreader-text--md-code-hl-number-color: #b43434;
-    --darkreader-text--md-code-hl-special-color: #c52e60;
-    --darkreader-text--md-code-hl-function-color: #934a9f;
-    --darkreader-text--md-code-hl-constant-color: #6151b6;
-    --darkreader-text--md-code-hl-keyword-color: #4376a8;
-    --darkreader-text--md-code-hl-string-color: #69bc92;
+    --darkreader-text--md-code-fg-color: #beb9b0;
+    --darkreader-bg--md-code-bg-color: #1e2021;
+    --darkreader-bg--md-code-hl-color: rgba(153, 153, 0, 0.5);
+    --darkreader-text--md-code-hl-number-color: #d93f3f;
+    --darkreader-text--md-code-hl-special-color: #ed3774;
+    --darkreader-text--md-code-hl-function-color: #b159c0;
+    --darkreader-text--md-code-hl-constant-color: #7561db;
+    --darkreader-text--md-code-hl-keyword-color: #518ecb;
+    --darkreader-text--md-code-hl-string-color: #7ee2b0;
     --darkreader-text--md-code-hl-name-color: var(--darkreader-text--md-code-fg-color);
     --darkreader-text--md-code-hl-operator-color: var(--darkreader-text--md-default-fg-color--light);
     --darkreader-text--md-code-hl-punctuation-color: var(--darkreader-text--md-default-fg-color--light);
@@ -138,18 +138,18 @@ select:-webkit-autofill {
     --darkreader-text--md-code-hl-variable-color: var(--darkreader-text--md-default-fg-color--light);
     --md-typeset-color: var(--md-default-fg-color);
     --darkreader-text--md-typeset-a-color: var(--darkreader-text--md-primary-fg-color);
-    --darkreader-bg--md-typeset-mark-color: rgba(127, 127, 0, 0.5);
-    --darkreader-bg--md-typeset-del-color: rgba(137, 21, 7, 0.15);
-    --darkreader-bg--md-typeset-ins-color: rgba(7, 141, 75, 0.15);
-    --darkreader-bg--md-typeset-kbd-color: #161819;
-    --darkreader-bg--md-typeset-kbd-accent-color: #141616;
-    --darkreader-bg--md-typeset-kbd-border-color: #35393c;
-    --darkreader-border--md-typeset-table-color: rgba(116, 108, 95, 0.12);
+    --darkreader-bg--md-typeset-mark-color: rgba(153, 153, 0, 0.5);
+    --darkreader-bg--md-typeset-del-color: rgba(165, 25, 9, 0.15);
+    --darkreader-bg--md-typeset-ins-color: rgba(9, 170, 90, 0.15);
+    --darkreader-bg--md-typeset-kbd-color: #1b1d1e;
+    --darkreader-bg--md-typeset-kbd-accent-color: #181a1b;
+    --darkreader-bg--md-typeset-kbd-border-color: #404548;
+    --darkreader-border--md-typeset-table-color: rgba(140, 130, 115, 0.12);
     --darkreader-text--md-admonition-fg-color: var(--darkreader-text--md-default-fg-color);
     --darkreader-bg--md-admonition-bg-color: var(--darkreader-bg--md-default-bg-color);
-    --darkreader-text--md-footer-fg-color: #c1bfbc;
-    --darkreader-text--md-footer-fg-color--light: rgba(193, 191, 188, 0.7);
-    --darkreader-text--md-footer-fg-color--lighter: rgba(193, 191, 188, 0.3);
+    --darkreader-text--md-footer-fg-color: #e8e6e3;
+    --darkreader-text--md-footer-fg-color--light: rgba(232, 230, 227, 0.7);
+    --darkreader-text--md-footer-fg-color--lighter: rgba(232, 230, 227, 0.3);
     --darkreader-bg--md-footer-bg-color: rgba(0, 0, 0, 0.87);
     --darkreader-bg--md-footer-bg-color--dark: rgba(0, 0, 0, 0.32);
     --darkreader-bg--md-shadow-z1: 0 0.2rem 0.5rem rgba(0,0,0,.05),
@@ -271,7 +271,7 @@ body {
     outline-color: var(--darkreader-border--md-accent-fg-color);
 }
 :root {
-    --darkreader-bgimg--md-clipboard-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjIwNyAtMC41MDkgLTAuNTU3IDAuMDAwIDAuODU5IC0wLjUzNiAwLjIzOSAtMC41NTEgMC4wMDAgMC44NDcgLTAuNTI4IC0wLjUwNiAwLjIwOCAwLjAwMCAwLjgyNSAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7Y2hhcnNldD11dGYtOCw8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTkgMjFIOFY3aDExbTAtMkg4YTIgMiAwIDAgMC0yIDJ2MTRhMiAyIDAgMCAwIDIgMmgxMWEyIDIgMCAwIDAgMi0yVjdhMiAyIDAgMCAwLTItMm0tMy00SDRhMiAyIDAgMCAwLTIgMnYxNGgyVjNoMTJWMVoiLz48L3N2Zz4iIC8+PC9zdmc+");
+    --darkreader-bgimg--md-clipboard-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjI0OSAtMC42MTQgLTAuNjcyIDAuMDAwIDEuMDM1IC0wLjY0NiAwLjI4OCAtMC42NjQgMC4wMDAgMS4wMjAgLTAuNjM2IC0wLjYwOSAwLjI1MCAwLjAwMCAwLjk5NCAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7Y2hhcnNldD11dGYtOCw8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTkgMjFIOFY3aDExbTAtMkg4YTIgMiAwIDAgMC0yIDJ2MTRhMiAyIDAgMCAwIDIgMmgxMWEyIDIgMCAwIDAgMi0yVjdhMiAyIDAgMCAwLTItMm0tMy00SDRhMiAyIDAgMCAwLTIgMnYxNGgyVjNoMTJWMVoiLz48L3N2Zz4iIC8+PC9zdmc+");
 }
 .md-clipboard {
     color: var(--darkreader-text--md-default-fg-color--lightest);
@@ -551,7 +551,7 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
         background-color: rgba(0, 0, 0, 0.26);
     }
     .md-search__form:hover {
-        background-color: rgba(20, 22, 22, 0.12); 
+        background-color: rgba(24, 26, 27, 0.12); 
     }
 }
 [data-md-toggle="search"]:checked ~ .md-header .md-search__form {
@@ -704,10 +704,10 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
     }
 }
 :root {
-    --darkreader-bgimg--md-source-forks-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjIwNyAtMC41MDkgLTAuNTU3IDAuMDAwIDAuODU5IC0wLjUzNiAwLjIzOSAtMC41NTEgMC4wMDAgMC44NDcgLTAuNTI4IC0wLjUwNiAwLjIwOCAwLjAwMCAwLjgyNSAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7Y2hhcnNldD11dGYtOCw8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik01IDMuMjVhLjc1Ljc1IDAgMSAxLTEuNSAwIC43NS43NSAwIDAgMSAxLjUgMHptMCAyLjEyMmEyLjI1IDIuMjUgMCAxIDAtMS41IDB2Ljg3OEEyLjI1IDIuMjUgMCAwIDAgNS43NSA4LjVoMS41djIuMTI4YTIuMjUxIDIuMjUxIDAgMSAwIDEuNSAwVjguNWgxLjVhMi4yNSAyLjI1IDAgMCAwIDIuMjUtMi4yNXYtLjg3OGEyLjI1IDIuMjUgMCAxIDAtMS41IDB2Ljg3OGEuNzUuNzUgMCAwIDEtLjc1Ljc1aC00LjVBLjc1Ljc1IDAgMCAxIDUgNi4yNXYtLjg3OHptMy43NSA3LjM3OGEuNzUuNzUgMCAxIDEtMS41IDAgLjc1Ljc1IDAgMCAxIDEuNSAwem0zLTguNzVhLjc1Ljc1IDAgMSAwIDAtMS41Ljc1Ljc1IDAgMCAwIDAgMS41eiIvPjwvc3ZnPiIgLz48L3N2Zz4=");
-    --darkreader-bgimg--md-source-repositories-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjIwNyAtMC41MDkgLTAuNTU3IDAuMDAwIDAuODU5IC0wLjUzNiAwLjIzOSAtMC41NTEgMC4wMDAgMC44NDcgLTAuNTI4IC0wLjUwNiAwLjIwOCAwLjAwMCAwLjgyNSAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7Y2hhcnNldD11dGYtOCw8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0yIDIuNUEyLjUgMi41IDAgMCAxIDQuNSAwaDguNzVhLjc1Ljc1IDAgMCAxIC43NS43NXYxMi41YS43NS43NSAwIDAgMS0uNzUuNzVoLTIuNWEuNzUuNzUgMCAxIDEgMC0xLjVoMS43NXYtMmgtOGExIDEgMCAwIDAtLjcxNCAxLjcuNzUuNzUgMCAwIDEtMS4wNzIgMS4wNUEyLjQ5NSAyLjQ5NSAwIDAgMSAyIDExLjV2LTl6bTEwLjUtMVY5aC04Yy0uMzU2IDAtLjY5NC4wNzQtMSAuMjA4VjIuNWExIDEgMCAwIDEgMS0xaDh6TTUgMTIuMjV2My4yNWEuMjUuMjUgMCAwIDAgLjQuMmwxLjQ1LTEuMDg3YS4yNS4yNSAwIDAgMSAuMyAwTDguNiAxNS43YS4yNS4yNSAwIDAgMCAuNC0uMnYtMy4yNWEuMjUuMjUgMCAwIDAtLjI1LS4yNWgtMy41YS4yNS4yNSAwIDAgMC0uMjUuMjV6Ii8+PC9zdmc+IiAvPjwvc3ZnPg==");
+    --darkreader-bgimg--md-source-forks-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjI0OSAtMC42MTQgLTAuNjcyIDAuMDAwIDEuMDM1IC0wLjY0NiAwLjI4OCAtMC42NjQgMC4wMDAgMS4wMjAgLTAuNjM2IC0wLjYwOSAwLjI1MCAwLjAwMCAwLjk5NCAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7Y2hhcnNldD11dGYtOCw8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik01IDMuMjVhLjc1Ljc1IDAgMSAxLTEuNSAwIC43NS43NSAwIDAgMSAxLjUgMHptMCAyLjEyMmEyLjI1IDIuMjUgMCAxIDAtMS41IDB2Ljg3OEEyLjI1IDIuMjUgMCAwIDAgNS43NSA4LjVoMS41djIuMTI4YTIuMjUxIDIuMjUxIDAgMSAwIDEuNSAwVjguNWgxLjVhMi4yNSAyLjI1IDAgMCAwIDIuMjUtMi4yNXYtLjg3OGEyLjI1IDIuMjUgMCAxIDAtMS41IDB2Ljg3OGEuNzUuNzUgMCAwIDEtLjc1Ljc1aC00LjVBLjc1Ljc1IDAgMCAxIDUgNi4yNXYtLjg3OHptMy43NSA3LjM3OGEuNzUuNzUgMCAxIDEtMS41IDAgLjc1Ljc1IDAgMCAxIDEuNSAwem0zLTguNzVhLjc1Ljc1IDAgMSAwIDAtMS41Ljc1Ljc1IDAgMCAwIDAgMS41eiIvPjwvc3ZnPiIgLz48L3N2Zz4=");
+    --darkreader-bgimg--md-source-repositories-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjI0OSAtMC42MTQgLTAuNjcyIDAuMDAwIDEuMDM1IC0wLjY0NiAwLjI4OCAtMC42NjQgMC4wMDAgMS4wMjAgLTAuNjM2IC0wLjYwOSAwLjI1MCAwLjAwMCAwLjk5NCAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7Y2hhcnNldD11dGYtOCw8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0yIDIuNUEyLjUgMi41IDAgMCAxIDQuNSAwaDguNzVhLjc1Ljc1IDAgMCAxIC43NS43NXYxMi41YS43NS43NSAwIDAgMS0uNzUuNzVoLTIuNWEuNzUuNzUgMCAxIDEgMC0xLjVoMS43NXYtMmgtOGExIDEgMCAwIDAtLjcxNCAxLjcuNzUuNzUgMCAwIDEtMS4wNzIgMS4wNUEyLjQ5NSAyLjQ5NSAwIDAgMSAyIDExLjV2LTl6bTEwLjUtMVY5aC04Yy0uMzU2IDAtLjY5NC4wNzQtMSAuMjA4VjIuNWExIDEgMCAwIDEgMS0xaDh6TTUgMTIuMjV2My4yNWEuMjUuMjUgMCAwIDAgLjQuMmwxLjQ1LTEuMDg3YS4yNS4yNSAwIDAgMSAuMyAwTDguNiAxNS43YS4yNS4yNSAwIDAgMCAuNC0uMnYtMy4yNWEuMjUuMjUgMCAwIDAtLjI1LS4yNWgtMy41YS4yNS4yNSAwIDAgMC0uMjUuMjV6Ii8+PC9zdmc+IiAvPjwvc3ZnPg==");
     --darkreader-bgimg--md-source-stars-icon: url("data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25zm0 2.445L6.615 5.5a.75.75 0 0 1-.564.41l-3.097.45 2.24 2.184a.75.75 0 0 1 .216.664l-.528 3.084 2.769-1.456a.75.75 0 0 1 .698 0l2.77 1.456-.53-3.084a.75.75 0 0 1 .216-.664l2.24-2.183-3.096-.45a.75.75 0 0 1-.564-.41L8 2.694v.001z"/></svg>");
-    --darkreader-bgimg--md-source-version-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjIwNyAtMC41MDkgLTAuNTU3IDAuMDAwIDAuODU5IC0wLjUzNiAwLjIzOSAtMC41NTEgMC4wMDAgMC44NDcgLTAuNTI4IC0wLjUwNiAwLjIwOCAwLjAwMCAwLjgyNSAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7Y2hhcnNldD11dGYtOCw8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0yLjUgNy43NzVWMi43NWEuMjUuMjUgMCAwIDEgLjI1LS4yNWg1LjAyNWEuMjUuMjUgMCAwIDEgLjE3Ny4wNzNsNi4yNSA2LjI1YS4yNS4yNSAwIDAgMSAwIC4zNTRsLTUuMDI1IDUuMDI1YS4yNS4yNSAwIDAgMS0uMzU0IDBsLTYuMjUtNi4yNWEuMjUuMjUgMCAwIDEtLjA3My0uMTc3em0tMS41IDBWMi43NUMxIDEuNzg0IDEuNzg0IDEgMi43NSAxaDUuMDI1Yy40NjQgMCAuOTEuMTg0IDEuMjM4LjUxM2w2LjI1IDYuMjVhMS43NSAxLjc1IDAgMCAxIDAgMi40NzRsLTUuMDI2IDUuMDI2YTEuNzUgMS43NSAwIDAgMS0yLjQ3NCAwbC02LjI1LTYuMjVBMS43NSAxLjc1IDAgMCAxIDEgNy43NzV6TTYgNWExIDEgMCAxIDAgMCAyIDEgMSAwIDAgMCAwLTJ6Ii8+PC9zdmc+IiAvPjwvc3ZnPg==");
+    --darkreader-bgimg--md-source-version-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjI0OSAtMC42MTQgLTAuNjcyIDAuMDAwIDEuMDM1IC0wLjY0NiAwLjI4OCAtMC42NjQgMC4wMDAgMS4wMjAgLTAuNjM2IC0wLjYwOSAwLjI1MCAwLjAwMCAwLjk5NCAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7Y2hhcnNldD11dGYtOCw8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDE2IDE2Ij48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0yLjUgNy43NzVWMi43NWEuMjUuMjUgMCAwIDEgLjI1LS4yNWg1LjAyNWEuMjUuMjUgMCAwIDEgLjE3Ny4wNzNsNi4yNSA2LjI1YS4yNS4yNSAwIDAgMSAwIC4zNTRsLTUuMDI1IDUuMDI1YS4yNS4yNSAwIDAgMS0uMzU0IDBsLTYuMjUtNi4yNWEuMjUuMjUgMCAwIDEtLjA3My0uMTc3em0tMS41IDBWMi43NUMxIDEuNzg0IDEuNzg0IDEgMi43NSAxaDUuMDI1Yy40NjQgMCAuOTEuMTg0IDEuMjM4LjUxM2w2LjI1IDYuMjVhMS43NSAxLjc1IDAgMCAxIDAgMi40NzRsLTUuMDI2IDUuMDI2YTEuNzUgMS43NSAwIDAgMS0yLjQ3NCAwbC02LjI1LTYuMjVBMS43NSAxLjc1IDAgMCAxIDEgNy43NzV6TTYgNWExIDEgMCAxIDAgMCAyIDEgMSAwIDAgMCAwLTJ6Ii8+PC9zdmc+IiAvPjwvc3ZnPg==");
 }
 .md-source {
     outline-color: var(--darkreader-border--md-accent-fg-color);
@@ -776,13 +776,13 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
     outline-color: initial;
 }
 .md-annotation .md-annotation__index {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .md-annotation .md-annotation__index:-webkit-any(:focus, :hover) {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .md-annotation .md-annotation__index:is(:focus, :hover) {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .md-annotation__index::after {
     background-color: var(--darkreader-bg--md-default-fg-color--lighter);
@@ -851,310 +851,310 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
 .md-typeset .admonition,
 .md-typeset details {
     background-color: var(--darkreader-bg--md-admonition-bg-color);
-    border-color: rgb(0, 49, 131);
+    border-color: rgb(0, 59, 158);
     box-shadow: var(--darkreader-bg--md-shadow-z1);
     color: var(--darkreader-text--md-admonition-fg-color);
 }
 .md-typeset .admonition-title,
 .md-typeset summary {
-    background-color: rgba(0, 51, 135, 0.1);
+    background-color: rgba(0, 61, 163, 0.1);
     border-color: initial;
 }
 .md-typeset .admonition-title::before,
 .md-typeset summary::before {
-    background-color: rgb(61, 137, 212);
+    background-color: rgb(73, 165, 255);
 }
 .md-typeset .admonition-title code,
 .md-typeset summary code {
     box-shadow: 0 0 0 .05rem var(--darkreader-bg--md-default-fg-color--lightest);
 }
 .md-typeset :-webkit-any(.admonition, details):-webkit-any(.note) {
-    border-color: rgb(0, 49, 131);
+    border-color: rgb(0, 59, 158);
 }
 .md-typeset :is(.admonition, details):is(.note) {
-    border-color: rgb(0, 49, 131);
+    border-color: rgb(0, 59, 158);
 }
 .md-typeset :-webkit-any(.note) > :-webkit-any(.admonition-title, summary) {
-    background-color: rgba(0, 51, 135, 0.1);
+    background-color: rgba(0, 61, 163, 0.1);
 }
 .md-typeset :is(.note) > :is(.admonition-title, summary) {
-    background-color: rgba(0, 51, 135, 0.1);
+    background-color: rgba(0, 61, 163, 0.1);
 }
 .md-typeset :-webkit-any(.note) > :-webkit-any(.admonition-title, summary)::before {
-    background-color: rgb(61, 137, 212);
+    background-color: rgb(73, 165, 255);
 }
 .md-typeset :is(.note) > :is(.admonition-title, summary)::before {
-    background-color: rgb(61, 137, 212);
+    background-color: rgb(73, 165, 255);
 }
 .md-typeset :-webkit-any(.note) > :-webkit-any(.admonition-title, summary)::after {
-    color: rgb(61, 137, 212);
+    color: rgb(73, 165, 255);
 }
 .md-typeset :is(.note) > :is(.admonition-title, summary)::after {
-    color: rgb(61, 137, 212);
+    color: rgb(73, 165, 255);
 }
 .md-typeset :-webkit-any(.admonition, details):-webkit-any(.abstract, .summary, .tldr) {
-    border-color: rgb(0, 102, 149);
+    border-color: rgb(0, 123, 179);
 }
 .md-typeset :is(.admonition, details):is(.abstract, .summary, .tldr) {
-    border-color: rgb(0, 102, 149);
+    border-color: rgb(0, 123, 179);
 }
 .md-typeset :-webkit-any(.abstract, .summary, .tldr) > :-webkit-any(.admonition-title, summary) {
-    background-color: rgba(0, 117, 169, 0.1);
+    background-color: rgba(0, 141, 204, 0.1);
 }
 .md-typeset :is(.abstract, .summary, .tldr) > :is(.admonition-title, summary) {
-    background-color: rgba(0, 117, 169, 0.1);
+    background-color: rgba(0, 141, 204, 0.1);
 }
 .md-typeset :-webkit-any(.abstract, .summary, .tldr) > :-webkit-any(.admonition-title, summary)::before {
-    background-color: rgb(22, 153, 212);
+    background-color: rgb(26, 184, 255);
 }
 .md-typeset :is(.abstract, .summary, .tldr) > :is(.admonition-title, summary)::before {
-    background-color: rgb(22, 153, 212);
+    background-color: rgb(26, 184, 255);
 }
 .md-typeset :-webkit-any(.abstract, .summary, .tldr) > :-webkit-any(.admonition-title, summary)::after {
-    color: rgb(22, 153, 212);
+    color: rgb(26, 184, 255);
 }
 .md-typeset :is(.abstract, .summary, .tldr) > :is(.admonition-title, summary)::after {
-    color: rgb(22, 153, 212);
+    color: rgb(26, 184, 255);
 }
 .md-typeset :-webkit-any(.admonition, details):-webkit-any(.info, .todo) {
-    border-color: rgb(0, 138, 159);
+    border-color: rgb(0, 166, 191);
 }
 .md-typeset :is(.admonition, details):is(.info, .todo) {
-    border-color: rgb(0, 138, 159);
+    border-color: rgb(0, 166, 191);
 }
 .md-typeset :-webkit-any(.info, .todo) > :-webkit-any(.admonition-title, summary) {
-    background-color: rgba(0, 122, 141, 0.1);
+    background-color: rgba(0, 147, 170, 0.1);
 }
 .md-typeset :is(.info, .todo) > :is(.admonition-title, summary) {
-    background-color: rgba(0, 122, 141, 0.1);
+    background-color: rgba(0, 147, 170, 0.1);
 }
 .md-typeset :-webkit-any(.info, .todo) > :-webkit-any(.admonition-title, summary)::before {
-    background-color: rgb(46, 190, 212);
+    background-color: rgb(56, 229, 255);
 }
 .md-typeset :is(.info, .todo) > :is(.admonition-title, summary)::before {
-    background-color: rgb(46, 190, 212);
+    background-color: rgb(56, 229, 255);
 }
 .md-typeset :-webkit-any(.info, .todo) > :-webkit-any(.admonition-title, summary)::after {
-    color: rgb(46, 190, 212);
+    color: rgb(56, 229, 255);
 }
 .md-typeset :is(.info, .todo) > :is(.admonition-title, summary)::after {
-    color: rgb(46, 190, 212);
+    color: rgb(56, 229, 255);
 }
 .md-typeset :-webkit-any(.admonition, details):-webkit-any(.tip, .hint, .important) {
-    border-color: rgb(0, 164, 142);
+    border-color: rgb(0, 198, 171);
 }
 .md-typeset :is(.admonition, details):is(.tip, .hint, .important) {
-    border-color: rgb(0, 164, 142);
+    border-color: rgb(0, 198, 171);
 }
 .md-typeset :-webkit-any(.tip, .hint, .important) > :-webkit-any(.admonition-title, summary) {
-    background-color: rgba(0, 127, 110, 0.1);
+    background-color: rgba(0, 153, 132, 0.1);
 }
 .md-typeset :is(.tip, .hint, .important) > :is(.admonition-title, summary) {
-    background-color: rgba(0, 127, 110, 0.1);
+    background-color: rgba(0, 153, 132, 0.1);
 }
 .md-typeset :-webkit-any(.tip, .hint, .important) > :-webkit-any(.admonition-title, summary)::before {
-    background-color: rgb(58, 212, 191);
+    background-color: rgb(70, 255, 230);
 }
 .md-typeset :is(.tip, .hint, .important) > :is(.admonition-title, summary)::before {
-    background-color: rgb(58, 212, 191);
+    background-color: rgb(70, 255, 230);
 }
 .md-typeset :-webkit-any(.tip, .hint, .important) > :-webkit-any(.admonition-title, summary)::after {
-    color: rgb(58, 212, 191);
+    color: rgb(70, 255, 230);
 }
 .md-typeset :is(.tip, .hint, .important) > :is(.admonition-title, summary)::after {
-    color: rgb(58, 212, 191);
+    color: rgb(70, 255, 230);
 }
 .md-typeset :-webkit-any(.admonition, details):-webkit-any(.success, .check, .done) {
-    border-color: rgb(0, 162, 67);
+    border-color: rgb(0, 195, 81);
 }
 .md-typeset :is(.admonition, details):is(.success, .check, .done) {
-    border-color: rgb(0, 162, 67);
+    border-color: rgb(0, 195, 81);
 }
 .md-typeset :-webkit-any(.success, .check, .done) > :-webkit-any(.admonition-title, summary) {
-    background-color: rgba(0, 133, 55, 0.1);
+    background-color: rgba(0, 160, 66, 0.1);
 }
 .md-typeset :is(.success, .check, .done) > :is(.admonition-title, summary) {
-    background-color: rgba(0, 133, 55, 0.1);
+    background-color: rgba(0, 160, 66, 0.1);
 }
 .md-typeset :-webkit-any(.success, .check, .done) > :-webkit-any(.admonition-title, summary)::before {
-    background-color: rgb(53, 212, 119);
+    background-color: rgb(64, 255, 143);
 }
 .md-typeset :is(.success, .check, .done) > :is(.admonition-title, summary)::before {
-    background-color: rgb(53, 212, 119);
+    background-color: rgb(64, 255, 143);
 }
 .md-typeset :-webkit-any(.success, .check, .done) > :-webkit-any(.admonition-title, summary)::after {
-    color: rgb(53, 212, 119);
+    color: rgb(64, 255, 143);
 }
 .md-typeset :is(.success, .check, .done) > :is(.admonition-title, summary)::after {
-    color: rgb(53, 212, 119);
+    color: rgb(64, 255, 143);
 }
 .md-typeset :-webkit-any(.admonition, details):-webkit-any(.question, .help, .faq) {
-    border-color: rgb(62, 137, 14);
+    border-color: rgb(75, 165, 17);
 }
 .md-typeset :is(.admonition, details):is(.question, .help, .faq) {
-    border-color: rgb(62, 137, 14);
+    border-color: rgb(75, 165, 17);
 }
 .md-typeset :-webkit-any(.question, .help, .faq) > :-webkit-any(.admonition-title, summary) {
-    background-color: rgba(66, 147, 15, 0.1);
+    background-color: rgba(80, 177, 18, 0.1);
 }
 .md-typeset :is(.question, .help, .faq) > :is(.admonition-title, summary) {
-    background-color: rgba(66, 147, 15, 0.1);
+    background-color: rgba(80, 177, 18, 0.1);
 }
 .md-typeset :-webkit-any(.question, .help, .faq) > :-webkit-any(.admonition-title, summary)::before {
-    background-color: rgb(103, 194, 45);
+    background-color: rgb(124, 234, 54);
 }
 .md-typeset :is(.question, .help, .faq) > :is(.admonition-title, summary)::before {
-    background-color: rgb(103, 194, 45);
+    background-color: rgb(124, 234, 54);
 }
 .md-typeset :-webkit-any(.question, .help, .faq) > :-webkit-any(.admonition-title, summary)::after {
-    color: rgb(103, 194, 45);
+    color: rgb(124, 234, 54);
 }
 .md-typeset :is(.question, .help, .faq) > :is(.admonition-title, summary)::after {
-    color: rgb(103, 194, 45);
+    color: rgb(124, 234, 54);
 }
 .md-typeset :-webkit-any(.admonition, details):-webkit-any(.warning, .caution, .attention) {
-    border-color: rgb(149, 85, 0);
+    border-color: rgb(179, 102, 0);
 }
 .md-typeset :is(.admonition, details):is(.warning, .caution, .attention) {
-    border-color: rgb(149, 85, 0);
+    border-color: rgb(179, 102, 0);
 }
 .md-typeset :-webkit-any(.warning, .caution, .attention) > :-webkit-any(.admonition-title, summary) {
-    background-color: rgba(169, 96, 0, 0.1);
+    background-color: rgba(204, 116, 0, 0.1);
 }
 .md-typeset :is(.warning, .caution, .attention) > :is(.admonition-title, summary) {
-    background-color: rgba(169, 96, 0, 0.1);
+    background-color: rgba(204, 116, 0, 0.1);
 }
 .md-typeset :-webkit-any(.warning, .caution, .attention) > :-webkit-any(.admonition-title, summary)::before {
-    background-color: rgb(212, 129, 22);
+    background-color: rgb(255, 156, 26);
 }
 .md-typeset :is(.warning, .caution, .attention) > :is(.admonition-title, summary)::before {
-    background-color: rgb(212, 129, 22);
+    background-color: rgb(255, 156, 26);
 }
 .md-typeset :-webkit-any(.warning, .caution, .attention) > :-webkit-any(.admonition-title, summary)::after {
-    color: rgb(212, 129, 22);
+    color: rgb(255, 156, 26);
 }
 .md-typeset :is(.warning, .caution, .attention) > :is(.admonition-title, summary)::after {
-    color: rgb(212, 129, 22);
+    color: rgb(255, 156, 26);
 }
 .md-typeset :-webkit-any(.admonition, details):-webkit-any(.failure, .fail, .missing) {
-    border-color: rgb(128, 0, 0);
+    border-color: rgb(154, 0, 0);
 }
 .md-typeset :is(.admonition, details):is(.failure, .fail, .missing) {
-    border-color: rgb(128, 0, 0);
+    border-color: rgb(154, 0, 0);
 }
 .md-typeset :-webkit-any(.failure, .fail, .missing) > :-webkit-any(.admonition-title, summary) {
-    background-color: rgba(129, 0, 0, 0.1);
+    background-color: rgba(155, 0, 0, 0.1);
 }
 .md-typeset :is(.failure, .fail, .missing) > :is(.admonition-title, summary) {
-    background-color: rgba(129, 0, 0, 0.1);
+    background-color: rgba(155, 0, 0, 0.1);
 }
 .md-typeset :-webkit-any(.failure, .fail, .missing) > :-webkit-any(.admonition-title, summary)::before {
-    background-color: rgb(212, 69, 69);
+    background-color: rgb(255, 83, 83);
 }
 .md-typeset :is(.failure, .fail, .missing) > :is(.admonition-title, summary)::before {
-    background-color: rgb(212, 69, 69);
+    background-color: rgb(255, 83, 83);
 }
 .md-typeset :-webkit-any(.failure, .fail, .missing) > :-webkit-any(.admonition-title, summary)::after {
-    color: rgb(212, 69, 69);
+    color: rgb(255, 83, 83);
 }
 .md-typeset :is(.failure, .fail, .missing) > :is(.admonition-title, summary)::after {
-    color: rgb(212, 69, 69);
+    color: rgb(255, 83, 83);
 }
 .md-typeset :-webkit-any(.admonition, details):-webkit-any(.danger, .error) {
-    border-color: rgb(143, 0, 27);
+    border-color: rgb(172, 0, 33);
 }
 .md-typeset :is(.admonition, details):is(.danger, .error) {
-    border-color: rgb(143, 0, 27);
+    border-color: rgb(172, 0, 33);
 }
 .md-typeset :-webkit-any(.danger, .error) > :-webkit-any(.admonition-title, summary) {
-    background-color: rgba(158, 0, 31, 0.1);
+    background-color: rgba(190, 0, 37, 0.1);
 }
 .md-typeset :is(.danger, .error) > :is(.admonition-title, summary) {
-    background-color: rgba(158, 0, 31, 0.1);
+    background-color: rgba(190, 0, 37, 0.1);
 }
 .md-typeset :-webkit-any(.danger, .error) > :-webkit-any(.admonition-title, summary)::before {
-    background-color: rgb(212, 35, 69);
+    background-color: rgb(255, 42, 83);
 }
 .md-typeset :is(.danger, .error) > :is(.admonition-title, summary)::before {
-    background-color: rgb(212, 35, 69);
+    background-color: rgb(255, 42, 83);
 }
 .md-typeset :-webkit-any(.danger, .error) > :-webkit-any(.admonition-title, summary)::after {
-    color: rgb(212, 35, 69);
+    color: rgb(255, 42, 83);
 }
 .md-typeset :is(.danger, .error) > :is(.admonition-title, summary)::after {
-    color: rgb(212, 35, 69);
+    color: rgb(255, 42, 83);
 }
 .md-typeset :-webkit-any(.admonition, details):-webkit-any(.bug) {
-    border-color: rgb(151, 0, 53);
+    border-color: rgb(182, 0, 64);
 }
 .md-typeset :is(.admonition, details):is(.bug) {
-    border-color: rgb(151, 0, 53);
+    border-color: rgb(182, 0, 64);
 }
 .md-typeset :-webkit-any(.bug) > :-webkit-any(.admonition-title, summary) {
-    background-color: rgba(163, 0, 58, 0.1);
+    background-color: rgba(196, 0, 70, 0.1);
 }
 .md-typeset :is(.bug) > :is(.admonition-title, summary) {
-    background-color: rgba(163, 0, 58, 0.1);
+    background-color: rgba(196, 0, 70, 0.1);
 }
 .md-typeset :-webkit-any(.bug) > :-webkit-any(.admonition-title, summary)::before {
-    background-color: rgb(212, 27, 93);
+    background-color: rgb(255, 33, 112);
 }
 .md-typeset :is(.bug) > :is(.admonition-title, summary)::before {
-    background-color: rgb(212, 27, 93);
+    background-color: rgb(255, 33, 112);
 }
 .md-typeset :-webkit-any(.bug) > :-webkit-any(.admonition-title, summary)::after {
-    color: rgb(212, 27, 93);
+    color: rgb(255, 33, 112);
 }
 .md-typeset :is(.bug) > :is(.admonition-title, summary)::after {
-    color: rgb(212, 27, 93);
+    color: rgb(255, 33, 112);
 }
 .md-typeset :-webkit-any(.admonition, details):-webkit-any(.example) {
-    border-color: rgb(34, 0, 129);
+    border-color: rgb(41, 0, 155);
 }
 .md-typeset :is(.admonition, details):is(.example) {
-    border-color: rgb(34, 0, 129);
+    border-color: rgb(41, 0, 155);
 }
 .md-typeset :-webkit-any(.example) > :-webkit-any(.admonition-title, summary) {
-    background-color: rgba(35, 0, 131, 0.1);
+    background-color: rgba(42, 0, 158, 0.1);
 }
 .md-typeset :is(.example) > :is(.admonition-title, summary) {
-    background-color: rgba(35, 0, 131, 0.1);
+    background-color: rgba(42, 0, 158, 0.1);
 }
 .md-typeset :-webkit-any(.example) > :-webkit-any(.admonition-title, summary)::before {
-    background-color: rgb(105, 66, 212);
+    background-color: rgb(126, 79, 255);
 }
 .md-typeset :is(.example) > :is(.admonition-title, summary)::before {
-    background-color: rgb(105, 66, 212);
+    background-color: rgb(126, 79, 255);
 }
 .md-typeset :-webkit-any(.example) > :-webkit-any(.admonition-title, summary)::after {
-    color: rgb(105, 66, 212);
+    color: rgb(126, 79, 255);
 }
 .md-typeset :is(.example) > :is(.admonition-title, summary)::after {
-    color: rgb(105, 66, 212);
+    color: rgb(126, 79, 255);
 }
 .md-typeset :-webkit-any(.admonition, details):-webkit-any(.quote, .cite) {
-    border-color: rgb(62, 68, 71);
+    border-color: rgb(75, 82, 85);
 }
 .md-typeset :is(.admonition, details):is(.quote, .cite) {
-    border-color: rgb(62, 68, 71);
+    border-color: rgb(75, 82, 85);
 }
 .md-typeset :-webkit-any(.quote, .cite) > :-webkit-any(.admonition-title, summary) {
-    background-color: rgba(66, 71, 74, 0.1);
+    background-color: rgba(79, 85, 89, 0.1);
 }
 .md-typeset :is(.quote, .cite) > :is(.admonition-title, summary) {
-    background-color: rgba(66, 71, 74, 0.1);
+    background-color: rgba(79, 85, 89, 0.1);
 }
 .md-typeset :-webkit-any(.quote, .cite) > :-webkit-any(.admonition-title, summary)::before {
-    background-color: rgb(142, 135, 126);
+    background-color: rgb(171, 163, 152);
 }
 .md-typeset :is(.quote, .cite) > :is(.admonition-title, summary)::before {
-    background-color: rgb(142, 135, 126);
+    background-color: rgb(171, 163, 152);
 }
 .md-typeset :-webkit-any(.quote, .cite) > :-webkit-any(.admonition-title, summary)::after {
-    color: rgb(142, 135, 126);
+    color: rgb(171, 163, 152);
 }
 .md-typeset :is(.quote, .cite) > :is(.admonition-title, summary)::after {
-    color: rgb(142, 135, 126);
+    color: rgb(171, 163, 152);
 }
 :root {
     --darkreader-bgimg--md-footnotes-icon: url("data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 7v4H5.83l3.58-3.59L8 6l-6 6 6 6 1.41-1.42L5.83 13H21V7h-2Z"/></svg>");
@@ -1484,7 +1484,7 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
     background-color: var(--darkreader-bg--md-default-fg-color--lightest); 
 }
 .md-typeset [type="checkbox"]:checked + .task-list-indicator::before {
-    background-color: rgb(36, 212, 126);
+    background-color: rgb(43, 255, 152);
 }
 :root > * {
     --md-mermaid-font-family: var(--md-text-font-family),
@@ -1496,65 +1496,65 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
     --md-mermaid-label-fg-color: var(--md-code-fg-color);
 }
 a {
-    color: rgb(78, 137, 194);
+    color: rgb(94, 165, 234);
 }
 a:hover {
-    color: rgb(85, 147, 207);
+    color: rgb(102, 177, 250);
 }
 a:active {
-    color: rgb(212, 149, 24);
+    color: rgb(255, 180, 29);
 }
 * {
     -webkit-tap-highlight-color: transparent;
 }
 table.sortable thead {
-    background-color: rgb(28, 31, 32);
-    color: rgb(139, 133, 124);
+    background-color: rgb(34, 37, 38);
+    color: rgb(168, 160, 149);
 }
 hr {
     border-top-color: initial;
     border-right-color: initial;
     border-left-color: initial;
-    border-bottom-color: rgb(51, 56, 58);
+    border-bottom-color: rgb(62, 68, 70);
 }
 .dashed {
-    border-bottom-color: rgb(51, 56, 58);
+    border-bottom-color: rgb(62, 68, 70);
 }
 .form-area {
     background-image: initial;
-    background-color: rgb(22, 24, 25);
-    border-color: rgb(51, 56, 58);
+    background-color: rgb(27, 29, 30);
+    border-color: rgb(62, 68, 70);
 }
 footer {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
 }
 body {
     background-image: initial;
-    background-color: rgb(22, 24, 25);
-    color: rgb(193, 191, 188);
+    background-color: rgb(27, 29, 30);
+    color: rgb(232, 230, 227);
 }
 header {
     background-image: initial;
-    background-color: rgb(11, 12, 12);
-    color: rgb(148, 143, 134);
+    background-color: rgb(13, 14, 14);
+    color: rgb(178, 172, 162);
 }
 #user-links {
-    color: rgb(146, 141, 132);
+    color: rgb(176, 170, 159);
 }
 #user-links > ul > li > span:hover {
-    border-top-color: rgb(165, 58, 7);
-    color: rgb(193, 191, 188);
+    border-top-color: rgb(199, 70, 8);
+    color: rgb(232, 230, 227);
     background-image: initial;
-    background-color: rgba(20, 22, 22, 0.25);
+    background-color: rgba(24, 26, 27, 0.25);
 }
 #nav-shadow {
-    background-image: linear-gradient(rgb(41, 44, 46),
+    background-image: linear-gradient(rgb(49, 53, 55),
     rgba(0, 0, 0, 0));
     background-color: initial;
 }
 #nav-container {
     background-image: initial;
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
 }
 nav ul {
     list-style-image: initial;
@@ -1562,7 +1562,7 @@ nav ul {
     background-color: transparent;
 }
 nav ul li {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 nav ul li.home-nav-element a:hover {
     border-bottom-color: initial;
@@ -1570,44 +1570,44 @@ nav ul li.home-nav-element a:hover {
 nav ul li a,
 nav ul li button {
     text-decoration-color: initial;
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
     border-top-color: transparent;
     border-bottom-color: transparent;
 }
 nav ul li a:link,
 nav ul li button:link {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 nav ul li a:hover,
 nav ul li button:hover {
-    border-top-color: rgb(165, 58, 7);
-    color: rgb(193, 191, 188);
+    border-top-color: rgb(199, 70, 8);
+    color: rgb(232, 230, 227);
     background-image: initial;
-    background-color: rgba(20, 22, 22, 0.25);
+    background-color: rgba(24, 26, 27, 0.25);
 }
 nav ul li a.active,
 nav ul li button.active {
-    border-top-color: rgb(165, 58, 7);
-    color: rgb(207, 121, 81);
+    border-top-color: rgb(199, 70, 8);
+    color: rgb(249, 146, 97);
     background-image: initial;
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
 }
 nav ul li ul {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
     background-image: initial;
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
     box-shadow: rgba(0, 0, 0, 0.4) 2px 2px 4px;
 }
 nav ul li ul li:hover {
     background-image: initial;
-    background-color: rgb(41, 44, 46);
+    background-color: rgb(49, 53, 55);
 }
 nav ul li ul li a {
-    color: rgb(193, 191, 188) !important;
+    color: rgb(232, 230, 227) !important;
 }
 nav ul li ul li a,
 nav ul li ul li button {
-    border-left-color: rgb(116, 108, 95);
+    border-left-color: rgb(140, 130, 115);
 }
 nav ul li button {
     background-image: none;
@@ -1620,78 +1620,78 @@ nav ul li.home-nav-element a:hover {
     background-color: transparent;
 }
 nav .nav-divider {
-    border-right-color: rgba(40, 43, 45, 0.15);
+    border-right-color: rgba(48, 52, 54, 0.15);
 }
 hr {
-    color: rgba(193, 191, 188, 0.2);
+    color: rgba(232, 230, 227, 0.2);
 }
 #content .title {
-    color: rgb(165, 161, 155);
+    color: rgb(199, 194, 187);
 }
 footer {
-    border-top-color: rgb(51, 56, 58);
+    border-top-color: rgb(62, 68, 70);
     background-image: initial;
-    background-color: rgb(28, 31, 32);
+    background-color: rgb(34, 37, 38);
 }
 a {
     text-decoration-color: initial;
 }
 noscript #noscript {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
     background-image: initial;
-    background-color: rgb(115, 0, 0);
+    background-color: rgb(139, 0, 0);
 }
 #announcement {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
     background-image: initial;
-    background-color: rgb(115, 0, 0);
+    background-color: rgb(139, 0, 0);
 }
 #announcement a {
-    color: rgb(212, 144, 22);
+    color: rgb(255, 174, 26);
 }
 .time {
-    color: rgb(148, 143, 134);
+    color: rgb(178, 172, 162);
 }
 #form-errors,
 .form-errors {
     background-image: initial;
-    background-color: rgba(169, 0, 0, 0.3);
-    border-color: rgb(149, 0, 0);
+    background-color: rgba(204, 0, 0, 0.3);
+    border-color: rgb(179, 0, 0);
 }
 #nav-placeholder {
     background-image: initial;
-    background-color: rgb(20, 22, 22);
-    border-right-color: rgb(51, 56, 58);
-    border-left-color: rgb(51, 56, 58);
+    background-color: rgb(24, 26, 27);
+    border-right-color: rgb(62, 68, 70);
+    border-left-color: rgb(62, 68, 70);
 }
 #contest-info a {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 #contest-info-main {
-    border-left-color: rgb(40, 43, 45);
+    border-left-color: rgb(48, 52, 54);
     background-image: initial;
     background-color: rgba(0, 0, 0, 0.77);
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .contest-info-toggle-mode-on {
     background-image: initial;
-    background-color: rgba(0, 136, 0, 0.57);
+    background-color: rgba(0, 164, 0, 0.57);
 }
 .contest-info-toggle-mode-on:hover {
     background-image: initial;
-    background-color: rgba(0, 136, 0, 0.97);
+    background-color: rgba(0, 164, 0, 0.97);
 }
 .contest-info-toggle-mode-off {
     background-image: initial;
-    background-color: rgba(169, 0, 0, 0.57);
+    background-color: rgba(204, 0, 0, 0.57);
 }
 .contest-info-toggle-mode-off:hover {
     background-image: initial;
-    background-color: rgba(169, 0, 0, 0.97);
+    background-color: rgba(204, 0, 0, 0.97);
 }
 #page-container {
-    border-right-color: rgb(51, 56, 58);
-    border-left-color: rgb(51, 56, 58);
+    border-right-color: rgb(62, 68, 70);
+    border-left-color: rgb(62, 68, 70);
 }
 .MathJax:focus {
     outline-color: initial;
@@ -1704,131 +1704,131 @@ noscript #noscript {
 }
 @media (max-width: 799px) {
     #navicon {
-        color: rgb(107, 145, 212);
+        color: rgb(129, 175, 255);
     }
     #navicon.hover {
-        color: rgb(66, 153, 211);
-        text-shadow: rgb(20, 22, 22) 0px 0px 5px;
+        color: rgb(80, 184, 254);
+        text-shadow: rgb(24, 26, 27) 0px 0px 5px;
     }
     #nav-list {
         background-image: initial;
-        background-color: rgb(20, 22, 22);
+        background-color: rgb(24, 26, 27);
         box-shadow: none;
         border-color: initial;
     }
 }
 #notification {
-    color: rgb(136, 159, 180);
+    color: rgb(164, 192, 217);
 }
 #notification:hover {
-    color: rgb(148, 142, 134);
+    color: rgb(178, 171, 161);
 }
 #chat-icon {
-    color: rgb(170, 166, 161);
+    color: rgb(205, 200, 194);
 }
 #chat-icon:hover {
-    color: rgb(95, 212, 95);
+    color: rgb(114, 255, 114);
 }
 #nav-lang-icon {
-    color: rgb(42, 104, 212);
+    color: rgb(51, 125, 255);
 }
 #nav-lang-icon:hover {
-    color: rgb(100, 141, 212);
+    color: rgb(121, 170, 255);
 }
 #nav-darkmode-icon:hover {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
 }
 .dropdown {
-    border-color: rgb(50, 54, 56);
+    border-color: rgb(60, 65, 68);
     background-image: initial;
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
 }
 .dropdown a {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .dropdown-item:hover {
     background-image: initial;
-    background-color: rgb(41, 44, 46);
+    background-color: rgb(49, 53, 55);
 }
 .unread_boxes {
-    background-color: rgb(169, 0, 0);
-    color: rgb(193, 191, 188);
+    background-color: rgb(204, 0, 0);
+    color: rgb(232, 230, 227);
 }
 .sub-lang {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .notification-open #notification {
-    color: rgb(95, 212, 95) !important;
+    color: rgb(114, 255, 114) !important;
 }
 .title-row {
-    color: rgb(165, 161, 155);
+    color: rgb(199, 194, 187);
 }
 .gray {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
 }
 .white {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .black {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .red {
-    color: rgb(212, 22, 22);
+    color: rgb(255, 26, 26);
 }
 .green {
-    color: rgb(95, 212, 95);
+    color: rgb(114, 255, 114);
 }
 .grayed {
-    color: rgb(139, 133, 124);
+    color: rgb(168, 160, 149);
 }
 .darkcyan {
-    color: rgb(89, 212, 212);
+    color: rgb(107, 255, 255);
 }
 .peru {
-    color: rgb(173, 120, 66);
+    color: rgb(209, 144, 80);
 }
 .blue {
-    color: rgb(42, 104, 212);
+    color: rgb(51, 125, 255);
 }
 .background-d6e8f7 {
-    background-color: rgb(32, 34, 36);
+    background-color: rgb(38, 41, 43);
 }
 .background-bisque {
-    background-color: rgb(71, 39, 0);
+    background-color: rgb(86, 47, 0);
 }
 .background-footer {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
 }
 #loading-bar {
-    background-color: rgb(101, 38, 33);
+    background-color: rgb(122, 46, 40);
 }
 @media (min-width: 800px) {
     #page-container {
         background-image: initial;
-        background-color: rgb(27, 28, 30);
+        background-color: rgb(32, 34, 36);
     }
     #content.wrapper {
         background-image: initial;
-        background-color: rgb(20, 22, 22);
+        background-color: rgb(24, 26, 27);
     }
 }
 .colored-text {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 ::-webkit-input-placeholder {
-    color: rgb(170, 166, 161);
+    color: rgb(205, 200, 194);
 }
 ::placeholder {
-    color: rgb(170, 166, 161);
+    color: rgb(205, 200, 194);
 }
 input::-webkit-input-placeholder {
-    color: rgb(170, 166, 161);
+    color: rgb(205, 200, 194);
 }
 input::placeholder {
-    color: rgb(170, 166, 161);
+    color: rgb(205, 200, 194);
 }
 ::-webkit-input-placeholder {
-    color: rgb(170, 166, 161);
+    color: rgb(205, 200, 194);
 }
 .table {
     background-image: initial;
@@ -1836,160 +1836,165 @@ input::placeholder {
 }
 .table.striped tr:nth-child(2n) {
     background-image: initial;
-    background-color: rgb(24, 26, 27);
+    background-color: rgb(29, 31, 32);
 }
 .table.striped tr:nth-child(2n+1) {
     background-image: initial;
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
 }
 .table td:first-child {
-    border-color: rgb(51, 56, 58);
+    border-color: rgb(62, 68, 70);
 }
 .table tr:last-child td {
-    border-color: rgb(51, 56, 58);
+    border-color: rgb(62, 68, 70);
 }
 .table tr:last-child td:first-child {
-    border-color: rgb(51, 56, 58);
+    border-color: rgb(62, 68, 70);
 }
 .table th {
-    color: rgb(193, 191, 188);
-    background-color: rgb(0, 0, 83);
-    border-color: rgb(51, 56, 58);
+    color: rgb(232, 230, 227);
+    background-color: rgb(0, 0, 100);
+    border-color: rgb(62, 68, 70);
 }
 .table td {
-    border-color: rgb(51, 56, 58);
+    border-color: rgb(62, 68, 70);
 }
 #users-table th a {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .AB {
-    background-color: rgb(44, 47, 49);
-    color: rgb(193, 191, 188);
+    background-color: rgb(53, 57, 59);
+    color: rgb(232, 230, 227);
 }
 .AC {
-    background-color: rgb(51, 135, 9);
-    color: rgb(95, 212, 95);
+    background-color: rgb(62, 163, 11);
+    color: rgb(114, 255, 114);
 }
 ._AC {
-    background-color: rgb(115, 127, 0);
-    color: rgb(95, 212, 95);
+    background-color: rgb(139, 153, 0);
+    color: rgb(114, 255, 114);
 }
 .WA {
-    background-color: rgb(44, 47, 49);
-    color: rgb(199, 40, 82);
+    background-color: rgb(53, 57, 59);
+    color: rgb(240, 48, 99);
 }
 .TLE,
 .MLE {
-    background-color: rgb(44, 47, 49);
-    color: rgb(193, 191, 188);
+    background-color: rgb(53, 57, 59);
+    color: rgb(232, 230, 227);
 }
 .OLE,
 .IR,
 .RTE,
 .OTH {
-    background-color: rgb(113, 78, 2);
-    color: rgb(193, 191, 188);
+    background-color: rgb(136, 94, 3);
+    color: rgb(232, 230, 227);
 }
 .CE {
-    background-color: rgb(44, 47, 49);
-    color: rgb(193, 191, 188);
+    background-color: rgb(53, 57, 59);
+    color: rgb(232, 230, 227);
 }
 .IE {
-    background-color: rgb(169, 0, 0);
-    color: rgb(193, 191, 188);
+    background-color: rgb(204, 0, 0);
+    color: rgb(232, 230, 227);
 }
 .QU,
 .G {
     background-image: initial;
-    background-color: rgb(20, 22, 22);
-    color: rgb(193, 191, 188);
+    background-color: rgb(24, 26, 27);
+    color: rgb(232, 230, 227);
 }
 .judge-online {
-    color: rgb(83, 163, 81);
+    color: rgb(100, 196, 97);
 }
 .judge-offline {
-    color: rgb(187, 46, 46);
+    color: rgb(225, 55, 55);
 }
 .middle-content .post {
-    border-color: rgb(63, 69, 71) rgb(70, 76, 78) rgb(70, 76, 78);
+    border-color: rgb(76, 83, 86) rgb(84, 91, 94) rgb(84, 91, 94);
 }
 .middle-content .post .title a {
-    color: rgb(212, 95, 95) !important;
+    color: rgb(255, 114, 114) !important;
 }
 .middle-content .post .title a:hover {
-    color: rgb(212, 58, 58) !important;
+    color: rgb(255, 70, 70) !important;
 }
 .left-sidebar-item.active {
-    color: rgb(193, 191, 188);
-    background-color: rgb(2, 55, 45);
+    color: rgb(232, 230, 227);
+    background-color: rgb(3, 66, 54);
 }
 .left-sidebar-item.active .sidebar-icon {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .blog-sidebox .contest {
-    border-bottom-color: rgb(51, 56, 58);
+    border-bottom-color: rgb(62, 68, 70);
 }
 .blog-sidebox .contest:last-child {
     border-bottom-color: initial;
 }
 .blog-sidebox .contest .name a {
-    color: rgb(86, 124, 159) !important;
+    color: rgb(104, 149, 191) !important;
 }
 .blog-sidebox .contest .name a:hover {
-    color: rgb(85, 147, 207) !important;
+    color: rgb(102, 177, 250) !important;
 }
 .no-dot-blog-sidebox ul {
     list-style-image: initial;
 }
 .blog-comment-count-link {
-    color: rgb(148, 143, 134);
+    color: rgb(178, 172, 162);
 }
 .rssatom span {
-    color: rgb(193, 191, 188);
-    border-color: rgb(144, 65, 13);
+    color: rgb(232, 230, 227);
+    border-color: rgb(174, 78, 16);
     background-image: linear-gradient(135deg,
-    rgb(145, 66, 18) 0px,
-    rgb(140, 75, 2) 47%,
-    rgb(145, 66, 18) 100%);
+    rgb(175, 79, 22) 0px,
+    rgb(169, 90, 3) 47%,
+    rgb(175, 79, 22) 100%);
     background-color: initial;
 }
 .blog-box {
-    border-bottom-color: rgb(50, 54, 56);
-    border-top-color: rgb(50, 54, 56);
-    background-color: rgb(20, 22, 22);
+    border-bottom-color: rgb(60, 65, 68);
+    border-top-color: rgb(60, 65, 68);
+    background-color: rgb(24, 26, 27);
     box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 5px;
 }
 .blog-box:hover {
-    border-color: rgb(67, 73, 76);
+    border-color: rgb(81, 88, 91);
 }
 .problem-feed-name a {
-    color: rgb(85, 147, 207);
+    color: rgb(102, 177, 250);
 }
 .problem-feed-types {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
+}
+.left-sidebar-item {
+    color: rgb(232, 230, 227);
 }
 .left-sidebar-item:hover {
-    background-color: rgb(33, 36, 37);
+    background-color: rgb(40, 43, 45);
+    color: rgb(232, 230, 227);
 }
 .left-sidebar-item.active:hover {
-    background-color: rgb(2, 55, 45);
+    background-color: rgb(3, 66, 54);
+    color: rgb(232, 230, 227);
 }
 .sidebar-icon {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .left-sidebar-header {
-    border-bottom-color: rgb(116, 108, 95);
-    color: rgb(193, 191, 188);
+    border-bottom-color: rgb(140, 130, 115);
+    color: rgb(232, 230, 227);
 }
 .show-more {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
     background-image: linear-gradient(rgba(0, 0, 0, 0),
-    rgb(20, 22, 22));
+    rgb(24, 26, 27));
     background-color: initial;
 }
 .middle-right-content.wrapper {
     background-image: initial;
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
 }
 @media (max-width: 799px) {
     .left-sidebar {
@@ -1999,368 +2004,368 @@ input::placeholder {
 }
 @media (min-width: 800px) {
     .left-sidebar-item {
-        border-color: rgb(50, 54, 56);
+        border-color: rgb(60, 65, 68);
         box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 5px;
-        background-color: rgb(20, 22, 22);
+        background-color: rgb(24, 26, 27);
     }
     .left-sidebar {
         border-right-color: initial;
     }
     .blog-box {
-        border-left-color: rgb(50, 54, 56);
-        border-right-color: rgb(50, 54, 56);
+        border-left-color: rgb(60, 65, 68);
+        border-right-color: rgb(60, 65, 68);
     }
 }
 #problem-table tr:hover {
     background-image: initial;
-    background-color: rgb(30, 32, 33);
+    background-color: rgb(36, 39, 40);
 }
 ul.problem-list {
     list-style-image: initial;
 }
 .solved-problem-color {
-    color: rgb(83, 163, 81);
+    color: rgb(100, 196, 97);
 }
 .unsolved-problem-color {
-    color: rgb(187, 46, 46);
+    color: rgb(225, 55, 55);
 }
 .attempted-problem-color {
-    color: rgb(212, 144, 22);
+    color: rgb(255, 174, 26);
 }
 .submissions-left {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .no-submissions-left {
-    color: rgb(212, 22, 22);
+    color: rgb(255, 26, 26);
 }
 .organization-tag {
     box-shadow: rgba(0, 0, 0, 0.12) 0px -0.1em 0px inset;
-    background-color: rgb(44, 47, 49);
+    background-color: rgb(53, 57, 59);
 }
 .organization-tag a {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .pdf-icon .pdf-icon-logo {
-    color: rgb(201, 49, 52);
+    color: rgb(242, 59, 63);
 }
 .pdf-icon .pdf-icon-bar {
     background-image: initial;
-    background-color: rgb(141, 9, 12);
+    background-color: rgb(170, 11, 15);
 }
 .license a {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
     text-decoration-color: initial;
 }
 #problem_submit #result-version-info {
-    border-bottom-color: rgb(65, 71, 73);
-    color: rgb(131, 125, 114);
+    border-bottom-color: rgb(78, 85, 88);
+    color: rgb(158, 150, 137);
 }
 #problem_submit #language-select2 .select2-results__option {
-    color: rgb(131, 125, 114) !important;
+    color: rgb(158, 150, 137) !important;
     background-image: initial !important;
-    background-color: rgb(20, 22, 22) !important; 
+    background-color: rgb(24, 26, 27) !important; 
 }
 #problem_submit #language-select2 .select2-results__option--highlighted {
     text-decoration-color: initial; 
 }
 #problem_submit #language-select2 .select2-results__option[aria-selected="true"] {
-    color: rgb(193, 191, 188) !important;
+    color: rgb(232, 230, 227) !important;
 }
 #problem-table th a {
     color: inherit;
 }
 .problem-data-form .bad-file input,
 .problem-data-form .bad-file .select2-selection {
-    border-color: rgb(149, 0, 0);
+    border-color: rgb(179, 0, 0);
 }
 .problem-clarification {
-    border-bottom-color: rgb(51, 56, 58);
+    border-bottom-color: rgb(62, 68, 70);
 }
 #clarification_header {
-    color: rgb(212, 22, 22);
+    color: rgb(255, 26, 26);
 }
 #clarification_header:hover {
-    color: rgb(212, 144, 22);
+    color: rgb(255, 174, 26);
 }
 #comment-announcement {
-    background-color: rgb(41, 44, 46);
-    color: rgb(138, 131, 121);
+    background-color: rgb(49, 53, 55);
+    color: rgb(166, 158, 146);
 }
 #comment-announcement:hover {
-    background-color: rgb(80, 86, 90);
+    background-color: rgb(96, 104, 108);
 }
 .admin a,
 .admin {
-    color: rgb(193, 191, 188) !important;
+    color: rgb(232, 230, 227) !important;
 }
 svg.rate-box circle {
     fill: none;
 }
 svg.rate-box.rate-newbie circle {
-    stroke: rgb(139, 133, 124);
+    stroke: rgb(168, 160, 149);
 }
 svg.rate-box.rate-newbie path {
-    fill: rgb(139, 133, 124);
+    fill: rgb(168, 160, 149);
 }
 svg.rate-box.rate-amateur circle {
-    stroke: rgb(71, 212, 71);
+    stroke: rgb(86, 255, 86);
 }
 svg.rate-box.rate-amateur path {
-    fill: rgb(71, 212, 71);
+    fill: rgb(86, 255, 86);
 }
 svg.rate-box.rate-specialist circle {
-    stroke: rgb(72, 209, 201);
+    stroke: rgb(87, 252, 242);
 }
 svg.rate-box.rate-specialist path {
-    fill: rgb(72, 209, 201);
+    fill: rgb(87, 252, 242);
 }
 svg.rate-box.rate-expert circle {
-    stroke: rgb(81, 129, 212);
+    stroke: rgb(97, 155, 255);
 }
 svg.rate-box.rate-expert path {
-    fill: rgb(81, 129, 212);
+    fill: rgb(97, 155, 255);
 }
 svg.rate-box.rate-candidate-master circle {
-    stroke: rgb(212, 81, 212);
+    stroke: rgb(255, 97, 255);
 }
 svg.rate-box.rate-candidate-master path {
-    fill: rgb(212, 81, 212);
+    fill: rgb(255, 97, 255);
 }
 svg.rate-box.rate-master circle {
-    stroke: rgb(212, 198, 41);
+    stroke: rgb(255, 239, 49);
 }
 svg.rate-box.rate-master path {
-    fill: rgb(212, 198, 41);
+    fill: rgb(255, 239, 49);
 }
 svg.rate-box.rate-grandmaster circle,
 svg.rate-box.rate-target circle {
-    stroke: rgb(212, 31, 31);
+    stroke: rgb(255, 37, 37);
 }
 svg.rate-box.rate-grandmaster path,
 svg.rate-box.rate-target path {
-    fill: rgb(212, 31, 31);
+    fill: rgb(255, 37, 37);
 }
 svg.rate-box.rate-target circle:last-child {
     stroke: none;
-    fill: rgb(212, 31, 31);
+    fill: rgb(255, 37, 37);
 }
 .rate-none,
 .rate-none a {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .rate-newbie,
 .rate-newbie a {
-    color: rgb(139, 133, 124);
+    color: rgb(168, 160, 149);
 }
 .rate-amateur,
 .rate-amateur a {
-    color: rgb(71, 212, 71);
+    color: rgb(86, 255, 86);
 }
 .rate-specialist,
 .rate-specialist a {
-    color: rgb(89, 212, 212);
+    color: rgb(107, 255, 255);
 }
 .rate-expert,
 .rate-expert a {
-    color: rgb(42, 104, 212);
+    color: rgb(51, 125, 255);
 }
 .rate-candidate-master,
 .rate-candidate-master a {
-    color: rgb(212, 71, 212);
+    color: rgb(255, 85, 255);
 }
 .rate-master,
 .rate-master a {
-    color: rgb(212, 126, 22);
+    color: rgb(255, 152, 26);
 }
 .rate-grandmaster,
 .rate-grandmaster a,
 .rate-target,
 .rate-target a {
-    color: rgb(212, 31, 31);
+    color: rgb(255, 37, 37);
 }
 .rate-group {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 #users-table th a,
 #users-table th a:link,
 #users-table th a:visited {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 #users-table th a:hover {
-    color: rgb(22, 212, 22);
+    color: rgb(26, 255, 26);
 }
 #users-table tr:hover {
     background-image: initial;
-    background-color: rgb(30, 32, 33);
+    background-color: rgb(36, 39, 40);
 }
 #users-table tr.highlight {
     background-image: initial;
-    background-color: rgb(71, 66, 0);
+    background-color: rgb(85, 79, 0);
 }
 #users-table tr:target {
     background-image: initial;
-    background-color: rgb(71, 66, 0);
+    background-color: rgb(85, 79, 0);
 }
 #users-table .organization-column a {
-    color: rgb(126, 119, 107) !important;
+    color: rgb(152, 143, 129) !important;
 }
 #users-table .disqualified {
-    background-color: rgb(85, 0, 0) !important;
+    background-color: rgb(103, 0, 0) !important;
 }
 #users-table .frozen {
     background-image: initial !important;
-    background-color: rgb(4, 64, 100) !important;
+    background-color: rgb(5, 77, 121) !important;
 }
 #users-table .full-score,
 #users-table .full-score a {
-    color: rgb(95, 212, 95);
+    color: rgb(114, 255, 114);
 }
 #users-table .partial-score,
 #users-table .partial-score a {
-    color: rgb(95, 212, 95);
+    color: rgb(114, 255, 114);
 }
 #users-table .failed-score,
 #users-table .failed-score a {
-    color: rgb(212, 22, 22);
+    color: rgb(255, 26, 26);
 }
 #users-table .pretest-full-score,
 #users-table .pretest-full-score a {
-    color: rgb(70, 136, 180);
+    color: rgb(84, 164, 217);
 }
 #users-table .pretest-partial-score,
 #users-table .pretest-partial-score a {
-    color: rgb(70, 136, 180);
+    color: rgb(84, 164, 217);
 }
 #users-table .pretest-failed-score,
 #users-table .pretest-failed-score a {
-    color: rgb(212, 22, 22);
+    color: rgb(255, 26, 26);
 }
 #users-table .user-points {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 #users-table .solving-time {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
 }
 #users-table .point-denominator {
-    border-top-color: rgb(70, 76, 78);
+    border-top-color: rgb(84, 91, 94);
 }
 #users-table .fullname-column {
     border-right-color: initial !important;
 }
 #users-table .fullname-column span {
-    color: rgb(126, 119, 107) !important;
+    color: rgb(152, 143, 129) !important;
 }
 #search-form .select2-results__option--highlighted {
-    background-color: rgb(36, 38, 40) !important;
+    background-color: rgb(43, 46, 48) !important;
 }
 a.user-redirect {
-    color: rgb(70, 136, 180);
+    color: rgb(84, 164, 217);
 }
 a.user-redirect:hover {
-    text-shadow: rgb(0, 0, 169) 0px 0px 2px;
+    text-shadow: rgb(0, 0, 204) 0px 0px 2px;
 }
 .user-info-cell {
-    border-left-color: rgb(51, 56, 58);
+    border-left-color: rgb(62, 68, 70);
 }
 .contest-history-cell {
-    border-left-color: rgb(51, 56, 58);
+    border-left-color: rgb(62, 68, 70);
 }
 .hide-solved-problems > span::before {
     background-image: initial;
     background-color: rgba(0, 0, 0, 0.2);
 }
 .pp-table .pp-weighted {
-    color: rgb(130, 123, 113);
+    color: rgb(157, 148, 136);
 }
 .pp-table div.sub-pp {
     border-left-color: initial;
 }
 #pp-load-link-wrapper {
-    border-color: rgb(51, 56, 58);
+    border-color: rgb(62, 68, 70);
 }
 #rating-tooltip {
     background-image: initial;
     background-color: rgba(0, 0, 0, 0.7);
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 #rating-tooltip.rate-group {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .follow {
     background-image: initial;
-    background-color: rgb(0, 85, 0);
-    border-color: rgb(16, 101, 16);
+    background-color: rgb(0, 102, 0);
+    border-color: rgb(19, 122, 19);
 }
 .follow:hover {
     background-image: initial;
-    background-color: rgb(0, 66, 0);
+    background-color: rgb(0, 80, 0);
 }
 .unfollow {
     background-image: initial;
-    background-color: rgb(169, 0, 0);
-    border-color: rgb(100, 0, 17);
+    background-color: rgb(204, 0, 0);
+    border-color: rgb(121, 0, 21);
 }
 .unfollow:hover {
     background-image: initial;
-    background-color: rgb(92, 0, 0);
+    background-color: rgb(111, 0, 0);
 }
 #submission-activity #submission-activity-actions #year {
-    color: rgb(157, 152, 145);
+    color: rgb(189, 183, 175);
 }
 #submission-activity #submission-activity-display {
-    border-color: rgb(51, 56, 58);
+    border-color: rgb(62, 68, 70);
 }
 #submission-activity #submission-activity-display .info-text {
-    color: rgb(157, 152, 145);
+    color: rgb(189, 183, 175);
 }
 #submission-activity #submission-activity-display table td.activity-blank {
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
 }
 #submission-activity #submission-activity-display table td.activity-0 {
-    background-color: rgb(36, 39, 41);
+    background-color: rgb(43, 47, 49);
 }
 #submission-activity #submission-activity-display table td.activity-1 {
-    background-color: rgb(18, 85, 43);
+    background-color: rgb(22, 102, 52);
 }
 #submission-activity #submission-activity-display table td.activity-2 {
-    background-color: rgb(39, 128, 79);
+    background-color: rgb(47, 154, 95);
 }
 #submission-activity #submission-activity-display table td.activity-3 {
-    background-color: rgb(32, 104, 51);
+    background-color: rgb(38, 125, 61);
 }
 #submission-activity #submission-activity-display table td.activity-4 {
-    background-color: rgb(22, 73, 38);
+    background-color: rgb(26, 88, 46);
 }
 .user-info-header {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
 }
 .user-stat-header {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
 }
 .content-description pre,
 .content-description code,
 .content-description kbd,
 .content-description samp,
 .content-description span.code {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .content-description code,
 .content-description span.code {
-    border-color: rgb(51, 56, 58);
-    background-color: rgb(23, 25, 26);
-    color: rgb(157, 152, 145);
+    border-color: rgb(62, 68, 70);
+    background-color: rgb(28, 30, 31);
+    color: rgb(189, 183, 175);
 }
 .content-description pre {
-    border-color: rgb(51, 56, 58);
-    background-color: rgb(23, 25, 26);
-    color: rgb(193, 191, 188);
+    border-color: rgb(62, 68, 70);
+    background-color: rgb(28, 30, 31);
+    color: rgb(232, 230, 227);
 }
 .content-description pre code,
 .content-description pre div.code {
     border-color: initial;
     background-image: initial;
     background-color: transparent;
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .content-description pre.no-border {
     border-color: initial;
@@ -2368,142 +2373,138 @@ a.user-redirect:hover {
 }
 .content-description ins {
     background-image: initial;
-    background-color: rgb(70, 70, 0);
-    color: rgb(193, 191, 188);
+    background-color: rgb(84, 84, 0);
+    color: rgb(232, 230, 227);
     text-decoration-color: initial;
 }
 .content-description mark {
     background-image: initial;
-    background-color: rgb(127, 127, 0);
-    color: rgb(193, 191, 188);
+    background-color: rgb(153, 153, 0);
+    color: rgb(232, 230, 227);
 }
 .content-description img {
     border-color: initial;
 }
 .codehilitetable pre {
-    background-color: rgba(29, 32, 32, 0.5);
+    background-color: rgba(35, 38, 39, 0.5);
 }
 .codehilitetable .linenos pre {
-    color: rgba(193, 191, 188, 0.26);
+    color: rgba(232, 230, 227, 0.26);
     background-color: rgba(0, 0, 0, 0.07);
     border-right-color: initial;
 }
 .info-float .fa {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .tweet-this i {
-    color: rgb(75, 146, 198);
+    color: rgb(90, 176, 238);
 }
 .facebook-this it {
-    color: rgb(110, 152, 197);
+    color: rgb(132, 183, 237);
 }
 .gplus-this i {
-    color: rgb(186, 75, 60); 
+    color: rgb(224, 90, 72); 
 }
 .button, button, input[type="submit"] {
-    background-color: rgb(2, 55, 45);
+    background-color: rgb(3, 66, 54);
     border-color: transparent;
     box-shadow: rgba(0, 0, 0, 0.02) 0px 1px 3px 0px;
     text-decoration-color: initial;
-    color: rgb(193, 191, 188) !important; 
+    color: rgb(232, 230, 227) !important; 
 }
 .button.disabled, button.disabled, input[type="submit"].disabled {
-    background-image: linear-gradient(rgb(61, 66, 68) 0px,
-    rgb(80, 86, 90) 100%) !important;
+    background-image: linear-gradient(rgb(73, 79, 82) 0px,
+    rgb(96, 104, 108) 100%) !important;
     background-color: initial !important;
-    border-color: rgb(70, 76, 78) !important; 
+    border-color: rgb(84, 91, 94) !important; 
 }
 .button.btn-gray, button.btn-gray, input[type="submit"].btn-gray {
     background-image: initial;
-    background-color: rgb(80, 86, 90); 
+    background-color: rgb(96, 104, 108); 
 }
 .button.btn-hovergray:hover, button.btn-hovergray:hover, input[type="submit"].btn-hovergray:hover {
     background-image: initial;
-    background-color: rgb(41, 44, 46); 
+    background-color: rgb(49, 53, 55); 
 }
 .button.btn-green, button.btn-green, input[type="submit"].btn-green {
     background-image: initial;
-    background-color: rgb(0, 85, 0); 
+    background-color: rgb(0, 102, 0); 
 }
 .button.btn-green:hover, button.btn-green:hover, input[type="submit"].btn-green:hover {
     background-image: initial;
-    background-color: rgb(29, 100, 50); 
+    background-color: rgb(35, 121, 60); 
 }
 .button.btn-darkred, button.btn-darkred, input[type="submit"].btn-darkred {
     background-image: initial;
-    background-color: rgb(92, 0, 0); 
+    background-color: rgb(111, 0, 0); 
 }
 .button.btn-darkred:hover, button.btn-darkred:hover, input[type="submit"].btn-darkred:hover {
     background-image: initial;
-    background-color: rgb(110, 28, 28); 
+    background-color: rgb(132, 34, 34); 
 }
 .button.btn-midnightblue, button.btn-midnightblue, input[type="submit"].btn-midnightblue {
     background-image: initial;
-    background-color: rgb(17, 17, 75); 
+    background-color: rgb(20, 20, 90); 
 }
 .button.btn-midnightblue:hover, button.btn-midnightblue:hover, input[type="submit"].btn-midnightblue:hover {
     background-image: initial;
-    background-color: rgb(0, 0, 92); 
+    background-color: rgb(0, 0, 111); 
 }
 .button.btn-darkGreen, button.btn-darkGreen, input[type="submit"].btn-darkGreen {
     background-image: initial;
-    background-color: rgb(2, 55, 45); 
-}
-.button.btn-darkGreen:hover, button.btn-darkGreen:hover, input[type="submit"].btn-darkGreen:hover {
-    background-image: initial;
-    background-color: rgb(2, 55, 45); 
+    background-color: rgb(3, 66, 54); 
 }
 .button:hover, button:hover, input[type="submit"]:hover {
-    background-color: rgb(2, 55, 45);
+    background-color: rgb(3, 66, 54);
     box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px; 
 }
 .button:focus, button:focus, input[type="submit"]:focus {
-    background-color: rgb(2, 55, 45);
+    background-color: rgb(3, 66, 54);
     box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px; 
 }
 .button:active, button:active, input[type="submit"]:hover {
-    background-color: rgb(2, 55, 45);
+    background-color: rgb(3, 66, 54);
     box-shadow: rgba(0, 0, 0, 0.06) 0px 2px 4px; 
 }
 input[type="text"], input[type="password"], input[type="email"], input[type="number"] {
-    color: rgb(148, 143, 134);
+    color: rgb(178, 172, 162);
     background-image: none;
-    background-color: rgb(20, 22, 22);
-    border-color: rgb(51, 56, 58);
+    background-color: rgb(24, 26, 27);
+    border-color: rgb(62, 68, 70);
     box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset;
 }
 textarea {
-    color: rgb(148, 143, 134);
+    color: rgb(178, 172, 162);
     background-image: none;
-    background-color: rgb(20, 22, 22);
-    border-color: rgb(51, 56, 58);
+    background-color: rgb(24, 26, 27);
+    border-color: rgb(62, 68, 70);
     box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset;
 }
 textarea:hover {
-    border-color: rgba(13, 72, 120, 0.8);
+    border-color: rgba(16, 87, 144, 0.8);
     box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset,
-    rgba(13, 76, 125, 0.6) 0px 0px 4px; 
+    rgba(16, 91, 150, 0.6) 0px 0px 4px; 
 }
 input[type="text"]:hover, input[type="password"]:hover {
-    border-color: rgba(13, 72, 120, 0.8);
+    border-color: rgba(16, 87, 144, 0.8);
     box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset,
-    rgba(13, 76, 125, 0.6) 0px 0px 4px;
+    rgba(16, 91, 150, 0.6) 0px 0px 4px;
 }
 textarea:focus {
-    border-color: rgba(13, 72, 120, 0.8);
+    border-color: rgba(16, 87, 144, 0.8);
     box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset,
-    rgba(13, 76, 125, 0.6) 0px 0px 8px; outline-color: initial; 
+    rgba(16, 91, 150, 0.6) 0px 0px 8px; outline-color: initial; 
 }
 input[type="text"]:focus, input[type="password"]:focus {
-    border-color: rgba(13, 72, 120, 0.8);
+    border-color: rgba(16, 87, 144, 0.8);
     box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset,
-    rgba(13, 76, 125, 0.6) 0px 0px 8px;
+    rgba(16, 91, 150, 0.6) 0px 0px 8px;
     outline-color: initial;
 }
 .btn-clipboard {
-    color: rgb(130, 124, 113);
-    background-color: rgb(20, 22, 22);
-    border-color: rgb(46, 50, 51);
+    color: rgb(157, 149, 136);
+    background-color: rgb(24, 26, 27);
+    border-color: rgb(55, 60, 62);
 }
 .ul_tab_a_active,
 .tabs > ul > li.active > a:focus,
@@ -2512,26 +2513,26 @@ input[type="text"]:focus, input[type="password"]:focus {
 .tabs > ul > li.active > span:hover,
 .tabs > ul > li.active > a,
 .tabs > ul > li.active > span {
-    color: rgb(170, 166, 161);
-    border-bottom-color: rgb(105, 97, 85);
+    color: rgb(205, 200, 194);
+    border-bottom-color: rgb(126, 117, 103);
     background-image: initial;
     background-color: transparent;
 }
 .tabs {
-    border-bottom-color: rgb(51, 56, 58);
+    border-bottom-color: rgb(62, 68, 70);
 }
 .tabs .tab .tab-icon {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
 }
 .tabs .tab.active a,
 .tabs .tab.active span {
-    border-top-color: rgb(40, 43, 45) !important;
+    border-top-color: rgb(48, 52, 54) !important;
 }
 .tabs .tab.active .tab-icon {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .tabs h2 {
-    color: rgb(165, 161, 155);
+    color: rgb(199, 194, 187);
 }
 .tabs > ul {
     list-style-image: none;
@@ -2544,103 +2545,103 @@ input[type="text"]:focus, input[type="password"]:focus {
 }
 .tabs > ul > li > a,
 .tabs > ul > li > span {
-    color: rgb(148, 143, 134);
+    color: rgb(178, 172, 162);
     text-decoration-color: initial;
 }
 .tabs > ul > li > a:hover,
 .tabs > ul > li > span:hover {
-    border-bottom-color: rgb(0, 180, 0);
+    border-bottom-color: rgb(0, 217, 0);
 }
 ul.pagination a:hover {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
     background-image: initial;
-    background-color: rgb(7, 106, 86);
+    background-color: rgb(8, 128, 104);
     border-color: initial;
 }
 ul.pagination > li > a,
 ul.pagination > li > span {
     text-decoration-color: initial;
-    color: rgb(170, 166, 161);
-    background-color: rgb(20, 22, 22);
-    border-color: rgb(105, 97, 85);
+    color: rgb(205, 200, 194);
+    background-color: rgb(24, 26, 27);
+    border-color: rgb(126, 117, 103);
 }
 ul.pagination > .disabled-page > a {
-    color: rgb(130, 123, 113);
-    background-color: rgba(2, 55, 45, 0.5);
-    border-color: rgba(105, 97, 85, 0.5);
+    color: rgb(157, 148, 136);
+    background-color: rgba(3, 66, 54, 0.5);
+    border-color: rgba(126, 117, 103, 0.5);
 }
 ul.pagination > .disabled-page > span {
-    color: rgb(130, 123, 113);
-    background-color: rgba(2, 55, 45, 0.5);
-    border-color: rgba(105, 97, 85, 0.5);
+    color: rgb(157, 148, 136);
+    background-color: rgba(3, 66, 54, 0.5);
+    border-color: rgba(126, 117, 103, 0.5);
 }
 ul.pagination > .active-page > a {
-    color: rgb(193, 191, 188);
-    background-color: rgb(2, 55, 45);
+    color: rgb(232, 230, 227);
+    background-color: rgb(3, 66, 54);
     border-color: transparent;
 }
 ul.pagination > .active-page > span {
-    color: rgb(193, 191, 188);
-    background-color: rgb(20, 22, 22);
+    color: rgb(232, 230, 227);
+    background-color: rgb(24, 26, 27);
     border-color: transparent;
 }
 .alert {
     border-color: transparent;
 }
 .alert-info {
-    color: rgb(97, 148, 173);
-    background-color: rgb(12, 40, 54);
-    border-color: rgb(18, 75, 86);
+    color: rgb(117, 178, 208);
+    background-color: rgb(14, 48, 65);
+    border-color: rgb(22, 90, 104);
 }
 .alert-warning {
-    color: rgb(164, 142, 102);
-    background-color: rgb(39, 33, 4);
-    border-color: rgb(90, 63, 9);
+    color: rgb(198, 171, 123);
+    background-color: rgb(47, 40, 5);
+    border-color: rgb(108, 76, 11);
 }
 .alert-danger {
-    color: rgb(161, 85, 83);
-    background-color: rgb(46, 18, 18);
-    border-color: rgb(74, 29, 36);
+    color: rgb(194, 102, 100);
+    background-color: rgb(56, 22, 22);
+    border-color: rgb(89, 35, 43);
 }
 .alert-dismissable .close,
 .alert-dismissible .close {
     color: inherit;
 }
 .close {
-    color: rgb(193, 191, 188);
-    text-shadow: rgb(20, 22, 22) 0px 1px 0px;
+    color: rgb(232, 230, 227);
+    text-shadow: rgb(24, 26, 27) 0px 1px 0px;
 }
 a.close {
     text-decoration-color: initial !important;
 }
 a.close:hover {
-    color: rgb(193, 191, 188) !important;
+    color: rgb(232, 230, 227) !important;
 }
 .close:focus,
 .close:hover {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
     text-decoration-color: initial;
 }
 .badge {
-    color: rgb(193, 191, 188);
-    background-color: rgb(129, 16, 16);
+    color: rgb(232, 230, 227);
+    background-color: rgb(155, 19, 19);
 }
 .form-submit-group {
-    border-top-color: rgb(44, 47, 49);
+    border-top-color: rgb(53, 57, 59);
 }
 .sidebox h3 {
     background-image: initial;
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
 }
 .sidebox h3 .fa {
     background-image: initial;
-    background-color: rgb(2, 55, 45);
-    color: rgb(193, 191, 188);
+    background-color: rgb(3, 66, 54);
+    color: rgb(232, 230, 227);
 }
 .sidebox-content {
     border-top-color: initial;
     background-image: initial;
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
 }
 .sidebox-content.sidebox-table {
     border-color: initial;
@@ -2650,69 +2651,69 @@ a.close:hover {
 }
 .ws-closed {
     background-image: initial;
-    background-color: rgb(115, 0, 0);
+    background-color: rgb(139, 0, 0);
 }
 .ws-closed a {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .messages li {
     border-color: transparent;
 }
 .messages li.debug {
-    color: rgb(161, 156, 149);
-    background-color: rgb(33, 36, 37);
-    border-color: rgb(49, 53, 55);
+    color: rgb(194, 188, 180);
+    background-color: rgb(40, 43, 44);
+    border-color: rgb(59, 64, 66);
 }
 .messages li.info {
-    color: rgb(118, 188, 200);
-    background-color: rgb(17, 49, 56);
-    border-color: rgb(25, 74, 81);
+    color: rgb(142, 227, 241);
+    background-color: rgb(20, 59, 67);
+    border-color: rgb(30, 89, 97);
 }
 .messages li.success {
-    color: rgb(127, 191, 142);
-    background-color: rgb(22, 51, 34);
-    border-color: rgb(31, 75, 41);
+    color: rgb(153, 230, 171);
+    background-color: rgb(26, 62, 41);
+    border-color: rgb(37, 90, 50);
 }
 .messages li.warning {
-    color: rgb(208, 178, 93);
-    background-color: rgb(51, 38, 0);
-    border-color: rgb(102, 76, 0);
+    color: rgb(251, 215, 112);
+    background-color: rgb(61, 46, 0);
+    border-color: rgb(123, 92, 0);
 }
 .messages li.error {
-    color: rgb(187, 111, 119);
-    background-color: rgb(56, 10, 14);
-    border-color: rgb(86, 15, 22);
+    color: rgb(225, 134, 143);
+    background-color: rgb(67, 12, 17);
+    border-color: rgb(104, 18, 27);
 }
 .spoiler-text {
-    border-color: rgb(116, 108, 95);
+    border-color: rgb(140, 130, 115);
     background-image: initial;
-    background-color: rgb(28, 30, 32);
+    background-color: rgb(34, 36, 38);
 }
 .spoiler-summary {
     text-decoration-color: initial;
 }
 .control-button {
     background-image: initial;
-    background-color: rgb(41, 44, 46);
+    background-color: rgb(49, 53, 55);
     border-color: initial;
-    color: rgb(193, 191, 188) !important;
+    color: rgb(232, 230, 227) !important;
 }
 .control-button:hover {
     background-image: initial;
-    background-color: rgb(80, 86, 90);
+    background-color: rgb(96, 104, 108);
 }
 ul.errorlist {
     list-style-image: initial;
-    color: rgb(212, 22, 22);
+    color: rgb(255, 26, 26);
 }
 .registration-form .block-header {
-    color: rgb(148, 143, 134);
+    color: rgb(178, 172, 162);
 }
 .registration-form .fullwidth-error input {
-    border-color: rgb(149, 0, 0);
+    border-color: rgb(179, 0, 0);
 }
 .registration-form .form-field-error {
-    color: rgb(212, 22, 22);
+    color: rgb(255, 26, 26);
 }
 .registration-form #edit-form {
     border-color: unset;
@@ -2720,63 +2721,63 @@ ul.errorlist {
     background-color: unset;
 }
 #login-panel .google-icon i {
-    color: rgb(186, 75, 60);
+    color: rgb(224, 90, 72);
 }
 #login-panel .facebook-icon i {
-    color: rgb(110, 152, 197);
+    color: rgb(132, 183, 237);
 }
 #login-panel .github-icon i {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 a.upvote-link,
 a.downvote-link {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 a.voted {
     text-shadow: rgb(0, 0, 0) 0px 0px 4px,
-    rgb(0, 0, 169) 0px 0px 9px;
+    rgb(0, 0, 204) 0px 0px 9px;
 }
 .comment-area .featherlight-edit .featherlight-content {
     background-image: initial;
-    background-color: rgb(22, 24, 25);
-    border-color: rgb(51, 56, 58);
+    background-color: rgb(27, 29, 30);
+    border-color: rgb(62, 68, 70);
 }
 .comment-area .new-comments .comment-display {
-    border-color: rgb(51, 56, 58);
+    border-color: rgb(62, 68, 70);
     background-image: initial;
-    background-color: rgb(22, 24, 25);
+    background-color: rgb(27, 29, 30);
 }
 .comment-area .new-comments .comment .detail .header {
-    border-bottom-color: rgb(68, 73, 76);
-    color: rgb(130, 123, 113);
+    border-bottom-color: rgb(82, 88, 92);
+    color: rgb(157, 148, 136);
 }
 .comment-area .previous-revision,
 .comment-area .next-revision {
-    color: rgb(157, 152, 145);
+    color: rgb(189, 183, 175);
 }
 .comment-area .new-comments .header i {
-    color: rgb(130, 123, 113) !important;
+    color: rgb(157, 148, 136) !important;
 }
 .comment-area .new-comments .comment:target > .comment-display {
-    border-color: rgb(28, 88, 127);
+    border-color: rgb(34, 106, 153);
 }
 .comment-author {
-    color: rgb(166, 162, 156);
+    color: rgb(200, 195, 188);
 }
 .comment-header {
-    color: rgb(192, 190, 188);
+    color: rgb(231, 229, 226);
     background-image: initial;
     background-color: rgba(0, 0, 0, 0.1);
-    border-color: rgb(51, 56, 58);
+    border-color: rgb(62, 68, 70);
 }
 .comment-edits:not(:empty) {
-    color: rgb(157, 152, 145);
+    color: rgb(189, 183, 175);
 }
 .comment-operation .fa {
-    color: rgb(157, 152, 145);
+    color: rgb(189, 183, 175);
 }
 .comment-box {
-    border-color: rgb(51, 56, 58);
+    border-color: rgb(62, 68, 70);
     background-image: initial;
     background-color: rgba(0, 0, 0, 0.01);
 }
@@ -2784,154 +2785,154 @@ a.voted {
     list-style-image: none;
 }
 .comment:target > .comment-box {
-    border-left-color: rgb(40, 43, 45);
+    border-left-color: rgb(48, 52, 54);
 }
 .actionbar .actionbar-button {
-    border-color: rgb(50, 54, 56);
+    border-color: rgb(60, 65, 68);
 }
 .actionbar .actionbar-button:hover {
     background-image: initial;
-    background-color: rgb(41, 44, 46);
+    background-color: rgb(49, 53, 55);
 }
 .actionbar .dislike-button {
     border-left-color: initial;
 }
 .actionbar .like-button.voted {
-    color: rgb(42, 104, 212);
+    color: rgb(51, 125, 255);
 }
 .actionbar .dislike-button.voted {
-    color: rgb(212, 22, 22);
+    color: rgb(255, 26, 26);
 }
 .actionbar .bookmarked {
-    color: rgb(206, 206, 66);
+    color: rgb(248, 248, 80);
 }
 #submissions-table {
     background-image: initial;
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
 }
 .submission-row {
-    border-left-color: rgb(51, 56, 58);
-    border-right-color: rgb(51, 56, 58);
+    border-left-color: rgb(62, 68, 70);
+    border-right-color: rgb(62, 68, 70);
 }
 .submission-row:hover {
     background-image: initial;
-    background-color: rgb(26, 28, 29);
+    background-color: rgb(31, 34, 35);
 }
 .submission-row:first-of-type {
-    border-top-color: rgb(51, 56, 58);
+    border-top-color: rgb(62, 68, 70);
 }
 .submission-row > div {
-    border-bottom-color: rgb(51, 56, 58);
+    border-bottom-color: rgb(62, 68, 70);
 }
 .submission-row .sub-result {
-    border-bottom-color: rgb(40, 43, 45);
-    border-right-color: rgb(51, 56, 58);
+    border-bottom-color: rgb(48, 52, 54);
+    border-right-color: rgb(62, 68, 70);
 }
 .submission-row .sub-result .score {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .submission-row .sub-testcase {
-    color: rgb(148, 143, 134);
+    color: rgb(178, 172, 162);
 }
 .submission-row .sub-usage {
-    border-left-color: rgb(51, 56, 58);
+    border-left-color: rgb(62, 68, 70);
 }
 #statistics-table tr:not(:first-child) td {
-    border-top-color: rgb(40, 43, 45) !important;
+    border-top-color: rgb(48, 52, 54) !important;
 }
 #statistics-table tr:not(:last-child) td:not(:last-child) {
-    border-right-color: rgb(40, 43, 45);
+    border-right-color: rgb(48, 52, 54);
 }
 .submission-contest {
-    color: rgb(148, 143, 134);
+    color: rgb(178, 172, 162);
 }
 .source-ln {
-    color: rgb(126, 119, 107);
-    border-right-color: rgb(70, 76, 78);
+    color: rgb(152, 143, 129);
+    border-right-color: rgb(84, 91, 94);
 }
 .source-ln a {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
 }
 .source-ln a:hover {
     text-decoration-color: initial;
 }
 .source-wrap {
-    border-color: rgb(60, 65, 67);
+    border-color: rgb(72, 78, 81);
 }
 .statistics-table .count {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 #test-cases .case-info {
-    border-color: rgb(28, 88, 127);
-    color: rgb(175, 172, 167);
+    border-color: rgb(34, 106, 153);
+    color: rgb(211, 207, 201);
 }
 #test-cases .case-output {
-    box-shadow: rgba(22, 24, 25, 0.15) 0px 1px 2px 0px;
-    border-color: rgba(106, 99, 87, 0.15);
+    box-shadow: rgba(27, 29, 30, 0.15) 0px 1px 2px 0px;
+    border-color: rgba(128, 119, 105, 0.15);
 }
 #test-cases .testcases-table {
     border-color: initial;
 }
 .overall-result-AC {
     background-image: linear-gradient(45deg,
-    rgb(56, 110, 0),
-    rgb(0, 110, 85));
+    rgb(68, 132, 0),
+    rgb(0, 132, 102));
     background-color: initial;
 }
 .overall-result-WA {
     background-image: linear-gradient(45deg,
-    rgb(127, 127, 0),
-    rgb(169, 0, 0));
+    rgb(153, 153, 0),
+    rgb(204, 0, 0));
     background-color: initial;
 }
 .overall-result-TLE {
     background-image: linear-gradient(45deg,
-    rgb(35, 37, 39),
-    rgb(69, 76, 93));
+    rgb(42, 45, 47),
+    rgb(83, 91, 112));
     background-color: initial;
 }
 .overall-result-RTE,
 .overall-result-MLE {
     background-image: linear-gradient(45deg,
-    rgb(56, 41, 2),
-    rgb(164, 120, 0));
+    rgb(67, 49, 3),
+    rgb(198, 145, 0));
     background-color: initial;
 }
 .case-AC {
-    color: rgb(95, 212, 95);
+    color: rgb(114, 255, 114);
 }
 .case-_AC {
-    color: rgb(212, 22, 22);
+    color: rgb(255, 26, 26);
 }
 .case-WA {
-    color: rgb(212, 22, 22);
+    color: rgb(255, 26, 26);
 }
 .case-TLE,
 .case-SC {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
 }
 .case-MLE,
 .case-OLE,
 .case-RTE,
 .case-IR {
-    color: rgb(212, 144, 22);
+    color: rgb(255, 174, 26);
 }
 .source-wrap a:active .line .highlighter {
     background-image: initial;
-    background-color: rgba(127, 105, 0, 0.48);
+    background-color: rgba(153, 127, 0, 0.48);
 }
 .submission-info .submission-date {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
 }
 .list-contest {
-    box-shadow: rgba(2, 55, 45, 0.2) 0px 4px 8px,
-    rgba(2, 55, 45, 0.19) 0px 6px 20px;
+    box-shadow: rgba(3, 66, 54, 0.2) 0px 4px 8px,
+    rgba(3, 66, 54, 0.19) 0px 6px 20px;
 }
 #contest-calendar th {
-    border-bottom-color: rgb(51, 56, 58);
+    border-bottom-color: rgb(62, 68, 70);
 }
 #contest-calendar th.sun {
-    border-left-color: rgb(51, 56, 58);
+    border-left-color: rgb(62, 68, 70);
 }
 #contest-calendar th.sun,
 #contest-calendar th.mon,
@@ -2940,139 +2941,139 @@ a.voted {
 #contest-calendar th.thu,
 #contest-calendar th.fri,
 #contest-calendar th.sat {
-    border-right-color: rgb(51, 56, 58);
+    border-right-color: rgb(62, 68, 70);
     background-image: initial;
-    background-color: rgb(22, 24, 25);
+    background-color: rgb(27, 29, 30);
 }
 #contest-calendar td {
-    color: rgb(193, 191, 188);
-    border-right-color: rgb(51, 56, 58);
-    border-bottom-color: rgb(51, 56, 58);
+    color: rgb(232, 230, 227);
+    border-right-color: rgb(62, 68, 70);
+    border-bottom-color: rgb(62, 68, 70);
 }
 #contest-calendar td .num {
-    border-bottom-color: rgb(51, 56, 58);
+    border-bottom-color: rgb(62, 68, 70);
 }
 #contest-calendar td ul {
     text-decoration-color: initial;
 }
 #contest-calendar td ul li i.fa {
-    color: rgb(212, 144, 22);
+    color: rgb(255, 174, 26);
 }
 #contest-calendar td ul li a {
     text-decoration-color: initial;
-    color: rgb(175, 172, 167);
+    color: rgb(211, 207, 201);
 }
 #contest-calendar td ul li a:hover {
     text-decoration-color: initial;
 }
 #contest-calendar td:hover {
     background-image: initial;
-    background-color: rgba(0, 0, 169, 0.3);
-    color: rgb(193, 191, 188);
+    background-color: rgba(0, 0, 204, 0.3);
+    color: rgb(232, 230, 227);
 }
 #contest-calendar .noday {
     background-image: initial;
-    background-color: rgb(27, 29, 30);
+    background-color: rgb(32, 35, 36);
 }
 #contest-calendar .today {
     background-image: initial;
-    background-color: rgba(90, 90, 0, 0.5);
+    background-color: rgba(108, 108, 0, 0.5);
 }
 #contest-calendar tr td:first-child {
-    border-left-color: rgb(60, 65, 67);
+    border-left-color: rgb(72, 78, 81);
 }
 #banner a.date {
     text-decoration-color: initial;
 }
 #banner a.date:link,
 #banner a.date:visited {
-    color: rgb(86, 124, 159);
+    color: rgb(104, 149, 191);
 }
 #banner a.date:hover {
-    color: rgb(85, 147, 207);
+    color: rgb(102, 177, 250);
 }
 #banner .time {
-    color: rgb(148, 143, 134);
+    color: rgb(178, 172, 162);
 }
 .time-left {
-    color: rgb(130, 123, 113);
+    color: rgb(157, 148, 136);
 }
 .contest-list .contest-tag-hidden {
     background-color: rgb(0, 0, 0);
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .first-solve {
     background-image: initial;
-    background-color: rgb(0, 165, 107);
+    background-color: rgb(0, 199, 129);
 }
 .contest-tag {
     box-shadow: rgba(0, 0, 0, 0.12) 0px -0.1em 0px inset;
 }
 .contest-tag-edit {
-    background-color: rgb(0, 85, 0);
+    background-color: rgb(0, 102, 0);
 }
 .contest-tag-private {
-    background-color: rgb(64, 69, 71);
-    color: rgb(193, 191, 188);
+    background-color: rgb(77, 83, 86);
+    color: rgb(232, 230, 227);
 }
 .contest-tag-org {
-    background-color: rgb(44, 47, 49);
+    background-color: rgb(53, 57, 59);
 }
 .contest-tag-org a {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .contest-tag-rated {
-    background-color: rgb(152, 51, 13);
-    color: rgb(193, 191, 188);
+    background-color: rgb(183, 61, 16);
+    color: rgb(232, 230, 227);
 }
 .contest-list-sort {
-    color: rgb(94, 162, 212);
+    color: rgb(113, 195, 255);
 }
 .contest-participation-operation .fa {
-    color: rgb(157, 152, 145);
+    color: rgb(189, 183, 175);
 }
 #add-clarification {
-    color: rgb(116, 212, 22);
+    color: rgb(140, 255, 26);
 }
 #add-clarification:hover {
-    color: rgb(22, 212, 212);
+    color: rgb(26, 255, 255);
 }
 #judge-versions .version-blank {
     background-image: initial;
-    background-color: rgb(28, 30, 32);
+    background-color: rgb(34, 36, 38);
 }
 #judge-versions .version-latest {
     background-image: initial;
-    background-color: rgba(73, 104, 0, 0.9);
+    background-color: rgba(88, 125, 0, 0.9);
 }
 #judge-versions .version-outdated {
     background-image: initial;
-    background-color: rgba(169, 0, 0, 0.8);
-    color: rgb(193, 191, 188);
+    background-color: rgba(204, 0, 0, 0.8);
+    color: rgb(232, 230, 227);
 }
 .chat {
     background-image: initial;
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
 }
 #chat-online {
-    border-right-color: rgb(51, 56, 58);
+    border-right-color: rgb(62, 68, 70);
     border-bottom-color: initial;
 }
 #chat-input {
-    color: rgb(193, 191, 188);
-    border-color: rgb(132, 97, 16);
+    color: rgb(232, 230, 227);
+    border-color: rgb(159, 117, 19);
 }
 .selected-status-row {
-    background-color: rgb(41, 44, 46);
+    background-color: rgb(49, 53, 55);
 }
 .status_last_message {
-    color: rgb(148, 142, 134);
+    color: rgb(178, 171, 161);
 }
 @media (min-width: 800px) {
     #chat-container {
-        border-top-color: rgb(51, 56, 58);
-        border-right-color: rgb(51, 56, 58);
-        border-left-color: rgb(51, 56, 58);
+        border-top-color: rgb(62, 68, 70);
+        border-right-color: rgb(62, 68, 70);
+        border-left-color: rgb(62, 68, 70);
         border-bottom-color: initial;
     }
 }
@@ -3086,129 +3087,132 @@ a.voted {
 }
 #refresh-button:hover {
     background-image: initial;
-    background-color: rgb(33, 92, 14);
+    background-color: rgb(40, 111, 17);
 }
 .status-circle {
-    stroke: rgb(193, 191, 188);
+    stroke: rgb(232, 230, 227);
 }
 .status-row:hover {
     background-image: initial;
-    background-color: rgb(41, 44, 46);
+    background-color: rgb(49, 53, 55);
 }
 .message-text-other {
     background-image: initial;
-    background-color: rgb(28, 30, 32);
-    color: rgb(193, 191, 188);
+    background-color: rgb(34, 36, 38);
+    color: rgb(232, 230, 227);
 }
 .message-text-myself {
     background-image: initial;
-    background-color: rgb(0, 88, 169);
-    color: rgb(193, 191, 188);
+    background-color: rgb(0, 106, 204);
+    color: rgb(232, 230, 227);
 }
 .chat-input-icon {
-    color: rgb(170, 166, 161);
+    color: rgb(205, 200, 194);
 }
 .chat-input-icon:hover {
     background-image: initial;
-    background-color: rgb(41, 44, 46);
+    background-color: rgb(49, 53, 55);
 }
 .chat .active-span {
-    color: rgb(140, 134, 125);
+    color: rgb(169, 162, 151);
 }
 .chat .unread-count {
-    color: rgb(193, 191, 188);
-    background-color: rgb(0, 92, 92);
+    color: rgb(232, 230, 227);
+    background-color: rgb(0, 111, 111);
 }
 .chat #setting-content {
-    background-color: rgb(27, 29, 30);
+    background-color: rgb(32, 35, 36);
     box-shadow: rgba(0, 0, 0, 0.2) 0px 8px 16px 0px;
 }
 .chat #setting-content li {
     text-decoration-color: initial;
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .chat #setting-content li:hover {
-    background-color: rgb(36, 39, 41);
+    background-color: rgb(43, 47, 49);
 }
 .leave-organization,
 .leave-organization:hover {
-    color: rgb(212, 22, 22);
+    color: rgb(255, 26, 26);
 }
 #control-list li {
-    border-bottom-color: rgb(116, 108, 95);
+    border-bottom-color: rgb(140, 130, 115);
 }
 #pending-count-box {
     background-image: initial;
-    background-color: rgb(169, 0, 0);
-    color: rgb(193, 191, 188);
+    background-color: rgb(204, 0, 0);
+    color: rgb(232, 230, 227);
 }
 .organization-row {
-    border-bottom-color: rgb(51, 56, 58);
+    border-bottom-color: rgb(62, 68, 70);
     border-top-color: initial;
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .organization-row:hover {
-    background-color: rgb(26, 27, 29);
+    background-color: rgb(31, 33, 35);
 }
 .organization-container {
-    border-color: rgb(51, 56, 58);
+    border-color: rgb(62, 68, 70);
+}
+.org-help-text {
+    color: rgb(152, 143, 129);
 }
 .ticket-container #content > h2:first-child small {
-    color: rgb(139, 133, 124);
+    color: rgb(168, 160, 149);
 }
 .ticket-container #content > h2:first-child .fa-check-circle-o {
-    color: rgb(71, 212, 71);
+    color: rgb(86, 255, 86);
 }
 .ticket-container #content > h2:first-child .fa-exclamation-circle {
-    color: rgb(212, 89, 89);
+    color: rgb(255, 107, 107);
 }
 .ticket-container .info-box {
-    border-color: rgb(64, 69, 71);
+    border-color: rgb(77, 83, 86);
 }
 .ticket-container .info-title {
-    border-bottom-color: rgb(64, 69, 71);
+    border-bottom-color: rgb(77, 83, 86);
     background-image: initial;
-    background-color: rgb(28, 30, 32);
+    background-color: rgb(34, 36, 38);
 }
 .ticket-container .info-empty {
-    color: rgb(139, 133, 124);
+    color: rgb(168, 160, 149);
 }
 .ticket-container .close-ticket {
-    background-image: linear-gradient(rgb(50, 115, 0) 0%,
-    rgb(26, 90, 12) 100%);
+    background-image: linear-gradient(rgb(60, 138, 0) 0%,
+    rgb(31, 109, 14) 100%);
     background-color: initial;
-    border-color: rgb(51, 160, 20);
+    border-color: rgb(61, 193, 24);
 }
 .ticket-container .close-ticket:hover {
     background-image: initial;
-    background-color: rgb(24, 75, 9);
+    background-color: rgb(29, 90, 11);
 }
 .ticket-container .open-ticket {
-    background-image: linear-gradient(rgb(162, 2, 0),
-    rgb(117, 41, 15));
+    background-image: linear-gradient(rgb(195, 3, 0),
+    rgb(141, 49, 18));
     background-color: initial;
-    border-color: rgb(154, 56, 20);
+    border-color: rgb(186, 67, 24);
 }
 .ticket-container .open-ticket:hover {
     background-image: initial;
-    background-color: rgb(88, 32, 12);
+    background-color: rgb(106, 38, 14);
 }
 .ticket-container .message .detail {
-    border-color: rgb(64, 69, 71);
+    border-color: rgb(77, 83, 86);
 }
 .ticket-container .message .header {
     background-image: initial;
-    background-color: rgb(28, 30, 32);
-    color: rgb(130, 123, 113);
-    border-bottom-color: rgb(64, 69, 71);
+    background-color: rgb(34, 36, 38);
+    color: rgb(157, 148, 136);
+    border-bottom-color: rgb(77, 83, 86);
 }
 .wmd-button-bar {
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
 }
 .wmd-input {
     background-image: initial;
-    background-color: rgb(20, 22, 22);
-    border-color: rgb(60, 65, 67);
+    background-color: rgb(24, 26, 27);
+    border-color: rgb(72, 78, 81);
 }
 .wmd-preview {
     background-image: none;
@@ -3218,13 +3222,13 @@ a.voted {
     list-style-image: initial;
 }
 .wmd-bold-button {
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iOCIgaGVpZ2h0PSI4Ij48ZGVmcz48ZmlsdGVyIGlkPSJkYXJrcmVhZGVyLWltYWdlLWZpbHRlciI+PGZlQ29sb3JNYXRyaXggdHlwZT0ibWF0cml4IiB2YWx1ZXM9IjAuMjA3IC0wLjUwOSAtMC41NTcgMC4wMDAgMC44NTkgLTAuNTM2IDAuMjM5IC0wLjU1MSAwLjAwMCAwLjg0NyAtMC41MjggLTAuNTA2IDAuMjA4IDAuMDAwIDAuODI1IDAuMDAwIDAuMDAwIDAuMDAwIDEuMDAwIDAuMDAwIiAvPjwvZmlsdGVyPjwvZGVmcz48aW1hZ2Ugd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsdGVyPSJ1cmwoI2RhcmtyZWFkZXItaW1hZ2UtZmlsdGVyKSIgeGxpbms6aHJlZj0iZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCM2FXUjBhRDBpT0hCNElpQm9aV2xuYUhROUlqaHdlQ0lnZG1sbGQwSnZlRDBpTUNBd0lEZ2dPQ0lnZUcxc2JuTTlJbWgwZEhBNkx5OTNkM2N1ZHpNdWIzSm5Mekl3TURBdmMzWm5JajROQ2lBZ1BIQmhkR2dnWkQwaVRUQWdNSFl4WXk0MU5TQXdJREVnTGpRMUlERWdNWFkwWXpBZ0xqVTFMUzQwTlNBeExURWdNWFl4YURVdU5XTXhMak00SURBZ01pNDFMVEV1TVRJZ01pNDFMVEl1TlNBd0xURXRMalU1TFRFdU9EVXRNUzQwTkMweUxqSTFMakkzTFM0ek5DNDBOQzB1TnpndU5EUXRNUzR5TlNBd0xURXVNUzB1T0RrdE1pMHlMVEpvTFRWNmJUTWdNV2d4WXk0MU5TQXdJREVnTGpRMUlERWdNWE10TGpRMUlERXRNU0F4YUMweGRpMHllbTB3SUROb01TNDFZeTQ0TXlBd0lERXVOUzQyTnlBeExqVWdNUzQxY3kwdU5qY2dNUzQxTFRFdU5TQXhMalZvTFRFdU5YWXRNM29pSUM4K0RRbzhMM04yWno0PSIgLz48L3N2Zz4=");
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iOCIgaGVpZ2h0PSI4Ij48ZGVmcz48ZmlsdGVyIGlkPSJkYXJrcmVhZGVyLWltYWdlLWZpbHRlciI+PGZlQ29sb3JNYXRyaXggdHlwZT0ibWF0cml4IiB2YWx1ZXM9IjAuMjQ5IC0wLjYxNCAtMC42NzIgMC4wMDAgMS4wMzUgLTAuNjQ2IDAuMjg4IC0wLjY2NCAwLjAwMCAxLjAyMCAtMC42MzYgLTAuNjA5IDAuMjUwIDAuMDAwIDAuOTk0IDAuMDAwIDAuMDAwIDAuMDAwIDEuMDAwIDAuMDAwIiAvPjwvZmlsdGVyPjwvZGVmcz48aW1hZ2Ugd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsdGVyPSJ1cmwoI2RhcmtyZWFkZXItaW1hZ2UtZmlsdGVyKSIgeGxpbms6aHJlZj0iZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCM2FXUjBhRDBpT0hCNElpQm9aV2xuYUhROUlqaHdlQ0lnZG1sbGQwSnZlRDBpTUNBd0lEZ2dPQ0lnZUcxc2JuTTlJbWgwZEhBNkx5OTNkM2N1ZHpNdWIzSm5Mekl3TURBdmMzWm5JajROQ2lBZ1BIQmhkR2dnWkQwaVRUQWdNSFl4WXk0MU5TQXdJREVnTGpRMUlERWdNWFkwWXpBZ0xqVTFMUzQwTlNBeExURWdNWFl4YURVdU5XTXhMak00SURBZ01pNDFMVEV1TVRJZ01pNDFMVEl1TlNBd0xURXRMalU1TFRFdU9EVXRNUzQwTkMweUxqSTFMakkzTFM0ek5DNDBOQzB1TnpndU5EUXRNUzR5TlNBd0xURXVNUzB1T0RrdE1pMHlMVEpvTFRWNmJUTWdNV2d4WXk0MU5TQXdJREVnTGpRMUlERWdNWE10TGpRMUlERXRNU0F4YUMweGRpMHllbTB3SUROb01TNDFZeTQ0TXlBd0lERXVOUzQyTnlBeExqVWdNUzQxY3kwdU5qY2dNUzQxTFRFdU5TQXhMalZvTFRFdU5YWXRNM29pSUM4K0RRbzhMM04yWno0PSIgLz48L3N2Zz4=");
 }
 .wmd-italic-button {
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iNTI1IiBoZWlnaHQ9IjUyNSI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjIwNyAtMC41MDkgLTAuNTU3IDAuMDAwIDAuODU5IC0wLjUzNiAwLjIzOSAtMC41NTEgMC4wMDAgMC44NDcgLTAuNTI4IC0wLjUwNiAwLjIwOCAwLjAwMCAwLjgyNSAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSI1MjUiIGhlaWdodD0iNTI1IiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUIyWlhKemFXOXVQU0l4TGpFaUlHbGtQU0pEWVhCaFh6RWlJSGh0Ykc1elBTSm9kSFJ3T2k4dmQzZDNMbmN6TG05eVp5OHlNREF3TDNOMlp5SWdlRzFzYm5NNmVHeHBibXM5SW1oMGRIQTZMeTkzZDNjdWR6TXViM0puTHpFNU9Ua3ZlR3hwYm1zaUlIZzlJakJ3ZUNJZ2VUMGlNSEI0SWcwS0lDQWdkMmxrZEdnOUlqVXlOUzR4TkRKd2VDSWdhR1ZwWjJoMFBTSTFNalV1TVRReWNIZ2lJSFpwWlhkQ2IzZzlJakFnTUNBMU1qVXVNVFF5SURVeU5TNHhORElpSUhOMGVXeGxQU0psYm1GaWJHVXRZbUZqYTJkeWIzVnVaRHB1WlhjZ01DQXdJRFV5TlM0eE5ESWdOVEkxTGpFME1qc2lEUW9nSUNCNGJXdzZjM0JoWTJVOUluQnlaWE5sY25abElqNE5DanhuUGcwS0lDQThaejROQ2lBZ0lDQThjR0YwYUNCa1BTSk5NemMxTGpVMExEQXVNalEwWXkweE15NHpNellzTVM0Mk9Ea3RNall1T0RNc01pNDROeTAwTUM0ME9UWXNNeTQxTlRaakxURTFMamMwTVN3d0xqYzVOaTB5Tnk0NU9EY3NNUzR4T0RndE16WXVOekkzTERFdU1UZzREUW9nSUNBZ0lDQmpMVEV3TGpBMk55d3dMVEl5TGpBNE55MHdMalV4TkMwek5pNHdOekV0TVM0MU56bGpMVEV5TGpJeU9DMHdMamt4T0MweU5TNHlPREl0TWk0d05TMHpPUzR4TmpJdE15NHpOemhqTFRNdU16WTJMVEF1TXpJMExUWXVPVFU0TERJdU1ERTBMVGN1T0RBekxEVXVNamc0RFFvZ0lDQWdJQ0JqTFRFdU1EVXpMRFF1TURnNExURXVOVGN6TERjdU5ERTRMVEV1TlRjekxEa3VPVGMyWXpBc05pNDROek1zTkM0NE1EUXNNVEV1TURrMUxERTBMalF5TlN3eE1pNDJPR014TWk0Mk9ERXNNUzQxTnprc01qQXVOall4TERVdU1ESTFMREl6TGprME1Td3hNQzR6TURZTkNpQWdJQ0FnSUdNekxqSTRMRFV1TWpneUxEUXVNRE01TERFeUxqWTNOU3d5TGpJNU5Td3lNaTR4T1RGc0xUWTBMakkyTml3ME1ETXVNemswWXkweExqYzFOaXd4TUM0d05ETXROUzQwTnpnc01UY3VOVGMyTFRFeExqRTFOeXd5TWk0MU9Ea05DaUFnSUNBZ0lHTXROUzQyT0RZc05TNHdNalF0TVRRdU1qRXNPQzQxT1RrdE1qVXVOVGMxTERFd0xqWTVOMk10TkM0NE1UWXNNUzR3TmpVdE55NDVPRGNzTWk0Mk5qSXRPUzQxTURRc05DNDNOVFZqTFRFdU5UUXlMREl1TVRFNExUSXVNamsxTERVdU1qZ3lMVEl1TWprMUxEa3VOVEU0RFFvZ0lDQWdJQ0JqTUN3eUxqVTJNeXd3TGpJME5TdzFMak15TkN3d0xqY3lPQ3c0TGpJNFl6QXVOVFExTERNdU16TTFMRE11T1RZMkxEVXVOamszTERjdU16STJMRFV1TXpVMFl6RXlMamMwT0MweExqTXhMREkxTGpJMU55MHlMalF5TkN3ek55NDFNamd0TXk0ek1qa05DaUFnSUNBZ0lHTXhOQzR4T1RndE1TNHdOalVzTWpVdU5qY3pMVEV1TlRjNUxETTBMalF5TlMweExqVTNPV014TUM0d05UVXNNQ3d5TWk0NU5UY3NNQzQxTVRRc016Z3VOamszTERFdU5UYzVZekV6TGpjMk5Dd3dMamt5TkN3eU55NDJPREVzTWk0d05TdzBNUzQzT0RFc015NHpPRFFOQ2lBZ0lDQWdJR016TGpNMk5pd3dMak14T0N3MkxqYzROeTB5TGpBMk9DdzNMak16TWkwMUxqUXdNMk13TGpRNE15MHlMamsxTml3d0xqY3lPUzAxTGpjeExEQXVOekk1TFRndU1qaGpNQzAzTGpNNU5DMDBMakUyTWkweE1pNHhORGd0TVRJdU5EWXhMVEUwTGpJM01nMEtJQ0FnSUNBZ1l5MHhNUzQ0TURZdE1pNDJNemd0TVRrdU9EazJMVFV1T1RReUxUSTBMakkyTmkwNUxqa3dNV010TkM0ek56WXRNeTQ1TmkwMUxqWTROaTB4TVM0eU1qVXRNeTQ1TXpVdE1qRXVOemswVERNek1pNDBNVGdzTmpJdU1EVU5DaUFnSUNBZ0lHTXhMamN6T0MweE1DNDFOak1zTlM0eE1qa3RNVGd1TWpJMUxERXdMakUyTlMweU1pNDVPR00xTGpBeE9TMDBMamMxTlN3eE15NDJOaTA0TGpFNE1pd3lOUzQ1TURZdE1UQXVNekEyWXpZdU1USXRNUzR3TlRNc01UQXVNVGN5TFRJdU5qTTRMREV5TGpFekxUUXVOelUxRFFvZ0lDQWdJQ0JqTVM0NU56RXRNaTR4TURVc01pNDVOUzAxTGpJM05Td3lMamsxTFRrdU5URXhZekF0TWk0Mk9UTXRNQzR5TmpRdE5TNDNNUzB3TGpnd01pMDVMakExTVVNek9ESXVNalF4TERJdU1URXhMRE0zT0M0NE9UUXRNQzR4T0RRc016YzFMalUwTERBdU1qUTBlaUl2UGcwS0lDQThMMmMrRFFvOEwyYytEUW84Wno0TkNqd3ZaejROQ2p4blBnMEtQQzluUGcwS1BHYytEUW84TDJjK0RRbzhaejROQ2p3dlp6NE5DanhuUGcwS1BDOW5QZzBLUEdjK0RRbzhMMmMrRFFvOFp6NE5Dand2Wno0TkNqeG5QZzBLUEM5blBnMEtQR2MrRFFvOEwyYytEUW84Wno0TkNqd3ZaejROQ2p4blBnMEtQQzluUGcwS1BHYytEUW84TDJjK0RRbzhaejROQ2p3dlp6NE5DanhuUGcwS1BDOW5QZzBLUEdjK0RRbzhMMmMrRFFvOEwzTjJaejROQ2c9PSIgLz48L3N2Zz4=");
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iNTI1IiBoZWlnaHQ9IjUyNSI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjI0OSAtMC42MTQgLTAuNjcyIDAuMDAwIDEuMDM1IC0wLjY0NiAwLjI4OCAtMC42NjQgMC4wMDAgMS4wMjAgLTAuNjM2IC0wLjYwOSAwLjI1MCAwLjAwMCAwLjk5NCAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSI1MjUiIGhlaWdodD0iNTI1IiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUIyWlhKemFXOXVQU0l4TGpFaUlHbGtQU0pEWVhCaFh6RWlJSGh0Ykc1elBTSm9kSFJ3T2k4dmQzZDNMbmN6TG05eVp5OHlNREF3TDNOMlp5SWdlRzFzYm5NNmVHeHBibXM5SW1oMGRIQTZMeTkzZDNjdWR6TXViM0puTHpFNU9Ua3ZlR3hwYm1zaUlIZzlJakJ3ZUNJZ2VUMGlNSEI0SWcwS0lDQWdkMmxrZEdnOUlqVXlOUzR4TkRKd2VDSWdhR1ZwWjJoMFBTSTFNalV1TVRReWNIZ2lJSFpwWlhkQ2IzZzlJakFnTUNBMU1qVXVNVFF5SURVeU5TNHhORElpSUhOMGVXeGxQU0psYm1GaWJHVXRZbUZqYTJkeWIzVnVaRHB1WlhjZ01DQXdJRFV5TlM0eE5ESWdOVEkxTGpFME1qc2lEUW9nSUNCNGJXdzZjM0JoWTJVOUluQnlaWE5sY25abElqNE5DanhuUGcwS0lDQThaejROQ2lBZ0lDQThjR0YwYUNCa1BTSk5NemMxTGpVMExEQXVNalEwWXkweE15NHpNellzTVM0Mk9Ea3RNall1T0RNc01pNDROeTAwTUM0ME9UWXNNeTQxTlRaakxURTFMamMwTVN3d0xqYzVOaTB5Tnk0NU9EY3NNUzR4T0RndE16WXVOekkzTERFdU1UZzREUW9nSUNBZ0lDQmpMVEV3TGpBMk55d3dMVEl5TGpBNE55MHdMalV4TkMwek5pNHdOekV0TVM0MU56bGpMVEV5TGpJeU9DMHdMamt4T0MweU5TNHlPREl0TWk0d05TMHpPUzR4TmpJdE15NHpOemhqTFRNdU16WTJMVEF1TXpJMExUWXVPVFU0TERJdU1ERTBMVGN1T0RBekxEVXVNamc0RFFvZ0lDQWdJQ0JqTFRFdU1EVXpMRFF1TURnNExURXVOVGN6TERjdU5ERTRMVEV1TlRjekxEa3VPVGMyWXpBc05pNDROek1zTkM0NE1EUXNNVEV1TURrMUxERTBMalF5TlN3eE1pNDJPR014TWk0Mk9ERXNNUzQxTnprc01qQXVOall4TERVdU1ESTFMREl6TGprME1Td3hNQzR6TURZTkNpQWdJQ0FnSUdNekxqSTRMRFV1TWpneUxEUXVNRE01TERFeUxqWTNOU3d5TGpJNU5Td3lNaTR4T1RGc0xUWTBMakkyTml3ME1ETXVNemswWXkweExqYzFOaXd4TUM0d05ETXROUzQwTnpnc01UY3VOVGMyTFRFeExqRTFOeXd5TWk0MU9Ea05DaUFnSUNBZ0lHTXROUzQyT0RZc05TNHdNalF0TVRRdU1qRXNPQzQxT1RrdE1qVXVOVGMxTERFd0xqWTVOMk10TkM0NE1UWXNNUzR3TmpVdE55NDVPRGNzTWk0Mk5qSXRPUzQxTURRc05DNDNOVFZqTFRFdU5UUXlMREl1TVRFNExUSXVNamsxTERVdU1qZ3lMVEl1TWprMUxEa3VOVEU0RFFvZ0lDQWdJQ0JqTUN3eUxqVTJNeXd3TGpJME5TdzFMak15TkN3d0xqY3lPQ3c0TGpJNFl6QXVOVFExTERNdU16TTFMRE11T1RZMkxEVXVOamszTERjdU16STJMRFV1TXpVMFl6RXlMamMwT0MweExqTXhMREkxTGpJMU55MHlMalF5TkN3ek55NDFNamd0TXk0ek1qa05DaUFnSUNBZ0lHTXhOQzR4T1RndE1TNHdOalVzTWpVdU5qY3pMVEV1TlRjNUxETTBMalF5TlMweExqVTNPV014TUM0d05UVXNNQ3d5TWk0NU5UY3NNQzQxTVRRc016Z3VOamszTERFdU5UYzVZekV6TGpjMk5Dd3dMamt5TkN3eU55NDJPREVzTWk0d05TdzBNUzQzT0RFc015NHpPRFFOQ2lBZ0lDQWdJR016TGpNMk5pd3dMak14T0N3MkxqYzROeTB5TGpBMk9DdzNMak16TWkwMUxqUXdNMk13TGpRNE15MHlMamsxTml3d0xqY3lPUzAxTGpjeExEQXVOekk1TFRndU1qaGpNQzAzTGpNNU5DMDBMakUyTWkweE1pNHhORGd0TVRJdU5EWXhMVEUwTGpJM01nMEtJQ0FnSUNBZ1l5MHhNUzQ0TURZdE1pNDJNemd0TVRrdU9EazJMVFV1T1RReUxUSTBMakkyTmkwNUxqa3dNV010TkM0ek56WXRNeTQ1TmkwMUxqWTROaTB4TVM0eU1qVXRNeTQ1TXpVdE1qRXVOemswVERNek1pNDBNVGdzTmpJdU1EVU5DaUFnSUNBZ0lHTXhMamN6T0MweE1DNDFOak1zTlM0eE1qa3RNVGd1TWpJMUxERXdMakUyTlMweU1pNDVPR00xTGpBeE9TMDBMamMxTlN3eE15NDJOaTA0TGpFNE1pd3lOUzQ1TURZdE1UQXVNekEyWXpZdU1USXRNUzR3TlRNc01UQXVNVGN5TFRJdU5qTTRMREV5TGpFekxUUXVOelUxRFFvZ0lDQWdJQ0JqTVM0NU56RXRNaTR4TURVc01pNDVOUzAxTGpJM05Td3lMamsxTFRrdU5URXhZekF0TWk0Mk9UTXRNQzR5TmpRdE5TNDNNUzB3TGpnd01pMDVMakExTVVNek9ESXVNalF4TERJdU1URXhMRE0zT0M0NE9UUXRNQzR4T0RRc016YzFMalUwTERBdU1qUTBlaUl2UGcwS0lDQThMMmMrRFFvOEwyYytEUW84Wno0TkNqd3ZaejROQ2p4blBnMEtQQzluUGcwS1BHYytEUW84TDJjK0RRbzhaejROQ2p3dlp6NE5DanhuUGcwS1BDOW5QZzBLUEdjK0RRbzhMMmMrRFFvOFp6NE5Dand2Wno0TkNqeG5QZzBLUEM5blBnMEtQR2MrRFFvOEwyYytEUW84Wno0TkNqd3ZaejROQ2p4blBnMEtQQzluUGcwS1BHYytEUW84TDJjK0RRbzhaejROQ2p3dlp6NE5DanhuUGcwS1BDOW5QZzBLUEdjK0RRbzhMMmMrRFFvOEwzTjJaejROQ2c9PSIgLz48L3N2Zz4=");
 }
 .wmd-latex-button {
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iNjQiIGhlaWdodD0iNjQiPjxkZWZzPjxmaWx0ZXIgaWQ9ImRhcmtyZWFkZXItaW1hZ2UtZmlsdGVyIj48ZmVDb2xvck1hdHJpeCB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMC4yMDcgLTAuNTA5IC0wLjU1NyAwLjAwMCAwLjg1OSAtMC41MzYgMC4yMzkgLTAuNTUxIDAuMDAwIDAuODQ3IC0wLjUyOCAtMC41MDYgMC4yMDggMC4wMDAgMC44MjUgMC4wMDAgMC4wMDAgMC4wMDAgMS4wMDAgMC4wMDAiIC8+PC9maWx0ZXI+PC9kZWZzPjxpbWFnZSB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbHRlcj0idXJsKCNkYXJrcmVhZGVyLWltYWdlLWZpbHRlcikiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QmxibUZpYkdVdFltRmphMmR5YjNWdVpEMGlibVYzSURBZ01DQTJOQ0EyTkNJZ2FHVnBaMmgwUFNJMk5IQjRJaUJwWkQwaVRHRjVaWEpmTVNJZ2RtVnljMmx2YmowaU1TNHhJaUIyYVdWM1FtOTRQU0l3SURBZ05qUWdOalFpSUhkcFpIUm9QU0kyTkhCNElpQjRiV3c2YzNCaFkyVTlJbkJ5WlhObGNuWmxJaUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lJSGh0Ykc1ek9uaHNhVzVyUFNKb2RIUndPaTh2ZDNkM0xuY3pMbTl5Wnk4eE9UazVMM2hzYVc1cklqNDhjR0YwYUNCa1BTSk5ORFV1TnpNc05qUklNelF1TnpVeVl5MHdMamN4TlN3d0xURXVNamsxTFRBdU1UY3pMVEV1TnpNNExUQXVOVEp6TFRBdU56azBMVEF1TnpVNExURXVNRFUyTFRFdU1qTTBiQzA1TGpRNE5DMHhOaTQxTmpRZ0lHTXRNQzR4TnpRc01DNDBOemd0TUM0ek5qa3NNQzQ0T0RjdE1DNDFPRFFzTVM0eU16UnNMVGd1T0RNMUxERTFMak16WXkwd0xqTXdOQ3d3TGpRek5DMHdMalkyTVN3d0xqZ3pOQzB4TGpBM01pd3hMakl3TVVNeE1TNDFOeklzTmpNdU9ERTJMREV4TGpBME1TdzJOQ3d4TUM0ek9URXNOalJJTUM0eE1qY2dJRXd4TlM0ek5pd3pPUzQyTkRGTU1DNDNNVElzTVRZdU5qYzFTREV4TGpZNVl6QXVOekUwTERBc01TNHlOQ3d3TGpBNU15d3hMalUzTml3d0xqSTNObU13TGpNek5Td3dMakU0TlN3d0xqWXpOQ3d3TGpRNU15d3dMamc1TXl3d0xqa3lObXc1TGpReUxERTFMamswT0NBZ1l6QXVNVEE0TFRBdU1qZ3NNQzR5TXpJdE1DNDFOVElzTUM0ek56UXRNQzQ0TVRKak1DNHhOQzB3TGpJMk1pd3dMakk1Tnkwd0xqVXpNU3d3TGpRM01TMHdMamd4TTJ3NExqSTFMVEUwTGpFMk1XTXdMak13TlMwd0xqUTNOeXd3TGpZeU1pMHdMamd5TXl3d0xqazFPQzB4TGpBMElDQmpNQzR6TXpZdE1DNHlNVGNzTUM0M05USXRNQzR6TWpVc01TNHlOVEV0TUM0ek1qVm9NVEF1TlRJMFRETXdMalUyTWl3ek9TNHhPRFpNTkRVdU56TXNOalI2SWk4K1BIQmhkR2dnWkQwaVRUWXhMamcwTERJekxqZzJZekF1TmpZM0xEQXNNUzR4T1RNc01DNHhPRE1zTVM0MU9Dd3dMalUxWXpBdU16ZzNMREF1TXpZMkxEQXVOVGdzTUM0NE5Td3dMalU0TERFdU5EVjJNeTQyU0RRekxqVXlNWFl0TW1Nd0xUQXVNemczTERBdU1EYzVMVEF1T0N3d0xqSXpPUzB4TGpJMElDQmpNQzR4Tmkwd0xqUXpPU3d3TGpRMExUQXVPRFFzTUM0NE5DMHhMakpzT0M0MExUZ3VORFpqTUM0M01qRXRNQzQzTWl3eExqTTBOeTB4TGpRd05pd3hMamc0TVMweUxqQTJZekF1TlRNekxUQXVOalV6TERBdU9UY3pMVEV1TWprM0xERXVNekU1TFRFdU9UTWdJR013TGpNME55MHdMall6TkN3d0xqWXdOaTB4TGpJMk55d3dMamM0TFRFdU9XTXdMakUzTXkwd0xqWXpNeXd3TGpJMkxURXVNekEwTERBdU1qWXRNaTR3TVdNd0xURXVNVFl0TUM0eU56Y3RNaTR3TlMwd0xqZ3pMVEl1TmpjZ0lHTXRNQzQxTlRNdE1DNDJNaTB4TGpNNU5pMHdMamt6TFRJdU5USTVMVEF1T1ROakxUQXVPVElzTUMweExqWTVOeXd3TGpJME15MHlMak16TERBdU56TmpMVEF1TmpNMExEQXVORGczTFRFdU1EY3NNUzR3T1MweExqTXhNU3d4TGpneElDQmpMVEF1TWpjNUxEQXVOek16TFRBdU5qUTJMREV1TWpJdE1TNHhMREV1TkRaakxUQXVORFV6TERBdU1qUXRNUzR4TERBdU1qa3pMVEV1T1RRc01DNHhObXd0TXk0eU9DMHdMalU0WXpBdU1qRXpMVEV1TkRVekxEQXVOakl6TFRJdU56SXNNUzR5TXkwekxqZ2dJR013TGpZd05pMHhMakE0TERFdU16VTVMVEV1T1Rnc01pNHlOaTB5TGpkak1DNDVMVEF1TnpJc01TNDVNeTB4TGpJMU55d3pMakE1TFRFdU5qRkROVEV1TmpZc01DNHhOemNzTlRJdU9UQTJMREFzTlRRdU1qUXNNR014TGpRek9Td3dMREl1TnpNMkxEQXVNakVzTXk0NE9URXNNQzQyTXlBZ1l6RXVNVFV5TERBdU5ESXNNaTR4TXpjc01TNHdNRE1zTWk0NU5Ea3NNUzQzTldNd0xqZ3hNeXd3TGpjME55d3hMalF6T0N3eExqWXpOeXd4TGpnM0xESXVOamRETmpNdU16Z3pMRFl1TURnekxEWXpMallzTnk0eU1pdzJNeTQyTERndU5EWWdJR013TERFdU1EWTJMVEF1TVRRNUxESXVNRFUwTFRBdU5EUTVMREl1T1RaakxUQXVNekF4TERBdU9UQTNMVEF1TnpFc01TNDNOekV0TVM0eU15d3lMalU1WXkwd0xqVXlMREF1T0RJdE1TNHhNak1zTVM0Mk1UTXRNUzQ0TVN3eUxqTTRJQ0JqTFRBdU5qZzNMREF1TnpZNExURXVOREUzTERFdU5UUTBMVEl1TVRrc01pNHpNMnd0TlM0Mk9Ua3NOUzQ0TkdNd0xqY3pNaTB3TGpJeU55d3hMalExT1Mwd0xqTTVPU3d5TGpFNExUQXVOVEpqTUM0M01pMHdMakV5TERFdU16ZzNMVEF1TVRnc01pMHdMakU0U0RZeExqZzBlaUl2UGp3dmMzWm5QZz09IiAvPjwvc3ZnPg==");
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iNjQiIGhlaWdodD0iNjQiPjxkZWZzPjxmaWx0ZXIgaWQ9ImRhcmtyZWFkZXItaW1hZ2UtZmlsdGVyIj48ZmVDb2xvck1hdHJpeCB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMC4yNDkgLTAuNjE0IC0wLjY3MiAwLjAwMCAxLjAzNSAtMC42NDYgMC4yODggLTAuNjY0IDAuMDAwIDEuMDIwIC0wLjYzNiAtMC42MDkgMC4yNTAgMC4wMDAgMC45OTQgMC4wMDAgMC4wMDAgMC4wMDAgMS4wMDAgMC4wMDAiIC8+PC9maWx0ZXI+PC9kZWZzPjxpbWFnZSB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbHRlcj0idXJsKCNkYXJrcmVhZGVyLWltYWdlLWZpbHRlcikiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QmxibUZpYkdVdFltRmphMmR5YjNWdVpEMGlibVYzSURBZ01DQTJOQ0EyTkNJZ2FHVnBaMmgwUFNJMk5IQjRJaUJwWkQwaVRHRjVaWEpmTVNJZ2RtVnljMmx2YmowaU1TNHhJaUIyYVdWM1FtOTRQU0l3SURBZ05qUWdOalFpSUhkcFpIUm9QU0kyTkhCNElpQjRiV3c2YzNCaFkyVTlJbkJ5WlhObGNuWmxJaUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lJSGh0Ykc1ek9uaHNhVzVyUFNKb2RIUndPaTh2ZDNkM0xuY3pMbTl5Wnk4eE9UazVMM2hzYVc1cklqNDhjR0YwYUNCa1BTSk5ORFV1TnpNc05qUklNelF1TnpVeVl5MHdMamN4TlN3d0xURXVNamsxTFRBdU1UY3pMVEV1TnpNNExUQXVOVEp6TFRBdU56azBMVEF1TnpVNExURXVNRFUyTFRFdU1qTTBiQzA1TGpRNE5DMHhOaTQxTmpRZ0lHTXRNQzR4TnpRc01DNDBOemd0TUM0ek5qa3NNQzQ0T0RjdE1DNDFPRFFzTVM0eU16UnNMVGd1T0RNMUxERTFMak16WXkwd0xqTXdOQ3d3TGpRek5DMHdMalkyTVN3d0xqZ3pOQzB4TGpBM01pd3hMakl3TVVNeE1TNDFOeklzTmpNdU9ERTJMREV4TGpBME1TdzJOQ3d4TUM0ek9URXNOalJJTUM0eE1qY2dJRXd4TlM0ek5pd3pPUzQyTkRGTU1DNDNNVElzTVRZdU5qYzFTREV4TGpZNVl6QXVOekUwTERBc01TNHlOQ3d3TGpBNU15d3hMalUzTml3d0xqSTNObU13TGpNek5Td3dMakU0TlN3d0xqWXpOQ3d3TGpRNU15d3dMamc1TXl3d0xqa3lObXc1TGpReUxERTFMamswT0NBZ1l6QXVNVEE0TFRBdU1qZ3NNQzR5TXpJdE1DNDFOVElzTUM0ek56UXRNQzQ0TVRKak1DNHhOQzB3TGpJMk1pd3dMakk1Tnkwd0xqVXpNU3d3TGpRM01TMHdMamd4TTJ3NExqSTFMVEUwTGpFMk1XTXdMak13TlMwd0xqUTNOeXd3TGpZeU1pMHdMamd5TXl3d0xqazFPQzB4TGpBMElDQmpNQzR6TXpZdE1DNHlNVGNzTUM0M05USXRNQzR6TWpVc01TNHlOVEV0TUM0ek1qVm9NVEF1TlRJMFRETXdMalUyTWl3ek9TNHhPRFpNTkRVdU56TXNOalI2SWk4K1BIQmhkR2dnWkQwaVRUWXhMamcwTERJekxqZzJZekF1TmpZM0xEQXNNUzR4T1RNc01DNHhPRE1zTVM0MU9Dd3dMalUxWXpBdU16ZzNMREF1TXpZMkxEQXVOVGdzTUM0NE5Td3dMalU0TERFdU5EVjJNeTQyU0RRekxqVXlNWFl0TW1Nd0xUQXVNemczTERBdU1EYzVMVEF1T0N3d0xqSXpPUzB4TGpJMElDQmpNQzR4Tmkwd0xqUXpPU3d3TGpRMExUQXVPRFFzTUM0NE5DMHhMakpzT0M0MExUZ3VORFpqTUM0M01qRXRNQzQzTWl3eExqTTBOeTB4TGpRd05pd3hMamc0TVMweUxqQTJZekF1TlRNekxUQXVOalV6TERBdU9UY3pMVEV1TWprM0xERXVNekU1TFRFdU9UTWdJR013TGpNME55MHdMall6TkN3d0xqWXdOaTB4TGpJMk55d3dMamM0TFRFdU9XTXdMakUzTXkwd0xqWXpNeXd3TGpJMkxURXVNekEwTERBdU1qWXRNaTR3TVdNd0xURXVNVFl0TUM0eU56Y3RNaTR3TlMwd0xqZ3pMVEl1TmpjZ0lHTXRNQzQxTlRNdE1DNDJNaTB4TGpNNU5pMHdMamt6TFRJdU5USTVMVEF1T1ROakxUQXVPVElzTUMweExqWTVOeXd3TGpJME15MHlMak16TERBdU56TmpMVEF1TmpNMExEQXVORGczTFRFdU1EY3NNUzR3T1MweExqTXhNU3d4TGpneElDQmpMVEF1TWpjNUxEQXVOek16TFRBdU5qUTJMREV1TWpJdE1TNHhMREV1TkRaakxUQXVORFV6TERBdU1qUXRNUzR4TERBdU1qa3pMVEV1T1RRc01DNHhObXd0TXk0eU9DMHdMalU0WXpBdU1qRXpMVEV1TkRVekxEQXVOakl6TFRJdU56SXNNUzR5TXkwekxqZ2dJR013TGpZd05pMHhMakE0TERFdU16VTVMVEV1T1Rnc01pNHlOaTB5TGpkak1DNDVMVEF1TnpJc01TNDVNeTB4TGpJMU55d3pMakE1TFRFdU5qRkROVEV1TmpZc01DNHhOemNzTlRJdU9UQTJMREFzTlRRdU1qUXNNR014TGpRek9Td3dMREl1TnpNMkxEQXVNakVzTXk0NE9URXNNQzQyTXlBZ1l6RXVNVFV5TERBdU5ESXNNaTR4TXpjc01TNHdNRE1zTWk0NU5Ea3NNUzQzTldNd0xqZ3hNeXd3TGpjME55d3hMalF6T0N3eExqWXpOeXd4TGpnM0xESXVOamRETmpNdU16Z3pMRFl1TURnekxEWXpMallzTnk0eU1pdzJNeTQyTERndU5EWWdJR013TERFdU1EWTJMVEF1TVRRNUxESXVNRFUwTFRBdU5EUTVMREl1T1RaakxUQXVNekF4TERBdU9UQTNMVEF1TnpFc01TNDNOekV0TVM0eU15d3lMalU1WXkwd0xqVXlMREF1T0RJdE1TNHhNak1zTVM0Mk1UTXRNUzQ0TVN3eUxqTTRJQ0JqTFRBdU5qZzNMREF1TnpZNExURXVOREUzTERFdU5UUTBMVEl1TVRrc01pNHpNMnd0TlM0Mk9Ua3NOUzQ0TkdNd0xqY3pNaTB3TGpJeU55d3hMalExT1Mwd0xqTTVPU3d5TGpFNExUQXVOVEpqTUM0M01pMHdMakV5TERFdU16ZzNMVEF1TVRnc01pMHdMakU0U0RZeExqZzBlaUl2UGp3dmMzWm5QZz09IiAvPjwvc3ZnPg==");
 }
 .wmd-latex-button-display {
     background-image: url("http://localhost:8000/static/pagedown/resources/latex-display.svg");
@@ -3233,10 +3237,10 @@ a.voted {
     background-image: url("http://localhost:8000/static/pagedown/resources/link.svg");
 }
 .wmd-user-reference-button {
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiPjxkZWZzPjxmaWx0ZXIgaWQ9ImRhcmtyZWFkZXItaW1hZ2UtZmlsdGVyIj48ZmVDb2xvck1hdHJpeCB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMC4yMDcgLTAuNTA5IC0wLjU1NyAwLjAwMCAwLjg1OSAtMC41MzYgMC4yMzkgLTAuNTUxIDAuMDAwIDAuODQ3IC0wLjUyOCAtMC41MDYgMC4yMDggMC4wMDAgMC44MjUgMC4wMDAgMC4wMDAgMC4wMDAgMS4wMDAgMC4wMDAiIC8+PC9maWx0ZXI+PC9kZWZzPjxpbWFnZSB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbHRlcj0idXJsKCNkYXJrcmVhZGVyLWltYWdlLWZpbHRlcikiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEQ5NGJXd2dkbVZ5YzJsdmJqMGlNUzR3SWlBL1BqeHpkbWNnYUdWcFoyaDBQU0l5TkNJZ2RtVnljMmx2YmowaU1TNHhJaUIzYVdSMGFEMGlNalFpSUhodGJHNXpQU0pvZEhSd09pOHZkM2QzTG5jekxtOXlaeTh5TURBd0wzTjJaeUlnZUcxc2JuTTZZMk05SW1oMGRIQTZMeTlqY21WaGRHbDJaV052YlcxdmJuTXViM0puTDI1ekl5SWdlRzFzYm5NNlpHTTlJbWgwZEhBNkx5OXdkWEpzTG05eVp5OWtZeTlsYkdWdFpXNTBjeTh4TGpFdklpQjRiV3h1Y3pweVpHWTlJbWgwZEhBNkx5OTNkM2N1ZHpNdWIzSm5MekU1T1Rrdk1ESXZNakl0Y21SbUxYTjViblJoZUMxdWN5TWlQanhuSUhSeVlXNXpabTl5YlQwaWRISmhibk5zWVhSbEtEQWdMVEV3TWpndU5Da2lQanh3WVhSb0lHUTlJbTB4TWlBd1l5MHdMalF3TlNBd0xUQXVPREExSURBdU1EWXdNekkyTFRFdU1UZzRJREF1TVRVMk1qVXRNQzR5TWpRZ01DNHdOVFkzT0Mwd0xqUTBJREF1TVRNeE16VXRNQzQyTlRZZ01DNHlNVGczTlMwd0xqQTRNeUF3TGpBek5EQXhMVEF1TVRZM09TQXdMakExTlRNMExUQXVNalE1T0NBd0xqQTVNemMxTFRBdU1ETTBJREF1TURFMU9ETXRNQzR3TmlBd0xqQTBOVGswTFRBdU1Ea3pOeUF3TGpBMk1qVXRNQzR5TURNeUlEQXVNVEF3TlRndE1DNDBNREl4SURBdU1qRTNNRFF0TUM0MU9UTTNJREF1TXpRek56VXRNQzR3TWpjZ01DNHdNVGMwTFRBdU1EWTNNU0F3TGpBeE16TTVMVEF1TURrek9DQXdMakF6TVRJMUxUQXVNRFUyTXlBd0xqQXpPRFkwTFRBdU1UQXhJREF1TURnME1Ua3RNQzR4TlRZeUlEQXVNVEkwT1RVdE1DNHhOVFk1SURBdU1URXlOaTB3TGpNeU1UWWdNQzR5TVRZdE1DNDBOamc0SURBdU16UXpPQzB3TGpFek5ESWdNQzR4TWpBM0xUQXVNalE1TkNBd0xqSTNNalF0TUM0ek56VWdNQzQwTURZeUxUQXVOREkxTVNBd0xqUXpOVGt0TUM0M09UTTJJREF1T0RrM01TMHhMakE1TXpnZ01TNDBNemMyTFRBdU5URTFOQ0F3TGprd016UXRNQzQ1TURBeUlERXVPVEl3TlMweExqQTJNalFnTWk0NU5qZzNMVEF1TURjNE15MHdMakF4TmpVdE1DNHhOVEF4TFRBdU1ESXlOQzB3TGpJeE9EZ2dNQzB3TGpVeU5URWdNQzR4TnpFdE1DNDJOVFExSURFdU1UWTROUzB3TGpNeE1qVWdNaTR5TVRnM0lEQXVNakF3TnlBd0xqWXhOak1nTUM0MU16UTJJREV1TVRBeE5TQXdMamczTlNBeExqTTNOU0F3TGpRMU56TWdNUzQzTnpjNElERXVOREkxTnlBekxqSTFPVGdnTWk0Mk9EYzFJRFF1TVRnM09IWXhMakF6TVd3dE1TQXhMVElnTVdNdE1TNDJNVGN6SURBdU9EQXhMVE11TWpJNE5DQXhMall3TlMwMExqZzBNemdnTWk0ME1EWXRNQzQ0T1RVeE15QXdMalUwTFRFdU1qUXhOU0F4TGpZdE1TNHhOVFl5SURJdU5UazBJREF1TURReE5qWTBJREF1TmpJMkxUQXVNVGcwTkRnZ01TNDBNamNnTUM0ME16YzFJREV1T0RRMElEQXVOVGt3T1NBd0xqTXdOQ0F4TGpJNU5Ua2dNQzR4TURZZ01TNDVNemMxSURBdU1UVTJJREV1T0RjMk5pMHdMakF3TVNBekxqYzBPRFFnTUNBMUxqWXlOU0F3SURJdU5qWTVJREF1TURBeElEVXVNek14SURBZ09DQXdJREl1TXpZM0lEQWdOQzQzTWpjZ01DNHdNRFFnTnk0d09UUWdNQ0F3TGpjMk9DMHdMakExTkNBd0xqazRNUzB3TGpnMk5TQXdMamt3TmkweExqVWdNQzR3TVRRdE1DNDVNeklnTUM0d05qa3RNUzQ1TnpZdE1DNDJOVFl0TWk0Mk9EZ3RNQzQxT1RJdE1DNDJNREl0TVM0ME16UXRNQzQ0TkMweUxqRTFOaTB4TGpJMUxURXVNRFl4TFRBdU5USTFMVEl1TVRJNExURXVNRE0zTFRNdU1UZzRMVEV1TlRZeWJDMHlMVEV0TVMweGRpMHhMakF6TVdNeExqSTJNaTB3TGpreU9DQXlMakl6TFRJdU5ERWdNaTQyT0RndE5DNHhPRGM0SURBdU16UXRNQzR5TnpNMklEQXVOamMwTFRBdU56VTRPQ0F3TGpnM05DMHhMak0zTlNBd0xqTTBNaTB4TGpBMU1ESWdNQzR5TVRNdE1pNHdORGMzTFRBdU16RXlMVEl1TWpFNE55MHdMakEyT1Mwd0xqQXlNalF0TUM0eE5DMHdMakF4TmpVdE1DNHlNVGtnTUMwd0xqRTJNaTB4TGpBME9ESXRNQzQxTkRjdE1pNHdOalV6TFRFdU1EWXlMVEl1T1RZNE55MHdMak10TUM0MU5EQTFMVEF1TmpZNUxURXVNREF4TnkweExqQTVOQzB4TGpRek56WXRNQzR4TWpZdE1DNHhNek00TFRBdU1qUXhMVEF1TWpnMU5TMHdMak0zTlMwd0xqUXdOakl0TUM0d01EWXRNQzR3TURVMUxUQXVNREkxSURBdU1EQTFOUzB3TGpBek1TQXdMVEF1TXpreUxUQXVNelE1T1Mwd0xqZ3lOeTB3TGpZeE9EazBMVEV1TWpneExUQXVPRFF6TnpVdE1DNHhNVFV0TUM0d05UWXlNaTB3TGpJeU55MHdMakV3T0RVMExUQXVNelEwTFRBdU1UVTJNalV0TUM0d09EUXRNQzR3TXpRd01TMHdMakUyTlMwd0xqQTJOREkyTFRBdU1qVXRNQzR3T1RNM05TMHdMakkxTlMwd0xqQTRPRFE0TFRBdU5URTJMVEF1TVRjek5UWXRNQzQzT0RJdE1DNHlNVGczTlMwd0xqQXlMVEF1TURBek5EQTFMVEF1TURReUlEQXVNREF6TVRRNExUQXVNRFl5SURBdE1DNHlORGt0TUM0d016a3hORFF0TUM0ME9UVXRNQzR3TmpVeU5TMHdMamMxTFRBdU1EWXlOWG9pSUdacGJHdzlJaU16TkRRNU5XVWlJSFJ5WVc1elptOXliVDBpZEhKaGJuTnNZWFJsS0RBZ01UQXlPQzQwS1NJdlBqeHdZWFJvSUdROUltMHdJREV3TlRFdU5HTXdMakF5TmpReE9TQXdMak1nTUM0eE1qWTFNU0F3TGpZZ01DNDBNemMxSURBdU9DQXdMalU1TURrZ01DNHpJREV1TWprMU9TQXdMakVnTVM0NU16YzFJREF1TW1nMUxqWXlOU0E0SURjdU1EazBZekF1TlRjMkxUQXVNU0F3TGpnME1pMHdMalVnTUM0NU1EWXRNV2d0TWpSNklpQm1hV3hzUFNJak1tTXpaVFV3SWk4K1BDOW5Qand2YzNablBnPT0iIC8+PC9zdmc+");
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiPjxkZWZzPjxmaWx0ZXIgaWQ9ImRhcmtyZWFkZXItaW1hZ2UtZmlsdGVyIj48ZmVDb2xvck1hdHJpeCB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMC4yNDkgLTAuNjE0IC0wLjY3MiAwLjAwMCAxLjAzNSAtMC42NDYgMC4yODggLTAuNjY0IDAuMDAwIDEuMDIwIC0wLjYzNiAtMC42MDkgMC4yNTAgMC4wMDAgMC45OTQgMC4wMDAgMC4wMDAgMC4wMDAgMS4wMDAgMC4wMDAiIC8+PC9maWx0ZXI+PC9kZWZzPjxpbWFnZSB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbHRlcj0idXJsKCNkYXJrcmVhZGVyLWltYWdlLWZpbHRlcikiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEQ5NGJXd2dkbVZ5YzJsdmJqMGlNUzR3SWlBL1BqeHpkbWNnYUdWcFoyaDBQU0l5TkNJZ2RtVnljMmx2YmowaU1TNHhJaUIzYVdSMGFEMGlNalFpSUhodGJHNXpQU0pvZEhSd09pOHZkM2QzTG5jekxtOXlaeTh5TURBd0wzTjJaeUlnZUcxc2JuTTZZMk05SW1oMGRIQTZMeTlqY21WaGRHbDJaV052YlcxdmJuTXViM0puTDI1ekl5SWdlRzFzYm5NNlpHTTlJbWgwZEhBNkx5OXdkWEpzTG05eVp5OWtZeTlsYkdWdFpXNTBjeTh4TGpFdklpQjRiV3h1Y3pweVpHWTlJbWgwZEhBNkx5OTNkM2N1ZHpNdWIzSm5MekU1T1Rrdk1ESXZNakl0Y21SbUxYTjViblJoZUMxdWN5TWlQanhuSUhSeVlXNXpabTl5YlQwaWRISmhibk5zWVhSbEtEQWdMVEV3TWpndU5Da2lQanh3WVhSb0lHUTlJbTB4TWlBd1l5MHdMalF3TlNBd0xUQXVPREExSURBdU1EWXdNekkyTFRFdU1UZzRJREF1TVRVMk1qVXRNQzR5TWpRZ01DNHdOVFkzT0Mwd0xqUTBJREF1TVRNeE16VXRNQzQyTlRZZ01DNHlNVGczTlMwd0xqQTRNeUF3TGpBek5EQXhMVEF1TVRZM09TQXdMakExTlRNMExUQXVNalE1T0NBd0xqQTVNemMxTFRBdU1ETTBJREF1TURFMU9ETXRNQzR3TmlBd0xqQTBOVGswTFRBdU1Ea3pOeUF3TGpBMk1qVXRNQzR5TURNeUlEQXVNVEF3TlRndE1DNDBNREl4SURBdU1qRTNNRFF0TUM0MU9UTTNJREF1TXpRek56VXRNQzR3TWpjZ01DNHdNVGMwTFRBdU1EWTNNU0F3TGpBeE16TTVMVEF1TURrek9DQXdMakF6TVRJMUxUQXVNRFUyTXlBd0xqQXpPRFkwTFRBdU1UQXhJREF1TURnME1Ua3RNQzR4TlRZeUlEQXVNVEkwT1RVdE1DNHhOVFk1SURBdU1URXlOaTB3TGpNeU1UWWdNQzR5TVRZdE1DNDBOamc0SURBdU16UXpPQzB3TGpFek5ESWdNQzR4TWpBM0xUQXVNalE1TkNBd0xqSTNNalF0TUM0ek56VWdNQzQwTURZeUxUQXVOREkxTVNBd0xqUXpOVGt0TUM0M09UTTJJREF1T0RrM01TMHhMakE1TXpnZ01TNDBNemMyTFRBdU5URTFOQ0F3TGprd016UXRNQzQ1TURBeUlERXVPVEl3TlMweExqQTJNalFnTWk0NU5qZzNMVEF1TURjNE15MHdMakF4TmpVdE1DNHhOVEF4TFRBdU1ESXlOQzB3TGpJeE9EZ2dNQzB3TGpVeU5URWdNQzR4TnpFdE1DNDJOVFExSURFdU1UWTROUzB3TGpNeE1qVWdNaTR5TVRnM0lEQXVNakF3TnlBd0xqWXhOak1nTUM0MU16UTJJREV1TVRBeE5TQXdMamczTlNBeExqTTNOU0F3TGpRMU56TWdNUzQzTnpjNElERXVOREkxTnlBekxqSTFPVGdnTWk0Mk9EYzFJRFF1TVRnM09IWXhMakF6TVd3dE1TQXhMVElnTVdNdE1TNDJNVGN6SURBdU9EQXhMVE11TWpJNE5DQXhMall3TlMwMExqZzBNemdnTWk0ME1EWXRNQzQ0T1RVeE15QXdMalUwTFRFdU1qUXhOU0F4TGpZdE1TNHhOVFl5SURJdU5UazBJREF1TURReE5qWTBJREF1TmpJMkxUQXVNVGcwTkRnZ01TNDBNamNnTUM0ME16YzFJREV1T0RRMElEQXVOVGt3T1NBd0xqTXdOQ0F4TGpJNU5Ua2dNQzR4TURZZ01TNDVNemMxSURBdU1UVTJJREV1T0RjMk5pMHdMakF3TVNBekxqYzBPRFFnTUNBMUxqWXlOU0F3SURJdU5qWTVJREF1TURBeElEVXVNek14SURBZ09DQXdJREl1TXpZM0lEQWdOQzQzTWpjZ01DNHdNRFFnTnk0d09UUWdNQ0F3TGpjMk9DMHdMakExTkNBd0xqazRNUzB3TGpnMk5TQXdMamt3TmkweExqVWdNQzR3TVRRdE1DNDVNeklnTUM0d05qa3RNUzQ1TnpZdE1DNDJOVFl0TWk0Mk9EZ3RNQzQxT1RJdE1DNDJNREl0TVM0ME16UXRNQzQ0TkMweUxqRTFOaTB4TGpJMUxURXVNRFl4TFRBdU5USTFMVEl1TVRJNExURXVNRE0zTFRNdU1UZzRMVEV1TlRZeWJDMHlMVEV0TVMweGRpMHhMakF6TVdNeExqSTJNaTB3TGpreU9DQXlMakl6TFRJdU5ERWdNaTQyT0RndE5DNHhPRGM0SURBdU16UXRNQzR5TnpNMklEQXVOamMwTFRBdU56VTRPQ0F3TGpnM05DMHhMak0zTlNBd0xqTTBNaTB4TGpBMU1ESWdNQzR5TVRNdE1pNHdORGMzTFRBdU16RXlMVEl1TWpFNE55MHdMakEyT1Mwd0xqQXlNalF0TUM0eE5DMHdMakF4TmpVdE1DNHlNVGtnTUMwd0xqRTJNaTB4TGpBME9ESXRNQzQxTkRjdE1pNHdOalV6TFRFdU1EWXlMVEl1T1RZNE55MHdMak10TUM0MU5EQTFMVEF1TmpZNUxURXVNREF4TnkweExqQTVOQzB4TGpRek56WXRNQzR4TWpZdE1DNHhNek00TFRBdU1qUXhMVEF1TWpnMU5TMHdMak0zTlMwd0xqUXdOakl0TUM0d01EWXRNQzR3TURVMUxUQXVNREkxSURBdU1EQTFOUzB3TGpBek1TQXdMVEF1TXpreUxUQXVNelE1T1Mwd0xqZ3lOeTB3TGpZeE9EazBMVEV1TWpneExUQXVPRFF6TnpVdE1DNHhNVFV0TUM0d05UWXlNaTB3TGpJeU55MHdMakV3T0RVMExUQXVNelEwTFRBdU1UVTJNalV0TUM0d09EUXRNQzR3TXpRd01TMHdMakUyTlMwd0xqQTJOREkyTFRBdU1qVXRNQzR3T1RNM05TMHdMakkxTlMwd0xqQTRPRFE0TFRBdU5URTJMVEF1TVRjek5UWXRNQzQzT0RJdE1DNHlNVGczTlMwd0xqQXlMVEF1TURBek5EQTFMVEF1TURReUlEQXVNREF6TVRRNExUQXVNRFl5SURBdE1DNHlORGt0TUM0d016a3hORFF0TUM0ME9UVXRNQzR3TmpVeU5TMHdMamMxTFRBdU1EWXlOWG9pSUdacGJHdzlJaU16TkRRNU5XVWlJSFJ5WVc1elptOXliVDBpZEhKaGJuTnNZWFJsS0RBZ01UQXlPQzQwS1NJdlBqeHdZWFJvSUdROUltMHdJREV3TlRFdU5HTXdMakF5TmpReE9TQXdMak1nTUM0eE1qWTFNU0F3TGpZZ01DNDBNemMxSURBdU9DQXdMalU1TURrZ01DNHpJREV1TWprMU9TQXdMakVnTVM0NU16YzFJREF1TW1nMUxqWXlOU0E0SURjdU1EazBZekF1TlRjMkxUQXVNU0F3TGpnME1pMHdMalVnTUM0NU1EWXRNV2d0TWpSNklpQm1hV3hzUFNJak1tTXpaVFV3SWk4K1BDOW5Qand2YzNablBnPT0iIC8+PC9zdmc+");
 }
 .wmd-quote-button {
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iNDgiIGhlaWdodD0iNDgiPjxkZWZzPjxmaWx0ZXIgaWQ9ImRhcmtyZWFkZXItaW1hZ2UtZmlsdGVyIj48ZmVDb2xvck1hdHJpeCB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMC4yMDcgLTAuNTA5IC0wLjU1NyAwLjAwMCAwLjg1OSAtMC41MzYgMC4yMzkgLTAuNTUxIDAuMDAwIDAuODQ3IC0wLjUyOCAtMC41MDYgMC4yMDggMC4wMDAgMC44MjUgMC4wMDAgMC4wMDAgMC4wMDAgMS4wMDAgMC4wMDAiIC8+PC9maWx0ZXI+PC9kZWZzPjxpbWFnZSB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIGZpbHRlcj0idXJsKCNkYXJrcmVhZGVyLWltYWdlLWZpbHRlcikiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEQ5NGJXd2dkbVZ5YzJsdmJqMGlNUzR3SWlBL1Bqd2hSRTlEVkZsUVJTQnpkbWNnSUZCVlFreEpReUFuTFM4dlZ6TkRMeTlFVkVRZ1UxWkhJREV1TVM4dlJVNG5JQ0FuYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2UjNKaGNHaHBZM012VTFaSEx6RXVNUzlFVkVRdmMzWm5NVEV1WkhSa0p6NDhjM1puSUdWdVlXSnNaUzFpWVdOclozSnZkVzVrUFNKdVpYY2dNQ0F3SURRNElEUTRJaUJvWldsbmFIUTlJalE0Y0hnaUlHbGtQU0pNWVhsbGNsOHpJaUIyWlhKemFXOXVQU0l4TGpFaUlIWnBaWGRDYjNnOUlqQWdNQ0EwT0NBME9DSWdkMmxrZEdnOUlqUTRjSGdpSUhodGJEcHpjR0ZqWlQwaWNISmxjMlZ5ZG1VaUlIaHRiRzV6UFNKb2RIUndPaTh2ZDNkM0xuY3pMbTl5Wnk4eU1EQXdMM04yWnlJZ2VHMXNibk02ZUd4cGJtczlJbWgwZEhBNkx5OTNkM2N1ZHpNdWIzSm5MekU1T1RrdmVHeHBibXNpUGp4blBqeHdZWFJvSUdROUlrMHdMREk0TGpNM05XZ3hNaTQyTjJNdE1DNHdOaklzTXk0ek1TMHhMak16T0N3MkxqTXhNeTB6TGpRd015dzRMalpqTFRBdU9UUTFMREF1T0RreUxURXVPVGd5TERFdU5EQTRMVEl1T0RjNUxERXVOekEySUNBZ1l5MHhMakVzTUM0ek1qZ3RNaTR5Tml3d0xqTTVOaTB5TGpnNE15d3dMalF3T0Vnd2RqSXVNamcyYURndU56VjJMVEF1TURBell6Y3VNakExTFRBdU1ETXlMREV6TGpBME15MDFMamd4Tml3eE15NHhOemN0TVRJdU9UazNTREl5ZGkweU1rZ3dWakk0TGpNM05Yb2lJR1pwYkd3OUlpTXlOREZHTWpBaUx6NDhjR0YwYUNCa1BTSk5NallzTmk0ek56VjJNakpvTVRJdU56UmpNQ3d5TGprNU1TMHhMRFV1TnpReUxUSXVOamMwTERjdU9UVTJZeTB3TGpnek9Td3hMakE0T1MweExqZ3lPQ3d4TGpjNU1pMHlMamMyTVN3eUxqSXpNeUFnSUdNdE1DNHdNRGdzTUM0d01EUXRNQzR3TVRZc01DNHdNRGd0TUM0d01qTXNNQzR3TVRKakxUQXVNVE01TERBdU1EWTFMVEF1TWpjMExEQXVNVEl5TFRBdU5EQTVMREF1TVRjMll5MHhMalV4TkN3d0xqVTFOeTB6TGpreE5Td3dMalU0Tnkwekxqa3hOU3d3TGpVNE4wZ3lObll5TGpJNE5tZzRMamMxSUNBZ1l6Y3VNekUzTERBc01UTXVNalV0TlM0NU16TXNNVE11TWpVdE1UTXVNalYyTFRJeVNESTJlaUlnWm1sc2JEMGlJekkwTVVZeU1DSXZQand2Wno0OEwzTjJaejQ9IiAvPjwvc3ZnPg==");
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iNDgiIGhlaWdodD0iNDgiPjxkZWZzPjxmaWx0ZXIgaWQ9ImRhcmtyZWFkZXItaW1hZ2UtZmlsdGVyIj48ZmVDb2xvck1hdHJpeCB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMC4yNDkgLTAuNjE0IC0wLjY3MiAwLjAwMCAxLjAzNSAtMC42NDYgMC4yODggLTAuNjY0IDAuMDAwIDEuMDIwIC0wLjYzNiAtMC42MDkgMC4yNTAgMC4wMDAgMC45OTQgMC4wMDAgMC4wMDAgMC4wMDAgMS4wMDAgMC4wMDAiIC8+PC9maWx0ZXI+PC9kZWZzPjxpbWFnZSB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIGZpbHRlcj0idXJsKCNkYXJrcmVhZGVyLWltYWdlLWZpbHRlcikiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEQ5NGJXd2dkbVZ5YzJsdmJqMGlNUzR3SWlBL1Bqd2hSRTlEVkZsUVJTQnpkbWNnSUZCVlFreEpReUFuTFM4dlZ6TkRMeTlFVkVRZ1UxWkhJREV1TVM4dlJVNG5JQ0FuYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2UjNKaGNHaHBZM012VTFaSEx6RXVNUzlFVkVRdmMzWm5NVEV1WkhSa0p6NDhjM1puSUdWdVlXSnNaUzFpWVdOclozSnZkVzVrUFNKdVpYY2dNQ0F3SURRNElEUTRJaUJvWldsbmFIUTlJalE0Y0hnaUlHbGtQU0pNWVhsbGNsOHpJaUIyWlhKemFXOXVQU0l4TGpFaUlIWnBaWGRDYjNnOUlqQWdNQ0EwT0NBME9DSWdkMmxrZEdnOUlqUTRjSGdpSUhodGJEcHpjR0ZqWlQwaWNISmxjMlZ5ZG1VaUlIaHRiRzV6UFNKb2RIUndPaTh2ZDNkM0xuY3pMbTl5Wnk4eU1EQXdMM04yWnlJZ2VHMXNibk02ZUd4cGJtczlJbWgwZEhBNkx5OTNkM2N1ZHpNdWIzSm5MekU1T1RrdmVHeHBibXNpUGp4blBqeHdZWFJvSUdROUlrMHdMREk0TGpNM05XZ3hNaTQyTjJNdE1DNHdOaklzTXk0ek1TMHhMak16T0N3MkxqTXhNeTB6TGpRd015dzRMalpqTFRBdU9UUTFMREF1T0RreUxURXVPVGd5TERFdU5EQTRMVEl1T0RjNUxERXVOekEySUNBZ1l5MHhMakVzTUM0ek1qZ3RNaTR5Tml3d0xqTTVOaTB5TGpnNE15d3dMalF3T0Vnd2RqSXVNamcyYURndU56VjJMVEF1TURBell6Y3VNakExTFRBdU1ETXlMREV6TGpBME15MDFMamd4Tml3eE15NHhOemN0TVRJdU9UazNTREl5ZGkweU1rZ3dWakk0TGpNM05Yb2lJR1pwYkd3OUlpTXlOREZHTWpBaUx6NDhjR0YwYUNCa1BTSk5NallzTmk0ek56VjJNakpvTVRJdU56UmpNQ3d5TGprNU1TMHhMRFV1TnpReUxUSXVOamMwTERjdU9UVTJZeTB3TGpnek9Td3hMakE0T1MweExqZ3lPQ3d4TGpjNU1pMHlMamMyTVN3eUxqSXpNeUFnSUdNdE1DNHdNRGdzTUM0d01EUXRNQzR3TVRZc01DNHdNRGd0TUM0d01qTXNNQzR3TVRKakxUQXVNVE01TERBdU1EWTFMVEF1TWpjMExEQXVNVEl5TFRBdU5EQTVMREF1TVRjMll5MHhMalV4TkN3d0xqVTFOeTB6TGpreE5Td3dMalU0Tnkwekxqa3hOU3d3TGpVNE4wZ3lObll5TGpJNE5tZzRMamMxSUNBZ1l6Y3VNekUzTERBc01UTXVNalV0TlM0NU16TXNNVE11TWpVdE1UTXVNalYyTFRJeVNESTJlaUlnWm1sc2JEMGlJekkwTVVZeU1DSXZQand2Wno0OEwzTjJaejQ9IiAvPjwvc3ZnPg==");
 }
 .wmd-code-button {
     background-image: url("http://localhost:8000/static/pagedown/resources/code.svg");
@@ -3245,16 +3249,16 @@ a.voted {
     background-image: url("http://localhost:8000/static/pagedown/resources/image.svg");
 }
 .wmd-olist-button {
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiPjxkZWZzPjxmaWx0ZXIgaWQ9ImRhcmtyZWFkZXItaW1hZ2UtZmlsdGVyIj48ZmVDb2xvck1hdHJpeCB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMC4yMDcgLTAuNTA5IC0wLjU1NyAwLjAwMCAwLjg1OSAtMC41MzYgMC4yMzkgLTAuNTUxIDAuMDAwIDAuODQ3IC0wLjUyOCAtMC41MDYgMC4yMDggMC4wMDAgMC44MjUgMC4wMDAgMC4wMDAgMC4wMDAgMS4wMDAgMC4wMDAiIC8+PC9maWx0ZXI+PC9kZWZzPjxpbWFnZSB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbHRlcj0idXJsKCNkYXJrcmVhZGVyLWltYWdlLWZpbHRlcikiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEQ5NGJXd2dkbVZ5YzJsdmJqMGlNUzR3SWlBL1BqeHpkbWNnWm1sc2JEMGlibTl1WlNJZ2FHVnBaMmgwUFNJeU5DSWdkbWxsZDBKdmVEMGlNQ0F3SURJMElESTBJaUIzYVdSMGFEMGlNalFpSUhodGJHNXpQU0pvZEhSd09pOHZkM2QzTG5jekxtOXlaeTh5TURBd0wzTjJaeUkrUEhCaGRHZ2daRDBpVFRZdU1EQXdNU0F5TGpjMVF6WXVNREF3TVNBeUxqTTVOVGMzSURVdU56VXlNamNnTWk0d09EazROQ0ExTGpRd05UYzJJREl1TURFMk16TkROUzR3TmpBeE1TQXhMamswTXlBMExqY3hNRE1nTWk0eE1qQTROaUEwTGpVMk5UZ2dNaTQwTkRNd00wdzBMalUyTkRJMklESXVORFEyTXpkRE5DNDFOakl5TmlBeUxqUTFNRFkzSURRdU5UVTRORElnTWk0ME5UZzRNU0EwTGpVMU1qYzFJREl1TkRjd05ESkROQzQxTkRFMElESXVORGt6TmpZZ05DNDFNakk0TWlBeUxqVXpNRFUxSURRdU5EazNNRFFnTWk0MU56Z3dPRU0wTGpRME5USTNJREl1Tmpjek5UWWdOQzR6TmpVNE5DQXlMamd3T1RRMUlEUXVNalU1TkNBeUxqazJNalE0UXpRdU1EUXhOellnTXk0eU56VXpOeUF6TGpjek5UTTRJRE11TmpJME9EZ2dNeTR6TlRJM05TQXpMamcyTXpreFF6TXVNREF4TkRRZ05DNHdPRE16TmlBeUxqZzVORFUySURRdU5UUTJNRFVnTXk0eE1UUXdNU0EwTGpnNU56TTFRek11TXpNek5EWWdOUzR5TkRnMk5pQXpMamM1TmpFMUlEVXVNelUxTlRRZ05DNHhORGMwTmlBMUxqRXpOakE1UXpRdU1qY3lNRFVnTlM0d05UZ3lOaUEwTGpNNE9UVTJJRFF1T1RjME56TWdOQzQxTURBeElEUXVPRGczTmpWV055NHlOVU0wTGpVd01ERWdOeTQyTmpReU1TQTBMamd6TlRnNUlEZ2dOUzR5TlRBeElEaEROUzQyTmpRek1TQTRJRFl1TURBd01TQTNMalkyTkRJeElEWXVNREF3TVNBM0xqSTFWakl1TnpWYUlpQm1hV3hzUFNJak1qRXlNVEl4SWk4K1BIQmhkR2dnWkQwaVRURTVMalE1T1RVZ01UaElNVEF1T1RrNU5Vd3hNQzQ0T0RJNUlERTRMakF3TmpkRE1UQXVNemcxTmlBeE9DNHdOalExSURrdU9UazVOVEVnTVRndU5EZzNNaUE1TGprNU9UVXhJREU1UXprdU9UazVOVEVnTVRrdU5UVXlNeUF4TUM0ME5EY3lJREl3SURFd0xqazVPVFVnTWpCSU1Ua3VORGs1TlV3eE9TNDJNVFl4SURFNUxqazVNek5ETWpBdU1URXpOU0F4T1M0NU16VTFJREl3TGpRNU9UVWdNVGt1TlRFeU9DQXlNQzQwT1RrMUlERTVRekl3TGpRNU9UVWdNVGd1TkRRM055QXlNQzR3TlRFNElERTRJREU1TGpRNU9UVWdNVGhhSWlCbWFXeHNQU0lqTWpFeU1USXhJaTgrUEhCaGRHZ2daRDBpVFRFNUxqUTVPVFVnTVRFdU5VZ3hNQzQ1T1RrMVRERXdMamc0TWprZ01URXVOVEEyTjBNeE1DNHpPRFUySURFeExqVTJORFVnT1M0NU9UazFNU0F4TVM0NU9EY3lJRGt1T1RrNU5URWdNVEl1TlVNNUxqazVPVFV4SURFekxqQTFNak1nTVRBdU5EUTNNaUF4TXk0MUlERXdMams1T1RVZ01UTXVOVWd4T1M0ME9UazFUREU1TGpZeE5qRWdNVE11TkRrek0wTXlNQzR4TVRNMUlERXpMalF6TlRVZ01qQXVORGs1TlNBeE15NHdNVEk0SURJd0xqUTVPVFVnTVRJdU5VTXlNQzQwT1RrMUlERXhMamswTnpjZ01qQXVNRFV4T0NBeE1TNDFJREU1TGpRNU9UVWdNVEV1TlZvaUlHWnBiR3c5SWlNeU1USXhNakVpTHo0OGNHRjBhQ0JrUFNKTk1Ua3VORGs1TlNBMVNERXdMams1T1RWTU1UQXVPRGd5T1NBMUxqQXdOamN6UXpFd0xqTTROVFlnTlM0d05qUTBPU0E1TGprNU9UVXhJRFV1TkRnM01UWWdPUzQ1T1RrMU1TQTJRemt1T1RrNU5URWdOaTQxTlRJeU9DQXhNQzQwTkRjeUlEY2dNVEF1T1RrNU5TQTNTREU1TGpRNU9UVk1NVGt1TmpFMk1TQTJMams1TXpJM1F6SXdMakV4TXpVZ05pNDVNelUxTVNBeU1DNDBPVGsxSURZdU5URXlPRFFnTWpBdU5EazVOU0EyUXpJd0xqUTVPVFVnTlM0ME5EYzNNaUF5TUM0d05URTRJRFVnTVRrdU5EazVOU0ExV2lJZ1ptbHNiRDBpSXpJeE1qRXlNU0l2UGp4d1lYUm9JR1E5SWswMUxqRTFNRGt6SURFd0xqVXhPVGxETkM0NE5EazFOeUF4TUM0ME5qWTNJRFF1TkRjME5EUWdNVEF1TlRnMk15QTBMakk0TURNeElERXdMamM0TURSRE15NDVPRGMwTVNBeE1TNHdOek16SURNdU5URXlOVE1nTVRFdU1EY3pNeUF6TGpJeE9UWTFJREV3TGpjNE1EUkRNaTQ1TWpZM055QXhNQzQwT0RjMElESXVPVEkyTnpnZ01UQXVNREV5TmlBekxqSXhPVFk1SURrdU56RTVOamxETXk0M056VTFOaUE1TGpFMk16ZzFJRFF1TmpVd05EUWdPQzQ1TURnMElEVXVOREV4TlRjZ09TNHdOREkzUXpVdU9EQTVJRGt1TVRFeU9ETWdOaTR5TVRjeklEa3VNamszTVNBMkxqVXlOekl5SURrdU5qUTRNelJETmk0NE5ESTJJREV3TGpBd05UZ2dOeUF4TUM0ME56STNJRGNnTVRGRE55QXhNUzQyTVRrMUlEWXVOekk0T1RVZ01USXVNRGdnTmk0ek9UUXdOaUF4TWk0ME1qQTFRell1TVRFMk15QXhNaTQzTURJNUlEVXVOell6TVRVZ01USXVPVE14SURVdU5EZzRNallnTVRNdU1UQTROa3cxTGpRd09EYzBJREV6TGpFMk1ERkROUzR5TVRNME9DQXhNeTR5T0RjZ05TNHdOVFF5T0NBeE15NHpPVGNnTkM0NU1qWTROaUF4TXk0MVNEWXVNalZETmk0Mk5qUXlNU0F4TXk0MUlEY2dNVE11T0RNMU9DQTNJREUwTGpJMVF6Y2dNVFF1TmpZME1pQTJMalkyTkRJZ01UVWdOaTR5TkRrNU9TQXhOVWd6TGpjMVF6TXVNek0xTnprZ01UVWdNeUF4TkM0Mk5qUXlJRE1nTVRRdU1qVkRNeUF4TWk0NU16WTBJRE11T1Rnek9EVWdNVEl1TWprM01TQTBMalUzTlRBMUlERXhMamt4TTB3MExqWXpOVEl5SURFeExqZzNNemxETkM0NU5USTFPU0F4TVM0Mk5qYzNJRFV1TVRZNE5ETWdNVEV1TlRJM05TQTFMak15TkRZNUlERXhMak0yT0RaRE5TNDBOVGcxTlNBeE1TNHlNekkxSURVdU5TQXhNUzR4TXpBMklEVXVOU0F4TVVNMUxqVWdNVEF1TnpjM05DQTFMalF6T0RZMUlERXdMalk0TVRnZ05TNDBNREkwTnlBeE1DNDJOREE0UXpVdU16WXdPRE1nTVRBdU5Ua3pOaUExTGpJNE5EYzFJREV3TGpVME16VWdOUzR4TlRBNU15QXhNQzQxTVRrNVdpSWdabWxzYkQwaUl6SXhNakV5TVNJdlBqeHdZWFJvSUdROUlrMHlMamsyT1RZM0lESXhMakk0TURORE1pNDVOamsyTnlBeU1TNHlPREF6SURNdU1EWXlOVEVnTWpFdU16WTBNU0F5TGprM05ESTJJREl4TGpJNE5EbE1NaTQ1TnprMk1pQXlNUzR5T1RBeFRESXVPVGt5T1NBeU1TNHpNREk0UXpNdU1EQXlPRGNnTWpFdU16RXlNU0F6TGpBeE5UQTVJREl4TGpNeU16TWdNeTR3TWprMU5pQXlNUzR6TXpVNVF6TXVNRFU0TkRnZ01qRXVNell4TWlBekxqQTVOalV6SURJeExqTTVNamNnTXk0eE5ETTNOU0F5TVM0ME1qZ3hRek11TWpNNE1TQXlNUzQwT1RnNUlETXVNelk1T1RZZ01qRXVOVGcySURNdU5UTTVOVGtnTWpFdU5qY3dPRU16TGpnNE1UTXhJREl4TGpnME1UY2dOQzR6TnpBME15QXlNaUExSURJeVF6VXVOak01TWpFZ01qSWdOaTR4T1RVNU5pQXlNUzQ0TVRnMklEWXVOakF4TXpJZ01qRXVORFl3TlVNM0xqQXdPVEl5SURJeExqRXdNREVnTnk0eU1URTJNeUF5TUM0Mk1ETXlJRGN1TVRrMU5UTWdNakF1TVRBeFF6Y3VNVGd5TVRrZ01Ua3VOamcwTmlBM0xqQXlPVEF6SURFNUxqTXdOVE1nTmk0M05qazROaUF4T1VNM0xqQXlPVEF6SURFNExqWTVORGNnTnk0eE9ESXhPU0F4T0M0ek1UVTBJRGN1TVRrMU5UTWdNVGN1T0RrNVF6Y3VNakV4TmpNZ01UY3VNemsyT0NBM0xqQXdPVEl5SURFMkxqZzVPVGtnTmk0Mk1ERXpNaUF4Tmk0MU16azFRell1TVRrMU9UWWdNVFl1TVRneE5DQTFMall6T1RJeElERTJJRFVnTVRaRE5DNHpOekEwTXlBeE5pQXpMamc0TVRNeElERTJMakUxT0RNZ015NDFNemsxT1NBeE5pNHpNamt5UXpNdU16WTVPVFlnTVRZdU5ERTBJRE11TWpNNE1TQXhOaTQxTURFeElETXVNVFF6TnpVZ01UWXVOVGN4T1VNekxqQTVOalV6SURFMkxqWXdOek1nTXk0d05UZzBPQ0F4Tmk0Mk16ZzRJRE11TURJNU5UWWdNVFl1TmpZME1VTXpMakF4TlRBNUlERTJMalkzTmpjZ015NHdNREk0TnlBeE5pNDJPRGM1SURJdU9Ua3lPU0F4Tmk0Mk9UY3lUREl1T1RjNU5qSWdNVFl1TnpBNU9Vd3lMamszTkRJeklERTJMamN4TlRGTU1pNDVOekU0T1NBeE5pNDNNVGMxVERJdU9UY3dPVEVnTVRZdU56RTROVXd5TGprMk9UWTNJREUyTGpjeE9UZERNaTQyTnpZM09DQXhOeTR3TVRJMklESXVOamMyTnpnZ01UY3VORGczTkNBeUxqazJPVFkzSURFM0xqYzRNRE5ETXk0eU5UZzJJREU0TGpBMk9UTWdNeTQzTWpRMk1pQXhPQzR3TnpNeUlEUXVNREU0TXpRZ01UY3VOemt5TVVNMExqQXlNVGNnTVRjdU56ZzVNaUEwTGpBek1ERTRJREUzTGpjNE1pQTBMakEwTXpjMUlERTNMamMzTVRsRE5DNHdOelEwSURFM0xqYzBPRGtnTkM0eE16QXdOQ0F4Tnk0M01URWdOQzR5TVRBME1TQXhOeTQyTnpBNFF6UXVNelk0TmprZ01UY3VOVGt4TnlBMExqWXlPVFUzSURFM0xqVWdOU0F4Tnk0MVF6VXVNell3TnprZ01UY3VOU0ExTGpVek5qQXhJREUzTGpVNU9Ua2dOUzQyTURneE1pQXhOeTQyTmpNMlF6VXVOamMzTmpnZ01UY3VOekkxTVNBMUxqWTVPREl6SURFM0xqYzVNRGNnTlM0Mk9UWXpJREUzTGpnMU1VTTFMalk1TkRJeklERTNMamt4TlRVZ05TNDJOalF3TXlBeE9DNHdNREkzSURVdU5UY3lOemdnTVRndU1EZ3hPRU0xTGpRNE5EVWdNVGd1TVRVNE5DQTFMak13T1RZeUlERTRMakkxSURVZ01UZ3VNalZETkM0MU9EVTNPU0F4T0M0eU5TQTBMakkxSURFNExqVTROVGdnTkM0eU5TQXhPVU0wTGpJMUlERTVMalF4TkRJZ05DNDFPRFUzT1NBeE9TNDNOU0ExSURFNUxqYzFRelV1TXpBNU5qSWdNVGt1TnpVZ05TNDBPRFExSURFNUxqZzBNVFlnTlM0MU56STNPQ0F4T1M0NU1UZ3lRelV1TmpZME1ETWdNVGt1T1RrM015QTFMalk1TkRJeklESXdMakE0TkRVZ05TNDJPVFl6SURJd0xqRTBPVU0xTGpZNU9ESXpJREl3TGpJd09UTWdOUzQyTnpjMk9DQXlNQzR5TnpRNUlEVXVOakE0TVRJZ01qQXVNek0yTkVNMUxqVXpOakF4SURJd0xqUXdNREVnTlM0ek5qQTNPU0F5TUM0MUlEVWdNakF1TlVNMExqWXlPVFUzSURJd0xqVWdOQzR6TmpnMk9TQXlNQzQwTURneklEUXVNakV3TkRFZ01qQXVNekk1TWtNMExqRXpNREEwSURJd0xqSTRPU0EwTGpBM05EUWdNakF1TWpVeE1TQTBMakEwTXpjMUlESXdMakl5T0RGRE5DNHdNekF4T0NBeU1DNHlNVGdnTkM0d01qRTNJREl3TGpJeE1EZ2dOQzR3TVRnek5DQXlNQzR5TURjNVF6TXVOekkwTmpJZ01Ua3VPVEkyT0NBekxqSTFPRFlnTVRrdU9UTXdOeUF5TGprMk9UWTNJREl3TGpJeE9UZERNaTQyTnpZM09DQXlNQzQxTVRJMklESXVOamMyTnpnZ01qQXVPVGczTkNBeUxqazJPVFkzSURJeExqSTRNRE5hVFRJdU9UY3hPRGtnTVRZdU56RTNOVXd5TGprM01Ea3hJREUyTGpjeE9EVkRNaTQ1TnpjMklERTJMamN4TWprZ015NHhOekU0TWlBeE5pNDFOVEUxSURJdU9UY3hPRGtnTVRZdU56RTNOVm9pSUdacGJHdzlJaU15TVRJeE1qRWlMejQ4TDNOMlp6ND0iIC8+PC9zdmc+");
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiPjxkZWZzPjxmaWx0ZXIgaWQ9ImRhcmtyZWFkZXItaW1hZ2UtZmlsdGVyIj48ZmVDb2xvck1hdHJpeCB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMC4yNDkgLTAuNjE0IC0wLjY3MiAwLjAwMCAxLjAzNSAtMC42NDYgMC4yODggLTAuNjY0IDAuMDAwIDEuMDIwIC0wLjYzNiAtMC42MDkgMC4yNTAgMC4wMDAgMC45OTQgMC4wMDAgMC4wMDAgMC4wMDAgMS4wMDAgMC4wMDAiIC8+PC9maWx0ZXI+PC9kZWZzPjxpbWFnZSB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbHRlcj0idXJsKCNkYXJrcmVhZGVyLWltYWdlLWZpbHRlcikiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEQ5NGJXd2dkbVZ5YzJsdmJqMGlNUzR3SWlBL1BqeHpkbWNnWm1sc2JEMGlibTl1WlNJZ2FHVnBaMmgwUFNJeU5DSWdkbWxsZDBKdmVEMGlNQ0F3SURJMElESTBJaUIzYVdSMGFEMGlNalFpSUhodGJHNXpQU0pvZEhSd09pOHZkM2QzTG5jekxtOXlaeTh5TURBd0wzTjJaeUkrUEhCaGRHZ2daRDBpVFRZdU1EQXdNU0F5TGpjMVF6WXVNREF3TVNBeUxqTTVOVGMzSURVdU56VXlNamNnTWk0d09EazROQ0ExTGpRd05UYzJJREl1TURFMk16TkROUzR3TmpBeE1TQXhMamswTXlBMExqY3hNRE1nTWk0eE1qQTROaUEwTGpVMk5UZ2dNaTQwTkRNd00wdzBMalUyTkRJMklESXVORFEyTXpkRE5DNDFOakl5TmlBeUxqUTFNRFkzSURRdU5UVTRORElnTWk0ME5UZzRNU0EwTGpVMU1qYzFJREl1TkRjd05ESkROQzQxTkRFMElESXVORGt6TmpZZ05DNDFNakk0TWlBeUxqVXpNRFUxSURRdU5EazNNRFFnTWk0MU56Z3dPRU0wTGpRME5USTNJREl1Tmpjek5UWWdOQzR6TmpVNE5DQXlMamd3T1RRMUlEUXVNalU1TkNBeUxqazJNalE0UXpRdU1EUXhOellnTXk0eU56VXpOeUF6TGpjek5UTTRJRE11TmpJME9EZ2dNeTR6TlRJM05TQXpMamcyTXpreFF6TXVNREF4TkRRZ05DNHdPRE16TmlBeUxqZzVORFUySURRdU5UUTJNRFVnTXk0eE1UUXdNU0EwTGpnNU56TTFRek11TXpNek5EWWdOUzR5TkRnMk5pQXpMamM1TmpFMUlEVXVNelUxTlRRZ05DNHhORGMwTmlBMUxqRXpOakE1UXpRdU1qY3lNRFVnTlM0d05UZ3lOaUEwTGpNNE9UVTJJRFF1T1RjME56TWdOQzQxTURBeElEUXVPRGczTmpWV055NHlOVU0wTGpVd01ERWdOeTQyTmpReU1TQTBMamd6TlRnNUlEZ2dOUzR5TlRBeElEaEROUzQyTmpRek1TQTRJRFl1TURBd01TQTNMalkyTkRJeElEWXVNREF3TVNBM0xqSTFWakl1TnpWYUlpQm1hV3hzUFNJak1qRXlNVEl4SWk4K1BIQmhkR2dnWkQwaVRURTVMalE1T1RVZ01UaElNVEF1T1RrNU5Vd3hNQzQ0T0RJNUlERTRMakF3TmpkRE1UQXVNemcxTmlBeE9DNHdOalExSURrdU9UazVOVEVnTVRndU5EZzNNaUE1TGprNU9UVXhJREU1UXprdU9UazVOVEVnTVRrdU5UVXlNeUF4TUM0ME5EY3lJREl3SURFd0xqazVPVFVnTWpCSU1Ua3VORGs1TlV3eE9TNDJNVFl4SURFNUxqazVNek5ETWpBdU1URXpOU0F4T1M0NU16VTFJREl3TGpRNU9UVWdNVGt1TlRFeU9DQXlNQzQwT1RrMUlERTVRekl3TGpRNU9UVWdNVGd1TkRRM055QXlNQzR3TlRFNElERTRJREU1TGpRNU9UVWdNVGhhSWlCbWFXeHNQU0lqTWpFeU1USXhJaTgrUEhCaGRHZ2daRDBpVFRFNUxqUTVPVFVnTVRFdU5VZ3hNQzQ1T1RrMVRERXdMamc0TWprZ01URXVOVEEyTjBNeE1DNHpPRFUySURFeExqVTJORFVnT1M0NU9UazFNU0F4TVM0NU9EY3lJRGt1T1RrNU5URWdNVEl1TlVNNUxqazVPVFV4SURFekxqQTFNak1nTVRBdU5EUTNNaUF4TXk0MUlERXdMams1T1RVZ01UTXVOVWd4T1M0ME9UazFUREU1TGpZeE5qRWdNVE11TkRrek0wTXlNQzR4TVRNMUlERXpMalF6TlRVZ01qQXVORGs1TlNBeE15NHdNVEk0SURJd0xqUTVPVFVnTVRJdU5VTXlNQzQwT1RrMUlERXhMamswTnpjZ01qQXVNRFV4T0NBeE1TNDFJREU1TGpRNU9UVWdNVEV1TlZvaUlHWnBiR3c5SWlNeU1USXhNakVpTHo0OGNHRjBhQ0JrUFNKTk1Ua3VORGs1TlNBMVNERXdMams1T1RWTU1UQXVPRGd5T1NBMUxqQXdOamN6UXpFd0xqTTROVFlnTlM0d05qUTBPU0E1TGprNU9UVXhJRFV1TkRnM01UWWdPUzQ1T1RrMU1TQTJRemt1T1RrNU5URWdOaTQxTlRJeU9DQXhNQzQwTkRjeUlEY2dNVEF1T1RrNU5TQTNTREU1TGpRNU9UVk1NVGt1TmpFMk1TQTJMams1TXpJM1F6SXdMakV4TXpVZ05pNDVNelUxTVNBeU1DNDBPVGsxSURZdU5URXlPRFFnTWpBdU5EazVOU0EyUXpJd0xqUTVPVFVnTlM0ME5EYzNNaUF5TUM0d05URTRJRFVnTVRrdU5EazVOU0ExV2lJZ1ptbHNiRDBpSXpJeE1qRXlNU0l2UGp4d1lYUm9JR1E5SWswMUxqRTFNRGt6SURFd0xqVXhPVGxETkM0NE5EazFOeUF4TUM0ME5qWTNJRFF1TkRjME5EUWdNVEF1TlRnMk15QTBMakk0TURNeElERXdMamM0TURSRE15NDVPRGMwTVNBeE1TNHdOek16SURNdU5URXlOVE1nTVRFdU1EY3pNeUF6TGpJeE9UWTFJREV3TGpjNE1EUkRNaTQ1TWpZM055QXhNQzQwT0RjMElESXVPVEkyTnpnZ01UQXVNREV5TmlBekxqSXhPVFk1SURrdU56RTVOamxETXk0M056VTFOaUE1TGpFMk16ZzFJRFF1TmpVd05EUWdPQzQ1TURnMElEVXVOREV4TlRjZ09TNHdOREkzUXpVdU9EQTVJRGt1TVRFeU9ETWdOaTR5TVRjeklEa3VNamszTVNBMkxqVXlOekl5SURrdU5qUTRNelJETmk0NE5ESTJJREV3TGpBd05UZ2dOeUF4TUM0ME56STNJRGNnTVRGRE55QXhNUzQyTVRrMUlEWXVOekk0T1RVZ01USXVNRGdnTmk0ek9UUXdOaUF4TWk0ME1qQTFRell1TVRFMk15QXhNaTQzTURJNUlEVXVOell6TVRVZ01USXVPVE14SURVdU5EZzRNallnTVRNdU1UQTROa3cxTGpRd09EYzBJREV6TGpFMk1ERkROUzR5TVRNME9DQXhNeTR5T0RjZ05TNHdOVFF5T0NBeE15NHpPVGNnTkM0NU1qWTROaUF4TXk0MVNEWXVNalZETmk0Mk5qUXlNU0F4TXk0MUlEY2dNVE11T0RNMU9DQTNJREUwTGpJMVF6Y2dNVFF1TmpZME1pQTJMalkyTkRJZ01UVWdOaTR5TkRrNU9TQXhOVWd6TGpjMVF6TXVNek0xTnprZ01UVWdNeUF4TkM0Mk5qUXlJRE1nTVRRdU1qVkRNeUF4TWk0NU16WTBJRE11T1Rnek9EVWdNVEl1TWprM01TQTBMalUzTlRBMUlERXhMamt4TTB3MExqWXpOVEl5SURFeExqZzNNemxETkM0NU5USTFPU0F4TVM0Mk5qYzNJRFV1TVRZNE5ETWdNVEV1TlRJM05TQTFMak15TkRZNUlERXhMak0yT0RaRE5TNDBOVGcxTlNBeE1TNHlNekkxSURVdU5TQXhNUzR4TXpBMklEVXVOU0F4TVVNMUxqVWdNVEF1TnpjM05DQTFMalF6T0RZMUlERXdMalk0TVRnZ05TNDBNREkwTnlBeE1DNDJOREE0UXpVdU16WXdPRE1nTVRBdU5Ua3pOaUExTGpJNE5EYzFJREV3TGpVME16VWdOUzR4TlRBNU15QXhNQzQxTVRrNVdpSWdabWxzYkQwaUl6SXhNakV5TVNJdlBqeHdZWFJvSUdROUlrMHlMamsyT1RZM0lESXhMakk0TURORE1pNDVOamsyTnlBeU1TNHlPREF6SURNdU1EWXlOVEVnTWpFdU16WTBNU0F5TGprM05ESTJJREl4TGpJNE5EbE1NaTQ1TnprMk1pQXlNUzR5T1RBeFRESXVPVGt5T1NBeU1TNHpNREk0UXpNdU1EQXlPRGNnTWpFdU16RXlNU0F6TGpBeE5UQTVJREl4TGpNeU16TWdNeTR3TWprMU5pQXlNUzR6TXpVNVF6TXVNRFU0TkRnZ01qRXVNell4TWlBekxqQTVOalV6SURJeExqTTVNamNnTXk0eE5ETTNOU0F5TVM0ME1qZ3hRek11TWpNNE1TQXlNUzQwT1RnNUlETXVNelk1T1RZZ01qRXVOVGcySURNdU5UTTVOVGtnTWpFdU5qY3dPRU16TGpnNE1UTXhJREl4TGpnME1UY2dOQzR6TnpBME15QXlNaUExSURJeVF6VXVOak01TWpFZ01qSWdOaTR4T1RVNU5pQXlNUzQ0TVRnMklEWXVOakF4TXpJZ01qRXVORFl3TlVNM0xqQXdPVEl5SURJeExqRXdNREVnTnk0eU1URTJNeUF5TUM0Mk1ETXlJRGN1TVRrMU5UTWdNakF1TVRBeFF6Y3VNVGd5TVRrZ01Ua3VOamcwTmlBM0xqQXlPVEF6SURFNUxqTXdOVE1nTmk0M05qazROaUF4T1VNM0xqQXlPVEF6SURFNExqWTVORGNnTnk0eE9ESXhPU0F4T0M0ek1UVTBJRGN1TVRrMU5UTWdNVGN1T0RrNVF6Y3VNakV4TmpNZ01UY3VNemsyT0NBM0xqQXdPVEl5SURFMkxqZzVPVGtnTmk0Mk1ERXpNaUF4Tmk0MU16azFRell1TVRrMU9UWWdNVFl1TVRneE5DQTFMall6T1RJeElERTJJRFVnTVRaRE5DNHpOekEwTXlBeE5pQXpMamc0TVRNeElERTJMakUxT0RNZ015NDFNemsxT1NBeE5pNHpNamt5UXpNdU16WTVPVFlnTVRZdU5ERTBJRE11TWpNNE1TQXhOaTQxTURFeElETXVNVFF6TnpVZ01UWXVOVGN4T1VNekxqQTVOalV6SURFMkxqWXdOek1nTXk0d05UZzBPQ0F4Tmk0Mk16ZzRJRE11TURJNU5UWWdNVFl1TmpZME1VTXpMakF4TlRBNUlERTJMalkzTmpjZ015NHdNREk0TnlBeE5pNDJPRGM1SURJdU9Ua3lPU0F4Tmk0Mk9UY3lUREl1T1RjNU5qSWdNVFl1TnpBNU9Vd3lMamszTkRJeklERTJMamN4TlRGTU1pNDVOekU0T1NBeE5pNDNNVGMxVERJdU9UY3dPVEVnTVRZdU56RTROVXd5TGprMk9UWTNJREUyTGpjeE9UZERNaTQyTnpZM09DQXhOeTR3TVRJMklESXVOamMyTnpnZ01UY3VORGczTkNBeUxqazJPVFkzSURFM0xqYzRNRE5ETXk0eU5UZzJJREU0TGpBMk9UTWdNeTQzTWpRMk1pQXhPQzR3TnpNeUlEUXVNREU0TXpRZ01UY3VOemt5TVVNMExqQXlNVGNnTVRjdU56ZzVNaUEwTGpBek1ERTRJREUzTGpjNE1pQTBMakEwTXpjMUlERTNMamMzTVRsRE5DNHdOelEwSURFM0xqYzBPRGtnTkM0eE16QXdOQ0F4Tnk0M01URWdOQzR5TVRBME1TQXhOeTQyTnpBNFF6UXVNelk0TmprZ01UY3VOVGt4TnlBMExqWXlPVFUzSURFM0xqVWdOU0F4Tnk0MVF6VXVNell3TnprZ01UY3VOU0ExTGpVek5qQXhJREUzTGpVNU9Ua2dOUzQyTURneE1pQXhOeTQyTmpNMlF6VXVOamMzTmpnZ01UY3VOekkxTVNBMUxqWTVPREl6SURFM0xqYzVNRGNnTlM0Mk9UWXpJREUzTGpnMU1VTTFMalk1TkRJeklERTNMamt4TlRVZ05TNDJOalF3TXlBeE9DNHdNREkzSURVdU5UY3lOemdnTVRndU1EZ3hPRU0xTGpRNE5EVWdNVGd1TVRVNE5DQTFMak13T1RZeUlERTRMakkxSURVZ01UZ3VNalZETkM0MU9EVTNPU0F4T0M0eU5TQTBMakkxSURFNExqVTROVGdnTkM0eU5TQXhPVU0wTGpJMUlERTVMalF4TkRJZ05DNDFPRFUzT1NBeE9TNDNOU0ExSURFNUxqYzFRelV1TXpBNU5qSWdNVGt1TnpVZ05TNDBPRFExSURFNUxqZzBNVFlnTlM0MU56STNPQ0F4T1M0NU1UZ3lRelV1TmpZME1ETWdNVGt1T1RrM015QTFMalk1TkRJeklESXdMakE0TkRVZ05TNDJPVFl6SURJd0xqRTBPVU0xTGpZNU9ESXpJREl3TGpJd09UTWdOUzQyTnpjMk9DQXlNQzR5TnpRNUlEVXVOakE0TVRJZ01qQXVNek0yTkVNMUxqVXpOakF4SURJd0xqUXdNREVnTlM0ek5qQTNPU0F5TUM0MUlEVWdNakF1TlVNMExqWXlPVFUzSURJd0xqVWdOQzR6TmpnMk9TQXlNQzQwTURneklEUXVNakV3TkRFZ01qQXVNekk1TWtNMExqRXpNREEwSURJd0xqSTRPU0EwTGpBM05EUWdNakF1TWpVeE1TQTBMakEwTXpjMUlESXdMakl5T0RGRE5DNHdNekF4T0NBeU1DNHlNVGdnTkM0d01qRTNJREl3TGpJeE1EZ2dOQzR3TVRnek5DQXlNQzR5TURjNVF6TXVOekkwTmpJZ01Ua3VPVEkyT0NBekxqSTFPRFlnTVRrdU9UTXdOeUF5TGprMk9UWTNJREl3TGpJeE9UZERNaTQyTnpZM09DQXlNQzQxTVRJMklESXVOamMyTnpnZ01qQXVPVGczTkNBeUxqazJPVFkzSURJeExqSTRNRE5hVFRJdU9UY3hPRGtnTVRZdU56RTNOVXd5TGprM01Ea3hJREUyTGpjeE9EVkRNaTQ1TnpjMklERTJMamN4TWprZ015NHhOekU0TWlBeE5pNDFOVEUxSURJdU9UY3hPRGtnTVRZdU56RTNOVm9pSUdacGJHdzlJaU15TVRJeE1qRWlMejQ4TDNOMlp6ND0iIC8+PC9zdmc+");
 }
 .wmd-ulist-button {
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMjAiIGhlaWdodD0iMjAiPjxkZWZzPjxmaWx0ZXIgaWQ9ImRhcmtyZWFkZXItaW1hZ2UtZmlsdGVyIj48ZmVDb2xvck1hdHJpeCB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMC4yMDcgLTAuNTA5IC0wLjU1NyAwLjAwMCAwLjg1OSAtMC41MzYgMC4yMzkgLTAuNTUxIDAuMDAwIDAuODQ3IC0wLjUyOCAtMC41MDYgMC4yMDggMC4wMDAgMC44MjUgMC4wMDAgMC4wMDAgMC4wMDAgMS4wMDAgMC4wMDAiIC8+PC9maWx0ZXI+PC9kZWZzPjxpbWFnZSB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIGZpbHRlcj0idXJsKCNkYXJrcmVhZGVyLWltYWdlLWZpbHRlcikiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEQ5NGJXd2dkbVZ5YzJsdmJqMGlNUzR3SWlBL1BqeHpkbWNnWm1sc2JEMGlibTl1WlNJZ2FHVnBaMmgwUFNJeU1DSWdkbWxsZDBKdmVEMGlNQ0F3SURJd0lESXdJaUIzYVdSMGFEMGlNakFpSUhodGJHNXpQU0pvZEhSd09pOHZkM2QzTG5jekxtOXlaeTh5TURBd0wzTjJaeUkrUEhCaGRHZ2daRDBpVFRNdU1qVWdOME16TGprME1ETTJJRGNnTkM0MUlEWXVORFF3TXpZZ05DNDFJRFV1TnpWRE5DNDFJRFV1TURVNU5qUWdNeTQ1TkRBek5pQTBMalVnTXk0eU5TQTBMalZETWk0MU5UazJOQ0EwTGpVZ01pQTFMakExT1RZMElESWdOUzQzTlVNeUlEWXVORFF3TXpZZ01pNDFOVGsyTkNBM0lETXVNalVnTjFwTk55QTFMamMxUXpjZ05TNHpNelUzT1NBM0xqTXpOVGM1SURVZ055NDNOU0ExU0RFM0xqSTFRekUzTGpZMk5ESWdOU0F4T0NBMUxqTXpOVGM1SURFNElEVXVOelZETVRnZ05pNHhOalF5TVNBeE55NDJOalF5SURZdU5TQXhOeTR5TlNBMkxqVklOeTQzTlVNM0xqTXpOVGM1SURZdU5TQTNJRFl1TVRZME1qRWdOeUExTGpjMVdrMDNMamMxSURFd1F6Y3VNek0xTnprZ01UQWdOeUF4TUM0ek16VTRJRGNnTVRBdU56VkROeUF4TVM0eE5qUXlJRGN1TXpNMU56a2dNVEV1TlNBM0xqYzFJREV4TGpWSU1UY3VNalZETVRjdU5qWTBNaUF4TVM0MUlERTRJREV4TGpFMk5ESWdNVGdnTVRBdU56VkRNVGdnTVRBdU16TTFPQ0F4Tnk0Mk5qUXlJREV3SURFM0xqSTFJREV3U0RjdU56VmFUVGN1TnpVZ01UVkROeTR6TXpVM09TQXhOU0EzSURFMUxqTXpOVGdnTnlBeE5TNDNOVU0zSURFMkxqRTJORElnTnk0ek16VTNPU0F4Tmk0MUlEY3VOelVnTVRZdU5VZ3hOeTR5TlVNeE55NDJOalF5SURFMkxqVWdNVGdnTVRZdU1UWTBNaUF4T0NBeE5TNDNOVU14T0NBeE5TNHpNelU0SURFM0xqWTJORElnTVRVZ01UY3VNalVnTVRWSU55NDNOVnBOTkM0MUlERXdMamMxUXpRdU5TQXhNUzQwTkRBMElETXVPVFF3TXpZZ01USWdNeTR5TlNBeE1rTXlMalUxT1RZMElERXlJRElnTVRFdU5EUXdOQ0F5SURFd0xqYzFReklnTVRBdU1EVTVOaUF5TGpVMU9UWTBJRGt1TlNBekxqSTFJRGt1TlVNekxqazBNRE0ySURrdU5TQTBMalVnTVRBdU1EVTVOaUEwTGpVZ01UQXVOelZhVFRNdU1qVWdNVGRETXk0NU5EQXpOaUF4TnlBMExqVWdNVFl1TkRRd05DQTBMalVnTVRVdU56VkROQzQxSURFMUxqQTFPVFlnTXk0NU5EQXpOaUF4TkM0MUlETXVNalVnTVRRdU5VTXlMalUxT1RZMElERTBMalVnTWlBeE5TNHdOVGsySURJZ01UVXVOelZETWlBeE5pNDBOREEwSURJdU5UVTVOalFnTVRjZ015NHlOU0F4TjFvaUlHWnBiR3c5SWlNeU1USXhNakVpTHo0OEwzTjJaejQ9IiAvPjwvc3ZnPg==");
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMjAiIGhlaWdodD0iMjAiPjxkZWZzPjxmaWx0ZXIgaWQ9ImRhcmtyZWFkZXItaW1hZ2UtZmlsdGVyIj48ZmVDb2xvck1hdHJpeCB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMC4yNDkgLTAuNjE0IC0wLjY3MiAwLjAwMCAxLjAzNSAtMC42NDYgMC4yODggLTAuNjY0IDAuMDAwIDEuMDIwIC0wLjYzNiAtMC42MDkgMC4yNTAgMC4wMDAgMC45OTQgMC4wMDAgMC4wMDAgMC4wMDAgMS4wMDAgMC4wMDAiIC8+PC9maWx0ZXI+PC9kZWZzPjxpbWFnZSB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIGZpbHRlcj0idXJsKCNkYXJrcmVhZGVyLWltYWdlLWZpbHRlcikiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEQ5NGJXd2dkbVZ5YzJsdmJqMGlNUzR3SWlBL1BqeHpkbWNnWm1sc2JEMGlibTl1WlNJZ2FHVnBaMmgwUFNJeU1DSWdkbWxsZDBKdmVEMGlNQ0F3SURJd0lESXdJaUIzYVdSMGFEMGlNakFpSUhodGJHNXpQU0pvZEhSd09pOHZkM2QzTG5jekxtOXlaeTh5TURBd0wzTjJaeUkrUEhCaGRHZ2daRDBpVFRNdU1qVWdOME16TGprME1ETTJJRGNnTkM0MUlEWXVORFF3TXpZZ05DNDFJRFV1TnpWRE5DNDFJRFV1TURVNU5qUWdNeTQ1TkRBek5pQTBMalVnTXk0eU5TQTBMalZETWk0MU5UazJOQ0EwTGpVZ01pQTFMakExT1RZMElESWdOUzQzTlVNeUlEWXVORFF3TXpZZ01pNDFOVGsyTkNBM0lETXVNalVnTjFwTk55QTFMamMxUXpjZ05TNHpNelUzT1NBM0xqTXpOVGM1SURVZ055NDNOU0ExU0RFM0xqSTFRekUzTGpZMk5ESWdOU0F4T0NBMUxqTXpOVGM1SURFNElEVXVOelZETVRnZ05pNHhOalF5TVNBeE55NDJOalF5SURZdU5TQXhOeTR5TlNBMkxqVklOeTQzTlVNM0xqTXpOVGM1SURZdU5TQTNJRFl1TVRZME1qRWdOeUExTGpjMVdrMDNMamMxSURFd1F6Y3VNek0xTnprZ01UQWdOeUF4TUM0ek16VTRJRGNnTVRBdU56VkROeUF4TVM0eE5qUXlJRGN1TXpNMU56a2dNVEV1TlNBM0xqYzFJREV4TGpWSU1UY3VNalZETVRjdU5qWTBNaUF4TVM0MUlERTRJREV4TGpFMk5ESWdNVGdnTVRBdU56VkRNVGdnTVRBdU16TTFPQ0F4Tnk0Mk5qUXlJREV3SURFM0xqSTFJREV3U0RjdU56VmFUVGN1TnpVZ01UVkROeTR6TXpVM09TQXhOU0EzSURFMUxqTXpOVGdnTnlBeE5TNDNOVU0zSURFMkxqRTJORElnTnk0ek16VTNPU0F4Tmk0MUlEY3VOelVnTVRZdU5VZ3hOeTR5TlVNeE55NDJOalF5SURFMkxqVWdNVGdnTVRZdU1UWTBNaUF4T0NBeE5TNDNOVU14T0NBeE5TNHpNelU0SURFM0xqWTJORElnTVRVZ01UY3VNalVnTVRWSU55NDNOVnBOTkM0MUlERXdMamMxUXpRdU5TQXhNUzQwTkRBMElETXVPVFF3TXpZZ01USWdNeTR5TlNBeE1rTXlMalUxT1RZMElERXlJRElnTVRFdU5EUXdOQ0F5SURFd0xqYzFReklnTVRBdU1EVTVOaUF5TGpVMU9UWTBJRGt1TlNBekxqSTFJRGt1TlVNekxqazBNRE0ySURrdU5TQTBMalVnTVRBdU1EVTVOaUEwTGpVZ01UQXVOelZhVFRNdU1qVWdNVGRETXk0NU5EQXpOaUF4TnlBMExqVWdNVFl1TkRRd05DQTBMalVnTVRVdU56VkROQzQxSURFMUxqQTFPVFlnTXk0NU5EQXpOaUF4TkM0MUlETXVNalVnTVRRdU5VTXlMalUxT1RZMElERTBMalVnTWlBeE5TNHdOVGsySURJZ01UVXVOelZETWlBeE5pNDBOREEwSURJdU5UVTVOalFnTVRjZ015NHlOU0F4TjFvaUlHWnBiR3c5SWlNeU1USXhNakVpTHo0OEwzTjJaejQ9IiAvPjwvc3ZnPg==");
 }
 .wmd-heading-button {
     background-image: url("http://localhost:8000/static/pagedown/resources/heading.svg");
 }
 .wmd-hr-button {
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjIwNyAtMC41MDkgLTAuNTU3IDAuMDAwIDAuODU5IC0wLjUzNiAwLjIzOSAtMC41NTEgMC4wMDAgMC44NDcgLTAuNTI4IC0wLjUwNiAwLjIwOCAwLjAwMCAwLjgyNSAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBEOTRiV3dnZG1WeWMybHZiajBpTVM0d0lpQS9Qanh6ZG1jZ2RtbGxkMEp2ZUQwaU1DQXdJREl3SURJd0lpQjRiV3h1Y3owaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNQzl6ZG1jaVBqeHdZWFJvSUdROUlrMHhJREZvTW5ZeVNERldNWHB0TUNBMGFESjJNa2d4VmpWNmJUQWdOR2d4T0hZeVNERldPWHB0TUNBMGFESjJNa2d4ZGkweWVtMHdJRFJvTW5ZeVNERjJMVEo2VFRVZ01XZ3lkakpJTlZZeGVtMHdJREUyYURKMk1rZzFkaTB5ZWswNUlERm9Nbll5U0RsV01YcHRNQ0EwYURKMk1rZzVWalY2YlRBZ09HZ3lkakpJT1hZdE1ucHRNQ0EwYURKMk1rZzVkaTB5ZW0wMExURTJhREoyTW1ndE1sWXhlbTB3SURFMmFESjJNbWd0TW5ZdE1ucHROQzB4Tm1neWRqSm9MVEpXTVhwdE1DQTBhREoyTW1ndE1sWTFlbTB3SURob01uWXlhQzB5ZGkweWVtMHdJRFJvTW5ZeWFDMHlkaTB5ZWlJdlBqd3ZjM1puUGc9PSIgLz48L3N2Zz4=");
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjI0OSAtMC42MTQgLTAuNjcyIDAuMDAwIDEuMDM1IC0wLjY0NiAwLjI4OCAtMC42NjQgMC4wMDAgMS4wMjAgLTAuNjM2IC0wLjYwOSAwLjI1MCAwLjAwMCAwLjk5NCAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBEOTRiV3dnZG1WeWMybHZiajBpTVM0d0lpQS9Qanh6ZG1jZ2RtbGxkMEp2ZUQwaU1DQXdJREl3SURJd0lpQjRiV3h1Y3owaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNQzl6ZG1jaVBqeHdZWFJvSUdROUlrMHhJREZvTW5ZeVNERldNWHB0TUNBMGFESjJNa2d4VmpWNmJUQWdOR2d4T0hZeVNERldPWHB0TUNBMGFESjJNa2d4ZGkweWVtMHdJRFJvTW5ZeVNERjJMVEo2VFRVZ01XZ3lkakpJTlZZeGVtMHdJREUyYURKMk1rZzFkaTB5ZWswNUlERm9Nbll5U0RsV01YcHRNQ0EwYURKMk1rZzVWalY2YlRBZ09HZ3lkakpJT1hZdE1ucHRNQ0EwYURKMk1rZzVkaTB5ZW0wMExURTJhREoyTW1ndE1sWXhlbTB3SURFMmFESjJNbWd0TW5ZdE1ucHROQzB4Tm1neWRqSm9MVEpXTVhwdE1DQTBhREoyTW1ndE1sWTFlbTB3SURob01uWXlhQzB5ZGkweWVtMHdJRFJvTW5ZeWFDMHlkaTB5ZWlJdlBqd3ZjM1puUGc9PSIgLz48L3N2Zz4=");
 }
 .wmd-undo-button {
     background-image: url("http://localhost:8000/static/pagedown/resources/undo.svg");
@@ -3263,242 +3267,242 @@ a.voted {
     background-image: url("http://localhost:8000/static/pagedown/resources/redo.svg");
 }
 .wmd-admonition-button {
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjIwNyAtMC41MDkgLTAuNTU3IDAuMDAwIDAuODU5IC0wLjUzNiAwLjIzOSAtMC41NTEgMC4wMDAgMC44NDcgLTAuNTI4IC0wLjUwNiAwLjIwOCAwLjAwMCAwLjgyNSAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBEOTRiV3dnZG1WeWMybHZiajBpTVM0d0lpQS9QandoUkU5RFZGbFFSU0J6ZG1jZ0lGQlZRa3hKUXlBbkxTOHZWek5ETHk5RVZFUWdVMVpISURFdU1TOHZSVTRuSUNBbmFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdlIzSmhjR2hwWTNNdlUxWkhMekV1TVM5RVZFUXZjM1puTVRFdVpIUmtKejQ4YzNabklHVnVZV0pzWlMxaVlXTnJaM0p2ZFc1a1BTSnVaWGNnTUNBd0lEVXhNaUExTVRJaUlHbGtQU0pNWVhsbGNsOHhJaUIyWlhKemFXOXVQU0l4TGpFaUlIWnBaWGRDYjNnOUlqQWdNQ0ExTVRJZ05URXlJaUI0Yld3NmMzQmhZMlU5SW5CeVpYTmxjblpsSWlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpSUhodGJHNXpPbmhzYVc1clBTSm9kSFJ3T2k4dmQzZDNMbmN6TG05eVp5OHhPVGs1TDNoc2FXNXJJajQ4Wno0OFp6NDhjR0YwYUNCa1BTSk5NelkxTERFMk55NDRTREl5T0M0eVl5MDFMamNzTUMweE1DNDBMVFF1TnkweE1DNDBMVEV3TGpSMkxUQXVPR013TFRVdU55dzBMamN0TVRBdU5Dd3hNQzQwTFRFd0xqUklNelkxWXpVdU55d3dMREV3TGpRc05DNDNMREV3TGpRc01UQXVOQ0FnSUNCMk1DNDRRek0zTlM0MUxERTJNeTR4TERNM01DNDRMREUyTnk0NExETTJOU3d4TmpjdU9Ib2lJR1pwYkd3OUlpTXpNRE5CTTBZaUx6NDhjR0YwYUNCa1BTSk5NelkxTERJeU9DNDRTREUxTXk0NVl5MDFMamNzTUMweE1DNDBMVFF1TnkweE1DNDBMVEV3TGpSMkxUQXVPR013TFRVdU55dzBMamN0TVRBdU5Dd3hNQzQwTFRFd0xqUklNelkxWXpVdU55d3dMREV3TGpRc05DNDNMREV3TGpRc01UQXVOQ0FnSUNCMk1DNDRRek0zTlM0MUxESXlOQzR4TERNM01DNDRMREl5T0M0NExETTJOU3d5TWpndU9Ib2lJR1pwYkd3OUlpTXpNRE5CTTBZaUx6NDhjR0YwYUNCa1BTSk5NelkxTERJNE9TNDRTREUxTXk0NVl5MDFMamNzTUMweE1DNDBMVFF1TnkweE1DNDBMVEV3TGpSMkxUQXVPR013TFRVdU55dzBMamN0TVRBdU5Dd3hNQzQwTFRFd0xqUklNelkxWXpVdU55d3dMREV3TGpRc05DNDNMREV3TGpRc01UQXVOQ0FnSUNCMk1DNDRRek0zTlM0MUxESTROUzR4TERNM01DNDRMREk0T1M0NExETTJOU3d5T0RrdU9Ib2lJR1pwYkd3OUlpTXpNRE5CTTBZaUx6NDhjR0YwYUNCa1BTSk5NelkxTERNMU1DNDVTREUxTXk0NVl5MDFMamNzTUMweE1DNDBMVFF1TnkweE1DNDBMVEV3TGpSMkxUQXVPR013TFRVdU55dzBMamN0TVRBdU5Dd3hNQzQwTFRFd0xqUklNelkxWXpVdU55d3dMREV3TGpRc05DNDNMREV3TGpRc01UQXVOQ0FnSUNCMk1DNDRRek0zTlM0MUxETTBOaTR5TERNM01DNDRMRE0xTUM0NUxETTJOU3d6TlRBdU9Yb2lJR1pwYkd3OUlpTXpNRE5CTTBZaUx6NDhjR0YwYUNCa1BTSk5NelkxTERReE1TNDVTREUxTXk0NVl5MDFMamNzTUMweE1DNDBMVFF1TnkweE1DNDBMVEV3TGpSMkxUQXVPR013TFRVdU55dzBMamN0TVRBdU5Dd3hNQzQwTFRFd0xqUklNelkxWXpVdU55d3dMREV3TGpRc05DNDNMREV3TGpRc01UQXVOQ0FnSUNCMk1DNDRRek0zTlM0MUxEUXdOeTR5TERNM01DNDRMRFF4TVM0NUxETTJOU3cwTVRFdU9Yb2lJR1pwYkd3OUlpTXpNRE5CTTBZaUx6NDhMMmMrUEhCaGRHZ2daRDBpVFRNNU1pdzBNeTQxU0RFM09TNHliRE00TGpZc05URXVOR2d4TkRRdU4yTXlOeTR5TERBc05Ea3VOU3d5TWk0ekxEUTVMalVzTkRrdU5YWXlOamt1TTJNd0xESTNMakl0TWpJdU15dzBPUzQxTFRRNUxqVXNORGt1TlVneE5UUXVOQ0FnSUdNdE1qY3VNaXd3TFRRNUxqVXRNakl1TXkwME9TNDFMVFE1TGpWV01UVXdMamxNTmpVdU15dzVPQzQwWXkwd0xqTXNNaTQzTFRBdU9DdzFMak10TUM0NExEaDJNelF5TGpOak1Dd3pOQzQyTERJNExqTXNOak1zTmpNc05qTklNemt5WXpNMExqWXNNQ3cyTXkweU9DNHpMRFl6TFRZelZqRXdOaTQwSUNBZ1F6UTFOQzQ1TERjeExqZ3NOREkyTGpZc05ETXVOU3d6T1RJc05ETXVOWG9pSUdacGJHdzlJaU16TUROQk0wWWlMejQ4Wno0OGNHRjBhQ0JrUFNKTk1USTFMalVzTVRRNUxqaHNOamd1TXl3eU5XTXpMallzTVM0ekxEWXVOUzB3TGpjc05pNHpMVFF1Tm13dE15NHlMVGN5TGpkakxUQXVNUzB4TGpVdE1DNDFMVEl1T1MweExqTXROQzR6YkRBdU1TMHdMakVnSUNBZ1l5MHdMakV0TUM0eUxUQXVNeTB3TGpRdE1DNDBMVEF1Tm13dE5EZ3VPQzAyTmk0MmJDMHhOaXd4TVM0M2JEUTBMakVzTmpBdU1tTXhMamdzTWk0MExERXVNaXcxTGpndE1TNHlMRGN1Tm13dE15NDRMREl1T0dNdE1pNDBMREV1T0MwMUxqZ3NNUzR5TFRjdU5pMHhMakpNTVRFNExEUTJMamtnSUNBZ2JDMHhOUzQ0TERFeExqWnNORFF1TkN3Mk1DNDNZekV1Tml3eUxqSXNNUzR4TERVdU1pMHhMakVzTmk0NGJDMDBMamNzTXk0MVl5MHlMaklzTVM0MkxUVXVNaXd4TGpFdE5pNDRMVEV1TVV3NE9TNDJMRFkzTGpaTU56SXVOaXc0TUd3ME55NHlMRFkwTGpRZ0lDQWdRekV5TVN3eE5EWXVPQ3d4TWpNc01UUTRMamtzTVRJMUxqVXNNVFE1TGpoNklFMHhNemdzTVRReExqbHNORGN1Tmkwek5DNDVZekl1T1MweUxqRXNOeTQyTERFdU15dzNMamdzTlM0NGJERXVNU3d6T1M0M1l5MHdMamNzTUM0eUxURXVOQ3d3TGpNdE1pd3dMamRzTFRFMExqSXNNVEF1TkNBZ0lDQmpMVEF1TVN3d0xqRXRNQzR6TERBdE1DNHpMREF1TVd3dE16WXVPQzB4TWk0MlF6RXpOeXd4TkRrdU5pd3hNelV1TVN3eE5EUXNNVE00TERFME1TNDVlaUlnWm1sc2JEMGlJek13TTBFelJpSXZQanh3WVhSb0lHUTlJazAyT0M0NUxEYzFMak5zTFRVdU55MDNMamRqTFRFd0xqVXRNVFF1TXkwM0xqTXRNelF1TlN3M0xUUTFiREl5TFRFMkxqRmpNVFF1TXkweE1DNDFMRE0wTGpVdE55NHpMRFExTERkc05TNDNMRGN1TjB3Mk9DNDVMRGMxTGpONklpQm1hV3hzUFNJak16QXpRVE5HSWk4K1BDOW5Qand2Wno0OEwzTjJaejQ9IiAvPjwvc3ZnPg==");
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjI0OSAtMC42MTQgLTAuNjcyIDAuMDAwIDEuMDM1IC0wLjY0NiAwLjI4OCAtMC42NjQgMC4wMDAgMS4wMjAgLTAuNjM2IC0wLjYwOSAwLjI1MCAwLjAwMCAwLjk5NCAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBEOTRiV3dnZG1WeWMybHZiajBpTVM0d0lpQS9QandoUkU5RFZGbFFSU0J6ZG1jZ0lGQlZRa3hKUXlBbkxTOHZWek5ETHk5RVZFUWdVMVpISURFdU1TOHZSVTRuSUNBbmFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdlIzSmhjR2hwWTNNdlUxWkhMekV1TVM5RVZFUXZjM1puTVRFdVpIUmtKejQ4YzNabklHVnVZV0pzWlMxaVlXTnJaM0p2ZFc1a1BTSnVaWGNnTUNBd0lEVXhNaUExTVRJaUlHbGtQU0pNWVhsbGNsOHhJaUIyWlhKemFXOXVQU0l4TGpFaUlIWnBaWGRDYjNnOUlqQWdNQ0ExTVRJZ05URXlJaUI0Yld3NmMzQmhZMlU5SW5CeVpYTmxjblpsSWlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpSUhodGJHNXpPbmhzYVc1clBTSm9kSFJ3T2k4dmQzZDNMbmN6TG05eVp5OHhPVGs1TDNoc2FXNXJJajQ4Wno0OFp6NDhjR0YwYUNCa1BTSk5NelkxTERFMk55NDRTREl5T0M0eVl5MDFMamNzTUMweE1DNDBMVFF1TnkweE1DNDBMVEV3TGpSMkxUQXVPR013TFRVdU55dzBMamN0TVRBdU5Dd3hNQzQwTFRFd0xqUklNelkxWXpVdU55d3dMREV3TGpRc05DNDNMREV3TGpRc01UQXVOQ0FnSUNCMk1DNDRRek0zTlM0MUxERTJNeTR4TERNM01DNDRMREUyTnk0NExETTJOU3d4TmpjdU9Ib2lJR1pwYkd3OUlpTXpNRE5CTTBZaUx6NDhjR0YwYUNCa1BTSk5NelkxTERJeU9DNDRTREUxTXk0NVl5MDFMamNzTUMweE1DNDBMVFF1TnkweE1DNDBMVEV3TGpSMkxUQXVPR013TFRVdU55dzBMamN0TVRBdU5Dd3hNQzQwTFRFd0xqUklNelkxWXpVdU55d3dMREV3TGpRc05DNDNMREV3TGpRc01UQXVOQ0FnSUNCMk1DNDRRek0zTlM0MUxESXlOQzR4TERNM01DNDRMREl5T0M0NExETTJOU3d5TWpndU9Ib2lJR1pwYkd3OUlpTXpNRE5CTTBZaUx6NDhjR0YwYUNCa1BTSk5NelkxTERJNE9TNDRTREUxTXk0NVl5MDFMamNzTUMweE1DNDBMVFF1TnkweE1DNDBMVEV3TGpSMkxUQXVPR013TFRVdU55dzBMamN0TVRBdU5Dd3hNQzQwTFRFd0xqUklNelkxWXpVdU55d3dMREV3TGpRc05DNDNMREV3TGpRc01UQXVOQ0FnSUNCMk1DNDRRek0zTlM0MUxESTROUzR4TERNM01DNDRMREk0T1M0NExETTJOU3d5T0RrdU9Ib2lJR1pwYkd3OUlpTXpNRE5CTTBZaUx6NDhjR0YwYUNCa1BTSk5NelkxTERNMU1DNDVTREUxTXk0NVl5MDFMamNzTUMweE1DNDBMVFF1TnkweE1DNDBMVEV3TGpSMkxUQXVPR013TFRVdU55dzBMamN0TVRBdU5Dd3hNQzQwTFRFd0xqUklNelkxWXpVdU55d3dMREV3TGpRc05DNDNMREV3TGpRc01UQXVOQ0FnSUNCMk1DNDRRek0zTlM0MUxETTBOaTR5TERNM01DNDRMRE0xTUM0NUxETTJOU3d6TlRBdU9Yb2lJR1pwYkd3OUlpTXpNRE5CTTBZaUx6NDhjR0YwYUNCa1BTSk5NelkxTERReE1TNDVTREUxTXk0NVl5MDFMamNzTUMweE1DNDBMVFF1TnkweE1DNDBMVEV3TGpSMkxUQXVPR013TFRVdU55dzBMamN0TVRBdU5Dd3hNQzQwTFRFd0xqUklNelkxWXpVdU55d3dMREV3TGpRc05DNDNMREV3TGpRc01UQXVOQ0FnSUNCMk1DNDRRek0zTlM0MUxEUXdOeTR5TERNM01DNDRMRFF4TVM0NUxETTJOU3cwTVRFdU9Yb2lJR1pwYkd3OUlpTXpNRE5CTTBZaUx6NDhMMmMrUEhCaGRHZ2daRDBpVFRNNU1pdzBNeTQxU0RFM09TNHliRE00TGpZc05URXVOR2d4TkRRdU4yTXlOeTR5TERBc05Ea3VOU3d5TWk0ekxEUTVMalVzTkRrdU5YWXlOamt1TTJNd0xESTNMakl0TWpJdU15dzBPUzQxTFRRNUxqVXNORGt1TlVneE5UUXVOQ0FnSUdNdE1qY3VNaXd3TFRRNUxqVXRNakl1TXkwME9TNDFMVFE1TGpWV01UVXdMamxNTmpVdU15dzVPQzQwWXkwd0xqTXNNaTQzTFRBdU9DdzFMak10TUM0NExEaDJNelF5TGpOak1Dd3pOQzQyTERJNExqTXNOak1zTmpNc05qTklNemt5WXpNMExqWXNNQ3cyTXkweU9DNHpMRFl6TFRZelZqRXdOaTQwSUNBZ1F6UTFOQzQ1TERjeExqZ3NOREkyTGpZc05ETXVOU3d6T1RJc05ETXVOWG9pSUdacGJHdzlJaU16TUROQk0wWWlMejQ4Wno0OGNHRjBhQ0JrUFNKTk1USTFMalVzTVRRNUxqaHNOamd1TXl3eU5XTXpMallzTVM0ekxEWXVOUzB3TGpjc05pNHpMVFF1Tm13dE15NHlMVGN5TGpkakxUQXVNUzB4TGpVdE1DNDFMVEl1T1MweExqTXROQzR6YkRBdU1TMHdMakVnSUNBZ1l5MHdMakV0TUM0eUxUQXVNeTB3TGpRdE1DNDBMVEF1Tm13dE5EZ3VPQzAyTmk0MmJDMHhOaXd4TVM0M2JEUTBMakVzTmpBdU1tTXhMamdzTWk0MExERXVNaXcxTGpndE1TNHlMRGN1Tm13dE15NDRMREl1T0dNdE1pNDBMREV1T0MwMUxqZ3NNUzR5TFRjdU5pMHhMakpNTVRFNExEUTJMamtnSUNBZ2JDMHhOUzQ0TERFeExqWnNORFF1TkN3Mk1DNDNZekV1Tml3eUxqSXNNUzR4TERVdU1pMHhMakVzTmk0NGJDMDBMamNzTXk0MVl5MHlMaklzTVM0MkxUVXVNaXd4TGpFdE5pNDRMVEV1TVV3NE9TNDJMRFkzTGpaTU56SXVOaXc0TUd3ME55NHlMRFkwTGpRZ0lDQWdRekV5TVN3eE5EWXVPQ3d4TWpNc01UUTRMamtzTVRJMUxqVXNNVFE1TGpoNklFMHhNemdzTVRReExqbHNORGN1Tmkwek5DNDVZekl1T1MweUxqRXNOeTQyTERFdU15dzNMamdzTlM0NGJERXVNU3d6T1M0M1l5MHdMamNzTUM0eUxURXVOQ3d3TGpNdE1pd3dMamRzTFRFMExqSXNNVEF1TkNBZ0lDQmpMVEF1TVN3d0xqRXRNQzR6TERBdE1DNHpMREF1TVd3dE16WXVPQzB4TWk0MlF6RXpOeXd4TkRrdU5pd3hNelV1TVN3eE5EUXNNVE00TERFME1TNDVlaUlnWm1sc2JEMGlJek13TTBFelJpSXZQanh3WVhSb0lHUTlJazAyT0M0NUxEYzFMak5zTFRVdU55MDNMamRqTFRFd0xqVXRNVFF1TXkwM0xqTXRNelF1TlN3M0xUUTFiREl5TFRFMkxqRmpNVFF1TXkweE1DNDFMRE0wTGpVdE55NHpMRFExTERkc05TNDNMRGN1TjB3Mk9DNDVMRGMxTGpONklpQm1hV3hzUFNJak16QXpRVE5HSWk4K1BDOW5Qand2Wno0OEwzTjJaejQ9IiAvPjwvc3ZnPg==");
 }
 .wmd-spoiler-button {
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjIwNyAtMC41MDkgLTAuNTU3IDAuMDAwIDAuODU5IC0wLjUzNiAwLjIzOSAtMC41NTEgMC4wMDAgMC44NDcgLTAuNTI4IC0wLjUwNiAwLjIwOCAwLjAwMCAwLjgyNSAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBEOTRiV3dnZG1WeWMybHZiajBpTVM0d0lpQS9Qanh6ZG1jZ1pHRjBZUzF1WVcxbFBTSk1ZWGxsY2lBeElpQnBaRDBpVEdGNVpYSmZNU0lnZG1sbGQwSnZlRDBpTUNBd0lETXlJRE15SWlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpUGp4MGFYUnNaUzgrUEhCaGRHZ2daRDBpVFRJM0xqTTNMREpJTVRRdU1EVmhPQzR3Tnl3NExqQTNMREFzTUN3eExESXVOemNzTmk0eExEY3VPVEVzTnk0NU1Td3dMREFzTVMwdU5qTXNNeTR4TW1nM0xqUTRZUzQ1TkM0NU5Dd3dMREVzTVN3d0xERXVPRGRJTVRVdU1XTXRMakUyTGpJdExqTTBMalF0TGpVeUxqVTVZVGd1TVRJc09DNHhNaXd3TERBc01TMDFMamcxTERJdU5URXNNaTR4Tnl3eUxqRTNMREFzTUN3eExTNHpOaXd3VmpJNFlUSXNNaXd3TERBc01Dd3lMREpvTVRkaE1pd3lMREFzTUN3d0xESXRNbFkwUVRJc01pd3dMREFzTUN3eU55NHpOeXd5V20wdE15NDNMREU0TGpjNGFDMDVMalpoTGprMExqazBMREFzTVN3eExEQXRNUzQ0TjJnNUxqWmhMamswTGprMExEQXNNU3d4TERBc01TNDROMXB0TUMwekxqZzFhQzA1TGpaaExqa3pMamt6TERBc01Td3hMREF0TVM0NE5tZzVMalpoTGprekxqa3pMREFzTVN3eExEQXNNUzQ0TmxvaUx6NDhjR0YwYUNCa1BTSk5PQzQzTXl3eE5DNHhPV0UyTGpBM0xEWXVNRGNzTUN3d0xEQXNOQzQwTVMweExqbEJOUzQyTVN3MUxqWXhMREFzTUN3d0xERTBMREV4TGpJellUWXNOaXd3TERBc01Dd3VPRGN0TXk0eE15dzJMakVzTmk0eExEQXNNQ3d3TFRVdE5tZ3dZVFlzTml3d0xEQXNNQzB4TFM0d09TdzJMakE1TERZdU1Ea3NNQ3d3TERBdExqTTJMREV5TGpFM1FUSXVNVGNzTWk0eE55d3dMREFzTUN3NExqY3pMREUwTGpFNVdtMHRNeTAyTGpBNVlURXNNU3d3TERBc01Td3hMVEZvTkdFeExERXNNQ3d3TERFc01Dd3lhQzAwUVRFc01Td3dMREFzTVN3MUxqY3pMRGd1TVZvaUx6NDhMM04yWno0PSIgLz48L3N2Zz4=");
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCI+PGRlZnM+PGZpbHRlciBpZD0iZGFya3JlYWRlci1pbWFnZS1maWx0ZXIiPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwLjI0OSAtMC42MTQgLTAuNjcyIDAuMDAwIDEuMDM1IC0wLjY0NiAwLjI4OCAtMC42NjQgMC4wMDAgMS4wMjAgLTAuNjM2IC0wLjYwOSAwLjI1MCAwLjAwMCAwLjk5NCAwLjAwMCAwLjAwMCAwLjAwMCAxLjAwMCAwLjAwMCIgLz48L2ZpbHRlcj48L2RlZnM+PGltYWdlIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWx0ZXI9InVybCgjZGFya3JlYWRlci1pbWFnZS1maWx0ZXIpIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBEOTRiV3dnZG1WeWMybHZiajBpTVM0d0lpQS9Qanh6ZG1jZ1pHRjBZUzF1WVcxbFBTSk1ZWGxsY2lBeElpQnBaRDBpVEdGNVpYSmZNU0lnZG1sbGQwSnZlRDBpTUNBd0lETXlJRE15SWlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpUGp4MGFYUnNaUzgrUEhCaGRHZ2daRDBpVFRJM0xqTTNMREpJTVRRdU1EVmhPQzR3Tnl3NExqQTNMREFzTUN3eExESXVOemNzTmk0eExEY3VPVEVzTnk0NU1Td3dMREFzTVMwdU5qTXNNeTR4TW1nM0xqUTRZUzQ1TkM0NU5Dd3dMREVzTVN3d0xERXVPRGRJTVRVdU1XTXRMakUyTGpJdExqTTBMalF0TGpVeUxqVTVZVGd1TVRJc09DNHhNaXd3TERBc01TMDFMamcxTERJdU5URXNNaTR4Tnl3eUxqRTNMREFzTUN3eExTNHpOaXd3VmpJNFlUSXNNaXd3TERBc01Dd3lMREpvTVRkaE1pd3lMREFzTUN3d0xESXRNbFkwUVRJc01pd3dMREFzTUN3eU55NHpOeXd5V20wdE15NDNMREU0TGpjNGFDMDVMalpoTGprMExqazBMREFzTVN3eExEQXRNUzQ0TjJnNUxqWmhMamswTGprMExEQXNNU3d4TERBc01TNDROMXB0TUMwekxqZzFhQzA1TGpaaExqa3pMamt6TERBc01Td3hMREF0TVM0NE5tZzVMalpoTGprekxqa3pMREFzTVN3eExEQXNNUzQ0TmxvaUx6NDhjR0YwYUNCa1BTSk5PQzQzTXl3eE5DNHhPV0UyTGpBM0xEWXVNRGNzTUN3d0xEQXNOQzQwTVMweExqbEJOUzQyTVN3MUxqWXhMREFzTUN3d0xERTBMREV4TGpJellUWXNOaXd3TERBc01Dd3VPRGN0TXk0eE15dzJMakVzTmk0eExEQXNNQ3d3TFRVdE5tZ3dZVFlzTml3d0xEQXNNQzB4TFM0d09TdzJMakE1TERZdU1Ea3NNQ3d3TERBdExqTTJMREV5TGpFM1FUSXVNVGNzTWk0eE55d3dMREFzTUN3NExqY3pMREUwTGpFNVdtMHRNeTAyTGpBNVlURXNNU3d3TERBc01Td3hMVEZvTkdFeExERXNNQ3d3TERFc01Dd3lhQzAwUVRFc01Td3dMREFzTVN3MUxqY3pMRGd1TVZvaUx6NDhMM04yWno0PSIgLz48L3N2Zz4=");
 }
 .wmd-button-active:hover {
-    background-color: rgb(41, 44, 46);
+    background-color: rgb(49, 53, 55);
 }
 .wmd-prompt-background {
     background-color: rgb(0, 0, 0);
 }
 .wmd-prompt-dialog {
-    border-color: rgb(64, 69, 71);
-    background-color: rgb(25, 27, 27); 
+    border-color: rgb(77, 83, 86);
+    background-color: rgb(30, 32, 33); 
 }
 .wmd-prompt-dialog > form > input[type="text"] {
-    border-color: rgb(64, 69, 71);
-    color: rgb(193, 191, 188); 
+    border-color: rgb(77, 83, 86);
+    color: rgb(232, 230, 227); 
 }
 .wmd-prompt-dialog > form > input[type="button"] {
-    border-color: rgb(68, 73, 76);
+    border-color: rgb(82, 88, 92);
 }
 .wmd-preview {
     background-image: initial;
-    background-color: rgb(20, 22, 22);
-    border-color: rgb(60, 65, 67);
+    background-color: rgb(24, 26, 27);
+    border-color: rgb(72, 78, 81);
 }
 .pagedown-image-upload {
     background-image: initial;
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
     box-shadow: rgba(0, 0, 0, 0.5) 2px 2px 10px 0px;
 }
 .pagedown-image-upload .submit-loading {
-    border-color: rgb(38, 76, 94) rgb(42, 46, 48) rgb(42, 46, 48);
+    border-color: rgb(46, 91, 113) rgb(51, 56, 58) rgb(51, 56, 58);
 }
 div.dmmd-preview-update {
     background-image: initial;
-    background-color: rgb(44, 47, 49);
-    color: rgb(166, 162, 156);
+    background-color: rgb(53, 57, 59);
+    color: rgb(200, 195, 188);
 }
 div.dmmd-preview-stale {
     background-image: repeating-linear-gradient(-45deg,
-    rgb(20, 22, 22),
-    rgb(20, 22, 22) 10px,
-    rgb(23, 25, 26) 10px,
-    rgb(23, 25, 26) 20px);
+    rgb(24, 26, 27),
+    rgb(24, 26, 27) 10px,
+    rgb(28, 30, 31) 10px,
+    rgb(28, 30, 31) 20px);
     background-color: initial;
 }
 code .hll {
-    background-color: rgb(51, 51, 0);
+    background-color: rgb(61, 61, 0);
 }
 code .c {
-    color: rgb(134, 128, 118);
+    color: rgb(162, 154, 142);
 }
 code .err {
-    color: rgb(193, 78, 78);
-    background-color: rgb(48, 30, 30);
+    color: rgb(233, 94, 94);
+    background-color: rgb(58, 36, 36);
 }
 code .k {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 code .o {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 code .cm {
-    color: rgb(134, 128, 118);
+    color: rgb(162, 154, 142);
 }
 code .cp {
-    color: rgb(139, 133, 124);
+    color: rgb(168, 160, 149);
 }
 code .c1 {
-    color: rgb(134, 128, 118);
+    color: rgb(162, 154, 142);
 }
 code .cs {
-    color: rgb(139, 133, 124);
+    color: rgb(168, 160, 149);
 }
 code .gd {
-    color: rgb(193, 191, 188);
-    background-color: rgb(59, 0, 0);
+    color: rgb(232, 230, 227);
+    background-color: rgb(71, 0, 0);
 }
 code .ge {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 code .gr {
-    color: rgb(212, 71, 71);
+    color: rgb(255, 85, 85);
 }
 code .gh {
-    color: rgb(139, 133, 124);
+    color: rgb(168, 160, 149);
 }
 code .gi {
-    color: rgb(193, 191, 188);
-    background-color: rgb(15, 59, 0);
+    color: rgb(232, 230, 227);
+    background-color: rgb(18, 71, 0);
 }
 code .go {
-    color: rgb(130, 123, 113);
+    color: rgb(157, 148, 136);
 }
 code .gp {
-    color: rgb(148, 143, 134);
+    color: rgb(178, 172, 162);
 }
 code .gu {
-    color: rgb(148, 143, 134);
+    color: rgb(178, 172, 162);
 }
 code .gt {
-    color: rgb(212, 71, 71);
+    color: rgb(255, 85, 85);
 }
 code .kc {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 code .kd {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 code .kn {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 code .kp {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 code .kr {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 code .kt {
-    color: rgb(115, 138, 164);
+    color: rgb(139, 166, 197);
 }
 code .m {
-    color: rgb(81, 212, 212);
+    color: rgb(97, 255, 255);
 }
 code .s {
-    color: rgb(199, 51, 89);
+    color: rgb(240, 62, 107);
 }
 code .na {
-    color: rgb(95, 212, 212);
+    color: rgb(114, 255, 255);
 }
 code .nb {
-    color: rgb(66, 175, 212);
+    color: rgb(79, 211, 255);
 }
 code .nc {
-    color: rgb(115, 138, 164);
+    color: rgb(139, 166, 197);
 }
 code .no {
-    color: rgb(95, 212, 212);
+    color: rgb(114, 255, 255);
 }
 code .nd {
-    color: rgb(153, 148, 139);
+    color: rgb(184, 178, 168);
 }
 code .ni {
-    color: rgb(212, 95, 212);
+    color: rgb(255, 114, 255);
 }
 code .ne {
-    color: rgb(212, 81, 81);
+    color: rgb(255, 97, 97);
 }
 code .nf {
-    color: rgb(212, 81, 81);
+    color: rgb(255, 97, 97);
 }
 code .nl {
-    color: rgb(212, 81, 81);
+    color: rgb(255, 97, 97);
 }
 code .nn {
-    color: rgb(148, 143, 134);
+    color: rgb(178, 172, 162);
 }
 code .nt {
-    color: rgb(105, 144, 212);
+    color: rgb(127, 174, 255);
 }
 code .nv {
-    color: rgb(95, 212, 212);
+    color: rgb(114, 255, 255);
 }
 code .ow {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 code .w {
-    color: rgb(157, 152, 145);
+    color: rgb(189, 183, 175);
 }
 code .mf {
-    color: rgb(81, 212, 212);
+    color: rgb(97, 255, 255);
 }
 code .mh {
-    color: rgb(81, 212, 212);
+    color: rgb(97, 255, 255);
 }
 code .mi {
-    color: rgb(81, 212, 212);
+    color: rgb(97, 255, 255);
 }
 code .mo {
-    color: rgb(81, 212, 212);
+    color: rgb(97, 255, 255);
 }
 code .sb {
-    color: rgb(199, 51, 89);
+    color: rgb(240, 62, 107);
 }
 code .sc {
-    color: rgb(199, 51, 89);
+    color: rgb(240, 62, 107);
 }
 code .sd {
-    color: rgb(199, 51, 89);
+    color: rgb(240, 62, 107);
 }
 code .s2 {
-    color: rgb(199, 51, 89);
+    color: rgb(240, 62, 107);
 }
 code .se {
-    color: rgb(199, 51, 89);
+    color: rgb(240, 62, 107);
 }
 code .sh {
-    color: rgb(199, 51, 89);
+    color: rgb(240, 62, 107);
 }
 code .si {
-    color: rgb(199, 51, 89);
+    color: rgb(240, 62, 107);
 }
 code .sx {
-    color: rgb(199, 51, 89);
+    color: rgb(240, 62, 107);
 }
 code .sr {
-    color: rgb(81, 212, 113);
+    color: rgb(97, 255, 136);
 }
 code .s1 {
-    color: rgb(199, 51, 89);
+    color: rgb(240, 62, 107);
 }
 code .ss {
-    color: rgb(212, 81, 179);
+    color: rgb(255, 97, 216);
 }
 code .bp {
-    color: rgb(139, 133, 124);
+    color: rgb(168, 160, 149);
 }
 code .vc {
-    color: rgb(95, 212, 212);
+    color: rgb(114, 255, 255);
 }
 code .vg {
-    color: rgb(95, 212, 212);
+    color: rgb(114, 255, 255);
 }
 code .vi {
-    color: rgb(95, 212, 212);
+    color: rgb(114, 255, 255);
 }
 code .il {
-    color: rgb(81, 212, 212);
+    color: rgb(97, 255, 255);
 }
 .fa-border {
-    border-color: rgb(44, 47, 49);
+    border-color: rgb(53, 57, 59);
 }
 .fa-inverse {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 @media all {
     .featherlight {
@@ -3512,12 +3516,12 @@ code .il {
     .featherlight .featherlight-content {
         border-bottom-color: transparent;
         background-image: initial;
-        background-color: rgb(20, 22, 22);
+        background-color: rgb(24, 26, 27);
     }
     .featherlight .featherlight-close-icon {
         background-image: initial;
-        background-color: rgba(20, 22, 22, 0.3);
-        color: rgb(193, 191, 188);
+        background-color: rgba(24, 26, 27, 0.3);
+        color: rgb(232, 230, 227);
     }
     .featherlight-iframe .featherlight-content {
         border-bottom-color: initial;
@@ -3532,14 +3536,14 @@ code .il {
     }
 }
 .tooltipped::after {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
     text-decoration-color: initial;
     text-shadow: none;
     background-image: initial;
     background-color: rgba(0, 0, 0, 0.8);
 }
 .tooltipped::before {
-    color: rgba(193, 191, 188, 0.8);
+    color: rgba(232, 230, 227, 0.8);
     border-color: transparent;
 }
 .tooltipped:hover::before,
@@ -3553,25 +3557,25 @@ code .il {
 .tooltipped-s::before,
 .tooltipped-se::before,
 .tooltipped-sw::before {
-    border-bottom-color: rgba(116, 108, 95, 0.8);
+    border-bottom-color: rgba(140, 130, 115, 0.8);
 }
 .tooltipped-n::before,
 .tooltipped-ne::before,
 .tooltipped-nw::before {
-    border-top-color: rgba(116, 108, 95, 0.8);
+    border-top-color: rgba(140, 130, 115, 0.8);
 }
 .tooltipped-w::before {
-    border-left-color: rgba(116, 108, 95, 0.8);
+    border-left-color: rgba(140, 130, 115, 0.8);
 }
 .tooltipped-e::before {
-    border-right-color: rgba(116, 108, 95, 0.8);
+    border-right-color: rgba(140, 130, 115, 0.8);
 }
 .select2-container .select2-search--inline .select2-search__field {
     border-color: initial;
 }
 .select2-dropdown {
-    background-color: rgb(20, 22, 22);
-    border-color: rgb(60, 65, 67);
+    background-color: rgb(24, 26, 27);
+    border-color: rgb(72, 78, 81);
 }
 .select2-results__options {
     list-style-image: initial;
@@ -3584,109 +3588,109 @@ code .il {
 }
 .select2-close-mask {
     border-color: initial;
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
 }
 .select2-hidden-accessible {
     border-color: initial !important;
 }
 .select2-container--default .select2-selection--single {
-    background-color: rgb(20, 22, 22);
-    border-color: rgb(60, 65, 67);
+    background-color: rgb(24, 26, 27);
+    border-color: rgb(72, 78, 81);
 }
 .select2-container--default .select2-selection--single .select2-selection__rendered {
-    color: rgb(157, 152, 145);
+    color: rgb(189, 183, 175);
 }
 .select2-container--default .select2-selection--single .select2-selection__placeholder {
-    color: rgb(139, 133, 124);
+    color: rgb(168, 160, 149);
 }
 .select2-container--default .select2-selection--single .select2-selection__arrow b {
-    border-color: rgb(68, 73, 76) transparent transparent;
+    border-color: rgb(82, 88, 92) transparent transparent;
 }
 .select2-container--default.select2-container--disabled .select2-selection--single {
-    background-color: rgb(28, 30, 32);
+    background-color: rgb(34, 36, 38);
 }
 .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
-    border-color: transparent transparent rgb(68, 73, 76);
+    border-color: transparent transparent rgb(82, 88, 92);
 }
 .select2-container--default .select2-selection--multiple {
-    background-color: rgb(20, 22, 22);
-    border-color: rgb(60, 65, 67);
+    background-color: rgb(24, 26, 27);
+    border-color: rgb(72, 78, 81);
 }
 .select2-container--default .select2-selection--multiple .select2-selection__rendered {
     list-style-image: initial;
 }
 .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
-    color: rgb(139, 133, 124);
+    color: rgb(168, 160, 149);
 }
 .select2-container--default .select2-selection--multiple .select2-selection__choice {
-    background-color: rgb(32, 36, 37);
-    border-color: rgb(60, 65, 67);
+    background-color: rgb(39, 43, 44);
+    border-color: rgb(72, 78, 81);
 }
 .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
-    color: rgb(139, 133, 124);
+    color: rgb(168, 160, 149);
 }
 .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
-    color: rgb(166, 162, 156);
+    color: rgb(200, 195, 188);
 }
 .select2-container--default.select2-container--focus .select2-selection--multiple {
-    border-color: rgb(116, 108, 95);
+    border-color: rgb(140, 130, 115);
     outline-color: initial;
 }
 .select2-container--default.select2-container--disabled .select2-selection--multiple {
-    background-color: rgb(28, 30, 32);
+    background-color: rgb(34, 36, 38);
 }
 .select2-container--default .select2-search--dropdown .select2-search__field {
-    border-color: rgb(60, 65, 67); 
+    border-color: rgb(72, 78, 81); 
 }
 .select2-container--default .select2-search--inline .select2-search__field {
     background-image: initial; background-color: transparent; border-color: initial; outline-color: initial; box-shadow: none; 
 }
 .select2-container--default .select2-results__option[aria-disabled="true"] {
-    color: rgb(139, 133, 124); 
+    color: rgb(168, 160, 149); 
 }
 .select2-container--default .select2-results__option[aria-selected="true"] {
-    background-color: rgb(36, 39, 41);
+    background-color: rgb(43, 47, 49);
 }
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
-    background-color: rgb(3, 50, 125);
-    color: rgb(193, 191, 188);
+    background-color: rgb(4, 60, 150);
+    color: rgb(232, 230, 227);
 }
 .select2-container--classic .select2-selection--single {
-    background-color: rgb(24, 26, 27);
-    border-color: rgb(60, 65, 67);
+    background-color: rgb(29, 31, 32);
+    border-color: rgb(72, 78, 81);
     outline-color: initial;
-    background-image: linear-gradient(rgb(20, 22, 22) 50%,
-    rgb(28, 30, 32) 100%);
+    background-image: linear-gradient(rgb(24, 26, 27) 50%,
+    rgb(34, 36, 38) 100%);
 }
 .select2-container--classic .select2-selection--single:focus {
-    border-color: rgb(3, 50, 125);
+    border-color: rgb(4, 60, 150);
 }
 .select2-container--classic .select2-selection--single .select2-selection__rendered {
-    color: rgb(157, 152, 145);
+    color: rgb(189, 183, 175);
 }
 .select2-container--classic .select2-selection--single .select2-selection__placeholder {
-    color: rgb(139, 133, 124);
+    color: rgb(168, 160, 149);
 }
 .select2-container--classic .select2-selection--single .select2-selection__arrow {
-    background-color: rgb(36, 39, 41);
+    background-color: rgb(43, 47, 49);
     border-top-color: initial;
     border-right-color: initial;
     border-bottom-color: initial;
-    border-left-color: rgb(60, 65, 67);
-    background-image: linear-gradient(rgb(28, 30, 32) 50%,
-    rgb(44, 47, 49) 100%);
+    border-left-color: rgb(72, 78, 81);
+    background-image: linear-gradient(rgb(34, 36, 38) 50%,
+    rgb(53, 57, 59) 100%);
 }
 .select2-container--classic .select2-selection--single .select2-selection__arrow b {
-    border-color: rgb(68, 73, 76) transparent transparent; 
+    border-color: rgb(82, 88, 92) transparent transparent; 
 }
 .select2-container--classic[dir="rtl"] .select2-selection--single .select2-selection__arrow {
     border-top-color: initial;
     border-bottom-color: initial;
     border-left-color: initial;
-    border-right-color: rgb(60, 65, 67);
+    border-right-color: rgb(72, 78, 81);
 }
 .select2-container--classic.select2-container--open .select2-selection--single {
-    border-color: rgb(3, 50, 125);
+    border-color: rgb(4, 60, 150);
 }
 .select2-container--classic.select2-container--open .select2-selection--single .select2-selection__arrow {
     background-image: initial;
@@ -3694,41 +3698,41 @@ code .il {
     border-color: initial;
 }
 .select2-container--classic.select2-container--open .select2-selection--single .select2-selection__arrow b {
-    border-color: transparent transparent rgb(68, 73, 76);
+    border-color: transparent transparent rgb(82, 88, 92);
 }
 .select2-container--classic.select2-container--open.select2-container--above .select2-selection--single {
     border-top-color: initial;
-    background-image: linear-gradient(rgb(20, 22, 22) 0%,
-    rgb(28, 30, 32) 50%);
+    background-image: linear-gradient(rgb(24, 26, 27) 0%,
+    rgb(34, 36, 38) 50%);
 }
 .select2-container--classic.select2-container--open.select2-container--below .select2-selection--single {
     border-bottom-color: initial;
-    background-image: linear-gradient(rgb(28, 30, 32) 50%,
-    rgb(20, 22, 22) 100%);
+    background-image: linear-gradient(rgb(34, 36, 38) 50%,
+    rgb(24, 26, 27) 100%);
 }
 .select2-container--classic .select2-selection--multiple {
-    background-color: rgb(20, 22, 22);
-    border-color: rgb(60, 65, 67);
+    background-color: rgb(24, 26, 27);
+    border-color: rgb(72, 78, 81);
     outline-color: initial;
 }
 .select2-container--classic .select2-selection--multiple:focus {
-    border-color: rgb(3, 50, 125);
+    border-color: rgb(4, 60, 150);
 }
 .select2-container--classic .select2-selection--multiple .select2-selection__rendered {
     list-style-image: initial;
 }
 .select2-container--classic .select2-selection--multiple .select2-selection__choice {
-    background-color: rgb(32, 36, 37);
-    border-color: rgb(60, 65, 67);
+    background-color: rgb(39, 43, 44);
+    border-color: rgb(72, 78, 81);
 }
 .select2-container--classic .select2-selection--multiple .select2-selection__choice__remove {
-    color: rgb(130, 123, 113);
+    color: rgb(157, 148, 136);
 }
 .select2-container--classic .select2-selection--multiple .select2-selection__choice__remove:hover {
-    color: rgb(148, 143, 134);
+    color: rgb(178, 172, 162);
 }
 .select2-container--classic.select2-container--open .select2-selection--multiple {
-    border-color: rgb(3, 50, 125);
+    border-color: rgb(4, 60, 150);
 }
 .select2-container--classic.select2-container--open.select2-container--above .select2-selection--multiple {
     border-top-color: initial;
@@ -3737,7 +3741,7 @@ code .il {
     border-bottom-color: initial;
 }
 .select2-container--classic .select2-search--dropdown .select2-search__field {
-    border-color: rgb(60, 65, 67);
+    border-color: rgb(72, 78, 81);
     outline-color: initial;
 }
 .select2-container--classic .select2-search--inline .select2-search__field {
@@ -3745,7 +3749,7 @@ code .il {
     box-shadow: none;
 }
 .select2-container--classic .select2-dropdown {
-    background-color: rgb(20, 22, 22); border-color: transparent; 
+    background-color: rgb(24, 26, 27); border-color: transparent; 
 }
 .select2-container--classic .select2-dropdown--above {
     border-bottom-color: initial; 
@@ -3754,97 +3758,97 @@ code .il {
     border-top-color: initial; 
 }
 .select2-container--classic .select2-results__option[aria-disabled="true"] {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
 }
 .select2-container--classic .select2-results__option--highlighted[aria-selected] {
-    background-color: rgb(27, 68, 134);
-    color: rgb(193, 191, 188);
+    background-color: rgb(33, 82, 162);
+    color: rgb(232, 230, 227);
 }
 .select2-container--classic.select2-container--open .select2-dropdown {
-    border-color: rgb(3, 50, 125);
+    border-color: rgb(4, 60, 150);
 }
 .icofont-border {
-    border-color: rgb(43, 46, 48);
+    border-color: rgb(52, 56, 58);
 }
 .icofont-inverse {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .sr-only {
     border-color: initial;
 }
 .CtxtMenu_InfoContent {
     border-color: initial;
-    background-color: rgb(28, 30, 32);
+    background-color: rgb(34, 36, 38);
 }
 .CtxtMenu_Info.CtxtMenu_MousePost {
     outline-color: initial;
 }
 .CtxtMenu_Info {
     border-color: initial;
-    background-color: rgb(36, 39, 41);
-    color: rgb(193, 191, 188);
-    box-shadow: rgb(80, 86, 90) 0px 10px 20px;
+    background-color: rgb(43, 47, 49);
+    color: rgb(232, 230, 227);
+    box-shadow: rgb(96, 104, 108) 0px 10px 20px;
 }
 .CtxtMenu_MenuClose {
-    border-color: rgb(60, 65, 67);
-    color: rgb(185, 183, 178);
+    border-color: rgb(72, 78, 81);
+    color: rgb(223, 220, 215);
 }
 .CtxtMenu_MenuClose span {
-    background-color: rgb(60, 65, 67);
+    background-color: rgb(72, 78, 81);
     border-color: initial;
 }
 .CtxtMenu_MenuClose:hover {
-    color: rgb(193, 191, 188) !important;
-    border-color: rgb(51, 56, 58) !important;
+    color: rgb(232, 230, 227) !important;
+    border-color: rgb(62, 68, 70) !important;
 }
 .CtxtMenu_MenuClose:hover span {
-    background-color: rgb(44, 47, 49) !important;
+    background-color: rgb(53, 57, 59) !important;
 }
 .CtxtMenu_MenuClose:hover:focus {
     outline-color: initial;
 }
 .CtxtMenu_Menu {
-    background-color: rgb(20, 22, 22);
-    color: rgb(193, 191, 188);
-    border-color: rgb(51, 56, 58);
-    box-shadow: rgb(80, 86, 90) 0px 10px 20px;
+    background-color: rgb(24, 26, 27);
+    color: rgb(232, 230, 227);
+    border-color: rgb(62, 68, 70);
+    box-shadow: rgb(96, 104, 108) 0px 10px 20px;
 }
 .CtxtMenu_MenuItem {
     background-image: initial;
     background-color: transparent;
 }
 .CtxtMenu_MenuArrow {
-    color: rgb(139, 133, 124);
+    color: rgb(168, 160, 149);
 }
 .CtxtMenu_MenuActive .CtxtMenu_MenuArrow {
-    color: rgb(193, 191, 188);
+    color: rgb(232, 230, 227);
 }
 .CtxtMenu_MenuInputBox {
-    color: rgb(139, 133, 124);
+    color: rgb(168, 160, 149);
 }
 .CtxtMenu_SliderValue {
-    color: rgb(166, 162, 156);
+    color: rgb(200, 195, 188);
 }
 .CtxtMenu_SliderBar {
     outline-color: initial;
     background-image: initial;
-    background-color: rgb(41, 44, 46);
+    background-color: rgb(49, 53, 55);
 }
 .CtxtMenu_MenuRule {
-    border-top-color: rgb(48, 51, 54);
+    border-top-color: rgb(58, 62, 65);
 }
 .CtxtMenu_MenuDisabled {
-    color: rgb(126, 119, 107);
+    color: rgb(152, 143, 129);
 }
 .CtxtMenu_MenuActive {
-    background-color: rgb(66, 71, 74);
-    color: rgb(193, 191, 188);
+    background-color: rgb(79, 86, 89);
+    color: rgb(232, 230, 227);
 }
 .CtxtMenu_MenuDisabled:focus {
-    background-color: rgb(31, 33, 35);
+    background-color: rgb(37, 40, 42);
 }
 .CtxtMenu_MenuLabel:focus {
-    background-color: rgb(31, 33, 35);
+    background-color: rgb(37, 40, 42);
 }
 .CtxtMenu_ContextMenu:focus {
     outline-color: initial;
@@ -3857,24 +3861,30 @@ code .il {
     box-shadow: none;
 }
 .CtxtMenu_SelectionBox {
-    background-color: rgb(20, 22, 22);
+    background-color: rgb(24, 26, 27);
 }
 .CtxtMenu_SelectionDivider {
-    border-top-color: rgb(116, 108, 95);
+    border-top-color: rgb(140, 130, 115);
 }
 mjx-merror {
-    color: rgb(212, 22, 22);
-    background-color: rgb(127, 127, 0);
+    color: rgb(255, 26, 26);
+    background-color: rgb(153, 153, 0);
 }
 mjx-assistive-mml {
     border-color: initial !important;
 }
+.recently-attempted ul {
+    list-style-image: initial;
+}
+.organization-row:last-child {
+    border-bottom-color: initial;
+}
 
 /* Override Style */
 .vimvixen-hint {
-    background-color: #664500 !important;
-    border-color: #b39210 !important;
-    color: #cac1a6 !important;
+    background-color: #7b5300 !important;
+    border-color: #d8b013 !important;
+    color: #f3e8c8 !important;
 }
 #vimvixen-console-frame {
     color-scheme: light !important
@@ -3888,7 +3898,7 @@ mjx-assistive-mml {
     color: var(--darkreader-neutral-text) !important;
 }
 gr-main-header {
-    background-color: #0d303c !important;
+    background-color: #0f3a48 !important;
 }
 .tou-z65h9k,
 .tou-mignzq,
@@ -3897,7 +3907,7 @@ gr-main-header {
     background-color: var(--darkreader-neutral-background) !important;
 }
 .tou-75mvi {
-    background-color: #031b22 !important;
+    background-color: #032029 !important;
 }
 .tou-ta9e87,
 .tou-1w3fhi0,
@@ -3906,13 +3916,13 @@ gr-main-header {
 .tou-1lpmd9d,
 .tou-1frrtv8,
 .tou-17ezmgn {
-    background-color: #080808 !important;
+    background-color: #0a0a0a !important;
 }
 .tou-uknfeu {
-    background-color: #1d1202 !important;
+    background-color: #231603 !important;
 }
 .tou-6i3zyv {
-    background-color: #15485a !important;
+    background-color: #19576c !important;
 }
 div.mermaid-viewer-control-panel .btn {
   fill: var(--darkreader-neutral-text);

@@ -27,7 +27,7 @@
             {{ field }}
           </div>
           {% if field.help_text %}
-            <i style="display: block">{{ field.help_text|safe }}</i>
+            <small class="org-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
           {% endif %}
         </div>
       {% endif %}
