@@ -210,21 +210,21 @@
       </defs>
     </svg>
     <nav id="navigation" class="unselectable">
-      <div id="nav-container">
+      <div id="nav-container" style="display: flex">
         <span id="navicon"><i class="fa fa-bars"></i></span>
         <ul id="nav-list">
-          <li style="margin-right:1.5em" class="home-nav-element"><a href="{{ url('home') }}">{% include "site-logo-fragment.html" %}</a></li>
-          <li class="home-nav-element"><span class="nav-divider"></span></li>
+          <li class="home-nav-element" style="margin-right: 1em"><a href="{{ url('home') }}">{% include "site-logo-fragment.html" %}</a></li>
           <li class="home-menu-item"><a href="{{ url('home') }}" class="nav-home">{{ _('Home') }}</a></li>
           {% for node in mptt_tree(nav_bar) recursive %}
             <li>
-              <a href="{{ node.path }}" id="fa-icon-links" class="normal-text nav-{{ node.key }}{% if node.key in nav_tab %} active{% endif %}" style="font-size: smaller; margin-right: 1.5em; text-align: left;">
+              <a href="{{ node.path }}" id="fa-icon-links" class="normal-text nav-{{ node.key }}{% if node.key in nav_tab %} active{% endif %}">
                 <span class="nav-fa-icon{{'-active' if node.key in nav_tab else''}}">
                   {% if node.key == "problems" %} <i class="fa fa-pencil"></i> {% endif %}
-                  {% if node.key == "submit" %} <i class="fa fa-neuter"></i> {% endif %}
+                  {% if node.key == "submit" %} <i class="fa fa-code"></i> {% endif %}
                   {% if node.key == "user" %} <i class="fa fa-user"></i> {% endif %}
                   {% if node.key == "contest" %} <i class="fa fa-graduation-cap"></i> {% endif %}
-                  {% if node.key == "about" %} <i class="fa fa-group"></i> {% endif %}
+                  {% if node.key == "group" %} <i class="fa fa-group"></i> {% endif %}
+                  {% if node.key == "about" %} <i class="fa fa-at"></i> {% endif %}
                 </span>
                 {{ user_trans(node.label) }}
                 {% if not node.is_leaf_node %}
@@ -238,59 +238,51 @@
           {% endfor %}
         </ul>
 
-        <div style="float: right; display: inline-flex; font-size: larger; align-items: center; height: 100%;">
-          <span class="navbar-icons">
-            {% if request.user.is_authenticated %}
-              <span title="{{_('Chat')}}">
-                <a id="chat-icon" href="{{ url('chat', '') }}" class="fa fa-wechat navbar-icon" aria-hidden="true" style="font-size: 22.5px;">
-                  {% set unread_chat = request.profile.count_unread_chat_boxes %}
-                  {% if unread_chat %}
-                    <sub class="unread_boxes">{{unread_chat}}</sub>
-                  {% endif %}
-                </a>
-              </span>
+        <div style="display: flex; font-size: larger; align-items: center; height: 100%; gap: 1em;">
+          {% if request.user.is_authenticated %}
+            <span title="{{_('Chat')}}">
+              <a id="chat-icon" href="{{ url('chat', '') }}" class="fa fa-wechat navbar-icon" aria-hidden="true" style="font-size: 22.5px;">
+                {% set unread_chat = request.profile.count_unread_chat_boxes %}
+                {% if unread_chat %}
+                  <sub class="unread_boxes">{{unread_chat}}</sub>
+                {% endif %}
+              </a>
+            </span>
 
-              {% set unseen_cnt = request.profile.count_unseen_notifications %}
-              <span title="{{_('Notification')}}" class="{{ 'notification-open' if unseen_cnt > 0 }}">
-                <a href="{{ url('notification') }}" class="fa fa-bell-o navbar-icon" id="notification" aria-hidden="true" style="font-size: 22.5px;">
-                  {% if unseen_cnt > 0 %}
-                    <sub class="unread_boxes">{{unseen_cnt}}</sub>
-                  {% endif %}
-                </a>
-              </span>
-            {% endif %}
-            <span title="{{_('Language')}}">
-              <div class="navbar-icon" id="nav-lang-icon" aria-hidden="true" style="font-size: 22.5px;">
-                {% if LANGUAGE_CODE == "vi" %}
-                  <h4 class="normal-text" style="color: black;">Tiếng Việt</h4>
+            {% set unseen_cnt = request.profile.count_unseen_notifications %}
+            <span title="{{_('Notification')}}" class="{{ 'notification-open' if unseen_cnt > 0 }}">
+              <a href="{{ url('notification') }}" class="fa fa-bell-o navbar-icon" id="notification" aria-hidden="true" style="font-size: 22.5px;">
+                {% if unseen_cnt > 0 %}
+                  <sub class="unread_boxes">{{unseen_cnt}}</sub>
                 {% endif %}
-                {% if LANGUAGE_CODE == "en" %}
-                  <h4 class="normal-text" style="color: black;">English</h4>
-                {% endif %}
-              </div>
-              <div id="lang-dropdown" class="dropdown" role="tooltip">
-                {% for language in language_info_list(LANGUAGES) %}
-                  <div value="{{ language.code }}"
-                    class="dropdown-item lang-dropdown-item" style="{{'font-weight: bold' if language.code == LANGUAGE_CODE}}">
-                    {{ language.name_local }}
-                  </div>
-                {% endfor %}
-              </div>
+              </a>
             </span>
-            <span title="{{_('Dark Mode')}}">
-              <a class="fa fa-moon-o navbar-icon black" id="nav-darkmode-icon" aria-hidden="true" href="?darkmode=1" style="font-size: 22.5px;"></a>
-            </span>
+          {% endif %}
+          <span title="{{_('Language')}}">
+            <div class="navbar-icon" id="nav-lang-icon" aria-hidden="true" style="font-size: 22.5px;">
+              {% if LANGUAGE_CODE == "vi" %}
+                <h4 class="black nav-right-text">Tiếng Việt</h4>
+              {% endif %}
+              {% if LANGUAGE_CODE == "en" %}
+                <h4 class="black nav-right-text">English</h4>
+              {% endif %}
+            </div>
+            <div id="lang-dropdown" class="dropdown" role="tooltip">
+              {% for language in language_info_list(LANGUAGES) %}
+                <div value="{{ language.code }}"
+                  class="dropdown-item lang-dropdown-item" style="{{'font-weight: bold' if language.code == LANGUAGE_CODE}}">
+                  {{ language.name_local }}
+                </div>
+              {% endfor %}
+            </div>
+          </span>
+          <span title="{{_('Dark Mode')}}">
+            <a class="fa fa-moon-o navbar-icon black" id="nav-darkmode-icon" aria-hidden="true" href="?darkmode=1" style="font-size: 22.5px;"></a>
           </span>
           {% if request.user.is_authenticated %}
-            <span id="user-links" class="navbar-icons">
-              <ul><li>
-                <span>
-                  <img src="{{ gravatar(request.profile, 32) }}" height="24" width="24">{# -#}
-                  <span>
-                    <b class="{{request.profile.css_class}}">{{ request.user.username }}</b>
-                  </span>
-                </span>
-              </li></ul>
+            <span id="user-links">
+              <img src="{{ gravatar(request.profile, 32) }}" height="24" width="24">
+              <i class="fa fa-angle-down" style="font-size: 18px; padding-top: 8px;"></i>
             </span>
             <div class="dropdown" id="userlink_dropdown" role="tooptip">
               <a href="{{ url('user_page') }}">
@@ -328,9 +320,9 @@
               {% endif %}
             </div>
           {% else %}
-            <span class="anon navbar-icons">
-              <a href="{{ url('auth_login') }}?next={{ LOGIN_RETURN_PATH|urlencode }}" style="margin-right: 20px;"><h4 class="normal-text">{{ _('Log in') }}</h4></a>
-              <a href="{{ url('registration_register') }}"><h4 class="normal-text">{{ _('Sign up') }}</h4></a>
+            <span class="anon">
+              <a href="{{ url('auth_login') }}?next={{ LOGIN_RETURN_PATH|urlencode }}"><h4 class="nav-right-text">{{ _('Log in') }}</h4></a>
+              <a href="{{ url('registration_register') }}"><h4 class="nav-right-text">{{ _('Sign up') }}</h4></a>
             </span>
           {% endif %}
         </div>

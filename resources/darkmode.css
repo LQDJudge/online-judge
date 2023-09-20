@@ -1502,7 +1502,7 @@ a:hover {
     color: rgb(102, 177, 250);
 }
 a:active {
-    color: rgb(255, 180, 29);
+    color: rgb(249, 146, 97);
 }
 * {
     -webkit-tap-highlight-color: transparent;
@@ -1538,14 +1538,9 @@ header {
     background-color: rgb(13, 14, 14);
     color: rgb(178, 172, 162);
 }
-#user-links {
-    color: rgb(176, 170, 159);
-}
-#user-links > ul > li > span:hover {
-    border-top-color: rgb(199, 70, 8);
+#user-links:hover {
     color: rgb(232, 230, 227);
-    background-image: initial;
-    background-color: rgba(24, 26, 27, 0.25);
+    border-color: rgb(140, 130, 115);
 }
 #nav-shadow {
     background-image: linear-gradient(rgb(49, 53, 55),
@@ -1571,8 +1566,6 @@ nav ul li a,
 nav ul li button {
     text-decoration-color: initial;
     color: rgb(232, 230, 227);
-    border-top-color: transparent;
-    border-bottom-color: transparent;
 }
 nav ul li a:link,
 nav ul li button:link {
@@ -1589,8 +1582,6 @@ nav ul li a.active,
 nav ul li button.active {
     border-top-color: rgb(199, 70, 8);
     color: rgb(249, 146, 97);
-    background-image: initial;
-    background-color: rgb(24, 26, 27);
 }
 nav ul li ul {
     color: rgb(232, 230, 227);
@@ -1618,9 +1609,6 @@ nav ul li.home-nav-element a:hover {
     border-bottom-color: initial;
     background-image: initial;
     background-color: transparent;
-}
-nav .nav-divider {
-    border-right-color: rgba(48, 52, 54, 0.15);
 }
 hr {
     color: rgba(232, 230, 227, 0.2);
@@ -1724,7 +1712,7 @@ noscript #noscript {
     color: rgb(178, 171, 161);
 }
 #chat-icon {
-    color: rgb(205, 200, 194);
+    color: rgb(249, 146, 97);
 }
 #chat-icon:hover {
     color: rgb(114, 255, 114);
@@ -1800,7 +1788,10 @@ noscript #noscript {
     color: rgb(152, 143, 129);
 }
 #loading-bar {
-    background-color: rgb(122, 46, 40);
+    background-color: rgb(125, 44, 5);
+}
+.anon a {
+    color: rgb(232, 230, 227);
 }
 @media (min-width: 800px) {
     #page-container {
@@ -1816,19 +1807,25 @@ noscript #noscript {
     color: rgb(232, 230, 227);
 }
 ::-webkit-input-placeholder {
-    color: rgb(205, 200, 194);
+    color: rgb(249, 146, 97);
 }
 ::placeholder {
-    color: rgb(205, 200, 194);
+    color: rgb(249, 146, 97);
 }
 input::-webkit-input-placeholder {
-    color: rgb(205, 200, 194);
+    color: rgb(249, 146, 97);
 }
 input::placeholder {
-    color: rgb(205, 200, 194);
+    color: rgb(249, 146, 97);
 }
 ::-webkit-input-placeholder {
-    color: rgb(205, 200, 194);
+    color: rgb(249, 146, 97);
+}
+.nav-fa-icon i {
+    color: rgb(232, 230, 227);
+}
+.nav-fa-icon-active i {
+    color: rgb(249, 146, 97);
 }
 .table {
     background-image: initial;
@@ -1921,7 +1918,7 @@ input::placeholder {
 }
 .left-sidebar-item.active {
     color: rgb(232, 230, 227);
-    background-color: rgb(3, 66, 54);
+    background-color: rgb(125, 44, 5);
 }
 .left-sidebar-item.active .sidebar-icon {
     color: rgb(232, 230, 227);
@@ -1976,7 +1973,7 @@ input::placeholder {
     color: rgb(232, 230, 227);
 }
 .left-sidebar-item.active:hover {
-    background-color: rgb(3, 66, 54);
+    background-color: rgb(125, 44, 5);
     color: rgb(232, 230, 227);
 }
 .sidebar-icon {
@@ -2406,7 +2403,7 @@ a.user-redirect:hover {
     color: rgb(224, 90, 72); 
 }
 .button, button, input[type="submit"] {
-    background-color: rgb(3, 66, 54);
+    background-color: rgb(125, 44, 5);
     border-color: transparent;
     box-shadow: rgba(0, 0, 0, 0.02) 0px 1px 3px 0px;
     text-decoration-color: initial;
@@ -2452,18 +2449,18 @@ a.user-redirect:hover {
 }
 .button.btn-darkGreen, button.btn-darkGreen, input[type="submit"].btn-darkGreen {
     background-image: initial;
-    background-color: rgb(3, 66, 54); 
+    background-color: rgb(125, 44, 5); 
 }
 .button:hover, button:hover, input[type="submit"]:hover {
-    background-color: rgb(3, 66, 54);
+    background-color: rgb(125, 44, 5);
     box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px; 
 }
 .button:focus, button:focus, input[type="submit"]:focus {
-    background-color: rgb(3, 66, 54);
+    background-color: rgb(125, 44, 5);
     box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px; 
 }
 .button:active, button:active, input[type="submit"]:hover {
-    background-color: rgb(3, 66, 54);
+    background-color: rgb(125, 44, 5);
     box-shadow: rgba(0, 0, 0, 0.06) 0px 2px 4px; 
 }
 input[type="text"], input[type="password"], input[type="email"], input[type="number"] {
@@ -2513,8 +2510,8 @@ input[type="text"]:focus, input[type="password"]:focus {
 .tabs > ul > li.active > span:hover,
 .tabs > ul > li.active > a,
 .tabs > ul > li.active > span {
-    color: rgb(205, 200, 194);
-    border-bottom-color: rgb(126, 117, 103);
+    color: rgb(249, 146, 97);
+    border-bottom-color: rgb(199, 70, 8);
     background-image: initial;
     background-color: transparent;
 }
@@ -2561,9 +2558,9 @@ ul.pagination a:hover {
 ul.pagination > li > a,
 ul.pagination > li > span {
     text-decoration-color: initial;
-    color: rgb(205, 200, 194);
+    color: rgb(249, 146, 97);
     background-color: rgb(24, 26, 27);
-    border-color: rgb(126, 117, 103);
+    border-color: rgb(199, 70, 8);
 }
 ul.pagination > .disabled-page > a {
     color: rgb(157, 148, 136);
@@ -2577,7 +2574,7 @@ ul.pagination > .disabled-page > span {
 }
 ul.pagination > .active-page > a {
     color: rgb(232, 230, 227);
-    background-color: rgb(3, 66, 54);
+    background-color: rgb(125, 44, 5);
     border-color: transparent;
 }
 ul.pagination > .active-page > span {
@@ -2635,7 +2632,7 @@ a.close:hover {
 }
 .sidebox h3 .fa {
     background-image: initial;
-    background-color: rgb(3, 66, 54);
+    background-color: rgb(125, 44, 5);
     color: rgb(232, 230, 227);
 }
 .sidebox-content {
@@ -3107,7 +3104,7 @@ a.voted {
     color: rgb(232, 230, 227);
 }
 .chat-input-icon {
-    color: rgb(205, 200, 194);
+    color: rgb(249, 146, 97);
 }
 .chat-input-icon:hover {
     background-image: initial;
@@ -3873,11 +3870,67 @@ mjx-merror {
 mjx-assistive-mml {
     border-color: initial !important;
 }
-.recently-attempted ul {
-    list-style-image: initial;
+mjx-stretchy-v > mjx-ext {
+    border-color: transparent;
 }
-.organization-row:last-child {
-    border-bottom-color: initial;
+.noUi-target,
+.noUi-target * {
+    -webkit-tap-highlight-color: transparent;
+}
+.noUi-target {
+    background-image: initial;
+    background-color: rgb(27, 29, 30);
+    border-color: rgb(60, 65, 68);
+    box-shadow: rgb(32, 35, 37) 0px 1px 1px inset,
+    rgb(62, 68, 70) 0px 3px 6px -5px;
+}
+.noUi-connect {
+    background-image: initial;
+    background-color: rgb(50, 147, 140);
+    box-shadow: rgba(38, 42, 43, 0.45) 0px 0px 3px inset;
+}
+.noUi-handle {
+    border-color: rgb(59, 64, 66);
+    background-image: initial;
+    background-color: rgb(24, 26, 27);
+    box-shadow: rgb(24, 26, 27) 0px 0px 1px inset,
+    rgb(35, 38, 40) 0px 1px 7px inset,
+    rgb(62, 68, 70) 0px 3px 6px -3px;
+}
+.noUi-active {
+    box-shadow: rgb(24, 26, 27) 0px 0px 1px inset,
+    rgb(43, 47, 49) 0px 1px 7px inset,
+    rgb(62, 68, 70) 0px 3px 6px -3px;
+}
+.noUi-handle::after,
+.noUi-handle::before {
+    background-image: initial;
+    background-color: rgb(38, 41, 42);
+}
+[disabled] .noUi-connect {
+    background-image: initial;
+    background-color: rgb(64, 69, 72);
+}
+.noUi-pips {
+    color: rgb(168, 160, 149);
+}
+.noUi-value-sub {
+    color: rgb(200, 195, 188);
+}
+.noUi-marker {
+    background-image: initial;
+    background-color: rgb(53, 57, 59);
+}
+.noUi-marker-large,
+.noUi-marker-sub {
+    background-image: initial;
+    background-color: rgb(72, 78, 81);
+}
+.noUi-tooltip {
+    border-color: rgb(59, 64, 66);
+    background-image: initial;
+    background-color: rgb(24, 26, 27);
+    color: rgb(232, 230, 227);
 }
 
 /* Override Style */
