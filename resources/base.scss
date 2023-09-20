@@ -25,7 +25,7 @@ a {
     }
 
     &:active {
-        color: #faa700;
+        color: $theme_color;
     }
 }
 
@@ -170,7 +170,7 @@ header {
 }
 
 #user-links {
-    // display: inline;
+    display: inline;
     float: right;
     color: #5c5954;
 
@@ -199,10 +199,10 @@ header {
             cursor: pointer;
 
             &:hover {
-                border-top: 2px solid #9c3706;
+                border-top: 2px solid $theme_color;
                 color: black;
                 background: rgba(255, 255, 255, 0.25);
-                margin: 0;
+                margin: -2.75px;
             }
 
             & > img {
@@ -296,7 +296,7 @@ nav {
                 }
 
                 &:hover {
-                    border-top: 2px solid #9c3706;
+                    border-top: 2px solid $theme_color;
                     color: black;
                     background: rgba(255, 255, 255, 0.25);
                     margin: 0;
@@ -304,8 +304,8 @@ nav {
 
                 &.active {
                     // color: #FFF;
-                    border-top: 2px solid #9c3706;
-                    color: #9c3706;
+                    border-top: 2px solid $theme_color;
+                    color: $theme_color;
                     background: white;
                 }
 
@@ -375,7 +375,7 @@ nav {
         padding-left: 3px;
         display: inline-block;
         height: 32px;
-        margin-right: 1px;
+        margin-right: 10px;
         border-right: 3px solid rgba(255, 255, 255, 0.15);
     }
 }
@@ -630,6 +630,7 @@ math {
         display: none;
         padding: 0;
         margin-left: 0;
+        text-align: center;
         border-left: 4px solid $highlight_blue;
         position: fixed;
         top: 36px;
@@ -768,7 +769,7 @@ math {
     }
 }
 .navbar-icon {
-    margin-right: 0.3em;
+    margin-right: 20px;
 }
 
 .unread_boxes {
@@ -798,11 +799,11 @@ select {
     max-height: 0;
 }
 
-@media (max-width: 500px) {
-    #notification {
-        margin-top: 0.6em;
-    }
-}
+// @media (max-width: 500px) {
+    //     #notification {
+        //         margin-top: 0.6em;
+        //     }
+    // }
 
 .notification-open #notification {
     color: green !important;
@@ -873,7 +874,7 @@ select {
     top: 0;
     left: 0;
     height: 2px;
-    background-color: #993932;
+    background-color: $theme_color;
     width: 0;
     z-index: 9999;
 }
@@ -957,4 +958,26 @@ input::placeholder{
 ::-moz-placeholder {  /* Firefox 19+ */
     color: $theme_color;
     text-align: center;
+}
+
+.normal-text {
+    font-weight: normal;
+    font-size: small;
+    text-align: center;
+}
+
+.nav-fa-icon {
+    i {
+        margin-right: 0.1em;
+        color: #000;
+        font-size: 22.5px;
+    }
+}
+
+.nav-fa-icon-active {
+    i {
+        color: $theme_color;
+        font-size: 22.5px;
+        margin-right: 0.1em;
+    }
 }
