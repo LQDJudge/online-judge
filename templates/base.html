@@ -213,7 +213,7 @@
       <div id="nav-container" style="display: flex">
         <span id="navicon"><i class="fa fa-bars"></i></span>
         <ul id="nav-list">
-          <li class="home-nav-element" style="margin-right: 1em"><a href="{{ url('home') }}">{% include "site-logo-fragment.html" %}</a></li>
+          <li class="home-nav-element"><a href="{{ url('home') }}">{% include "site-logo-fragment.html" %}</a></li>
           <li class="home-menu-item"><a href="{{ url('home') }}" class="nav-home">{{ _('Home') }}</a></li>
           {% for node in mptt_tree(nav_bar) recursive %}
             <li>

@@ -229,6 +229,12 @@ nav {
             text-transform: uppercase;
             position: relative;
 
+            &.home-nav-element {
+                display: flex;
+                align-items: center;
+                margin-right: 1em;
+            }
+
             &.home-nav-element a {
                 padding: 0;
                 height: 44px;
