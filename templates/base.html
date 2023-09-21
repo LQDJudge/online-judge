@@ -221,7 +221,7 @@
               <a href="{{ node.path }}" id="fa-icon-links" class="normal-text nav-{{ node.key }}{% if node.key in nav_tab %} active{% endif %}" style="font-size: smaller; margin-right: 1.5em; text-align: left;">
                 <span class="nav-fa-icon{{'-active' if node.key in nav_tab else''}}">
                   {% if node.key == "problems" %} <i class="fa fa-pencil"></i> {% endif %}
-                  {% if node.key == "submit" %} <i class="fa fa-neuter"></i> {% endif %}
+                  {% if node.key == "submit" %} <i class="fa fa-code"></i> {% endif %}
                   {% if node.key == "user" %} <i class="fa fa-user"></i> {% endif %}
                   {% if node.key == "contest" %} <i class="fa fa-graduation-cap"></i> {% endif %}
                   {% if node.key == "about" %} <i class="fa fa-group"></i> {% endif %}
@@ -252,7 +252,7 @@
 
               {% set unseen_cnt = request.profile.count_unseen_notifications %}
               <span title="{{_('Notification')}}" class="{{ 'notification-open' if unseen_cnt > 0 }}">
-                <a href="{{ url('notification') }}" class="fa fa-bell-o navbar-icon" id="notification" aria-hidden="true" style="font-size: 22.5px;">
+                <a href="{{ url('notification') }}" class="fa fa-bell navbar-icon" id="notification" aria-hidden="true" style="font-size: 22.5px;">
                   {% if unseen_cnt > 0 %}
                     <sub class="unread_boxes">{{unseen_cnt}}</sub>
                   {% endif %}
