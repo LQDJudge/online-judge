@@ -67,6 +67,16 @@
       });
     });
   </script>
+
+  <script src="{{ static('pagedown/Markdown.Converter.js') }}"></script>
+  <script src="{{ static('pagedown-extra/pagedown/Markdown.Converter.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Sanitizer.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Editor.js') }}"></script>
+  <script src="{{ static('pagedown-extra/Markdown.Extra.js') }}"></script>
+  <script src="{{ static('pagedown_init.js') }}"></script>
+  <script src="{{ static('mathjax3_config.js') }}"></script>
+  <script src="http://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  <script src="{{ static('pagedown_math.js') }}"></script>
   <!-- <div class="left-markdown">
         <form id="post-form" method="POST" >
         {% csrf_token %}
@@ -80,29 +90,7 @@
       <div class="comment-post-wrapper">
         <div id="comment-form-body"><div class="wmd-wrapper image-upload-enabled">
           <div class="wmd-panel">
-            <div id="wmd-button-bar-id_body"><ul id="wmd-button-row-id_body" class="wmd-button-row">
-              <li class="wmd-button wmd-bold-button wmd-button-active" id="wmd-bold-button-id_body" title="Strong <strong> Ctrl+B"></li>
-              <li class="wmd-button wmd-italic-button wmd-button-active" id="wmd-italic-button-id_body" title="Emphasis <em> Ctrl+I"></li>
-              <li class="wmd-spacer wmd-spacer1" id="wmd-spacer1-id_body"></li>
-              <li class="wmd-button wmd-latex-button wmd-button-active" id="wmd-latex-button-id_body" title="Latex embed - Ctrl+M"></li>
-              <li class="wmd-button wmd-latex-button-display wmd-button-active" id="wmd-latex-button-display-id_body" title="Latex display embed - Ctrl+Space"></li>
-              <li class="wmd-spacer wmd-spacer2" id="wmd-spacer2-id_body"></li>
-              <li class="wmd-button wmd-link-button wmd-button-active" id="wmd-link-button-id_body" title="Hyperlink <a> Ctrl+L"></li>
-              <li class="wmd-button wmd-user-reference-button wmd-button-active" id="wmd-user-reference-button-id_body" title="User reference"></li>
-              <li class="wmd-button wmd-quote-button wmd-button-active" id="wmd-quote-button-id_body" title="Blockquote <blockquote> Ctrl+Q"></li>
-              <li class="wmd-button wmd-code-button wmd-button-active" id="wmd-code-button-id_body" title="Code Sample <pre><code> Ctrl+K"></li>
-              <li class="wmd-button wmd-image-button wmd-button-active" id="wmd-image-button-id_body" title="Image <img> Ctrl+G"></li>
-              <li class="wmd-spacer wmd-spacer3" id="wmd-spacer3-id_body"></li>
-              <li class="wmd-button wmd-olist-button wmd-button-active" id="wmd-olist-button-id_body" title="Numbered List <ol> Ctrl+O"></li>
-              <li class="wmd-button wmd-ulist-button wmd-button-active" id="wmd-ulist-button-id_body" title="Bulleted List <ul> Ctrl+U"></li>
-              <li class="wmd-button wmd-heading-button wmd-button-active" id="wmd-heading-button-id_body" title="Heading <h2>/<h2> Ctrl+H"></li>
-              <li class="wmd-button wmd-hr-button wmd-button-active" id="wmd-hr-button-id_body" title="Horizontal Rule <hr> Ctrl+R"></li>
-              <li class="wmd-spacer wmd-spacer3" id="wmd-spacer3-id_body"></li>
-              <li class="wmd-button wmd-admonition-button wmd-button-active" id="wmd-admonition-button-id_body" title="Admonition"></li>
-              <li class="wmd-button wmd-spoiler-button wmd-button-active" id="wmd-spoiler-button-id_body" title="Spoiler"></li>
-              <li class="wmd-spacer wmd-spacer4" id="wmd-spacer4-id_body"></li>
-              <li class="wmd-button wmd-undo-button wmd-button-active" id="wmd-undo-button-id_body" title="Undo - Ctrl+Z"></li>
-              <li class="wmd-button wmd-redo-button wmd-button-inactive" id="wmd-redo-button-id_body" title="Redo - Ctrl+Shift+Z"></li></ul></div>
+            <div id="wmd-button-bar-id_body"></div>
             <textarea id="wmd-input-id_body" class=" wmd-input" name="body" required=""></textarea>
           </div>
           <div id="id_body-preview" data-preview-url="/widgets/preview/comment" data-textarea-id="wmd-input-id_body" data-timeout="1000" class="wmd-panel wmd-preview dmmd-preview dmmd-no-button">
