@@ -57,7 +57,7 @@
     .profile-pic {
       height: 2.6em;
       width: 2.6em;
-      border-radius: 0.3em;
+      border-radius: 50%;
       margin-top: 0.1em;
       float: left;
     }
@@ -122,6 +122,9 @@
       align-items: center;
       gap: 1em;
     }
+    ::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+      text-align: left;
+    }
     #chat-input {
       padding: 10px 20px;
       font-size: 16px;
@@ -130,7 +133,9 @@
       transition: box-shadow 0.3s ease-in-out;
       width: 80%;
       resize: none;
-      height: 100%;
+      height: 80%;
+      max-height: 200px;
+      overflow-y: auto;
     }
     #chat-input:focus {
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -162,11 +167,13 @@
       stroke-width: 1;
     }
     .info-pic {
-      border-radius: 5px;
+      border-radius: 50%;
       margin-left: 1em;
+      margin-top: 3px;
     }
     #chat-info {
       height: 3em;
+      padding-bottom: 0.25em;
     }
 
     @media (min-width: 800px) {
@@ -175,7 +182,7 @@
         overflow:hidden;
       }
       #chat-input-container {
-        padding-left: 5%;
+        padding-left: 3%;
       }
       #chat-area {
         padding-bottom: 1.5em;
