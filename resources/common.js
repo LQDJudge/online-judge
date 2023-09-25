@@ -386,6 +386,9 @@ function onWindowReady() {
         });
     });
     $('a').click(function() {
+        if ($(this).attr('href') === '#') {
+            return;
+        }
         $("#loading-bar").show();
         $("#loading-bar").animate({ width: "100%" }, 2000, function() {
             $(this).hide().css({ width: 0});
