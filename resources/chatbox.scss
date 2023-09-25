@@ -52,11 +52,15 @@
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
     flex-grow: 1;
+    padding-left: 0.5em;
 }
 
 #chat-input {
     color: black;
-    border: 2px solid #e4a81c;
+    border: 2px solid black;
+}
+#chat-input::placeholder {
+    color: grey;
 }
 #chat-online-content {
     padding: 0;
@@ -81,7 +85,7 @@
     }
     #chat-online {
         margin: 0;
-        width: 35%;
+        width: 30%;
     }
     #chat-area {
         flex-grow: 1;
@@ -91,12 +95,12 @@
     font-family: "Noto Sans", Arial, "Lucida Grande", sans-serif;
 }
 .info-pic {
-    height: 100%;
+    height: 95%;
 }
 
 .info-name {
     margin-left: 10px;
-    font-size: 2em;
+    font-size: 1.8em;
     font-weight: bold !important;
     display: flex;
     align-items: center;
@@ -111,21 +115,6 @@
     position: relative;
     z-index: 100;
 }
-#refresh-button {
-    padding: 0;
-    margin-left: auto;
-    margin-right: 0.3em;
-    background: transparent;
-    border: none;
-    height: 1.5em;
-    width: 1.5em;
-}
-#refresh-button:hover {
-    background: lightgreen;
-    -webkit-transform: rotate(360deg);
-    transform: rotate(360deg);
-    transition: 1.5s ease-in-out;
-}
 .status-pic {
     height: 32px;
     width: 32px;
@@ -135,6 +124,7 @@
     position: relative;
     display: inline-flex;
     flex: 0 0 auto;
+    align-items: center;
 }
 .status-circle {
     position: absolute;
@@ -166,11 +156,11 @@
 }
 .message-text {
     padding: 0.4em 0.6em 0.5em;
-    border-radius: 15px;
+    border-radius: 20px;
     max-width: 70%;
     width: fit-content;
-    font-size: 1.05rem;
-    line-height: 1.3;
+    font-size: 1rem;
+    line-height: 1.2;
 }
 .message-text-other {
     background: #eeeeee;
@@ -181,10 +171,11 @@
     color: white;
 }
 .chat-input-icon {
-    color: $theme_color;
+    color: white;
+    background-color: #3c8262;
 }
 .chat-input-icon:hover {
-    background: lightgray;
+    background: #57b28b;
 }
 .chat {
     .active-span {
@@ -193,12 +184,16 @@
     }
 
     .unread-count {
-        float: right;
         color: white;
         background-color: darkcyan;
-        border-radius: 2px;
-        padding: 0 0.5em;
-        align-self: flex-end;
+        border-radius: 50%;
+        align-self: center;
+        flex: 0 0 1.25rem;
+        height: 1.25rem;
+        font-size: smaller;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     #setting-content {
         display: none;
@@ -224,6 +219,6 @@
 
 @media (max-width: 799px) {
     #chat-area {
-        height: calc(100vh - 120px);
+        height: calc(100vh - $navbar_height_mobile);
     }
 }
