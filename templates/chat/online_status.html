@@ -5,8 +5,10 @@
   <span style="padding-left:0.5em">
     <b>{{_('Lobby')}}</b>
   </span>
-  <span class="spacer">
-    <span class="unread-count" id="unread-count-lobby">{{unread_count_lobby if unread_count_lobby}}</span>
+  <span class="spacer" style="display:flex;justify-content: flex-end;">
+    {% if unread_count_lobby and unread_count_lobby > 0 %}
+      <span class="unread-count" id="unread-count-lobby">{{unread_count_lobby}}</span>
+    {% endif %}
   </span>
 </li>
 {% for section in status_sections %}
@@ -37,9 +39,11 @@
               </span>
             {% endif %}
           </div>
-          <span class="unread-count" id="unread-count-{{user.user.id}}">
-            {{user.unread_count if user.unread_count}}
-          </span>
+          {% if user.unread_count and user.unread_count > 0 %}
+            <span class="unread-count" id="unread-count-{{user.user.id}}">
+              {{user.unread_count}}
+            </span>
+          {% endif %}
         </li>
       {% endfor %}
     </ul>

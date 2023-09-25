@@ -59,6 +59,9 @@
     color: black;
     border: 2px solid black;
 }
+#chat-input::placeholder {
+    color: grey;
+}
 #chat-online-content {
     padding: 0;
     width: 100%;
@@ -136,6 +139,7 @@
     position: relative;
     display: inline-flex;
     flex: 0 0 auto;
+    align-items: center;
 }
 .status-circle {
     position: absolute;
@@ -194,13 +198,16 @@
     }
 
     .unread-count {
-        float: right;
         color: white;
         background-color: darkcyan;
-        border-radius: 2px;
-        padding: 0 0.5em;
-        align-self: flex-end;
         border-radius: 50%;
+        align-self: center;
+        flex: 0 0 1.25rem;
+        height: 1.25rem;
+        font-size: smaller;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     #setting-content {
         display: none;

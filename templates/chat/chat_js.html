@@ -559,16 +559,14 @@
     register_setting();
     color_selected_room();
 
-    // Adjust textarea height to fit the content
-    $(document).ready(function() {
-      $('#chat-input').on('input', function() {
-        if (this.scrollHeight > this.clientHeight) {
-          this.style.height = 'auto';
-          this.style.height = (this.scrollHeight) + 'px';
-        } else {
-          $(this).css('height', '80%');
-        }
-      });
+    $('#chat-input').on('input', function() {
+      if (this.scrollHeight > this.clientHeight) {
+        this.style.height = (this.scrollHeight) + 'px';
+        $(this).css('border-radius', '30px');
+      } else {
+        $(this).css('height', '80%');
+      }
     });
+    $('#submit-button').on('click', submit_chat);
   });
 </script>
