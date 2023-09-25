@@ -78,7 +78,7 @@
     #chat-container {
         display: flex;
         width: 100%;
-        height: calc(100vh - 3em);
+        height: calc(100vh - $navbar_height);
         border: 1px solid #ccc;
         /*border-radius: 0 4px 0 0;*/
         border-bottom: 0;
@@ -220,5 +220,6 @@
 @media (max-width: 799px) {
     #chat-area {
         height: calc(100vh - $navbar_height_mobile);
+        max-height: -webkit-fill-available;
     }
 }
