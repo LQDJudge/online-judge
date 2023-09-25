@@ -115,21 +115,6 @@
     position: relative;
     z-index: 100;
 }
-#refresh-button {
-    padding: 0;
-    margin-left: auto;
-    margin-right: 0.3em;
-    background: transparent;
-    border: none;
-    height: 1.5em;
-    width: 1.5em;
-}
-#refresh-button:hover {
-    background: lightgreen;
-    -webkit-transform: rotate(360deg);
-    transform: rotate(360deg);
-    transition: 1.5s ease-in-out;
-}
 .status-pic {
     height: 32px;
     width: 32px;
@@ -186,10 +171,11 @@
     color: white;
 }
 .chat-input-icon {
-    color: $theme_color;
+    color: white;
+    background-color: #3c8262;
 }
 .chat-input-icon:hover {
-    background: lightgray;
+    background: #57b28b;
 }
 .chat {
     .active-span {
@@ -233,6 +219,6 @@
 
 @media (max-width: 799px) {
     #chat-area {
-        height: calc(100vh - 120px);
+        height: calc(100vh - $navbar_height_mobile);
     }
 }

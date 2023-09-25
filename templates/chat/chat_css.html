@@ -6,6 +6,7 @@
 
     #content {
       padding-top: 0;
+      margin-bottom: 0;
     }
 
     ::-webkit-scrollbar {
@@ -197,20 +198,24 @@
       #chat-area {
         padding-bottom: 1.5em;
       }
+      .back-button {
+        display: none;
+      }
     }
     @media (max-width: 799px) {
       html, body {
         max-width: 100%;
         overflow-x: hidden;
       }
-      #mobile ul {
-        width: 100%;
-      }
-      .info-pic {
-        margin-left: 0.5em;
-      }
       .active-span {
         display: none;
+      }
+      #chat-area {
+        display: none;
+      }
+      .back-button {
+        margin-right: 1em;
+        font-size: 1.5em;
       }
     }
   </style>
