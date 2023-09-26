@@ -186,6 +186,7 @@
               var $comment = $("#comment-" + id + "-children");
               $comment.append(data);
             }
+            MathJax.typeset($('#comments')[0]);
           }
         })
       }

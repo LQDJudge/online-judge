@@ -1712,10 +1712,10 @@ noscript #noscript {
     color: rgb(178, 171, 161);
 }
 #chat-icon {
-    color: rgb(249, 146, 97);
+    color: rgb(200, 196, 189);
 }
 #chat-icon:hover {
-    color: rgb(114, 255, 114);
+    color: rgb(249, 146, 97);
 }
 #nav-lang-icon {
     color: rgb(51, 125, 255);
@@ -2922,8 +2922,8 @@ a.voted {
     color: rgb(152, 143, 129);
 }
 .list-contest {
-    box-shadow: rgba(3, 66, 54, 0.2) 0px 4px 8px,
-    rgba(3, 66, 54, 0.19) 0px 6px 20px;
+    box-shadow: rgb(49, 53, 55) 0px 1px 2px,
+    rgb(49, 53, 55) 0px 1px 5px;
 }
 #contest-calendar th {
     border-bottom-color: rgb(62, 68, 70);
@@ -3058,7 +3058,13 @@ a.voted {
 }
 #chat-input {
     color: rgb(232, 230, 227);
-    border-color: rgb(159, 117, 19);
+    border-color: rgb(140, 130, 115);
+}
+#chat-input::-webkit-input-placeholder {
+    color: rgb(152, 143, 129);
+}
+#chat-input::placeholder {
+    color: rgb(152, 143, 129);
 }
 .selected-status-row {
     background-color: rgb(49, 53, 55);
@@ -3076,15 +3082,6 @@ a.voted {
 }
 #chat-info {
     box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 3px;
-}
-#refresh-button {
-    background-image: initial;
-    background-color: transparent;
-    border-color: initial;
-}
-#refresh-button:hover {
-    background-image: initial;
-    background-color: rgb(40, 111, 17);
 }
 .status-circle {
     stroke: rgb(232, 230, 227);
@@ -3104,11 +3101,12 @@ a.voted {
     color: rgb(232, 230, 227);
 }
 .chat-input-icon {
-    color: rgb(249, 146, 97);
+    color: rgb(232, 230, 227);
+    background-color: rgb(48, 104, 78);
 }
 .chat-input-icon:hover {
     background-image: initial;
-    background-color: rgb(49, 53, 55);
+    background-color: rgb(62, 136, 112);
 }
 .chat .active-span {
     color: rgb(169, 162, 151);
@@ -3873,64 +3871,11 @@ mjx-assistive-mml {
 mjx-stretchy-v > mjx-ext {
     border-color: transparent;
 }
-.noUi-target,
-.noUi-target * {
-    -webkit-tap-highlight-color: transparent;
+.recently-attempted ul {
+    list-style-image: initial;
 }
-.noUi-target {
-    background-image: initial;
-    background-color: rgb(27, 29, 30);
-    border-color: rgb(60, 65, 68);
-    box-shadow: rgb(32, 35, 37) 0px 1px 1px inset,
-    rgb(62, 68, 70) 0px 3px 6px -5px;
-}
-.noUi-connect {
-    background-image: initial;
-    background-color: rgb(50, 147, 140);
-    box-shadow: rgba(38, 42, 43, 0.45) 0px 0px 3px inset;
-}
-.noUi-handle {
-    border-color: rgb(59, 64, 66);
-    background-image: initial;
-    background-color: rgb(24, 26, 27);
-    box-shadow: rgb(24, 26, 27) 0px 0px 1px inset,
-    rgb(35, 38, 40) 0px 1px 7px inset,
-    rgb(62, 68, 70) 0px 3px 6px -3px;
-}
-.noUi-active {
-    box-shadow: rgb(24, 26, 27) 0px 0px 1px inset,
-    rgb(43, 47, 49) 0px 1px 7px inset,
-    rgb(62, 68, 70) 0px 3px 6px -3px;
-}
-.noUi-handle::after,
-.noUi-handle::before {
-    background-image: initial;
-    background-color: rgb(38, 41, 42);
-}
-[disabled] .noUi-connect {
-    background-image: initial;
-    background-color: rgb(64, 69, 72);
-}
-.noUi-pips {
-    color: rgb(168, 160, 149);
-}
-.noUi-value-sub {
-    color: rgb(200, 195, 188);
-}
-.noUi-marker {
-    background-image: initial;
-    background-color: rgb(53, 57, 59);
-}
-.noUi-marker-large,
-.noUi-marker-sub {
-    background-image: initial;
-    background-color: rgb(72, 78, 81);
-}
-.noUi-tooltip {
-    border-color: rgb(59, 64, 66);
-    background-image: initial;
-    background-color: rgb(24, 26, 27);
-    color: rgb(232, 230, 227);
+.organization-row:last-child {
+    border-bottom-color: initial;
 }
 
 /* Override Style */

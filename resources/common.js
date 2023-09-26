@@ -386,6 +386,11 @@ function onWindowReady() {
         });
     });
     $('a').click(function() {
+        var href = $(this).attr('href');
+        if (href === '#' || href.startsWith("javascript")) {
+            return;
+        }
+
         $("#loading-bar").show();
         $("#loading-bar").animate({ width: "100%" }, 2000, function() {
             $(this).hide().css({ width: 0});

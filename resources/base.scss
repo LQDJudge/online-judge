@@ -182,6 +182,9 @@ header {
         cursor: pointer;
         padding: 3.5px;
     }
+    img {
+        border-radius: 50%;
+    }
 }
 
 #nav-shadow {
@@ -228,6 +231,12 @@ nav {
             color: #FFF;
             text-transform: uppercase;
             position: relative;
+
+            &.home-nav-element {
+                display: flex;
+                align-items: center;
+                margin-right: 1em;
+            }
 
             &.home-nav-element a {
                 padding: 0;
@@ -533,7 +542,11 @@ math {
 
 @media (max-width: 799px) {
     #navigation {
-        height: 36px;
+        height: $navbar_height_mobile;
+    }
+
+    #content {
+        margin-top: $navbar_height_mobile;
     }
 
     #navicon {
@@ -631,11 +644,11 @@ math {
 }
 
 #chat-icon {
-    color: $theme_color;
+    color: darkgreen;
 }
 
 #chat-icon:hover {
-    color: green;
+    color: $theme_color;
 }
 
 #nav-lang-icon {
