@@ -5,20 +5,17 @@
     main {
       overflow: hidden;
     }
+    #content {
+      width: 100%;
+    }
+    #content.wrapper {
+      padding: 0;
+    }
     .form-area {
       float: left;
       width: 47%;
-      /* height: 604px; */
-      /* background-color: #acabab;  */
-      /* padding: 20px; */
-    }
-    .left-markdown{
-      float: left;
-      width: 47%;
-      height: 50%;
-      /* flex: 1; */
-      /* background-color: #acabab;  */
-      padding: 20px;
+      height: 100%
+
     }
     .wmd-preview{
       float: right;
@@ -26,17 +23,13 @@
     }
     .width-controller{
       width: 51%;
-      /* flex: 1; */
+    }
+    .wmd-input {
+      height: 678px;
     }
     .right-markdown{
-      /* float: right; */
-      /* width: 51%; */
-      height: 427px;
-      /* flex: 1; */
-      /* background-color: #6b6b6b; */
+      height: 725px;
       overflow-y: scroll;
-      /* #f0f0f0;  */
-      /* padding: 20px; */
     }
   </style>
 {% endblock %}
@@ -57,13 +50,27 @@
           },
           success: function(data) {
             $('#display').html(data)
-            // data sẽ là html nó render, thế vào phần bên phải
           },
           error: function(error) {
             alert(error);
             console.log(error.message)
           }
         })
+      });
+    });
+  </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const leftDiv = document.getElementById("wmd-input-id_body");
+      const rightDiv = document.getElementById("display");
+
+      leftDiv.addEventListener("scroll", function() {
+        rightDiv.scrollTop = leftDiv.scrollTop;
+      });
+
+      rightDiv.addEventListener("scroll", function() {
+        leftDiv.scrollTop = rightDiv.scrollTop;
       });
     });
   </script>
@@ -77,21 +84,16 @@
   <script src="{{ static('mathjax3_config.js') }}"></script>
   <script src="http://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
   <script src="{{ static('pagedown_math.js') }}"></script>
-  <!-- <div class="left-markdown">
-        <form id="post-form" method="POST" >
-        {% csrf_token %}
-        <textarea  id="inputField" cols="105" rows="40" value=" "></textarea>
-        </form>
-    </div> -->
-  <div id="new-comment" class="form-area" style="">
 
+  <div id="new-comment" class="form-area" style="">
     <form class="comment-submit-form" action="" method="post">
-      <input type="hidden" name="csrfmiddlewaretoken" value="Ngk7TfY2iIW4e9cPitl05k1c7xNUsVk9kCTkrAFveVmmcIhjRKv4GLtItKANAvae"> <input type="hidden" name="parent" id="id_parent">
+      <input type="hidden" name="csrfmiddlewaretoken" value="Ngk7TfY2iIW4e9cPitl05k1c7xNUsVk9kCTkrAFveVmmcIhjRKv4GLtItKANAvae">
+      <input type="hidden" name="parent" id="id_parent">
       <div class="comment-post-wrapper">
         <div id="comment-form-body"><div class="wmd-wrapper image-upload-enabled">
           <div class="wmd-panel">
             <div id="wmd-button-bar-id_body"></div>
-            <textarea id="wmd-input-id_body" class=" wmd-input" name="body" required=""></textarea>
+            <textarea id="wmd-input-id_body" class="wmd-input" name="body" required=""></textarea>
           </div>
           <div id="id_body-preview" data-preview-url="/widgets/preview/comment" data-textarea-id="wmd-input-id_body" data-timeout="1000" class="wmd-panel wmd-preview dmmd-preview dmmd-no-button">
             <div class="dmmd-preview-update"><i class="fa fa-refresh"></i> Update Preview</div>
@@ -119,25 +121,10 @@
           </div>
         </div></div>
       </div>
-      <hr>
-      <input style="float:right" type="submit" value="Post!" class="button">
     </form>
   </div>
-
-
-  <!-- <div id="comments" class="comment-area"></div> -->
-
   <div id="id_body-preview" data-preview-url="/widgets/preview/comment" data-textarea-id="wmd-input-id_body" data-timeout="1000" class="width-controller wmd-panel wmd-preview dmmd-preview dmmd-no-button dmmd-preview-has-content">
     <div class="right-markdown dmmd-preview-content content-description" id="display"></div>
-
   </div>
-
-  <!-- <script>
-        var right=document.getElementById("new-comment").style.height;
-        var left=document.getElementById("id_body-preview").style.height;
-        
-        document.getElementById('id_body-preview').style.height=right;
-        
-    </script> -->
 {% endblock %}
 
