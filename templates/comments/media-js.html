@@ -30,7 +30,7 @@
   {% endif %}
   <script type="text/javascript">
     $(document).ready(function () {
-      let loading_gif = "<img src=\"{{static('loading.gif')}}\" style=\"height: 1.5em; margin-bottom: 3px\" class=\"loading\">";
+      let loading_gif = "<img src=\"{{static('loading.gif')}}\" style=\"height: 3em; margin-bottom: 3px\" class=\"loading\">";
       window.reply_comment = function (parent) {
         var $comment_reply = $('#comment-' + parent + '-reply');
         var reply_id = 'reply-' + parent;
