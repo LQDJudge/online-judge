@@ -150,6 +150,7 @@ def get_comments(request, limit=10):
             revisions=Count("versions", distinct=True),
         )[offset : offset + limit]
     )
+    profile = None
     if request.user.is_authenticated:
         profile = request.profile
         queryset = queryset.annotate(
