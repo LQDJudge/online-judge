@@ -39,6 +39,9 @@ msgstr "Đăng ký tên"
 msgid "Report"
 msgstr "Báo cáo"
 
+msgid "Insert Image"
+msgstr "Chèn hình ảnh"
+
 msgid "2sat"
 msgstr ""
 

@@ -25,10 +25,10 @@
       width: 51%;
     }
     .wmd-input {
-      height: 678px;
+      height: calc(100vh - 146px);
     }
     .right-markdown{
-      height: 725px;
+      height: calc(100vh - 100px);
       overflow-y: scroll;
     }
   </style>
@@ -87,44 +87,42 @@
   <script src="{{ static('pagedown_math.js') }}"></script>
 
   <div id="new-comment" class="form-area" style="">
-    <form class="comment-submit-form" action="" method="post">
-      <input type="hidden" name="csrfmiddlewaretoken" value="Ngk7TfY2iIW4e9cPitl05k1c7xNUsVk9kCTkrAFveVmmcIhjRKv4GLtItKANAvae">
-      <input type="hidden" name="parent" id="id_parent">
-      <div class="comment-post-wrapper">
-        <div id="comment-form-body"><div class="wmd-wrapper image-upload-enabled">
-          <div class="wmd-panel">
-            <div id="wmd-button-bar-id_body"></div>
-            <textarea id="wmd-input-id_body" class="wmd-input" name="body" required=""></textarea>
-          </div>
-          <div id="id_body-preview" data-preview-url="/widgets/preview/comment" data-textarea-id="wmd-input-id_body" data-timeout="1000" class="wmd-panel wmd-preview dmmd-preview dmmd-no-button">
-            <div class="dmmd-preview-update"><i class="fa fa-refresh"></i> Update Preview</div>
-            <div class="dmmd-preview-content content-description"></div>
-          </div>
-          <div class="pagedown-image-upload">
-            <h2>Insert Image</h2>
-            <div class="form-row">
-              <div>
-                <label class="label">From the web</label>
-                <input class="url-input" type="text" placeholder="http://">
-              </div>
-            </div>
-            <div class="form-row">
-              <div>
-                <label class="label">From your computer</label>
-                <input class="file-input" type="file" name="image" id="file" data-action="/pagedown/image-upload/" accept="image/*">
-              </div>
-            </div>
-            <div class="submit-row">
-              <div class="submit-loading"></div>
-              <input class="submit-input show" type="submit" value="Save" name="_addanother">
-              <p class="deletelink-box"><a href="#" class="close-image-upload deletelink">Cancel</a></p>
+    <input type="hidden" name="csrfmiddlewaretoken" value="Ngk7TfY2iIW4e9cPitl05k1c7xNUsVk9kCTkrAFveVmmcIhjRKv4GLtItKANAvae">
+    <input type="hidden" name="parent" id="id_parent">
+    <div class="comment-post-wrapper">
+      <div id="comment-form-body"><div class="wmd-wrapper image-upload-enabled">
+        <div class="wmd-panel">
+          <div id="wmd-button-bar-id_body"></div>
+          <textarea id="wmd-input-id_body" class="wmd-input" name="body" required=""></textarea>
+        </div>
+        <div id="id_body-preview" data-preview-url="/widgets/preview/comment" data-textarea-id="wmd-input-id_body" data-timeout="1000" class="wmd-panel wmd-preview dmmd-preview dmmd-no-button">
+          <div class="dmmd-preview-update"><i class="fa fa-refresh"></i> Update Preview</div>
+          <div class="dmmd-preview-content content-description"></div>
+        </div>
+        <div class="pagedown-image-upload">
+          <h2>{{_('Insert Image')}}</h2>
+          <div class="form-row">
+            <div>
+              <label class="label">From the web</label>
+              <input class="url-input" type="text" placeholder="http://">
             </div>
           </div>
-        </div></div>
-      </div>
-    </form>
+          <div class="form-row">
+            <div>
+              <label class="label">From your computer</label>
+              <input class="file-input" type="file" name="image" id="file" data-action="/pagedown/image-upload/" accept="image/*">
+            </div>
+          </div>
+          <div class="submit-row">
+            <div class="submit-loading"></div>
+            <input class="submit-input show" type="submit" value="Save" name="_addanother">
+            <p class="deletelink-box"><a href="#" class="close-image-upload deletelink">Cancel</a></p>
+          </div>
+        </div>
+      </div></div>
+    </div>
   </div>
-  <div id="id_body-preview" data-preview-url="/widgets/preview/comment" data-textarea-id="wmd-input-id_body" data-timeout="1000" class="width-controller wmd-panel wmd-preview dmmd-preview dmmd-no-button dmmd-preview-has-content">
+  <div id="id_body-preview" data-preview-url="{{url('comment_preview')}}" data-textarea-id="wmd-input-id_body" data-timeout="1000" class="width-controller wmd-panel wmd-preview dmmd-preview dmmd-no-button dmmd-preview-has-content">
     <div class="right-markdown dmmd-preview-content content-description" id="display"></div>
   </div>
 {% endblock %}
