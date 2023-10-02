@@ -42,6 +42,9 @@ msgstr "Báo cáo"
 msgid "Insert Image"
 msgstr "Chèn hình ảnh"
 
+msgid "Save"
+msgstr "Lưu"
+
 msgid "2sat"
 msgstr ""
 

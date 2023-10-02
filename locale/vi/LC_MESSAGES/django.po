@@ -130,9 +130,17 @@ msgstr "Thể thức"
 msgid "Rating"
 msgstr ""
 
-#: templates/markdown_editor/markdown_editor.html:103
+#: templates/markdown_editor/markdown_editor.html:107
 msgid "Insert Image"
 msgstr "Chèn hình ảnh"
+
+#: templates/markdown_editor/markdown_editor.html:110
+msgid "From the web"
+msgstr "Từ web" 
+
+#: templates/markdown_editor/markdown_editor.html:116
+msgid "From your computer"
+msgstr "Từ máy tính của bạn"
 
 #: judge/admin/contest.py:201
 msgid "Access"
