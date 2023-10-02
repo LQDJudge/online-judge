@@ -44,6 +44,7 @@ from judge.views import (
     language,
     license,
     mailgun,
+    markdown_editor,
     notification,
     organization,
     preview,
@@ -404,6 +405,11 @@ urlpatterns = [
                 url(r"^/html$", submission.single_submission),
             ]
         ),
+    ),
+    url(
+        r"^markdown_editor/",
+        markdown_editor.MarkdownEditor.as_view(),
+        name="markdown_editor",
     ),
     url(
         r"^submission_source_file/(?P<filename>(\w|\.)+)",
