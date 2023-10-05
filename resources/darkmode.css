@@ -2552,7 +2552,7 @@ input[type="text"]:focus, input[type="password"]:focus {
 ul.pagination a:hover {
     color: rgb(232, 230, 227);
     background-image: initial;
-    background-color: rgb(8, 128, 104);
+    background-color: rgb(163, 62, 18);
     border-color: initial;
 }
 ul.pagination > li > a,
@@ -2563,14 +2563,14 @@ ul.pagination > li > span {
     border-color: rgb(199, 70, 8);
 }
 ul.pagination > .disabled-page > a {
-    color: rgb(157, 148, 136);
-    background-color: rgba(3, 66, 54, 0.5);
-    border-color: rgba(126, 117, 103, 0.5);
+    color: rgb(223, 220, 215);
+    background-color: rgb(137, 78, 57);
+    border-color: rgb(199, 68, 21);
 }
 ul.pagination > .disabled-page > span {
-    color: rgb(157, 148, 136);
-    background-color: rgba(3, 66, 54, 0.5);
-    border-color: rgba(126, 117, 103, 0.5);
+    color: rgb(223, 220, 215);
+    background-color: rgb(137, 78, 57);
+    border-color: rgb(199, 68, 21);
 }
 ul.pagination > .active-page > a {
     color: rgb(232, 230, 227);
@@ -3868,14 +3868,9 @@ mjx-merror {
 mjx-assistive-mml {
     border-color: initial !important;
 }
-mjx-stretchy-v > mjx-ext {
-    border-color: transparent;
-}
-.recently-attempted ul {
-    list-style-image: initial;
-}
-.organization-row:last-child {
-    border-bottom-color: initial;
+#users-table td:nth-child(2),
+#users-table th:nth-child(2) {
+    border-right-color: initial;
 }
 
 /* Override Style */
