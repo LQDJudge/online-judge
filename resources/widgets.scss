@@ -161,8 +161,7 @@ input {
 }
 
 textarea {
-    padding: 4px 8px;
-    color: #555;
+    padding: 8px;
     background: #FFF none;
     border: 1px solid $border_gray;
     border-radius: $widget_border_radius;
@@ -172,8 +171,7 @@ textarea {
 }
 
 textarea:hover {
-    border-color: rgba(82, 168, 236, 0.8);
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 4px rgba(82, 168, 236, 0.6);
+    border-color: black;
 }
 
 input {
@@ -184,8 +182,8 @@ input {
 }
 
 textarea:focus {
-    border-color: rgba(82, 168, 236, 0.8);
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(82, 168, 236, 0.6);
+    border-color: black;
+    border-width: unset;
     outline: 0;
 }
 

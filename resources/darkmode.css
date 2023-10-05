@@ -2471,16 +2471,13 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset;
 }
 textarea {
-    color: rgb(178, 172, 162);
     background-image: none;
     background-color: rgb(24, 26, 27);
     border-color: rgb(62, 68, 70);
     box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset;
 }
 textarea:hover {
-    border-color: rgba(16, 87, 144, 0.8);
-    box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset,
-    rgba(16, 91, 150, 0.6) 0px 0px 4px; 
+    border-color: rgb(140, 130, 115); 
 }
 input[type="text"]:hover, input[type="password"]:hover {
     border-color: rgba(16, 87, 144, 0.8);
@@ -2488,9 +2485,7 @@ input[type="text"]:hover, input[type="password"]:hover {
     rgba(16, 91, 150, 0.6) 0px 0px 4px;
 }
 textarea:focus {
-    border-color: rgba(16, 87, 144, 0.8);
-    box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset,
-    rgba(16, 91, 150, 0.6) 0px 0px 8px; outline-color: initial; 
+    border-color: rgb(140, 130, 115); outline-color: initial; 
 }
 input[type="text"]:focus, input[type="password"]:focus {
     border-color: rgba(16, 87, 144, 0.8);
@@ -3868,9 +3863,14 @@ mjx-merror {
 mjx-assistive-mml {
     border-color: initial !important;
 }
-#users-table td:nth-child(2),
-#users-table th:nth-child(2) {
-    border-right-color: initial;
+mjx-stretchy-v > mjx-ext {
+    border-color: transparent;
+}
+.recently-attempted ul {
+    list-style-image: initial;
+}
+.organization-row:last-child {
+    border-bottom-color: initial;
 }
 
 /* Override Style */
