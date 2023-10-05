@@ -1,10 +1,17 @@
+<div onclick="hide_right_panel()" class="back-button">
+  <i class="fa fa-arrow-left"></i>
+</div>
 {% if other_user %}
-  <div class="status-container" style="height: 100%">
+  <div class="status-container" style="height: 3em; width: 3em;">
     <img src="{{ gravatar(other_user, 135) }}" class="info-pic">
     <svg style="position:absolute; height:100%; width: 100%; transform: rotate(180deg);" >
       <circle class="info-circle"
         fill="{{'green' if other_online else 'red'}}"/>
     </svg>
+  </div>
+{% else %}
+  <div class="status-container" style="height: 3em;">
+    <img src="{{ static('icons/logo.png') }}" class="info-pic" style="border-radius: 0px;">
   </div>
 {% endif %}
 <span class="info-name username">
@@ -21,9 +28,9 @@
 
 {% if other_user %}
   <span style="margin-right: 0.3em" id="setting">
-    <button class="control-button small" style="height:100%;" id="setting-button">
+    <div class="control-button small" style="" id="setting-button">
       <i class="fa fa-ellipsis-h"></i>
-    </button>
+    </div>
     <div id="setting-content">
       <li>
         <a href="{{url('toggle_ignore', other_user.id)}}" class=" {{'green' if is_ignored else 'red'}}">

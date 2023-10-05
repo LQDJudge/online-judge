@@ -35,7 +35,7 @@ def save_upload(f, path):
 
 # pass callback function to post_upload
 def handle_upload(f, fileattrs, upload_dir, post_upload=None):
-    chunks_dir = os.path.join(tempfile.gettempdir(), "chunk_upload_tmp")
+    chunks_dir = settings.CHUNK_UPLOAD_DIR
     if not os.path.exists(os.path.dirname(chunks_dir)):
         os.makedirs(os.path.dirname(chunks_dir))
     chunked = False
