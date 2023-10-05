@@ -322,7 +322,7 @@ input {
 // Bootstrap-y pagination
 ul.pagination a:hover {
     color: #FFF;
-    background: #0aa082;
+    background: #cc4e17;
     border: none;
 }
 
@@ -337,22 +337,6 @@ ul.pagination {
     > {
         li {
             display: inline;
-
-            // &:first-child > {
-                //     a, span {
-                    //         margin-left: 0;
-                    //         border-top-left-radius: $widget_border_radius;
-                    //         border-bottom-left-radius: $widget_border_radius;
-                    //     }
-                // }
-
-            // &:last-child > {
-                //     a, span {
-                    //         margin-left: 0;
-                    //         border-top-right-radius: $widget_border_radius;
-                    //         border-bottom-right-radius: $widget_border_radius;
-                    //     }
-                // }
 
             > {
                 a, span {
@@ -373,15 +357,15 @@ ul.pagination {
 
         .disabled-page > {
             a {
-                color: #888;
-                background-color: #04534380;
-                border-color: #04534380;
+                color: #f1efef;
+                background-color: #ab6247;
+                border-color: #6a240b;
             }
 
             span {
-                color: #888;
-                background-color: #04534380;
-                border-color: #04534380;
+                color: #f1efef;
+                background-color: #ab6247;
+                border-color: #6a240b;
             }
         }
 
