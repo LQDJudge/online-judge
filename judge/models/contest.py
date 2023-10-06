@@ -922,3 +922,6 @@ class ContestsSummary(models.Model):
 
     def __str__(self):
         return self.key
+
+    def get_absolute_url(self):
+        return reverse("contests_summary", args=[self.key])
