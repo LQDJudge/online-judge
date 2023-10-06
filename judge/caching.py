@@ -1,6 +1,7 @@
 from inspect import signature
 from django.core.cache import cache
 from django.db.models.query import QuerySet
+from django.core.handlers.wsgi import WSGIRequest
 
 import hashlib
 
@@ -18,10 +19,14 @@ def cache_wrapper(prefix, timeout=None):
             return str(arg)[:MAX_NUM_CHAR]
         return str(arg)
 
+    def filter_args(args_list):
+        return [x for x in args_list if not isinstance(x, WSGIRequest)]
+
     def get_key(func, *args, **kwargs):
         args_list = list(args)
         signature_args = list(signature(func).parameters.keys())
         args_list += [kwargs.get(k) for k in signature_args[len(args) :]]
+        args_list = filter_args(args_list)
         args_list = [arg_to_str(i) for i in args_list]
         key = prefix + ":" + ":".join(args_list)
         key = key.replace(" ", "_")
