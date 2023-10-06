@@ -33,6 +33,7 @@ __all__ = [
     "ContestSubmission",
     "Rating",
     "ContestProblemClarification",
+    "ContestsSummary",
 ]
 
 
@@ -900,3 +901,24 @@ class ContestProblemClarification(models.Model):
     date = models.DateTimeField(
         verbose_name=_("clarification timestamp"), auto_now_add=True
     )
+
+
+class ContestsSummary(models.Model):
+    contests = models.ManyToManyField(
+        Contest,
+    )
+    scores = models.JSONField(
+        null=True,
+        blank=True,
+    )
+    key = models.CharField(
+        max_length=20,
+        unique=True,
+    )
+
+    class Meta:
+        verbose_name = _("contests summary")
+        verbose_name_plural = _("contests summaries")
+
+    def __str__(self):
+        return self.key

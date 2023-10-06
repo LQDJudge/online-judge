@@ -27,6 +27,8 @@ from django.db.models import (
     Value,
     When,
 )
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 from django.db.models.expressions import CombinedExpression
 from django.http import (
     Http404,
@@ -67,6 +69,7 @@ from judge.models import (
     Profile,
     Submission,
     ContestProblemClarification,
+    ContestsSummary,
 )
 from judge.tasks import run_moss
 from judge.utils.celery import redirect_to_task_status
@@ -1380,3 +1383,65 @@ def update_contest_mode(request):
     old_mode = request.session.get("contest_mode", True)
     request.session["contest_mode"] = not old_mode
     return HttpResponse()
+
+
+ContestsSummaryData = namedtuple(
+    "ContestsSummaryData",
+    "user points point_contests css_class",
+)
+
+
+def contests_summary_view(request, key):
+    try:
+        contests_summary = ContestsSummary.objects.get(key=key)
+    except:
+        raise Http404()
+
+    cache_key = "csv:" + key
+    context = cache.get(cache_key)
+    if context:
+        return render(request, "contest/contests_summary.html", context)
+
+    scores_system = contests_summary.scores
+    contests = contests_summary.contests.all()
+    total_points = defaultdict(int)
+    result_per_contest = defaultdict(lambda: [(0, 0)] * len(contests))
+    user_css_class = {}
+
+    for i in range(len(contests)):
+        contest = contests[i]
+        users, problems = get_contest_ranking_list(request, contest)
+        for rank, user in users:
+            curr_score = 0
+            if rank - 1 < len(scores_system):
+                curr_score = scores_system[rank - 1]
+            total_points[user.user] += curr_score
+            result_per_contest[user.user][i] = (curr_score, rank)
+            user_css_class[user.user] = user.css_class
+
+    sorted_total_points = [
+        ContestsSummaryData(
+            user=user,
+            points=total_points[user],
+            point_contests=result_per_contest[user],
+            css_class=user_css_class[user],
+        )
+        for user in total_points
+    ]
+
+    sorted_total_points.sort(key=lambda x: x.points, reverse=True)
+    total_rank = ranker(sorted_total_points)
+
+    context = {
+        "total_rank": list(total_rank),
+        "title": _("Contests Summary"),
+        "contests": contests,
+    }
+    cache.set(cache_key, context)
+
+    return render(request, "contest/contests_summary.html", context)
+
+
+@receiver([post_save, post_delete], sender=ContestsSummary)
+def clear_cache(sender, instance, **kwargs):
+    cache.delete("csv:" + instance.key)
