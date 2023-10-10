@@ -16,6 +16,7 @@ from sortedm2m.fields import SortedManyToManyField
 from judge.models.choices import ACE_THEMES, MATH_ENGINES_CHOICES, TIMEZONE
 from judge.models.runtime import Language
 from judge.ratings import rating_class
+from judge.caching import cache_wrapper
 
 
 __all__ = ["Organization", "Profile", "OrganizationRequest", "Friend"]
@@ -142,6 +143,7 @@ class Organization(models.Model):
         )
         verbose_name = _("organization")
         verbose_name_plural = _("organizations")
+        app_label = "judge"
 
 
 class Profile(models.Model):
@@ -266,10 +268,9 @@ class Profile(models.Model):
 
     @cached_property
     def count_unseen_notifications(self):
-        query = {
-            "read": False,
-        }
-        return self.notifications.filter(**query).count()
+        from judge.models.notification import unseen_notifications_count
+
+        return unseen_notifications_count(self)
 
     @cached_property
     def count_unread_chat_boxes(self):

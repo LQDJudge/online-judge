@@ -80,6 +80,7 @@ def vote_page(request, delta):
         else:
             PageVote.objects.filter(id=pagevote_id).update(score=F("score") + delta)
         break
+    _dirty_vote_score(pagevote_id, request.profile)
     return HttpResponse("success", content_type="text/plain")
 
 
@@ -103,3 +104,8 @@ class PageVoteDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         context = super(PageVoteDetailView, self).get_context_data(**kwargs)
         context["pagevote"] = self.object.get_or_create_pagevote()
         return context
+
+
+def _dirty_vote_score(pagevote_id, profile):
+    pv = PageVote(id=pagevote_id)
+    pv.vote_score.dirty(pv, profile)

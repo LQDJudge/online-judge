@@ -27,7 +27,7 @@ from judge.dblock import LockModel
 from judge.models import Comment, CommentVote, Notification, BlogPost
 from judge.utils.views import TitleMixin
 from judge.widgets import MathJaxPagedownWidget, HeavyPreviewPageDownWidget
-from judge.comments import add_mention_notifications, del_mention_notifications
+from judge.comments import add_mention_notifications
 
 import json
 
@@ -240,7 +240,6 @@ class CommentEditAjax(LoginRequiredMixin, CommentMixin, UpdateView):
     def form_valid(self, form):
         # update notifications
         comment = form.instance
-        del_mention_notifications(comment)
         add_mention_notifications(comment)
 
         with transaction.atomic(), revisions.create_revision():

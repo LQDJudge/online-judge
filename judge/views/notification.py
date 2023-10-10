@@ -2,10 +2,9 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView
 from django.utils.translation import ugettext as _
 from django.utils.timezone import now
-from django.db.models import BooleanField, Value
 
-from judge.utils.cachedict import CacheDict
-from judge.models import Profile, Comment, Notification
+from judge.models import Profile, Notification, NotificationProfile
+from judge.models.notification import unseen_notifications_count
 
 __all__ = ["NotificationList"]
 
@@ -16,24 +15,11 @@ class NotificationList(ListView):
     template_name = "notification/list.html"
 
     def get_queryset(self):
-        self.unseen_cnt = self.request.profile.count_unseen_notifications
+        self.unseen_cnt = unseen_notifications_count(self.request.profile)
 
-        query = {
-            "owner": self.request.profile,
-        }
-
-        self.queryset = (
-            Notification.objects.filter(**query)
-            .order_by("-time")[:100]
-            .annotate(seen=Value(True, output_field=BooleanField()))
-        )
-
-        # Mark the several first unseen
-        for cnt, q in enumerate(self.queryset):
-            if cnt < self.unseen_cnt:
-                q.seen = False
-            else:
-                break
+        self.queryset = Notification.objects.filter(
+            owner=self.request.profile
+        ).order_by("-id")[:100]
 
         return self.queryset
 
@@ -46,8 +32,6 @@ class NotificationList(ListView):
 
     def get(self, request, *args, **kwargs):
         ret = super().get(request, *args, **kwargs)
-
-        # update after rendering
-        Notification.objects.filter(owner=self.request.profile).update(read=True)
-
+        NotificationProfile.objects.filter(user=request.profile).update(unread_count=0)
+        unseen_notifications_count.dirty(self.request.profile)
         return ret
