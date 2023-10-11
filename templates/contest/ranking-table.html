@@ -13,14 +13,14 @@
 {% endblock %}
 
 {% block user_footer %}
-  {% if user.user.first_name %}
+  {% if user.first_name %}
     <div style="font-weight: 600; display: none" class="fullname gray">
-      {{ user.user.first_name if user.user.first_name else ''}}
+      {{ user.first_name if user.first_name else ''}}
     </div>
   {% endif %}
-  {% if user.user.last_name %}
+  {% if user.last_name %}
     <div class="school gray" style="display: none"><a style="font-weight: 600">
-      {{- user.user.last_name -}}
+      {{- user.last_name -}}
     </a></div>
   {% endif %}
 {% endblock %}

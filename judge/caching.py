@@ -40,9 +40,9 @@ def cache_wrapper(prefix, timeout=None):
                 if result == NONE_RESULT:
                     result = None
                 return result
+            result = func(*args, **kwargs)
             if result is None:
                 result = NONE_RESULT
-            result = func(*args, **kwargs)
             cache.set(cache_key, result, timeout)
             return result
 

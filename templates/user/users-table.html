@@ -10,7 +10,7 @@
 
 {% block user_footer %}
   <span style="margin-left: 0.5em">{% if user.rating %}{{ rating_number(user) }}{% endif %}</span>
-  <div class="gray" style="font-weight: 600; margin-top: 0.2em">{{ user.user.first_name if user.user.first_name else ''}}</div>
+  <div class="gray" style="font-weight: 600; margin-top: 0.2em">{{ user.first_name or ''}}</div>
 {% endblock %}
 
 {% block after_point_head %}
@@ -39,11 +39,11 @@
   <td class="user-problem-count">{{ user.problem_count }}</td>
   <td>
     <div class="about-td">
-      {% if user.about %}
-        {% cache 86400 'user_about' user.id MATH_ENGINE %}
+      {% cache 86400 'user_about' user.id MATH_ENGINE %}
+        {% if user.about %}
           {{ user.about|markdown(lazy_load=True)|reference|str|safe }}
-        {% endcache %}
-      {% endif %}
+        {% endif %}
+      {% endcache %}
     </div>
   </td>
 {% endblock %}

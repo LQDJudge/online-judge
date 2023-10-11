@@ -36,7 +36,7 @@ from judge.jinja2.gravatar import gravatar
 from judge.models import Friend
 
 from chat_box.models import Message, Profile, Room, UserRoom, Ignore
-from chat_box.utils import encrypt_url, decrypt_url, encrypt_channel
+from chat_box.utils import encrypt_url, decrypt_url, encrypt_channel, get_unread_boxes
 
 import json
 
@@ -208,6 +208,7 @@ def post_message(request):
         )
     else:
         Room.last_message_body.dirty(room)
+
         for user in room.users():
             event.post(
                 encrypt_channel("chat_" + str(user.id)),
@@ -223,6 +224,7 @@ def post_message(request):
                 UserRoom.objects.filter(user=user, room=room).update(
                     unread_count=F("unread_count") + 1
                 )
+                get_unread_boxes.dirty(user)
 
     return JsonResponse(ret)
 
@@ -284,6 +286,8 @@ def update_last_seen(request, **kwargs):
     user_room.last_seen = timezone.now()
     user_room.unread_count = 0
     user_room.save()
+
+    get_unread_boxes.dirty(profile)
 
     return JsonResponse({"msg": "updated"})
 

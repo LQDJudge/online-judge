@@ -10,6 +10,9 @@ from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
+from django.dispatch import receiver
+from django.db.models.signals import post_save, pre_save
+
 from fernet_fields import EncryptedCharField
 from sortedm2m.fields import SortedManyToManyField
 
@@ -202,7 +205,7 @@ class Profile(models.Model):
         help_text=_("User will not be able to vote on problems' point values."),
         default=False,
     )
-    rating = models.IntegerField(null=True, default=None)
+    rating = models.IntegerField(null=True, default=None, db_index=True)
     user_script = models.TextField(
         verbose_name=_("user script"),
         default="",
@@ -256,6 +259,21 @@ class Profile(models.Model):
         max_length=300,
     )
 
+    @cache_wrapper(prefix="Pgbi")
+    def _get_basic_info(self):
+        return {
+            "first_name": self.user.first_name,
+            "last_name": self.user.last_name,
+            "email": self.user.email,
+            "username": self.user.username,
+            "mute": self.mute,
+            "profile_image": self.profile_image,
+        }
+
+    @cached_property
+    def _cached_info(self):
+        return self._get_basic_info()
+
     @cached_property
     def organization(self):
         # We do this to take advantage of prefetch_related
@@ -264,7 +282,27 @@ class Profile(models.Model):
 
     @cached_property
     def username(self):
-        return self.user.username
+        return self._cached_info["username"]
+
+    @cached_property
+    def first_name(self):
+        return self._cached_info["first_name"]
+
+    @cached_property
+    def last_name(self):
+        return self._cached_info["last_name"]
+
+    @cached_property
+    def email(self):
+        return self._cached_info["email"]
+
+    @cached_property
+    def is_muted(self):
+        return self._cached_info["mute"]
+
+    @cached_property
+    def cached_profile_image(self):
+        return self._cached_info["profile_image"]
 
     @cached_property
     def count_unseen_notifications(self):
@@ -499,3 +537,18 @@ class OrganizationProfile(models.Model):
     @classmethod
     def get_most_recent_organizations(self, users):
         return self.objects.filter(users=users).order_by("-last_visit")[:5]
+
+
+@receiver([post_save], sender=User)
+def on_user_save(sender, instance, **kwargs):
+    profile = instance.profile
+    profile._get_user.dirty(profile)
+
+
+@receiver([pre_save], sender=Profile)
+def on_profile_save(sender, instance, **kwargs):
+    if instance.id is None:
+        return
+    prev = sender.objects.get(id=instance.id)
+    if prev.mute != instance.mute or prev.profile_image != instance.profile_image:
+        instance._get_user.dirty(instance)
