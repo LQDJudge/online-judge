@@ -382,7 +382,7 @@ class ProblemAdmin(CompareVersionAdmin):
             category = "Problem public: " + str(obj.is_public)
             if orgs:
                 category += " (" + ", ".join(orgs) + ")"
-            make_notification(users, html, category, request.profile)
+            make_notification(users, category, html, request.profile)
 
     def construct_change_message(self, request, form, *args, **kwargs):
         if form.cleaned_data.get("change_message"):
