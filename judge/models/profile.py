@@ -12,6 +12,8 @@ from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save
+from django.core.exceptions import RelatedObjectDoesNotExist
+
 
 from fernet_fields import EncryptedCharField
 from sortedm2m.fields import SortedManyToManyField
@@ -544,10 +546,11 @@ class OrganizationProfile(models.Model):
 
 @receiver([post_save], sender=User)
 def on_user_save(sender, instance, **kwargs):
-    if instance.id is None:
-        return
-    profile = instance.profile
-    profile._get_basic_info.dirty(profile)
+    try:
+        profile = instance.profile
+        profile._get_basic_info.dirty(profile)
+    except RelatedObjectDoesNotExist:
+        pass
 
 
 @receiver([pre_save], sender=Profile)
