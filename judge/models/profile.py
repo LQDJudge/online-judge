@@ -12,7 +12,6 @@ from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save
-from django.core.exceptions import RelatedObjectDoesNotExist
 
 
 from fernet_fields import EncryptedCharField
@@ -549,7 +548,7 @@ def on_user_save(sender, instance, **kwargs):
     try:
         profile = instance.profile
         profile._get_basic_info.dirty(profile)
-    except RelatedObjectDoesNotExist:
+    except:
         pass
 
 
