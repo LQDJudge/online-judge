@@ -541,6 +541,8 @@ class OrganizationProfile(models.Model):
 
 @receiver([post_save], sender=User)
 def on_user_save(sender, instance, **kwargs):
+    if instance.id is None:
+        return
     profile = instance.profile
     profile._get_user.dirty(profile)
 
