@@ -544,7 +544,7 @@ def on_user_save(sender, instance, **kwargs):
     if instance.id is None:
         return
     profile = instance.profile
-    profile._get_user.dirty(profile)
+    profile._get_basic_info.dirty(profile)
 
 
 @receiver([pre_save], sender=Profile)
@@ -553,4 +553,4 @@ def on_profile_save(sender, instance, **kwargs):
         return
     prev = sender.objects.get(id=instance.id)
     if prev.mute != instance.mute or prev.profile_image != instance.profile_image:
-        instance._get_user.dirty(instance)
+        instance._get_basic_info.dirty(instance)
