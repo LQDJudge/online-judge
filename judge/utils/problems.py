@@ -10,8 +10,6 @@ from django.db.models import Case, Count, ExpressionWrapper, F, Max, Q, When
 from django.db.models.fields import FloatField
 from django.utils import timezone
 from django.utils.translation import gettext as _, gettext_noop
-from django.db.models.signals import pre_save
-from django.dispatch import receiver
 
 from judge.models import Problem, Submission
 from judge.ml.collab_filter import CollabFilter
@@ -29,9 +27,9 @@ __all__ = [
 @cache_wrapper(prefix="user_tester")
 def user_tester_ids(profile):
     return set(
-        Problem.testers.through.objects.filter(profile=profile).values_list(
-            "problem_id", flat=True
-        )
+        Problem.testers.through.objects.filter(profile=profile)
+        .values_list("problem_id", flat=True)
+        .distinct()
     )
 
 
@@ -41,7 +39,9 @@ def user_editable_ids(profile):
         (
             Problem.objects.filter(authors=profile)
             | Problem.objects.filter(curators=profile)
-        ).values_list("id", flat=True)
+        )
+        .values_list("id", flat=True)
+        .distinct()
     )
     return result
 
@@ -249,22 +249,3 @@ def finished_submission(sub):
         keys += ["contest_complete:%d" % participation.id]
         keys += ["contest_attempted:%d" % participation.id]
     cache.delete_many(keys)
-
-
-@receiver([pre_save], sender=Problem)
-def on_problem_save(sender, instance, **kwargs):
-    if instance.id is None:
-        return
-    prev_editors = list(sender.objects.get(id=instance.id).editor_ids)
-    new_editors = list(instance.editor_ids)
-    if prev_editors != new_editors:
-        all_editors = set(prev_editors + new_editors)
-        for profile_id in all_editors:
-            user_editable_ids.dirty(profile_id)
-
-    prev_testers = list(sender.objects.get(id=instance.id).tester_ids)
-    new_testers = list(instance.tester_ids)
-    if prev_testers != new_testers:
-        all_testers = set(prev_testers + new_testers)
-        for profile_id in all_testers:
-            user_tester_ids.dirty(profile_id)

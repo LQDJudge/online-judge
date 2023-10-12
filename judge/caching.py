@@ -40,12 +40,10 @@ def cache_wrapper(prefix, timeout=None):
     def _get(key):
         if not l0_cache:
             return cache.get(key)
-        print("GET", key, l0_cache.get(key))
         return l0_cache.get(key) or cache.get(key)
 
     def _set_l0(key, value):
         if l0_cache:
-            print("SET", key, value)
             l0_cache.set(key, value, 30)
 
     def _set(key, value, timeout):
