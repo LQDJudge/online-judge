@@ -10,6 +10,8 @@ from django.db.models import Case, Count, ExpressionWrapper, F, Max, Q, When
 from django.db.models.fields import FloatField
 from django.utils import timezone
 from django.utils.translation import gettext as _, gettext_noop
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 
 from judge.models import Problem, Submission
 from judge.ml.collab_filter import CollabFilter
@@ -24,6 +26,7 @@ __all__ = [
 ]
 
 
+@cache_wrapper(prefix="user_tester")
 def user_tester_ids(profile):
     return set(
         Problem.testers.through.objects.filter(profile=profile).values_list(
@@ -32,6 +35,7 @@ def user_tester_ids(profile):
     )
 
 
+@cache_wrapper(prefix="user_editable")
 def user_editable_ids(profile):
     result = set(
         (
@@ -42,22 +46,19 @@ def user_editable_ids(profile):
     return result
 
 
+@cache_wrapper(prefix="contest_complete")
 def contest_completed_ids(participation):
-    key = "contest_complete:%d" % participation.id
-    result = cache.get(key)
-    if result is None:
-        result = set(
-            participation.submissions.filter(
-                submission__result="AC", points=F("problem__points")
-            )
-            .values_list("problem__problem__id", flat=True)
-            .distinct()
+    result = set(
+        participation.submissions.filter(
+            submission__result="AC", points=F("problem__points")
         )
-        cache.set(key, result, 86400)
+        .values_list("problem__problem__id", flat=True)
+        .distinct()
+    )
     return result
 
 
-@cache_wrapper(prefix="user_complete", timeout=86400)
+@cache_wrapper(prefix="user_complete")
 def user_completed_ids(profile):
     result = set(
         Submission.objects.filter(
@@ -69,7 +70,7 @@ def user_completed_ids(profile):
     return result
 
 
-@cache_wrapper(prefix="contest_attempted", timeout=86400)
+@cache_wrapper(prefix="contest_attempted")
 def contest_attempted_ids(participation):
     result = {
         id: {"achieved_points": points, "max_points": max_points}
@@ -84,7 +85,7 @@ def contest_attempted_ids(participation):
     return result
 
 
-@cache_wrapper(prefix="user_attempted", timeout=86400)
+@cache_wrapper(prefix="user_attempted")
 def user_attempted_ids(profile):
     result = {
         id: {
@@ -248,3 +249,22 @@ def finished_submission(sub):
         keys += ["contest_complete:%d" % participation.id]
         keys += ["contest_attempted:%d" % participation.id]
     cache.delete_many(keys)
+
+
+@receiver([pre_save], sender=Problem)
+def on_problem_save(sender, instance, **kwargs):
+    if instance.id is None:
+        return
+    prev_editors = list(sender.objects.get(id=instance.id).editor_ids)
+    new_editors = list(instance.editor_ids)
+    if prev_editors != new_editors:
+        all_editors = set(prev_editors + new_editors)
+        for profile_id in all_editors:
+            user_editable_ids.dirty(profile_id)
+
+    prev_testers = list(sender.objects.get(id=instance.id).tester_ids)
+    new_testers = list(instance.tester_ids)
+    if prev_testers != new_testers:
+        all_testers = set(prev_testers + new_testers)
+        for profile_id in all_testers:
+            user_tester_ids.dirty(profile_id)

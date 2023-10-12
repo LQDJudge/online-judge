@@ -220,6 +220,47 @@ class Submission(models.Model):
     def id_secret(self):
         return self.get_id_secret(self.id)
 
+    def is_accessible_by(self, profile):
+        from judge.utils.problems import (
+            user_completed_ids,
+            user_tester_ids,
+            user_editable_ids,
+        )
+
+        if not profile:
+            return False
+
+        problem_id = self.problem_id
+        user = profile.user
+
+        if profile.id == self.user_id:
+            return True
+
+        if problem_id in user_editable_ids(profile):
+            return True
+
+        if self.problem_id in user_completed_ids(profile):
+            if self.problem.is_public:
+                return True
+            if problem_id in user_tester_ids(profile):
+                return True
+
+        if user.has_perm("judge.change_submission"):
+            return True
+
+        if user.has_perm("judge.view_all_submission"):
+            return True
+
+        if self.problem.is_public and user.has_perm("judge.view_public_submission"):
+            return True
+
+        if hasattr(
+            self, "contest"
+        ) and self.contest.participation.contest.is_editable_by(user):
+            return True
+
+        return False
+
     class Meta:
         permissions = (
             ("abort_any_submission", "Abort any submission"),

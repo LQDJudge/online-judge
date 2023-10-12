@@ -21,7 +21,6 @@ from . import (
     render,
     social,
     spaceless,
-    submission,
     timedelta,
 )
 from . import registry
