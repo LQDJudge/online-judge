@@ -254,9 +254,8 @@ class Submission(models.Model):
         if self.problem.is_public and user.has_perm("judge.view_public_submission"):
             return True
 
-        if hasattr(
-            self, "contest"
-        ) and self.contest.participation.contest.is_editable_by(user):
+        contest = self.contest_object
+        if contest and contest.is_editable_by(user):
             return True
 
         return False
