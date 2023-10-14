@@ -35,6 +35,7 @@ from judge.utils.tickets import filter_visible_tickets, own_ticket_filter
 from judge.utils.views import SingleObjectFormView, TitleMixin, paginate_query_context
 from judge.views.problem import ProblemMixin
 from judge.widgets import HeavyPreviewPageDownWidget
+from judge.models.notification import make_notification
 
 ticket_widget = (
     forms.Textarea()
