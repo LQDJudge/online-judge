@@ -236,9 +236,10 @@ class ContestList(
                     active.append(participation)
                     present.remove(participation.contest)
 
-        active.sort(key=attrgetter("end_time", "key"))
-        present.sort(key=attrgetter("end_time", "key"))
-        future.sort(key=attrgetter("start_time"))
+        if not ("contest" in self.request.GET and settings.ENABLE_FTS):
+            active.sort(key=attrgetter("end_time", "key"))
+            present.sort(key=attrgetter("end_time", "key"))
+            future.sort(key=attrgetter("start_time"))
         context["active_participations"] = active
         context["current_contests"] = present
         context["future_contests"] = future
