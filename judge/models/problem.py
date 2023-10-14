@@ -107,9 +107,7 @@ class License(models.Model):
 
 class TranslatedProblemQuerySet(SearchQuerySet):
     def __init__(self, **kwargs):
-        super(TranslatedProblemQuerySet, self).__init__(
-            ("code", "name", "description"), **kwargs
-        )
+        super(TranslatedProblemQuerySet, self).__init__(("code", "name"), **kwargs)
 
     def add_i18n_name(self, language):
         return self.annotate(

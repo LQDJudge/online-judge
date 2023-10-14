@@ -24,6 +24,7 @@ from judge.models.submission import Submission
 from judge.ratings import rate_contest
 from judge.models.pagevote import PageVotable
 from judge.models.bookmark import Bookmarkable
+from judge.fulltext import SearchManager
 
 __all__ = [
     "Contest",
@@ -309,6 +310,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
     comments = GenericRelation("Comment")
     pagevote = GenericRelation("PageVote")
     bookmark = GenericRelation("BookMark")
+    objects = SearchManager(("key", "name"))
 
     @cached_property
     def format_class(self):

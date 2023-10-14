@@ -466,9 +466,13 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
     manual_sort = frozenset(("name", "group", "solved", "type"))
     all_sorts = sql_sort | manual_sort
     default_desc = frozenset(("date", "points", "ac_rate", "user_count"))
-    default_sort = "-date"
     first_page_href = None
     filter_organization = False
+
+    def get_default_sort_order(self, request):
+        if "search" in request.GET and settings.ENABLE_FTS:
+            return "-relevance"
+        return "-date"
 
     def get_paginator(
         self, queryset, per_page, orphans=0, allow_empty_first_page=True, **kwargs
@@ -485,41 +489,45 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         )
         if not self.in_contest:
             queryset = queryset.add_i18n_name(self.request.LANGUAGE_CODE)
-            sort_key = self.order.lstrip("-")
-            if sort_key in self.sql_sort:
-                queryset = queryset.order_by(self.order)
-            elif sort_key == "name":
-                queryset = queryset.order_by(self.order.replace("name", "i18n_name"))
-            elif sort_key == "group":
-                queryset = queryset.order_by(self.order + "__name")
-            elif sort_key == "solved":
-                if self.request.user.is_authenticated:
-                    profile = self.request.profile
-                    solved = user_completed_ids(profile)
-                    attempted = user_attempted_ids(profile)
-
-                    def _solved_sort_order(problem):
-                        if problem.id in solved:
-                            return 1
-                        if problem.id in attempted:
-                            return 0
-                        return -1
-
-                    queryset = list(queryset)
-                    queryset.sort(
-                        key=_solved_sort_order, reverse=self.order.startswith("-")
-                    )
-            elif sort_key == "type":
-                if self.show_types:
-                    queryset = list(queryset)
-                    queryset.sort(
-                        key=lambda problem: problem.types_list[0]
-                        if problem.types_list
-                        else "",
-                        reverse=self.order.startswith("-"),
-                    )
+            queryset = self.sort_queryset(queryset)
             paginator.object_list = queryset
         return paginator
+
+    def sort_queryset(self, queryset):
+        sort_key = self.order.lstrip("-")
+        if sort_key in self.sql_sort:
+            queryset = queryset.order_by(self.order)
+        elif sort_key == "name":
+            queryset = queryset.order_by(self.order.replace("name", "i18n_name"))
+        elif sort_key == "group":
+            queryset = queryset.order_by(self.order + "__name")
+        elif sort_key == "solved":
+            if self.request.user.is_authenticated:
+                profile = self.request.profile
+                solved = user_completed_ids(profile)
+                attempted = user_attempted_ids(profile)
+
+                def _solved_sort_order(problem):
+                    if problem.id in solved:
+                        return 1
+                    if problem.id in attempted:
+                        return 0
+                    return -1
+
+                queryset = list(queryset)
+                queryset.sort(
+                    key=_solved_sort_order, reverse=self.order.startswith("-")
+                )
+        elif sort_key == "type":
+            if self.show_types:
+                queryset = list(queryset)
+                queryset.sort(
+                    key=lambda problem: problem.types_list[0]
+                    if problem.types_list
+                    else "",
+                    reverse=self.order.startswith("-"),
+                )
+        return queryset
 
     @cached_property
     def profile(self):
@@ -611,36 +619,28 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
                 self.request.GET.getlist("search")
             ).strip()
             if query:
-                if settings.ENABLE_FTS and self.full_text:
-                    queryset = queryset.search(query, queryset.BOOLEAN).extra(
-                        order_by=["-relevance"]
+                substr_queryset = queryset.filter(
+                    Q(code__icontains=query)
+                    | Q(name__icontains=query)
+                    | Q(
+                        translations__name__icontains=query,
+                        translations__language=self.request.LANGUAGE_CODE,
+                    )
+                )
+                if settings.ENABLE_FTS:
+                    queryset = (
+                        queryset.search(query, queryset.BOOLEAN).extra(
+                            order_by=["-relevance"]
+                        )
+                        | substr_queryset
                     )
                 else:
-                    queryset = queryset.filter(
-                        Q(code__icontains=query)
-                        | Q(name__icontains=query)
-                        | Q(
-                            translations__name__icontains=query,
-                            translations__language=self.request.LANGUAGE_CODE,
-                        )
-                    )
+                    queryset = substr_queryset
         self.prepoint_queryset = queryset
         if self.point_start is not None:
             queryset = queryset.filter(points__gte=self.point_start)
         if self.point_end is not None:
             queryset = queryset.filter(points__lte=self.point_end)
-        queryset = queryset.annotate(
-            has_public_editorial=Case(
-                When(
-                    solution__is_public=True,
-                    solution__publish_on__lte=timezone.now(),
-                    then=True,
-                ),
-                default=False,
-                output_field=BooleanField(),
-            )
-        )
-
         return queryset.distinct()
 
     def get_queryset(self):
@@ -658,7 +658,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         context["show_types"] = 0 if self.in_contest else int(self.show_types)
         context["full_text"] = 0 if self.in_contest else int(self.full_text)
         context["show_editorial"] = 0 if self.in_contest else int(self.show_editorial)
-        context["have_editorial"] = 0 if self.in_contest else int(self.have_editorial)
         context["show_solved_only"] = (
             0 if self.in_contest else int(self.show_solved_only)
         )
@@ -768,7 +767,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         self.show_types = self.GET_with_session(request, "show_types")
         self.full_text = self.GET_with_session(request, "full_text")
         self.show_editorial = self.GET_with_session(request, "show_editorial")
-        self.have_editorial = self.GET_with_session(request, "have_editorial")
         self.show_solved_only = self.GET_with_session(request, "show_solved_only")
 
         self.search_query = None
@@ -816,7 +814,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             "show_types",
             "full_text",
             "show_editorial",
-            "have_editorial",
             "show_solved_only",
         )
         for key in to_update:
@@ -862,9 +859,6 @@ class ProblemFeed(ProblemList, FeedView):
             self.show_types = 1
         queryset = super(ProblemFeed, self).get_queryset()
 
-        if self.have_editorial:
-            queryset = queryset.filter(has_public_editorial=1)
-
         user = self.request.profile
 
         if self.feed_type == "new":
@@ -886,6 +880,8 @@ class ProblemFeed(ProblemList, FeedView):
                 .order_by("?")
                 .add_i18n_name(self.request.LANGUAGE_CODE)
             )
+        if "search" in self.request.GET:
+            return queryset.add_i18n_name(self.request.LANGUAGE_CODE)
         if not settings.ML_OUTPUT_PATH or not user:
             return queryset.order_by("?").add_i18n_name(self.request.LANGUAGE_CODE)
 
@@ -946,7 +942,6 @@ class ProblemFeed(ProblemList, FeedView):
         context["title"] = self.title
         context["feed_type"] = self.feed_type
         context["has_show_editorial_option"] = False
-        context["has_have_editorial_option"] = False
 
         return context
 

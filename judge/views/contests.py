@@ -186,9 +186,16 @@ class ContestList(
                 self.request.GET.getlist("contest")
             ).strip()
             if query:
-                queryset = queryset.filter(
+                substr_queryset = queryset.filter(
                     Q(key__icontains=query) | Q(name__icontains=query)
                 )
+                if settings.ENABLE_FTS:
+                    queryset = (
+                        queryset.search(query).extra(order_by=["-relevance"])
+                        | substr_queryset
+                    )
+                else:
+                    queryset = substr_queryset
         if not self.org_query and self.request.organization:
             self.org_query = [self.request.organization.id]
         if self.show_orgs:

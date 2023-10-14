@@ -34,13 +34,6 @@
           <label for="show_editorial">{{ _('Show editorial') }}</label>
         </div>
       {% endif %}
-      {% if has_have_editorial_option %}
-        <div>
-          <input id="have_editorial" type="checkbox" name="have_editorial" value="1"
-            {% if have_editorial %} checked{% endif %}>
-          <label for="have_editorial">{{ _('Have editorial') }}</label>
-        </div>
-      {% endif %}
       {% if organizations %}
         <div class="filter-form-group">
           <label class="bold-text margin-label" for="type"><i class="non-italics">{{ _('Group') }}</i></label>
