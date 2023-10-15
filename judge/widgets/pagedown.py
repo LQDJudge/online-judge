@@ -52,11 +52,11 @@ else:
         class Media:
             css = {
                 "all": [
-                    "markdown.css",
                     "pagedown_widget.css",
                     "content-description.css",
                     "admin/css/pagedown.css",
                     "pagedown.css",
+                    "https://fonts.googleapis.com/css2?family=Fira+Code&family=Noto+Sans&display=swap",
                 ]
             }
             js = ["admin/js/pagedown.js"]
