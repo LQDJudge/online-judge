@@ -23,6 +23,28 @@
     box-shadow: none !important;
 }
 
+#content .content-description h1,
+#content .content-description h2,
+#content .content-description h3,
+#content .content-description h4,
+#content .content-description h5,
+#content .content-description h6 {
+    padding-left: 0;
+    padding-right: 0;
+    font-size: inherit;
+}
+
+#content .content-description h5 {
+  letter-spacing: initial;
+  text-transform: initial;
+}
+
+#content .content-description ul,
+#content .content-description ol {
+    margin-left: 0;
+    margin-right: 0;
+}
+
 #content .content-description ul,
 #content .content-description ol {
     margin-left: 0;
