@@ -1802,7 +1802,7 @@ msgstr "Số thực (chênh lệch tương đối)"
 
 #: judge/models/problem_data.py:36
 msgid "Non-trailing spaces"
-msgstr "Không cho phép dấu cách cuối dòng"
+msgstr "Không xét dấu cách cuối dòng"
 
 #: judge/models/problem_data.py:37
 msgid "Unordered"
@@ -3116,10 +3116,8 @@ msgid "The user you are trying to kick is not in organization: %s."
 msgstr ""
 
 #: judge/views/organization.py:790 judge/views/organization.py:946
-#, fuzzy, python-format
-#| msgid "Editing %s"
 msgid "Edit %s"
-msgstr "Đang chỉnh sửa %s"
+msgstr "Chỉnh sửa %s"
 
 #: judge/views/organization.py:818 templates/organization/list.html:45
 msgid "Create group"
@@ -5636,7 +5634,7 @@ msgstr "Người được ủy thác"
 
 #: templates/ticket/new_problem.html:7
 msgid "Thanks for opening a ticket!"
-msgstr "Cảm ơn đã báo cáo!"
+msgstr "Cảm ơn bạn đã báo cáo!"
 
 #: templates/ticket/new_problem.html:9
 msgid ""
