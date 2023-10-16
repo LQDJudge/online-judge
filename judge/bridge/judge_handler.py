@@ -93,13 +93,6 @@ class JudgeHandler(ZlibPacketHandler):
 
     def on_disconnect(self):
         self._stop_ping.set()
-        if self._working:
-            logger.error(
-                "Judge %s disconnected while handling submission %s",
-                self.name,
-                self._working,
-            )
-        self.judges.remove(self)
         if self.name is not None:
             self._disconnected()
         logger.info(
@@ -118,16 +111,6 @@ class JudgeHandler(ZlibPacketHandler):
                 None,
                 0,
             )
-            # Submission.objects.filter(id=self._working).update(
-            #     status="IE", result="IE", error=""
-            # )
-            # json_log.error(
-            #     self._make_json_log(
-            #         sub=self._working,
-            #         action="close",
-            #         info="IE due to shutdown on grading",
-            #     )
-            # )
 
     def _authenticate(self, id, key):
         try:
