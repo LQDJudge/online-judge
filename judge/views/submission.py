@@ -1,6 +1,5 @@
 import json
 import os.path
-import zipfile
 from operator import attrgetter
 
 from django.conf import settings

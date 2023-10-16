@@ -29,7 +29,6 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 
-import datetime
 
 from judge import event_poster as event
 from judge.jinja2.gravatar import gravatar
@@ -37,8 +36,6 @@ from judge.models import Friend
 
 from chat_box.models import Message, Profile, Room, UserRoom, Ignore
 from chat_box.utils import encrypt_url, decrypt_url, encrypt_channel, get_unread_boxes
-
-import json
 
 
 class ChatView(ListView):

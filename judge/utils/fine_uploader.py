@@ -5,7 +5,6 @@ from django import forms
 from django.forms import ClearableFileInput
 
 import os, os.path
-import tempfile
 import shutil
 
 __all__ = ("handle_upload", "save_upload", "FineUploadForm", "FineUploadFileInput")
