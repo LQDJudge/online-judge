@@ -8,6 +8,8 @@ from django.db.models.functions import Coalesce
 
 from chat_box.models import Ignore, Message, UserRoom, Room
 
+from judge.caching import cache_wrapper
+
 secret_key = settings.CHAT_SECRET_KEY
 fernet = Fernet(secret_key)
 
@@ -37,6 +39,7 @@ def encrypt_channel(channel):
     )
 
 
+@cache_wrapper(prefix="gub")
 def get_unread_boxes(profile):
     ignored_rooms = Ignore.get_ignored_rooms(profile)
     unread_boxes = (

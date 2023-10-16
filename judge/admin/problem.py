@@ -25,6 +25,7 @@ from judge.models import (
     Solution,
     Notification,
 )
+from judge.models.notification import make_notification
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
     AdminSelect2MultipleWidget,
@@ -32,6 +33,7 @@ from judge.widgets import (
     CheckboxSelectMultipleWithSelectAll,
     HeavyPreviewAdminPageDownWidget,
 )
+from judge.utils.problems import user_editable_ids, user_tester_ids
 
 MEMORY_UNITS = (("KB", "KB"), ("MB", "MB"))
 
@@ -358,12 +360,31 @@ class ProblemAdmin(CompareVersionAdmin):
             self._rescore(request, obj.id)
 
     def save_related(self, request, form, formsets, change):
+        editors = set()
+        testers = set()
+        if "curators" in form.changed_data or "authors" in form.changed_data:
+            editors = set(form.instance.editor_ids)
+        if "testers" in form.changed_data:
+            testers = set(form.instance.tester_ids)
+
         super().save_related(request, form, formsets, change)
-        # Only rescored if we did not already do so in `save_model`
         obj = form.instance
         obj.curators.add(request.profile)
         obj.is_organization_private = obj.organizations.count() > 0
         obj.save()
+
+        if "curators" in form.changed_data or "authors" in form.changed_data:
+            del obj.editor_ids
+            editors = editors.union(set(obj.editor_ids))
+        if "testers" in form.changed_data:
+            del obj.tester_ids
+            testers = testers.union(set(obj.tester_ids))
+
+        for editor in editors:
+            user_editable_ids.dirty(editor)
+        for tester in testers:
+            user_tester_ids.dirty(tester)
+
         # Create notification
         if "is_public" in form.changed_data or "organizations" in form.changed_data:
             users = set(obj.authors.all())
@@ -381,14 +402,7 @@ class ProblemAdmin(CompareVersionAdmin):
             category = "Problem public: " + str(obj.is_public)
             if orgs:
                 category += " (" + ", ".join(orgs) + ")"
-            for user in users:
-                notification = Notification(
-                    owner=user,
-                    html_link=html,
-                    category=category,
-                    author=request.profile,
-                )
-                notification.save()
+            make_notification(users, category, html, request.profile)
 
     def construct_change_message(self, request, form, *args, **kwargs):
         if form.cleaned_data.get("change_message"):

@@ -26,21 +26,20 @@ from judge.dblock import LockModel
 from judge.models import Comment, Notification
 from judge.widgets import HeavyPreviewPageDownWidget
 from judge.jinja2.reference import get_user_from_text
+from judge.models.notification import make_notification
 
 
 DEFAULT_OFFSET = 10
 
 
+def _get_html_link_notification(comment):
+    return f'<a href="{comment.get_absolute_url()}">{comment.page_title}</a>'
+
+
 def add_mention_notifications(comment):
-    user_referred = get_user_from_text(comment.body).exclude(id=comment.author.id)
-    for user in user_referred:
-        notification_ref = Notification(owner=user, comment=comment, category="Mention")
-        notification_ref.save()
-
-
-def del_mention_notifications(comment):
-    query = {"comment": comment, "category": "Mention"}
-    Notification.objects.filter(**query).delete()
+    users_mentioned = get_user_from_text(comment.body).exclude(id=comment.author.id)
+    link = _get_html_link_notification(comment)
+    make_notification(users_mentioned, "Mention", link, comment.author)
 
 
 class CommentForm(ModelForm):
@@ -124,23 +123,17 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
                 comment.save()
 
             # add notification for reply
+            comment_notif_link = _get_html_link_notification(comment)
             if comment.parent and comment.parent.author != comment.author:
-                notification_reply = Notification(
-                    owner=comment.parent.author, comment=comment, category="Reply"
+                make_notification(
+                    [comment.parent.author], "Reply", comment_notif_link, comment.author
                 )
-                notification_reply.save()
 
             # add notification for page authors
             page_authors = comment.linked_object.authors.all()
-            for user in page_authors:
-                if user == comment.author:
-                    continue
-                notification = Notification(
-                    owner=user, comment=comment, category="Comment"
-                )
-                notification.save()
-            # except Exception:
-            #     pass
+            make_notification(
+                page_authors, "Comment", comment_notif_link, comment.author
+            )
 
             add_mention_notifications(comment)
 

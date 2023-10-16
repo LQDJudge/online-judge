@@ -24,40 +24,41 @@ __all__ = [
 ]
 
 
+@cache_wrapper(prefix="user_tester")
 def user_tester_ids(profile):
     return set(
-        Problem.testers.through.objects.filter(profile=profile).values_list(
-            "problem_id", flat=True
-        )
+        Problem.testers.through.objects.filter(profile=profile)
+        .values_list("problem_id", flat=True)
+        .distinct()
     )
 
 
+@cache_wrapper(prefix="user_editable")
 def user_editable_ids(profile):
     result = set(
         (
             Problem.objects.filter(authors=profile)
             | Problem.objects.filter(curators=profile)
-        ).values_list("id", flat=True)
+        )
+        .values_list("id", flat=True)
+        .distinct()
     )
     return result
 
 
+@cache_wrapper(prefix="contest_complete")
 def contest_completed_ids(participation):
-    key = "contest_complete:%d" % participation.id
-    result = cache.get(key)
-    if result is None:
-        result = set(
-            participation.submissions.filter(
-                submission__result="AC", points=F("problem__points")
-            )
-            .values_list("problem__problem__id", flat=True)
-            .distinct()
+    result = set(
+        participation.submissions.filter(
+            submission__result="AC", points=F("problem__points")
         )
-        cache.set(key, result, 86400)
+        .values_list("problem__problem__id", flat=True)
+        .distinct()
+    )
     return result
 
 
-@cache_wrapper(prefix="user_complete", timeout=86400)
+@cache_wrapper(prefix="user_complete")
 def user_completed_ids(profile):
     result = set(
         Submission.objects.filter(
@@ -69,7 +70,7 @@ def user_completed_ids(profile):
     return result
 
 
-@cache_wrapper(prefix="contest_attempted", timeout=86400)
+@cache_wrapper(prefix="contest_attempted")
 def contest_attempted_ids(participation):
     result = {
         id: {"achieved_points": points, "max_points": max_points}
@@ -84,7 +85,7 @@ def contest_attempted_ids(participation):
     return result
 
 
-@cache_wrapper(prefix="user_attempted", timeout=86400)
+@cache_wrapper(prefix="user_attempted")
 def user_attempted_ids(profile):
     result = {
         id: {

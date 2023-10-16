@@ -13,7 +13,7 @@ div.dmmd-preview-update {
 }
 
 div.dmmd-preview-content {
-  padding: 0 7px;
+  padding: 0 8px;
 }
 
 div.dmmd-preview.dmmd-preview-has-content div.dmmd-preview-update {
@@ -21,7 +21,8 @@ div.dmmd-preview.dmmd-preview-has-content div.dmmd-preview-update {
 }
 
 div.dmmd-preview-has-content div.dmmd-preview-content {
-  padding-bottom: 7px;
+  padding-bottom: 8px;
+  padding-top: 8px;
 }
 
 div.dmmd-no-button div.dmmd-preview-update {

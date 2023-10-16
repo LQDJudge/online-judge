@@ -126,7 +126,7 @@ class ProfileAdmin(VersionAdmin):
     admin_user_admin.short_description = _("User")
 
     def email(self, obj):
-        return obj.user.email
+        return obj.email
 
     email.admin_order_field = "user__email"
     email.short_description = _("Email")

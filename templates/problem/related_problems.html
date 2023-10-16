@@ -1,4 +1,4 @@
-{% if related_problems %}
+{% if request.user.is_authenticated and related_problems %}
   <div class="content-description">
     <h4>{{_('Recommended problems')}}:</h4>
     <ul style="list-style-type: none; margin: 0.3em;">

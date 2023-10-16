@@ -31,10 +31,9 @@ class Resolver(TemplateView):
         for participation in self.contest.users.filter(virtual=0):
             cnt_user += 1
             users[str(cnt_user)] = {
-                "username": participation.user.user.username,
-                "name": participation.user.user.first_name
-                or participation.user.user.username,
-                "school": participation.user.user.last_name,
+                "username": participation.user.username,
+                "name": participation.user.first_name or participation.user.username,
+                "school": participation.user.last_name,
                 "last_submission": participation.cumtime_final,
                 "problems": {},
             }

@@ -12,12 +12,12 @@ from . import registry
 def gravatar(profile, size=80, default=None, profile_image=None, email=None):
     if profile_image:
         return profile_image
-    if profile and profile.profile_image:
-        return profile.profile_image.url
+    if profile and profile.profile_image_url:
+        return profile.profile_image_url
     if profile:
-        email = email or profile.user.email
+        email = email or profile.email
         if default is None:
-            default = profile.mute
+            default = profile.is_muted
     gravatar_url = (
         "//www.gravatar.com/avatar/"
         + hashlib.md5(utf8bytes(email.strip().lower())).hexdigest()

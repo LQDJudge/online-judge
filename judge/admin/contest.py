@@ -502,3 +502,19 @@ class ContestParticipationAdmin(admin.ModelAdmin):
 
     show_virtual.short_description = _("virtual")
     show_virtual.admin_order_field = "virtual"
+
+
+class ContestsSummaryForm(ModelForm):
+    class Meta:
+        widgets = {
+            "contests": AdminHeavySelect2MultipleWidget(
+                data_view="contest_select2", attrs={"style": "width: 100%"}
+            ),
+        }
+
+
+class ContestsSummaryAdmin(admin.ModelAdmin):
+    fields = ("key", "contests", "scores")
+    list_display = ("key",)
+    search_fields = ("key", "contests__key")
+    form = ContestsSummaryForm

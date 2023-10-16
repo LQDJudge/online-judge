@@ -107,9 +107,7 @@ class License(models.Model):
 
 class TranslatedProblemQuerySet(SearchQuerySet):
     def __init__(self, **kwargs):
-        super(TranslatedProblemQuerySet, self).__init__(
-            ("code", "name", "description"), **kwargs
-        )
+        super(TranslatedProblemQuerySet, self).__init__(("code", "name"), **kwargs)
 
     def add_i18n_name(self, language):
         return self.annotate(
@@ -436,15 +434,23 @@ class Problem(models.Model, PageVotable, Bookmarkable):
 
     @cached_property
     def author_ids(self):
-        return self.authors.values_list("id", flat=True)
+        return Problem.authors.through.objects.filter(problem=self).values_list(
+            "profile_id", flat=True
+        )
 
     @cached_property
     def editor_ids(self):
-        return self.author_ids | self.curators.values_list("id", flat=True)
+        return self.author_ids.union(
+            Problem.curators.through.objects.filter(problem=self).values_list(
+                "profile_id", flat=True
+            )
+        )
 
     @cached_property
     def tester_ids(self):
-        return self.testers.values_list("id", flat=True)
+        return Problem.testers.through.objects.filter(problem=self).values_list(
+            "profile_id", flat=True
+        )
 
     @cached_property
     def usable_common_names(self):

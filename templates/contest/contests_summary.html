@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title_row %}{% endblock %}
+{% block title_ruler %}{% endblock %}
+
+{% block media %}
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #ddd;
+      font-size: 1em;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      border: 1px solid #595656;
+      padding: 15px;
+      text-align: center;
+    }
+
+    th {
+      font-size: 15px;
+    }
+
+    tr:hover {
+      cursor: pointer;
+    }
+  </style>
+{% endblock %}
+
+{% block body %}
+  <table class="table" id="users-table">
+    <thead>
+      <tr>
+        <th>{{_('Rank')}}</th>
+        <th>{{_('Name')}}</th>
+        {% for contest in contests %}
+          <th><a href="{{url('contest_view', contest.key)}}" title="{{contest.name}}">{{ loop.index }}</a></th>
+        {% endfor %}
+        <th>{{_('Points')}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for rank, item in total_rank %}
+        <tr>
+          <td>
+            {{ rank }}
+          </td>
+          <td>
+            <div>
+              <span class="username {{ item.css_class }} wrapline" href="{{url('user_page', item.user.username)}}" >{{item.user.username}}</span>
+            </div>
+            <div>{{item.user.first_name}}</div>
+          </td>
+          {% for point_contest, rank_contest in item.point_contests %}
+            <td>
+              <div>{{ point_contest }}</div>
+              {% if rank_contest %}
+                <div><small>(#{{ rank_contest }})</small></div>
+              {% endif %}
+            </td>
+          {% endfor %}
+          <td>
+            <b>{{ item.points }}</b>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

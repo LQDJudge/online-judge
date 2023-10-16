@@ -10,12 +10,17 @@ from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
+from django.dispatch import receiver
+from django.db.models.signals import post_save, pre_save
+
+
 from fernet_fields import EncryptedCharField
 from sortedm2m.fields import SortedManyToManyField
 
 from judge.models.choices import ACE_THEMES, MATH_ENGINES_CHOICES, TIMEZONE
 from judge.models.runtime import Language
 from judge.ratings import rating_class
+from judge.caching import cache_wrapper
 
 
 __all__ = ["Organization", "Profile", "OrganizationRequest", "Friend"]
@@ -142,6 +147,7 @@ class Organization(models.Model):
         )
         verbose_name = _("organization")
         verbose_name_plural = _("organizations")
+        app_label = "judge"
 
 
 class Profile(models.Model):
@@ -200,7 +206,7 @@ class Profile(models.Model):
         help_text=_("User will not be able to vote on problems' point values."),
         default=False,
     )
-    rating = models.IntegerField(null=True, default=None)
+    rating = models.IntegerField(null=True, default=None, db_index=True)
     user_script = models.TextField(
         verbose_name=_("user script"),
         default="",
@@ -254,6 +260,24 @@ class Profile(models.Model):
         max_length=300,
     )
 
+    @cache_wrapper(prefix="Pgbi2")
+    def _get_basic_info(self):
+        profile_image_url = None
+        if self.profile_image:
+            profile_image_url = self.profile_image.url
+        return {
+            "first_name": self.user.first_name,
+            "last_name": self.user.last_name,
+            "email": self.user.email,
+            "username": self.user.username,
+            "mute": self.mute,
+            "profile_image_url": profile_image_url,
+        }
+
+    @cached_property
+    def _cached_info(self):
+        return self._get_basic_info()
+
     @cached_property
     def organization(self):
         # We do this to take advantage of prefetch_related
@@ -262,14 +286,33 @@ class Profile(models.Model):
 
     @cached_property
     def username(self):
-        return self.user.username
+        return self._cached_info["username"]
+
+    @cached_property
+    def first_name(self):
+        return self._cached_info["first_name"]
+
+    @cached_property
+    def last_name(self):
+        return self._cached_info["last_name"]
+
+    @cached_property
+    def email(self):
+        return self._cached_info["email"]
+
+    @cached_property
+    def is_muted(self):
+        return self._cached_info["mute"]
+
+    @cached_property
+    def profile_image_url(self):
+        return self._cached_info["profile_image_url"]
 
     @cached_property
     def count_unseen_notifications(self):
-        query = {
-            "read": False,
-        }
-        return self.notifications.filter(**query).count()
+        from judge.models.notification import unseen_notifications_count
+
+        return unseen_notifications_count(self)
 
     @cached_property
     def count_unread_chat_boxes(self):
@@ -498,3 +541,21 @@ class OrganizationProfile(models.Model):
     @classmethod
     def get_most_recent_organizations(self, users):
         return self.objects.filter(users=users).order_by("-last_visit")[:5]
+
+
+@receiver([post_save], sender=User)
+def on_user_save(sender, instance, **kwargs):
+    try:
+        profile = instance.profile
+        profile._get_basic_info.dirty(profile)
+    except:
+        pass
+
+
+@receiver([pre_save], sender=Profile)
+def on_profile_save(sender, instance, **kwargs):
+    if instance.id is None:
+        return
+    prev = sender.objects.get(id=instance.id)
+    if prev.mute != instance.mute or prev.profile_image != instance.profile_image:
+        instance._get_basic_info.dirty(instance)

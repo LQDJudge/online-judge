@@ -14,7 +14,7 @@
   width: 100%;
   background: #fff;
   border: 1px solid DarkGray;
-  font-family: Consolas, "Liberation Mono", Monaco, "Courier New", monospace !important;
+  font-family: "Noto Sans",Arial,"Lucida Grande",sans-serif !important;
 }
 
 .wmd-preview {

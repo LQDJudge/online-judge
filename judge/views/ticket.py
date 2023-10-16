@@ -35,6 +35,7 @@ from judge.utils.tickets import filter_visible_tickets, own_ticket_filter
 from judge.utils.views import SingleObjectFormView, TitleMixin, paginate_query_context
 from judge.views.problem import ProblemMixin
 from judge.widgets import HeavyPreviewPageDownWidget
+from judge.models.notification import make_notification
 
 ticket_widget = (
     forms.Textarea()
@@ -49,16 +50,10 @@ ticket_widget = (
 
 def add_ticket_notifications(users, author, link, ticket):
     html = f'<a href="{link}">{ticket.linked_item}</a>'
-
     users = set(users)
     if author in users:
         users.remove(author)
-
-    for user in users:
-        notification = Notification(
-            owner=user, html_link=html, category="Ticket", author=author
-        )
-        notification.save()
+    make_notification(users, "Ticket", html, author)
 
 
 class TicketForm(forms.Form):

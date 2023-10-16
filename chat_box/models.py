@@ -18,6 +18,9 @@ class Room(models.Model):
         Profile, related_name="user_two", verbose_name="user 2", on_delete=CASCADE
     )
 
+    class Meta:
+        app_label = "chat_box"
+
     @cache_wrapper(prefix="Rc")
     def contain(self, profile):
         return self.user_one == profile or self.user_two == profile
@@ -58,6 +61,7 @@ class Message(models.Model):
         indexes = [
             models.Index(fields=["hidden", "room", "-id"]),
         ]
+        app_label = "chat_box"
 
 
 class UserRoom(models.Model):
@@ -70,6 +74,7 @@ class UserRoom(models.Model):
 
     class Meta:
         unique_together = ("user", "room")
+        app_label = "chat_box"
 
 
 class Ignore(models.Model):
@@ -81,6 +86,9 @@ class Ignore(models.Model):
         db_index=True,
     )
     ignored_users = models.ManyToManyField(Profile)
+
+    class Meta:
+        app_label = "chat_box"
 
     @classmethod
     def is_ignored(self, current_user, new_friend):

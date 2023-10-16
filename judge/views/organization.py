@@ -56,10 +56,10 @@ from judge.models import (
     Problem,
     Profile,
     Contest,
-    Notification,
     ContestProblem,
     OrganizationProfile,
 )
+from judge.models.notification import make_notification
 from judge import event_poster as event
 from judge.utils.ranker import ranker
 from judge.utils.views import (
@@ -1019,16 +1019,9 @@ class AddOrganizationBlog(
             html = (
                 f'<a href="{link}">{self.object.title} - {self.organization.name}</a>'
             )
-            for user in self.organization.admins.all():
-                if user.id == self.request.profile.id:
-                    continue
-                notification = Notification(
-                    owner=user,
-                    author=self.request.profile,
-                    category="Add blog",
-                    html_link=html,
-                )
-                notification.save()
+            make_notification(
+                self.organization.admins.all(), "Add blog", html, self.request.profile
+            )
             return res
 
 
@@ -1104,17 +1097,8 @@ class EditOrganizationBlog(
         )
         html = f'<a href="{link}">{blog.title} - {self.organization.name}</a>'
         post_authors = blog.authors.all()
-        posible_user = self.organization.admins.all() | post_authors
-        for user in posible_user:
-            if user.id == self.request.profile.id:
-                continue
-            notification = Notification(
-                owner=user,
-                author=self.request.profile,
-                category=action,
-                html_link=html,
-            )
-            notification.save()
+        posible_users = self.organization.admins.all() | post_authors
+        make_notification(posible_users, action, html, self.request.profile)
 
     def form_valid(self, form):
         with transaction.atomic(), revisions.create_revision():
