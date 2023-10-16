@@ -441,16 +441,32 @@ class ContestDetail(
             .add_i18n_name(self.request.LANGUAGE_CODE)
         )
         context["editable_organizations"] = self.get_editable_organizations()
+        context["is_clonable"] = is_contest_clonable(self.request, self.object)
         return context
 
 
-class ContestClone(
-    ContestMixin, PermissionRequiredMixin, TitleMixin, SingleObjectFormView
-):
+def is_contest_clonable(request, contest):
+    if not request.profile:
+        return False
+    if not Organization.objects.filter(admins=request.profile).exists():
+        return False
+    if request.user.has_perm("judge.clone_contest"):
+        return True
+    if contest.ended:
+        return True
+    return False
+
+
+class ContestClone(ContestMixin, TitleMixin, SingleObjectFormView):
     title = _("Clone Contest")
     template_name = "contest/clone.html"
     form_class = ContestCloneForm
-    permission_required = "judge.clone_contest"
+
+    def get_object(self, queryset=None):
+        contest = super().get_object(queryset)
+        if not is_contest_clonable(self.request, contest):
+            raise Http404()
+        return contest
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()

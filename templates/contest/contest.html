@@ -82,11 +82,16 @@
       {{ contest.description|markdown|reference|str|safe }}
     {% endcache %}
   </div>
-  {% if editable_organizations %}
-    <div>
+  {% if editable_organizations or is_clonable %}
+    <div style="display: flex; gap: 0.5em;">
       {% for org in editable_organizations %}
         <span> [<a href="{{ url('organization_contest_edit', org.id , org.slug , contest.key) }}">{{ _('Edit in') }} {{org.slug}}</a>]</span>
       {% endfor %}
+      {% if is_clonable %}
+        <span>
+          [<a href="{{url('contest_clone', contest.key)}}"}}>{{_('Clone')}}</a>]
+        </span>
+      {% endif %}
     </div>
   {% endif %}
 
