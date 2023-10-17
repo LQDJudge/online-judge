@@ -93,6 +93,7 @@ class JudgeHandler(ZlibPacketHandler):
 
     def on_disconnect(self):
         self._stop_ping.set()
+        self.judges.remove(self)
         if self.name is not None:
             self._disconnected()
         logger.info(
