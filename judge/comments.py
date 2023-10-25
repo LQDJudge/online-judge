@@ -144,14 +144,16 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
 
     def get(self, request, *args, **kwargs):
         target_comment = None
+        self.object = self.get_object()
         if "comment-id" in request.GET:
-            comment_id = int(request.GET["comment-id"])
             try:
+                comment_id = int(request.GET["comment-id"])
                 comment_obj = Comment.objects.get(id=comment_id)
-            except Comment.DoesNotExist:
+            except (Comment.DoesNotExist, ValueError):
+                raise Http404
+            if comment_obj.linked_object != self.object:
                 raise Http404
             target_comment = comment_obj.get_root()
-        self.object = self.get_object()
         return self.render_to_response(
             self.get_context_data(
                 object=self.object,

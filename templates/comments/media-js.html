@@ -145,6 +145,8 @@
             $comment_loading.hide();
             var $comment = $("#comment-" + id + "-children");
             $comment.append(data);
+            MathJax.typeset($('#comments')[0]);
+            register_time($('.time-with-rel'));
           }
         })
       }
@@ -187,6 +189,7 @@
               $comment.append(data);
             }
             MathJax.typeset($('#comments')[0]);
+            register_time($('.time-with-rel'));
           }
         })
       }
