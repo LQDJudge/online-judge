@@ -556,7 +556,7 @@ class Problem(models.Model, PageVotable, Bookmarkable):
 
     def save(self, *args, **kwargs):
         super(Problem, self).save(*args, **kwargs)
-        if self.code != self.__original_code:
+        if self.__original_code and self.code != self.__original_code:
             if hasattr(self, "data_files") or self.pdf_description:
                 try:
                     problem_data_storage.rename(self.__original_code, self.code)

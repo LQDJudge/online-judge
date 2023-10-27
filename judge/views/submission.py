@@ -195,8 +195,8 @@ def get_cases_data(submission):
             continue
         count += 1
         problem_data[count] = {
-            "input": case_data[case.input_file] if case.input_file else "",
-            "answer": case_data[case.output_file] if case.output_file else "",
+            "input": case_data.get(case.input_file, "") if case.input_file else "",
+            "answer": case_data.get(case.output_file, "") if case.output_file else "",
         }
 
     return problem_data

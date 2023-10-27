@@ -56,6 +56,7 @@ from judge.utils.fine_uploader import (
     FineUploadForm,
 )
 from judge.views.problem import ProblemMixin
+from judge.logging import log_exception
 
 mimetypes.init()
 mimetypes.add_type("application/x-yaml", ".yml")
@@ -248,6 +249,9 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
             elif data.zipfile:
                 return ZipFile(data.zipfile.path).namelist()
         except BadZipfile:
+            return []
+        except FileNotFoundError as e:
+            log_exception(e)
             return []
         return []
 

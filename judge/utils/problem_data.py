@@ -12,6 +12,8 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.core.cache import cache
 
+from judge.logging import log_exception
+
 if os.altsep:
 
     def split_path_first(
@@ -323,11 +325,13 @@ def get_problem_case(problem, files):
         settings.DMOJ_PROBLEM_DATA_ROOT, str(problem.data_files.zipfile)
     )
     if not os.path.exists(archive_path):
-        raise Exception('archive file "%s" does not exist' % archive_path)
+        log_exception('archive file "%s" does not exist' % archive_path)
+        return {}
     try:
         archive = zipfile.ZipFile(archive_path, "r")
     except zipfile.BadZipfile:
-        raise Exception('bad archive: "%s"' % archive_path)
+        log_exception('bad archive: "%s"' % archive_path)
+        return {}
 
     for file in uncached_files:
         cache_key = "problem_archive:%s:%s" % (problem.code, get_file_cachekey(file))
