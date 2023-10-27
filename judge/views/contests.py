@@ -419,7 +419,14 @@ class ContestDetail(
             return []
         res = []
         for organization in self.object.organizations.all():
+            can_edit = False
             if self.request.profile.can_edit_organization(organization):
+                can_edit = True
+            if self.request.profile in organization and self.object.is_editable_by(
+                self.request.user
+            ):
+                can_edit = True
+            if can_edit:
                 res.append(organization)
         return res
 
