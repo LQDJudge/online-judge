@@ -1956,8 +1956,10 @@ input::placeholder {
     background-color: rgb(24, 26, 27);
     box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 5px;
 }
-.blog-box:hover {
+.blog-box:hover,
+.blog-box:not(.pre-expand-blog) {
     border-color: rgb(81, 88, 91);
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 2px;
 }
 .problem-feed-name a {
     color: rgb(102, 177, 250);
@@ -2780,11 +2782,15 @@ a.voted {
     border-left-color: rgb(48, 52, 54);
 }
 .actionbar .actionbar-button {
-    border-color: rgb(60, 65, 68);
+    background-image: initial;
+    background-color: rgb(49, 53, 55);
+}
+.actionbar .actionbar-button a:hover {
+    color: inherit;
 }
 .actionbar .actionbar-button:hover {
     background-image: initial;
-    background-color: rgb(49, 53, 55);
+    background-color: rgb(73, 79, 82);
 }
 .actionbar .dislike-button {
     border-left-color: initial;
