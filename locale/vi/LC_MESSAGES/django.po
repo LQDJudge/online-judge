@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-28 04:45+0700\n"
+"POT-Creation-Date: 2023-11-01 13:59+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -2605,59 +2605,59 @@ msgstr "Chỉnh sửa bài nộp"
 msgid "Recalculating user points"
 msgstr "Tính lại điểm người dùng"
 
-#: judge/utils/problem_data.py:71
+#: judge/utils/problem_data.py:73
 msgid "Empty batches not allowed."
 msgstr "Nhóm test trống là không hợp lệ."
 
-#: judge/utils/problem_data.py:79 judge/utils/problem_data.py:87
-#: judge/utils/problem_data.py:102
+#: judge/utils/problem_data.py:81 judge/utils/problem_data.py:89
+#: judge/utils/problem_data.py:104
 msgid "How did you corrupt the custom checker path?"
 msgstr "How did you corrupt the custom checker path?"
 
-#: judge/utils/problem_data.py:130
+#: judge/utils/problem_data.py:132
 #, python-format
 msgid "Points must be defined for non-batch case #%d."
 msgstr "Ô điểm số cho test #%d phải được điền."
 
-#: judge/utils/problem_data.py:137
+#: judge/utils/problem_data.py:139
 #, python-format
 msgid "Input file for case %d does not exist: %s"
 msgstr "File input cho test %d không tồn tại: %s"
 
-#: judge/utils/problem_data.py:142
+#: judge/utils/problem_data.py:144
 #, python-format
 msgid "Output file for case %d does not exist: %s"
 msgstr "File output cho test %d không tồn tại: %s"
 
-#: judge/utils/problem_data.py:169
+#: judge/utils/problem_data.py:171
 #, python-format
 msgid "Batch start case #%d requires points."
 msgstr "Nhóm test #%d cần được điền điểm số."
 
-#: judge/utils/problem_data.py:192
+#: judge/utils/problem_data.py:194
 #, python-format
 msgid "Attempt to end batch outside of one in case #%d"
 msgstr "Nhóm test #%d kết thúc không hợp lệ"
 
-#: judge/utils/problem_data.py:211
+#: judge/utils/problem_data.py:213
 msgid "How did you corrupt the zip path?"
 msgstr ""
 
-#: judge/utils/problem_data.py:217
+#: judge/utils/problem_data.py:219
 msgid "How did you corrupt the generator path?"
 msgstr ""
 
-#: judge/utils/problem_data.py:235
+#: judge/utils/problem_data.py:237
 msgid "Invalid interactor judge"
 msgstr ""
 
-#: judge/utils/problem_data.py:259
+#: judge/utils/problem_data.py:261
 #, fuzzy
 #| msgid "Invalid Return"
 msgid "Invalid signature handler"
 msgstr "Invalid Return"
 
-#: judge/utils/problem_data.py:262
+#: judge/utils/problem_data.py:264
 msgid "Invalid signature header"
 msgstr ""
 
@@ -2759,7 +2759,7 @@ msgid "Editing comment"
 msgstr "Chỉnh sửa bình luận"
 
 #: judge/views/contests.py:123 judge/views/contests.py:386
-#: judge/views/contests.py:391 judge/views/contests.py:683
+#: judge/views/contests.py:391 judge/views/contests.py:685
 msgid "No such contest"
 msgstr "Không có contest nào như vậy"
 
@@ -2785,118 +2785,118 @@ msgstr "Không tìm thấy kỳ thi nào như vậy."
 msgid "Access to contest \"%s\" denied"
 msgstr "Truy cập tới kỳ thi \"%s\" bị từ chối"
 
-#: judge/views/contests.py:466
+#: judge/views/contests.py:468
 msgid "Clone Contest"
 msgstr "Nhân bản kỳ thi"
 
-#: judge/views/contests.py:557
+#: judge/views/contests.py:559
 msgid "Contest not ongoing"
 msgstr "Kỳ thi đang không diễn ra"
 
-#: judge/views/contests.py:558
+#: judge/views/contests.py:560
 #, python-format
 msgid "\"%s\" is not currently ongoing."
 msgstr "\"%s\" kỳ thi đang không diễn ra."
 
-#: judge/views/contests.py:565
+#: judge/views/contests.py:567
 msgid "Already in contest"
 msgstr "Đã ở trong kỳ thi"
 
-#: judge/views/contests.py:566
+#: judge/views/contests.py:568
 #, python-format
 msgid "You are already in a contest: \"%s\"."
 msgstr "Bạn đã ở trong kỳ thi: \"%s\"."
 
-#: judge/views/contests.py:576
+#: judge/views/contests.py:578
 msgid "Banned from joining"
 msgstr "Bị cấm tham gia"
 
-#: judge/views/contests.py:578
+#: judge/views/contests.py:580
 msgid ""
 "You have been declared persona non grata for this contest. You are "
 "permanently barred from joining this contest."
 msgstr "Bạn không được phép tham gia kỳ thi này."
 
-#: judge/views/contests.py:667
+#: judge/views/contests.py:669
 #, python-format
 msgid "Enter access code for \"%s\""
 msgstr "Nhập mật khẩu truy cập cho \"%s\""
 
-#: judge/views/contests.py:684
+#: judge/views/contests.py:686
 #, python-format
 msgid "You are not in contest \"%s\"."
 msgstr "Bạn không ở trong kỳ thi \"%s\"."
 
-#: judge/views/contests.py:707
+#: judge/views/contests.py:709
 msgid "ContestCalendar requires integer year and month"
 msgstr "Lịch thi yêu cầu giá trị cho năm và tháng là số nguyên"
 
-#: judge/views/contests.py:765
+#: judge/views/contests.py:767
 #, python-format
 msgid "Contests in %(month)s"
 msgstr "Các kỳ thi trong %(month)s"
 
-#: judge/views/contests.py:766
+#: judge/views/contests.py:768
 msgid "F Y"
 msgstr "F Y"
 
-#: judge/views/contests.py:826
+#: judge/views/contests.py:828
 #, python-format
 msgid "%s Statistics"
 msgstr "%s Thống kê"
 
-#: judge/views/contests.py:1122
+#: judge/views/contests.py:1124
 #, python-format
 msgid "%s Rankings"
 msgstr "%s Bảng điểm"
 
-#: judge/views/contests.py:1133
+#: judge/views/contests.py:1135
 msgid "???"
 msgstr "???"
 
-#: judge/views/contests.py:1160
+#: judge/views/contests.py:1162
 #, python-format
 msgid "Your participation in %s"
 msgstr "Lần tham gia trong %s"
 
-#: judge/views/contests.py:1161
+#: judge/views/contests.py:1163
 #, python-format
 msgid "%s's participation in %s"
 msgstr "Lần tham gia của %s trong %s"
 
-#: judge/views/contests.py:1175
+#: judge/views/contests.py:1177
 msgid "Live"
 msgstr "Trực tiếp"
 
-#: judge/views/contests.py:1194 templates/contest/contest-tabs.html:21
+#: judge/views/contests.py:1196 templates/contest/contest-tabs.html:21
 msgid "Participation"
 msgstr "Lần tham gia"
 
-#: judge/views/contests.py:1243
+#: judge/views/contests.py:1245
 #, python-format
 msgid "%s MOSS Results"
 msgstr "%s Kết quả MOSS"
 
-#: judge/views/contests.py:1279
+#: judge/views/contests.py:1281
 #, python-format
 msgid "Running MOSS for %s..."
 msgstr "Đang chạy MOSS cho %s..."
 
-#: judge/views/contests.py:1302
+#: judge/views/contests.py:1304
 #, python-format
 msgid "Contest tag: %s"
 msgstr "Nhãn kỳ thi: %s"
 
-#: judge/views/contests.py:1317 judge/views/ticket.py:67
+#: judge/views/contests.py:1319 judge/views/ticket.py:67
 msgid "Issue description"
 msgstr "Mô tả vấn đề"
 
-#: judge/views/contests.py:1360
+#: judge/views/contests.py:1362
 #, python-format
 msgid "New clarification for %s"
 msgstr "Thông báo mới cho %s"
 
-#: judge/views/contests.py:1466
+#: judge/views/contests.py:1468
 #, fuzzy
 #| msgid "contest summary"
 msgid "Contests Summary"
@@ -3251,39 +3251,39 @@ msgstr "Nộp bài cho %(problem)s"
 msgid "Clone Problem"
 msgstr "Nhân bản bài tập"
 
-#: judge/views/problem_data.py:70
+#: judge/views/problem_data.py:71
 msgid "Checker arguments must be a JSON object"
 msgstr ""
 
-#: judge/views/problem_data.py:72
+#: judge/views/problem_data.py:73
 msgid "Checker arguments is invalid JSON"
 msgstr ""
 
-#: judge/views/problem_data.py:79
+#: judge/views/problem_data.py:80
 msgid "Your zip file is invalid!"
 msgstr "File Zip không hợp lệ!"
 
-#: judge/views/problem_data.py:169
+#: judge/views/problem_data.py:170
 #, python-brace-format
 msgid "Comparing submissions for {0}"
 msgstr "So sánh các bài nộp cho {0}"
 
-#: judge/views/problem_data.py:173
+#: judge/views/problem_data.py:174
 #, python-brace-format
 msgid "Comparing submissions for <a href=\"{1}\">{0}</a>"
 msgstr "So sánh các bài nộp cho <a href=\"{1}\">{0}</a>"
 
-#: judge/views/problem_data.py:210
+#: judge/views/problem_data.py:211
 #, python-brace-format
 msgid "Editing data for {0}"
 msgstr "Chỉnh sửa dữ liệu cho {0}"
 
-#: judge/views/problem_data.py:214
+#: judge/views/problem_data.py:215
 #, python-format
 msgid "Editing data for %s"
 msgstr "Chỉnh sửa dữ liệu cho %s"
 
-#: judge/views/problem_data.py:344 judge/views/problem_data.py:346
+#: judge/views/problem_data.py:348 judge/views/problem_data.py:350
 #, python-format
 msgid "Generated init.yml for %s"
 msgstr "File init.yml cho %s"
@@ -3595,6 +3595,10 @@ msgstr "Chia sẻ"
 #: templates/actionbar/list.html:57
 msgid "Report"
 msgstr "Báo cáo"
+
+#: templates/actionbar/media-js.html:116
+msgid "Copied link"
+msgstr "Đã sao chép link"
 
 #: templates/admin/judge/contest/change_form.html:9
 msgid "Are you sure you want to rejudge ALL the submissions?"
