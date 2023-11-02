@@ -28,6 +28,8 @@
 
 {% block js_media %}
   <script type="text/javascript">
+    let loadingPage;
+
     function activateBlogBoxOnClick() {
       $('.blog-box').on('click', function () {
         var $description = $(this).children('.blog-description');
@@ -64,15 +66,15 @@
         $elem.addClass('active');
       }
       $(window).off("scroll");
-      $('.middle-right-content').html(loading_page);
+      $('.middle-right-content').html(loadingPage);
       $.get(url, function (data) {
         var reload_content = $(data).find('.middle-right-content');
-        var bodyend_script = $(data).find('#bodyend');
+        var bodyend_script = $(data).find('#extra_js');
         if (reload_content.length) {
           window.history.pushState("", "", url);
           $('html, body').animate({scrollTop: 0}, 'fast');
           $('.middle-right-content').html(reload_content.first().html());
-          $('#bodyend').html(bodyend_script.first().html());
+          $('#extra_js').html(bodyend_script.first().html());
           $("#loading-bar").hide().css({ width: 0});
           if (reload_content.hasClass("wrapper")) {
             $('.middle-right-content').addClass("wrapper");
@@ -114,6 +116,9 @@
         navigateTo($(this), true);
       });
       registerNavigation();
+      $.get("{{static('html/loading-page.html')}}", function(data) {
+        loadingPage = data;
+      });
     });
   </script>
 {% endblock %}
@@ -141,11 +146,14 @@
   {% block after_posts %}{% endblock %}
 {% endblock %}
 
+{% block extra_js %}
+  {% block three_col_js %}{% endblock %}
+{% endblock %}
+
 {% block bodyend %}
   {{ super() }}
   {% if REQUIRE_JAX %}
     {% include "mathjax-load.html" %}
   {% endif %}
   {% include "comments/math.html" %}
-  {% block three_col_js %}{% endblock %}
 {% endblock %}

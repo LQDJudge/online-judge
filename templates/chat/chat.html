@@ -82,7 +82,7 @@
           {% include 'chat/user_online_status.html' %}
         </div>
         <div id="chat-box">
-          <img src="{{static('loading.gif')}}" id="loader">
+          <img src="{{static('loading.gif')}}" id="loader" style="display: none;">
           <ul id="chat-log">
             {% include 'chat/message_list.html' %}
           </ul>
