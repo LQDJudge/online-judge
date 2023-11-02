@@ -16,8 +16,9 @@
       $('.vote-detail').each(function() {
         $(this).on('click', function() {
           var pid = $(this).attr('pid');
-          $('.detail').hide();
-          $('#detail-'+pid).show();
+          $.get("{{url('internal_problem_votes')}}?id="+pid, function(data) {
+            $('#detail').html(data);
+          });
         })
       })
     });
@@ -59,37 +60,8 @@
 
 {% block right_sidebar %}
   <div style="display: block; width: 100%">
-    <div><a href="{{url('admin:judge_volunteerproblemvote_changelist')}}">{{_('Admin')}}</a></div>
-    {% for problem in problems %}
-      <div class="detail" id="detail-{{problem.id}}" style="display: none;">
-        <h3>{{_('Votes for problem') }} {{problem.name}}</h3>
-        <ol>
-          {% for vote in problem.volunteer_user_votes.order_by('id') %}
-            <li>
-              <h4> {{link_user(vote.voter)}} </h4>
-              <table class="table">
-                <tbody>
-                  <tr>
-                    <td style="width:10%">{{_('Knowledge')}}</td>
-                    <td>{{vote.knowledge_points}}</td>
-                  </tr>
-                  <tr>
-                    <td>{{_('Thinking')}}</td>
-                    <td>{{vote.thinking_points}}</td>
-                  </tr>
-                  <tr>
-                    <td>{{_('Types')}}</td>
-                    <td>{{vote.types.all() | join(', ')}}</td>
-                  </tr>
-                  <tr>
-                    <td>{{_('Feedback')}}</td>
-                    <td>{{vote.feedback}}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </li>
-          {% endfor %}
-        </ol>
-      </div>
-    {% endfor %}
+    <a href="{{url('admin:judge_volunteerproblemvote_changelist')}}">{{_('Admin')}}</a>
+    <div class="detail" id="detail">
+    </div>
+  </div>
 {% endblock %}
