@@ -1101,6 +1101,11 @@ urlpatterns = [
                     name="internal_problem",
                 ),
                 url(
+                    r"^problem_votes$",
+                    internal.get_problem_votes,
+                    name="internal_problem_votes",
+                ),
+                url(
                     r"^request_time$",
                     internal.InternalRequestTime.as_view(),
                     name="internal_request_time",
