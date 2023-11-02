@@ -27,9 +27,10 @@ class Room(models.Model):
 
     @cache_wrapper(prefix="Rinfo")
     def _info(self):
+        last_msg = self.message_set.first()
         return {
             "user_ids": [self.user_one.id, self.user_two.id],
-            "last_message": self.message_set.first().body,
+            "last_message": last_msg.body if last_msg else None,
         }
 
     @cached_property
