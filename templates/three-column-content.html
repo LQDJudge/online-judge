@@ -67,10 +67,13 @@
       $('.middle-right-content').html(loading_page);
       $.get(url, function (data) {
         var reload_content = $(data).find('.middle-right-content');
+        var bodyend_script = $(data).find('#bodyend');
         if (reload_content.length) {
           window.history.pushState("", "", url);
           $('html, body').animate({scrollTop: 0}, 'fast');
           $('.middle-right-content').html(reload_content.first().html());
+          $('#bodyend').html(bodyend_script.first().html());
+          $("#loading-bar").hide().css({ width: 0});
           if (reload_content.hasClass("wrapper")) {
             $('.middle-right-content').addClass("wrapper");
           }
@@ -83,7 +86,6 @@
           activateBlogBoxOnClick();
           $('.xdsoft_datetimepicker').hide();
           registerNavigation();
-          $("#loading-bar").hide().css({ width: 0});
         }
         else {
           window.location.href = url;
@@ -129,7 +131,6 @@
     {% block left_sidebar %}{% endblock %}
     <div class="middle-right-content {{'wrapper' if is_two_column}}">
       {% block three_col_media %}{% endblock %}
-      {% block three_col_js %}{% endblock %}
       <div class="middle-content">
         {% block middle_title %}{% endblock %}
         {% block middle_content %}{% endblock %}
@@ -146,4 +147,5 @@
     {% include "mathjax-load.html" %}
   {% endif %}
   {% include "comments/math.html" %}
+  {% block three_col_js %}{% endblock %}
 {% endblock %}
