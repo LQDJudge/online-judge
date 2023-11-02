@@ -3,6 +3,7 @@
     <h4>{{_('Recommended problems')}}:</h4>
     <ul style="list-style-type: none; margin: 0.3em;">
       {% for problem in related_problems %}
+      <tr id="problem-{{ problem.code }}">
         <li>
           {% if problem.id in completed_problem_ids %}
             <i class="solved-problem-color fa fa-check-circle"></i>

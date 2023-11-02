@@ -7,6 +7,7 @@ from django.contrib.auth import views as auth_views
 from django.contrib.sitemaps.views import sitemap
 from django.http import Http404, HttpResponsePermanentRedirect, HttpResponseRedirect
 from django.templatetags.static import static
+from django.utils.functional import lazy
 from django.urls import reverse
 from django.utils.functional import lazystr
 from django.utils.translation import ugettext_lazy as _
@@ -1197,10 +1198,10 @@ favicon_paths = [
     "mstile-310x310.png",
     "reload.png",
 ]
-
+static_lazy = lazy(static, str)
 for favicon in favicon_paths:
     urlpatterns.append(
-        url(r"^%s$" % favicon, RedirectView.as_view(url=static("icons/" + favicon)))
+        url(r"^%s$" % favicon, RedirectView.as_view(url=static_lazy('icons/' + favicon)))
     )
 
 handler404 = "judge.views.error.error404"
