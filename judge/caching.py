@@ -40,7 +40,10 @@ def cache_wrapper(prefix, timeout=None):
     def _get(key):
         if not l0_cache:
             return cache.get(key)
-        return l0_cache.get(key) or cache.get(key)
+        result = l0_cache.get(key)
+        if result is None:
+            result = cache.get(key)
+        return result
 
     def _set_l0(key, value):
         if l0_cache:
@@ -56,7 +59,7 @@ def cache_wrapper(prefix, timeout=None):
             result = _get(cache_key)
             if result is not None:
                 _set_l0(cache_key, result)
-                if result == NONE_RESULT:
+                if type(result) == str and result == NONE_RESULT:
                     result = None
                 return result
             result = func(*args, **kwargs)

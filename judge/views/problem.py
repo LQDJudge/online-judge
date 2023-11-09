@@ -1,10 +1,8 @@
 import logging
 import os
 import shutil
-from datetime import timedelta, datetime
 from operator import itemgetter
 from random import randrange
-import random
 from copy import deepcopy
 
 from django.core.cache import cache
@@ -77,6 +75,8 @@ from judge.utils.problems import (
     user_attempted_ids,
     user_completed_ids,
     get_related_problems,
+    get_user_recommended_problems,
+    RecommendationType,
 )
 from judge.utils.strings import safe_float_or_none, safe_int_or_none
 from judge.utils.tickets import own_ticket_filter
@@ -834,24 +834,34 @@ class ProblemFeed(ProblemList, FeedView):
     title = _("Problem feed")
     feed_type = None
 
-    # arr = [[], [], ..]
-    def merge_recommendation(self, arr):
-        seed = datetime.now().strftime("%d%m%Y")
-        merged_array = []
-        for a in arr:
-            merged_array += a
-        random.Random(seed).shuffle(merged_array)
+    def get_recommended_problem_ids(self, queryset):
+        user_id = self.request.profile.id
+        problem_ids = queryset.values_list("id", flat=True)
+        rec_types = [
+            RecommendationType.CF_DOT,
+            RecommendationType.CF_COSINE,
+            RecommendationType.CF_TIME_DOT,
+            RecommendationType.CF_TIME_COSINE,
+            RecommendationType.HOT_PROBLEM,
+        ]
+        limits = [100, 100, 100, 100, 20]
+        shuffle = True
 
-        res = []
-        used_pid = set()
+        allow_debug_type = (
+            self.request.user.is_impersonate or self.request.user.is_superuser
+        )
+        if allow_debug_type and "debug_type" in self.request.GET:
+            try:
+                debug_type = int(self.request.GET.get("debug_type"))
+            except ValueError:
+                raise Http404()
+            rec_types = [debug_type]
+            limits = [100]
+            shuffle = False
 
-        for obj in merged_array:
-            if type(obj) == tuple:
-                obj = obj[1]
-            if obj not in used_pid:
-                res.append(obj)
-                used_pid.add(obj)
-        return res
+        return get_user_recommended_problems(
+            user_id, problem_ids, rec_types, limits, shuffle
+        )
 
     def get_queryset(self):
         if self.feed_type == "volunteer":
@@ -885,40 +895,8 @@ class ProblemFeed(ProblemList, FeedView):
         if not settings.ML_OUTPUT_PATH or not user:
             return queryset.order_by("?").add_i18n_name(self.request.LANGUAGE_CODE)
 
-        cf_model = CollabFilter("collab_filter")
-        cf_time_model = CollabFilter("collab_filter_time")
+        q = self.get_recommended_problem_ids(queryset)
 
-        queryset = queryset.values_list("id", flat=True)
-        hot_problems_recommendations = [
-            problem.id
-            for problem in hot_problems(timedelta(days=7), 20)
-            if problem.id in set(queryset)
-        ]
-
-        q = self.merge_recommendation(
-            [
-                cf_model.user_recommendations(user, queryset, cf_model.DOT, 100),
-                cf_model.user_recommendations(
-                    user,
-                    queryset,
-                    cf_model.COSINE,
-                    100,
-                ),
-                cf_time_model.user_recommendations(
-                    user,
-                    queryset,
-                    cf_time_model.COSINE,
-                    100,
-                ),
-                cf_time_model.user_recommendations(
-                    user,
-                    queryset,
-                    cf_time_model.DOT,
-                    100,
-                ),
-                hot_problems_recommendations,
-            ]
-        )
         queryset = Problem.objects.filter(id__in=q)
         queryset = queryset.add_i18n_name(self.request.LANGUAGE_CODE)
 
