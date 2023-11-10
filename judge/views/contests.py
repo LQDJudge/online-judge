@@ -498,6 +498,7 @@ class ContestClone(ContestMixin, TitleMixin, SingleObjectFormView):
         contest.is_visible = False
         contest.user_count = 0
         contest.key = form.cleaned_data["key"]
+        contest.is_rated = False
         contest.save()
 
         contest.tags.set(tags)
