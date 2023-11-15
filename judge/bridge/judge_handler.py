@@ -24,6 +24,7 @@ from judge.models import (
     Submission,
     SubmissionTestCase,
 )
+from judge.bridge.utils import VanishedSubmission
 
 logger = logging.getLogger("judge.bridge")
 json_log = logging.getLogger("judge.json.bridge")
@@ -310,6 +311,9 @@ class JudgeHandler(ZlibPacketHandler):
 
     def submit(self, id, problem, language, source):
         data = self.get_related_submission_data(id)
+        if not data:
+            self._update_internal_error_submission(id, "Submission vanished")
+            raise VanishedSubmission()
         self._working = id
         self._working_data = {
             "problem": problem,
@@ -658,8 +662,11 @@ class JudgeHandler(ZlibPacketHandler):
         self._free_self(packet)
 
         id = packet["submission-id"]
+        self._update_internal_error_submission(id, packet["message"])
+
+    def _update_internal_error_submission(self, id, message):
         if Submission.objects.filter(id=id).update(
-            status="IE", result="IE", error=packet["message"]
+            status="IE", result="IE", error=message
         ):
             event.post(
                 "sub_%s" % Submission.get_id_secret(id), {"type": "internal-error"}
@@ -667,9 +674,9 @@ class JudgeHandler(ZlibPacketHandler):
             self._post_update_submission(id, "internal-error", done=True)
             json_log.info(
                 self._make_json_log(
-                    packet,
+                    sub=id,
                     action="internal-error",
-                    message=packet["message"],
+                    message=message,
                     finish=True,
                     result="IE",
                 )
@@ -678,10 +685,10 @@ class JudgeHandler(ZlibPacketHandler):
             logger.warning("Unknown submission: %s", id)
             json_log.error(
                 self._make_json_log(
-                    packet,
+                    sub=id,
                     action="internal-error",
                     info="unknown submission",
-                    message=packet["message"],
+                    message=message,
                     finish=True,
                     result="IE",
                 )
