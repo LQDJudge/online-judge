@@ -54,9 +54,9 @@
         </div>
       </div>
     </div>
-    {% if user.user.first_name %}
+    {% if user.first_name %}
       <p style="font-size:1.4em; text-align: center;">
-        {{user.user.first_name}}{% if user.user.last_name %}    ({{user.user.last_name}}){% endif %}
+        {{user.first_name}}{% if user.last_name %}    ({{user.last_name}}){% endif %}
       </p>
     {% endif %}
     {% if perms.judge.change_profile %}
@@ -70,9 +70,7 @@
     {% endif%}
     {% if user.about %}
       <h4>{{ _('About') }}</h4>
-      {% cache 86400 'user_about' user.id MATH_ENGINE %}
-        {{ user.about|markdown(lazy_load=True)|reference|str|safe }}
-      {% endcache %}
+      {{ user.about|markdown(lazy_load=True)|reference|str|safe }}
     {% else %}
       <i>
         {% if user.user == request.user %}

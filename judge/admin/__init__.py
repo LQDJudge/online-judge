@@ -3,7 +3,12 @@ from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import User
 
 from judge.admin.comments import CommentAdmin
-from judge.admin.contest import ContestAdmin, ContestParticipationAdmin, ContestTagAdmin
+from judge.admin.contest import (
+    ContestAdmin,
+    ContestParticipationAdmin,
+    ContestTagAdmin,
+    ContestsSummaryAdmin,
+)
 from judge.admin.interface import (
     BlogPostAdmin,
     LicenseAdmin,
@@ -41,6 +46,7 @@ from judge.models import (
     Ticket,
     VolunteerProblemVote,
     Course,
+    ContestsSummary,
 )
 
 
@@ -69,3 +75,4 @@ admin.site.register(VolunteerProblemVote, VolunteerProblemVoteAdmin)
 admin.site.register(Course)
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
+admin.site.register(ContestsSummary, ContestsSummaryAdmin)

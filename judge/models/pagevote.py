@@ -5,6 +5,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
 from judge.models.profile import Profile
+from judge.caching import cache_wrapper
 
 __all__ = ["PageVote", "PageVoteVoter"]
 
@@ -28,6 +29,7 @@ class PageVote(models.Model):
         ]
         unique_together = ("content_type", "object_id")
 
+    @cache_wrapper(prefix="PVvs")
     def vote_score(self, user):
         page_vote = PageVoteVoter.objects.filter(pagevote=self, voter=user)
         if page_vote.exists():

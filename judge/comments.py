@@ -26,21 +26,20 @@ from judge.dblock import LockModel
 from judge.models import Comment, Notification
 from judge.widgets import HeavyPreviewPageDownWidget
 from judge.jinja2.reference import get_user_from_text
+from judge.models.notification import make_notification
 
 
 DEFAULT_OFFSET = 10
 
 
+def _get_html_link_notification(comment):
+    return f'<a href="{comment.get_absolute_url()}">{comment.page_title}</a>'
+
+
 def add_mention_notifications(comment):
-    user_referred = get_user_from_text(comment.body).exclude(id=comment.author.id)
-    for user in user_referred:
-        notification_ref = Notification(owner=user, comment=comment, category="Mention")
-        notification_ref.save()
-
-
-def del_mention_notifications(comment):
-    query = {"comment": comment, "category": "Mention"}
-    Notification.objects.filter(**query).delete()
+    users_mentioned = get_user_from_text(comment.body).exclude(id=comment.author.id)
+    link = _get_html_link_notification(comment)
+    make_notification(users_mentioned, "Mention", link, comment.author)
 
 
 class CommentForm(ModelForm):
@@ -124,23 +123,17 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
                 comment.save()
 
             # add notification for reply
+            comment_notif_link = _get_html_link_notification(comment)
             if comment.parent and comment.parent.author != comment.author:
-                notification_reply = Notification(
-                    owner=comment.parent.author, comment=comment, category="Reply"
+                make_notification(
+                    [comment.parent.author], "Reply", comment_notif_link, comment.author
                 )
-                notification_reply.save()
 
             # add notification for page authors
             page_authors = comment.linked_object.authors.all()
-            for user in page_authors:
-                if user == comment.author:
-                    continue
-                notification = Notification(
-                    owner=user, comment=comment, category="Comment"
-                )
-                notification.save()
-            # except Exception:
-            #     pass
+            make_notification(
+                page_authors, "Comment", comment_notif_link, comment.author
+            )
 
             add_mention_notifications(comment)
 
@@ -151,14 +144,16 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
 
     def get(self, request, *args, **kwargs):
         target_comment = None
+        self.object = self.get_object()
         if "comment-id" in request.GET:
-            comment_id = int(request.GET["comment-id"])
             try:
+                comment_id = int(request.GET["comment-id"])
                 comment_obj = Comment.objects.get(id=comment_id)
-            except Comment.DoesNotExist:
+            except (Comment.DoesNotExist, ValueError):
+                raise Http404
+            if comment_obj.linked_object != self.object:
                 raise Http404
             target_comment = comment_obj.get_root()
-        self.object = self.get_object()
         return self.render_to_response(
             self.get_context_data(
                 object=self.object,
@@ -168,7 +163,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         )
 
     def _get_queryset(self, target_comment):
-        if target_comment != None:
+        if target_comment:
             queryset = target_comment.get_descendants(include_self=True)
             queryset = (
                 queryset.select_related("author__user")
@@ -217,11 +212,11 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
 
         context["has_comments"] = queryset.exists()
         context["comment_lock"] = self.is_comment_locked()
-        context["comment_list"] = queryset
+        context["comment_list"] = list(queryset)
 
         context["vote_hide_threshold"] = settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD
         if queryset.exists():
-            context["comment_root_id"] = queryset[0].id
+            context["comment_root_id"] = context["comment_list"][0].id
         else:
             context["comment_root_id"] = 0
         context["comment_parent_none"] = 1
@@ -234,4 +229,5 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
 
         context["limit"] = DEFAULT_OFFSET
         context["comment_count"] = comment_count
+        context["profile"] = self.request.profile
         return context

@@ -29,12 +29,6 @@
         height: 2em;
         padding-top: 4px;
       }
-      @media(min-width: 800px) {
-        #content {
-          width: 99%;
-          margin-left: 0;
-        }
-      }
       @media(max-width: 799px) {
         #content {
           width: 100%;
@@ -114,7 +108,7 @@
 
         $('#go').click(clean_submit);
 
-        $('input#full_text, input#hide_solved, input#show_types, input#show_editorial, input#have_editorial, input#show_solved_only').click(function () {
+        $('input#full_text, input#hide_solved, input#show_types, input#have_editorial, input#show_solved_only').click(function () {
           prep_form();
           ($('<form>').attr('action', window.location.pathname + '?' + form_serialize())
               .append($('<input>').attr('type', 'hidden').attr('name', 'csrfmiddlewaretoken')

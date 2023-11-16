@@ -24,6 +24,7 @@ from judge.models.submission import Submission
 from judge.ratings import rate_contest
 from judge.models.pagevote import PageVotable
 from judge.models.bookmark import Bookmarkable
+from judge.fulltext import SearchManager
 
 __all__ = [
     "Contest",
@@ -33,6 +34,7 @@ __all__ = [
     "ContestSubmission",
     "Rating",
     "ContestProblemClarification",
+    "ContestsSummary",
 ]
 
 
@@ -97,11 +99,13 @@ class Contest(models.Model, PageVotable, Bookmarkable):
     )
     authors = models.ManyToManyField(
         Profile,
+        verbose_name=_("authors"),
         help_text=_("These users will be able to edit the contest."),
         related_name="authors+",
     )
     curators = models.ManyToManyField(
         Profile,
+        verbose_name=_("curators"),
         help_text=_(
             "These users will be able to edit the contest, "
             "but will not be listed as authors."
@@ -111,6 +115,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
     )
     testers = models.ManyToManyField(
         Profile,
+        verbose_name=_("testers"),
         help_text=_(
             "These users will be able to view the contest, " "but not edit it."
         ),
@@ -308,6 +313,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
     comments = GenericRelation("Comment")
     pagevote = GenericRelation("PageVote")
     bookmark = GenericRelation("BookMark")
+    objects = SearchManager(("key", "name"))
 
     @cached_property
     def format_class(self):
@@ -900,3 +906,27 @@ class ContestProblemClarification(models.Model):
     date = models.DateTimeField(
         verbose_name=_("clarification timestamp"), auto_now_add=True
     )
+
+
+class ContestsSummary(models.Model):
+    contests = models.ManyToManyField(
+        Contest,
+    )
+    scores = models.JSONField(
+        null=True,
+        blank=True,
+    )
+    key = models.CharField(
+        max_length=20,
+        unique=True,
+    )
+
+    class Meta:
+        verbose_name = _("contests summary")
+        verbose_name_plural = _("contests summaries")
+
+    def __str__(self):
+        return self.key
+
+    def get_absolute_url(self):
+        return reverse("contests_summary", args=[self.key])

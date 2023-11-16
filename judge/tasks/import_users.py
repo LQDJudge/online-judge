@@ -1,5 +1,4 @@
 import csv
-from tempfile import mktemp
 import re
 
 from django.conf import settings

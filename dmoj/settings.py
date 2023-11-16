@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-import datetime
 import os
 import tempfile
 
@@ -484,6 +483,9 @@ CHAT_SECRET_KEY = "QUdVFsxk6f5-Hd8g9BXv81xMqvIZFRqMl-KbRzztW-U="
 META_REMOTE_ADDRESS_KEY = "REMOTE_ADDR"
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
+# Chunk upload
+CHUNK_UPLOAD_DIR = "/tmp/chunk_upload_tmp"
 
 try:
     with open(os.path.join(os.path.dirname(__file__), "local_settings.py")) as f:

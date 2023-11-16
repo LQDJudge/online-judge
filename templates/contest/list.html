@@ -112,56 +112,54 @@
 {% endblock %}
 
 {% macro contest_head(contest) %}
-  {% spaceless %}
-    <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title" style="margin-right: 5px;">
-      {{- contest.name -}}
-    </a>
-    <br>
-    <div class="contest-tags" style="margin-top: 5px;">
-      {% if not contest.is_visible %}
-        <span class="contest-tag contest-tag-hidden">
-          <i class="fa fa-eye-slash"></i> {{ _('hidden') }}
-        </span>
+  <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title" style="margin-right: 5px;">
+    {{contest.name}}
+  </a>
+  <br>
+  <div class="contest-tags" style="margin-top: 5px;">
+    {% if not contest.is_visible %}
+      <span class="contest-tag contest-tag-hidden">
+        <i class="fa fa-eye-slash"></i> {{ _('hidden') }}
+      </span>
+    {% endif %}
+    {% if contest.is_editable %}
+      <span class="contest-tag contest-tag-edit">
+        <a href="{{ url('organization_contest_edit', organization.id, organization.slug, contest.key) }}" class="white">
+          <i class="fa fa-edit"></i> {{ _('Edit') }}
+        </a>
+      </span>
+    {% endif %}
+    {% if contest.is_private %}
+      <span class="contest-tag contest-tag-private">
+        <i class="fa fa-lock"></i> {{ _('private') }}
+      </span>
+    {% endif %}
+    {% if not hide_contest_orgs %}
+      {% if contest.is_organization_private %}
+        {% for org in contest.organizations.all() %}
+          <span class="contest-tag contest-tag-org">
+            <a href="{{ org.get_absolute_url() }}">
+              <i class="fa fa-lock"></i> {{ org.name }}
+            </a>
+          </span>
+        {% endfor %}
       {% endif %}
-      {% if contest.is_editable %}
-        <span class="contest-tag contest-tag-edit">
-          <a href="{{ url('organization_contest_edit', organization.id, organization.slug, contest.key) }}" class="white">
-            <i class="fa fa-edit"></i> {{ _('Edit') }}
-          </a>
-        </span>
-      {% endif %}
-      {% if contest.is_private %}
-        <span class="contest-tag contest-tag-private">
-          <i class="fa fa-lock"></i> {{ _('private') }}
-        </span>
-      {% endif %}
-      {% if not hide_contest_orgs %}
-        {% if contest.is_organization_private %}
-          {% for org in contest.organizations.all() %}
-            <span class="contest-tag contest-tag-org">
-              <a href="{{ org.get_absolute_url() }}">
-                <i class="fa fa-lock"></i> {{ org.name }}
-              </a>
-            </span>
-          {% endfor %}
-        {% endif %}
-      {% endif %}
-      {% if contest.is_rated %}
-        <span class="contest-tag contest-tag-rated">
-          <i class="fa fa-bar-chart"></i> {{ _('rated') }}
-        </span>
-      {% endif %}
-      {% for tag in contest.tags.all() %}
-        <span style="background-color: {{ tag.color }}" class="contest-tag">
-          <a href="{{ url('contest_tag', tag.name) }}"
-            style="color: {{ tag.text_color }}"
-            data-featherlight="{{ url('contest_tag_ajax', tag.name) }}">
-            {{- tag.name -}}
-          </a>
-        </span>
-      {% endfor %}
-    </div>
-  {% endspaceless %}
+    {% endif %}
+    {% if contest.is_rated %}
+      <span class="contest-tag contest-tag-rated">
+        <i class="fa fa-bar-chart"></i> {{ _('rated') }}
+      </span>
+    {% endif %}
+    {% for tag in contest.tags.all() %}
+      <span style="background-color: {{ tag.color }}" class="contest-tag">
+        <a href="{{ url('contest_tag', tag.name) }}"
+          style="color: {{ tag.text_color }}"
+          data-featherlight="{{ url('contest_tag_ajax', tag.name) }}">
+          {{- tag.name -}}
+        </a>
+      </span>
+    {% endfor %}
+  </div>
 {% endmacro %}
 
 {% macro time_left(contest, padding_top = true) %}

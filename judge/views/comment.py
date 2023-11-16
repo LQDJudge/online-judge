@@ -15,12 +15,11 @@ from django.http import (
     HttpResponseBadRequest,
     HttpResponseForbidden,
 )
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, UpdateView
 from django.urls import reverse_lazy
-from django.template import loader
 from reversion import revisions
 from reversion.models import Version
 
@@ -28,7 +27,7 @@ from judge.dblock import LockModel
 from judge.models import Comment, CommentVote, Notification, BlogPost
 from judge.utils.views import TitleMixin
 from judge.widgets import MathJaxPagedownWidget, HeavyPreviewPageDownWidget
-from judge.comments import add_mention_notifications, del_mention_notifications
+from judge.comments import add_mention_notifications
 
 import json
 
@@ -42,11 +41,6 @@ __all__ = [
 
 
 @login_required
-
-# def get_more_reply(request, id):
-#     queryset = Comment.get_pk(id)
-
-
 def vote_comment(request, delta):
     if abs(delta) != 1:
         return HttpResponseBadRequest(
@@ -156,6 +150,7 @@ def get_comments(request, limit=10):
             revisions=Count("versions", distinct=True),
         )[offset : offset + limit]
     )
+    profile = None
     if request.user.is_authenticated:
         profile = request.profile
         queryset = queryset.annotate(
@@ -164,10 +159,11 @@ def get_comments(request, limit=10):
 
     new_offset = offset + min(len(queryset), limit)
 
-    comment_html = loader.render_to_string(
+    return render(
+        request,
         "comments/content-list.html",
         {
-            "request": request,
+            "profile": profile,
             "comment_root_id": comment_root_id,
             "comment_list": queryset,
             "vote_hide_threshold": settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD,
@@ -180,8 +176,6 @@ def get_comments(request, limit=10):
             "comment_more": comment_count - new_offset,
         },
     )
-
-    return HttpResponse(comment_html)
 
 
 def get_show_more(request):
@@ -246,7 +240,6 @@ class CommentEditAjax(LoginRequiredMixin, CommentMixin, UpdateView):
     def form_valid(self, form):
         # update notifications
         comment = form.instance
-        del_mention_notifications(comment)
         add_mention_notifications(comment)
 
         with transaction.atomic(), revisions.create_revision():

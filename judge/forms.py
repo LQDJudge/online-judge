@@ -11,7 +11,6 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import RegexValidator
-from django.db import transaction
 from django.db.models import Q
 from django.forms import (
     CharField,
@@ -52,7 +51,6 @@ from judge.widgets import (
     DateTimePickerWidget,
     ImageWidget,
 )
-from judge.tasks import rescore_contest
 
 
 def fix_unicode(string, unsafe=tuple("\u202a\u202b\u202d\u202e")):
@@ -282,15 +280,8 @@ class EditOrganizationContestForm(ModelForm):
             "view_contest_scoreboard",
         ]:
             self.fields[field].widget.data_url = (
-                self.fields[field].widget.get_url() + "?org_id=1"
+                self.fields[field].widget.get_url() + f"?org_id={self.org_id}"
             )
-
-    def save(self, commit=True):
-        res = super(EditOrganizationContestForm, self).save(commit=False)
-        if commit:
-            res.save()
-            transaction.on_commit(rescore_contest.s(res.key).delay)
-        return res
 
     class Meta:
         model = Contest

@@ -56,10 +56,10 @@ from judge.models import (
     Problem,
     Profile,
     Contest,
-    Notification,
     ContestProblem,
     OrganizationProfile,
 )
+from judge.models.notification import make_notification
 from judge import event_poster as event
 from judge.utils.ranker import ranker
 from judge.utils.views import (
@@ -73,6 +73,7 @@ from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
 from judge.views.submission import AllSubmissions, SubmissionsListBase
 from judge.views.feed import FeedView
+from judge.tasks import rescore_contest
 
 __all__ = [
     "OrganizationList",
@@ -394,7 +395,7 @@ class OrganizationContestMixin(
     model = Contest
 
     def is_contest_editable(self, request, contest):
-        return request.profile in contest.authors.all() or self.can_edit_organization(
+        return contest.is_editable_by(request.user) or self.can_edit_organization(
             self.organization
         )
 
@@ -947,7 +948,7 @@ class EditOrganizationContest(
 
     def get_content_title(self):
         href = reverse("contest_view", args=[self.contest.key])
-        return mark_safe(f'Edit <a href="{href}">{self.contest.key}</a>')
+        return mark_safe(_("Edit") + f' <a href="{href}">{self.contest.key}</a>')
 
     def get_object(self):
         return self.contest
@@ -960,6 +961,19 @@ class EditOrganizationContest(
             self.object.organizations.add(self.organization)
             self.object.is_organization_private = True
             self.object.save()
+
+            if any(
+                f in form.changed_data
+                for f in (
+                    "start_time",
+                    "end_time",
+                    "time_limit",
+                    "format_config",
+                    "format_name",
+                    "freeze_after",
+                )
+            ):
+                transaction.on_commit(rescore_contest.s(self.object.key).delay)
             return res
 
     def get_problem_formset(self, post=False):
@@ -1019,16 +1033,9 @@ class AddOrganizationBlog(
             html = (
                 f'<a href="{link}">{self.object.title} - {self.organization.name}</a>'
             )
-            for user in self.organization.admins.all():
-                if user.id == self.request.profile.id:
-                    continue
-                notification = Notification(
-                    owner=user,
-                    author=self.request.profile,
-                    category="Add blog",
-                    html_link=html,
-                )
-                notification.save()
+            make_notification(
+                self.organization.admins.all(), "Add blog", html, self.request.profile
+            )
             return res
 
 
@@ -1104,17 +1111,8 @@ class EditOrganizationBlog(
         )
         html = f'<a href="{link}">{blog.title} - {self.organization.name}</a>'
         post_authors = blog.authors.all()
-        posible_user = self.organization.admins.all() | post_authors
-        for user in posible_user:
-            if user.id == self.request.profile.id:
-                continue
-            notification = Notification(
-                owner=user,
-                author=self.request.profile,
-                category=action,
-                html_link=html,
-            )
-            notification.save()
+        posible_users = self.organization.admins.all() | post_authors
+        make_notification(posible_users, action, html, self.request.profile)
 
     def form_valid(self, form):
         with transaction.atomic(), revisions.create_revision():

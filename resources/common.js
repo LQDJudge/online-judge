@@ -387,7 +387,7 @@ function onWindowReady() {
     });
     $('a').click(function() {
         var href = $(this).attr('href');
-        if (href === '#' || href.startsWith("javascript")) {
+        if (!href || href === '#' || href.startsWith("javascript")) {
             return;
         }
 

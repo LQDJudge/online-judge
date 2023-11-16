@@ -6,7 +6,7 @@ from judge.models.choices import (
     MATH_ENGINES_CHOICES,
     TIMEZONE,
 )
-from judge.models.comment import Comment, CommentLock, CommentVote, Notification
+from judge.models.comment import Comment, CommentLock, CommentVote
 from judge.models.contest import (
     Contest,
     ContestMoss,
@@ -16,6 +16,7 @@ from judge.models.contest import (
     ContestTag,
     Rating,
     ContestProblemClarification,
+    ContestsSummary,
 )
 from judge.models.interface import BlogPost, MiscConfig, NavigationBar, validate_regex
 from judge.models.message import PrivateMessage, PrivateMessageThread
@@ -57,6 +58,7 @@ from judge.models.volunteer import VolunteerProblemVote
 from judge.models.pagevote import PageVote, PageVoteVoter
 from judge.models.bookmark import BookMark, MakeBookMark
 from judge.models.course import Course
+from judge.models.notification import Notification, NotificationProfile
 
 revisions.register(Profile, exclude=["points", "last_access", "ip", "rating"])
 revisions.register(Problem, follow=["language_limits"])

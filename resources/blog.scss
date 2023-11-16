@@ -147,8 +147,9 @@
     }
 }
 
-.blog-box:hover {
+.blog-box:hover, .blog-box:not(.pre-expand-blog) {
     border-color: #8a8a8a;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.1);
 }
 
 .blog-description {
@@ -229,7 +230,6 @@
 .show-more {
     display: flex;
     color: black;
-    font-style: italic;
     font-size: 16px;
     font-weight: 700;
     padding: 0px 12px;

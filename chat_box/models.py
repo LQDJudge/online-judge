@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import CASCADE, Q
 from django.utils.translation import gettext_lazy as _
+from django.utils.functional import cached_property
 
 
 from judge.models.profile import Profile
@@ -17,22 +18,40 @@ class Room(models.Model):
     user_two = models.ForeignKey(
         Profile, related_name="user_two", verbose_name="user 2", on_delete=CASCADE
     )
+    last_msg_time = models.DateTimeField(
+        verbose_name=_("last seen"), null=True, db_index=True
+    )
 
-    @cache_wrapper(prefix="Rc")
+    class Meta:
+        app_label = "chat_box"
+
+    @cache_wrapper(prefix="Rinfo")
+    def _info(self):
+        last_msg = self.message_set.first()
+        return {
+            "user_ids": [self.user_one.id, self.user_two.id],
+            "last_message": last_msg.body if last_msg else None,
+        }
+
+    @cached_property
+    def _cached_info(self):
+        return self._info()
+
     def contain(self, profile):
-        return self.user_one == profile or self.user_two == profile
+        return profile.id in self._cached_info["user_ids"]
 
-    @cache_wrapper(prefix="Rou")
     def other_user(self, profile):
         return self.user_one if profile == self.user_two else self.user_two
 
-    @cache_wrapper(prefix="Rus")
+    def other_user_id(self, profile):
+        user_ids = self._cached_info["user_ids"]
+        return sum(user_ids) - profile.id
+
     def users(self):
         return [self.user_one, self.user_two]
 
-    @cache_wrapper(prefix="Rlmb")
     def last_message_body(self):
-        return self.message_set.first().body
+        return self._cached_info["last_message"]
 
 
 class Message(models.Model):
@@ -58,6 +77,7 @@ class Message(models.Model):
         indexes = [
             models.Index(fields=["hidden", "room", "-id"]),
         ]
+        app_label = "chat_box"
 
 
 class UserRoom(models.Model):
@@ -70,6 +90,7 @@ class UserRoom(models.Model):
 
     class Meta:
         unique_together = ("user", "room")
+        app_label = "chat_box"
 
 
 class Ignore(models.Model):
@@ -81,6 +102,9 @@ class Ignore(models.Model):
         db_index=True,
     )
     ignored_users = models.ManyToManyField(Profile)
+
+    class Meta:
+        app_label = "chat_box"
 
     @classmethod
     def is_ignored(self, current_user, new_friend):

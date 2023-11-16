@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand
 from judge.models import *
-from collections import defaultdict
 import csv
 import os
 from django.conf import settings

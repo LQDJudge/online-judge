@@ -29,16 +29,13 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 
-import datetime
 
 from judge import event_poster as event
 from judge.jinja2.gravatar import gravatar
 from judge.models import Friend
 
 from chat_box.models import Message, Profile, Room, UserRoom, Ignore
-from chat_box.utils import encrypt_url, decrypt_url, encrypt_channel
-
-import json
+from chat_box.utils import encrypt_url, decrypt_url, encrypt_channel, get_unread_boxes
 
 
 class ChatView(ListView):
@@ -87,8 +84,8 @@ class ChatView(ListView):
         self.room_id = request_room
         self.messages = (
             Message.objects.filter(hidden=False, room=self.room_id, id__lt=last_id)
-            .select_related("author", "author__user")
-            .defer("author__about", "author__user_script")[:page_size]
+            .select_related("author")
+            .only("body", "time", "author__rating", "author__display_rank")[:page_size]
         )
         if not only_messages:
             return super().get(request, *args, **kwargs)
@@ -207,7 +204,10 @@ def post_message(request):
             },
         )
     else:
-        Room.last_message_body.dirty(room)
+        Room._info.dirty(room)
+        room.last_msg_time = new_message.time
+        room.save()
+
         for user in room.users():
             event.post(
                 encrypt_channel("chat_" + str(user.id)),
@@ -223,6 +223,7 @@ def post_message(request):
                 UserRoom.objects.filter(user=user, room=room).update(
                     unread_count=F("unread_count") + 1
                 )
+                get_unread_boxes.dirty(user)
 
     return JsonResponse(ret)
 
@@ -284,6 +285,8 @@ def update_last_seen(request, **kwargs):
     user_room.last_seen = timezone.now()
     user_room.unread_count = 0
     user_room.save()
+
+    get_unread_boxes.dirty(profile)
 
     return JsonResponse({"msg": "updated"})
 
@@ -350,11 +353,11 @@ def get_online_status(profile, other_profile_ids, rooms=None):
             room = Room.objects.get(id=i["room"])
             other_profile = room.other_user(profile)
             count[other_profile.id] = i["unread_count"]
+        rooms = Room.objects.filter(id__in=rooms)
         for room in rooms:
-            room = Room.objects.get(id=room)
-            other_profile = room.other_user(profile)
-            last_msg[other_profile.id] = room.last_message_body()
-            room_of_user[other_profile.id] = room.id
+            other_profile_id = room.other_user_id(profile)
+            last_msg[other_profile_id] = room.last_message_body()
+            room_of_user[other_profile_id] = room.id
 
     for other_profile in other_profiles:
         is_online = False
@@ -388,9 +391,6 @@ def get_status_context(profile, include_ignored=False):
     recent_profile = (
         Room.objects.filter(Q(user_one=profile) | Q(user_two=profile))
         .annotate(
-            last_msg_time=Subquery(
-                Message.objects.filter(room=OuterRef("pk")).values("time")[:1]
-            ),
             other_user=Case(
                 When(user_one=profile, then="user_two"),
                 default="user_one",
@@ -411,27 +411,14 @@ def get_status_context(profile, include_ignored=False):
         .values_list("id", flat=True)
     )
 
-    all_user_status = (
-        queryset.filter(last_access__gte=last_5_minutes)
-        .annotate(is_online=Case(default=True, output_field=BooleanField()))
-        .order_by("-rating")
-        .exclude(id__in=admin_list)
-        .exclude(id__in=recent_profile_ids)
-        .values_list("id", flat=True)[:30]
-    )
-
     return [
         {
-            "title": "Recent",
+            "title": _("Recent"),
             "user_list": get_online_status(profile, recent_profile_ids, recent_rooms),
         },
         {
-            "title": "Admin",
+            "title": _("Admin"),
             "user_list": get_online_status(profile, admin_list),
-        },
-        {
-            "title": "Other",
-            "user_list": get_online_status(profile, all_user_status),
         },
     ]
 

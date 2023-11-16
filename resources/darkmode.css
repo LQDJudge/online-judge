@@ -1956,8 +1956,10 @@ input::placeholder {
     background-color: rgb(24, 26, 27);
     box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 5px;
 }
-.blog-box:hover {
+.blog-box:hover,
+.blog-box:not(.pre-expand-blog) {
     border-color: rgb(81, 88, 91);
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 2px;
 }
 .problem-feed-name a {
     color: rgb(102, 177, 250);
@@ -2471,16 +2473,13 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset;
 }
 textarea {
-    color: rgb(178, 172, 162);
     background-image: none;
     background-color: rgb(24, 26, 27);
     border-color: rgb(62, 68, 70);
     box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset;
 }
 textarea:hover {
-    border-color: rgba(16, 87, 144, 0.8);
-    box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset,
-    rgba(16, 91, 150, 0.6) 0px 0px 4px; 
+    border-color: rgb(140, 130, 115); 
 }
 input[type="text"]:hover, input[type="password"]:hover {
     border-color: rgba(16, 87, 144, 0.8);
@@ -2488,9 +2487,7 @@ input[type="text"]:hover, input[type="password"]:hover {
     rgba(16, 91, 150, 0.6) 0px 0px 4px;
 }
 textarea:focus {
-    border-color: rgba(16, 87, 144, 0.8);
-    box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset,
-    rgba(16, 91, 150, 0.6) 0px 0px 8px; outline-color: initial; 
+    border-color: rgb(140, 130, 115); outline-color: initial; 
 }
 input[type="text"]:focus, input[type="password"]:focus {
     border-color: rgba(16, 87, 144, 0.8);
@@ -2552,7 +2549,7 @@ input[type="text"]:focus, input[type="password"]:focus {
 ul.pagination a:hover {
     color: rgb(232, 230, 227);
     background-image: initial;
-    background-color: rgb(8, 128, 104);
+    background-color: rgb(163, 62, 18);
     border-color: initial;
 }
 ul.pagination > li > a,
@@ -2563,14 +2560,14 @@ ul.pagination > li > span {
     border-color: rgb(199, 70, 8);
 }
 ul.pagination > .disabled-page > a {
-    color: rgb(157, 148, 136);
-    background-color: rgba(3, 66, 54, 0.5);
-    border-color: rgba(126, 117, 103, 0.5);
+    color: rgb(223, 220, 215);
+    background-color: rgb(137, 78, 57);
+    border-color: rgb(199, 68, 21);
 }
 ul.pagination > .disabled-page > span {
-    color: rgb(157, 148, 136);
-    background-color: rgba(3, 66, 54, 0.5);
-    border-color: rgba(126, 117, 103, 0.5);
+    color: rgb(223, 220, 215);
+    background-color: rgb(137, 78, 57);
+    border-color: rgb(199, 68, 21);
 }
 ul.pagination > .active-page > a {
     color: rgb(232, 230, 227);
@@ -2785,11 +2782,15 @@ a.voted {
     border-left-color: rgb(48, 52, 54);
 }
 .actionbar .actionbar-button {
-    border-color: rgb(60, 65, 68);
+    background-image: initial;
+    background-color: rgb(49, 53, 55);
+}
+.actionbar .actionbar-button a:hover {
+    color: inherit;
 }
 .actionbar .actionbar-button:hover {
     background-image: initial;
-    background-color: rgb(49, 53, 55);
+    background-color: rgb(73, 79, 82);
 }
 .actionbar .dislike-button {
     border-left-color: initial;

@@ -44,6 +44,7 @@ from judge.views import (
     language,
     license,
     mailgun,
+    markdown_editor,
     notification,
     organization,
     preview,
@@ -406,6 +407,11 @@ urlpatterns = [
         ),
     ),
     url(
+        r"^markdown_editor/",
+        markdown_editor.MarkdownEditor.as_view(),
+        name="markdown_editor",
+    ),
+    url(
         r"^submission_source_file/(?P<filename>(\w|\.)+)",
         submission.SubmissionSourceFileView.as_view(),
         name="submission_source_file",
@@ -511,6 +517,11 @@ urlpatterns = [
         ),
     ),
     url(r"^contests/", paged_list_view(contests.ContestList, "contest_list")),
+    url(
+        r"^contests/summary/(?P<key>\w+)$",
+        contests.contests_summary_view,
+        name="contests_summary",
+    ),
     url(r"^course/", paged_list_view(course.CourseList, "course_list")),
     url(
         r"^contests/(?P<year>\d+)/(?P<month>\d+)/$",
@@ -1088,6 +1099,11 @@ urlpatterns = [
                     r"^problem$",
                     internal.InternalProblem.as_view(),
                     name="internal_problem",
+                ),
+                url(
+                    r"^problem_votes$",
+                    internal.get_problem_votes,
+                    name="internal_problem_votes",
                 ),
                 url(
                     r"^request_time$",

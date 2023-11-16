@@ -1,0 +1,2 @@
+class VanishedSubmission(Exception):
+    pass

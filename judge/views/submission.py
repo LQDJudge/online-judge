@@ -1,6 +1,5 @@
 import json
 import os.path
-import zipfile
 from operator import attrgetter
 
 from django.conf import settings
@@ -84,31 +83,7 @@ class SubmissionMixin(object):
 class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, DetailView):
     def get_object(self, queryset=None):
         submission = super(SubmissionDetailBase, self).get_object(queryset)
-        profile = self.request.profile
-        problem = submission.problem
-        if self.request.user.has_perm("judge.view_all_submission"):
-            return submission
-        if problem.is_public and self.request.user.has_perm(
-            "judge.view_public_submission"
-        ):
-            return submission
-        if submission.user_id == profile.id:
-            return submission
-        if problem.is_editor(profile):
-            return submission
-        if problem.is_public or problem.testers.filter(id=profile.id).exists():
-            if Submission.objects.filter(
-                user_id=profile.id,
-                result="AC",
-                problem_id=problem.id,
-                points=problem.points,
-            ).exists():
-                return submission
-        if hasattr(
-            submission, "contest"
-        ) and submission.contest.participation.contest.is_editable_by(
-            self.request.user
-        ):
+        if submission.is_accessible_by(self.request.profile):
             return submission
 
         raise PermissionDenied()
@@ -220,8 +195,8 @@ def get_cases_data(submission):
             continue
         count += 1
         problem_data[count] = {
-            "input": case_data[case.input_file] if case.input_file else "",
-            "answer": case_data[case.output_file] if case.output_file else "",
+            "input": case_data.get(case.input_file, "") if case.input_file else "",
+            "answer": case_data.get(case.output_file, "") if case.output_file else "",
         }
 
     return problem_data
@@ -483,19 +458,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         authenticated = self.request.user.is_authenticated
         context["dynamic_update"] = False
         context["show_problem"] = self.show_problem
-        context["completed_problem_ids"] = (
-            user_completed_ids(self.request.profile) if authenticated else []
-        )
-        context["editable_problem_ids"] = (
-            user_editable_ids(self.request.profile) if authenticated else []
-        )
-        context["tester_problem_ids"] = (
-            user_tester_ids(self.request.profile) if authenticated else []
-        )
-
+        context["profile"] = self.request.profile
         context["all_languages"] = Language.objects.all().values_list("key", "name")
         context["selected_languages"] = self.selected_languages
-
         context["all_statuses"] = self.get_searchable_status_codes()
         context["selected_statuses"] = self.selected_statuses
 
@@ -779,19 +744,10 @@ def single_submission(request, submission_id, show_problem=True):
         "submission/row.html",
         {
             "submission": submission,
-            "completed_problem_ids": user_completed_ids(request.profile)
-            if authenticated
-            else [],
-            "editable_problem_ids": user_editable_ids(request.profile)
-            if authenticated
-            else [],
-            "tester_problem_ids": user_tester_ids(request.profile)
-            if authenticated
-            else [],
             "show_problem": show_problem,
             "problem_name": show_problem
             and submission.problem.translated_name(request.LANGUAGE_CODE),
-            "profile_id": request.profile.id if authenticated else 0,
+            "profile": request.profile if authenticated else None,
         },
     )
 
@@ -1010,9 +966,6 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
         context["contest"] = self.contest
         context["problem"] = self.problem
         context["profile"] = self.profile
-        context["profile_id"] = (
-            self.request.profile.id if self.request.profile else None
-        )
 
         contest_problem = self.contest.contest_problems.get(problem=self.problem)
         filtered_submissions = []
