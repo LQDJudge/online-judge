@@ -1,6 +1,6 @@
 from django.views.generic import TemplateView
 from django.utils.translation import gettext as _
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from judge.models import Contest
 from django.utils.safestring import mark_safe
 
@@ -21,7 +21,7 @@ class Resolver(TemplateView):
         hidden_subtasks = self.contest.format.get_hidden_subtasks()
         num_problems = len(problems)
         problem_sub = [0] * num_problems
-        sub_frozen = [0] * num_problems
+        sub_frozen = [[] for _ in range(num_problems)]
         problems_json = {str(i): {} for i in range(1, num_problems + 1)}
 
         users = {}
@@ -126,10 +126,8 @@ class Resolver(TemplateView):
 
         for i in hidden_subtasks:
             order = id_to_order[i]
-            if hidden_subtasks[i]:
-                sub_frozen[order - 1] = min(hidden_subtasks[i])
-            else:
-                sub_frozen[order - 1] = problem_sub[order - 1] + 1
+            sub_frozen[order - 1] = list(hidden_subtasks[i])
+
         return {
             "problem_sub": problem_sub,
             "sub_frozen": sub_frozen,
@@ -143,8 +141,15 @@ class Resolver(TemplateView):
         return context
 
     def get(self, request, *args, **kwargs):
-        if request.user.is_superuser:
-            self.contest = Contest.objects.get(key=kwargs.get("contest"))
-            if self.contest.format.has_hidden_subtasks:
-                return super(Resolver, self).get(request, *args, **kwargs)
-        return HttpResponseForbidden()
+        if not request.user.is_superuser:
+            return HttpResponseForbidden()
+        self.contest = Contest.objects.get(key=kwargs.get("contest"))
+        if not self.contest.format.has_hidden_subtasks:
+            return HttpResponseForbidden()
+
+        if self.request.GET.get("json"):
+            json_dumps_params = {"ensure_ascii": False}
+            return JsonResponse(
+                self.get_contest_json(), json_dumps_params=json_dumps_params
+            )
+        return super(Resolver, self).get(request, *args, **kwargs)
