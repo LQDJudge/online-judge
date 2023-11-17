@@ -146,7 +146,7 @@ class ContestList(
     default_desc = frozenset(("name", "user_count"))
 
     def get_default_sort_order(self, request):
-        if "contest" in request.GET and settings.ENABLE_FTS:
+        if request.GET.get("contest") and settings.ENABLE_FTS:
             return "-relevance"
         return "-start_time"
 
@@ -161,7 +161,7 @@ class ContestList(
         if request.GET.get("show_orgs"):
             self.show_orgs = 1
 
-        if "orgs" in self.request.GET and self.request.profile:
+        if self.request.GET.get("orgs") and self.request.profile:
             try:
                 self.org_query = list(map(int, request.GET.getlist("orgs")))
                 if not self.request.user.is_superuser:
@@ -169,8 +169,10 @@ class ContestList(
                         i
                         for i in self.org_query
                         if i
-                        in self.request.profile.organizations.values_list(
-                            "id", flat=True
+                        in set(
+                            self.request.profile.organizations.values_list(
+                                "id", flat=True
+                            )
                         )
                     ]
             except ValueError:
@@ -185,7 +187,7 @@ class ContestList(
             .prefetch_related("tags", "organizations", "authors", "curators", "testers")
         )
 
-        if "contest" in self.request.GET:
+        if self.request.GET.get("contest"):
             self.contest_query = query = " ".join(
                 self.request.GET.getlist("contest")
             ).strip()
@@ -253,10 +255,7 @@ class ContestList(
         context["org_query"] = self.org_query
         context["show_orgs"] = int(self.show_orgs)
         if self.request.profile:
-            if self.request.user.is_superuser:
-                context["organizations"] = Organization.objects.all()
-            else:
-                context["organizations"] = self.request.profile.organizations.all()
+            context["organizations"] = self.request.profile.organizations.all()
         context["page_type"] = "list"
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())
