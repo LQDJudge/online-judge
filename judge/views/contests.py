@@ -144,7 +144,11 @@ class ContestList(
     context_object_name = "past_contests"
     all_sorts = frozenset(("name", "user_count", "start_time"))
     default_desc = frozenset(("name", "user_count"))
-    default_sort = "-start_time"
+
+    def get_default_sort_order(self, request):
+        if "contest" in request.GET and settings.ENABLE_FTS:
+            return "-relevance"
+        return "-start_time"
 
     @cached_property
     def _now(self):
