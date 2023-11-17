@@ -117,7 +117,6 @@
         {% endfor %}
       </span>
     {% endif %}
-
     <span class="spacer"></span>
     {% if has_render %}
       <a href="{{ url('problem_pdf', problem.code) }}" class="view-pdf" target="_blank">
@@ -134,6 +133,7 @@
   </a>
   </div>
 {% endblock %}
+
 
 {% block info_float %}
   {% if request.user.is_authenticated and request.in_contest_mode and submission_limit %}
@@ -203,53 +203,6 @@
     <a href="{{ url('problem_clone', problem.code) }}">{{ _('Clone problem') }}</a>
   </div>
 {% endif %}
-
-<hr style="padding-top: 0.3em">
-
-<div class="problem-info-entry">
-  <i class="fa fa-check fa-fw"></i><span class="pi-name">{{ _('Points:') }}</span>
-  <span class="pi-value">
-    {% if contest_problem %}
-      {{ contest_problem.points }}{% if contest_problem.partial %} {{ _('(partial)') }}{% endif %}
-    {% else %}
-      {{ problem.points|floatformat }}{% if problem.partial %} {{ _('(partial)') }}{% endif %}
-    {% endif %}
-  </span>
-</div>
-<div class="problem-info-entry">
-  <i class="fa fa-clock-o fa-fw"></i><span class="pi-name">{{ _('Time limit:') }}</span>
-  <span class="pi-value">{{ problem.time_limit }}s</span>
-</div>
-<div class="problem-lang-limits">
-  {% for name, limit in problem.language_time_limit %}
-    <div class="lang-limit">
-      <span class="lang-name">{{ name }}</span>
-      <span class="lang-tl">{{ limit }}s</span>
-    </div>
-  {% endfor %}
-</div>
-<div class="problem-info-entry">
-  <i class="fa fa-server fa-fw"></i><span class="pi-name">{{ _('Memory limit:') }}</span>
-  <span class="pi-value">{{ problem.memory_limit|kbsimpleformat }}</span>
-</div>
-<div class="problem-lang-limits">
-  {% for name, limit in problem.language_memory_limit %}
-    <div class="lang-limit">
-      <span class="lang-name">{{ name }}</span>
-      <span class="lang-ml">{{ limit|kbsimpleformat }}</span>
-    </div>
-  {% endfor %}
-</div>
-<div class="problem-info-entry">
-  <i class="fa fa-file-o fa-fw"></i><span class="pi-name">{{ _('Input:') }}</span>
-  <span class="pi-value">
-    {{ fileio_input or _('stdin') }}
-  </span>
-</div>
-<div class="problem-info-entry">
-  <i class="fa fa-file fa-fw"></i><span class="pi-name">{{ _('Output:') }}</span>
-  <span class="pi-value">{{ fileio_output or _('stdout') }}</span>
-</div>
 
 <hr style="padding-top: 0.7em">
 
@@ -342,6 +295,40 @@
       </a>
     </div>
   {% endif %}
+  <div class = "new-problem-info center">
+    <span class="info-block">
+      <i class="fa fa-check fa-fw"></i><span class="pi-name">{{ _('Points:') }}</span>
+      <span class="new-pi-value">
+        {% if contest_problem %}
+          {{ contest_problem.points }}{% if contest_problem.partial %} {{ _('(partial)') }}{% endif %}
+        {% else %}
+          {{ problem.points|floatformat }}{% if problem.partial %} {{ _('(partial)') }}{% endif %}
+        {% endif %}
+      </span>
+    </span>
+
+    <span class="info-block">
+      <i class="fa fa-clock-o fa-fw"></i><span class="pi-name">{{ _('Time limit:') }}</span>
+      <span class="new-pi-value">{{ problem.time_limit }}s</span>
+    </span>
+
+    <span class="info-block">
+      <i class="fa fa-server fa-fw"></i><span class="pi-name">{{ _('Memory limit:') }}</span>
+      <span class="new-pi-value">{{ problem.memory_limit|kbsimpleformat }}</span>
+    </span>
+
+    <span class="info-block">
+      <i class="fa fa-file-o fa-fw"></i><span class="pi-name">{{ _('Input:') }}</span>
+      <span class="new-pi-value">
+        {{ fileio_input or _('stdin') }}
+      </span>
+    </span>
+
+    <span class="info-block">
+      <i class="fa fa-file fa-fw"></i><span class="pi-name">{{ _('Output:') }}</span>
+      <span class="new-pi-value">{{ fileio_output or _('stdout') }}</span>
+    </span>
+  </div>
 
   {% cache 86400 'problem_html' problem.id MATH_ENGINE LANGUAGE_CODE %}
     {{ description|markdown(lazy_load=True)|reference|str|safe }}
