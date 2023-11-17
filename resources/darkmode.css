@@ -2093,6 +2093,9 @@ ul.problem-list {
 #comment-announcement:hover {
     background-color: rgb(96, 104, 108);
 }
+.new-problem-info {
+    background-color: rgb(54, 39, 0);
+}
 .admin a,
 .admin {
     color: rgb(232, 230, 227) !important;
@@ -2784,9 +2787,6 @@ a.voted {
 .actionbar .actionbar-button {
     background-image: initial;
     background-color: rgb(49, 53, 55);
-}
-.actionbar .actionbar-button a:hover {
-    color: inherit;
 }
 .actionbar .actionbar-button:hover {
     background-image: initial;

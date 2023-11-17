@@ -300,9 +300,9 @@
       <i class="fa fa-check fa-fw"></i><span class="pi-name">{{ _('Points:') }}</span>
       <span class="new-pi-value">
         {% if contest_problem %}
-          {{ contest_problem.points }}{% if contest_problem.partial %} {{ _('(partial)') }}{% endif %}
+          {{ contest_problem.points }} {% if contest_problem.partial %}(p){% endif %}
         {% else %}
-          {{ problem.points|floatformat }}{% if problem.partial %} {{ _('(partial)') }}{% endif %}
+          {{ problem.points|floatformat }} {% if problem.partial %}(p){% endif %}
         {% endif %}
       </span>
     </span>
