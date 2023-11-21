@@ -162,10 +162,10 @@ class ProblemData(models.Model):
                         get_file_cachekey(file),
                     )
                     cache.delete(cache_key)
-            except BadZipFile:
+            except (BadZipFile, FileNotFoundError):
                 pass
-        if self.zipfile != self.__original_zipfile and self.__original_zipfile:
-            self.__original_zipfile.delete(save=False)
+            if self.zipfile != self.__original_zipfile:
+                self.__original_zipfile.delete(save=False)
         return super(ProblemData, self).save(*args, **kwargs)
 
     def has_yml(self):

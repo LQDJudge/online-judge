@@ -6,6 +6,7 @@ from django.utils.translation import gettext as _, gettext_lazy
 from django.db.models import Count, Q
 from django.http import HttpResponseForbidden
 from django.urls import reverse
+from django.shortcuts import render
 
 from judge.utils.diggpaginator import DiggPaginator
 from judge.models import VolunteerProblemVote, Problem
@@ -21,7 +22,7 @@ class InternalView(object):
 class InternalProblem(InternalView, ListView):
     model = Problem
     title = _("Internal problems")
-    template_name = "internal/problem.html"
+    template_name = "internal/problem/problem.html"
     paginate_by = 100
     context_object_name = "problems"
 
@@ -61,6 +62,28 @@ class InternalProblem(InternalView, ListView):
         context["query"] = self.get_search_query()
 
         return context
+
+
+def get_problem_votes(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden()
+    try:
+        problem = Problem.objects.get(id=request.GET.get("id"))
+    except:
+        return HttpResponseForbidden()
+    votes = (
+        problem.volunteer_user_votes.select_related("voter")
+        .prefetch_related("types")
+        .order_by("id")
+    )
+    return render(
+        request,
+        "internal/problem/votes.html",
+        {
+            "problem": problem,
+            "votes": votes,
+        },
+    )
 
 
 class RequestTimeMixin(object):

@@ -39,12 +39,6 @@ msgstr "Đăng ký tên"
 msgid "Report"
 msgstr "Báo cáo"
 
-msgid "Insert Image"
-msgstr "Chèn hình ảnh"
-
-msgid "Save"
-msgstr "Lưu"
-
 msgid "2sat"
 msgstr ""
 
@@ -600,3 +594,8 @@ msgstr ""
 msgid "z-function"
 msgstr ""
 
+#~ msgid "Insert Image"
+#~ msgstr "Chèn hình ảnh"
+
+#~ msgid "Save"
+#~ msgstr "Lưu"

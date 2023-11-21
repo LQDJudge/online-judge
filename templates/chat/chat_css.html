@@ -10,7 +10,15 @@
     }
 
     ::-webkit-scrollbar {
-      width: 20px;
+      width: 16px;
+      background-color: transparent !important;
+    }
+
+    #chat-input::-webkit-scrollbar {
+      width: 22px;
+    }
+    #chat-input::-webkit-scrollbar-thumb {
+      border: 10px solid transparent;
     }
 
     ::-webkit-scrollbar-track {
@@ -144,9 +152,11 @@
       transition: box-shadow 0.3s ease-in-out;
       width: 80%;
       resize: none;
-      height: 80%;
+      height: 70%;
       max-height: 200px;
       overflow-y: auto;
+      margin-top: auto;
+      margin-bottom: 6px;
     }
     #chat-input:focus {
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);

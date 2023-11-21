@@ -36,7 +36,4 @@
     {% endif %}
     {{ make_tab_item('edit', 'fa fa-edit', url('admin:judge_contest_change', contest.id), _('Edit')) }}
   {% endif %}
-  {% if perms.judge.clone_contest %}
-    {{ make_tab_item('clone', 'fa fa-copy', url('contest_clone', contest.key), _('Clone')) }}
-  {% endif %}
 </div>

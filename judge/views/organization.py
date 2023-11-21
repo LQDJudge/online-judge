@@ -73,6 +73,7 @@ from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
 from judge.views.submission import AllSubmissions, SubmissionsListBase
 from judge.views.feed import FeedView
+from judge.tasks import rescore_contest
 
 __all__ = [
     "OrganizationList",
@@ -394,7 +395,7 @@ class OrganizationContestMixin(
     model = Contest
 
     def is_contest_editable(self, request, contest):
-        return request.profile in contest.authors.all() or self.can_edit_organization(
+        return contest.is_editable_by(request.user) or self.can_edit_organization(
             self.organization
         )
 
@@ -947,7 +948,7 @@ class EditOrganizationContest(
 
     def get_content_title(self):
         href = reverse("contest_view", args=[self.contest.key])
-        return mark_safe(f'Edit <a href="{href}">{self.contest.key}</a>')
+        return mark_safe(_("Edit") + f' <a href="{href}">{self.contest.key}</a>')
 
     def get_object(self):
         return self.contest
@@ -960,6 +961,19 @@ class EditOrganizationContest(
             self.object.organizations.add(self.organization)
             self.object.is_organization_private = True
             self.object.save()
+
+            if any(
+                f in form.changed_data
+                for f in (
+                    "start_time",
+                    "end_time",
+                    "time_limit",
+                    "format_config",
+                    "format_name",
+                    "freeze_after",
+                )
+            ):
+                transaction.on_commit(rescore_contest.s(self.object.key).delay)
             return res
 
     def get_problem_formset(self, post=False):

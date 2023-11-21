@@ -416,3 +416,19 @@ ul.problem-list {
         }
     }
 }
+
+.new-problem-info {
+    background-color: #fff6dd;
+    border-radius: 25px;
+    font-size: 14px;
+    height: 25px;
+    width: 100%;
+    display: table;
+    padding: 5px;
+    margin-top: 12px;
+}
+
+.info-block {
+    display:table-cell;
+    vertical-align:middle;
+}

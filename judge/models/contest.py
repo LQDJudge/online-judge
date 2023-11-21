@@ -99,11 +99,13 @@ class Contest(models.Model, PageVotable, Bookmarkable):
     )
     authors = models.ManyToManyField(
         Profile,
+        verbose_name=_("authors"),
         help_text=_("These users will be able to edit the contest."),
         related_name="authors+",
     )
     curators = models.ManyToManyField(
         Profile,
+        verbose_name=_("curators"),
         help_text=_(
             "These users will be able to edit the contest, "
             "but will not be listed as authors."
@@ -113,6 +115,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
     )
     testers = models.ManyToManyField(
         Profile,
+        verbose_name=_("testers"),
         help_text=_(
             "These users will be able to view the contest, " "but not edit it."
         ),

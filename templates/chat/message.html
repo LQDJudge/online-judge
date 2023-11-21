@@ -1,12 +1,12 @@
 <li class="message" id="message-{{ message.id }}" message-id="{{ message.id }}">
-  <a href="{{ url('user_page', message.author.user.username) }}">
+  <a href="{{ url('user_page', message.author.username) }}">
     <img src="{{ gravatar(message.author, 135) }}" class="profile-pic">
   </a>
   <div class="body-message">
     <div class="user-time">
       <span class="username {{ message.author.css_class }}">
-        <a href="{{ url('user_page', message.author.user.username) }}">
-          {{ message.author }}
+        <a href="{{ url('user_page', message.author.username) }}">
+          {{ message.author.username }}
         </a>
       </span>
       <span class="time">

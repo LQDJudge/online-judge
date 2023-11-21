@@ -3,6 +3,8 @@ from collections import namedtuple
 from operator import attrgetter
 from threading import RLock
 
+from judge.bridge.utils import VanishedSubmission
+
 try:
     from llist import dllist
 except ImportError:
@@ -39,6 +41,8 @@ class JudgeList(object):
                         )
                         try:
                             judge.submit(id, problem, language, source)
+                        except VanishedSubmission:
+                            pass
                         except Exception:
                             logger.exception(
                                 "Failed to dispatch %d (%s, %s) to %s",

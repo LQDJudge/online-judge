@@ -144,7 +144,11 @@ class ContestList(
     context_object_name = "past_contests"
     all_sorts = frozenset(("name", "user_count", "start_time"))
     default_desc = frozenset(("name", "user_count"))
-    default_sort = "-start_time"
+
+    def get_default_sort_order(self, request):
+        if request.GET.get("contest") and settings.ENABLE_FTS:
+            return "-relevance"
+        return "-start_time"
 
     @cached_property
     def _now(self):
@@ -157,7 +161,7 @@ class ContestList(
         if request.GET.get("show_orgs"):
             self.show_orgs = 1
 
-        if "orgs" in self.request.GET and self.request.profile:
+        if self.request.GET.get("orgs") and self.request.profile:
             try:
                 self.org_query = list(map(int, request.GET.getlist("orgs")))
                 if not self.request.user.is_superuser:
@@ -165,8 +169,10 @@ class ContestList(
                         i
                         for i in self.org_query
                         if i
-                        in self.request.profile.organizations.values_list(
-                            "id", flat=True
+                        in set(
+                            self.request.profile.organizations.values_list(
+                                "id", flat=True
+                            )
                         )
                     ]
             except ValueError:
@@ -181,7 +187,7 @@ class ContestList(
             .prefetch_related("tags", "organizations", "authors", "curators", "testers")
         )
 
-        if "contest" in self.request.GET:
+        if self.request.GET.get("contest"):
             self.contest_query = query = " ".join(
                 self.request.GET.getlist("contest")
             ).strip()
@@ -249,10 +255,7 @@ class ContestList(
         context["org_query"] = self.org_query
         context["show_orgs"] = int(self.show_orgs)
         if self.request.profile:
-            if self.request.user.is_superuser:
-                context["organizations"] = Organization.objects.all()
-            else:
-                context["organizations"] = self.request.profile.organizations.all()
+            context["organizations"] = self.request.profile.organizations.all()
         context["page_type"] = "list"
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())
@@ -419,7 +422,14 @@ class ContestDetail(
             return []
         res = []
         for organization in self.object.organizations.all():
+            can_edit = False
             if self.request.profile.can_edit_organization(organization):
+                can_edit = True
+            if self.request.profile in organization and self.object.is_editable_by(
+                self.request.user
+            ):
+                can_edit = True
+            if can_edit:
                 res.append(organization)
         return res
 
@@ -441,16 +451,32 @@ class ContestDetail(
             .add_i18n_name(self.request.LANGUAGE_CODE)
         )
         context["editable_organizations"] = self.get_editable_organizations()
+        context["is_clonable"] = is_contest_clonable(self.request, self.object)
         return context
 
 
-class ContestClone(
-    ContestMixin, PermissionRequiredMixin, TitleMixin, SingleObjectFormView
-):
+def is_contest_clonable(request, contest):
+    if not request.profile:
+        return False
+    if not Organization.objects.filter(admins=request.profile).exists():
+        return False
+    if request.user.has_perm("judge.clone_contest"):
+        return True
+    if contest.ended:
+        return True
+    return False
+
+
+class ContestClone(ContestMixin, TitleMixin, SingleObjectFormView):
     title = _("Clone Contest")
     template_name = "contest/clone.html"
     form_class = ContestCloneForm
-    permission_required = "judge.clone_contest"
+
+    def get_object(self, queryset=None):
+        contest = super().get_object(queryset)
+        if not is_contest_clonable(self.request, contest):
+            raise Http404()
+        return contest
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -475,6 +501,7 @@ class ContestClone(
         contest.is_visible = False
         contest.user_count = 0
         contest.key = form.cleaned_data["key"]
+        contest.is_rated = False
         contest.save()
 
         contest.tags.set(tags)
