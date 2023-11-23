@@ -266,18 +266,18 @@ button:hover, button:focus {
     border-radius: 50%;
 }
 
-.btn.btn-tertiary {
+.btn.btn-primary {
     color: #fff;
     background: var(--green);
     border-color: var(--green);
 }
 
-.btn.btn-tertiary:hover, .btn.btn-tertiary:focus {
+.btn.btn-primary:hover, .btn.btn-primary:focus {
     border-color: green !important;
     background: green !important;
 }
 
-.btn.btn-tertiary .icon i {
+.btn.btn-primary .icon i {
     color: var(--green);
 }
 
