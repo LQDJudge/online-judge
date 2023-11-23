@@ -1,6 +1,7 @@
 {% extends "common-content.html" %}
 {% block content_media %}
   {% include "comments/media-css.html" %}
+  <link rel="stylesheet" href="resources/newButton.scssfs">
   <style>
     .title-state {
       font-size: 2em;
@@ -49,6 +50,11 @@
 {% endblock %}
 
 {% block content_js_media %}
+  <script>
+    function redirectTo(url) {
+      window.location.href = url;
+    }
+  </script>
   {% include "comments/media-js.html" %}
   {% include "actionbar/media-js.html" %}
   {% if request.in_contest_mode %}
@@ -138,9 +144,12 @@
 {% block info_float %}
   {% if request.user.is_authenticated and request.in_contest_mode and submission_limit %}
     {% if submissions_left > 0 %}
-      <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full btn-green small">
-        {{ _('Submit solution') }}
-      </a>
+      <button onclick="redirectTo('{{ url('problem_submit', problem.code) }}')" class="btn btn-tertiary btn-block btn-round">
+        <span>{{ _('Submit') }}</span>
+        <div class="icon icon-round d-flex align-items-center justify-content-center">
+          <i class="fa fa-send"></i>
+        </div>
+      </button>
       <div class="submissions-left">
         {% trans trimmed counter=submissions_left %}
           {{ counter }} submission left
@@ -149,13 +158,21 @@
         {% endtrans %}
       </div>
     {% else %}
-      <a class="unselectable button full disabled small">{{ _('Submit solution') }}</a>
+      <button onclick="redirectTo('{{ url('problem_submit', problem.code) }}')" class="btn btn-tertiary btn-block btn-round">
+        <span>{{ _('Submit') }}</span>
+        <div class="icon icon-round d-flex align-items-center justify-content-center">
+          <i class="fa fa-send"></i>
+        </div>
+      </button>
       <div class="no-submissions-left submissions-left">{{ _('0 submissions left') }}</div>
     {% endif %}
   {% else %}
-    <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full btn-green small">
-      {{ _('Submit solution') }}
-    </a>
+    <button onclick="redirectTo('{{ url('problem_submit', problem.code) }}')" class="btn btn-tertiary btn-block btn-round">
+      <span>{{ _('Submit') }}</span>
+      <div class="icon icon-round d-flex align-items-center justify-content-center">
+        <i class="fa fa-send"></i>
+      </div>
+    </button>
   {% endif %}
 
   <hr style="padding-bottom: 0.3em">
@@ -295,7 +312,7 @@
       </a>
     </div>
   {% endif %}
-  <div class = "new-problem-info center">
+  <div class = "new-problem-info d-flex align-items-center justify-content-center">
     <span class="info-block">
       <i class="fa fa-check fa-fw"></i><span class="pi-name">{{ _('Points:') }}</span>
       <span class="new-pi-value">
@@ -324,7 +341,7 @@
       </span>
     </span>
 
-    <span class="info-block">
+    <span>
       <i class="fa fa-file fa-fw"></i><span class="pi-name">{{ _('Output:') }}</span>
       <span class="new-pi-value">{{ fileio_output or _('stdout') }}</span>
     </span>
