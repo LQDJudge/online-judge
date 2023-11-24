@@ -28,6 +28,9 @@
 
 // Bootstrap-y buttons
 .button, button, input[type=submit] {
+    -webkit-transition: .3s all ease;
+    -o-transition: .3s all ease;
+    transition: .3s all ease;
     align-items: center;
     background-clip: padding-box;
     background-color: $theme_color;
@@ -78,10 +81,10 @@
     }
 
     &.btn-green {
-        background: green;
+        background: #28a745;
 
         &:hover {
-            background: #2c974b;
+            background: green;
         }
     }
 
@@ -740,5 +743,136 @@ ul.errorlist {
 
     .github-icon i {
         color: black;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn {
+        -webkit-transition: none;
+        -o-transition: none;
+        transition: none;
+    }
+}
+
+.btn:hover {
+    color: #212529;
+    text-decoration: none;
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+.btn-block + .btn-block {
+    margin-top: 0.5rem;
+}
+
+.d-flex {
+    display: -webkit-box !important;
+    display: -ms-flexbox !important;
+    display: flex !important;
+}
+
+.justify-content-center {
+    -webkit-box-pack: center !important;
+    -ms-flex-pack: center !important;
+    justify-content: center !important;
+}
+
+.align-items-center {
+    -webkit-box-align: center !important;
+    -ms-flex-align: center !important;
+    align-items: center !important;
+}
+
+.align-content-center {
+    -ms-flex-line-pack: center !important;
+    align-content: center !important;
+}
+
+.align-self-center {
+    -ms-flex-item-align: center !important;
+    -ms-grid-row-align: center !important;
+    align-self: center !important;
+}
+
+body {
+    font-size: 15px;
+    line-height: 1.8;
+    font-weight: normal;
+}
+
+a {
+    -webkit-transition: .3s all ease;
+    -o-transition: .3s all ease;
+    transition: .3s all ease;
+}
+
+button:hover, button:focus {
+    text-decoration: none !important;
+    outline: none !important;
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+}
+
+.btn {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-width: 1px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 500;
+    -webkit-box-shadow: 0px 10px 20px -6px rgba(0, 0, 0, 0.12);
+    -moz-box-shadow: 0px 10px 20px -6px rgba(0, 0, 0, 0.12);
+    box-shadow: 0px 10px 20px -6px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    position: relative;
+    -moz-transition: all 0.3s ease;
+    -o-transition: all 0.3s ease;
+    -webkit-transition: all 0.3s ease;
+    -ms-transition: all 0.3s ease;
+    transition: all 0.3s ease;
+    span {
+        margin-left: -20px;
+        -moz-transition: all 0.3s ease;
+        -o-transition: all 0.3s ease;
+        -webkit-transition: all 0.3s ease;
+        -ms-transition: all 0.3s ease;
+        transition: all 0.3s ease;
+    }
+    .icon {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 45px;
+        bottom: 0;
+        background: #fff;
+        i {
+            font-size: 20px;
+        }
+    }
+    .icon.icon-round {
+        border-radius: 50%;
+    }
+    &.btn-round {
+        border-radius: 40px;
+    }
+    &:hover, &:active, &:focus {
+        outline: none;
+        span {
+            margin-left: -10px;
+        }
+    }
+    &.btn-primary {
+        color: #fff;
+        .icon i {
+            color: #28a745;
+        }
+    }
+    &.btn-disabled {
+        color: #fff;
+        background: gray;
+        border-color: gray;
     }
 }

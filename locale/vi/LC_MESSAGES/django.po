@@ -4753,7 +4753,7 @@ msgstr "Phiếu tình nguyện"
 
 #: templates/problem/feed/problems.html:53
 msgid "Submit"
-msgstr "Gửi"
+msgstr "Nộp bài"
 
 #: templates/problem/feed/problems.html:60
 msgid "Value"

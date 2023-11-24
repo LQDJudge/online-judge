@@ -422,13 +422,25 @@ ul.problem-list {
     border-radius: 25px;
     font-size: 14px;
     height: 25px;
-    width: 100%;
+    width: 98%;
     display: table;
     padding: 5px;
-    margin-top: 12px;
+    margin-top: 14px;
+    border: solid;
+    border-color: black;
+    border-width: 0.1px;
 }
 
 .info-block {
     display:table-cell;
     vertical-align:middle;
+    margin-right: auto;
+}
+
+@media screen and (min-width: 1100px) {
+    .d-flex-problem {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+    }
 }
