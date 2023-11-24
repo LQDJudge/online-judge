@@ -416,3 +416,31 @@ ul.problem-list {
         }
     }
 }
+
+.new-problem-info {
+    background-color: #fff6dd;
+    border-radius: 25px;
+    font-size: 14px;
+    height: 25px;
+    width: 98%;
+    display: table;
+    padding: 5px;
+    margin-top: 14px;
+    border: solid;
+    border-color: black;
+    border-width: 0.1px;
+}
+
+.info-block {
+    display:table-cell;
+    vertical-align:middle;
+    margin-right: auto;
+}
+
+@media screen and (min-width: 1100px) {
+    .d-flex-problem {
+        display: -webkit-box !important;
+        display: -ms-flexbox !important;
+        display: flex !important;
+    }
+}
