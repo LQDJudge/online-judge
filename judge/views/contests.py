@@ -27,7 +27,6 @@ from django.db.models import (
     Value,
     When,
 )
-from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.db.models.expressions import CombinedExpression
 from django.http import (
@@ -1422,7 +1421,7 @@ def update_contest_mode(request):
 
 ContestsSummaryData = namedtuple(
     "ContestsSummaryData",
-    "user points point_contests css_class",
+    "username first_name last_name points point_contests css_class",
 )
 
 
@@ -1437,64 +1436,48 @@ class ContestsSummaryView(DiggPaginatorMixin, ListView):
             raise Http404()
         return super().get(*args, **kwargs)
 
-    def _get_contests_and_ranking(self):
-        contests_summary = self.contests_summary
-        cache_key = "csv:" + contests_summary.key
-        result = cache.get(cache_key)
-        if result:
-            return result
-
-        scores_system = contests_summary.scores
-        contests = contests_summary.contests.all()
-        total_points = defaultdict(int)
-        result_per_contest = defaultdict(lambda: [(0, 0)] * len(contests))
-        user_css_class = {}
-
-        for i in range(len(contests)):
-            contest = contests[i]
-            users, problems = get_contest_ranking_list(self.request, contest)
-            for rank, user in users:
-                curr_score = 0
-                if rank - 1 < len(scores_system):
-                    curr_score = scores_system[rank - 1]
-                total_points[user.user] += curr_score
-                result_per_contest[user.user][i] = (curr_score, rank)
-                user_css_class[user.user] = user.css_class
-
-        sorted_total_points = [
-            ContestsSummaryData(
-                user=user,
-                points=total_points[user],
-                point_contests=result_per_contest[user],
-                css_class=user_css_class[user],
-            )
-            for user in total_points
-        ]
-
-        sorted_total_points.sort(key=lambda x: x.points, reverse=True)
-        total_rank = ranker(sorted_total_points)
-
-        result = {
-            "total_rank": list(total_rank),
-            "contests": contests,
-        }
-        cache.set(cache_key, result)
-        return result
-
     def get_queryset(self):
-        rank_and_contests = self._get_contests_and_ranking()
-        total_rank = rank_and_contests["total_rank"]
-        self.contests = rank_and_contests["contests"]
+        total_rank = self.contests_summary.results
         return total_rank
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["contests"] = self.contests
+        context["contests"] = self.contests_summary.contests.all()
         context["title"] = _("Contests")
         context["first_page_href"] = "."
         return context
 
 
-@receiver([post_save, post_delete], sender=ContestsSummary)
-def clear_cache(sender, instance, **kwargs):
-    cache.delete("csv:" + instance.key)
+def recalculate_contest_summary_result(contest_summary):
+    scores_system = contest_summary.scores
+    contests = contest_summary.contests.all()
+    total_points = defaultdict(int)
+    result_per_contest = defaultdict(lambda: [(0, 0)] * len(contests))
+    user_css_class = {}
+
+    for i in range(len(contests)):
+        contest = contests[i]
+        users, problems = get_contest_ranking_list(None, contest)
+        for rank, user in users:
+            curr_score = 0
+            if rank - 1 < len(scores_system):
+                curr_score = scores_system[rank - 1]
+            total_points[user.user] += curr_score
+            result_per_contest[user.user][i] = (curr_score, rank)
+            user_css_class[user.user] = user.css_class
+
+    sorted_total_points = [
+        ContestsSummaryData(
+            username=user.username,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            points=total_points[user],
+            point_contests=result_per_contest[user],
+            css_class=user_css_class[user],
+        )
+        for user in total_points
+    ]
+
+    sorted_total_points.sort(key=lambda x: x.points, reverse=True)
+    total_rank = ranker(sorted_total_points)
+    return [(rank, item._asdict()) for rank, item in total_rank]

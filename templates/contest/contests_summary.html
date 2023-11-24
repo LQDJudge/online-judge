@@ -49,9 +49,10 @@
           </td>
           <td>
             <div>
-              <span class="username {{ item.css_class }} wrapline" href="{{url('user_page', item.user.username)}}" >{{item.user.username}}</span>
+              <a href="{{url('user_page', item.username)}}"> <span class="username {{ item.css_class }} wrapline">{{item.username}}</span></a>
             </div>
-            <div>{{item.user.first_name}}</div>
+            <div>{{item.first_name}}</div>
+            <div>{{item.last_name}}</div>
           </td>
           {% for point_contest, rank_contest in item.point_contests %}
             <td>

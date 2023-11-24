@@ -920,6 +920,7 @@ class ContestsSummary(models.Model):
         max_length=20,
         unique=True,
     )
+    results = models.JSONField(null=True, blank=True)
 
     class Meta:
         verbose_name = _("contests summary")

@@ -24,6 +24,7 @@ from judge.widgets import (
     AdminSelect2Widget,
     HeavyPreviewAdminPageDownWidget,
 )
+from judge.views.contests import recalculate_contest_summary_result
 
 
 class AdminHeavySelect2Widget(AdminHeavySelect2Widget):
@@ -518,3 +519,9 @@ class ContestsSummaryAdmin(admin.ModelAdmin):
     list_display = ("key",)
     search_fields = ("key", "contests__key")
     form = ContestsSummaryForm
+
+    def save_model(self, request, obj, form, change):
+        super(ContestsSummaryAdmin, self).save_model(request, obj, form, change)
+        obj.refresh_from_db()
+        obj.results = recalculate_contest_summary_result(obj)
+        obj.save()
