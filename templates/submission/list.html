@@ -1,4 +1,7 @@
 {% extends "three-column-content.html" %}
+
+{% set has_hidden_subtasks = request.in_contest_mode and request.participation.contest.format.has_hidden_subtasks %}
+
 {% block three_col_js %}
   <script type="text/javascript">
     {% if dynamic_update and last_msg %}
@@ -249,7 +252,7 @@
     </script>
   {% endcompress %}
 
-  {% if dynamic_update and last_msg %}
+  {% if dynamic_update and last_msg and not has_hidden_subtasks %}
     <script type="text/javascript">
       $(function () {
         load_dynamic_update({{last_msg}});
