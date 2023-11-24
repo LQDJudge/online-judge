@@ -28,6 +28,9 @@
 
 // Bootstrap-y buttons
 .button, button, input[type=submit] {
+    -webkit-transition: .3s all ease;
+    -o-transition: .3s all ease;
+    transition: .3s all ease;
     align-items: center;
     background-clip: padding-box;
     background-color: $theme_color;
@@ -801,12 +804,6 @@ body {
 }
 
 a {
-    -webkit-transition: .3s all ease;
-    -o-transition: .3s all ease;
-    transition: .3s all ease;
-}
-
-button {
     -webkit-transition: .3s all ease;
     -o-transition: .3s all ease;
     transition: .3s all ease;
