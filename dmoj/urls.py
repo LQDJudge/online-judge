@@ -518,9 +518,8 @@ urlpatterns = [
     ),
     url(r"^contests/", paged_list_view(contests.ContestList, "contest_list")),
     url(
-        r"^contests/summary/(?P<key>\w+)$",
-        contests.contests_summary_view,
-        name="contests_summary",
+        r"^contests/summary/(?P<key>\w+)/",
+        paged_list_view(contests.ContestsSummaryView, "contests_summary"),
     ),
     url(r"^course/", paged_list_view(course.CourseList, "course_list")),
     url(

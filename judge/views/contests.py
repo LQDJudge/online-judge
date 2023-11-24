@@ -1426,55 +1426,73 @@ ContestsSummaryData = namedtuple(
 )
 
 
-def contests_summary_view(request, key):
-    try:
-        contests_summary = ContestsSummary.objects.get(key=key)
-    except:
-        raise Http404()
+class ContestsSummaryView(DiggPaginatorMixin, ListView):
+    paginate_by = 50
+    template_name = "contest/contests_summary.html"
 
-    cache_key = "csv:" + key
-    context = cache.get(cache_key)
-    if context:
-        return render(request, "contest/contests_summary.html", context)
+    def get(self, *args, **kwargs):
+        try:
+            self.contests_summary = ContestsSummary.objects.get(key=kwargs["key"])
+        except:
+            raise Http404()
+        return super().get(*args, **kwargs)
 
-    scores_system = contests_summary.scores
-    contests = contests_summary.contests.all()
-    total_points = defaultdict(int)
-    result_per_contest = defaultdict(lambda: [(0, 0)] * len(contests))
-    user_css_class = {}
+    def _get_contests_and_ranking(self):
+        contests_summary = self.contests_summary
+        cache_key = "csv:" + contests_summary.key
+        result = cache.get(cache_key)
+        if result:
+            return result
 
-    for i in range(len(contests)):
-        contest = contests[i]
-        users, problems = get_contest_ranking_list(request, contest)
-        for rank, user in users:
-            curr_score = 0
-            if rank - 1 < len(scores_system):
-                curr_score = scores_system[rank - 1]
-            total_points[user.user] += curr_score
-            result_per_contest[user.user][i] = (curr_score, rank)
-            user_css_class[user.user] = user.css_class
+        scores_system = contests_summary.scores
+        contests = contests_summary.contests.all()
+        total_points = defaultdict(int)
+        result_per_contest = defaultdict(lambda: [(0, 0)] * len(contests))
+        user_css_class = {}
 
-    sorted_total_points = [
-        ContestsSummaryData(
-            user=user,
-            points=total_points[user],
-            point_contests=result_per_contest[user],
-            css_class=user_css_class[user],
-        )
-        for user in total_points
-    ]
+        for i in range(len(contests)):
+            contest = contests[i]
+            users, problems = get_contest_ranking_list(self.request, contest)
+            for rank, user in users:
+                curr_score = 0
+                if rank - 1 < len(scores_system):
+                    curr_score = scores_system[rank - 1]
+                total_points[user.user] += curr_score
+                result_per_contest[user.user][i] = (curr_score, rank)
+                user_css_class[user.user] = user.css_class
 
-    sorted_total_points.sort(key=lambda x: x.points, reverse=True)
-    total_rank = ranker(sorted_total_points)
+        sorted_total_points = [
+            ContestsSummaryData(
+                user=user,
+                points=total_points[user],
+                point_contests=result_per_contest[user],
+                css_class=user_css_class[user],
+            )
+            for user in total_points
+        ]
 
-    context = {
-        "total_rank": list(total_rank),
-        "title": _("Contests Summary"),
-        "contests": contests,
-    }
-    cache.set(cache_key, context)
+        sorted_total_points.sort(key=lambda x: x.points, reverse=True)
+        total_rank = ranker(sorted_total_points)
 
-    return render(request, "contest/contests_summary.html", context)
+        result = {
+            "total_rank": list(total_rank),
+            "contests": contests,
+        }
+        cache.set(cache_key, result)
+        return result
+
+    def get_queryset(self):
+        rank_and_contests = self._get_contests_and_ranking()
+        total_rank = rank_and_contests["total_rank"]
+        self.contests = rank_and_contests["contests"]
+        return total_rank
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["contests"] = self.contests
+        context["title"] = _("Contests")
+        context["first_page_href"] = "."
+        return context
 
 
 @receiver([post_save, post_delete], sender=ContestsSummary)

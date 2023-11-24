@@ -42,7 +42,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for rank, item in total_rank %}
+      {% for rank, item in page_obj %}
         <tr>
           <td>
             {{ rank }}
@@ -68,4 +68,9 @@
       {% endfor %}
     </tbody>
   </table>
+  {% if page_obj and page_obj.num_pages > 1 %}
+    <div style="margin-top: 10px;">
+      {% include "list-pages.html" %}
+    </div>
+  {% endif %}
 {% endblock %}
