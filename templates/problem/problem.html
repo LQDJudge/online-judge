@@ -178,31 +178,31 @@
 
   {% if request.user.is_authenticated and has_submissions %}
     <div>
-      <a href="{{ url('user_submissions', problem.code, request.user.username) }}">{{ _('My submissions') }}</a>
+      <a class="a-problem" href="{{ url('user_submissions', problem.code, request.user.username) }}">{{ _('My submissions') }}</a>
     </div>
   {% endif %}
-  <div><a href="{{ url('chronological_submissions', problem.code) }}">{{ _('All submissions') }}</a></div>
-  <div><a href="{{ url('ranked_submissions', problem.code) }}">{{ _('Best submissions') }}</a></div>
+  <div><a class="a-problem" href="{{ url('chronological_submissions', problem.code) }}">{{ _('All submissions') }}</a></div>
+  <div><a class="a-problem" href="{{ url('ranked_submissions', problem.code) }}">{{ _('Best submissions') }}</a></div>
   {% if editorial and editorial.is_public and
   not (request.user.is_authenticated and request.in_contest_mode) %}
   <hr>
-  <div><a href="{{ url('problem_editorial', problem.code) }}">{{ _('Read editorial') }}</a></div>
+  <div><a class="a-problem" href="{{ url('problem_editorial', problem.code) }}">{{ _('Read editorial') }}</a></div>
 {% endif %}
 {% if can_edit_problem %}
   <hr>
   <div>
-    <a href="{{ url('problem_ticket_list', problem.code) }}">{{ _('Manage tickets') }}
+    <a class="a-problem" href="{{ url('problem_ticket_list', problem.code) }}">{{ _('Manage tickets') }}
       {% if num_open_tickets %}<span class="badge">{{ num_open_tickets }}</span>{% endif %}
     </a>
   </div>
-  <div><a href="{{ url('admin:judge_problem_change', problem.id) }}">{{ _('Edit problem') }}</a></div>
+  <div><a class="a-problem" href="{{ url('admin:judge_problem_change', problem.id) }}">{{ _('Edit problem') }}</a></div>
   {% if not problem.is_manually_managed %}
-    <div><a href="{{ url('problem_data', problem.code) }}">{{ _('Edit test data') }}</a></div>
+    <div><a class="a-problem" href="{{ url('problem_data', problem.code) }}">{{ _('Edit test data') }}</a></div>
   {% endif %}
 {% elif request.user.is_authenticated and has_tickets %}
   <hr>
   <div>
-    <a href="{{ url('problem_ticket_list', problem.code) }}">{{ _('My tickets') }}
+    <a class="a-problem" href="{{ url('problem_ticket_list', problem.code) }}">{{ _('My tickets') }}
       {% if num_open_tickets %}<span class="badge">{{ num_open_tickets }}</span>{% endif %}
     </a>
   </div>
@@ -210,13 +210,13 @@
 
 {% if problem.is_subs_manageable_by(request.user) %}
   <div>
-    <a href="{{ url('problem_manage_submissions', problem.code) }}">{{ _('Manage submissions') }}</a>
+    <a class="a-problem" href="{{ url('problem_manage_submissions', problem.code) }}">{{ _('Manage submissions') }}</a>
   </div>
 {% endif %}
 
 {% if perms.judge.clone_problem %}
   <div>
-    <a href="{{ url('problem_clone', problem.code) }}">{{ _('Clone problem') }}</a>
+    <a class="a-problem" href="{{ url('problem_clone', problem.code) }}">{{ _('Clone problem') }}</a>
   </div>
 {% endif %}
 
