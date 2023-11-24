@@ -2095,6 +2095,7 @@ ul.problem-list {
 }
 .new-problem-info {
     background-color: rgb(54, 39, 0);
+    border-color: rgb(140, 130, 115);
 }
 .admin a,
 .admin {
@@ -2430,11 +2431,11 @@ a.user-redirect:hover {
 }
 .button.btn-green, button.btn-green, input[type="submit"].btn-green {
     background-image: initial;
-    background-color: rgb(0, 102, 0); 
+    background-color: rgb(32, 134, 55); 
 }
 .button.btn-green:hover, button.btn-green:hover, input[type="submit"].btn-green:hover {
     background-image: initial;
-    background-color: rgb(35, 121, 60); 
+    background-color: rgb(0, 102, 0); 
 }
 .button.btn-darkred, button.btn-darkred, input[type="submit"].btn-darkred {
     background-image: initial;
@@ -2725,6 +2726,40 @@ ul.errorlist {
 }
 #login-panel .github-icon i {
     color: rgb(232, 230, 227);
+}
+.btn:hover {
+    color: rgb(209, 205, 199);
+    text-decoration-color: initial;
+}
+button:hover,
+button:focus {
+    text-decoration-color: initial;
+    outline-color: initial;
+    box-shadow: none;
+}
+.btn {
+    box-shadow: rgba(0, 0, 0, 0.12) 0px 10px 20px -6px;
+}
+.btn .icon {
+    background-image: initial;
+    background-color: rgb(24, 26, 27);
+}
+.btn:hover,
+.btn:active,
+.btn:focus {
+    outline-color: initial;
+}
+.btn.btn-primary {
+    color: rgb(232, 230, 227);
+}
+.btn.btn-primary .icon i {
+    color: rgb(97, 217, 124);
+}
+.btn.btn-disabled {
+    color: rgb(232, 230, 227);
+    background-image: initial;
+    background-color: rgb(96, 104, 108);
+    border-color: rgb(84, 91, 94);
 }
 a.upvote-link,
 a.downvote-link {
