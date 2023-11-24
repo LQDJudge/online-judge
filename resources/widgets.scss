@@ -743,11 +743,6 @@ ul.errorlist {
     }
 }
 
-
-:root {
-    --green: #28a745;
-}
-
 @media (prefers-reduced-motion: reduce) {
     .btn {
         -webkit-transition: none;
@@ -886,8 +881,8 @@ button:hover, button:focus {
 
 .btn.btn-primary {
     color: #fff;
-    background: var(--green);
-    border-color: var(--green);
+    background: $sucess;
+    border-color: $sucess;
 }
 
 .btn.btn-disabled {
@@ -897,12 +892,12 @@ button:hover, button:focus {
 }
 
 .btn.btn-primary:hover, .btn.btn-primary:focus {
-    border-color: green !important;
-    background: green !important;
+    border-color: green;
+    background: green;
 }
 
 .btn.btn-primary .icon i {
-    color: var(--green);
+    color: $sucess;
 }
 
 .btn.btn-round {
