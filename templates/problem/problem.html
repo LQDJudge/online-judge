@@ -1,4 +1,7 @@
 {% extends "common-content.html" %}
+
+{% set has_hidden_subtasks = request.in_contest_mode and request.participation.contest.format.has_hidden_subtasks %}
+
 {% block content_media %}
   {% include "comments/media-css.html" %}
   <style>
@@ -91,7 +94,7 @@
 
 {% block title_row %}
   <div class="problem-title">
-    {% if request.user.is_authenticated %}
+    {% if request.user.is_authenticated and not has_hidden_subtasks %}
       {% if problem.id in completed_problem_ids %}
         <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
           {% if problem.is_public or request.in_contest_mode %}
