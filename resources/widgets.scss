@@ -78,10 +78,10 @@
     }
 
     &.btn-green {
-        background: green;
+        background: #28a745;
 
         &:hover {
-            background: #2c974b;
+            background: green;
         }
     }
 
@@ -806,13 +806,6 @@ a {
     transition: .3s all ease;
 }
 
-a:hover, a:focus {
-    text-decoration: none !important;
-    outline: none !important;
-    -webkit-box-shadow: none;
-    box-shadow: none;
-}
-
 button {
     -webkit-transition: .3s all ease;
     -o-transition: .3s all ease;
@@ -843,63 +836,46 @@ button:hover, button:focus {
     -webkit-transition: all 0.3s ease;
     -ms-transition: all 0.3s ease;
     transition: all 0.3s ease;
-}
-
-.btn span {
-    margin-left: -20px;
-    -moz-transition: all 0.3s ease;
-    -o-transition: all 0.3s ease;
-    -webkit-transition: all 0.3s ease;
-    -ms-transition: all 0.3s ease;
-    transition: all 0.3s ease;
-}
-
-.btn:hover, .btn:active, .btn:focus {
-    outline: none !important;
-}
-
-.btn:hover span, .btn:active span, .btn:focus span {
-    margin-left: -10px;
-}
-
-.btn .icon {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 45px;
-    bottom: 0;
-    background: #fff;
-}
-
-.btn .icon i {
-    font-size: 20px;
-}
-
-.btn .icon.icon-round {
-    border-radius: 50%;
-}
-
-.btn.btn-primary {
-    color: #fff;
-    background: $sucess;
-    border-color: $sucess;
-}
-
-.btn.btn-disabled {
-    color: #fff;
-    background: gray;
-    border-color: gray;
-}
-
-.btn.btn-primary:hover, .btn.btn-primary:focus {
-    border-color: green;
-    background: green;
-}
-
-.btn.btn-primary .icon i {
-    color: $sucess;
-}
-
-.btn.btn-round {
-    border-radius: 40px;
+    span {
+        margin-left: -20px;
+        -moz-transition: all 0.3s ease;
+        -o-transition: all 0.3s ease;
+        -webkit-transition: all 0.3s ease;
+        -ms-transition: all 0.3s ease;
+        transition: all 0.3s ease;
+    }
+    .icon {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 45px;
+        bottom: 0;
+        background: #fff;
+        i {
+            font-size: 20px;
+        }
+    }
+    .icon.icon-round {
+        border-radius: 50%;
+    }
+    &.btn-round {
+        border-radius: 40px;
+    }
+    &:hover, &:active, &:focus {
+        outline: none;
+        span {
+            margin-left: -10px;
+        }
+    }
+    &.btn-primary {
+        color: #fff;
+        .icon i {
+            color: #28a745;
+        }
+    }
+    &.btn-disabled {
+        color: #fff;
+        background: gray;
+        border-color: gray;
+    }
 }
