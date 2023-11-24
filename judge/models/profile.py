@@ -468,11 +468,7 @@ class Friend(models.Model):
     @classmethod
     def is_friend(self, current_user, new_friend):
         try:
-            return (
-                current_user.following_users.get()
-                .users.filter(user=new_friend.user)
-                .exists()
-            )
+            return current_user.following_users.filter(users=new_friend).exists()
         except:
             return False
 

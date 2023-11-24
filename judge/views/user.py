@@ -100,12 +100,12 @@ class UserPage(TitleMixin, UserMixin, DetailView):
     def get_title(self):
         return (
             _("My account")
-            if self.request.user == self.object.user
-            else _("User %s") % self.object.user.username
+            if self.request.profile == self.object
+            else _("User %s") % self.object.username
         )
 
     def get_content_title(self):
-        username = self.object.user.username
+        username = self.object.username
         css_class = self.object.css_class
         return mark_safe(f'<span class="{css_class}">{username}</span>')
 
