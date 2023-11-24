@@ -157,7 +157,7 @@
         {% endtrans %}
       </div>
     {% else %}
-      <button onclick="redirectTo('{{ url('problem_submit', problem.code) }}')" class="btn btn-primary btn-block btn-round">
+      <button class="btn btn-disabled btn-block btn-round">
         <span>{{ _('Submit') }}</span>
         <div class="icon icon-round d-flex align-items-center justify-content-center">
           <i class="fa fa-send"></i>

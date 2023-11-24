@@ -152,6 +152,12 @@ button:hover, button:focus {
     border-color: var(--green);
 }
 
+.btn.btn-disabled {
+    color: #fff;
+    background: gray;
+    border-color: gray;
+}
+
 .btn.btn-primary:hover, .btn.btn-primary:focus {
     border-color: green !important;
     background: green !important;
