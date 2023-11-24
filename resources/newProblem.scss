@@ -30,6 +30,14 @@
     display: flex !important;
 }
 
+@media screen and (min-width: 1000px) {
+    .d-flex-problem {
+        display: -webkit-box !important;
+        display: -ms-flexbox !important;
+        display: flex !important;
+    }
+}
+
 @media (min-width: 576px) {
     .d-sm-flex {
         display: -webkit-box !important;
@@ -300,5 +308,7 @@ button:hover, button:focus {
 }
 
 .info-block {
+    display:table-cell;
+    vertical-align:middle;
     margin-right: auto;
 }
