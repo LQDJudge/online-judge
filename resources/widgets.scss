@@ -797,7 +797,7 @@ ul.errorlist {
     align-self: center !important;
 }
 
-body {
+a {
     font-size: 15px;
     line-height: 1.8;
     font-weight: normal;
@@ -810,10 +810,10 @@ a {
 }
 
 button:hover, button:focus {
-    text-decoration: none !important;
-    outline: none !important;
-    -webkit-box-shadow: none !important;
-    box-shadow: none !important;
+    text-decoration: none;
+    outline: none;
+    -webkit-box-shadow: none;
+    box-shadow: none;
 }
 
 .btn {
