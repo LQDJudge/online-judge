@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block users_js_media %}
+  {% include "contest/contest-datetime-js.html" %}
   {% if can_edit %}
     <script type="text/javascript">
       $(function () {
