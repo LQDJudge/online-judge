@@ -252,7 +252,17 @@ $.fn.textWidth = function () {
 };
 
 function registerPopper($trigger, $dropdown) {
-    const popper = Popper.createPopper($trigger[0], $dropdown[0]);
+    const popper = Popper.createPopper($trigger[0], $dropdown[0], {
+        placement: 'bottom-end',
+        modifiers: [
+            {
+                name: 'offset',
+                options: {
+                    offset: [0, 8],
+                },
+            },
+        ],
+    });
     $trigger.click(function(e) {
         $dropdown.toggle();
         popper.update();

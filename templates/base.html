@@ -168,6 +168,7 @@
                   {{ language.name_local }}
                 </div>
               {% endfor %}
+              <div class="popper-arrow" data-popper-arrow></div>
             </div>
           </span>
           <span title="{{_('Dark Mode')}}">
@@ -179,6 +180,7 @@
               <i class="fa fa-angle-down" style="font-size: 18px; padding-top: 8px;"></i>
             </span>
             <div class="dropdown" id="userlink_dropdown" role="tooptip">
+              <div class="popper-arrow" data-popper-arrow></div>
               <a href="{{ url('user_page') }}">
                 <div class="dropdown-item">{{ _('Profile') }}</div>
               </a>
