@@ -1727,16 +1727,23 @@ noscript #noscript {
     color: rgb(152, 143, 129);
 }
 .dropdown {
-    border-color: rgb(60, 65, 68);
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 8px 16px 0px;
 }
 .dropdown a {
+    text-decoration-color: initial;
+    color: rgb(232, 230, 227);
+}
+.dropdown-item {
     color: rgb(232, 230, 227);
 }
 .dropdown-item:hover {
-    background-image: initial;
-    background-color: rgb(49, 53, 55);
+    color: rgb(249, 146, 97);
+}
+.popper-arrow,
+.popper-arrow::before {
+    background-image: inherit;
+    background-color: inherit;
 }
 .unread_boxes {
     background-color: rgb(204, 0, 0);
