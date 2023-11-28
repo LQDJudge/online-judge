@@ -59,8 +59,10 @@ th.header.rank {
         vertical-align: middle;
     }
 
-    .rank, .points, .problems, .username {
+    .rank, .points, .problems, .user-name {
         white-space: nowrap;
+        max-width: 20em;
+        overflow: hidden;
     }
 
     .about-td {
