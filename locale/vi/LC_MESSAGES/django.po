@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-28 08:35+0700\n"
+"POT-Creation-Date: 2023-11-29 08:53+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -46,7 +46,7 @@ msgstr ""
 msgid "Recent"
 msgstr "Gần đây"
 
-#: chat_box/views.py:420 templates/base.html:187
+#: chat_box/views.py:420 templates/base.html:189
 #: templates/comments/content-list.html:78
 #: templates/contest/contest-list-tabs.html:4
 #: templates/contest/ranking-table.html:47
@@ -196,7 +196,7 @@ msgstr "Tính toán lại kết quả"
 msgid "username"
 msgstr "tên đăng nhập"
 
-#: judge/admin/contest.py:504 templates/base.html:239
+#: judge/admin/contest.py:504 templates/base.html:241
 msgid "virtual"
 msgstr "ảo"
 
@@ -409,7 +409,7 @@ msgstr "Bạn không có quyền chấm lại nhiều bài nộp như vậy."
 msgid "Rejudge the selected submissions"
 msgstr "Chấm lại các bài nộp đã chọn"
 
-#: judge/admin/submission.py:302 judge/views/problem_manage.py:226
+#: judge/admin/submission.py:302 judge/views/problem_manage.py:228
 #, python-format
 msgid "%d submission were successfully rescored."
 msgid_plural "%d submissions were successfully rescored."
@@ -531,55 +531,55 @@ msgstr "Thành viên mới"
 msgid "These usernames don't exist: {usernames}"
 msgstr "Các tên đăng nhập này không tồn tại: {usernames}"
 
-#: judge/forms.py:421
+#: judge/forms.py:422
 msgid "Username/Email"
 msgstr "Tên đăng nhập / Email"
 
-#: judge/forms.py:422 judge/views/email.py:22
+#: judge/forms.py:424 judge/views/email.py:22
 #: templates/registration/registration_form.html:46
 #: templates/registration/registration_form.html:60
 #: templates/user/edit-profile.html:108 templates/user/import/table_csv.html:5
 msgid "Password"
 msgstr "Mật khẩu"
 
-#: judge/forms.py:448
+#: judge/forms.py:450
 msgid "Two Factor Authentication tokens must be 6 decimal digits."
 msgstr "Two Factor Authentication phải chứa 6 chữ số."
 
-#: judge/forms.py:461 templates/registration/totp_auth.html:32
+#: judge/forms.py:463 templates/registration/totp_auth.html:32
 msgid "Invalid Two Factor Authentication token."
 msgstr "Token Two Factor Authentication không hợp lệ."
 
-#: judge/forms.py:468 judge/models/problem.py:130
+#: judge/forms.py:470 judge/models/problem.py:130
 msgid "Problem code must be ^[a-z0-9]+$"
 msgstr "Mã bài phải có dạng ^[a-z0-9]+$"
 
-#: judge/forms.py:475
+#: judge/forms.py:477
 msgid "Problem with code already exists."
 msgstr "Mã bài đã tồn tại."
 
-#: judge/forms.py:482 judge/models/contest.py:95
+#: judge/forms.py:484 judge/models/contest.py:95
 msgid "Contest id must be ^[a-z0-9]+$"
 msgstr "Mã kỳ thi phải có dạng ^[a-z0-9]+$"
 
-#: judge/forms.py:489 templates/contest/clone.html:47
+#: judge/forms.py:491 templates/contest/clone.html:47
 #: templates/problem/search-form.html:39
 msgid "Group"
 msgstr "Nhóm"
 
-#: judge/forms.py:497
+#: judge/forms.py:499
 msgid "Contest with key already exists."
 msgstr "Mã kỳ thi đã tồn tại."
 
-#: judge/forms.py:505
+#: judge/forms.py:507
 msgid "Group doesn't exist."
 msgstr "Nhóm không tồn tại."
 
-#: judge/forms.py:507
+#: judge/forms.py:509
 msgid "You don't have permission in this group."
 msgstr "Bạn không có quyền trong nhóm này."
 
-#: judge/forms.py:557
+#: judge/forms.py:559
 msgid "This problem is duplicated."
 msgstr "Bài này bị lặp"
 
@@ -3302,17 +3302,17 @@ msgstr "File init.yml cho %s"
 msgid "Managing submissions for %s"
 msgstr "Quản lý bài nộp cho %s"
 
-#: judge/views/problem_manage.py:135
+#: judge/views/problem_manage.py:137
 #, python-format
 msgid "Rejudging selected submissions for %s..."
 msgstr "Đang chấm lại các bài nộp cho %s..."
 
-#: judge/views/problem_manage.py:195
+#: judge/views/problem_manage.py:197
 #, python-format
 msgid "Rescoring all submissions for %s..."
 msgstr "Đang tính điểm lại các bài nộp cho %s..."
 
-#: judge/views/problem_manage.py:210
+#: judge/views/problem_manage.py:212
 #, python-format
 msgid "Successfully scheduled %d submission for rejudging."
 msgid_plural "Successfully scheduled %d submissions for rejudging."
@@ -3568,7 +3568,7 @@ msgid "Updated on site"
 msgstr "Được cập nhật trên web"
 
 #: judge/views/user.py:431 templates/admin/auth/user/change_form.html:14
-#: templates/admin/auth/user/change_form.html:17 templates/base.html:199
+#: templates/admin/auth/user/change_form.html:17 templates/base.html:201
 #: templates/user/user-tabs.html:11
 msgid "Edit profile"
 msgstr "Chỉnh sửa thông tin"
@@ -3671,48 +3671,48 @@ msgstr "Chat"
 msgid "Notification"
 msgstr "Thông báo"
 
-#: templates/base.html:173
+#: templates/base.html:174
 msgid "Dark Mode"
 msgstr ""
 
-#: templates/base.html:183
+#: templates/base.html:185
 msgid "Profile"
 msgstr "Trang cá nhân"
 
-#: templates/base.html:192
+#: templates/base.html:194
 msgid "Internal"
 msgstr "Nội bộ"
 
-#: templates/base.html:195
+#: templates/base.html:197
 msgid "Stats"
 msgstr "Thống kê"
 
-#: templates/base.html:208
+#: templates/base.html:210
 msgid "Log out"
 msgstr "Đăng xuất"
 
-#: templates/base.html:218
+#: templates/base.html:220
 #: templates/registration/password_reset_complete.html:4
 msgid "Log in"
 msgstr "Đăng nhập"
 
-#: templates/base.html:219
+#: templates/base.html:221
 msgid "Sign up"
 msgstr "Đăng ký"
 
-#: templates/base.html:233
+#: templates/base.html:235
 msgid "spectating"
 msgstr "đang theo dõi"
 
-#: templates/base.html:245
+#: templates/base.html:247
 msgid "Compete"
 msgstr "Thi"
 
-#: templates/base.html:247
+#: templates/base.html:249
 msgid "General"
 msgstr "Chung"
 
-#: templates/base.html:254
+#: templates/base.html:256
 msgid "This site works best with JavaScript enabled."
 msgstr ""
 
@@ -4823,79 +4823,87 @@ msgstr "Để trống nếu không lọc theo ngôn ngữ"
 msgid "Leave empty to not filter by result"
 msgstr "Để trống nếu không lọc theo kết quả"
 
-#: templates/problem/manage_submission.html:79
+#: templates/problem/manage_submission.html:64
+msgid "Leave empty to not filter by contest"
+msgstr "Để trống nếu không lọc theo kỳ thi"
+
+#: templates/problem/manage_submission.html:94
 msgid "Need valid values for both start and end IDs."
 msgstr "Cần số liệu hợp lệ cho ID bắt đầu và kết thúc."
 
-#: templates/problem/manage_submission.html:82
+#: templates/problem/manage_submission.html:97
 msgid "End ID must be after start ID."
 msgstr "ID kết thúc phải lớn hơn hoặc bằng ID khởi đầu."
 
-#: templates/problem/manage_submission.html:95
+#: templates/problem/manage_submission.html:110
 #, python-brace-format
 msgid ""
 "You are about to {action} {count} submissions. Are you sure you want to do "
 "this?"
 msgstr "Bạn chuẩn bị {action} {count} bài nộp. Tiếp tục?"
 
-#: templates/problem/manage_submission.html:102
+#: templates/problem/manage_submission.html:117
 #, python-brace-format
 msgid ""
 "You are about to {action} a few submissions. Are you sure you want to do "
 "this?"
 msgstr "Bạn chuẩn bị {action} vài bài nộp. Tiếp tục?"
 
-#: templates/problem/manage_submission.html:126
+#: templates/problem/manage_submission.html:141
 #: templates/submission/list.html:337
 msgid "Filter submissions"
 msgstr "Lọc bài nộp"
 
-#: templates/problem/manage_submission.html:131
+#: templates/problem/manage_submission.html:146
 msgid "Filter by ID:"
 msgstr "Lọc theo ID:"
 
-#: templates/problem/manage_submission.html:134
+#: templates/problem/manage_submission.html:149
 msgid "Starting ID:"
 msgstr "ID bắt đầu:"
 
-#: templates/problem/manage_submission.html:138
+#: templates/problem/manage_submission.html:153
 msgid "Ending ID:"
 msgstr "ID kết thúc:"
 
-#: templates/problem/manage_submission.html:142
+#: templates/problem/manage_submission.html:157
 msgid "This range includes both endpoints."
 msgstr "Bao gồm hai đầu mút."
 
-#: templates/problem/manage_submission.html:145
+#: templates/problem/manage_submission.html:160
 msgid "Filter by language:"
 msgstr "Lọc theo ngôn ngữ:"
 
-#: templates/problem/manage_submission.html:153
+#: templates/problem/manage_submission.html:168
 msgid "Filter by result:"
 msgstr "Lọc theo kết quả:"
 
-#: templates/problem/manage_submission.html:161
+#: templates/problem/manage_submission.html:176
 msgid "In current contest"
 msgstr "Trong kỳ thi hiện tại"
 
-#: templates/problem/manage_submission.html:167
+#: templates/problem/manage_submission.html:180
+msgid "Filter by contest:"
+msgstr "Lọc theo kỳ thi:"
+
+#: templates/problem/manage_submission.html:188
 msgid "Action"
 msgstr "Hành động"
 
-#: templates/problem/manage_submission.html:169
+#: templates/problem/manage_submission.html:190
 msgid "Rejudge selected submissions"
 msgstr "Chấm lại những bài nộp này"
 
-#: templates/problem/manage_submission.html:174
+#: templates/problem/manage_submission.html:195
 msgid "Download selected submissions"
 msgstr "Tải các bài nộp này"
 
-#: templates/problem/manage_submission.html:180
+#: templates/problem/manage_submission.html:201
 #, python-format
 msgid "Are you sure you want to rescore %(count)d submissions?"
 msgstr "Bạn có chắc muốn tính điểm lại %(count)d bài nộp?"
 
-#: templates/problem/manage_submission.html:181
+#: templates/problem/manage_submission.html:202
 msgid "Rescore all submissions"
 msgstr "Tính điểm lại các bài nộp"
 

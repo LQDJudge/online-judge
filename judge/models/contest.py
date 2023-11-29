@@ -467,7 +467,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         )
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.key})"
 
     def get_absolute_url(self):
         return reverse("contest_view", args=(self.key,))

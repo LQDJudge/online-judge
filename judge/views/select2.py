@@ -85,10 +85,17 @@ class ProblemSelect2View(Select2View):
 
 
 class ContestSelect2View(Select2View):
+    def get(self, request, *args, **kwargs):
+        self.problem_id = kwargs.get("problem_id", request.GET.get("problem_id", ""))
+        return super(ContestSelect2View, self).get(request, *args, **kwargs)
+
     def get_queryset(self):
-        return Contest.get_visible_contests(self.request.user).filter(
+        q = Contest.get_visible_contests(self.request.user).filter(
             Q(key__icontains=self.term) | Q(name__icontains=self.term)
         )
+        if self.problem_id:
+            q = q.filter(problems=self.problem_id)
+        return q
 
 
 class CommentSelect2View(Select2View):
