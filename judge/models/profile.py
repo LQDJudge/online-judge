@@ -419,6 +419,9 @@ class Profile(models.Model):
         )
 
     class Meta:
+        indexes = [
+            models.Index(fields=["is_unlisted", "performance_points"]),
+        ]
         permissions = (
             ("test_site", "Shows in-progress development stuff"),
             ("totp", "Edit TOTP settings"),
