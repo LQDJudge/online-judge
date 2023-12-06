@@ -169,7 +169,6 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
                 queryset.select_related("author__user")
                 .filter(hidden=False)
                 .defer("author__about")
-                .annotate(revisions=Count("versions", distinct=True))
             )
         else:
             queryset = self.object.comments
@@ -180,7 +179,6 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
                 .filter(hidden=False)
                 .annotate(
                     count_replies=Count("replies", distinct=True),
-                    revisions=Count("versions", distinct=True),
                 )[:DEFAULT_OFFSET]
             )
 

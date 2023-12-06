@@ -147,7 +147,6 @@ def get_comments(request, limit=10):
         .defer("author__about")
         .annotate(
             count_replies=Count("replies", distinct=True),
-            revisions=Count("versions", distinct=True),
         )[offset : offset + limit]
     )
     profile = None
@@ -241,7 +240,8 @@ class CommentEditAjax(LoginRequiredMixin, CommentMixin, UpdateView):
         # update notifications
         comment = form.instance
         add_mention_notifications(comment)
-
+        comment.revision_count = comment.versions.count() + 1
+        comment.save(update_fields=["revision_count"])
         with transaction.atomic(), revisions.create_revision():
             revisions.set_comment(_("Edited from site"))
             revisions.set_user(self.request.user)
