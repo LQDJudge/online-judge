@@ -37,7 +37,10 @@ msgid "Name"
 msgstr "Đăng ký tên"
 
 msgid "Report"
-msgstr "Báo cáo"
+msgstr "Báo cáo tiêu cực"
+
+msgid "Bug Report"
+msgstr "Báo cáo lỗi"
 
 msgid "2sat"
 msgstr ""
