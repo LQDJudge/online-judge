@@ -96,6 +96,11 @@
         }
       </style>
     {% endif %}
+    {% if not INLINE_JQUERY %}
+      <script src="{{ JQUERY_JS }}"></script>
+    {% else %}
+      <script src="{{ static('libs/jquery-3.4.1.min.js') }}"></script>
+    {% endif %}
   </head>
   <body>
     <svg width="0" height="0" style="display: block">
@@ -274,15 +279,9 @@
         <div id="announcement">{{ i18n_config.announcement|safe }}</div>
       {% endif %}
 
-      {% if not INLINE_JQUERY %}
-        <script src="{{ JQUERY_JS }}"></script>
-      {% endif %}
       <script src="https://unpkg.com/@popperjs/core@2"></script>
       {% compress js %}
         <script>{{ inlinei18n(LANGUAGE_CODE)|safe }}</script>
-        {% if INLINE_JQUERY %}
-          <script src="{{ static('libs/jquery-3.4.1.min.js') }}"></script>
-        {% endif %}
         <script src="{{ static('libs/jquery-cookie.js') }}"></script>
         <script src="{{ static('libs/jquery-taphold.js') }}"></script>
         <script src="{{ static('libs/jquery.unveil.js') }}"></script>
