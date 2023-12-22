@@ -52,11 +52,6 @@
 {% endblock %}
 
 {% block content_js_media %}
-  <script>
-    function redirectTo(url) {
-      window.location.href = url;
-    }
-  </script>
   {% include "comments/media-js.html" %}
   {% include "actionbar/media-js.html" %}
   {% if request.in_contest_mode %}
@@ -146,12 +141,14 @@
 {% block info_float %}
   {% if request.user.is_authenticated and request.in_contest_mode and submission_limit %}
     {% if submissions_left > 0 %}
-      <button onclick="redirectTo('{{ url('problem_submit', problem.code) }}')" class="btn-green btn btn-primary btn-block btn-round">
-        <span>{{ _('Submit') }}</span>
-        <div class="icon icon-round d-flex align-items-center justify-content-center">
-          <i class="fa fa-send"></i>
-        </div>
-      </button>
+      <a href="{{ url('problem_submit', problem.code) }}">
+        <button class="btn-green btn btn-primary btn-block btn-round">
+          <span>{{ _('Submit') }}</span>
+          <div class="icon icon-round d-flex align-items-center justify-content-center">
+            <i class="fa fa-send"></i>
+          </div>
+        </button>
+      </a>
       <div class="submissions-left">
         {% trans trimmed counter=submissions_left %}
           {{ counter }} submission left
@@ -169,12 +166,14 @@
       <div class="no-submissions-left submissions-left">{{ _('0 submissions left') }}</div>
     {% endif %}
   {% else %}
-    <button onclick="redirectTo('{{ url('problem_submit', problem.code) }}')" class="btn-green btn btn-primary btn-block btn-round">
-      <span>{{ _('Submit') }}</span>
-      <div class="icon icon-round d-flex align-items-center justify-content-center">
-        <i class="fa fa-send"></i>
-      </div>
-    </button>
+    <a href="{{ url('problem_submit', problem.code) }}">
+      <button class="btn-green btn btn-primary btn-block btn-round">
+        <span>{{ _('Submit') }}</span>
+        <div class="icon icon-round d-flex align-items-center justify-content-center">
+          <i class="fa fa-send"></i>
+        </div>
+      </button>
+    </a>
   {% endif %}
 
   <hr style="padding-bottom: 0.3em">
