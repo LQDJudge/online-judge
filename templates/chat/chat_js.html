@@ -219,7 +219,6 @@
       if ($("#chat-input").val().trim()) {
         $('#chat-input-container').height('auto');
         var body = $('#chat-input').val().trim();
-        // body = body.split('\n').join('\n\n');
 
         var message = {
           body: body,
@@ -228,6 +227,7 @@
         };
 
         $('#chat-input').val('');
+        $('#chat-input').css('height', '70%');
 
         add_message_from_template(body, message.tmp_id);
 
@@ -239,6 +239,8 @@
           $('#empty_msg').hide();
           $('#chat-input').focus();
         })
+
+
       }
     {% endif %}
   }
