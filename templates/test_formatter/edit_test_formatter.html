@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block media %}
+  <style>
+    .container {
+      width: 100%;
+      margin: auto;
+    }
+    .column {
+      flex: 50%;
+    }
+    .left {
+      padding-right: 16px;
+    }
+    .right {
+      padding-left: 16px;
+    }
+    .row {
+      display: flex;
+    }
+    input {
+      width: 100%;
+    }
+    .preview-container {
+      padding-bottom: 16px;
+    }
+    #preview {
+      background-color: rgb(220, 220, 220);
+      border: solid 2px rgb(180, 180, 180);
+      padding: 8px;
+      max-height: 134px;
+      height: 20%;
+      overflow-y: scroll;
+    }
+    .button-container {
+      text-align:left;
+    }
+    .button {
+      display:inline-block;
+    }
+  </style>
+{% endblock %}
+{% block js_media %}
+  <script>
+    $(document).ready(function(){
+      $("#convert").on("click", function(event) {
+        event.preventDefault()
+        $.ajax({
+          url: "{{url('edit_page')}}",
+          type: 'POST',
+          data: {
+            action: 'convert',
+            bef_inp_format: $("#bef_inp_format").val(),
+            bef_out_format: $("#bef_out_format").val(),
+            aft_inp_format: $("#aft_inp_format").val(),
+            aft_out_format: $("#aft_out_format").val(),
+            file_name: $('#file_name').val()
+          },
+          success: function(data) {
+            console.log(data)
+            $('#preview').html(data);
+          },
+          error: function(error) {
+            alert(error);
+            console.log(error.message)
+          }
+        })
+      });
+    });
+
+    $(document).ready(function(){
+      $("#download").on("click", function(event) {
+        event.preventDefault()
+        window.location.href = "{{url('edit_page')}}";
+        $.ajax({
+          url: "{{url('edit_page')}}",
+          type: 'POST',
+          data: {
+            action: 'download'
+          },
+          success: function(data) {
+            console.log(data)
+            var file_path = data;
+            window.location.href = "{{url('download_page')}}" + "?file_path="+file_path;
+          },
+          error: function(error) {
+            alert(error);
+            console.log(error.message)
+          }
+        })
+      });
+    });
+  </script>
+  <script src="{{ static('mathjax3_config.js') }}"></script>
+  <script src="http://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  <script src="{{ static('pagedown_math.js') }}"></script>
+{% endblock %}
+
+
+{% block body %}
+  <div class="container">
+    <div class="row">
+      {% csrf_token %}
+      <div class="column left">
+        <h3>Before</h3><br>
+        <label for="fname">Input format</label><br>
+        <input type="text" id="bef_inp_format" value="{{files_list[0]}}" readonly><br>
+        <label for="lname">Output format</label><br>
+        <input type="text" id="bef_out_format" value="{{files_list[1]}}" readonly><br><br>
+
+      </div>
+      <div class="column right">
+        <h3>After</h3><br>
+        <label for="fname">Input format</label><br>
+        <input type="text" id="aft_inp_format" value="input.000"><br>
+        <label for="lname">Output format</label><br>
+        <input type="text" id="aft_out_format" value="output.000"><br><br>
+
+      </div>
+    </div>
+    <div class="preview-container">
+      <h3>Preview</h3><br>
+      <div id="preview">
+        {{ res|safe }}
+      </div>
+    </div>
+
+    <div class="filename-container">
+      <h3>File name</h3><br>
+      <input type="text" id="file_name" value="{{file_name}}"><br><br>
+    </div>
+    <div class="button-container">
+      <button type="submit" id="convert" class="button">Convert</button>
+      <button type="submit" id="download" class="button">Download</button>
+    </div>
+  </div>
+{% endblock %}
