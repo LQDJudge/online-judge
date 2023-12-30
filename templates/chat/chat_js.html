@@ -2,6 +2,10 @@
   let isMobile = window.matchMedia("only screen and (max-width: 799px)").matches;
 
   function load_next_page(last_id, refresh_html=false) {
+    if (refresh_html) {
+      $('#chat-log').html('');
+      $('#loader').show();
+    }
     var param = {
       'last_id': last_id,
       'only_messages': true,
@@ -12,7 +16,6 @@
     })
       .done(function(data) {
       if (refresh_html) {
-        $('#chat-log').html('');
         $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
         window.lock = true;
       }
@@ -78,6 +81,7 @@
           register_toggle($(this));
         });
         register_click_space();
+        register_setting(false);
         color_selected_room();
       }
     })
@@ -93,7 +97,7 @@
       .done(function(data) {
       $('#chat-info').html(data);
       register_time($('.time-with-rel'));
-      register_setting();
+      register_setting(true);
     })
   }
 
@@ -363,18 +367,22 @@
     }
   }
 
-  function register_setting() {
-    $('#setting-button').on('click', function() {
-      $('#setting-content').toggle();
+  function register_setting(is_on_user_status_bar) {
+    let $setting_button = is_on_user_status_bar ? $('.user-setting-button') : $('.setting-button');
+    $setting_button.on('click', function(e) {
+      e.stopPropagation();
+      $('.setting-content').not($(this).siblings('.setting-content')).hide();
+      $(this).siblings('.setting-content').toggle();
     });
-    $('#setting-content li').on('click', function() {
-      $(this).children('a')[0].click();
-    })
-    $('#setting-content a').on('click', function() {
+    $('.setting-content a').on('click', function(e) {
+      e.stopPropagation();
       var href = $(this).attr('href');
       href += '?next=' + window.location.pathname;
       $(this).attr('href', href);
     })
+    $(document).on('click', function() {
+      $('.setting-content').hide();
+    });
   }
   $(function() {
     $('#loader').hide();
@@ -547,7 +555,8 @@
         characterData: false
       })
     }
-    register_setting();
+    register_setting(true);
+    register_setting(false);
     color_selected_room();
 
     $('#chat-input').on('input', function() {
