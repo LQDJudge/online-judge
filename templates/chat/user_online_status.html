@@ -27,22 +27,20 @@
 {% endif %}
 
 {% if other_user %}
-  <span style="margin-right: 0.3em" id="setting">
-    <div class="control-button small" style="" id="setting-button">
+  <div style="margin-right: 0.3em; position: relative;">
+    <div class="control-button small user-setting-button">
       <i class="fa fa-ellipsis-h"></i>
     </div>
-    <div id="setting-content">
-      <li>
-        <a href="{{url('toggle_ignore', other_user.id)}}" class=" {{'green' if is_ignored else 'red'}}">
-          {% if is_ignored %}
-            {{_('Unignore')}}
-          {% else %}
-            {{_('Ignore')}}
-          {% endif %}
-        </a>
-      </li>
+    <div class="setting-content">
+      <a href="{{url('toggle_ignore', other_user.id)}}" class=" {{'green' if is_ignored else 'red'}}">
+        {% if is_ignored %}
+          {{_('Unignore')}}
+        {% else %}
+          {{_('Ignore')}}
+        {% endif %}
+      </a>
     </div>
-  </span>
+  </div>
 {% else %}
   <span class="active-span">{{online_count}} {{_('users are online')}}</span>
 {% endif %}

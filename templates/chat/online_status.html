@@ -25,8 +25,7 @@
           <div class="status-container">
             <img src="{{ gravatar(user.user, 135) }}" class="status-pic">
             <svg style="position:absolute;" height="32" width="32">
-              <circle class="status-circle"
-                fill="{{'green' if user.is_online else 'red'}}"/>
+              <circle class="status-circle" fill="{{'green' if user.is_online else 'red'}}"/>
             </svg>
           </div>
           <div class="status-user">
@@ -44,8 +43,19 @@
               {{user.unread_count}}
             </span>
           {% endif %}
+          <div style="margin-right: 0.3em; position: relative;">
+            <div class="control-button small setting-button">
+              <i class="fa fa-ellipsis-h"></i>
+            </div>
+            <div class="setting-content">
+              <a href="{{url('toggle_ignore', user.user.id)}}" class="red">
+                {{_('Ignore')}}
+              </a>
+            </div>
+          </div>
         </li>
       {% endfor %}
     </ul>
   {% endif %}
 {% endfor %}
+
