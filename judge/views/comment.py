@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.context_processors import PermWrapper
 from django.core.exceptions import PermissionDenied
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 from django.db.models import Q, F, Count, FilteredRelation
 from django.db.models.functions import Coalesce
 from django.db.models.expressions import F, Value
@@ -242,7 +242,7 @@ class CommentEditAjax(LoginRequiredMixin, CommentMixin, UpdateView):
         add_mention_notifications(comment)
         comment.revision_count = comment.versions.count() + 1
         comment.save(update_fields=["revision_count"])
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             revisions.set_comment(_("Edited from site"))
             revisions.set_user(self.request.user)
             return super(CommentEditAjax, self).form_valid(form)
