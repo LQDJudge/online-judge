@@ -227,9 +227,15 @@
       .active-span {
         display: none;
       }
-      #chat-area {
-        display: none;
-      }
+      {% if not room %}
+        #chat-area {
+          display: none;
+        }
+      {% else %}
+        .chat-left-panel {
+          display: none;
+        }
+      {% endif %}
       .back-button {
         margin-right: 1em;
         font-size: 1.5em;
