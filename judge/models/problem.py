@@ -11,6 +11,8 @@ from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 
 from judge.fulltext import SearchQuerySet
 from judge.models.pagevote import PageVotable
@@ -555,8 +557,9 @@ class Problem(models.Model, PageVotable, Bookmarkable):
         return result
 
     def save(self, *args, **kwargs):
+        code_changed = self.__original_code and self.code != self.__original_code
         super(Problem, self).save(*args, **kwargs)
-        if self.__original_code and self.code != self.__original_code:
+        if code_changed:
             if hasattr(self, "data_files") or self.pdf_description:
                 try:
                     problem_data_storage.rename(self.__original_code, self.code)
@@ -567,6 +570,7 @@ class Problem(models.Model, PageVotable, Bookmarkable):
                     self.pdf_description.name = problem_directory_file_helper(
                         self.code, self.pdf_description.name
                     )
+                    super().save(update_fields=["pdf_description"])
                 if hasattr(self, "data_files"):
                     self.data_files._update_code(self.__original_code, self.code)
 
@@ -719,3 +723,10 @@ class ProblemPointsVote(models.Model):
 
     def __str__(self):
         return f"{self.voter}: {self.points} for {self.problem.code}"
+
+
+@receiver(m2m_changed, sender=Problem.organizations.through)
+def update_organization_private(sender, instance, **kwargs):
+    if kwargs["action"] in ["post_add", "post_remove", "post_clear"]:
+        instance.is_organization_private = instance.organizations.exists()
+        instance.save(update_fields=["is_organization_private"])

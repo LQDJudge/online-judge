@@ -370,8 +370,6 @@ class ProblemAdmin(CompareVersionAdmin):
         super().save_related(request, form, formsets, change)
         obj = form.instance
         obj.curators.add(request.profile)
-        obj.is_organization_private = obj.organizations.count() > 0
-        obj.save()
 
         if "curators" in form.changed_data or "authors" in form.changed_data:
             del obj.editor_ids
