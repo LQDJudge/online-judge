@@ -3,6 +3,7 @@
 
   function load_next_page(last_id, refresh_html=false) {
     if (refresh_html) {
+      window.lock = true;
       $('#chat-log').html('');
       $('#loader').show();
     }
@@ -13,11 +14,11 @@
     $.get("{{ url('chat', '') }}" + window.room_id, param)
       .fail(function() {
       console.log("Fail to load page, last_id = " + last_id);
+      window.lock = false;
     })
       .done(function(data) {
       if (refresh_html) {
         $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
-        window.lock = true;
       }
       var time = refresh_html ? 0 : 200;
 
@@ -67,7 +68,7 @@
       }
     })}
 
-  function refresh_status() {
+  function refresh_status(refresh_chat_info=false) {
     $.get("{{url('online_status_ajax')}}")
       .fail(function() {
       console.log("Fail to get online status");
@@ -89,6 +90,10 @@
     var data = {
       'user': window.other_user_id,
     };
+
+    if (refresh_chat_info) {
+      $('#chat-info').html('');
+    }
 
     $.get("{{url('user_online_status_ajax')}}", data)
       .fail(function() {
@@ -299,7 +304,7 @@
       history.replaceState(null, '', "{{url('chat', '')}}" + window.room_id);
       load_next_page(null, true);
       update_last_seen();
-      refresh_status();
+      refresh_status(true);
       $('#chat-input').focus();
       show_right_panel();
     }
