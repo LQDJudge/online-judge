@@ -556,10 +556,10 @@ class Problem(models.Model, PageVotable, Bookmarkable):
         cache.set(key, result)
         return result
 
-    def save(self, *args, **kwargs):
+    def save(self, should_move_data=True, *args, **kwargs):
         code_changed = self.__original_code and self.code != self.__original_code
         super(Problem, self).save(*args, **kwargs)
-        if code_changed:
+        if code_changed and should_move_data:
             if hasattr(self, "data_files") or self.pdf_description:
                 try:
                     problem_data_storage.rename(self.__original_code, self.code)

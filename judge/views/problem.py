@@ -1186,7 +1186,7 @@ class ProblemClone(
         problem.ac_rate = 0
         problem.user_count = 0
         problem.code = form.cleaned_data["code"]
-        problem.save()
+        problem.save(should_move_data=False)
         problem.authors.add(self.request.profile)
         problem.allowed_languages.set(languages)
         problem.language_limits.set(language_limits)
