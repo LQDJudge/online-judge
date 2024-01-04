@@ -85,7 +85,8 @@
     }
     #chat-online {
         margin: 0;
-        width: 30%;
+        min-width: 30%;
+        max-width: 30%;
     }
     #chat-area {
         flex-grow: 1;
