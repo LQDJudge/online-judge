@@ -5,7 +5,7 @@ import judge.models.test_formatter
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("judge", "0173_fulltext"),
+        ("judge", "0176_comment_revision_count"),
     ]
 
     operations = [
