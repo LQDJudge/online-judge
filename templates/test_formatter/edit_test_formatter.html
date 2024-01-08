@@ -45,7 +45,7 @@
       $("#convert").on("click", function(event) {
         event.preventDefault()
         $.ajax({
-          url: "{{url('edit_page')}}",
+          url: "{{url('test_formatter_edit')}}",
           type: 'POST',
           data: {
             action: 'convert',
@@ -70,16 +70,15 @@
     $(document).ready(function(){
       $("#download").on("click", function(event) {
         event.preventDefault()
-        window.location.href = "{{url('edit_page')}}";
         $.ajax({
-          url: "{{url('edit_page')}}",
+          url: "{{url('test_formatter_edit')}}",
           type: 'POST',
           data: {
             action: 'download'
           },
           success: function(data) {
             var file_path = data;
-            window.location.href = "{{url('download_page')}}" + "?file_path="+file_path;
+            window.location.href = "{{url('test_formatter_download')}}" + "?file_path="+file_path;
           },
           error: function(error) {
             alert(error);

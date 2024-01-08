@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
 {% block body %}
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form }}
-    <button type="submit">{{_('Upload')}}</button>
-  </form>
-
-
+  <center>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ form }}
+      <button type="submit" style="margin-top: 2em">{{_('Upload')}}</button>
+    </form>
+  </center>
 {% endblock %}

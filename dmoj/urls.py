@@ -420,12 +420,12 @@ urlpatterns = [
                 url(
                     r"^edit_page$",
                     test_formatter.EditTestFormatter.as_view(),
-                    name="edit_page",
+                    name="test_formatter_edit",
                 ),
                 url(
                     r"^download_page$",
                     test_formatter.DownloadTestFormatter.as_view(),
-                    name="download_page",
+                    name="test_formatter_download",
                 ),
             ]
         ),

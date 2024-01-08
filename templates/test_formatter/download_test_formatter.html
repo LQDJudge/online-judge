@@ -33,7 +33,7 @@
         event.preventDefault()
         var file_path = document.getElementById('file_path').value;
         $.ajax({
-          url: "{{url('download_page')}}",
+          url: "{{url('test_formatter_download')}}",
           type: 'POST',
           data: {
             file_path: file_path
@@ -74,7 +74,7 @@
     </div>
     <div class="button-container">
       <button type="submit" id="download" class="button">{{_('Download')}}</button>
-      <a href="{{url('edit_page')}}?file_path={{file_path_getnames}}" id="edit" class="button">{{_('Edit')}}</a>
+      <a href="{{url('test_formatter_edit')}}?file_path={{file_path_getnames}}" id="edit" class="button">{{_('Edit')}}</a>
     </div>
   </div>
 
