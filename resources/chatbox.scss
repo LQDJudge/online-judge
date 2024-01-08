@@ -90,6 +90,8 @@
     }
     #chat-area {
         flex-grow: 1;
+        min-width: 70%;
+        max-width: 70%;
     }
 }
 #chat-input, #chat-log .content-message {
