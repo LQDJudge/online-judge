@@ -5612,6 +5612,42 @@ msgstr "pretests"
 msgid "main tests"
 msgstr "test chính thức"
 
+#: templates/test_formatter/test_formatter.html:7
+msgid "Upload"
+msgstr "Tải lên"
+
+#: templates/test_formatter/edit_test_formatter.html:103
+msgid "Before"
+msgstr "Trước"
+
+#: templates/test_formatter/edit_test_formatter.html:104
+msgid "Input format"
+msgstr "Định dạng đầu vào"
+
+#: templates/test_formatter/edit_test_formatter.html:107
+msgid "Output format"
+msgstr "Định dạng đầu ra"
+
+#: templates/test_formatter/edit_test_formatter.html:111
+msgid "After"
+msgstr "Sau"
+
+#: templates/test_formatter/edit_test_formatter.html:126
+msgid "File name"
+msgstr "Tên file"
+
+#: templates/test_formatter/edit_test_formatter.html:127
+msgid "Preview"
+msgstr "Xem trước"
+
+#: templates/test_formatter/edit_test_formatter.html:131
+msgid "Convert"
+msgstr "Chuyển đổi"
+
+#: templates/test_formatter/edit_test_formatter.html:132
+msgid "Download"
+msgstr "Tải xuống"
+
 #: templates/ticket/feed.html:21
 msgid " replied"
 msgstr ""

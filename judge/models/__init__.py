@@ -53,6 +53,8 @@ from judge.models.submission import (
     SubmissionSource,
     SubmissionTestCase,
 )
+
+from judge.models.test_formatter import TestFormatterModel
 from judge.models.ticket import Ticket, TicketMessage
 from judge.models.volunteer import VolunteerProblemVote
 from judge.models.pagevote import PageVote, PageVoteVoter

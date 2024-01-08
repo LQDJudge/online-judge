@@ -68,6 +68,9 @@ from judge.views import (
     course,
     email,
 )
+
+from judge.views.test_formatter import test_formatter
+
 from judge.views.problem_data import (
     ProblemDataView,
     ProblemSubmissionDiff,
@@ -403,6 +406,26 @@ urlpatterns = [
                 ),
                 url(r"^/abort$", submission.abort_submission, name="submission_abort"),
                 url(r"^/html$", submission.single_submission),
+            ]
+        ),
+    ),
+    url(
+        r"^test_formatter/",
+        include(
+            [
+                url(
+                    r"^$", test_formatter.TestFormatter.as_view(), name="test_formatter"
+                ),
+                url(
+                    r"^edit_page$",
+                    test_formatter.EditTestFormatter.as_view(),
+                    name="edit_page",
+                ),
+                url(
+                    r"^download_page$",
+                    test_formatter.DownloadTestFormatter.as_view(),
+                    name="download_page",
+                ),
             ]
         ),
     ),
