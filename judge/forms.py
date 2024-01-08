@@ -29,6 +29,7 @@ from django_ace import AceWidget
 from judge.models import (
     Contest,
     Language,
+    TestFormatterModel,
     Organization,
     PrivateMessage,
     Problem,
@@ -37,6 +38,7 @@ from judge.models import (
     Submission,
     BlogPost,
     ContestProblem,
+    TestFormatterModel,
 )
 
 from judge.widgets import (
@@ -568,3 +570,9 @@ class ContestProblemFormSet(
     )
 ):
     model = ContestProblem
+
+
+class TestFormatterForm(ModelForm):
+    class Meta:
+        model = TestFormatterModel
+        fields = ["file"]
