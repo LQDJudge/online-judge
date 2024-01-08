@@ -61,6 +61,7 @@ from judge.models.pagevote import PageVote, PageVoteVoter
 from judge.models.bookmark import BookMark, MakeBookMark
 from judge.models.course import Course
 from judge.models.notification import Notification, NotificationProfile
+from judge.models.test_formatter import TestFormatterModel
 
 revisions.register(Profile, exclude=["points", "last_access", "ip", "rating"])
 revisions.register(Problem, follow=["language_limits"])

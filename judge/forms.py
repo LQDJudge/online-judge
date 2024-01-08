@@ -38,6 +38,7 @@ from judge.models import (
     Submission,
     BlogPost,
     ContestProblem,
+    TestFormatterModel,
 )
 
 from judge.widgets import (
