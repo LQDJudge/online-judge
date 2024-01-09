@@ -106,7 +106,7 @@ class BaseActionSubmissionsView(
 
         try:
             languages = list(map(int, self.request.POST.getlist("language")))
-            results = list(map(int, self.request.POST.getlist("result")))
+            results = list(map(str, self.request.POST.getlist("result")))
             contests = list(map(int, self.request.POST.getlist("contest")))
         except ValueError:
             return HttpResponseBadRequest()
