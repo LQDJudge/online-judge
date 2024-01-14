@@ -71,7 +71,6 @@ class ProfileAdmin(VersionAdmin):
         "is_banned_problem_voting",
         "notes",
         "is_totp_enabled",
-        "user_script",
         "current_contest",
     )
     readonly_fields = ("user",)
@@ -159,15 +158,6 @@ class ProfileAdmin(VersionAdmin):
         )
 
     recalculate_points.short_description = _("Recalculate scores")
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super(ProfileAdmin, self).get_form(request, obj, **kwargs)
-        if "user_script" in form.base_fields:
-            # form.base_fields['user_script'] does not exist when the user has only view permission on the model.
-            form.base_fields["user_script"].widget = AceWidget(
-                "javascript", request.profile.ace_theme
-            )
-        return form
 
 
 class UserAdmin(OldUserAdmin):

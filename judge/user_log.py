@@ -24,6 +24,5 @@ class LogUserAccessMiddleware(object):
                 updates["ip"] = request.META.get(settings.META_REMOTE_ADDRESS_KEY)
             Profile.objects.filter(user_id=request.user.pk).update(**updates)
             cache.set(f"user_log_update_{request.user.id}", True, 120)
-            print("UPDATE", updates)
 
         return response

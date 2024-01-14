@@ -19,7 +19,6 @@
             "rating": null,
             "timezone": "America/Toronto",
             "user": 1,
-            "user_script": ""
         },
         "model": "judge.profile",
         "pk": 1

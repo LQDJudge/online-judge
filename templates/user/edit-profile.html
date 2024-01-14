@@ -59,13 +59,6 @@
   {{ form.media.js }}
   <script type="text/javascript">
     $(function () {
-      $('#ace_user_script').on('ace_load', function (e, editor) {
-        editor.getSession().setMode("ace/mode/javascript");
-      });
-    });
-  </script>
-  <script type="text/javascript">
-    $(function () {
       $('#disable-2fa-button').click(function () {
         alert("The administrators for this site require all the staff to have two-factor authentication enabled, so it may not be disabled at this time.");
       });
@@ -177,10 +170,6 @@
       {{ form.css_background }}
       <div><i>{{form.css_background.help_text}}</i></div>
       <br><br>
-      <div class="block-header">{{ _('User-script') }}:</div>
-      {{ form.user_script }}
-      <hr>
-
       <input type="submit" style="float:right" value="{{ _('Update profile') }}">
     </form>
   </div>

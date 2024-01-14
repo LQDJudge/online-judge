@@ -207,13 +207,6 @@ class Profile(models.Model):
         default=False,
     )
     rating = models.IntegerField(null=True, default=None, db_index=True)
-    user_script = models.TextField(
-        verbose_name=_("user script"),
-        default="",
-        blank=True,
-        max_length=65536,
-        help_text=_("User-defined JavaScript for site customization."),
-    )
     current_contest = models.OneToOneField(
         "ContestParticipation",
         verbose_name=_("current contest"),

@@ -78,12 +78,10 @@ class ProfileForm(ModelForm):
             "timezone",
             "language",
             "ace_theme",
-            "user_script",
             "profile_image",
             "css_background",
         ]
         widgets = {
-            "user_script": AceWidget(theme="github"),
             "timezone": Select2Widget(attrs={"style": "width:200px"}),
             "language": Select2Widget(attrs={"style": "width:200px"}),
             "ace_theme": Select2Widget(attrs={"style": "width:200px"}),
