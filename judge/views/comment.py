@@ -25,7 +25,6 @@ from reversion.models import Version
 from django.conf import settings
 from django_ratelimit.decorators import ratelimit
 
-from judge.dblock import LockModel
 from judge.models import Comment, CommentVote, Notification, BlogPost
 from judge.utils.views import TitleMixin
 from judge.widgets import MathJaxPagedownWidget, HeavyPreviewPageDownWidget
@@ -83,18 +82,15 @@ def vote_comment(request, delta):
     try:
         vote.save()
     except IntegrityError:
-        with LockModel(write=(CommentVote,)):
-            try:
-                vote = CommentVote.objects.get(
-                    comment_id=comment_id, voter=request.profile
-                )
-            except CommentVote.DoesNotExist:
-                raise Http404()
-            if -vote.score != delta:
-                return HttpResponseBadRequest(
-                    _("You already voted."), content_type="text/plain"
-                )
-            vote.delete()
+        try:
+            vote = CommentVote.objects.get(comment_id=comment_id, voter=request.profile)
+        except CommentVote.DoesNotExist:
+            raise Http404()
+        if -vote.score != delta:
+            return HttpResponseBadRequest(
+                _("You already voted."), content_type="text/plain"
+            )
+        vote.delete()
         Comment.objects.filter(id=comment_id).update(score=F("score") - vote.score)
     else:
         Comment.objects.filter(id=comment_id).update(score=F("score") + delta)

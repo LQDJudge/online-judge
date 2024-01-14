@@ -23,7 +23,6 @@ from reversion import revisions
 from reversion.models import Revision, Version
 from django_ratelimit.decorators import ratelimit
 
-from judge.dblock import LockModel
 from judge.models import Comment, Notification
 from judge.widgets import HeavyPreviewPageDownWidget
 from judge.jinja2.reference import get_user_from_text

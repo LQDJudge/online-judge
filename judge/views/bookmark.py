@@ -12,7 +12,6 @@ from judge.models.bookmark import BookMark, MakeBookMark
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
-from judge.dblock import LockModel
 from django.views.generic import View, ListView
 
 
