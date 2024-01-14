@@ -351,7 +351,7 @@ class ProblemDetail(
         else:
             context["fileio_input"] = None
             context["fileio_output"] = None
-        if not self.in_contest:
+        if not self.in_contest and settings.ML_OUTPUT_PATH:
             context["related_problems"] = get_related_problems(
                 self.profile, self.object
             )
