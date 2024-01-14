@@ -22,6 +22,8 @@ from django.views.generic import DetailView, UpdateView
 from django.urls import reverse_lazy
 from reversion import revisions
 from reversion.models import Version
+from django.conf import settings
+from django_ratelimit.decorators import ratelimit
 
 from judge.dblock import LockModel
 from judge.models import Comment, CommentVote, Notification, BlogPost
@@ -40,6 +42,7 @@ __all__ = [
 ]
 
 
+@ratelimit(key="user", rate=settings.RL_VOTE)
 @login_required
 def vote_comment(request, delta):
     if abs(delta) != 1:
@@ -77,27 +80,24 @@ def vote_comment(request, delta):
     vote.voter = request.profile
     vote.score = delta
 
-    while True:
-        try:
-            vote.save()
-        except IntegrityError:
-            with LockModel(write=(CommentVote,)):
-                try:
-                    vote = CommentVote.objects.get(
-                        comment_id=comment_id, voter=request.profile
-                    )
-                except CommentVote.DoesNotExist:
-                    # We must continue racing in case this is exploited to manipulate votes.
-                    continue
-                if -vote.score != delta:
-                    return HttpResponseBadRequest(
-                        _("You already voted."), content_type="text/plain"
-                    )
-                vote.delete()
-            Comment.objects.filter(id=comment_id).update(score=F("score") - vote.score)
-        else:
-            Comment.objects.filter(id=comment_id).update(score=F("score") + delta)
-        break
+    try:
+        vote.save()
+    except IntegrityError:
+        with LockModel(write=(CommentVote,)):
+            try:
+                vote = CommentVote.objects.get(
+                    comment_id=comment_id, voter=request.profile
+                )
+            except CommentVote.DoesNotExist:
+                raise Http404()
+            if -vote.score != delta:
+                return HttpResponseBadRequest(
+                    _("You already voted."), content_type="text/plain"
+                )
+            vote.delete()
+        Comment.objects.filter(id=comment_id).update(score=F("score") - vote.score)
+    else:
+        Comment.objects.filter(id=comment_id).update(score=F("score") + delta)
     return HttpResponse("success", content_type="text/plain")
 
 

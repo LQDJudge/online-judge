@@ -21,6 +21,7 @@ from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 from reversion import revisions
 from reversion.models import Revision, Version
+from django_ratelimit.decorators import ratelimit
 
 from judge.dblock import LockModel
 from judge.models import Comment, Notification
@@ -93,6 +94,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
             and self.request.participation.contest.use_clarifications
         )
 
+    @method_decorator(ratelimit(key="user", rate=settings.RL_COMMENT))
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -115,9 +117,7 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
             comment.author = request.profile
             comment.linked_object = self.object
 
-            with LockModel(
-                write=(Comment, Revision, Version), read=(ContentType,)
-            ), revisions.create_revision():
+            with revisions.create_revision():
                 revisions.set_user(request.user)
                 revisions.set_comment(_("Posted comment"))
                 comment.save()

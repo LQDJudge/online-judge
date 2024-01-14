@@ -12,8 +12,9 @@ from judge.models.pagevote import PageVote, PageVoteVoter
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
-from judge.dblock import LockModel
 from django.views.generic import View, ListView
+from django_ratelimit.decorators import ratelimit
+from django.conf import settings
 
 
 __all__ = [
@@ -24,6 +25,7 @@ __all__ = [
 ]
 
 
+@ratelimit(key="user", rate=settings.RL_VOTE)
 @login_required
 def vote_page(request, delta):
     if abs(delta) != 1:
@@ -61,25 +63,19 @@ def vote_page(request, delta):
     vote.voter = request.profile
     vote.score = delta
 
-    while True:
+    try:
+        vote.save()
+    except IntegrityError:
         try:
-            vote.save()
-        except IntegrityError:
-            with LockModel(write=(PageVoteVoter,)):
-                try:
-                    vote = PageVoteVoter.objects.get(
-                        pagevote_id=pagevote_id, voter=request.profile
-                    )
-                except PageVoteVoter.DoesNotExist:
-                    # We must continue racing in case this is exploited to manipulate votes.
-                    continue
-                vote.delete()
-            PageVote.objects.filter(id=pagevote_id).update(
-                score=F("score") - vote.score
+            vote = PageVoteVoter.objects.get(
+                pagevote_id=pagevote_id, voter=request.profile
             )
-        else:
-            PageVote.objects.filter(id=pagevote_id).update(score=F("score") + delta)
-        break
+        except PageVoteVoter.DoesNotExist:
+            raise Http404()
+        vote.delete()
+        PageVote.objects.filter(id=pagevote_id).update(score=F("score") - vote.score)
+    else:
+        PageVote.objects.filter(id=pagevote_id).update(score=F("score") + delta)
     _dirty_vote_score(pagevote_id, request.profile)
     return HttpResponse("success", content_type="text/plain")
 

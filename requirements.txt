@@ -43,3 +43,4 @@ pymdown-extensions
 mdx-breakless-lists
 beautifulsoup4
 pre-commit
+django-ratelimit

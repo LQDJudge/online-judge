@@ -491,6 +491,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 # Chunk upload
 CHUNK_UPLOAD_DIR = "/tmp/chunk_upload_tmp"
 
+# Rate limit
+RL_VOTE = "200/h"
+RL_COMMENT = "30/h"
+
+
 try:
     with open(os.path.join(os.path.dirname(__file__), "local_settings.py")) as f:
         exec(f.read(), globals())
