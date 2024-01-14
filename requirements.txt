@@ -34,7 +34,7 @@ netaddr
 redis
 lupa
 websocket-client
-python-memcached
+python-memcached<1.60
 numpy
 pandas
 markdown
