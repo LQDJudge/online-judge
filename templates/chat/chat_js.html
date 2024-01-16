@@ -243,6 +243,9 @@
         $.post("{{ url('post_chat_message') }}", message)
           .fail(function(res) {
           console.log('Fail to send message');
+          var $body = $('#message-text-'+ message.tmp_id);
+          $body.css('text-decoration', 'line-through');
+          $body.css('background', 'red');
         })
           .done(function(res, status) {
           $('#empty_msg').hide();
@@ -307,6 +310,7 @@
       refresh_status(true);
       $('#chat-input').focus();
       show_right_panel();
+      $('#chat-input').val('').trigger('input');
     }
     window.lock_click_space = true;
     if (encrypted_user) {
@@ -316,6 +320,7 @@
         window.other_user_id = data.other_user_id;
         color_selected_room();
         callback();
+        $('#chat-input').attr('maxlength', 5000);
       })
         .fail(function() {
         console.log('Fail to get_or_create_room');
@@ -326,6 +331,7 @@
       window.other_user_id = '';
       color_selected_room();
       callback();
+      $('#chat-input').attr('maxlength', 200);
     }
     window.lock_click_space = false;
   }

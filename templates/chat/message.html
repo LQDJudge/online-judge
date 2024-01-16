@@ -23,7 +23,7 @@
             {{_('Mute')}}
           </a>
         {% endif %}
-        <div class="message-text message-text-other">
+        <div class="message-text message-text-other" id="message-text-{{ message.id }}">
           {{message.body|markdown(lazy_load=False)|reference|str|safe }}
         </div>
       </div>
