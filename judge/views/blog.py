@@ -23,7 +23,6 @@ from judge.models import (
 from judge.models.profile import Organization, OrganizationProfile
 from judge.utils.cachedict import CacheDict
 from judge.utils.diggpaginator import DiggPaginator
-from judge.utils.problems import user_completed_ids
 from judge.utils.tickets import filter_visible_tickets
 from judge.utils.views import TitleMixin
 from judge.views.feed import FeedView

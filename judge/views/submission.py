@@ -41,7 +41,6 @@ from judge.models import ProblemTranslation
 from judge.models import Profile
 from judge.models import Submission
 from judge.utils.problems import get_result_data
-from judge.utils.problems import user_completed_ids, user_editable_ids, user_tester_ids
 from judge.utils.problem_data import get_problem_case
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
 from judge.utils.views import DiggPaginatorMixin

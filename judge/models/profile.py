@@ -255,17 +255,18 @@ class Profile(models.Model):
 
     @cache_wrapper(prefix="Pgbi2")
     def _get_basic_info(self):
-        profile_image_url = None
-        if self.profile_image:
-            profile_image_url = self.profile_image.url
-        return {
-            "first_name": self.user.first_name,
-            "last_name": self.user.last_name,
+        res = {
             "email": self.user.email,
             "username": self.user.username,
             "mute": self.mute,
-            "profile_image_url": profile_image_url,
         }
+        if self.user.first_name:
+            res["first_name"] = self.user.first_name
+        if self.user.last_name:
+            res["last_name"] = self.user.last_name
+        if self.profile_image:
+            res["profile_image_url"] = self.profile_image.url
+        return res
 
     @cached_property
     def _cached_info(self):
@@ -283,11 +284,11 @@ class Profile(models.Model):
 
     @cached_property
     def first_name(self):
-        return self._cached_info["first_name"]
+        return self._cached_info.get("first_name", "")
 
     @cached_property
     def last_name(self):
-        return self._cached_info["last_name"]
+        return self._cached_info.get("last_name", "")
 
     @cached_property
     def email(self):
@@ -299,7 +300,7 @@ class Profile(models.Model):
 
     @cached_property
     def profile_image_url(self):
-        return self._cached_info["profile_image_url"]
+        return self._cached_info.get("profile_image_url")
 
     @cached_property
     def count_unseen_notifications(self):
