@@ -344,7 +344,7 @@ def problem_init_view(request, problem):
         "problem/yaml.html",
         {
             "raw_source": data,
-            "highlighted_source": highlight_code(data, "yaml", linenos=False),
+            "highlighted_source": highlight_code(data, "yaml", linenos=True),
             "title": _("Generated init.yml for %s") % problem.name,
             "content_title": mark_safe(
                 escape(_("Generated init.yml for %s"))

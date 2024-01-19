@@ -117,7 +117,6 @@ else:
         class Media:
             css = {
                 "all": [
-                    "pygment-github.css",
                     "table.css",
                     "ranks.css",
                     "dmmd-preview.css",

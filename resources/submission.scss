@@ -155,48 +155,6 @@ label[for="language"], label[for="status"] {
     color: #555;
 }
 
-.source-ln {
-    color: gray;
-    border-right: 1px solid gray;
-    padding-right: 5px;
-    text-align: right;
-
-    a {
-        color: gray;
-        display: block;
-
-        &:hover {
-            text-decoration: underline;
-        }
-
-        &::before {
-            display: block;
-            content: " ";
-            margin-top: -50px;
-            height: 50px;
-            visibility: hidden;
-        }
-    }
-}
-
-.source-code pre, .source-ln pre {
-    margin: 0;
-    padding: 0;
-    white-space: pre;
-}
-
-.source-code {
-    padding-left: 15px;
-    width: 100%;
-}
-
-.source-wrap {
-    overflow-x: auto;
-    padding: 1em;
-    border-radius: 10px;
-    border: double 4px darkgray;
-}
-
 .statistics-table {
     .status {
         font-weight: bold;

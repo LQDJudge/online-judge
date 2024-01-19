@@ -406,7 +406,7 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
                     .replace("'//", "'https://")
                 )
                 maker.title = problem_name
-                assets = ["style.css", "pygment-github.css"]
+                assets = ["style.css"]
                 if maker.math_engine == "jax":
                     assets.append("mathjax3_config.js")
                 for file in assets:

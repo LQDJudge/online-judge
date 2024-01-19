@@ -44,15 +44,13 @@
         $.ajax({
           url: "{{url('blog_preview')}}",
           type: 'POST',
-          headers: {
-            'X-CSRFToken': csrfToken,  // Include the CSRF token in the headers
-          },
           data: {
             preview: $(this).val()
           },
           success: function(data) {
             $('#display').html(data);
             MathJax.typeset();
+            populateCopyButton();
           },
           error: function(error) {
             alert(error);

@@ -200,29 +200,25 @@ input {
 
 // Bootstrap-y copy button
 .btn-clipboard {
-    top: 0;
-    right: 0;
+    top: -5px;
+    right: -8px;
     display: block;
     font-size: 12px;
-    color: #767676;
     cursor: pointer;
-    background-color: #FFF;
-    border: 1px solid #E1E1E8;
-    border-radius: 0 $widget_border_radius;
     position: absolute;
     padding: 5px 8px;
+    font-family: system-ui, "Noto Sans";
+
+    &:hover {
+        border-radius: $widget_border_radius;
+        border: 1px solid #E1E1E8;
+        background-color: #FFF;
+    }
 }
 
 .copy-clipboard {
     position: relative;
 }
-
-.md-typeset .admonition .btn-clipboard,
-.md-typeset details .btn-clipboard {
-    right: -0.6rem;
-    border-radius: 0 0 0 4px;
-}
-
 
 // Bootstrap-y tabs
 .ul_tab_a_active {
