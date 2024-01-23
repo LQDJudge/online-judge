@@ -276,6 +276,7 @@ class Submission(models.Model):
         indexes = [
             models.Index(fields=["problem", "user", "-points"]),
             models.Index(fields=["contest_object", "problem", "user", "-points"]),
+            models.Index(fields=["language", "result"]),
         ]
 
 
