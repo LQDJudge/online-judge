@@ -182,20 +182,21 @@ def check_valid_message(request, room):
         return False
 
     try:
-        last_msg_all = Message.objects.filter(room=room).latest("time")
+        last_msg = Message.objects.filter(room=room).first()
+        if (
+            last_msg.author == request.profile
+            and last_msg.body == request.POST["body"].strip()
+        ):
+            return False
     except Message.DoesNotExist:
-        last_msg_all = None
-
-    if last_msg_all and last_msg_all.body == request.POST["body"].strip():
-        return False
+        pass
 
     if not room:
-        four_last_msg = Message.objects.filter(
-            author=request.profile, room=room
-        ).order_by("-time")[:4]
+        four_last_msg = Message.objects.filter(room=room).order_by("-id")[:4]
         if len(four_last_msg) >= 4:
+            same_author = all(msg.author == request.profile for msg in four_last_msg)
             time_diff = timezone.now() - four_last_msg[3].time
-            if time_diff.total_seconds() < 15:
+            if same_author and time_diff.total_seconds() < 300:
                 return False
 
     return True
@@ -207,7 +208,7 @@ def post_message(request):
 
     if request.method != "POST":
         return HttpResponseBadRequest()
-    if len(request.POST["body"]) > 5000:
+    if len(request.POST["body"]) > 5000 or len(request.POST["body"].strip()) == 0:
         return HttpResponseBadRequest()
 
     room = None
