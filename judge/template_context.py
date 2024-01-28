@@ -24,7 +24,6 @@ def get_resource(request):
         scheme = "http"
 
     return {
-        "PYGMENT_THEME": settings.PYGMENT_THEME,
         "INLINE_JQUERY": settings.INLINE_JQUERY,
         "INLINE_FONTAWESOME": settings.INLINE_FONTAWESOME,
         "JQUERY_JS": settings.JQUERY_JS,

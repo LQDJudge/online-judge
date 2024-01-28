@@ -113,6 +113,7 @@
     $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
     register_time($('.time-with-rel'));
     MathJax.typeset();
+    populateCopyButton();
     merge_authors();
   }
 
@@ -167,6 +168,7 @@
             add_new_message(message, room, true);
           }
           MathJax.typeset();
+          populateCopyButton();
           register_time($('.time-with-rel'));
           remove_unread_current_user();
           merge_authors();

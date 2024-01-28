@@ -135,7 +135,7 @@
 {% block body %}
   <div style="clear: both"></div>
   <br>
-  {% if request.user == submission.user.user or perms.judge.resubmit_other %}
+  {% if request.profile == submission.user or perms.judge.resubmit_other %}
     <div><a href="{{ url('problem_submit', submission.problem.code, submission.id) }}">{{ _('Resubmit') }}</a></div>
   {% endif %}
   {% if perms.judge.rejudge_submission %}
@@ -151,21 +151,8 @@
 
   <br>
   <h3 id="source-header" class="toggle closed"><i class="fa fa-chevron-right fa-fw"></i>{{_('Source code')}}</h3>
-  <div class="source-wrap toggled" style="display: none; margin-bottom: 1em">
-    <table style="width: 100%">
-      <tr>
-        <td class="source-ln" style="width: 0">
-          <div>
-            {% for line in raw_source.split('\n') %}
-              <a href="#line-{{ loop.index }}" name="line-{{ loop.index }}">
-                <pre class="line">{{ loop.index }}</pre>
-              </a>
-            {% endfor %}
-          </div>
-        </td>
-        <td class="source-code">{{ highlighted_source }}</td>
-      </tr>
-    </table>
+  <div class="toggled" style="display: none; margin-bottom: 1em">
+    {{ highlighted_source }}
   </div>
 
   <div id="test-cases">{% include "submission/status-testcases.html" %}</div>

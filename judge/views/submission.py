@@ -41,7 +41,6 @@ from judge.models import ProblemTranslation
 from judge.models import Profile
 from judge.models import Submission
 from judge.utils.problems import get_result_data
-from judge.utils.problems import user_completed_ids, user_editable_ids, user_tester_ids
 from judge.utils.problem_data import get_problem_case
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
 from judge.utils.views import DiggPaginatorMixin
@@ -112,22 +111,6 @@ class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, Deta
                 ),
             }
         )
-
-
-class SubmissionSource(SubmissionDetailBase):
-    template_name = "submission/source.html"
-
-    def get_queryset(self):
-        return super().get_queryset().select_related("source")
-
-    def get_context_data(self, **kwargs):
-        context = super(SubmissionSource, self).get_context_data(**kwargs)
-        submission = self.object
-        context["raw_source"] = submission.source.source.rstrip("\n")
-        context["highlighted_source"] = highlight_code(
-            submission.source.source, submission.language.pygments, linenos=False
-        )
-        return context
 
 
 def get_hidden_subtasks(request, submission):
@@ -228,9 +211,11 @@ class SubmissionStatus(SubmissionDetailBase):
         )
         context["time_limit"] = submission.problem.time_limit
         context["can_see_testcases"] = False
-        context["raw_source"] = submission.source.source.rstrip("\n")
         context["highlighted_source"] = highlight_code(
-            submission.source.source, submission.language.pygments, linenos=False
+            submission.source.source,
+            submission.language.pygments,
+            linenos=True,
+            title=submission.language,
         )
 
         contest = submission.contest_or_none
@@ -266,7 +251,7 @@ class SubmissionTestCaseQuery(SubmissionStatus):
         return super(SubmissionTestCaseQuery, self).get(request, *args, **kwargs)
 
 
-class SubmissionSourceRaw(SubmissionSource):
+class SubmissionSourceRaw(SubmissionDetailBase):
     def get(self, request, *args, **kwargs):
         submission = self.get_object()
         return HttpResponse(submission.source.source, content_type="text/plain")
