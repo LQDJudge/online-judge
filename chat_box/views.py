@@ -174,19 +174,48 @@ def mute_message(request):
     return JsonResponse(ret)
 
 
+def check_valid_message(request, room):
+    if not room and len(request.POST["body"]) > 200:
+        return False
+
+    if not can_access_room(request, room) or request.profile.mute:
+        return False
+
+    try:
+        last_msg = Message.objects.filter(room=room).first()
+        if (
+            last_msg.author == request.profile
+            and last_msg.body == request.POST["body"].strip()
+        ):
+            return False
+    except Message.DoesNotExist:
+        pass
+
+    if not room:
+        four_last_msg = Message.objects.filter(room=room).order_by("-id")[:4]
+        if len(four_last_msg) >= 4:
+            same_author = all(msg.author == request.profile for msg in four_last_msg)
+            time_diff = timezone.now() - four_last_msg[3].time
+            if same_author and time_diff.total_seconds() < 300:
+                return False
+
+    return True
+
+
 @login_required
 def post_message(request):
     ret = {"msg": "posted"}
+
     if request.method != "POST":
         return HttpResponseBadRequest()
-    if len(request.POST["body"]) > 5000:
+    if len(request.POST["body"]) > 5000 or len(request.POST["body"].strip()) == 0:
         return HttpResponseBadRequest()
 
     room = None
     if request.POST["room"]:
         room = Room.objects.get(id=request.POST["room"])
 
-    if not can_access_room(request, room) or request.profile.mute:
+    if not check_valid_message(request, room):
         return HttpResponseBadRequest()
 
     new_message = Message(author=request.profile, body=request.POST["body"], room=room)
@@ -229,9 +258,7 @@ def post_message(request):
 
 
 def can_access_room(request, room):
-    return (
-        not room or room.user_one == request.profile or room.user_two == request.profile
-    )
+    return not room or room.contain(request.profile)
 
 
 @login_required
@@ -247,7 +274,7 @@ def chat_message_ajax(request):
     try:
         message = Message.objects.filter(hidden=False).get(id=message_id)
         room = message.room
-        if room and not room.contain(request.profile):
+        if not can_access_room(request, room):
             return HttpResponse("Unauthorized", status=401)
     except Message.DoesNotExist:
         return HttpResponseBadRequest()
@@ -278,7 +305,7 @@ def update_last_seen(request, **kwargs):
     except Room.DoesNotExist:
         return HttpResponseBadRequest()
 
-    if room and not room.contain(profile):
+    if not can_access_room(request, room):
         return HttpResponseBadRequest()
 
     user_room, _ = UserRoom.objects.get_or_create(user=profile, room=room)
