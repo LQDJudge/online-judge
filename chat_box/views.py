@@ -181,15 +181,13 @@ def check_valid_message(request, room):
     if not can_access_room(request, room) or request.profile.mute:
         return False
 
-    try:
-        last_msg = Message.objects.filter(room=room).first()
-        if (
-            last_msg.author == request.profile
-            and last_msg.body == request.POST["body"].strip()
-        ):
-            return False
-    except Message.DoesNotExist:
-        pass
+    last_msg = Message.objects.filter(room=room).first()
+    if (
+        last_msg
+        and last_msg.author == request.profile
+        and last_msg.body == request.POST["body"].strip()
+    ):
+        return False
 
     if not room:
         four_last_msg = Message.objects.filter(room=room).order_by("-id")[:4]
