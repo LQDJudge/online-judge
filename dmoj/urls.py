@@ -407,16 +407,18 @@ urlpatterns = [
         include(
             [
                 url(
-                    r"^$", test_formatter.TestFormatter.as_view(), name="test_formatter"
+                    r"^$",
+                    login_required(test_formatter.TestFormatter.as_view()),
+                    name="test_formatter",
                 ),
                 url(
                     r"^edit_page$",
-                    test_formatter.EditTestFormatter.as_view(),
+                    login_required(test_formatter.EditTestFormatter.as_view()),
                     name="test_formatter_edit",
                 ),
                 url(
                     r"^download_page$",
-                    test_formatter.DownloadTestFormatter.as_view(),
+                    login_required(test_formatter.DownloadTestFormatter.as_view()),
                     name="test_formatter_download",
                 ),
             ]
