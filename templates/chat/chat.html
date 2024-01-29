@@ -88,7 +88,7 @@
           </ul>
         </div>
         <div id="chat-input-container">
-          <textarea maxlength="5000" id="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
+          <textarea maxlength="{{5000 if room else 200}}" id="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
           <div class="chat-input-icon" id="emoji-button" href="#" title="{{_('Emoji')}}"><i class="icofont-slightly-smile"></i>
           </div>
           <div class="chat-input-icon" id="submit-button">

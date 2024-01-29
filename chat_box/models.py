@@ -66,7 +66,6 @@ class Message(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        new_message = self.id
         self.body = self.body.strip()
         super(Message, self).save(*args, **kwargs)
 
