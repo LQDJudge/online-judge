@@ -78,11 +78,19 @@
     </form>
   {% endif %}
   <div style="clear: both"></div>
-  <div class="content-description">
-    {% cache 3600 'contest_html' contest.id MATH_ENGINE %}
-      {{ contest.description|markdown|reference|str|safe }}
-    {% endcache %}
-  </div>
+
+  {% if contest.is_organization_private %}
+    {% for org in contest.organizations.all() %}
+      <div style="margin-bottom: 1em;">
+        <span class="contest-tag contest-tag-org">
+          <a href="{{ org.get_absolute_url() }}">
+            <i class="fa fa-lock"></i> {{ org.name }}
+          </a>
+        </span>
+      </div>
+    {% endfor %}
+  {% endif %}
+
   {% if editable_organizations or is_clonable %}
     <div style="display: flex; gap: 0.5em;">
       {% for org in editable_organizations %}
@@ -95,6 +103,12 @@
       {% endif %}
     </div>
   {% endif %}
+
+  <div style="padding: 0 1em;">
+    {% cache 3600 'contest_html' contest.id MATH_ENGINE %}
+      {{ contest.description|markdown|reference|str|safe }}
+    {% endcache %}
+  </div>
 
   {% if contest.ended or request.user.is_superuser or is_editor or is_tester %}
     <hr>

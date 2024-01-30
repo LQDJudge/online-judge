@@ -280,12 +280,18 @@ function registerPopper($trigger, $dropdown) {
 function populateCopyButton() {
     var copyButton;
     $('pre code').each(function () {
+        var copyButton = $('<span>', {
+            'class': 'btn-clipboard',
+            'data-clipboard-text': $(this).text(),
+            'title': 'Click to copy'
+        }).append('<i class="fa fa-copy"></i>');
+
+        if ($(this).parent().width() > 100) {
+            copyButton.append('<span style="margin-left: 2px">Copy</span>');
+        }
+        
         $(this).before($('<div>', {'class': 'copy-clipboard'})
-                .append(copyButton = $('<span>', {
-                'class': 'btn-clipboard',
-                'data-clipboard-text': $(this).text(),
-                'title': 'Click to copy'
-            }).append('<i class="fa fa-copy"></i><span style="margin-left: 2px">Copy</span>')));
+                .append(copyButton));
 
         $(copyButton.get(0)).mouseleave(function () {
             $(this).attr('class', 'btn-clipboard');
