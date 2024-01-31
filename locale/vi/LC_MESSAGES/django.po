@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-31 08:04+0700\n"
+"POT-Creation-Date: 2024-01-31 11:20+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -67,27 +67,27 @@ msgstr "Tiếng Việt"
 msgid "English"
 msgstr ""
 
-#: dmoj/urls.py:105
+#: dmoj/urls.py:106
 msgid "Activation key invalid"
 msgstr "Mã kích hoạt không hợp lệ"
 
-#: dmoj/urls.py:110
+#: dmoj/urls.py:111
 msgid "Register"
 msgstr "Đăng ký"
 
-#: dmoj/urls.py:117
+#: dmoj/urls.py:118
 msgid "Registration Completed"
 msgstr "Đăng ký hoàn thành"
 
-#: dmoj/urls.py:125
+#: dmoj/urls.py:126
 msgid "Registration not allowed"
 msgstr "Đăng ký không thành công"
 
-#: dmoj/urls.py:133
+#: dmoj/urls.py:134
 msgid "Login"
 msgstr "Đăng nhập"
 
-#: dmoj/urls.py:221 templates/base.html:114
+#: dmoj/urls.py:220 templates/base.html:114
 #: templates/organization/org-left-sidebar.html:2
 msgid "Home"
 msgstr "Trang chủ"
@@ -509,6 +509,34 @@ msgstr "IOI mới"
 #: judge/contest_format/ultimate.py:12
 msgid "Ultimate"
 msgstr ""
+
+#: judge/custom_translations.py:7
+#, python-format
+msgid ""
+"This password is too short. It must contain at least %(min_length)d "
+"character."
+msgid_plural ""
+"This password is too short. It must contain at least %(min_length)d "
+"characters."
+msgstr[0] "Mật khẩu phải chứa ít nhất %(min_length)d ký tự."
+
+#: judge/custom_translations.py:12
+#, python-format
+msgid "Your password must contain at least %(min_length)d character."
+msgid_plural "Your password must contain at least %(min_length)d characters."
+msgstr[0] "Mật khẩu phải chứa ít nhất %(min_length)d ký tự."
+
+#: judge/custom_translations.py:16
+msgid "The two password fields didn’t match."
+msgstr "Mật khẩu xác nhận không khớp."
+
+#: judge/custom_translations.py:17
+msgid "Your password can’t be entirely numeric."
+msgstr "Mật khẩu không được toàn chữ số."
+
+#: judge/custom_translations.py:19
+msgid "Bug Report"
+msgstr "Báo cáo lỗi"
 
 #: judge/forms.py:113
 msgid "File size exceeds the maximum allowed limit of 5MB."

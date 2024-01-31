@@ -312,6 +312,19 @@ a {
     margin-left: -20px;
 }
 
+.pagedown-image-upload {
+    .submit-input {
+        display: flex;
+        min-width: inherit;
+        float: right;
+    }
+    .deletelink-box {
+        position: absolute;
+        top: 2px;
+        right: 1em;
+    }
+}
+
 @media (max-width: 799px) {
     .hide_texts_on_mobile .actionbar-text {
         display: none;
