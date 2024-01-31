@@ -9,6 +9,7 @@ from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils.translation import gettext as _
 from requests import HTTPError
 from reversion import revisions
 from social_core.backends.github import GithubOAuth2
@@ -65,13 +66,13 @@ class UsernameForm(forms.Form):
         max_length=30,
         label="Username",
         error_messages={
-            "invalid": "A username must contain letters, numbers, or underscores"
+            "invalid": _("A username must contain letters, numbers, or underscores")
         },
     )
 
     def clean_username(self):
         if User.objects.filter(username=self.cleaned_data["username"]).exists():
-            raise forms.ValidationError("Sorry, the username is taken.")
+            raise forms.ValidationError(_("Sorry, the username is taken."))
         return self.cleaned_data["username"]
 
 
@@ -89,7 +90,7 @@ def choose_username(backend, user, username=None, *args, **kwargs):
             request,
             "registration/username_select.html",
             {
-                "title": "Choose a username",
+                "title": _("Choose a username"),
                 "form": form,
             },
         )
@@ -118,7 +119,7 @@ def make_profile(backend, user, response, is_new=False, *args, **kwargs):
             backend.strategy.request,
             "registration/profile_creation.html",
             {
-                "title": "Create your profile",
+                "title": _("Create your profile"),
                 "form": form,
             },
         )

@@ -417,6 +417,11 @@ function onWindowReady() {
             $(this).hide().css({ width: 0});
         });    
     });
+
+    $('.errorlist').each(function() {
+        var errorList = $(this);
+        errorList.nextAll('input, select, textarea').first().after(errorList);
+    });
 }
 
 $(function() {

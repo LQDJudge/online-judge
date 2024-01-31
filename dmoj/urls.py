@@ -61,6 +61,7 @@ from judge.views import (
     course,
     email,
 )
+from judge import authentication
 
 from judge.views.test_formatter import test_formatter
 
@@ -139,9 +140,7 @@ register_patterns = [
     url(r"^logout/$", user.UserLogoutView.as_view(), name="auth_logout"),
     url(
         r"^password/change/$",
-        auth_views.PasswordChangeView.as_view(
-            template_name="registration/password_change_form.html",
-        ),
+        authentication.CustomPasswordChangeView.as_view(),
         name="password_change",
     ),
     url(
