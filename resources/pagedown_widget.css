@@ -14,7 +14,7 @@
   width: 100%;
   background: #fff;
   border: 1px solid DarkGray;
-  font-family: "Noto Sans",Arial,"Lucida Grande",sans-serif !important;
+  font-family: var(--md-code-font-family),monospace !important;
 }
 
 .wmd-preview {
