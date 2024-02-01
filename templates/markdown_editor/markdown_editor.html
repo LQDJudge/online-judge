@@ -1,21 +1,23 @@
+{% set layout='no_wrapper' %}
 {% extends "base.html" %}
 
 {% block media %}
   <style>
-    main{
+    body{
       overflow: hidden;
     }
     #content{
       width: 100%;
-    }
-    #content.wrapper{
+      height: calc(100vh - 50px);
+      margin-bottom: 0;
       padding: 0;
     }
-    .form-area{
-      float: left;
-      width: 47%;
-      height: 100%
+    #content-body {
+      padding: 0;
+      height: 100%;
+      display: flex;
     }
+
     .wmd-preview{
       float: right;
       margin-top: 0;
@@ -23,58 +25,54 @@
     .width-controller{
       width: 51%;
     }
-    .wmd-input{
-      height: calc(100vh - 72px);
+    #id_body-preview{
+      overflow: scroll;
     }
-    .right-markdown{
-      height: calc(100vh - 72px);
-      overflow-y: scroll;
-    }
-    .wrap{
-      display: flex;
+    .form-area {
+      flex-grow: 1;
     }
   </style>
 {% endblock %}
 
 {% block js_media %}
   <script>
+    function debounce(func, wait) {
+      let timeout;
+
+      return function executedFunction(...args) {
+        const context = this;
+        const later = () => {
+          clearTimeout(timeout);
+          func.apply(context, args);
+        };
+
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    function update_preview() {
+      $.ajax({
+        url: "{{url('blog_preview')}}",
+        type: 'POST',
+        data: {
+          preview: $(this).val()
+        },
+        success: function(data) {
+          $('#display').html(data);
+          MathJax.typeset();
+          populateCopyButton();
+        },
+        error: function(error) {
+          alert(error);
+          console.log(error.message);
+        }
+      })
+    }
+
     $(document).ready(function(){
-      $("#wmd-input-id_body").on("keyup", function() {
-        const csrfToken = "{{ csrf_token }}";
-        $.ajax({
-          url: "{{url('blog_preview')}}",
-          type: 'POST',
-          data: {
-            preview: $(this).val()
-          },
-          success: function(data) {
-            $('#display').html(data);
-            MathJax.typeset();
-            populateCopyButton();
-          },
-          error: function(error) {
-            alert(error);
-            console.log(error.message)
-          }
-        })
-
-      });
-    });
-  </script>
-
-
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      const leftDiv = document.getElementById("wmd-input-id_body");
-      const rightDiv = document.getElementById("display");
-
-      leftDiv.addEventListener("scroll", function() {
-        rightDiv.scrollTop = leftDiv.scrollTop;
-      });
-
-      rightDiv.addEventListener("scroll", function() {
-        leftDiv.scrollTop = rightDiv.scrollTop;
-      });
+      const debounced_update_preview = debounce(update_preview, 250);
+      $("#wmd-input-id_body").on("keyup", debounced_update_preview);
     });
   </script>
 
@@ -96,46 +94,44 @@
 {% endblock %}
 
 {% block body %}
-  <div class="wrap">
-    <div id="new-comment" class="form-area">
-      <input type="hidden" name="parent" id="id_parent">
-      <div class="comment-post-wrapper">
-        <div id="comment-form-body"><div class="wmd-wrapper image-upload-enabled">
-          <div class="wmd-panel">
-            <div id="wmd-button-bar-id_body"></div>
-            <textarea id="wmd-input-id_body" class="wmd-input" name="body" required=""></textarea>
-          </div>
-          <div id="id_body-preview" data-preview-url="{{url('comment_preview')}}" data-textarea-id="wmd-input-id_body" data-timeout="1000" class="wmd-panel wmd-preview dmmd-preview dmmd-no-button">
-            <div class="dmmd-preview-update"><i class="fa fa-refresh"></i> {{_('Update Preview')}}</div>
-            <div class="dmmd-preview-content content-description"></div>
-          </div>
-          <div class="pagedown-image-upload">
-            <h2>{{_('Insert Image')}}</h2>
-            <div class="form-row">
-              <div>
-                <label class="label">{{_('From the web')}}</label>
-                <input class="url-input" type="text" placeholder="http://">
-              </div>
-            </div>
-            <div class="form-row">
-              <div>
-                <label class="label">{{_('From your computer')}}</label>
-                <input class="file-input" type="file" name="image" id="file" data-action="/pagedown/image-upload/" accept="image/*">
-              </div>
-            </div>
-            <div class="submit-row">
-              <div class="submit-loading"></div>
-              <input class="submit-input show" type="submit" value="{{_('Save')}}" name="_addanother">
-              <p class="deletelink-box"><a href="#" class="close-image-upload deletelink">{{_('Cancel')}}</a></p>
+  <div id="new-comment" class="form-area">
+    <input type="hidden" name="parent" id="id_parent">
+    <div class="comment-post-wrapper">
+      <div id="comment-form-body"><div class="wmd-wrapper image-upload-enabled">
+        <div class="wmd-panel">
+          <div id="wmd-button-bar-id_body"></div>
+          <textarea id="wmd-input-id_body" class="wmd-input" name="body" required=""></textarea>
+        </div>
+        <div id="id_body-preview" data-preview-url="{{url('comment_preview')}}" data-textarea-id="wmd-input-id_body" data-timeout="1000" class="wmd-panel wmd-preview dmmd-preview dmmd-no-button">
+          <div class="dmmd-preview-update"><i class="fa fa-refresh"></i> {{_('Update Preview')}}</div>
+          <div class="dmmd-preview-content content-description"></div>
+        </div>
+        <div class="pagedown-image-upload">
+          <h2>{{_('Insert Image')}}</h2>
+          <div class="form-row">
+            <div>
+              <label class="label">{{_('From the web')}}</label>
+              <input class="url-input" type="text" placeholder="http://">
             </div>
           </div>
-        </div></div>
-      </div>
+          <div class="form-row">
+            <div>
+              <label class="label">{{_('From your computer')}}</label>
+              <input class="file-input" type="file" name="image" id="file" data-action="/pagedown/image-upload/" accept="image/*">
+            </div>
+          </div>
+          <div class="submit-row">
+            <div class="submit-loading"></div>
+            <input class="submit-input show" type="submit" value="{{_('Save')}}" name="_addanother">
+            <p class="deletelink-box"><a href="#" class="close-image-upload deletelink">{{_('Cancel')}}</a></p>
+          </div>
+        </div>
+      </div></div>
     </div>
+  </div>
 
-    <div id="id_body-preview" data-preview-url="{{url('comment_preview')}}" data-textarea-id="wmd-input-id_body" data-timeout="1000" class="width-controller wmd-panel wmd-preview dmmd-preview dmmd-no-button dmmd-preview-has-content">
-      <div class="right-markdown dmmd-preview-content content-description" id="display"></div>
-    </div>
+  <div id="id_body-preview" data-preview-url="{{url('comment_preview')}}" data-textarea-id="wmd-input-id_body" data-timeout="1000" class="width-controller wmd-panel wmd-preview dmmd-preview dmmd-no-button dmmd-preview-has-content">
+    <div class="right-markdown dmmd-preview-content content-description" id="display"></div>
   </div>
 {% endblock %}
 
