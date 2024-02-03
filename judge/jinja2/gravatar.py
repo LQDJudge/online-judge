@@ -10,7 +10,7 @@ from . import registry
 
 @registry.function
 def gravatar(profile, size=80, default=None, profile_image=None, email=None):
-    if not profile.is_muted:
+    if profile and not profile.is_muted:
         if profile_image:
             return profile_image
         if profile and profile.profile_image_url:
