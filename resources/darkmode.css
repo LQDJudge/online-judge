@@ -1,3 +1,5 @@
+/*! Dark reader generated CSS | Licensed under MIT https://github.com/darkreader/darkreader/blob/main/LICENSE */
+
 /* User-Agent Style */
 html {
     background-color: #181a1b !important;
@@ -2535,7 +2537,6 @@ ul.pagination a:hover {
     color: rgb(232, 230, 227);
     background-image: initial;
     background-color: rgb(163, 62, 18);
-    border-color: initial;
 }
 ul.pagination > li > a,
 ul.pagination > li > span {
@@ -2818,36 +2819,22 @@ a.voted {
 .actionbar .bookmarked {
     color: rgb(248, 248, 80);
 }
-#submissions-table {
+.submission-row {
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 4px;
     background-image: initial;
     background-color: rgb(24, 26, 27);
 }
-.submission-row {
-    border-left-color: rgb(62, 68, 70);
-    border-right-color: rgb(62, 68, 70);
+.submission-row .sub-result .language {
+    background-color: rgb(41, 44, 46);
 }
-.submission-row:hover {
-    background-image: initial;
-    background-color: rgb(31, 34, 35);
-}
-.submission-row:first-of-type {
-    border-top-color: rgb(62, 68, 70);
-}
-.submission-row > div {
-    border-bottom-color: rgb(62, 68, 70);
-}
-.submission-row .sub-result {
-    border-bottom-color: rgb(48, 52, 54);
-    border-right-color: rgb(62, 68, 70);
-}
-.submission-row .sub-result .score {
-    color: rgb(232, 230, 227);
+.submission-row .sub-info .name:hover {
+    text-decoration-color: initial;
 }
 .submission-row .sub-testcase {
     color: rgb(178, 172, 162);
 }
-.submission-row .sub-usage {
-    border-left-color: rgb(62, 68, 70);
+.submission-row .sub-user-img {
+    background-color: rgb(43, 47, 49);
 }
 #statistics-table tr:not(:first-child) td {
     border-top-color: rgb(48, 52, 54) !important;
@@ -3777,4 +3764,7 @@ div.mermaid .actor {
 }
 .google-symbols {
     font-family: 'Google Symbols' !important;
+}
+.material-icons-extended {
+    font-family: 'Material Icons Extended' !important;
 }

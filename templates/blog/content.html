@@ -9,7 +9,7 @@
           {%- endif -%}
         {% endwith %}
         &#8226;
-        {{ relative_time(post.publish_on, abs=_('on {time}'), rel=_('{time}')) -}}
+        {{ relative_time(post.publish_on) }}
         {%- if post.sticky %} &#8226;
           <i title="Sticky" class="fa fa-star fa-fw"></i>{% endif -%}
         {% if post.is_organization_private and show_organization_private_icon %}

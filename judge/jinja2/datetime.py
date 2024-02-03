@@ -23,5 +23,5 @@ registry.filter(localtime_wrapper(time))
 
 @registry.function
 @registry.render_with("widgets/relative-time.html")
-def relative_time(time, format=_("N j, Y, g:i a"), rel=_("{time}"), abs=_("on {time}")):
+def relative_time(time, format=_("N j, Y, g:i a"), rel=_("{time}"), abs=_("{time}")):
     return {"time": time, "format": format, "rel_format": rel, "abs_format": abs}
