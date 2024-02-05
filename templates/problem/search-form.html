@@ -49,9 +49,9 @@
       <div class="filter-form-group">
         <label class="bold-text margin-label" for="type"><i class="non-italics">{{ _('Author') }}</i></label>
         <select id="search-author" name="authors" multiple>
-          {% for author in all_authors %}
-            <option value="{{ author.id }}"{% if author.id in author_query %} selected{% endif %}>
-              {{ author.user__username }}
+          {% for author in author_query %}
+            <option value="{{ author.id }}" selected>
+              {{ author.username }}
             </option>
           {% endfor %}
         </select>

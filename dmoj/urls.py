@@ -84,6 +84,7 @@ from judge.views.select2 import (
     TicketUserSelect2View,
     UserSearchSelect2View,
     UserSelect2View,
+    ProblemAuthorSearchSelect2View,
 )
 
 admin.autodiscover()
@@ -886,6 +887,11 @@ urlpatterns = [
                                 r"^ticket_assignee$",
                                 AssigneeSelect2View.as_view(),
                                 name="ticket_assignee_select2_ajax",
+                            ),
+                            url(
+                                r"^problem_authors$",
+                                ProblemAuthorSearchSelect2View.as_view(),
+                                name="problem_authors_select2_ajax",
                             ),
                         ]
                     ),

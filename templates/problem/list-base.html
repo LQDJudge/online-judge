@@ -90,7 +90,15 @@
           .css({'visibility': 'visible'});
         $('#search-org').select2({multiple: 1, placeholder: '{{ _('Groups') }}...'})
           .css({'visibility': 'visible'});
-        $('#search-author').select2({multiple: 1, placeholder: '{{ _('Authors') }}...'})
+        $('#search-author').select2({
+          multiple: 1,
+          placeholder: '{{ _('Authors') }}...',
+          ajax: {
+            url: '{{ url('problem_authors_select2_ajax') }}',
+            delay: 250,
+            cache: true,
+          }
+        })
           .css({'visibility': 'visible'});
 
         // This is incredibly nasty to do but it's needed because otherwise the select2 steals the focus

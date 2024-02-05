@@ -522,7 +522,9 @@
     $('#search-handle').select2({
       placeholder: '<i class="fa fa-search"></i> {{ _('Search by handle...') }}',
       ajax: {
-        url: '{{ url('chat_user_search_select2_ajax') }}'
+        url: '{{ url('chat_user_search_select2_ajax') }}',
+        delay: 250,
+        cache: true,
       },
       minimumInputLength: 1,
       escapeMarkup: function (markup) {

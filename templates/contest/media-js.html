@@ -161,7 +161,9 @@
     $('#search-contest').select2({
       placeholder: placeholder,
       ajax: {
-        url: '{{ url('contest_user_search_select2_ajax', contest.key) }}'
+        url: '{{ url('contest_user_search_select2_ajax', contest.key) }}',
+        cache: true,
+        delay: 250,
       },
       minimumInputLength: 1,
       escapeMarkup: function (markup) {

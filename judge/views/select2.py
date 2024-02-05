@@ -200,3 +200,17 @@ class ChatUserSearchSelect2View(UserSearchSelect2View):
             ),
             "display_rank": display_rank,
         }
+
+
+class ProblemAuthorSearchSelect2View(UserSearchSelect2View):
+    def get_queryset(self):
+        return Profile.objects.filter(
+            authored_problems__isnull=False, user__username__icontains=self.term
+        ).distinct()
+
+    def get_json_result_from_object(self, user_tuple):
+        pk, username, email, display_rank, profile_image = user_tuple
+        return {
+            "text": username,
+            "id": pk,
+        }
