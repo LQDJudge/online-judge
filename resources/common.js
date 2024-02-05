@@ -467,4 +467,28 @@ $(function() {
         $nav_list.hide();
     });
 
+    $(window).on('beforeunload', function() {
+        let key = `oj-content-${window.location.href}`;
+        let $contentClone = $('#content').clone();
+        $contentClone.find('.select2').remove();
+            $contentClone.find('.select2-hidden-accessible').removeClass('select2-hidden-accessible');
+        sessionStorage.setItem(key, JSON.stringify({
+          "html": $contentClone.html(),
+          "page": window.page,
+          "has_next_page": window.has_next_page,
+        }));
+    });
+    if (window.performance && 
+      window.performance.navigation.type 
+      === window.performance.navigation.TYPE_BACK_FORWARD) {
+        let key = `oj-content-${window.location.href}`;
+        let content = sessionStorage.getItem(key);
+        if (content) {    
+            content = JSON.parse(content);
+            $('#content').html(content.html);
+            onWindowReady();
+            window.page = content.page;
+            window.has_next_page = content.has_next_page;
+        }
+    }
 });
