@@ -136,16 +136,20 @@ label[for="language"], label[for="status"] {
 }
 
 @media(max-width: 799px) {
-    .sub-prop {
-        .label {
+    .submission-row {
+        .sub-prop {
+            .label {
+                display: none;
+            }
+
+            .fa {
+                display: inline-block;
+            }
+        }
+        .sub-user-img {
             display: none;
         }
-
-        .fa {
-            display: inline-block;
-        }
     }
-
     #fake-info-float {
         display: none;
     }
