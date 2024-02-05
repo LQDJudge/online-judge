@@ -488,7 +488,7 @@ $(function() {
             content = JSON.parse(content);
             $('#content').html(content.html);
             onWindowReady();
-            $(window).scrollTop(content.scrollOffset);
+            $(window).scrollTop(content.scrollOffset - 100);
             window.page = content.page;
             window.has_next_page = content.has_next_page;
         }
