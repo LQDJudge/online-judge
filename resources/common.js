@@ -476,6 +476,7 @@ $(function() {
           "html": $contentClone.html(),
           "page": window.page,
           "has_next_page": window.has_next_page,
+          "scrollOffset": $(window).scrollTop(),
         }));
     });
     if (window.performance && 
@@ -487,6 +488,7 @@ $(function() {
             content = JSON.parse(content);
             $('#content').html(content.html);
             onWindowReady();
+            $(window).scrollTop(content.scrollOffset);
             window.page = content.page;
             window.has_next_page = content.has_next_page;
         }
