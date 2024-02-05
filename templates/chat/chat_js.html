@@ -52,7 +52,7 @@
 
   function postProcessMessages() {
     register_time($('.time-with-rel'));
-    MathJax.typeset();
+    renderKatex();
     populateCopyButton();
     merge_authors();
   }

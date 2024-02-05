@@ -43,7 +43,6 @@ from judge.models import (
 
 from judge.widgets import (
     HeavyPreviewPageDownWidget,
-    MathJaxPagedownWidget,
     PagedownWidget,
     Select2MultipleWidget,
     Select2Widget,
@@ -412,7 +411,7 @@ class NewMessageForm(ModelForm):
         fields = ["title", "content"]
         widgets = {}
         if PagedownWidget is not None:
-            widgets["content"] = MathJaxPagedownWidget()
+            widgets["content"] = PagedownWidget()
 
 
 class CustomAuthenticationForm(AuthenticationForm):

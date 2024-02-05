@@ -27,7 +27,7 @@ from django_ratelimit.decorators import ratelimit
 
 from judge.models import Comment, CommentVote, Notification, BlogPost
 from judge.utils.views import TitleMixin
-from judge.widgets import MathJaxPagedownWidget, HeavyPreviewPageDownWidget
+from judge.widgets import HeavyPreviewPageDownWidget
 from judge.comments import add_mention_notifications
 
 import json

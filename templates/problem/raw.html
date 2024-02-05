@@ -92,16 +92,7 @@
     <div class="content-description printing">
       {{ description|markdown|reference|absolutify(url)|str|safe }}
     </div>
-
-    <script type="text/javascript" src="{{ static('mathjax3_config.js') }}"></script>
-    <script type="text/javascript" src="mathjax3_config.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"></script>
-    <script type="text/javascript">
-      MathJax.Hub.Register.StartupHook("End", function () {
-        if (typeof window.callPhantom === 'function')
-        window.callPhantom({'action': 'snapshot'});
-        document.body.classList.add('math-loaded');
-      });
-    </script>
+    <script src="{{ static('katex_config.js') }}"></script>
+    {% include "katex-load.html" %}
   </body>
 </html>

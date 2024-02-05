@@ -6,7 +6,7 @@ from pymdownx import superfences
 
 
 EXTENSIONS = [
-    "pymdownx.arithmatex",
+    # "pymdownx.arithmatex",
     "pymdownx.magiclink",
     "pymdownx.betterem",
     "pymdownx.details",
@@ -83,23 +83,8 @@ def markdown(value, lazy_load=False):
         value, extensions=extensions, extension_configs=EXTENSION_CONFIGS
     )
 
-    # Don't clean mathjax
-    hash_script_tag = {}
     soup = BeautifulSoup(html, "html.parser")
-    for script_tag in soup.find_all("script"):
-        allow_math_types = ["math/tex", "math/tex; mode=display"]
-        if script_tag.attrs.get("type", False) in allow_math_types:
-            hash_script_tag[str(hash(str(script_tag)))] = str(script_tag)
-
-    for hashed_tag in hash_script_tag:
-        tag = hash_script_tag[hashed_tag]
-        html = html.replace(tag, hashed_tag)
-
     html = bleach.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS)
-
-    for hashed_tag in hash_script_tag:
-        tag = hash_script_tag[hashed_tag]
-        html = html.replace(hashed_tag, tag)
 
     if not html:
         html = escape(value)

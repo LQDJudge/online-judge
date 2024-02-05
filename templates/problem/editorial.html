@@ -36,8 +36,5 @@
 {% endblock %}
 
 {% block bodyend %}
-  {% if REQUIRE_JAX %}
-    {% include "mathjax-load.html" %}
-  {% endif %}
   {% include "comments/math.html" %}
 {% endblock %}

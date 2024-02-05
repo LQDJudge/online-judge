@@ -185,10 +185,6 @@
 {% endblock %}
 
 {% block bodyend %}
-  {% if REQUIRE_JAX %}
-    {% include "mathjax-load.html" %}
-  {% endif %}
-
   <script type="text/javascript">
     var submission_activity = {{ submission_data }};
     var metadata = {{ submission_metadata }};

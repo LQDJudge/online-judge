@@ -376,6 +376,8 @@
         {% block extra_js %}{% endblock %}
       </div>
       {% block bodyend %}{% endblock %}
+      <script src="{{ static('katex_config.js') }}"></script>
+      {% include "katex-load.html" %}
       {% block footer %}
         <footer>
           <span id="footer-content">

@@ -407,8 +407,6 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
                 )
                 maker.title = problem_name
                 assets = ["style.css"]
-                if maker.math_engine == "jax":
-                    assets.append("mathjax3_config.js")
                 for file in assets:
                     maker.load(file, os.path.join(settings.DMOJ_RESOURCES, file))
                 maker.make()

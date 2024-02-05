@@ -60,7 +60,7 @@
         },
         success: function(data) {
           $('#display').html(data);
-          MathJax.typeset();
+          renderKatex();
           populateCopyButton();
         },
         error: function(error) {
@@ -82,8 +82,6 @@
   <script src="{{ static('pagedown/Markdown.Editor.js') }}"></script>
   <script src="{{ static('pagedown-extra/Markdown.Extra.js') }}"></script>
   <script src="{{ static('pagedown_init.js') }}"></script>
-  <script src="{{ static('mathjax3_config.js') }}"></script>
-  <script src="http://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
   <script src="{{ static('pagedown_math.js') }}"></script>
 {% endblock %}
 

@@ -96,7 +96,7 @@ class Command(BaseCommand):
                 .replace("'//", "'https://")
             )
             maker.title = problem_name
-            for file in ("style.css", "mathjax3_config.js"):
+            for file in "style.css":
                 maker.load(file, os.path.join(settings.DMOJ_RESOURCES, file))
             maker.make(debug=True)
             if not maker.success:

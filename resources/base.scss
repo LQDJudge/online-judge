@@ -521,16 +521,6 @@ noscript #noscript {
     margin-top: 1.2em;
 }
 
-math {
-    font-size: 1.155em;
-}
-
-.MathJax {
-    &:focus {
-        outline: none;
-    }
-}
-
 @media(max-width: 1498px) {
     #page-container {
         border-left: none;

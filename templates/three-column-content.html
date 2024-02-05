@@ -83,7 +83,7 @@
             $('.middle-right-content').removeClass("wrapper");
           }
           $(document).prop('title', $(data).filter('title').text());
-          MathJax.typeset($('.middle-right-content')[0]);
+          renderKatex($('.middle-right-content')[0]);
           onWindowReady();
           activateBlogBoxOnClick();
           $('.xdsoft_datetimepicker').hide();
@@ -152,8 +152,5 @@
 
 {% block bodyend %}
   {{ super() }}
-  {% if REQUIRE_JAX %}
-    {% include "mathjax-load.html" %}
-  {% endif %}
   {% include "comments/math.html" %}
 {% endblock %}
