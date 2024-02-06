@@ -6,7 +6,7 @@ from pymdownx import superfences
 
 
 EXTENSIONS = [
-    # "pymdownx.arithmatex",
+    "pymdownx.arithmatex",
     "pymdownx.magiclink",
     "pymdownx.betterem",
     "pymdownx.details",
@@ -25,6 +25,9 @@ EXTENSIONS = [
 ]
 
 EXTENSION_CONFIGS = {
+    "pymdownx.arithmatex": {
+        "generic": True,
+    },
     "pymdownx.superfences": {
         "custom_fences": [
             {
@@ -83,7 +86,6 @@ def markdown(value, lazy_load=False):
         value, extensions=extensions, extension_configs=EXTENSION_CONFIGS
     )
 
-    soup = BeautifulSoup(html, "html.parser")
     html = bleach.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS)
 
     if not html:
