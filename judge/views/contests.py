@@ -461,6 +461,8 @@ def is_contest_clonable(request, contest):
         return False
     if request.user.has_perm("judge.clone_contest"):
         return True
+    if contest.access_code and not contest.is_editable_by(request.user):
+        return False
     if contest.ended:
         return True
     return False
