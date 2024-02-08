@@ -49,11 +49,14 @@
         font-size: 1.2em;
         margin-bottom: 10px;
 
-        .name {
+        .sub-user {
+            overflow-wrap: break-word;
+        }
+        .sub-problem {
             font-weight: 700;
         }
 
-        .name:hover {
+        .sub-problem:hover {
             text-decoration: underline;
         }
     }
@@ -89,6 +92,8 @@
         border-radius: 50%;
         overflow: hidden;
         margin-right: 15px;
+        display: flex;
+        align-items: center;
 
         img {
             width: 100%;

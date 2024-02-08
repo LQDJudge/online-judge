@@ -4,10 +4,12 @@
 </div>
 <div class="sub-details">
   <div class="sub-info{% if submission.status == 'G' %} sub-info-grading{% endif %}">
-    {{ link_user(submission.user) }}
+    <div class="sub-user" style="max-width: {{50 if show_problem else 100}}%">
+      {{ link_user(submission.user) }}
+    </div>
     {% if show_problem %}
       <span>—</span>
-      <div class="name"><a href="{{ url('problem_detail', submission.problem.code) }}">{{ problem_name }}</a></div>
+      <div class="sub-problem"><a href="{{ url('problem_detail', submission.problem.code) }}">{{ problem_name }}</a></div>
     {% endif %}
   </div>
   <div class="sub-result">
