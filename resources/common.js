@@ -422,6 +422,7 @@ function onWindowReady() {
         var errorList = $(this);
         errorList.nextAll('input, select, textarea').first().after(errorList);
     });
+    register_all_toggles();
 }
 
 $(function() {
