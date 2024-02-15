@@ -44,11 +44,11 @@ function register_toggle(link) {
     });
 }
 
-$(function register_all_toggles() {
+function register_all_toggles() {
     $('.toggle').each(function () {
         register_toggle($(this));
     });
-});
+};
 
 function featureTest(property, value, noPrefixes) {
     var prop = property + ':',
