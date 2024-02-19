@@ -1,3 +1,5 @@
+/*! Dark reader generated CSS | Licensed under MIT https://github.com/darkreader/darkreader/blob/main/LICENSE */
+
 /* User-Agent Style */
 html {
     background-color: #181a1b !important;
@@ -1658,9 +1660,6 @@ noscript #noscript {
     border-right-color: rgb(62, 68, 70);
     border-left-color: rgb(62, 68, 70);
 }
-.MathJax:focus {
-    outline-color: initial;
-}
 @media (max-width: 1498px) {
     #page-container {
         border-left-color: initial;
@@ -2825,7 +2824,7 @@ a.voted {
 .submission-row .sub-result .language {
     background-color: rgb(41, 44, 46);
 }
-.submission-row .sub-info .name:hover {
+.submission-row .sub-info .sub-problem:hover {
     text-decoration-color: initial;
 }
 .submission-row .sub-testcase {
@@ -3296,6 +3295,57 @@ div.dmmd-preview-stale {
     rgb(28, 30, 31) 20px);
     background-color: initial;
 }
+.course-list {
+    list-style-image: initial;
+}
+.course-list .course-item {
+    border-color: rgb(58, 62, 65);
+    background-color: rgb(24, 26, 27);
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px;
+}
+.course-list .course-item:hover {
+    box-shadow: rgba(0, 0, 0, 0.15) 0px 6px 12px;
+}
+.lesson-list {
+    list-style-image: initial;
+}
+.lesson-list li:hover {
+    box-shadow: rgba(0, 0, 0, 0.15) 0px 6px 12px;
+    background-image: initial;
+    background-color: rgb(52, 52, 0);
+}
+.lesson-list li {
+    background-image: initial;
+    background-color: rgb(24, 26, 27);
+    border-color: rgb(58, 62, 65);
+    box-shadow: rgb(53, 57, 59) 0px 2px 4px;
+}
+.lesson-list .lesson-title {
+    color: initial;
+}
+.lesson-list .lesson-title .lesson-points {
+    color: rgb(169, 162, 151);
+}
+.lesson-list .progress-container {
+    background-image: initial;
+    background-color: rgb(42, 45, 47);
+}
+.lesson-list .progress-bar {
+    background-image: initial;
+    background-color: rgb(125, 44, 5);
+    color: rgb(232, 230, 227);
+}
+.course-problem-list li {
+    border-bottom-color: rgb(53, 57, 59);
+}
+.course-problem-list li:hover {
+    background-image: initial;
+    background-color: rgb(42, 45, 47);
+}
+.course-problem-list a {
+    text-decoration-color: initial;
+    color: inherit;
+}
 .fa-border {
     border-color: rgb(53, 57, 59);
 }
@@ -3574,111 +3624,35 @@ div.dmmd-preview-stale {
 .sr-only {
     border-color: initial;
 }
-.CtxtMenu_InfoContent {
-    border-color: initial;
-    background-color: rgb(34, 36, 38);
-}
-.CtxtMenu_Info.CtxtMenu_MousePost {
-    outline-color: initial;
-}
-.CtxtMenu_Info {
-    border-color: initial;
-    background-color: rgb(43, 47, 49);
-    color: rgb(232, 230, 227);
-    box-shadow: rgb(96, 104, 108) 0px 10px 20px;
-}
-.CtxtMenu_MenuClose {
-    border-color: rgb(72, 78, 81);
-    color: rgb(223, 220, 215);
-}
-.CtxtMenu_MenuClose span {
-    background-color: rgb(72, 78, 81);
-    border-color: initial;
-}
-.CtxtMenu_MenuClose:hover {
-    color: rgb(232, 230, 227) !important;
-    border-color: rgb(62, 68, 70) !important;
-}
-.CtxtMenu_MenuClose:hover span {
-    background-color: rgb(53, 57, 59) !important;
-}
-.CtxtMenu_MenuClose:hover:focus {
-    outline-color: initial;
-}
-.CtxtMenu_Menu {
-    background-color: rgb(24, 26, 27);
-    color: rgb(232, 230, 227);
-    border-color: rgb(62, 68, 70);
-    box-shadow: rgb(96, 104, 108) 0px 10px 20px;
-}
-.CtxtMenu_MenuItem {
-    background-image: initial;
-    background-color: transparent;
-}
-.CtxtMenu_MenuArrow {
-    color: rgb(168, 160, 149);
-}
-.CtxtMenu_MenuActive .CtxtMenu_MenuArrow {
-    color: rgb(232, 230, 227);
-}
-.CtxtMenu_MenuInputBox {
-    color: rgb(168, 160, 149);
-}
-.CtxtMenu_SliderValue {
-    color: rgb(200, 195, 188);
-}
-.CtxtMenu_SliderBar {
-    outline-color: initial;
-    background-image: initial;
-    background-color: rgb(49, 53, 55);
-}
-.CtxtMenu_MenuRule {
-    border-top-color: rgb(58, 62, 65);
-}
-.CtxtMenu_MenuDisabled {
-    color: rgb(152, 143, 129);
-}
-.CtxtMenu_MenuActive {
-    background-color: rgb(79, 86, 89);
-    color: rgb(232, 230, 227);
-}
-.CtxtMenu_MenuDisabled:focus {
-    background-color: rgb(37, 40, 42);
-}
-.CtxtMenu_MenuLabel:focus {
-    background-color: rgb(37, 40, 42);
-}
-.CtxtMenu_ContextMenu:focus {
-    outline-color: initial;
-}
-.CtxtMenu_ContextMenu .CtxtMenu_MenuItem:focus {
-    outline-color: initial;
-}
-.CtxtMenu_SelectionMenu {
-    border-bottom-color: initial;
-    box-shadow: none;
-}
-.CtxtMenu_SelectionBox {
-    background-color: rgb(24, 26, 27);
-}
-.CtxtMenu_SelectionDivider {
-    border-top-color: rgb(140, 130, 115);
-}
-mjx-merror {
-    color: rgb(255, 26, 26);
-    background-color: rgb(153, 153, 0);
-}
-mjx-assistive-mml {
-    border-color: initial !important;
-}
-mjx-stretchy-v > mjx-ext {
-    border-color: transparent;
-}
 .recently-attempted ul {
     list-style-image: initial;
 }
 .organization-row:last-child {
     border-bottom-color: initial;
+}
+.katex * {
+    border-color: currentcolor;
+}
+.katex .katex-mathml {
+    border-color: initial;
+}
+.katex .rule {
+    border-color: initial;
+}
+.katex svg {
+    fill: currentcolor;
+    stroke: currentcolor;
+}
+.katex svg path {
+    stroke: none;
+}
+.katex .fbox,
+.katex .fcolorbox {
+    border-color: initial;
+}
+.katex .angl {
+    border-right-color: initial;
+    border-top-color: initial;
 }
 
 /* Override Style */
@@ -3765,4 +3739,14 @@ div.mermaid .actor {
 }
 .material-icons-extended {
     font-family: 'Material Icons Extended' !important;
+}
+mitid-authenticators-code-app > .code-app-container {
+    padding-top: 1rem;
+    background-color: white !important;
+}
+iframe#unpaywall[src$="unpaywall.html"] {
+    color-scheme: light !important;
+}
+.ms-Icon {
+    font-family: 'FabricMDL2Icons' !important;
 }
