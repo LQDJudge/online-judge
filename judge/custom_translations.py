@@ -18,4 +18,5 @@ def custom_trans():
         _("Your password can’t be entirely numeric."),
         # Navbar
         _("Bug Report"),
+        _("Courses"),
     ]

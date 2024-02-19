@@ -24,6 +24,9 @@ msgstr "Giới thiệu"
 msgid "Status"
 msgstr "Máy chấm"
 
+msgid "Courses"
+msgstr "Khóa học"
+
 msgid "Suggestions"
 msgstr "Đề xuất ý tưởng"
 
@@ -38,6 +41,9 @@ msgstr "Đăng ký tên"
 
 msgid "Report"
 msgstr "Báo cáo tiêu cực"
+
+msgid "Bug Report"
+msgstr "Báo cáo lỗi"
 
 msgid "2sat"
 msgstr ""
@@ -593,9 +599,6 @@ msgstr ""
 
 msgid "z-function"
 msgstr ""
-
-#~ msgid "Bug Report"
-#~ msgstr "Báo cáo lỗi"
 
 #~ msgid "Insert Image"
 #~ msgstr "Chèn hình ảnh"
