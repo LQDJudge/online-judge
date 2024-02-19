@@ -559,7 +559,30 @@ urlpatterns = [
         r"^contests/summary/(?P<key>\w+)/",
         paged_list_view(contests.ContestsSummaryView, "contests_summary"),
     ),
-    url(r"^course/", paged_list_view(course.CourseList, "course_list")),
+    url(r"^courses/", paged_list_view(course.CourseList, "course_list")),
+    url(
+        r"^course/(?P<slug>[\w-]*)",
+        include(
+            [
+                url(r"^$", course.CourseDetail.as_view(), name="course_detail"),
+                url(
+                    r"^/lesson/(?P<id>\d+)$",
+                    course.CourseLessonDetail.as_view(),
+                    name="course_lesson_detail",
+                ),
+                url(
+                    r"^/edit_lessons$",
+                    course.EditCourseLessonsView.as_view(),
+                    name="edit_course_lessons",
+                ),
+                url(
+                    r"^/grades$",
+                    course.CourseStudentResults.as_view(),
+                    name="course_grades",
+                ),
+            ]
+        ),
+    ),
     url(
         r"^contests/(?P<year>\d+)/(?P<month>\d+)/$",
         contests.ContestCalendar.as_view(),

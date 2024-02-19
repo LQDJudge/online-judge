@@ -96,12 +96,16 @@
     }
 
     function registerNavigation() {
-      const links = ['.pagination a', '.tabs li a'];
-      for (link of links) {
-        $(link).on('click', function (e) {
-          e.preventDefault();
-          navigateTo($(this));
-        })
+      const links = ['.pagination a', '.tabs li a', '#control-panel a'];
+      for (let linkSelector of links) {
+        $(linkSelector).each(function() {
+          if ($(this).attr('target') !== '_blank') {
+            $(this).on('click', function(e) {
+              e.preventDefault();
+              navigateTo($(this));
+            });
+          }
+        });
       }
     }
 

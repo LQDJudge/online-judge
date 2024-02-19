@@ -1,0 +1,127 @@
+{% extends "course/base.html" %}
+
+{% block two_col_media %}
+  <style type="text/css">
+    table {
+      font-size: 15px;
+    }
+    td {
+      height: 2.5em;
+    }
+    .user-name {
+      padding-left: 1em !important;
+    }
+    #search-input {
+      float: right;
+      margin-bottom: 1em;
+    }
+  </style>
+{% endblock %}
+
+{% block two_col_js %}
+  <script>
+    $(document).ready(function(){
+      var $searchInput = $("#search-input");
+      var $usersTable = $("#users-table");
+      var tableBorderColor = $('#users-table td').css('border-bottom-color');
+
+      $searchInput.on("keyup", function() {
+        var value = $(this).val().toLowerCase();
+        $("#users-table tbody tr").filter(function() {
+          $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+
+        if(value) {
+          $('#users-table').css('border-bottom', '1px solid ' + tableBorderColor);
+        } else {
+          $('#users-table').css('border-bottom', '');
+        }
+      });
+
+      $('#sortSelect').select2({
+        minimumResultsForSearch: -1,
+        width: "10em",
+      });
+
+      $('#sortSelect').on('change', function() {
+        var rows = $('#users-table tbody tr').get();
+        var sortBy = $(this).val();
+        rows.sort(function(a, b) {
+          var keyA = $(a).find(sortBy === 'username' ? '.user-name' : 'td:last-child').text().trim();
+          var keyB = $(b).find(sortBy === 'username' ? '.user-name' : 'td:last-child').text().trim();
+
+          if(sortBy === 'total') {
+            // Convert percentage string to number for comparison
+            keyA = -parseFloat(keyA.replace('%', ''));
+            keyB = -parseFloat(keyB.replace('%', ''));
+          }
+          else {
+            keyA = keyA.toLowerCase();
+            keyB = keyB.toLowerCase();
+          }
+
+          if(keyA < keyB) return -1;
+          if(keyA > keyB) return 1;
+          return 0;
+        });
+
+        $.each(rows, function(index, row) {
+          $('#users-table tbody').append(row);
+        });
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block middle_content %}
+  <center><h2>{{title}}</h2></center>
+  {% set lessons = course.lessons.all() %}
+  {{_("Sort by")}}:
+  <select id="sortSelect">
+    <option value="username">{{_("Username")}}</option>
+    <option value="total">{{_("Score")}}</option>
+  </select>
+  <input type="text" id="search-input" placeholder="{{_('Search')}}" autofocus>
+  <table class="table striped" id="users-table">
+    <thead>
+      <tr>
+        <th>{{_('Student')}}</th>
+        {% if grades|length > 0 %}
+          {% for lesson in lessons %}
+            <th class="points">
+              <a href="{{url('course_lesson_detail', course.slug, lesson.id)}}">
+                {{ lesson.title }}
+                <div class="point-denominator">{{lesson.points}}</div>
+              </a>
+            </th>
+          {% endfor %}
+        {% endif %}
+        <th>{{_('Total')}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for student, grade in grades.items() %}
+        <tr>
+          <td class="user-name">
+            <div>
+              {{link_user(student)}}
+            </div>
+            <div>
+              {{student.first_name}}
+            </div>
+          </td>
+          {% for lesson in lessons %}
+            <td class="partial-score">
+              <a href="{{url('course_lesson_detail', course.slug, lesson.id)}}?user={{student.username}}">
+                {{ grade[lesson.id]['percentage'] | floatformat(0) }}%
+              </a>
+            </td>
+          {% endfor %}
+          <td style="font-weight: bold">
+            {{ grade['total']['percentage'] | floatformat(0) }}%
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

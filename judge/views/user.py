@@ -409,7 +409,7 @@ def edit_profile(request):
             request.POST, request.FILES, instance=profile, user=request.user
         )
         if form_user.is_valid() and form.is_valid():
-            with transaction.atomic(), revisions.create_revision():
+            with revisions.create_revision():
                 form_user.save()
                 form.save()
                 revisions.set_user(request.user)

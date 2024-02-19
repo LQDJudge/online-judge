@@ -131,6 +131,13 @@ class OrganizationMixin(OrganizationBase):
         context["can_edit"] = self.can_edit_organization(self.organization)
         context["organization"] = self.organization
         context["logo_override_image"] = self.organization.logo_override_image
+        context["organization_subdomain"] = (
+            ("http" if settings.DMOJ_SSL == 0 else "https")
+            + "://"
+            + self.organization.slug
+            + "."
+            + get_current_site(self.request).domain
+        )
         if "organizations" in context:
             context.pop("organizations")
         return context
@@ -274,14 +281,6 @@ class OrganizationHome(OrganizationHomeView, FeedView):
     def get_context_data(self, **kwargs):
         context = super(OrganizationHome, self).get_context_data(**kwargs)
         context["title"] = self.organization.name
-        http = "http" if settings.DMOJ_SSL == 0 else "https"
-        context["organization_subdomain"] = (
-            http
-            + "://"
-            + self.organization.slug
-            + "."
-            + get_current_site(self.request).domain
-        )
 
         now = timezone.now()
         visible_contests = (
@@ -737,7 +736,7 @@ class AddOrganizationMember(
     def form_valid(self, form):
         new_users = form.cleaned_data["new_users"]
         self.object.members.add(*new_users)
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             revisions.set_comment(_("Added members from site"))
             revisions.set_user(self.request.user)
             return super(AddOrganizationMember, self).form_valid(form)
@@ -804,7 +803,7 @@ class EditOrganization(
         return form
 
     def form_valid(self, form):
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             revisions.set_comment(_("Edited from site"))
             revisions.set_user(self.request.user)
             return super(EditOrganization, self).form_valid(form)
@@ -836,7 +835,7 @@ class AddOrganization(LoginRequiredMixin, TitleMixin, CreateView):
                 % settings.DMOJ_USER_MAX_ORGANIZATION_ADD,
                 status=400,
             )
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             revisions.set_comment(_("Added from site"))
             revisions.set_user(self.request.user)
             res = super(AddOrganization, self).form_valid(form)
@@ -861,7 +860,7 @@ class AddOrganizationContest(
         return kwargs
 
     def form_valid(self, form):
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             revisions.set_comment(_("Added from site"))
             revisions.set_user(self.request.user)
 
@@ -954,7 +953,7 @@ class EditOrganizationContest(
         return self.contest
 
     def form_valid(self, form):
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             revisions.set_comment(_("Edited from site"))
             revisions.set_user(self.request.user)
             res = super(EditOrganizationContest, self).form_valid(form)
@@ -1015,7 +1014,7 @@ class AddOrganizationBlog(
         return _("Add blog for %s") % self.organization.name
 
     def form_valid(self, form):
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             res = super(AddOrganizationBlog, self).form_valid(form)
             self.object.is_organization_private = True
             self.object.authors.add(self.request.profile)
@@ -1037,6 +1036,11 @@ class AddOrganizationBlog(
                 self.organization.admins.all(), "Add blog", html, self.request.profile
             )
             return res
+
+    def get_success_url(self):
+        return reverse(
+            "organization_home", args=[self.organization.id, self.organization.slug]
+        )
 
 
 class EditOrganizationBlog(
@@ -1115,12 +1119,17 @@ class EditOrganizationBlog(
         make_notification(posible_users, action, html, self.request.profile)
 
     def form_valid(self, form):
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             res = super(EditOrganizationBlog, self).form_valid(form)
             revisions.set_comment(_("Edited from site"))
             revisions.set_user(self.request.user)
             self.create_notification("Edit blog")
             return res
+
+    def get_success_url(self):
+        return reverse(
+            "organization_home", args=[self.organization.id, self.organization.slug]
+        )
 
 
 class PendingBlogs(

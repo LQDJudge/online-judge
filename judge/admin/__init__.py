@@ -23,6 +23,7 @@ from judge.admin.submission import SubmissionAdmin
 from judge.admin.taxon import ProblemGroupAdmin, ProblemTypeAdmin
 from judge.admin.ticket import TicketAdmin
 from judge.admin.volunteer import VolunteerProblemVoteAdmin
+from judge.admin.course import CourseAdmin
 from judge.models import (
     BlogPost,
     Comment,
@@ -72,7 +73,7 @@ admin.site.register(Profile, ProfileAdmin)
 admin.site.register(Submission, SubmissionAdmin)
 admin.site.register(Ticket, TicketAdmin)
 admin.site.register(VolunteerProblemVote, VolunteerProblemVoteAdmin)
-admin.site.register(Course)
+admin.site.register(Course, CourseAdmin)
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(ContestsSummary, ContestsSummaryAdmin)

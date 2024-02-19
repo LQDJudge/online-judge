@@ -53,6 +53,15 @@
             </div>
           </li>
         {% endif %}
+        {% if is_member %}
+          <li>
+            <div>
+              <a href="{{ organization_subdomain }}" target="_blank">
+                {{_('Subdomain')}}
+              </a>
+            </div>
+          </li>
+        {% endif %}
         {% if is_member and not is_admin %}
           <li>
             <form method="post" action="{{ url('leave_organization', organization.id, organization.slug) }}">

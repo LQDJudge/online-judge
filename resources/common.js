@@ -472,7 +472,9 @@ $(function() {
         let key = `oj-content-${window.location.href}`;
         let $contentClone = $('#content').clone();
         $contentClone.find('.select2').remove();
-            $contentClone.find('.select2-hidden-accessible').removeClass('select2-hidden-accessible');
+        $contentClone.find('.select2-hidden-accessible').removeClass('select2-hidden-accessible');
+        $contentClone.find('.noUi-base').remove();
+        $contentClone.find('.wmd-button-row').remove();
         sessionStorage.setItem(key, JSON.stringify({
           "html": $contentClone.html(),
           "page": window.page,

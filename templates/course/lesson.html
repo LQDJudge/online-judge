@@ -1,0 +1,39 @@
+{% extends "course/base.html" %}
+
+{% block two_col_media %}
+  <style>
+  </style>
+{% endblock %}
+
+{% block middle_content %}
+  <center><h2>{{title}}</h2></center>
+  <h3 class="course-content-title">{{_("Content")}}</h3>
+  <div>
+    {{ lesson.content|markdown|reference|str|safe }}
+  </div>
+  <h3 class="course-content-title">{{_("Problems")}}</h3>
+  <ul class="course-problem-list">
+    {% for problem in lesson.problems.all() %}
+      <a href="{{url('problem_detail', problem.code)}}">
+        <li>
+          {% if problem.id in completed_problem_ids %}
+            <i class="solved-problem-color fa fa-check-circle"></i>
+          {% elif problem.id in attempted_problems %}
+            <i class="attempted-problem-color fa fa-minus-circle"></i>
+          {% else %}
+            <i class="unsolved-problem-color fa fa-minus-circle"></i>
+          {% endif %}
+          <span class="problem-name">{{problem.name}}</span>
+          {% set pp = problem_points[problem.id] %}
+          <span class="score">
+            {% if pp %}
+              {{pp.case_points|floatformat(1)}} / {{pp.case_total|floatformat(0)}}
+            {% else %}
+              0
+            {% endif %}
+          </span>
+        </li>
+      </a>
+    {% endfor %}
+  </ul>
+{% endblock %}

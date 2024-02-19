@@ -77,7 +77,18 @@ ALLOWED_TAGS = list(bleach.sanitizer.ALLOWED_TAGS) + [
     "summary",
 ]
 
-ALLOWED_ATTRS = ["src", "width", "height", "href", "class", "open"]
+ALLOWED_ATTRS = [
+    "src",
+    "width",
+    "height",
+    "href",
+    "class",
+    "open",
+    "title",
+    "frameborder",
+    "allow",
+    "allowfullscreen",
+]
 
 
 def markdown(value, lazy_load=False):

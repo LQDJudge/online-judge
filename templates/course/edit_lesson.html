@@ -1,0 +1,58 @@
+{% extends "course/base.html" %}
+
+{% block two_col_media %}
+  {{ form.media.css }}
+  <style type="text/css">
+    .field-order, .field-title, .field-points {
+      display: inline-flex;
+    }
+    .form-header {
+      margin-bottom: 0.5em;
+    }
+  </style>
+{% endblock %}
+
+{% block two_col_js %}
+  {{ form.media.js }}
+{% endblock %}
+
+{% block middle_content %}
+  <form method="post">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    {% for form in formset %}
+      <h3 class="toggle {{'open' if form.errors else 'closed'}} form-header"><i class="fa fa-chevron-right fa-fw"></i>
+        {% if form.title.value() %}
+          {{form.order.value()}}. {{form.title.value()}}
+        {% else %}
+          + {{_("Add new")}}
+        {% endif %}
+      </h3>
+      <div class="toggled" style="{{'display: none;' if not form.errors}} margin-bottom: 1em">
+        {{form.id}}
+        {% if form.errors %}
+          <div class="alert alert-danger alert-dismissable">
+            <a href="#" class="close">x</a>
+            {{_("Please fix below errors")}}
+          </div>
+        {% endif %}
+        {% for field in form %}
+          {% if not field.is_hidden %}
+            <div style="margin-bottom: 1em;">
+              {{ field.errors }}
+              <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b> </label>
+              <div class="org-field-wrapper field-{{field.name}}" id="org-field-wrapper-{{field.html_name}}">
+                {{ field }}
+              </div>
+              {% if field.help_text %}
+                <small class="org-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
+              {% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+        <hr/>
+      </div>
+    {% endfor %}
+    <input type="submit" value="{{_('Save')}}" style="float: right">
+  </form>
+{% endblock %}
