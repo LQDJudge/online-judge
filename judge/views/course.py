@@ -60,7 +60,7 @@ def calculate_lessons_progress(profile, lessons):
     res["total"] = {
         "achieved_points": total_achieved_points,
         "total_points": total_points,
-        "percentage": total_achieved_points / total_points * 100,
+        "percentage": total_achieved_points / total_points * 100 if total_points else 0,
     }
     return res
 
