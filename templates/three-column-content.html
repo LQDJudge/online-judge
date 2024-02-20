@@ -75,6 +75,7 @@
           $('html, body').animate({scrollTop: 0}, 'fast');
           $('.middle-right-content').html(reload_content.first().html());
           $('#extra_js').html(bodyend_script.first().html());
+          $("#loading-bar").stop(true, true);
           $("#loading-bar").hide().css({ width: 0});
           if (reload_content.hasClass("wrapper")) {
             $('.middle-right-content').addClass("wrapper");

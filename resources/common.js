@@ -311,6 +311,21 @@ function populateCopyButton() {
     });
 }
 
+function register_markdown_editors() {
+    if (!("Markdown" in window)) {
+        return;
+    }
+    $('textarea.wmd-input').each(function() {
+        let id = this.id.substr(9); // remove prefix "wmd-input"
+        var $buttonBar = $(this).prevAll('div[id^="wmd-button-bar"]').first();
+        if (!$buttonBar.length || !$buttonBar.html().trim()) {
+            let converter = new Markdown.Converter();
+            let editor = new Markdown.Editor(converter, id);
+            editor.run();
+        }
+    });
+}
+
 function onWindowReady() {
     // http://stackoverflow.com/a/1060034/1090657
     var hidden = 'hidden';
@@ -391,6 +406,7 @@ function onWindowReady() {
         $("[data-src]iframe").each(function() {
             $(this).attr("src", $(this).attr("data-src"));
         })
+        register_markdown_editors();
     }, "100");
 
     $('form').submit(function (evt) {
@@ -414,6 +430,7 @@ function onWindowReady() {
 
         $("#loading-bar").show();
         $("#loading-bar").animate({ width: "100%" }, 2000, function() {
+            $(this).stop(true, true);
             $(this).hide().css({ width: 0});
         });    
     });
