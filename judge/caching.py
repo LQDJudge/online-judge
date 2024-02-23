@@ -74,7 +74,17 @@ def cache_wrapper(prefix, timeout=None):
             if l0_cache:
                 l0_cache.delete(cache_key)
 
+        def prefetch_multi(args_list):
+            keys = []
+            for args in args_list:
+                keys.append(get_key(func, *args))
+            results = cache.get_many(keys)
+            for key, result in results.items():
+                if result is not None:
+                    _set_l0(key, result)
+
         wrapper.dirty = dirty
+        wrapper.prefetch_multi = prefetch_multi
 
         return wrapper
 

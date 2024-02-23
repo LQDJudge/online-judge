@@ -470,6 +470,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         if context["in_hidden_subtasks_contest"]:
             for submission in context["submissions"]:
                 self.modify_attrs(submission)
+
         return context
 
     def get(self, request, *args, **kwargs):

@@ -34,7 +34,7 @@ from judge import event_poster as event
 from judge.jinja2.gravatar import gravatar
 from judge.models import Friend
 
-from chat_box.models import Message, Profile, Room, UserRoom, Ignore
+from chat_box.models import Message, Profile, Room, UserRoom, Ignore, get_room_info
 from chat_box.utils import encrypt_url, decrypt_url, encrypt_channel, get_unread_boxes
 
 
@@ -231,7 +231,7 @@ def post_message(request):
             },
         )
     else:
-        Room._info.dirty(room)
+        get_room_info.dirty(room.id)
         room.last_msg_time = new_message.time
         room.save()
 
@@ -363,6 +363,8 @@ def user_online_status_ajax(request):
 def get_online_status(profile, other_profile_ids, rooms=None):
     if not other_profile_ids:
         return None
+    Profile.prefetch_profile_cache(other_profile_ids)
+
     joined_ids = ",".join([str(id) for id in other_profile_ids])
     other_profiles = Profile.objects.raw(
         f"SELECT * from judge_profile where id in ({joined_ids}) order by field(id,{joined_ids})"
@@ -429,6 +431,7 @@ def get_status_context(profile, include_ignored=False):
 
     recent_profile_ids = [str(i["other_user"]) for i in recent_profile]
     recent_rooms = [int(i["id"]) for i in recent_profile]
+    Room.prefetch_room_cache(recent_rooms)
 
     admin_list = (
         queryset.filter(display_rank="admin")
