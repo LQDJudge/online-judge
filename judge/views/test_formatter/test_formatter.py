@@ -25,8 +25,11 @@ def id_to_path(id):
 
 
 def get_names_in_archive(file_path):
+    suffixes = ("inp", "out", "INP", "OUT")
     with ZipFile(os.path.join(settings.MEDIA_ROOT, file_path)) as f:
-        result = [x for x in f.namelist() if not x.endswith("/")]
+        result = [
+            x for x in f.namelist() if not x.endswith("/") and x.endswith(suffixes)
+        ]
         return list(sorted(result, key=tf_utils.natural_sorting_key))
 
 

@@ -430,26 +430,6 @@ urlpatterns = [
         name="markdown_editor",
     ),
     url(
-        r"^test_formatter/",
-        include(
-            [
-                url(
-                    r"^$", test_formatter.TestFormatter.as_view(), name="test_formatter"
-                ),
-                url(
-                    r"^edit_page$",
-                    test_formatter.EditTestFormatter.as_view(),
-                    name="edit_page",
-                ),
-                url(
-                    r"^download_page$",
-                    test_formatter.DownloadTestFormatter.as_view(),
-                    name="download_page",
-                ),
-            ]
-        ),
-    ),
-    url(
         r"^submission_source_file/(?P<filename>(\w|\.)+)",
         submission.SubmissionSourceFileView.as_view(),
         name="submission_source_file",

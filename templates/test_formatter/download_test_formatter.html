@@ -23,6 +23,12 @@
     .button {
       display:inline-block;
     }
+    .copyright {
+      position: absolute;
+      bottom: 48px;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
   </style>
 {% endblock %}
 
@@ -75,6 +81,9 @@
     <div class="button-container">
       <button type="submit" id="download" class="button">{{_('Download')}}</button>
       <a href="{{url('test_formatter_edit')}}?file_path={{file_path_getnames}}" id="edit" class="button">{{_('Edit')}}</a>
+    </div>
+    <div class="copyright">
+      <p >{{_('Copyright')}} Nguyễn Tiến Trung Kiên</p>
     </div>
   </div>
 

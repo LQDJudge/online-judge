@@ -23,6 +23,12 @@
     .preview-container {
       padding-bottom: 16px;
     }
+    .copyright {
+      position: absolute;
+      bottom: 48px;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
     #preview {
       background-color: rgb(220, 220, 220);
       border: solid 2px rgb(180, 180, 180);
@@ -126,6 +132,9 @@
     <div class="button-container">
       <button type="submit" id="convert" class="button">{{_('Convert')}}</button>
       <button type="submit" id="download" class="button">{{_('Download')}}</button>
+    </div>
+    <div class="copyright">
+      <p >{{_('Copyright')}} Nguyễn Tiến Trung Kiên</p>
     </div>
   </div>
 {% endblock %}
