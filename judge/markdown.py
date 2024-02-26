@@ -88,6 +88,7 @@ ALLOWED_ATTRS = [
     "frameborder",
     "allow",
     "allowfullscreen",
+    "loading",
 ]
 
 
@@ -105,11 +106,9 @@ def markdown(value, lazy_load=False):
         soup = BeautifulSoup(html, features="html.parser")
         for img in soup.findAll("img"):
             if img.get("src"):
-                img["data-src"] = img["src"]
-                img["src"] = ""
+                img["loading"] = "lazy"
         for img in soup.findAll("iframe"):
             if img.get("src"):
-                img["data-src"] = img["src"]
-                img["src"] = ""
+                img["loading"] = "lazy"
         html = str(soup)
     return '<div class="md-typeset content-description">%s</div>' % html

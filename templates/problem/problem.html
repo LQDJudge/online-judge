@@ -224,6 +224,36 @@
   </div>
 {% endif %}
 
+{% if problem.language_time_limit or problem.language_memory_limit %}
+  <hr style="padding-top: 0.3em">
+{% endif %}
+{% if problem.language_time_limit %}
+  <div class="problem-info-entry">
+    <i class="fa fa-clock-o fa-fw"></i><span class="pi-name">{{ _('Time limit:') }}</span>
+  </div>
+  <div class="problem-lang-limits">
+    {% for name, limit in problem.language_time_limit %}
+      <div class="lang-limit">
+        <span class="lang-name">{{ name }}</span>
+        <span class="lang-tl">{{ limit }}s</span>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% if problem.language_memory_limit %}
+  <div class="problem-info-entry">
+    <i class="fa fa-server fa-fw"></i><span class="pi-name">{{ _('Memory limit:') }}</span>
+  </div>
+  <div class="problem-lang-limits">
+    {% for name, limit in problem.language_memory_limit %}
+      <div class="lang-limit">
+        <span class="lang-name">{{ name }}</span>
+        <span class="lang-ml">{{ limit|kbsimpleformat }}</span>
+      </div>
+    {% endfor %}
+  </div>
+{% endif%}
+
 <hr style="padding-top: 0.7em">
 
 {% cache 86400 'problem_authors' problem.id LANGUAGE_CODE %}

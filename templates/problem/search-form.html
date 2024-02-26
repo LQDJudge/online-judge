@@ -84,8 +84,10 @@
         </select>
       </div>
       {% if point_values %}
-        <div style="margin-top: 5px;" class="bold-text margin-label" class="form-label">{{ _('Point range') }}</div>
-        <div id="point-slider"></div>
+        <div class="filter-form-group">
+          <div class="bold-text margin-label" class="form-label">{{ _('Point range') }}</div>
+          <div id="point-slider"></div>
+        </div>
       {% endif %}
       <input id="point-start" type="hidden" name="point_start" {% if point_start and point_start != point_values.min %}value="{{ point_start }}"{% else %}disabled{% endif %}>
       <input id="point-end" type="hidden" name="point_end" {% if point_end and point_end != point_values.max %}value="{{ point_end }}"{% else %}disabled{% endif %}>

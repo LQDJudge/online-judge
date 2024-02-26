@@ -400,14 +400,8 @@ function onWindowReady() {
     });
 
     setTimeout(() => {
-        $("[data-src]img").each(function() {
-            $(this).attr("src", $(this).attr("data-src"));
-        })
-        $("[data-src]iframe").each(function() {
-            $(this).attr("src", $(this).attr("data-src"));
-        })
         register_markdown_editors();
-    }, "100");
+    }, 100);
 
     $('form').submit(function (evt) {
         // Prevent multiple submissions of forms, see #565

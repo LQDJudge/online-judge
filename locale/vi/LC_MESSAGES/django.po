@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-20 06:20+0700\n"
+"POT-Creation-Date: 2024-02-27 03:20+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -18,23 +18,23 @@ msgstr ""
 "X-Crowdin-Project-ID: 466004\n"
 "X-Crowdin-File-ID: 5\n"
 
-#: chat_box/models.py:22 chat_box/models.py:87
+#: chat_box/models.py:22 chat_box/models.py:83
 msgid "last seen"
 msgstr "xem lần cuối"
 
-#: chat_box/models.py:58 chat_box/models.py:83 chat_box/models.py:99
+#: chat_box/models.py:54 chat_box/models.py:79 chat_box/models.py:95
 #: judge/admin/interface.py:150 judge/models/contest.py:647
 #: judge/models/contest.py:853 judge/models/course.py:129
-#: judge/models/profile.py:430 judge/models/profile.py:504
+#: judge/models/profile.py:419 judge/models/profile.py:493
 msgid "user"
 msgstr "người dùng"
 
-#: chat_box/models.py:60 judge/models/comment.py:44
+#: chat_box/models.py:56 judge/models/comment.py:44
 #: judge/models/notification.py:17
 msgid "posted time"
 msgstr "thời gian đăng"
 
-#: chat_box/models.py:62 judge/models/comment.py:49
+#: chat_box/models.py:58 judge/models/comment.py:49
 msgid "body of comment"
 msgstr "nội dung bình luận"
 
@@ -42,11 +42,11 @@ msgstr "nội dung bình luận"
 msgid "LQDOJ Chat"
 msgstr ""
 
-#: chat_box/views.py:441
+#: chat_box/views.py:444
 msgid "Recent"
 msgstr "Gần đây"
 
-#: chat_box/views.py:445 templates/base.html:192
+#: chat_box/views.py:448 templates/base.html:192
 #: templates/comments/content-list.html:77
 #: templates/contest/contest-list-tabs.html:4
 #: templates/contest/ranking-table.html:47 templates/course/left_sidebar.html:8
@@ -2046,7 +2046,7 @@ msgid ""
 msgstr "Ảnh này sẽ thay thế logo mặc định khi ở trong tổ chức."
 
 #: judge/models/profile.py:148 judge/models/profile.py:178
-#: judge/models/profile.py:436 judge/models/profile.py:511
+#: judge/models/profile.py:425 judge/models/profile.py:500
 msgid "organization"
 msgstr ""
 
@@ -2152,35 +2152,35 @@ msgstr "Background tự chọn"
 msgid "CSS custom background properties: url(\"image_url\"), color, etc"
 msgstr "CSS background tự chọn. Ví dụ: url(\"image_url\"), white, ..."
 
-#: judge/models/profile.py:423
+#: judge/models/profile.py:412
 msgid "user profile"
 msgstr "thông tin người dùng"
 
-#: judge/models/profile.py:424
+#: judge/models/profile.py:413
 msgid "user profiles"
 msgstr "thông tin người dùng"
 
-#: judge/models/profile.py:440
+#: judge/models/profile.py:429
 msgid "request time"
 msgstr "thời gian đăng ký"
 
-#: judge/models/profile.py:443
+#: judge/models/profile.py:432
 msgid "state"
 msgstr "trạng thái"
 
-#: judge/models/profile.py:450
+#: judge/models/profile.py:439
 msgid "reason"
 msgstr "lý do"
 
-#: judge/models/profile.py:453
+#: judge/models/profile.py:442
 msgid "organization join request"
 msgstr "đơn đăng ký tham gia"
 
-#: judge/models/profile.py:454
+#: judge/models/profile.py:443
 msgid "organization join requests"
 msgstr "đơn đăng ký tham gia"
 
-#: judge/models/profile.py:516
+#: judge/models/profile.py:505
 #, fuzzy
 #| msgid "last seen"
 msgid "last visit"
@@ -3224,7 +3224,7 @@ msgstr "Bạn không được phép chỉnh sửa tổ chức này."
 #: templates/contest/tag-title.html:9 templates/flatpages/admin_link.html:3
 #: templates/license.html:10 templates/problem/editorial.html:15
 #: templates/problem/feed/problems.html:50
-#: templates/test_formatter/download_test_formatter.html:77
+#: templates/test_formatter/download_test_formatter.html:83
 msgid "Edit"
 msgstr "Chỉnh sửa"
 
@@ -3458,50 +3458,50 @@ msgstr "Bài nộp của %(user)s cho bài %(problem)s"
 msgid "All submissions"
 msgstr "Tất cả bài nộp"
 
-#: judge/views/submission.py:545 judge/views/submission.py:550
+#: judge/views/submission.py:546 judge/views/submission.py:551
 msgid "All my submissions"
 msgstr "Tất cả bài nộp của tôi"
 
-#: judge/views/submission.py:546
+#: judge/views/submission.py:547
 #, python-format
 msgid "All submissions by %s"
 msgstr "Tất cả bài nộp của %s"
 
-#: judge/views/submission.py:552
+#: judge/views/submission.py:553
 #, python-brace-format
 msgid "All submissions by <a href=\"{1}\">{0}</a>"
 msgstr "Tất cả bài nộp của <a href=\"{1}\">{0}</a>"
 
-#: judge/views/submission.py:573
+#: judge/views/submission.py:574
 #, fuzzy
 #| msgid "All submissions"
 msgid "All friend submissions"
 msgstr "Tất cả bài nộp"
 
-#: judge/views/submission.py:602
+#: judge/views/submission.py:603
 #, python-format
 msgid "All submissions for %s"
 msgstr "Tất cả bài nộp cho %s"
 
-#: judge/views/submission.py:630
+#: judge/views/submission.py:631
 msgid "Must pass a problem"
 msgstr "Phải làm được một bài"
 
-#: judge/views/submission.py:688
+#: judge/views/submission.py:689
 #, python-format
 msgid "My submissions for %(problem)s"
 msgstr "Bài nộp của tôi cho %(problem)s"
 
-#: judge/views/submission.py:689
+#: judge/views/submission.py:690
 #, python-format
 msgid "%(user)s's submissions for %(problem)s"
 msgstr "Các bài nộp của %(user)s cho %(problem)s"
 
-#: judge/views/submission.py:825
+#: judge/views/submission.py:826
 msgid "Must pass a contest"
 msgstr "Phải qua một kỳ thi"
 
-#: judge/views/submission.py:855
+#: judge/views/submission.py:856
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a href="
@@ -3510,7 +3510,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho <a href=\"{3}\">{2}</a> trong <a "
 "href=\"{5}\">{4}</a>"
 
-#: judge/views/submission.py:867
+#: judge/views/submission.py:868
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for problem {2} in <a href=\"{4}\">{3}"
@@ -3519,15 +3519,15 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho bài {2} trong <a href=\"{4}\">{3}"
 "</a>"
 
-#: judge/views/submission.py:1001
+#: judge/views/submission.py:1002
 #, fuzzy
 #| msgid "You do not have the permission to rejudge submissions."
 msgid "You don't have permission to access."
 msgstr "Bạn không có quyền chấm lại bài."
 
-#: judge/views/test_formatter/test_formatter.py:61
-#: judge/views/test_formatter/test_formatter.py:104
-#: judge/views/test_formatter/test_formatter.py:187
+#: judge/views/test_formatter/test_formatter.py:64
+#: judge/views/test_formatter/test_formatter.py:107
+#: judge/views/test_formatter/test_formatter.py:190
 #, fuzzy
 #| msgid "contest format"
 msgid "Test Formatter"
@@ -3628,7 +3628,7 @@ msgstr "Chỉnh sửa thông tin"
 msgid "Leaderboard"
 msgstr "Xếp hạng"
 
-#: judge/views/user.py:543
+#: judge/views/user.py:542
 msgid "Import Users"
 msgstr ""
 
@@ -3812,7 +3812,7 @@ msgid "You have no ticket"
 msgstr "Bạn không có báo cáo"
 
 #: templates/blog/list.html:72 templates/problem/list.html:150
-#: templates/problem/problem.html:390
+#: templates/problem/problem.html:408
 msgid "Clarifications"
 msgstr "Thông báo"
 
@@ -3821,7 +3821,7 @@ msgid "Add"
 msgstr "Thêm mới"
 
 #: templates/blog/list.html:97 templates/problem/list.html:172
-#: templates/problem/problem.html:401
+#: templates/problem/problem.html:419
 msgid "No clarifications have been made at this time."
 msgstr "Không có thông báo nào."
 
@@ -4441,7 +4441,7 @@ msgstr "Vui lòng sửa các lỗi bên dưới"
 #: templates/organization/blog/edit.html:36
 #: templates/organization/contest/add.html:36
 #: templates/organization/contest/edit.html:86
-#: templates/organization/form.html:23
+#: templates/organization/form.html:23 templates/pagedown.html:31
 msgid "Save"
 msgstr "Lưu"
 
@@ -4503,6 +4503,7 @@ msgstr "Tải file lên"
 
 #: templates/fine_uploader/script.html:23
 #: templates/markdown_editor/markdown_editor.html:124
+#: templates/pagedown.html:32
 msgid "Cancel"
 msgstr "Hủy"
 
@@ -4572,14 +4573,17 @@ msgid "Update Preview"
 msgstr "Cập nhật xem trước"
 
 #: templates/markdown_editor/markdown_editor.html:108
+#: templates/pagedown.html:15
 msgid "Insert Image"
 msgstr "Chèn hình ảnh"
 
 #: templates/markdown_editor/markdown_editor.html:111
+#: templates/pagedown.html:18
 msgid "From the web"
 msgstr "Từ web"
 
 #: templates/markdown_editor/markdown_editor.html:117
+#: templates/pagedown.html:25
 msgid "From your computer"
 msgstr "Từ máy tính của bạn"
 
@@ -4761,7 +4765,7 @@ msgstr "Xem YAML"
 msgid "Autofill testcases"
 msgstr "Tự động điền test"
 
-#: templates/problem/data.html:506 templates/problem/problem.html:249
+#: templates/problem/data.html:506 templates/problem/problem.html:267
 msgid "Problem type"
 msgid_plural "Problem types"
 msgstr[0] "Dạng bài"
@@ -5043,66 +5047,66 @@ msgstr "Quản lý bài nộp"
 msgid "Clone problem"
 msgstr "Nhân bản bài"
 
-#: templates/problem/problem.html:234
+#: templates/problem/problem.html:252
 msgid "Author:"
 msgid_plural "Authors:"
 msgstr[0] "Tác giả:"
 
-#: templates/problem/problem.html:262
+#: templates/problem/problem.html:280
 msgid "Allowed languages"
 msgstr "Ngôn ngữ cho phép"
 
-#: templates/problem/problem.html:270
+#: templates/problem/problem.html:288
 #, python-format
 msgid "No %(lang)s judge online"
 msgstr "Không có máy chấm cho %(lang)s"
 
-#: templates/problem/problem.html:282
+#: templates/problem/problem.html:300
 #: templates/status/judge-status-table.html:2
 msgid "Judge"
 msgid_plural "Judges"
 msgstr[0] "Máy chấm"
 
-#: templates/problem/problem.html:300
+#: templates/problem/problem.html:318
 msgid "none available"
 msgstr "Bài này chưa có máy chấm"
 
-#: templates/problem/problem.html:312
+#: templates/problem/problem.html:330
 #, python-format
 msgid "This problem has %(length)s clarification(s)"
 msgstr "Bài này có %(length)s thông báo"
 
-#: templates/problem/problem.html:320
+#: templates/problem/problem.html:338
 msgid "Points:"
 msgstr "Điểm:"
 
-#: templates/problem/problem.html:331
+#: templates/problem/problem.html:349
 msgid "Time limit:"
 msgstr "Thời gian:"
 
-#: templates/problem/problem.html:336
+#: templates/problem/problem.html:354
 msgid "Memory limit:"
 msgstr "Bộ nhớ:"
 
-#: templates/problem/problem.html:341 templates/problem/raw.html:67
+#: templates/problem/problem.html:359 templates/problem/raw.html:67
 #: templates/submission/status-testcases.html:155
 msgid "Input:"
 msgstr "Input:"
 
-#: templates/problem/problem.html:343 templates/problem/raw.html:67
+#: templates/problem/problem.html:361 templates/problem/raw.html:67
 msgid "stdin"
 msgstr "bàn phím"
 
-#: templates/problem/problem.html:348 templates/problem/raw.html:70
+#: templates/problem/problem.html:366 templates/problem/raw.html:70
 #: templates/submission/status-testcases.html:159
 msgid "Output:"
 msgstr "Output:"
 
-#: templates/problem/problem.html:349 templates/problem/raw.html:70
+#: templates/problem/problem.html:367 templates/problem/raw.html:70
 msgid "stdout"
 msgstr "màn hình"
 
-#: templates/problem/problem.html:376
+#: templates/problem/problem.html:394
 msgid "Request clarification"
 msgstr "Yêu cầu làm rõ đề"
 
@@ -5152,16 +5156,16 @@ msgstr "Hiển thị hướng dẫn"
 msgid "All"
 msgstr "Tất cả"
 
-#: templates/problem/search-form.html:87
+#: templates/problem/search-form.html:88
 msgid "Point range"
 msgstr "Mốc điểm"
 
-#: templates/problem/search-form.html:93 templates/submission/list.html:355
+#: templates/problem/search-form.html:95 templates/submission/list.html:355
 #: templates/ticket/list.html:250
 msgid "Go"
 msgstr "Lọc"
 
-#: templates/problem/search-form.html:94
+#: templates/problem/search-form.html:96
 msgid "Random"
 msgstr "Ngẫu nhiên"
 
@@ -5690,43 +5694,49 @@ msgstr "pretests"
 msgid "main tests"
 msgstr "test chính thức"
 
-#: templates/test_formatter/download_test_formatter.html:69
-#: templates/test_formatter/download_test_formatter.html:76
-#: templates/test_formatter/edit_test_formatter.html:128
+#: templates/test_formatter/download_test_formatter.html:75
+#: templates/test_formatter/download_test_formatter.html:82
+#: templates/test_formatter/edit_test_formatter.html:134
 msgid "Download"
 msgstr "Tải xuống"
 
-#: templates/test_formatter/edit_test_formatter.html:99
+#: templates/test_formatter/download_test_formatter.html:86
+#: templates/test_formatter/edit_test_formatter.html:137
+#: templates/test_formatter/test_formatter.html:20
+msgid "Copyright"
+msgstr ""
+
+#: templates/test_formatter/edit_test_formatter.html:105
 msgid "Before"
 msgstr "Trước"
 
-#: templates/test_formatter/edit_test_formatter.html:100
-#: templates/test_formatter/edit_test_formatter.html:108
+#: templates/test_formatter/edit_test_formatter.html:106
+#: templates/test_formatter/edit_test_formatter.html:114
 msgid "Input format"
 msgstr "Định dạng đầu vào"
 
-#: templates/test_formatter/edit_test_formatter.html:102
-#: templates/test_formatter/edit_test_formatter.html:110
+#: templates/test_formatter/edit_test_formatter.html:108
+#: templates/test_formatter/edit_test_formatter.html:116
 msgid "Output format"
 msgstr "Định dạng đầu ra"
 
-#: templates/test_formatter/edit_test_formatter.html:107
+#: templates/test_formatter/edit_test_formatter.html:113
 msgid "After"
 msgstr "Sau"
 
-#: templates/test_formatter/edit_test_formatter.html:116
+#: templates/test_formatter/edit_test_formatter.html:122
 msgid "Preview"
 msgstr "Xem trước"
 
-#: templates/test_formatter/edit_test_formatter.html:123
+#: templates/test_formatter/edit_test_formatter.html:129
 msgid "File name"
 msgstr "Tên file"
 
-#: templates/test_formatter/edit_test_formatter.html:127
+#: templates/test_formatter/edit_test_formatter.html:133
 msgid "Convert"
 msgstr "Chuyển đổi"
 
-#: templates/test_formatter/test_formatter.html:8
+#: templates/test_formatter/test_formatter.html:17
 msgid "Upload"
 msgstr "Tải lên"
 
@@ -6070,6 +6080,11 @@ msgstr "Thông tin"
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Chọn tất cả"
+
+#, fuzzy
+#~| msgid "From the web"
+#~ msgid "From the Web"
+#~ msgstr "Từ web"
 
 #~ msgid "on {time}"
 #~ msgstr "vào {time}"
