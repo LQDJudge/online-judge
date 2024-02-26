@@ -1195,8 +1195,8 @@ urlpatterns = [
     url(r"^resolver/(?P<contest>\w+)", resolver.Resolver.as_view(), name="resolver"),
 ] + url_static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-# if hasattr(settings, "INTERNAL_IPS"):
-#     urlpatterns.append(url("__debug__/", include("debug_toolbar.urls")))
+if hasattr(settings, "INTERNAL_IPS"):
+    urlpatterns.append(url("__debug__/", include("debug_toolbar.urls")))
 
 favicon_paths = [
     "apple-touch-icon-180x180.png",

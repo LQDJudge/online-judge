@@ -399,7 +399,6 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
                             if trans is None
                             else trans.description,
                             "url": request.build_absolute_uri(),
-                            "math_engine": maker.math_engine,
                         }
                     )
                     .replace('"//', '"https://')

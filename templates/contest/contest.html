@@ -105,7 +105,7 @@
   {% endif %}
 
   <div style="padding: 0 1em;">
-    {% cache 3600 'contest_html' contest.id MATH_ENGINE %}
+    {% cache 3600 'contest_html' contest.id %}
       {{ contest.description|markdown|reference|str|safe }}
     {% endcache %}
   </div>

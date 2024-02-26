@@ -63,7 +63,6 @@ class ProfileAdmin(VersionAdmin):
         "timezone",
         "language",
         "ace_theme",
-        "math_engine",
         "last_access",
         "ip",
         "mute",

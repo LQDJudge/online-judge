@@ -88,11 +88,6 @@ class ProfileForm(ModelForm):
             "css_background": forms.TextInput(),
         }
 
-        has_math_config = bool(settings.MATHOID_URL)
-        if has_math_config:
-            fields.append("math_engine")
-            widgets["math_engine"] = Select2Widget(attrs={"style": "width:200px"})
-
         if HeavyPreviewPageDownWidget is not None:
             widgets["about"] = HeavyPreviewPageDownWidget(
                 preview=reverse_lazy("profile_preview"),

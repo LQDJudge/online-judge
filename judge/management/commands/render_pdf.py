@@ -89,7 +89,6 @@ class Command(BaseCommand):
                         if trans is None
                         else trans.description,
                         "url": "",
-                        "math_engine": maker.math_engine,
                     }
                 )
                 .replace('"//', '"https://')

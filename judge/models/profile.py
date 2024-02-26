@@ -17,7 +17,7 @@ from django.db.models.signals import post_save, pre_save
 from fernet_fields import EncryptedCharField
 from sortedm2m.fields import SortedManyToManyField
 
-from judge.models.choices import ACE_THEMES, MATH_ENGINES_CHOICES, TIMEZONE
+from judge.models.choices import ACE_THEMES, TIMEZONE
 from judge.models.runtime import Language
 from judge.ratings import rating_class
 from judge.caching import cache_wrapper
@@ -214,13 +214,6 @@ class Profile(models.Model):
         blank=True,
         related_name="+",
         on_delete=models.SET_NULL,
-    )
-    math_engine = models.CharField(
-        verbose_name=_("math engine"),
-        choices=MATH_ENGINES_CHOICES,
-        max_length=4,
-        default=settings.MATHOID_DEFAULT_TYPE,
-        help_text=_("the rendering engine used to render math"),
     )
     is_totp_enabled = models.BooleanField(
         verbose_name=_("2FA enabled"),

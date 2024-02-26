@@ -430,7 +430,6 @@ def edit_profile(request):
             "form": form,
             "title": _("Edit profile"),
             "profile": profile,
-            "has_math_config": bool(settings.MATHOID_URL),
             "TIMEZONE_MAP": tzmap or "http://momentjs.com/static/img/world.png",
             "TIMEZONE_BG": settings.TIMEZONE_BG if tzmap else "#4E7CAD",
         },

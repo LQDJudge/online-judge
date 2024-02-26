@@ -118,13 +118,3 @@ def site_name(request):
         "SITE_LONG_NAME": settings.SITE_LONG_NAME,
         "SITE_ADMIN_EMAIL": settings.SITE_ADMIN_EMAIL,
     }
-
-
-def math_setting(request):
-    if request.user.is_authenticated:
-        engine = request.profile.math_engine
-    else:
-        engine = settings.MATHOID_DEFAULT_TYPE
-    if engine == "auto":
-        engine = "jax"
-    return {"MATH_ENGINE": engine, "REQUIRE_JAX": engine == "jax"}
