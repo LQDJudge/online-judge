@@ -65,13 +65,15 @@
         e.preventDefault();
         if (!$('#raw_problem').attr('src')) {
           $('#raw_problem').attr('src', '{{problem.code}}/raw')
+          $('#raw_problem').on('load', function() {
+            renderKatex(frames['raw_problem'].document);
+            frames['raw_problem'].print();
+          });
         }
-        // while(!$('.math-loaded', frames['raw_problem'].document).length){
-        //   await new Promise(r => setTimeout(r, 200));
-        // }
-        setTimeout(() => {
+        else {
           frames['raw_problem'].print();
-        }, 1000);
+          return;
+        }
       });
       $('#clarification_header').on('click', function() {
         $('#clarification_header_container').hide();
