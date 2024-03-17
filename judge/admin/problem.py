@@ -1,8 +1,8 @@
 from operator import attrgetter
 
 from django import forms
-from django.contrib import admin
-from django.db import transaction
+from django.contrib import admin, messages
+from django.db import transaction, IntegrityError
 from django.db.models import Q, Avg, Count
 from django.db.models.aggregates import StdDev
 from django.forms import ModelForm, TextInput
@@ -11,6 +11,7 @@ from django.utils.html import format_html
 from django.utils.translation import gettext, gettext_lazy as _, ungettext
 from django_ace import AceWidget
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 from reversion.admin import VersionAdmin
 from reversion_compare.admin import CompareVersionAdmin
@@ -55,6 +56,16 @@ class ProblemForm(ModelForm):
                 "placeholder": gettext("Describe the changes you made (optional)"),
             }
         )
+
+    def clean_code(self):
+        code = self.cleaned_data.get("code")
+        if self.instance.pk:
+            return code
+
+        if Problem.objects.filter(code=code).exists():
+            raise ValidationError(_("A problem with this code already exists."))
+
+        return code
 
     def clean(self):
         memory_unit = self.cleaned_data.get("memory_unit", "KB")
@@ -131,6 +142,7 @@ class LanguageLimitInline(admin.TabularInline):
     model = LanguageLimit
     fields = ("language", "time_limit", "memory_limit", "memory_unit")
     form = LanguageLimitInlineForm
+    extra = 0
 
 
 class LanguageTemplateInlineForm(ModelForm):
@@ -145,6 +157,7 @@ class LanguageTemplateInline(admin.TabularInline):
     model = LanguageTemplate
     fields = ("language", "source")
     form = LanguageTemplateInlineForm
+    extra = 0
 
 
 class ProblemSolutionForm(ModelForm):

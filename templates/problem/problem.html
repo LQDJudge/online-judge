@@ -67,7 +67,9 @@
           $('#raw_problem').attr('src', '{{problem.code}}/raw')
           $('#raw_problem').on('load', function() {
             renderKatex(frames['raw_problem'].document);
-            frames['raw_problem'].print();
+            setTimeout(() => {
+              frames['raw_problem'].print();
+            }, 500);
           });
         }
         else {
