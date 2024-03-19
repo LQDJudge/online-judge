@@ -38,7 +38,7 @@ CHECKERS = (
     ("identical", _("Byte identical")),
     ("linecount", _("Line-by-line")),
     ("custom", _("Custom checker (PY)")),
-    ("customval", _("Custom validator (CPP)")),
+    ("customcpp", _("Custom checker (CPP)")),
     ("interact", _("Interactive")),
     ("testlib", _("Testlib")),
 )
@@ -90,8 +90,8 @@ class ProblemData(models.Model):
         upload_to=problem_directory_file,
         validators=[FileExtensionValidator(allowed_extensions=["py"])],
     )
-    custom_validator = models.FileField(
-        verbose_name=_("custom validator file"),
+    custom_checker_cpp = models.FileField(
+        verbose_name=_("custom cpp checker file"),
         storage=problem_data_storage,
         null=True,
         blank=True,
@@ -186,9 +186,9 @@ class ProblemData(models.Model):
             self.custom_checker.name = problem_directory_file_helper(
                 new, self.custom_checker.name
             )
-        if self.custom_validator:
-            self.custom_validator.name = problem_directory_file_helper(
-                new, self.custom_validator.name
+        if self.custom_checker_cpp:
+            self.custom_checker_cpp.name = problem_directory_file_helper(
+                new, self.custom_checker_cpp.name
             )
         if self.interactive_judge:
             self.interactive_judge.name = problem_directory_file_helper(

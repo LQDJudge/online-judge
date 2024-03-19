@@ -137,7 +137,7 @@
         let $checker = $('#id_problem-data-checker')
 
         let $custom_checker = $('#id_problem-data-custom_checker');
-        let $validator = $('#id_problem-data-custom_validator');
+        let $validator = $('#id_problem-data-custom_checker_cpp');
         let $interactive = $('#id_problem-data-interactive_judge');
         let $sig_handler = $('#id_problem-data-signature_handler');
         let $sig_header = $('#id_problem-data-signature_header');
@@ -165,10 +165,10 @@
 
         $checker.change(function () {
           $tr_checker.toggle($checker.val() == 'custom').change();
-          $tr_validator.toggle($checker.val() == 'customval' || $checker.val() == 'testlib').change();
+          $tr_validator.toggle($checker.val() == 'customcpp' || $checker.val() == 'testlib').change();
           $tr_interactive.toggle($checker.val() == 'interact').change();
 
-          $sample.toggle(['custom', 'customval', 'interact'].includes($checker.val())).change();
+          $sample.toggle(['custom', 'customcpp', 'interact'].includes($checker.val())).change();
         }).change();
 
         $ioi_signature.change(function() {

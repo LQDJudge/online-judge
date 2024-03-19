@@ -82,8 +82,8 @@ class ProblemDataCompiler(object):
                     )
                 return custom_checker_path[1]
 
-            if case.checker == "customval":
-                custom_checker_path = split_path_first(case.custom_validator.name)
+            if case.checker == "customcpp":
+                custom_checker_path = split_path_first(case.custom_checker_cpp.name)
                 if len(custom_checker_path) != 2:
                     raise ProblemDataError(
                         _("How did you corrupt the custom checker path?")
@@ -98,7 +98,7 @@ class ProblemDataCompiler(object):
                 }
 
             if case.checker == "testlib":
-                custom_checker_path = split_path_first(case.custom_validator.name)
+                custom_checker_path = split_path_first(case.custom_checker_cpp.name)
                 if len(custom_checker_path) != 2:
                     raise ProblemDataError(
                         _("How did you corrupt the custom checker path?")

@@ -89,7 +89,7 @@ class ProblemDataForm(ModelForm):
             "checker",
             "checker_args",
             "custom_checker",
-            "custom_validator",
+            "custom_checker_cpp",
             "interactive_judge",
             "fileio_input",
             "fileio_output",
