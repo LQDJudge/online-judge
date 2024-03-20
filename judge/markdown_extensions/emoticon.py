@@ -103,9 +103,10 @@ class EmoticonEmojiInlineProcessor(InlineProcessor):
 
 class EmoticonExtension(Extension):
     def extendMarkdown(self, md):
-        # Create the regex pattern to match any emoticon in the map
         emoticon_pattern = (
+            r"(?:(?<=\s)|^)"  # Lookbehind for a whitespace character or the start of the string
             r"(" + "|".join(map(re.escape, EMOTICON_EMOJI_MAP.keys())) + r")"
+            r"(?=\s|$)"  # Lookahead for a whitespace character or the end of the string
         )
         emoticon_processor = EmoticonEmojiInlineProcessor(emoticon_pattern, md)
         md.inlinePatterns.register(emoticon_processor, "emoticon_to_emoji", 1)
