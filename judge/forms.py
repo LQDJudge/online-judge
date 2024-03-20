@@ -295,7 +295,6 @@ class EditOrganizationContestForm(ModelForm):
             "hide_problem_tags",
             "public_scoreboard",
             "scoreboard_visibility",
-            "run_pretests_only",
             "points_precision",
             "description",
             "og_image",
