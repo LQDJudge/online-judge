@@ -148,7 +148,7 @@ function register_time(elems, limit) { // in hours
 }
 
 window.notification_template = {
-    icon: '/logo.png'
+    icon: '/logo.svg'
 };
 window.notification_timeout = 5000;
 

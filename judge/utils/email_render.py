@@ -8,7 +8,6 @@ def render_email_message(request, contexts):
     email_contexts = {
         "username": request.user.username,
         "domain": current_site.domain,
-        "protocol": "https" if request.is_secure() else "http",
         "site_name": settings.SITE_NAME,
         "message": None,
         "title": None,

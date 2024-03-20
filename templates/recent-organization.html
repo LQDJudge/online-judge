@@ -22,7 +22,7 @@
     <div class="toggled sidebox-content">
       {% for organization in recent_organizations %}
         <a href="{{ url('organization_home', organization.organization.pk, organization.organization.slug) }}" class="organization-row" title="{{organization.organization.about}}">
-          <img class="org-logo" loading="lazy" src="{{ organization.organization.logo_override_image or static('icons/icon.png') }}">
+          <img class="org-logo" loading="lazy" src="{{ organization.organization.logo_override_image or static('icons/icon.svg') }}">
           <span style="word-break: break-word;">{{ organization.organization }}</span>
         </a>
       {% endfor %}
