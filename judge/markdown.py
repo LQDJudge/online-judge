@@ -4,6 +4,8 @@ from django.utils.html import escape
 from bs4 import BeautifulSoup
 from pymdownx import superfences
 
+from judge.markdown_extensions import YouTubeExtension, EmoticonExtension
+
 
 EXTENSIONS = [
     "pymdownx.arithmatex",
@@ -22,6 +24,8 @@ EXTENSIONS = [
     "markdown.extensions.admonition",
     "nl2br",
     "mdx_breakless_lists",
+    YouTubeExtension(),
+    EmoticonExtension(),
 ]
 
 EXTENSION_CONFIGS = {

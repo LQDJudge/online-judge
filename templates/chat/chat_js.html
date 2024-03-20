@@ -585,5 +585,8 @@
     });
 
     $('#submit-button').on('click', submit_chat);
+    register_copy_clipboard($("#chat-input"), () => {
+      $('#chat-input').trigger('input');
+    });
   });
 </script>

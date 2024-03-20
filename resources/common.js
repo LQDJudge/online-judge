@@ -311,17 +311,49 @@ function populateCopyButton() {
     });
 }
 
-function register_markdown_editors() {
-    if (!("Markdown" in window)) {
-        return;
-    }
-    $('textarea.wmd-input').each(function() {
-        let id = this.id.substr(9); // remove prefix "wmd-input"
-        var $buttonBar = $(this).prevAll('div[id^="wmd-button-bar"]').first();
-        if (!$buttonBar.length || !$buttonBar.html().trim()) {
-            let converter = new Markdown.Converter();
-            let editor = new Markdown.Editor(converter, id);
-            editor.run();
+function register_copy_clipboard($elements, callback) {
+    $elements.on('paste', function(event) {
+        const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+        for (const index in items) {
+            const item = items[index];
+            if (item.kind === 'file' && item.type.indexOf('image') !== -1) {
+                const blob = item.getAsFile();
+                const formData = new FormData();
+                formData.append('image', blob);
+
+                $(this).prop('disabled', true);
+
+                $.ajax({
+                    url: '/pagedown/image-upload/',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(data) {
+                        // Assuming the server returns the URL of the image
+                        const imageUrl = data.url;
+                        const editor = $(event.target); // Get the textarea where the event was triggered
+                        let currentMarkdown = editor.val();
+                        const markdownImageText = '![](' + imageUrl + ')'; // Markdown for an image
+                        
+                        if (currentMarkdown) currentMarkdown += "\n";
+                        currentMarkdown += markdownImageText;
+
+                        editor.val(currentMarkdown);
+                        callback?.();
+                    },
+                    error: function() {
+                        alert('There was an error uploading the image.');
+                    },
+                    complete: () => {
+                        // Re-enable the editor
+                        $(this).prop('disabled', false);
+                    }
+                });
+                
+                // We only handle the first image in the clipboard data
+                break;
+            }
         }
     });
 }
@@ -399,9 +431,7 @@ function onWindowReady() {
         }
     });
 
-    setTimeout(() => {
-        register_markdown_editors();
-    }, 100);
+    register_copy_clipboard($('textarea.wmd-input'));
 
     $('form').submit(function (evt) {
         // Prevent multiple submissions of forms, see #565

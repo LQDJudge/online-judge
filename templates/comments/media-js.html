@@ -211,14 +211,15 @@
       $comments.find('a.edit-link').featherlight({
         afterOpen: function () {
           register_dmmd_preview($('#id-edit-comment-body-preview'));
-          register_markdown_editors();
           if ('DjangoPagedown' in window) {
+            DjangoPagedown.createEditor(
+              $('#wmd-input-id-edit-comment-body').closest('.wmd-wrapper')[0]
+            );
+            register_copy_clipboard($('#wmd-input-id-edit-comment-body'));
             var $wmd = $('.featherlight .wmd-wrapper');
             if ($wmd.length) {
-              if ('MathJax' in window) {
-                var preview = $('.featherlight div.wmd-preview')[0];
-                renderKatex(preview);
-              }
+              var preview = $('.featherlight div.wmd-preview')[0];
+              renderKatex(preview);
             }
           }
           $('#comment-edit').submit(function (event) {
@@ -241,6 +242,11 @@
               });
             });
           });
+        },
+        beforeClose: function() {
+          DjangoPagedown.destroyEditor(
+            $('#wmd-input-id-edit-comment-body').closest('.wmd-wrapper')[0]
+          );
         },
         variant: 'featherlight-edit'
       });
