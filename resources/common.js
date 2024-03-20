@@ -347,7 +347,7 @@ function register_copy_clipboard($elements, callback) {
                     },
                     complete: () => {
                         // Re-enable the editor
-                        $(this).prop('disabled', false);
+                        $(this).prop('disabled', false).focus();
                     }
                 });
                 
