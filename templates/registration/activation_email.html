@@ -4,6 +4,7 @@
 {% set username = user.get_username() %}
 {% set button_text = _("Activate") %}
 {% set domain = site.domain %}
+{% set protocol = "https" if request.is_secure() else "http" %}
 {% include "general_email.html" %}
 <br>
 {{_("Alternatively, you can reply to this message to activate your account. Your reply must keep the following text intact for this to work:")}}
