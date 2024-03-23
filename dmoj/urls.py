@@ -60,6 +60,7 @@ from judge.views import (
     resolver,
     course,
     email,
+    custom_file_upload,
 )
 from judge import authentication
 
@@ -1193,6 +1194,7 @@ urlpatterns = [
         ),
     ),
     url(r"^resolver/(?P<contest>\w+)", resolver.Resolver.as_view(), name="resolver"),
+    url(r"^upload/$", custom_file_upload.file_upload, name="custom_file_upload"),
 ] + url_static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # if hasattr(settings, "INTERNAL_IPS"):
