@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-19 11:51+0700\n"
+"POT-Creation-Date: 2024-03-23 10:54+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -67,27 +67,27 @@ msgstr "Tiếng Việt"
 msgid "English"
 msgstr ""
 
-#: dmoj/urls.py:107
+#: dmoj/urls.py:108
 msgid "Activation key invalid"
 msgstr "Mã kích hoạt không hợp lệ"
 
-#: dmoj/urls.py:112
+#: dmoj/urls.py:113
 msgid "Register"
 msgstr "Đăng ký"
 
-#: dmoj/urls.py:119
+#: dmoj/urls.py:120
 msgid "Registration Completed"
 msgstr "Đăng ký hoàn thành"
 
-#: dmoj/urls.py:127
+#: dmoj/urls.py:128
 msgid "Registration not allowed"
 msgstr "Đăng ký không thành công"
 
-#: dmoj/urls.py:135
+#: dmoj/urls.py:136
 msgid "Login"
 msgstr "Đăng nhập"
 
-#: dmoj/urls.py:221 templates/base.html:114
+#: dmoj/urls.py:222 templates/base.html:114
 #: templates/course/left_sidebar.html:2
 #: templates/organization/org-left-sidebar.html:2
 msgid "Home"
@@ -558,68 +558,68 @@ msgstr "File tải lên không được quá 5MB."
 msgid "Any judge"
 msgstr ""
 
-#: judge/forms.py:338
+#: judge/forms.py:337
 msgid "Enter usernames separating by space"
 msgstr "Nhập các tên đăng nhập, cách nhau bởi dấu cách"
 
-#: judge/forms.py:339 judge/views/stats.py:166 templates/stats/site.html:27
+#: judge/forms.py:338 judge/views/stats.py:166 templates/stats/site.html:27
 msgid "New users"
 msgstr "Thành viên mới"
 
-#: judge/forms.py:356
+#: judge/forms.py:355
 #, python-brace-format
 msgid "These usernames don't exist: {usernames}"
 msgstr "Các tên đăng nhập này không tồn tại: {usernames}"
 
-#: judge/forms.py:416
+#: judge/forms.py:415
 msgid "Username/Email"
 msgstr "Tên đăng nhập / Email"
 
-#: judge/forms.py:418 judge/views/email.py:22
+#: judge/forms.py:417 judge/views/email.py:22
 #: templates/registration/registration_form.html:46
 #: templates/registration/registration_form.html:60
 #: templates/user/edit-profile.html:101 templates/user/import/table_csv.html:5
 msgid "Password"
 msgstr "Mật khẩu"
 
-#: judge/forms.py:444
+#: judge/forms.py:443
 msgid "Two Factor Authentication tokens must be 6 decimal digits."
 msgstr "Two Factor Authentication phải chứa 6 chữ số."
 
-#: judge/forms.py:457 templates/registration/totp_auth.html:32
+#: judge/forms.py:456 templates/registration/totp_auth.html:32
 msgid "Invalid Two Factor Authentication token."
 msgstr "Token Two Factor Authentication không hợp lệ."
 
-#: judge/forms.py:464 judge/models/problem.py:132
+#: judge/forms.py:463 judge/models/problem.py:132
 msgid "Problem code must be ^[a-z0-9]+$"
 msgstr "Mã bài phải có dạng ^[a-z0-9]+$"
 
-#: judge/forms.py:471
+#: judge/forms.py:470
 msgid "Problem with code already exists."
 msgstr "Mã bài đã tồn tại."
 
-#: judge/forms.py:478 judge/models/contest.py:95
+#: judge/forms.py:477 judge/models/contest.py:95
 msgid "Contest id must be ^[a-z0-9]+$"
 msgstr "Mã kỳ thi phải có dạng ^[a-z0-9]+$"
 
-#: judge/forms.py:485 templates/contest/clone.html:47
+#: judge/forms.py:484 templates/contest/clone.html:47
 #: templates/problem/search-form.html:39
 msgid "Group"
 msgstr "Nhóm"
 
-#: judge/forms.py:493
+#: judge/forms.py:492
 msgid "Contest with key already exists."
 msgstr "Mã kỳ thi đã tồn tại."
 
-#: judge/forms.py:501
+#: judge/forms.py:500
 msgid "Group doesn't exist."
 msgstr "Nhóm không tồn tại."
 
-#: judge/forms.py:503
+#: judge/forms.py:502
 msgid "You don't have permission in this group."
 msgstr "Bạn không có quyền trong nhóm này."
 
-#: judge/forms.py:553
+#: judge/forms.py:552
 msgid "This problem is duplicated."
 msgstr "Bài này bị lặp"
 
@@ -2932,6 +2932,10 @@ msgstr "Chỉnh sửa bài học cho <a href='%(url)s'>%(course_name)s</a>"
 msgid "Grades in <a href='%(url)s'>%(course_name)s</a>"
 msgstr "Điểm trong <a href='%(url)s'>%(course_name)s</a>"
 
+#: judge/views/custom_file_upload.py:42
+msgid "File Upload"
+msgstr "Tải file lên"
+
 #: judge/views/email.py:21
 msgid "New Email"
 msgstr "Email mới"
@@ -4415,7 +4419,7 @@ msgid "Please fix below errors"
 msgstr "Vui lòng sửa các lỗi bên dưới"
 
 #: templates/course/edit_lesson.html:56
-#: templates/markdown_editor/markdown_editor.html:123
+#: templates/markdown_editor/markdown_editor.html:122
 #: templates/organization/blog/edit.html:36
 #: templates/organization/contest/add.html:36
 #: templates/organization/contest/edit.html:86
@@ -4447,6 +4451,18 @@ msgstr "Điểm"
 msgid "Teachers"
 msgstr "Giáo viên"
 
+#: templates/custom_file_upload.html:6
+msgid "Your file has been uploaded successfully"
+msgstr "File đã được tải lên thành công"
+
+#: templates/custom_file_upload.html:7
+msgid "Upload another file"
+msgstr "Tải file khác lên"
+
+#: templates/custom_file_upload.html:12 templates/fine_uploader/script.html:7
+msgid "Upload file"
+msgstr "Tải file lên"
+
 #: templates/email_change/email_change.html:15
 msgid "Verify Email"
 msgstr "Xác thực Email"
@@ -4475,12 +4491,8 @@ msgstr "Xem thêm"
 msgid "Drop files here to upload"
 msgstr "Kéo file vào đây để tải lên"
 
-#: templates/fine_uploader/script.html:7
-msgid "Upload file"
-msgstr "Tải file lên"
-
 #: templates/fine_uploader/script.html:23
-#: templates/markdown_editor/markdown_editor.html:124
+#: templates/markdown_editor/markdown_editor.html:123
 #: templates/pagedown.html:32
 msgid "Cancel"
 msgstr "Hủy"
@@ -4546,21 +4558,21 @@ msgstr "Gợi ý"
 msgid "Source:"
 msgstr "Nguồn:"
 
-#: templates/markdown_editor/markdown_editor.html:104 templates/pagedown.html:9
+#: templates/markdown_editor/markdown_editor.html:103 templates/pagedown.html:9
 msgid "Update Preview"
 msgstr "Cập nhật xem trước"
 
-#: templates/markdown_editor/markdown_editor.html:108
+#: templates/markdown_editor/markdown_editor.html:107
 #: templates/pagedown.html:15
 msgid "Insert Image"
 msgstr "Chèn hình ảnh"
 
-#: templates/markdown_editor/markdown_editor.html:111
+#: templates/markdown_editor/markdown_editor.html:110
 #: templates/pagedown.html:18
 msgid "From the web"
 msgstr "Từ web"
 
-#: templates/markdown_editor/markdown_editor.html:117
+#: templates/markdown_editor/markdown_editor.html:116
 #: templates/pagedown.html:25
 msgid "From your computer"
 msgstr "Từ máy tính của bạn"
