@@ -163,6 +163,7 @@ class ContestAdmin(CompareVersionAdmin):
                     "scoreboard_visibility",
                     "run_pretests_only",
                     "points_precision",
+                    "rate_limit",
                 )
             },
         ),

@@ -963,6 +963,15 @@ class RandomProblem(ProblemList):
 user_logger = logging.getLogger("judge.user")
 
 
+def last_nth_submitted_date_in_contest(profile, contest, n):
+    submissions = Submission.objects.filter(
+        user=profile, contest_object=contest
+    ).order_by("-id")[:n]
+    if submissions.count() >= n:
+        return submissions[n - 1].date
+    return None
+
+
 @login_required
 def problem_submit(request, problem, submission=None):
     if (
@@ -1011,7 +1020,7 @@ def problem_submit(request, problem, submission=None):
                 >= settings.DMOJ_SUBMISSION_LIMIT
             ):
                 return HttpResponse(
-                    "<h1>You submitted too many submissions.</h1>", status=429
+                    _("<h1>You have submitted too many submissions.</h1>"), status=429
                 )
             if not problem.allowed_languages.filter(
                 id=form.cleaned_data["language"].id
@@ -1032,7 +1041,22 @@ def problem_submit(request, problem, submission=None):
 
             with transaction.atomic():
                 if profile.current_contest is not None:
+                    contest = profile.current_contest.contest
                     contest_id = profile.current_contest.contest_id
+                    rate_limit = contest.rate_limit
+
+                    if rate_limit:
+                        t = last_nth_submitted_date_in_contest(
+                            profile, contest, rate_limit
+                        )
+                        if t is not None and timezone.now() - t < timezone.timedelta(
+                            minutes=1
+                        ):
+                            return HttpResponse(
+                                _("<h1>You have submitted too many submissions.</h1>"),
+                                status=429,
+                            )
+
                     try:
                         contest_problem = problem.contests.get(contest_id=contest_id)
                     except ContestProblem.DoesNotExist:
@@ -1112,11 +1136,11 @@ def problem_submit(request, problem, submission=None):
         default_lang = request.profile.language
 
     submission_limit = submissions_left = None
+    next_valid_submit_time = None
     if profile.current_contest is not None:
+        contest = profile.current_contest.contest
         try:
-            submission_limit = problem.contests.get(
-                contest=profile.current_contest.contest
-            ).max_submissions
+            submission_limit = problem.contests.get(contest=contest).max_submissions
         except ContestProblem.DoesNotExist:
             pass
         else:
@@ -1124,6 +1148,12 @@ def problem_submit(request, problem, submission=None):
                 submissions_left = submission_limit - get_contest_submission_count(
                     problem, profile, profile.current_contest.virtual
                 )
+        if contest.rate_limit:
+            t = last_nth_submitted_date_in_contest(profile, contest, contest.rate_limit)
+            if t is not None:
+                next_valid_submit_time = t + timezone.timedelta(minutes=1)
+                next_valid_submit_time = next_valid_submit_time.isoformat()
+
     return render(
         request,
         "problem/submit.html",
@@ -1153,6 +1183,7 @@ def problem_submit(request, problem, submission=None):
             "output_only": problem.data_files.output_only
             if hasattr(problem, "data_files")
             else False,
+            "next_valid_submit_time": next_valid_submit_time,
         },
     )
 

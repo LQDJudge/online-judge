@@ -32,7 +32,31 @@
         }
       {% endif %}
     }
+
+    {% if request.in_contest and next_valid_submit_time and not (submission_limit and submissions_left <= 0) %}
+      $(function () {
+        const $submitButton = $("#submit-button");
+        $submitButton.prop('disabled', true);
+        const nextValidDate = new Date("{{next_valid_submit_time}}");
+
+        function updateCountdown() {
+          var now = new Date();
+          var timeUntilNextValid = nextValidDate - now;
+
+          if (timeUntilNextValid > 0) {
+            var seconds = Math.floor(timeUntilNextValid / 1000);
+            $("#countdown-timer").text("{{_("Wait")}} " + seconds + "s");
+            setTimeout(updateCountdown, 1000);
+          } else {
+            $("#countdown-timer").text("");
+            $submitButton.prop('disabled', false);
+          }
+        }
+        updateCountdown();
+      });
+    {% endif %}
   </script>
+
   {% compress js %}
     <script type="text/javascript">
       $(function () {
@@ -228,8 +252,9 @@
       {{ form.source_file }}
       <div class="submit-bar">
         {{ form.judge }}
-        <input type="submit" value="{{ _('Submit!') }}" class="button small"
-          {% if request.in_contest and submission_limit and not submissions_left %}disabled{% endif %}>
+        <input id="submit-button" type="submit" value="{{ _('Submit!') }}" class="button small"
+          {% if request.in_contest and submission_limit and  submissions_left <= 0 %}disabled{% endif %}>
+        <span id="countdown-timer"></span>
       </div>
     {% endif %}
   </form>

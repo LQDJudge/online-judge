@@ -310,6 +310,15 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         validators=[MinValueValidator(0), MaxValueValidator(10)],
         help_text=_("Number of digits to round points to."),
     )
+    rate_limit = models.PositiveIntegerField(
+        verbose_name=(_("rate limit")),
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text=_(
+            "Maximum number of submissions per minute. Leave empty if you don't want rate limit."
+        ),
+    )
     comments = GenericRelation("Comment")
     pagevote = GenericRelation("PageVote")
     bookmark = GenericRelation("BookMark")

@@ -59,7 +59,7 @@
     text-align: center;
     width: auto;
 
-    &.disabled {
+    &.disabled, &[disabled] {
         background: linear-gradient(to bottom, darkgray 0, gray 100%) repeat-x !important;
         border-color: grey !important;
         cursor: not-allowed;

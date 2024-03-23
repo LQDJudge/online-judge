@@ -296,6 +296,7 @@ class EditOrganizationContestForm(ModelForm):
             "public_scoreboard",
             "scoreboard_visibility",
             "points_precision",
+            "rate_limit",
             "description",
             "og_image",
             "logo_override_image",
