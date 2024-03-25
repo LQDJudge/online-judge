@@ -32,7 +32,7 @@
     <div class="organization-container toggled">
       {% for org in queryset %}
         <a href="{{ org.get_absolute_url() }}" class="organization-row" title="{{org.about}}">
-          <img class="org-logo" loading="lazy" src="{{ org.logo_override_image or static('icons/logo.svg') }}">
+          <img class="org-logo" loading="lazy" src="{{ org.logo_override_image or static('icons/icon.svg') }}" onerror="{{static('icons/logo.svg')}}">
           <span style="margin-right: auto">{{ org.name }}</span>
           <span style="font-weight: normal"><i>{{ org.member_count }} {{_('members')}}</i></span>
         </a>

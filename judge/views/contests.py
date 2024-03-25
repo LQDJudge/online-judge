@@ -153,11 +153,25 @@ class ContestList(
     def _now(self):
         return timezone.now()
 
+    def GET_with_session(self, request, key):
+        if not request.GET.get(key):
+            return request.session.get(key, False)
+        return request.GET.get(key, None) == "1"
+
+    def update_session(self, request):
+        to_update = ("show_orgs",)
+        for key in to_update:
+            if key in request.GET:
+                val = request.GET.get(key) == "1"
+                request.session[key] = val
+            else:
+                request.session[key] = False
+
     def get(self, request, *args, **kwargs):
         self.contest_query = None
         self.org_query = []
         self.show_orgs = 0
-        if request.GET.get("show_orgs"):
+        if self.GET_with_session(request, "show_orgs"):
             self.show_orgs = 1
 
         if self.request.GET.get("orgs") and self.request.profile:
@@ -177,6 +191,7 @@ class ContestList(
             except ValueError:
                 pass
 
+        self.update_session(request)
         return super(ContestList, self).get(request, *args, **kwargs)
 
     def _get_queryset(self):
