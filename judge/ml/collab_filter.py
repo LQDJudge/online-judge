@@ -71,7 +71,7 @@ class CollabFilter:
     def problem_neighbors(self, problem, problemset, measure=DOT, limit=None):
         pid = problem.id
         if pid not in self.problem_embeddings:
-            return None
+            return []
         embedding = self.problem_embeddings[pid]
         scores = self.compute_scores(embedding, self.problem_embeddings, measure)
         res = []
