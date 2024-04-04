@@ -66,9 +66,8 @@ class JudgeHandler(ZlibPacketHandler):
         self._working = False
         self._working_data = {}
         self._no_response_job = None
-        self._problems = []
         self.executors = {}
-        self.problems = {}
+        self.problems = set()
         self.latency = None
         self.time_delta = None
         self.load = 1e100
@@ -140,11 +139,27 @@ class JudgeHandler(ZlibPacketHandler):
             )
         return result
 
+    def _update_supported_problems(self, problem_packet):
+        # problem_packet is a dict {code: mtimes} from judge-server
+        self.problems = set(p for p, _ in problem_packet)
+
+    def _update_judge_problems(self):
+        problem_codes = list(self.problems)
+        chunk_size = 500
+        self.judge.problems.clear()
+
+        for i in range(0, len(problem_codes), chunk_size):
+            chunk = problem_codes[i : i + chunk_size]
+            problem_ids = Problem.objects.filter(code__in=chunk).values_list(
+                "id", flat=True
+            )
+            self.judge.problems.add(*problem_ids)
+
     def _connected(self):
         judge = self.judge = Judge.objects.get(name=self.name)
         judge.start_time = timezone.now()
         judge.online = True
-        judge.problems.set(Problem.objects.filter(code__in=list(self.problems.keys())))
+        self._update_judge_problems()
         judge.runtimes.set(Language.objects.filter(key__in=list(self.executors.keys())))
 
         # Delete now in case we somehow crashed and left some over from the last connection
@@ -209,8 +224,7 @@ class JudgeHandler(ZlibPacketHandler):
             return
 
         self.timeout = 60
-        self._problems = packet["problems"]
-        self.problems = dict(self._problems)
+        self._update_supported_problems(packet["problems"])
         self.executors = packet["executors"]
         self.name = packet["id"]
 
@@ -438,14 +452,12 @@ class JudgeHandler(ZlibPacketHandler):
 
     def on_supported_problems(self, packet):
         logger.info("%s: Updated problem list", self.name)
-        self._problems = packet["problems"]
-        self.problems = dict(self._problems)
+        self._update_supported_problems(packet["problems"])
+
         if not self.working:
             self.judges.update_problems(self)
 
-        self.judge.problems.set(
-            Problem.objects.filter(code__in=list(self.problems.keys()))
-        )
+        self._update_judge_problems()
         json_log.info(
             self._make_json_log(action="update-problems", count=len(self.problems))
         )
