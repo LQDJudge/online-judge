@@ -501,9 +501,16 @@ def get_or_create_room(request):
             user_room.last_seen = timezone.now()
             user_room.save()
 
+    room_url = reverse("chat", kwargs={"room_id": room.id})
     if request.method == "GET":
-        return JsonResponse({"room": room.id, "other_user_id": other_user.id})
-    return HttpResponseRedirect(reverse("chat", kwargs={"room_id": room.id}))
+        return JsonResponse(
+            {
+                "room": room.id,
+                "other_user_id": other_user.id,
+                "url": room_url,
+            }
+        )
+    return HttpResponseRedirect(room_url)
 
 
 def get_unread_count(rooms, user):

@@ -288,19 +288,6 @@ class UserAboutPage(UserPage):
 
         return context
 
-    # follow/unfollow user
-    def post(self, request, user, *args, **kwargs):
-        try:
-            if not request.profile:
-                raise Exception("You have to login")
-            if request.profile.username == user:
-                raise Exception("Cannot make friend with yourself")
-
-            following_profile = Profile.objects.get(user__username=user)
-            Friend.toggle_friend(request.profile, following_profile)
-        finally:
-            return HttpResponseRedirect(request.path_info)
-
 
 class UserProblemsPage(UserPage):
     template_name = "user/user-problems.html"
@@ -590,3 +577,17 @@ def toggle_darkmode(request):
         return HttpResponseBadRequest()
     request.session["darkmode"] = not request.session.get("darkmode", False)
     return HttpResponseRedirect(path)
+
+
+@login_required
+def toggle_follow(request, user):
+    if request.method != "POST":
+        raise Http404()
+
+    profile_to_follow = get_object_or_404(Profile, user__username=user)
+
+    if request.profile.id == profile_to_follow.id:
+        raise Http404()
+
+    Friend.toggle_friend(request.profile, profile_to_follow)
+    return HttpResponseRedirect(reverse("user_page", args=(user,)))

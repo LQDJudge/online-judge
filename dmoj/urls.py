@@ -489,6 +489,7 @@ urlpatterns = [
                         reverse("all_user_submissions", args=[user])
                     ),
                 ),
+                url(r"^/toggle_follow/", user.toggle_follow, name="user_toggle_follow"),
                 url(
                     r"^/$",
                     lambda _, user: HttpResponsePermanentRedirect(

@@ -272,7 +272,7 @@ form.contest-join-pseudotab {
 }
 
 .contest-participation-operation {
-    float: right;
+    margin-left: auto;
 
     .fa {
         color: #444;
@@ -282,7 +282,7 @@ form.contest-join-pseudotab {
         padding-left: 1px;
     }
 
-    padding: 0 5px;
+    padding-left: 5px;
 }
 
 #add-clarification {
