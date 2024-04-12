@@ -118,12 +118,6 @@
           </button>
         </form>
       {% endif %}
-      <br>
-      <div>
-        <a href="{{ url('all_user_submissions', user.username) }}" class="button small" style="width:145px">
-          {{ _('View submissions') }}
-        </a>
-      </div>
       {% if request.user.is_authenticated %}
         <br>
         <button class="small btn-midnightblue" style="width:145px" id="message-button">
