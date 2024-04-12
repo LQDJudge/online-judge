@@ -79,19 +79,21 @@
 {% endblock %}
 
 {% block js_media %}
-  <script type="text/javascript">
-    $(function() {
-      $("#message-button").on("click", function() {
-        $.get("{{ url('get_or_create_room') }}", {
-          "other": "{{ chat_param(request.profile, user) }}"
-        }, function(response) {
-          window.location.href = response.url;
-        }).fail(function(error) {
-          console.log("Error: ", error);
+  {% if request.user.is_authenticated %}
+    <script type="text/javascript">
+      $(function() {
+        $("#message-button").on("click", function() {
+          $.get("{{ url('get_or_create_room') }}", {
+            "other": "{{ chat_param(request.profile, user) }}"
+          }, function(response) {
+            window.location.href = response.url;
+          }).fail(function(error) {
+            console.log("Error: ", error);
+          });
         });
       });
-    });
-  </script>
+    </script>
+  {% endif %}
   {% block user_js_media %}{% endblock %}
 {% endblock %}
 
@@ -102,7 +104,7 @@
         <img src="{{ gravatar(user, 145) }}" width="145px" height="145px">
       </div>
       <br>
-      {% if request.user != user.user %}
+      {% if request.user.is_authenticated and request.profile != user %}
         <form method="post" action="{{ url('user_toggle_follow', user.username) }}">
           {% csrf_token %}
           <button class="small {{ 'unfollow' if followed else 'follow' }}" style="width:145px">
