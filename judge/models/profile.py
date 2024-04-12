@@ -55,7 +55,9 @@ class Organization(models.Model):
         verbose_name=_("short name"),
         help_text=_("Displayed beside user name during contests"),
     )
-    about = models.TextField(verbose_name=_("organization description"))
+    about = models.CharField(
+        max_length=10000, verbose_name=_("organization description")
+    )
     registrant = models.ForeignKey(
         "Profile",
         verbose_name=_("registrant"),
@@ -154,7 +156,9 @@ class Profile(models.Model):
     user = models.OneToOneField(
         User, verbose_name=_("user associated"), on_delete=models.CASCADE
     )
-    about = models.TextField(verbose_name=_("self-description"), null=True, blank=True)
+    about = models.CharField(
+        max_length=10000, verbose_name=_("self-description"), null=True, blank=True
+    )
     timezone = models.CharField(
         max_length=50,
         verbose_name=_("location"),
