@@ -481,7 +481,7 @@ class Friend(models.Model):
 
 
 class OrganizationProfile(models.Model):
-    users = models.ForeignKey(
+    profile = models.ForeignKey(
         Profile,
         verbose_name=_("user"),
         related_name="last_visit",
@@ -500,22 +500,26 @@ class OrganizationProfile(models.Model):
     )
 
     @classmethod
-    def remove_organization(self, users, organization):
-        organizationprofile = self.objects.filter(
-            users=users, organization=organization
+    def remove_organization(self, profile, organization):
+        organization_profile = self.objects.filter(
+            profile=profile, organization=organization
         )
-        if organizationprofile.exists():
-            organizationprofile.delete()
+        if organization_profile.exists():
+            organization_profile.delete()
 
     @classmethod
-    def add_organization(self, users, organization):
-        self.remove_organization(users, organization)
-        new_organization = OrganizationProfile(users=users, organization=organization)
-        new_organization.save()
+    def add_organization(self, profile, organization):
+        self.remove_organization(profile, organization)
+        new_row = OrganizationProfile(profile=profile, organization=organization)
+        new_row.save()
 
     @classmethod
-    def get_most_recent_organizations(self, users):
-        return self.objects.filter(users=users).order_by("-last_visit")[:5]
+    def get_most_recent_organizations(cls, profile):
+        queryset = cls.objects.filter(profile=profile).order_by("-last_visit")[:5]
+        queryset = queryset.select_related("organization").defer("organization__about")
+        organizations = [op.organization for op in queryset]
+
+        return organizations
 
 
 @receiver([post_save], sender=User)

@@ -242,6 +242,7 @@ class OrganizationList(TitleMixin, ListView, OrganizationBase):
             super(OrganizationList, self)
             .get_queryset()
             .annotate(member_count=Count("member"))
+            .defer("about")
         )
 
     def get_context_data(self, **kwargs):

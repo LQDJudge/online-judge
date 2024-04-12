@@ -10,32 +10,35 @@
   <script type="text/javascript" src="{{ static('fine-uploader/jquery.fine-uploader.js') }}"></script>
   <script type="text/javascript">
     $(function () {
-      $("#problem-data-zipfile_fine_uploader").fineUploader({
-        request: {
-          endpoint: "{{url('problem_zip_upload', problem.code)}}",
-          params: {
-            'csrfmiddlewaretoken': '{{ csrf_token }}'
+      if (!window.PAGE_FROM_BACK_BUTTON_CACHE) {
+        $("#problem-data-zipfile_fine_uploader").fineUploader({
+          request: {
+            endpoint: "{{url('problem_zip_upload', problem.code)}}",
+            params: {
+              'csrfmiddlewaretoken': '{{ csrf_token }}'
+            }
+          },
+          chunking: {
+            enabled: true,
+            partSize: 40000000,
+          },
+          resume: {
+            enabled: true
+          },
+          validation: {
+            allowedExtensions: ['zip'],
+          },
+        }).on('complete', function (event, id, name, responseJSON) {
+          console.log(responseJSON);
+          if (!responseJSON.success) {
+            alert('Fail to upload: ' + responseJSON.error);
           }
-        },
-        chunking: {
-          enabled: true,
-          partSize: 40000000,
-        },
-        resume: {
-          enabled: true
-        },
-        validation: {
-          allowedExtensions: ['zip'],
-        },
-      }).on('complete', function (event, id, name, responseJSON) {
-        console.log(responseJSON);
-        if (!responseJSON.success) {
-          alert('Fail to upload: ' + responseJSON.error);
-        }
-        else {
-          $('#submit-button').click();
-        }
-      });;
+          else {
+            $('#submit-button').click();
+          }
+        });
+        toggle_custom();
+      }
 
       function update_select2() {
         $('tbody:not(.extra-row-body) .type-column select').select2({
@@ -133,7 +136,7 @@
         }).change();
       }
 
-      (function toggle_custom() {
+      function toggle_custom() {
         let $checker = $('#id_problem-data-checker')
 
         let $custom_checker = $('#id_problem-data-custom_checker');
@@ -175,7 +178,7 @@
           $tr_sig_header.toggle($ioi_signature.is(':checked')).change();
           $tr_sig_handler.toggle($ioi_signature.is(':checked')).change();
         }).change();
-      })();
+      };
 
       checker_precision($('#id_problem-data-checker'));
 

@@ -4,19 +4,10 @@
   {% block user_media %}{% endblock %}
 
   <style>
-    .user-gravatar {
-      display: block;
-      padding-right: 15px;
-      width: 145px;
+    .user-profile-img {
+      width: 150px;
+      height: 150px;
     }
-
-    .user-gravatar img {
-      width: 145px;
-      height: 145px;
-      display: block;
-      border-radius: 6px;
-    }
-
     .page-title {
       display: -webkit-box;
       display: -webkit-flex;
@@ -100,14 +91,14 @@
 {% block body %}
   <div class="user-info-page">
     <div class="user-sidebar">
-      <div class="user-gravatar">
-        <img src="{{ gravatar(user, 145) }}" width="145px" height="145px">
+      <div class="user-img user-profile-img">
+        <img src="{{ gravatar(user, 145) }}">
       </div>
       <br>
       {% if request.user.is_authenticated and request.profile != user %}
         <form method="post" action="{{ url('user_toggle_follow', user.username) }}">
           {% csrf_token %}
-          <button class="small {{ 'unfollow' if followed else 'follow' }}" style="width:145px">
+          <button class="small {{ 'unfollow' if followed else 'follow' }}" style="width:100%">
             {% if followed %}
               <i class="fa fa-remove"></i>
               {{ _('Unfollow') }}
@@ -118,16 +109,16 @@
           </button>
         </form>
       {% endif %}
-      {% if request.user.is_authenticated %}
+      {% if request.user.is_authenticated and request.profile != user %}
         <br>
-        <button class="small btn-midnightblue" style="width:145px" id="message-button">
+        <button class="small btn-midnightblue" style="width:100%" id="message-button">
           {{ _('Send message') }}
         </button>
       {% endif %}
 
       {% if ratings %}
         <br>
-        <div style="border: 3px dashed darkgray; padding: 0.3em; margin-right: 15px; border-radius: 6px;">
+        <div style="border: 3px dashed darkgray; padding: 0.3em; border-radius: 6px;">
           <div class="user-stat-container">
             <div class="user-stat-header">{{_('Contests written')}}:</div>
             <div class="user-stat">{{ratings|length}}</div>

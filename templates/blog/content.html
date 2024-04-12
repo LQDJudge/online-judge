@@ -1,10 +1,12 @@
 {% for post in posts%}
   <section class="{% if post.sticky %}sticky {% endif %}blog-box">
     <div style="margin-bottom: 0.5em">
-      <span class="time">
+      <span class="item-header time">
         {% with authors=post.authors.all() %}
           {%- if authors -%}
-            <img src="{{gravatar(authors[0])}}" style="width: 1.5em; border-radius: 50%; margin-bottom: -0.3em">
+            <span class="user-img" style="width: 1.5em; height: 1.5em">
+              <img src="{{gravatar(authors[0])}}">
+            </span>
             <span class="post-authors">{{ link_users(authors) }}</span>
           {%- endif -%}
         {% endwith %}

@@ -1,10 +1,8 @@
 {% block two_col_media %}
   <style>
     .org-logo {
-      vertical-align: middle;
       height: 2em;
       width: 2em;
-      display: inline-block;
       margin-right: 0.5em;
     }
     .toggle {
@@ -21,9 +19,13 @@
     <h3 class="bold-text colored-text"><i class="fa fa-users"></i>{{ _('Recent groups') }}</h3>
     <div class="toggled sidebox-content">
       {% for organization in recent_organizations %}
-        <a href="{{ url('organization_home', organization.organization.pk, organization.organization.slug) }}" class="organization-row" title="{{organization.organization.about}}">
-          <img class="org-logo" loading="lazy" src="{{ organization.organization.logo_override_image or static('icons/icon.svg') }}">
-          <span style="word-break: break-word;">{{ organization.organization }}</span>
+        <a href="{{ url('organization_home', organization.pk, organization.slug) }}" class="organization-row">
+          {% if organization.logo_override_image %}
+            <img class="org-logo user-img" loading="lazy" src="{{ organization.logo_override_image }}">
+          {% else %}
+            <img class="org-logo" loading="lazy" src="{{ static('icons/icon.svg') }}" onerror="{{static('icons/logo.svg')}}">
+          {% endif %}
+          <span style="word-break: break-word;">{{ organization.name }}</span>
         </a>
       {% endfor %}
     </div>

@@ -267,13 +267,27 @@ a.edit-profile {
 
 .user-sidebar {
     flex: 0 0 150px;
-    padding-left: 1em;
+    padding-right: 1em;
 }
 
 .user-content {
     flex: 1 1;
     overflow: hidden;
     word-wrap: break-word;
+}
+
+.user-img {
+    flex-shrink: 0;
+    background-color: #ddd;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+
+    img {
+        width: 100%;
+        height: auto;
+    }
 }
 
 @media not all and (min-width: 600px) {

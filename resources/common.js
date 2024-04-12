@@ -532,6 +532,7 @@ $(function() {
             content = JSON.parse(content);
             $('#content').html(content.html);
             onWindowReady();
+            window.PAGE_FROM_BACK_BUTTON_CACHE = true;
             $(window).scrollTop(content.scrollOffset - 100);
             window.page = content.page;
             window.has_next_page = content.has_next_page;

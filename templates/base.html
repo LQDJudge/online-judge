@@ -179,7 +179,7 @@
           </span>
           {% if request.user.is_authenticated %}
             <span id="user-links">
-              <img src="{{ gravatar(request.profile, 32) }}" height="24" width="24">
+              <img class="user-img" src="{{ gravatar(request.profile, 32) }}" height="24" width="24">
               <i class="fa fa-angle-down" style="font-size: 18px; padding-top: 8px;"></i>
             </span>
             <div class="dropdown" id="userlink_dropdown" role="tooptip">
@@ -277,9 +277,9 @@
         <div id="announcement">{{ i18n_config.announcement|safe }}</div>
       {% endif %}
 
-      <script src="https://unpkg.com/@popperjs/core@2"></script>
       {% compress js %}
         <script>{{ inlinei18n(LANGUAGE_CODE)|safe }}</script>
+        <script src="{{ static('libs/popper.min.js') }}"></script>
         <script src="{{ static('libs/jquery-cookie.js') }}"></script>
         <script src="{{ static('libs/jquery-taphold.js') }}"></script>
         <script src="{{ static('libs/jquery.unveil.js') }}"></script>

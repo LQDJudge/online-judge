@@ -7,6 +7,9 @@ html {
 html {
     color-scheme: dark !important;
 }
+iframe {
+    color-scheme: initial;
+}
 html, body {
     background-color: #181a1b;
 }
@@ -55,7 +58,7 @@ select:-webkit-autofill {
 }
 
 /* Invert Style */
-.jfk-bubble.gtx-bubble, .captcheck_answer_label > input + img, span#closed_text > img[src^="https://www.gstatic.com/images/branding/googlelogo"], span[data-href^="https://www.hcaptcha.com/"] > #icon, #bit-notification-bar-iframe, ::-webkit-calendar-picker-indicator, img.Wirisformula {
+.jfk-bubble.gtx-bubble, .captcheck_answer_label > input + img, span#closed_text > img[src^="https://www.gstatic.com/images/branding/googlelogo"], span[data-href^="https://www.hcaptcha.com/"] > #icon, ::-webkit-calendar-picker-indicator, img.Wirisformula {
     filter: invert(100%) hue-rotate(180deg) contrast(90%) !important;
 }
 
@@ -68,91 +71,80 @@ select:-webkit-autofill {
 }
 
 /* Modified CSS */
-:root, [data-md-color-scheme="default"] {
-    --darkreader-bg--md-default-fg-color: rgba(0, 0, 0, 0.87);
-    --darkreader-text--md-default-fg-color: rgba(232, 230, 227, 0.87);
-    --darkreader-bg--md-default-fg-color--light: rgba(0, 0, 0, 0.54);
-    --darkreader-text--md-default-fg-color--light: rgba(232, 230, 227, 0.54);
-    --darkreader-border--md-default-fg-color--light: rgba(140, 130, 115, 0.54);
-    --darkreader-bg--md-default-fg-color--lighter: rgba(0, 0, 0, 0.32);
-    --darkreader-text--md-default-fg-color--lighter: rgba(232, 230, 227, 0.32);
-    --darkreader-border--md-default-fg-color--lighter: rgba(140, 130, 115, 0.32);
-    --darkreader-bg--md-default-fg-color--lightest: rgba(0, 0, 0, 0.07);
-    --darkreader-text--md-default-fg-color--lightest: rgba(232, 230, 227, 0.07);
-    --darkreader-border--md-default-fg-color--lightest: rgba(140, 130, 115, 0.07);
-    --darkreader-bg--md-default-bg-color: #181a1b;
-    --darkreader-text--md-default-bg-color: #e8e6e3;
-    --darkreader-border--md-default-bg-color: #303436;
-    --md-default-bg-color--light: hsla(0,0%,100%,.7);
-    --md-default-bg-color--lighter: hsla(0,0%,100%,.3);
-    --md-default-bg-color--lightest: hsla(0,0%,100%,.12);
-    --darkreader-bg--md-primary-fg-color: #334191;
-    --darkreader-text--md-primary-fg-color: #6d94cb;
-    --darkreader-border--md-primary-fg-color: #2f3c86;
-    --md-primary-fg-color--light: #5d6cc0;
-    --darkreader-bg--md-primary-fg-color--dark: #263281;
-    --darkreader-text--md-primary-bg-color: #e8e6e3;
-    --darkreader-text--md-primary-bg-color--light: rgba(232, 230, 227, 0.7);
-    --darkreader-bg--md-accent-fg-color: #01189b;
-    --darkreader-text--md-accent-fg-color: #539bfe;
-    --darkreader-border--md-accent-fg-color: #011899;
-    --darkreader-bg--md-accent-fg-color--transparent: rgba(1, 24, 155, 0.1);
+:root,
+[data-md-color-scheme="default"] {
     --darkreader-bg--md-accent-bg-color: #181a1b;
-    --darkreader-text--md-accent-bg-color: #e8e6e3;
-    --md-accent-bg-color--light: hsla(0,0%,100%,.7);
-    --darkreader-text--md-code-fg-color: #beb9b0;
+    --darkreader-bg--md-accent-fg-color: #01189b;
+    --darkreader-bg--md-accent-fg-color--transparent: rgba(1, 24, 155, 0.1);
+    --darkreader-bg--md-admonition-bg-color: var(--darkreader-bg--md-default-bg-color);
     --darkreader-bg--md-code-bg-color: #1e2021;
     --darkreader-bg--md-code-hl-color: rgba(153, 153, 0, 0.5);
-    --darkreader-text--md-code-hl-number-color: #d93f3f;
-    --darkreader-text--md-code-hl-special-color: #ed3774;
-    --darkreader-text--md-code-hl-function-color: #b159c0;
-    --darkreader-text--md-code-hl-constant-color: #7561db;
-    --darkreader-text--md-code-hl-keyword-color: #518ecb;
-    --darkreader-text--md-code-hl-string-color: #7ee2b0;
-    --darkreader-text--md-code-hl-name-color: var(--darkreader-text--md-code-fg-color);
-    --darkreader-text--md-code-hl-operator-color: var(--darkreader-text--md-default-fg-color--light);
-    --darkreader-text--md-code-hl-punctuation-color: var(--darkreader-text--md-default-fg-color--light);
-    --darkreader-text--md-code-hl-comment-color: var(--darkreader-text--md-default-fg-color--light);
-    --darkreader-text--md-code-hl-generic-color: var(--darkreader-text--md-default-fg-color--light);
-    --darkreader-text--md-code-hl-variable-color: var(--darkreader-text--md-default-fg-color--light);
-    --md-typeset-color: var(--md-default-fg-color);
-    --darkreader-text--md-typeset-a-color: var(--darkreader-text--md-primary-fg-color);
-    --darkreader-bg--md-typeset-mark-color: rgba(153, 153, 0, 0.5);
+    --darkreader-bg--md-default-bg-color: #181a1b;
+    --darkreader-bg--md-default-fg-color: rgba(0, 0, 0, 0.87);
+    --darkreader-bg--md-default-fg-color--light: rgba(0, 0, 0, 0.54);
+    --darkreader-bg--md-default-fg-color--lighter: rgba(0, 0, 0, 0.32);
+    --darkreader-bg--md-default-fg-color--lightest: rgba(0, 0, 0, 0.07);
+    --darkreader-bg--md-footer-bg-color: rgba(0, 0, 0, 0.87);
+    --darkreader-bg--md-footer-bg-color--dark: rgba(0, 0, 0, 0.32);
+    --darkreader-bg--md-primary-fg-color: #334191;
+    --darkreader-bg--md-primary-fg-color--dark: #263281;
+    --darkreader-bg--md-shadow-z1: 0 0.2rem 0.5rem rgba(0,0,0,.05),0 0 0.05rem rgba(0,0,0,.1);
+    --darkreader-bg--md-shadow-z2: 0 0.2rem 0.5rem rgba(0,0,0,.1),0 0 0.05rem rgba(0,0,0,.25);
+    --darkreader-bg--md-shadow-z3: 0 0.2rem 0.5rem rgba(0,0,0,.2),0 0 0.05rem rgba(0,0,0,.35);
     --darkreader-bg--md-typeset-del-color: rgba(165, 25, 9, 0.15);
     --darkreader-bg--md-typeset-ins-color: rgba(9, 170, 90, 0.15);
-    --darkreader-bg--md-typeset-kbd-color: #1b1d1e;
     --darkreader-bg--md-typeset-kbd-accent-color: #181a1b;
     --darkreader-bg--md-typeset-kbd-border-color: #404548;
+    --darkreader-bg--md-typeset-kbd-color: #1b1d1e;
+    --darkreader-bg--md-typeset-mark-color: rgba(153, 153, 0, 0.5);
+    --darkreader-border--md-accent-fg-color: #011899;
+    --darkreader-border--md-default-bg-color: #303436;
+    --darkreader-border--md-default-fg-color--light: rgba(140, 130, 115, 0.54);
+    --darkreader-border--md-default-fg-color--lighter: rgba(140, 130, 115, 0.32);
+    --darkreader-border--md-default-fg-color--lightest: rgba(140, 130, 115, 0.07);
+    --darkreader-border--md-primary-fg-color: #2f3c86;
     --darkreader-border--md-typeset-table-color: rgba(140, 130, 115, 0.12);
+    --darkreader-text--md-accent-bg-color: #e8e6e3;
+    --darkreader-text--md-accent-fg-color: #539bfe;
     --darkreader-text--md-admonition-fg-color: var(--darkreader-text--md-default-fg-color);
-    --darkreader-bg--md-admonition-bg-color: var(--darkreader-bg--md-default-bg-color);
+    --darkreader-text--md-code-fg-color: #beb9b0;
+    --darkreader-text--md-code-hl-comment-color: var(--darkreader-text--md-default-fg-color--light);
+    --darkreader-text--md-code-hl-constant-color: #7561db;
+    --darkreader-text--md-code-hl-function-color: #b159c0;
+    --darkreader-text--md-code-hl-generic-color: var(--darkreader-text--md-default-fg-color--light);
+    --darkreader-text--md-code-hl-keyword-color: #518ecb;
+    --darkreader-text--md-code-hl-name-color: var(--darkreader-text--md-code-fg-color);
+    --darkreader-text--md-code-hl-number-color: #d93f3f;
+    --darkreader-text--md-code-hl-operator-color: var(--darkreader-text--md-default-fg-color--light);
+    --darkreader-text--md-code-hl-punctuation-color: var(--darkreader-text--md-default-fg-color--light);
+    --darkreader-text--md-code-hl-special-color: #ed3774;
+    --darkreader-text--md-code-hl-string-color: #7ee2b0;
+    --darkreader-text--md-code-hl-variable-color: var(--darkreader-text--md-default-fg-color--light);
+    --darkreader-text--md-default-bg-color: #e8e6e3;
+    --darkreader-text--md-default-fg-color: rgba(232, 230, 227, 0.87);
+    --darkreader-text--md-default-fg-color--light: rgba(232, 230, 227, 0.54);
+    --darkreader-text--md-default-fg-color--lighter: rgba(232, 230, 227, 0.32);
+    --darkreader-text--md-default-fg-color--lightest: rgba(232, 230, 227, 0.07);
     --darkreader-text--md-footer-fg-color: #e8e6e3;
     --darkreader-text--md-footer-fg-color--light: rgba(232, 230, 227, 0.7);
     --darkreader-text--md-footer-fg-color--lighter: rgba(232, 230, 227, 0.3);
-    --darkreader-bg--md-footer-bg-color: rgba(0, 0, 0, 0.87);
-    --darkreader-bg--md-footer-bg-color--dark: rgba(0, 0, 0, 0.32);
-    --darkreader-bg--md-shadow-z1: 0 0.2rem 0.5rem rgba(0,0,0,.05),
-    0 0 0.05rem rgba(0,0,0,.1);
-    --darkreader-bg--md-shadow-z2: 0 0.2rem 0.5rem rgba(0,0,0,.1),
-    0 0 0.05rem rgba(0,0,0,.25);
-    --darkreader-bg--md-shadow-z3: 0 0.2rem 0.5rem rgba(0,0,0,.2),
-    0 0 0.05rem rgba(0,0,0,.35);
+    --darkreader-text--md-primary-bg-color: #e8e6e3;
+    --darkreader-text--md-primary-bg-color--light: rgba(232, 230, 227, 0.7);
+    --darkreader-text--md-primary-fg-color: #6d94cb;
+    --darkreader-text--md-typeset-a-color: var(--darkreader-text--md-primary-fg-color);
+    --md-accent-bg-color--light: hsla(0,0%,100%,.7);
+    --md-default-bg-color--light: hsla(0,0%,100%,.7);
+    --md-default-bg-color--lighter: hsla(0,0%,100%,.3);
+    --md-default-bg-color--lightest: hsla(0,0%,100%,.12);
+    --md-primary-fg-color--light: #5d6cc0;
+    --md-typeset-color: var(--md-default-fg-color);
 }
 .md-icon svg {
     fill: currentcolor;
 }
 body {
-    --md-text-font-family: var(--md-text-font,_),
-    -apple-system,
-    BlinkMacSystemFont,
-    Helvetica,
-    Arial,
-    sans-serif;
-    --md-code-font-family: var(--md-code-font,_),
-    SFMono-Regular,
-    Consolas,
-    Menlo,
-    monospace;
+    --md-code-font-family: var(--md-code-font,_),SFMono-Regular,Consolas,Menlo,monospace;
+    --md-text-font-family: var(--md-text-font,_),-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;
 }
 :root {
     --darkreader-bgimg--md-typeset-table-sort-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0ibTE4IDIxLTQtNGgzVjdoLTNsNC00IDQgNGgtM3YxMGgzTTIgMTl2LTJoMTB2Mk0yIDEzdi0yaDd2Mk0yIDdWNWg0djJIMloiLz48L3N2Zz4=");
@@ -176,9 +168,7 @@ body {
 }
 .md-typeset kbd {
     background-color: var(--darkreader-bg--md-typeset-kbd-color);
-    box-shadow: 0 .1rem 0 .05rem var(--darkreader-bg--md-typeset-kbd-border-color),
-    0 .1rem 0 var(--darkreader-bg--md-typeset-kbd-border-color),
-    0 -.1rem .2rem var(--darkreader-bg--md-typeset-kbd-accent-color) inset;
+    box-shadow: 0 .1rem 0 .05rem var(--darkreader-bg--md-typeset-kbd-border-color),0 .1rem 0 var(--darkreader-bg--md-typeset-kbd-border-color),0 -.1rem .2rem var(--darkreader-bg--md-typeset-kbd-accent-color) inset;
     color: var(--darkreader-text--md-default-fg-color);
 }
 .md-typeset mark {
@@ -186,8 +176,8 @@ body {
     color: inherit;
 }
 .md-typeset abbr {
-    text-decoration-color: initial;
     border-bottom: .05rem dotted var(--darkreader-border--md-default-fg-color--light);
+    text-decoration-color: initial;
 }
 @media (hover: none) {
     .md-typeset abbr[title]:-webkit-any(:focus, :hover)::after {
@@ -202,7 +192,7 @@ body {
     }
 }
 .md-typeset blockquote {
-    border-left: .2rem solid var(--darkreader-border--md-default-fg-color--lighter); 
+    border-left: .2rem solid var(--darkreader-border--md-default-fg-color--lighter);
 }
 [dir="rtl"] .md-typeset blockquote {
     border-right: .2rem solid var(--darkreader-border--md-default-fg-color--lighter);
@@ -219,13 +209,13 @@ body {
 }
 .md-typeset table:not([class]) tbody tr:hover {
     background-color: rgba(0, 0, 0, 0.04);
-    box-shadow: 0 .05rem 0 var(--darkreader-bg--md-default-bg-color) inset; 
+    box-shadow: 0 .05rem 0 var(--darkreader-bg--md-default-bg-color) inset;
 }
 .md-typeset table th[role="columnheader"]:hover::after {
-    background-color: var(--darkreader-bg--md-default-fg-color--lighter); 
+    background-color: var(--darkreader-bg--md-default-fg-color--lighter);
 }
 .md-typeset table th[role="columnheader"][aria-sort="ascending"]::after {
-    background-color: var(--darkreader-bg--md-default-fg-color--light); 
+    background-color: var(--darkreader-bg--md-default-fg-color--light);
 }
 .md-typeset table th[role="columnheader"][aria-sort="descending"]::after {
     background-color: var(--darkreader-bg--md-default-fg-color--light);
@@ -235,8 +225,8 @@ body {
     color: var(--darkreader-text--md-footer-fg-color);
 }
 .md-banner--warning {
-    color: var(--darkreader-text--md-default-fg-color);
     background: var(--darkreader-bg--md-typeset-mark-color);
+    color: var(--darkreader-text--md-default-fg-color);
 }
 .md-banner__button {
     color: inherit;
@@ -286,8 +276,9 @@ body {
 .md-consent__inner {
     background-color: var(--darkreader-bg--md-default-bg-color);
     border-color: initial;
-    box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 0.2rem,
-    rgba(0, 0, 0, 0.2) 0px 0.2rem 0.4rem;
+    border-style: initial;
+    border-width: 0px;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 0.2rem, rgba(0, 0, 0, 0.2) 0px 0.2rem 0.4rem;
 }
 .md-typeset .md-content__button {
     color: var(--darkreader-text--md-default-fg-color--lighter);
@@ -301,6 +292,8 @@ body {
 }
 .md-feedback fieldset {
     border-color: initial;
+    border-style: none;
+    border-width: initial;
 }
 .md-feedback__list:hover .md-icon:not(:disabled) {
     color: var(--darkreader-text--md-default-fg-color--lighter);
@@ -348,22 +341,22 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
 }
 .md-typeset .md-button--primary {
     background-color: var(--darkreader-bg--md-primary-fg-color);
-    color: var(--darkreader-text--md-primary-bg-color);
     border-color: var(--darkreader-border--md-primary-fg-color);
+    color: var(--darkreader-text--md-primary-bg-color);
 }
 .md-typeset .md-button:-webkit-any(:focus, :hover) {
     background-color: var(--darkreader-bg--md-accent-fg-color);
-    color: var(--darkreader-text--md-accent-bg-color);
     border-color: var(--darkreader-border--md-accent-fg-color);
+    color: var(--darkreader-text--md-accent-bg-color);
 }
 .md-typeset .md-button:is(:focus, :hover) {
     background-color: var(--darkreader-bg--md-accent-fg-color);
-    color: var(--darkreader-text--md-accent-bg-color);
     border-color: var(--darkreader-border--md-accent-fg-color);
+    color: var(--darkreader-text--md-accent-bg-color);
 }
 .md-typeset .md-input {
-    box-shadow: var(--darkreader-bg--md-shadow-z1);
     border-bottom: .1rem solid var(--darkreader-border--md-default-fg-color--lighter);
+    box-shadow: var(--darkreader-bg--md-shadow-z1);
 }
 .md-typeset .md-input:-webkit-any(:focus, :hover) {
     border-bottom-color: var(--darkreader-border--md-accent-fg-color);
@@ -375,13 +368,11 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
 }
 .md-header {
     background-color: var(--darkreader-bg--md-primary-fg-color);
-    box-shadow: rgba(0, 0, 0, 0) 0px 0px 0.2rem,
-    rgba(0, 0, 0, 0) 0px 0.2rem 0.4rem;
+    box-shadow: rgba(0, 0, 0, 0) 0px 0px 0.2rem, rgba(0, 0, 0, 0) 0px 0.2rem 0.4rem;
     color: var(--darkreader-text--md-primary-bg-color);
 }
 .md-header--shadow {
-    box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 0.2rem,
-    rgba(0, 0, 0, 0.2) 0px 0.2rem 0.4rem;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 0.2rem, rgba(0, 0, 0, 0.2) 0px 0.2rem 0.4rem;
 }
 .md-header__button {
     color: currentcolor;
@@ -398,8 +389,8 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
     fill: currentcolor;
 }
 :root {
-    --darkreader-bgimg--md-nav-icon--prev: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIwIDExdjJIOGw1LjUgNS41LTEuNDIgMS40Mkw0LjE2IDEybDcuOTItNy45MkwxMy41IDUuNSA4IDExaDEyWiIvPjwvc3ZnPg==");
     --darkreader-bgimg--md-nav-icon--next: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTguNTkgMTYuNTggMTMuMTcgMTIgOC41OSA3LjQxIDEwIDZsNiA2LTYgNi0xLjQxLTEuNDJaIi8+PC9zdmc+");
+    --darkreader-bgimg--md-nav-icon--prev: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIwIDExdjJIOGw1LjUgNS41LTEuNDIgMS40Mkw0LjE2IDEybDcuOTItNy45MkwxMy41IDUuNSA4IDExaDEyWiIvPjwvc3ZnPg==");
     --darkreader-bgimg--md-toc-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTMgOWgxNFY3SDN2Mm0wIDRoMTR2LTJIM3YybTAgNGgxNHYtMkgzdjJtMTYgMGgydi0yaC0ydjJtMC0xMHYyaDJWN2gtMm0wIDZoMnYtMmgtMnYyWiIvPjwvc3ZnPg==");
 }
 .md-nav__title .md-nav__button.md-logo :-webkit-any(img, svg) {
@@ -424,7 +415,7 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
     color: var(--darkreader-text--md-accent-fg-color);
 }
 .md-nav__link.focus-visible {
-    outline-color: var(--darkreader-border--md-accent-fg-color); 
+    outline-color: var(--darkreader-border--md-accent-fg-color);
 }
 .md-nav--primary .md-nav__link[for="__toc"] .md-icon::after {
     background-color: currentcolor;
@@ -443,10 +434,10 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
     }
     .md-nav--primary .md-nav__title ~ .md-nav__list {
         background-color: var(--darkreader-bg--md-default-bg-color);
-        box-shadow: 0 .05rem 0 var(--darkreader-bg--md-default-fg-color--lightest) inset; 
+        box-shadow: 0 .05rem 0 var(--darkreader-bg--md-default-fg-color--lightest) inset;
     }
     .md-nav--primary .md-nav__title ~ .md-nav__list > :first-child {
-        border-top-color: initial; 
+        border-top: 0px;
     }
     .md-nav--primary .md-nav__title[for="__drawer"] {
         background-color: var(--darkreader-bg--md-primary-fg-color);
@@ -482,14 +473,14 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
 }
 @media screen and (min-width: 60em) {
     .md-nav--secondary .md-nav__title {
-        box-shadow: 0 0 .4rem .4rem var(--darkreader-bg--md-default-bg-color);
         background: var(--darkreader-bg--md-default-bg-color);
+        box-shadow: 0 0 .4rem .4rem var(--darkreader-bg--md-default-bg-color);
     }
 }
 @media screen and (min-width: 76.25em) {
     .md-nav--primary .md-nav__title {
-        box-shadow: 0 0 .4rem .4rem var(--darkreader-bg--md-default-bg-color);
         background: var(--darkreader-bg--md-default-bg-color);
+        box-shadow: 0 0 .4rem .4rem var(--darkreader-bg--md-default-bg-color);
     }
     .md-nav__icon:hover {
         background-color: var(--darkreader-bg--md-accent-fg-color--transparent);
@@ -498,11 +489,11 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
         background-color: currentcolor;
     }
     .md-nav--lifted > .md-nav__list > .md-nav__item--active > .md-nav__link {
-        box-shadow: 0 0 .4rem .4rem var(--darkreader-bg--md-default-bg-color);
         background: var(--darkreader-bg--md-default-bg-color);
+        box-shadow: 0 0 .4rem .4rem var(--darkreader-bg--md-default-bg-color);
     }
     .md-nav--integrated > .md-nav__list > .md-nav__item--active .md-nav--secondary {
-        border-left: .05rem solid var(--darkreader-border--md-primary-fg-color); 
+        border-left: .05rem solid var(--darkreader-border--md-primary-fg-color);
     }
     [dir="rtl"] .md-nav--integrated > .md-nav__list > .md-nav__item--active .md-nav--secondary {
         border-right: .05rem solid var(--darkreader-border--md-primary-fg-color);
@@ -530,7 +521,7 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
         background-color: rgba(0, 0, 0, 0.26);
     }
     .md-search__form:hover {
-        background-color: rgba(24, 26, 27, 0.12); 
+        background-color: rgba(24, 26, 27, 0.12);
     }
 }
 [data-md-toggle="search"]:checked ~ .md-header .md-search__form {
@@ -539,8 +530,8 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
     color: var(--darkreader-text--md-default-fg-color);
 }
 .md-search__input {
-    background-image: initial;
     background-color: transparent;
+    background-image: initial;
 }
 .md-search__input::placeholder,
 .md-search__input ~ .md-search__icon {
@@ -554,9 +545,10 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
         color: var(--darkreader-text--md-primary-bg-color--light);
     }
     .md-search__input + .md-search__icon {
-        color: var(--darkreader-text--md-primary-bg-color); 
+        color: var(--darkreader-text--md-primary-bg-color);
     }
-    [data-md-toggle="search"]:checked ~ .md-header .md-search__input + .md-search__icon, [data-md-toggle="search"]:checked ~ .md-header .md-search__input::placeholder {
+    [data-md-toggle="search"]:checked ~ .md-header .md-search__input + .md-search__icon,
+    [data-md-toggle="search"]:checked ~ .md-header .md-search__input::placeholder {
         color: var(--darkreader-text--md-default-fg-color--light);
     }
 }
@@ -649,7 +641,7 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
     border-bottom-color: var(--darkreader-border--md-default-bg-color);
     border-left-color: transparent;
     border-right-color: transparent;
-    border-top-color: initial;
+    border-top: 0px;
 }
 .md-select__link {
     outline-color: initial;
@@ -665,7 +657,7 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
 }
 @media screen and (max-width: 76.1875em) {
     .md-sidebar--primary {
-        background-color: var(--darkreader-bg--md-default-bg-color); 
+        background-color: var(--darkreader-bg--md-default-bg-color);
     }
     [data-md-toggle="drawer"]:checked ~ .md-container .md-sidebar--primary {
         box-shadow: var(--darkreader-bg--md-shadow-z3);
@@ -814,18 +806,18 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
     background-color: var(--darkreader-bg--md-default-fg-color--lightest);
 }
 :root {
-    --darkreader-bgimg--md-admonition-icon--note: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJDNi40NyAyIDIgNi40NyAyIDEyczQuNDcgMTAgMTAgMTAgMTAtNC40NyAxMC0xMFMxNy41MyAyIDEyIDJtMy4xIDUuMDdjLjE0IDAgLjI4LjA1LjQuMTZsMS4yNyAxLjI3Yy4yMy4yMi4yMy41NyAwIC43OGwtMSAxLTIuMDUtMi4wNSAxLTFjLjEtLjExLjI0LS4xNi4zOC0uMTZtLTEuOTcgMS43NCAyLjA2IDIuMDYtNi4wNiA2LjA2SDcuMDd2LTIuMDZsNi4wNi02LjA2WiIvPjwvc3ZnPg==");
     --darkreader-bgimg--md-admonition-icon--abstract: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3IDlIN1Y3aDEwbTAgNkg3di0yaDEwbS0zIDZIN3YtMmg3TTEyIDNhMSAxIDAgMCAxIDEgMSAxIDEgMCAwIDEtMSAxIDEgMSAwIDAgMS0xLTEgMSAxIDAgMCAxIDEtMW03IDBoLTQuMThDMTQuNCAxLjg0IDEzLjMgMSAxMiAxYy0xLjMgMC0yLjQuODQtMi44MiAySDVhMiAyIDAgMCAwLTIgMnYxNGEyIDIgMCAwIDAgMiAyaDE0YTIgMiAwIDAgMCAyLTJWNWEyIDIgMCAwIDAtMi0yWiIvPjwvc3ZnPg==");
-    --darkreader-bgimg--md-admonition-icon--info: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEzIDloLTJWN2gybTAgMTBoLTJ2LTZoMm0tMS05QTEwIDEwIDAgMCAwIDIgMTJhMTAgMTAgMCAwIDAgMTAgMTAgMTAgMTAgMCAwIDAgMTAtMTBBMTAgMTAgMCAwIDAgMTIgMloiLz48L3N2Zz4=");
-    --darkreader-bgimg--md-admonition-icon--tip: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LjY2IDExLjJjLS4yMy0uMy0uNTEtLjU2LS43Ny0uODItLjY3LS42LTEuNDMtMS4wMy0yLjA3LTEuNjZDMTMuMzMgNy4yNiAxMyA0Ljg1IDEzLjk1IDNjLS45NS4yMy0xLjc4Ljc1LTIuNDkgMS4zMi0yLjU5IDIuMDgtMy42MSA1Ljc1LTIuMzkgOC45LjA0LjEuMDguMi4wOC4zMyAwIC4yMi0uMTUuNDItLjM1LjUtLjIzLjEtLjQ3LjA0LS42Ni0uMTJhLjU4LjU4IDAgMCAxLS4xNC0uMTdjLTEuMTMtMS40My0xLjMxLTMuNDgtLjU1LTUuMTJDNS43OCAxMCA0Ljg3IDEyLjMgNSAxNC40N2MuMDYuNS4xMiAxIC4yOSAxLjUuMTQuNi40MSAxLjIuNzEgMS43MyAxLjA4IDEuNzMgMi45NSAyLjk3IDQuOTYgMy4yMiAyLjE0LjI3IDQuNDMtLjEyIDYuMDctMS42IDEuODMtMS42NiAyLjQ3LTQuMzIgMS41My02LjZsLS4xMy0uMjZjLS4yMS0uNDYtLjc3LTEuMjYtLjc3LTEuMjZtLTMuMTYgNi4zYy0uMjguMjQtLjc0LjUtMS4xLjYtMS4xMi40LTIuMjQtLjE2LTIuOS0uODIgMS4xOS0uMjggMS45LTEuMTYgMi4xMS0yLjA1LjE3LS44LS4xNS0xLjQ2LS4yOC0yLjIzLS4xMi0uNzQtLjEtMS4zNy4xNy0yLjA2LjE5LjM4LjM5Ljc2LjYzIDEuMDYuNzcgMSAxLjk4IDEuNDQgMi4yNCAyLjguMDQuMTQuMDYuMjguMDYuNDMuMDMuODItLjMzIDEuNzItLjkzIDIuMjdaIi8+PC9zdmc+");
-    --darkreader-bgimg--md-admonition-icon--success: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIxIDcgOSAxOWwtNS41LTUuNSAxLjQxLTEuNDFMOSAxNi4xNyAxOS41OSA1LjU5IDIxIDdaIi8+PC9zdmc+");
-    --darkreader-bgimg--md-admonition-icon--question: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0ibTE1LjA3IDExLjI1LS45LjkyQzEzLjQ1IDEyLjg5IDEzIDEzLjUgMTMgMTVoLTJ2LS41YzAtMS4xMS40NS0yLjExIDEuMTctMi44M2wxLjI0LTEuMjZjLjM3LS4zNi41OS0uODYuNTktMS40MWEyIDIgMCAwIDAtMi0yIDIgMiAwIDAgMC0yIDJIOGE0IDQgMCAwIDEgNC00IDQgNCAwIDAgMSA0IDQgMy4yIDMuMiAwIDAgMS0uOTMgMi4yNU0xMyAxOWgtMnYtMmgyTTEyIDJBMTAgMTAgMCAwIDAgMiAxMmExMCAxMCAwIDAgMCAxMCAxMCAxMCAxMCAwIDAgMCAxMC0xMGMwLTUuNTMtNC41LTEwLTEwLTEwWiIvPjwvc3ZnPg==");
-    --darkreader-bgimg--md-admonition-icon--warning: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEzIDE0aC0yVjloMm0wIDloLTJ2LTJoMk0xIDIxaDIyTDEyIDIgMSAyMVoiLz48L3N2Zz4=");
-    --darkreader-bgimg--md-admonition-icon--failure: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE5IDYuNDEgMTcuNTkgNSAxMiAxMC41OSA2LjQxIDUgNSA2LjQxIDEwLjU5IDEyIDUgMTcuNTkgNi40MSAxOSAxMiAxMy40MSAxNy41OSAxOSAxOSAxNy41OSAxMy40MSAxMiAxOSA2LjQxWiIvPjwvc3ZnPg==");
-    --darkreader-bgimg--md-admonition-icon--danger: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0ibTExLjUgMjAgNC44Ni05LjczSDEzVjRsLTUgOS43M2gzLjVWMjBNMTIgMmMyLjc1IDAgNS4xIDEgNy4wNSAyLjk1QzIxIDYuOSAyMiA5LjI1IDIyIDEycy0xIDUuMS0yLjk1IDcuMDVDMTcuMSAyMSAxNC43NSAyMiAxMiAyMnMtNS4xLTEtNy4wNS0yLjk1QzMgMTcuMSAyIDE0Ljc1IDIgMTJzMS01LjEgMi45NS03LjA1QzYuOSAzIDkuMjUgMiAxMiAyWiIvPjwvc3ZnPg==");
     --darkreader-bgimg--md-admonition-icon--bug: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTExIDEzaDJ2MWgtMnYtMW0xMC04djZjMCA1LjUtMy44IDEwLjctOSAxMi01LjItMS4zLTktNi41LTktMTJWNWw5LTQgOSA0bS00IDVoLTIuMmMtLjItLjYtLjYtMS4xLTEuMS0xLjVsMS4yLTEuMi0uNy0uN0wxMi44IDhIMTJjLS4yIDAtLjUgMC0uNy4xTDkuOSA2LjZsLS44LjggMS4yIDEuMmMtLjUuMy0uOS44LTEuMSAxLjRIN3YxaDJ2MUg3djFoMnYxSDd2MWgyLjJjLjQgMS4yIDEuNSAyIDIuOCAyczIuNC0uOCAyLjgtMkgxN3YtMWgtMnYtMWgydi0xaC0ydi0xaDJ2LTFtLTYgMmgydi0xaC0ydjFaIi8+PC9zdmc+");
+    --darkreader-bgimg--md-admonition-icon--danger: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0ibTExLjUgMjAgNC44Ni05LjczSDEzVjRsLTUgOS43M2gzLjVWMjBNMTIgMmMyLjc1IDAgNS4xIDEgNy4wNSAyLjk1QzIxIDYuOSAyMiA5LjI1IDIyIDEycy0xIDUuMS0yLjk1IDcuMDVDMTcuMSAyMSAxNC43NSAyMiAxMiAyMnMtNS4xLTEtNy4wNS0yLjk1QzMgMTcuMSAyIDE0Ljc1IDIgMTJzMS01LjEgMi45NS03LjA1QzYuOSAzIDkuMjUgMiAxMiAyWiIvPjwvc3ZnPg==");
     --darkreader-bgimg--md-admonition-icon--example: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTcgMnYyaDF2MTRhNCA0IDAgMCAwIDQgNCA0IDQgMCAwIDAgNC00VjRoMVYySDdtNCAxNGMtLjYgMC0xLS40LTEtMXMuNC0xIDEtMSAxIC40IDEgMS0uNCAxLTEgMW0yLTRjLS42IDAtMS0uNC0xLTFzLjQtMSAxLTEgMSAuNCAxIDEtLjQgMS0xIDFtMS01aC00VjRoNHYzWiIvPjwvc3ZnPg==");
+    --darkreader-bgimg--md-admonition-icon--failure: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE5IDYuNDEgMTcuNTkgNSAxMiAxMC41OSA2LjQxIDUgNSA2LjQxIDEwLjU5IDEyIDUgMTcuNTkgNi40MSAxOSAxMiAxMy40MSAxNy41OSAxOSAxOSAxNy41OSAxMy40MSAxMiAxOSA2LjQxWiIvPjwvc3ZnPg==");
+    --darkreader-bgimg--md-admonition-icon--info: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEzIDloLTJWN2gybTAgMTBoLTJ2LTZoMm0tMS05QTEwIDEwIDAgMCAwIDIgMTJhMTAgMTAgMCAwIDAgMTAgMTAgMTAgMTAgMCAwIDAgMTAtMTBBMTAgMTAgMCAwIDAgMTIgMloiLz48L3N2Zz4=");
+    --darkreader-bgimg--md-admonition-icon--note: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJDNi40NyAyIDIgNi40NyAyIDEyczQuNDcgMTAgMTAgMTAgMTAtNC40NyAxMC0xMFMxNy41MyAyIDEyIDJtMy4xIDUuMDdjLjE0IDAgLjI4LjA1LjQuMTZsMS4yNyAxLjI3Yy4yMy4yMi4yMy41NyAwIC43OGwtMSAxLTIuMDUtMi4wNSAxLTFjLjEtLjExLjI0LS4xNi4zOC0uMTZtLTEuOTcgMS43NCAyLjA2IDIuMDYtNi4wNiA2LjA2SDcuMDd2LTIuMDZsNi4wNi02LjA2WiIvPjwvc3ZnPg==");
+    --darkreader-bgimg--md-admonition-icon--question: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0ibTE1LjA3IDExLjI1LS45LjkyQzEzLjQ1IDEyLjg5IDEzIDEzLjUgMTMgMTVoLTJ2LS41YzAtMS4xMS40NS0yLjExIDEuMTctMi44M2wxLjI0LTEuMjZjLjM3LS4zNi41OS0uODYuNTktMS40MWEyIDIgMCAwIDAtMi0yIDIgMiAwIDAgMC0yIDJIOGE0IDQgMCAwIDEgNC00IDQgNCAwIDAgMSA0IDQgMy4yIDMuMiAwIDAgMS0uOTMgMi4yNU0xMyAxOWgtMnYtMmgyTTEyIDJBMTAgMTAgMCAwIDAgMiAxMmExMCAxMCAwIDAgMCAxMCAxMCAxMCAxMCAwIDAgMCAxMC0xMGMwLTUuNTMtNC41LTEwLTEwLTEwWiIvPjwvc3ZnPg==");
     --darkreader-bgimg--md-admonition-icon--quote: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE0IDE3aDNsMi00VjdoLTZ2NmgzTTYgMTdoM2wyLTRWN0g1djZoM2wtMiA0WiIvPjwvc3ZnPg==");
+    --darkreader-bgimg--md-admonition-icon--success: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIxIDcgOSAxOWwtNS41LTUuNSAxLjQxLTEuNDFMOSAxNi4xNyAxOS41OSA1LjU5IDIxIDdaIi8+PC9zdmc+");
+    --darkreader-bgimg--md-admonition-icon--tip: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LjY2IDExLjJjLS4yMy0uMy0uNTEtLjU2LS43Ny0uODItLjY3LS42LTEuNDMtMS4wMy0yLjA3LTEuNjZDMTMuMzMgNy4yNiAxMyA0Ljg1IDEzLjk1IDNjLS45NS4yMy0xLjc4Ljc1LTIuNDkgMS4zMi0yLjU5IDIuMDgtMy42MSA1Ljc1LTIuMzkgOC45LjA0LjEuMDguMi4wOC4zMyAwIC4yMi0uMTUuNDItLjM1LjUtLjIzLjEtLjQ3LjA0LS42Ni0uMTJhLjU4LjU4IDAgMCAxLS4xNC0uMTdjLTEuMTMtMS40My0xLjMxLTMuNDgtLjU1LTUuMTJDNS43OCAxMCA0Ljg3IDEyLjMgNSAxNC40N2MuMDYuNS4xMiAxIC4yOSAxLjUuMTQuNi40MSAxLjIuNzEgMS43MyAxLjA4IDEuNzMgMi45NSAyLjk3IDQuOTYgMy4yMiAyLjE0LjI3IDQuNDMtLjEyIDYuMDctMS42IDEuODMtMS42NiAyLjQ3LTQuMzIgMS41My02LjZsLS4xMy0uMjZjLS4yMS0uNDYtLjc3LTEuMjYtLjc3LTEuMjZtLTMuMTYgNi4zYy0uMjguMjQtLjc0LjUtMS4xLjYtMS4xMi40LTIuMjQtLjE2LTIuOS0uODIgMS4xOS0uMjggMS45LTEuMTYgMi4xMS0yLjA1LjE3LS44LS4xNS0xLjQ2LS4yOC0yLjIzLS4xMi0uNzQtLjEtMS4zNy4xNy0yLjA2LjE5LjM4LjM5Ljc2LjYzIDEuMDYuNzcgMSAxLjk4IDEuNDQgMi4yNCAyLjguMDQuMTQuMDYuMjguMDYuNDMuMDMuODItLjMzIDEuNzItLjkzIDIuMjdaIi8+PC9zdmc+");
+    --darkreader-bgimg--md-admonition-icon--warning: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEzIDE0aC0yVjloMm0wIDloLTJ2LTJoMk0xIDIxaDIyTDEyIDIgMSAyMVoiLz48L3N2Zz4=");
 }
 .md-typeset .admonition,
 .md-typeset details {
@@ -838,6 +830,8 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
 .md-typeset summary {
     background-color: rgba(0, 61, 163, 0.1);
     border-color: initial;
+    border-style: none;
+    border-width: initial;
 }
 .md-typeset .admonition-title::before,
 .md-typeset summary::before {
@@ -1142,7 +1136,7 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
     color: var(--darkreader-text--md-default-fg-color--light);
 }
 .md-typeset .footnote > ol > li:target {
-    color: var(--darkreader-text--md-default-fg-color); 
+    color: var(--darkreader-text--md-default-fg-color);
 }
 .md-typeset [id^="fnref:"]:target > .footnote-ref {
     outline-color: initial;
@@ -1328,8 +1322,8 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
     color: var(--darkreader-text--md-default-fg-color--light);
 }
 :root {
-    --darkreader-bgimg--md-tabbed-icon--prev: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE1LjQxIDE2LjU4IDEwLjgzIDEybDQuNTgtNC41OUwxNCA2bC02IDYgNiA2IDEuNDEtMS40MloiLz48L3N2Zz4=");
     --darkreader-bgimg--md-tabbed-icon--next: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTguNTkgMTYuNTggMTMuMTcgMTIgOC41OSA3LjQxIDEwIDZsNiA2LTYgNi0xLjQxLTEuNDJaIi8+PC9zdmc+");
+    --darkreader-bgimg--md-tabbed-icon--prev: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE1LjQxIDE2LjU4IDEwLjgzIDEybDQuNTgtNC41OUwxNCA2bC02IDYgNiA2IDEuNDEtMS40MloiLz48L3N2Zz4=");
 }
 .md-typeset .tabbed-set > input:target {
     --md-scroll-offset: 0.625em;
@@ -1360,12 +1354,10 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
     background-color: currentcolor;
 }
 .md-typeset .tabbed-control {
-    background: linear-gradient(to right,
-    var(--darkreader-bg--md-default-bg-color) 60%,transparent);
+    background: linear-gradient(to right,var(--darkreader-bg--md-default-bg-color) 60%,transparent);
 }
 .md-typeset .tabbed-control--next {
-    background: linear-gradient(to left,
-    var(--darkreader-bg--md-default-bg-color) 60%,transparent);
+    background: linear-gradient(to left,var(--darkreader-bg--md-default-bg-color) 60%,transparent);
 }
 @media screen {
     .md-typeset .tabbed-set > input:first-child:checked ~ .tabbed-labels > :first-child,
@@ -1460,19 +1452,18 @@ html .md-footer-meta.md-typeset a:is(:focus, :hover) {
     --darkreader-bgimg--md-tasklist-icon--checked: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNMSAxMkMxIDUuOTI1IDUuOTI1IDEgMTIgMXMxMSA0LjkyNSAxMSAxMS00LjkyNSAxMS0xMSAxMVMxIDE4LjA3NSAxIDEyem0xNi4yOC0yLjcyYS43NS43NSAwIDAgMC0xLjA2LTEuMDZsLTUuOTcgNS45Ny0yLjQ3LTIuNDdhLjc1Ljc1IDAgMCAwLTEuMDYgMS4wNmwzIDNhLjc1Ljc1IDAgMCAwIDEuMDYgMGw2LjUtNi41eiIvPjwvc3ZnPg==");
 }
 .md-typeset .task-list-indicator::before {
-    background-color: var(--darkreader-bg--md-default-fg-color--lightest); 
+    background-color: var(--darkreader-bg--md-default-fg-color--lightest);
 }
 .md-typeset [type="checkbox"]:checked + .task-list-indicator::before {
     background-color: rgb(43, 255, 152);
 }
 :root > * {
-    --md-mermaid-font-family: var(--md-text-font-family),
-    sans-serif;
     --md-mermaid-edge-color: var(--md-code-fg-color);
-    --md-mermaid-node-bg-color: var(--md-accent-fg-color--transparent);
-    --md-mermaid-node-fg-color: var(--md-accent-fg-color);
+    --md-mermaid-font-family: var(--md-text-font-family),sans-serif;
     --md-mermaid-label-bg-color: var(--md-default-bg-color);
     --md-mermaid-label-fg-color: var(--md-code-fg-color);
+    --md-mermaid-node-bg-color: var(--md-accent-fg-color--transparent);
+    --md-mermaid-node-fg-color: var(--md-accent-fg-color);
 }
 a {
     color: rgb(94, 165, 234);
@@ -1491,60 +1482,59 @@ table.sortable thead {
     color: rgb(168, 160, 149);
 }
 hr {
-    border-top-color: initial;
-    border-right-color: initial;
-    border-left-color: initial;
     border-bottom-color: rgb(62, 68, 70);
+    border-left: 0px;
+    border-right: 0px;
+    border-top: 0px;
 }
 .dashed {
     border-bottom-color: rgb(62, 68, 70);
 }
 .form-area {
-    background-image: initial;
     background-color: rgb(27, 29, 30);
+    background-image: initial;
     border-color: rgb(62, 68, 70);
 }
 footer {
     color: rgb(152, 143, 129);
 }
 body {
-    background-image: initial;
     background-color: rgb(27, 29, 30);
+    background-image: initial;
     color: rgb(232, 230, 227);
 }
 header {
-    background-image: initial;
     background-color: rgb(13, 14, 14);
+    background-image: initial;
     color: rgb(178, 172, 162);
 }
 #user-links:hover {
-    color: rgb(232, 230, 227);
     border-color: rgb(140, 130, 115);
+    color: rgb(232, 230, 227);
 }
 #nav-shadow {
-    background-image: linear-gradient(rgb(49, 53, 55),
-    rgba(0, 0, 0, 0));
     background-color: initial;
+    background-image: linear-gradient(rgb(49, 53, 55), rgba(0, 0, 0, 0));
 }
 #nav-container {
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    background-image: initial;
 }
 nav ul {
-    list-style-image: initial;
-    background-image: initial;
     background-color: transparent;
+    background-image: initial;
+    list-style-image: initial;
 }
 nav ul li {
     color: rgb(232, 230, 227);
 }
 nav ul li.home-nav-element a:hover {
-    border-bottom-color: initial;
+    border-bottom: none;
 }
 nav ul li a,
 nav ul li button {
-    text-decoration-color: initial;
     color: rgb(232, 230, 227);
+    text-decoration-color: initial;
 }
 nav ul li a:link,
 nav ul li button:link {
@@ -1552,10 +1542,10 @@ nav ul li button:link {
 }
 nav ul li a:hover,
 nav ul li button:hover {
+    background-color: rgba(24, 26, 27, 0.25);
+    background-image: initial;
     border-top-color: rgb(199, 70, 8);
     color: rgb(232, 230, 227);
-    background-image: initial;
-    background-color: rgba(24, 26, 27, 0.25);
 }
 nav ul li a.active,
 nav ul li button.active {
@@ -1563,14 +1553,14 @@ nav ul li button.active {
     color: rgb(249, 146, 97);
 }
 nav ul li ul {
-    color: rgb(232, 230, 227);
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    background-image: initial;
     box-shadow: rgba(0, 0, 0, 0.4) 2px 2px 4px;
+    color: rgb(232, 230, 227);
 }
 nav ul li ul li:hover {
-    background-image: initial;
     background-color: rgb(49, 53, 55);
+    background-image: initial;
 }
 nav ul li ul li a {
     color: rgb(232, 230, 227) !important;
@@ -1580,14 +1570,16 @@ nav ul li ul li button {
     border-left-color: rgb(140, 130, 115);
 }
 nav ul li button {
-    background-image: none;
     background-color: initial;
+    background-image: none;
     border-color: initial;
+    border-style: none;
+    border-width: initial;
 }
 nav ul li.home-nav-element a:hover {
-    border-bottom-color: initial;
-    background-image: initial;
     background-color: transparent;
+    background-image: initial;
+    border-bottom: 0px;
 }
 hr {
     color: rgba(232, 230, 227, 0.2);
@@ -1596,22 +1588,22 @@ hr {
     color: rgb(199, 194, 187);
 }
 footer {
-    border-top-color: rgb(62, 68, 70);
-    background-image: initial;
     background-color: rgb(34, 37, 38);
+    background-image: initial;
+    border-top-color: rgb(62, 68, 70);
 }
 a {
     text-decoration-color: initial;
 }
 noscript #noscript {
-    color: rgb(232, 230, 227);
-    background-image: initial;
     background-color: rgb(139, 0, 0);
+    background-image: initial;
+    color: rgb(232, 230, 227);
 }
 #announcement {
-    color: rgb(232, 230, 227);
-    background-image: initial;
     background-color: rgb(139, 0, 0);
+    background-image: initial;
+    color: rgb(232, 230, 227);
 }
 #announcement a {
     color: rgb(255, 174, 26);
@@ -1621,49 +1613,49 @@ noscript #noscript {
 }
 #form-errors,
 .form-errors {
-    background-image: initial;
     background-color: rgba(204, 0, 0, 0.3);
+    background-image: initial;
     border-color: rgb(179, 0, 0);
 }
 #nav-placeholder {
-    background-image: initial;
     background-color: rgb(24, 26, 27);
-    border-right-color: rgb(62, 68, 70);
+    background-image: initial;
     border-left-color: rgb(62, 68, 70);
+    border-right-color: rgb(62, 68, 70);
 }
 #contest-info a {
     color: rgb(232, 230, 227);
 }
 #contest-info-main {
-    border-left-color: rgb(48, 52, 54);
-    background-image: initial;
     background-color: rgba(0, 0, 0, 0.77);
+    background-image: initial;
+    border-left-color: rgb(48, 52, 54);
     color: rgb(232, 230, 227);
 }
 .contest-info-toggle-mode-on {
-    background-image: initial;
     background-color: rgba(0, 164, 0, 0.57);
+    background-image: initial;
 }
 .contest-info-toggle-mode-on:hover {
-    background-image: initial;
     background-color: rgba(0, 164, 0, 0.97);
+    background-image: initial;
 }
 .contest-info-toggle-mode-off {
-    background-image: initial;
     background-color: rgba(204, 0, 0, 0.57);
+    background-image: initial;
 }
 .contest-info-toggle-mode-off:hover {
-    background-image: initial;
     background-color: rgba(204, 0, 0, 0.97);
+    background-image: initial;
 }
 #page-container {
-    border-right-color: rgb(62, 68, 70);
     border-left-color: rgb(62, 68, 70);
+    border-right-color: rgb(62, 68, 70);
 }
 @media (max-width: 1498px) {
     #page-container {
-        border-left-color: initial;
-        border-right-color: initial;
+        border-left: none;
+        border-right: none;
     }
 }
 @media (max-width: 799px) {
@@ -1675,10 +1667,10 @@ noscript #noscript {
         text-shadow: rgb(24, 26, 27) 0px 0px 5px;
     }
     #nav-list {
-        background-image: initial;
         background-color: rgb(24, 26, 27);
-        box-shadow: none;
+        background-image: initial;
         border-color: initial;
+        box-shadow: none;
     }
 }
 #notification {
@@ -1707,8 +1699,8 @@ noscript #noscript {
     box-shadow: rgba(0, 0, 0, 0.2) 0px 8px 16px 0px;
 }
 .dropdown a {
-    text-decoration-color: initial;
     color: rgb(232, 230, 227);
+    text-decoration-color: initial;
 }
 .dropdown-item {
     color: rgb(232, 230, 227);
@@ -1718,8 +1710,8 @@ noscript #noscript {
 }
 .popper-arrow,
 .popper-arrow::before {
-    background-image: inherit;
     background-color: inherit;
+    background-image: inherit;
 }
 .unread_boxes {
     background-color: rgb(204, 0, 0);
@@ -1778,12 +1770,12 @@ noscript #noscript {
 }
 @media (min-width: 800px) {
     #page-container {
-        background-image: initial;
         background-color: rgb(32, 34, 36);
+        background-image: initial;
     }
     #content.wrapper {
-        background-image: initial;
         background-color: rgb(24, 26, 27);
+        background-image: initial;
     }
 }
 .colored-text {
@@ -1811,16 +1803,16 @@ input::placeholder {
     color: rgb(249, 146, 97);
 }
 .table {
-    background-image: initial;
     background-color: rgba(0, 0, 0, 0.01);
+    background-image: initial;
 }
 .table.striped tr:nth-child(2n) {
-    background-image: initial;
     background-color: rgb(29, 31, 32);
+    background-image: initial;
 }
 .table.striped tr:nth-child(2n+1) {
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    background-image: initial;
 }
 .table td:first-child {
     border-color: rgb(62, 68, 70);
@@ -1832,9 +1824,9 @@ input::placeholder {
     border-color: rgb(62, 68, 70);
 }
 .table th {
-    color: rgb(232, 230, 227);
     background-color: rgb(0, 0, 100);
     border-color: rgb(62, 68, 70);
+    color: rgb(232, 230, 227);
 }
 .table td {
     border-color: rgb(62, 68, 70);
@@ -1880,8 +1872,8 @@ input::placeholder {
 }
 .QU,
 .G {
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    background-image: initial;
     color: rgb(232, 230, 227);
 }
 .judge-online {
@@ -1900,8 +1892,8 @@ input::placeholder {
     color: rgb(255, 70, 70) !important;
 }
 .left-sidebar-item.active {
-    color: rgb(232, 230, 227);
     background-color: rgb(125, 44, 5);
+    color: rgb(232, 230, 227);
 }
 .left-sidebar-item.active .sidebar-icon {
     color: rgb(232, 230, 227);
@@ -1910,7 +1902,7 @@ input::placeholder {
     border-bottom-color: rgb(62, 68, 70);
 }
 .blog-sidebox .contest:last-child {
-    border-bottom-color: initial;
+    border-bottom: none;
 }
 .blog-sidebox .contest .name a {
     color: rgb(104, 149, 191) !important;
@@ -1925,18 +1917,15 @@ input::placeholder {
     color: rgb(178, 172, 162);
 }
 .rssatom span {
-    color: rgb(232, 230, 227);
-    border-color: rgb(174, 78, 16);
-    background-image: linear-gradient(135deg,
-    rgb(175, 79, 22) 0px,
-    rgb(169, 90, 3) 47%,
-    rgb(175, 79, 22) 100%);
     background-color: initial;
+    background-image: linear-gradient(135deg, rgb(175, 79, 22) 0px, rgb(169, 90, 3) 47%, rgb(175, 79, 22) 100%);
+    border-color: rgb(174, 78, 16);
+    color: rgb(232, 230, 227);
 }
 .blog-box {
+    background-color: rgb(24, 26, 27);
     border-bottom-color: rgb(60, 65, 68);
     border-top-color: rgb(60, 65, 68);
-    background-color: rgb(24, 26, 27);
     box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 5px;
 }
 .blog-box:hover,
@@ -1969,26 +1958,25 @@ input::placeholder {
     color: rgb(232, 230, 227);
 }
 .show-more {
-    color: rgb(232, 230, 227);
-    background-image: linear-gradient(rgba(0, 0, 0, 0),
-    rgb(24, 26, 27));
     background-color: initial;
+    background-image: linear-gradient(rgba(0, 0, 0, 0), rgb(24, 26, 27));
+    color: rgb(232, 230, 227);
 }
 .middle-right-content.wrapper {
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    background-image: initial;
 }
 @media (max-width: 799px) {
     .left-sidebar {
-        background-image: inherit;
         background-color: inherit;
+        background-image: inherit;
     }
 }
 @media (min-width: 800px) {
     .left-sidebar-item {
+        background-color: rgb(24, 26, 27);
         border-color: rgb(60, 65, 68);
         box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 5px;
-        background-color: rgb(24, 26, 27);
     }
     .left-sidebar {
         border-right-color: initial;
@@ -1999,8 +1987,8 @@ input::placeholder {
     }
 }
 #problem-table tr:hover {
-    background-image: initial;
     background-color: rgb(36, 39, 40);
+    background-image: initial;
 }
 ul.problem-list {
     list-style-image: initial;
@@ -2021,8 +2009,8 @@ ul.problem-list {
     color: rgb(255, 26, 26);
 }
 .organization-tag {
-    box-shadow: rgba(0, 0, 0, 0.12) 0px -0.1em 0px inset;
     background-color: rgb(53, 57, 59);
+    box-shadow: rgba(0, 0, 0, 0.12) 0px -0.1em 0px inset;
 }
 .organization-tag a {
     color: rgb(232, 230, 227);
@@ -2031,8 +2019,8 @@ ul.problem-list {
     color: rgb(242, 59, 63);
 }
 .pdf-icon .pdf-icon-bar {
-    background-image: initial;
     background-color: rgb(170, 11, 15);
+    background-image: initial;
 }
 .license a {
     color: rgb(152, 143, 129);
@@ -2043,12 +2031,12 @@ ul.problem-list {
     color: rgb(158, 150, 137);
 }
 #problem_submit #language-select2 .select2-results__option {
-    color: rgb(158, 150, 137) !important;
+    background-color: rgb(24, 26, 27) !important;
     background-image: initial !important;
-    background-color: rgb(24, 26, 27) !important; 
+    color: rgb(158, 150, 137) !important;
 }
 #problem_submit #language-select2 .select2-results__option--highlighted {
-    text-decoration-color: initial; 
+    text-decoration-color: initial;
 }
 #problem_submit #language-select2 .select2-results__option[aria-selected="true"] {
     color: rgb(232, 230, 227) !important;
@@ -2132,8 +2120,8 @@ svg.rate-box.rate-target path {
     fill: rgb(255, 37, 37);
 }
 svg.rate-box.rate-target circle:last-child {
-    stroke: none;
     fill: rgb(255, 37, 37);
+    stroke: none;
 }
 .rate-none,
 .rate-none a {
@@ -2181,16 +2169,16 @@ svg.rate-box.rate-target circle:last-child {
     color: rgb(26, 255, 26);
 }
 #users-table tr:hover {
-    background-image: initial;
     background-color: rgb(36, 39, 40);
+    background-image: initial;
 }
 #users-table tr.highlight {
-    background-image: initial;
     background-color: rgb(85, 79, 0);
+    background-image: initial;
 }
 #users-table tr:target {
-    background-image: initial;
     background-color: rgb(85, 79, 0);
+    background-image: initial;
 }
 #users-table .organization-column a {
     color: rgb(152, 143, 129) !important;
@@ -2199,8 +2187,8 @@ svg.rate-box.rate-target circle:last-child {
     background-color: rgb(103, 0, 0) !important;
 }
 #users-table .frozen {
-    background-image: initial !important;
     background-color: rgb(5, 77, 121) !important;
+    background-image: initial !important;
 }
 #users-table .full-score,
 #users-table .full-score a {
@@ -2236,7 +2224,7 @@ svg.rate-box.rate-target circle:last-child {
     border-top-color: rgb(84, 91, 94);
 }
 #users-table .fullname-column {
-    border-right-color: initial !important;
+    border-right: none !important;
 }
 #users-table .fullname-column span {
     color: rgb(152, 143, 129) !important;
@@ -2257,43 +2245,46 @@ a.user-redirect:hover {
     border-left-color: rgb(62, 68, 70);
 }
 .hide-solved-problems > span::before {
-    background-image: initial;
     background-color: rgba(0, 0, 0, 0.2);
+    background-image: initial;
+}
+.user-img {
+    background-color: rgb(43, 47, 49);
 }
 .pp-table .pp-weighted {
     color: rgb(157, 148, 136);
 }
 .pp-table div.sub-pp {
-    border-left-color: initial;
+    border-left: none;
 }
 #pp-load-link-wrapper {
     border-color: rgb(62, 68, 70);
 }
 #rating-tooltip {
-    background-image: initial;
     background-color: rgba(0, 0, 0, 0.7);
+    background-image: initial;
     color: rgb(232, 230, 227);
 }
 #rating-tooltip.rate-group {
     color: rgb(232, 230, 227);
 }
 .follow {
-    background-image: initial;
     background-color: rgb(0, 102, 0);
+    background-image: initial;
     border-color: rgb(19, 122, 19);
 }
 .follow:hover {
-    background-image: initial;
     background-color: rgb(0, 80, 0);
+    background-image: initial;
 }
 .unfollow {
-    background-image: initial;
     background-color: rgb(204, 0, 0);
+    background-image: initial;
     border-color: rgb(121, 0, 21);
 }
 .unfollow:hover {
-    background-image: initial;
     background-color: rgb(111, 0, 0);
+    background-image: initial;
 }
 #submission-activity #submission-activity-actions #year {
     color: rgb(189, 183, 175);
@@ -2346,36 +2337,42 @@ a.user-redirect:hover {
 }
 .content-description pre code,
 .content-description pre div.code {
-    border-color: initial;
-    background-image: initial;
     background-color: transparent;
+    background-image: initial;
+    border-color: initial;
+    border-style: initial;
+    border-width: 0px;
     color: var(--darkreader-text--md-code-fg-color);
 }
 .content-description pre.no-border {
-    border-color: initial;
     background-color: inherit;
+    border-color: initial;
+    border-style: none;
+    border-width: initial;
 }
 .content-description ins {
-    background-image: initial;
     background-color: rgb(84, 84, 0);
+    background-image: initial;
     color: rgb(232, 230, 227);
     text-decoration-color: initial;
 }
 .content-description mark {
-    background-image: initial;
     background-color: rgb(153, 153, 0);
+    background-image: initial;
     color: rgb(232, 230, 227);
 }
 .content-description img {
     border-color: initial;
+    border-style: initial;
+    border-width: 0px;
 }
 .codehilitetable pre {
     background-color: rgba(35, 38, 39, 0.5);
 }
 .codehilitetable .linenos pre {
-    color: rgba(232, 230, 227, 0.26);
     background-color: rgba(0, 0, 0, 0.07);
-    border-right-color: initial;
+    border-right: 0px;
+    color: rgba(232, 230, 227, 0.26);
 }
 .info-float .fa {
     color: rgb(232, 230, 227);
@@ -2387,102 +2384,136 @@ a.user-redirect:hover {
     color: rgb(132, 183, 237);
 }
 .gplus-this i {
-    color: rgb(224, 90, 72); 
+    color: rgb(224, 90, 72);
 }
-.button, button, input[type="submit"] {
+.button,
+button,
+input[type="submit"] {
     background-color: rgb(125, 44, 5);
     border-color: transparent;
     box-shadow: rgba(0, 0, 0, 0.02) 0px 1px 3px 0px;
+    color: rgb(232, 230, 227) !important;
     text-decoration-color: initial;
-    color: rgb(232, 230, 227) !important; 
 }
-.button.disabled, button.disabled, input[type="submit"].disabled {
-    background-image: linear-gradient(rgb(73, 79, 82) 0px,
-    rgb(96, 104, 108) 100%) !important;
+.button.disabled,
+.button[disabled],
+button.disabled,
+button[disabled],
+input[type="submit"].disabled,
+input[type="submit"][disabled] {
     background-color: initial !important;
-    border-color: rgb(84, 91, 94) !important; 
+    background-image: linear-gradient(rgb(73, 79, 82) 0px, rgb(96, 104, 108) 100%) !important;
+    border-color: rgb(84, 91, 94) !important;
 }
-.button.btn-gray, button.btn-gray, input[type="submit"].btn-gray {
+.button.btn-gray,
+button.btn-gray,
+input[type="submit"].btn-gray {
+    background-color: rgb(96, 104, 108);
     background-image: initial;
-    background-color: rgb(96, 104, 108); 
 }
-.button.btn-hovergray:hover, button.btn-hovergray:hover, input[type="submit"].btn-hovergray:hover {
+.button.btn-hovergray:hover,
+button.btn-hovergray:hover,
+input[type="submit"].btn-hovergray:hover {
+    background-color: rgb(49, 53, 55);
     background-image: initial;
-    background-color: rgb(49, 53, 55); 
 }
-.button.btn-green, button.btn-green, input[type="submit"].btn-green {
+.button.btn-green,
+button.btn-green,
+input[type="submit"].btn-green {
+    background-color: rgb(32, 134, 55);
     background-image: initial;
-    background-color: rgb(32, 134, 55); 
 }
-.button.btn-green:hover, button.btn-green:hover, input[type="submit"].btn-green:hover {
+.button.btn-green:hover,
+button.btn-green:hover,
+input[type="submit"].btn-green:hover {
+    background-color: rgb(0, 102, 0);
     background-image: initial;
-    background-color: rgb(0, 102, 0); 
 }
-.button.btn-darkred, button.btn-darkred, input[type="submit"].btn-darkred {
+.button.btn-darkred,
+button.btn-darkred,
+input[type="submit"].btn-darkred {
+    background-color: rgb(111, 0, 0);
     background-image: initial;
-    background-color: rgb(111, 0, 0); 
 }
-.button.btn-darkred:hover, button.btn-darkred:hover, input[type="submit"].btn-darkred:hover {
+.button.btn-darkred:hover,
+button.btn-darkred:hover,
+input[type="submit"].btn-darkred:hover {
+    background-color: rgb(132, 34, 34);
     background-image: initial;
-    background-color: rgb(132, 34, 34); 
 }
-.button.btn-midnightblue, button.btn-midnightblue, input[type="submit"].btn-midnightblue {
+.button.btn-midnightblue,
+button.btn-midnightblue,
+input[type="submit"].btn-midnightblue {
+    background-color: rgb(20, 20, 90);
     background-image: initial;
-    background-color: rgb(20, 20, 90); 
 }
-.button.btn-midnightblue:hover, button.btn-midnightblue:hover, input[type="submit"].btn-midnightblue:hover {
+.button.btn-midnightblue:hover,
+button.btn-midnightblue:hover,
+input[type="submit"].btn-midnightblue:hover {
+    background-color: rgb(0, 0, 111);
     background-image: initial;
-    background-color: rgb(0, 0, 111); 
 }
-.button.btn-darkGreen, button.btn-darkGreen, input[type="submit"].btn-darkGreen {
-    background-image: initial;
-    background-color: rgb(125, 44, 5); 
-}
-.button:hover, button:hover, input[type="submit"]:hover {
+.button.btn-darkGreen,
+button.btn-darkGreen,
+input[type="submit"].btn-darkGreen {
     background-color: rgb(125, 44, 5);
-    box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px; 
+    background-image: initial;
 }
-.button:focus, button:focus, input[type="submit"]:focus {
+.button:hover,
+button:hover,
+input[type="submit"]:hover {
     background-color: rgb(125, 44, 5);
-    box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px; 
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px;
 }
-.button:active, button:active, input[type="submit"]:hover {
+.button:focus,
+button:focus,
+input[type="submit"]:focus {
     background-color: rgb(125, 44, 5);
-    box-shadow: rgba(0, 0, 0, 0.06) 0px 2px 4px; 
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px;
 }
-input[type="text"], input[type="password"], input[type="email"], input[type="number"] {
-    color: rgb(178, 172, 162);
-    background-image: none;
+.button:active,
+button:active,
+input[type="submit"]:hover {
+    background-color: rgb(125, 44, 5);
+    box-shadow: rgba(0, 0, 0, 0.06) 0px 2px 4px;
+}
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"] {
     background-color: rgb(24, 26, 27);
+    background-image: none;
     border-color: rgb(62, 68, 70);
     box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset;
+    color: rgb(178, 172, 162);
 }
 textarea {
-    background-image: none;
     background-color: rgb(24, 26, 27);
+    background-image: none;
     border-color: rgb(62, 68, 70);
     box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset;
 }
 textarea:hover {
-    border-color: rgb(140, 130, 115); 
+    border-color: rgb(140, 130, 115);
 }
-input[type="text"]:hover, input[type="password"]:hover {
+input[type="text"]:hover,
+input[type="password"]:hover {
     border-color: rgba(16, 87, 144, 0.8);
-    box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset,
-    rgba(16, 91, 150, 0.6) 0px 0px 4px;
+    box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset, rgba(16, 91, 150, 0.6) 0px 0px 4px;
 }
 textarea:focus {
-    border-color: rgb(140, 130, 115); outline-color: initial; 
+    border-color: rgb(140, 130, 115);
+    outline-color: initial;
 }
-input[type="text"]:focus, input[type="password"]:focus {
+input[type="text"]:focus,
+input[type="password"]:focus {
     border-color: rgba(16, 87, 144, 0.8);
-    box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset,
-    rgba(16, 91, 150, 0.6) 0px 0px 8px;
+    box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px inset, rgba(16, 91, 150, 0.6) 0px 0px 8px;
     outline-color: initial;
 }
 .btn-clipboard:hover {
-    border-color: rgb(55, 60, 62);
     background-color: rgb(24, 26, 27);
+    border-color: rgb(55, 60, 62);
 }
 .ul_tab_a_active,
 .tabs > ul > li.active > a:focus,
@@ -2491,10 +2522,10 @@ input[type="text"]:focus, input[type="password"]:focus {
 .tabs > ul > li.active > span:hover,
 .tabs > ul > li.active > a,
 .tabs > ul > li.active > span {
-    color: rgb(249, 146, 97);
-    border-bottom-color: rgb(199, 70, 8);
-    background-image: initial;
     background-color: transparent;
+    background-image: initial;
+    border-bottom-color: rgb(199, 70, 8);
+    color: rgb(249, 146, 97);
 }
 .tabs {
     border-bottom-color: rgb(62, 68, 70);
@@ -2531,54 +2562,54 @@ input[type="text"]:focus, input[type="password"]:focus {
     border-bottom-color: rgb(0, 217, 0);
 }
 ul.pagination a:hover {
-    color: rgb(232, 230, 227);
-    background-image: initial;
     background-color: rgb(163, 62, 18);
+    background-image: initial;
+    color: rgb(232, 230, 227);
 }
 ul.pagination > li > a,
 ul.pagination > li > span {
-    text-decoration-color: initial;
-    color: rgb(249, 146, 97);
     background-color: rgb(24, 26, 27);
     border-color: rgb(199, 70, 8);
+    color: rgb(249, 146, 97);
+    text-decoration-color: initial;
 }
 ul.pagination > .disabled-page > a {
-    color: rgb(223, 220, 215);
     background-color: rgb(137, 78, 57);
     border-color: rgb(199, 68, 21);
+    color: rgb(223, 220, 215);
 }
 ul.pagination > .disabled-page > span {
-    color: rgb(223, 220, 215);
     background-color: rgb(137, 78, 57);
     border-color: rgb(199, 68, 21);
+    color: rgb(223, 220, 215);
 }
 ul.pagination > .active-page > a {
-    color: rgb(232, 230, 227);
     background-color: rgb(125, 44, 5);
     border-color: transparent;
+    color: rgb(232, 230, 227);
 }
 ul.pagination > .active-page > span {
-    color: rgb(232, 230, 227);
     background-color: rgb(24, 26, 27);
     border-color: transparent;
+    color: rgb(232, 230, 227);
 }
 .alert {
     border-color: transparent;
 }
 .alert-info {
-    color: rgb(117, 178, 208);
     background-color: rgb(14, 48, 65);
     border-color: rgb(22, 90, 104);
+    color: rgb(117, 178, 208);
 }
 .alert-warning {
-    color: rgb(198, 171, 123);
     background-color: rgb(47, 40, 5);
     border-color: rgb(108, 76, 11);
+    color: rgb(198, 171, 123);
 }
 .alert-danger {
-    color: rgb(194, 102, 100);
     background-color: rgb(56, 22, 22);
     border-color: rgb(89, 35, 43);
+    color: rgb(194, 102, 100);
 }
 .alert-dismissable .close,
 .alert-dismissible .close {
@@ -2600,35 +2631,37 @@ a.close:hover {
     text-decoration-color: initial;
 }
 .badge {
-    color: rgb(232, 230, 227);
     background-color: rgb(155, 19, 19);
+    color: rgb(232, 230, 227);
 }
 .form-submit-group {
     border-top-color: rgb(53, 57, 59);
 }
 .sidebox h3 {
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    background-image: initial;
 }
 .sidebox h3 .fa {
-    background-image: initial;
     background-color: rgb(125, 44, 5);
+    background-image: initial;
     color: rgb(232, 230, 227);
 }
 .sidebox-content {
-    border-top-color: initial;
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    background-image: initial;
+    border-top: none;
 }
 .sidebox-content.sidebox-table {
     border-color: initial;
+    border-style: none;
+    border-width: initial;
 }
 .sidebox {
     box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 5px;
 }
 .ws-closed {
-    background-image: initial;
     background-color: rgb(139, 0, 0);
+    background-image: initial;
 }
 .ws-closed a {
     color: rgb(232, 230, 227);
@@ -2637,49 +2670,51 @@ a.close:hover {
     border-color: transparent;
 }
 .messages li.debug {
-    color: rgb(194, 188, 180);
     background-color: rgb(40, 43, 44);
     border-color: rgb(59, 64, 66);
+    color: rgb(194, 188, 180);
 }
 .messages li.info {
-    color: rgb(142, 227, 241);
     background-color: rgb(20, 59, 67);
     border-color: rgb(30, 89, 97);
+    color: rgb(142, 227, 241);
 }
 .messages li.success {
-    color: rgb(153, 230, 171);
     background-color: rgb(26, 62, 41);
     border-color: rgb(37, 90, 50);
+    color: rgb(153, 230, 171);
 }
 .messages li.warning {
-    color: rgb(251, 215, 112);
     background-color: rgb(61, 46, 0);
     border-color: rgb(123, 92, 0);
+    color: rgb(251, 215, 112);
 }
 .messages li.error {
-    color: rgb(225, 134, 143);
     background-color: rgb(67, 12, 17);
     border-color: rgb(104, 18, 27);
+    color: rgb(225, 134, 143);
 }
 .spoiler-text {
-    border-color: rgb(140, 130, 115);
-    background-image: initial;
     background-color: rgb(34, 36, 38);
+    background-image: initial;
+    border-color: rgb(140, 130, 115);
 }
 .spoiler-summary {
     text-decoration-color: initial;
 }
 .control-button {
     border-color: initial;
+    border-style: initial;
+    border-width: 0px;
     color: rgb(232, 230, 227) !important;
 }
 .control-button:hover {
-    background-image: initial;
     background-color: rgb(96, 104, 108);
+    background-image: initial;
 }
 ul.errorlist {
-    list-style-image: initial;
     color: rgb(255, 26, 26);
+    list-style-image: initial;
 }
 .registration-form .block-header {
     color: rgb(178, 172, 162);
@@ -2691,9 +2726,9 @@ ul.errorlist {
     color: rgb(255, 26, 26);
 }
 .registration-form #edit-form {
-    border-color: unset;
-    background-image: unset;
     background-color: unset;
+    background-image: unset;
+    border-color: unset;
 }
 #login-panel .google-icon i {
     color: rgb(224, 90, 72);
@@ -2710,16 +2745,16 @@ ul.errorlist {
 }
 button:hover,
 button:focus {
-    text-decoration-color: initial;
-    outline-color: initial;
     box-shadow: none;
+    outline-color: initial;
+    text-decoration-color: initial;
 }
 .btn {
     box-shadow: rgba(0, 0, 0, 0.12) 0px 10px 20px -6px;
 }
 .btn .icon {
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    background-image: initial;
 }
 .btn:hover,
 .btn:active,
@@ -2733,28 +2768,27 @@ button:focus {
     color: rgb(97, 217, 124);
 }
 .btn.btn-disabled {
-    color: rgb(232, 230, 227);
-    background-image: initial;
     background-color: rgb(96, 104, 108);
+    background-image: initial;
     border-color: rgb(84, 91, 94);
+    color: rgb(232, 230, 227);
 }
 a.upvote-link,
 a.downvote-link {
     color: rgb(232, 230, 227);
 }
 a.voted {
-    text-shadow: rgb(0, 0, 0) 0px 0px 4px,
-    rgb(0, 0, 204) 0px 0px 9px;
+    text-shadow: rgb(0, 0, 0) 0px 0px 4px, rgb(0, 0, 204) 0px 0px 9px;
 }
 .comment-area .featherlight-edit .featherlight-content {
-    background-image: initial;
     background-color: rgb(27, 29, 30);
+    background-image: initial;
     border-color: rgb(62, 68, 70);
 }
 .comment-area .new-comments .comment-display {
-    border-color: rgb(62, 68, 70);
-    background-image: initial;
     background-color: rgb(27, 29, 30);
+    background-image: initial;
+    border-color: rgb(62, 68, 70);
 }
 .comment-area .new-comments .comment .detail .header {
     border-bottom-color: rgb(82, 88, 92);
@@ -2774,10 +2808,10 @@ a.voted {
     color: rgb(200, 195, 188);
 }
 .comment-header {
-    color: rgb(231, 229, 226);
-    background-image: initial;
     background-color: rgba(0, 0, 0, 0.1);
+    background-image: initial;
     border-color: rgb(62, 68, 70);
+    color: rgb(231, 229, 226);
 }
 .comment-edits:not(:empty) {
     color: rgb(189, 183, 175);
@@ -2786,9 +2820,9 @@ a.voted {
     color: rgb(189, 183, 175);
 }
 .comment-box {
-    border-color: rgb(62, 68, 70);
-    background-image: initial;
     background-color: rgba(0, 0, 0, 0.01);
+    background-image: initial;
+    border-color: rgb(62, 68, 70);
 }
 .comment {
     list-style-image: none;
@@ -2797,15 +2831,15 @@ a.voted {
     border-left-color: rgb(48, 52, 54);
 }
 .actionbar .actionbar-button {
-    background-image: initial;
     background-color: rgb(49, 53, 55);
+    background-image: initial;
 }
 .actionbar .actionbar-button:hover {
-    background-image: initial;
     background-color: rgb(73, 79, 82);
+    background-image: initial;
 }
 .actionbar .dislike-button {
-    border-left-color: initial;
+    border-left: 0px;
 }
 .actionbar .like-button.voted {
     color: rgb(51, 125, 255);
@@ -2817,9 +2851,9 @@ a.voted {
     color: rgb(248, 248, 80);
 }
 .submission-row {
-    box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 4px;
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    background-image: initial;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 4px;
 }
 .submission-row .sub-result .language {
     background-color: rgb(41, 44, 46);
@@ -2829,9 +2863,6 @@ a.voted {
 }
 .submission-row .sub-testcase {
     color: rgb(178, 172, 162);
-}
-.submission-row .sub-user-img {
-    background-color: rgb(43, 47, 49);
 }
 #statistics-table tr:not(:first-child) td {
     border-top-color: rgb(48, 52, 54) !important;
@@ -2850,36 +2881,28 @@ a.voted {
     color: rgb(211, 207, 201);
 }
 #test-cases .case-output {
-    box-shadow: rgba(27, 29, 30, 0.15) 0px 1px 2px 0px;
     border-color: rgba(128, 119, 105, 0.15);
+    box-shadow: rgba(27, 29, 30, 0.15) 0px 1px 2px 0px;
 }
 #test-cases .testcases-table {
     border-color: initial;
 }
 .overall-result-AC {
-    background-image: linear-gradient(45deg,
-    rgb(68, 132, 0),
-    rgb(0, 132, 102));
     background-color: initial;
+    background-image: linear-gradient(45deg, rgb(68, 132, 0), rgb(0, 132, 102));
 }
 .overall-result-WA {
-    background-image: linear-gradient(45deg,
-    rgb(153, 153, 0),
-    rgb(204, 0, 0));
     background-color: initial;
+    background-image: linear-gradient(45deg, rgb(153, 153, 0), rgb(204, 0, 0));
 }
 .overall-result-TLE {
-    background-image: linear-gradient(45deg,
-    rgb(42, 45, 47),
-    rgb(83, 91, 112));
     background-color: initial;
+    background-image: linear-gradient(45deg, rgb(42, 45, 47), rgb(83, 91, 112));
 }
 .overall-result-RTE,
 .overall-result-MLE {
-    background-image: linear-gradient(45deg,
-    rgb(67, 49, 3),
-    rgb(198, 145, 0));
     background-color: initial;
+    background-image: linear-gradient(45deg, rgb(67, 49, 3), rgb(198, 145, 0));
 }
 .case-AC {
     color: rgb(114, 255, 114);
@@ -2901,15 +2924,14 @@ a.voted {
     color: rgb(255, 174, 26);
 }
 .source-wrap a:active .line .highlighter {
-    background-image: initial;
     background-color: rgba(153, 127, 0, 0.48);
+    background-image: initial;
 }
 .submission-info .submission-date {
     color: rgb(152, 143, 129);
 }
 .list-contest {
-    box-shadow: rgb(49, 53, 55) 0px 1px 2px,
-    rgb(49, 53, 55) 0px 1px 5px;
+    box-shadow: rgb(49, 53, 55) 0px 1px 2px, rgb(49, 53, 55) 0px 1px 5px;
 }
 #contest-calendar th {
     border-bottom-color: rgb(62, 68, 70);
@@ -2924,14 +2946,14 @@ a.voted {
 #contest-calendar th.thu,
 #contest-calendar th.fri,
 #contest-calendar th.sat {
-    border-right-color: rgb(62, 68, 70);
-    background-image: initial;
     background-color: rgb(27, 29, 30);
+    background-image: initial;
+    border-right-color: rgb(62, 68, 70);
 }
 #contest-calendar td {
-    color: rgb(232, 230, 227);
-    border-right-color: rgb(62, 68, 70);
     border-bottom-color: rgb(62, 68, 70);
+    border-right-color: rgb(62, 68, 70);
+    color: rgb(232, 230, 227);
 }
 #contest-calendar td .num {
     border-bottom-color: rgb(62, 68, 70);
@@ -2943,24 +2965,24 @@ a.voted {
     color: rgb(255, 174, 26);
 }
 #contest-calendar td ul li a {
-    text-decoration-color: initial;
     color: rgb(211, 207, 201);
+    text-decoration-color: initial;
 }
 #contest-calendar td ul li a:hover {
     text-decoration-color: initial;
 }
 #contest-calendar td:hover {
-    background-image: initial;
     background-color: rgba(0, 0, 204, 0.3);
+    background-image: initial;
     color: rgb(232, 230, 227);
 }
 #contest-calendar .noday {
-    background-image: initial;
     background-color: rgb(32, 35, 36);
+    background-image: initial;
 }
 #contest-calendar .today {
-    background-image: initial;
     background-color: rgba(108, 108, 0, 0.5);
+    background-image: initial;
 }
 #contest-calendar tr td:first-child {
     border-left-color: rgb(72, 78, 81);
@@ -2986,8 +3008,8 @@ a.voted {
     color: rgb(232, 230, 227);
 }
 .first-solve {
-    background-image: initial;
     background-color: rgb(0, 199, 129);
+    background-image: initial;
 }
 .contest-tag {
     box-shadow: rgba(0, 0, 0, 0.12) 0px -0.1em 0px inset;
@@ -3022,29 +3044,29 @@ a.voted {
     color: rgb(26, 255, 255);
 }
 #judge-versions .version-blank {
-    background-image: initial;
     background-color: rgb(34, 36, 38);
+    background-image: initial;
 }
 #judge-versions .version-latest {
-    background-image: initial;
     background-color: rgba(88, 125, 0, 0.9);
+    background-image: initial;
 }
 #judge-versions .version-outdated {
-    background-image: initial;
     background-color: rgba(204, 0, 0, 0.8);
+    background-image: initial;
     color: rgb(232, 230, 227);
 }
 .chat {
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    background-image: initial;
 }
 #chat-online {
+    border-bottom: 0px;
     border-right-color: rgb(62, 68, 70);
-    border-bottom-color: initial;
 }
 #chat-input {
-    color: rgb(232, 230, 227);
     border-color: rgb(140, 130, 115);
+    color: rgb(232, 230, 227);
 }
 #chat-input::-webkit-input-placeholder {
     color: rgb(152, 143, 129);
@@ -3060,10 +3082,10 @@ a.voted {
 }
 @media (min-width: 800px) {
     #chat-container {
-        border-top-color: rgb(62, 68, 70);
-        border-right-color: rgb(62, 68, 70);
+        border-bottom: 0px;
         border-left-color: rgb(62, 68, 70);
-        border-bottom-color: initial;
+        border-right-color: rgb(62, 68, 70);
+        border-top-color: rgb(62, 68, 70);
     }
 }
 #chat-info {
@@ -3073,33 +3095,33 @@ a.voted {
     stroke: rgb(232, 230, 227);
 }
 .status-row:hover {
-    background-image: initial;
     background-color: rgb(49, 53, 55);
+    background-image: initial;
 }
 .message-text-other {
-    background-image: initial;
     background-color: rgb(34, 36, 38);
+    background-image: initial;
     color: rgb(232, 230, 227);
 }
 .message-text-myself {
-    background-image: initial;
     background-color: rgb(0, 106, 204);
+    background-image: initial;
     color: rgb(232, 230, 227);
 }
 .chat-input-icon {
-    color: rgb(232, 230, 227);
     background-color: rgb(48, 104, 78);
+    color: rgb(232, 230, 227);
 }
 .chat-input-icon:hover {
-    background-image: initial;
     background-color: rgb(62, 136, 112);
+    background-image: initial;
 }
 .chat .active-span {
     color: rgb(169, 162, 151);
 }
 .chat .unread-count {
-    color: rgb(232, 230, 227);
     background-color: rgb(0, 111, 111);
+    color: rgb(232, 230, 227);
 }
 .chat .setting-content {
     background-color: rgb(32, 35, 36);
@@ -3119,13 +3141,13 @@ a.voted {
     border-bottom-color: rgb(140, 130, 115);
 }
 #pending-count-box {
-    background-image: initial;
     background-color: rgb(204, 0, 0);
+    background-image: initial;
     color: rgb(232, 230, 227);
 }
 .organization-row {
     border-bottom-color: rgb(62, 68, 70);
-    border-top-color: initial;
+    border-top: none;
     color: rgb(232, 230, 227);
 }
 .organization-row:hover {
@@ -3150,53 +3172,51 @@ a.voted {
     border-color: rgb(77, 83, 86);
 }
 .ticket-container .info-title {
-    border-bottom-color: rgb(77, 83, 86);
-    background-image: initial;
     background-color: rgb(34, 36, 38);
+    background-image: initial;
+    border-bottom-color: rgb(77, 83, 86);
 }
 .ticket-container .info-empty {
     color: rgb(168, 160, 149);
 }
 .ticket-container .close-ticket {
-    background-image: linear-gradient(rgb(60, 138, 0) 0%,
-    rgb(31, 109, 14) 100%);
     background-color: initial;
+    background-image: linear-gradient(rgb(60, 138, 0) 0%, rgb(31, 109, 14) 100%);
     border-color: rgb(61, 193, 24);
 }
 .ticket-container .close-ticket:hover {
-    background-image: initial;
     background-color: rgb(29, 90, 11);
+    background-image: initial;
 }
 .ticket-container .open-ticket {
-    background-image: linear-gradient(rgb(195, 3, 0),
-    rgb(141, 49, 18));
     background-color: initial;
+    background-image: linear-gradient(rgb(195, 3, 0), rgb(141, 49, 18));
     border-color: rgb(186, 67, 24);
 }
 .ticket-container .open-ticket:hover {
-    background-image: initial;
     background-color: rgb(106, 38, 14);
+    background-image: initial;
 }
 .ticket-container .message .detail {
     border-color: rgb(77, 83, 86);
 }
 .ticket-container .message .header {
-    background-image: initial;
     background-color: rgb(34, 36, 38);
-    color: rgb(157, 148, 136);
+    background-image: initial;
     border-bottom-color: rgb(77, 83, 86);
+    color: rgb(157, 148, 136);
 }
 .wmd-button-bar {
     background-color: rgb(24, 26, 27);
 }
 .wmd-input {
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    background-image: initial;
     border-color: rgb(72, 78, 81);
 }
 .wmd-preview {
-    background-image: none;
     background-color: initial;
+    background-image: none;
 }
 .wmd-button {
     list-style-image: initial;
@@ -3259,48 +3279,44 @@ a.voted {
     background-color: rgb(0, 0, 0);
 }
 .wmd-prompt-dialog {
+    background-color: rgb(30, 32, 33);
     border-color: rgb(77, 83, 86);
-    background-color: rgb(30, 32, 33); 
 }
 .wmd-prompt-dialog > form > input[type="text"] {
     border-color: rgb(77, 83, 86);
-    color: rgb(232, 230, 227); 
+    color: rgb(232, 230, 227);
 }
 .wmd-prompt-dialog > form > input[type="button"] {
     border-color: rgb(82, 88, 92);
 }
 .wmd-preview {
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    background-image: initial;
     border-color: rgb(72, 78, 81);
 }
 .pagedown-image-upload {
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    background-image: initial;
     box-shadow: rgba(0, 0, 0, 0.5) 2px 2px 10px 0px;
 }
 .pagedown-image-upload .submit-loading {
     border-color: rgb(46, 91, 113) rgb(51, 56, 58) rgb(51, 56, 58);
 }
 div.dmmd-preview-update {
-    background-image: initial;
     background-color: rgb(53, 57, 59);
+    background-image: initial;
     color: rgb(200, 195, 188);
 }
 div.dmmd-preview-stale {
-    background-image: repeating-linear-gradient(-45deg,
-    rgb(24, 26, 27),
-    rgb(24, 26, 27) 10px,
-    rgb(28, 30, 31) 10px,
-    rgb(28, 30, 31) 20px);
     background-color: initial;
+    background-image: repeating-linear-gradient(-45deg, rgb(24, 26, 27), rgb(24, 26, 27) 10px, rgb(28, 30, 31) 10px, rgb(28, 30, 31) 20px);
 }
 .course-list {
     list-style-image: initial;
 }
 .course-list .course-item {
-    border-color: rgb(58, 62, 65);
     background-color: rgb(24, 26, 27);
+    border-color: rgb(58, 62, 65);
     box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px;
 }
 .course-list .course-item:hover {
@@ -3310,13 +3326,13 @@ div.dmmd-preview-stale {
     list-style-image: initial;
 }
 .lesson-list li:hover {
-    box-shadow: rgba(0, 0, 0, 0.15) 0px 6px 12px;
-    background-image: initial;
     background-color: rgb(52, 52, 0);
+    background-image: initial;
+    box-shadow: rgba(0, 0, 0, 0.15) 0px 6px 12px;
 }
 .lesson-list li {
-    background-image: initial;
     background-color: rgb(24, 26, 27);
+    background-image: initial;
     border-color: rgb(58, 62, 65);
     box-shadow: rgb(53, 57, 59) 0px 2px 4px;
 }
@@ -3327,24 +3343,24 @@ div.dmmd-preview-stale {
     color: rgb(169, 162, 151);
 }
 .lesson-list .progress-container {
-    background-image: initial;
     background-color: rgb(42, 45, 47);
+    background-image: initial;
 }
 .lesson-list .progress-bar {
-    background-image: initial;
     background-color: rgb(125, 44, 5);
+    background-image: initial;
     color: rgb(232, 230, 227);
 }
 .course-problem-list li {
     border-bottom-color: rgb(53, 57, 59);
 }
 .course-problem-list li:hover {
-    background-image: initial;
     background-color: rgb(42, 45, 47);
+    background-image: initial;
 }
 .course-problem-list a {
-    text-decoration-color: initial;
     color: inherit;
+    text-decoration-color: initial;
 }
 .fa-border {
     border-color: rgb(53, 57, 59);
@@ -3354,28 +3370,30 @@ div.dmmd-preview-stale {
 }
 @media all {
     .featherlight {
-        background-image: initial;
         background-color: rgba(0, 0, 0, 0);
+        background-image: initial;
     }
     .featherlight:last-of-type {
-        background-image: initial;
         background-color: rgba(0, 0, 0, 0.8);
+        background-image: initial;
     }
     .featherlight .featherlight-content {
-        border-bottom-color: transparent;
-        background-image: initial;
         background-color: rgb(24, 26, 27);
+        background-image: initial;
+        border-bottom-color: transparent;
     }
     .featherlight .featherlight-close-icon {
-        background-image: initial;
         background-color: rgba(24, 26, 27, 0.3);
+        background-image: initial;
         color: rgb(232, 230, 227);
     }
     .featherlight-iframe .featherlight-content {
-        border-bottom-color: initial;
+        border-bottom: 0px;
     }
     .featherlight iframe {
         border-color: initial;
+        border-style: initial;
+        border-width: 0px;
     }
 }
 @media only screen and (max-width: 1024px) {
@@ -3384,15 +3402,15 @@ div.dmmd-preview-stale {
     }
 }
 .tooltipped::after {
+    background-color: rgba(0, 0, 0, 0.8);
+    background-image: initial;
     color: rgb(232, 230, 227);
     text-decoration-color: initial;
     text-shadow: none;
-    background-image: initial;
-    background-color: rgba(0, 0, 0, 0.8);
 }
 .tooltipped::before {
-    color: rgba(232, 230, 227, 0.8);
     border-color: transparent;
+    color: rgba(232, 230, 227, 0.8);
 }
 .tooltipped:hover::before,
 .tooltipped:hover::after,
@@ -3420,6 +3438,8 @@ div.dmmd-preview-stale {
 }
 .select2-container .select2-search--inline .select2-search__field {
     border-color: initial;
+    border-style: none;
+    border-width: initial;
 }
 .select2-dropdown {
     background-color: rgb(24, 26, 27);
@@ -3429,17 +3449,21 @@ div.dmmd-preview-stale {
     list-style-image: initial;
 }
 .select2-container--open .select2-dropdown--above {
-    border-bottom-color: initial;
+    border-bottom: none;
 }
 .select2-container--open .select2-dropdown--below {
-    border-top-color: initial;
+    border-top: none;
 }
 .select2-close-mask {
-    border-color: initial;
     background-color: rgb(24, 26, 27);
+    border-color: initial;
+    border-style: initial;
+    border-width: 0px;
 }
 .select2-hidden-accessible {
     border-color: initial !important;
+    border-style: initial !important;
+    border-width: 0px !important;
 }
 .select2-container--default .select2-selection--single {
     background-color: rgb(24, 26, 27);
@@ -3488,13 +3512,19 @@ div.dmmd-preview-stale {
     background-color: rgb(34, 36, 38);
 }
 .select2-container--default .select2-search--dropdown .select2-search__field {
-    border-color: rgb(72, 78, 81); 
+    border-color: rgb(72, 78, 81);
 }
 .select2-container--default .select2-search--inline .select2-search__field {
-    background-image: initial; background-color: transparent; border-color: initial; outline-color: initial; box-shadow: none; 
+    background-color: transparent;
+    background-image: initial;
+    border-color: initial;
+    border-style: none;
+    border-width: initial;
+    box-shadow: none;
+    outline-color: initial;
 }
 .select2-container--default .select2-results__option[aria-disabled="true"] {
-    color: rgb(168, 160, 149); 
+    color: rgb(168, 160, 149);
 }
 .select2-container--default .select2-results__option[aria-selected="true"] {
     background-color: rgb(43, 47, 49);
@@ -3505,10 +3535,9 @@ div.dmmd-preview-stale {
 }
 .select2-container--classic .select2-selection--single {
     background-color: rgb(29, 31, 32);
+    background-image: linear-gradient(rgb(24, 26, 27) 50%, rgb(34, 36, 38) 100%);
     border-color: rgb(72, 78, 81);
     outline-color: initial;
-    background-image: linear-gradient(rgb(24, 26, 27) 50%,
-    rgb(34, 36, 38) 100%);
 }
 .select2-container--classic .select2-selection--single:focus {
     border-color: rgb(4, 60, 150);
@@ -3521,42 +3550,41 @@ div.dmmd-preview-stale {
 }
 .select2-container--classic .select2-selection--single .select2-selection__arrow {
     background-color: rgb(43, 47, 49);
-    border-top-color: initial;
-    border-right-color: initial;
-    border-bottom-color: initial;
+    background-image: linear-gradient(rgb(34, 36, 38) 50%, rgb(53, 57, 59) 100%);
+    border-bottom: none;
     border-left-color: rgb(72, 78, 81);
-    background-image: linear-gradient(rgb(34, 36, 38) 50%,
-    rgb(53, 57, 59) 100%);
+    border-right: none;
+    border-top: none;
 }
 .select2-container--classic .select2-selection--single .select2-selection__arrow b {
-    border-color: rgb(82, 88, 92) transparent transparent; 
+    border-color: rgb(82, 88, 92) transparent transparent;
 }
 .select2-container--classic[dir="rtl"] .select2-selection--single .select2-selection__arrow {
-    border-top-color: initial;
-    border-bottom-color: initial;
-    border-left-color: initial;
+    border-bottom: none;
+    border-left: none;
     border-right-color: rgb(72, 78, 81);
+    border-top: none;
 }
 .select2-container--classic.select2-container--open .select2-selection--single {
     border-color: rgb(4, 60, 150);
 }
 .select2-container--classic.select2-container--open .select2-selection--single .select2-selection__arrow {
-    background-image: initial;
     background-color: transparent;
+    background-image: initial;
     border-color: initial;
+    border-style: none;
+    border-width: initial;
 }
 .select2-container--classic.select2-container--open .select2-selection--single .select2-selection__arrow b {
     border-color: transparent transparent rgb(82, 88, 92);
 }
 .select2-container--classic.select2-container--open.select2-container--above .select2-selection--single {
-    border-top-color: initial;
-    background-image: linear-gradient(rgb(24, 26, 27) 0%,
-    rgb(34, 36, 38) 50%);
+    background-image: linear-gradient(rgb(24, 26, 27) 0%, rgb(34, 36, 38) 50%);
+    border-top: none;
 }
 .select2-container--classic.select2-container--open.select2-container--below .select2-selection--single {
-    border-bottom-color: initial;
-    background-image: linear-gradient(rgb(34, 36, 38) 50%,
-    rgb(24, 26, 27) 100%);
+    background-image: linear-gradient(rgb(34, 36, 38) 50%, rgb(24, 26, 27) 100%);
+    border-bottom: none;
 }
 .select2-container--classic .select2-selection--multiple {
     background-color: rgb(24, 26, 27);
@@ -3583,27 +3611,28 @@ div.dmmd-preview-stale {
     border-color: rgb(4, 60, 150);
 }
 .select2-container--classic.select2-container--open.select2-container--above .select2-selection--multiple {
-    border-top-color: initial;
+    border-top: none;
 }
 .select2-container--classic.select2-container--open.select2-container--below .select2-selection--multiple {
-    border-bottom-color: initial;
+    border-bottom: none;
 }
 .select2-container--classic .select2-search--dropdown .select2-search__field {
     border-color: rgb(72, 78, 81);
     outline-color: initial;
 }
 .select2-container--classic .select2-search--inline .select2-search__field {
-    outline-color: initial;
     box-shadow: none;
+    outline-color: initial;
 }
 .select2-container--classic .select2-dropdown {
-    background-color: rgb(24, 26, 27); border-color: transparent; 
+    background-color: rgb(24, 26, 27);
+    border-color: transparent;
 }
 .select2-container--classic .select2-dropdown--above {
-    border-bottom-color: initial; 
+    border-bottom: none;
 }
 .select2-container--classic .select2-dropdown--below {
-    border-top-color: initial; 
+    border-top: none;
 }
 .select2-container--classic .select2-results__option[aria-disabled="true"] {
     color: rgb(152, 143, 129);
@@ -3623,21 +3652,27 @@ div.dmmd-preview-stale {
 }
 .sr-only {
     border-color: initial;
+    border-style: initial;
+    border-width: 0px;
 }
 .recently-attempted ul {
     list-style-image: initial;
 }
 .organization-row:last-child {
-    border-bottom-color: initial;
+    border-bottom: none;
 }
 .katex * {
     border-color: currentcolor;
 }
 .katex .katex-mathml {
     border-color: initial;
+    border-style: initial;
+    border-width: 0px;
 }
 .katex .rule {
     border-color: initial;
+    border-style: solid;
+    border-width: 0px;
 }
 .katex svg {
     fill: currentcolor;
@@ -3662,7 +3697,7 @@ div.dmmd-preview-stale {
     color: #f3e8c8 !important;
 }
 #vimvixen-console-frame {
-    color-scheme: light !important
+    color-scheme: light !important;
 }
 ::placeholder {
     opacity: 0.5 !important;
@@ -3700,53 +3735,55 @@ gr-main-header {
     background-color: #19576c !important;
 }
 div.mermaid-viewer-control-panel .btn {
-  fill: var(--darkreader-neutral-text);
-  background-color: var(--darkreader-neutral-background);
+    background-color: var(--darkreader-neutral-background);
+    fill: var(--darkreader-neutral-text);
 }
 svg g rect.er {
-  fill: var(--darkreader-neutral-background) !important;
+    fill: var(--darkreader-neutral-background) !important;
 }
 svg g rect.er.entityBox {
-  fill: var(--darkreader-neutral-background) !important;
+    fill: var(--darkreader-neutral-background) !important;
 }
 svg g rect.er.attributeBoxOdd {
-  fill: var(--darkreader-neutral-background) !important;
+    fill: var(--darkreader-neutral-background) !important;
 }
 svg g rect.er.attributeBoxEven {
-  fill-opacity: 0.8 !important;
-  fill: var(--darkreader-selection-background);
+    fill: var(--darkreader-selection-background);
+    fill-opacity: 0.8 !important;
 }
 svg rect.er.relationshipLabelBox {
-  fill: var(--darkreader-neutral-background) !important;
+    fill: var(--darkreader-neutral-background) !important;
 }
-svg g g.nodes rect, svg g g.nodes polygon {
-  fill: var(--darkreader-neutral-background) !important;
+svg g g.nodes rect,
+svg g g.nodes polygon {
+    fill: var(--darkreader-neutral-background) !important;
 }
 svg g rect.task {
-  fill: var(--darkreader-selection-background) !important;
+    fill: var(--darkreader-selection-background) !important;
 }
-svg line.messageLine0, svg line.messageLine1 {
-  stroke: var(--darkreader-neutral-text) !important;
+svg line.messageLine0,
+svg line.messageLine1 {
+    stroke: var(--darkreader-neutral-text) !important;
 }
 div.mermaid .actor {
-  fill: var(--darkreader-neutral-background) !important;
+    fill: var(--darkreader-neutral-background) !important;
 }
 .google-material-icons {
     font-family: 'Google Material Icons' !important;
 }
 .google-symbols {
-    font-family: 'Google Symbols' !important;
+    font-family: 'Google Symbols Subset', 'Google Symbols' !important;
 }
 .material-icons-extended {
     font-family: 'Material Icons Extended' !important;
 }
 mitid-authenticators-code-app > .code-app-container {
-    padding-top: 1rem;
     background-color: white !important;
+    padding-top: 1rem;
 }
 iframe#unpaywall[src$="unpaywall.html"] {
     color-scheme: light !important;
 }
-.ms-Icon {
-    font-family: 'FabricMDL2Icons' !important;
+.oui-icon {
+    font-family: 'Oui Icons' !important;
 }

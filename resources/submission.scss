@@ -85,20 +85,9 @@
         }
     }
     .sub-user-img {
-        flex-shrink: 0;
         width: 70px;
         height: 70px;
-        background-color: #ddd;
-        border-radius: 50%;
-        overflow: hidden;
         margin-right: 15px;
-        display: flex;
-        align-items: center;
-
-        img {
-            width: 100%;
-            height: auto;
-        }
     }
 }
 
