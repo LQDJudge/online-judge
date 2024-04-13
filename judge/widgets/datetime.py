@@ -2,6 +2,7 @@ from django import forms
 from django.templatetags.static import static
 from django.utils.html import format_html
 from django.forms.utils import flatatt
+from django.utils.dateparse import parse_datetime
 
 
 class DateTimePickerWidget(forms.DateTimeInput):
@@ -10,6 +11,13 @@ class DateTimePickerWidget(forms.DateTimeInput):
     def render(self, name, value, attrs=None, renderer=None):
         if value is None:
             value = ""
+        elif isinstance(value, str):
+            # Attempt to parse the string back to datetime
+            parsed_date = parse_datetime(value)
+            if parsed_date is not None:
+                value = parsed_date.strftime("%Y-%m-%dT%H:%M")
+            else:
+                value = ""
         else:
             value = value.strftime("%Y-%m-%dT%H:%M")
 
