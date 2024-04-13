@@ -262,6 +262,13 @@
     border-radius: 1em;
 }
 
+.post-content-header {
+    margin-left: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2em;
+}
+
 
 @media (max-width: 799px) {
     .blog-sidebar,

@@ -1,7 +1,7 @@
 {% for post in posts%}
   <section class="{% if post.sticky %}sticky {% endif %}blog-box">
     <div style="margin-bottom: 0.5em">
-      <span class="item-header time">
+      <span class="post-content-header time">
         {% with authors=post.authors.all() %}
           {%- if authors -%}
             <span class="user-img" style="width: 1.5em; height: 1.5em">
