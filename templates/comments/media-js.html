@@ -3,7 +3,7 @@
   {{ comment_form.media.js }}
   <script type="text/javascript">
     $(document).ready(function () {
-      let loading_gif = "<i class=\"fa fa-spinner fa-pulse loading\" style=\"font-size: 1.5em\"></i>";
+      let loading_gif = "<i class=\"fa fa-spinner fa-pulse loading\" style=\"font-size: 1.5em; margin-bottom: 1em;\"></i>";
       window.reply_comment = function (parent) {
         var $comment_reply = $('#comment-' + parent + '-reply');
         var reply_id = 'reply-' + parent;
