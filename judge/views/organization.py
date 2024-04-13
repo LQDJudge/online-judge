@@ -104,15 +104,15 @@ class OrganizationBase(object):
     def is_member(self, org=None):
         if org is None:
             org = self.object
-        return (
-            self.request.profile in org if self.request.user.is_authenticated else False
-        )
+        if self.request.profile:
+            return org.is_member(self.request.profile)
+        return False
 
     def is_admin(self, org=None):
         if org is None:
             org = self.object
         if self.request.profile:
-            return org.admins.filter(id=self.request.profile.id).exists()
+            return org.is_admin(self.request.profile)
         return False
 
     def can_access(self, org):
@@ -222,12 +222,19 @@ class OrganizationHomeView(OrganizationMixin):
                 organizations=self.organization,
                 authors=self.request.profile,
             ).count()
-        context["top_rated"] = self.organization.members.filter(
-            is_unlisted=False
-        ).order_by("-rating")[:10]
-        context["top_scorer"] = self.organization.members.filter(
-            is_unlisted=False
-        ).order_by("-performance_points")[:10]
+        context["top_rated"] = (
+            self.organization.members.filter(is_unlisted=False)
+            .order_by("-rating")
+            .only("id", "rating")[:10]
+        )
+        context["top_scorer"] = (
+            self.organization.members.filter(is_unlisted=False)
+            .order_by("-performance_points")
+            .only("id", "performance_points")[:10]
+        )
+        Profile.prefetch_profile_cache([p.id for p in context["top_rated"]])
+        Profile.prefetch_profile_cache([p.id for p in context["top_scorer"]])
+
         return context
 
 
@@ -516,6 +523,7 @@ class JoinOrganization(OrganizationMembershipChange):
         profile.organizations.add(org)
         profile.save()
         cache.delete(make_template_fragment_key("org_member_count", (org.id,)))
+        Organization.is_member.dirty(org, profile)
 
 
 class LeaveOrganization(OrganizationMembershipChange):
@@ -528,6 +536,7 @@ class LeaveOrganization(OrganizationMembershipChange):
             )
         profile.organizations.remove(org)
         cache.delete(make_template_fragment_key("org_member_count", (org.id,)))
+        Organization.is_member.dirty(org, profile)
 
 
 class OrganizationRequestForm(Form):

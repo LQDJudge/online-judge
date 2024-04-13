@@ -55,7 +55,7 @@ from django.views.generic.detail import (
 )
 
 from judge import event_poster as event
-from judge.comments import CommentedDetailView
+from judge.views.comment import CommentedDetailView
 from judge.forms import ContestCloneForm
 from judge.models import (
     Contest,
@@ -956,7 +956,7 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
 
 ContestRankingProfile = namedtuple(
     "ContestRankingProfile",
-    "id user css_class username points cumtime tiebreaker organization participation "
+    "id user points cumtime tiebreaker participation "
     "participation_rating problem_cells result_cell",
 )
 
@@ -976,13 +976,10 @@ def make_contest_ranking_profile(
     user = participation.user
     return ContestRankingProfile(
         id=user.id,
-        user=user.user,
-        css_class=user.css_class,
-        username=user.username,
+        user=user,
         points=points,
         cumtime=cumtime,
         tiebreaker=participation.tiebreaker,
-        organization=user.organization,
         participation_rating=participation.rating.rating
         if hasattr(participation, "rating")
         else None,
@@ -1000,12 +997,24 @@ def make_contest_ranking_profile(
 
 
 def base_contest_ranking_list(contest, problems, queryset, show_final=False):
-    return [
+    participation_fields = [
+        field.name
+        for field in ContestParticipation._meta.get_fields()
+        if field.concrete and not field.many_to_many
+    ]
+    fields_to_fetch = participation_fields + [
+        "user__id",
+        "rating__rating",
+    ]
+
+    res = [
         make_contest_ranking_profile(contest, participation, problems, show_final)
-        for participation in queryset.select_related("user__user", "rating").defer(
-            "user__about", "user__organizations__about"
+        for participation in queryset.select_related("user", "rating").only(
+            *fields_to_fetch
         )
     ]
+    Profile.prefetch_profile_cache([p.id for p in res])
+    return res
 
 
 def contest_ranking_list(contest, problems, queryset=None, show_final=False):
@@ -1016,18 +1025,18 @@ def contest_ranking_list(contest, problems, queryset=None, show_final=False):
         return base_contest_ranking_list(
             contest,
             problems,
-            queryset.prefetch_related("user__organizations")
-            .extra(select={"round_score": "round(score, 6)"})
-            .order_by("is_disqualified", "-round_score", "cumtime", "tiebreaker"),
+            queryset.extra(select={"round_score": "round(score, 6)"}).order_by(
+                "is_disqualified", "-round_score", "cumtime", "tiebreaker"
+            ),
             show_final,
         )
     else:
         return base_contest_ranking_list(
             contest,
             problems,
-            queryset.prefetch_related("user__organizations")
-            .extra(select={"round_score": "round(score_final, 6)"})
-            .order_by("is_disqualified", "-round_score", "cumtime_final", "tiebreaker"),
+            queryset.extra(select={"round_score": "round(score_final, 6)"}).order_by(
+                "is_disqualified", "-round_score", "cumtime_final", "tiebreaker"
+            ),
             show_final,
         )
 

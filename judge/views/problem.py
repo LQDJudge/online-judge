@@ -44,7 +44,7 @@ from django.views.generic import ListView, View
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
-from judge.comments import CommentedDetailView
+from judge.views.comment import CommentedDetailView
 from judge.forms import ProblemCloneForm, ProblemSubmitForm, ProblemPointsVoteForm
 from judge.models import (
     ContestProblem,
@@ -820,7 +820,7 @@ class ProblemFeed(ProblemList, FeedView):
     model = Problem
     context_object_name = "problems"
     template_name = "problem/feed.html"
-    feed_content_template_name = "problem/feed/problems.html"
+    feed_content_template_name = "problem/feed/items.html"
     paginate_by = 4
     title = _("Problem feed")
     feed_type = None

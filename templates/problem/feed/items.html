@@ -12,7 +12,7 @@
         <i class="unsolved-problem-color fa fa-minus-circle"></i>
       {% endif %}
     </h3>
-    {% with authors=problem.authors.all() %}
+    {% with authors=problem.get_authors() %}
       {% if authors %}
         <div class="problem-feed-info-entry">
           <i class="fa fa-pencil-square-o fa-fw"></i>

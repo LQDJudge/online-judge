@@ -6,7 +6,7 @@ from django.utils.functional import lazy
 from django.utils.translation import ugettext as _
 from django.views.generic import ListView
 
-from judge.comments import CommentedDetailView
+from judge.views.comment import CommentedDetailView
 from judge.views.pagevote import PageVoteDetailView
 from judge.views.bookmark import BookMarkDetailView
 from judge.models import (
@@ -69,13 +69,18 @@ class HomeFeedView(FeedView):
         profile_queryset = Profile.objects
         if self.request.organization:
             profile_queryset = self.request.organization.members
-        context["top_rated"] = profile_queryset.filter(is_unlisted=False).order_by(
-            "-rating"
-        )[:10]
-        context["top_scorer"] = profile_queryset.filter(is_unlisted=False).order_by(
-            "-performance_points"
-        )[:10]
-
+        context["top_rated"] = (
+            profile_queryset.filter(is_unlisted=False)
+            .order_by("-rating")
+            .only("id", "rating")[:10]
+        )
+        context["top_scorer"] = (
+            profile_queryset.filter(is_unlisted=False)
+            .order_by("-performance_points")
+            .only("id", "performance_points")[:10]
+        )
+        Profile.prefetch_profile_cache([p.id for p in context["top_rated"]])
+        Profile.prefetch_profile_cache([p.id for p in context["top_scorer"]])
         return context
 
 
@@ -90,7 +95,7 @@ class PostList(HomeFeedView):
         queryset = (
             BlogPost.objects.filter(visible=True, publish_on__lte=timezone.now())
             .order_by("-sticky", "-publish_on")
-            .prefetch_related("authors__user", "organizations")
+            .prefetch_related("organizations")
         )
         filter = Q(is_organization_private=False)
         if self.request.user.is_authenticated:
@@ -198,6 +203,6 @@ class PostView(TitleMixin, CommentedDetailView, PageVoteDetailView, BookMarkDeta
 
     def get_object(self, queryset=None):
         post = super(PostView, self).get_object(queryset)
-        if not post.can_see(self.request.user):
+        if not post.is_accessible_by(self.request.user):
             raise Http404()
         return post

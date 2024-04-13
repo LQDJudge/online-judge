@@ -1,8 +1,8 @@
-{% for post in posts%}
+{% for post in posts %}
   <section class="{% if post.sticky %}sticky {% endif %}blog-box">
     <div style="margin-bottom: 0.5em">
       <span class="post-content-header time">
-        {% with authors=post.authors.all() %}
+        {% with authors=post.get_authors() %}
           {%- if authors -%}
             <span class="user-img" style="width: 1.5em; height: 1.5em">
               <img src="{{gravatar(authors[0])}}">
@@ -31,7 +31,7 @@
         <a href="{{ url('blog_post', post.id, post.slug) }}#comments" class="blog-comment-count-link">
           <i class="fa fa-comments blog-comment-icon"></i>
           <span class="blog-comment-count">
-            {{- post.comments.filter(hidden=False).count() or 0 -}}
+            {{ comment_count(post) }}
           </span>
         </a>
       </span>

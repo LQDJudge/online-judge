@@ -13,6 +13,7 @@ from mptt.models import MPTTModel
 from judge.models.profile import Organization, Profile
 from judge.models.pagevote import PageVotable
 from judge.models.bookmark import Bookmarkable
+from judge.caching import cache_wrapper
 
 __all__ = ["MiscConfig", "validate_regex", "NavigationBar", "BlogPost"]
 
@@ -105,7 +106,7 @@ class BlogPost(models.Model, PageVotable, Bookmarkable):
     def get_absolute_url(self):
         return reverse("blog_post", args=(self.id, self.slug))
 
-    def can_see(self, user):
+    def is_accessible_by(self, user):
         if self.visible and self.publish_on <= timezone.now():
             if not self.is_organization_private:
                 return True
@@ -131,6 +132,10 @@ class BlogPost(models.Model, PageVotable, Bookmarkable):
             user.has_perm("judge.change_blogpost")
             and self.authors.filter(id=user.profile.id).exists()
         )
+
+    @cache_wrapper(prefix="BPga")
+    def get_authors(self):
+        return self.authors.only("id")
 
     class Meta:
         permissions = (("edit_all_post", _("Edit all posts")),)

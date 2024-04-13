@@ -8,14 +8,13 @@ from django.http import (
     HttpResponseForbidden,
 )
 from django.utils.translation import gettext as _
-from judge.models.pagevote import PageVote, PageVoteVoter
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
-
 from django.views.generic import View, ListView
 from django_ratelimit.decorators import ratelimit
 from django.conf import settings
 
+from judge.models.pagevote import PageVote, PageVoteVoter, dirty_pagevote
 
 __all__ = [
     "upvote_page",
@@ -54,9 +53,11 @@ def vote_page(request, delta):
         pagevote_id = int(request.POST["id"])
     except ValueError:
         return HttpResponseBadRequest()
-    else:
-        if not PageVote.objects.filter(id=pagevote_id).exists():
-            raise Http404()
+
+    try:
+        pagevote = PageVote.objects.get(id=pagevote_id)
+    except PageVote.DoesNotExist:
+        raise Http404()
 
     vote = PageVoteVoter()
     vote.pagevote_id = pagevote_id
@@ -76,7 +77,9 @@ def vote_page(request, delta):
         PageVote.objects.filter(id=pagevote_id).update(score=F("score") - vote.score)
     else:
         PageVote.objects.filter(id=pagevote_id).update(score=F("score") + delta)
-    _dirty_vote_score(pagevote_id, request.profile)
+
+    dirty_pagevote(pagevote, request.profile)
+
     return HttpResponse("success", content_type="text/plain")
 
 
@@ -100,8 +103,3 @@ class PageVoteDetailView(TemplateResponseMixin, SingleObjectMixin, View):
         context = super(PageVoteDetailView, self).get_context_data(**kwargs)
         context["pagevote"] = self.object.get_or_create_pagevote()
         return context
-
-
-def _dirty_vote_score(pagevote_id, profile):
-    pv = PageVote(id=pagevote_id)
-    pv.vote_score.dirty(pv, profile)

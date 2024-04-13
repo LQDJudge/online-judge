@@ -31,11 +31,8 @@ class PageVote(models.Model):
 
     @cache_wrapper(prefix="PVvs")
     def vote_score(self, user):
-        page_vote = PageVoteVoter.objects.filter(pagevote=self, voter=user)
-        if page_vote.exists():
-            return page_vote.first().score
-        else:
-            return 0
+        page_vote = PageVoteVoter.objects.filter(pagevote=self, voter=user).first()
+        return page_vote.score if page_vote else 0
 
     def __str__(self):
         return f"pagevote for {self.linked_object}"
@@ -52,11 +49,22 @@ class PageVoteVoter(models.Model):
         verbose_name_plural = _("pagevote votes")
 
 
+@cache_wrapper(prefix="gocp")
+def _get_or_create_pagevote(content_type, object_id):
+    pagevote, created = PageVote.objects.get_or_create(
+        content_type=content_type,
+        object_id=object_id,
+    )
+    return pagevote
+
+
 class PageVotable:
     def get_or_create_pagevote(self):
-        if self.pagevote.count():
-            return self.pagevote.first()
-        new_pagevote = PageVote()
-        new_pagevote.linked_object = self
-        new_pagevote.save()
-        return new_pagevote
+        content_type = ContentType.objects.get_for_model(self)
+        object_id = self.pk
+        return _get_or_create_pagevote(content_type, object_id)
+
+
+def dirty_pagevote(pagevote, profile):
+    pagevote.vote_score.dirty(pagevote, profile)
+    _get_or_create_pagevote.dirty(pagevote.content_type, pagevote.object_id)

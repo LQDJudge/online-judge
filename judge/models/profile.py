@@ -141,6 +141,14 @@ class Organization(models.Model):
     def get_submissions_url(self):
         return reverse("organization_submissions", args=(self.id, self.slug))
 
+    @cache_wrapper("Oia")
+    def is_admin(self, profile):
+        return self.admins.filter(id=profile.id).exists()
+
+    @cache_wrapper("Oim")
+    def is_member(self, profile):
+        return profile in self
+
     class Meta:
         ordering = ["name"]
         permissions = (
@@ -281,6 +289,14 @@ class Profile(models.Model):
         return self._cached_info["mute"]
 
     @cached_property
+    def cached_display_rank(self):
+        return self._cached_info.get("display_rank")
+
+    @cached_property
+    def cached_rating(self):
+        return self._cached_info.get("rating")
+
+    @cached_property
     def profile_image_url(self):
         return self._cached_info.get("profile_image_url")
 
@@ -374,7 +390,7 @@ class Profile(models.Model):
 
     @cached_property
     def css_class(self):
-        return self.get_user_css_class(self.display_rank, self.rating)
+        return self.get_user_css_class(self.cached_display_rank, self.cached_rating)
 
     def get_friends(self):  # list of ids, including you
         friend_obj = self.following_users.prefetch_related("users")
@@ -388,11 +404,7 @@ class Profile(models.Model):
         if not self.user.is_authenticated:
             return False
         profile_id = self.id
-        return (
-            org.admins.filter(id=profile_id).exists()
-            or org.registrant_id == profile_id
-            or self.user.is_superuser
-        )
+        return org.is_admin(self) or self.user.is_superuser
 
     @classmethod
     def prefetch_profile_cache(self, profile_ids):
@@ -544,7 +556,7 @@ def on_profile_save(sender, instance, **kwargs):
         _get_basic_info.dirty(instance.id)
 
 
-@cache_wrapper(prefix="Pgbi2")
+@cache_wrapper(prefix="Pgbi3")
 def _get_basic_info(profile_id):
     profile = (
         Profile.objects.select_related("user")
@@ -556,6 +568,8 @@ def _get_basic_info(profile_id):
             "user__email",
             "user__first_name",
             "user__last_name",
+            "display_rank",
+            "rating",
         )
         .get(id=profile_id)
     )
@@ -569,6 +583,8 @@ def _get_basic_info(profile_id):
         "profile_image_url": profile.profile_image.url
         if profile.profile_image
         else None,
+        "display_rank": profile.display_rank,
+        "rating": profile.rating,
     }
     res = {k: v for k, v in res.items() if v is not None}
     return res

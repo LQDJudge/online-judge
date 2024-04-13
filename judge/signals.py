@@ -57,16 +57,11 @@ def problem_update(sender, instance, **kwargs):
     )
     cache.delete_many(
         [
-            make_template_fragment_key("problem_authors", (instance.id, lang))
-            for lang, _ in settings.LANGUAGES
-        ]
-    )
-    cache.delete_many(
-        [
             "generated-meta-problem:%s:%d" % (lang, instance.id)
             for lang, _ in settings.LANGUAGES
         ]
     )
+    Problem.get_authors.dirty(instance)
 
     for lang, _ in settings.LANGUAGES:
         unlink_if_exists(get_pdf_path("%s.%s.pdf" % (instance.code, lang)))
@@ -129,6 +124,7 @@ def post_update(sender, instance, **kwargs):
         ]
         + [make_template_fragment_key("post_content", (instance.id,))]
     )
+    BlogPost.get_authors.dirty(instance)
 
 
 @receiver(post_delete, sender=Submission)
@@ -146,6 +142,8 @@ def contest_submission_delete(sender, instance, **kwargs):
 @receiver(post_save, sender=Organization)
 def organization_update(sender, instance, **kwargs):
     cache.delete_many([make_template_fragment_key("organization_html", (instance.id,))])
+    for admin in instance.admins.all():
+        Organization.is_admin.dirty(instance, admin)
 
 
 _misc_config_i18n = [code for code, _ in settings.LANGUAGES]

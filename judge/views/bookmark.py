@@ -8,12 +8,12 @@ from django.http import (
     HttpResponseForbidden,
 )
 from django.utils.translation import gettext as _
-from judge.models.bookmark import BookMark, MakeBookMark
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
 from django.views.generic import View, ListView
 
+from judge.models.bookmark import BookMark, MakeBookMark, dirty_bookmark
 
 __all__ = [
     "dobookmark_page",
@@ -32,29 +32,30 @@ def bookmark_page(request, delta):
 
     try:
         bookmark_id = int(request.POST["id"])
-        bookmark_page = BookMark.objects.filter(id=bookmark_id)
+        bookmark = BookMark.objects.get(id=bookmark_id)
     except ValueError:
         return HttpResponseBadRequest()
-    else:
-        if not bookmark_page.exists():
-            raise Http404()
+    except BookMark.DoesNotExist:
+        raise Http404()
 
     if delta == 0:
         bookmarklist = MakeBookMark.objects.filter(
-            bookmark=bookmark_page.first(), user=request.profile
+            bookmark=bookmark, user=request.profile
         )
         if not bookmarklist.exists():
             newbookmark = MakeBookMark(
-                bookmark=bookmark_page.first(),
+                bookmark=bookmark,
                 user=request.profile,
             )
             newbookmark.save()
     else:
         bookmarklist = MakeBookMark.objects.filter(
-            bookmark=bookmark_page.first(), user=request.profile
+            bookmark=bookmark, user=request.profile
         )
         if bookmarklist.exists():
             bookmarklist.delete()
+
+    dirty_bookmark(bookmark, request.profile)
 
     return HttpResponse("success", content_type="text/plain")
 

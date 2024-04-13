@@ -13,16 +13,21 @@
 {% endblock %}
 
 {% block user_footer %}
-  {% if user.user.first_name %}
+  {% set profile = user.user %}
+  {% if profile.first_name %}
     <div style="font-weight: 600; display: none" class="fullname gray">
-      {{ user.user.first_name }}
+      {{ profile.first_name }}
     </div>
   {% endif %}
-  {% if user.user.last_name %}
+  {% if profile.last_name %}
     <div class="school gray" style="display: none"><div style="font-weight: 600">
-      {{- user.user.last_name -}}
+      {{ profile.last_name }}
     </div></div>
   {% endif %}
+{% endblock %}
+
+{% block user_link %}
+  {{ link_user(user.user, show_image=True) }}
 {% endblock %}
 
 {% block user_data %}

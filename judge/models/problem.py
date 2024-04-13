@@ -24,6 +24,7 @@ from judge.models.problem_data import (
     problem_data_storage,
     problem_directory_file_helper,
 )
+from judge.caching import cache_wrapper
 
 __all__ = [
     "ProblemGroup",
@@ -438,6 +439,10 @@ class Problem(models.Model, PageVotable, Bookmarkable):
         return Problem.authors.through.objects.filter(problem=self).values_list(
             "profile_id", flat=True
         )
+
+    @cache_wrapper(prefix="Pga")
+    def get_authors(self):
+        return self.authors.only("id")
 
     @cached_property
     def editor_ids(self):

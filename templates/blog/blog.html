@@ -19,7 +19,7 @@
   <div class="post-full">
     <div class="post-title">{{ title }}</div>
     <div class="time">
-      {% with authors=post.authors.all() %}
+      {% with authors=post.get_authors() %}
         {% if authors %}
           <span class="post-authors">{{ link_users(authors) }}</span>
         {% endif %}
