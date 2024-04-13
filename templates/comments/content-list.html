@@ -24,12 +24,7 @@
       </div>
       <div class="detail">
         <div class="header">
-          {% with author=node.author, user=node.author.user %}
-            <a href="{{ url('user_page', user.username) }}" class="user comment-img user-img">
-              <img src="{{ gravatar(author, 135) }}">
-            </a>
-          {% endwith %}
-          {{ link_user(node.author) }},&nbsp;
+          {{ link_user(node.author, show_image=True) }}&nbsp;&nbsp;
           {{ relative_time(node.time, abs=_('{time}'), rel=_('{time}')) }}
           <span class="comment-spacer"></span>
           <span class="comment-operation">
