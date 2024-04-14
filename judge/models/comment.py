@@ -83,7 +83,7 @@ class Comment(MPTTModel):
         if organization:
             queryset = queryset.filter(author__in=organization.members.all())
 
-        object_access = CacheDict(lambda p: p.is_accessible_by(user))
+        problem_access = CacheDict(lambda p: p.is_accessible_by(user))
         contest_access = CacheDict(lambda c: c.is_accessible_by(user))
         blog_access = CacheDict(lambda b: b.is_accessible_by(user))
 
