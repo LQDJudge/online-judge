@@ -14,7 +14,7 @@
     {% for course in courses %}
       <div class="course-item">
         <div class="course-image">
-          <img src="{{course.image_url}}">
+          <img loading="lazy" src="{{course.image_url}}">
         </div>
         <div class="course-content">
           <a href="{{url('course_detail', course.slug)}}" class="course-name">{{course.name}}</a>

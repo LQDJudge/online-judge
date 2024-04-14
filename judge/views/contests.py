@@ -1018,7 +1018,7 @@ def base_contest_ranking_list(contest, problems, queryset, show_final=False):
 
 
 def contest_ranking_list(contest, problems, queryset=None, show_final=False):
-    if not queryset:
+    if queryset is None:
         queryset = contest.users.filter(virtual=0)
 
     if not show_final:

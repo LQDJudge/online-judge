@@ -1,6 +1,6 @@
 <li class="message" id="message-{{ message.id }}" message-id="{{ message.id }}">
   <a href="{{ url('user_page', message.author.username) }}">
-    <img src="{{ gravatar(message.author, 135) }}" class="profile-pic user-img">
+    <img loading="lazy" src="{{ gravatar(message.author, 135) }}" class="profile-pic user-img">
   </a>
   <div class="body-message">
     <div class="user-time">

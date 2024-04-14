@@ -1,6 +1,6 @@
 {% set can_view = submission.is_accessible_by(profile) %}
 <div class="sub-user-img user-img">
-  <img src="{{gravatar(submission.user)}}">
+  <img loading="lazy" src="{{gravatar(submission.user)}}">
 </div>
 <div class="sub-details">
   <div class="sub-info{% if submission.status == 'G' %} sub-info-grading{% endif %}">
