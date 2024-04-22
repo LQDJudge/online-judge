@@ -902,7 +902,10 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
             if (point == None) or (problem_code not in codes):
                 continue
             problem_idx = codes.index(problem_code)
-            bin_idx = math.floor(point * self.POINT_BIN / max_point)
+            if max_point > 0:
+                bin_idx = math.floor(point * self.POINT_BIN / max_point)
+            else:
+                bin_idx = 0
             bin_idx = max(min(bin_idx, self.POINT_BIN), 0)
             counter[problem_idx][bin_idx] += count
         for i in range(num_problems):
