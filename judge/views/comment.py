@@ -486,9 +486,9 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
                 ).exists()
             )
 
-        context["has_comments"] = queryset.exists()
         context["comment_lock"] = self.is_comment_locked()
         context["comment_list"] = list(queryset)
+        context["has_comments"] = len(context["comment_list"]) > 0
 
         context["vote_hide_threshold"] = settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD
 

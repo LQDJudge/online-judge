@@ -235,31 +235,33 @@ class ContestList(
     def get_context_data(self, **kwargs):
         context = super(ContestList, self).get_context_data(**kwargs)
         present, active, future = [], [], []
-        for contest in self._get_queryset().exclude(end_time__lt=self._now):
-            if contest.start_time > self._now:
-                future.append(contest)
-            else:
-                present.append(contest)
+        if not context["page_obj"] or context["page_obj"].number == 1:
+            for contest in self._get_queryset().exclude(end_time__lt=self._now):
+                if contest.start_time > self._now:
+                    future.append(contest)
+                else:
+                    present.append(contest)
 
-        if self.request.user.is_authenticated:
-            for participation in (
-                ContestParticipation.objects.filter(
-                    virtual=0, user=self.request.profile, contest_id__in=present
-                )
-                .select_related("contest")
-                .prefetch_related(
-                    "contest__authors", "contest__curators", "contest__testers"
-                )
-                .annotate(key=F("contest__key"))
-            ):
-                if not participation.ended:
-                    active.append(participation)
-                    present.remove(participation.contest)
+            if self.request.user.is_authenticated:
+                for participation in (
+                    ContestParticipation.objects.filter(
+                        virtual=0, user=self.request.profile, contest_id__in=present
+                    )
+                    .select_related("contest")
+                    .prefetch_related(
+                        "contest__authors", "contest__curators", "contest__testers"
+                    )
+                    .annotate(key=F("contest__key"))
+                ):
+                    if not participation.ended:
+                        active.append(participation)
+                        present.remove(participation.contest)
 
-        if not ("contest" in self.request.GET and settings.ENABLE_FTS):
-            active.sort(key=attrgetter("end_time", "key"))
-            present.sort(key=attrgetter("end_time", "key"))
-            future.sort(key=attrgetter("start_time"))
+            if not ("contest" in self.request.GET and settings.ENABLE_FTS):
+                active.sort(key=attrgetter("end_time", "key"))
+                present.sort(key=attrgetter("end_time", "key"))
+                future.sort(key=attrgetter("start_time"))
+
         context["active_participations"] = active
         context["current_contests"] = present
         context["future_contests"] = future

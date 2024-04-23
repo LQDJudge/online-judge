@@ -184,20 +184,21 @@ class PostView(TitleMixin, CommentedDetailView, PageVoteDetailView, BookMarkDeta
     def get_context_data(self, **kwargs):
         context = super(PostView, self).get_context_data(**kwargs)
         context["og_image"] = self.object.og_image
-        context["valid_user_to_show_edit"] = False
-        context["valid_org_to_show_edit"] = []
+        context["editable_orgs"] = []
 
-        if self.request.profile in self.object.authors.all():
-            context["valid_user_to_show_edit"] = True
+        can_edit = False
+        if self.request.profile.id in self.object.get_authors():
+            can_edit = True
 
-        for valid_org_to_show_edit in self.object.organizations.all():
-            if self.request.profile in valid_org_to_show_edit.admins.all():
-                context["valid_user_to_show_edit"] = True
+        orgs = list(self.object.organizations.all())
+        for org in orgs:
+            if org.is_admin(self.request.profile):
+                can_edit = True
 
-        if context["valid_user_to_show_edit"]:
-            for post_org in self.object.organizations.all():
-                if post_org in self.request.profile.organizations.all():
-                    context["valid_org_to_show_edit"].append(post_org)
+        if can_edit:
+            for org in orgs:
+                if org.is_member(self.request.profile):
+                    context["editable_orgs"].append(org)
 
         return context
 

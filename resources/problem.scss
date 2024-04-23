@@ -174,15 +174,15 @@ ul.problem-list {
 }
 
 .organization-tag {
-    box-shadow: inset 0 -0.1em 0 rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
     padding: 0.15em 0.3em;
     border-radius: 0.15em;
     font-weight: 600;
     margin-right: 0.45em;
     position: relative;
     background-color: #ccc;
-    transform: translateY(+35%);
-    display: inline-block;
+    color: initial;
 }
 
 .organization-tag a {

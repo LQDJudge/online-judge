@@ -8,6 +8,7 @@ from django.core.cache.utils import make_template_fragment_key
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
+import judge
 from judge.utils.problems import finished_submission
 from .models import (
     BlogPost,
@@ -22,6 +23,7 @@ from .models import (
     Problem,
     Profile,
     Submission,
+    NavigationBar,
 )
 
 
@@ -166,3 +168,8 @@ def contest_submission_update(sender, instance, **kwargs):
     Submission.objects.filter(id=instance.submission_id).update(
         contest_object_id=instance.participation.contest_id
     )
+
+
+@receiver(post_save, sender=NavigationBar)
+def navbar_update(sender, instance, **kwargs):
+    judge.template_context._nav_bar.dirty()

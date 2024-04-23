@@ -30,8 +30,8 @@
       {% if post.is_editable_by(request.user) %}
         <span> [<a href="{{ url('admin:judge_blogpost_change', post.id) }}">{{ _('Edit') }}</a>]</span>
       {% endif %}
-      {% if valid_user_to_show_edit %}
-        {% for org in valid_org_to_show_edit %}
+      {% if editable_orgs %}
+        {% for org in editable_orgs %}
           <span> [<a href="{{ url('edit_organization_blog', org.id , org.slug , post.id) }}">{{ _('Edit in') }} {{org.slug}}</a>]</span>
         {% endfor %}
       {% endif %}

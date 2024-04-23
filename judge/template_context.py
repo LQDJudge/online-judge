@@ -1,3 +1,4 @@
+import re
 from functools import partial
 
 from django.conf import settings
@@ -7,6 +8,7 @@ from django.core.cache import cache
 from django.utils.functional import SimpleLazyObject, new_method_proxy
 
 from .models import MiscConfig, NavigationBar, Profile
+from judge.caching import cache_wrapper
 
 
 class FixedSimpleLazyObject(SimpleLazyObject):
@@ -50,22 +52,28 @@ def comet_location(request):
     return {"EVENT_DAEMON_LOCATION": websocket, "EVENT_DAEMON_POLL_LOCATION": poll}
 
 
+@cache_wrapper(prefix="nb")
+def _nav_bar():
+    return NavigationBar.objects.all()
+
+
 def __nav_tab(path):
-    result = list(
-        NavigationBar.objects.extra(where=["%s REGEXP BINARY regex"], params=[path])[:1]
-    )
-    return (
-        result[0].get_ancestors(include_self=True).values_list("key", flat=True)
-        if result
-        else []
-    )
+    nav_bar_list = list(_nav_bar())
+    nav_bar_dict = {nb.id: nb for nb in nav_bar_list}
+    result = next((nb for nb in nav_bar_list if re.match(nb.regex, path)), None)
+    if result:
+        while result.parent_id:
+            result = nav_bar_dict.get(result.parent_id)
+        return result.key
+    else:
+        return []
 
 
 def general_info(request):
     path = request.get_full_path()
     return {
         "nav_tab": FixedSimpleLazyObject(partial(__nav_tab, request.path)),
-        "nav_bar": NavigationBar.objects.all(),
+        "nav_bar": _nav_bar(),
         "LOGIN_RETURN_PATH": "" if path.startswith("/accounts/") else path,
         "perms": PermWrapper(request.user),
     }

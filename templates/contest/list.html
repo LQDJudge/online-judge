@@ -9,10 +9,6 @@
       padding-top: 0;
     }
 
-    .content-description ul {
-      padding: 0 !important;
-    }
-
     .btn-contest {
       display: inline-block;
       padding: 1px 6px;
@@ -20,6 +16,7 @@
 
     .contest-group-header {
       padding-bottom: 1em;
+      margin-top: 1.5em;
     }
 
     {% if page_obj and page_obj.number > 1%}
@@ -115,8 +112,7 @@
   <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title" style="margin-right: 5px;">
     {{contest.name}}
   </a>
-  <br>
-  <div class="contest-tags" style="margin-top: 5px;">
+  <div class="contest-tags">
     {% if not contest.is_visible %}
       <span class="contest-tag contest-tag-hidden">
         <i class="fa fa-eye-slash"></i> {{ _('hidden') }}
@@ -137,11 +133,7 @@
     {% if not hide_contest_orgs %}
       {% if contest.is_organization_private %}
         {% for org in contest.organizations.all() %}
-          <span class="contest-tag contest-tag-org">
-            <a href="{{ org.get_absolute_url() }}">
-              <i class="fa fa-lock"></i> {{ org.name }}
-            </a>
-          </span>
+          {% include "organization/tag.html" %}
         {% endfor %}
       {% endif %}
     {% endif %}
@@ -162,15 +154,22 @@
   </div>
 {% endmacro %}
 
-{% macro time_left(contest, padding_top = true) %}
-  <div class="time time-left {{ 'non-padding-top' if padding_top == false }}">
+{% macro time_left(contest) %}
+  <div class="time-left">
     {% if contest.time_limit %}
-      {{ contest.start_time|date(_("M j, Y, G:i")) }} -
-      {{ contest.end_time|date(_("M j, Y, G:i")) }}
+      <div>
+        <b>{{_("Start")}}</b>: {{ contest.start_time|date(_("g:i a d/m/Y")) }}
+      </div>
+      <div>
+        <b>{{_("End")}}</b>: {{ contest.end_time|date(_("g:i a d/m/Y")) }}
+      </div>
     {% else %}
-      {{ contest.start_time|date(_("M j, Y, G:i")) }}
+      <div>
+        <b>{{_("Start")}}</b>: {{ contest.start_time|date(_("g:i a d/m/Y")) }}
+      </div>
     {% endif %}
-    <br>
+  </div>
+  <div class="time">
     {% if contest.time_limit %}
       {% trans time_limit=contest.time_limit|timedelta('localized-no-seconds') %}{{ time_limit }} window{% endtrans %}
     {% else %}
@@ -206,48 +205,49 @@
 {% endmacro %}
 
 {% block middle_content %}
-  <div class="content-description">
-    <form id="filter-form">
-      <input id="search-contest" type="text" name="contest" value="{{ contest_query or '' }}"
-        placeholder="{{ _('Search contests...') }}">
-      {% if organizations %}
-        <select id="search-org" name="orgs" multiple>
-          {% for org in organizations %}
-            <option value="{{ org.id }}"{% if org.id in org_query %} selected{% endif %}>
-              {{ org.name }}
-            </option>
-          {% endfor %}
-        </select>
-      {% endif %}
-      <button id="search-btn" class="btn-green small"> {{ _('Search')}} </button>
-      {% if organizations %}
-        <div>
-          <input id="show_orgs" type="checkbox" name="show_orgs" value="1" {% if show_orgs %}checked{% endif %}>
-          <label for="show_orgs">{{ _('Hide organization contests') }}</label>
-        </div>
-      {% endif %}
-      {% if create_url %}
-        <a href="{{create_url}}" class="button small" style="float: right"><i class="fa fa-plus"></i> {{ _('Create')}}</a>
-      {% endif %}
-    </form>
+  <form id="filter-form">
+    <input id="search-contest" type="text" name="contest" value="{{ contest_query or '' }}"
+      placeholder="{{ _('Search contests...') }}">
+    {% if organizations %}
+      <select id="search-org" name="orgs" multiple>
+        {% for org in organizations %}
+          <option value="{{ org.id }}"{% if org.id in org_query %} selected{% endif %}>
+            {{ org.name }}
+          </option>
+        {% endfor %}
+      </select>
+    {% endif %}
+    <button id="search-btn" class="btn-green small"> {{ _('Search')}} </button>
+    {% if organizations %}
+      <div>
+        <input id="show_orgs" type="checkbox" name="show_orgs" value="1" {% if show_orgs %}checked{% endif %}>
+        <label for="show_orgs">{{ _('Hide organization contests') }}</label>
+      </div>
+    {% endif %}
+    {% if create_url %}
+      <a href="{{create_url}}" class="button small" style="float: right"><i class="fa fa-plus"></i> {{ _('Create')}}</a>
+    {% endif %}
+  </form>
+
+  <div id="ongoing-table">
     {% if active_participations %}
       <h3 class="toggle open contest-group-header">
         <i class="fa fa-chevron-right fa-fw"></i>
         {{ _('Active Contests') }}
       </h3>
       <div class="toggled">
-
         {% for participation in active_participations %}
           {% with contest=participation.contest %}
             <div class="list-contest">
-              <div class="info-contest" style="flex: 1.5">
+              <div class="info-contest">
                 <div class="contest-title"> {{ _('Contests') }} </div>
                 {{ contest_head(contest) }}
               </div>
-              <div class="info-contest" style="flex: 1.5">
+              <div class="info-contest">
                 <div class="contest-title"> {{ _('Time') }} </div>
                 <div class="contest-block">
                   {% if contest.start_time %}
+                    {{ time_left(contest) }}
                     {% if contest.time_limit %}
                       <span class="time">
                         {% trans countdown=participation.end_time|as_countdown %}Window ends in {{countdown}}{% endtrans %}
@@ -255,15 +255,14 @@
                     {% elif contest.time_before_end %}
                       <span class="time">{% trans countdown=contest.end_time|as_countdown %}Ends in {{countdown}}{% endtrans %}</span>
                     {% endif %}
-                    {{ time_left(contest) }}
                   {% endif %}
                 </div>
               </div>
-              <div class="info-contest">
+              <div class="info-contest" style="flex: 0.5;">
                 <div class="contest-title"> {{ _('Format') }} </div>
                 {{ contest.format.name }}
               </div>
-              <div class="info-contest">
+              <div class="info-contest" style="flex: 0.5;">
                 <div class="contest-title"> {{ _('Users') }} </div>
                 {{ user_count(contest, request.user) }}
               </div>
@@ -274,7 +273,6 @@
           {% endwith %}
         {% endfor %}
       </div>
-      <br>
     {% endif %}
 
     <h3 class="toggle open contest-group-header">
@@ -282,29 +280,29 @@
       {{ _('Ongoing Contests') }}
     </h3>
     {% if current_contests %}
-      <div id="ongoing-table" class="toggled">
+      <div class="toggled">
         {% for contest in current_contests %}
           <div class="list-contest">
-            <div class="info-contest" style="flex: 1.5">
+            <div class="info-contest">
               <div class="contest-title"> {{ _('Contests') }} </div>
               {{ contest_head(contest) }}
             </div>
-            <div class="info-contest" style="flex: 1.5">
+            <div class="info-contest">
               <div class="contest-title"> {{ _('Time') }} </div>
               <div class="contest-block">
                 {% if contest.start_time %}
+                  {{ time_left(contest) }}
                   {% if contest.time_before_end %}
                     <span class="time">{% trans countdown=contest.end_time|as_countdown %}Ends in {{countdown}}{% endtrans %}</span>
                   {% endif %}
-                  {{ time_left(contest) }}
                 {% endif %}
               </div>
             </div>
-            <div class="info-contest">
+            <div class="info-contest" style="flex: 0.5;">
               <div class="contest-title"> {{ _('Format') }} </div>
               {{ contest.format.name }}
             </div>
-            <div class="info-contest">
+            <div class="info-contest" style="flex: 0.5;">
               <div class="contest-title"> {{ _('Users') }} </div>
               {{ user_count(contest, request.user) }}
             </div>
@@ -313,12 +311,11 @@
             </div>
           </div>
         {% endfor %}
-        <br>
       </div>
     {% else %}
       <div class="toggled">
         <i> {{ _('There is no ongoing contest at this time.') }} </i>
-        <br>
+        <br><br>
       </div>
     {% endif %}
 
@@ -330,22 +327,22 @@
       <div class="toggled">
         {% for contest in future_contests %}
           <div class="list-contest">
-            <div class="info-contest" style="flex: 1.5">
+            <div class="info-contest">
               <div class="contest-title"> {{ _('Contests') }} </div>
               {{ contest_head(contest) }}
             </div>
-            <div class="info-contest" style="flex: 1.5">
+            <div class="info-contest">
               <div class="contest-title"> {{ _('Time') }} </div>
               <div class="contest-block">
                 {% if contest.start_time %}
+                  {{ time_left(contest) }}
                   {% if contest.time_before_start %}
                     <span class="time">{{ _('Starting in %(countdown)s.', countdown=contest.start_time|as_countdown) }}</span>
                   {% endif %}
-                  {{ time_left(contest) }}
                 {% endif %}
               </div>
             </div>
-            <div class="info-contest">
+            <div class="info-contest" style="flex: 0.5;">
               <div class="contest-title"> {{ _('Format') }} </div>
               {{ contest.format.name }}
             </div>
@@ -355,62 +352,61 @@
     {% else %}
       <div class="toggled">
         <i>{{ _('There is no scheduled contest at this time.') }}</i>
-        <br>
-      </div>
-    {% endif %}
-    <br>
-
-    <h3 class="toggle open contest-group-header">
-      {{ _('Past Contests') }}
-    </h3>
-    {% if past_contests %}
-      {% if page_obj and page_obj.num_pages > 1 %}
-        <div style="margin-bottom: 10px;">
-          {% include "list-pages.html" %}
-        </div>
-      {% endif %}
-
-      {% for contest in past_contests %}
-        <div class="list-contest">
-          <div class="info-contest" style="flex: 1.5">
-            <div class="contest-title"> {{ _('Contests') }} </div>
-            {{ contest_head(contest) }}
-          </div>
-          <div class="info-contest" style="flex: 1.5">
-            <div class="contest-title"> {{ _('Time') }} </div>
-            <div class="contest-block">
-              {{ time_left(contest, false) }}
-            </div>
-          </div>
-          <div class="info-contest">
-            <div class="contest-title"> {{ _('Format') }} </div>
-            {{ contest.format.name }}
-          </div>
-          <div class="info-contest">
-            <div class="contest-title"> {{ _('Users') }} </div>
-            {{ user_count(contest, request.user) }}
-          </div>
-          {% if not request.in_contest %}
-            <div class="participate-button">
-              <form action="{{ url('contest_join', contest.key) }}" method="post">
-                {% csrf_token %}
-                <input type="submit" class="unselectable button full small"
-                  value="{{ _('Virtual join') }}">
-              </form>
-            </div>
-          {% endif %}
-        </div>
-      {% endfor %}
-      {% if page_obj and page_obj.num_pages > 1 %}
-        <div style="margin-top: 10px;">
-          {% include "list-pages.html" %}
-        </div>
-      {% endif %}
-    {% else %}
-      <div class="toggled">
-        <i> {{ _('There is no past contest.') }} </i>
-        <br>
+        <br><br>
       </div>
     {% endif %}
   </div>
+
+  <h3 class="toggle open contest-group-header">
+    {{ _('Past Contests') }}
+  </h3>
+  {% if past_contests %}
+    {% if page_obj and page_obj.num_pages > 1 %}
+      <div style="margin-bottom: 10px;">
+        {% include "list-pages.html" %}
+      </div>
+    {% endif %}
+
+    {% for contest in past_contests %}
+      <div class="list-contest">
+        <div class="info-contest">
+          <div class="contest-title"> {{ _('Contests') }} </div>
+          {{ contest_head(contest) }}
+        </div>
+        <div class="info-contest">
+          <div class="contest-title"> {{ _('Time') }} </div>
+          <div class="contest-block">
+            {{ time_left(contest) }}
+          </div>
+        </div>
+        <div class="info-contest" style="flex: 0.5;">
+          <div class="contest-title"> {{ _('Format') }} </div>
+          {{ contest.format.name }}
+        </div>
+        <div class="info-contest" style="flex: 0.5;">
+          <div class="contest-title"> {{ _('Users') }} </div>
+          {{ user_count(contest, request.user) }}
+        </div>
+        {% if not request.in_contest %}
+          <div class="participate-button">
+            <form action="{{ url('contest_join', contest.key) }}" method="post">
+              {% csrf_token %}
+              <input type="submit" class="unselectable button full small"
+                value="{{ _('Virtual join') }}">
+            </form>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+    {% if page_obj and page_obj.num_pages > 1 %}
+      <div style="margin-top: 10px;">
+        {% include "list-pages.html" %}
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="toggled">
+      <i> {{ _('There is no past contest.') }} </i>
+      <br>
+    </div>
+  {% endif %}
 {% endblock %}

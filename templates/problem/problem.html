@@ -118,11 +118,7 @@
     {% if problem.is_organization_private %}
       <span class="organization-tags">
         {% for org in problem.organizations.all() %}
-          <span class="organization-tag">
-            <a href="{{ org.get_absolute_url() }}">
-              <i class="fa fa-lock"></i> {{ org.name }}
-            </a>
-          </span>
+          {% include "organization/tag.html" %}
         {% endfor %}
       </span>
     {% endif %}
