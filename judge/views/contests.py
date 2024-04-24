@@ -480,7 +480,10 @@ def is_contest_clonable(request, contest):
         return True
     if contest.access_code and not contest.is_editable_by(request.user):
         return False
-    if contest.ended:
+    if (
+        contest.end_time is not None
+        and contest.end_time + timedelta(days=1) < contest._now
+    ):
         return True
     return False
 
