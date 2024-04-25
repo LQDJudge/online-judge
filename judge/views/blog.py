@@ -186,21 +186,17 @@ class PostView(TitleMixin, CommentedDetailView, PageVoteDetailView, BookMarkDeta
         context["og_image"] = self.object.og_image
         context["editable_orgs"] = []
 
-        can_edit = False
         orgs = list(self.object.organizations.all())
 
         if self.request.profile:
             if self.request.profile.id in self.object.get_authors():
-                can_edit = True
-
-            for org in orgs:
-                if org.is_admin(self.request.profile):
-                    can_edit = True
-
-        if can_edit:
-            for org in orgs:
-                if org.is_member(self.request.profile):
-                    context["editable_orgs"].append(org)
+                for org in orgs:
+                    if org.is_member(self.request.profile):
+                        context["editable_orgs"].append(org)
+            else:
+                for org in orgs:
+                    if org.is_admin(self.request.profile):
+                        context["editable_orgs"].append(org)
 
         return context
 

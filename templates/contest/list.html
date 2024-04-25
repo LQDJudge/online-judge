@@ -83,8 +83,12 @@
       $('.contest-tag').find('a[data-featherlight]').featherlight();
 
       $('.join-warning').click(function () {
-        return confirm('{{ _('Are you sure you want to join?') }}\n' +
-          '{{ _('Joining a contest for the first time starts your timer, after which it becomes unstoppable.') }}');
+        let q = '{{ _('Are you sure you want to join?') }}\n' +
+        '{{ _('Joining a contest for the first time starts your timer, after which it becomes unstoppable.') }}';
+        {% if request.in_contest %}
+          q += " {{ _('By joining in this contest, you will automatically leave contest') }} \"{{ request.participation.contest.name }}\". ";
+        {% endif %}
+        return confirm(q);
       });
 
       $('#search-org').select2({multiple: 1, placeholder: '{{ _('Groups') }}...'})
@@ -187,20 +191,20 @@
 {% endmacro %}
 
 {% macro contest_join(contest, request) %}
-  {% if not request.in_contest %}
-    {% if request.profile in contest.authors.all() or request.profile in contest.curators.all() or request.profile in contest.testers.all() %}
-      <form action="{{ url('contest_join', contest.key) }}" method="post">
-        {% csrf_token %}
-        <input type="submit" class="unselectable button full small"
-          value="{{ _('Spectate') }}">
-      </form>
-    {% else %}
-      <form action="{{ url('contest_join', contest.key) }}" method="post">
-        {% csrf_token %}
-        <input type="submit" class="unselectable button full small join-warning"
-          value="{{ _('Join') }}">
-      </form>
-    {% endif %}
+  {% if request.in_contest and request.participation.contest == contest %}
+    <button class="small" disabled>{{ _('In contest') }}</button>
+  {% elif request.profile in contest.authors.all() or request.profile in contest.curators.all() or request.profile in contest.testers.all() %}
+    <form action="{{ url('contest_join', contest.key) }}" method="post">
+      {% csrf_token %}
+      <input type="submit" class="unselectable button full small"
+        value="{{ _('Spectate') }}">
+    </form>
+  {% else %}
+    <form action="{{ url('contest_join', contest.key) }}" method="post">
+      {% csrf_token %}
+      <input type="submit" class="unselectable button full small join-warning"
+        value="{{ _('Join') }}">
+    </form>
   {% endif %}
 {% endmacro %}
 
@@ -387,15 +391,17 @@
           <div class="contest-title"> {{ _('Users') }} </div>
           {{ user_count(contest, request.user) }}
         </div>
-        {% if not request.in_contest %}
-          <div class="participate-button">
+        <div class="participate-button">
+          {% if request.in_contest and request.participation.contest == contest %}
+            <button class="small" disabled>{{ _('In contest') }}</button>
+          {% else %}
             <form action="{{ url('contest_join', contest.key) }}" method="post">
               {% csrf_token %}
               <input type="submit" class="unselectable button full small"
                 value="{{ _('Virtual join') }}">
             </form>
-          </div>
-        {% endif %}
+          {% endif %}
+        </div>
       </div>
     {% endfor %}
     {% if page_obj and page_obj.num_pages > 1 %}

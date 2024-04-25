@@ -468,6 +468,10 @@ class ContestDetail(
         )
         context["editable_organizations"] = self.get_editable_organizations()
         context["is_clonable"] = is_contest_clonable(self.request, self.object)
+        if self.request.in_contest:
+            context["current_contest"] = self.request.participation.contest
+        else:
+            context["current_contest"] = None
         return context
 
 
@@ -587,12 +591,7 @@ class ContestJoin(LoginRequiredMixin, ContestMixin, BaseDetailView):
 
         profile = request.profile
         if profile.current_contest is not None:
-            return generic_message(
-                request,
-                _("Already in contest"),
-                _('You are already in a contest: "%s".')
-                % profile.current_contest.contest.name,
-            )
+            profile.remove_contest()
 
         if (
             not request.user.is_superuser
@@ -671,6 +670,7 @@ class ContestJoin(LoginRequiredMixin, ContestMixin, BaseDetailView):
         profile.save()
         contest._updating_stats_only = True
         contest.update_user_count()
+        request.session["contest_mode"] = True
         return HttpResponseRedirect(reverse("problem_list"))
 
     def ask_for_access_code(self, form=None):
