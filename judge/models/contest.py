@@ -25,6 +25,7 @@ from judge.ratings import rate_contest
 from judge.models.pagevote import PageVotable
 from judge.models.bookmark import Bookmarkable
 from judge.fulltext import SearchManager
+from judge.caching import cache_wrapper
 
 __all__ = [
     "Contest",
@@ -455,25 +456,41 @@ class Contest(models.Model, PageVotable, Bookmarkable):
     def ended(self):
         return self.end_time < self._now
 
-    @cached_property
-    def author_ids(self):
-        return Contest.authors.through.objects.filter(contest=self).values_list(
-            "profile_id", flat=True
+    @cache_wrapper(prefix="Coai")
+    def _author_ids(self):
+        return set(
+            Contest.authors.through.objects.filter(contest=self).values_list(
+                "profile_id", flat=True
+            )
         )
 
-    @cached_property
-    def editor_ids(self):
-        return self.author_ids.union(
+    @cache_wrapper(prefix="Coci")
+    def _curator_ids(self):
+        return set(
             Contest.curators.through.objects.filter(contest=self).values_list(
                 "profile_id", flat=True
             )
         )
 
+    @cache_wrapper(prefix="Coti")
+    def _tester_ids(self):
+        return set(
+            Contest.testers.through.objects.filter(contest=self).values_list(
+                "profile_id", flat=True
+            )
+        )
+
+    @cached_property
+    def author_ids(self):
+        return self._author_ids()
+
+    @cached_property
+    def editor_ids(self):
+        return self.author_ids.union(self._curator_ids())
+
     @cached_property
     def tester_ids(self):
-        return Contest.testers.through.objects.filter(contest=self).values_list(
-            "profile_id", flat=True
-        )
+        return self._tester_ids()
 
     def __str__(self):
         return f"{self.name} ({self.key})"

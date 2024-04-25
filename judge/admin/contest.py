@@ -299,6 +299,18 @@ class ContestAdmin(CompareVersionAdmin):
             self._rescore(obj.key)
             self._rescored = True
 
+        if form.changed_data and any(
+            f in form.changed_data
+            for f in (
+                "authors",
+                "curators",
+                "testers",
+            )
+        ):
+            Contest._author_ids.dirty(obj)
+            Contest._curator_ids.dirty(obj)
+            Contest._tester_ids.dirty(obj)
+
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         # Only rescored if we did not already do so in `save_model`

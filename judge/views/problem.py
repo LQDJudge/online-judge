@@ -64,6 +64,7 @@ from judge.models import (
     Organization,
     Profile,
     LanguageTemplate,
+    Contest,
 )
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
@@ -587,7 +588,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             i
             for i in query
             if i in self.profile.organizations.values_list("id", flat=True)
-        ]
+        ][:3]
 
     def get_normal_queryset(self):
         queryset = Problem.get_visible_problems(self.request.user)
@@ -599,9 +600,14 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             self.org_query = [self.request.organization.id]
         if self.org_query:
             self.org_query = self.get_org_query(self.org_query)
+            contest_problems = (
+                Contest.objects.filter(organizations__in=self.org_query)
+                .select_related("problems")
+                .values_list("contest_problems__problem__id")
+                .distinct()
+            )
             queryset = queryset.filter(
-                Q(organizations__in=self.org_query)
-                | Q(contests__contest__organizations__in=self.org_query)
+                Q(organizations__in=self.org_query) | Q(id__in=contest_problems)
             )
         if self.author_query:
             queryset = queryset.filter(authors__in=self.author_query)

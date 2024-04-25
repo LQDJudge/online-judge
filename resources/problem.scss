@@ -170,7 +170,7 @@ ul.problem-list {
 
 .organization-tags {
     padding-left: 0.75em;
-    vertical-align: middle;
+    display: flex;
 }
 
 .organization-tag {
@@ -183,6 +183,7 @@ ul.problem-list {
     position: relative;
     background-color: #ccc;
     color: initial;
+    min-height: 1.5em;
 }
 
 .organization-tag a {

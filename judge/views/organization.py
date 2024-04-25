@@ -478,6 +478,9 @@ class OrganizationSubmissions(
             ),
         )
 
+    def get_title(self):
+        return _("Submissions in") + f" {self.organization}"
+
 
 class OrganizationMembershipChange(
     LoginRequiredMixin, OrganizationMixin, SingleObjectMixin, View
@@ -983,6 +986,18 @@ class EditOrganizationContest(
                 )
             ):
                 transaction.on_commit(rescore_contest.s(self.object.key).delay)
+
+            if any(
+                f in form.changed_data
+                for f in (
+                    "authors",
+                    "curators",
+                    "testers",
+                )
+            ):
+                Contest._author_ids.dirty(self.object)
+                Contest._curator_ids.dirty(self.object)
+                Contest._tester_ids.dirty(self.object)
             return res
 
     def get_problem_formset(self, post=False):
@@ -1075,7 +1090,7 @@ class EditOrganizationBlog(
             if self.organization not in self.blog.organizations.all():
                 raise Exception("This blog does not belong to this organization")
             if (
-                self.request.profile not in self.blog.authors.all()
+                self.request.profile.id not in self.blog.get_authors()
                 and not self.can_edit_organization(self.organization)
             ):
                 raise Exception("Not allowed to edit this blog")

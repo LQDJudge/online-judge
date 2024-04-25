@@ -198,7 +198,7 @@ class ContestList(
         queryset = (
             super(ContestList, self)
             .get_queryset()
-            .prefetch_related("tags", "organizations", "authors", "curators", "testers")
+            .prefetch_related("tags", "organizations")
         )
 
         if self.request.GET.get("contest"):
@@ -248,9 +248,6 @@ class ContestList(
                         virtual=0, user=self.request.profile, contest_id__in=present
                     )
                     .select_related("contest")
-                    .prefetch_related(
-                        "contest__authors", "contest__curators", "contest__testers"
-                    )
                     .annotate(key=F("contest__key"))
                 ):
                     if not participation.ended:

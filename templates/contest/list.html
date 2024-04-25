@@ -193,7 +193,7 @@
 {% macro contest_join(contest, request) %}
   {% if request.in_contest and request.participation.contest == contest %}
     <button class="small" disabled>{{ _('In contest') }}</button>
-  {% elif request.profile in contest.authors.all() or request.profile in contest.curators.all() or request.profile in contest.testers.all() %}
+  {% elif request.profile.id in contest.editor_ids or request.profile.id in contest.tester_ids %}
     <form action="{{ url('contest_join', contest.key) }}" method="post">
       {% csrf_token %}
       <input type="submit" class="unselectable button full small"

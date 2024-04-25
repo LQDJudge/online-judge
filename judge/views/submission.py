@@ -52,7 +52,7 @@ from judge.utils.timedelta import nice_repr
 def submission_related(queryset):
     return queryset.select_related("user", "problem", "language").only(
         "id",
-        "user_id",
+        "user__id",
         "problem__name",
         "problem__code",
         "problem__is_public",
@@ -67,7 +67,8 @@ def submission_related(queryset):
         "case_points",
         "case_total",
         "current_testcase",
-        "contest_object",
+        "contest_object__key",
+        "contest_object__name",
     )
 
 
