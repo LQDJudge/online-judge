@@ -33,13 +33,16 @@ from django.views import View
 
 from judge import event_poster as event
 from judge.highlight_code import highlight_code
-from judge.models import Contest, ContestParticipation
-from judge.models import Language
-from judge.models import Problem
-from judge.models import ProblemTestCase
-from judge.models import ProblemTranslation
-from judge.models import Profile
-from judge.models import Submission
+from judge.models import (
+    Contest,
+    ContestParticipation,
+    Language,
+    Problem,
+    ProblemTestCase,
+    ProblemTranslation,
+    Profile,
+    Submission,
+)
 from judge.utils.problems import get_result_data
 from judge.utils.problem_data import get_problem_case
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
@@ -79,6 +82,10 @@ class SubmissionMixin(object):
 
 
 class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, DetailView):
+    queryset = Submission.objects.select_related(
+        "language", "problem", "user", "contest_object"
+    ).defer("problem__description", "user__about", "contest_object__description")
+
     def get_object(self, queryset=None):
         submission = super(SubmissionDetailBase, self).get_object(queryset)
         if submission.is_accessible_by(self.request.profile):
@@ -90,7 +97,7 @@ class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, Deta
         submission = self.object
         return _("Submission of %(problem)s by %(user)s") % {
             "problem": submission.problem.translated_name(self.request.LANGUAGE_CODE),
-            "user": submission.user.user.username,
+            "user": submission.user.username,
         }
 
     def get_content_title(self):
@@ -105,8 +112,8 @@ class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, Deta
                 ),
                 "user": format_html(
                     '<a href="{0}">{1}</a>',
-                    reverse("user_page", args=[submission.user.user.username]),
-                    submission.user.user.username,
+                    reverse("user_page", args=[submission.user.username]),
+                    submission.user.username,
                 ),
             }
         )
@@ -187,15 +194,28 @@ def get_cases_data(submission):
 class SubmissionStatus(SubmissionDetailBase):
     template_name = "submission/status.html"
 
-    def access_testcases_in_contest(self):
-        contest = self.object.contest_or_none
-        if contest is None:
-            return False
-        if contest.problem.problem.is_editable_by(self.request.user):
+    def can_see_testcases(self):
+        contest_submission = self.object.contest_or_none
+        if contest_submission is None:
             return True
-        if contest.problem.contest.is_in_contest(self.request.user):
+
+        contest_problem = contest_submission.problem
+        problem = self.object.problem
+        contest = self.object.contest_object
+
+        if contest_problem.show_testcases:
+            return True
+        if problem.is_editable_by(self.request.user):
+            return True
+        if contest.is_editable_by(self.request.user):
+            return True
+        if not problem.is_public:
             return False
-        if contest.participation.ended:
+        if contest.is_in_contest(self.request.user):
+            return False
+        if not contest.ended:
+            return False
+        if contest_submission.participation.ended:
             return True
         return False
 
@@ -217,14 +237,7 @@ class SubmissionStatus(SubmissionDetailBase):
             title=submission.language,
         )
 
-        contest = submission.contest_or_none
-        show_testcases = False
-        can_see_testcases = self.access_testcases_in_contest()
-
-        if contest is not None:
-            show_testcases = contest.problem.show_testcases or False
-
-        if contest is None or show_testcases or can_see_testcases:
+        if self.can_see_testcases():
             context["cases_data"] = get_cases_data(submission)
             context["can_see_testcases"] = True
         try:
