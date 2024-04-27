@@ -73,12 +73,7 @@ class Comment(MPTTModel):
 
     @classmethod
     def most_recent(cls, user, n, batch=None, organization=None):
-        queryset = (
-            cls.objects.filter(hidden=False)
-            .select_related("author__user")
-            .defer("author__about")
-            .order_by("-id")
-        )
+        queryset = cls.objects.filter(hidden=False).order_by("-id")
 
         if organization:
             queryset = queryset.filter(author__in=organization.members.all())

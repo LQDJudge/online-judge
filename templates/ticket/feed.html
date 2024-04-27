@@ -8,20 +8,21 @@
         {{ ticket.title }}
       </a>
     </h3>
-    {% with author=ticket.user %}
-      {% if author %}
+    {% with author_id = ticket.user_id %}
+      {% if author_id %}
         <div class="problem-feed-info-entry">
           <i class="fa fa-pencil-square-o fa-fw"></i>
-          <span class="pi-value">{{ link_user(author) }}</span>
+          <span class="pi-value">{{ link_user(author_id) }}</span>
         </div>
       {% endif %}
     {% endwith %}
+    {% set last_message = ticket.messages.last() %}
     <div class="problem-feed-types">
       <i class="fa fa-tag"></i>
-      {{link_user(ticket.messages.last().user)}} {{_(' replied')}}
+      {{link_user(last_message.user_id)}} {{_('replied')}}
     </div>
     <div class='blog-description content-description'>
-      {{ ticket.messages.last().body|markdown(lazy_load=True)|reference|str|safe }}
+      {{ last_message.body|markdown(lazy_load=True)|reference|str|safe }}
       <div class="show-more"> {{_("...More")}} </div>
     </div>
   </div>

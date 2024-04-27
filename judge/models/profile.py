@@ -547,15 +547,6 @@ def on_user_save(sender, instance, **kwargs):
         pass
 
 
-@receiver([pre_save], sender=Profile)
-def on_profile_save(sender, instance, **kwargs):
-    if instance.id is None:
-        return
-    prev = sender.objects.get(id=instance.id)
-    if prev.mute != instance.mute or prev.profile_image != instance.profile_image:
-        _get_basic_info.dirty(instance.id)
-
-
 @cache_wrapper(prefix="Pgbi3")
 def _get_basic_info(profile_id):
     profile = (

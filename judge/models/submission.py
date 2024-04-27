@@ -220,7 +220,7 @@ class Submission(models.Model):
     def id_secret(self):
         return self.get_id_secret(self.id)
 
-    def is_accessible_by(self, profile):
+    def is_accessible_by(self, profile, check_contest=True):
         if not profile:
             return False
 
@@ -239,9 +239,10 @@ class Submission(models.Model):
         if self.problem.is_public and user.has_perm("judge.view_public_submission"):
             return True
 
-        contest = self.contest_object
-        if contest and contest.is_editable_by(user):
-            return True
+        if check_contest:
+            contest = self.contest_object
+            if contest and contest.is_editable_by(user):
+                return True
 
         from judge.utils.problems import (
             user_completed_ids,

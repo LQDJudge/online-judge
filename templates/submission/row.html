@@ -1,4 +1,4 @@
-{% set can_view = submission.is_accessible_by(profile) %}
+{% set can_view = submission.is_accessible_by(profile, check_contest=False) or is_in_editable_contest %}
 <div class="sub-user-img user-img">
   <img loading="lazy" src="{{gravatar(submission.user)}}">
 </div>

@@ -469,6 +469,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         if context["in_hidden_subtasks_contest"]:
             for submission in context["submissions"]:
                 self.modify_attrs(submission)
+        context[
+            "is_in_editable_contest"
+        ] = self.in_contest and self.contest.is_editable_by(self.request.user)
 
         return context
 
@@ -721,6 +724,11 @@ def single_submission(request, submission_id, show_problem=True):
         submission_related(Submission.objects.all()), id=int(submission_id)
     )
 
+    is_in_editable_contest = False
+    if authenticated and request.in_contest_mode:
+        contest = request.profile.current_contest.contest
+        is_in_editable_contest = contest.is_editable_by(request.user)
+
     if not submission.problem.is_accessible_by(request.user):
         raise Http404()
 
@@ -733,6 +741,7 @@ def single_submission(request, submission_id, show_problem=True):
             "problem_name": show_problem
             and submission.problem.translated_name(request.LANGUAGE_CODE),
             "profile": request.profile if authenticated else None,
+            "is_in_editable_contest": is_in_editable_contest,
         },
     )
 

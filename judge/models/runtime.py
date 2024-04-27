@@ -11,6 +11,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from judge.judgeapi import disconnect_judge
+from judge.caching import cache_wrapper
 
 __all__ = ["Language", "RuntimeVersion", "Judge"]
 
@@ -147,19 +148,24 @@ class Language(models.Model):
 
     @classmethod
     def get_default_language(cls):
-        try:
-            return Language.objects.get(key=settings.DEFAULT_USER_LANGUAGE)
-        except Language.DoesNotExist:
-            return cls.get_python3()
+        return _get_default_language()
 
     @classmethod
     def get_default_language_pk(cls):
-        return cls.get_default_language().pk
+        return _get_default_language().pk
 
     class Meta:
         ordering = ["key"]
         verbose_name = _("language")
         verbose_name_plural = _("languages")
+
+
+@cache_wrapper(prefix="gdl")
+def _get_default_language():
+    try:
+        return Language.objects.get(key=settings.DEFAULT_USER_LANGUAGE)
+    except Language.DoesNotExist:
+        return cls.get_python3()
 
 
 class RuntimeVersion(models.Model):

@@ -160,6 +160,8 @@ def link_user(user, show_image=False):
         profile = user
     elif isinstance(user, AbstractUser):
         profile = user.profile
+    elif isinstance(user, int):
+        profile = Profile(id=user)
     else:
         raise ValueError("Expected profile or user, got %s" % (type(user),))
     return {"profile": profile, "show_image": show_image}

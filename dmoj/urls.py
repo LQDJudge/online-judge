@@ -399,7 +399,6 @@ urlpatterns = [
                     name="submission_status",
                 ),
                 url(r"^/abort$", submission.abort_submission, name="submission_abort"),
-                url(r"^/html$", submission.single_submission),
             ]
         ),
     ),

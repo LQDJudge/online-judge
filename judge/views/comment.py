@@ -438,22 +438,13 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
     def _get_queryset(self, target_comment):
         if target_comment:
             queryset = target_comment.get_descendants(include_self=True)
-            queryset = (
-                queryset.select_related("author__user")
-                .filter(hidden=False)
-                .defer("author__about")
-            )
+            queryset = queryset.filter(hidden=False)
         else:
             queryset = self.object.comments
             queryset = queryset.filter(parent=None, hidden=False)
-            queryset = (
-                queryset.select_related("author__user")
-                .defer("author__about")
-                .filter(hidden=False)
-                .annotate(
-                    count_replies=Count("replies", distinct=True),
-                )[:DEFAULT_OFFSET]
-            )
+            queryset = queryset.filter(hidden=False).annotate(
+                count_replies=Count("replies", distinct=True),
+            )[:DEFAULT_OFFSET]
 
         if self.request.user.is_authenticated:
             profile = self.request.profile

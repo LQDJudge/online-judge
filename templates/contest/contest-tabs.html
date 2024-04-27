@@ -9,7 +9,7 @@
 <div class="left-sidebar">
   {% if can_access %}
     {{ make_tab_item('detail', 'fa fa-info-circle', url('contest_view', contest.key), _('Info')) }}
-    {% if contest.ended or can_edit %}
+    {% if (contest.ended and not contest.is_in_contest(request.user)) or can_edit %}
       {{ make_tab_item('stats', 'fa fa-pie-chart', url('contest_stats', contest.key), _('Statistics')) }}
     {% endif %}
   {% endif %}

@@ -130,7 +130,6 @@ class TicketFeed(HomeFeedView):
                     )
                     .order_by("-id")
                     .prefetch_related("linked_item")
-                    .select_related("user__user")
                 )
             else:
                 return []
@@ -141,7 +140,6 @@ class TicketFeed(HomeFeedView):
                     Ticket.objects.order_by("-id")
                     .filter(is_open=True)
                     .prefetch_related("linked_item")
-                    .select_related("user__user")
                 )
                 return filter_visible_tickets(tickets, self.request.user, profile)
             else:
@@ -157,7 +155,7 @@ class TicketFeed(HomeFeedView):
 class CommentFeed(HomeFeedView):
     model = Comment
     context_object_name = "comments"
-    paginate_by = 15
+    paginate_by = 10
     feed_content_template_name = "comments/feed.html"
 
     def get_queryset(self):

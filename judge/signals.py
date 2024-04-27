@@ -82,6 +82,8 @@ def profile_update(sender, instance, **kwargs):
         ]
     )
 
+    judge.models.profile._get_basic_info.dirty(instance.id)
+
 
 @receiver(post_save, sender=Contest)
 def contest_update(sender, instance, **kwargs):
