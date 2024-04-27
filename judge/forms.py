@@ -39,6 +39,7 @@ from judge.models import (
     BlogPost,
     ContestProblem,
     TestFormatterModel,
+    ProfileInfo,
 )
 
 from judge.widgets import (
@@ -51,6 +52,7 @@ from judge.widgets import (
     Select2MultipleWidget,
     DateTimePickerWidget,
     ImageWidget,
+    DatePickerWidget,
 )
 
 
@@ -67,6 +69,17 @@ class UserForm(ModelForm):
             "first_name",
             "last_name",
         ]
+
+
+class ProfileInfoForm(ModelForm):
+    class Meta:
+        model = ProfileInfo
+        fields = ["tshirt_size", "date_of_birth", "address"]
+        widgets = {
+            "tshirt_size": Select2Widget(attrs={"style": "width:100%"}),
+            "date_of_birth": DatePickerWidget,
+            "address": forms.TextInput(attrs={"style": "width:100%"}),
+        }
 
 
 class ProfileForm(ModelForm):

@@ -6,7 +6,7 @@ from reversion.admin import VersionAdmin
 from django.contrib.auth.admin import UserAdmin as OldUserAdmin
 
 from django_ace import AceWidget
-from judge.models import Profile
+from judge.models import Profile, ProfileInfo
 from judge.widgets import AdminPagedownWidget, AdminSelect2Widget
 
 
@@ -54,6 +54,13 @@ class TimezoneFilter(admin.SimpleListFilter):
         return queryset.filter(timezone=self.value())
 
 
+class ProfileInfoInline(admin.StackedInline):
+    model = ProfileInfo
+    can_delete = False
+    verbose_name_plural = "profile info"
+    fk_name = "profile"
+
+
 class ProfileAdmin(VersionAdmin):
     fields = (
         "user",
@@ -67,7 +74,6 @@ class ProfileAdmin(VersionAdmin):
         "ip",
         "mute",
         "is_unlisted",
-        "is_banned_problem_voting",
         "notes",
         "is_totp_enabled",
         "current_contest",
@@ -90,6 +96,7 @@ class ProfileAdmin(VersionAdmin):
     actions_on_top = True
     actions_on_bottom = True
     form = ProfileForm
+    inlines = (ProfileInfoInline,)
 
     def get_queryset(self, request):
         return super(ProfileAdmin, self).get_queryset(request).select_related("user")

@@ -25,3 +25,25 @@ class DateTimePickerWidget(forms.DateTimeInput):
             attrs, {"type": self.input_type, "name": name, "value": value}
         )
         return format_html("<input{}>", flatatt(final_attrs))
+
+
+class DatePickerWidget(forms.DateInput):
+    input_type = "date"
+
+    def render(self, name, value, attrs=None, renderer=None):
+        if value is None:
+            value = ""
+        elif isinstance(value, str):
+            # Attempt to parse the string back to date
+            parsed_date = parse_date(value)
+            if parsed_date is not None:
+                value = parsed_date.strftime("%Y-%m-%d")
+            else:
+                value = ""
+        else:
+            value = value.strftime("%Y-%m-%d")
+
+        final_attrs = self.build_attrs(
+            attrs, {"type": self.input_type, "name": name, "value": value}
+        )
+        return format_html("<input{}>", flatatt(final_attrs))

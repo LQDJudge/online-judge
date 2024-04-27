@@ -35,8 +35,8 @@ from django.views.generic import DetailView, ListView, TemplateView
 from django.template.loader import render_to_string
 from reversion import revisions
 
-from judge.forms import UserForm, ProfileForm
-from judge.models import Profile, Rating, Submission, Friend
+from judge.forms import UserForm, ProfileForm, ProfileInfoForm
+from judge.models import Profile, Rating, Submission, Friend, ProfileInfo
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
 from judge.tasks import import_users
@@ -390,21 +390,25 @@ class UserPerformancePointsAjax(UserProblemsPage):
 @login_required
 def edit_profile(request):
     profile = request.profile
+    profile_info, created = ProfileInfo.objects.get_or_create(profile=profile)
     if request.method == "POST":
         form_user = UserForm(request.POST, instance=request.user)
         form = ProfileForm(
             request.POST, request.FILES, instance=profile, user=request.user
         )
+        form_info = ProfileInfoForm(request.POST, instance=profile_info)
         if form_user.is_valid() and form.is_valid():
             with revisions.create_revision():
                 form_user.save()
                 form.save()
+                form_info.save()
                 revisions.set_user(request.user)
                 revisions.set_comment(_("Updated on site"))
             return HttpResponseRedirect(request.path)
     else:
         form_user = UserForm(instance=request.user)
         form = ProfileForm(instance=profile, user=request.user)
+        form_info = ProfileInfoForm(instance=profile_info)
 
     tzmap = settings.TIMEZONE_MAP
 
@@ -415,6 +419,7 @@ def edit_profile(request):
             "require_staff_2fa": settings.DMOJ_REQUIRE_STAFF_2FA,
             "form_user": form_user,
             "form": form,
+            "form_info": form_info,
             "title": _("Edit profile"),
             "profile": profile,
             "TIMEZONE_MAP": tzmap or "http://momentjs.com/static/img/world.png",

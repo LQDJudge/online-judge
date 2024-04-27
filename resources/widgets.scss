@@ -143,7 +143,7 @@
 }
 
 input {
-    &[type=text], &[type=password], &[type=email], &[type=number], &[type=datetime-local] {
+    &[type=text], &[type=password], &[type=email], &[type=number], &[type=datetime-local], &[type=date] {
         padding: 4px 8px;
         color: #555;
         background: #FFF none;

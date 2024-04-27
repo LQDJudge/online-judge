@@ -26,6 +26,15 @@ from judge.caching import cache_wrapper
 __all__ = ["Organization", "Profile", "OrganizationRequest", "Friend"]
 
 
+TSHIRT_SIZES = (
+    ("S", "Small (S)"),
+    ("M", "Medium (M)"),
+    ("L", "Large (L)"),
+    ("XL", "Extra Large (XL)"),
+    ("XXL", "2 Extra Large (XXL)"),
+)
+
+
 class EncryptedNullCharField(EncryptedCharField):
     def get_prep_value(self, value):
         if not value:
@@ -211,11 +220,6 @@ class Profile(models.Model):
     is_unlisted = models.BooleanField(
         verbose_name=_("unlisted user"),
         help_text=_("User will not be ranked."),
-        default=False,
-    )
-    is_banned_problem_voting = models.BooleanField(
-        verbose_name=_("banned from voting"),
-        help_text=_("User will not be able to vote on problems' point values."),
         default=False,
     )
     rating = models.IntegerField(null=True, default=None, db_index=True)
@@ -420,6 +424,36 @@ class Profile(models.Model):
         )
         verbose_name = _("user profile")
         verbose_name_plural = _("user profiles")
+
+
+class ProfileInfo(models.Model):
+    profile = models.OneToOneField(
+        Profile,
+        verbose_name=_("profile associated"),
+        on_delete=models.CASCADE,
+        related_name="info",
+    )
+    tshirt_size = models.CharField(
+        max_length=5,
+        choices=TSHIRT_SIZES,
+        verbose_name=_("t-shirt size"),
+        null=True,
+        blank=True,
+    )
+    date_of_birth = models.DateField(
+        verbose_name=_("date of birth"),
+        null=True,
+        blank=True,
+    )
+    address = models.CharField(
+        max_length=255,
+        verbose_name=_("address"),
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return f"{self.profile.user.username}'s Info"
 
 
 class OrganizationRequest(models.Model):

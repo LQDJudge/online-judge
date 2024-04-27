@@ -77,10 +77,12 @@
 {% block body %}
   <div id="center-float">
     <form id="edit-form" action="" method="post" class="form-area" enctype="multipart/form-data">
-      {% if form.errors or form_user.errors %}
+      {% if form.errors or form_user.errors or form_info.errors %}
         <div class="alert alert-danger alert-dismissable">
           <a href="#" class="close">x</a>
           {{ form.errors }}
+          <br>
+          {{ form_info.errors }}
           <br>
           {{ form_user.errors }}
         </div>
@@ -90,12 +92,24 @@
 
       <table class="block-header grayed main-info">
         <tr>
-          <td> {{ _('Fullname') }}: </td>
+          <td> {{ _('Full name') }}: </td>
           <td> {{ form_user.first_name }} </td>
         </tr>
         <tr>
           <td> {{ _('School') }}: </td>
           <td> {{ form_user.last_name }} </td>
+        </tr>
+        <tr>
+          <td> {{ _('Date of birth') }}: </td>
+          <td> {{ form_info.date_of_birth }} </td>
+        </tr>
+        <tr>
+          <td> {{ _('Address') }}: </td>
+          <td> {{ form_info.address }} </td>
+        </tr>
+        <tr>
+          <td> {{ _('T-Shirt size') }}: </td>
+          <td> {{ form_info.tshirt_size }} </td>
         </tr>
         <tr>
           <td> {{ _('Password') }}: </td>

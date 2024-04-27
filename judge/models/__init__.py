@@ -43,6 +43,7 @@ from judge.models.profile import (
     Profile,
     Friend,
     OrganizationProfile,
+    ProfileInfo,
 )
 from judge.models.runtime import Judge, Language, RuntimeVersion
 from judge.models.submission import (
