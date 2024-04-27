@@ -1163,8 +1163,7 @@ urlpatterns = [
     ),
     url(
         r"^notifications/",
-        login_required(notification.NotificationList.as_view()),
-        name="notification",
+        paged_list_view(notification.NotificationList, "notification"),
     ),
     url(
         r"^import_users/",

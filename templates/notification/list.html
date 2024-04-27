@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block body %}
-  {% if not has_notifications %}
+  {% if not notifications %}
     <h2 style="text-align: center;">{{ _('You have no notifications') }}</h2>
   {% else %}
     <table class="table">
@@ -14,7 +14,7 @@
       {% for notification in notifications %}
         <tr class="{{ 'highlight' if not notification.seen }}">
           <td>
-            {{ link_user(notification.author) }}
+            {{ link_user(notification.author_id) }}
           </td>
           <td>
             {{ notification.category }}
@@ -31,5 +31,8 @@
       {% endfor %}
     </table>
   {% endif %}
+  <div style="margin-top: 10px;">
+    {% include "list-pages.html" %}
+  </div>
 {% endblock %}
 
