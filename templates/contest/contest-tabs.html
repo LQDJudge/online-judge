@@ -19,9 +19,8 @@
       {{ make_tab_item('ranking', 'fa fa-bar-chart', url('contest_ranking', contest.key), _('Rankings')) }}
       {% if request.user.is_authenticated and can_access %}
         {{ make_tab_item('participation', 'fa fa-users', url('contest_participation_own', contest.key), _('Participation')) }}
+        {{ make_tab_item('submissions', 'fa fa-code', url('contest_submissions', contest.key), _('Submissions')) }}
       {% endif %}
-    {% else %}
-      {{ make_tab_item('ranking', 'fa fa-bar-chart', None, _('Hidden Rankings')) }}
     {% endif %}
   {% endif %}
   {% if request.user.is_superuser and contest_has_hidden_subtasks %}

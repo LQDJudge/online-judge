@@ -628,6 +628,13 @@ urlpatterns = [
                     ),
                 ),
                 url(
+                    r"^/submissions",
+                    paged_list_view(
+                        submission.ContestSubmissions,
+                        "contest_submissions",
+                    ),
+                ),
+                url(
                     r"^/participations$",
                     contests.ContestParticipationList.as_view(),
                     name="contest_participation_own",

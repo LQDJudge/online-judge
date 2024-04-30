@@ -71,7 +71,7 @@ from judge.utils.views import (
 from judge.utils.problems import user_attempted_ids, user_completed_ids
 from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
-from judge.views.submission import AllSubmissions, SubmissionsListBase
+from judge.views.submission import SubmissionsListBase
 from judge.views.feed import FeedView
 from judge.tasks import rescore_contest
 

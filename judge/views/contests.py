@@ -362,6 +362,19 @@ class ContestMixin(object):
 
         return context
 
+    def contest_access_check(self, contest):
+        try:
+            contest.access_check(self.request.user)
+        except Contest.PrivateContest:
+            raise PrivateContestError(
+                contest.name,
+                contest.is_private,
+                contest.is_organization_private,
+                contest.organizations.all(),
+            )
+        except Contest.Inaccessible:
+            raise Http404()
+
     def get_object(self, queryset=None):
         contest = super(ContestMixin, self).get_object(queryset)
         profile = self.request.profile
@@ -377,19 +390,9 @@ class ContestMixin(object):
         if self.should_bypass_access_check(contest):
             return contest
 
-        try:
-            contest.access_check(self.request.user)
-        except Contest.PrivateContest:
-            raise PrivateContestError(
-                contest.name,
-                contest.is_private,
-                contest.is_organization_private,
-                contest.organizations.all(),
-            )
-        except Contest.Inaccessible:
-            raise Http404()
-        else:
-            return contest
+        self.contest_access_check(contest)
+
+        return contest
 
     def dispatch(self, request, *args, **kwargs):
         try:

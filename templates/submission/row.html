@@ -55,7 +55,7 @@
       {{ submission.language.short_display_name }}
     </div>
     <span class="time">{{ relative_time(submission.date, format=_("d/m/Y"))}}</span>
-    {% if not request.in_contest_mode and submission.contest_object_id %}
+    {% if not hide_contest_in_row and submission.contest_object_id %}
       <a href="{{ url('contest_view', submission.contest_object.key) }}"
         class="submission-contest">
         <i title="{{ submission.contest_object.name }}" class="fa fa-dot-circle-o"></i>

@@ -289,6 +289,8 @@
         padding: 0.8em 0.2em 0.8em 0.2em;
         display: inline-block;
         flex: 1;
+        min-width: 5em;
+        overflow-wrap: anywhere;
 
         .sidebar-icon {
             display: none;
@@ -301,6 +303,8 @@
         border-radius: 7px;
         display: flex;
         background: inherit;
+        gap: 0.3em;
+        overflow-x: scroll;
     }
 
     .blog-box {
@@ -363,10 +367,13 @@
         max-width: 11%;
         min-width: 11%;
         position: fixed;
-        height: 100%;
-        margin-top: -4em;
-        padding-top: 4em;
-        border-right: 1px;
+        height: calc(100vh - $navbar_height - 20px);
+        overflow-y: auto;
+
+        &::-webkit-scrollbar {
+            width: 0;
+            background-color: transparent;
+        }
     }
 
     .feed-table {

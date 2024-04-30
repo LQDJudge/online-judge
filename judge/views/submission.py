@@ -50,6 +50,7 @@ from judge.utils.views import DiggPaginatorMixin
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.utils.views import TitleMixin
 from judge.utils.timedelta import nice_repr
+from judge.views.contests import ContestMixin
 
 
 def submission_related(queryset):
@@ -308,6 +309,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     def access_check(self, request):
         pass
 
+    def hide_contest_in_row(self):
+        return self.request.in_contest_mode
+
     @cached_property
     def in_contest(self):
         return (
@@ -477,6 +481,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["friend_submissions_link"] = self.get_friend_submissions_page()
         context["all_submissions_link"] = self.get_all_submissions_page()
         context["page_type"] = self.page_type
+        context["hide_contest_in_row"] = self.hide_contest_in_row()
 
         context["in_hidden_subtasks_contest"] = self.in_hidden_subtasks_contest()
         if context["in_hidden_subtasks_contest"]:
@@ -847,6 +852,38 @@ class ForceContestMixin(object):
             raise ImproperlyConfigured(_("Must pass a contest"))
         self._contest = get_object_or_404(Contest, key=kwargs["contest"])
         return super(ForceContestMixin, self).get(request, *args, **kwargs)
+
+
+class ContestSubmissions(
+    LoginRequiredMixin, ContestMixin, ForceContestMixin, SubmissionsListBase
+):
+    check_contest_in_access_check = True
+    template_name = "contest/submissions.html"
+    context_object_name = "submissions"
+
+    def hide_contest_in_row(self):
+        return True
+
+    def access_check(self, request):
+        super().contest_access_check(self.contest)
+        super().access_check(request)
+
+    def get_title(self):
+        return _("Submissions in") + " " + self.contest.name
+
+    def get_content_title(self):
+        return format_html(
+            _('Submissions in <a href="{0}">{1}</a>'),
+            reverse("contest_view", args=[self.contest.key]),
+            self.contest.name,
+        )
+
+    def get_context_data(self, **kwargs):
+        self.object = self.contest
+        context = super(ContestSubmissions, self).get_context_data(**kwargs)
+        context["contest"] = self.contest
+        context["page_type"] = "submissions"
+        return context
 
 
 class UserContestSubmissions(ForceContestMixin, UserProblemSubmissions):
