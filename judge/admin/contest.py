@@ -316,10 +316,6 @@ class ContestAdmin(CompareVersionAdmin):
         # Only rescored if we did not already do so in `save_model`
         if not self._rescored and any(formset.has_changed() for formset in formsets):
             self._rescore(form.cleaned_data["key"])
-        obj = form.instance
-        obj.is_organization_private = obj.organizations.count() > 0
-        obj.is_private = obj.private_contestants.count() > 0
-        obj.save()
 
     def has_change_permission(self, request, obj=None):
         if not request.user.has_perm("judge.edit_own_contest"):

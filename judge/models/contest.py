@@ -2,11 +2,14 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models, transaction
 from django.db.models import CASCADE, Q
+from django.db.models.signals import m2m_changed
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.translation import gettext, gettext_lazy as _
 from django.contrib.contenttypes.fields import GenericRelation
+from django.dispatch import receiver
+
 from jsonfield import JSONField
 from lupa import LuaRuntime
 from moss import (
@@ -656,6 +659,20 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         )
         verbose_name = _("contest")
         verbose_name_plural = _("contests")
+
+
+@receiver(m2m_changed, sender=Contest.organizations.through)
+def update_organization_private(sender, instance, **kwargs):
+    if kwargs["action"] in ["post_add", "post_remove", "post_clear"]:
+        instance.is_organization_private = instance.organizations.exists()
+        instance.save(update_fields=["is_organization_private"])
+
+
+@receiver(m2m_changed, sender=Contest.private_contestants.through)
+def update_private(sender, instance, **kwargs):
+    if kwargs["action"] in ["post_add", "post_remove", "post_clear"]:
+        instance.is_private = instance.private_contestants.exists()
+        instance.save(update_fields=["is_private"])
 
 
 class ContestParticipation(models.Model):
