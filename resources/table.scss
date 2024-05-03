@@ -29,7 +29,7 @@
 
     tr:last-child td {
         border-color: $border_gray;
-        border-width: 1px 1px 1px 0;
+        border-bottom-width: 1px;
     }
 
     thead th {
