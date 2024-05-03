@@ -25,6 +25,7 @@ from judge.models import (
     SubmissionTestCase,
 )
 from judge.bridge.utils import VanishedSubmission
+from judge.caching import cache_wrapper
 
 logger = logging.getLogger("judge.bridge")
 json_log = logging.getLogger("judge.json.bridge")
@@ -144,16 +145,41 @@ class JudgeHandler(ZlibPacketHandler):
         self.problems = set(p for p, _ in problem_packet)
 
     def _update_judge_problems(self):
-        problem_codes = list(self.problems)
         chunk_size = 500
-        self.judge.problems.clear()
 
-        for i in range(0, len(problem_codes), chunk_size):
-            chunk = problem_codes[i : i + chunk_size]
-            problem_ids = Problem.objects.filter(code__in=chunk).values_list(
-                "id", flat=True
-            )
-            self.judge.problems.add(*problem_ids)
+        target_problem_codes = self.problems
+        current_problems = _get_judge_problems(self.judge)
+
+        updated = False
+        problems_to_add = list(target_problem_codes - current_problems)
+        problems_to_remove = list(current_problems - target_problem_codes)
+
+        if problems_to_add:
+            for i in range(0, len(problems_to_add), chunk_size):
+                chunk = problems_to_add[i : i + chunk_size]
+                problem_ids = Problem.objects.filter(code__in=chunk).values_list(
+                    "id", flat=True
+                )
+                if not problem_ids:
+                    continue
+                logger.info("%s: Add %d problems", self.name, len(problem_ids))
+                self.judge.problems.add(*problem_ids)
+                updated = True
+
+        if problems_to_remove:
+            for i in range(0, len(problems_to_remove), chunk_size):
+                chunk = problems_to_remove[i : i + chunk_size]
+                problem_ids = Problem.objects.filter(code__in=chunk).values_list(
+                    "id", flat=True
+                )
+                if not problem_ids:
+                    continue
+                logger.info("%s: Remove %d problems", self.name, len(problem_ids))
+                self.judge.problems.remove(*problem_ids)
+                updated = True
+
+        if updated:
+            _get_judge_problems.dirty(self.judge)
 
     def _connected(self):
         judge = self.judge = Judge.objects.get(name=self.name)
@@ -194,6 +220,8 @@ class JudgeHandler(ZlibPacketHandler):
     def _disconnected(self):
         Judge.objects.filter(id=self.judge.id).update(online=False)
         RuntimeVersion.objects.filter(judge=self.judge).delete()
+        self.judge.problems.clear()
+        _get_judge_problems.dirty(self.judge)
 
     def _update_ping(self):
         try:
@@ -931,3 +959,8 @@ class JudgeHandler(ZlibPacketHandler):
 
     def on_cleanup(self):
         db.connection.close()
+
+
+@cache_wrapper(prefix="gjp", timeout=3600)
+def _get_judge_problems(judge):
+    return set(judge.problems.values_list("code", flat=True))

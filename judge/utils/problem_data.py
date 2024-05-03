@@ -4,6 +4,7 @@ import os
 import re
 import yaml
 import zipfile
+import shutil
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -47,6 +48,10 @@ class ProblemDataStorage(FileSystemStorage):
 
     def rename(self, old, new):
         return os.rename(self.path(old), self.path(new))
+
+    def delete_directory(self, name):
+        directory_path = self.path(name)
+        shutil.rmtree(directory_path)
 
 
 class ProblemDataError(Exception):

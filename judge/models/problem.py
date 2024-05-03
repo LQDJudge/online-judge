@@ -561,23 +561,36 @@ class Problem(models.Model, PageVotable, Bookmarkable):
         cache.set(key, result)
         return result
 
+    def handle_code_change(self):
+        has_data = hasattr(self, "data_files")
+        has_pdf = bool(self.pdf_description)
+        if not has_data and not has_pdf:
+            return
+
+        try:
+            problem_data_storage.rename(self.__original_code, self.code)
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise
+
+        if has_pdf:
+            self.pdf_description.name = problem_directory_file_helper(
+                self.code, self.pdf_description.name
+            )
+            super().save(update_fields=["pdf_description"])
+
+        if has_data:
+            self.data_files._update_code(self.__original_code, self.code)
+
     def save(self, should_move_data=True, *args, **kwargs):
         code_changed = self.__original_code and self.code != self.__original_code
         super(Problem, self).save(*args, **kwargs)
         if code_changed and should_move_data:
-            if hasattr(self, "data_files") or self.pdf_description:
-                try:
-                    problem_data_storage.rename(self.__original_code, self.code)
-                except OSError as e:
-                    if e.errno != errno.ENOENT:
-                        raise
-                if self.pdf_description:
-                    self.pdf_description.name = problem_directory_file_helper(
-                        self.code, self.pdf_description.name
-                    )
-                    super().save(update_fields=["pdf_description"])
-                if hasattr(self, "data_files"):
-                    self.data_files._update_code(self.__original_code, self.code)
+            self.handle_code_change()
+
+    def delete(self, *args, **kwargs):
+        super().delete(*args, **kwargs)
+        problem_data_storage.delete_directory(self.code)
 
     save.alters_data = True
 
