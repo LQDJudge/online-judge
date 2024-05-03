@@ -964,7 +964,7 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
 
 ContestRankingProfile = namedtuple(
     "ContestRankingProfile",
-    "id user points cumtime tiebreaker participation "
+    "id user username points cumtime tiebreaker participation "
     "participation_rating problem_cells result_cell",
 )
 
@@ -985,6 +985,7 @@ def make_contest_ranking_profile(
     return ContestRankingProfile(
         id=user.id,
         user=user,
+        username=user.username,
         points=points,
         cumtime=cumtime,
         tiebreaker=participation.tiebreaker,

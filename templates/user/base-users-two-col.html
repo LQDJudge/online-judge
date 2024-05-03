@@ -24,8 +24,8 @@
 
   {% block before_table %}{% endblock %}
 
-  <div style="overflow-x: scroll;">
-    <table id="users-table" class="table">
+  <div style="overflow-x: auto;">
+    <table id="users-table" class="table striped no-border">
       {% block users_table %}{% endblock %}
     </table>
   </div>

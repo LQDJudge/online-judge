@@ -16,16 +16,18 @@
         background: white;
     }
 
+    &.no-border {
+        td, th {
+            border: none;
+        }
+    }
+
     td:first-child {
         border-color: $border_gray;
         border-width: 1px 1px 0 1px;
     }
 
     tr:last-child td {
-        &:first-child {
-            border: 1px solid $border_gray;
-        }
-
         border-color: $border_gray;
         border-width: 1px 1px 1px 0;
     }
