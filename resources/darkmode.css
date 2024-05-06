@@ -2941,6 +2941,8 @@ a.voted {
     color: rgb(152, 143, 129);
 }
 .list-contest {
+    background-color: rgb(24, 26, 27);
+    background-image: initial;
     box-shadow: rgb(49, 53, 55) 0px 1px 2px, rgb(49, 53, 55) 0px 1px 5px;
 }
 #contest-calendar th {
