@@ -158,15 +158,6 @@ class ContestList(
             return request.session.get(key, False)
         return request.GET.get(key, None) == "1"
 
-    def update_session(self, request):
-        to_update = ("show_orgs",)
-        for key in to_update:
-            if key in request.GET:
-                val = request.GET.get(key) == "1"
-                request.session[key] = val
-            else:
-                request.session[key] = False
-
     def get(self, request, *args, **kwargs):
         self.contest_query = None
         self.org_query = []
@@ -191,8 +182,17 @@ class ContestList(
             except ValueError:
                 pass
 
-        self.update_session(request)
         return super(ContestList, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        to_update = ("show_orgs",)
+        for key in to_update:
+            if key in request.GET:
+                val = request.GET.get(key) == "1"
+                request.session[key] = val
+            else:
+                request.session[key] = False
+        return HttpResponseRedirect(request.get_full_path())
 
     def _get_queryset(self):
         queryset = (

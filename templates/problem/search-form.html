@@ -47,7 +47,7 @@
         </div>
       {% endif %}
       <div class="filter-form-group">
-        <label class="bold-text margin-label" for="type"><i class="non-italics">{{ _('Author') }}</i></label>
+        <label class="bold-text margin-label" for="search-author"><i class="non-italics">{{ _('Author') }}</i></label>
         <select id="search-author" name="authors" multiple>
           {% for author in author_query %}
             <option value="{{ author.id }}" selected>

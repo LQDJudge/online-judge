@@ -863,6 +863,8 @@ noscript #noscript {
 
 .margin-label{
     margin-bottom: 2.5px;
+    padding-bottom: 0.25em;
+    display: block;
 }
 
 ::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */

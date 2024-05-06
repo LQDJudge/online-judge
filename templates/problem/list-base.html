@@ -86,10 +86,8 @@
         }
 
         $category.select2().css({'visibility': 'visible'}).change(clean_submit);
-        $('#types').select2({multiple: 1, placeholder: '{{ _('Filter by type...') }}'})
-          .css({'visibility': 'visible'});
-        $('#search-org').select2({multiple: 1, placeholder: '{{ _('Groups') }}...'})
-          .css({'visibility': 'visible'});
+        $('#types').select2({multiple: 1, placeholder: '{{ _('Filter by type...') }}'});
+        $('#search-org').select2({multiple: 1, placeholder: '{{ _('Groups') }}...'});
         $('#search-author').select2({
           multiple: 1,
           placeholder: '{{ _('Authors') }}...',
@@ -98,8 +96,7 @@
             delay: 250,
             cache: true,
           }
-        })
-          .css({'visibility': 'visible'});
+        });
 
         // This is incredibly nasty to do but it's needed because otherwise the select2 steals the focus
         $search.keypress(function (e) {
@@ -157,8 +154,7 @@
           $(".edit-btn").on('click', function() {
             var pid = $(this).attr('pid');
             $('#volunteer-types-' + pid).css({'width': '100%'});
-            $('#volunteer-types-' + pid).select2({multiple: 1, placeholder: '{{ _('Add types...') }}'})
-              .css({'visibility': 'visible'});
+            $('#volunteer-types-' + pid).select2({multiple: 1, placeholder: '{{ _('Add types...') }}'});
 
             $('#form-' + pid).show();
             $('#submit-' + pid).show();
