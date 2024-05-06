@@ -427,10 +427,12 @@ class OrganizationContests(
         context["page_type"] = "contests"
         context["hide_contest_orgs"] = True
         context.pop("organizations")
-        context["create_url"] = reverse(
-            "organization_contest_add",
-            args=[self.organization.id, self.organization.slug],
-        )
+
+        if self.can_edit_organization(self.organization):
+            context["create_url"] = reverse(
+                "organization_contest_add",
+                args=[self.organization.id, self.organization.slug],
+            )
 
         for participation in context["active_participations"]:
             self.set_editable_contest(participation.contest)
