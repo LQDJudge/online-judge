@@ -133,7 +133,7 @@ class BlogPost(models.Model, PageVotable, Bookmarkable):
             and self.authors.filter(id=user.profile.id).exists()
         )
 
-    @cache_wrapper(prefix="BPga")
+    @cache_wrapper(prefix="BPga", expected_type=models.query.QuerySet)
     def get_authors(self):
         return self.authors.only("id")
 

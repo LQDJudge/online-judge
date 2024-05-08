@@ -581,7 +581,7 @@ def on_user_save(sender, instance, **kwargs):
         pass
 
 
-@cache_wrapper(prefix="Pgbi3")
+@cache_wrapper(prefix="Pgbi3", expected_type=dict)
 def _get_basic_info(profile_id):
     profile = (
         Profile.objects.select_related("user")

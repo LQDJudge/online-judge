@@ -49,7 +49,7 @@ class PageVoteVoter(models.Model):
         verbose_name_plural = _("pagevote votes")
 
 
-@cache_wrapper(prefix="gocp")
+@cache_wrapper(prefix="gocp", expected_type=PageVote)
 def _get_or_create_pagevote(content_type, object_id):
     pagevote, created = PageVote.objects.get_or_create(
         content_type=content_type,

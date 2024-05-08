@@ -167,7 +167,7 @@ def editable_problems(user, profile=None):
     return subquery
 
 
-@cache_wrapper(prefix="hp", timeout=900)
+@cache_wrapper(prefix="hp", timeout=14400)
 def hot_problems(duration, limit):
     qs = Problem.get_public_problems().filter(
         submission__date__gt=timezone.now() - duration
@@ -224,7 +224,7 @@ def hot_problems(duration, limit):
     return qs
 
 
-@cache_wrapper(prefix="grp", timeout=26400)
+@cache_wrapper(prefix="grp", timeout=14400)
 def get_related_problems(profile, problem, limit=8):
     if not profile or not settings.ML_OUTPUT_PATH:
         return None

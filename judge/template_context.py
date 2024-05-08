@@ -7,6 +7,8 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.utils.functional import SimpleLazyObject, new_method_proxy
 
+from mptt.querysets import TreeQuerySet
+
 from .models import MiscConfig, NavigationBar, Profile
 from judge.caching import cache_wrapper
 
@@ -52,7 +54,7 @@ def comet_location(request):
     return {"EVENT_DAEMON_LOCATION": websocket, "EVENT_DAEMON_POLL_LOCATION": poll}
 
 
-@cache_wrapper(prefix="nb")
+@cache_wrapper(prefix="nb", expected_type=TreeQuerySet)
 def _nav_bar():
     return NavigationBar.objects.all()
 

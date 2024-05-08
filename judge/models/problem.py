@@ -440,7 +440,7 @@ class Problem(models.Model, PageVotable, Bookmarkable):
             "profile_id", flat=True
         )
 
-    @cache_wrapper(prefix="Pga")
+    @cache_wrapper(prefix="Pga", expected_type=models.query.QuerySet)
     def get_authors(self):
         return self.authors.only("id")
 

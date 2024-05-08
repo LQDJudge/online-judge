@@ -23,7 +23,7 @@ class BookMark(models.Model):
     linked_object = GenericForeignKey("content_type", "object_id")
 
     @cache_wrapper(prefix="BMgb")
-    def get_bookmark(self, user):
+    def is_bookmarked_by(self, user):
         return MakeBookMark.objects.filter(bookmark=self, user=user).exists()
 
     class Meta:
@@ -53,7 +53,7 @@ class MakeBookMark(models.Model):
         verbose_name_plural = _("make bookmarks")
 
 
-@cache_wrapper(prefix="gocb")
+@cache_wrapper(prefix="gocb", expected_type=BookMark)
 def _get_or_create_bookmark(content_type, object_id):
     bookmark, created = BookMark.objects.get_or_create(
         content_type=content_type,
@@ -70,5 +70,5 @@ class Bookmarkable:
 
 
 def dirty_bookmark(bookmark, profile):
-    bookmark.get_bookmark.dirty(bookmark, profile)
+    bookmark.is_bookmarked_by.dirty(bookmark, profile)
     _get_or_create_bookmark.dirty(bookmark.content_type, bookmark.object_id)

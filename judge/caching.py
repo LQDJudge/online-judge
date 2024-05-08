@@ -5,6 +5,8 @@ from django.core.handlers.wsgi import WSGIRequest
 
 import hashlib
 
+from judge.logging import log_debug
+
 MAX_NUM_CHAR = 50
 NONE_RESULT = "__None__"
 
@@ -26,7 +28,7 @@ def filter_args(args_list):
 l0_cache = caches["l0"] if "l0" in caches else None
 
 
-def cache_wrapper(prefix, timeout=None):
+def cache_wrapper(prefix, timeout=None, expected_type=None):
     def get_key(func, *args, **kwargs):
         args_list = list(args)
         signature_args = list(signature(func).parameters.keys())
@@ -54,10 +56,23 @@ def cache_wrapper(prefix, timeout=None):
         cache.set(key, value, timeout)
 
     def decorator(func):
+        def _validate_type(cache_key, result):
+            if expected_type and not isinstance(result, expected_type):
+                data = {
+                    "function": f"{func.__module__}.{func.__qualname__}",
+                    "result": str(result)[:30],
+                    "expected_type": expected_type,
+                    "type": type(result),
+                    "key": cache_key,
+                }
+                log_debug("invalid_key", data)
+                return False
+            return True
+
         def wrapper(*args, **kwargs):
             cache_key = get_key(func, *args, **kwargs)
             result = _get(cache_key)
-            if result is not None:
+            if result is not None and _validate_type(cache_key, result):
                 _set_l0(cache_key, result)
                 if type(result) == str and result == NONE_RESULT:
                     result = None
