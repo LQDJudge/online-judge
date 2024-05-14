@@ -491,6 +491,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
 
         self.selected_languages = request.GET.getlist("language")
         self.selected_statuses = request.GET.getlist("status")
+        self.selected_languages_key = []
 
         if self.selected_languages:
             languages = Language.objects.filter(key__in=self.selected_languages).values(
