@@ -24,6 +24,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
+from django.utils.datastructures import MultiValueDictKeyError
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, UpdateView, View
 from django.views.generic.base import TemplateResponseMixin
@@ -130,7 +131,7 @@ def get_comments(request, limit=10):
     try:
         comment_id = int(request.GET["id"])
         parent_none = int(request.GET["parent_none"])
-    except ValueError:
+    except (ValueError, MultiValueDictKeyError):
         return HttpResponseBadRequest()
     else:
         if comment_id and not Comment.objects.filter(id=comment_id).exists():
@@ -138,7 +139,10 @@ def get_comments(request, limit=10):
 
     offset = 0
     if "offset" in request.GET:
-        offset = int(request.GET["offset"])
+        try:
+            offset = int(request.GET["offset"])
+        except ValueError:
+            return HttpResponseBadRequest()
 
     target_comment = -1
     if "target_comment" in request.GET:

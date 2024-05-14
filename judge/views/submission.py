@@ -51,6 +51,7 @@ from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.utils.views import TitleMixin
 from judge.utils.timedelta import nice_repr
 from judge.views.contests import ContestMixin
+from judge.caching import cache_wrapper
 
 
 def submission_related(queryset):
@@ -380,17 +381,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                 )
 
         if self.selected_languages:
-            # Note (DMOJ): MariaDB can't optimize this subquery for some insane, unknown reason,
-            # so we are forcing an eager evaluation to get the IDs right here.
-            # Otherwise, with multiple language filters, MariaDB refuses to use an index
-            # (or runs the subquery for every submission, which is even more horrifying to think about).
-            queryset = queryset.filter(
-                language__in=list(
-                    Language.objects.filter(
-                        key__in=self.selected_languages
-                    ).values_list("id", flat=True)
-                )
-            )
+            queryset = queryset.filter(language__in=self.selected_languages)
         if self.selected_statuses:
             submission_results = [i for i, _ in Submission.RESULT]
             if self.selected_statuses[0] in submission_results:
@@ -461,7 +452,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["show_problem"] = self.show_problem
         context["profile"] = self.request.profile
         context["all_languages"] = Language.objects.all().values_list("key", "name")
-        context["selected_languages"] = self.selected_languages
+        context["selected_languages"] = self.selected_languages_key
         context["all_statuses"] = self.get_searchable_status_codes()
         context["selected_statuses"] = self.selected_statuses
 
@@ -500,6 +491,18 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
 
         self.selected_languages = request.GET.getlist("language")
         self.selected_statuses = request.GET.getlist("status")
+
+        if self.selected_languages:
+            languages = Language.objects.filter(key__in=self.selected_languages).values(
+                "id", "key"
+            )
+            self.selected_languages = [i["id"] for i in languages]
+            self.selected_languages_key = [i["key"] for i in languages]
+        if self.selected_statuses:
+            allowed_statuses = [i for i, _ in Submission.RESULT + Submission.STATUS]
+            self.selected_statuses = [
+                i for i in self.selected_statuses if i in allowed_statuses
+            ]
 
         if self.in_contest and self.contest.is_editable_by(self.request.user):
             self.include_frozen = True
@@ -795,28 +798,9 @@ class AllSubmissions(InfinitePaginationMixin, GeneralSubmissions):
         if self.request.organization or self.in_contest:
             return super(AllSubmissions, self)._get_result_data()
 
-        key = "global_submission_result_data"
-        if self.selected_statuses:
-            key += ":" + ",".join(self.selected_statuses)
-        if self.selected_languages:
-            key += ":" + ",".join(self.selected_languages)
-        result = cache.get(key)
-        if result:
-            return result
-        queryset = Submission.objects
-        if self.selected_languages:
-            queryset = queryset.filter(
-                language__in=Language.objects.filter(key__in=self.selected_languages)
-            )
-        if self.selected_statuses:
-            submission_results = [i for i, _ in Submission.RESULT]
-            if self.selected_statuses[0] in submission_results:
-                queryset = queryset.filter(result__in=self.selected_statuses)
-            else:
-                queryset = queryset.filter(status__in=self.selected_statuses)
-        result = get_result_data(queryset)
-        cache.set(key, result, self.stats_update_interval)
-        return result
+        return _get_global_submission_result_data(
+            self.selected_statuses, self.selected_languages
+        )
 
 
 class ForceContestMixin(object):
@@ -1071,3 +1055,19 @@ class SubmissionSourceFileView(View):
         response["Content-Type"] = "application/octet-stream"
         response["Content-Disposition"] = "attachment; filename=%s" % (filename,)
         return response
+
+
+@cache_wrapper(prefix="gsrd", timeout=3600, expected_type=dict)
+def _get_global_submission_result_data(statuses, languages):
+    queryset = Submission.objects
+    if languages:
+        queryset = queryset.filter(
+            language__in=Language.objects.filter(id__in=languages)
+        )
+    if statuses:
+        submission_results = [i for i, _ in Submission.RESULT]
+        if statuses[0] in submission_results:
+            queryset = queryset.filter(result__in=statuses)
+        else:
+            queryset = queryset.filter(status__in=statuses)
+    return get_result_data(queryset)
