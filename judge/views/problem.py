@@ -949,6 +949,12 @@ class LanguageTemplateAjax(View):
 class RandomProblem(ProblemList):
     def get(self, request, *args, **kwargs):
         self.setup_problem_list(request)
+
+        try:
+            return super().get(request, *args, **kwargs)
+        except ProgrammingError as e:
+            return generic_message(request, "FTS syntax error", e.args[1], status=400)
+
         if self.in_contest:
             raise Http404()
 
