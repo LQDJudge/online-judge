@@ -43,6 +43,10 @@
     background-color: #f3f3f3;
 }
 
+.organization-row:last-child {
+    border-bottom: none;
+}
+
 .organization-container {
     border: 1px #ccc solid;
     margin-bottom: 3em;
@@ -53,4 +57,3 @@
     display: block;
     color: gray;
 }
-
