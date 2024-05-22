@@ -147,6 +147,7 @@ def recalculate_ratings(ranking, old_mean, times_ranked, historical_p):
 def rate_contest(contest):
     from judge.models import Rating, Profile
     from judge.models.profile import _get_basic_info
+    from judge.utils.users import get_contest_ratings
 
     rating_subquery = Rating.objects.filter(user=OuterRef("user"))
     rating_sorted = rating_subquery.order_by("-contest__end_time")
@@ -239,6 +240,7 @@ def rate_contest(contest):
         )
 
     _get_basic_info.dirty_multi([(uid,) for uid in user_ids])
+    get_contest_ratings.dirty_multi([(uid,) for uid in user_ids])
 
 
 RATING_LEVELS = [

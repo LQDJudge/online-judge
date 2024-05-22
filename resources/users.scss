@@ -513,3 +513,77 @@ a.edit-profile {
 .user-stat-header {
     color: gray;
 }
+
+.profile-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s;
+
+    &:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-header {
+        background-color: #f7f7f7;
+        text-align: center;
+        padding: 5px;
+    }
+
+    .avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+    }
+
+    .card-body {
+        padding: 20px;
+        padding-bottom: 5px;
+    }
+
+    .user-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    .user-info-body {
+        font-weight: bold;
+    }
+
+    /* Medals Container */
+    .medals-container {
+        display: flex;
+        justify-content: center;
+        padding: 10px;
+        padding-top: 0px;
+        gap: 5px;
+    }
+
+    /* Medal Item */
+    .medal-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+
+        img {
+            width: 70px; /* Adjust size based on your actual image size */
+            height: auto;
+        }
+    }
+
+    .medal-count {
+        background-color: hsla(30, 4%, 91%, .7);
+        border-radius: 50%;
+        bottom: .5rem;
+        color: black;
+        font-size: 1em;
+        line-height: 1;
+        padding: 0.8em 0;
+        right: .5rem;
+        text-align: center;
+        width: 2.5em;
+    }
+}

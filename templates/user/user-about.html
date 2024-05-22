@@ -42,15 +42,15 @@
       {% if not user.is_unlisted %}
         <div class="user-info-card">
           <div class="user-info">
-            <div class="user-info-header" title="{{_('Rank by rating')}}"><i class="fa fa-globe peru" ></i> {{_('Rating')}}</div>
+            <div class="user-info-header" title="{{_('Rank by rating')}}"><i class="fa fa-globe peru" ></i> {{_('Rating')}} #</div>
             <div class="user-info-body">{{rating_rank if rating_rank else '-'}}</div>
           </div>
         </div>
       {% endif %}
       <div class="user-info-card">
         <div class="user-info">
-          <div class="user-info-header" title="{{_('Rank by points')}}"><i class="fa fa-globe blue" ></i> {{_('Points')}}</div>
-          <div class="user-info-body">{{rank}}</div>
+          <div class="user-info-header" title="{{_('Rank by points')}}"><i class="fa fa-globe blue" ></i> {{_('Points')}} #</div>
+          <div class="user-info-body">{{points_rank}}</div>
         </div>
       </div>
     </div>
@@ -86,7 +86,7 @@
       <br>
       <div id="awards">
         <h4>{{_('Awards')}}</h4>
-        {% for medal in awards.medals %}
+        {% for medal in awards %}
           {% if medal.ranking == 1 %}
             {% set medal_url = static('awards/gold-medal.png') %}
           {% elif medal.ranking == 2%}

@@ -2,15 +2,15 @@
 {% block three_col_media %}
   {% include "blog/media-css.html" %}
   <style>
-    @media (max-width: 799px) {
-      .title {
-        clear: both;
-      }
-    }
-
     .no-clarifications-message {
       font-style: italic;
       text-align: center;
+    }
+
+    .org-logo {
+      height: 2em;
+      width: 2em;
+      margin-right: 0.5em;
     }
   </style>
 {% endblock %}
@@ -98,7 +98,8 @@
       </div>
     {% endif %}
     {% include 'contests-countdown.html' %}
-    {% include 'recent-organization.html' %}
+    {% include 'profile-table.html' %}
     {% include 'top-users.html' %}
+    {% include 'recent-organization.html' %}
   </div>
 {% endblock %}

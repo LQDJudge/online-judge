@@ -43,6 +43,12 @@ from judge.tasks import import_users
 from judge.utils.problems import contest_completed_ids, user_completed_ids
 from judge.utils.ranker import ranker
 from judge.utils.unicode import utf8text
+from judge.utils.users import (
+    get_rating_rank,
+    get_points_rank,
+    get_awards,
+    get_contest_ratings,
+)
 from judge.utils.views import (
     QueryStringSortMixin,
     TitleMixin,
@@ -142,22 +148,10 @@ class UserPage(TitleMixin, UserMixin, DetailView):
         rating = self.object.ratings.order_by("-contest__end_time")[:1]
         context["rating"] = rating[0] if rating else None
 
-        context["rank"] = (
-            Profile.objects.filter(
-                is_unlisted=False,
-                performance_points__gt=self.object.performance_points,
-            ).count()
-            + 1
-        )
+        context["points_rank"] = get_points_rank(self.object)
 
         if rating:
-            context["rating_rank"] = (
-                Profile.objects.filter(
-                    is_unlisted=False,
-                    rating__gt=self.object.rating,
-                ).count()
-                + 1
-            )
+            context["rating_rank"] = get_rating_rank(self.object)
             context["rated_users"] = Profile.objects.filter(
                 is_unlisted=False, rating__isnull=False
             ).count()
@@ -185,42 +179,9 @@ EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 class UserAboutPage(UserPage):
     template_name = "user/user-about.html"
 
-    def get_awards(self, ratings):
-        result = {}
-
-        sorted_ratings = sorted(
-            ratings, key=lambda x: (x.rank, -x.contest.end_time.timestamp())
-        )
-
-        result["medals"] = [
-            {
-                "label": rating.contest.name,
-                "ranking": rating.rank,
-                "link": reverse("contest_ranking", args=(rating.contest.key,))
-                + "#!"
-                + self.object.username,
-                "date": date_format(rating.contest.end_time, _("M j, Y")),
-            }
-            for rating in sorted_ratings
-            if rating.rank <= 3
-        ]
-
-        num_awards = 0
-        for i in result:
-            num_awards += len(result[i])
-
-        if num_awards == 0:
-            result = None
-
-        return result
-
     def get_context_data(self, **kwargs):
         context = super(UserAboutPage, self).get_context_data(**kwargs)
-        ratings = context["ratings"] = (
-            self.object.ratings.order_by("-contest__end_time")
-            .select_related("contest")
-            .defer("contest__description")
-        )
+        ratings = context["ratings"] = get_contest_ratings(self.object)
 
         context["rating_data"] = mark_safe(
             json.dumps(
@@ -244,7 +205,7 @@ class UserAboutPage(UserPage):
             )
         )
 
-        context["awards"] = self.get_awards(ratings)
+        context["awards"] = get_awards(self.object)
 
         if ratings:
             user_data = self.object.ratings.aggregate(Min("rating"), Max("rating"))

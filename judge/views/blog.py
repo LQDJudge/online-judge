@@ -25,6 +25,7 @@ from judge.utils.cachedict import CacheDict
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.tickets import filter_visible_tickets
 from judge.utils.views import TitleMixin
+from judge.utils.users import get_rating_rank, get_points_rank, get_awards
 from judge.views.feed import FeedView
 
 
@@ -81,6 +82,26 @@ class HomeFeedView(FeedView):
         )
         Profile.prefetch_profile_cache([p.id for p in context["top_rated"]])
         Profile.prefetch_profile_cache([p.id for p in context["top_scorer"]])
+
+        if self.request.user.is_authenticated:
+            context["rating_rank"] = get_rating_rank(self.request.profile)
+            context["points_rank"] = get_points_rank(self.request.profile)
+
+            medals_list = get_awards(self.request.profile)
+            context["awards"] = {
+                "medals": medals_list,
+                "gold_count": 0,
+                "silver_count": 0,
+                "bronze_count": 0,
+            }
+            for medal in medals_list:
+                if medal["ranking"] == 1:
+                    context["awards"]["gold_count"] += 1
+                elif medal["ranking"] == 2:
+                    context["awards"]["silver_count"] += 1
+                elif medal["ranking"] == 3:
+                    context["awards"]["bronze_count"] += 1
+
         return context
 
 
