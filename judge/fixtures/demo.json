@@ -17,7 +17,7 @@
             "problem_count": 0,
             "rating": null,
             "timezone": "America/Toronto",
-            "user": 1,
+            "user": 1
         },
         "model": "judge.profile",
         "pk": 1
