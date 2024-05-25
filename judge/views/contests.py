@@ -140,9 +140,9 @@ class ContestList(
     paginate_by = 10
     template_name = "contest/list.html"
     title = gettext_lazy("Contests")
-    context_object_name = "past_contests"
     all_sorts = frozenset(("name", "user_count", "start_time"))
     default_desc = frozenset(("name", "user_count"))
+    context_object_name = "contests"
 
     def get_default_sort_order(self, request):
         if request.GET.get("contest") and settings.ENABLE_FTS:
@@ -159,6 +159,11 @@ class ContestList(
         return request.GET.get(key, None) == "1"
 
     def get(self, request, *args, **kwargs):
+        default_tab = "active"
+        if not self.request.user.is_authenticated:
+            default_tab = "current"
+        self.current_tab = self.request.GET.get("tab", default_tab)
+
         self.contest_query = None
         self.org_query = []
         self.show_orgs = 0
@@ -225,43 +230,63 @@ class ContestList(
 
         return queryset
 
-    def get_queryset(self):
+    def _get_past_contests_queryset(self):
         return (
             self._get_queryset()
-            .order_by(self.order, "key")
             .filter(end_time__lt=self._now)
+            .order_by(self.order, "key")
         )
+
+    def _active_participations(self):
+        return ContestParticipation.objects.filter(
+            virtual=0,
+            user=self.request.profile,
+            contest__start_time__lte=self._now,
+            contest__end_time__gte=self._now,
+        )
+
+    @cached_property
+    def _active_contests_ids(self):
+        return self._active_participations().values_list("contest_id", flat=True)
+
+    def _get_current_contests_queryset(self):
+        return (
+            self._get_queryset()
+            .exclude(id__in=self._active_contests_ids)
+            .filter(start_time__lte=self._now, end_time__gte=self._now)
+            .order_by(self.order, "key")
+        )
+
+    def _get_future_contests_queryset(self):
+        return (
+            self._get_queryset()
+            .filter(start_time__gt=self._now)
+            .order_by("start_time", "key")
+        )
+
+    def _get_active_participations_queryset(self):
+        active_contests = self._get_queryset().filter(id__in=self._active_contests_ids)
+        return self._active_participations().filter(contest_id__in=active_contests)
+
+    def get_queryset(self):
+        if self.current_tab == "past":
+            return self._get_past_contests_queryset()
+        elif self.current_tab == "current":
+            return self._get_current_contests_queryset()
+        elif self.current_tab == "future":
+            return self._get_future_contests_queryset()
+        else:  # Default to active
+            return self._get_active_participations_queryset()
 
     def get_context_data(self, **kwargs):
         context = super(ContestList, self).get_context_data(**kwargs)
-        present, active, future = [], [], []
-        if not context["page_obj"] or context["page_obj"].number == 1:
-            for contest in self._get_queryset().exclude(end_time__lt=self._now):
-                if contest.start_time > self._now:
-                    future.append(contest)
-                else:
-                    present.append(contest)
 
-            if self.request.user.is_authenticated:
-                for participation in (
-                    ContestParticipation.objects.filter(
-                        virtual=0, user=self.request.profile, contest_id__in=present
-                    )
-                    .select_related("contest")
-                    .annotate(key=F("contest__key"))
-                ):
-                    if not participation.ended:
-                        active.append(participation)
-                        present.remove(participation.contest)
+        context["current_tab"] = self.current_tab
 
-            if not ("contest" in self.request.GET and settings.ENABLE_FTS):
-                active.sort(key=attrgetter("end_time", "key"))
-                present.sort(key=attrgetter("end_time", "key"))
-                future.sort(key=attrgetter("start_time"))
+        context["current_count"] = self._get_current_contests_queryset().count()
+        context["future_count"] = self._get_future_contests_queryset().count()
+        context["active_count"] = self._get_active_participations_queryset().count()
 
-        context["active_participations"] = active
-        context["current_contests"] = present
-        context["future_contests"] = future
         context["now"] = self._now
         context["first_page_href"] = "."
         context["contest_query"] = self.contest_query

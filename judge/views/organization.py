@@ -434,14 +434,12 @@ class OrganizationContests(
                 args=[self.organization.id, self.organization.slug],
             )
 
-        for participation in context["active_participations"]:
-            self.set_editable_contest(participation.contest)
-        for contest in context["past_contests"]:
-            self.set_editable_contest(contest)
-        for contest in context["current_contests"]:
-            self.set_editable_contest(contest)
-        for contest in context["future_contests"]:
-            self.set_editable_contest(contest)
+        if self.current_tab == "active":
+            for participation in context["contests"]:
+                self.set_editable_contest(participation.contest)
+        else:
+            for contest in context["contests"]:
+                self.set_editable_contest(contest)
         return context
 
 
