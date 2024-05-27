@@ -247,7 +247,11 @@ class ContestList(
 
     @cached_property
     def _active_contests_ids(self):
-        return self._active_participations().values_list("contest_id", flat=True)
+        return [
+            participation.contest_id
+            for participation in self._active_participations().select_related("contest")
+            if not participation.ended
+        ]
 
     def _get_current_contests_queryset(self):
         return (
