@@ -134,112 +134,7 @@
   </div>
 {% endblock %}
 
-{% macro contest_head(contest) %}
-  <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title" style="margin-right: 5px;">
-    {{contest.name}}
-  </a>
-  <div class="contest-tags">
-    {% if not contest.is_visible %}
-      <span class="contest-tag contest-tag-hidden">
-        <i class="fa fa-eye-slash"></i> {{ _('hidden') }}
-      </span>
-    {% endif %}
-    {% if contest.is_editable %}
-      <span class="contest-tag contest-tag-edit">
-        <a href="{{ url('organization_contest_edit', organization.id, organization.slug, contest.key) }}" class="white">
-          <i class="fa fa-edit"></i> {{ _('Edit') }}
-        </a>
-      </span>
-    {% endif %}
-    {% if contest.is_private %}
-      <span class="contest-tag contest-tag-private">
-        <i class="fa fa-lock"></i> {{ _('private') }}
-      </span>
-    {% endif %}
-    {% if not hide_contest_orgs %}
-      {% if contest.is_organization_private %}
-        {% for org in contest.organizations.all() %}
-          {% include "organization/tag.html" %}
-        {% endfor %}
-      {% endif %}
-    {% endif %}
-    {% if contest.is_rated %}
-      <span class="contest-tag contest-tag-rated">
-        <i class="fa fa-bar-chart"></i> {{ _('rated') }}
-      </span>
-    {% endif %}
-    {% for tag in contest.tags.all() %}
-      <span style="background-color: {{ tag.color }}" class="contest-tag">
-        <a href="{{ url('contest_tag', tag.name) }}"
-          style="color: {{ tag.text_color }}"
-          data-featherlight="{{ url('contest_tag_ajax', tag.name) }}">
-          {{- tag.name -}}
-        </a>
-      </span>
-    {% endfor %}
-  </div>
-{% endmacro %}
-
-{% macro time_left(contest) %}
-  <div class="time-left">
-    {% if contest.time_limit %}
-      <div>
-        <b>{{_("Start")}}</b>: {{ contest.start_time|date(_("H:i d/m/Y")) }}
-      </div>
-      <div>
-        <b>{{_("End")}}</b>: {{ contest.end_time|date(_("H:i d/m/Y")) }}
-      </div>
-    {% else %}
-      <div>
-        <b>{{_("Start")}}</b>: {{ contest.start_time|date(_("H:i d/m/Y")) }}
-      </div>
-    {% endif %}
-    <div>
-      <b>{{_("Length")}}</b>:
-      {% if contest.time_limit %}
-        {% trans time_limit=contest.time_limit|timedelta('localized-no-seconds') %}{{ time_limit }}{% endtrans %}
-      {% else %}
-        {% trans duration=contest.contest_window_length|timedelta('localized-no-seconds') %}{{ duration }}{% endtrans %}
-      {% endif %}
-    </div>
-  </div>
-{% endmacro %}
-
-{% macro user_count(contest, user) %}
-  {% if contest.can_see_own_scoreboard(user) %}
-    <a href="{{ url('contest_ranking', contest.key) }}"><i class="fa fa-users"></i> {{ contest.user_count }}</a>
-  {% else %}
-    <i class="fa fa-users"></i>{{ contest.user_count }}
-  {% endif %}
-{% endmacro %}
-
-{% macro contest_join(contest, request) %}
-  {% if request.in_contest and request.participation.contest == contest %}
-    <button class="small" disabled>{{ _('In contest') }}</button>
-  {% elif request.profile.id in contest.editor_ids or request.profile.id in contest.tester_ids %}
-    <form action="{{ url('contest_join', contest.key) }}" method="post">
-      {% csrf_token %}
-      <input type="submit" class="unselectable button full small"
-        value="{{ _('Spectate') }}">
-    </form>
-  {% else %}
-    <form action="{{ url('contest_join', contest.key) }}" method="post">
-      {% csrf_token %}
-      <input type="submit" class="unselectable button full small join-warning"
-        value="{{ _('Join') }}">
-    </form>
-  {% endif %}
-{% endmacro %}
-
-{% macro contest_format_user(contest, show_user=True) %}
-  <div style="display: flex; flex-direction: column; height: 100%;">
-    <div class="contest-title"> {{ _('Format') }} </div>
-    <div style="flex-grow: 1">{{ contest.format.name }}</div>
-    {% if show_user %}
-      <div class="contest-title">{{ user_count(contest, request.user) }}</div>
-    {% endif %}
-  </div>
-{% endmacro %}
+{% from "contest/macros.html" import contest_head, time_left, user_count, contest_join, contest_format_user %}
 
 {% block middle_content %}
   <div class="tabs tabs-no-flex" style="width: 100%;margin-left: auto;margin-right: auto;">
@@ -298,7 +193,7 @@
               </div>
             </div>
             <div class="info-contest" style="flex: 0.5;">
-              {{ contest_format_user(contest) }}
+              {{ contest_format_user(contest, request) }}
             </div>
             <div class="participate-button">
               {{ contest_join(contest, request) }}
@@ -336,7 +231,7 @@
             </div>
           </div>
           <div class="info-contest" style="flex: 0.5;">
-            {{ contest_format_user(contest) }}
+            {{ contest_format_user(contest, request) }}
           </div>
           <div class="participate-button">
             {{ contest_join(contest, request) }}
@@ -373,7 +268,7 @@
             </div>
           </div>
           <div class="info-contest" style="flex: 0.5;">
-            {{ contest_format_user(contest, show_user=False) }}
+            {{ contest_format_user(contest, request, show_user=False) }}
           </div>
         </div>
       {% endfor %}
@@ -402,7 +297,7 @@
             </div>
           </div>
           <div class="info-contest" style="flex: 0.5;">
-            {{ contest_format_user(contest) }}
+            {{ contest_format_user(contest, request) }}
           </div>
           <div class="participate-button">
             {% if request.in_contest and request.participation.contest == contest %}

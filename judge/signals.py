@@ -24,6 +24,7 @@ from .models import (
     Profile,
     Submission,
     NavigationBar,
+    Solution,
 )
 
 
@@ -120,14 +121,7 @@ def comment_update(sender, instance, **kwargs):
 
 @receiver(post_save, sender=BlogPost)
 def post_update(sender, instance, **kwargs):
-    cache.delete_many(
-        [
-            make_template_fragment_key("post_summary", (instance.id,)),
-            "blog_slug:%d" % instance.id,
-            "blog_feed:%d" % instance.id,
-        ]
-        + [make_template_fragment_key("post_content", (instance.id,))]
-    )
+    cache.delete(make_template_fragment_key("post_content", (instance.id,)))
     BlogPost.get_authors.dirty(instance)
 
 
@@ -175,3 +169,8 @@ def contest_submission_update(sender, instance, **kwargs):
 @receiver(post_save, sender=NavigationBar)
 def navbar_update(sender, instance, **kwargs):
     judge.template_context._nav_bar.dirty()
+
+
+@receiver(post_save, sender=Solution)
+def solution_update(sender, instance, **kwargs):
+    cache.delete(make_template_fragment_key("solution_content", (instance.id,)))
