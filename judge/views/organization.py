@@ -425,7 +425,6 @@ class OrganizationContests(
     def get_context_data(self, **kwargs):
         context = super(OrganizationContests, self).get_context_data(**kwargs)
         context["page_type"] = "contests"
-        context["hide_contest_orgs"] = True
         context.pop("organizations")
 
         if self.can_edit_organization(self.organization):
