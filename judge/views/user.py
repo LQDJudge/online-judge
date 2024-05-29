@@ -36,7 +36,17 @@ from django.template.loader import render_to_string
 from reversion import revisions
 
 from judge.forms import UserForm, ProfileForm, ProfileInfoForm
-from judge.models import Profile, Rating, Submission, Friend, ProfileInfo
+from judge.models import (
+    Profile,
+    Rating,
+    Submission,
+    Friend,
+    ProfileInfo,
+    BlogPost,
+    Problem,
+    Contest,
+    Solution,
+)
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
 from judge.tasks import import_users
@@ -54,9 +64,12 @@ from judge.utils.views import (
     TitleMixin,
     generic_message,
     SingleObjectFormView,
+    DiggPaginatorMixin,
 )
 from judge.utils.infinite_paginator import InfinitePaginationMixin
+from judge.views.problem import ProblemList
 from .contests import ContestRanking
+
 
 __all__ = [
     "UserPage",
@@ -305,17 +318,49 @@ class UserProblemsPage(UserPage):
         return context
 
 
-class UserBookMarkPage(UserPage):
+class UserBookMarkPage(DiggPaginatorMixin, ListView, UserPage):
     template_name = "user/user-bookmarks.html"
+    context_object_name = "bookmarks"
+    paginate_by = 10
+
+    def get(self, request, *args, **kwargs):
+        self.current_tab = self.request.GET.get("tab", "problems")
+        self.user = self.object = self.get_object()
+        return super(UserBookMarkPage, self).get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        model = None
+        if self.current_tab == "posts":
+            model = BlogPost
+        elif self.current_tab == "contests":
+            model = Contest
+        elif self.current_tab == "editorials":
+            model = Solution
+        else:
+            model = Problem
+
+        q = MakeBookMark.objects.filter(user=self.user).select_related("bookmark")
+        q = q.filter(bookmark__content_type=ContentType.objects.get_for_model(model))
+        object_ids = q.values_list("bookmark__object_id", flat=True)
+
+        res = model.objects.filter(id__in=object_ids)
+        if self.current_tab == "contests":
+            res = res.prefetch_related("organizations", "tags")
+        elif self.current_tab == "editorials":
+            res = res.select_related("problem")
+
+        return res
 
     def get_context_data(self, **kwargs):
         context = super(UserBookMarkPage, self).get_context_data(**kwargs)
 
-        bookmark_list = MakeBookMark.objects.filter(user=self.object)
-        context["blogs"] = bookmark_list.filter(bookmark__page__startswith="b")
-        context["problems"] = bookmark_list.filter(bookmark__page__startswith="p")
-        context["contests"] = bookmark_list.filter(bookmark__page__startswith="c")
-        context["solutions"] = bookmark_list.filter(bookmark__page__startswith="s")
+        context["current_tab"] = self.current_tab
+        context["user"] = self.user
+
+        context["page_prefix"] = (
+            self.request.path + "?tab=" + self.current_tab + "&page="
+        )
+        context["first_page_href"] = self.request.path
 
         return context
 

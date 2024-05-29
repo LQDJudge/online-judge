@@ -704,6 +704,10 @@ class Solution(models.Model, PageVotable, Bookmarkable):
         else:
             return reverse("problem_editorial", args=[problem.code])
 
+    @cache_wrapper(prefix="Sga", expected_type=models.query.QuerySet)
+    def get_authors(self):
+        return self.authors.only("id")
+
     def __str__(self):
         return _("Editorial for %s") % self.problem.name
 

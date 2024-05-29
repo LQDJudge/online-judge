@@ -22,6 +22,7 @@ from django.db.models import (
     Q,
     When,
     IntegerField,
+    Sum,
 )
 from django.db.models.functions import Coalesce
 from django.db.utils import ProgrammingError
@@ -644,6 +645,16 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             queryset = queryset.filter(points__gte=self.point_start)
         if self.point_end is not None:
             queryset = queryset.filter(points__lte=self.point_end)
+
+        queryset = queryset.annotate(
+            has_public_editorial=Sum(
+                Case(
+                    When(solution__is_public=True, then=1),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            )
+        )
         return queryset.distinct()
 
     def get_queryset(self):

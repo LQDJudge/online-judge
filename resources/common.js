@@ -358,6 +358,33 @@ function register_copy_clipboard($elements, callback) {
     });
 }
 
+function activateBlogBoxOnClick() {
+    $('.blog-box').on('click', function () {
+        var $description = $(this).children('.blog-description');
+        var max_height = $description.css('max-height');
+        if (max_height !== 'fit-content') {
+            $description.css('max-height', 'fit-content');
+            $(this).css('cursor', 'auto');
+            $(this).removeClass('pre-expand-blog');
+            $(this).children().children('.show-more').hide();
+        }
+    });
+
+    $('.blog-box').each(function () {
+        var $precontent = $(this).children('.blog-description').height();
+        var $content = $(this).children().children('.content-description').height();
+        if ($content == undefined) {
+            $content = $(this).children().children('.md-typeset').height()
+        }
+        if ($content > $precontent - 30) {
+            $(this).addClass('pre-expand-blog');
+            $(this).css('cursor', 'pointer');
+        } else {
+            $(this).children().children('.show-more').hide();
+        }
+    });
+}
+
 function onWindowReady() {
     // http://stackoverflow.com/a/1060034/1090657
     var hidden = 'hidden';
@@ -464,6 +491,7 @@ function onWindowReady() {
         errorList.nextAll('input, select, textarea').first().after(errorList);
     });
     register_all_toggles();
+    activateBlogBoxOnClick();
 }
 
 $(function() {

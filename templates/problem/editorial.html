@@ -27,7 +27,9 @@
         <p>Authors: {{ link_users(authors) }}</p>
       {% endif %}
     {% endwith %}
-    {{ solution.content|markdown|reference|str|safe }}
+    {% cache 86400 'solution_content' solution.id %}
+      {{ solution.content|markdown(lazy_load=True)|reference|str|safe }}
+    {% endcache %}
   </div>
   <hr>
   {% include "actionbar/list.html" %}

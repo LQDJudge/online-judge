@@ -30,33 +30,6 @@
   <script type="text/javascript">
     let loadingPage;
 
-    function activateBlogBoxOnClick() {
-      $('.blog-box').on('click', function () {
-        var $description = $(this).children('.blog-description');
-        var max_height = $description.css('max-height');
-        if (max_height !== 'fit-content') {
-          $description.css('max-height', 'fit-content');
-          $(this).css('cursor', 'auto');
-          $(this).removeClass('pre-expand-blog');
-          $(this).children().children('.show-more').hide();
-        }
-      });
-
-      $('.blog-box').each(function () {
-        var $precontent = $(this).children('.blog-description').height();
-        var $content = $(this).children().children('.content-description').height();
-        if ($content == undefined) {
-          $content = $(this).children().children('.md-typeset').height()
-        }
-        if ($content > $precontent - 30) {
-          $(this).addClass('pre-expand-blog');
-          $(this).css('cursor', 'pointer');
-        } else {
-          $(this).children().children('.show-more').hide();
-        }
-      });
-    }
-
     function navigateTo($elem, update_sidebar = false) {
       var url = $elem.attr('href');
 
@@ -86,7 +59,6 @@
           $(document).prop('title', $(data).filter('title').text());
           renderKatex($('.middle-right-content')[0]);
           onWindowReady();
-          activateBlogBoxOnClick();
           $('.xdsoft_datetimepicker').hide();
           registerNavigation();
         }
@@ -114,7 +86,6 @@
       window.addEventListener('popstate', (e) => {
         window.location.href = e.currentTarget.location.href;
       });
-      activateBlogBoxOnClick();
 
       $('.left-sidebar-item').on('click', function (e) {
         e.preventDefault();
