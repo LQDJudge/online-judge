@@ -6,8 +6,8 @@
         placeholder="{{ _('Search contests...') }}">
       {% if organizations %}
         <div style="margin-bottom: 1em;">
-          <input id="show_orgs" type="checkbox" name="show_orgs" value="1" {% if show_orgs %}checked{% endif %}>
-          <label for="show_orgs">{{ _('Hide organization contests') }}</label>
+          <input id="hide_organization_contests" type="checkbox" name="hide_organization_contests" value="1" {% if hide_organization_contests %}checked{% endif %}>
+          <label for="hide_organization_contests">{{ _('Hide organization contests') }}</label>
         </div>
         <label for="search-org" class="bold-text margin-label">{{ _('Group') }}</label>
         <select id="search-org" name="orgs" multiple>
@@ -18,6 +18,17 @@
           {% endfor %}
         </select>
       {% endif %}
+      <div class="filter-form-group">
+        <label for="order" class="bold-text margin-label">{{ _('Order by') }}</label>
+        <select id="order" name="order" style="width: 100%">
+          <option value="">---</option>
+          {% for value, name in all_sort_options %}
+            <option value="{{value}}"{% if selected_order == value%} selected{% endif %}>
+              {{ name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
       <div class="form-submit-group">
         <a id="go" class="button small">{{ _('Go') }}</a>
         {% if create_url %}

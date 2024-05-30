@@ -14,7 +14,14 @@ from reversion.admin import VersionAdmin
 from reversion_compare.admin import CompareVersionAdmin
 
 from django_ace import AceWidget
-from judge.models import Contest, ContestProblem, ContestSubmission, Profile, Rating
+from judge.models import (
+    Contest,
+    ContestProblem,
+    ContestSubmission,
+    Profile,
+    Rating,
+    OfficialContest,
+)
 from judge.ratings import rate_contest
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
@@ -149,6 +156,26 @@ class ContestForm(ModelForm):
             )
 
 
+class OfficialContestInlineForm(ModelForm):
+    class Meta:
+        widgets = {
+            "category": AdminSelect2Widget,
+            "location": AdminSelect2Widget,
+        }
+
+
+class OfficialContestInline(admin.StackedInline):
+    fields = (
+        "category",
+        "year",
+        "location",
+    )
+    model = OfficialContest
+    can_delete = True
+    form = OfficialContestInlineForm
+    extra = 0
+
+
 class ContestAdmin(CompareVersionAdmin):
     fieldsets = (
         (None, {"fields": ("key", "name", "authors", "curators", "testers")}),
@@ -223,7 +250,7 @@ class ContestAdmin(CompareVersionAdmin):
         "user_count",
     )
     search_fields = ("key", "name")
-    inlines = [ContestProblemInline]
+    inlines = [ContestProblemInline, OfficialContestInline]
     actions_on_top = True
     actions_on_bottom = True
     form = ContestForm

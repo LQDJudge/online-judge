@@ -5,6 +5,6 @@
     {{ make_tab_item('grades', 'fa fa-check-square-o', url('course_grades', course.slug), _('Grades')) }}
   {% endif %}
   {% if perms.judge.change_course %}
-    {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_course_change', course.id), _('Admin')) }}
+    {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_course_change', course.id), _('Admin'), force_new_page=True) }}
   {% endif %}
 </div>

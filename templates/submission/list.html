@@ -391,7 +391,7 @@
       {{ make_tab_item('friend_tab', 'fa fa-users', friend_submissions_link, _('Friends')) }}
     {% endif %}
     {% if perms.judge.change_submission %}
-      {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_submission_changelist'), _('Admin')) }}
+      {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_submission_changelist'), _('Admin'), force_new_page=True) }}
     {% endif %}
   </div>
 {% endblock %}

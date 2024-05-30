@@ -1,0 +1,57 @@
+<div class="sidebox">
+  <h3 class="colored-text"><i class="fa fa-search"></i>{{ _('Contest search') }}</h3>
+  <div class="sidebox-content">
+    <form id="filter-form" method="GET">
+      <input id="search-contest" type="text" name="contest" value="{{ contest_query or '' }}"
+        placeholder="{{ _('Search contests...') }}">
+
+      <div class="filter-form-group">
+        <label class="bold-text margin-label" for="year_from"><i class="non-italics">{{ _('Year') }}</i></label>
+        <div class="year-range">
+          <input type="number" name="year_from" id="year_from" value="{{ year_from or '' }}"
+            placeholder="{{ _('From') }}">
+          <input type="number" name="year_to" id="year_to" value="{{ year_to or '' }}"
+            placeholder="{{ _('To') }}" style="float: right">
+        </div>
+      </div>
+
+      <div class="filter-form-group">
+        <label class="bold-text margin-label" for="category"><i class="non-italics">{{ _('Category') }}</i></label>
+        <select id="category" name="category" multiple>
+          {% for cat in categories %}
+            <option value="{{ cat.id }}"{% if cat.id in selected_categories %} selected{% endif %}>
+              {{ cat.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-form-group">
+        <label class="bold-text margin-label" for="location"><i class="non-italics">{{ _('Location') }}</i></label>
+        <select id="location" name="location" style="width: 100%" multiple>
+          {% for loc in locations %}
+            <option value="{{ loc.id }}"{% if loc.id in selected_locations %} selected{% endif %}>
+              {{ loc.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-form-group">
+        <label for="order" class="bold-text margin-label">{{ _('Order by') }}</label>
+        <select id="order" name="order" style="width: 100%">
+          <option value="">---</option>
+          {% for value, name in all_sort_options %}
+            <option value="{{value}}"{% if selected_order == value%} selected{% endif %}>
+              {{ name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-submit-group">
+        <a id="go" class="button small">{{ _('Go') }}</a>
+      </div>
+    </form>
+  </div>
+</div>

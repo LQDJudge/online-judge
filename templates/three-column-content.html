@@ -32,8 +32,15 @@
 
     function navigateTo($elem, update_sidebar = false) {
       var url = $elem.attr('href');
+      var force_new_page = $elem.data('force_new_page');
 
       if (url === '#') return;
+
+      if (force_new_page) {
+        window.location.href = url;
+        return;
+      }
+
       if (update_sidebar) {
         $('.left-sidebar-item').removeClass('active');
         $elem.addClass('active');
@@ -99,8 +106,8 @@
   </script>
 {% endblock %}
 
-{% macro make_tab_item(name, fa, url, text) %}
-  <a class="left-sidebar-item {% if page_type == name %}active{% endif %}" href="{{ url }}" id="{{ name }}-tab">
+{% macro make_tab_item(name, fa, url, text, force_new_page=False) %}
+  <a class="left-sidebar-item {% if page_type == name %}active{% endif %}" href="{{ url }}" id="{{ name }}-tab" {% if force_new_page%}data-force_new_page="1"{% endif %}>
     <span class="sidebar-icon"><i class="{{ fa }}"></i></span>
     <span class="sidebar-text">{{ text }}</span>
   </a>

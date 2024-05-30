@@ -21,7 +21,14 @@
     #search-org {
       width: 100%;
     }
+    .contest-format-user {
+      flex: 0.5 !important;
+    }
+    .participate-button {
+      float: right;
+    }
   </style>
+  {% block contest_list_media %}{% endblock %}
 {% endblock %}
 
 {% block three_col_js %}
@@ -75,7 +82,7 @@
 
       var $form = $('form#filter-form');
 
-      $('#show_orgs').click(function () {
+      $('#hide_organization_contests').click(function () {
         submitFormWithParams($form, "POST");
       });
       $('#go').click(function() {
@@ -110,6 +117,8 @@
 
       $('#search-org').select2({multiple: 1, placeholder: '{{ _('Groups') }}...'});
 
+      $('#order').select2();
+
       // var tooltip_classes = 'tooltipped tooltipped-e';
       //
       // $('.contest-tag').each(function () {
@@ -122,6 +131,7 @@
       // });
     });
   </script>
+  {% block contest_list_js %}{% endblock %}
 {% endblock %}
 
 {% block left_sidebar %}
@@ -134,7 +144,31 @@
   </div>
 {% endblock %}
 
-{% from "contest/macros.html" import contest_head, time_left, user_count, contest_join, contest_format_user %}
+{% from "contest/macros.html" import contest_head, time_left, user_count, contest_format_user %}
+
+{% macro contest_join(contest, request, is_past=False) %}
+  {% if request.in_contest and request.participation.contest == contest %}
+    <button class="small" disabled>{{ _('In contest') }}</button>
+  {% elif is_past %}
+    <form action="{{ url('contest_join', contest.key) }}" method="post">
+      {% csrf_token %}
+      <input type="submit" class="unselectable button full small"
+        value="{{ _('Virtual join') }}">
+    </form>
+  {% elif request.profile.id in contest.editor_ids or request.profile.id in contest.tester_ids %}
+    <form action="{{ url('contest_join', contest.key) }}" method="post">
+      {% csrf_token %}
+      <input type="submit" class="unselectable button full small"
+        value="{{ _('Spectate') }}">
+    </form>
+  {% else %}
+    <form action="{{ url('contest_join', contest.key) }}" method="post">
+      {% csrf_token %}
+      <input type="submit" class="unselectable button full small join-warning"
+        value="{{ _('Join') }}">
+    </form>
+  {% endif %}
+{% endmacro %}
 
 {% block middle_content %}
   <div class="tabs tabs-no-flex" style="width: 100%;margin-left: auto;margin-right: auto;">
@@ -192,11 +226,11 @@
                 {% endif %}
               </div>
             </div>
-            <div class="info-contest" style="flex: 0.5;">
-              {{ contest_format_user(contest, request) }}
-            </div>
-            <div class="participate-button">
-              {{ contest_join(contest, request) }}
+            <div class="info-contest contest-format-user">
+              {{ contest_format_user(contest, request, is_official=is_official) }}
+              <div class="participate-button">
+                {{ contest_join(contest, request) }}
+              </div>
             </div>
           </div>
         {% endwith %}
@@ -230,11 +264,11 @@
               {% endif %}
             </div>
           </div>
-          <div class="info-contest" style="flex: 0.5;">
-            {{ contest_format_user(contest, request) }}
-          </div>
-          <div class="participate-button">
-            {{ contest_join(contest, request) }}
+          <div class="info-contest contest-format-user">
+            {{ contest_format_user(contest, request, is_official=is_official) }}
+            <div class="participate-button">
+              {{ contest_join(contest, request) }}
+            </div>
           </div>
         </div>
       {% endfor %}
@@ -267,8 +301,8 @@
               {% endif %}
             </div>
           </div>
-          <div class="info-contest" style="flex: 0.5;">
-            {{ contest_format_user(contest, request, show_user=False) }}
+          <div class="info-contest contest-format-user">
+            {{ contest_format_user(contest, request, show_user=False, is_official=is_official) }}
           </div>
         </div>
       {% endfor %}
@@ -296,19 +330,11 @@
               {{ time_left(contest) }}
             </div>
           </div>
-          <div class="info-contest" style="flex: 0.5;">
-            {{ contest_format_user(contest, request) }}
-          </div>
-          <div class="participate-button">
-            {% if request.in_contest and request.participation.contest == contest %}
-              <button class="small" disabled>{{ _('In contest') }}</button>
-            {% else %}
-              <form action="{{ url('contest_join', contest.key) }}" method="post">
-                {% csrf_token %}
-                <input type="submit" class="unselectable button full small"
-                  value="{{ _('Virtual join') }}">
-              </form>
-            {% endif %}
+          <div class="info-contest contest-format-user">
+            {{ contest_format_user(contest, request, is_official=is_official) }}
+            <div class="participate-button">
+              {{ contest_join(contest, request, is_past=True) }}
+            </div>
           </div>
         </div>
       {% endfor %}

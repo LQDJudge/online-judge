@@ -540,6 +540,10 @@ urlpatterns = [
         r"^contests/summary/(?P<key>\w+)/",
         paged_list_view(contests.ContestsSummaryView, "contests_summary"),
     ),
+    url(
+        r"^contests/official",
+        paged_list_view(contests.OfficialContestList, "official_contest_list"),
+    ),
     url(r"^courses/", paged_list_view(course.CourseList, "course_list")),
     url(
         r"^course/(?P<slug>[\w-]*)",

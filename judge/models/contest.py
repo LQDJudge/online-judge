@@ -39,6 +39,9 @@ __all__ = [
     "Rating",
     "ContestProblemClarification",
     "ContestsSummary",
+    "OfficialContest",
+    "OfficialContestCategory",
+    "OfficialContestLocation",
 ]
 
 
@@ -974,3 +977,53 @@ class ContestsSummary(models.Model):
 
     def get_absolute_url(self):
         return reverse("contests_summary", args=[self.key])
+
+
+class OfficialContestCategory(models.Model):
+    name = models.CharField(
+        max_length=50, verbose_name=_("official contest category"), unique=True
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("official contest category")
+        verbose_name_plural = _("official contest categories")
+
+
+class OfficialContestLocation(models.Model):
+    name = models.CharField(
+        max_length=50, verbose_name=_("official contest location"), unique=True
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("official contest location")
+        verbose_name_plural = _("official contest locations")
+
+
+class OfficialContest(models.Model):
+    contest = models.OneToOneField(
+        Contest,
+        verbose_name=_("contest"),
+        related_name="official",
+        on_delete=CASCADE,
+    )
+    category = models.ForeignKey(
+        OfficialContestCategory,
+        verbose_name=_("contest category"),
+        on_delete=CASCADE,
+    )
+    year = models.PositiveIntegerField(verbose_name=_("year"))
+    location = models.ForeignKey(
+        OfficialContestLocation,
+        verbose_name=_("contest location"),
+        on_delete=CASCADE,
+    )
+
+    class Meta:
+        verbose_name = _("official contest")
+        verbose_name_plural = _("official contests")

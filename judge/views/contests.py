@@ -69,6 +69,8 @@ from judge.models import (
     Submission,
     ContestProblemClarification,
     ContestsSummary,
+    OfficialContestCategory,
+    OfficialContestLocation,
 )
 from judge.tasks import run_moss
 from judge.utils.celery import redirect_to_task_status
@@ -106,6 +108,7 @@ __all__ = [
     "base_contest_ranking_list",
     "ContestClarificationView",
     "update_contest_mode",
+    "OfficialContestList",
 ]
 
 
@@ -129,8 +132,15 @@ def _find_contest(request, key):
 
 
 class ContestListMixin(object):
+    official = False
+
     def get_queryset(self):
-        return Contest.get_visible_contests(self.request.user)
+        q = Contest.get_visible_contests(self.request.user)
+        if self.official:
+            q = q.filter(official__isnull=False).select_related(
+                "official", "official__category", "official__location"
+            )
+        return q
 
 
 class ContestList(
@@ -158,39 +168,41 @@ class ContestList(
             return request.session.get(key, False)
         return request.GET.get(key, None) == "1"
 
+    def setup_contest_list(self, request):
+        self.contest_query = request.GET.get("contest", "")
+
+        self.hide_organization_contests = 0
+        if self.GET_with_session(request, "hide_organization_contests"):
+            self.hide_organization_contests = 1
+
+        self.org_query = []
+        if request.GET.get("orgs") and request.profile:
+            try:
+                self.org_query = list(map(int, request.GET.getlist("orgs")))
+                if not request.user.is_superuser:
+                    self.org_query = [
+                        i
+                        for i in self.org_query
+                        if i
+                        in set(
+                            request.profile.organizations.values_list("id", flat=True)
+                        )
+                    ]
+            except ValueError:
+                pass
+
     def get(self, request, *args, **kwargs):
         default_tab = "active"
         if not self.request.user.is_authenticated:
             default_tab = "current"
         self.current_tab = self.request.GET.get("tab", default_tab)
 
-        self.contest_query = None
-        self.org_query = []
-        self.show_orgs = 0
-        if self.GET_with_session(request, "show_orgs"):
-            self.show_orgs = 1
-
-        if self.request.GET.get("orgs") and self.request.profile:
-            try:
-                self.org_query = list(map(int, request.GET.getlist("orgs")))
-                if not self.request.user.is_superuser:
-                    self.org_query = [
-                        i
-                        for i in self.org_query
-                        if i
-                        in set(
-                            self.request.profile.organizations.values_list(
-                                "id", flat=True
-                            )
-                        )
-                    ]
-            except ValueError:
-                pass
+        self.setup_contest_list(request)
 
         return super(ContestList, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        to_update = ("show_orgs",)
+        to_update = ("hide_organization_contests",)
         for key in to_update:
             if key in request.GET:
                 val = request.GET.get(key) == "1"
@@ -199,6 +211,9 @@ class ContestList(
                 request.session[key] = False
         return HttpResponseRedirect(request.get_full_path())
 
+    def extra_queryset_filters(self, queryset):
+        return queryset
+
     def _get_queryset(self):
         queryset = (
             super(ContestList, self)
@@ -206,28 +221,25 @@ class ContestList(
             .prefetch_related("tags", "organizations")
         )
 
-        if self.request.GET.get("contest"):
-            self.contest_query = query = " ".join(
-                self.request.GET.getlist("contest")
-            ).strip()
-            if query:
-                substr_queryset = queryset.filter(
-                    Q(key__icontains=query) | Q(name__icontains=query)
+        if self.contest_query:
+            substr_queryset = queryset.filter(
+                Q(key__icontains=self.contest_query)
+                | Q(name__icontains=self.contest_query)
+            )
+            if settings.ENABLE_FTS:
+                queryset = (
+                    queryset.search(self.contest_query).extra(order_by=["-relevance"])
+                    | substr_queryset
                 )
-                if settings.ENABLE_FTS:
-                    queryset = (
-                        queryset.search(query).extra(order_by=["-relevance"])
-                        | substr_queryset
-                    )
-                else:
-                    queryset = substr_queryset
+            else:
+                queryset = substr_queryset
         if not self.org_query and self.request.organization:
             self.org_query = [self.request.organization.id]
-        if self.show_orgs:
+        if self.hide_organization_contests:
             queryset = queryset.filter(organizations=None)
         if self.org_query:
             queryset = queryset.filter(organizations__in=self.org_query)
-
+        queryset = self.extra_queryset_filters(queryset)
         return queryset
 
     def _get_past_contests_queryset(self):
@@ -295,10 +307,19 @@ class ContestList(
         context["first_page_href"] = "."
         context["contest_query"] = self.contest_query
         context["org_query"] = self.org_query
-        context["show_orgs"] = int(self.show_orgs)
+        context["hide_organization_contests"] = int(self.hide_organization_contests)
         if self.request.profile:
             context["organizations"] = self.request.profile.organizations.all()
         context["page_type"] = "list"
+        context["selected_order"] = self.request.GET.get("order")
+        context["all_sort_options"] = [
+            ("start_time", _("Start time (asc.)")),
+            ("-start_time", _("Start time (desc.)")),
+            ("name", _("Name (asc.)")),
+            ("-name", _("Name (desc.)")),
+            ("user_count", _("User count (asc.)")),
+            ("-user_count", _("User count (desc.)")),
+        ]
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())
         return context
@@ -1545,3 +1566,67 @@ def recalculate_contest_summary_result(contest_summary):
     sorted_total_points.sort(key=lambda x: x.points, reverse=True)
     total_rank = ranker(sorted_total_points)
     return [(rank, item._asdict()) for rank, item in total_rank]
+
+
+class OfficialContestList(ContestList):
+    official = True
+    template_name = "contest/official_list.html"
+
+    def setup_contest_list(self, request):
+        self.contest_query = request.GET.get("contest", "")
+        self.org_query = []
+        self.hide_organization_contests = False
+
+        self.selected_categories = []
+        self.selected_locations = []
+        self.year_from = None
+        self.year_to = None
+
+        if "category" in request.GET:
+            try:
+                self.selected_categories = list(
+                    map(int, request.GET.getlist("category"))
+                )
+            except ValueError:
+                pass
+        if "location" in request.GET:
+            try:
+                self.selected_locations = list(
+                    map(int, request.GET.getlist("location"))
+                )
+            except ValueError:
+                pass
+        if "year_from" in request.GET:
+            try:
+                self.year_from = int(request.GET.get("year_from"))
+            except ValueError:
+                pass
+        if "year_to" in request.GET:
+            try:
+                self.year_to = int(request.GET.get("year_to"))
+            except ValueError:
+                pass
+
+    def extra_queryset_filters(self, queryset):
+        if self.selected_categories:
+            queryset = queryset.filter(official__category__in=self.selected_categories)
+        if self.selected_locations:
+            queryset = queryset.filter(official__location__in=self.selected_locations)
+        if self.year_from:
+            queryset = queryset.filter(official__year__gte=self.year_from)
+        if self.year_to:
+            queryset = queryset.filter(official__year__lte=self.year_to)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_type"] = "official"
+        context["is_official"] = True
+        context["categories"] = OfficialContestCategory.objects.all()
+        context["locations"] = OfficialContestLocation.objects.all()
+        context["selected_categories"] = self.selected_categories
+        context["selected_locations"] = self.selected_locations
+        context["year_from"] = self.year_from
+        context["year_to"] = self.year_to
+
+        return context

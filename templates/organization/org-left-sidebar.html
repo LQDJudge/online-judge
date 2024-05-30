@@ -9,6 +9,6 @@
     {{ make_tab_item('users', 'fa fa-user', organization.get_users_url(), _('Members')) }}
   {% endif %}
   {% if perms.judge.change_organization %}
-    {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_organization_change', organization.id), _('Admin')) }}
+    {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_organization_change', organization.id), _('Admin'), force_new_page=True) }}
   {% endif %}
 </div>

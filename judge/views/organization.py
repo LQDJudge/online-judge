@@ -414,7 +414,7 @@ class OrganizationContests(
 
     def get_queryset(self):
         self.org_query = [self.organization_id]
-        self.show_orgs = False
+        self.hide_organization_contests = False
         return super().get_queryset()
 
     def set_editable_contest(self, contest):

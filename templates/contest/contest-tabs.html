@@ -24,7 +24,7 @@
     {% endif %}
   {% endif %}
   {% if request.user.is_superuser and contest_has_hidden_subtasks %}
-    {{ make_tab_item('resolver', 'fa fa-check', url('resolver', contest.key), _('Resolver')) }}
+    {{ make_tab_item('resolver', 'fa fa-check', url('resolver', contest.key), _('Resolver'), force_new_page=True) }}
   {% endif %}
   {% if show_final_ranking %}
     {{ make_tab_item('final_ranking', 'fa fa-bar-chart', url('contest_final_ranking', contest.key), _('Final rankings')) }}
@@ -33,6 +33,6 @@
     {% if perms.judge.moss_contest and has_moss_api_key %}
       {{ make_tab_item('moss', 'fa fa-gavel', url('contest_moss', contest.key), _('MOSS')) }}
     {% endif %}
-    {{ make_tab_item('edit', 'fa fa-edit', url('admin:judge_contest_change', contest.id), _('Edit')) }}
+    {{ make_tab_item('edit', 'fa fa-edit', url('admin:judge_contest_change', contest.id), _('Edit'), force_new_page=True) }}
   {% endif %}
 </div>
