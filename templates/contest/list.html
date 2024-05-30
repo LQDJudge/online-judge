@@ -38,6 +38,7 @@
       const url = new URL(window.location);
       const searchParams = new URLSearchParams(url.search);
       searchParams.set('tab', newTab);
+      searchParams.delete('page');
       url.search = searchParams.toString();
       return url.href;
     }
