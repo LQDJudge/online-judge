@@ -1078,28 +1078,30 @@ def base_contest_ranking_list(contest, problems, queryset, show_final=False):
     return res
 
 
-def contest_ranking_list(contest, problems, queryset=None, show_final=False):
+def contest_ranking_list(
+    contest, problems, queryset=None, show_final=False, extra_participation=None
+):
     if queryset is None:
         queryset = contest.users.filter(virtual=0)
 
-    if not show_final:
-        return base_contest_ranking_list(
-            contest,
-            problems,
-            queryset.extra(select={"round_score": "round(score, 6)"}).order_by(
-                "is_disqualified", "-round_score", "cumtime", "tiebreaker"
-            ),
-            show_final,
+    if extra_participation and extra_participation.virtual:
+        queryset = queryset | contest.users.filter(id=extra_participation.id)
+
+    if show_final:
+        queryset = queryset.order_by(
+            "is_disqualified", "-score_final", "cumtime_final", "tiebreaker"
         )
     else:
-        return base_contest_ranking_list(
-            contest,
-            problems,
-            queryset.extra(select={"round_score": "round(score_final, 6)"}).order_by(
-                "is_disqualified", "-round_score", "cumtime_final", "tiebreaker"
-            ),
-            show_final,
+        queryset = queryset.order_by(
+            "is_disqualified", "-score", "cumtime", "tiebreaker"
         )
+
+    return base_contest_ranking_list(
+        contest,
+        problems,
+        queryset,
+        show_final,
+    )
 
 
 def get_contest_ranking_list(
@@ -1116,21 +1118,12 @@ def get_contest_ranking_list(
         .order_by("order")
     )
 
-    # Set participation to current virtual join if it's None
-    ranking_participation = None
-    if participation is None and request.user.is_authenticated:
-        participation = request.profile.current_contest
-        if participation is None or participation.contest_id != contest.id:
-            participation = None
-    if participation is not None and participation.virtual:
-        ranking_participation = make_contest_ranking_profile(
-            contest, participation, problems
-        )
+    if participation is None:
+        participation = _get_current_virtual_participation(request, contest)
 
-    ranking_list_result = ranking_list(contest, problems, show_final=show_final)
-
-    if ranking_participation and ranking_participation not in ranking_list_result:
-        ranking_list_result.append(ranking_participation)
+    ranking_list_result = ranking_list(
+        contest, problems, show_final=show_final, extra_participation=participation
+    )
 
     users = ranker(
         ranking_list_result,
@@ -1155,6 +1148,9 @@ def contest_ranking_ajax(request, contest, participation=None):
         ):
             raise Http404()
 
+    if participation is None:
+        participation = _get_current_virtual_participation(request, contest)
+
     queryset = contest.users.filter(virtual__gte=0)
     if request.GET.get("friend") == "true" and request.profile:
         friends = request.profile.get_friends()
@@ -1166,7 +1162,9 @@ def contest_ranking_ajax(request, contest, participation=None):
         request,
         contest,
         participation,
-        ranking_list=partial(contest_ranking_list, queryset=queryset),
+        ranking_list=partial(
+            contest_ranking_list, queryset=queryset, extra_participation=participation
+        ),
         show_final=show_final,
     )
     return render(
@@ -1180,6 +1178,19 @@ def contest_ranking_ajax(request, contest, participation=None):
             "can_edit": contest.is_editable_by(request.user),
         },
     )
+
+
+def _get_current_virtual_participation(request, contest):
+    # Return None if not eligible
+    if not request.user.is_authenticated:
+        return None
+
+    participation = request.profile.current_contest
+
+    if participation is None or participation.contest_id != contest.id:
+        return None
+
+    return participation
 
 
 class ContestRankingBase(ContestMixin, TitleMixin, DetailView):
