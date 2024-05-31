@@ -140,6 +140,8 @@ class ContestListMixin(object):
             q = q.filter(official__isnull=False).select_related(
                 "official", "official__category", "official__location"
             )
+        else:
+            q = q.filter(official__isnull=True)
         return q
 
 
