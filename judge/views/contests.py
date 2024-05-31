@@ -1057,7 +1057,9 @@ def make_contest_ranking_profile(
     )
 
 
-def base_contest_ranking_list(contest, problems, queryset, show_final=False):
+def base_contest_ranking_list(
+    contest, problems, queryset, show_final=False, extra_participation=None
+):
     participation_fields = [
         field.name
         for field in ContestParticipation._meta.get_fields()
