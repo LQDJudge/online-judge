@@ -203,7 +203,9 @@ class UserAboutPage(UserPage):
                         "label": rating.contest.name,
                         "rating": rating.rating,
                         "ranking": rating.rank,
-                        "link": reverse("contest_ranking", args=(rating.contest.key,)),
+                        "link": reverse("contest_ranking", args=(rating.contest.key,))
+                        + "#!"
+                        + self.object.username,
                         "timestamp": (rating.contest.end_time - EPOCH).total_seconds()
                         * 1000,
                         "date": date_format(

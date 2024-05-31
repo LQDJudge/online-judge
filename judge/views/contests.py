@@ -1107,7 +1107,6 @@ def get_contest_ranking_list(
     contest,
     participation=None,
     ranking_list=contest_ranking_list,
-    show_current_virtual=False,
     ranker=ranker,
     show_final=False,
 ):
@@ -1117,21 +1116,26 @@ def get_contest_ranking_list(
         .order_by("order")
     )
 
+    # Set participation to current virtual join if it's None
+    ranking_participation = None
+    if participation is None and request.user.is_authenticated:
+        participation = request.profile.current_contest
+        if participation is None or participation.contest_id != contest.id:
+            participation = None
+    if participation is not None and participation.virtual:
+        ranking_participation = make_contest_ranking_profile(
+            contest, participation, problems
+        )
+
+    ranking_list_result = ranking_list(contest, problems, show_final=show_final)
+
+    if ranking_participation and ranking_participation not in ranking_list_result:
+        ranking_list_result.append(ranking_participation)
+
     users = ranker(
-        ranking_list(contest, problems, show_final=show_final),
+        ranking_list_result,
         key=attrgetter("points", "cumtime", "tiebreaker"),
     )
-
-    if show_current_virtual:
-        if participation is None and request.user.is_authenticated:
-            participation = request.profile.current_contest
-            if participation is None or participation.contest_id != contest.id:
-                participation = None
-        if participation is not None and participation.virtual:
-            users = chain(
-                [("-", make_contest_ranking_profile(contest, participation, problems))],
-                users,
-            )
     return users, problems
 
 
@@ -1272,7 +1276,6 @@ class ContestParticipationList(LoginRequiredMixin, ContestRankingBase):
         return get_contest_ranking_list(
             self.request,
             self.object,
-            show_current_virtual=False,
             ranking_list=partial(base_contest_ranking_list, queryset=queryset),
             ranker=lambda users, key: (
                 (user.participation.virtual or live_link, user) for user in users
