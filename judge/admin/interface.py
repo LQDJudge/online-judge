@@ -53,7 +53,8 @@ class NavigationBarAdmin(DraggableMPTTAdmin):
 class BlogPostForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(BlogPostForm, self).__init__(*args, **kwargs)
-        self.fields["authors"].widget.can_add_related = False
+        if "authors" in self.fields:
+            self.fields["authors"].widget.can_add_related = False
 
     class Meta:
         widgets = {

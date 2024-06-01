@@ -51,7 +51,10 @@ class ProblemDataStorage(FileSystemStorage):
 
     def delete_directory(self, name):
         directory_path = self.path(name)
-        shutil.rmtree(directory_path)
+        try:
+            shutil.rmtree(directory_path)
+        except FileNotFoundError:
+            pass
 
 
 class ProblemDataError(Exception):

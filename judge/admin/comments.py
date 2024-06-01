@@ -12,7 +12,6 @@ class CommentForm(ModelForm):
     class Meta:
         widgets = {
             "author": AdminHeavySelect2Widget(data_view="profile_select2"),
-            "parent": AdminHeavySelect2Widget(data_view="comment_select2"),
         }
         if HeavyPreviewAdminPageDownWidget is not None:
             widgets["body"] = HeavyPreviewAdminPageDownWidget(
@@ -39,7 +38,7 @@ class CommentAdmin(VersionAdmin):
     )
     list_display = ["author", "linked_object", "time"]
     search_fields = ["author__user__username", "body"]
-    readonly_fields = ["score"]
+    readonly_fields = ["score", "parent"]
     actions = ["hide_comment", "unhide_comment"]
     list_filter = ["hidden"]
     actions_on_top = True

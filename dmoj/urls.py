@@ -77,7 +77,6 @@ from judge.views.register import ActivationView, RegistrationView
 from judge.views.select2 import (
     AssigneeSelect2View,
     ChatUserSearchSelect2View,
-    CommentSelect2View,
     ContestSelect2View,
     ContestUserSearchSelect2View,
     OrganizationSelect2View,
@@ -1065,9 +1064,6 @@ urlpatterns = [
                 ),
                 url(
                     r"^contest/$", ContestSelect2View.as_view(), name="contest_select2"
-                ),
-                url(
-                    r"^comment/$", CommentSelect2View.as_view(), name="comment_select2"
                 ),
             ]
         ),

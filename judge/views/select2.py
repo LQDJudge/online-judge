@@ -98,11 +98,6 @@ class ContestSelect2View(Select2View):
         return q
 
 
-class CommentSelect2View(Select2View):
-    def get_queryset(self):
-        return Comment.objects.filter(page__icontains=self.term)
-
-
 class UserSearchSelect2View(BaseListView):
     paginate_by = 20
 
