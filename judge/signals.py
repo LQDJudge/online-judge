@@ -72,6 +72,8 @@ def problem_update(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Profile)
 def profile_update(sender, instance, **kwargs):
+    judge.utils.users.get_points_rank.dirty(instance.id)
+    judge.utils.users.get_rating_rank.dirty(instance.id)
     if hasattr(instance, "_updating_stats_only"):
         return
 

@@ -79,8 +79,10 @@ def cache_wrapper(prefix, timeout=None, expected_type=None):
                 return result
             result = func(*args, **kwargs)
             if result is None:
-                result = NONE_RESULT
-            _set(cache_key, result, timeout)
+                cache_result = NONE_RESULT
+            else:
+                cache_result = result
+            _set(cache_key, cache_result, timeout)
             return result
 
         def dirty(*args, **kwargs):

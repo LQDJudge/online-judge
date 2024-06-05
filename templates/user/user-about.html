@@ -42,13 +42,13 @@
       <div class="user-info-card">
         <div class="user-info">
           <div class="user-info-header" title="{{_('Rank by rating')}}"><i class="fa fa-globe peru" ></i> {{_('Rating')}} #</div>
-          <div class="user-info-body">{{rating_rank if rating_rank and not user.is_unlisted else '-'}}</div>
+          <div class="user-info-body">{{rating_rank if rating_rank else '-'}}</div>
         </div>
       </div>
       <div class="user-info-card">
         <div class="user-info">
           <div class="user-info-header" title="{{_('Rank by points')}}"><i class="fa fa-globe blue" ></i> {{_('Points')}} #</div>
-          <div class="user-info-body">{{points_rank if not user.is_unlisted else '-'}}</div>
+          <div class="user-info-body">{{points_rank if points_rank else '-'}}</div>
         </div>
       </div>
     </div>
