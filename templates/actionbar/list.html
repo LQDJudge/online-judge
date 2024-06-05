@@ -11,19 +11,19 @@
         class="like-button actionbar-button {% if pagevote.vote_score(request.profile) == 1 %}voted{% endif %}"
         onclick="javascript:pagevote_upvote({{ pagevote.id }}, event)">
         <span class="pagevote-score" id="pagevote-score-{{pagevote.id}}">{{ pagevote.score }}</span>
-        <i class="fa fa-thumbs-o-up" style="font-size: large;"></i>
+        <i class="far fa-thumbs-up" style="font-size: large;"></i>
         <span class="actionbar-text">{{_("Like")}}</span>
       </span>
       <span id="dislike-button-{{pagevote.id}}"
         class="dislike-button actionbar-button {% if pagevote.vote_score(request.profile) == -1 %}voted{% endif %}"
         onclick="javascript:pagevote_downvote({{ pagevote.id }}, event)">
-        <i class="fa fa-thumbs-o-down" style="font-size: large;"></i>
+        <i class="far fa-thumbs-down" style="font-size: large;"></i>
       </span>
     </span>
     {% if not hide_actionbar_comment %}
       <span class="actionbar-block">
         <span class="actionbar-button actionbar-comment">
-          <i class="fa fa-comment-o" style="font-size: large;"></i>
+          <i class="far fa-comment" style="font-size: large;"></i>
           <span class="actionbar-text">
             {{_("Comment")}}
           </span>
@@ -39,7 +39,7 @@
       <span id="bookmark-button-{{bookmark.id}}"
         class="bookmark-button actionbar-button {% if bookmark.is_bookmarked_by(request.profile) %} bookmarked {% endif %}"
         onclick="javascript:bookmark({{ bookmark.id }}, event)">
-        <i class="fa fa-bookmark-o" style="font-size: large;"></i>
+        <i class="far fa-bookmark" style="font-size: large;"></i>
         <span class="actionbar-text">{{_("Bookmark")}}</span>
       </span>
     </span>

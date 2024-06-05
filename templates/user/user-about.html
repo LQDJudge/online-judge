@@ -25,7 +25,7 @@
                 {% pluralize %}
                 {{ counter }} problems solved
               {% endtrans -%}"
-          ><i class="fa fa-slack darkcyan"></i> {{_('Problems')}}</div>
+          ><i class="green icofont-tick-mark"></i> {{_('Problems')}}</div>
           <div class="user-info-body">{{user.problem_count}}</div>
         </div>
       </div>
@@ -33,7 +33,7 @@
         <div class="user-info">
           <div class="user-info-header"
             title="{{_('Total points')}}"
-          ><i class="green icofont-tick-mark"></i> {{_('Points')}}</div>
+          ><i class="fa fa-trophy darkcyan"></i> {{_('Points')}}</div>
           <div class="user-info-body"><span title="{{ user.performance_points|floatformat(2) }}">
             {{ user.performance_points|floatformat(0) }}
           </span></div>
