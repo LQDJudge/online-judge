@@ -676,10 +676,16 @@ noscript #noscript {
     cursor: pointer;
     color: black;
     font-weight: 600;
+    border-top: 1px solid #ccc;
+
+    i {
+        width: 1.5em;
+    }
 }
 
 .dropdown-item:hover {
     color: $theme_color;
+    background-color: #f8f8f2;
 }
 
 .popper-arrow,
@@ -907,7 +913,7 @@ input::placeholder{
     i {
         margin-right: 0.1em;
         color: #000;
-        font-size: 22.5px;
+        font-size: 21px;
     }
 }
 

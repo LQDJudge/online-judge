@@ -284,7 +284,7 @@ function populateCopyButton() {
             'class': 'btn-clipboard',
             'data-clipboard-text': $(this).text(),
             'title': 'Click to copy'
-        }).append('<i class="fa fa-copy"></i>');
+        }).append('<i class="far fa-copy"></i>');
 
         if ($(this).parent().width() > 100) {
             copyButton.append('<span style="margin-left: 2px">Copy</span>');
