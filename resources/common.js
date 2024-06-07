@@ -475,7 +475,11 @@ function onWindowReady() {
     
     $('a').click(function() {
         var href = $(this).attr('href');
-        if (!href || href === '#' || href.startsWith("javascript")) {
+        var target = $(this).attr('target');
+        if (!href || href === '#' || href.startsWith("javascript") || 
+            $(this).attr("data-featherlight") ||
+            target === "_blank"
+        ) {
             return;
         }
 

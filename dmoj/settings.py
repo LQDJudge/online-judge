@@ -33,6 +33,7 @@ SITE_ID = 1
 SITE_NAME = "LQDOJ"
 SITE_LONG_NAME = "LQDOJ: Le Quy Don Online Judge"
 SITE_ADMIN_EMAIL = False
+SITE_DOMAIN = "lqdoj.edu.vn"
 
 DMOJ_REQUIRE_STAFF_2FA = True
 
