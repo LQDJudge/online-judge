@@ -135,19 +135,23 @@
 {% block body %}
   <div style="clear: both"></div>
   <br>
-  {% if request.profile == submission.user or perms.judge.resubmit_other %}
-    <div><a href="{{ url('problem_submit', submission.problem.code, submission.id) }}">{{ _('Resubmit') }}</a></div>
-  {% endif %}
-  {% if perms.judge.rejudge_submission %}
-    <div>
-      <form action="{{ url('submission_rejudge') }}" method="post">
-        {% csrf_token %}
-        <a href="#" onclick="parentNode.submit()">{{ _('Rejudge') }}</a>
-        <input type="hidden" name="id" value="{{ submission.id }}">
-        <input type="hidden" name="path" value="{{ url('submission_status', submission.id) }}">
-      </form>
-    </div>
-  {% endif %}
+  <div style="width: fit-content;">
+    {% if request.profile == submission.user or perms.judge.resubmit_other %}
+      <div class="link-row"><a href="{{ url('problem_submit', submission.problem.code, submission.id) }}">
+        <i class="fa fa-upload"></i>{{ _('Resubmit') }}</a></div>
+    {% endif %}
+    {% if perms.judge.rejudge_submission %}
+      <div class="link-row">
+        <form action="{{ url('submission_rejudge') }}" method="post">
+          {% csrf_token %}
+          <a href="#" onclick="parentNode.submit()">
+            <i class="fa fa-rotate-right"></i>{{ _('Rejudge') }}</a>
+          <input type="hidden" name="id" value="{{ submission.id }}">
+          <input type="hidden" name="path" value="{{ url('submission_status', submission.id) }}">
+        </form>
+      </div>
+    {% endif %}
+  </div>
 
   <br>
   <h3 id="source-header" class="toggle closed"><i class="fa fa-chevron-right fa-fw"></i>{{_('Source code')}}</h3>
