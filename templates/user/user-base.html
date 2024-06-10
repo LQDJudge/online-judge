@@ -112,7 +112,7 @@
       {% if request.user.is_authenticated and request.profile != user %}
         <br>
         <button class="small btn-midnightblue" style="width:100%" id="message-button">
-          {{ _('Send message') }}
+          <i class="fa fa-envelope"></i> {{ _('Send message') }}
         </button>
       {% endif %}
 
