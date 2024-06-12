@@ -69,10 +69,8 @@
     {% endif %}
     {% block media %}{% endblock %}
     {% if use_darkmode %}
-      {% compress css %}
-        <link rel="stylesheet" href="{{ static('darkmode.css') }}">
-        <link rel="stylesheet" href="{{ static('darkmode-svg.css') }}">
-      {% endcompress %}
+      <link rel="stylesheet" href="{{ static('darkmode.css') }}">
+      <link rel="stylesheet" href="{{ static('darkmode-svg.css') }}">
     {% endif %}
 
     <noscript>
