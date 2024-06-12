@@ -792,10 +792,34 @@ ul.errorlist {
     align-self: center !important;
 }
 
-.a-problem {
-    font-size: 15px;
-    line-height: 1.8;
+.link-row {
+    display: flex;
+    align-items: center;
+    padding: 6px;
     font-weight: normal;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    a {
+        color: inherit;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        text-decoration: none;
+
+        i {
+            width: 1.5em;
+        }
+    }
+
+    span {
+        flex-grow: 1;
+    }
+
+    &:hover {
+        color: $theme_color;
+        background-color: #f8f8f2;
+    }
 }
 
 a {
