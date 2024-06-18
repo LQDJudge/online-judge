@@ -13,9 +13,9 @@
 
       function update_ticket_state(open) {
         if (open)
-        $status.removeClass('fa-check-circle-o').addClass('fa-exclamation-circle');
+        $status.removeClass('fa-check-circle').addClass('fa-exclamation-circle');
         else
-        $status.removeClass('fa-exclamation-circle').addClass('fa-check-circle-o');
+        $status.removeClass('fa-exclamation-circle').addClass('fa-check-circle');
         $('.close-ticket').toggle(open);
         $('.open-ticket').toggle(!open);
       }
@@ -144,7 +144,7 @@
 
 {% block content_title %}
   <span class="status">
-    <i class="fa {% if ticket.is_open %}fa-exclamation-circle{% else %}fa-check-circle-o{% endif %}"></i>
+    <i class="fa {% if ticket.is_open %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
   </span>
   <span class="title">{{ ticket.title }}</span><small>#{{ ticket.id }}</small>
 {% endblock %}

@@ -1,0 +1,24 @@
+<div class="sidebox">
+  <h3 class="colored-text"><i class="fa fa-search"></i>{{ _('Organization search') }}</h3>
+  <div class="sidebox-content">
+    <form id="filter-form" method="GET">
+      <input id="search-organization" type="text" name="organization" value="{{ organization_query or '' }}"
+        placeholder="{{ _('Search organizations...') }}">
+      <div class="filter-form-group">
+        <label for="order" class="bold-text margin-label">{{ _('Order by') }}</label>
+        <select id="order" name="order" style="width: 100%">
+          <option value="">---</option>
+          {% for value, name in all_sort_options %}
+            <option value="{{value}}"{% if selected_order == value%} selected{% endif %}>
+              {{ name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-submit-group">
+        <a class="button small" href="{{url('organization_add')}}">{{_("Create group")}}</a>
+        <a id="go" class="button small">{{ _('Go') }}</a>
+      </div>
+    </form>
+  </div>
+</div>

@@ -134,7 +134,6 @@
     border-bottom: 1.4px solid lightgray;
     border-top: 1.4px solid lightgray;
     margin-bottom: 1.5em;
-    width: 90%;
     padding: 1em 1.25em 0.5em 1.25em;
     background-color: white;
     margin-left: auto;
@@ -275,6 +274,7 @@
     .right-sidebar {
         width: 100%;
         margin-left: auto;
+        margin-top: 2em;
     }
 
     .actionbar-box {
@@ -342,6 +342,7 @@
     .blog-sidebar,
     .right-sidebar {
         flex: 25%;
+        max-width: 25%;
     }
 
     .middle-content {

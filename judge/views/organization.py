@@ -238,33 +238,87 @@ class OrganizationHomeView(OrganizationMixin):
         return context
 
 
-class OrganizationList(TitleMixin, ListView, OrganizationBase):
+class OrganizationList(
+    QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ListView, OrganizationBase
+):
     model = Organization
     context_object_name = "organizations"
     template_name = "organization/list.html"
     title = gettext_lazy("Groups")
+    paginate_by = 12
+    all_sorts = frozenset(("name", "member_count"))
+    default_desc = frozenset(("name", "member_count"))
 
-    def get_queryset(self):
-        return (
+    def get_default_sort_order(self, request):
+        return "-member_count"
+
+    def get(self, request, *args, **kwargs):
+        default_tab = "mine"
+        if not self.request.user.is_authenticated:
+            default_tab = "public"
+        self.current_tab = self.request.GET.get("tab", default_tab)
+        self.organization_query = request.GET.get("organization", "")
+
+        return super(OrganizationList, self).get(request, *args, **kwargs)
+
+    def _get_queryset(self):
+        queryset = (
             super(OrganizationList, self)
             .get_queryset()
             .annotate(member_count=Count("member"))
             .defer("about")
         )
 
-    def get_context_data(self, **kwargs):
-        context = super(OrganizationList, self).get_context_data(**kwargs)
-        context["my_organizations"] = []
-        context["page_type"] = "organizations"
+        if self.organization_query:
+            queryset = queryset.filter(
+                Q(slug__icontains=self.organization_query)
+                | Q(name__icontains=self.organization_query)
+                | Q(short_name__icontains=self.organization_query)
+            )
+        return queryset
+
+    def get_queryset(self):
+        organization_list = self._get_queryset()
+
+        my_organizations = []
         if self.request.profile:
-            context["my_organizations"] = context["organizations"].filter(
+            my_organizations = organization_list.filter(
                 id__in=self.request.profile.organizations.values("id")
             )
-        other_organizations = context["organizations"].exclude(
-            id__in=context["my_organizations"]
-        )
-        context["open_organizations"] = other_organizations.filter(is_open=True)
-        context["private_organizations"] = other_organizations.filter(is_open=False)
+
+        if self.current_tab == "public":
+            queryset = organization_list.exclude(id__in=my_organizations).filter(
+                is_open=True
+            )
+        elif self.current_tab == "private":
+            queryset = organization_list.exclude(id__in=my_organizations).filter(
+                is_open=False
+            )
+        else:
+            queryset = my_organizations
+
+        if queryset:
+            queryset = queryset.order_by(self.order)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizationList, self).get_context_data(**kwargs)
+
+        context["first_page_href"] = "."
+        context["current_tab"] = self.current_tab
+        context["page_type"] = self.current_tab
+        context["organization_query"] = self.organization_query
+        context["selected_order"] = self.request.GET.get("order")
+        context["all_sort_options"] = [
+            ("name", _("Name (asc.)")),
+            ("-name", _("Name (desc.)")),
+            ("member_count", _("Member count (asc.)")),
+            ("-member_count", _("Member count (desc.)")),
+        ]
+
+        context.update(self.get_sort_context())
+        context.update(self.get_sort_paginate_context())
+
         return context
 
 

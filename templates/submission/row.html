@@ -58,7 +58,7 @@
     {% if not hide_contest_in_row and submission.contest_object_id %}
       <a href="{{ url('contest_view', submission.contest_object.key) }}"
         class="submission-contest">
-        <i title="{{ submission.contest_object.name }}" class="fa fa-dot-circle-o"></i>
+        <i title="{{ submission.contest_object.name }}" class="far fa-dot-circle"></i>
       </a>
     {% endif %}
   </div>

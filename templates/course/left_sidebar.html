@@ -2,7 +2,7 @@
   {{ make_tab_item('home', 'fa fa-home', course.get_absolute_url(), _('Home')) }}
   {% if is_editable %}
     {{ make_tab_item('edit_lesson', 'fa fa-edit', url('edit_course_lessons', course.slug), _('Edit lessons')) }}
-    {{ make_tab_item('grades', 'fa fa-check-square-o', url('course_grades', course.slug), _('Grades')) }}
+    {{ make_tab_item('grades', 'fa fa-check-square', url('course_grades', course.slug), _('Grades')) }}
   {% endif %}
   {% if perms.judge.change_course %}
     {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_course_change', course.id), _('Admin'), force_new_page=True) }}
