@@ -385,6 +385,47 @@ function activateBlogBoxOnClick() {
     });
 }
 
+function changeTabParameter(newTab) {
+  const url = new URL(window.location);
+  const searchParams = new URLSearchParams(url.search);
+  searchParams.set('tab', newTab);
+  searchParams.delete('page');
+  url.search = searchParams.toString();
+  return url.href;
+}
+
+function submitFormWithParams($form, method) {
+  const currentUrl = new URL(window.location.href);
+  const searchParams = new URLSearchParams(currentUrl.search);
+  const formData = $form.serialize();
+
+  const params = new URLSearchParams(formData);
+
+  if (searchParams.has('tab')) {
+    params.set('tab', searchParams.get('tab'));
+  }
+
+  const fullUrl = currentUrl.pathname + '?' + params.toString();
+
+  if (method === "GET") {
+    window.location.href = fullUrl;
+  }
+  else {
+    var $formToSubmit = $('<form>')
+      .attr('action', fullUrl)
+      .attr('method', 'POST')
+      .appendTo('body');
+
+    $formToSubmit.append($('<input>').attr({
+      type: 'hidden',
+      name: 'csrfmiddlewaretoken',
+      value: $.cookie('csrftoken')
+    }));
+
+    $formToSubmit.submit();
+  }
+}
+
 function onWindowReady() {
     // http://stackoverflow.com/a/1060034/1090657
     var hidden = 'hidden';

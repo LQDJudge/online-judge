@@ -168,7 +168,7 @@ else:
                 },
                 {
                     "model": "judge.Submission",
-                    "icon": "fa-check-square-o",
+                    "icon": "fa-check-square",
                     "children": [
                         "judge.Language",
                         "judge.Judge",

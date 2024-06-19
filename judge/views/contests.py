@@ -159,6 +159,8 @@ class ContestList(
     def get_default_sort_order(self, request):
         if request.GET.get("contest") and settings.ENABLE_FTS:
             return "-relevance"
+        if self.current_tab == "future":
+            return "start_time"
         return "-start_time"
 
     @cached_property
@@ -279,12 +281,24 @@ class ContestList(
         return (
             self._get_queryset()
             .filter(start_time__gt=self._now)
-            .order_by("start_time", "key")
+            .order_by(self.order, "key")
         )
 
     def _get_active_participations_queryset(self):
-        active_contests = self._get_queryset().filter(id__in=self._active_contests_ids)
-        return self._active_participations().filter(contest_id__in=active_contests)
+        active_contests = (
+            self._get_queryset()
+            .filter(id__in=self._active_contests_ids)
+            .order_by(self.order, "key")
+        )
+        ordered_ids = list(active_contests.values_list("id", flat=True))
+
+        participations = self._active_participations().filter(
+            contest_id__in=ordered_ids
+        )
+        participations = sorted(
+            participations, key=lambda p: ordered_ids.index(p.contest_id)
+        )
+        return participations
 
     def get_queryset(self):
         if self.current_tab == "past":
@@ -303,7 +317,7 @@ class ContestList(
 
         context["current_count"] = self._get_current_contests_queryset().count()
         context["future_count"] = self._get_future_contests_queryset().count()
-        context["active_count"] = self._get_active_participations_queryset().count()
+        context["active_count"] = len(self._get_active_participations_queryset())
 
         context["now"] = self._now
         context["first_page_href"] = "."

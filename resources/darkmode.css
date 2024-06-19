@@ -1766,6 +1766,9 @@ noscript #noscript {
 .background-bisque {
     background-color: rgb(86, 47, 0);
 }
+.background-royalblue {
+    background-color: rgb(25, 58, 158) !important;
+}
 .background-footer {
     color: rgb(152, 143, 129);
 }
@@ -2769,6 +2772,10 @@ ul.errorlist {
     color: rgb(209, 205, 199);
     text-decoration-color: initial;
 }
+.link-row a {
+    color: inherit;
+    text-decoration-color: initial;
+}
 .link-row:hover {
     background-color: rgb(31, 31, 17);
     color: rgb(249, 146, 97);
@@ -3171,6 +3178,19 @@ a.voted {
     background-image: initial;
     color: rgb(232, 230, 227);
 }
+.organization-card {
+    background-color: rgb(24, 26, 27);
+    border-color: rgb(58, 62, 65);
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 4px;
+    color: inherit;
+    text-decoration-color: initial;
+}
+.organization-card:hover {
+    color: rgb(249, 146, 97);
+}
+.organization-card img.org-logo {
+    background-color: rgb(32, 35, 37);
+}
 .organization-row {
     border-bottom-color: rgb(62, 68, 70);
     border-top: none;
@@ -3179,16 +3199,13 @@ a.voted {
 .organization-row:hover {
     background-color: rgb(31, 33, 35);
 }
-.organization-container {
-    border-color: rgb(62, 68, 70);
-}
 .org-help-text {
     color: rgb(152, 143, 129);
 }
 .ticket-container #content > h2:first-child small {
     color: rgb(168, 160, 149);
 }
-.ticket-container #content > h2:first-child .fa-check-circle-o {
+.ticket-container #content > h2:first-child .fa-check-circle {
     color: rgb(86, 255, 86);
 }
 .ticket-container #content > h2:first-child .fa-exclamation-circle {
