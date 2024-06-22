@@ -14,6 +14,7 @@
   {% include "contest/media-js.html" %}
   {% include "comments/media-js.html" %}
   {% include "actionbar/media-js.html" %}
+  {% include "contest/contest-datetime-js.html" %}
 {% endblock %}
 
 {% block two_col_media %}
@@ -77,11 +78,15 @@
     </form>
   {% endif %}
   <div style="clear: both"></div>
-  <div class="content-description">
-    {% cache 3600 'contest_html' contest.id MATH_ENGINE %}
-      {{ contest.description|markdown|reference|str|safe }}
-    {% endcache %}
-  </div>
+
+  {% if contest.is_organization_private %}
+    <div style="display: flex; margin-bottom: 1em">
+      {% for org in contest.organizations.all() %}
+        {% include "organization/tag.html" %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
   {% if editable_organizations or is_clonable %}
     <div style="display: flex; gap: 0.5em;">
       {% for org in editable_organizations %}
@@ -94,6 +99,12 @@
       {% endif %}
     </div>
   {% endif %}
+
+  <div style="padding: 0 1em;">
+    {% cache 3600 'contest_html' contest.id %}
+      {{ contest.description|markdown|reference|str|safe }}
+    {% endcache %}
+  </div>
 
   {% if contest.ended or request.user.is_superuser or is_editor or is_tester %}
     <hr>

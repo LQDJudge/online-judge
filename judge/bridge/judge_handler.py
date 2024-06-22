@@ -24,6 +24,8 @@ from judge.models import (
     Submission,
     SubmissionTestCase,
 )
+from judge.bridge.utils import VanishedSubmission
+from judge.caching import cache_wrapper
 
 logger = logging.getLogger("judge.bridge")
 json_log = logging.getLogger("judge.json.bridge")
@@ -65,9 +67,8 @@ class JudgeHandler(ZlibPacketHandler):
         self._working = False
         self._working_data = {}
         self._no_response_job = None
-        self._problems = []
         self.executors = {}
-        self.problems = {}
+        self.problems = set()
         self.latency = None
         self.time_delta = None
         self.load = 1e100
@@ -139,11 +140,52 @@ class JudgeHandler(ZlibPacketHandler):
             )
         return result
 
+    def _update_supported_problems(self, problem_packet):
+        # problem_packet is a dict {code: mtimes} from judge-server
+        self.problems = set(p for p, _ in problem_packet)
+
+    def _update_judge_problems(self):
+        chunk_size = 500
+
+        target_problem_codes = self.problems
+        current_problems = _get_judge_problems(self.judge)
+
+        updated = False
+        problems_to_add = list(target_problem_codes - current_problems)
+        problems_to_remove = list(current_problems - target_problem_codes)
+
+        if problems_to_add:
+            for i in range(0, len(problems_to_add), chunk_size):
+                chunk = problems_to_add[i : i + chunk_size]
+                problem_ids = Problem.objects.filter(code__in=chunk).values_list(
+                    "id", flat=True
+                )
+                if not problem_ids:
+                    continue
+                logger.info("%s: Add %d problems", self.name, len(problem_ids))
+                self.judge.problems.add(*problem_ids)
+                updated = True
+
+        if problems_to_remove:
+            for i in range(0, len(problems_to_remove), chunk_size):
+                chunk = problems_to_remove[i : i + chunk_size]
+                problem_ids = Problem.objects.filter(code__in=chunk).values_list(
+                    "id", flat=True
+                )
+                if not problem_ids:
+                    continue
+                logger.info("%s: Remove %d problems", self.name, len(problem_ids))
+                self.judge.problems.remove(*problem_ids)
+                updated = True
+
+        if updated:
+            _get_judge_problems.dirty(self.judge)
+
     def _connected(self):
         judge = self.judge = Judge.objects.get(name=self.name)
         judge.start_time = timezone.now()
         judge.online = True
-        judge.problems.set(Problem.objects.filter(code__in=list(self.problems.keys())))
+        self._update_judge_problems()
         judge.runtimes.set(Language.objects.filter(key__in=list(self.executors.keys())))
 
         # Delete now in case we somehow crashed and left some over from the last connection
@@ -178,6 +220,8 @@ class JudgeHandler(ZlibPacketHandler):
     def _disconnected(self):
         Judge.objects.filter(id=self.judge.id).update(online=False)
         RuntimeVersion.objects.filter(judge=self.judge).delete()
+        self.judge.problems.clear()
+        _get_judge_problems.dirty(self.judge)
 
     def _update_ping(self):
         try:
@@ -208,8 +252,7 @@ class JudgeHandler(ZlibPacketHandler):
             return
 
         self.timeout = 60
-        self._problems = packet["problems"]
-        self.problems = dict(self._problems)
+        self._update_supported_problems(packet["problems"])
         self.executors = packet["executors"]
         self.name = packet["id"]
 
@@ -310,6 +353,9 @@ class JudgeHandler(ZlibPacketHandler):
 
     def submit(self, id, problem, language, source):
         data = self.get_related_submission_data(id)
+        if not data:
+            self._update_internal_error_submission(id, "Submission vanished")
+            raise VanishedSubmission()
         self._working = id
         self._working_data = {
             "problem": problem,
@@ -434,14 +480,12 @@ class JudgeHandler(ZlibPacketHandler):
 
     def on_supported_problems(self, packet):
         logger.info("%s: Updated problem list", self.name)
-        self._problems = packet["problems"]
-        self.problems = dict(self._problems)
+        self._update_supported_problems(packet["problems"])
+
         if not self.working:
             self.judges.update_problems(self)
 
-        self.judge.problems.set(
-            Problem.objects.filter(code__in=list(self.problems.keys()))
-        )
+        self._update_judge_problems()
         json_log.info(
             self._make_json_log(action="update-problems", count=len(self.problems))
         )
@@ -658,8 +702,11 @@ class JudgeHandler(ZlibPacketHandler):
         self._free_self(packet)
 
         id = packet["submission-id"]
+        self._update_internal_error_submission(id, packet["message"])
+
+    def _update_internal_error_submission(self, id, message):
         if Submission.objects.filter(id=id).update(
-            status="IE", result="IE", error=packet["message"]
+            status="IE", result="IE", error=message
         ):
             event.post(
                 "sub_%s" % Submission.get_id_secret(id), {"type": "internal-error"}
@@ -667,9 +714,9 @@ class JudgeHandler(ZlibPacketHandler):
             self._post_update_submission(id, "internal-error", done=True)
             json_log.info(
                 self._make_json_log(
-                    packet,
+                    sub=id,
                     action="internal-error",
-                    message=packet["message"],
+                    message=message,
                     finish=True,
                     result="IE",
                 )
@@ -678,10 +725,10 @@ class JudgeHandler(ZlibPacketHandler):
             logger.warning("Unknown submission: %s", id)
             json_log.error(
                 self._make_json_log(
-                    packet,
+                    sub=id,
                     action="internal-error",
                     info="unknown submission",
-                    message=packet["message"],
+                    message=message,
                     finish=True,
                     result="IE",
                 )
@@ -912,3 +959,8 @@ class JudgeHandler(ZlibPacketHandler):
 
     def on_cleanup(self):
         db.connection.close()
+
+
+@cache_wrapper(prefix="gjp", timeout=3600)
+def _get_judge_problems(judge):
+    return set(judge.problems.values_list("code", flat=True))

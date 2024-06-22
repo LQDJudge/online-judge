@@ -8,13 +8,13 @@ from django.core.cache.utils import make_template_fragment_key
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
+import judge
 from judge.utils.problems import finished_submission
 from .models import (
     BlogPost,
     Comment,
     Contest,
     ContestSubmission,
-    EFFECTIVE_MATH_ENGINES,
     Judge,
     Language,
     License,
@@ -23,6 +23,8 @@ from .models import (
     Problem,
     Profile,
     Submission,
+    NavigationBar,
+    Solution,
 )
 
 
@@ -46,21 +48,13 @@ def problem_update(sender, instance, **kwargs):
     cache.delete_many(
         [
             make_template_fragment_key("submission_problem", (instance.id,)),
-            make_template_fragment_key("problem_feed", (instance.id,)),
             "problem_tls:%s" % instance.id,
             "problem_mls:%s" % instance.id,
         ]
     )
     cache.delete_many(
         [
-            make_template_fragment_key("problem_html", (instance.id, engine, lang))
-            for lang, _ in settings.LANGUAGES
-            for engine in EFFECTIVE_MATH_ENGINES
-        ]
-    )
-    cache.delete_many(
-        [
-            make_template_fragment_key("problem_authors", (instance.id, lang))
+            make_template_fragment_key("problem_html", (instance.id, lang))
             for lang, _ in settings.LANGUAGES
         ]
     )
@@ -70,6 +64,7 @@ def problem_update(sender, instance, **kwargs):
             for lang, _ in settings.LANGUAGES
         ]
     )
+    Problem.get_authors.dirty(instance)
 
     for lang, _ in settings.LANGUAGES:
         unlink_if_exists(get_pdf_path("%s.%s.pdf" % (instance.code, lang)))
@@ -77,19 +72,20 @@ def problem_update(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Profile)
 def profile_update(sender, instance, **kwargs):
+    judge.utils.users.get_points_rank.dirty(instance.id)
+    judge.utils.users.get_rating_rank.dirty(instance.id)
     if hasattr(instance, "_updating_stats_only"):
         return
 
     cache.delete_many(
-        [
-            make_template_fragment_key("user_about", (instance.id, engine))
-            for engine in EFFECTIVE_MATH_ENGINES
-        ]
+        [make_template_fragment_key("user_about", (instance.id,))]
         + [
             make_template_fragment_key("org_member_count", (org_id,))
             for org_id in instance.organizations.values_list("id", flat=True)
         ]
     )
+
+    judge.models.profile._get_basic_info.dirty(instance.id)
 
 
 @receiver(post_save, sender=Contest)
@@ -99,10 +95,7 @@ def contest_update(sender, instance, **kwargs):
 
     cache.delete_many(
         ["generated-meta-contest:%d" % instance.id]
-        + [
-            make_template_fragment_key("contest_html", (instance.id, engine))
-            for engine in EFFECTIVE_MATH_ENGINES
-        ]
+        + [make_template_fragment_key("contest_html", (instance.id,))]
     )
 
 
@@ -130,19 +123,8 @@ def comment_update(sender, instance, **kwargs):
 
 @receiver(post_save, sender=BlogPost)
 def post_update(sender, instance, **kwargs):
-    cache.delete_many(
-        [
-            make_template_fragment_key("post_summary", (instance.id,)),
-            "blog_slug:%d" % instance.id,
-            "blog_feed:%d" % instance.id,
-        ]
-    )
-    cache.delete_many(
-        [
-            make_template_fragment_key("post_content", (instance.id, engine))
-            for engine in EFFECTIVE_MATH_ENGINES
-        ]
-    )
+    cache.delete(make_template_fragment_key("post_content", (instance.id,)))
+    BlogPost.get_authors.dirty(instance)
 
 
 @receiver(post_delete, sender=Submission)
@@ -159,12 +141,9 @@ def contest_submission_delete(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Organization)
 def organization_update(sender, instance, **kwargs):
-    cache.delete_many(
-        [
-            make_template_fragment_key("organization_html", (instance.id, engine))
-            for engine in EFFECTIVE_MATH_ENGINES
-        ]
-    )
+    cache.delete_many([make_template_fragment_key("organization_html", (instance.id,))])
+    for admin in instance.admins.all():
+        Organization.is_admin.dirty(instance, admin)
 
 
 _misc_config_i18n = [code for code, _ in settings.LANGUAGES]
@@ -187,3 +166,13 @@ def contest_submission_update(sender, instance, **kwargs):
     Submission.objects.filter(id=instance.submission_id).update(
         contest_object_id=instance.participation.contest_id
     )
+
+
+@receiver(post_save, sender=NavigationBar)
+def navbar_update(sender, instance, **kwargs):
+    judge.template_context._nav_bar.dirty()
+
+
+@receiver(post_save, sender=Solution)
+def solution_update(sender, instance, **kwargs):
+    cache.delete(make_template_fragment_key("solution_content", (instance.id,)))

@@ -59,13 +59,6 @@
   {{ form.media.js }}
   <script type="text/javascript">
     $(function () {
-      $('#ace_user_script').on('ace_load', function (e, editor) {
-        editor.getSession().setMode("ace/mode/javascript");
-      });
-    });
-  </script>
-  <script type="text/javascript">
-    $(function () {
       $('#disable-2fa-button').click(function () {
         alert("The administrators for this site require all the staff to have two-factor authentication enabled, so it may not be disabled at this time.");
       });
@@ -84,10 +77,12 @@
 {% block body %}
   <div id="center-float">
     <form id="edit-form" action="" method="post" class="form-area" enctype="multipart/form-data">
-      {% if form.errors or form_user.errors %}
+      {% if form.errors or form_user.errors or form_info.errors %}
         <div class="alert alert-danger alert-dismissable">
           <a href="#" class="close">x</a>
           {{ form.errors }}
+          <br>
+          {{ form_info.errors }}
           <br>
           {{ form_user.errors }}
         </div>
@@ -97,12 +92,24 @@
 
       <table class="block-header grayed main-info">
         <tr>
-          <td> {{ _('Fullname') }}: </td>
+          <td> {{ _('Full name') }}: </td>
           <td> {{ form_user.first_name }} </td>
         </tr>
         <tr>
           <td> {{ _('School') }}: </td>
           <td> {{ form_user.last_name }} </td>
+        </tr>
+        <tr>
+          <td> {{ _('Date of birth') }}: </td>
+          <td> {{ form_info.date_of_birth }} </td>
+        </tr>
+        <tr>
+          <td> {{ _('Address') }}: </td>
+          <td> {{ form_info.address }} </td>
+        </tr>
+        <tr>
+          <td> {{ _('T-Shirt size') }}: </td>
+          <td> {{ form_info.tshirt_size }} </td>
         </tr>
         <tr>
           <td> {{ _('Password') }}: </td>
@@ -148,12 +155,6 @@
                 <td><label class="inline-header grayed">{{ _('Editor theme') }}:</label></td>
                 <td><span class="fullwidth">{{ form.ace_theme }}</span></td>
               </tr>
-              {% if has_math_config %}
-                <tr>
-                  <td><label class="inline-header grayed">{{ _('Math engine') }}:</label></td>
-                  <td><span class="fullwidth">{{ form.math_engine }}</span></td>
-                </tr>
-              {% endif %}
             </table>
           </td>
         </tr>
@@ -177,10 +178,6 @@
       {{ form.css_background }}
       <div><i>{{form.css_background.help_text}}</i></div>
       <br><br>
-      <div class="block-header">{{ _('User-script') }}:</div>
-      {{ form.user_script }}
-      <hr>
-
       <input type="submit" style="float:right" value="{{ _('Update profile') }}">
     </form>
   </div>

@@ -20,6 +20,7 @@ from judge.models.interface import BlogPost
 from judge.models.problem import Problem, Solution
 from judge.models.profile import Profile
 from judge.utils.cachedict import CacheDict
+from judge.caching import cache_wrapper
 
 
 __all__ = ["Comment", "CommentLock", "CommentVote", "Notification"]
@@ -56,6 +57,7 @@ class Comment(MPTTModel):
         related_name="replies",
         on_delete=CASCADE,
     )
+    revision_count = models.PositiveIntegerField(default=1)
 
     versions = VersionRelation()
 
@@ -71,19 +73,14 @@ class Comment(MPTTModel):
 
     @classmethod
     def most_recent(cls, user, n, batch=None, organization=None):
-        queryset = (
-            cls.objects.filter(hidden=False)
-            .select_related("author__user")
-            .defer("author__about", "body")
-            .order_by("-id")
-        )
+        queryset = cls.objects.filter(hidden=False).order_by("-id")
 
         if organization:
             queryset = queryset.filter(author__in=organization.members.all())
 
         problem_access = CacheDict(lambda p: p.is_accessible_by(user))
         contest_access = CacheDict(lambda c: c.is_accessible_by(user))
-        blog_access = CacheDict(lambda b: b.can_see(user))
+        blog_access = CacheDict(lambda b: b.is_accessible_by(user))
 
         if n == -1:
             n = len(queryset)
@@ -117,10 +114,6 @@ class Comment(MPTTModel):
     def get_replies(self):
         query = Comment.filter(parent=self)
         return len(query)
-
-    @cached_property
-    def get_revisions(self):
-        return self.versions.count()
 
     @cached_property
     def page_title(self):
@@ -177,3 +170,10 @@ class CommentLock(models.Model):
 
     def __str__(self):
         return str(self.page)
+
+
+@cache_wrapper(prefix="gcc")
+def get_visible_comment_count(content_type, object_id):
+    return Comment.objects.filter(
+        content_type=content_type, object_id=object_id, hidden=False
+    ).count()

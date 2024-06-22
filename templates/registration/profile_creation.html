@@ -30,11 +30,13 @@
 {% block js_media %}{{ form.media.js }}{% endblock %}
 
 {% block body %}
-  <form action="" method="post" class="form-area">
-    {% csrf_token %}
-    <table border="0" style="text-align:left">{{ form.as_table() }}</table>
-    <input type="submit" style="float:right;" value="{{ _('Continue >') }}">
-  </form>
+  <div id="center-float" class="registration-form">
+    <form action="" method="post" class="form-area">
+      {% csrf_token %}
+      <table border="0" style="text-align:left">{{ form.as_table() }}</table>
+      <input type="submit" style="float:right;" value="{{ _('Continue >') }}">
+    </form>
+  </div>
 
   <div class="map-wrap">
     <div class="map-inset">

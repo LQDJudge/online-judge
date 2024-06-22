@@ -28,6 +28,9 @@
 
 // Bootstrap-y buttons
 .button, button, input[type=submit] {
+    -webkit-transition: .3s all ease;
+    -o-transition: .3s all ease;
+    transition: .3s all ease;
     align-items: center;
     background-clip: padding-box;
     background-color: $theme_color;
@@ -56,7 +59,7 @@
     text-align: center;
     width: auto;
 
-    &.disabled {
+    &.disabled, &[disabled] {
         background: linear-gradient(to bottom, darkgray 0, gray 100%) repeat-x !important;
         border-color: grey !important;
         cursor: not-allowed;
@@ -78,10 +81,10 @@
     }
 
     &.btn-green {
-        background: green;
+        background: #28a745;
 
         &:hover {
-            background: #2c974b;
+            background: green;
         }
     }
 
@@ -140,7 +143,7 @@
 }
 
 input {
-    &[type=text], &[type=password], &[type=email], &[type=number] {
+    &[type=text], &[type=password], &[type=email], &[type=number], &[type=datetime-local], &[type=date] {
         padding: 4px 8px;
         color: #555;
         background: #FFF none;
@@ -197,29 +200,25 @@ input {
 
 // Bootstrap-y copy button
 .btn-clipboard {
-    top: 0;
-    right: 0;
+    top: -5px;
+    right: -8px;
     display: block;
     font-size: 12px;
-    color: #767676;
     cursor: pointer;
-    background-color: #FFF;
-    border: 1px solid #E1E1E8;
-    border-radius: 0 $widget_border_radius;
     position: absolute;
     padding: 5px 8px;
+    font-family: system-ui, "Noto Sans";
+
+    &:hover {
+        border-radius: $widget_border_radius;
+        border: 1px solid #E1E1E8;
+        background-color: #FFF;
+    }
 }
 
 .copy-clipboard {
     position: relative;
 }
-
-.md-typeset .admonition .btn-clipboard,
-.md-typeset details .btn-clipboard {
-    right: -0.6rem;
-    border-radius: 0 0 0 4px;
-}
-
 
 // Bootstrap-y tabs
 .ul_tab_a_active {
@@ -321,7 +320,6 @@ input {
 ul.pagination a:hover {
     color: #FFF;
     background: #cc4e17;
-    border: none;
 }
 
 ul.pagination {
@@ -599,7 +597,6 @@ ul.select2-selection__rendered {
 }
 
 .control-button {
-    background: lightgray;
     color: black !important;
     border: 0;
 }
@@ -614,6 +611,7 @@ ul.errorlist {
     list-style: none;
     padding: 0px;
     color: red;
+    margin-bottom: 3px;
 }
 
 .registration-form {
@@ -740,5 +738,161 @@ ul.errorlist {
 
     .github-icon i {
         color: black;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn {
+        -webkit-transition: none;
+        -o-transition: none;
+        transition: none;
+    }
+}
+
+.btn:hover {
+    color: #212529;
+    text-decoration: none;
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+.btn-block + .btn-block {
+    margin-top: 0.5rem;
+}
+
+.d-flex {
+    display: -webkit-box !important;
+    display: -ms-flexbox !important;
+    display: flex !important;
+}
+
+.justify-content-center {
+    -webkit-box-pack: center !important;
+    -ms-flex-pack: center !important;
+    justify-content: center !important;
+}
+
+.align-items-center {
+    -webkit-box-align: center !important;
+    -ms-flex-align: center !important;
+    align-items: center !important;
+}
+
+.align-content-center {
+    -ms-flex-line-pack: center !important;
+    align-content: center !important;
+}
+
+.align-self-center {
+    -ms-flex-item-align: center !important;
+    -ms-grid-row-align: center !important;
+    align-self: center !important;
+}
+
+.link-row {
+    display: flex;
+    align-items: center;
+    padding: 6px;
+    font-weight: normal;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    a {
+        color: inherit;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        text-decoration: none;
+
+        i {
+            width: 1.5em;
+        }
+    }
+
+    span {
+        flex-grow: 1;
+    }
+
+    &:hover {
+        color: $theme_color;
+        background-color: #f8f8f2;
+    }
+}
+
+a {
+    -webkit-transition: .3s all ease;
+    -o-transition: .3s all ease;
+    transition: .3s all ease;
+}
+
+button:hover, button:focus {
+    text-decoration: none;
+    outline: none;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+}
+
+.btn {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-width: 1px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 500;
+    -webkit-box-shadow: 0px 10px 20px -6px rgba(0, 0, 0, 0.12);
+    -moz-box-shadow: 0px 10px 20px -6px rgba(0, 0, 0, 0.12);
+    box-shadow: 0px 10px 20px -6px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    position: relative;
+    -moz-transition: all 0.3s ease;
+    -o-transition: all 0.3s ease;
+    -webkit-transition: all 0.3s ease;
+    -ms-transition: all 0.3s ease;
+    transition: all 0.3s ease;
+    span {
+        font-size: 15px;
+        margin-left: -20px;
+        -moz-transition: all 0.3s ease;
+        -o-transition: all 0.3s ease;
+        -webkit-transition: all 0.3s ease;
+        -ms-transition: all 0.3s ease;
+        transition: all 0.3s ease;
+    }
+    .icon {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 45px;
+        bottom: 0;
+        background: #fff;
+        i {
+            font-size: 20px;
+        }
+    }
+    .icon.icon-round {
+        border-radius: 50%;
+    }
+    &.btn-round {
+        border-radius: 40px;
+    }
+    &:hover, &:active, &:focus {
+        outline: none;
+        span {
+            margin-left: -10px;
+        }
+    }
+    &.btn-primary {
+        color: #fff;
+        .icon i {
+            color: #28a745;
+        }
+    }
+    &.btn-disabled {
+        color: #fff;
+        background: gray;
+        border-color: gray;
     }
 }

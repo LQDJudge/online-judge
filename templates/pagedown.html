@@ -12,23 +12,24 @@
   {% endif %}
   {% if image_upload_enabled %}
     <div class="pagedown-image-upload">
-      <h2>Insert Image</h2>
+      <h2>{{_("Insert Image")}}</h2>
       <div class="form-row">
         <div>
-          <label class="label">From the web</label>
+          <label class="label">{{_("From the web")}}</label>
           <input class="url-input" type="text" placeholder="http://" />
         </div>
       </div>
+      <br>
       <div class="form-row">
         <div>
-          <label class="label">From your computer</label>
+          <label class="label">{{_("From your computer")}}</label>
           <input class="file-input" type="file" name="image" id="file" data-action="{{ url('pagedown-image-upload') }}" accept="image/*"/>
         </div>
       </div>
       <div class="submit-row">
         <div class="submit-loading"></div>
-        <input class="submit-input show" type="submit" value="Save" name="_addanother">
-        <p class="deletelink-box"><a href="#" class="close-image-upload deletelink">Cancel</a></p>
+        <input class="submit-input show small" type="submit" value="{{_('Save')}}" name="_addanother">
+        <p class="deletelink-box"><a href="#" class="close-image-upload deletelink">{{_("Cancel")}}</a></p>
       </div>
     </div>
   {% endif %}

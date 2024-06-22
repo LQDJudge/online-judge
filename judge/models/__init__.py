@@ -2,8 +2,6 @@ from reversion import revisions
 
 from judge.models.choices import (
     ACE_THEMES,
-    EFFECTIVE_MATH_ENGINES,
-    MATH_ENGINES_CHOICES,
     TIMEZONE,
 )
 from judge.models.comment import Comment, CommentLock, CommentVote
@@ -17,6 +15,9 @@ from judge.models.contest import (
     Rating,
     ContestProblemClarification,
     ContestsSummary,
+    OfficialContestCategory,
+    OfficialContestLocation,
+    OfficialContest,
 )
 from judge.models.interface import BlogPost, MiscConfig, NavigationBar, validate_regex
 from judge.models.message import PrivateMessage, PrivateMessageThread
@@ -45,6 +46,7 @@ from judge.models.profile import (
     Profile,
     Friend,
     OrganizationProfile,
+    ProfileInfo,
 )
 from judge.models.runtime import Judge, Language, RuntimeVersion
 from judge.models.submission import (
@@ -53,12 +55,15 @@ from judge.models.submission import (
     SubmissionSource,
     SubmissionTestCase,
 )
+
+from judge.models.test_formatter import TestFormatterModel
 from judge.models.ticket import Ticket, TicketMessage
 from judge.models.volunteer import VolunteerProblemVote
 from judge.models.pagevote import PageVote, PageVoteVoter
 from judge.models.bookmark import BookMark, MakeBookMark
-from judge.models.course import Course
+from judge.models.course import Course, CourseRole, CourseLesson
 from judge.models.notification import Notification, NotificationProfile
+from judge.models.test_formatter import TestFormatterModel
 
 revisions.register(Profile, exclude=["points", "last_access", "ip", "rating"])
 revisions.register(Problem, follow=["language_limits"])

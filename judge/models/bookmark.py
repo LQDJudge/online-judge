@@ -6,6 +6,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
 from judge.models.profile import Profile
+from judge.caching import cache_wrapper
 
 __all__ = ["BookMark"]
 
@@ -21,12 +22,9 @@ class BookMark(models.Model):
     object_id = models.PositiveIntegerField()
     linked_object = GenericForeignKey("content_type", "object_id")
 
-    def get_bookmark(self, user):
-        userqueryset = MakeBookMark.objects.filter(bookmark=self, user=user)
-        if userqueryset.exists():
-            return True
-        else:
-            return False
+    @cache_wrapper(prefix="BMgb")
+    def is_bookmarked_by(self, user):
+        return MakeBookMark.objects.filter(bookmark=self, user=user).exists()
 
     class Meta:
         verbose_name = _("bookmark")
@@ -55,11 +53,22 @@ class MakeBookMark(models.Model):
         verbose_name_plural = _("make bookmarks")
 
 
+@cache_wrapper(prefix="gocb", expected_type=BookMark)
+def _get_or_create_bookmark(content_type, object_id):
+    bookmark, created = BookMark.objects.get_or_create(
+        content_type=content_type,
+        object_id=object_id,
+    )
+    return bookmark
+
+
 class Bookmarkable:
     def get_or_create_bookmark(self):
-        if self.bookmark.count():
-            return self.bookmark.first()
-        new_bookmark = BookMark()
-        new_bookmark.linked_object = self
-        new_bookmark.save()
-        return new_bookmark
+        content_type = ContentType.objects.get_for_model(self)
+        object_id = self.pk
+        return _get_or_create_bookmark(content_type, object_id)
+
+
+def dirty_bookmark(bookmark, profile):
+    bookmark.is_bookmarked_by.dirty(bookmark, profile)
+    _get_or_create_bookmark.dirty(bookmark.content_type, bookmark.object_id)

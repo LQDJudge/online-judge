@@ -1,0 +1,100 @@
+{% macro contest_head(contest, organization=None) %}
+  <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title" style="margin-right: 5px;">
+    {{contest.name}}
+  </a>
+  <div class="contest-tags">
+    {% if not contest.is_visible %}
+      <span class="contest-tag contest-tag-hidden">
+        <i class="fa fa-eye-slash"></i> {{ _('hidden') }}
+      </span>
+    {% endif %}
+    {% if organization and contest.is_editable %}
+      <span class="contest-tag contest-tag-edit">
+        <a href="{{ url('organization_contest_edit', organization.id, organization.slug, contest.key) }}" class="white">
+          <i class="fa fa-edit"></i> {{ _('Edit') }}
+        </a>
+      </span>
+    {% endif %}
+    {% if contest.is_private %}
+      <span class="contest-tag contest-tag-private">
+        <i class="fa fa-lock"></i> {{ _('private') }}
+      </span>
+    {% endif %}
+    {% if not organization %}
+      {% if contest.is_organization_private %}
+        {% for org in contest.organizations.all() %}
+          {% include "organization/tag.html" %}
+        {% endfor %}
+      {% endif %}
+    {% endif %}
+    {% if contest.is_rated %}
+      <span class="contest-tag contest-tag-rated">
+        <i class="fa fa-bar-chart"></i> {{ _('rated') }}
+      </span>
+    {% endif %}
+    {% for tag in contest.tags.all() %}
+      <span style="background-color: {{ tag.color }}" class="contest-tag">
+        <a href="{{ url('contest_tag', tag.name) }}"
+          style="color: {{ tag.text_color }}"
+          data-featherlight="{{ url('contest_tag_ajax', tag.name) }}">
+          {{- tag.name -}}
+        </a>
+      </span>
+    {% endfor %}
+  </div>
+{% endmacro %}
+
+{% macro time_left(contest) %}
+  <div class="time-left">
+    {% if contest.time_limit %}
+      <div>
+        <b>{{_("Start")}}</b>: {{ contest.start_time|date(_("H:i d/m/Y")) }}
+      </div>
+      <div>
+        <b>{{_("End")}}</b>: {{ contest.end_time|date(_("H:i d/m/Y")) }}
+      </div>
+    {% else %}
+      <div>
+        <b>{{_("Start")}}</b>: {{ contest.start_time|date(_("H:i d/m/Y")) }}
+      </div>
+    {% endif %}
+    <div>
+      <b>{{_("Length")}}</b>:
+      {% if contest.time_limit %}
+        {% trans time_limit=contest.time_limit|timedelta('localized-no-seconds') %}{{ time_limit }}{% endtrans %}
+      {% else %}
+        {% trans duration=contest.contest_window_length|timedelta('localized-no-seconds') %}{{ duration }}{% endtrans %}
+      {% endif %}
+    </div>
+  </div>
+{% endmacro %}
+
+{% macro user_count(contest, user) %}
+  {% if contest.can_see_own_scoreboard(user) %}
+    <a href="{{ url('contest_ranking', contest.key) }}"><i class="fa fa-users"></i> {{ contest.user_count }}</a>
+  {% else %}
+    <i class="fa fa-users"></i>{{ contest.user_count }}
+  {% endif %}
+{% endmacro %}
+
+{% macro contest_format_user(contest, request, show_user=True, is_official=False) %}
+  {% if is_official %}
+    <div style="display: flex; flex-direction: column;">
+      <div><b>{{ _('Format') }}</b>: {{ contest.format.name }}</div>
+      <div><b>{{ _('Category') }}</b>: {{ contest.official.category.name }}</div>
+      <div><b>{{ _('Location') }}</b>: {{ contest.official.location.name }}</div>
+      <div><b>{{ _('Year') }}</b>: {{ contest.official.year }}</div>
+      {% if show_user %}
+        <div class="contest-title" style="margin-top: 0.4em">{{ user_count(contest, request.user) }}</div>
+      {% endif %}
+    </div>
+  {% else %}
+    <div style="display: flex; flex-direction: column;">
+      <div class="contest-title"> {{ _('Format') }} </div>
+      <div style="flex-grow: 1">{{ contest.format.name }}</div>
+      {% if show_user %}
+        <div class="contest-title" style="margin-top: 0.4em">{{ user_count(contest, request.user) }}</div>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endmacro %}

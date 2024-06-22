@@ -1,36 +1,8 @@
-<script src="{{ static('libs/featherlight/featherlight.min.js') }}" type="text/javascript"></script>
 {% compress js %}
   {{ comment_form.media.js }}
-  {% if not REQUIRE_JAX %}
-    <script type="text/javascript">
-      $(function () {
-        $('#id_body').keypress(function () {
-          if (!("MathJax" in window)) {
-            $.ajax({
-              type: "GET",
-              url: '{{ static('mathjax3_config.js') }}',
-              dataType: "script",
-              cache: true,
-              success: function () {
-                $.ajax({
-                  type: "GET",
-                  url: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js',
-                  dataType: "script",
-                  cache: true,
-                  success: function () {
-                    mathjax_pagedown($);
-                  }
-                });
-              }
-            });
-          }
-        });
-      });
-    </script>
-  {% endif %}
   <script type="text/javascript">
     $(document).ready(function () {
-      let loading_gif = "<img src=\"{{static('loading.gif')}}\" style=\"height: 3em; margin-bottom: 3px\" class=\"loading\">";
+      let loading_gif = "<i class=\"fa fa-spinner fa-pulse loading\" style=\"font-size: 1.5em; margin-bottom: 1em;\"></i>";
       window.reply_comment = function (parent) {
         var $comment_reply = $('#comment-' + parent + '-reply');
         var reply_id = 'reply-' + parent;
@@ -61,10 +33,8 @@
       });
 
       function update_math($comment) {
-        if ('MathJax' in window) {
-          var $body = $comment.find('.comment-body');
-          MathJax.typeset($body[0]);
-        }
+        var $body = $comment.find('.comment-body');
+        renderKatex($body[0]);
       }
 
       window.show_revision = function (comment_id, offset) {
@@ -145,7 +115,7 @@
             $comment_loading.hide();
             var $comment = $("#comment-" + id + "-children");
             $comment.append(data);
-            MathJax.typeset($('#comments')[0]);
+            renderKatex($('#comments')[0]);
             register_time($('.time-with-rel'));
           }
         })
@@ -188,7 +158,7 @@
               var $comment = $("#comment-" + id + "-children");
               $comment.append(data);
             }
-            MathJax.typeset($('#comments')[0]);
+            renderKatex($('#comments')[0]);
             register_time($('.time-with-rel'));
           }
         })
@@ -241,13 +211,14 @@
         afterOpen: function () {
           register_dmmd_preview($('#id-edit-comment-body-preview'));
           if ('DjangoPagedown' in window) {
+            DjangoPagedown.createEditor(
+              $('#wmd-input-id-edit-comment-body').closest('.wmd-wrapper')[0]
+            );
+            register_copy_clipboard($('#wmd-input-id-edit-comment-body'));
             var $wmd = $('.featherlight .wmd-wrapper');
             if ($wmd.length) {
-              window.DjangoPagedown.createEditor($wmd.get(0));
-              if ('MathJax' in window) {
-                var preview = $('.featherlight div.wmd-preview')[0];
-                MathJax.typeset(preview);
-              }
+              var preview = $('.featherlight div.wmd-preview')[0];
+              renderKatex(preview);
             }
           }
           $('#comment-edit').submit(function (event) {
@@ -270,6 +241,11 @@
               });
             });
           });
+        },
+        beforeClose: function() {
+          DjangoPagedown.destroyEditor(
+            $('#wmd-input-id-edit-comment-body').closest('.wmd-wrapper')[0]
+          );
         },
         variant: 'featherlight-edit'
       });

@@ -34,7 +34,7 @@ netaddr
 redis
 lupa
 websocket-client
-python-memcached
+python-memcached<1.60
 numpy
 pandas
 markdown
@@ -43,3 +43,4 @@ pymdown-extensions
 mdx-breakless-lists
 beautifulsoup4
 pre-commit
+django-ratelimit

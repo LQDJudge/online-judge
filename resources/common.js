@@ -44,11 +44,11 @@ function register_toggle(link) {
     });
 }
 
-$(function register_all_toggles() {
+function register_all_toggles() {
     $('.toggle').each(function () {
         register_toggle($(this));
     });
-});
+};
 
 function featureTest(property, value, noPrefixes) {
     var prop = property + ':',
@@ -148,7 +148,7 @@ function register_time(elems, limit) { // in hours
 }
 
 window.notification_template = {
-    icon: '/logo.png'
+    icon: '/logo.svg'
 };
 window.notification_timeout = 5000;
 
@@ -252,7 +252,17 @@ $.fn.textWidth = function () {
 };
 
 function registerPopper($trigger, $dropdown) {
-    const popper = Popper.createPopper($trigger[0], $dropdown[0]);
+    const popper = Popper.createPopper($trigger[0], $dropdown[0], {
+        placement: 'bottom-end',
+        modifiers: [
+            {
+                name: 'offset',
+                options: {
+                    offset: [0, 8],
+                },
+            },
+        ],
+    });
     $trigger.click(function(e) {
         $dropdown.toggle();
         popper.update();
@@ -265,6 +275,155 @@ function registerPopper($trigger, $dropdown) {
             $dropdown.hide();
         }
     })
+}
+
+function populateCopyButton() {
+    var copyButton;
+    $('pre code').each(function () {
+        var copyButton = $('<span>', {
+            'class': 'btn-clipboard',
+            'data-clipboard-text': $(this).text(),
+            'title': 'Click to copy'
+        }).append('<i class="far fa-copy"></i>');
+
+        if ($(this).parent().width() > 100) {
+            copyButton.append('<span style="margin-left: 2px">Copy</span>');
+        }
+        
+        $(this).before($('<div>', {'class': 'copy-clipboard'})
+                .append(copyButton));
+
+        $(copyButton.get(0)).mouseleave(function () {
+            $(this).attr('class', 'btn-clipboard');
+            $(this).removeAttr('aria-label');
+        });
+
+        var curClipboard = new Clipboard(copyButton.get(0));
+
+        curClipboard.on('success', function (e) {
+            e.clearSelection();
+            showTooltip(e.trigger, 'Copied!');
+        });
+
+        curClipboard.on('error', function (e) {
+            showTooltip(e.trigger, fallbackMessage(e.action));
+        });
+    });
+}
+
+function register_copy_clipboard($elements, callback) {
+    $elements.on('paste', function(event) {
+        const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+        for (const index in items) {
+            const item = items[index];
+            if (item.kind === 'file' && item.type.indexOf('image') !== -1) {
+                const blob = item.getAsFile();
+                const formData = new FormData();
+                formData.append('image', blob);
+
+                $(this).prop('disabled', true);
+
+                $.ajax({
+                    url: '/pagedown/image-upload/',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(data) {
+                        // Assuming the server returns the URL of the image
+                        const imageUrl = data.url;
+                        const editor = $(event.target); // Get the textarea where the event was triggered
+                        let currentMarkdown = editor.val();
+                        const markdownImageText = '![](' + imageUrl + ')'; // Markdown for an image
+                        
+                        if (currentMarkdown) currentMarkdown += "\n";
+                        currentMarkdown += markdownImageText;
+
+                        editor.val(currentMarkdown);
+                        callback?.();
+                    },
+                    error: function() {
+                        alert('There was an error uploading the image.');
+                    },
+                    complete: () => {
+                        // Re-enable the editor
+                        $(this).prop('disabled', false).focus();
+                    }
+                });
+                
+                // We only handle the first image in the clipboard data
+                break;
+            }
+        }
+    });
+}
+
+function activateBlogBoxOnClick() {
+    $('.blog-box').on('click', function () {
+        var $description = $(this).children('.blog-description');
+        var max_height = $description.css('max-height');
+        if (max_height !== 'fit-content') {
+            $description.css('max-height', 'fit-content');
+            $(this).css('cursor', 'auto');
+            $(this).removeClass('pre-expand-blog');
+            $(this).children().children('.show-more').hide();
+        }
+    });
+
+    $('.blog-box').each(function () {
+        var $precontent = $(this).children('.blog-description').height();
+        var $content = $(this).children().children('.content-description').height();
+        if ($content == undefined) {
+            $content = $(this).children().children('.md-typeset').height()
+        }
+        if ($content > $precontent - 30) {
+            $(this).addClass('pre-expand-blog');
+            $(this).css('cursor', 'pointer');
+        } else {
+            $(this).children().children('.show-more').hide();
+        }
+    });
+}
+
+function changeTabParameter(newTab) {
+  const url = new URL(window.location);
+  const searchParams = new URLSearchParams(url.search);
+  searchParams.set('tab', newTab);
+  searchParams.delete('page');
+  url.search = searchParams.toString();
+  return url.href;
+}
+
+function submitFormWithParams($form, method) {
+  const currentUrl = new URL(window.location.href);
+  const searchParams = new URLSearchParams(currentUrl.search);
+  const formData = $form.serialize();
+
+  const params = new URLSearchParams(formData);
+
+  if (searchParams.has('tab')) {
+    params.set('tab', searchParams.get('tab'));
+  }
+
+  const fullUrl = currentUrl.pathname + '?' + params.toString();
+
+  if (method === "GET") {
+    window.location.href = fullUrl;
+  }
+  else {
+    var $formToSubmit = $('<form>')
+      .attr('action', fullUrl)
+      .attr('method', 'POST')
+      .appendTo('body');
+
+    $formToSubmit.append($('<input>').attr({
+      type: 'hidden',
+      name: 'csrfmiddlewaretoken',
+      value: $.cookie('csrftoken')
+    }));
+
+    $formToSubmit.submit();
+  }
 }
 
 function onWindowReady() {
@@ -340,14 +499,7 @@ function onWindowReady() {
         }
     });
 
-    setTimeout(() => {
-        $("[data-src]img").each(function() {
-            $(this).attr("src", $(this).attr("data-src"));
-        })
-        $("[data-src]iframe").each(function() {
-            $(this).attr("src", $(this).attr("data-src"));
-        })
-    }, "100");
+    register_copy_clipboard($('textarea.wmd-input'));
 
     $('form').submit(function (evt) {
         // Prevent multiple submissions of forms, see #565
@@ -360,42 +512,31 @@ function onWindowReady() {
     })
     $('#logout').on('click', () => $('#logout-form').submit());
 
-    var copyButton;
-    $('pre code').each(function () {
-        $(this).parent().before($('<div>', {'class': 'copy-clipboard'})
-                .append(copyButton = $('<span>', {
-                'class': 'btn-clipboard',
-                'data-clipboard-text': $(this).text(),
-                'title': 'Click to copy'
-            }).text('Copy')));
-
-        $(copyButton.get(0)).mouseleave(function () {
-            $(this).attr('class', 'btn-clipboard');
-            $(this).removeAttr('aria-label');
-        });
-
-        var curClipboard = new Clipboard(copyButton.get(0));
-
-        curClipboard.on('success', function (e) {
-            e.clearSelection();
-            showTooltip(e.trigger, 'Copied!');
-        });
-
-        curClipboard.on('error', function (e) {
-            showTooltip(e.trigger, fallbackMessage(e.action));
-        });
-    });
+    populateCopyButton();
+    
     $('a').click(function() {
         var href = $(this).attr('href');
-        if (!href || href === '#' || href.startsWith("javascript")) {
+        var target = $(this).attr('target');
+        if (!href || href === '#' || href.startsWith("javascript") || 
+            $(this).attr("data-featherlight") ||
+            target === "_blank"
+        ) {
             return;
         }
 
         $("#loading-bar").show();
         $("#loading-bar").animate({ width: "100%" }, 2000, function() {
+            $(this).stop(true, true);
             $(this).hide().css({ width: 0});
         });    
     });
+
+    $('.errorlist').each(function() {
+        var errorList = $(this);
+        errorList.nextAll('input, select, textarea').first().after(errorList);
+    });
+    register_all_toggles();
+    activateBlogBoxOnClick();
 }
 
 $(function() {
@@ -441,4 +582,33 @@ $(function() {
         $nav_list.hide();
     });
 
+    $(window).on('beforeunload', function() {
+        let key = `oj-content-${window.location.href}`;
+        let $contentClone = $('#content').clone();
+        $contentClone.find('.select2').remove();
+        $contentClone.find('.select2-hidden-accessible').removeClass('select2-hidden-accessible');
+        $contentClone.find('.noUi-base').remove();
+        $contentClone.find('.wmd-button-row').remove();
+        sessionStorage.setItem(key, JSON.stringify({
+          "html": $contentClone.html(),
+          "page": window.page,
+          "has_next_page": window.has_next_page,
+          "scrollOffset": $(window).scrollTop(),
+        }));
+    });
+    if (window.performance && 
+      window.performance.navigation.type 
+      === window.performance.navigation.TYPE_BACK_FORWARD) {
+        let key = `oj-content-${window.location.href}`;
+        let content = sessionStorage.getItem(key);
+        if (content) {    
+            content = JSON.parse(content);
+            $('#content').html(content.html);
+            onWindowReady();
+            window.PAGE_FROM_BACK_BUTTON_CACHE = true;
+            $(window).scrollTop(content.scrollOffset - 100);
+            window.page = content.page;
+            window.has_next_page = content.has_next_page;
+        }
+    }
 });

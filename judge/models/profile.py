@@ -17,13 +17,22 @@ from django.db.models.signals import post_save, pre_save
 from fernet_fields import EncryptedCharField
 from sortedm2m.fields import SortedManyToManyField
 
-from judge.models.choices import ACE_THEMES, MATH_ENGINES_CHOICES, TIMEZONE
+from judge.models.choices import ACE_THEMES, TIMEZONE
 from judge.models.runtime import Language
 from judge.ratings import rating_class
 from judge.caching import cache_wrapper
 
 
 __all__ = ["Organization", "Profile", "OrganizationRequest", "Friend"]
+
+
+TSHIRT_SIZES = (
+    ("S", "Small (S)"),
+    ("M", "Medium (M)"),
+    ("L", "Large (L)"),
+    ("XL", "Extra Large (XL)"),
+    ("XXL", "2 Extra Large (XXL)"),
+)
 
 
 class EncryptedNullCharField(EncryptedCharField):
@@ -55,7 +64,9 @@ class Organization(models.Model):
         verbose_name=_("short name"),
         help_text=_("Displayed beside user name during contests"),
     )
-    about = models.TextField(verbose_name=_("organization description"))
+    about = models.CharField(
+        max_length=10000, verbose_name=_("organization description")
+    )
     registrant = models.ForeignKey(
         "Profile",
         verbose_name=_("registrant"),
@@ -139,6 +150,14 @@ class Organization(models.Model):
     def get_submissions_url(self):
         return reverse("organization_submissions", args=(self.id, self.slug))
 
+    @cache_wrapper("Oia")
+    def is_admin(self, profile):
+        return self.admins.filter(id=profile.id).exists()
+
+    @cache_wrapper("Oim")
+    def is_member(self, profile):
+        return profile in self
+
     class Meta:
         ordering = ["name"]
         permissions = (
@@ -154,7 +173,9 @@ class Profile(models.Model):
     user = models.OneToOneField(
         User, verbose_name=_("user associated"), on_delete=models.CASCADE
     )
-    about = models.TextField(verbose_name=_("self-description"), null=True, blank=True)
+    about = models.CharField(
+        max_length=10000, verbose_name=_("self-description"), null=True, blank=True
+    )
     timezone = models.CharField(
         max_length=50,
         verbose_name=_("location"),
@@ -201,19 +222,7 @@ class Profile(models.Model):
         help_text=_("User will not be ranked."),
         default=False,
     )
-    is_banned_problem_voting = models.BooleanField(
-        verbose_name=_("banned from voting"),
-        help_text=_("User will not be able to vote on problems' point values."),
-        default=False,
-    )
     rating = models.IntegerField(null=True, default=None, db_index=True)
-    user_script = models.TextField(
-        verbose_name=_("user script"),
-        default="",
-        blank=True,
-        max_length=65536,
-        help_text=_("User-defined JavaScript for site customization."),
-    )
     current_contest = models.OneToOneField(
         "ContestParticipation",
         verbose_name=_("current contest"),
@@ -221,13 +230,6 @@ class Profile(models.Model):
         blank=True,
         related_name="+",
         on_delete=models.SET_NULL,
-    )
-    math_engine = models.CharField(
-        verbose_name=_("math engine"),
-        choices=MATH_ENGINES_CHOICES,
-        max_length=4,
-        default=settings.MATHOID_DEFAULT_TYPE,
-        help_text=_("the rendering engine used to render math"),
     )
     is_totp_enabled = models.BooleanField(
         verbose_name=_("2FA enabled"),
@@ -260,23 +262,9 @@ class Profile(models.Model):
         max_length=300,
     )
 
-    @cache_wrapper(prefix="Pgbi2")
-    def _get_basic_info(self):
-        profile_image_url = None
-        if self.profile_image:
-            profile_image_url = self.profile_image.url
-        return {
-            "first_name": self.user.first_name,
-            "last_name": self.user.last_name,
-            "email": self.user.email,
-            "username": self.user.username,
-            "mute": self.mute,
-            "profile_image_url": profile_image_url,
-        }
-
     @cached_property
     def _cached_info(self):
-        return self._get_basic_info()
+        return _get_basic_info(self.id)
 
     @cached_property
     def organization(self):
@@ -290,11 +278,11 @@ class Profile(models.Model):
 
     @cached_property
     def first_name(self):
-        return self._cached_info["first_name"]
+        return self._cached_info.get("first_name", "")
 
     @cached_property
     def last_name(self):
-        return self._cached_info["last_name"]
+        return self._cached_info.get("last_name", "")
 
     @cached_property
     def email(self):
@@ -305,8 +293,16 @@ class Profile(models.Model):
         return self._cached_info["mute"]
 
     @cached_property
+    def cached_display_rank(self):
+        return self._cached_info.get("display_rank")
+
+    @cached_property
+    def cached_rating(self):
+        return self._cached_info.get("rating")
+
+    @cached_property
     def profile_image_url(self):
-        return self._cached_info["profile_image_url"]
+        return self._cached_info.get("profile_image_url")
 
     @cached_property
     def count_unseen_notifications(self):
@@ -398,7 +394,7 @@ class Profile(models.Model):
 
     @cached_property
     def css_class(self):
-        return self.get_user_css_class(self.display_rank, self.rating)
+        return self.get_user_css_class(self.cached_display_rank, self.cached_rating)
 
     def get_friends(self):  # list of ids, including you
         friend_obj = self.following_users.prefetch_related("users")
@@ -412,19 +408,52 @@ class Profile(models.Model):
         if not self.user.is_authenticated:
             return False
         profile_id = self.id
-        return (
-            org.admins.filter(id=profile_id).exists()
-            or org.registrant_id == profile_id
-            or self.user.is_superuser
-        )
+        return org.is_admin(self) or self.user.is_superuser
+
+    @classmethod
+    def prefetch_profile_cache(self, profile_ids):
+        _get_basic_info.prefetch_multi([(pid,) for pid in profile_ids])
 
     class Meta:
+        indexes = [
+            models.Index(fields=["is_unlisted", "performance_points"]),
+        ]
         permissions = (
             ("test_site", "Shows in-progress development stuff"),
             ("totp", "Edit TOTP settings"),
         )
         verbose_name = _("user profile")
         verbose_name_plural = _("user profiles")
+
+
+class ProfileInfo(models.Model):
+    profile = models.OneToOneField(
+        Profile,
+        verbose_name=_("profile associated"),
+        on_delete=models.CASCADE,
+        related_name="info",
+    )
+    tshirt_size = models.CharField(
+        max_length=5,
+        choices=TSHIRT_SIZES,
+        verbose_name=_("t-shirt size"),
+        null=True,
+        blank=True,
+    )
+    date_of_birth = models.DateField(
+        verbose_name=_("date of birth"),
+        null=True,
+        blank=True,
+    )
+    address = models.CharField(
+        max_length=255,
+        verbose_name=_("address"),
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return f"{self.profile.user.username}'s Info"
 
 
 class OrganizationRequest(models.Model):
@@ -468,11 +497,7 @@ class Friend(models.Model):
     @classmethod
     def is_friend(self, current_user, new_friend):
         try:
-            return (
-                current_user.following_users.get()
-                .users.filter(user=new_friend.user)
-                .exists()
-            )
+            return current_user.following_users.filter(users=new_friend).exists()
         except:
             return False
 
@@ -506,7 +531,7 @@ class Friend(models.Model):
 
 
 class OrganizationProfile(models.Model):
-    users = models.ForeignKey(
+    profile = models.ForeignKey(
         Profile,
         verbose_name=_("user"),
         related_name="last_visit",
@@ -525,37 +550,66 @@ class OrganizationProfile(models.Model):
     )
 
     @classmethod
-    def remove_organization(self, users, organization):
-        organizationprofile = self.objects.filter(
-            users=users, organization=organization
+    def remove_organization(self, profile, organization):
+        organization_profile = self.objects.filter(
+            profile=profile, organization=organization
         )
-        if organizationprofile.exists():
-            organizationprofile.delete()
+        if organization_profile.exists():
+            organization_profile.delete()
 
     @classmethod
-    def add_organization(self, users, organization):
-        self.remove_organization(users, organization)
-        new_organization = OrganizationProfile(users=users, organization=organization)
-        new_organization.save()
+    def add_organization(self, profile, organization):
+        self.remove_organization(profile, organization)
+        new_row = OrganizationProfile(profile=profile, organization=organization)
+        new_row.save()
 
     @classmethod
-    def get_most_recent_organizations(self, users):
-        return self.objects.filter(users=users).order_by("-last_visit")[:5]
+    def get_most_recent_organizations(cls, profile):
+        queryset = cls.objects.filter(profile=profile).order_by("-last_visit")[:5]
+        queryset = queryset.select_related("organization").defer("organization__about")
+        organizations = [op.organization for op in queryset]
+
+        return organizations
 
 
 @receiver([post_save], sender=User)
 def on_user_save(sender, instance, **kwargs):
     try:
         profile = instance.profile
-        profile._get_basic_info.dirty(profile)
+        _get_basic_info.dirty(profile.id)
     except:
         pass
 
 
-@receiver([pre_save], sender=Profile)
-def on_profile_save(sender, instance, **kwargs):
-    if instance.id is None:
-        return
-    prev = sender.objects.get(id=instance.id)
-    if prev.mute != instance.mute or prev.profile_image != instance.profile_image:
-        instance._get_basic_info.dirty(instance)
+@cache_wrapper(prefix="Pgbi3", expected_type=dict)
+def _get_basic_info(profile_id):
+    profile = (
+        Profile.objects.select_related("user")
+        .only(
+            "id",
+            "mute",
+            "profile_image",
+            "user__username",
+            "user__email",
+            "user__first_name",
+            "user__last_name",
+            "display_rank",
+            "rating",
+        )
+        .get(id=profile_id)
+    )
+    user = profile.user
+    res = {
+        "email": user.email,
+        "username": user.username,
+        "mute": profile.mute,
+        "first_name": user.first_name or None,
+        "last_name": user.last_name or None,
+        "profile_image_url": profile.profile_image.url
+        if profile.profile_image
+        else None,
+        "display_rank": profile.display_rank,
+        "rating": profile.rating,
+    }
+    res = {k: v for k, v in res.items() if v is not None}
+    return res

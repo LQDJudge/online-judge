@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block user_content %}
-  <div class="content-description">
+  <div>
     <div class="user-info-container">
       <div class="user-info-card">
         <div class="user-info">
@@ -25,7 +25,7 @@
                 {% pluralize %}
                 {{ counter }} problems solved
               {% endtrans -%}"
-          ><i class="fa fa-slack darkcyan"></i> {{_('Problems')}}</div>
+          ><i class="green icofont-tick-mark"></i> {{_('Problems')}}</div>
           <div class="user-info-body">{{user.problem_count}}</div>
         </div>
       </div>
@@ -33,24 +33,22 @@
         <div class="user-info">
           <div class="user-info-header"
             title="{{_('Total points')}}"
-          ><i class="green icofont-tick-mark"></i> {{_('Points')}}</div>
+          ><i class="fa fa-trophy darkcyan"></i> {{_('Points')}}</div>
           <div class="user-info-body"><span title="{{ user.performance_points|floatformat(2) }}">
             {{ user.performance_points|floatformat(0) }}
           </span></div>
         </div>
       </div>
-      {% if not user.is_unlisted %}
-        <div class="user-info-card">
-          <div class="user-info">
-            <div class="user-info-header" title="{{_('Rank by rating')}}"><i class="fa fa-globe peru" ></i> {{_('Rating')}}</div>
-            <div class="user-info-body">{{rating_rank if rating_rank else '-'}}</div>
-          </div>
-        </div>
-      {% endif %}
       <div class="user-info-card">
         <div class="user-info">
-          <div class="user-info-header" title="{{_('Rank by points')}}"><i class="fa fa-globe blue" ></i> {{_('Points')}}</div>
-          <div class="user-info-body">{{rank}}</div>
+          <div class="user-info-header" title="{{_('Rank by rating')}}"><i class="fa fa-globe peru" ></i> {{_('Rating')}} #</div>
+          <div class="user-info-body">{{rating_rank if rating_rank else '-'}}</div>
+        </div>
+      </div>
+      <div class="user-info-card">
+        <div class="user-info">
+          <div class="user-info-header" title="{{_('Rank by points')}}"><i class="fa fa-globe blue" ></i> {{_('Points')}} #</div>
+          <div class="user-info-body">{{points_rank if points_rank else '-'}}</div>
         </div>
       </div>
     </div>
@@ -86,7 +84,7 @@
       <br>
       <div id="awards">
         <h4>{{_('Awards')}}</h4>
-        {% for medal in awards.medals %}
+        {% for medal in awards %}
           {% if medal.ranking == 1 %}
             {% set medal_url = static('awards/gold-medal.png') %}
           {% elif medal.ranking == 2%}
@@ -185,10 +183,6 @@
 {% endblock %}
 
 {% block bodyend %}
-  {% if REQUIRE_JAX %}
-    {% include "mathjax-load.html" %}
-  {% endif %}
-
   <script type="text/javascript">
     var submission_activity = {{ submission_data }};
     var metadata = {{ submission_metadata }};

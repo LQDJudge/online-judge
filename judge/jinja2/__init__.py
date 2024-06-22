@@ -22,6 +22,7 @@ from . import (
     social,
     spaceless,
     timedelta,
+    comment,
 )
 from . import registry
 

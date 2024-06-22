@@ -34,7 +34,7 @@ from judge import event_poster as event
 from judge.jinja2.gravatar import gravatar
 from judge.models import Friend
 
-from chat_box.models import Message, Profile, Room, UserRoom, Ignore
+from chat_box.models import Message, Profile, Room, UserRoom, Ignore, get_room_info
 from chat_box.utils import encrypt_url, decrypt_url, encrypt_channel, get_unread_boxes
 
 
@@ -174,19 +174,46 @@ def mute_message(request):
     return JsonResponse(ret)
 
 
+def check_valid_message(request, room):
+    if not room and len(request.POST["body"]) > 200:
+        return False
+
+    if not can_access_room(request, room) or request.profile.mute:
+        return False
+
+    last_msg = Message.objects.filter(room=room).first()
+    if (
+        last_msg
+        and last_msg.author == request.profile
+        and last_msg.body == request.POST["body"].strip()
+    ):
+        return False
+
+    if not room:
+        four_last_msg = Message.objects.filter(room=room).order_by("-id")[:4]
+        if len(four_last_msg) >= 4:
+            same_author = all(msg.author == request.profile for msg in four_last_msg)
+            time_diff = timezone.now() - four_last_msg[3].time
+            if same_author and time_diff.total_seconds() < 300:
+                return False
+
+    return True
+
+
 @login_required
 def post_message(request):
     ret = {"msg": "posted"}
+
     if request.method != "POST":
         return HttpResponseBadRequest()
-    if len(request.POST["body"]) > 5000:
+    if len(request.POST["body"]) > 5000 or len(request.POST["body"].strip()) == 0:
         return HttpResponseBadRequest()
 
     room = None
     if request.POST["room"]:
         room = Room.objects.get(id=request.POST["room"])
 
-    if not can_access_room(request, room) or request.profile.mute:
+    if not check_valid_message(request, room):
         return HttpResponseBadRequest()
 
     new_message = Message(author=request.profile, body=request.POST["body"], room=room)
@@ -204,7 +231,7 @@ def post_message(request):
             },
         )
     else:
-        Room._info.dirty(room)
+        get_room_info.dirty(room.id)
         room.last_msg_time = new_message.time
         room.save()
 
@@ -229,9 +256,7 @@ def post_message(request):
 
 
 def can_access_room(request, room):
-    return (
-        not room or room.user_one == request.profile or room.user_two == request.profile
-    )
+    return not room or room.contain(request.profile)
 
 
 @login_required
@@ -247,7 +272,7 @@ def chat_message_ajax(request):
     try:
         message = Message.objects.filter(hidden=False).get(id=message_id)
         room = message.room
-        if room and not room.contain(request.profile):
+        if not can_access_room(request, room):
             return HttpResponse("Unauthorized", status=401)
     except Message.DoesNotExist:
         return HttpResponseBadRequest()
@@ -278,7 +303,7 @@ def update_last_seen(request, **kwargs):
     except Room.DoesNotExist:
         return HttpResponseBadRequest()
 
-    if room and not room.contain(profile):
+    if not can_access_room(request, room):
         return HttpResponseBadRequest()
 
     user_room, _ = UserRoom.objects.get_or_create(user=profile, room=room)
@@ -338,6 +363,8 @@ def user_online_status_ajax(request):
 def get_online_status(profile, other_profile_ids, rooms=None):
     if not other_profile_ids:
         return None
+    Profile.prefetch_profile_cache(other_profile_ids)
+
     joined_ids = ",".join([str(id) for id in other_profile_ids])
     other_profiles = Profile.objects.raw(
         f"SELECT * from judge_profile where id in ({joined_ids}) order by field(id,{joined_ids})"
@@ -404,6 +431,7 @@ def get_status_context(profile, include_ignored=False):
 
     recent_profile_ids = [str(i["other_user"]) for i in recent_profile]
     recent_rooms = [int(i["id"]) for i in recent_profile]
+    Room.prefetch_room_cache(recent_rooms)
 
     admin_list = (
         queryset.filter(display_rank="admin")
@@ -473,9 +501,16 @@ def get_or_create_room(request):
             user_room.last_seen = timezone.now()
             user_room.save()
 
+    room_url = reverse("chat", kwargs={"room_id": room.id})
     if request.method == "GET":
-        return JsonResponse({"room": room.id, "other_user_id": other_user.id})
-    return HttpResponseRedirect(reverse("chat", kwargs={"room_id": room.id}))
+        return JsonResponse(
+            {
+                "room": room.id,
+                "other_user_id": other_user.id,
+                "url": room_url,
+            }
+        )
+    return HttpResponseRedirect(room_url)
 
 
 def get_unread_count(rooms, user):

@@ -9,7 +9,7 @@
 <div class="left-sidebar">
   {% if can_access %}
     {{ make_tab_item('detail', 'fa fa-info-circle', url('contest_view', contest.key), _('Info')) }}
-    {% if contest.ended or can_edit %}
+    {% if (contest.ended and not contest.is_in_contest(request.user)) or can_edit %}
       {{ make_tab_item('stats', 'fa fa-pie-chart', url('contest_stats', contest.key), _('Statistics')) }}
     {% endif %}
   {% endif %}
@@ -19,13 +19,12 @@
       {{ make_tab_item('ranking', 'fa fa-bar-chart', url('contest_ranking', contest.key), _('Rankings')) }}
       {% if request.user.is_authenticated and can_access %}
         {{ make_tab_item('participation', 'fa fa-users', url('contest_participation_own', contest.key), _('Participation')) }}
+        {{ make_tab_item('submissions', 'fa fa-code', url('contest_submissions', contest.key), _('Submissions')) }}
       {% endif %}
-    {% else %}
-      {{ make_tab_item('ranking', 'fa fa-bar-chart', None, _('Hidden Rankings')) }}
     {% endif %}
   {% endif %}
   {% if request.user.is_superuser and contest_has_hidden_subtasks %}
-    {{ make_tab_item('resolver', 'fa fa-check', url('resolver', contest.key), _('Resolver')) }}
+    {{ make_tab_item('resolver', 'fa fa-check', url('resolver', contest.key), _('Resolver'), force_new_page=True) }}
   {% endif %}
   {% if show_final_ranking %}
     {{ make_tab_item('final_ranking', 'fa fa-bar-chart', url('contest_final_ranking', contest.key), _('Final rankings')) }}
@@ -34,6 +33,6 @@
     {% if perms.judge.moss_contest and has_moss_api_key %}
       {{ make_tab_item('moss', 'fa fa-gavel', url('contest_moss', contest.key), _('MOSS')) }}
     {% endif %}
-    {{ make_tab_item('edit', 'fa fa-edit', url('admin:judge_contest_change', contest.id), _('Edit')) }}
+    {{ make_tab_item('edit', 'fa fa-edit', url('admin:judge_contest_change', contest.id), _('Edit'), force_new_page=True) }}
   {% endif %}
 </div>

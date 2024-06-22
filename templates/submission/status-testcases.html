@@ -10,14 +10,14 @@
     <pre>{{ submission.error|ansi2html }}</pre>
   {% else %}
     {% if submission.error %}
-      <h3><i class="fa fa-exclamation-triangle fa-fw"></i>{{ _('Compilation Warnings') }}</h3>
+      <h3><i class="fa fa-exclamation-triangle"></i>{{ _('Compilation Warnings') }}</h3>
       <pre>{{ submission.error|ansi2html }}</pre>
       <hr><br>
     {% endif %}
     {% if is_pretest %}
-      <h3><i class="fa fa-check-square-o fa-fw"></i>{{ _('Pretest Execution Results') }}</h3>
+      <h3><i class="far fa-check-square"></i> {{ _('Pretest Execution Results') }}</h3>
     {% else %}
-      <h3><i class="fa fa-check-square-o fa-fw"></i>{{ _('Execution Results') }}</h3>
+      <h3><i class="far fa-check-square"></i> {{ _('Execution Results') }}</h3>
     {% endif %}
 
     {% for batch in batches %}

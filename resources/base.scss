@@ -182,9 +182,6 @@ header {
         cursor: pointer;
         padding: 3.5px;
     }
-    img {
-        border-radius: 50%;
-    }
 }
 
 #nav-shadow {
@@ -521,16 +518,6 @@ noscript #noscript {
     margin-top: 1.2em;
 }
 
-math {
-    font-size: 1.155em;
-}
-
-.MathJax {
-    &:focus {
-        outline: none;
-    }
-}
-
 @media(max-width: 1498px) {
     #page-container {
         border-left: none;
@@ -667,25 +654,60 @@ math {
 }
 
 .dropdown {
-    border-radius: 4px;
-    border: 0.5px solid lightgray;
-    margin-top: 1px;
-    background: white;
     display: none;
+    background-color: white;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    padding: 4px 0;
+    z-index: 1;
+    border-radius: 5px;
 
     a {
+        display: block;
+        text-decoration: none;
+        transition: background-color 0.3s;
         color: black;
     }
 }
 
 .dropdown-item {
-    font-size: 15px;
-    padding: 6px 8px;
+    font-size: 16px;
+    padding: 6px 40px 6px 15px;
     cursor: pointer;
+    color: black;
+    font-weight: 600;
+    border-top: 1px solid #ccc;
+
+    i {
+        width: 1.5em;
+    }
 }
 
 .dropdown-item:hover {
-    background: lightgray;
+    color: $theme_color;
+    background-color: #f8f8f2;
+}
+
+.popper-arrow,
+.popper-arrow::before {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: inherit;
+}
+
+.popper-arrow {
+    visibility: hidden;
+}
+
+.popper-arrow::before {
+    visibility: visible;
+    content: '';
+    transform: rotate(45deg);
+}
+
+.popper-arrow {
+    top: -4px;
 }
 
 .unread_boxes {
@@ -707,12 +729,7 @@ math {
 }
 
 .featherlight {
-    z-index: 1000 !important;
-}
-
-select {
-    visibility: hidden;
-    max-height: 0;
+    z-index: 1001 !important;
 }
 
 // @media (max-width: 500px) {
@@ -772,6 +789,10 @@ select {
 
 .background-bisque {
     background-color: bisque;
+}
+
+.background-royalblue {
+    background-color: royalblue !important;
 }
 
 .background-footer {
@@ -852,6 +873,8 @@ select {
 
 .margin-label{
     margin-bottom: 2.5px;
+    padding-bottom: 0.25em;
+    display: block;
 }
 
 ::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
@@ -894,7 +917,7 @@ input::placeholder{
     i {
         margin-right: 0.1em;
         color: #000;
-        font-size: 22.5px;
+        font-size: 21px;
     }
 }
 
@@ -904,4 +927,9 @@ input::placeholder{
         font-size: 22.5px;
         margin-right: 0.1em;
     }
+}
+
+.featherlight-content {
+    max-height: 80% !important;
+    border-radius: 10px;
 }

@@ -1,0 +1,42 @@
+{% extends "contest/list.html" %}
+
+{% block contest_list_media %}
+  <style type="text/css">
+    .contest-format-user {
+      flex: 1 !important;
+    }
+
+    .year-range {
+      display: inline;
+    }
+
+    .year-range input {
+      width: 45%;
+    }
+  </style>
+{% endblock %}
+
+{% block contest_list_js %}
+  <script type="text/javascript">
+    $(function() {
+      $("#category").select2();
+      $("#location").select2();
+      $('#year_from').keypress(function (e) {
+        if (e.keyCode === 13) {
+          $('#go').click();
+        }
+      });
+      $('#year_to').keypress(function (e) {
+        if (e.keyCode === 13) {
+          $('#go').click();
+        }
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block right_sidebar %}
+  <div class="right-sidebar">
+    {% include "contest/official-search-form.html" %}
+  </div>
+{% endblock %}

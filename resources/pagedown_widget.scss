@@ -1,3 +1,5 @@
+@import "vars";
+
 .wmd-panel {
     margin: 0;
     width: 100%;
@@ -14,7 +16,8 @@
     width: 100%;
     background: #fff;
     border: 1px solid DarkGray;
-    font-family: "Noto Sans",Arial,"Lucida Grande",sans-serif !important;
+    font-family: $monospace-fonts;
+    font-size: 15px;
 }
 
 .wmd-preview {
@@ -23,8 +26,14 @@
 }
 
 .wmd-button-row {
-    margin: 10px 5px 5px;
+    margin-top: 10px;
+    margin-bottom: 5px;
     padding: 0;
+    display: flex;        /* Display as a flex container */
+    flex-wrap: nowrap;    /* Prevent items from wrapping */
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 3px;
 }
 
 .wmd-button {
@@ -37,8 +46,7 @@
     background-position: center;
     border-radius: 3px;
     cursor: pointer;
-    padding-left: 2px;
-    padding-right: 3px;
+    flex: 0 0 auto;
 }
 
 .wmd-bold-button {
@@ -124,7 +132,7 @@
 .wmd-spacer
 {
     display: inline-flex;
-    width: 20px;
+    width: 10px;
 }
 
 .wmd-prompt-background {

@@ -2,11 +2,14 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models, transaction
 from django.db.models import CASCADE, Q
+from django.db.models.signals import m2m_changed
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.translation import gettext, gettext_lazy as _
 from django.contrib.contenttypes.fields import GenericRelation
+from django.dispatch import receiver
+
 from jsonfield import JSONField
 from lupa import LuaRuntime
 from moss import (
@@ -25,6 +28,7 @@ from judge.ratings import rate_contest
 from judge.models.pagevote import PageVotable
 from judge.models.bookmark import Bookmarkable
 from judge.fulltext import SearchManager
+from judge.caching import cache_wrapper
 
 __all__ = [
     "Contest",
@@ -35,6 +39,9 @@ __all__ = [
     "Rating",
     "ContestProblemClarification",
     "ContestsSummary",
+    "OfficialContest",
+    "OfficialContestCategory",
+    "OfficialContestLocation",
 ]
 
 
@@ -310,6 +317,15 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         validators=[MinValueValidator(0), MaxValueValidator(10)],
         help_text=_("Number of digits to round points to."),
     )
+    rate_limit = models.PositiveIntegerField(
+        verbose_name=(_("rate limit")),
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text=_(
+            "Maximum number of submissions per minute. Leave empty if you don't want rate limit."
+        ),
+    )
     comments = GenericRelation("Comment")
     pagevote = GenericRelation("PageVote")
     bookmark = GenericRelation("BookMark")
@@ -446,28 +462,44 @@ class Contest(models.Model, PageVotable, Bookmarkable):
     def ended(self):
         return self.end_time < self._now
 
-    @cached_property
-    def author_ids(self):
-        return Contest.authors.through.objects.filter(contest=self).values_list(
-            "profile_id", flat=True
+    @cache_wrapper(prefix="Coai")
+    def _author_ids(self):
+        return set(
+            Contest.authors.through.objects.filter(contest=self).values_list(
+                "profile_id", flat=True
+            )
         )
 
-    @cached_property
-    def editor_ids(self):
-        return self.author_ids.union(
+    @cache_wrapper(prefix="Coci")
+    def _curator_ids(self):
+        return set(
             Contest.curators.through.objects.filter(contest=self).values_list(
                 "profile_id", flat=True
             )
         )
 
-    @cached_property
-    def tester_ids(self):
-        return Contest.testers.through.objects.filter(contest=self).values_list(
-            "profile_id", flat=True
+    @cache_wrapper(prefix="Coti")
+    def _tester_ids(self):
+        return set(
+            Contest.testers.through.objects.filter(contest=self).values_list(
+                "profile_id", flat=True
+            )
         )
 
+    @cached_property
+    def author_ids(self):
+        return self._author_ids()
+
+    @cached_property
+    def editor_ids(self):
+        return self.author_ids.union(self._curator_ids())
+
+    @cached_property
+    def tester_ids(self):
+        return self._tester_ids()
+
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.key})"
 
     def get_absolute_url(self):
         return reverse("contest_view", args=(self.key,))
@@ -630,6 +662,20 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         )
         verbose_name = _("contest")
         verbose_name_plural = _("contests")
+
+
+@receiver(m2m_changed, sender=Contest.organizations.through)
+def update_organization_private(sender, instance, **kwargs):
+    if kwargs["action"] in ["post_add", "post_remove", "post_clear"]:
+        instance.is_organization_private = instance.organizations.exists()
+        instance.save(update_fields=["is_organization_private"])
+
+
+@receiver(m2m_changed, sender=Contest.private_contestants.through)
+def update_private(sender, instance, **kwargs):
+    if kwargs["action"] in ["post_add", "post_remove", "post_clear"]:
+        instance.is_private = instance.private_contestants.exists()
+        instance.save(update_fields=["is_private"])
 
 
 class ContestParticipation(models.Model):
@@ -920,6 +966,7 @@ class ContestsSummary(models.Model):
         max_length=20,
         unique=True,
     )
+    results = models.JSONField(null=True, blank=True)
 
     class Meta:
         verbose_name = _("contests summary")
@@ -930,3 +977,53 @@ class ContestsSummary(models.Model):
 
     def get_absolute_url(self):
         return reverse("contests_summary", args=[self.key])
+
+
+class OfficialContestCategory(models.Model):
+    name = models.CharField(
+        max_length=50, verbose_name=_("official contest category"), unique=True
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("official contest category")
+        verbose_name_plural = _("official contest categories")
+
+
+class OfficialContestLocation(models.Model):
+    name = models.CharField(
+        max_length=50, verbose_name=_("official contest location"), unique=True
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("official contest location")
+        verbose_name_plural = _("official contest locations")
+
+
+class OfficialContest(models.Model):
+    contest = models.OneToOneField(
+        Contest,
+        verbose_name=_("contest"),
+        related_name="official",
+        on_delete=CASCADE,
+    )
+    category = models.ForeignKey(
+        OfficialContestCategory,
+        verbose_name=_("contest category"),
+        on_delete=CASCADE,
+    )
+    year = models.PositiveIntegerField(verbose_name=_("year"))
+    location = models.ForeignKey(
+        OfficialContestLocation,
+        verbose_name=_("contest location"),
+        on_delete=CASCADE,
+    )
+
+    class Meta:
+        verbose_name = _("official contest")
+        verbose_name_plural = _("official contests")

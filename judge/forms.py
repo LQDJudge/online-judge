@@ -29,6 +29,7 @@ from django_ace import AceWidget
 from judge.models import (
     Contest,
     Language,
+    TestFormatterModel,
     Organization,
     PrivateMessage,
     Problem,
@@ -37,11 +38,12 @@ from judge.models import (
     Submission,
     BlogPost,
     ContestProblem,
+    TestFormatterModel,
+    ProfileInfo,
 )
 
 from judge.widgets import (
     HeavyPreviewPageDownWidget,
-    MathJaxPagedownWidget,
     PagedownWidget,
     Select2MultipleWidget,
     Select2Widget,
@@ -50,6 +52,7 @@ from judge.widgets import (
     Select2MultipleWidget,
     DateTimePickerWidget,
     ImageWidget,
+    DatePickerWidget,
 )
 
 
@@ -68,6 +71,17 @@ class UserForm(ModelForm):
         ]
 
 
+class ProfileInfoForm(ModelForm):
+    class Meta:
+        model = ProfileInfo
+        fields = ["tshirt_size", "date_of_birth", "address"]
+        widgets = {
+            "tshirt_size": Select2Widget(attrs={"style": "width:100%"}),
+            "date_of_birth": DatePickerWidget,
+            "address": forms.TextInput(attrs={"style": "width:100%"}),
+        }
+
+
 class ProfileForm(ModelForm):
     class Meta:
         model = Profile
@@ -76,23 +90,16 @@ class ProfileForm(ModelForm):
             "timezone",
             "language",
             "ace_theme",
-            "user_script",
             "profile_image",
             "css_background",
         ]
         widgets = {
-            "user_script": AceWidget(theme="github"),
             "timezone": Select2Widget(attrs={"style": "width:200px"}),
             "language": Select2Widget(attrs={"style": "width:200px"}),
             "ace_theme": Select2Widget(attrs={"style": "width:200px"}),
             "profile_image": ImageWidget,
             "css_background": forms.TextInput(),
         }
-
-        has_math_config = bool(settings.MATHOID_URL)
-        if has_math_config:
-            fields.append("math_engine")
-            widgets["math_engine"] = Select2Widget(attrs={"style": "width:200px"})
 
         if HeavyPreviewPageDownWidget is not None:
             widgets["about"] = HeavyPreviewPageDownWidget(
@@ -301,8 +308,8 @@ class EditOrganizationContestForm(ModelForm):
             "hide_problem_tags",
             "public_scoreboard",
             "scoreboard_visibility",
-            "run_pretests_only",
             "points_precision",
+            "rate_limit",
             "description",
             "og_image",
             "logo_override_image",
@@ -412,13 +419,15 @@ class NewMessageForm(ModelForm):
         fields = ["title", "content"]
         widgets = {}
         if PagedownWidget is not None:
-            widgets["content"] = MathJaxPagedownWidget()
+            widgets["content"] = PagedownWidget()
 
 
 class CustomAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super(CustomAuthenticationForm, self).__init__(*args, **kwargs)
-        self.fields["username"].widget.attrs.update({"placeholder": _("Username")})
+        self.fields["username"].widget.attrs.update(
+            {"placeholder": _("Username/Email")}
+        )
         self.fields["password"].widget.attrs.update({"placeholder": _("Password")})
 
         self.has_google_auth = self._has_social_auth("GOOGLE_OAUTH2")
@@ -566,3 +575,9 @@ class ContestProblemFormSet(
     )
 ):
     model = ContestProblem
+
+
+class TestFormatterForm(ModelForm):
+    class Meta:
+        model = TestFormatterModel
+        fields = ["file"]

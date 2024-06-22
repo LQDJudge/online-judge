@@ -1,4 +1,7 @@
 {% extends "three-column-content.html" %}
+
+{% set has_hidden_subtasks = request.in_contest_mode and request.participation.contest.format.has_hidden_subtasks %}
+
 {% block three_col_js %}
   <script type="text/javascript">
     {% if dynamic_update and last_msg %}
@@ -249,7 +252,7 @@
     </script>
   {% endcompress %}
 
-  {% if dynamic_update and last_msg %}
+  {% if dynamic_update and last_msg and not has_hidden_subtasks %}
     <script type="text/javascript">
       $(function () {
         load_dynamic_update({{last_msg}});
@@ -271,10 +274,6 @@
 
       col.sub-info, td.sub-info {
         width: 78%
-      }
-
-      #status, #language {
-        visibility: hidden;
       }
     </style>
   {% endif %}
@@ -392,7 +391,7 @@
       {{ make_tab_item('friend_tab', 'fa fa-users', friend_submissions_link, _('Friends')) }}
     {% endif %}
     {% if perms.judge.change_submission %}
-      {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_submission_changelist'), _('Admin')) }}
+      {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_submission_changelist'), _('Admin'), force_new_page=True) }}
     {% endif %}
   </div>
 {% endblock %}

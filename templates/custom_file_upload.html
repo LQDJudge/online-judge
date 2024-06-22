@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block body %}
+  <center>
+    {% if file_url %}
+      <p>{{_('Your file has been uploaded successfully')}}: <a href="{{ file_url }}" target="_blank">{{ file_url }}</a></p>
+      <a href="{{ url('custom_file_upload') }}" class="button small" style="width: fit-content;">{{_('Upload another file')}}</a>
+    {% else %}
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p() }}
+        <button type="submit">{{_('Upload file')}}</button>
+      </form>
+    {% endif %}
+  </center>
+{% endblock %}

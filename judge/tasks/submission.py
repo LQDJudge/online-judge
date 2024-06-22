@@ -8,7 +8,7 @@ from judge.utils.celery import Progress
 __all__ = ("apply_submission_filter", "rejudge_problem_filter", "rescore_problem")
 
 
-def apply_submission_filter(queryset, id_range, languages, results, contest):
+def apply_submission_filter(queryset, id_range, languages, results, contests):
     if id_range:
         start, end = id_range
         queryset = queryset.filter(id__gte=start, id__lte=end)
@@ -16,8 +16,8 @@ def apply_submission_filter(queryset, id_range, languages, results, contest):
         queryset = queryset.filter(language_id__in=languages)
     if results:
         queryset = queryset.filter(result__in=results)
-    if contest:
-        queryset = queryset.filter(contest_object=contest)
+    if contests:
+        queryset = queryset.filter(contest_object__in=contests)
     queryset = queryset.exclude(status__in=Submission.IN_PROGRESS_GRADING_STATUS)
     return queryset
 

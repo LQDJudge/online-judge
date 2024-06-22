@@ -10,16 +10,9 @@
 {% block middle_title %}
   <div class="page-title">
     <div class="tabs" style="border: none;">
-      <h2><img src="{{logo_override_image}}" style="height: 3rem; vertical-align: middle">
+      <h2><img src="{{logo_override_image}}" style="height: 3rem; vertical-align: middle; border-radius: 5px;">
         {{title}}
       </h2>
-      {% if is_member %}
-        <div>
-          <a href="{{organization_subdomain}}" target="_blank">
-            {{_('Subdomain')}}
-          </a>
-        </div>
-      {% endif %}
       <span class="spacer"></span>
 
       {% if request.user.is_authenticated %}
@@ -31,7 +24,8 @@
           </form>
         {% else %}
           <a href="{{ url('request_organization', organization.id, organization.slug) }}"
-            class="unselectable button">{{ _('Request membership') }}</a>
+            class="unselectable button">
+            {{ _('Request membership') }}</a>
         {% endif %}
       {% endif %}
     </div>
@@ -47,7 +41,7 @@
       <h3><i class="fa fa-info-circle"></i>{{ _('About') }}</h3>
       <div class="sidebox-content">
         <div style="margin: 0.3em;">
-          {% cache 3600 'organization_html' organization.id MATH_ENGINE %}
+          {% cache 3600 'organization_html' organization.id %}
             {{ organization.about|markdown|reference|str|safe }}
           {% endcache %}
         </div>

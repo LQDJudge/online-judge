@@ -19,7 +19,7 @@
   <div class="post-full">
     <div class="post-title">{{ title }}</div>
     <div class="time">
-      {% with authors=post.authors.all() %}
+      {% with authors=post.get_authors() %}
         {% if authors %}
           <span class="post-authors">{{ link_users(authors) }}</span>
         {% endif %}
@@ -30,14 +30,14 @@
       {% if post.is_editable_by(request.user) %}
         <span> [<a href="{{ url('admin:judge_blogpost_change', post.id) }}">{{ _('Edit') }}</a>]</span>
       {% endif %}
-      {% if valid_user_to_show_edit %}
-        {% for org in valid_org_to_show_edit %}
+      {% if editable_orgs %}
+        {% for org in editable_orgs %}
           <span> [<a href="{{ url('edit_organization_blog', org.id , org.slug , post.id) }}">{{ _('Edit in') }} {{org.slug}}</a>]</span>
         {% endfor %}
       {% endif %}
     </div>
     <div class="body content-description">
-      {% cache 86400 'post_content' post.id MATH_ENGINE %}
+      {% cache 86400 'post_content' post.id %}
         {{ post.content|markdown|reference|str|safe}}
       {% endcache %}
     </div>
@@ -49,8 +49,5 @@
 
 {% block bodyend %}
   {{ super() }}
-  {% if REQUIRE_JAX %}
-    {% include "mathjax-load.html" %}
-  {% endif %}
   {% include "comments/math.html" %}
 {% endblock %}

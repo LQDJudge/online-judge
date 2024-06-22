@@ -6,7 +6,7 @@ from reversion.admin import VersionAdmin
 from django.contrib.auth.admin import UserAdmin as OldUserAdmin
 
 from django_ace import AceWidget
-from judge.models import Profile
+from judge.models import Profile, ProfileInfo
 from judge.widgets import AdminPagedownWidget, AdminSelect2Widget
 
 
@@ -54,6 +54,13 @@ class TimezoneFilter(admin.SimpleListFilter):
         return queryset.filter(timezone=self.value())
 
 
+class ProfileInfoInline(admin.StackedInline):
+    model = ProfileInfo
+    can_delete = False
+    verbose_name_plural = "profile info"
+    fk_name = "profile"
+
+
 class ProfileAdmin(VersionAdmin):
     fields = (
         "user",
@@ -63,15 +70,12 @@ class ProfileAdmin(VersionAdmin):
         "timezone",
         "language",
         "ace_theme",
-        "math_engine",
         "last_access",
         "ip",
         "mute",
         "is_unlisted",
-        "is_banned_problem_voting",
         "notes",
         "is_totp_enabled",
-        "user_script",
         "current_contest",
     )
     readonly_fields = ("user",)
@@ -92,6 +96,7 @@ class ProfileAdmin(VersionAdmin):
     actions_on_top = True
     actions_on_bottom = True
     form = ProfileForm
+    inlines = (ProfileInfoInline,)
 
     def get_queryset(self, request):
         return super(ProfileAdmin, self).get_queryset(request).select_related("user")
@@ -159,15 +164,6 @@ class ProfileAdmin(VersionAdmin):
         )
 
     recalculate_points.short_description = _("Recalculate scores")
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super(ProfileAdmin, self).get_form(request, obj, **kwargs)
-        if "user_script" in form.base_fields:
-            # form.base_fields['user_script'] does not exist when the user has only view permission on the model.
-            form.base_fields["user_script"].widget = AceWidget(
-                "javascript", request.profile.ace_theme
-            )
-        return form
 
 
 class UserAdmin(OldUserAdmin):

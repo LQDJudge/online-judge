@@ -2,18 +2,19 @@
 {% block three_col_media %}
   {% include "blog/media-css.html" %}
   <style>
-    @media (max-width: 799px) {
-      .title {
-        clear: both;
-      }
-    }
-    .time {
-      margin-left: 0;
-    }
-
     .no-clarifications-message {
       font-style: italic;
       text-align: center;
+    }
+
+    .org-logo {
+      height: 2em;
+      width: 2em;
+      margin-right: 0.5em;
+    }
+
+    .organization-row:last-child {
+      border-bottom: none;
     }
   </style>
 {% endblock %}
@@ -100,8 +101,9 @@
         </div>
       </div>
     {% endif %}
+    {% include 'profile-table.html' %}
     {% include 'contests-countdown.html' %}
-    {% include 'recent-organization.html' %}
     {% include 'top-users.html' %}
+    {% include 'recent-organization.html' %}
   </div>
 {% endblock %}

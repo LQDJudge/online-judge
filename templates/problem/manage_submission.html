@@ -59,6 +59,21 @@
         placeholder: '{{ _('Leave empty to not filter by result') }}'
       });
 
+      $('#by-contest-filter').select2({
+        multiple: true,
+        placeholder: '{{ _('Leave empty to not filter by contest') }}',
+        ajax: {
+          url: "{{url('contest_select2')}}",
+          data: function(params) {
+            return {
+              term: params.term,
+              problem_id: {{problem.id}}
+            };
+          },
+          delay: 250,
+        }
+      });
+
       $('#rescore-all').click(function (e) {
         e.preventDefault();
         if (confirm(this.dataset.warning)) {
@@ -157,10 +172,14 @@
               {% endfor %}
             </select>
           </div>
-          {% if in_contest %}
-            <label for="in-contest" name="in_contest">{{ _('In current contest') }}:</label>
-            <input type="checkbox" name="in_contest">
-          {% endif %}
+          <div class="control-group">
+            <label for="by-contest-filter">{{ _('Filter by contest:') }}</label>
+            <select id="by-contest-filter" name="contest" multiple>
+              {% if current_contest %}
+                <option selected value="{{current_contest.id}}">{{ current_contest }}</option>
+              {% endif %}
+            </select>
+          </div>
         </form>
       </div>
       <div class="pane">

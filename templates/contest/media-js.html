@@ -149,8 +149,12 @@
     });
 
     $('.first-join').click(function () {
-      return confirm('{{ _('Are you sure you want to join?') }}\n' +
-        '{{ _('Joining a contest starts your timer, after which it becomes unstoppable.') }}');
+      let q = '{{ _('Are you sure you want to join?') }}\n' +
+      '{{ _('Joining a contest starts your timer, after which it becomes unstoppable.') }}';
+      {% if current_contest %}
+        q += " {{ _('By joining in this contest, you will automatically leave contest') }} \"{{ current_contest.name }}\". ";
+      {% endif %}
+      return confirm(q);
     });
 
     var url = '{{ url('contest_participation', contest.key, '__username__') }}';
@@ -161,7 +165,9 @@
     $('#search-contest').select2({
       placeholder: placeholder,
       ajax: {
-        url: '{{ url('contest_user_search_select2_ajax', contest.key) }}'
+        url: '{{ url('contest_user_search_select2_ajax', contest.key) }}',
+        cache: true,
+        delay: 250,
       },
       minimumInputLength: 1,
       escapeMarkup: function (markup) {

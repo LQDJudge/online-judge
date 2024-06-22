@@ -1,14 +1,14 @@
 <div class="left-sidebar">
   {{ make_tab_item('home', 'fa fa-home', organization.get_absolute_url(), _('Home')) }}
   {% if is_member or can_edit %}
-    {{ make_tab_item('problems', 'fa fa-list', organization.get_problems_url(), _('Problems')) }}
-    {{ make_tab_item('contests', 'fa fa-trophy', organization.get_contests_url(), _('Contests')) }}
-    {{ make_tab_item('submissions', 'fa fa-book', organization.get_submissions_url(), _('Submissions')) }}
+    {{ make_tab_item('problems', 'fa fa-puzzle-piece', organization.get_problems_url(), _('Problems')) }}
+    {{ make_tab_item('contests', 'fa fa-ranking-star', organization.get_contests_url(), _('Contests')) }}
+    {{ make_tab_item('submissions', 'fa fa-code', organization.get_submissions_url(), _('Submissions')) }}
   {% endif %}
   {% if is_member or can_edit or organization.is_open %}
-    {{ make_tab_item('users', 'fa fa-user', organization.get_users_url(), _('Members')) }}
+    {{ make_tab_item('users', 'fa fa-users', organization.get_users_url(), _('Members')) }}
   {% endif %}
   {% if perms.judge.change_organization %}
-    {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_organization_change', organization.id), _('Admin')) }}
+    {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_organization_change', organization.id), _('Admin'), force_new_page=True) }}
   {% endif %}
 </div>

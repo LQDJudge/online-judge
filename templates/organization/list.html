@@ -1,49 +1,110 @@
-{% extends "two-column-content.html" %}
+{% extends "three-column-content.html" %}
 
-{% block two_col_media %}
-  <style>
-    .organization-container .organization-row:last-child {
-      border-bottom: none;
-    }
+{% block three_col_js %}
+  <script type="text/javascript">
+    $(document).ready(function () {
+      $('#mine-tab').attr('href', changeTabParameter('mine'));
+      $('#public-tab').attr('href', changeTabParameter('public'));
+      $('#private-tab').attr('href', changeTabParameter('private'));
 
-    .org-logo {
-      vertical-align: middle;
-      height: 2em;
-      width: 2em;
-      display: inline-block;
-      margin-right: 1em;
-      margin-left: 0.5em;
-    }
-    .toggle {
-      cursor: pointer;
-    }
-  </style>
+      var $form = $('form#filter-form');
+
+      $('#go').click(function() {
+        submitFormWithParams($form, "GET");
+      });
+
+      $form.on('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+        }
+      });
+
+      $('#search-organization').keypress(function (e) {
+        if (e.keyCode === 13) {
+          $('#go').click();
+        }
+      });
+
+      $('#order').select2();
+    });
+  </script>
+  {% block contest_list_js %}{% endblock %}
 {% endblock %}
-
-{% block title_ruler %}{% endblock %}
 
 {% block left_sidebar %}
-  {% include "user/user-left-sidebar.html" %}
+  <div class="left-sidebar">
+    {% if request.user.is_authenticated %}
+      {{ make_tab_item('mine', 'fa fa-user', request.path + '?tab=mine', _('Mine')) }}
+    {% endif %}
+    {{ make_tab_item('public', 'fa fa-globe', request.path + '?tab=public', _('Public')) }}
+    {{ make_tab_item('private', 'fa fa-lock', request.path + '?tab=private', _('Private')) }}
+    {% if request.user.is_superuser %}
+      {{ make_tab_item('import', 'fa fa-table', url('import_users'), _('Import'), force_new_page=True) }}
+    {% endif %}
+  </div>
 {% endblock %}
 
-{% macro org_list(title, queryset) %}
+{% block right_sidebar %}
+  <div class="right-sidebar">
+    {% include "organization/search-form.html" %}
+  </div>
+{% endblock %}
+
+{% macro org_list(queryset, tab) %}
   {% if queryset %}
-    <h3 style="padding-bottom: 1em" class="toggle open"><i class="fa fa-chevron-right fa-fw"></i> {{title}} ({{queryset.count()}})</h3>
-    <div class="organization-container toggled">
+    <div class="organization-container">
       {% for org in queryset %}
-        <a href="{{ org.get_absolute_url() }}" class="organization-row" title="{{org.about}}">
-          <img class="org-logo" data-src="{{ org.logo_override_image or static('icons/icon.png') }}">
-          <span style="margin-right: auto">{{ org.name }}</span>
-          <span style="font-weight: normal"><i>{{ org.member_count }} {{_('members')}}</i></span>
-        </a>
+        <div class="organization-card" style="cursor: pointer;" onclick="location.href='{{ org.get_absolute_url() }}';">
+          {% if org.logo_override_image %}
+            <img class="org-logo" loading="lazy" src="{{ org.logo_override_image }}">
+          {% else %}
+            <img class="org-logo" loading="lazy" src="{{ static('icons/icon.svg') }}" onerror="this.onerror=null;this.src='{{ static('icons/logo.svg') }}';">
+          {% endif %}
+          <div class="org-details">
+            <span style="font-weight: bold;">{{ org.name }}</span>
+            <span style="margin-bottom: 0"><i>{{ org.member_count }} {{ _('members') }}</i></span>
+          </div>
+          {% if tab == 'mine' %}
+            <div class="background-royalblue button small">{{ _('View') }}</div>
+          {% elif tab == 'public' %}
+            <form method="post" action="{{ url('join_organization', org.id, org.slug) }}">
+              {% csrf_token %}
+              <input type="submit" style="width: 100%" class="background-royalblue button small" value="{{ _('Join') }}">
+            </form>
+          {% else %}
+            <a href="{{ url('request_organization', org.id, org.slug) }}" style="font-size: 15px;" class="background-royalblue button small">{{ _('Request membership') }}</a>
+          {% endif %}
+        </div>
       {% endfor %}
     </div>
+    {% if page_obj and page_obj.num_pages > 1 %}
+      {% include "list-pages.html" %}
+    {% endif %}
   {% endif %}
 {% endmacro %}
 
 {% block middle_content %}
-  <a style="float: right" class="button small" href="{{url('organization_add')}}">{{_("Create group")}}</a>
-  {{ org_list(_('My groups'), my_organizations) }}
-  {{ org_list(_('Open groups'), open_organizations) }}
-  {{ org_list(_('Private groups'), private_organizations) }}
+  {% if current_tab == 'mine' %}
+    {% if organizations %}
+      {{ org_list(organizations, 'mine') }}
+    {% else %}
+      <i> {{ _('You have not joined any organization yet.') }} </i>
+    {% endif %}
+  {% endif %}
+
+  {% if current_tab == 'public' %}
+    {% if organizations %}
+      {{ org_list(organizations, 'public') }}
+    {% else %}
+      <i> {{ _('There is no public organization.') }} </i>
+    {% endif %}
+  {% endif %}
+
+  {% if current_tab == 'private' %}
+    {% if organizations %}
+      {{ org_list(organizations, 'private') }}
+    {% else %}
+      <i> {{ _('There is no private organization.') }} </i>
+    {% endif %}
+  {% endif %}
 {% endblock %}

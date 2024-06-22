@@ -1,19 +1,18 @@
-<div class="sub-result {{ breakdown.sub_result_class }}">
-  <div class="score">{{ breakdown.sub_points|floatformat(0) }} / {{ breakdown.sub_total|floatformat(0) }}</div>
-  <div class="state">
-    <span title="{{ breakdown.sub_long_status }}" class="status">{{ breakdown.sub_short_status }}</span>
-    |
-    <span class="language">{{ breakdown.sub_lang }}</span>
+<div class="sub-details">
+  <div class="sub-info">
+    <div class="sub-problem">
+      <a href="{{ url('problem_detail', breakdown.problem_code) }}">{{ breakdown.problem_name }}</a>
+    </div>
+  </div>
+  <div class="sub-result">
+    <div class="state {{ breakdown.sub_result_class }}">
+      <span title="{{ breakdown.sub_long_status }}" class="status">{{ breakdown.sub_short_status }}</span>
+    </div>
+    <div class="score">{{ breakdown.sub_points|floatformat(0) }} / {{ breakdown.sub_total|floatformat(0) }}</div>
+    <div class="language">{{ breakdown.sub_lang }}</div>
+    <span class="time">{{ relative_time(breakdown.sub_date) }}</span>
   </div>
 </div>
-
-<div class="sub-info">
-  <div class="name">
-    <a href="{{ url('problem_detail', breakdown.problem_code) }}">{{ breakdown.problem_name }}</a>
-  </div>
-  <div class="time">{{ relative_time(breakdown.sub_date) }}</div>
-</div>
-
 <div class="sub-pp sub-usage">
   <div class="pp">
     <a href="{{ url('submission_status', breakdown.sub_id) }}">{{ breakdown.points|floatformat(0) }}pp</a>

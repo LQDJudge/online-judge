@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block media %}
+  <style>
+    .container {
+      width: 100%;
+      margin: auto;
+    }
+    .preview-container {
+      padding-bottom: 16px;
+    }
+    #preview {
+      background-color: rgb(220, 220, 220);
+      border: solid 2px rgb(180, 180, 180);
+      padding: 8px;
+      max-height: 134px;
+      height: 20%;
+      overflow-y: scroll;
+    }
+    .button-container {
+      text-align:left;
+    }
+    .button {
+      display:inline-block;
+    }
+    .copyright {
+      position: absolute;
+      bottom: 48px;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  </style>
+{% endblock %}
+
+{% block js_media %}
+  <script>
+    $(document).ready(function(){
+      $("#download").on("click", function(event) {
+        event.preventDefault()
+        var file_path = document.getElementById('file_path').value;
+        $.ajax({
+          url: "{{url('test_formatter_download')}}",
+          type: 'POST',
+          data: {
+            file_path: file_path
+          },
+          xhrFields: {
+            responseType: 'blob'
+          },
+          success: function(data) {
+            var url = window.URL.createObjectURL(data);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = file_path.split('/').pop();
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+          },
+          error: function(error) {
+            alert(error);
+            console.log(error.message)
+          }
+        })
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block body %}
+  <div class="container">
+    <input type="hidden" id="file_path" value={{file_path}}>
+    <input type="hidden" id="file_path_getnames" value={{file_path_getnames}}>
+
+    <div class="preview-container">
+      <h2>{{_('Download')}}</h2><br>
+      <h4>{{file_name}}</h4><br>
+      <div id="preview">
+        {{ response|safe }}
+      </div>
+    </div>
+    <div class="button-container">
+      <button type="submit" id="download" class="button">{{_('Download')}}</button>
+      <a href="{{url('test_formatter_edit')}}?file_path={{file_path_getnames}}" id="edit" class="button">{{_('Edit')}}</a>
+    </div>
+    <div class="copyright">
+      <p >{{_('Copyright')}} Nguyễn Tiến Trung Kiên</p>
+    </div>
+  </div>
+
+
+{% endblock %}

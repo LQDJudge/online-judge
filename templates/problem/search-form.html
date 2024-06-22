@@ -47,11 +47,11 @@
         </div>
       {% endif %}
       <div class="filter-form-group">
-        <label class="bold-text margin-label" for="type"><i class="non-italics">{{ _('Author') }}</i></label>
+        <label class="bold-text margin-label" for="search-author"><i class="non-italics">{{ _('Author') }}</i></label>
         <select id="search-author" name="authors" multiple>
-          {% for author in all_authors %}
-            <option value="{{ author.id }}"{% if author.id in author_query %} selected{% endif %}>
-              {{ author.user__username }}
+          {% for author in author_query %}
+            <option value="{{ author.id }}" selected>
+              {{ author.username }}
             </option>
           {% endfor %}
         </select>
@@ -84,8 +84,10 @@
         </select>
       </div>
       {% if point_values %}
-        <div style="margin-top: 5px;" class="bold-text margin-label" class="form-label">{{ _('Point range') }}</div>
-        <div id="point-slider"></div>
+        <div class="filter-form-group">
+          <div class="bold-text margin-label" class="form-label">{{ _('Point range') }}</div>
+          <div id="point-slider"></div>
+        </div>
       {% endif %}
       <input id="point-start" type="hidden" name="point_start" {% if point_start and point_start != point_values.min %}value="{{ point_start }}"{% else %}disabled{% endif %}>
       <input id="point-end" type="hidden" name="point_end" {% if point_end and point_end != point_values.max %}value="{{ point_end }}"{% else %}disabled{% endif %}>

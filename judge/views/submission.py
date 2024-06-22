@@ -33,29 +33,31 @@ from django.views import View
 
 from judge import event_poster as event
 from judge.highlight_code import highlight_code
-from judge.models import Contest, ContestParticipation
-from judge.models import Language
-from judge.models import Problem
-from judge.models import ProblemTestCase
-from judge.models import ProblemTranslation
-from judge.models import Profile
-from judge.models import Submission
+from judge.models import (
+    Contest,
+    ContestParticipation,
+    Language,
+    Problem,
+    ProblemTestCase,
+    ProblemTranslation,
+    Profile,
+    Submission,
+)
 from judge.utils.problems import get_result_data
-from judge.utils.problems import user_completed_ids, user_editable_ids, user_tester_ids
 from judge.utils.problem_data import get_problem_case
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
 from judge.utils.views import DiggPaginatorMixin
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.utils.views import TitleMixin
 from judge.utils.timedelta import nice_repr
+from judge.views.contests import ContestMixin
+from judge.caching import cache_wrapper
 
 
 def submission_related(queryset):
-    return queryset.select_related("user__user", "problem", "language").only(
+    return queryset.select_related("user", "problem", "language").only(
         "id",
-        "user__user__username",
-        "user__display_rank",
-        "user__rating",
+        "user__id",
         "problem__name",
         "problem__code",
         "problem__is_public",
@@ -70,7 +72,8 @@ def submission_related(queryset):
         "case_points",
         "case_total",
         "current_testcase",
-        "contest_object",
+        "contest_object__key",
+        "contest_object__name",
     )
 
 
@@ -81,6 +84,10 @@ class SubmissionMixin(object):
 
 
 class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, DetailView):
+    queryset = Submission.objects.select_related(
+        "language", "problem", "user", "contest_object"
+    ).defer("problem__description", "user__about", "contest_object__description")
+
     def get_object(self, queryset=None):
         submission = super(SubmissionDetailBase, self).get_object(queryset)
         if submission.is_accessible_by(self.request.profile):
@@ -92,7 +99,7 @@ class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, Deta
         submission = self.object
         return _("Submission of %(problem)s by %(user)s") % {
             "problem": submission.problem.translated_name(self.request.LANGUAGE_CODE),
-            "user": submission.user.user.username,
+            "user": submission.user.username,
         }
 
     def get_content_title(self):
@@ -107,27 +114,11 @@ class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, Deta
                 ),
                 "user": format_html(
                     '<a href="{0}">{1}</a>',
-                    reverse("user_page", args=[submission.user.user.username]),
-                    submission.user.user.username,
+                    reverse("user_page", args=[submission.user.username]),
+                    submission.user.username,
                 ),
             }
         )
-
-
-class SubmissionSource(SubmissionDetailBase):
-    template_name = "submission/source.html"
-
-    def get_queryset(self):
-        return super().get_queryset().select_related("source")
-
-    def get_context_data(self, **kwargs):
-        context = super(SubmissionSource, self).get_context_data(**kwargs)
-        submission = self.object
-        context["raw_source"] = submission.source.source.rstrip("\n")
-        context["highlighted_source"] = highlight_code(
-            submission.source.source, submission.language.pygments, linenos=False
-        )
-        return context
 
 
 def get_hidden_subtasks(request, submission):
@@ -205,15 +196,28 @@ def get_cases_data(submission):
 class SubmissionStatus(SubmissionDetailBase):
     template_name = "submission/status.html"
 
-    def access_testcases_in_contest(self):
-        contest = self.object.contest_or_none
-        if contest is None:
-            return False
-        if contest.problem.problem.is_editable_by(self.request.user):
+    def can_see_testcases(self):
+        contest_submission = self.object.contest_or_none
+        if contest_submission is None:
             return True
-        if contest.problem.contest.is_in_contest(self.request.user):
+
+        contest_problem = contest_submission.problem
+        problem = self.object.problem
+        contest = self.object.contest_object
+
+        if contest_problem.show_testcases:
+            return True
+        if problem.is_editable_by(self.request.user):
+            return True
+        if contest.is_editable_by(self.request.user):
+            return True
+        if not problem.is_public:
             return False
-        if contest.participation.ended:
+        if contest.is_in_contest(self.request.user):
+            return False
+        if not contest.ended:
+            return False
+        if contest_submission.participation.ended:
             return True
         return False
 
@@ -228,19 +232,14 @@ class SubmissionStatus(SubmissionDetailBase):
         )
         context["time_limit"] = submission.problem.time_limit
         context["can_see_testcases"] = False
-        context["raw_source"] = submission.source.source.rstrip("\n")
         context["highlighted_source"] = highlight_code(
-            submission.source.source, submission.language.pygments, linenos=False
+            submission.source.source,
+            submission.language.pygments,
+            linenos=True,
+            title=submission.language,
         )
 
-        contest = submission.contest_or_none
-        show_testcases = False
-        can_see_testcases = self.access_testcases_in_contest()
-
-        if contest is not None:
-            show_testcases = contest.problem.show_testcases or False
-
-        if contest is None or show_testcases or can_see_testcases:
+        if self.can_see_testcases():
             context["cases_data"] = get_cases_data(submission)
             context["can_see_testcases"] = True
         try:
@@ -266,7 +265,7 @@ class SubmissionTestCaseQuery(SubmissionStatus):
         return super(SubmissionTestCaseQuery, self).get(request, *args, **kwargs)
 
 
-class SubmissionSourceRaw(SubmissionSource):
+class SubmissionSourceRaw(SubmissionDetailBase):
     def get(self, request, *args, **kwargs):
         submission = self.get_object()
         return HttpResponse(submission.source.source, content_type="text/plain")
@@ -310,6 +309,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
 
     def access_check(self, request):
         pass
+
+    def hide_contest_in_row(self):
+        return self.request.in_contest_mode
 
     @cached_property
     def in_contest(self):
@@ -379,17 +381,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                 )
 
         if self.selected_languages:
-            # Note (DMOJ): MariaDB can't optimize this subquery for some insane, unknown reason,
-            # so we are forcing an eager evaluation to get the IDs right here.
-            # Otherwise, with multiple language filters, MariaDB refuses to use an index
-            # (or runs the subquery for every submission, which is even more horrifying to think about).
-            queryset = queryset.filter(
-                language__in=list(
-                    Language.objects.filter(
-                        key__in=self.selected_languages
-                    ).values_list("id", flat=True)
-                )
-            )
+            queryset = queryset.filter(language__in=self.selected_languages)
         if self.selected_statuses:
             submission_results = [i for i, _ in Submission.RESULT]
             if self.selected_statuses[0] in submission_results:
@@ -460,7 +452,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["show_problem"] = self.show_problem
         context["profile"] = self.request.profile
         context["all_languages"] = Language.objects.all().values_list("key", "name")
-        context["selected_languages"] = self.selected_languages
+        context["selected_languages"] = self.selected_languages_key
         context["all_statuses"] = self.get_searchable_status_codes()
         context["selected_statuses"] = self.selected_statuses
 
@@ -480,11 +472,16 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["friend_submissions_link"] = self.get_friend_submissions_page()
         context["all_submissions_link"] = self.get_all_submissions_page()
         context["page_type"] = self.page_type
+        context["hide_contest_in_row"] = self.hide_contest_in_row()
 
         context["in_hidden_subtasks_contest"] = self.in_hidden_subtasks_contest()
         if context["in_hidden_subtasks_contest"]:
             for submission in context["submissions"]:
                 self.modify_attrs(submission)
+        context[
+            "is_in_editable_contest"
+        ] = self.in_contest and self.contest.is_editable_by(self.request.user)
+
         return context
 
     def get(self, request, *args, **kwargs):
@@ -494,6 +491,19 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
 
         self.selected_languages = request.GET.getlist("language")
         self.selected_statuses = request.GET.getlist("status")
+        self.selected_languages_key = []
+
+        if self.selected_languages:
+            languages = Language.objects.filter(key__in=self.selected_languages).values(
+                "id", "key"
+            )
+            self.selected_languages = [i["id"] for i in languages]
+            self.selected_languages_key = [i["key"] for i in languages]
+        if self.selected_statuses:
+            allowed_statuses = [i for i, _ in Submission.RESULT + Submission.STATUS]
+            self.selected_statuses = [
+                i for i in self.selected_statuses if i in allowed_statuses
+            ]
 
         if self.in_contest and self.contest.is_editable_by(self.request.user):
             self.include_frozen = True
@@ -736,6 +746,11 @@ def single_submission(request, submission_id, show_problem=True):
         submission_related(Submission.objects.all()), id=int(submission_id)
     )
 
+    is_in_editable_contest = False
+    if authenticated and request.in_contest_mode:
+        contest = request.profile.current_contest.contest
+        is_in_editable_contest = contest.is_editable_by(request.user)
+
     if not submission.problem.is_accessible_by(request.user):
         raise Http404()
 
@@ -748,6 +763,7 @@ def single_submission(request, submission_id, show_problem=True):
             "problem_name": show_problem
             and submission.problem.translated_name(request.LANGUAGE_CODE),
             "profile": request.profile if authenticated else None,
+            "is_in_editable_contest": is_in_editable_contest,
         },
     )
 
@@ -783,28 +799,9 @@ class AllSubmissions(InfinitePaginationMixin, GeneralSubmissions):
         if self.request.organization or self.in_contest:
             return super(AllSubmissions, self)._get_result_data()
 
-        key = "global_submission_result_data"
-        if self.selected_statuses:
-            key += ":" + ",".join(self.selected_statuses)
-        if self.selected_languages:
-            key += ":" + ",".join(self.selected_languages)
-        result = cache.get(key)
-        if result:
-            return result
-        queryset = Submission.objects
-        if self.selected_languages:
-            queryset = queryset.filter(
-                language__in=Language.objects.filter(key__in=self.selected_languages)
-            )
-        if self.selected_statuses:
-            submission_results = [i for i, _ in Submission.RESULT]
-            if self.selected_statuses[0] in submission_results:
-                queryset = queryset.filter(result__in=self.selected_statuses)
-            else:
-                queryset = queryset.filter(status__in=self.selected_statuses)
-        result = get_result_data(queryset)
-        cache.set(key, result, self.stats_update_interval)
-        return result
+        return _get_global_submission_result_data(
+            self.selected_statuses, self.selected_languages
+        )
 
 
 class ForceContestMixin(object):
@@ -840,6 +837,38 @@ class ForceContestMixin(object):
             raise ImproperlyConfigured(_("Must pass a contest"))
         self._contest = get_object_or_404(Contest, key=kwargs["contest"])
         return super(ForceContestMixin, self).get(request, *args, **kwargs)
+
+
+class ContestSubmissions(
+    LoginRequiredMixin, ContestMixin, ForceContestMixin, SubmissionsListBase
+):
+    check_contest_in_access_check = True
+    template_name = "contest/submissions.html"
+    context_object_name = "submissions"
+
+    def hide_contest_in_row(self):
+        return True
+
+    def access_check(self, request):
+        super().contest_access_check(self.contest)
+        super().access_check(request)
+
+    def get_title(self):
+        return _("Submissions in") + " " + self.contest.name
+
+    def get_content_title(self):
+        return format_html(
+            _('Submissions in <a href="{0}">{1}</a>'),
+            reverse("contest_view", args=[self.contest.key]),
+            self.contest.name,
+        )
+
+    def get_context_data(self, **kwargs):
+        self.object = self.contest
+        context = super(ContestSubmissions, self).get_context_data(**kwargs)
+        context["contest"] = self.contest
+        context["page_type"] = "submissions"
+        return context
 
 
 class UserContestSubmissions(ForceContestMixin, UserProblemSubmissions):
@@ -1027,3 +1056,19 @@ class SubmissionSourceFileView(View):
         response["Content-Type"] = "application/octet-stream"
         response["Content-Disposition"] = "attachment; filename=%s" % (filename,)
         return response
+
+
+@cache_wrapper(prefix="gsrd", timeout=3600, expected_type=dict)
+def _get_global_submission_result_data(statuses, languages):
+    queryset = Submission.objects
+    if languages:
+        queryset = queryset.filter(
+            language__in=Language.objects.filter(id__in=languages)
+        )
+    if statuses:
+        submission_results = [i for i, _ in Submission.RESULT]
+        if statuses[0] in submission_results:
+            queryset = queryset.filter(result__in=statuses)
+        else:
+            queryset = queryset.filter(status__in=statuses)
+    return get_result_data(queryset)

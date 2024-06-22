@@ -3,7 +3,7 @@
 </div>
 {% if other_user %}
   <div class="status-container" style="height: 3em; width: 3em;">
-    <img src="{{ gravatar(other_user, 135) }}" class="info-pic">
+    <img src="{{ gravatar(other_user, 135) }}" class="info-pic user-img">
     <svg style="position:absolute; height:100%; width: 100%; transform: rotate(180deg);" >
       <circle class="info-circle"
         fill="{{'green' if other_online else 'red'}}"/>
@@ -11,7 +11,7 @@
   </div>
 {% else %}
   <div class="status-container" style="height: 3em;">
-    <img src="{{ static('icons/logo.png') }}" class="info-pic" style="border-radius: 0px;">
+    <img src="{{ static('icons/icon.svg') }}" class="info-pic" style="border-radius: 0px;">
   </div>
 {% endif %}
 <span class="info-name username">
@@ -27,22 +27,20 @@
 {% endif %}
 
 {% if other_user %}
-  <span style="margin-right: 0.3em" id="setting">
-    <div class="control-button small" style="" id="setting-button">
+  <div style="margin-right: 0.3em; position: relative;">
+    <div class="control-button small user-setting-button">
       <i class="fa fa-ellipsis-h"></i>
     </div>
-    <div id="setting-content">
-      <li>
-        <a href="{{url('toggle_ignore', other_user.id)}}" class=" {{'green' if is_ignored else 'red'}}">
-          {% if is_ignored %}
-            {{_('Unignore')}}
-          {% else %}
-            {{_('Ignore')}}
-          {% endif %}
-        </a>
-      </li>
+    <div class="setting-content">
+      <a href="{{url('toggle_ignore', other_user.id)}}" class=" {{'green' if is_ignored else 'red'}}">
+        {% if is_ignored %}
+          {{_('Unignore')}}
+        {% else %}
+          {{_('Ignore')}}
+        {% endif %}
+      </a>
     </div>
-  </span>
+  </div>
 {% else %}
   <span class="active-span">{{online_count}} {{_('users are online')}}</span>
 {% endif %}

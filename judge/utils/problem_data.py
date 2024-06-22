@@ -4,6 +4,7 @@ import os
 import re
 import yaml
 import zipfile
+import shutil
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -48,6 +49,13 @@ class ProblemDataStorage(FileSystemStorage):
     def rename(self, old, new):
         return os.rename(self.path(old), self.path(new))
 
+    def delete_directory(self, name):
+        directory_path = self.path(name)
+        try:
+            shutil.rmtree(directory_path)
+        except FileNotFoundError:
+            pass
+
 
 class ProblemDataError(Exception):
     def __init__(self, message):
@@ -82,8 +90,8 @@ class ProblemDataCompiler(object):
                     )
                 return custom_checker_path[1]
 
-            if case.checker == "customval":
-                custom_checker_path = split_path_first(case.custom_validator.name)
+            if case.checker == "customcpp":
+                custom_checker_path = split_path_first(case.custom_checker_cpp.name)
                 if len(custom_checker_path) != 2:
                     raise ProblemDataError(
                         _("How did you corrupt the custom checker path?")
@@ -98,7 +106,7 @@ class ProblemDataCompiler(object):
                 }
 
             if case.checker == "testlib":
-                custom_checker_path = split_path_first(case.custom_validator.name)
+                custom_checker_path = split_path_first(case.custom_checker_cpp.name)
                 if len(custom_checker_path) != 2:
                     raise ProblemDataError(
                         _("How did you corrupt the custom checker path?")

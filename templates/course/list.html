@@ -1,19 +1,29 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-  </head>
-  <body>
-    <h1>Enrolling</h1>
-    {% for course in enrolling %}
-      <h2> {{ course }} </h2>
+{% extends "two-column-content.html" %}
+
+{% block two_col_media %}
+{% endblock %}
+
+{% block left_sidebar %}
+  <div class="left-sidebar">
+    {{ make_tab_item('list', 'fa fa-list', url('course_list'), _('Courses')) }}
+  </div>
+{% endblock %}
+
+{% block middle_content %}
+  <div class="course-list">
+    {% for course in courses %}
+      <div class="course-item">
+        <div class="course-image">
+          <img loading="lazy" src="{{course.image_url}}">
+        </div>
+        <div class="course-content">
+          <a href="{{url('course_detail', course.slug)}}" class="course-name">{{course.name}}</a>
+          {% set teachers = course.get_teachers() %}
+          {% if teachers %}
+            <div class="course-teachers">{{_('Teachers')}}: {{link_users(teachers)}}</div>
+          {% endif %}
+        </div>
+      </div>
     {% endfor %}
-    <h1> Available </h1>
-    {% for course in available %}
-      <h2> {{ course }} </h2>
-    {% endfor %}
-  </body>
-</html>
+  </div>
+{% endblock %}

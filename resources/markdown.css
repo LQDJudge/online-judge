@@ -4129,17 +4129,20 @@ html .md-typeset .footnote-ref{
 .md-typeset :-webkit-any(.emojione,.twemoji,.gemoji){
     display:inline-flex;
     height:1.125em;
-    vertical-align:text-top
+    vertical-align:text-top;
+    font-size: 1.2em;
 }
 .md-typeset :-moz-any(.emojione,.twemoji,.gemoji){
     display:inline-flex;
     height:1.125em;
-    vertical-align:text-top
+    vertical-align:text-top;
+    font-size: 1.2em;
 }
 .md-typeset :is(.emojione,.twemoji,.gemoji){
     display:inline-flex;
     height:1.125em;
-    vertical-align:text-top
+    vertical-align:text-top;
+    font-size: 1.2em;
 }
 .md-typeset :-webkit-any(.emojione,.twemoji,.gemoji) svg{
     fill:currentcolor;
@@ -4149,12 +4152,14 @@ html .md-typeset .footnote-ref{
 .md-typeset :-moz-any(.emojione,.twemoji,.gemoji) svg{
     fill:currentcolor;
     max-height:100%;
-    width:1.125em
+    width:1.125em;
+    font-size: 1.2em;
 }
 .md-typeset :is(.emojione,.twemoji,.gemoji) svg{
     fill:currentcolor;
     max-height:100%;
-    width:1.125em
+    width:1.125em;
+    font-size: 1.2em;
 }
 .highlight :-webkit-any(.o,.ow){
     color:var(--md-code-hl-operator-color)
@@ -4295,7 +4300,7 @@ html .md-typeset .footnote-ref{
     padding:0 1.1764705882em
 }
 .highlight span.filename{
-    background-color:var(--md-code-bg-color);
+    background-color:var(--md-default-fg-color--lighter);
     border-bottom:.05rem solid var(--md-default-fg-color--lightest);
     border-top-left-radius:.1rem;
     border-top-right-radius:.1rem;
@@ -4374,8 +4379,6 @@ html .md-typeset .footnote-ref{
     background-color:var(--md-code-bg-color);
     border-bottom-left-radius:.1rem;
     border-top-left-radius:.1rem;
-    font-size:.85em;
-    padding:.7720588235em 0 .7720588235em 1.1764705882em;
     -webkit-user-select:none;
     -moz-user-select:none;
     -ms-user-select:none;

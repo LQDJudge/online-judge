@@ -1,1 +1,10 @@
-<span class="{{ profile.css_class }}"><a href="{{ url('user_page', profile.username) }}">{{ profile.username }}</a></span>
+<span class="{{ profile.css_class }} {{'user-with-img' if show_image}}">
+  {% if show_image %}
+    <span class="user-img">
+      <img loading="lazy" src="{{gravatar(profile)}}">
+    </span>
+  {% endif %}
+  <a href="{{ url('user_page', profile.username) }}">
+    {{ profile.username }}
+  </a>
+</span>

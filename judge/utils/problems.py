@@ -1,7 +1,8 @@
 from collections import defaultdict
 from math import e
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
+from enum import Enum
 
 from django.conf import settings
 from django.core.cache import cache
@@ -9,6 +10,7 @@ from django.db.models import Case, Count, ExpressionWrapper, F, Max, Q, When
 from django.db.models.fields import FloatField
 from django.utils import timezone
 from django.utils.translation import gettext as _, gettext_noop
+from django.http import Http404
 
 from judge.models import Problem, Submission
 from judge.ml.collab_filter import CollabFilter
@@ -112,13 +114,21 @@ def _get_result_data(results):
             # Using gettext_noop here since this will be tacked into the cache, so it must be language neutral.
             # The caller, SubmissionList.get_result_data will run ugettext on the name.
             {"code": "AC", "name": gettext_noop("Accepted"), "count": results["AC"]},
-            {"code": "WA", "name": gettext_noop("Wrong"), "count": results["WA"]},
+            {
+                "code": "WA",
+                "name": gettext_noop("Wrong Answer"),
+                "count": results["WA"],
+            },
             {
                 "code": "CE",
                 "name": gettext_noop("Compile Error"),
                 "count": results["CE"],
             },
-            {"code": "TLE", "name": gettext_noop("Timeout"), "count": results["TLE"]},
+            {
+                "code": "TLE",
+                "name": gettext_noop("Time Limit Exceeded"),
+                "count": results["TLE"],
+            },
             {
                 "code": "ERR",
                 "name": gettext_noop("Error"),
@@ -165,7 +175,7 @@ def editable_problems(user, profile=None):
     return subquery
 
 
-@cache_wrapper(prefix="hp", timeout=900)
+@cache_wrapper(prefix="hp", timeout=14400)
 def hot_problems(duration, limit):
     qs = Problem.get_public_problems().filter(
         submission__date__gt=timezone.now() - duration
@@ -222,7 +232,7 @@ def hot_problems(duration, limit):
     return qs
 
 
-@cache_wrapper(prefix="grp", timeout=26400)
+@cache_wrapper(prefix="grp", timeout=14400)
 def get_related_problems(profile, problem, limit=8):
     if not profile or not settings.ML_OUTPUT_PATH:
         return None
@@ -248,3 +258,72 @@ def finished_submission(sub):
         keys += ["contest_complete:%d" % participation.id]
         keys += ["contest_attempted:%d" % participation.id]
     cache.delete_many(keys)
+
+
+class RecommendationType(Enum):
+    HOT_PROBLEM = 1
+    CF_DOT = 2
+    CF_COSINE = 3
+    CF_TIME_DOT = 4
+    CF_TIME_COSINE = 5
+
+
+# Return a list of list. Each inner list correspond to each type in types
+def get_user_recommended_problems(
+    user_id,
+    problem_ids,
+    recommendation_types,
+    limits,
+    shuffle=False,
+):
+    cf_model = CollabFilter("collab_filter")
+    cf_time_model = CollabFilter("collab_filter_time")
+
+    def get_problem_ids_from_type(rec_type, limit):
+        if type(rec_type) == int:
+            try:
+                rec_type = RecommendationType(rec_type)
+            except ValueError:
+                raise Http404()
+        if rec_type == RecommendationType.HOT_PROBLEM:
+            return [
+                problem.id
+                for problem in hot_problems(timedelta(days=7), limit)
+                if problem.id in set(problem_ids)
+            ]
+        if rec_type == RecommendationType.CF_DOT:
+            return cf_model.user_recommendations(
+                user_id, problem_ids, cf_model.DOT, limit
+            )
+        if rec_type == RecommendationType.CF_COSINE:
+            return cf_model.user_recommendations(
+                user_id, problem_ids, cf_model.COSINE, limit
+            )
+        if rec_type == RecommendationType.CF_TIME_DOT:
+            return cf_time_model.user_recommendations(
+                user_id, problem_ids, cf_model.DOT, limit
+            )
+        if rec_type == RecommendationType.CF_TIME_COSINE:
+            return cf_time_model.user_recommendations(
+                user_id, problem_ids, cf_model.COSINE, limit
+            )
+        return []
+
+    all_problems = []
+    for rec_type, limit in zip(recommendation_types, limits):
+        all_problems += get_problem_ids_from_type(rec_type, limit)
+    if shuffle:
+        seed = datetime.now().strftime("%d%m%Y")
+        random.Random(seed).shuffle(all_problems)
+
+    # deduplicate problems
+    res = []
+    used_pid = set()
+
+    for obj in all_problems:
+        if type(obj) == tuple:
+            obj = obj[1]
+        if obj not in used_pid:
+            res.append(obj)
+            used_pid.add(obj)
+    return res

@@ -16,14 +16,6 @@ from django.contrib.auth.decorators import login_required
 from django.conf.urls.static import static as url_static
 
 
-from judge.feed import (
-    AtomBlogFeed,
-    AtomCommentFeed,
-    AtomProblemFeed,
-    BlogFeed,
-    CommentFeed,
-    ProblemFeed,
-)
 from judge.forms import CustomAuthenticationForm
 from judge.sitemap import (
     BlogPostSitemap,
@@ -46,6 +38,7 @@ from judge.views import (
     license,
     mailgun,
     markdown_editor,
+    test_formatter,
     notification,
     organization,
     preview,
@@ -68,7 +61,12 @@ from judge.views import (
     resolver,
     course,
     email,
+    custom_file_upload,
 )
+from judge import authentication
+
+from judge.views.test_formatter import test_formatter
+
 from judge.views.problem_data import (
     ProblemDataView,
     ProblemSubmissionDiff,
@@ -80,7 +78,6 @@ from judge.views.register import ActivationView, RegistrationView
 from judge.views.select2 import (
     AssigneeSelect2View,
     ChatUserSearchSelect2View,
-    CommentSelect2View,
     ContestSelect2View,
     ContestUserSearchSelect2View,
     OrganizationSelect2View,
@@ -88,6 +85,7 @@ from judge.views.select2 import (
     TicketUserSelect2View,
     UserSearchSelect2View,
     UserSelect2View,
+    ProblemAuthorSearchSelect2View,
 )
 
 admin.autodiscover()
@@ -144,9 +142,7 @@ register_patterns = [
     url(r"^logout/$", user.UserLogoutView.as_view(), name="auth_logout"),
     url(
         r"^password/change/$",
-        auth_views.PasswordChangeView.as_view(
-            template_name="registration/password_change_form.html",
-        ),
+        authentication.CustomPasswordChangeView.as_view(),
         name="password_change",
     ),
     url(
@@ -403,7 +399,28 @@ urlpatterns = [
                     name="submission_status",
                 ),
                 url(r"^/abort$", submission.abort_submission, name="submission_abort"),
-                url(r"^/html$", submission.single_submission),
+            ]
+        ),
+    ),
+    url(
+        r"^test_formatter/",
+        include(
+            [
+                url(
+                    r"^$",
+                    login_required(test_formatter.TestFormatter.as_view()),
+                    name="test_formatter",
+                ),
+                url(
+                    r"^edit_page$",
+                    login_required(test_formatter.EditTestFormatter.as_view()),
+                    name="test_formatter_edit",
+                ),
+                url(
+                    r"^download_page$",
+                    login_required(test_formatter.DownloadTestFormatter.as_view()),
+                    name="test_formatter_download",
+                ),
             ]
         ),
     ),
@@ -471,6 +488,7 @@ urlpatterns = [
                         reverse("all_user_submissions", args=[user])
                     ),
                 ),
+                url(r"^/toggle_follow/", user.toggle_follow, name="user_toggle_follow"),
                 url(
                     r"^/$",
                     lambda _, user: HttpResponsePermanentRedirect(
@@ -519,11 +537,37 @@ urlpatterns = [
     ),
     url(r"^contests/", paged_list_view(contests.ContestList, "contest_list")),
     url(
-        r"^contests/summary/(?P<key>\w+)$",
-        contests.contests_summary_view,
-        name="contests_summary",
+        r"^contests/summary/(?P<key>\w+)/",
+        paged_list_view(contests.ContestsSummaryView, "contests_summary"),
     ),
-    url(r"^course/", paged_list_view(course.CourseList, "course_list")),
+    url(
+        r"^contests/official",
+        paged_list_view(contests.OfficialContestList, "official_contest_list"),
+    ),
+    url(r"^courses/", paged_list_view(course.CourseList, "course_list")),
+    url(
+        r"^course/(?P<slug>[\w-]*)",
+        include(
+            [
+                url(r"^$", course.CourseDetail.as_view(), name="course_detail"),
+                url(
+                    r"^/lesson/(?P<id>\d+)$",
+                    course.CourseLessonDetail.as_view(),
+                    name="course_lesson_detail",
+                ),
+                url(
+                    r"^/edit_lessons$",
+                    course.EditCourseLessonsView.as_view(),
+                    name="edit_course_lessons",
+                ),
+                url(
+                    r"^/grades$",
+                    course.CourseStudentResults.as_view(),
+                    name="course_grades",
+                ),
+            ]
+        ),
+    ),
     url(
         r"^contests/(?P<year>\d+)/(?P<month>\d+)/$",
         contests.ContestCalendar.as_view(),
@@ -585,6 +629,13 @@ urlpatterns = [
                     paged_list_view(
                         submission.UserContestSubmissionsAjax,
                         "contest_user_submissions_ajax",
+                    ),
+                ),
+                url(
+                    r"^/submissions",
+                    paged_list_view(
+                        submission.ContestSubmissions,
+                        "contest_submissions",
                     ),
                 ),
                 url(
@@ -852,6 +903,11 @@ urlpatterns = [
                                 AssigneeSelect2View.as_view(),
                                 name="ticket_assignee_select2_ajax",
                             ),
+                            url(
+                                r"^problem_authors$",
+                                ProblemAuthorSearchSelect2View.as_view(),
+                                name="problem_authors_select2_ajax",
+                            ),
                         ]
                     ),
                 ),
@@ -907,19 +963,6 @@ urlpatterns = [
                         ]
                     ),
                 ),
-            ]
-        ),
-    ),
-    url(
-        r"^feed/",
-        include(
-            [
-                url(r"^problems/rss/$", ProblemFeed(), name="problem_rss"),
-                url(r"^problems/atom/$", AtomProblemFeed(), name="problem_atom"),
-                url(r"^comment/rss/$", CommentFeed(), name="comment_rss"),
-                url(r"^comment/atom/$", AtomCommentFeed(), name="comment_atom"),
-                url(r"^blog/rss/$", BlogFeed(), name="blog_rss"),
-                url(r"^blog/atom/$", AtomBlogFeed(), name="blog_atom"),
             ]
         ),
     ),
@@ -1022,9 +1065,6 @@ urlpatterns = [
                 ),
                 url(
                     r"^contest/$", ContestSelect2View.as_view(), name="contest_select2"
-                ),
-                url(
-                    r"^comment/$", CommentSelect2View.as_view(), name="comment_select2"
                 ),
             ]
         ),
@@ -1131,8 +1171,7 @@ urlpatterns = [
     ),
     url(
         r"^notifications/",
-        login_required(notification.NotificationList.as_view()),
-        name="notification",
+        paged_list_view(notification.NotificationList, "notification"),
     ),
     url(
         r"^import_users/",
@@ -1162,6 +1201,7 @@ urlpatterns = [
         ),
     ),
     url(r"^resolver/(?P<contest>\w+)", resolver.Resolver.as_view(), name="resolver"),
+    url(r"^upload/$", custom_file_upload.file_upload, name="custom_file_upload"),
 ] + url_static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # if hasattr(settings, "INTERNAL_IPS"):

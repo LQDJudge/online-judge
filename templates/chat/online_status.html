@@ -1,6 +1,6 @@
 <li class="status-row" id="lobby_row">
   <div class="status-container">
-    <img src="{{ static('icons/logo.png') }}" style="height:1.3em">
+    <img loading="lazy" src="{{ static('icons/icon.svg') }}" style="height:32px">
   </div>
   <span style="padding-left:0.5em">
     <b>{{_('Lobby')}}</b>
@@ -23,10 +23,9 @@
       {% for user in section.user_list %}
         <li class="click_space status-row" id="click_space_{{user.user.id}}" value="{{user.url}}">
           <div class="status-container">
-            <img src="{{ gravatar(user.user, 135) }}" class="status-pic">
+            <img loading="lazy" src="{{ gravatar(user.user, 135) }}" class="status-pic user-img">
             <svg style="position:absolute;" height="32" width="32">
-              <circle class="status-circle"
-                fill="{{'green' if user.is_online else 'red'}}"/>
+              <circle class="status-circle" fill="{{'green' if user.is_online else 'red'}}"/>
             </svg>
           </div>
           <div class="status-user">
@@ -44,8 +43,19 @@
               {{user.unread_count}}
             </span>
           {% endif %}
+          <div style="margin-right: 0.3em; position: relative;">
+            <div class="control-button small setting-button">
+              <i class="fa fa-ellipsis-h"></i>
+            </div>
+            <div class="setting-content">
+              <a href="{{url('toggle_ignore', user.user.id)}}" class="red">
+                {{_('Ignore')}}
+              </a>
+            </div>
+          </div>
         </li>
       {% endfor %}
     </ul>
   {% endif %}
 {% endfor %}
+

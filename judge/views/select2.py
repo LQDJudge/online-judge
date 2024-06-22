@@ -85,15 +85,17 @@ class ProblemSelect2View(Select2View):
 
 
 class ContestSelect2View(Select2View):
+    def get(self, request, *args, **kwargs):
+        self.problem_id = kwargs.get("problem_id", request.GET.get("problem_id", ""))
+        return super(ContestSelect2View, self).get(request, *args, **kwargs)
+
     def get_queryset(self):
-        return Contest.get_visible_contests(self.request.user).filter(
+        q = Contest.get_visible_contests(self.request.user).filter(
             Q(key__icontains=self.term) | Q(name__icontains=self.term)
         )
-
-
-class CommentSelect2View(Select2View):
-    def get_queryset(self):
-        return Comment.objects.filter(page__icontains=self.term)
+        if self.problem_id:
+            q = q.filter(problems=self.problem_id)
+        return q
 
 
 class UserSearchSelect2View(BaseListView):
@@ -192,4 +194,18 @@ class ChatUserSearchSelect2View(UserSearchSelect2View):
                 email,
             ),
             "display_rank": display_rank,
+        }
+
+
+class ProblemAuthorSearchSelect2View(UserSearchSelect2View):
+    def get_queryset(self):
+        return Profile.objects.filter(
+            authored_problems__isnull=False, user__username__icontains=self.term
+        ).distinct()
+
+    def get_json_result_from_object(self, user_tuple):
+        pk, username, email, display_rank, profile_image = user_tuple
+        return {
+            "text": username,
+            "id": pk,
         }

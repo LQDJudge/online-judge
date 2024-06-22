@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block after_rank %}
-  <td><img style="border: 2px solid lightblue; max-width: none; border-radius: 50%" src="{{ gravatar(user, 45) }}" height="45px" width="45px"></td>
+  <td><img loading="lazy" style="max-width: none;" class="user-img" src="{{ gravatar(user, 40) }}" height="40px" width="40px"></td>
 {% endblock %}
 
 {% block user_footer %}
@@ -39,7 +39,7 @@
   <td class="user-problem-count">{{ user.problem_count }}</td>
   <td>
     <div class="about-td">
-      {% cache 86400 'user_about' user.id MATH_ENGINE %}
+      {% cache 86400 'user_about' user.id %}
         {% if user.about %}
           {{ user.about|markdown(lazy_load=True)|reference|str|safe }}
         {% endif %}

@@ -25,26 +25,18 @@ class Room(models.Model):
     class Meta:
         app_label = "chat_box"
 
-    @cache_wrapper(prefix="Rinfo")
-    def _info(self):
-        last_msg = self.message_set.first()
-        return {
-            "user_ids": [self.user_one.id, self.user_two.id],
-            "last_message": last_msg.body if last_msg else None,
-        }
-
     @cached_property
     def _cached_info(self):
-        return self._info()
+        return get_room_info(self.id)
 
     def contain(self, profile):
-        return profile.id in self._cached_info["user_ids"]
+        return profile.id in [self.user_one_id, self.user_two_id]
 
     def other_user(self, profile):
         return self.user_one if profile == self.user_two else self.user_two
 
     def other_user_id(self, profile):
-        user_ids = self._cached_info["user_ids"]
+        user_ids = [self.user_one_id, self.user_two_id]
         return sum(user_ids) - profile.id
 
     def users(self):
@@ -52,6 +44,10 @@ class Room(models.Model):
 
     def last_message_body(self):
         return self._cached_info["last_message"]
+
+    @classmethod
+    def prefetch_room_cache(self, room_ids):
+        get_room_info.prefetch_multi([(i,) for i in room_ids])
 
 
 class Message(models.Model):
@@ -66,7 +62,6 @@ class Message(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        new_message = self.id
         self.body = self.body.strip()
         super(Message, self).save(*args, **kwargs)
 
@@ -148,3 +143,11 @@ class Ignore(models.Model):
             self.remove_ignore(current_user, friend)
         else:
             self.add_ignore(current_user, friend)
+
+
+@cache_wrapper(prefix="Rinfo")
+def get_room_info(room_id):
+    last_msg = Message.objects.filter(room_id=room_id).first()
+    return {
+        "last_message": last_msg.body if last_msg else None,
+    }

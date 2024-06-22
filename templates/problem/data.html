@@ -6,36 +6,38 @@
     window.big_input = (window.valid_files.length > 100);
   </script>
   <script type="text/javascript" src="{{ static('jquery-ui.min.js') }}"></script>
-  <script type="text/javascript" src="{{ static('libs/featherlight/featherlight.min.js') }}"></script>
   <script type="text/javascript" src="{{ static('fine-uploader/jquery.fine-uploader.js') }}"></script>
   <script type="text/javascript">
     $(function () {
-      $("#problem-data-zipfile_fine_uploader").fineUploader({
-        request: {
-          endpoint: "{{url('problem_zip_upload', problem.code)}}",
-          params: {
-            'csrfmiddlewaretoken': '{{ csrf_token }}'
+      if (!window.PAGE_FROM_BACK_BUTTON_CACHE) {
+        $("#problem-data-zipfile_fine_uploader").fineUploader({
+          request: {
+            endpoint: "{{url('problem_zip_upload', problem.code)}}",
+            params: {
+              'csrfmiddlewaretoken': '{{ csrf_token }}'
+            }
+          },
+          chunking: {
+            enabled: true,
+            partSize: 40000000,
+          },
+          resume: {
+            enabled: true
+          },
+          validation: {
+            allowedExtensions: ['zip'],
+          },
+        }).on('complete', function (event, id, name, responseJSON) {
+          console.log(responseJSON);
+          if (!responseJSON.success) {
+            alert('Fail to upload: ' + responseJSON.error);
           }
-        },
-        chunking: {
-          enabled: true,
-          partSize: 40000000,
-        },
-        resume: {
-          enabled: true
-        },
-        validation: {
-          allowedExtensions: ['zip'],
-        },
-      }).on('complete', function (event, id, name, responseJSON) {
-        console.log(responseJSON);
-        if (!responseJSON.success) {
-          alert('Fail to upload: ' + responseJSON.error);
-        }
-        else {
-          $('#submit-button').click();
-        }
-      });;
+          else {
+            $('#submit-button').click();
+          }
+        });
+        toggle_custom();
+      }
 
       function update_select2() {
         $('tbody:not(.extra-row-body) .type-column select').select2({
@@ -133,11 +135,11 @@
         }).change();
       }
 
-      (function toggle_custom() {
+      function toggle_custom() {
         let $checker = $('#id_problem-data-checker')
 
         let $custom_checker = $('#id_problem-data-custom_checker');
-        let $validator = $('#id_problem-data-custom_validator');
+        let $validator = $('#id_problem-data-custom_checker_cpp');
         let $interactive = $('#id_problem-data-interactive_judge');
         let $sig_handler = $('#id_problem-data-signature_handler');
         let $sig_header = $('#id_problem-data-signature_header');
@@ -165,17 +167,17 @@
 
         $checker.change(function () {
           $tr_checker.toggle($checker.val() == 'custom').change();
-          $tr_validator.toggle($checker.val() == 'customval' || $checker.val() == 'testlib').change();
+          $tr_validator.toggle($checker.val() == 'customcpp' || $checker.val() == 'testlib').change();
           $tr_interactive.toggle($checker.val() == 'interact').change();
 
-          $sample.toggle(['custom', 'customval', 'interact'].includes($checker.val())).change();
+          $sample.toggle(['custom', 'customcpp', 'interact'].includes($checker.val())).change();
         }).change();
 
         $ioi_signature.change(function() {
           $tr_sig_header.toggle($ioi_signature.is(':checked')).change();
           $tr_sig_handler.toggle($ioi_signature.is(':checked')).change();
         }).change();
-      })();
+      };
 
       checker_precision($('#id_problem-data-checker'));
 

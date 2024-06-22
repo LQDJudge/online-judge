@@ -1,10 +1,8 @@
 import logging
 import os
 import shutil
-from datetime import timedelta, datetime
 from operator import itemgetter
 from random import randrange
-import random
 from copy import deepcopy
 
 from django.core.cache import cache
@@ -24,6 +22,7 @@ from django.db.models import (
     Q,
     When,
     IntegerField,
+    Sum,
 )
 from django.db.models.functions import Coalesce
 from django.db.utils import ProgrammingError
@@ -46,7 +45,7 @@ from django.views.generic import ListView, View
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
-from judge.comments import CommentedDetailView
+from judge.views.comment import CommentedDetailView
 from judge.forms import ProblemCloneForm, ProblemSubmitForm, ProblemPointsVoteForm
 from judge.models import (
     ContestProblem,
@@ -66,6 +65,7 @@ from judge.models import (
     Organization,
     Profile,
     LanguageTemplate,
+    Contest,
 )
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
@@ -77,6 +77,8 @@ from judge.utils.problems import (
     user_attempted_ids,
     user_completed_ids,
     get_related_problems,
+    get_user_recommended_problems,
+    RecommendationType,
 )
 from judge.utils.strings import safe_float_or_none, safe_int_or_none
 from judge.utils.tickets import own_ticket_filter
@@ -351,7 +353,7 @@ class ProblemDetail(
         else:
             context["fileio_input"] = None
             context["fileio_output"] = None
-        if not self.in_contest:
+        if not self.in_contest and settings.ML_OUTPUT_PATH:
             context["related_problems"] = get_related_problems(
                 self.profile, self.object
             )
@@ -399,16 +401,13 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
                             if trans is None
                             else trans.description,
                             "url": request.build_absolute_uri(),
-                            "math_engine": maker.math_engine,
                         }
                     )
                     .replace('"//', '"https://')
                     .replace("'//", "'https://")
                 )
                 maker.title = problem_name
-                assets = ["style.css", "pygment-github.css"]
-                if maker.math_engine == "jax":
-                    assets.append("mathjax3_config.js")
+                assets = ["style.css"]
                 for file in assets:
                     maker.load(file, os.path.join(settings.DMOJ_RESOURCES, file))
                 maker.make()
@@ -590,7 +589,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             i
             for i in query
             if i in self.profile.organizations.values_list("id", flat=True)
-        ]
+        ][:3]
 
     def get_normal_queryset(self):
         queryset = Problem.get_visible_problems(self.request.user)
@@ -602,9 +601,14 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             self.org_query = [self.request.organization.id]
         if self.org_query:
             self.org_query = self.get_org_query(self.org_query)
+            contest_problems = (
+                Contest.objects.filter(organizations__in=self.org_query)
+                .select_related("problems")
+                .values_list("contest_problems__problem__id")
+                .distinct()
+            )
             queryset = queryset.filter(
-                Q(organizations__in=self.org_query)
-                | Q(contests__contest__organizations__in=self.org_query)
+                Q(organizations__in=self.org_query) | Q(id__in=contest_problems)
             )
         if self.author_query:
             queryset = queryset.filter(authors__in=self.author_query)
@@ -641,6 +645,16 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             queryset = queryset.filter(points__gte=self.point_start)
         if self.point_end is not None:
             queryset = queryset.filter(points__lte=self.point_end)
+
+        queryset = queryset.annotate(
+            has_public_editorial=Sum(
+                Case(
+                    When(solution__is_public=True, then=1),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            )
+        )
         return queryset.distinct()
 
     def get_queryset(self):
@@ -664,12 +678,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
 
         if self.request.profile:
             context["organizations"] = self.request.profile.organizations.all()
-        all_authors_ids = Problem.objects.values_list("authors", flat=True)
-        context["all_authors"] = (
-            Profile.objects.filter(id__in=all_authors_ids)
-            .select_related("user")
-            .values("id", "user__username")
-        )
         context["category"] = self.category
         context["categories"] = ProblemGroup.objects.all()
         if self.show_types:
@@ -677,7 +685,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             context["problem_types"] = ProblemType.objects.all()
         context["has_fts"] = settings.ENABLE_FTS
         context["org_query"] = self.org_query
-        context["author_query"] = self.author_query
+        context["author_query"] = Profile.objects.filter(id__in=self.author_query)
         context["search_query"] = self.search_query
         context["completed_problem_ids"] = self.get_completed_problems()
         context["attempted_problems"] = self.get_attempted_problems()
@@ -829,29 +837,39 @@ class ProblemFeed(ProblemList, FeedView):
     model = Problem
     context_object_name = "problems"
     template_name = "problem/feed.html"
-    feed_content_template_name = "problem/feed/problems.html"
+    feed_content_template_name = "problem/feed/items.html"
     paginate_by = 4
     title = _("Problem feed")
     feed_type = None
 
-    # arr = [[], [], ..]
-    def merge_recommendation(self, arr):
-        seed = datetime.now().strftime("%d%m%Y")
-        merged_array = []
-        for a in arr:
-            merged_array += a
-        random.Random(seed).shuffle(merged_array)
+    def get_recommended_problem_ids(self, queryset):
+        user_id = self.request.profile.id
+        problem_ids = queryset.values_list("id", flat=True)
+        rec_types = [
+            RecommendationType.CF_DOT,
+            RecommendationType.CF_COSINE,
+            RecommendationType.CF_TIME_DOT,
+            RecommendationType.CF_TIME_COSINE,
+            RecommendationType.HOT_PROBLEM,
+        ]
+        limits = [100, 100, 100, 100, 20]
+        shuffle = True
 
-        res = []
-        used_pid = set()
+        allow_debug_type = (
+            self.request.user.is_impersonate or self.request.user.is_superuser
+        )
+        if allow_debug_type and "debug_type" in self.request.GET:
+            try:
+                debug_type = int(self.request.GET.get("debug_type"))
+            except ValueError:
+                raise Http404()
+            rec_types = [debug_type]
+            limits = [100]
+            shuffle = False
 
-        for obj in merged_array:
-            if type(obj) == tuple:
-                obj = obj[1]
-            if obj not in used_pid:
-                res.append(obj)
-                used_pid.add(obj)
-        return res
+        return get_user_recommended_problems(
+            user_id, problem_ids, rec_types, limits, shuffle
+        )
 
     def get_queryset(self):
         if self.feed_type == "volunteer":
@@ -885,40 +903,8 @@ class ProblemFeed(ProblemList, FeedView):
         if not settings.ML_OUTPUT_PATH or not user:
             return queryset.order_by("?").add_i18n_name(self.request.LANGUAGE_CODE)
 
-        cf_model = CollabFilter("collab_filter")
-        cf_time_model = CollabFilter("collab_filter_time")
+        q = self.get_recommended_problem_ids(queryset)
 
-        queryset = queryset.values_list("id", flat=True)
-        hot_problems_recommendations = [
-            problem.id
-            for problem in hot_problems(timedelta(days=7), 20)
-            if problem.id in set(queryset)
-        ]
-
-        q = self.merge_recommendation(
-            [
-                cf_model.user_recommendations(user, queryset, cf_model.DOT, 100),
-                cf_model.user_recommendations(
-                    user,
-                    queryset,
-                    cf_model.COSINE,
-                    100,
-                ),
-                cf_time_model.user_recommendations(
-                    user,
-                    queryset,
-                    cf_time_model.COSINE,
-                    100,
-                ),
-                cf_time_model.user_recommendations(
-                    user,
-                    queryset,
-                    cf_time_model.DOT,
-                    100,
-                ),
-                hot_problems_recommendations,
-            ]
-        )
         queryset = Problem.objects.filter(id__in=q)
         queryset = queryset.add_i18n_name(self.request.LANGUAGE_CODE)
 
@@ -974,6 +960,12 @@ class LanguageTemplateAjax(View):
 class RandomProblem(ProblemList):
     def get(self, request, *args, **kwargs):
         self.setup_problem_list(request)
+
+        try:
+            return super().get(request, *args, **kwargs)
+        except ProgrammingError as e:
+            return generic_message(request, "FTS syntax error", e.args[1], status=400)
+
         if self.in_contest:
             raise Http404()
 
@@ -992,6 +984,15 @@ class RandomProblem(ProblemList):
 
 
 user_logger = logging.getLogger("judge.user")
+
+
+def last_nth_submitted_date_in_contest(profile, contest, n):
+    submissions = Submission.objects.filter(
+        user=profile, contest_object=contest
+    ).order_by("-id")[:n]
+    if submissions.count() >= n:
+        return submissions[n - 1].date
+    return None
 
 
 @login_required
@@ -1042,7 +1043,7 @@ def problem_submit(request, problem, submission=None):
                 >= settings.DMOJ_SUBMISSION_LIMIT
             ):
                 return HttpResponse(
-                    "<h1>You submitted too many submissions.</h1>", status=429
+                    _("<h1>You have submitted too many submissions.</h1>"), status=429
                 )
             if not problem.allowed_languages.filter(
                 id=form.cleaned_data["language"].id
@@ -1063,7 +1064,22 @@ def problem_submit(request, problem, submission=None):
 
             with transaction.atomic():
                 if profile.current_contest is not None:
+                    contest = profile.current_contest.contest
                     contest_id = profile.current_contest.contest_id
+                    rate_limit = contest.rate_limit
+
+                    if rate_limit:
+                        t = last_nth_submitted_date_in_contest(
+                            profile, contest, rate_limit
+                        )
+                        if t is not None and timezone.now() - t < timezone.timedelta(
+                            minutes=1
+                        ):
+                            return HttpResponse(
+                                _("<h1>You have submitted too many submissions.</h1>"),
+                                status=429,
+                            )
+
                     try:
                         contest_problem = problem.contests.get(contest_id=contest_id)
                     except ContestProblem.DoesNotExist:
@@ -1143,11 +1159,11 @@ def problem_submit(request, problem, submission=None):
         default_lang = request.profile.language
 
     submission_limit = submissions_left = None
+    next_valid_submit_time = None
     if profile.current_contest is not None:
+        contest = profile.current_contest.contest
         try:
-            submission_limit = problem.contests.get(
-                contest=profile.current_contest.contest
-            ).max_submissions
+            submission_limit = problem.contests.get(contest=contest).max_submissions
         except ContestProblem.DoesNotExist:
             pass
         else:
@@ -1155,6 +1171,12 @@ def problem_submit(request, problem, submission=None):
                 submissions_left = submission_limit - get_contest_submission_count(
                     problem, profile, profile.current_contest.virtual
                 )
+        if contest.rate_limit:
+            t = last_nth_submitted_date_in_contest(profile, contest, contest.rate_limit)
+            if t is not None:
+                next_valid_submit_time = t + timezone.timedelta(minutes=1)
+                next_valid_submit_time = next_valid_submit_time.isoformat()
+
     return render(
         request,
         "problem/submit.html",
@@ -1184,6 +1206,7 @@ def problem_submit(request, problem, submission=None):
             "output_only": problem.data_files.output_only
             if hasattr(problem, "data_files")
             else False,
+            "next_valid_submit_time": next_valid_submit_time,
         },
     )
 
@@ -1208,7 +1231,7 @@ class ProblemClone(
         problem.ac_rate = 0
         problem.user_count = 0
         problem.code = form.cleaned_data["code"]
-        problem.save()
+        problem.save(should_move_data=False)
         problem.authors.add(self.request.profile)
         problem.allowed_languages.set(languages)
         problem.language_limits.set(language_limits)

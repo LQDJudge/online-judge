@@ -3,6 +3,6 @@
   {{ make_tab_item('friends', 'fa fa-users', url('user_list') + '?friend=true', _('Friends')) }}
   {{ make_tab_item('organizations', 'fa fa-university', url('organization_list'), _('Groups')) }}
   {% if request.user.is_superuser %}
-    {{ make_tab_item('import', 'fa fa-table', url('import_users'), _('Import')) }}
+    {{ make_tab_item('import', 'fa fa-table', url('import_users'), _('Import'), force_new_page=True) }}
   {% endif %}
 </div>

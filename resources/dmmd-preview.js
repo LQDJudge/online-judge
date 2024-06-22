@@ -23,38 +23,8 @@ $(function () {
                     csrfmiddlewaretoken: $.cookie('csrftoken')
                 }, function (result) {
                     $content.html(result);
-                    $(".dmmd-preview-content [data-src]img").each(function() {
-                        $(this).attr("src", $(this).attr("data-src"));
-                    })
-                    $(".dmmd-preview-content [data-src]iframe").each(function() {
-                        $(this).attr("src", $(this).attr("data-src"));
-                    })
                     $preview.addClass('dmmd-preview-has-content').removeClass('dmmd-preview-stale');
-
-                    var $jax = $content.find('.require-mathjax-support');
-                    if ($jax.length) {
-                        if (!('MathJax' in window)) {
-                            $.ajax({
-                                type: 'GET',
-                                url: $jax.attr('data-config'),
-                                dataType: 'script',
-                                cache: true,
-                                success: function () {
-                                    $.ajax({
-                                        type: 'GET',
-                                        url: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js',
-                                        dataType: 'script',
-                                        cache: true,
-                                        success: function () {
-                                            MathJax.typeset();
-                                        }
-                                    });
-                                }
-                            });
-                        } else {
-                            MathJax.typeset($content[0]);
-                        }
-                    }
+                    renderKatex($content[0]);
                 });
             } else {
                 $content.empty();

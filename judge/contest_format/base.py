@@ -109,6 +109,8 @@ class BaseContestFormat(metaclass=ABCMeta):
         )
         for result in queryset:
             problem = str(result["problem_id"])
+            if not (self.contest.freeze_after or hidden_subtasks.get(problem)):
+                continue
             if format_data.get(problem):
                 is_after_freeze = (
                     self.contest.freeze_after

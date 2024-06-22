@@ -19,15 +19,14 @@ def vote_problem(request):
     except Exception as e:
         return HttpResponseBadRequest()
 
-    with transaction.atomic():
-        vote, _ = VolunteerProblemVote.objects.get_or_create(
-            voter=request.profile,
-            problem=problem,
-            defaults={"knowledge_points": 0, "thinking_points": 0},
-        )
-        vote.knowledge_points = knowledge_points
-        vote.thinking_points = thinking_points
-        vote.feedback = feedback
-        vote.types.set(types)
-        vote.save()
+    vote, _ = VolunteerProblemVote.objects.get_or_create(
+        voter=request.profile,
+        problem=problem,
+        defaults={"knowledge_points": 0, "thinking_points": 0},
+    )
+    vote.knowledge_points = knowledge_points
+    vote.thinking_points = thinking_points
+    vote.feedback = feedback
+    vote.types.set(types)
+    vote.save()
     return JsonResponse({})

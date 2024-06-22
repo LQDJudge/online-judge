@@ -35,22 +35,41 @@ from django.views.generic import DetailView, ListView, TemplateView
 from django.template.loader import render_to_string
 from reversion import revisions
 
-from judge.forms import UserForm, ProfileForm
-from judge.models import Profile, Rating, Submission, Friend
+from judge.forms import UserForm, ProfileForm, ProfileInfoForm
+from judge.models import (
+    Profile,
+    Rating,
+    Submission,
+    Friend,
+    ProfileInfo,
+    BlogPost,
+    Problem,
+    Contest,
+    Solution,
+)
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
 from judge.tasks import import_users
 from judge.utils.problems import contest_completed_ids, user_completed_ids
 from judge.utils.ranker import ranker
 from judge.utils.unicode import utf8text
+from judge.utils.users import (
+    get_rating_rank,
+    get_points_rank,
+    get_awards,
+    get_contest_ratings,
+)
 from judge.utils.views import (
     QueryStringSortMixin,
     TitleMixin,
     generic_message,
     SingleObjectFormView,
+    DiggPaginatorMixin,
 )
 from judge.utils.infinite_paginator import InfinitePaginationMixin
+from judge.views.problem import ProblemList
 from .contests import ContestRanking
+
 
 __all__ = [
     "UserPage",
@@ -100,12 +119,12 @@ class UserPage(TitleMixin, UserMixin, DetailView):
     def get_title(self):
         return (
             _("My account")
-            if self.request.user == self.object.user
-            else _("User %s") % self.object.user.username
+            if self.request.profile == self.object
+            else _("User %s") % self.object.username
         )
 
     def get_content_title(self):
-        username = self.object.user.username
+        username = self.object.username
         css_class = self.object.css_class
         return mark_safe(f'<span class="{css_class}">{username}</span>')
 
@@ -142,22 +161,10 @@ class UserPage(TitleMixin, UserMixin, DetailView):
         rating = self.object.ratings.order_by("-contest__end_time")[:1]
         context["rating"] = rating[0] if rating else None
 
-        context["rank"] = (
-            Profile.objects.filter(
-                is_unlisted=False,
-                performance_points__gt=self.object.performance_points,
-            ).count()
-            + 1
-        )
+        context["points_rank"] = get_points_rank(self.object)
 
         if rating:
-            context["rating_rank"] = (
-                Profile.objects.filter(
-                    is_unlisted=False,
-                    rating__gt=self.object.rating,
-                ).count()
-                + 1
-            )
+            context["rating_rank"] = get_rating_rank(self.object)
             context["rated_users"] = Profile.objects.filter(
                 is_unlisted=False, rating__isnull=False
             ).count()
@@ -185,42 +192,9 @@ EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 class UserAboutPage(UserPage):
     template_name = "user/user-about.html"
 
-    def get_awards(self, ratings):
-        result = {}
-
-        sorted_ratings = sorted(
-            ratings, key=lambda x: (x.rank, -x.contest.end_time.timestamp())
-        )
-
-        result["medals"] = [
-            {
-                "label": rating.contest.name,
-                "ranking": rating.rank,
-                "link": reverse("contest_ranking", args=(rating.contest.key,))
-                + "#!"
-                + self.object.username,
-                "date": date_format(rating.contest.end_time, _("M j, Y")),
-            }
-            for rating in sorted_ratings
-            if rating.rank <= 3
-        ]
-
-        num_awards = 0
-        for i in result:
-            num_awards += len(result[i])
-
-        if num_awards == 0:
-            result = None
-
-        return result
-
     def get_context_data(self, **kwargs):
         context = super(UserAboutPage, self).get_context_data(**kwargs)
-        ratings = context["ratings"] = (
-            self.object.ratings.order_by("-contest__end_time")
-            .select_related("contest")
-            .defer("contest__description")
-        )
+        ratings = context["ratings"] = get_contest_ratings(self.object)
 
         context["rating_data"] = mark_safe(
             json.dumps(
@@ -229,7 +203,9 @@ class UserAboutPage(UserPage):
                         "label": rating.contest.name,
                         "rating": rating.rating,
                         "ranking": rating.rank,
-                        "link": reverse("contest_ranking", args=(rating.contest.key,)),
+                        "link": reverse("contest_ranking", args=(rating.contest.key,))
+                        + "#!"
+                        + self.object.username,
                         "timestamp": (rating.contest.end_time - EPOCH).total_seconds()
                         * 1000,
                         "date": date_format(
@@ -244,7 +220,7 @@ class UserAboutPage(UserPage):
             )
         )
 
-        context["awards"] = self.get_awards(ratings)
+        context["awards"] = get_awards(self.object)
 
         if ratings:
             user_data = self.object.ratings.aggregate(Min("rating"), Max("rating"))
@@ -287,19 +263,6 @@ class UserAboutPage(UserPage):
         )
 
         return context
-
-    # follow/unfollow user
-    def post(self, request, user, *args, **kwargs):
-        try:
-            if not request.profile:
-                raise Exception("You have to login")
-            if request.profile.username == user:
-                raise Exception("Cannot make friend with yourself")
-
-            following_profile = Profile.objects.get(user__username=user)
-            Friend.toggle_friend(request.profile, following_profile)
-        finally:
-            return HttpResponseRedirect(request.path_info)
 
 
 class UserProblemsPage(UserPage):
@@ -357,17 +320,49 @@ class UserProblemsPage(UserPage):
         return context
 
 
-class UserBookMarkPage(UserPage):
+class UserBookMarkPage(DiggPaginatorMixin, ListView, UserPage):
     template_name = "user/user-bookmarks.html"
+    context_object_name = "bookmarks"
+    paginate_by = 10
+
+    def get(self, request, *args, **kwargs):
+        self.current_tab = self.request.GET.get("tab", "problems")
+        self.user = self.object = self.get_object()
+        return super(UserBookMarkPage, self).get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        model = None
+        if self.current_tab == "posts":
+            model = BlogPost
+        elif self.current_tab == "contests":
+            model = Contest
+        elif self.current_tab == "editorials":
+            model = Solution
+        else:
+            model = Problem
+
+        q = MakeBookMark.objects.filter(user=self.user).select_related("bookmark")
+        q = q.filter(bookmark__content_type=ContentType.objects.get_for_model(model))
+        object_ids = q.values_list("bookmark__object_id", flat=True)
+
+        res = model.objects.filter(id__in=object_ids)
+        if self.current_tab == "contests":
+            res = res.prefetch_related("organizations", "tags")
+        elif self.current_tab == "editorials":
+            res = res.select_related("problem")
+
+        return res
 
     def get_context_data(self, **kwargs):
         context = super(UserBookMarkPage, self).get_context_data(**kwargs)
 
-        bookmark_list = MakeBookMark.objects.filter(user=self.object)
-        context["blogs"] = bookmark_list.filter(bookmark__page__startswith="b")
-        context["problems"] = bookmark_list.filter(bookmark__page__startswith="p")
-        context["contests"] = bookmark_list.filter(bookmark__page__startswith="c")
-        context["solutions"] = bookmark_list.filter(bookmark__page__startswith="s")
+        context["current_tab"] = self.current_tab
+        context["user"] = self.user
+
+        context["page_prefix"] = (
+            self.request.path + "?tab=" + self.current_tab + "&page="
+        )
+        context["first_page_href"] = self.request.path
 
         return context
 
@@ -403,21 +398,25 @@ class UserPerformancePointsAjax(UserProblemsPage):
 @login_required
 def edit_profile(request):
     profile = request.profile
+    profile_info, created = ProfileInfo.objects.get_or_create(profile=profile)
     if request.method == "POST":
         form_user = UserForm(request.POST, instance=request.user)
         form = ProfileForm(
             request.POST, request.FILES, instance=profile, user=request.user
         )
+        form_info = ProfileInfoForm(request.POST, instance=profile_info)
         if form_user.is_valid() and form.is_valid():
-            with transaction.atomic(), revisions.create_revision():
+            with revisions.create_revision():
                 form_user.save()
                 form.save()
+                form_info.save()
                 revisions.set_user(request.user)
                 revisions.set_comment(_("Updated on site"))
             return HttpResponseRedirect(request.path)
     else:
         form_user = UserForm(instance=request.user)
         form = ProfileForm(instance=profile, user=request.user)
+        form_info = ProfileInfoForm(instance=profile_info)
 
     tzmap = settings.TIMEZONE_MAP
 
@@ -428,9 +427,9 @@ def edit_profile(request):
             "require_staff_2fa": settings.DMOJ_REQUIRE_STAFF_2FA,
             "form_user": form_user,
             "form": form,
+            "form_info": form_info,
             "title": _("Edit profile"),
             "profile": profile,
-            "has_math_config": bool(settings.MATHOID_URL),
             "TIMEZONE_MAP": tzmap or "http://momentjs.com/static/img/world.png",
             "TIMEZONE_BG": settings.TIMEZONE_BG if tzmap else "#4E7CAD",
         },
@@ -457,14 +456,13 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
         queryset = (
             Profile.objects.filter(is_unlisted=False)
             .order_by(self.order, "id")
-            .select_related("user")
             .only(
                 "display_rank",
-                "user__username",
                 "points",
                 "rating",
                 "performance_points",
                 "problem_count",
+                "about",
             )
         )
         if self.request.organization:
@@ -472,11 +470,11 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
         if (self.request.GET.get("friend") == "true") and self.request.profile:
             queryset = self.filter_friend_queryset(queryset)
             self.filter_friend = True
-
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super(UserList, self).get_context_data(**kwargs)
+        Profile.prefetch_profile_cache([u.id for u in context["users"]])
         context["users"] = ranker(
             context["users"], rank=self.paginate_by * (context["page_obj"].number - 1)
         )
@@ -592,3 +590,17 @@ def toggle_darkmode(request):
         return HttpResponseBadRequest()
     request.session["darkmode"] = not request.session.get("darkmode", False)
     return HttpResponseRedirect(path)
+
+
+@login_required
+def toggle_follow(request, user):
+    if request.method != "POST":
+        raise Http404()
+
+    profile_to_follow = get_object_or_404(Profile, user__username=user)
+
+    if request.profile.id == profile_to_follow.id:
+        raise Http404()
+
+    Friend.toggle_friend(request.profile, profile_to_follow)
+    return HttpResponseRedirect(reverse("user_page", args=(user,)))

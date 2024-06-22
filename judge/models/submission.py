@@ -220,13 +220,7 @@ class Submission(models.Model):
     def id_secret(self):
         return self.get_id_secret(self.id)
 
-    def is_accessible_by(self, profile):
-        from judge.utils.problems import (
-            user_completed_ids,
-            user_tester_ids,
-            user_editable_ids,
-        )
-
+    def is_accessible_by(self, profile, check_contest=True):
         if not profile:
             return False
 
@@ -235,15 +229,6 @@ class Submission(models.Model):
 
         if profile.id == self.user_id:
             return True
-
-        if problem_id in user_editable_ids(profile):
-            return True
-
-        if self.problem_id in user_completed_ids(profile):
-            if self.problem.is_public:
-                return True
-            if problem_id in user_tester_ids(profile):
-                return True
 
         if user.has_perm("judge.change_submission"):
             return True
@@ -254,9 +239,25 @@ class Submission(models.Model):
         if self.problem.is_public and user.has_perm("judge.view_public_submission"):
             return True
 
-        contest = self.contest_object
-        if contest and contest.is_editable_by(user):
+        if check_contest:
+            contest = self.contest_object
+            if contest and contest.is_editable_by(user):
+                return True
+
+        from judge.utils.problems import (
+            user_completed_ids,
+            user_tester_ids,
+            user_editable_ids,
+        )
+
+        if problem_id in user_editable_ids(profile):
             return True
+
+        if self.problem_id in user_completed_ids(profile):
+            if self.problem.is_public:
+                return True
+            if problem_id in user_tester_ids(profile):
+                return True
 
         return False
 
@@ -276,6 +277,7 @@ class Submission(models.Model):
         indexes = [
             models.Index(fields=["problem", "user", "-points"]),
             models.Index(fields=["contest_object", "problem", "user", "-points"]),
+            models.Index(fields=["language", "result"]),
         ]
 
 

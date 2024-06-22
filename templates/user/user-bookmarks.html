@@ -7,92 +7,187 @@
   {% include "user/user-tabs.html" %}
 {% endblock %}
 
+{% from "contest/macros.html" import contest_head, time_left, user_count, contest_format_user %}
+
 {% block user_content %}
-  {% if blogs %}
-    <div class="bookmark-group">
-      <h3 class="unselectable toggle closed">
-        <span class="fa fa-chevron-right fa-fw"></span>{{ _('Posts') }} ({{ blogs|length }})
-      </h3>
-      <table style="display: none" class="table toggled">
-        <tbody>
-          {% for post in blogs %}
-            {% set object = post.bookmark.linked_object %}
-            {% if object %}
-              <tr>
-                <td class="bookmark-name">
-                  <a href="{{ url('blog_post', object.id, object.slug) }}">{{ object.title}} </a>
-                </td>
-              </tr>
+  <div class="tabs tabs-no-flex" style="width: 100%;margin-left: auto;margin-right: auto;">
+    <ul>
+      <li class="{{'active' if current_tab=='problems'}}">
+        <a href="?tab=problems">{{ _('Problems') }}</a>
+      </li>
+      <li class="{{'active' if current_tab=='contests'}}">
+        <a href="?tab=contests">{{ _('Contests') }}</a>
+      </li>
+      <li class="{{'active' if current_tab=='editorials'}}">
+        <a href="?tab=editorials">{{ _('Editorials') }}</a>
+      </li>
+      <li class="{{'active' if current_tab=='posts'}}">
+        <a href="?tab=posts">{{ _('Posts') }}</a>
+      </li>
+    </ul>
+  </div>
+
+  {% if current_tab == 'problems' %}
+    {% if bookmarks %}
+      {% for problem in bookmarks %}
+        <div class="blog-box">
+          <h3 class="problem-feed-name">
+            <a href="{{ url('problem_detail', problem.code) }}">
+              {{ problem.name }}
+            </a>
+          </h3>
+          {% with authors=problem.get_authors() %}
+            {% if authors %}
+              <div class="problem-feed-info-entry">
+                <i class="far fa-pen-to-square"></i>
+                <span class="pi-value">{{ link_users(authors) }}</span>
+              </div>
             {% endif %}
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  {% endif %}
-  {% if problems %}
-    <div class="bookmark-group">
-      <h3 class="unselectable toggle closed">
-        <span class="fa fa-chevron-right fa-fw"></span>{{ _('Problems') }} ({{ problems|length }})
-      </h3>
-      <table style="display: none" class="table toggled">
-        <tbody>
-          {% for problem in problems %}
-            {% set object = problem.bookmark.linked_object %}
-            {% if object %}
-              <tr>
-                <td class="bookmark-name">
-                  <a href="{{ url('problem_detail', object.code) }}">{{ object.name}} </a>
-                </td>
-              </tr>
-            {% endif %}
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  {% endif %}
-  {% if contests %}
-    <div class="bookmark-group">
-      <h3 class="unselectable toggle closed">
-        <span class="fa fa-chevron-right fa-fw"></span>{{ _('Contests') }} ({{ contests|length }})
-      </h3>
-      <table style="display: none" class="table toggled">
-      </thead>
-      <tbody>
-        {% for contest in contests %}
-          {% set object = contest.bookmark.linked_object %}
-          {% if object %}
-            <tr>
-              <td class="bookmark-name">
-                <a href="{{ url('contest_view', object.key) }}">{{ object.name}} </a>
-              </td>
-            </tr>
-          {% endif %}
-        {% endfor %}
-      </tbody>
-    </table>
-    </div>
-  {% endif %}
-  {% if solutions %}
-    <div class="bookmark-group">
-      <h3 class="unselectable toggle closed">
-        <span class="fa fa-chevron-right fa-fw"></span>{{ _('Editorials') }} ({{ solutions|length }})
-      </h3>
-      <table style="display: none" class="table toggled">
-      </thead>
-      <tbody>
-        {% for solution in solutions %}
-          {% set object = solution.bookmark.linked_object %}
-          {% if object %}
-            <tr>
-              <td class="bookmark-name">
-                <a href="{{ url('problem_editorial', object.problem.code) }}">{{ object.problem.name}} </a>
-              </td>
-            </tr>
-          {% endif %}
-        {% endfor %}
-      </tbody>
-    </table>
-    </div>
+          {% endwith %}
+          <div class="problem-feed-types">
+            <i class="fa fa-tag"></i>
+            *{{problem.points | int}}
+          </div>
+          <div class="blog-description">
+            <div class='content-description'>
+              {% cache 86400 'problem_html' problem.id LANGUAGE_CODE %}
+                {{ problem.description|markdown(lazy_load=True)|reference|str|safe }}
+              {% endcache %}
+              {% if problem.pdf_description %}
+                <embed src="{{url('problem_pdf_description', problem.code)}}" width="100%" height="500" type="application/pdf"
+                  style="margin-top: 0.5em">
+              {% endif %}
+            </div>
+            <div class="show-more"> {{_("...More")}} </div>
+          </div>
+        </div>
+      {% endfor %}
+      {% if page_obj and page_obj.num_pages > 1 %}
+        <div style="margin-top: 10px;">
+          {% include "list-pages.html" %}
+        </div>
+      {% endif %}
+    {% else %}
+      <i> {{ _('There is no saved problem.') }} </i>
+    {% endif %}
   {% endif %}
 
+  {% if current_tab == 'contests' %}
+    {% if bookmarks %}
+      {% for contest in bookmarks %}
+        <div class="list-contest">
+          <div class="info-contest">
+            <div class="contest-title"> {{ _('Contests') }} </div>
+            {{ contest_head(contest) }}
+          </div>
+          <div class="info-contest">
+            <div class="contest-title"> {{ _('Time') }} </div>
+            <div class="contest-block">
+              {{ time_left(contest) }}
+            </div>
+          </div>
+          <div class="info-contest" style="flex: 0.5;">
+            {{ contest_format_user(contest, request) }}
+          </div>
+        </div>
+      {% endfor %}
+      {% if page_obj and page_obj.num_pages > 1 %}
+        <div style="margin-top: 10px;">
+          {% include "list-pages.html" %}
+        </div>
+      {% endif %}
+    {% else %}
+      <i> {{ _('There is no saved contest.') }} </i>
+    {% endif %}
+  {% endif %}
+
+  {% if current_tab == 'editorials' %}
+    {% if bookmarks %}
+      {% for solution in bookmarks %}
+        <section class="blog-box">
+          <div style="margin-bottom: 0.5em">
+            <span class="post-content-header time">
+              {% with authors=solution.get_authors() %}
+                {%- if authors -%}
+                  <span class="user-img" style="width: 1.5em; height: 1.5em">
+                    <img src="{{gravatar(authors[0])}}" loading="lazy">
+                  </span>
+                  <span class="post-authors">{{ link_users(authors) }}</span>
+                {%- endif -%}
+              {% endwith %}
+              &#8226;
+              {{ relative_time(solution.publish_on) }}
+            </span>
+          </div>
+          <h2 class="title">
+            <a href="{{ url('problem_editorial', solution.problem.code) }}">{{ solution.problem.name }}</a>
+          </h2>
+          <div class="blog-description">
+            <div class="summary content-description">
+              {% cache 86400 'solution_content' solution.id %}
+                {{ solution.content|markdown(lazy_load=True)|reference|str|safe }}
+              {% endcache %}
+            </div>
+            <div class="show-more"> {{_("...More")}} </div>
+          </div>
+        </section>
+      {% endfor %}
+      {% if page_obj and page_obj.num_pages > 1 %}
+        <div style="margin-top: 10px;">
+          {% include "list-pages.html" %}
+        </div>
+      {% endif %}
+    {% else %}
+      <i> {{ _('There is no saved editorial.') }} </i>
+    {% endif %}
+  {% endif %}
+
+  {% if current_tab == 'posts' %}
+    {% if bookmarks %}
+      {% for post in bookmarks %}
+        <section class="blog-box">
+          <div style="margin-bottom: 0.5em">
+            <span class="post-content-header time">
+              {% with authors=post.get_authors() %}
+                {%- if authors -%}
+                  <span class="user-img" style="width: 1.5em; height: 1.5em">
+                    <img src="{{gravatar(authors[0])}}" loading="lazy">
+                  </span>
+                  <span class="post-authors">{{ link_users(authors) }}</span>
+                {%- endif -%}
+              {% endwith %}
+              &#8226;
+              {{ relative_time(post.publish_on) }}
+            </span>
+            <span style="float: right">
+              <a href="{{ url('blog_post', post.id, post.slug) }}#comments" class="blog-comment-count-link">
+                <i class="fa fa-comments blog-comment-icon"></i>
+                <span class="blog-comment-count">
+                  {{ comment_count(post) }}
+                </span>
+              </a>
+            </span>
+          </div>
+          <h2 class="title">
+            <a href="{{ url('blog_post', post.id, post.slug) }}">{{ post.title }}</a>
+          </h2>
+          <div class="blog-description">
+            <div class="summary content-description">
+              {% cache 86400 'post_content' post.id %}
+                {{ post.content|markdown(lazy_load=True)|reference|str|safe }}
+              {% endcache %}
+            </div>
+            <div class="show-more"> {{_("...More")}} </div>
+          </div>
+        </section>
+      {% endfor %}
+      {% if page_obj and page_obj.num_pages > 1 %}
+        <div style="margin-top: 10px;">
+          {% include "list-pages.html" %}
+        </div>
+      {% endif %}
+    {% else %}
+      <i> {{ _('There is no saved post.') }} </i>
+    {% endif %}
+  {% endif %}
 {% endblock %}

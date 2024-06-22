@@ -5,6 +5,8 @@ from django.core.handlers.wsgi import WSGIRequest
 
 import hashlib
 
+from judge.logging import log_debug
+
 MAX_NUM_CHAR = 50
 NONE_RESULT = "__None__"
 
@@ -26,7 +28,7 @@ def filter_args(args_list):
 l0_cache = caches["l0"] if "l0" in caches else None
 
 
-def cache_wrapper(prefix, timeout=None):
+def cache_wrapper(prefix, timeout=None, expected_type=None):
     def get_key(func, *args, **kwargs):
         args_list = list(args)
         signature_args = list(signature(func).parameters.keys())
@@ -40,7 +42,10 @@ def cache_wrapper(prefix, timeout=None):
     def _get(key):
         if not l0_cache:
             return cache.get(key)
-        return l0_cache.get(key) or cache.get(key)
+        result = l0_cache.get(key)
+        if result is None:
+            result = cache.get(key)
+        return result
 
     def _set_l0(key, value):
         if l0_cache:
@@ -51,18 +56,33 @@ def cache_wrapper(prefix, timeout=None):
         cache.set(key, value, timeout)
 
     def decorator(func):
+        def _validate_type(cache_key, result):
+            if expected_type and not isinstance(result, expected_type):
+                data = {
+                    "function": f"{func.__module__}.{func.__qualname__}",
+                    "result": str(result)[:30],
+                    "expected_type": expected_type,
+                    "type": type(result),
+                    "key": cache_key,
+                }
+                log_debug("invalid_key", data)
+                return False
+            return True
+
         def wrapper(*args, **kwargs):
             cache_key = get_key(func, *args, **kwargs)
             result = _get(cache_key)
-            if result is not None:
+            if result is not None and _validate_type(cache_key, result):
                 _set_l0(cache_key, result)
-                if result == NONE_RESULT:
+                if type(result) == str and result == NONE_RESULT:
                     result = None
                 return result
             result = func(*args, **kwargs)
             if result is None:
-                result = NONE_RESULT
-            _set(cache_key, result, timeout)
+                cache_result = NONE_RESULT
+            else:
+                cache_result = result
+            _set(cache_key, cache_result, timeout)
             return result
 
         def dirty(*args, **kwargs):
@@ -71,7 +91,26 @@ def cache_wrapper(prefix, timeout=None):
             if l0_cache:
                 l0_cache.delete(cache_key)
 
+        def prefetch_multi(args_list):
+            keys = []
+            for args in args_list:
+                keys.append(get_key(func, *args))
+            results = cache.get_many(keys)
+            for key, result in results.items():
+                if result is not None:
+                    _set_l0(key, result)
+
+        def dirty_multi(args_list):
+            keys = []
+            for args in args_list:
+                keys.append(get_key(func, *args))
+            cache.delete_many(keys)
+            if l0_cache:
+                l0_cache.delete_many(keys)
+
         wrapper.dirty = dirty
+        wrapper.prefetch_multi = prefetch_multi
+        wrapper.dirty_multi = dirty_multi
 
         return wrapper
 

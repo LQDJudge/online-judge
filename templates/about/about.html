@@ -2,7 +2,7 @@
 
 {% block body %}
   {% if request.organization %}
-    {% cache 3600 'organization_html' request.organization.id MATH_ENGINE %}
+    {% cache 3600 'organization_html' request.organization.id %}
       {{ request.organization.about|markdown|reference|str|safe }}
     {% endcache %}
   {% else %}

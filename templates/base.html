@@ -50,10 +50,9 @@
     <link rel="stylesheet" type="text/css" href="{{ static('markdown.css') }}">
     {% compress css %}
       <link rel="stylesheet" href="{{ static('style.css') }}">
-      {% if PYGMENT_THEME %}
-        <link rel="stylesheet" href="{{ static(PYGMENT_THEME) }}">
-      {% endif %}{% if INLINE_FONTAWESOME %}
-        <link rel="stylesheet" href="{{ static('libs/fontawesome/font-awesome.css') }}">{% endif %}
+      {% if INLINE_FONTAWESOME %}
+        <link rel="stylesheet" href="{{ static('fontawesome/css/all.min.css') }}">
+      {% endif %}
       <link rel="stylesheet" type="text/css" href="{{ static('libs/featherlight/featherlight.min.css') }}">
       <link rel="stylesheet" type="text/css" href="{{ static('libs/clipboard/tooltip.css') }}">
       <link rel="stylesheet" type="text/css" href="{{ static('libs/select2/select2.css') }}">
@@ -70,10 +69,8 @@
     {% endif %}
     {% block media %}{% endblock %}
     {% if use_darkmode %}
-      {% compress css %}
-        <link rel="stylesheet" href="{{ static('darkmode.css') }}">
-        <link rel="stylesheet" href="{{ static('darkmode-svg.css') }}">
-      {% endcompress %}
+      <link rel="stylesheet" href="{{ static('darkmode.css') }}">
+      <link rel="stylesheet" href="{{ static('darkmode-svg.css') }}">
     {% endif %}
 
     <noscript>
@@ -92,9 +89,18 @@
         @media(min-width: 800px) {
           #page-container {
             background: {{request.profile.css_background|safe}};
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
           }
         }
       </style>
+    {% endif %}
+    {% if not INLINE_JQUERY %}
+      <script src="{{ JQUERY_JS }}"></script>
+    {% else %}
+      <script src="{{ static('libs/jquery-3.4.1.min.js') }}"></script>
     {% endif %}
   </head>
   <body>
@@ -113,11 +119,11 @@
             <li>
               <a href="{{ node.path }}" id="fa-icon-links" class="normal-text nav-{{ node.key }}{% if node.key in nav_tab %} active{% endif %}">
                 <span class="nav-fa-icon{{'-active' if node.key in nav_tab else''}}">
-                  {% if node.key == "problems" %} <i class="fa fa-pencil"></i> {% endif %}
+                  {% if node.key == "problems" %} <i class="fa fa-puzzle-piece"></i> {% endif %}
                   {% if node.key == "submit" %} <i class="fa fa-code"></i> {% endif %}
                   {% if node.key == "user" %} <i class="fa fa-user"></i> {% endif %}
-                  {% if node.key == "contest" %} <i class="fa fa-graduation-cap"></i> {% endif %}
-                  {% if node.key == "group" %} <i class="fa fa-group"></i> {% endif %}
+                  {% if node.key == "contest" %} <i class="fa fa-ranking-star"></i> {% endif %}
+                  {% if node.key == "group" %} <i class="fa fa-building-columns"></i> {% endif %}
                   {% if node.key == "about" %} <i class="fa fa-at"></i> {% endif %}
                 </span>
                 {{ user_trans(node.label) }}
@@ -135,7 +141,7 @@
         <div style="display: flex; font-size: larger; align-items: center; height: 100%; gap: 1em;">
           {% if request.user.is_authenticated %}
             <span title="{{_('Chat')}}">
-              <a id="chat-icon" href="{{ url('chat', '') }}" class="fa fa-wechat navbar-icon" aria-hidden="true" style="font-size: 22.5px;">
+              <a id="chat-icon" href="{{ url('chat', '') }}" class="fab fa-weixin navbar-icon" aria-hidden="true" style="font-size: 22.5px;">
                 {% set unread_chat = request.profile.count_unread_chat_boxes %}
                 {% if unread_chat %}
                   <sub class="unread_boxes">{{unread_chat}}</sub>
@@ -145,7 +151,7 @@
 
             {% set unseen_cnt = request.profile.count_unseen_notifications %}
             <span title="{{_('Notification')}}" class="{{ 'notification-open' if unseen_cnt > 0 }}">
-              <a href="{{ url('notification') }}" class="fa fa-bell-o navbar-icon" id="notification" aria-hidden="true" style="font-size: 22.5px;">
+              <a href="{{ url('notification') }}" class="far fa-bell navbar-icon" id="notification" aria-hidden="true" style="font-size: 22.5px;">
                 {% if unseen_cnt > 0 %}
                   <sub class="unread_boxes">{{unseen_cnt}}</sub>
                 {% endif %}
@@ -168,43 +174,48 @@
                   {{ language.name_local }}
                 </div>
               {% endfor %}
+              <div class="popper-arrow" data-popper-arrow></div>
             </div>
           </span>
           <span title="{{_('Dark Mode')}}">
-            <a class="fa fa-moon-o navbar-icon black" id="nav-darkmode-icon" aria-hidden="true" href="?darkmode=1" style="font-size: 22.5px;"></a>
+            <a class="far fa-moon navbar-icon black" id="nav-darkmode-icon" aria-hidden="true" href="?darkmode=1" style="font-size: 22.5px;"></a>
           </span>
           {% if request.user.is_authenticated %}
             <span id="user-links">
-              <img src="{{ gravatar(request.profile, 32) }}" height="24" width="24">
+              <img class="user-img" src="{{ gravatar(request.profile, 32) }}" height="24" width="24">
               <i class="fa fa-angle-down" style="font-size: 18px; padding-top: 8px;"></i>
             </span>
             <div class="dropdown" id="userlink_dropdown" role="tooptip">
+              <div class="popper-arrow" data-popper-arrow></div>
               <a href="{{ url('user_page') }}">
-                <div class="dropdown-item">{{ _('Profile') }}</div>
+                <div class="dropdown-item"><i class="fa fa-user"></i> {{ _('Profile') }}</div>
               </a>
               {% if request.user.is_staff or request.user.is_superuser %}
                 <a href="{{ url('admin:index') }}">
-                  <div class="dropdown-item">{{ _('Admin') }}</div>
+                  <div class="dropdown-item"><i class="fa fa-user-shield"></i> {{ _('Admin') }}</div>
                 </a>
               {% endif %}
               {% if request.user.is_superuser %}
                 <a href="{{ url('internal_problem') }}">
-                  <div class="dropdown-item">{{ _('Internal') }}</div>
+                  <div class="dropdown-item"><i class="fa fa-circle-info"></i> {{ _('Internal') }}</div>
                 </a>
                 <a href="{{ url('site_stats') }}">
-                  <div class="dropdown-item">{{ _('Stats') }}</div>
+                  <div class="dropdown-item"><i class="fa fa-chart-pie"></i> {{ _('Stats') }}</div>
                 </a>
               {% endif %}
+              <a href="{{ url('user_bookmark') }}">
+                <div class="dropdown-item"><i class="fa fa-bookmark"></i> {{ _('Bookmarks') }}</div>
+              </a>
               <a href="{{ url('user_edit_profile') }}">
-                <div class="dropdown-item">{{ _('Edit profile') }}</div>
+                <div class="dropdown-item"><i class="fa fa-gear"></i> {{ _('Settings') }}</div>
               </a>
               {% if request.user.is_impersonate %}
                 <a href="{{ url('impersonate-stop') }}">
-                  <div class="dropdown-item">Stop impersonating</div>
+                  <div class="dropdown-item"><i class="fa fa-eye"></i> {{_('Stop impersonating')}}</div>
                 </a>
               {% else %}
                 <a href="#" id="logout" class="red">
-                  <div class="dropdown-item">
+                  <div class="dropdown-item"><i class="fa fa-right-from-bracket"></i>
                     {{ _('Log out') }}
                     <form id="logout-form" action="{{ url('auth_logout') }}" method="POST">
                       {% csrf_token %}
@@ -242,9 +253,9 @@
         </div>
         <div id="contest-info-toggle" class="{{'contest-info-toggle-mode-on' if request.contest_mode else 'contest-info-toggle-mode-off'}}">
           {% if request.contest_mode %}
-            <i class="fa fa-toggle-on white"></i> {{_('Compete')}}
+            <i class="fa fa-toggle-on white"></i> {{_('In contest')}}
           {% else %}
-            <i class="fa fa-toggle-off white"></i> {{_('General')}}
+            <i class="fa fa-toggle-off white"></i> {{_('Out contest')}}
           {% endif %}
         </div>
       </div>
@@ -272,15 +283,9 @@
         <div id="announcement">{{ i18n_config.announcement|safe }}</div>
       {% endif %}
 
-      {% if not INLINE_JQUERY %}
-        <script src="{{ JQUERY_JS }}"></script>
-      {% endif %}
-      <script src="https://unpkg.com/@popperjs/core@2"></script>
       {% compress js %}
         <script>{{ inlinei18n(LANGUAGE_CODE)|safe }}</script>
-        {% if INLINE_JQUERY %}
-          <script src="{{ static('libs/jquery-3.4.1.min.js') }}"></script>
-        {% endif %}
+        <script src="{{ static('libs/popper.min.js') }}"></script>
         <script src="{{ static('libs/jquery-cookie.js') }}"></script>
         <script src="{{ static('libs/jquery-taphold.js') }}"></script>
         <script src="{{ static('libs/jquery.unveil.js') }}"></script>
@@ -290,6 +295,7 @@
         {% include "extra_js.html" %}
         <script src="{{ static('common.js') }}"></script>
         <script src="{{ static('libs/clipboard/tooltip.js') }}"></script>
+        <script type="text/javascript" src="{{ static('libs/featherlight/featherlight.min.js') }}"></script>
         <script>
           moment.locale('{{ LANGUAGE_CODE }}');
           $(function () {
@@ -373,15 +379,12 @@
         {{ misc_config.analytics|safe }}
       {% endif %}
 
-      {# Don't run userscript since it may be malicious #}
-      {% if request.user.is_authenticated and request.profile.user_script and not request.user.is_impersonate %}
-        <script type="text/javascript">{{ request.profile.user_script|safe }}</script>
-      {% endif %}
-
       <div id="extra_js">
         {% block extra_js %}{% endblock %}
       </div>
       {% block bodyend %}{% endblock %}
+      <script src="{{ static('katex_config.js') }}"></script>
+      {% include "katex-load.html" %}
       {% block footer %}
         <footer>
           <span id="footer-content">

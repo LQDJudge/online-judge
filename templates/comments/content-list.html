@@ -1,5 +1,5 @@
 {% for node in mptt_tree(comment_list) recursive %}
-  <li id="comment-{{ node.id }}" data-revision="{{ node.revisions - 1 }}" data-max-revision="{{ node.revisions - 1 }}"
+  <li id="comment-{{ node.id }}" data-revision="{{ node.revision_count - 1 }}" data-max-revision="{{ node.revision_count - 1 }}"
     data-revision-ajax="{{ url('comment_revision_ajax', node.id) }}" class="comment">
     <div class="comment-display{% if node.score <= vote_hide_threshold %} bad-comment{% endif %}">
       <div class="info">
@@ -24,21 +24,16 @@
       </div>
       <div class="detail">
         <div class="header">
-          {% with author=node.author, user=node.author.user %}
-            <a href="{{ url('user_page', user.username) }}" class="user comment-img">
-              <img src="{{ gravatar(author, 135) }}" class="gravatar">
-            </a>
-          {% endwith %}
-          {{ link_user(node.author) }},&nbsp;
+          {{ link_user(node.author_id, show_image=True) }}&nbsp;&nbsp;
           {{ relative_time(node.time, abs=_('{time}'), rel=_('{time}')) }}
           <span class="comment-spacer"></span>
           <span class="comment-operation">
-            {% if node.revisions > 1 %}
+            {% if node.revision_count > 1 %}
               <span class="comment-edits">
                 <a href="javascript:show_revision({{ node.id }}, -1)" class="previous-revision">&larr;</a>
                 <span class="comment-edit-text">
-                  {% if node.revisions > 2 %}
-                    {% trans edits=node.revisions - 1 %}edit {{ edits }}{% endtrans %}
+                  {% if node.revision_count > 2 %}
+                    {% trans edits=node.revision_count - 1 %}edit {{ edits }}{% endtrans %}
                   {% else %}
                     {{ _('edited') }}
                   {% endif %}
@@ -53,10 +48,9 @@
               <i class="fa fa-link fa-fw"></i>
             </a>
             {% if profile and not comment_lock %}
-              {% set can_edit = node.author.id == profile.id and not profile.mute %}
+              {% set can_edit = node.author_id == profile.id and not profile.mute %}
               {% if can_edit %}
-                <a data-featherlight="{{ url('comment_edit_ajax', node.id) }}"
-                  href="{{ url('comment_edit', node.id) }}" title="{{ _('Edit') }}" class="edit-link">
+                <a data-featherlight="{{ url('comment_edit_ajax', node.id) }}" href="#" title="{{ _('Edit') }}" class="edit-link">
                   <i class="fa fa-pencil fa-fw"></i>
                 </a>
               {% else %}
@@ -69,9 +63,9 @@
                   <a href="javascript:reply_comment({{ node.id }})" title="{{ _('Reply') }}"><i
                     class="fa fa-reply fa-fw"></i></a>
                 {% else %}
-                  <a data-featherlight="{{ url('comment_edit_ajax', node.id) }}"
-                    href="{{ url('comment_edit', node.id) }}" title="{{ _('Edit') }}" class="edit-link"><i
-                      class="fa fa-pencil fa-fw"></i></a>
+                  <a data-featherlight="{{ url('comment_edit_ajax', node.id) }}" href="#" title="{{ _('Edit') }}" class="edit-link">
+                    <i class="fa fa-pencil fa-fw"></i>
+                  </a>
                 {% endif %}
                 <a href="javascript:" title="{{ _('Hide') }}" data-id="{{ node.id }}" class="hide-comment"><i
                   class="fa fa-trash fa-fw"></i></a>

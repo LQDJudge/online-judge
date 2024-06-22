@@ -56,3 +56,11 @@ class ProblemTypeAdmin(admin.ModelAdmin):
             [o.pk for o in obj.problem_set.all()] if obj else []
         )
         return super(ProblemTypeAdmin, self).get_form(request, obj, **kwargs)
+
+
+class OfficialContestCategoryAdmin(admin.ModelAdmin):
+    fields = ("name",)
+
+
+class OfficialContestLocationAdmin(admin.ModelAdmin):
+    fields = ("name",)

@@ -34,6 +34,7 @@ SITE_ID = 1
 SITE_NAME = "LQDOJ"
 SITE_LONG_NAME = "LQDOJ: Le Quy Don Online Judge"
 SITE_ADMIN_EMAIL = False
+SITE_DOMAIN = "lqdoj.edu.vn"
 
 DMOJ_REQUIRE_STAFF_2FA = True
 
@@ -85,6 +86,7 @@ DMOJ_STATS_SUBMISSION_RESULT_COLORS = {
     "ERR": "#ffa71c",
 }
 DMOJ_PROFILE_IMAGE_ROOT = "profile_images"
+DMOJ_TEST_FORMATTER_ROOT = "test_formatter"
 
 MARKDOWN_STYLES = {}
 MARKDOWN_DEFAULT_STYLE = {}
@@ -130,13 +132,10 @@ USE_SELENIUM = False
 SELENIUM_CUSTOM_CHROME_PATH = None
 SELENIUM_CHROMEDRIVER_PATH = "chromedriver"
 
-PYGMENT_THEME = "pygment-github.css"
 INLINE_JQUERY = True
 INLINE_FONTAWESOME = True
 JQUERY_JS = "//ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"
-FONTAWESOME_CSS = (
-    "//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"
-)
+FONTAWESOME_CSS = "//cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 DMOJ_CANONICAL = ""
 
 # Application definition
@@ -170,7 +169,7 @@ else:
                 },
                 {
                     "model": "judge.Submission",
-                    "icon": "fa-check-square-o",
+                    "icon": "fa-check-square",
                     "children": [
                         "judge.Language",
                         "judge.Judge",
@@ -278,8 +277,11 @@ LANGUAGE_COOKIE_AGE = 8640000
 
 FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
 
-IMPERSONATE_REQUIRE_SUPERUSER = True
-IMPERSONATE_DISABLE_LOGGING = True
+IMPERSONATE = {
+    "REQUIRE_SUPERUSER": True,
+    "DISABLE_LOGGING": True,
+    "ADMIN_DELETE_PERMISSION": True,
+}
 
 ACCOUNT_ACTIVATION_DAYS = 7
 
@@ -323,7 +325,6 @@ TEMPLATES = [
                 "judge.template_context.site",
                 "judge.template_context.site_name",
                 "judge.template_context.misc_config",
-                "judge.template_context.math_setting",
                 "social_django.context_processors.backends",
                 "social_django.context_processors.login_redirect",
             ],
@@ -431,7 +432,7 @@ AUTHENTICATION_BACKENDS = (
     "social_core.backends.google.GoogleOAuth2",
     "social_core.backends.facebook.FacebookOAuth2",
     "judge.social_auth.GitHubSecureEmailOAuth2",
-    "django.contrib.auth.backends.ModelBackend",
+    "judge.authentication.CustomModelBackend",
 )
 
 SOCIAL_AUTH_PIPELINE = (
@@ -487,6 +488,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # Chunk upload
 CHUNK_UPLOAD_DIR = "/tmp/chunk_upload_tmp"
+
+# Rate limit
+RL_VOTE = "200/h"
+RL_COMMENT = "30/h"
+
 
 try:
     with open(os.path.join(os.path.dirname(__file__), "local_settings.py")) as f:

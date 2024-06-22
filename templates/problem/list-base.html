@@ -86,12 +86,17 @@
         }
 
         $category.select2().css({'visibility': 'visible'}).change(clean_submit);
-        $('#types').select2({multiple: 1, placeholder: '{{ _('Filter by type...') }}'})
-          .css({'visibility': 'visible'});
-        $('#search-org').select2({multiple: 1, placeholder: '{{ _('Groups') }}...'})
-          .css({'visibility': 'visible'});
-        $('#search-author').select2({multiple: 1, placeholder: '{{ _('Authors') }}...'})
-          .css({'visibility': 'visible'});
+        $('#types').select2({multiple: 1, placeholder: '{{ _('Filter by type...') }}'});
+        $('#search-org').select2({multiple: 1, placeholder: '{{ _('Groups') }}...'});
+        $('#search-author').select2({
+          multiple: 1,
+          placeholder: '{{ _('Authors') }}...',
+          ajax: {
+            url: '{{ url('problem_authors_select2_ajax') }}',
+            delay: 250,
+            cache: true,
+          }
+        });
 
         // This is incredibly nasty to do but it's needed because otherwise the select2 steals the focus
         $search.keypress(function (e) {
@@ -108,7 +113,7 @@
 
         $('#go').click(clean_submit);
 
-        $('input#full_text, input#hide_solved, input#show_types, input#have_editorial, input#show_solved_only').click(function () {
+        $('input#full_text, input#hide_solved, input#show_types, input#have_editorial, input#show_solved_only, input#show_editorial').click(function () {
           prep_form();
           ($('<form>').attr('action', window.location.pathname + '?' + form_serialize())
               .append($('<input>').attr('type', 'hidden').attr('name', 'csrfmiddlewaretoken')
@@ -149,8 +154,7 @@
           $(".edit-btn").on('click', function() {
             var pid = $(this).attr('pid');
             $('#volunteer-types-' + pid).css({'width': '100%'});
-            $('#volunteer-types-' + pid).select2({multiple: 1, placeholder: '{{ _('Add types...') }}'})
-              .css({'visibility': 'visible'});
+            $('#volunteer-types-' + pid).select2({multiple: 1, placeholder: '{{ _('Add types...') }}'});
 
             $('#form-' + pid).show();
             $('#submit-' + pid).show();

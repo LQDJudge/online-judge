@@ -78,12 +78,12 @@ class ManageProblemSubmissionView(TitleMixin, ManageProblemSubmissionMixin, Deta
             )
         ]
         context["results"] = sorted(map(itemgetter(0), Submission.RESULT))
-        context["in_contest"] = False
+        context["current_contest"] = None
         if (
             self.request.in_contest_mode
             and self.object in self.request.participation.contest.problems.all()
         ):
-            context["in_contest"] = True
+            context["current_contest"] = self.request.participation.contest
 
         return context
 
@@ -106,20 +106,12 @@ class BaseActionSubmissionsView(
 
         try:
             languages = list(map(int, self.request.POST.getlist("language")))
+            results = list(map(str, self.request.POST.getlist("result")))
+            contests = list(map(int, self.request.POST.getlist("contest")))
         except ValueError:
             return HttpResponseBadRequest()
 
-        contest = None
-        try:
-            in_contest = bool(self.request.POST.get("in_contest", False))
-            if in_contest:
-                contest = self.request.participation.contest
-        except (KeyError, ValueError):
-            return HttpResponseBadRequest()
-
-        return self.generate_response(
-            id_range, languages, self.request.POST.getlist("result"), contest
-        )
+        return self.generate_response(id_range, languages, results, contests)
 
     def generate_response(self, id_range, languages, results, contest):
         raise NotImplementedError()

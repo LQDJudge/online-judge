@@ -20,9 +20,15 @@ from judge.admin.problem import ProblemAdmin, ProblemPointsVoteAdmin
 from judge.admin.profile import ProfileAdmin, UserAdmin
 from judge.admin.runtime import JudgeAdmin, LanguageAdmin
 from judge.admin.submission import SubmissionAdmin
-from judge.admin.taxon import ProblemGroupAdmin, ProblemTypeAdmin
+from judge.admin.taxon import (
+    ProblemGroupAdmin,
+    ProblemTypeAdmin,
+    OfficialContestCategoryAdmin,
+    OfficialContestLocationAdmin,
+)
 from judge.admin.ticket import TicketAdmin
 from judge.admin.volunteer import VolunteerProblemVoteAdmin
+from judge.admin.course import CourseAdmin
 from judge.models import (
     BlogPost,
     Comment,
@@ -47,6 +53,8 @@ from judge.models import (
     VolunteerProblemVote,
     Course,
     ContestsSummary,
+    OfficialContestCategory,
+    OfficialContestLocation,
 )
 
 
@@ -72,7 +80,9 @@ admin.site.register(Profile, ProfileAdmin)
 admin.site.register(Submission, SubmissionAdmin)
 admin.site.register(Ticket, TicketAdmin)
 admin.site.register(VolunteerProblemVote, VolunteerProblemVoteAdmin)
-admin.site.register(Course)
+admin.site.register(Course, CourseAdmin)
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(ContestsSummary, ContestsSummaryAdmin)
+admin.site.register(OfficialContestCategory, OfficialContestCategoryAdmin)
+admin.site.register(OfficialContestLocation, OfficialContestLocationAdmin)

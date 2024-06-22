@@ -71,7 +71,7 @@ from judge.utils.views import (
 from judge.utils.problems import user_attempted_ids, user_completed_ids
 from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
-from judge.views.submission import AllSubmissions, SubmissionsListBase
+from judge.views.submission import SubmissionsListBase
 from judge.views.feed import FeedView
 from judge.tasks import rescore_contest
 
@@ -104,15 +104,15 @@ class OrganizationBase(object):
     def is_member(self, org=None):
         if org is None:
             org = self.object
-        return (
-            self.request.profile in org if self.request.user.is_authenticated else False
-        )
+        if self.request.profile:
+            return org.is_member(self.request.profile)
+        return False
 
     def is_admin(self, org=None):
         if org is None:
             org = self.object
         if self.request.profile:
-            return org.admins.filter(id=self.request.profile.id).exists()
+            return org.is_admin(self.request.profile)
         return False
 
     def can_access(self, org):
@@ -131,6 +131,13 @@ class OrganizationMixin(OrganizationBase):
         context["can_edit"] = self.can_edit_organization(self.organization)
         context["organization"] = self.organization
         context["logo_override_image"] = self.organization.logo_override_image
+        context["organization_subdomain"] = (
+            ("http" if settings.DMOJ_SSL == 0 else "https")
+            + "://"
+            + self.organization.slug
+            + "."
+            + get_current_site(self.request).domain
+        )
         if "organizations" in context:
             context.pop("organizations")
         return context
@@ -215,41 +222,103 @@ class OrganizationHomeView(OrganizationMixin):
                 organizations=self.organization,
                 authors=self.request.profile,
             ).count()
-        context["top_rated"] = self.organization.members.filter(
-            is_unlisted=False
-        ).order_by("-rating")[:10]
-        context["top_scorer"] = self.organization.members.filter(
-            is_unlisted=False
-        ).order_by("-performance_points")[:10]
+        context["top_rated"] = (
+            self.organization.members.filter(is_unlisted=False)
+            .order_by("-rating")
+            .only("id", "rating")[:10]
+        )
+        context["top_scorer"] = (
+            self.organization.members.filter(is_unlisted=False)
+            .order_by("-performance_points")
+            .only("id", "performance_points")[:10]
+        )
+        Profile.prefetch_profile_cache([p.id for p in context["top_rated"]])
+        Profile.prefetch_profile_cache([p.id for p in context["top_scorer"]])
+
         return context
 
 
-class OrganizationList(TitleMixin, ListView, OrganizationBase):
+class OrganizationList(
+    QueryStringSortMixin, DiggPaginatorMixin, TitleMixin, ListView, OrganizationBase
+):
     model = Organization
     context_object_name = "organizations"
     template_name = "organization/list.html"
     title = gettext_lazy("Groups")
+    paginate_by = 12
+    all_sorts = frozenset(("name", "member_count"))
+    default_desc = frozenset(("name", "member_count"))
 
-    def get_queryset(self):
-        return (
+    def get_default_sort_order(self, request):
+        return "-member_count"
+
+    def get(self, request, *args, **kwargs):
+        default_tab = "mine"
+        if not self.request.user.is_authenticated:
+            default_tab = "public"
+        self.current_tab = self.request.GET.get("tab", default_tab)
+        self.organization_query = request.GET.get("organization", "")
+
+        return super(OrganizationList, self).get(request, *args, **kwargs)
+
+    def _get_queryset(self):
+        queryset = (
             super(OrganizationList, self)
             .get_queryset()
             .annotate(member_count=Count("member"))
+            .defer("about")
         )
+
+        if self.organization_query:
+            queryset = queryset.filter(
+                Q(slug__icontains=self.organization_query)
+                | Q(name__icontains=self.organization_query)
+                | Q(short_name__icontains=self.organization_query)
+            )
+        return queryset
+
+    def get_queryset(self):
+        organization_list = self._get_queryset()
+
+        my_organizations = []
+        if self.request.profile:
+            my_organizations = organization_list.filter(
+                id__in=self.request.profile.organizations.values("id")
+            )
+
+        if self.current_tab == "public":
+            queryset = organization_list.exclude(id__in=my_organizations).filter(
+                is_open=True
+            )
+        elif self.current_tab == "private":
+            queryset = organization_list.exclude(id__in=my_organizations).filter(
+                is_open=False
+            )
+        else:
+            queryset = my_organizations
+
+        if queryset:
+            queryset = queryset.order_by(self.order)
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationList, self).get_context_data(**kwargs)
-        context["my_organizations"] = []
-        context["page_type"] = "organizations"
-        if self.request.profile:
-            context["my_organizations"] = context["organizations"].filter(
-                id__in=self.request.profile.organizations.values("id")
-            )
-        other_organizations = context["organizations"].exclude(
-            id__in=context["my_organizations"]
-        )
-        context["open_organizations"] = other_organizations.filter(is_open=True)
-        context["private_organizations"] = other_organizations.filter(is_open=False)
+
+        context["first_page_href"] = "."
+        context["current_tab"] = self.current_tab
+        context["page_type"] = self.current_tab
+        context["organization_query"] = self.organization_query
+        context["selected_order"] = self.request.GET.get("order")
+        context["all_sort_options"] = [
+            ("name", _("Name (asc.)")),
+            ("-name", _("Name (desc.)")),
+            ("member_count", _("Member count (asc.)")),
+            ("-member_count", _("Member count (desc.)")),
+        ]
+
+        context.update(self.get_sort_context())
+        context.update(self.get_sort_paginate_context())
+
         return context
 
 
@@ -274,14 +343,6 @@ class OrganizationHome(OrganizationHomeView, FeedView):
     def get_context_data(self, **kwargs):
         context = super(OrganizationHome, self).get_context_data(**kwargs)
         context["title"] = self.organization.name
-        http = "http" if settings.DMOJ_SSL == 0 else "https"
-        context["organization_subdomain"] = (
-            http
-            + "://"
-            + self.organization.slug
-            + "."
-            + get_current_site(self.request).domain
-        )
 
         now = timezone.now()
         visible_contests = (
@@ -407,6 +468,7 @@ class OrganizationContests(
 
     def get_queryset(self):
         self.org_query = [self.organization_id]
+        self.hide_organization_contests = False
         return super().get_queryset()
 
     def set_editable_contest(self, contest):
@@ -417,21 +479,20 @@ class OrganizationContests(
     def get_context_data(self, **kwargs):
         context = super(OrganizationContests, self).get_context_data(**kwargs)
         context["page_type"] = "contests"
-        context["hide_contest_orgs"] = True
         context.pop("organizations")
-        context["create_url"] = reverse(
-            "organization_contest_add",
-            args=[self.organization.id, self.organization.slug],
-        )
 
-        for participation in context["active_participations"]:
-            self.set_editable_contest(participation.contest)
-        for contest in context["past_contests"]:
-            self.set_editable_contest(contest)
-        for contest in context["current_contests"]:
-            self.set_editable_contest(contest)
-        for contest in context["future_contests"]:
-            self.set_editable_contest(contest)
+        if self.can_edit_organization(self.organization):
+            context["create_url"] = reverse(
+                "organization_contest_add",
+                args=[self.organization.id, self.organization.slug],
+            )
+
+        if self.current_tab == "active":
+            for participation in context["contests"]:
+                self.set_editable_contest(participation.contest)
+        else:
+            for contest in context["contests"]:
+                self.set_editable_contest(contest)
         return context
 
 
@@ -470,6 +531,9 @@ class OrganizationSubmissions(
                 "organization_home", args=[self.organization.id, self.organization.slug]
             ),
         )
+
+    def get_title(self):
+        return _("Submissions in") + f" {self.organization}"
 
 
 class OrganizationMembershipChange(
@@ -516,6 +580,7 @@ class JoinOrganization(OrganizationMembershipChange):
         profile.organizations.add(org)
         profile.save()
         cache.delete(make_template_fragment_key("org_member_count", (org.id,)))
+        Organization.is_member.dirty(org, profile)
 
 
 class LeaveOrganization(OrganizationMembershipChange):
@@ -528,6 +593,7 @@ class LeaveOrganization(OrganizationMembershipChange):
             )
         profile.organizations.remove(org)
         cache.delete(make_template_fragment_key("org_member_count", (org.id,)))
+        Organization.is_member.dirty(org, profile)
 
 
 class OrganizationRequestForm(Form):
@@ -737,7 +803,7 @@ class AddOrganizationMember(
     def form_valid(self, form):
         new_users = form.cleaned_data["new_users"]
         self.object.members.add(*new_users)
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             revisions.set_comment(_("Added members from site"))
             revisions.set_user(self.request.user)
             return super(AddOrganizationMember, self).form_valid(form)
@@ -804,7 +870,7 @@ class EditOrganization(
         return form
 
     def form_valid(self, form):
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             revisions.set_comment(_("Edited from site"))
             revisions.set_user(self.request.user)
             return super(EditOrganization, self).form_valid(form)
@@ -836,7 +902,7 @@ class AddOrganization(LoginRequiredMixin, TitleMixin, CreateView):
                 % settings.DMOJ_USER_MAX_ORGANIZATION_ADD,
                 status=400,
             )
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             revisions.set_comment(_("Added from site"))
             revisions.set_user(self.request.user)
             res = super(AddOrganization, self).form_valid(form)
@@ -861,7 +927,7 @@ class AddOrganizationContest(
         return kwargs
 
     def form_valid(self, form):
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             revisions.set_comment(_("Added from site"))
             revisions.set_user(self.request.user)
 
@@ -954,7 +1020,7 @@ class EditOrganizationContest(
         return self.contest
 
     def form_valid(self, form):
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             revisions.set_comment(_("Edited from site"))
             revisions.set_user(self.request.user)
             res = super(EditOrganizationContest, self).form_valid(form)
@@ -974,6 +1040,18 @@ class EditOrganizationContest(
                 )
             ):
                 transaction.on_commit(rescore_contest.s(self.object.key).delay)
+
+            if any(
+                f in form.changed_data
+                for f in (
+                    "authors",
+                    "curators",
+                    "testers",
+                )
+            ):
+                Contest._author_ids.dirty(self.object)
+                Contest._curator_ids.dirty(self.object)
+                Contest._tester_ids.dirty(self.object)
             return res
 
     def get_problem_formset(self, post=False):
@@ -1015,7 +1093,7 @@ class AddOrganizationBlog(
         return _("Add blog for %s") % self.organization.name
 
     def form_valid(self, form):
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             res = super(AddOrganizationBlog, self).form_valid(form)
             self.object.is_organization_private = True
             self.object.authors.add(self.request.profile)
@@ -1037,6 +1115,11 @@ class AddOrganizationBlog(
                 self.organization.admins.all(), "Add blog", html, self.request.profile
             )
             return res
+
+    def get_success_url(self):
+        return reverse(
+            "organization_home", args=[self.organization.id, self.organization.slug]
+        )
 
 
 class EditOrganizationBlog(
@@ -1061,7 +1144,7 @@ class EditOrganizationBlog(
             if self.organization not in self.blog.organizations.all():
                 raise Exception("This blog does not belong to this organization")
             if (
-                self.request.profile not in self.blog.authors.all()
+                self.request.profile.id not in self.blog.get_authors()
                 and not self.can_edit_organization(self.organization)
             ):
                 raise Exception("Not allowed to edit this blog")
@@ -1115,12 +1198,17 @@ class EditOrganizationBlog(
         make_notification(posible_users, action, html, self.request.profile)
 
     def form_valid(self, form):
-        with transaction.atomic(), revisions.create_revision():
+        with revisions.create_revision():
             res = super(EditOrganizationBlog, self).form_valid(form)
             revisions.set_comment(_("Edited from site"))
             revisions.set_user(self.request.user)
             self.create_notification("Edit blog")
             return res
+
+    def get_success_url(self):
+        return reverse(
+            "organization_home", args=[self.organization.id, self.organization.slug]
+        )
 
 
 class PendingBlogs(

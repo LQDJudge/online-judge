@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block media %}
+  <style>
+    .copyright {
+      position: absolute;
+      bottom: 48px;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  </style>
+{% endblock %}
+{% block body %}
+  <center>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ form }}
+      <button type="submit" style="margin-top: 2em">{{_('Upload')}}</button>
+    </form>
+    <div class="copyright">
+      <p >{{_('Copyright')}} Nguyễn Tiến Trung Kiên</p>
+    </div>
+  </center>
+{% endblock %}

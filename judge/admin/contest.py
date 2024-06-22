@@ -14,7 +14,14 @@ from reversion.admin import VersionAdmin
 from reversion_compare.admin import CompareVersionAdmin
 
 from django_ace import AceWidget
-from judge.models import Contest, ContestProblem, ContestSubmission, Profile, Rating
+from judge.models import (
+    Contest,
+    ContestProblem,
+    ContestSubmission,
+    Profile,
+    Rating,
+    OfficialContest,
+)
 from judge.ratings import rate_contest
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
@@ -24,6 +31,7 @@ from judge.widgets import (
     AdminSelect2Widget,
     HeavyPreviewAdminPageDownWidget,
 )
+from judge.views.contests import recalculate_contest_summary_result
 
 
 class AdminHeavySelect2Widget(AdminHeavySelect2Widget):
@@ -148,6 +156,26 @@ class ContestForm(ModelForm):
             )
 
 
+class OfficialContestInlineForm(ModelForm):
+    class Meta:
+        widgets = {
+            "category": AdminSelect2Widget,
+            "location": AdminSelect2Widget,
+        }
+
+
+class OfficialContestInline(admin.StackedInline):
+    fields = (
+        "category",
+        "year",
+        "location",
+    )
+    model = OfficialContest
+    can_delete = True
+    form = OfficialContestInlineForm
+    extra = 0
+
+
 class ContestAdmin(CompareVersionAdmin):
     fieldsets = (
         (None, {"fields": ("key", "name", "authors", "curators", "testers")}),
@@ -162,6 +190,7 @@ class ContestAdmin(CompareVersionAdmin):
                     "scoreboard_visibility",
                     "run_pretests_only",
                     "points_precision",
+                    "rate_limit",
                 )
             },
         ),
@@ -221,7 +250,7 @@ class ContestAdmin(CompareVersionAdmin):
         "user_count",
     )
     search_fields = ("key", "name")
-    inlines = [ContestProblemInline]
+    inlines = [ContestProblemInline, OfficialContestInline]
     actions_on_top = True
     actions_on_bottom = True
     form = ContestForm
@@ -297,15 +326,23 @@ class ContestAdmin(CompareVersionAdmin):
             self._rescore(obj.key)
             self._rescored = True
 
+        if form.changed_data and any(
+            f in form.changed_data
+            for f in (
+                "authors",
+                "curators",
+                "testers",
+            )
+        ):
+            Contest._author_ids.dirty(obj)
+            Contest._curator_ids.dirty(obj)
+            Contest._tester_ids.dirty(obj)
+
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         # Only rescored if we did not already do so in `save_model`
         if not self._rescored and any(formset.has_changed() for formset in formsets):
             self._rescore(form.cleaned_data["key"])
-        obj = form.instance
-        obj.is_organization_private = obj.organizations.count() > 0
-        obj.is_private = obj.private_contestants.count() > 0
-        obj.save()
 
     def has_change_permission(self, request, obj=None):
         if not request.user.has_perm("judge.edit_own_contest"):
@@ -518,3 +555,9 @@ class ContestsSummaryAdmin(admin.ModelAdmin):
     list_display = ("key",)
     search_fields = ("key", "contests__key")
     form = ContestsSummaryForm
+
+    def save_model(self, request, obj, form, change):
+        super(ContestsSummaryAdmin, self).save_model(request, obj, form, change)
+        obj.refresh_from_db()
+        obj.results = recalculate_contest_summary_result(obj)
+        obj.save()

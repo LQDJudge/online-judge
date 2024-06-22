@@ -37,7 +37,7 @@ msgid "Name"
 msgstr "Đăng ký tên"
 
 msgid "Report"
-msgstr "Báo cáo"
+msgstr "Báo cáo tiêu cực"
 
 msgid "2sat"
 msgstr ""
@@ -593,6 +593,12 @@ msgstr ""
 
 msgid "z-function"
 msgstr ""
+
+#~ msgid "Courses"
+#~ msgstr "Khóa học"
+
+#~ msgid "Bug Report"
+#~ msgstr "Báo cáo lỗi"
 
 #~ msgid "Insert Image"
 #~ msgstr "Chèn hình ảnh"

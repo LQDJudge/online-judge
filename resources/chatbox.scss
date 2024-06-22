@@ -27,7 +27,7 @@
     margin-top: 1em;
 }
 .big-emoji {
-    font-size: 16px;
+    font-size: 1.2em;
 }
 #chat-online {
     border-right: 1px solid #ccc;
@@ -85,10 +85,13 @@
     }
     #chat-online {
         margin: 0;
-        width: 30%;
+        min-width: 30%;
+        max-width: 30%;
     }
     #chat-area {
         flex-grow: 1;
+        min-width: 70%;
+        max-width: 70%;
     }
 }
 #chat-input, #chat-log .content-message {
@@ -96,6 +99,7 @@
 }
 .info-pic {
     height: 95%;
+    width: 100%;
 }
 
 .info-name {
@@ -139,6 +143,7 @@
 .status-row {
     display: flex;
     padding: 15px;
+    padding-right: 0;
     gap: 0.5em;
     border-radius: 6px;
 }
@@ -195,7 +200,7 @@
         align-items: center;
         justify-content: center;
     }
-    #setting-content {
+    .setting-content {
         display: none;
         position: absolute;
         background-color: #f1f1f1;
@@ -204,14 +209,14 @@
         z-index: 1;
         right: 0;
     }
-    #setting-content li {
+    .setting-content a {
         padding: 12px 16px;
         text-decoration: none;
         display: block;
-        color: black;
         font-weight: bold;
+        font-size: 1rem;
     }
-    #setting-content li:hover {
+    .setting-content a:hover {
         background-color: #ddd;
         cursor: pointer;
     }

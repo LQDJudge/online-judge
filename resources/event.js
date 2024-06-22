@@ -7,6 +7,7 @@ function EventReceiver(websocket, poller, channels, last_msg, onmessage) {
     if (onmessage)
         this.onmessage = onmessage;
     var receiver = this;
+    var time_retry = 1000;
 
     function init_poll() {
         function long_poll() {
@@ -62,7 +63,8 @@ function EventReceiver(websocket, poller, channels, last_msg, onmessage) {
                 if (event.code != 1000 && receiver.onwsclose !== null)
                     receiver.onwsclose(event);
                 if (event.code == 1006) {
-                    setTimeout(connect, 1000);
+                    setTimeout(connect, time_retry);
+                    time_retry += 2000;
                 }
             }
         }

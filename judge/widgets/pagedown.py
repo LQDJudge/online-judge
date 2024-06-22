@@ -10,8 +10,8 @@ from judge.widgets.mixins import CompressorWidgetMixin
 __all__ = [
     "PagedownWidget",
     "AdminPagedownWidget",
-    "MathJaxPagedownWidget",
-    "MathJaxAdminPagedownWidget",
+    "KatexPagedownWidget",
+    "KatexAdminPagedownWidget",
     "HeavyPreviewPageDownWidget",
     "HeavyPreviewAdminPageDownWidget",
 ]
@@ -21,8 +21,8 @@ try:
 except ImportError:
     PagedownWidget = None
     AdminPagedownWidget = None
-    MathJaxPagedownWidget = None
-    MathJaxAdminPagedownWidget = None
+    KatexPagedownWidget = None
+    KatexAdminPagedownWidget = None
     HeavyPreviewPageDownWidget = None
     HeavyPreviewAdminPageDownWidget = None
 else:
@@ -61,15 +61,19 @@ else:
             }
             js = ["admin/js/pagedown.js"]
 
-    class MathJaxPagedownWidget(PagedownWidget):
+    class KatexPagedownWidget(PagedownWidget):
         class Media:
+            css = {
+                "all": ["https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"]
+            }
             js = [
-                "mathjax3_config.js",
-                "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js",
+                "katex_config.js",
+                "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js",
+                "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js",
                 "pagedown_math.js",
             ]
 
-    class MathJaxAdminPagedownWidget(AdminPagedownWidget, MathJaxPagedownWidget):
+    class KatexAdminPagedownWidget(AdminPagedownWidget, KatexPagedownWidget):
         pass
 
     class HeavyPreviewPageDownWidget(PagedownWidget):
@@ -112,12 +116,11 @@ else:
             js = ["dmmd-preview.js"]
 
     class HeavyPreviewAdminPageDownWidget(
-        AdminPagedownWidget, HeavyPreviewPageDownWidget
+        KatexPagedownWidget, AdminPagedownWidget, HeavyPreviewPageDownWidget
     ):
         class Media:
             css = {
                 "all": [
-                    "pygment-github.css",
                     "table.css",
                     "ranks.css",
                     "dmmd-preview.css",

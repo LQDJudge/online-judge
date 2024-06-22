@@ -2,9 +2,13 @@
 
 .content-description {
     line-height: 1.6em;
-    font-size: 15px;
-    font-family: "Noto Sans", Arial, "Lucida Grande", sans-serif;
+    font-size: 16px;
+    font-family: "Segoe UI", "Noto Sans", Arial, "Lucida Grande", sans-serif;
+    overflow-wrap: anywhere;
 
+    h1, h2, h3, h4, h5, .admonition-title, summary {
+        font-family: "Noto Sans", "Segoe UI", Arial, "Lucida Grande", sans-serif;
+    }
     img {
         max-width: 100%;
         height: auto;
@@ -21,11 +25,9 @@
         font-family: $monospace-fonts !important;
         margin: 0 2px;
         padding: 0 5px;
-        border: 1px solid $border_gray;
-        background-color: #f8f8f8;
+        background-color: var(--md-code-bg-color);
         border-radius: $widget_border_radius;
-        font-size: 0.95em;
-        color: #444;
+        color: var(--md-code-fg-color);
     }
 
     pre {
@@ -36,18 +38,16 @@
             padding: 0;
             background: transparent;
             font-size: 1em;
-            color: black;
+            color: var(--md-code-fg-color);
 
         }
 
         white-space: pre-wrap;
         word-wrap: break-word;
-        margin: 1.5em 0 1.5em 0;
-        padding: 1em;
-        border: 1px solid $border_gray;
-        background-color: #f8f8f8;
-        color: black;
-        border-radius: $widget_border_radius;
+        padding: 0.5em 1em;
+        background-color: var(--md-code-bg-color);
+        color: var(--md-code-fg-color);
+        border-radius: 3px;
     }
 
     pre.no-border {
@@ -56,6 +56,10 @@
         border: none;
         background-color: inherit;
         border-radius: none;
+    }
+
+    .linenos pre {
+        padding-right: 0;
     }
 
     b, strong {
@@ -171,7 +175,10 @@ pre {
 }
 
 
-@media (min-width: 700px) {
+@media (min-width: 800px) {
+    .content-description pre:has(code) {
+        min-width: 3em;
+    }
     #common-content {
         display: flex;
         flex-direction: row-reverse;
@@ -207,7 +214,7 @@ pre {
     }
 }
 
-@media not all and (min-width: 700px) {
+@media not all and (min-width: 800px) {
     #content-right .info-float {
         float: none;
         width: 100% !important;
@@ -233,6 +240,7 @@ a.view-pdf {
     display: -webkit-flex;
     display: -ms-flexbox;
     display: flex;
+    align-items: center;
 
     .spacer {
         display: inline-block;

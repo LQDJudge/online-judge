@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block users_js_media %}
+  {% include "contest/contest-datetime-js.html" %}
   {% if can_edit %}
     <script type="text/javascript">
       $(function () {
@@ -127,12 +128,14 @@
 
 {% block before_table %}
   {% include "contest/contest-datetime.html" %}
-  <div style="margin-bottom: 0.5em">
-    {% if page_type == 'participation' %}
-      {% if contest.can_see_full_scoreboard(request.user) %}
+  {% if page_type == 'participation' %}
+    {% if contest.can_see_full_scoreboard(request.user) %}
+      <div style="margin-bottom: 0.5em">
         <input id="search-contest" type="text" placeholder="{{ _('View user participation') }}">
-      {% endif %}
+      </div>
     {% endif %}
+  {% endif %}
+  <div style="margin-bottom: 0.5em">
     <input id="show-schools-checkbox" type="checkbox" style="vertical-align: bottom">
     <label for="show-schools-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show schools') }}</label>
 
@@ -147,8 +150,8 @@
     <label for="show-total-score-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Total score only') }}</label>
     <input id="show-virtual-checkbox" type="checkbox" style="vertical-align: bottom;">
     <label id="show-virtual-label" for="show-virtual-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show virtual participation') }}</label>
-    <img src="{{static('loading.gif')}}" style="height: 1em; display:none;" id="loading-gif"></img>
-    <a href="#" onclick="download_ranking_as_csv()" style="float: right;">
+    <i class="fa fa-spinner fa-pulse" style="display: none" id="loading-gif"></i>
+    <a href="#" onclick="download_ranking_as_csv()">
       <i class="fa fa-download" aria-hidden="true"></i>
       {{ _('Download as CSV') }}
     </a>

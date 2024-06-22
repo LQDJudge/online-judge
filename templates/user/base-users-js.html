@@ -9,7 +9,9 @@
     $('#search-handle').select2({
       placeholder: '{{ _('Search by handle...') }}',
       ajax: {
-        url: '{{ url('user_search_select2_ajax') }}'
+        url: '{{ url('user_search_select2_ajax') }}',
+        delay: 250,
+        cache: true,
       },
       minimumInputLength: 1,
       escapeMarkup: function (markup) {

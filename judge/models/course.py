@@ -1,18 +1,20 @@
 from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.translation import gettext, gettext_lazy as _
+from django.urls import reverse
+from django.db.models import Q
 
-from judge.models import Contest
+from judge.models import BlogPost, Problem
 from judge.models.profile import Organization, Profile
 
-__all__ = [
-    "Course",
-    "CourseRole",
-    "CourseResource",
-    "CourseAssignment",
-]
 
-course_directory_file = ""
+class RoleInCourse(models.TextChoices):
+    STUDENT = "ST", _("Student")
+    ASSISTANT = "AS", _("Assistant")
+    TEACHER = "TE", _("Teacher")
+
+
+EDITABLE_ROLES = (RoleInCourse.TEACHER, RoleInCourse.ASSISTANT)
 
 
 class Course(models.Model):
@@ -20,10 +22,7 @@ class Course(models.Model):
         max_length=128,
         verbose_name=_("course name"),
     )
-    about = models.TextField(verbose_name=_("organization description"))
-    ending_time = models.DateTimeField(
-        verbose_name=_("ending time"),
-    )
+    about = models.TextField(verbose_name=_("course description"))
     is_public = models.BooleanField(
         verbose_name=_("publicly visible"),
         default=False,
@@ -57,35 +56,50 @@ class Course(models.Model):
     def __str__(self):
         return self.name
 
-    @classmethod
-    def is_editable_by(course, profile):
-        if profile.is_superuser:
-            return True
-        userquery = CourseRole.objects.filter(course=course, user=profile)
-        if userquery.exists():
-            if userquery[0].role == "AS" or userquery[0].role == "TE":
-                return True
-        return False
+    def get_absolute_url(self):
+        return reverse("course_detail", args=(self.slug,))
 
     @classmethod
-    def is_accessible_by(cls, course, profile):
-        userqueryset = CourseRole.objects.filter(course=course, user=profile)
-        if userqueryset.exists():
-            return True
-        else:
+    def is_editable_by(cls, course, profile):
+        try:
+            course_role = CourseRole.objects.get(course=course, user=profile)
+            return course_role.role in EDITABLE_ROLES
+        except CourseRole.DoesNotExist:
             return False
 
     @classmethod
-    def get_students(cls, course):
-        return CourseRole.objects.filter(course=course, role="ST").values("user")
+    def is_accessible_by(cls, course, profile):
+        if not profile:
+            return False
+        try:
+            course_role = CourseRole.objects.get(course=course, user=profile)
+            if course_role.course.is_public:
+                return True
+            return course_role.role in EDITABLE_ROLES
+        except CourseRole.DoesNotExist:
+            return False
 
     @classmethod
-    def get_assistants(cls, course):
-        return CourseRole.objects.filter(course=course, role="AS").values("user")
+    def get_accessible_courses(cls, profile):
+        return Course.objects.filter(
+            Q(is_public=True) | Q(courserole__role__in=EDITABLE_ROLES),
+            courserole__user=profile,
+        ).distinct()
 
-    @classmethod
-    def get_teachers(cls, course):
-        return CourseRole.objects.filter(course=course, role="TE").values("user")
+    def _get_users_by_role(self, role):
+        course_roles = CourseRole.objects.filter(course=self, role=role).select_related(
+            "user"
+        )
+        return [course_role.user for course_role in course_roles]
+
+    def get_students(self):
+        return self._get_users_by_role(RoleInCourse.STUDENT)
+
+    def get_assistants(self):
+        return self._get_users_by_role(RoleInCourse.ASSISTANT)
+
+    def get_teachers(self):
+        return self._get_users_by_role(RoleInCourse.TEACHER)
 
     @classmethod
     def add_student(cls, course, profiles):
@@ -104,7 +118,7 @@ class Course(models.Model):
 
 
 class CourseRole(models.Model):
-    course = models.OneToOneField(
+    course = models.ForeignKey(
         Course,
         verbose_name=_("course"),
         on_delete=models.CASCADE,
@@ -114,13 +128,8 @@ class CourseRole(models.Model):
         Profile,
         verbose_name=_("user"),
         on_delete=models.CASCADE,
-        related_name=_("user_of_course"),
+        related_name="course_roles",
     )
-
-    class RoleInCourse(models.TextChoices):
-        STUDENT = "ST", _("Student")
-        ASSISTANT = "AS", _("Assistant")
-        TEACHER = "TE", _("Teacher")
 
     role = models.CharField(
         max_length=2,
@@ -140,44 +149,19 @@ class CourseRole(models.Model):
             couresrole.role = role
             couresrole.save()
 
+    class Meta:
+        unique_together = ("course", "user")
 
-class CourseResource(models.Model):
-    course = models.OneToOneField(
+
+class CourseLesson(models.Model):
+    course = models.ForeignKey(
         Course,
         verbose_name=_("course"),
-        on_delete=models.CASCADE,
-        db_index=True,
-    )
-    files = models.FileField(
-        verbose_name=_("course files"),
-        null=True,
-        blank=True,
-        upload_to=course_directory_file,
-    )
-    description = models.CharField(
-        verbose_name=_("description"),
-        blank=True,
-        max_length=150,
-    )
-    order = models.IntegerField(null=True, default=None)
-    is_public = models.BooleanField(
-        verbose_name=_("publicly visible"),
-        default=False,
-    )
-
-
-class CourseAssignment(models.Model):
-    course = models.OneToOneField(
-        Course,
-        verbose_name=_("course"),
-        on_delete=models.CASCADE,
-        db_index=True,
-    )
-    contest = models.OneToOneField(
-        Contest,
-        verbose_name=_("contest"),
+        related_name="lessons",
         on_delete=models.CASCADE,
     )
-    points = models.FloatField(
-        verbose_name=_("points"),
-    )
+    title = models.TextField(verbose_name=_("course title"))
+    content = models.TextField(verbose_name=_("course content"))
+    problems = models.ManyToManyField(Problem, verbose_name=_("problem"), blank=True)
+    order = models.IntegerField(verbose_name=_("order"), default=0)
+    points = models.IntegerField(verbose_name=_("points"))

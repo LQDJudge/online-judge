@@ -5,64 +5,59 @@
     width: 20%;
 }
 
-#submissions-table {
-    background: white;
-}
-
 .submission-row {
     display: flex;
-    border-left: #ccc 1px solid;
-    border-right: #ccc 1px solid;
     transition: background-color linear 0.2s;
-
-    &:hover {
-        background: #F2F2F2;
-    }
-
-    &:first-of-type {
-        border-top: #ccc 1px solid;
-        border-top-left-radius: $widget_border_radius;
-        border-top-right-radius: $widget_border_radius;
-        .sub-result {
-            border-top-left-radius: $widget_border_radius;
-        }
-    }
-
-    > div {
-        padding: 7px 5px;
-        vertical-align: middle;
-        border-bottom: #ccc 1px solid;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
+    margin-bottom: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    align-items: center;
+    padding: 10px;
+    background: white;
 
     .sub-result {
-        min-width: 80px;
-        width: 80px;
-        text-align: center;
-        border-bottom-color: white;
-        border-right: #ccc 1px solid;
+        display: flex;
+        align-items: center;
+        font-weight: 600;
+        gap: 10px;
 
         .state {
-            font-size: 0.7em;
-            font-weight: bold;
-            padding-top: 0.5em;
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+
+        .language {
+            background-color: #e1e1e1;
+            border-radius: 5px;
+            padding: 2px 8px;
         }
 
         .score {
-            font-size: 1.3em;
-            color: #000;
+            font-size: 1.2em;
         }
+    }
+
+    .sub-details {
+        flex-grow: 1;
+        overflow: hidden;
     }
 
     .sub-info {
         flex: 1;
-        padding-left: 20px !important;
+        display: flex;
+        gap: 5px;
+        font-size: 1.2em;
+        margin-bottom: 10px;
 
-        .name {
+        .sub-user {
+            overflow-wrap: break-word;
+        }
+        .sub-problem {
             font-weight: 700;
-            font-size: 1.2em;
+        }
+
+        .sub-problem:hover {
+            text-decoration: underline;
         }
     }
 
@@ -78,15 +73,21 @@
     }
 
     .sub-usage {
-        min-width: 70px;
-        width: 70px;
+        margin-left: auto;
         white-space: nowrap;
-        text-align: center;
-        border-left: #ccc 1px solid;
+        text-align: right;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
 
         .time {
             font-weight: bold;
         }
+    }
+    .sub-user-img {
+        width: 70px;
+        height: 70px;
+        margin-right: 15px;
     }
 }
 
@@ -128,16 +129,20 @@ label[for="language"], label[for="status"] {
 }
 
 @media(max-width: 799px) {
-    .sub-prop {
-        .label {
+    .submission-row {
+        .sub-prop {
+            .label {
+                display: none;
+            }
+
+            .fa {
+                display: inline-block;
+            }
+        }
+        .sub-user-img {
             display: none;
         }
-
-        .fa {
-            display: inline-block;
-        }
     }
-
     #fake-info-float {
         display: none;
     }
@@ -153,48 +158,6 @@ label[for="language"], label[for="status"] {
 
 .submission-contest {
     color: #555;
-}
-
-.source-ln {
-    color: gray;
-    border-right: 1px solid gray;
-    padding-right: 5px;
-    text-align: right;
-
-    a {
-        color: gray;
-        display: block;
-
-        &:hover {
-            text-decoration: underline;
-        }
-
-        &::before {
-            display: block;
-            content: " ";
-            margin-top: -50px;
-            height: 50px;
-            visibility: hidden;
-        }
-    }
-}
-
-.source-code pre, .source-ln pre {
-    margin: 0;
-    padding: 0;
-    white-space: pre;
-}
-
-.source-code {
-    padding-left: 15px;
-    width: 100%;
-}
-
-.source-wrap {
-    overflow-x: auto;
-    padding: 1em;
-    border-radius: 10px;
-    border: double 4px darkgray;
 }
 
 .statistics-table {
@@ -240,6 +203,7 @@ label[for="language"], label[for="status"] {
         border-radius: .28571429rem;
         border: 1px solid rgba(34,36,38,.15);
         font-family: Consolas;
+        overflow-wrap: anywhere;
     }
 
     .testcases-table {

@@ -73,7 +73,7 @@
     }
 
     .filter-form-group {
-        margin-top: 5px;
+        margin-top: 15px;
     }
 }
 
@@ -95,11 +95,6 @@
 #search {
     width: 100%;
     height: 2.3em;
-}
-
-label[for="category"], label[for="type"] {
-    padding-bottom: 0.25em;
-    display: block;
 }
 
 #category {
@@ -170,19 +165,20 @@ ul.problem-list {
 
 .organization-tags {
     padding-left: 0.75em;
-    vertical-align: middle;
+    display: flex;
 }
 
 .organization-tag {
-    box-shadow: inset 0 -0.1em 0 rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
     padding: 0.15em 0.3em;
     border-radius: 0.15em;
     font-weight: 600;
     margin-right: 0.45em;
     position: relative;
     background-color: #ccc;
-    transform: translateY(+35%);
-    display: inline-block;
+    color: initial;
+    min-height: 1.5em;
 }
 
 .organization-tag a {
@@ -324,10 +320,6 @@ ul.problem-list {
     padding: 4px 10px;
 }
 
-#category, #types {
-    visibility: hidden;
-}
-
 #filter-form .form-label {
     margin-top: 0.5em;
     font-style: italic;
@@ -414,5 +406,33 @@ ul.problem-list {
         .pcode {
             min-width: 7em;
         }
+    }
+}
+
+.new-problem-info {
+    background-color: #fff6dd;
+    border-radius: 25px;
+    font-size: 14px;
+    height: 25px;
+    width: 98%;
+    display: table;
+    padding: 5px 10px;
+    margin-top: 14px;
+    border: solid;
+    border-color: black;
+    border-width: 0.1px;
+}
+
+.info-block {
+    display:table-cell;
+    vertical-align:middle;
+    margin-right: auto;
+}
+
+@media screen and (min-width: 1100px) {
+    .d-flex-problem {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
     }
 }

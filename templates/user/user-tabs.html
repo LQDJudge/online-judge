@@ -3,11 +3,12 @@
 {% block tabs %}
   {{ make_tab('about', 'fa-info-circle', url('user_page', user.user.username), _('About')) }}
   {{ make_tab('problems', 'fa-puzzle-piece', url('user_problems', user.user.username), _('Problems')) }}
-  {% if request.user.is_superuser and user.user != request.user and not user.user.is_superuser %}
+  {{ make_tab('submissions', 'fa-code', url('all_user_submissions', user.username), _('Submissions')) }}
+  {% if request.user.is_superuser and user != request.profile and not user.user.is_superuser %}
     {{ make_tab('impersonate', 'fa-eye', url('impersonate-start', user.user.id), _('Impersonate')) }}
   {% endif %}
-  {% if user.user == request.user %}
-    {{ make_tab('bookmark', 'fa-bookmark', url('user_bookmark'), _('Bookmark')) }}
+  {% if user == request.profile %}
+    {{ make_tab('bookmark', 'fa-bookmark', url('user_bookmark'), _('Bookmarks')) }}
     {{ make_tab('edit', 'fa-edit', url('user_edit_profile'), _('Edit profile')) }}
   {% else %}
     {% if perms.auth.change_user %}
