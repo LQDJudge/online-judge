@@ -26,86 +26,6 @@
   </style>
 {% endblock %}
 
-{% block js_media %}
-  <script type="text/javascript">
-    let loadingPage;
-
-    function navigateTo($elem, update_sidebar = false) {
-      var url = $elem.attr('href');
-      var force_new_page = $elem.data('force_new_page');
-
-      if (url === '#') return;
-
-      if (force_new_page) {
-        window.location.href = url;
-        return;
-      }
-
-      if (update_sidebar) {
-        $('.left-sidebar-item').removeClass('active');
-        $elem.addClass('active');
-      }
-      $(window).off("scroll");
-      $('.middle-right-content').html(loadingPage);
-      $.get(url, function (data) {
-        var reload_content = $(data).find('.middle-right-content');
-        var bodyend_script = $(data).find('#extra_js');
-        if (reload_content.length) {
-          window.history.pushState("", "", url);
-          $('html, body').animate({scrollTop: 0}, 'fast');
-          $('.middle-right-content').html(reload_content.first().html());
-          $('#extra_js').html(bodyend_script.first().html());
-          $("#loading-bar").stop(true, true);
-          $("#loading-bar").hide().css({ width: 0});
-          if (reload_content.hasClass("wrapper")) {
-            $('.middle-right-content').addClass("wrapper");
-          }
-          else {
-            $('.middle-right-content').removeClass("wrapper");
-          }
-          $(document).prop('title', $(data).filter('title').text());
-          renderKatex($('.middle-right-content')[0]);
-          onWindowReady();
-          $('.xdsoft_datetimepicker').hide();
-          registerNavigation();
-        }
-        else {
-          window.location.href = url;
-        }
-      });
-    }
-
-    function registerNavigation() {
-      const links = ['.pagination a', '.tabs li a', '#control-panel a'];
-      for (let linkSelector of links) {
-        $(linkSelector).each(function() {
-          if ($(this).attr('target') !== '_blank') {
-            $(this).on('click', function(e) {
-              e.preventDefault();
-              navigateTo($(this));
-            });
-          }
-        });
-      }
-    }
-
-    $(function () {
-      window.addEventListener('popstate', (e) => {
-        window.location.href = e.currentTarget.location.href;
-      });
-
-      $('.left-sidebar-item').on('click', function (e) {
-        e.preventDefault();
-        navigateTo($(this), true);
-      });
-      registerNavigation();
-      $.get("{{static('html/loading-page.html')}}", function(data) {
-        loadingPage = data;
-      });
-    });
-  </script>
-{% endblock %}
-
 {% macro make_tab_item(name, fa, url, text, force_new_page=False) %}
   <a class="left-sidebar-item {% if page_type == name %}active{% endif %}" href="{{ url }}" id="{{ name }}-tab" {% if force_new_page%}data-force_new_page="1"{% endif %}>
     <span class="sidebar-icon"><i class="{{ fa }}"></i></span>
@@ -127,13 +47,4 @@
     </div>
   </div>
   {% block after_posts %}{% endblock %}
-{% endblock %}
-
-{% block extra_js %}
-  {% block three_col_js %}{% endblock %}
-{% endblock %}
-
-{% block bodyend %}
-  {{ super() }}
-  {% include "comments/math.html" %}
 {% endblock %}

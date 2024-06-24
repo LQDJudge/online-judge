@@ -66,7 +66,7 @@ class AceWidget(forms.Textarea):
         if self.toolbar:
             toolbar = (
                 '<div style="width: {}" class="django-ace-toolbar">'
-                '<a href="./" class="django-ace-max_min"></a>'
+                '<a href="#" class="django-ace-max_min"></a>'
                 "</div>"
             ).format(self.width)
             html = toolbar + html

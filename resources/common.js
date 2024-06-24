@@ -386,44 +386,230 @@ function activateBlogBoxOnClick() {
 }
 
 function changeTabParameter(newTab) {
-  const url = new URL(window.location);
-  const searchParams = new URLSearchParams(url.search);
-  searchParams.set('tab', newTab);
-  searchParams.delete('page');
-  url.search = searchParams.toString();
-  return url.href;
+    const url = new URL(window.location);
+    const searchParams = new URLSearchParams(url.search);
+    searchParams.set('tab', newTab);
+    searchParams.delete('page');
+    url.search = searchParams.toString();
+    return url.href;
 }
 
 function submitFormWithParams($form, method) {
-  const currentUrl = new URL(window.location.href);
-  const searchParams = new URLSearchParams(currentUrl.search);
-  const formData = $form.serialize();
+    const currentUrl = new URL(window.location.href);
+    const searchParams = new URLSearchParams(currentUrl.search);
+    const formData = $form.serialize();
 
-  const params = new URLSearchParams(formData);
+    const params = new URLSearchParams(formData);
 
-  if (searchParams.has('tab')) {
-    params.set('tab', searchParams.get('tab'));
-  }
+    if (searchParams.has('tab')) {
+        params.set('tab', searchParams.get('tab'));
+    }
 
-  const fullUrl = currentUrl.pathname + '?' + params.toString();
+    const fullUrl = currentUrl.pathname + '?' + params.toString();
 
-  if (method === "GET") {
-    window.location.href = fullUrl;
-  }
-  else {
-    var $formToSubmit = $('<form>')
-      .attr('action', fullUrl)
-      .attr('method', 'POST')
-      .appendTo('body');
+    if (method === "GET") {
+        window.location.href = fullUrl;
+    }
+    else {
+        var $formToSubmit = $('<form>')
+            .attr('action', fullUrl)
+            .attr('method', 'POST')
+            .appendTo('body');
 
-    $formToSubmit.append($('<input>').attr({
-      type: 'hidden',
-      name: 'csrfmiddlewaretoken',
-      value: $.cookie('csrftoken')
-    }));
+        $formToSubmit.append($('<input>').attr({
+            type: 'hidden',
+            name: 'csrfmiddlewaretoken',
+            value: $.cookie('csrftoken')
+        }));
 
-    $formToSubmit.submit();
-  }
+        $formToSubmit.submit();
+    }
+}
+
+function saveCurrentPageToSessionStorage() {
+    const storageLimit = 5;
+    const sessionStorageKey = 'oj-content-keys';
+
+    let key = `oj-content-${window.location.href}`;
+    let $contentClone = $('body').clone();
+    $contentClone.find('.select2').remove();
+    $contentClone.find('.select2-hidden-accessible').removeClass('select2-hidden-accessible');
+    $contentClone.find('.noUi-base').remove();
+    $contentClone.find('.wmd-button-row').remove();
+
+    let contentData = JSON.stringify({
+        "html": $contentClone.html(),
+        "page": window.page,
+        "has_next_page": window.has_next_page,
+        "scrollOffset": $(window).scrollTop(),
+    });
+
+    let keys = JSON.parse(sessionStorage.getItem(sessionStorageKey)) || [];
+
+    // Remove the existing key if it exists
+    if (keys.includes(key)) {
+        keys = keys.filter(k => k !== key);
+    }
+
+    keys.push(key);
+
+    if (keys.length > storageLimit) {
+        let oldestKey = keys.shift();
+        sessionStorage.removeItem(oldestKey);
+    }
+
+    sessionStorage.setItem(sessionStorageKey, JSON.stringify(keys));
+    sessionStorage.setItem(key, contentData);
+}
+
+function loadPageFromSessionStorage() {
+    let key = `oj-content-${window.location.href}`;
+    let content = sessionStorage.getItem(key);
+    if (content) {    
+        content = JSON.parse(content);
+        $('body').html(content.html);
+        onWindowReady();
+        window.PAGE_FROM_BACK_BUTTON_CACHE = true;
+        setTimeout(() => {
+            $(window).scrollTop(content.scrollOffset - 50);
+        }, 1);
+        window.page = content.page;
+        window.has_next_page = content.has_next_page;
+    }
+}
+
+let currentRequest = null; // Variable to keep track of the current request
+
+function navigateTo(url, reload_container, force_new_page=false) {
+    if (url === '#') return;
+    if (force_new_page) {
+        window.location.href = url;
+        return;
+    }
+
+    if (!reload_container || !$(reload_container).length) {
+       reload_container = "#content";
+    }
+
+    if (currentRequest) {
+        currentRequest.abort();
+    }
+
+    const controller = new AbortController();
+    const signal = controller.signal;
+    currentRequest = controller;
+
+    $(window).off("scroll");
+
+    saveCurrentPageToSessionStorage();
+    replaceLoadingPage(reload_container);
+
+    const toUpdateElements = [
+        "#nav-container",
+        "#js_media",
+        "#media",
+        ".left-sidebar",
+        "#bodyend",
+    ];
+
+    $.ajax({
+        url: url,
+        method: 'GET',
+        dataType: 'html',
+        signal: signal,
+        success: function (data) {
+            let reload_content = $(data).find(reload_container).first();
+            if (!reload_content.length) {
+                reload_container = "#content";
+                reload_content = $(data).find(reload_container).first();
+            }
+
+            if (reload_content.length) {
+                window.history.pushState("", "", url);
+                $(window).scrollTop(0);
+                $("#loading-bar").stop(true, true);
+                $("#loading-bar").hide().css({ width: 0});
+                
+                for (let elem of toUpdateElements) {
+                    $(elem).replaceWith($(data).find(elem).first());
+                }
+
+                $(reload_container).replaceWith(reload_content);
+                
+                $(document).prop('title', $(data).filter('title').text());
+                renderKatex($(reload_container)[0]);
+                onWindowReady();
+                $('.xdsoft_datetimepicker').hide();
+            } else {
+                window.location.href = url;
+            }
+        },
+        error: function (xhr, status, error) {
+            if (status !== 'abort') { // Ignore aborted requests
+                window.location.href = url;
+            }
+        }
+    });
+}
+
+function isEligibleLinkToRegister($e) {
+    if ($e.attr('target') === '_blank') {
+        return false;
+    }
+    if ($e.data('initialized_navigation')) {
+        return false;
+    }
+    const href = $e.attr('href');
+    if (!href) return false;
+    return (
+        href.startsWith('http')
+        || href.startsWith('/')
+        || href.startsWith('#')
+        || href.startsWith('?')
+    );
+};
+
+function replaceLoadingPage(reload_container) {
+    const loadingPage = `
+<div style="height: 80vh; margin: 0; display: flex; align-items: center; justify-content: center; width: 100%; font-size: xx-large;">
+    <i class="fa fa-spinner fa-pulse"></i>
+</div>
+    `;
+    $(reload_container).fadeOut(100, function() {
+        $(this).html(loadingPage).fadeIn(100);
+    });
+}
+
+function registerNavigation() {
+    const containerMap = {
+        '.left-sidebar-item': '.middle-right-content',
+        '.pagination li a': '.middle-content',
+        '.tabs li a': '.middle-content',
+        '#control-panel a': '.middle-content',
+    };
+
+    $.each(containerMap, function(selector, target) {
+        $(selector).each(function() {
+            const href = $(this).attr('href');
+            const force_new_page = $(this).data('force_new_page');
+
+            if (isEligibleLinkToRegister($(this))) {
+                $(this).data('initialized_navigation', true);
+
+                $(this).on('click', function(e) {
+                    e.preventDefault();
+                    let containerSelector = null;
+                    for (let key in containerMap) {
+                        if ($(this).is(key)) {
+                            containerSelector = containerMap[key];
+                            break;
+                        }
+                    }
+                    navigateTo(href, containerSelector, force_new_page);
+                });
+            }
+        });
+    });
 }
 
 function onWindowReady() {
@@ -528,7 +714,7 @@ function onWindowReady() {
         $("#loading-bar").animate({ width: "100%" }, 2000, function() {
             $(this).stop(true, true);
             $(this).hide().css({ width: 0});
-        });    
+        }); 
     });
 
     $('.errorlist').each(function() {
@@ -537,12 +723,13 @@ function onWindowReady() {
     });
     register_all_toggles();
     activateBlogBoxOnClick();
+    registerNavigation();
+    registerPopper($('#nav-lang-icon'), $('#lang-dropdown'));
+    registerPopper($('#user-links'), $('#userlink_dropdown'));
 }
 
 $(function() {
     onWindowReady();
-    registerPopper($('#nav-lang-icon'), $('#lang-dropdown'));
-    registerPopper($('#user-links'), $('#userlink_dropdown'));
     var $nav_list = $('#nav-list');
     $('#navicon').click(function (event) {
         event.stopPropagation();
@@ -582,33 +769,15 @@ $(function() {
         $nav_list.hide();
     });
 
-    $(window).on('beforeunload', function() {
-        let key = `oj-content-${window.location.href}`;
-        let $contentClone = $('#content').clone();
-        $contentClone.find('.select2').remove();
-        $contentClone.find('.select2-hidden-accessible').removeClass('select2-hidden-accessible');
-        $contentClone.find('.noUi-base').remove();
-        $contentClone.find('.wmd-button-row').remove();
-        sessionStorage.setItem(key, JSON.stringify({
-          "html": $contentClone.html(),
-          "page": window.page,
-          "has_next_page": window.has_next_page,
-          "scrollOffset": $(window).scrollTop(),
-        }));
-    });
+    $(window).on('beforeunload', saveCurrentPageToSessionStorage);
+    
     if (window.performance && 
       window.performance.navigation.type 
       === window.performance.navigation.TYPE_BACK_FORWARD) {
-        let key = `oj-content-${window.location.href}`;
-        let content = sessionStorage.getItem(key);
-        if (content) {    
-            content = JSON.parse(content);
-            $('#content').html(content.html);
-            onWindowReady();
-            window.PAGE_FROM_BACK_BUTTON_CACHE = true;
-            $(window).scrollTop(content.scrollOffset - 100);
-            window.page = content.page;
-            window.has_next_page = content.has_next_page;
-        }
+        loadPageFromSessionStorage();
     }
+
+    window.addEventListener('popstate', (e) => {
+        window.location.href = e.currentTarget.location.href;
+    });
 });

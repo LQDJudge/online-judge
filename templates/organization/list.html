@@ -1,11 +1,12 @@
 {% extends "three-column-content.html" %}
 
-{% block three_col_js %}
+{% block js_media %}
   <script type="text/javascript">
     $(document).ready(function () {
       $('#mine-tab').attr('href', changeTabParameter('mine'));
       $('#public-tab').attr('href', changeTabParameter('public'));
       $('#private-tab').attr('href', changeTabParameter('private'));
+      registerNavigation();
 
       var $form = $('form#filter-form');
 

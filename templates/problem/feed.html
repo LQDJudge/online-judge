@@ -24,7 +24,7 @@
   </div>
   {% if request.user.has_perm('judge.suggest_problem_changes') and feed_type == 'volunteer' %}
     <ul style="margin-bottom: 1em; margin-left: auto">
-      <li><a href="{{url('admin:judge_volunteerproblemvote_changelist')}}">{{_('View your votes')}}</a></li>
+      <li><a href="{{url('admin:judge_volunteerproblemvote_changelist')}}" target="_blank">{{_('View your votes')}}</a></li>
     </ul>
   {% endif %}
   {% include "problem/feed/items.html" %}

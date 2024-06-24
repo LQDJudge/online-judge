@@ -671,20 +671,12 @@ class OrganizationRequestBaseView(
     LoginRequiredMixin,
     SingleObjectTemplateResponseMixin,
     SingleObjectMixin,
+    AdminOrganizationMixin,
 ):
     model = Organization
     slug_field = "key"
     slug_url_kwarg = "key"
     tab = None
-
-    def get_object(self, queryset=None):
-        organization = super(OrganizationRequestBaseView, self).get_object(queryset)
-        if not (
-            organization.admins.filter(id=self.request.profile.id).exists()
-            or organization.registrant_id == self.request.profile.id
-        ):
-            raise PermissionDenied()
-        return organization
 
     def get_content_title(self):
         return _("Manage join requests")

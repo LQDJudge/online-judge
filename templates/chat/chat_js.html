@@ -1,5 +1,7 @@
 <script type="text/javascript">
-  let isMobile = window.matchMedia("only screen and (max-width: 799px)").matches;
+  function isMobile() {
+    return window.matchMedia("only screen and (max-width: 799px)").matches;
+  }
 
   function load_next_page(last_id, refresh_html=false) {
     if (refresh_html) {
@@ -218,7 +220,7 @@
     if (window.room_id) {
       $("#last_msg-" + window.room_id).html(body);
     }
-    var html = message_template;
+    var html = message_template();
     html = html.replaceAll('$body', body).replaceAll('$id', tmp_id);
     var $html = $(html);
     $html.find('.time-with-rel').attr('data-iso', (new Date()).toISOString());
@@ -288,7 +290,7 @@
   }
 
   function show_right_panel() {
-    if (isMobile) {
+    if (isMobile()) {
       $('.chat-left-panel').hide();
       $('#chat-area').css('display', 'flex');
       $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
@@ -296,7 +298,7 @@
   }
 
   function hide_right_panel() {
-    if (isMobile) {
+    if (isMobile()) {
       $('.chat-left-panel').show();
       $('#chat-area').hide();
     }
@@ -479,7 +481,7 @@
     const button = document.querySelector('#emoji-button');
     const tooltip = document.querySelector('.tooltip');
     const popper = Popper.createPopper(button, tooltip, {
-      placement: isMobile ? 'auto-end' : 'left',
+      placement: isMobile() ? 'auto-end' : 'left',
     });
 
     function toggleEmoji() {

@@ -31,13 +31,14 @@
   {% block contest_list_media %}{% endblock %}
 {% endblock %}
 
-{% block three_col_js %}
+{% block js_media %}
   <script type="text/javascript">
     $(document).ready(function () {
       $('#active-url').attr('href', changeTabParameter('active'));
       $('#current-url').attr('href', changeTabParameter('current'));
       $('#future-url').attr('href', changeTabParameter('future'));
       $('#past-url').attr('href', changeTabParameter('past'));
+      registerNavigation();
 
       var $form = $('form#filter-form');
 

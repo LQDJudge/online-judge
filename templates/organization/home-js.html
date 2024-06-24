@@ -1,8 +1,5 @@
 <script type="text/javascript">
-  $(function () {
-    $('.time-remaining').each(function () {
-      count_down($(this));
-    });
+  function confirmLeaveOrganization() {
     $('.leave-organization').click(function () {
       if (confirm('{{ _('Are you sure you want to leave this organization?') }}\n' +
         {% if organization.is_open %}
@@ -13,6 +10,11 @@
       )) {
         $(this).parent().submit();
       }
+    });
+  }
+  $(function () {
+    $('.time-remaining').each(function () {
+      count_down($(this));
     });
   });
 </script>

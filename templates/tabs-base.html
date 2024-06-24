@@ -1,6 +1,6 @@
-{% macro make_tab(name, fa, url, text) %}
+{% macro make_tab(name, fa, url, text, force_new_page=False) %}
   <li class="tab{% if tab == name %} active{% endif %}">
-    {%- if url %}<a href="{{ url }}">{% else %}<span>{% endif -%}
+    {%- if url %}<a href="{{ url }}" {% if force_new_page%}data-force_new_page="1"{% endif %}>{% else %}<span>{% endif -%}
     <i class="tab-icon fa {{ fa }}"></i> {{ text }}
     {%- if url %}</a>{% else %}</span>{% endif -%}
   </li>

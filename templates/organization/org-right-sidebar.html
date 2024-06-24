@@ -58,7 +58,7 @@
           <div class="link-row" style="color: red;">
             <form method="post" action="{{ url('leave_organization', organization.id, organization.slug) }}">
               {% csrf_token %}
-              <a href="#" class="leave-organization">
+              <a href="#" class="leave-organization" onclick="confirmLeaveOrganization()">
                 <i class="fa fa-sign-out-alt"></i>{{ _('Leave group') }}</a>
             </form>
           </div>

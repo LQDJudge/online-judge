@@ -5,17 +5,17 @@
   {{ make_tab('problems', 'fa-puzzle-piece', url('user_problems', user.user.username), _('Problems')) }}
   {{ make_tab('submissions', 'fa-code', url('all_user_submissions', user.username), _('Submissions')) }}
   {% if request.user.is_superuser and user != request.profile and not user.user.is_superuser %}
-    {{ make_tab('impersonate', 'fa-eye', url('impersonate-start', user.user.id), _('Impersonate')) }}
+    {{ make_tab('impersonate', 'fa-eye', url('impersonate-start', user.user.id), _('Impersonate'), force_new_page=True) }}
   {% endif %}
   {% if user == request.profile %}
     {{ make_tab('bookmark', 'fa-bookmark', url('user_bookmark'), _('Bookmarks')) }}
-    {{ make_tab('edit', 'fa-edit', url('user_edit_profile'), _('Edit profile')) }}
+    {{ make_tab('edit', 'fa-gear', url('user_edit_profile'), _('Settings')) }}
   {% else %}
     {% if perms.auth.change_user %}
-      {{ make_tab('edit', 'fa-edit', url('admin:auth_user_change', user.user.id), _('Admin User')) }}
+      {{ make_tab('edit', 'fa-edit', url('admin:auth_user_change', user.user.id), _('Admin User'), force_new_page=True) }}
     {% endif %}
     {% if perms.judge.change_profile %}
-      {{ make_tab('edit', 'fa-edit', url('admin:judge_profile_change', user.id), _('Admin Profile')) }}
+      {{ make_tab('edit', 'fa-edit', url('admin:judge_profile_change', user.id), _('Admin Profile'), force_new_page=True) }}
     {% endif %}
   {% endif %}
 {% endblock %}

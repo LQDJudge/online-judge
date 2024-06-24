@@ -4,8 +4,6 @@
 {% block title_ruler %}{% endblock %}
 {% block title %} {{_('Chat Box')}} {% endblock %}
 {% block js_media %}
-
-  {% include "comments/math.html" %}
   <script type="text/javascript" src="{{ static('event.js') }}"></script>
   <script type="module" src="https://unpkg.com/emoji-picker-element@1"></script>
   {% compress js %}
@@ -41,11 +39,12 @@
 
       return receiver;
     }
-    let message_template = `
+    function message_template() {
+      return`
 {% with message=message_template %}
   {% include "chat/message.html" %}
 {% endwith %}  
-    `;
+    `};
     $(function() {
       load_dynamic_update({{last_msg}});
     });
