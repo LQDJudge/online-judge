@@ -101,7 +101,6 @@ __all__ = [
     "ContestStats",
     "ContestMossView",
     "ContestMossDelete",
-    "contest_ranking_ajax",
     "ContestParticipationList",
     "ContestParticipationDisqualify",
     "get_contest_ranking_list",
@@ -1148,54 +1147,6 @@ def get_contest_ranking_list(
     return users, problems
 
 
-def contest_ranking_ajax(request, contest, participation=None):
-    contest, exists = _find_contest(request, contest)
-    show_final = bool(request.GET.get("final", False))
-    if not exists:
-        return HttpResponseBadRequest("Invalid contest", content_type="text/plain")
-
-    if not contest.can_see_full_scoreboard(request.user):
-        raise Http404()
-
-    if show_final:
-        if (
-            not contest.is_editable_by(request.user)
-            or not contest.format.has_hidden_subtasks
-        ):
-            raise Http404()
-
-    if participation is None:
-        participation = _get_current_virtual_participation(request, contest)
-
-    queryset = contest.users.filter(virtual__gte=0)
-    if request.GET.get("friend") == "true" and request.profile:
-        friends = request.profile.get_friends()
-        queryset = queryset.filter(user_id__in=friends)
-    if request.GET.get("virtual") != "true":
-        queryset = queryset.filter(virtual=0)
-
-    users, problems = get_contest_ranking_list(
-        request,
-        contest,
-        participation,
-        ranking_list=partial(
-            contest_ranking_list, queryset=queryset, extra_participation=participation
-        ),
-        show_final=show_final,
-    )
-    return render(
-        request,
-        "contest/ranking-table.html",
-        {
-            "users": users,
-            "problems": problems,
-            "contest": contest,
-            "has_rating": contest.ratings.exists(),
-            "can_edit": contest.is_editable_by(request.user),
-        },
-    )
-
-
 def _get_current_virtual_participation(request, contest):
     # Return None if not eligible
     if not request.user.is_authenticated:
@@ -1237,6 +1188,7 @@ class ContestRankingBase(ContestMixin, TitleMixin, DetailView):
 
 class ContestRanking(ContestRankingBase):
     page_type = "ranking"
+    show_final = False
 
     def should_bypass_access_check(self, contest):
         return contest.public_scoreboard
@@ -1256,23 +1208,60 @@ class ContestRanking(ContestRankingBase):
                 ranker=lambda users, key: ((_("???"), user) for user in users),
             )
 
-        return get_contest_ranking_list(self.request, self.object)
+        queryset = self.object.users
+        if self.friend_only:
+            friends = self.request.profile.get_friends()
+            queryset = queryset.filter(user_id__in=friends)
+        if not self.include_virtual:
+            queryset = queryset.filter(virtual=0)
+        else:
+            queryset = queryset.filter(virtual__gte=0)
+
+        return get_contest_ranking_list(
+            self.request,
+            self.object,
+            ranking_list=partial(contest_ranking_list, queryset=queryset),
+            show_final=self.show_final,
+        )
+
+    def _get_default_include_virtual(self):
+        if hasattr(self.object, "official"):
+            return "1"
+        return "0"
+
+    def setup_filters(self):
+        if self.request.profile:
+            self.friend_only = bool(self.request.GET.get("friend") == "1")
+        else:
+            self.friend_only = False
+        self.include_virtual = bool(
+            self.request.GET.get("virtual", self._get_default_include_virtual()) == "1"
+        )
+        self.ajax_only = bool(self.request.GET.get("ajax") == "1")
+
+        if self.ajax_only:
+            self.template_name = "contest/ranking-table.html"
 
     def get_context_data(self, **kwargs):
+        self.setup_filters()
         context = super().get_context_data(**kwargs)
         context["has_rating"] = self.object.ratings.exists()
+        if not self.ajax_only:
+            context["include_virtual"] = self.include_virtual
+            context["friend_only"] = self.friend_only
         return context
 
 
 class ContestFinalRanking(LoginRequiredMixin, ContestRanking):
     page_type = "final_ranking"
+    show_final = True
 
     def get_ranking_list(self):
         if not self.object.is_editable_by(self.request.user):
             raise Http404()
         if not self.object.format.has_hidden_subtasks:
             raise Http404()
-        return get_contest_ranking_list(self.request, self.object, show_final=True)
+        return super().get_ranking_list()
 
 
 class ContestParticipationList(LoginRequiredMixin, ContestRankingBase):

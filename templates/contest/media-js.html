@@ -56,39 +56,6 @@
     }
   }
 
-  function renew_filter(need_update=true) {
-    var checkboxes = [
-      '#show-schools-checkbox',
-      '#show-fullnames-checkbox',
-      '#show-total-score-checkbox',
-    ];
-
-    var checkboxes2 = [
-      '#show-friends-checkbox',
-      '#show-virtual-checkbox'
-    ]
-
-    for (var i of checkboxes) {
-      var $box = $(i);
-      if ($box.is(':checked')) {
-        $box.prop('checked', false);
-        $box.click();
-        $box.prop('checked', true);
-      }
-    }
-
-    var to_update = false;
-    for (var i of checkboxes2) {
-      var $box = $(i);
-      if ($box.is(':checked')) {
-        to_update = true;
-      }
-    }
-    if (to_update && need_update) {
-      update_ranking();
-    }
-  }
-
   function get_initial_rank() {
     var ranks = $('.rank-td').map(function() {return this.innerHTML}).get();
     var usernames = $('.user-name .rating a').map(function() {return this.text}).get();
@@ -118,16 +85,13 @@
     var friend = $('#show-friends-checkbox').is(':checked');
     var virtual = $('#show-virtual-checkbox').is(':checked');
     $('#loading-gif').show();
-    var url = `{{url('contest_ranking_ajax', contest.key)}}?friend=${friend}&virtual=${virtual}`;
-    {% if page_type == 'final_ranking' %}
-      url += "&final=true";
-    {% endif %}
+    var url = `?friend=${friend ? 1 : 0}&virtual=${virtual ? 1 : 0}&ajax=1`;
+
     $.get({
       url: url,
       success: function(HTML) {
         $('#users-table').html(HTML);
         highlightFirstSolve();
-        renew_filter(false);
         $('#loading-gif').hide();
         if (!virtual && !friend) {
           get_initial_rank();
@@ -201,7 +165,6 @@
     })
 
     highlightFirstSolve();
-    renew_filter();
     get_initial_rank();
 
     {% if participation_tab %}
