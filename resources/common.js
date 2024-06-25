@@ -726,10 +726,7 @@ function onWindowReady() {
     registerNavigation();
     registerPopper($('#nav-lang-icon'), $('#lang-dropdown'));
     registerPopper($('#user-links'), $('#userlink_dropdown'));
-}
 
-$(function() {
-    onWindowReady();
     var $nav_list = $('#nav-list');
     $('#navicon').click(function (event) {
         event.stopPropagation();
@@ -768,7 +765,10 @@ $(function() {
     $('html').click(function () {
         $nav_list.hide();
     });
+}
 
+$(function() {
+    onWindowReady();
     $(window).on('beforeunload', saveCurrentPageToSessionStorage);
     
     if (window.performance && 
