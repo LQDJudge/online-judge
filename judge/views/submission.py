@@ -1,4 +1,3 @@
-import json
 import os.path
 from operator import attrgetter
 
@@ -455,15 +454,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["selected_languages"] = self.selected_languages_key
         context["all_statuses"] = self.get_searchable_status_codes()
         context["selected_statuses"] = self.selected_statuses
-
-        if not self.in_hidden_subtasks_contest():
-            context["results_json"] = mark_safe(json.dumps(self.get_result_data()))
-            context["results_colors_json"] = mark_safe(
-                json.dumps(settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS)
-            )
-        else:
-            context["results_json"] = None
-
+        context["can_show_result_data"] = not self.in_hidden_subtasks_contest()
         context["page_suffix"] = suffix = (
             ("?" + self.request.GET.urlencode()) if self.request.GET else ""
         )
@@ -509,7 +500,15 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             self.include_frozen = True
 
         if "results" in request.GET:
-            return JsonResponse(self.get_result_data())
+            response = {}
+            if not self.in_hidden_subtasks_contest():
+                response["results_json"] = self.get_result_data()
+                response[
+                    "results_colors_json"
+                ] = settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS
+            else:
+                response["results_json"] = None
+            return JsonResponse(response)
 
         return super(SubmissionsListBase, self).get(request, *args, **kwargs)
 
