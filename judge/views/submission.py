@@ -587,7 +587,9 @@ class AllUserSubmissions(ConditionalUserTabMixin, UserMixin, GeneralSubmissions)
         return context
 
 
-class AllFriendSubmissions(LoginRequiredMixin, GeneralSubmissions):
+class AllFriendSubmissions(
+    LoginRequiredMixin, InfinitePaginationMixin, GeneralSubmissions
+):
     def get_queryset(self):
         friends = self.request.profile.get_friends()
         return (

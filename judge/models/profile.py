@@ -397,12 +397,13 @@ class Profile(models.Model):
         return self.get_user_css_class(self.cached_display_rank, self.cached_rating)
 
     def get_friends(self):  # list of ids, including you
-        friend_obj = self.following_users.prefetch_related("users")
-        ret = []
-        if friend_obj:
-            ret = [friend.id for friend in friend_obj[0].users.all()]
-        ret.append(self.id)
-        return ret
+        friend_obj = self.following_users.prefetch_related("users").first()
+        friend_ids = (
+            [friend.id for friend in friend_obj.users.all()] if friend_obj else []
+        )
+        friend_ids.append(self.id)
+
+        return friend_ids
 
     def can_edit_organization(self, org):
         if not self.user.is_authenticated:
