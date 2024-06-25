@@ -665,13 +665,13 @@ OrganizationRequestFormSet = modelformset_factory(
 
 
 class OrganizationRequestBaseView(
+    AdminOrganizationMixin,
     DetailView,
     OrganizationHomeView,
     TitleMixin,
     LoginRequiredMixin,
     SingleObjectTemplateResponseMixin,
     SingleObjectMixin,
-    AdminOrganizationMixin,
 ):
     model = Organization
     slug_field = "key"

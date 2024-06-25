@@ -39,9 +39,6 @@
     {% endif %}
     {{ make_tab_item('public', 'fa fa-globe', request.path + '?tab=public', _('Public')) }}
     {{ make_tab_item('private', 'fa fa-lock', request.path + '?tab=private', _('Private')) }}
-    {% if request.user.is_superuser %}
-      {{ make_tab_item('import', 'fa fa-table', url('import_users'), _('Import'), force_new_page=True) }}
-    {% endif %}
   </div>
 {% endblock %}
 
