@@ -539,6 +539,7 @@ function navigateTo(url, reload_container, force_new_page=false) {
                 $(document).prop('title', $(data).filter('title').text());
                 renderKatex($(reload_container)[0]);
                 onWindowReady();
+                registerNavList();
                 $('.xdsoft_datetimepicker').hide();
             } else {
                 window.location.href = url;
@@ -726,7 +727,9 @@ function onWindowReady() {
     registerNavigation();
     registerPopper($('#nav-lang-icon'), $('#lang-dropdown'));
     registerPopper($('#user-links'), $('#userlink_dropdown'));
+}
 
+function registerNavList() {
     var $nav_list = $('#nav-list');
     $('#navicon').click(function (event) {
         event.stopPropagation();
@@ -769,6 +772,7 @@ function onWindowReady() {
 
 $(function() {
     onWindowReady();
+    registerNavList();
     $(window).on('beforeunload', saveCurrentPageToSessionStorage);
     
     if (window.performance && 
