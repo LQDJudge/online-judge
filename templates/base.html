@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ LANGUAGE_CODE }}">
+<html lang="{{ LANGUAGE_CODE }}" {% if use_darkmode %}class="darkmode"{% endif %}>
   <head>
     <title>{% block title %}{{ title }} - {{ SITE_LONG_NAME }}{% endblock %}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -72,8 +72,8 @@
     {% endif %}
 
     {% if use_darkmode %}
-      <link rel="stylesheet" href="{{ static('darkmode.css') }}">
-      <link rel="stylesheet" href="{{ static('darkmode-svg.css') }}">
+      <link rel="stylesheet" href="{{ static('darkmode-processed.css') }}">
+      <link rel="stylesheet" href="{{ static('darkmode-svg-processed.css') }}">
     {% endif %}
 
     <noscript>
