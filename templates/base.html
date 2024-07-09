@@ -44,10 +44,15 @@
     <script>window.bad_browser = true</script>
     <![endif]-->
     {% block meta %}{% endblock %}
+
+    {% if use_darkmode %}
+      <link rel="stylesheet" href="{{ static('darkmode-processed.css') }}">
+      <link rel="stylesheet" href="{{ static('darkmode-svg-processed.css') }}">
+    {% endif %}
     {% if not INLINE_FONTAWESOME %}
       <link rel="stylesheet" href="{{ FONTAWESOME_CSS }}">
     {% endif %}
-    <link rel="stylesheet" type="text/css" href="{{ static('markdown.css') }}">
+
     {% compress css %}
       <link rel="stylesheet" href="{{ static('style.css') }}">
       {% if INLINE_FONTAWESOME %}
@@ -58,6 +63,7 @@
       <link rel="stylesheet" type="text/css" href="{{ static('libs/select2/select2.css') }}">
       <link rel="stylesheet" type="text/css" href="{{ static('icofont/icofont.min.css') }}">
     {% endcompress %}
+    <link rel="stylesheet" type="text/css" href="{{ static('markdown.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&family=Noto+Sans&display=swap" rel="stylesheet">
@@ -69,11 +75,6 @@
           background: #893e89 !important;
         }
       </style>
-    {% endif %}
-
-    {% if use_darkmode %}
-      <link rel="stylesheet" href="{{ static('darkmode-processed.css') }}">
-      <link rel="stylesheet" href="{{ static('darkmode-svg-processed.css') }}">
     {% endif %}
 
     <noscript>
