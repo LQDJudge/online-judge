@@ -274,7 +274,10 @@ class Profile(models.Model):
 
     @cached_property
     def username(self):
-        return self._cached_info["username"]
+        try:
+            return self._cached_info["username"]
+        except KeyError:
+            _get_basic_info.dirty(self.id)
 
     @cached_property
     def first_name(self):
