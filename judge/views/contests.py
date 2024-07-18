@@ -417,13 +417,14 @@ class ContestMixin(object):
             self.request.user
         )
         context["logo_override_image"] = self.object.logo_override_image
+
         if (
             not context["logo_override_image"]
             and self.object.organizations.count() == 1
         ):
-            context[
-                "logo_override_image"
-            ] = self.object.organizations.first().organization_image.url
+            org_image = self.object.organizations.first().organization_image
+            if org_image:
+                context["logo_override_image"] = org_image.url
 
         return context
 
