@@ -1,7 +1,9 @@
 {% if request.in_contest_mode and request.participation.contest.logo_override_image %}
   <img src="{{ request.participation.contest.logo_override_image|camo }}" alt="{{ SITE_NAME }}" height="44" style="border: none">
 {% elif request.organization %}
-  <img src="{{ request.organization.logo_override_image|camo }}" alt="{{ SITE_NAME }}" height="44" style="border: none">
+  <img src="{{ request.organization.organization_image.url|camo }}" alt="{{ SITE_NAME }}" height="44" style="border: none">
+{% elif organization_image is defined and organization_image %}
+  <img src="{{ organization_image.url|camo }}" alt="{{ SITE_NAME }}" height="44" style="border: none">
 {% elif logo_override_image is defined and logo_override_image %}
   <img src="{{ logo_override_image|camo }}" alt="{{ SITE_NAME }}" height="44" style="border: none">
 {% else %}

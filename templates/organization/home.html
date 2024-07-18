@@ -10,7 +10,10 @@
 {% block middle_title %}
   <div class="page-title">
     <div class="tabs" style="border: none;">
-      <h2><img src="{{logo_override_image}}" style="height: 3rem; vertical-align: middle; border-radius: 5px;">
+      <h2>
+        {% if organization_image %}
+          <img src="{{organization_image.url}}" style="height: 3rem; vertical-align: middle; border-radius: 5px;">
+        {% endif %}
         {{title}}
       </h2>
       <span class="spacer"></span>
