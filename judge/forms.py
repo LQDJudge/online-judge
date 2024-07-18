@@ -195,15 +195,31 @@ class EditOrganizationForm(ModelForm):
             "slug",
             "short_name",
             "about",
-            "logo_override_image",
+            "organization_image",
             "admins",
             "is_open",
         ]
-        widgets = {"admins": Select2MultipleWidget()}
+        widgets = {
+            "admins": Select2MultipleWidget(),
+            "organization_image": ImageWidget,
+        }
         if HeavyPreviewPageDownWidget is not None:
             widgets["about"] = HeavyPreviewPageDownWidget(
                 preview=reverse_lazy("organization_preview")
             )
+
+    def __init__(self, *args, **kwargs):
+        super(EditOrganizationForm, self).__init__(*args, **kwargs)
+        self.fields["organization_image"].required = False
+
+    def clean_organization_image(self):
+        organization_image = self.cleaned_data.get("organization_image")
+        if organization_image:
+            if organization_image.size > 5 * 1024 * 1024:
+                raise ValidationError(
+                    _("File size exceeds the maximum allowed limit of 5MB.")
+                )
+        return organization_image
 
 
 class AddOrganizationForm(ModelForm):
@@ -214,7 +230,7 @@ class AddOrganizationForm(ModelForm):
             "slug",
             "short_name",
             "about",
-            "logo_override_image",
+            "organization_image",
             "is_open",
         ]
         widgets = {}
@@ -226,6 +242,7 @@ class AddOrganizationForm(ModelForm):
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop("request", None)
         super(AddOrganizationForm, self).__init__(*args, **kwargs)
+        self.fields["organization_image"].required = False
 
     def save(self, commit=True):
         res = super(AddOrganizationForm, self).save(commit=False)

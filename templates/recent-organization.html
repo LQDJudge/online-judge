@@ -4,8 +4,8 @@
     <div class="toggled sidebox-content">
       {% for organization in recent_organizations %}
         <a href="{{ url('organization_home', organization.pk, organization.slug) }}" class="organization-row">
-          {% if organization.logo_override_image %}
-            <img class="org-logo user-img" loading="lazy" src="{{ organization.logo_override_image }}">
+          {% if organization.organization_image %}
+            <img class="org-logo user-img" loading="lazy" src="{{ organization.organization_image.url }}">
           {% else %}
             <img class="org-logo" loading="lazy" src="{{ static('icons/icon.svg') }}" onerror="{{static('icons/logo.svg')}}">
           {% endif %}

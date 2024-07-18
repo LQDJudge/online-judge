@@ -53,8 +53,8 @@
     <div class="organization-container">
       {% for org in queryset %}
         <div class="organization-card" style="cursor: pointer;" onclick="location.href='{{ org.get_absolute_url() }}';">
-          {% if org.logo_override_image %}
-            <img class="org-logo" loading="lazy" src="{{ org.logo_override_image }}">
+          {% if org.organization_image %}
+            <img class="org-logo" loading="lazy" src="{{ org.organization_image.url }}">
           {% else %}
             <img class="org-logo" loading="lazy" src="{{ static('icons/icon.svg') }}" onerror="this.onerror=null;this.src='{{ static('icons/logo.svg') }}';">
           {% endif %}

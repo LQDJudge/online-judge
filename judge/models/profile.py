@@ -48,6 +48,12 @@ def profile_image_path(profile, filename):
     return os.path.join(settings.DMOJ_PROFILE_IMAGE_ROOT, new_filename)
 
 
+def organization_image_path(organization, filename):
+    tail = filename.split(".")[-1]
+    new_filename = f"organization_{organization.id}.{tail}"
+    return os.path.join(settings.DMOJ_ORGANIZATION_IMAGE_ROOT, new_filename)
+
+
 class Organization(models.Model):
     name = models.CharField(max_length=128, verbose_name=_("organization title"))
     slug = models.SlugField(
@@ -104,6 +110,7 @@ class Organization(models.Model):
         null=True,
         blank=True,
     )
+    organization_image = models.ImageField(upload_to=organization_image_path, null=True)
     logo_override_image = models.CharField(
         verbose_name=_("Logo override image"),
         default="",

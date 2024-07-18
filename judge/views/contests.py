@@ -423,7 +423,7 @@ class ContestMixin(object):
         ):
             context[
                 "logo_override_image"
-            ] = self.object.organizations.first().logo_override_image
+            ] = self.object.organizations.first().organization_image.url
 
         return context
 

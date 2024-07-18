@@ -130,7 +130,7 @@ class OrganizationMixin(OrganizationBase):
         context["is_admin"] = self.is_admin(self.organization)
         context["can_edit"] = self.can_edit_organization(self.organization)
         context["organization"] = self.organization
-        context["logo_override_image"] = self.organization.logo_override_image
+        context["organization_image"] = self.organization.organization_image
         context["organization_subdomain"] = (
             ("http" if settings.DMOJ_SSL == 0 else "https")
             + "://"
