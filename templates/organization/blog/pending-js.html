@@ -1,0 +1,48 @@
+<script type="text/javascript">
+  $(document).ready(function () {
+    function ajax_post(url, data, on_success) {
+      return $.ajax({
+        url: url,
+        type: 'POST',
+        data: data,
+        success: function (data, textStatus, jqXHR) {
+          if (typeof on_success !== 'undefined')
+          on_success();
+        },
+        error: function (data, textStatus, jqXHR) {
+          alert('Action failed: ' + data.responseText);
+        }
+      });
+    }
+
+    function removePost(postId) {
+      $('#post-' + postId).slideUp('normal', function () {
+        $(this).remove();
+      });
+    }
+
+    window.approvePost = function (url, postId, e) {
+      e.preventDefault();
+      const csrfToken = '{{ csrf_token }}';
+      ajax_post(url, {
+        id: postId,
+        action: 'Approve',
+        csrfmiddlewaretoken: csrfToken
+      }, function () {
+        removePost(postId);
+      });
+    }
+
+    window.rejectPost = function (url, postId, e) {
+      e.preventDefault();
+      const csrfToken = '{{ csrf_token }}';
+      ajax_post(url, {
+        id: postId,
+        action: 'Reject',
+        csrfmiddlewaretoken: csrfToken
+      }, function () {
+        removePost(postId);
+      });
+    }
+  });
+</script>

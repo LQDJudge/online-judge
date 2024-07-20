@@ -208,14 +208,9 @@ class PostView(TitleMixin, CommentedDetailView, PageVoteDetailView, BookMarkDeta
         orgs = list(self.object.organizations.all())
 
         if self.request.profile:
-            if self.request.profile.id in self.object.get_authors():
-                for org in orgs:
-                    if org.is_member(self.request.profile):
-                        context["editable_orgs"].append(org)
-            else:
-                for org in orgs:
-                    if org.is_admin(self.request.profile):
-                        context["editable_orgs"].append(org)
+            for org in orgs:
+                if self.request.profile.can_edit_organization(org):
+                    context["editable_orgs"].append(org)
 
         return context
 
