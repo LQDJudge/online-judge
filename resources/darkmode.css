@@ -1769,6 +1769,12 @@ noscript #noscript {
 .background-royalblue {
     background-color: rgb(25, 58, 158) !important;
 }
+.background-green {
+    background-color: rgb(32, 134, 55) !important;
+}
+.background-red {
+    background-color: rgb(165, 29, 42) !important;
+}
 .background-footer {
     color: rgb(152, 143, 129);
 }
@@ -3828,22 +3834,10 @@ svg line.messageLine1 {
 div.mermaid .actor {
     fill: var(--darkreader-neutral-background) !important;
 }
-.google-material-icons {
-    font-family: 'Google Material Icons' !important;
-}
-.google-symbols {
-    font-family: 'Google Symbols Subset', 'Google Symbols' !important;
-}
-.material-icons-extended {
-    font-family: 'Material Icons Extended' !important;
-}
 mitid-authenticators-code-app > .code-app-container {
     background-color: white !important;
     padding-top: 1rem;
 }
 iframe#unpaywall[src$="unpaywall.html"] {
     color-scheme: light !important;
-}
-.oui-icon {
-    font-family: 'Oui Icons' !important;
 }

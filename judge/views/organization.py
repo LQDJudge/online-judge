@@ -1118,7 +1118,7 @@ class EditOrganizationBlog(
     LoginRequiredMixin,
     TitleMixin,
     OrganizationHomeView,
-    MemberOrganizationMixin,
+    AdminOrganizationMixin,
     UpdateView,
 ):
     template_name = "organization/blog/edit.html"
@@ -1134,18 +1134,19 @@ class EditOrganizationBlog(
             self.blog_id = kwargs["blog_pk"]
             self.blog = BlogPost.objects.get(id=self.blog_id)
             if self.organization not in self.blog.organizations.all():
-                raise Exception("This blog does not belong to this organization")
-            if (
-                self.request.profile.id not in self.blog.get_authors()
-                and not self.can_edit_organization(self.organization)
-            ):
-                raise Exception("Not allowed to edit this blog")
-        except:
+                raise Exception(_("This blog does not belong to this organization"))
+            if not self.request.profile.can_edit_organization(self.organization):
+                raise Exception(_("Not allowed to edit this blog"))
+        except Exception as e:
             return generic_message(
                 request,
                 _("Permission denied"),
-                _("Not allowed to edit this blog"),
+                e,
             )
+
+    def publish_blog(self, request, *args, **kwargs):
+        self.blog_id = kwargs["blog_pk"]
+        BlogPost.objects.filter(pk=self.blog_id).update(visible=True)
 
     def delete_blog(self, request, *args, **kwargs):
         self.blog_id = kwargs["blog_pk"]
@@ -1164,6 +1165,22 @@ class EditOrganizationBlog(
         if request.POST["action"] == "Delete":
             self.create_notification("Delete blog")
             self.delete_blog(request, *args, **kwargs)
+            cur_url = reverse(
+                "organization_home",
+                args=(self.organization_id, self.organization.slug),
+            )
+            return HttpResponseRedirect(cur_url)
+        elif request.POST["action"] == "Reject":
+            self.create_notification("Reject blog")
+            self.delete_blog(request, *args, **kwargs)
+            cur_url = reverse(
+                "organization_pending_blogs",
+                args=(self.organization_id, self.organization.slug),
+            )
+            return HttpResponseRedirect(cur_url)
+        elif request.POST["action"] == "Approve":
+            self.create_notification("Approve blog")
+            self.publish_blog(request, *args, **kwargs)
             cur_url = reverse(
                 "organization_pending_blogs",
                 args=(self.organization_id, self.organization.slug),
@@ -1185,9 +1202,8 @@ class EditOrganizationBlog(
             args=[self.organization.id, self.organization.slug, self.blog_id],
         )
         html = f'<a href="{link}">{blog.title} - {self.organization.name}</a>'
-        post_authors = blog.authors.all()
-        posible_users = self.organization.admins.all() | post_authors
-        make_notification(posible_users, action, html, self.request.profile)
+        to_users = (self.organization.admins.all() | blog.get_authors()).distinct()
+        make_notification(to_users, action, html, self.request.profile)
 
     def form_valid(self, form):
         with revisions.create_revision():
@@ -1224,3 +1240,8 @@ class PendingBlogs(
 
     def get_title(self):
         return _("Pending blogs in %s") % self.organization.name
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["org"] = self.organization
+        return context
