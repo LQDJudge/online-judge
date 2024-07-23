@@ -594,14 +594,14 @@ msgstr ""
 msgid "z-function"
 msgstr ""
 
-#~ msgid "Courses"
-#~ msgstr "Khóa học"
+msgid "Courses"
+msgstr "Khóa học"
 
-#~ msgid "Bug Report"
-#~ msgstr "Báo cáo lỗi"
+msgid "Bug Report"
+msgstr "Báo cáo lỗi"
 
-#~ msgid "Insert Image"
-#~ msgstr "Chèn hình ảnh"
+msgid "Insert Image"
+msgstr "Chèn hình ảnh"
 
-#~ msgid "Save"
-#~ msgstr "Lưu"
+msgid "Save"
+msgstr "Lưu"
