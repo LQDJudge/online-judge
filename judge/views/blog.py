@@ -51,14 +51,13 @@ class HomeFeedView(FeedView):
         now = timezone.now()
         visible_contests = (
             Contest.get_visible_contests(self.request.user, show_own_contests_only=True)
-            .filter(is_visible=True)
+            .filter(is_visible=True, official__isnull=True)
             .order_by("start_time")
         )
         if self.request.organization:
             visible_contests = visible_contests.filter(
                 is_organization_private=True, organizations=self.request.organization
             )
-
         context["current_contests"] = visible_contests.filter(
             start_time__lte=now, end_time__gt=now
         )
