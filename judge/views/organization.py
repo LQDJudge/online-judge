@@ -580,7 +580,6 @@ class JoinOrganization(OrganizationMembershipChange):
         profile.organizations.add(org)
         profile.save()
         cache.delete(make_template_fragment_key("org_member_count", (org.id,)))
-        Organization.is_member.dirty(org, profile)
 
 
 class LeaveOrganization(OrganizationMembershipChange):
@@ -593,7 +592,6 @@ class LeaveOrganization(OrganizationMembershipChange):
             )
         profile.organizations.remove(org)
         cache.delete(make_template_fragment_key("org_member_count", (org.id,)))
-        Organization.is_member.dirty(org, profile)
 
 
 class OrganizationRequestForm(Form):

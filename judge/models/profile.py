@@ -157,11 +157,9 @@ class Organization(models.Model):
     def get_submissions_url(self):
         return reverse("organization_submissions", args=(self.id, self.slug))
 
-    @cache_wrapper("Oia")
     def is_admin(self, profile):
         return self.admins.filter(id=profile.id).exists()
 
-    @cache_wrapper("Oim")
     def is_member(self, profile):
         return profile in self
 
