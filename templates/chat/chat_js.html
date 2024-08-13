@@ -141,8 +141,11 @@
           message: message,
         },
         success: function (data) {
-          add_message(data);
-          callback(true);
+          // make sure user is still in the same room
+          if (room == window.room_id) {
+            add_message(data);
+            callback(true);
+          }
         },
         error: function (data) {
           console.log('Could not add new message');
