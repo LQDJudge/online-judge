@@ -369,7 +369,7 @@ class AddOrganizationMemberForm(ModelForm):
         label=_("New users"),
     )
 
-    def clean(self):
+    def clean_new_users(self):
         new_users = self.cleaned_data.get("new_users") or ""
         usernames = new_users.split()
         invalid_usernames = []
@@ -387,8 +387,7 @@ class AddOrganizationMemberForm(ModelForm):
                     usernames=str(invalid_usernames)
                 )
             )
-        self.cleaned_data["new_users"] = valid_usernames
-        return self.cleaned_data
+        return valid_usernames
 
     class Meta:
         model = Organization

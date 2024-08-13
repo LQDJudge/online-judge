@@ -793,8 +793,12 @@ class AddOrganizationMember(
     def form_valid(self, form):
         new_users = form.cleaned_data["new_users"]
         self.object.members.add(*new_users)
+        link = reverse("organization_home", args=[self.object.id, self.object.slug])
+        html = f'<a href="{link}">{self.object.name}</a>'
+        make_notification(new_users, "Added to group", html, self.request.profile)
         with revisions.create_revision():
-            revisions.set_comment(_("Added members from site"))
+            usernames = ", ".join([u.username for u in new_users])
+            revisions.set_comment(_("Added members from site") + ": " + usernames)
             revisions.set_user(self.request.user)
             return super(AddOrganizationMember, self).form_valid(form)
 
@@ -819,7 +823,7 @@ class KickUserWidgetView(
                 status=400,
             )
 
-        if not organization.members.filter(id=user.id).exists():
+        if not organization.is_member(user):
             return generic_message(
                 request,
                 _("Can't kick user"),
@@ -828,7 +832,20 @@ class KickUserWidgetView(
                 status=400,
             )
 
-        organization.members.remove(user)
+        if organization.is_admin(user):
+            return generic_message(
+                request,
+                _("Can't kick user"),
+                _("The user you are trying to kick is an organization admin."),
+                status=400,
+            )
+
+        with revisions.create_revision():
+            revisions.set_comment(_("Kicked member") + " " + user.username)
+            revisions.set_user(self.request.user)
+            organization.members.remove(user)
+            organization.save()
+
         return HttpResponseRedirect(organization.get_users_url())
 
 

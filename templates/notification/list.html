@@ -17,7 +17,7 @@
             {{ link_user(notification.author_id) }}
           </td>
           <td>
-            {{ notification.category }}
+            {{ notification.verbose_activity() }}
           </td>
           <td>
             {% autoescape off %}

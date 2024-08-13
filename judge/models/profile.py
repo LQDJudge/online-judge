@@ -158,7 +158,11 @@ class Organization(models.Model):
         return reverse("organization_submissions", args=(self.id, self.slug))
 
     def is_admin(self, profile):
-        return self.admins.filter(id=profile.id).exists()
+        return profile.id in self.get_admin_ids()
+
+    @cache_wrapper(prefix="Orgai", expected_type=list)
+    def get_admin_ids(self):
+        return list(self.admins.values_list("id", flat=True))
 
     def is_member(self, profile):
         return profile in self

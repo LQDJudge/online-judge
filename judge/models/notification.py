@@ -7,6 +7,20 @@ from judge.models import Profile, Comment
 from judge.caching import cache_wrapper
 
 
+category_to_verbose_message = {
+    "Add blog": _("Added a post"),
+    "Added to group": _("You are added to a group"),
+    "Comment": _("You have a new comment"),
+    "Delete blog": _("Deleted a post"),
+    "Reject blog": _("Rejected a post"),
+    "Approve blog": _("Approved a post"),
+    "Edit blog": _("Edited a post"),
+    "Mention": _("Mentioned you"),
+    "Reply": _("Replied you"),
+    "Ticket": _("Ticket"),
+}
+
+
 class Notification(models.Model):
     owner = models.ForeignKey(
         Profile,
@@ -27,10 +41,29 @@ class Notification(models.Model):
         verbose_name=_("who trigger, used for non-comment"),
         on_delete=CASCADE,
     )
-    comment = models.ForeignKey(
-        Comment, null=True, verbose_name=_("comment"), on_delete=CASCADE
-    )  # deprecated
-    read = models.BooleanField(verbose_name=_("read"), default=False)  # deprecated
+
+    def verbose_activity(self):
+        if self.category in category_to_verbose_message:
+            return category_to_verbose_message[self.category]
+
+        if "Problem public" in self.category:
+            is_public = "True" in self.category
+            if "(" in self.category and ")" in self.category:
+                groups = self.category.split("(", 1)[1].strip(")")
+                if is_public:
+                    verbose_message = _("The problem is public to: ") + groups
+                else:
+                    verbose_message = _("The problem is private to: ") + groups
+            else:
+                verbose_message = (
+                    _("The problem is public to everyone.")
+                    if is_public
+                    else _("The problem is private.")
+                )
+
+            return verbose_message
+
+        return self.category
 
 
 class NotificationProfile(models.Model):
