@@ -411,30 +411,31 @@
 
     scrollContainer($('#chat-box'), $('#loader'))
 
-    {% if request.user.is_staff %}
-      $(document).on("click", ".chat_remove", function() {
-        var elt = $(this);
-        $.ajax({
-          url: "{{ url('delete_chat_message') }}",
-          type: 'post',
-          data: {
-            message: elt.attr('value'),
-          },
-          dataType: 'json',
-          success: function(data){
-            var $block = elt.parent();
-            if ($block.parent().find('.body-block').length > 1) {
-              $block.remove();
-            }
-            else {
-              elt.closest('li').remove();
-            }
-          },
-          fail: function(data) {
-            console.log('Fail to delete');
-          },
-        });
+    $(document).on("click", ".chat_remove", function() {
+      var elt = $(this);
+      $.ajax({
+        url: "{{ url('delete_chat_message') }}",
+        type: 'post',
+        data: {
+          message: elt.attr('value'),
+        },
+        dataType: 'json',
+        success: function(data){
+          var $block = elt.parent();
+          if ($block.parent().find('.body-block').length > 1) {
+            $block.remove();
+          }
+          else {
+            elt.closest('li').remove();
+          }
+        },
+        fail: function(data) {
+          console.log('Fail to delete');
+        },
       });
+    });
+
+    {% if request.user.is_staff %}
       $(document).on("click", ".chat_mute", function() {
         if (confirm("{{_('Mute this user and delete all messages?')}}")) {
           var elt = $(this);

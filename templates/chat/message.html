@@ -15,10 +15,12 @@
     </div>
     <span class="content-message">
       <div class="body-block" id="body-block-{{ message.id }}" title="{{ message.time|date('g:i a') }}">
-        {% if request.user.is_staff %}
+        {% if request.user.is_staff or request.profile == message.author %}
           <a class="red chatbtn_remove_mess chat_remove" value="{{message.id}}" style="cursor: pointer;">
             {{_('Delete')}}
           </a>
+        {% endif %}
+        {% if request.user.is_staff and request.profile != message.author %}
           <a class="red chatbtn_remove_mess chat_mute" value="{{message.id}}" style="cursor: pointer;">
             {{_('Mute')}}
           </a>

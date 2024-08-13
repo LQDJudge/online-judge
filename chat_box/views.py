@@ -37,6 +37,8 @@ from judge.models import Friend
 from chat_box.models import Message, Profile, Room, UserRoom, Ignore, get_room_info
 from chat_box.utils import encrypt_url, decrypt_url, encrypt_channel, get_unread_boxes
 
+from reversion import revisions
+
 
 class ChatView(ListView):
     context_object_name = "message"
@@ -137,13 +139,13 @@ def delete_message(request):
     if request.method == "GET":
         return HttpResponseBadRequest()
 
-    if not request.user.is_staff:
-        return HttpResponseBadRequest()
-
     try:
         messid = int(request.POST.get("message"))
         mess = Message.objects.get(id=messid)
     except:
+        return HttpResponseBadRequest()
+
+    if not request.user.is_staff and request.profile != mess.author:
         return HttpResponseBadRequest()
 
     mess.hidden = True
@@ -167,8 +169,12 @@ def mute_message(request):
     except:
         return HttpResponseBadRequest()
 
-    mess.author.mute = True
-    mess.author.save()
+    with revisions.create_revision():
+        revisions.set_comment(_("Mute chat") + ": " + mess.body)
+        revisions.set_user(request.user)
+        mess.author.mute = True
+        mess.author.save()
+
     Message.objects.filter(room=None, author=mess.author).update(hidden=True)
 
     return JsonResponse(ret)
