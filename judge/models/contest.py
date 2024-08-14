@@ -375,6 +375,10 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         if self.end_time > one_year_later:
             self.end_time = one_year_later
 
+        max_duration = timedelta(days=7)
+        if self.time_limit and self.time_limit > max_duration:
+            self.time_limit = max_duration
+
         super().save(*args, **kwargs)
 
     def is_in_contest(self, user):
