@@ -19,6 +19,7 @@ from moss import (
     MOSS_LANG_PYTHON,
     MOSS_LANG_PASCAL,
 )
+from datetime import timedelta
 
 from judge import contest_format
 from judge.models.problem import Problem
@@ -354,9 +355,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
     def clean(self):
         # Django will complain if you didn't fill in start_time or end_time, so we don't have to.
         if self.start_time and self.end_time and self.start_time >= self.end_time:
-            raise ValidationError(
-                "What is this? A contest that ended before it starts?"
-            )
+            raise ValidationError(_("End time must be after start time"))
         self.format_class.validate(self.format_config)
 
         try:
@@ -370,6 +369,13 @@ class Contest(models.Model, PageVotable, Bookmarkable):
                 raise ValidationError(
                     "Contest problem label script: script should return a string."
                 )
+
+    def save(self, *args, **kwargs):
+        one_year_later = self.start_time + timedelta(days=365)
+        if self.end_time > one_year_later:
+            self.end_time = one_year_later
+
+        super().save(*args, **kwargs)
 
     def is_in_contest(self, user):
         if user.is_authenticated:
