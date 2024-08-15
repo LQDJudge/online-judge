@@ -10,6 +10,7 @@
       for (var i = 0; i < vars.length; i++) {
         var pair = vars[i].split("=");
         var key = decodeURIComponent(pair[0]);
+        if (!key) continue;
         var value = decodeURIComponent(pair[1].replace(/\+/g, ' '));
         queryParams[key] = value;
       }
