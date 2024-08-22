@@ -538,6 +538,9 @@ function navigateTo(url, reload_container, force_new_page=false) {
                 
                 $(document).prop('title', $(data).filter('title').text());
                 renderKatex($(reload_container)[0]);
+                if ('DjangoPagedown' in window) {
+                  DjangoPagedown.init();
+                }
                 onWindowReady();
                 registerNavList();
                 $('.xdsoft_datetimepicker').hide();

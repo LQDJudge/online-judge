@@ -33,8 +33,6 @@ class OrganizationAdmin(VersionAdmin):
         "short_name",
         "is_open",
         "about",
-        "organization_image",
-        "logo_override_image",
         "slots",
         "registrant",
         "creation_date",

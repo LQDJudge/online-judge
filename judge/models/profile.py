@@ -111,16 +111,6 @@ class Organization(models.Model):
         blank=True,
     )
     organization_image = models.ImageField(upload_to=organization_image_path, null=True)
-    logo_override_image = models.CharField(
-        verbose_name=_("Logo override image"),
-        default="",
-        max_length=150,
-        blank=True,
-        help_text=_(
-            "This image will replace the default site logo for users "
-            "viewing the organization."
-        ),
-    )
 
     def __contains__(self, item):
         if isinstance(item, int):

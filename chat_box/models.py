@@ -24,6 +24,7 @@ class Room(models.Model):
 
     class Meta:
         app_label = "chat_box"
+        unique_together = ("user_one", "user_two")
 
     @cached_property
     def _cached_info(self):

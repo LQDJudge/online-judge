@@ -48,8 +48,9 @@ def calculate_lessons_progress(profile, lessons):
         num_problems = len(problems)
         percentage = 0
         for val in problem_points.values():
-            score = val["case_points"] / val["case_total"]
-            percentage += score / num_problems
+            if val["case_total"] > 0:
+                score = val["case_points"] / val["case_total"]
+                percentage += score / num_problems
         res[lesson.id] = {
             "achieved_points": percentage * lesson.points,
             "percentage": percentage * 100,
