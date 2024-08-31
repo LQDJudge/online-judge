@@ -426,59 +426,6 @@ function submitFormWithParams($form, method) {
     }
 }
 
-function saveCurrentPageToSessionStorage() {
-    const storageLimit = 5;
-    const sessionStorageKey = 'oj-content-keys';
-
-    let key = `oj-content-${window.location.href}`;
-    let $contentClone = $('body').clone();
-    $contentClone.find('.select2').remove();
-    $contentClone.find('.select2-hidden-accessible').removeClass('select2-hidden-accessible');
-    $contentClone.find('.noUi-base').remove();
-    $contentClone.find('.wmd-button-row').remove();
-
-    let contentData = JSON.stringify({
-        "html": $contentClone.html(),
-        "page": window.page,
-        "has_next_page": window.has_next_page,
-        "scrollOffset": $(window).scrollTop(),
-    });
-
-    let keys = JSON.parse(sessionStorage.getItem(sessionStorageKey)) || [];
-
-    // Remove the existing key if it exists
-    if (keys.includes(key)) {
-        keys = keys.filter(k => k !== key);
-    }
-
-    keys.push(key);
-
-    if (keys.length > storageLimit) {
-        let oldestKey = keys.shift();
-        sessionStorage.removeItem(oldestKey);
-    }
-
-    sessionStorage.setItem(sessionStorageKey, JSON.stringify(keys));
-    sessionStorage.setItem(key, contentData);
-}
-
-function loadPageFromSessionStorage() {
-    let key = `oj-content-${window.location.href}`;
-    let content = sessionStorage.getItem(key);
-    if (content) {    
-        content = JSON.parse(content);
-        $('body').html(content.html);
-        onWindowReady();
-        window.PAGE_FROM_BACK_BUTTON_CACHE = true;
-        setTimeout(() => {
-            $(window).scrollTop(content.scrollOffset - 50);
-        }, 1);
-        window.page = content.page;
-        window.has_next_page = content.has_next_page;
-    }
-}
-
-let currentRequest = null; // Variable to keep track of the current request
 
 function navigateTo(url, reload_container, force_new_page=false) {
     if (url === '#') return;
@@ -491,17 +438,16 @@ function navigateTo(url, reload_container, force_new_page=false) {
        reload_container = "#content";
     }
 
-    if (currentRequest) {
-        currentRequest.abort();
+    if (window.currentRequest) {
+        window.currentRequest.abort();
     }
 
     const controller = new AbortController();
     const signal = controller.signal;
-    currentRequest = controller;
+    window.currentRequest = controller;
 
     $(window).off("scroll");
 
-    saveCurrentPageToSessionStorage();
     replaceLoadingPage(reload_container);
 
     const toUpdateElements = [
@@ -774,16 +720,12 @@ function registerNavList() {
 }
 
 $(function() {
+    if (typeof window.currentRequest === 'undefined') {
+        window.currentRequest = null;
+    }
     onWindowReady();
     registerNavList();
-    $(window).on('beforeunload', saveCurrentPageToSessionStorage);
-    
-    if (window.performance && 
-      window.performance.navigation.type 
-      === window.performance.navigation.TYPE_BACK_FORWARD) {
-        loadPageFromSessionStorage();
-    }
-
+   
     window.addEventListener('popstate', (e) => {
         window.location.href = e.currentTarget.location.href;
     });

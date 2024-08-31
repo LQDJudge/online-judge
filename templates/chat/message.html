@@ -20,7 +20,7 @@
             {{_('Delete')}}
           </a>
         {% endif %}
-        {% if request.user.is_staff and request.profile != message.author %}
+        {% if request.user.is_staff and request.profile != message.author and not message.room_id %}
           <a class="red chatbtn_remove_mess chat_mute" value="{{message.id}}" style="cursor: pointer;">
             {{_('Mute')}}
           </a>
