@@ -991,12 +991,15 @@ class EditOrganizationContest(
             return res
         problem_formset = self.get_problem_formset(True)
         if problem_formset.is_valid():
+            for problem_form in problem_formset:
+                if problem_form.cleaned_data.get("DELETE") and problem_form.instance.pk:
+                    problem_form.instance.delete()
+
             for problem_form in problem_formset.save(commit=False):
                 if problem_form:
                     problem_form.contest = self.contest
                     problem_form.save()
-            for problem_form in problem_formset.deleted_objects:
-                problem_form.delete()
+
             super().post(request, *args, **kwargs)
             return HttpResponseRedirect(
                 reverse(

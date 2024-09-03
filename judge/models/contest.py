@@ -19,7 +19,7 @@ from moss import (
     MOSS_LANG_PYTHON,
     MOSS_LANG_PASCAL,
 )
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from judge import contest_format
 from judge.models.problem import Problem
@@ -371,6 +371,13 @@ class Contest(models.Model, PageVotable, Bookmarkable):
                 )
 
     def save(self, *args, **kwargs):
+        earliest_start_time = datetime(2020, 1, 1).replace(tzinfo=timezone.utc)
+        if self.start_time < earliest_start_time:
+            self.start_time = earliest_start_time
+
+        if self.end_time < self.start_time:
+            self.end_time = self.start_time + timedelta(hours=1)
+
         one_year_later = self.start_time + timedelta(days=365)
         if self.end_time > one_year_later:
             self.end_time = one_year_later
