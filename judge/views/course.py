@@ -292,7 +292,8 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
             for problem_formset in problem_formsets:
                 problem_formset.save()
                 for obj in problem_formset.deleted_objects:
-                    obj.delete()
+                    if obj.pk is not None:
+                        obj.delete()
             return self.form_valid(formset)
         else:
             return self.form_invalid(formset)
