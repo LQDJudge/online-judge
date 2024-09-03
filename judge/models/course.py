@@ -165,3 +165,12 @@ class CourseLesson(models.Model):
     problems = models.ManyToManyField(Problem, verbose_name=_("problem"), blank=True)
     order = models.IntegerField(verbose_name=_("order"), default=0)
     points = models.IntegerField(verbose_name=_("points"))
+
+
+class CourseLessonProblem(models.Model):
+    lesson = models.ForeignKey(
+        CourseLesson, on_delete=models.CASCADE, related_name="lesson_problems"
+    )
+    problem = models.ForeignKey(Problem, on_delete=models.CASCADE)
+    order = models.IntegerField(verbose_name=_("order"), default=0)
+    score = models.IntegerField(verbose_name=_("score"), default=0)

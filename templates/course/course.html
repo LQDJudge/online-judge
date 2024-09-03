@@ -15,7 +15,11 @@
           <div class="lesson-title">
             {{ lesson.title }}
             <div class="lesson-points">
-              {{progress['achieved_points'] | floatformat(1)}} / {{lesson.points}}
+              {% if progress['total_points'] %}
+                {{(progress['achieved_points'] / progress['total_points'] * lesson.points) | floatformat(1)}} / {{lesson.points}}
+              {% else %}
+                0 / {{lesson.points}}
+              {% endif %}
             </div>
           </div>
           <div class="progress-container">
@@ -30,7 +34,6 @@
     {% set achieved_points = total_progress['achieved_points'] %}
     {% set total_points = total_progress['total_points'] %}
     {% set percentage = total_progress['percentage'] %}
-
     {{_("Total achieved points")}}:
     <span style="float: right; font-weight: normal;">
       {{ achieved_points | floatformat(2) }} / {{ total_points }} ({{percentage|floatformat(1)}}%)

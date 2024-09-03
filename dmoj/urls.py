@@ -564,6 +564,11 @@ urlpatterns = [
                     course.CourseStudentResults.as_view(),
                     name="course_grades",
                 ),
+                url(
+                    r"^/grades/lesson/(?P<id>\d+)$",
+                    course.CourseStudentResultsLesson.as_view(),
+                    name="course_grades_lesson",
+                ),
             ]
         ),
     ),
