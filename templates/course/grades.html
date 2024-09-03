@@ -74,8 +74,8 @@
 {% endblock %}
 
 {% block middle_content %}
-  <center><h2>{{title}}</h2></center>
-  {% set lessons = course.lessons.all() %}
+  <center><h2>{{content_title}}</h2></center>
+  {% set lessons = course.lessons.order_by('order') %}
   {{_("Sort by")}}:
   <select id="sortSelect">
     <option value="username">{{_("Username")}}</option>
@@ -89,7 +89,7 @@
         {% if grades|length > 0 %}
           {% for lesson in lessons %}
             <th class="points">
-              <a href="{{url('course_lesson_detail', course.slug, lesson.id)}}">
+              <a href="{{url('course_grades_lesson', course.slug, lesson.id)}}">
                 {{ lesson.title }}
                 <div class="point-denominator">{{lesson.points}}</div>
               </a>
@@ -111,9 +111,14 @@
             </div>
           </td>
           {% for lesson in lessons %}
+            {% set val = grade.get(lesson.id) %}
             <td class="partial-score">
               <a href="{{url('course_lesson_detail', course.slug, lesson.id)}}?user={{student.username}}">
-                {{ grade[lesson.id]['percentage'] | floatformat(0) }}%
+                {% if val and val['total_points'] %}
+                  {{ (val['achieved_points'] / val['total_points'] * lesson.points) | floatformat(0) }}
+                {% else %}
+                  0
+                {% endif %}
               </a>
             </td>
           {% endfor %}

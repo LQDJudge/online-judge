@@ -4,16 +4,32 @@ from django.views.generic import ListView, DetailView, View
 from django.utils.translation import gettext, gettext_lazy as _
 from django.http import Http404
 from django import forms
-from django.forms import inlineformset_factory
+from django.forms import (
+    inlineformset_factory,
+    ModelForm,
+    modelformset_factory,
+    BaseModelFormSet,
+)
 from django.views.generic.edit import FormView
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.db.models import Max, F
 from django.core.exceptions import ObjectDoesNotExist
 
-from judge.models import Course, CourseLesson, Submission, Profile, CourseRole
+from judge.models import (
+    Course,
+    CourseLesson,
+    Submission,
+    Profile,
+    CourseRole,
+    CourseLessonProblem,
+)
 from judge.models.course import RoleInCourse
-from judge.widgets import HeavyPreviewPageDownWidget, HeavySelect2MultipleWidget
+from judge.widgets import (
+    HeavyPreviewPageDownWidget,
+    HeavySelect2MultipleWidget,
+    HeavySelect2Widget,
+)
 from judge.utils.problems import (
     user_attempted_ids,
     user_completed_ids,
@@ -36,32 +52,35 @@ def max_case_points_per_problem(profile, problems):
 
 def calculate_lessons_progress(profile, lessons):
     res = {}
-    total_achieved_points = 0
-    total_points = 0
+    total_achieved_points = total_lesson_points = 0
     for lesson in lessons:
-        problems = list(lesson.problems.all())
-        if not problems:
-            res[lesson.id] = {"achieved_points": 0, "percentage": 0}
-            total_points += lesson.points
-            continue
+        problems = lesson.lesson_problems.values_list("problem", flat=True)
         problem_points = max_case_points_per_problem(profile, problems)
-        num_problems = len(problems)
-        percentage = 0
-        for val in problem_points.values():
-            if val["case_total"] > 0:
-                score = val["case_points"] / val["case_total"]
-                percentage += score / num_problems
+        achieved_points = total_points = 0
+
+        for lesson_problem in lesson.lesson_problems.all():
+            val = problem_points.get(lesson_problem.problem.id)
+            if val and val["case_total"]:
+                achieved_points += (
+                    val["case_points"] / val["case_total"] * lesson_problem.score
+                )
+            total_points += lesson_problem.score
+
         res[lesson.id] = {
-            "achieved_points": percentage * lesson.points,
-            "percentage": percentage * 100,
+            "achieved_points": achieved_points,
+            "total_points": total_points,
+            "percentage": achieved_points / total_points * 100 if total_points else 0,
         }
-        total_achieved_points += percentage * lesson.points
-        total_points += lesson.points
+        if total_points:
+            total_achieved_points += achieved_points / total_points * lesson.points
+        total_lesson_points += lesson.points
 
     res["total"] = {
         "achieved_points": total_achieved_points,
-        "total_points": total_points,
-        "percentage": total_achieved_points / total_points * 100 if total_points else 0,
+        "total_points": total_lesson_points,
+        "percentage": total_achieved_points / total_lesson_points * 100
+        if total_lesson_points
+        else 0,
     }
     return res
 
@@ -157,12 +176,13 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super(CourseLessonDetail, self).get_context_data(**kwargs)
         profile = self.get_profile()
+        context["profile"] = profile
         context["title"] = self.lesson.title
         context["lesson"] = self.lesson
         context["completed_problem_ids"] = user_completed_ids(profile)
         context["attempted_problems"] = user_attempted_ids(profile)
         context["problem_points"] = max_case_points_per_problem(
-            profile, self.lesson.problems.all()
+            profile, self.lesson.lesson_problems.values_list("problem", flat=True)
         )
         return context
 
@@ -183,9 +203,39 @@ CourseLessonFormSet = inlineformset_factory(
 )
 
 
+class CourseLessonProblemForm(ModelForm):
+    class Meta:
+        model = CourseLessonProblem
+        fields = ["order", "problem", "score", "lesson"]
+        widgets = {
+            "problem": HeavySelect2Widget(
+                data_view="problem_select2", attrs={"style": "width: 100%"}
+            ),
+            "lesson": forms.HiddenInput(),
+        }
+
+
+CourseLessonProblemFormSet = modelformset_factory(
+    CourseLessonProblem, form=CourseLessonProblemForm, extra=5, can_delete=True
+)
+
+
 class EditCourseLessonsView(CourseEditableMixin, FormView):
     template_name = "course/edit_lesson.html"
     form_class = CourseLessonFormSet
+
+    def get_problem_formset(self, post=False, lesson=None):
+        formset = CourseLessonProblemFormSet(
+            data=self.request.POST if post else None,
+            prefix=f"problems_{lesson.id}" if lesson else "problems",
+            queryset=CourseLessonProblem.objects.filter(lesson=lesson).order_by(
+                "order"
+            ),
+        )
+        if lesson:
+            for form in formset:
+                form.fields["lesson"].initial = lesson
+        return formset
 
     def get_context_data(self, **kwargs):
         context = super(EditCourseLessonsView, self).get_context_data(**kwargs)
@@ -193,10 +243,25 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
             context["formset"] = self.form_class(
                 self.request.POST, self.request.FILES, instance=self.course
             )
+            context["problem_formsets"] = {
+                lesson.instance.id: self.get_problem_formset(
+                    post=True, lesson=lesson.instance
+                )
+                for lesson in context["formset"].forms
+                if lesson.instance.id
+            }
         else:
             context["formset"] = self.form_class(
                 instance=self.course, queryset=self.course.lessons.order_by("order")
             )
+            context["problem_formsets"] = {
+                lesson.instance.id: self.get_problem_formset(
+                    post=False, lesson=lesson.instance
+                )
+                for lesson in context["formset"].forms
+                if lesson.instance.id
+            }
+
         context["title"] = _("Edit lessons for %(course_name)s") % {
             "course_name": self.course.name
         }
@@ -213,8 +278,22 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
 
     def post(self, request, *args, **kwargs):
         formset = self.form_class(request.POST, instance=self.course)
+        problem_formsets = [
+            self.get_problem_formset(post=True, lesson=lesson.instance)
+            for lesson in formset.forms
+            if lesson.instance.id
+        ]
+        for pf in problem_formsets:
+            if not pf.is_valid():
+                return self.form_invalid(pf)
+
         if formset.is_valid():
             formset.save()
+            for problem_formset in problem_formsets:
+                problem_formset.save()
+                for obj in problem_formset.deleted_objects:
+                    if obj.pk is not None:
+                        obj.delete()
             return self.form_valid(formset)
         else:
             return self.form_invalid(formset)
@@ -239,7 +318,10 @@ class CourseStudentResults(CourseEditableMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(CourseStudentResults, self).get_context_data(**kwargs)
-        context["title"] = mark_safe(
+        context["title"] = _("Grades in %(course_name)s</a>") % {
+            "course_name": self.course.name,
+        }
+        context["content_title"] = mark_safe(
             _("Grades in <a href='%(url)s'>%(course_name)s</a>")
             % {
                 "course_name": self.course.name,
@@ -248,4 +330,62 @@ class CourseStudentResults(CourseEditableMixin, DetailView):
         )
         context["page_type"] = "grades"
         context["grades"] = self.get_grades()
+        return context
+
+
+class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
+    model = CourseLesson
+    template_name = "course/grades_lesson.html"
+
+    def get_object(self):
+        try:
+            self.lesson = CourseLesson.objects.get(
+                course=self.course, id=self.kwargs["id"]
+            )
+            return self.lesson
+        except ObjectDoesNotExist:
+            raise Http404()
+
+    def get_lesson_grades(self):
+        students = self.course.get_students()
+        students.sort(key=lambda u: u.username.lower())
+        problems = self.lesson.lesson_problems.values_list("problem", flat=True)
+        lesson_problems = self.lesson.lesson_problems.all()
+        grades = {}
+        for s in students:
+            grades[s] = problem_points = max_case_points_per_problem(s, problems)
+            achieved_points = total_points = 0
+            for lesson_problem in lesson_problems:
+                val = problem_points.get(lesson_problem.problem.id)
+                if val and val["case_total"]:
+                    achieved_points += (
+                        val["case_points"] / val["case_total"] * lesson_problem.score
+                    )
+                total_points += lesson_problem.score
+            grades[s]["total"] = {
+                "achieved_points": achieved_points,
+                "total_points": total_points,
+                "percentage": achieved_points / total_points * 100
+                if total_points
+                else 0,
+            }
+        return grades
+
+    def get_context_data(self, **kwargs):
+        context = super(CourseStudentResultsLesson, self).get_context_data(**kwargs)
+        context["lesson"] = self.lesson
+        context["title"] = _("Grades of %(lesson_name)s</a> in %(course_name)s</a>") % {
+            "course_name": self.course.name,
+            "lesson_name": self.lesson.title,
+        }
+        context["content_title"] = mark_safe(
+            _("Grades of %(lesson_name)s</a> in <a href='%(url)s'>%(course_name)s</a>")
+            % {
+                "course_name": self.course.name,
+                "lesson_name": self.lesson.title,
+                "url": self.course.get_absolute_url(),
+            }
+        )
+        context["page_type"] = "grades"
+        context["grades"] = self.get_lesson_grades()
         return context

@@ -6,14 +6,15 @@
 {% endblock %}
 
 {% block middle_content %}
-  <center><h2>{{title}}</h2></center>
+  <center><h2>{{title}} - {{profile.username}}</h2></center>
   <h3 class="course-content-title">{{_("Content")}}</h3>
   <div>
     {{ lesson.content|markdown|reference|str|safe }}
   </div>
   <h3 class="course-content-title">{{_("Problems")}}</h3>
   <ul class="course-problem-list">
-    {% for problem in lesson.problems.all() %}
+    {% for lesson_problem in lesson.lesson_problems.order_by('order') %}
+      {% set problem = lesson_problem.problem %}
       <a href="{{url('problem_detail', problem.code)}}">
         <li>
           {% if problem.id in completed_problem_ids %}
@@ -26,10 +27,10 @@
           <span class="problem-name">{{problem.name}}</span>
           {% set pp = problem_points[problem.id] %}
           <span class="score">
-            {% if pp %}
-              {{pp.case_points|floatformat(1)}} / {{pp.case_total|floatformat(0)}}
+            {% if pp and pp.case_total %}
+              {{(pp.case_points / pp.case_total * lesson_problem.score) |floatformat(1)}} / {{lesson_problem.score|floatformat(0)}}
             {% else %}
-              0
+              0 / {{lesson_problem.score|floatformat(0)}}
             {% endif %}
           </span>
         </li>

@@ -61,7 +61,7 @@ from judge.models.ticket import Ticket, TicketMessage
 from judge.models.volunteer import VolunteerProblemVote
 from judge.models.pagevote import PageVote, PageVoteVoter
 from judge.models.bookmark import BookMark, MakeBookMark
-from judge.models.course import Course, CourseRole, CourseLesson
+from judge.models.course import Course, CourseRole, CourseLesson, CourseLessonProblem
 from judge.models.notification import Notification, NotificationProfile
 from judge.models.test_formatter import TestFormatterModel
 
