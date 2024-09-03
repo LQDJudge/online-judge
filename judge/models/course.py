@@ -162,9 +162,17 @@ class CourseLesson(models.Model):
     )
     title = models.TextField(verbose_name=_("course title"))
     content = models.TextField(verbose_name=_("course content"))
-    problems = models.ManyToManyField(Problem, verbose_name=_("problem"), blank=True)
     order = models.IntegerField(verbose_name=_("order"), default=0)
     points = models.IntegerField(verbose_name=_("points"))
+
+    def get_absolute_url(self):
+        return reverse(
+            "course_lesson_detail",
+            args=(
+                self.course.slug,
+                self.id,
+            ),
+        )
 
 
 class CourseLessonProblem(models.Model):

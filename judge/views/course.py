@@ -130,7 +130,7 @@ class CourseDetail(CourseDetailMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(CourseDetail, self).get_context_data(**kwargs)
-        lessons = self.course.lessons.prefetch_related("problems").all()
+        lessons = self.course.lessons.prefetch_related("lesson_problems").all()
         context["title"] = self.course.name
         context["page_type"] = "home"
         context["lessons"] = lessons
@@ -190,7 +190,7 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
 class CourseLessonForm(forms.ModelForm):
     class Meta:
         model = CourseLesson
-        fields = ["order", "title", "points", "content", "problems"]
+        fields = ["order", "title", "points", "content"]
         widgets = {
             "title": forms.TextInput(),
             "content": HeavyPreviewPageDownWidget(preview=reverse_lazy("blog_preview")),
@@ -312,13 +312,13 @@ class CourseStudentResults(CourseEditableMixin, DetailView):
     def get_grades(self):
         students = self.course.get_students()
         students.sort(key=lambda u: u.username.lower())
-        lessons = self.course.lessons.prefetch_related("problems").all()
+        lessons = self.course.lessons.prefetch_related("lesson_problems").all()
         grades = {s: calculate_lessons_progress(s, lessons) for s in students}
         return grades
 
     def get_context_data(self, **kwargs):
         context = super(CourseStudentResults, self).get_context_data(**kwargs)
-        context["title"] = _("Grades in %(course_name)s</a>") % {
+        context["title"] = _("Grades in %(course_name)s") % {
             "course_name": self.course.name,
         }
         context["content_title"] = mark_safe(
@@ -374,16 +374,19 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super(CourseStudentResultsLesson, self).get_context_data(**kwargs)
         context["lesson"] = self.lesson
-        context["title"] = _("Grades of %(lesson_name)s</a> in %(course_name)s</a>") % {
+        context["title"] = _("Grades of %(lesson_name)s in %(course_name)s") % {
             "course_name": self.course.name,
             "lesson_name": self.lesson.title,
         }
         context["content_title"] = mark_safe(
-            _("Grades of %(lesson_name)s</a> in <a href='%(url)s'>%(course_name)s</a>")
+            _(
+                "Grades of <a href='%(url_lesson)s'>%(lesson_name)s</a> in <a href='%(url_course)s'>%(course_name)s</a>"
+            )
             % {
                 "course_name": self.course.name,
                 "lesson_name": self.lesson.title,
-                "url": self.course.get_absolute_url(),
+                "url_course": self.course.get_absolute_url(),
+                "url_lesson": self.lesson.get_absolute_url(),
             }
         )
         context["page_type"] = "grades"
