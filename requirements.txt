@@ -44,3 +44,4 @@ mdx-breakless-lists
 beautifulsoup4
 pre-commit
 django-ratelimit
+lxml_html_clean

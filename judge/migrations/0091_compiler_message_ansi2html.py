@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import lxml.html as lh
 from django.db import migrations
-from lxml.html.clean import clean_html
+from lxml_html_clean import clean_html
 
 
 def strip_error_html(apps, schema_editor):

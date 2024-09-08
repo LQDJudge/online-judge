@@ -9,6 +9,7 @@ from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
 import judge
+from judge import template_context
 from judge.utils.problems import finished_submission
 from .models import (
     BlogPost,
@@ -25,6 +26,7 @@ from .models import (
     Submission,
     NavigationBar,
     Solution,
+    ContestProblem,
 )
 
 
@@ -169,9 +171,16 @@ def contest_submission_update(sender, instance, **kwargs):
 
 @receiver(post_save, sender=NavigationBar)
 def navbar_update(sender, instance, **kwargs):
-    judge.template_context._nav_bar.dirty()
+    template_context._nav_bar.dirty()
 
 
 @receiver(post_save, sender=Solution)
 def solution_update(sender, instance, **kwargs):
     cache.delete(make_template_fragment_key("solution_content", (instance.id,)))
+
+
+@receiver(post_delete, sender=ContestProblem)
+def contest_problem_delete(sender, instance, **kwargs):
+    Submission.objects.filter(
+        contest_object=instance.contest, contest__isnull=True
+    ).update(contest_object=None)
