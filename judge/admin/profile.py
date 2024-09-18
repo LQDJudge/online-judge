@@ -1,13 +1,18 @@
 from django.contrib import admin
-from django.forms import ModelForm
+from django.forms import ModelForm, CharField, TextInput
 from django.utils.html import format_html
 from django.utils.translation import gettext, gettext_lazy as _, ungettext
-from reversion.admin import VersionAdmin
 from django.contrib.auth.admin import UserAdmin as OldUserAdmin
+from django.core.exceptions import ValidationError
 
 from django_ace import AceWidget
+
 from judge.models import Profile, ProfileInfo
 from judge.widgets import AdminPagedownWidget, AdminSelect2Widget
+
+from reversion.admin import VersionAdmin
+
+import re
 
 
 class ProfileForm(ModelForm):
@@ -166,8 +171,25 @@ class ProfileAdmin(VersionAdmin):
     recalculate_points.short_description = _("Recalculate scores")
 
 
+class UserForm(ModelForm):
+    username = CharField(
+        max_length=150,
+        help_text=_("Username can only contain letters, digits, and underscores."),
+        widget=TextInput(attrs={"class": "vTextField"}),
+    )
+
+    def clean_username(self):
+        username = self.cleaned_data.get("username")
+        if not re.match(r"^\w+$", username):
+            raise ValidationError(
+                _("Username can only contain letters, digits, and underscores.")
+            )
+        return username
+
+
 class UserAdmin(OldUserAdmin):
     # Customize the fieldsets for adding and editing users
+    form = UserForm
     fieldsets = (
         (None, {"fields": ("username", "password")}),
         ("Personal Info", {"fields": ("first_name", "last_name", "email")}),
