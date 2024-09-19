@@ -4,6 +4,7 @@ from django.utils.html import format_html
 from django.utils.translation import gettext, gettext_lazy as _, ungettext
 from django.contrib.auth.admin import UserAdmin as OldUserAdmin
 from django.core.exceptions import ValidationError
+from django.contrib.auth.forms import UserChangeForm
 
 from django_ace import AceWidget
 
@@ -171,12 +172,12 @@ class ProfileAdmin(VersionAdmin):
     recalculate_points.short_description = _("Recalculate scores")
 
 
-class UserForm(ModelForm):
-    username = CharField(
-        max_length=150,
-        help_text=_("Username can only contain letters, digits, and underscores."),
-        widget=TextInput(attrs={"class": "vTextField"}),
-    )
+class UserForm(UserChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].help_text = _(
+            "Username can only contain letters, digits, and underscores."
+        )
 
     def clean_username(self):
         username = self.cleaned_data.get("username")
@@ -221,3 +222,6 @@ class UserAdmin(OldUserAdmin):
                 "user_permissions",
             )
         return fields
+
+    def has_add_permission(self, request):
+        return False
