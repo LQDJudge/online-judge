@@ -559,5 +559,5 @@ class ContestsSummaryAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         super(ContestsSummaryAdmin, self).save_model(request, obj, form, change)
         obj.refresh_from_db()
-        obj.results = recalculate_contest_summary_result(obj)
+        obj.results = recalculate_contest_summary_result(request, obj)
         obj.save()

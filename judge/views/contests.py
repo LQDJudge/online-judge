@@ -1555,7 +1555,7 @@ class ContestsSummaryView(DiggPaginatorMixin, ListView):
         return context
 
 
-def recalculate_contest_summary_result(contest_summary):
+def recalculate_contest_summary_result(request, contest_summary):
     scores_system = contest_summary.scores
     contests = contest_summary.contests.all()
     total_points = defaultdict(int)
@@ -1564,14 +1564,14 @@ def recalculate_contest_summary_result(contest_summary):
 
     for i in range(len(contests)):
         contest = contests[i]
-        users, problems = get_contest_ranking_list(None, contest)
+        users, problems = get_contest_ranking_list(request, contest)
         for rank, user in users:
             curr_score = 0
             if rank - 1 < len(scores_system):
                 curr_score = scores_system[rank - 1]
             total_points[user.user] += curr_score
             result_per_contest[user.user][i] = (curr_score, rank)
-            user_css_class[user.user] = user.css_class
+            user_css_class[user.user] = user.user.css_class
 
     sorted_total_points = [
         ContestsSummaryData(
