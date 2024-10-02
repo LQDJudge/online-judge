@@ -246,6 +246,10 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         verbose_name=_("organizations"),
         help_text=_("If private, only these organizations may see the contest"),
     )
+    is_in_course = models.BooleanField(
+        verbose_name=_("contest in course"),
+        default=False,
+    )
     og_image = models.CharField(
         verbose_name=_("OpenGraph image"), default="", max_length=150, blank=True
     )
@@ -561,6 +565,14 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         if not self.is_visible:
             raise self.Inaccessible()
 
+        if self.is_in_course:
+            from judge.models import Course, CourseContest
+
+            course_contest = CourseContest.objects.filter(contest=self).first()
+            if Course.is_accessible_by(course_contest.course, user.profile):
+                return
+            raise self.Inaccessible()
+
         # Contest is not private
         if not self.is_private and not self.is_organization_private:
             return
@@ -612,7 +624,10 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         if not user.is_authenticated:
             return (
                 cls.objects.filter(
-                    is_visible=True, is_organization_private=False, is_private=False
+                    is_visible=True,
+                    is_organization_private=False,
+                    is_private=False,
+                    is_in_course=False,
                 )
                 .defer("description")
                 .distinct()
@@ -626,7 +641,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
             )
             or show_own_contests_only
         ):
-            q = Q(is_visible=True)
+            q = Q(is_visible=True, is_in_course=False)
             q &= (
                 Q(view_contest_scoreboard=user.profile)
                 | Q(is_organization_private=False, is_private=False)

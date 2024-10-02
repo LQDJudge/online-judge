@@ -12,28 +12,42 @@ from django.forms import (
 )
 from django.views.generic.edit import FormView
 from django.shortcuts import get_object_or_404
-from django.urls import reverse_lazy
-from django.db.models import Max, F
+from django.urls import reverse_lazy, reverse
+from django.db.models import Max, F, Sum
 from django.core.exceptions import ObjectDoesNotExist
 
 from judge.models import (
     Course,
+    Contest,
     CourseLesson,
     Submission,
     Profile,
     CourseRole,
     CourseLessonProblem,
+    CourseContest,
+    ContestProblem,
+    ContestParticipation,
 )
 from judge.models.course import RoleInCourse
 from judge.widgets import (
     HeavyPreviewPageDownWidget,
     HeavySelect2MultipleWidget,
     HeavySelect2Widget,
+    DateTimePickerWidget,
+    Select2MultipleWidget,
+    Select2Widget,
+)
+from judge.forms import (
+    ContestProblemFormSet,
 )
 from judge.utils.problems import (
     user_attempted_ids,
     user_completed_ids,
 )
+from judge.utils.contest import (
+    maybe_trigger_contest_rescore,
+)
+from reversion import revisions
 
 
 def max_case_points_per_problem(profile, problems):
@@ -85,6 +99,65 @@ def calculate_lessons_progress(profile, lessons):
     return res
 
 
+def calculate_contests_progress(profile, course_contests):
+    res = {}
+    total_achieved_points = total_contest_points = 0
+    for course_contest in course_contests:
+        contest = course_contest.contest
+
+        achieved_points = 0
+        participation = ContestParticipation.objects.filter(
+            contest=contest, user=profile, virtual=0
+        ).first()
+
+        if participation:
+            achieved_points = participation.score
+
+        total_points = (
+            ContestProblem.objects.filter(contest=contest).aggregate(Sum("points"))[
+                "points__sum"
+            ]
+            or 0
+        )
+
+        res[course_contest.id] = {
+            "achieved_points": achieved_points,
+            "total_points": total_points,
+            "percentage": achieved_points / total_points * 100 if total_points else 0,
+        }
+
+        if total_points:
+            total_achieved_points += (
+                achieved_points / total_points * course_contest.points
+            )
+        total_contest_points += course_contest.points
+
+    res["total"] = {
+        "achieved_points": total_achieved_points,
+        "total_points": total_contest_points,
+        "percentage": total_achieved_points / total_contest_points * 100
+        if total_contest_points
+        else 0,
+    }
+    return res
+
+
+def calculate_total_progress(profile, lesson_progress, contest_progress):
+    lesson_total = lesson_progress["total"]
+    contest_total = contest_progress["total"]
+    total_achieved_points = (
+        lesson_total["achieved_points"] + contest_total["achieved_points"]
+    )
+    total_points = lesson_total["total_points"] + contest_total["total_points"]
+
+    res = {
+        "achieved_points": total_achieved_points,
+        "total_points": total_points,
+        "percentage": total_achieved_points / total_points * 100 if total_points else 0,
+    }
+    return res
+
+
 class CourseList(ListView):
     model = Course
     template_name = "course/list.html"
@@ -130,13 +203,34 @@ class CourseDetail(CourseDetailMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(CourseDetail, self).get_context_data(**kwargs)
-        lessons = self.course.lessons.prefetch_related("lesson_problems").all()
+        lessons = (
+            self.course.lessons.filter(is_visible=True)
+            .order_by("order")
+            .prefetch_related("lesson_problems")
+            .all()
+        )
+        course_contests = (
+            self.course.contests.select_related("contest")
+            .filter(contest__is_visible=True)
+            .order_by("order")
+        )
         context["title"] = self.course.name
         context["page_type"] = "home"
         context["lessons"] = lessons
         context["lesson_progress"] = calculate_lessons_progress(
             self.request.profile, lessons
         )
+        context["course_contests"] = course_contests
+        context["contest_progress"] = calculate_contests_progress(
+            self.request.profile, course_contests
+        )
+
+        context["total_progress"] = calculate_total_progress(
+            self.request.profile,
+            context["lesson_progress"],
+            context["contest_progress"],
+        )
+
         return context
 
 
@@ -149,6 +243,11 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
             self.lesson = CourseLesson.objects.get(
                 course=self.course, id=self.kwargs["id"]
             )
+
+            is_editable = Course.is_editable_by(self.course, self.request.profile)
+            if not self.lesson.is_visible and not is_editable:
+                raise Http404()
+
             return self.lesson
         except ObjectDoesNotExist:
             raise Http404()
@@ -190,7 +289,7 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
 class CourseLessonForm(forms.ModelForm):
     class Meta:
         model = CourseLesson
-        fields = ["order", "title", "points", "content"]
+        fields = ["order", "title", "is_visible", "points", "content"]
         widgets = {
             "title": forms.TextInput(),
             "content": HeavyPreviewPageDownWidget(preview=reverse_lazy("blog_preview")),
@@ -312,9 +411,29 @@ class CourseStudentResults(CourseEditableMixin, DetailView):
     def get_grades(self):
         students = self.course.get_students()
         students.sort(key=lambda u: u.username.lower())
-        lessons = self.course.lessons.prefetch_related("lesson_problems").all()
-        grades = {s: calculate_lessons_progress(s, lessons) for s in students}
-        return grades
+        lessons = (
+            self.course.lessons.filter(is_visible=True)
+            .prefetch_related("lesson_problems")
+            .all()
+        )
+        course_contests = (
+            self.course.contests.select_related("contest")
+            .filter(contest__is_visible=True)
+            .order_by("order")
+        )
+
+        grade_lessons = {}
+        grade_contests = {}
+        grade_total = {}
+        for s in students:
+            grade_lessons[s] = lesson_progress = calculate_lessons_progress(s, lessons)
+            grade_contests[s] = contest_progress = calculate_contests_progress(
+                s, course_contests
+            )
+            grade_total[s] = calculate_total_progress(
+                s, lesson_progress, contest_progress
+            )
+        return grade_lessons, grade_contests, grade_total
 
     def get_context_data(self, **kwargs):
         context = super(CourseStudentResults, self).get_context_data(**kwargs)
@@ -329,7 +448,19 @@ class CourseStudentResults(CourseEditableMixin, DetailView):
             }
         )
         context["page_type"] = "grades"
-        context["grades"] = self.get_grades()
+        (
+            context["grade_lessons"],
+            context["grade_contests"],
+            context["grade_total"],
+        ) = self.get_grades()
+        context["lessons"] = self.course.lessons.filter(is_visible=True).order_by(
+            "order"
+        )
+        context["course_contests"] = (
+            self.course.contests.select_related("contest")
+            .filter(contest__is_visible=True)
+            .order_by("order")
+        )
         return context
 
 
@@ -392,3 +523,255 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
         context["page_type"] = "grades"
         context["grades"] = self.get_lesson_grades()
         return context
+
+
+class AddCourseContestForm(forms.ModelForm):
+    order = forms.IntegerField(label=_("Order"))
+    points = forms.IntegerField(label=_("Points"))
+
+    class Meta:
+        model = Contest
+        fields = [
+            "order",
+            "points",
+            "key",
+            "name",
+            "start_time",
+            "end_time",
+            "problems",
+        ]
+        widgets = {
+            "start_time": DateTimePickerWidget(),
+            "end_time": DateTimePickerWidget(),
+            "problems": HeavySelect2MultipleWidget(data_view="problem_select2"),
+        }
+
+    def save(self, course, profile, commit=True):
+        contest = super().save(commit=False)
+        contest.is_in_course = True
+
+        old_save_m2m = self.save_m2m
+
+        def save_m2m():
+            for i, problem in enumerate(self.cleaned_data["problems"]):
+                contest_problem = ContestProblem(
+                    contest=contest, problem=problem, points=100, order=i + 1
+                )
+                contest_problem.save()
+                contest.contest_problems.add(contest_problem)
+            contest.authors.add(profile)
+            old_save_m2m()
+
+        self.save_m2m = save_m2m
+        contest.save()
+        self.save_m2m()
+
+        CourseContest.objects.create(
+            course=course,
+            contest=contest,
+            order=self.cleaned_data["order"],
+            points=self.cleaned_data["points"],
+        )
+
+        return contest
+
+
+class AddCourseContest(CourseEditableMixin, FormView):
+    template_name = "course/add_contest.html"
+    form_class = AddCourseContestForm
+
+    def get_title(self):
+        return _("Add contest")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = self.get_title()
+        return context
+
+    def form_valid(self, form):
+        with revisions.create_revision():
+            revisions.set_comment(_("Added from course") + " " + self.course.name)
+            revisions.set_user(self.request.user)
+
+            self.contest = form.save(course=self.course, profile=self.request.profile)
+
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse(
+            "edit_course_contest",
+            args=[self.course.slug, self.contest.key],
+        )
+
+
+class CourseContestList(CourseEditableMixin, ListView):
+    template_name = "course/contest_list.html"
+    context_object_name = "course_contests"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = _("Contest list")
+        context["page_type"] = "contests"
+        return context
+
+    def get_queryset(self):
+        return self.course.contests.select_related("contest").all().order_by("order")
+
+
+class EditCourseContestForm(ModelForm):
+    order = forms.IntegerField(label=_("Order"))
+    points = forms.IntegerField(label=_("Points"))
+
+    class Meta:
+        model = Contest
+        fields = (
+            "order",
+            "points",
+            "is_visible",
+            "key",
+            "name",
+            "start_time",
+            "end_time",
+            "format_name",
+            "authors",
+            "curators",
+            "testers",
+            "time_limit",
+            "freeze_after",
+            "use_clarifications",
+            "hide_problem_tags",
+            "public_scoreboard",
+            "scoreboard_visibility",
+            "points_precision",
+            "rate_limit",
+            "description",
+            "access_code",
+            "private_contestants",
+            "view_contest_scoreboard",
+            "banned_users",
+        )
+        widgets = {
+            "authors": HeavySelect2MultipleWidget(data_view="profile_select2"),
+            "curators": HeavySelect2MultipleWidget(data_view="profile_select2"),
+            "testers": HeavySelect2MultipleWidget(data_view="profile_select2"),
+            "private_contestants": HeavySelect2MultipleWidget(
+                data_view="profile_select2"
+            ),
+            "banned_users": HeavySelect2MultipleWidget(data_view="profile_select2"),
+            "view_contest_scoreboard": HeavySelect2MultipleWidget(
+                data_view="profile_select2"
+            ),
+            "tags": Select2MultipleWidget,
+            "description": HeavyPreviewPageDownWidget(
+                preview=reverse_lazy("contest_preview")
+            ),
+            "start_time": DateTimePickerWidget(),
+            "end_time": DateTimePickerWidget(),
+            "format_name": Select2Widget(),
+            "scoreboard_visibility": Select2Widget(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.course_contest_instance = kwargs.pop("course_contest_instance", None)
+        super().__init__(*args, **kwargs)
+
+        if self.course_contest_instance:
+            self.fields["order"].initial = self.course_contest_instance.order
+            self.fields["points"].initial = self.course_contest_instance.points
+
+    def save(self, commit=True):
+        contest = super().save(commit=commit)
+
+        if self.course_contest_instance:
+            self.course_contest_instance.order = self.cleaned_data["order"]
+            self.course_contest_instance.points = self.cleaned_data["points"]
+            if commit:
+                self.course_contest_instance.save()
+
+        return contest
+
+
+class EditCourseContest(CourseEditableMixin, FormView):
+    template_name = "course/edit_contest.html"
+    form_class = EditCourseContestForm
+
+    def dispatch(self, request, *args, **kwargs):
+        self.contest = get_object_or_404(Contest, key=self.kwargs["contest"])
+        res = super().dispatch(request, *args, **kwargs)
+        if not self.contest.is_in_course:
+            raise Http404()
+        return res
+
+    def get_form_kwargs(self):
+        self.course_contest = get_object_or_404(
+            CourseContest, course=self.course, contest=self.contest
+        )
+
+        kwargs = super().get_form_kwargs()
+        kwargs["instance"] = self.contest
+        kwargs["course_contest_instance"] = self.course_contest
+        return kwargs
+
+    def post(self, request, *args, **kwargs):
+        problem_formset = self.get_problem_formset(True)
+        if problem_formset.is_valid():
+            for problem_form in problem_formset:
+                if problem_form.cleaned_data.get("DELETE") and problem_form.instance.pk:
+                    problem_form.instance.delete()
+
+            for problem_form in problem_formset.save(commit=False):
+                if problem_form:
+                    problem_form.contest = self.contest
+                    problem_form.save()
+
+            return super().post(request, *args, **kwargs)
+
+        self.object = self.contest
+        return self.render_to_response(
+            self.get_context_data(
+                problems_form=problem_formset,
+            )
+        )
+
+    def get_title(self):
+        return _("Edit contest")
+
+    def form_valid(self, form):
+        with revisions.create_revision():
+            revisions.set_comment(_("Edited from course") + " " + self.course.name)
+            revisions.set_user(self.request.user)
+
+            maybe_trigger_contest_rescore(form, self.contest)
+
+            form.save()
+
+        return super().form_valid(form)
+
+    def get_problem_formset(self, post=False):
+        return ContestProblemFormSet(
+            data=self.request.POST if post else None,
+            prefix="problems",
+            queryset=ContestProblem.objects.filter(contest=self.contest).order_by(
+                "order"
+            ),
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = self.get_title()
+        context["content_title"] = mark_safe(
+            _("Edit <a href='%(url)s'>%(contest_name)s</a>")
+            % {
+                "contest_name": self.contest.name,
+                "url": self.contest.get_absolute_url(),
+            }
+        )
+        if "problems_form" not in context:
+            context["problems_form"] = self.get_problem_formset()
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            "edit_course_contest",
+            args=[self.course.slug, self.contest.key],
+        )

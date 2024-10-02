@@ -75,58 +75,84 @@
 
 {% block middle_content %}
   <center><h2>{{content_title}}</h2></center>
-  {% set lessons = course.lessons.order_by('order') %}
   {{_("Sort by")}}:
   <select id="sortSelect">
     <option value="username">{{_("Username")}}</option>
     <option value="total">{{_("Score")}}</option>
   </select>
   <input type="text" id="search-input" placeholder="{{_('Search')}}" autofocus>
-  <table class="table striped" id="users-table">
-    <thead>
-      <tr>
-        <th>{{_('Student')}}</th>
-        {% if grades|length > 0 %}
+  <div style="overflow-x: auto; margin-top: 1em">
+    <table class="table striped" id="users-table">
+      <thead>
+        <tr>
+          <th>{{_('Student')}}</th>
+          <th>{{_('Total')}}</th>
           {% for lesson in lessons %}
-            <th class="points">
+            <th class="points" title="{{lesson.title}}">
               <a href="{{url('course_grades_lesson', course.slug, lesson.id)}}">
-                {{ lesson.title }}
+                L{{ loop.index0 + 1 }}
                 <div class="point-denominator">{{lesson.points}}</div>
               </a>
             </th>
           {% endfor %}
-        {% endif %}
-        <th>{{_('Total')}}</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for student, grade in grades.items() %}
-        <tr>
-          <td class="user-name">
-            <div>
-              {{link_user(student)}}
-            </div>
-            <div>
-              {{student.first_name}}
-            </div>
-          </td>
-          {% for lesson in lessons %}
-            {% set val = grade.get(lesson.id) %}
-            <td class="partial-score">
-              <a href="{{url('course_lesson_detail', course.slug, lesson.id)}}?user={{student.username}}">
-                {% if val and val['total_points'] %}
-                  {{ (val['achieved_points'] / val['total_points'] * lesson.points) | floatformat(0) }}
-                {% else %}
-                  0
-                {% endif %}
+          {% for course_contest in course_contests %}
+            <th class="points" title="{{course_contest.contest.name}}">
+              <a href="{{url('contest_ranking', course_contest.contest.key)}}">
+                C{{ loop.index0 + 1 }}
+                <div class="point-denominator">{{course_contest.points}}</div>
               </a>
-            </td>
+            </th>
           {% endfor %}
-          <td style="font-weight: bold">
-            {{ grade['total']['percentage'] | floatformat(0) }}%
-          </td>
         </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for student in grade_total.keys() %}
+          {% set grade_lessons_student = grade_lessons.get(student) %}
+          {% set grade_contests_student = grade_contests.get(student) %}
+          {% set grade_total_student = grade_total.get(student) %}
+          <tr>
+            <td class="user-name">
+              <div>
+                {{link_user(student)}}
+              </div>
+              <div>
+                {{student.first_name}}
+              </div>
+            </td>
+            <td style="font-weight: bold">
+              {% if grade_total_student %}
+                {{ grade_total_student['percentage'] | floatformat(0) }}%
+              {% else %}
+                0
+              {% endif %}
+            </td>
+            {% for lesson in lessons %}
+              {% set val = grade_lessons_student.get(lesson.id) %}
+              <td class="partial-score">
+                <a href="{{url('course_lesson_detail', course.slug, lesson.id)}}?user={{student.username}}">
+                  {% if val and val['total_points'] %}
+                    {{ (val['achieved_points'] / val['total_points'] * lesson.points) | floatformat(0) }}
+                  {% else %}
+                    0
+                  {% endif %}
+                </a>
+              </td>
+            {% endfor %}
+            {% for course_contest in course_contests %}
+              {% set val = grade_contests_student.get(course_contest.id) %}
+              <td class="partial-score">
+                <a href="{{url('contest_ranking', course_contest.contest.key)}}#!{{student.username}}">
+                  {% if val and val['total_points'] %}
+                    {{ (val['achieved_points'] / val['total_points'] * course_contest.points) | floatformat(0) }}
+                  {% else %}
+                    0
+                  {% endif %}
+                </a>
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 {% endblock %}

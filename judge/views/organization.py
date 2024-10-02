@@ -69,6 +69,7 @@ from judge.utils.views import (
     DiggPaginatorMixin,
 )
 from judge.utils.problems import user_attempted_ids, user_completed_ids
+from judge.utils.contest import maybe_trigger_contest_rescore
 from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
 from judge.views.submission import SubmissionsListBase
@@ -1038,30 +1039,8 @@ class EditOrganizationContest(
             self.object.is_organization_private = True
             self.object.save()
 
-            if any(
-                f in form.changed_data
-                for f in (
-                    "start_time",
-                    "end_time",
-                    "time_limit",
-                    "format_config",
-                    "format_name",
-                    "freeze_after",
-                )
-            ):
-                transaction.on_commit(rescore_contest.s(self.object.key).delay)
+            maybe_trigger_contest_rescore(form, self.object)
 
-            if any(
-                f in form.changed_data
-                for f in (
-                    "authors",
-                    "curators",
-                    "testers",
-                )
-            ):
-                Contest._author_ids.dirty(self.object)
-                Contest._curator_ids.dirty(self.object)
-                Contest._tester_ids.dirty(self.object)
             return res
 
     def get_problem_formset(self, post=False):

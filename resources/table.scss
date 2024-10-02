@@ -34,20 +34,12 @@
 
     thead th {
         vertical-align: middle;
-
-        &:first-child {
-            border-top-left-radius: $table_header_rounding;
-        }
-
-        &:last-child {
-            border-top-right-radius: $table_header_rounding;
-        }
     }
 
     th {
         height: 2em;
-        color: white;
-        background-color: $widget_black;
+        color: black;
+        background-color: #DAA520;
         border-color: #cccccc;
         border-width: 1px 1px 0 0;
         border-style: solid;
@@ -56,14 +48,6 @@
         text-align: center;
         font-weight: 600;
         font-size: 1.1em;
-
-        &:first-child {
-            border-top-left-radius: $table_header_rounding;
-        }
-
-        &:last-child {
-            border-top-right-radius: $table_header_rounding;
-        }
     }
 
     td {
@@ -73,19 +57,6 @@
         padding: 7px 5px;
         vertical-align: middle;
         text-align: center;
-    }
-
-    // Monkey-patches for awkward table rounding
-    tr:not(:first-child) th {
-        border-radius: 0;
-    }
-
-    tr:last-child th {
-        border-bottom-left-radius: $table_header_rounding;
-    }
-
-    thead tr th {
-        border-bottom-left-radius: 0 !important;
     }
 }
 
