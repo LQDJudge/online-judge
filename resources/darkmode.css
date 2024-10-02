@@ -9,7 +9,7 @@ html {
     color-scheme: dark !important;
 }
 iframe {
-    color-scheme: initial;
+    color-scheme: dark !important;
 }
 html, body, input, textarea, select, button, dialog {
     background-color: #181a1b;
@@ -36,21 +36,8 @@ select:-webkit-autofill {
     background-color: #404400 !important;
     color: #e8e6e3 !important;
 }
-::-webkit-scrollbar {
-    background-color: #202324;
-    color: #aba499;
-}
-::-webkit-scrollbar-thumb {
-    background-color: #454a4d;
-}
-::-webkit-scrollbar-thumb:hover {
-    background-color: #575e62;
-}
-::-webkit-scrollbar-thumb:active {
-    background-color: #484e51;
-}
-::-webkit-scrollbar-corner {
-    background-color: #181a1b;
+* {
+    scrollbar-color: #454a4d #202324;
 }
 ::selection {
     background-color: #004daa !important;
@@ -63,14 +50,14 @@ select:-webkit-autofill {
 }
 
 /* Invert Style */
-.jfk-bubble.gtx-bubble, .captcheck_answer_label > input + img, span#closed_text > img[src^="https://www.gstatic.com/images/branding/googlelogo"], span[data-href^="https://www.hcaptcha.com/"] > #icon, ::-webkit-calendar-picker-indicator, img.Wirisformula {
+.jfk-bubble.gtx-bubble, .captcheck_answer_label > input + img, span#closed_text > img[src^="https://www.gstatic.com/images/branding/googlelogo"], span[data-href^="https://www.hcaptcha.com/"] > #icon, img.Wirisformula {
     filter: invert(100%) hue-rotate(180deg) contrast(90%) !important;
 }
 
 /* Variables Style */
 :root {
-   --darkreader-neutral-background: #131516;
-   --darkreader-neutral-text: #d8d4cf;
+   --darkreader-neutral-background: #181a1b;
+   --darkreader-neutral-text: #e8e6e3;
    --darkreader-selection-background: #004daa;
    --darkreader-selection-text: #e8e6e3;
 }
@@ -1843,7 +1830,7 @@ input::placeholder {
     border-color: rgb(62, 68, 70);
 }
 .table th {
-    background-color: rgb(0, 0, 100);
+    background-color: rgb(174, 132, 26);
     border-color: rgb(62, 68, 70);
     color: rgb(232, 230, 227);
 }
@@ -2185,7 +2172,7 @@ svg.rate-box.rate-target circle:last-child {
     color: rgb(232, 230, 227);
 }
 #users-table th a:hover {
-    color: rgb(26, 255, 26);
+    color: rgb(255, 211, 147);
 }
 #users-table tr:hover {
     background-color: rgb(36, 39, 40);
@@ -3396,7 +3383,7 @@ div.dmmd-preview-stale {
     background-image: initial;
 }
 .lesson-list .progress-bar {
-    background-color: rgb(125, 44, 5);
+    background-color: rgb(27, 111, 27);
     background-image: initial;
     color: rgb(232, 230, 227);
 }
@@ -3410,6 +3397,16 @@ div.dmmd-preview-stale {
 .course-problem-list a {
     color: inherit;
     text-decoration-color: initial;
+}
+.course-contest-card {
+    border-color: rgb(58, 62, 65);
+    box-shadow: rgba(0, 0, 0, 0.1) 2px 2px 10px;
+}
+.course-contest-card h5 {
+    color: rgb(200, 195, 188);
+}
+.course-contest-card p {
+    color: rgb(178, 172, 162);
 }
 .fa-border {
     border: var(--darkreader-border--fa-border-width, .08em) var(--darkreader-border--fa-border-style, solid) var(--darkreader-border--fa-border-color, #35393b);
@@ -3721,12 +3718,6 @@ div.dmmd-preview-stale {
     border-style: initial;
     border-width: 0px;
 }
-.recently-attempted ul {
-    list-style-image: initial;
-}
-.organization-row:last-child {
-    border-bottom: none;
-}
 .katex * {
     border-color: currentcolor;
 }
@@ -3758,9 +3749,9 @@ div.dmmd-preview-stale {
 
 /* Override Style */
 .vimvixen-hint {
-    background-color: #7b5300 !important;
-    border-color: #d8b013 !important;
-    color: #f3e8c8 !important;
+    background-color: #684b00 !important;
+    border-color: #9e7e00 !important;
+    color: #d7d4cf !important;
 }
 #vimvixen-console-frame {
     color-scheme: light !important;
@@ -3774,7 +3765,7 @@ div.dmmd-preview-stale {
     color: var(--darkreader-neutral-text) !important;
 }
 gr-main-header {
-    background-color: #0f3a48 !important;
+    background-color: #1b4958 !important;
 }
 .tou-z65h9k,
 .tou-mignzq,
@@ -3783,7 +3774,7 @@ gr-main-header {
     background-color: var(--darkreader-neutral-background) !important;
 }
 .tou-75mvi {
-    background-color: #032029 !important;
+    background-color: #0f3a47 !important;
 }
 .tou-ta9e87,
 .tou-1w3fhi0,
@@ -3792,13 +3783,13 @@ gr-main-header {
 .tou-1lpmd9d,
 .tou-1frrtv8,
 .tou-17ezmgn {
-    background-color: #0a0a0a !important;
+    background-color: #1e2021 !important;
 }
 .tou-uknfeu {
-    background-color: #231603 !important;
+    background-color: #432c09 !important;
 }
 .tou-6i3zyv {
-    background-color: #19576c !important;
+    background-color: #245d70 !important;
 }
 div.mermaid-viewer-control-panel .btn {
     background-color: var(--darkreader-neutral-background);

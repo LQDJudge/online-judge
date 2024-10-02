@@ -569,6 +569,21 @@ urlpatterns = [
                     course.CourseStudentResultsLesson.as_view(),
                     name="course_grades_lesson",
                 ),
+                url(
+                    r"^/add_contest$",
+                    course.AddCourseContest.as_view(),
+                    name="add_course_contest",
+                ),
+                url(
+                    r"^/edit_contest/(?P<contest>\w+)$",
+                    course.EditCourseContest.as_view(),
+                    name="edit_course_contest",
+                ),
+                url(
+                    r"^/contests$",
+                    course.CourseContestList.as_view(),
+                    name="course_contest_list",
+                ),
             ]
         ),
     ),

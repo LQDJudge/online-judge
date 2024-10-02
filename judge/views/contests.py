@@ -534,6 +534,14 @@ class ContestDetail(
         )
         context["editable_organizations"] = self.get_editable_organizations()
         context["is_clonable"] = is_contest_clonable(self.request, self.object)
+
+        if self.object.is_in_course:
+            from judge.models import Course, CourseContest
+
+            course = CourseContest.get_course_of_contest(self.object)
+            if Course.is_editable_by(course, self.request.profile):
+                context["editable_course"] = course
+
         if self.request.in_contest:
             context["current_contest"] = self.request.participation.contest
         else:

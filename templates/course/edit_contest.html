@@ -1,0 +1,92 @@
+{% extends "course/base.html" %}
+
+{% block js_media %}
+  {{ form.media.js }}
+{% endblock %}
+
+{% block two_col_media %}
+  {{ form.media.css }}
+  <style>
+    #org-field-wrapper-order,
+    #org-field-wrapper-points,
+    #org-field-wrapper-scoreboard_visibility,
+    #org-field-wrapper-points_precision,
+    #org-field-wrapper-start_time,
+    #org-field-wrapper-end_time,
+    #org-field-wrapper-time_limit,
+    #org-field-wrapper-format_name,
+    #org-field-wrapper-freeze_after,
+    #org-field-wrapper-rate_limit {
+      display: inline-flex;
+    }
+    .problems-problem {
+      max-width: 60vh;
+    }
+    input[type=number] {
+      width: 5em;
+    }
+    .middle-content {
+      z-index: 1;
+    }
+    #three-col-container {
+      overflow: auto;
+    }
+  </style>
+{% endblock %}
+
+{% block middle_content %}
+  <center><h2>{{content_title}}</h2></center>
+  <form action="" method="post">
+    {% csrf_token %}
+    {% if form.errors or problems_form.errors %}
+      <div class="alert alert-danger alert-dismissable">
+        <a href="#" class="close">x</a>
+        {{_("Please fix below errors")}}
+      </div>
+    {% endif %}
+    {% for field in form %}
+      {% if not field.is_hidden %}
+        <div style="margin-bottom: 1em;">
+          {{ field.errors }}
+          <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b> </label>
+          <div class="org-field-wrapper" id="org-field-wrapper-{{field.html_name }}">
+            {{ field }}
+          </div>
+          {% if field.help_text %}
+            <small class="org-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    <hr><br>
+    {{ problems_form.management_form }}
+    <i>{{_('If you run out of rows, click Save')}}</i>
+    <table class="table">
+      <thead>
+        <tr>
+          {% for field in problems_form[0] %}
+            {% if not field.is_hidden %}
+              <th class="problems-{{field.name}}">
+                {{field.label}}
+              </th>
+            {% endif %}
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for form in problems_form %}
+          <tr>
+            {% for field in form %}
+              <td class="problems-{{field.name}}" title="
+                {{ field.help_text|safe if field.help_text }}"
+                style="{{ 'display:none' if field.is_hidden }}"
+              >{{field}}<div class="red">{{field.errors}}</div></td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <button type="submit">{{ _('Save') }}</button>
+  </form>
+{% endblock %}

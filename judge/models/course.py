@@ -4,7 +4,7 @@ from django.utils.translation import gettext, gettext_lazy as _
 from django.urls import reverse
 from django.db.models import Q
 
-from judge.models import BlogPost, Problem
+from judge.models import BlogPost, Problem, Contest
 from judge.models.profile import Organization, Profile
 
 
@@ -160,10 +160,11 @@ class CourseLesson(models.Model):
         related_name="lessons",
         on_delete=models.CASCADE,
     )
-    title = models.TextField(verbose_name=_("course title"))
-    content = models.TextField(verbose_name=_("course content"))
+    title = models.TextField(verbose_name=_("lesson title"))
+    content = models.TextField(verbose_name=_("lesson content"))
     order = models.IntegerField(verbose_name=_("order"), default=0)
     points = models.IntegerField(verbose_name=_("points"))
+    is_visible = models.BooleanField(verbose_name=_("publicly visible"), default=True)
 
     def get_absolute_url(self):
         return reverse(
@@ -182,3 +183,19 @@ class CourseLessonProblem(models.Model):
     problem = models.ForeignKey(Problem, on_delete=models.CASCADE)
     order = models.IntegerField(verbose_name=_("order"), default=0)
     score = models.IntegerField(verbose_name=_("score"), default=0)
+
+
+class CourseContest(models.Model):
+    course = models.ForeignKey(
+        Course, on_delete=models.CASCADE, related_name="contests"
+    )
+    contest = models.ForeignKey(
+        Contest, unique=True, on_delete=models.CASCADE, related_name="course"
+    )
+    order = models.IntegerField(verbose_name=_("order"), default=0)
+    points = models.IntegerField(verbose_name=_("points"))
+
+    def get_course_of_contest(contest):
+        course_contest = contest.course.get()
+        course = course_contest.course
+        return course
