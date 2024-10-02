@@ -426,6 +426,30 @@ function submitFormWithParams($form, method) {
     }
 }
 
+function initPagedown(maxRetries=5) {
+    // There's a race condition so we want to retry several times
+    let attempts = 0;
+
+    function tryInit() {
+        try {
+            // make sure pagedown_init.js was loaded
+            if ('DjangoPagedown' in window) {
+                DjangoPagedown.init();
+            } else if (attempts < maxRetries) {
+                attempts++;
+                setTimeout(tryInit, 1000);
+            }
+        } catch (error) {
+            // this may happen if Markdown.xyz.js was not loaded
+            if (attempts < maxRetries) {
+                attempts++;
+                setTimeout(tryInit, 1000);
+            }
+        }
+    }
+
+    setTimeout(tryInit, 100);
+}
 
 function navigateTo(url, reload_container, force_new_page=false) {
     if (url === '#') return;
@@ -484,9 +508,7 @@ function navigateTo(url, reload_container, force_new_page=false) {
                 
                 $(document).prop('title', $(data).filter('title').text());
                 renderKatex($(reload_container)[0]);
-                if ('DjangoPagedown' in window) {
-                  DjangoPagedown.init();
-                }
+                initPagedown();
                 onWindowReady();
                 registerNavList();
                 $('.xdsoft_datetimepicker').hide();
