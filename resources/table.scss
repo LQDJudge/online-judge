@@ -22,7 +22,7 @@
         }
     }
 
-    td:first-child {
+    th:first-child, td:first-child {
         border-color: $border_gray;
         border-width: 1px 1px 0 1px;
     }

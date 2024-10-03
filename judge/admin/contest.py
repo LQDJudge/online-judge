@@ -32,6 +32,7 @@ from judge.widgets import (
     HeavyPreviewAdminPageDownWidget,
 )
 from judge.views.contests import recalculate_contest_summary_result
+from judge.utils.contest import maybe_trigger_contest_rescore
 
 
 class AdminHeavySelect2Widget(AdminHeavySelect2Widget):
@@ -310,39 +311,14 @@ class ContestAdmin(CompareVersionAdmin):
 
         super().save_model(request, obj, form, change)
 
-        # We need this flag because `save_related` deals with the inlines, but does not know if we have already rescored
-        self._rescored = False
-        if form.changed_data and any(
-            f in form.changed_data
-            for f in (
-                "start_time",
-                "end_time",
-                "time_limit",
-                "format_config",
-                "format_name",
-                "freeze_after",
-            )
-        ):
-            self._rescore(obj.key)
-            self._rescored = True
-
-        if form.changed_data and any(
-            f in form.changed_data
-            for f in (
-                "authors",
-                "curators",
-                "testers",
-            )
-        ):
-            Contest._author_ids.dirty(obj)
-            Contest._curator_ids.dirty(obj)
-            Contest._tester_ids.dirty(obj)
-
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         # Only rescored if we did not already do so in `save_model`
-        if not self._rescored and any(formset.has_changed() for formset in formsets):
-            self._rescore(form.cleaned_data["key"])
+        formset_changed = False
+        if any(formset.has_changed() for formset in formsets):
+            formset_changed = True
+
+        maybe_trigger_contest_rescore(form, form.instance, formset_changed)
 
     def has_change_permission(self, request, obj=None):
         if not request.user.has_perm("judge.edit_own_contest"):
@@ -350,11 +326,6 @@ class ContestAdmin(CompareVersionAdmin):
         if obj is None:
             return True
         return obj.is_editable_by(request.user)
-
-    def _rescore(self, contest_key):
-        from judge.tasks import rescore_contest
-
-        transaction.on_commit(rescore_contest.s(contest_key).delay)
 
     def make_visible(self, request, queryset):
         if not request.user.has_perm("judge.change_contest_visibility"):

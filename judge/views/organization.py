@@ -1039,7 +1039,7 @@ class EditOrganizationContest(
             self.object.is_organization_private = True
             self.object.save()
 
-            maybe_trigger_contest_rescore(form, self.object)
+            maybe_trigger_contest_rescore(form, self.object, True)
 
             return res
 
