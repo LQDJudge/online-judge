@@ -47,8 +47,8 @@
         var rows = $('#users-table tbody tr').get();
         var sortBy = $(this).val();
         rows.sort(function(a, b) {
-          var keyA = $(a).find(sortBy === 'username' ? '.user-name' : 'td:last-child').text().trim();
-          var keyB = $(b).find(sortBy === 'username' ? '.user-name' : 'td:last-child').text().trim();
+          var keyA = $(a).find(sortBy === 'username' ? '.user-name' : '.total-score').text().trim();
+          var keyB = $(b).find(sortBy === 'username' ? '.user-name' : '.total-score').text().trim();
 
           if(sortBy === 'total') {
             // Convert percentage string to number for comparison
@@ -76,11 +76,13 @@
 {% block middle_content %}
   <center><h2>{{content_title}}</h2></center>
   {{_("Sort by")}}:
-  <select id="sortSelect">
-    <option value="username">{{_("Username")}}</option>
-    <option value="total">{{_("Score")}}</option>
-  </select>
-  <input type="text" id="search-input" placeholder="{{_('Search')}}" autofocus>
+  <div>
+    <select id="sortSelect">
+      <option value="username">{{_("Username")}}</option>
+      <option value="total">{{_("Score")}}</option>
+    </select>
+    <input type="text" id="search-input" placeholder="{{_('Search')}}" autofocus>
+  </div>
   <div style="overflow-x: auto; margin-top: 1em">
     <table class="table striped" id="users-table">
       <thead>
@@ -119,7 +121,7 @@
                 {{student.first_name}}
               </div>
             </td>
-            <td style="font-weight: bold">
+            <td class="total-score" style="font-weight: bold">
               {% if grade_total_student %}
                 {{ grade_total_student['percentage'] | floatformat(0) }}%
               {% else %}

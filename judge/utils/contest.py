@@ -5,17 +5,20 @@ from judge.models import (
 )
 
 
-def maybe_trigger_contest_rescore(form, contest):
-    if any(
-        f in form.changed_data
-        for f in (
-            "start_time",
-            "end_time",
-            "time_limit",
-            "format_config",
-            "format_name",
-            "freeze_after",
+def maybe_trigger_contest_rescore(form, contest, force_rescore=False):
+    if (
+        any(
+            f in form.changed_data
+            for f in (
+                "start_time",
+                "end_time",
+                "time_limit",
+                "format_config",
+                "format_name",
+                "freeze_after",
+            )
         )
+        or force_rescore
     ):
         transaction.on_commit(rescore_contest.s(contest.key).delay)
 

@@ -715,7 +715,10 @@ class EditCourseContest(CourseEditableMixin, FormView):
     def post(self, request, *args, **kwargs):
         problem_formset = self.get_problem_formset(True)
         if problem_formset.is_valid():
+            self.problem_form_changes = False
             for problem_form in problem_formset:
+                if problem_form.has_changed():
+                    self.problem_form_changes = True
                 if problem_form.cleaned_data.get("DELETE") and problem_form.instance.pk:
                     problem_form.instance.delete()
 
@@ -741,7 +744,8 @@ class EditCourseContest(CourseEditableMixin, FormView):
             revisions.set_comment(_("Edited from course") + " " + self.course.name)
             revisions.set_user(self.request.user)
 
-            maybe_trigger_contest_rescore(form, self.contest)
+            if self.problem_form_changes:
+                maybe_trigger_contest_rescore(form, self.contest, True)
 
             form.save()
 
