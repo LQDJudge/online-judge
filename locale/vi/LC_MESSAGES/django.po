@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-12 05:45+0700\n"
+"POT-Creation-Date: 2024-10-12 08:18+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -1950,11 +1950,11 @@ msgstr "file zip chứa test"
 msgid "generator file"
 msgstr "file tạo test"
 
-#: judge/models/problem_data.py:70 judge/models/problem_data.py:246
+#: judge/models/problem_data.py:70 judge/models/problem_data.py:250
 msgid "output prefix length"
 msgstr "độ dài hiển thị output"
 
-#: judge/models/problem_data.py:73 judge/models/problem_data.py:249
+#: judge/models/problem_data.py:73 judge/models/problem_data.py:253
 msgid "output limit length"
 msgstr "giới hạn hiển thị output"
 
@@ -1962,15 +1962,15 @@ msgstr "giới hạn hiển thị output"
 msgid "init.yml generation feedback"
 msgstr "phản hồi của quá trình tạo file init.yml"
 
-#: judge/models/problem_data.py:79 judge/models/problem_data.py:252
+#: judge/models/problem_data.py:79 judge/models/problem_data.py:256
 msgid "checker"
 msgstr "trình chấm"
 
-#: judge/models/problem_data.py:82 judge/models/problem_data.py:255
+#: judge/models/problem_data.py:82 judge/models/problem_data.py:259
 msgid "checker arguments"
 msgstr "các biến trong trình chấm"
 
-#: judge/models/problem_data.py:84 judge/models/problem_data.py:257
+#: judge/models/problem_data.py:84 judge/models/problem_data.py:261
 msgid "checker arguments as a JSON object"
 msgstr "các biến trong trình chấm theo dạng JSON"
 
@@ -1986,7 +1986,7 @@ msgstr "trình chấm C++"
 msgid "interactive judge"
 msgstr "trình chấm interactive"
 
-#: judge/models/problem_data.py:111 judge/models/problem_data.py:237
+#: judge/models/problem_data.py:111 judge/models/problem_data.py:241
 msgid "input file name"
 msgstr "tên file input"
 
@@ -1994,7 +1994,7 @@ msgstr "tên file input"
 msgid "Leave empty for stdin"
 msgstr "Để trống nếu nhập từ bàn phím"
 
-#: judge/models/problem_data.py:117 judge/models/problem_data.py:240
+#: judge/models/problem_data.py:117 judge/models/problem_data.py:244
 msgid "output file name"
 msgstr "tên file output"
 
@@ -2018,51 +2018,51 @@ msgstr "Nộp bài bằng hàm?"
 msgid "Use IOI Signature"
 msgstr "Nộp bài bằng hàm như IOI"
 
-#: judge/models/problem_data.py:133 judge/models/problem_data.py:277
+#: judge/models/problem_data.py:133 judge/models/problem_data.py:281
 msgid "signature handler"
 msgstr "File xử lý hàm"
 
-#: judge/models/problem_data.py:141 judge/models/problem_data.py:283
+#: judge/models/problem_data.py:141 judge/models/problem_data.py:289
 msgid "signature header"
 msgstr "File định nghĩa hàm"
 
-#: judge/models/problem_data.py:221
+#: judge/models/problem_data.py:225
 msgid "problem data set"
 msgstr "tập hợp dữ liệu bài"
 
-#: judge/models/problem_data.py:225
+#: judge/models/problem_data.py:229
 msgid "case position"
 msgstr "vị trí test"
 
-#: judge/models/problem_data.py:228
+#: judge/models/problem_data.py:232
 msgid "case type"
 msgstr "loại test"
 
-#: judge/models/problem_data.py:230
+#: judge/models/problem_data.py:234
 msgid "Normal case"
 msgstr "Test bình thường"
 
-#: judge/models/problem_data.py:231
+#: judge/models/problem_data.py:235
 msgid "Batch start"
 msgstr "Bắt đầu nhóm"
 
-#: judge/models/problem_data.py:232
+#: judge/models/problem_data.py:236
 msgid "Batch end"
 msgstr "Kết thúc nhóm"
 
-#: judge/models/problem_data.py:242
+#: judge/models/problem_data.py:246
 msgid "generator arguments"
 msgstr "biến trong file sinh test"
 
-#: judge/models/problem_data.py:243
+#: judge/models/problem_data.py:247
 msgid "point value"
 msgstr "điểm"
 
-#: judge/models/problem_data.py:244
+#: judge/models/problem_data.py:248
 msgid "case is pretest?"
 msgstr "test là pretest?"
 
-#: judge/models/problem_data.py:274
+#: judge/models/problem_data.py:278
 msgid "signature language"
 msgstr "Ngôn ngữ"
 
@@ -3554,7 +3554,7 @@ msgstr "Chỉnh sửa dữ liệu cho {0}"
 msgid "Editing data for %s"
 msgstr "Chỉnh sửa dữ liệu cho %s"
 
-#: judge/views/problem_data.py:397 judge/views/problem_data.py:399
+#: judge/views/problem_data.py:401 judge/views/problem_data.py:403
 #, python-format
 msgid "Generated init.yml for %s"
 msgstr "File init.yml cho %s"
