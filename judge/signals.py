@@ -10,7 +10,7 @@ from django.dispatch import receiver
 
 from judge import template_context
 from judge.utils.problems import finished_submission
-from judge.utils.users import get_points_rank
+from judge.utils.users import get_points_rank, get_rating_rank
 from judge.models.profile import _get_basic_info
 from .models import (
     BlogPost,
