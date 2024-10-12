@@ -8,9 +8,10 @@ from django.core.cache.utils import make_template_fragment_key
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-import judge
 from judge import template_context
 from judge.utils.problems import finished_submission
+from judge.utils.users import get_points_rank
+from judge.models.profile import _get_basic_info
 from .models import (
     BlogPost,
     Comment,
@@ -74,8 +75,8 @@ def problem_update(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Profile)
 def profile_update(sender, instance, **kwargs):
-    judge.utils.users.get_points_rank.dirty(instance.id)
-    judge.utils.users.get_rating_rank.dirty(instance.id)
+    get_points_rank.dirty(instance.id)
+    get_rating_rank.dirty(instance.id)
     if hasattr(instance, "_updating_stats_only"):
         return
 
@@ -87,7 +88,7 @@ def profile_update(sender, instance, **kwargs):
         ]
     )
 
-    judge.models.profile._get_basic_info.dirty(instance.id)
+    _get_basic_info.dirty(instance.id)
 
 
 @receiver(post_save, sender=Contest)

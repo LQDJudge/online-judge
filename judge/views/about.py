@@ -17,7 +17,7 @@ def custom_checker_sample(request):
 1. Trình chấm tự viết (PY)
 2. Trình chấm tự viết (CPP)
 3. Interactive (CPP)
-4. Dùng hàm như IOI (CPP)
+4. Dùng hàm như IOI
 
 ---
 
@@ -197,16 +197,18 @@ int main(int argc, char *argv[]) {
     }
 }
 ```
-## 4. IOI Signature (CPP) 
+## 4. IOI Signature
 Đây là chức năng để sử dụng hàm như trong IOI. Thí sinh được cho một định nghĩa hàm và cần cài đặt hàm đó trả về giá trị đúng.
 Để sử dụng chức năng này, cần viết 2 chương trình:
-- Header: Đây là file định nghĩa hàm (đuôi phải là `.h`)
-- Handler: Đây là chương trình xử lý input và xuất ra output dựa trên hàm (đuôi phải là `.cpp`)
+- Header: Đây là file định nghĩa hàm (đuôi phải là `.h`, chỉ áp dụng cho C/C++)
+- Handler: Đây là chương trình xử lý input và xuất ra output dựa trên hàm
 
 **Ví dụ:**
 Cho bài toán: nhập vào số n. Viết hàm `solve(int n)` trả về `n * 2`. Giả sử input là multitest có dạng:
 - Dòng đầu chứa `t` là số test
 - Mỗi dòng chứa một số nguyên `n`
+
+### a. C/C++
 
 **Header (header.h):**
 ```cpp
@@ -242,6 +244,58 @@ int solve(int n) {
     return  n * 2;
 }
 ```
+
+### b. Python
+Bài nộp thí sinh sẽ được lưu vào file _submission.py.
+
+**Handler (handler.py):**
+```python
+from _submission import solve
+
+def main():
+    t = int(input())
+    for _ in range(t):
+        n = int(input())
+        print(solve(n))
+
+if __name__ == "__main__":
+    main()
+```
+
+**Bài nộp thí sinh:**
+```python
+def solve(n):
+    return n * 2
+```
+
+### c. Java
+Thí sinh phải đặt tên class đúng như yêu cầu đề bài để handler sử dụng
+
+**Handler (handler.java):**
+```java
+import java.util.Scanner;
+
+public class Handler {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        int t = scanner.nextInt();
+        for (int i = 0; i < t; i++) {
+            int n = scanner.nextInt();
+            System.out.println(Solution.solve(n));
+        }
+    }
+}
+```
+
+**Bài nộp thí sinh:**
+```java
+public class Solution {
+    public static int solve(int n) {
+        return n * 2;
+    }
+}
+```
+
 
 """
     return render(

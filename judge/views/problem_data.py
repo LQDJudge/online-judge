@@ -28,6 +28,7 @@ from django.forms import (
     FileInput,
     TextInput,
     CheckboxInput,
+    modelformset_factory,
 )
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
@@ -44,6 +45,7 @@ from judge.models import (
     ProblemTestCase,
     Submission,
     problem_data_storage,
+    ProblemSignatureGrader,
 )
 from judge.utils.problem_data import ProblemDataCompiler
 from judge.utils.unicode import utf8text
@@ -95,8 +97,6 @@ class ProblemDataForm(ModelForm):
             "fileio_output",
             "output_only",
             "use_ioi_signature",
-            "signature_handler",
-            "signature_header",
         ]
         widgets = {
             "zipfile": FineUploadFileInput,
@@ -134,6 +134,24 @@ class ProblemCaseForm(ModelForm):
             # 'output_limit': NumberInput(attrs={'style': 'width: 6em'}),
             # 'checker_args': HiddenInput,
         }
+
+
+class ProblemSignatureGraderForm(ModelForm):
+    class Meta:
+        model = ProblemSignatureGrader
+        fields = ["language", "handler", "header"]
+
+
+class ProblemSignatureGraderFormSet(BaseModelFormSet):
+    def clean(self):
+        super().clean()
+        languages = []
+        for form in self.forms:
+            if form.cleaned_data and not form.cleaned_data.get("DELETE", False):
+                language = form.cleaned_data["language"]
+                if language in languages:
+                    form.add_error("language", _("Each language must be unique."))
+                languages.append(language)
 
 
 class ProblemCaseFormSet(
@@ -240,6 +258,25 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
             ),
         )
 
+    def get_signature_grader_formset(self, post=False):
+        queryset = ProblemSignatureGrader.objects.filter(problem=self.object)
+        existing_count = queryset.count()
+        extra_forms = max(3 - existing_count, 0)
+
+        return modelformset_factory(
+            ProblemSignatureGrader,
+            form=ProblemSignatureGraderForm,
+            formset=ProblemSignatureGraderFormSet,
+            extra=extra_forms,
+            max_num=3,
+            can_delete=True,
+        )(
+            queryset=queryset,
+            data=self.request.POST if post else None,
+            files=self.request.FILES if post else None,
+            prefix="signature-graders",
+        )
+
     def get_valid_files(self, data, post=False):
         try:
             if post and "problem-data-zipfile-clear" in self.request.POST:
@@ -264,6 +301,8 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
             )
             context["data_form"].zip_valid = valid_files is not False
             context["cases_formset"] = self.get_case_formset(valid_files)
+            context["signature_grader_formset"] = self.get_signature_grader_formset()
+
         context["valid_files_json"] = mark_safe(json.dumps(context["valid_files"]))
         context["valid_files"] = set(context["valid_files"])
         context["all_case_forms"] = chain(
@@ -277,13 +316,26 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
         valid_files = self.get_valid_files(data_form.instance, post=True)
         data_form.zip_valid = valid_files is not False
         cases_formset = self.get_case_formset(valid_files, post=True)
-        if data_form.is_valid() and cases_formset.is_valid():
+        signature_grader_formset = self.get_signature_grader_formset(post=True)
+
+        if (
+            data_form.is_valid()
+            and cases_formset.is_valid()
+            and signature_grader_formset.is_valid()
+        ):
             data = data_form.save()
             for case in cases_formset.save(commit=False):
                 case.dataset_id = problem.id
                 case.save()
             for case in cases_formset.deleted_objects:
                 case.delete()
+
+            for grader in signature_grader_formset.save(commit=False):
+                grader.problem_id = problem.id
+                grader.save()
+            for grader in signature_grader_formset.deleted_objects:
+                grader.delete()
+
             ProblemDataCompiler.generate(
                 problem, data, problem.cases.order_by("order"), valid_files
             )
@@ -292,6 +344,7 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
             self.get_context_data(
                 data_form=data_form,
                 cases_formset=cases_formset,
+                signature_grader_formset=signature_grader_formset,
                 valid_files=valid_files,
             )
         )

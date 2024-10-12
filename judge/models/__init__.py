@@ -37,6 +37,7 @@ from judge.models.problem_data import (
     CHECKERS,
     ProblemData,
     ProblemTestCase,
+    ProblemSignatureGrader,
     problem_data_storage,
     problem_directory_file,
 )

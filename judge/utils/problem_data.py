@@ -264,17 +264,27 @@ class ProblemDataCompiler(object):
         if self.data.output_only:
             init["output_only"] = True
         if self.data.use_ioi_signature:
-            handler_path = split_path_first(self.data.signature_handler.name)
-            if len(handler_path) != 2:
-                raise ProblemDataError(_("Invalid signature handler"))
-            header_path = split_path_first(self.data.signature_header.name)
-            if len(header_path) != 2:
-                raise ProblemDataError(_("Invalid signature header"))
+            signature_graders = {}
+            for grader in self.problem.signature_graders.all():
+                handler_path = split_path_first(grader.handler.name)
+                if len(handler_path) != 2:
+                    raise ProblemDataError(_("Invalid signature handler"))
 
-            init["signature_grader"] = {
-                "entry": handler_path[1],
-                "header": header_path[1],
-            }
+                grader_info = {
+                    "entry": handler_path[1],
+                }
+
+                if grader.language == "c":
+                    header_path = split_path_first(grader.header.name)
+                    if len(header_path) != 2:
+                        raise ProblemDataError(_("Invalid signature header for C/C++"))
+                    grader_info["header"] = header_path[1]
+                    signature_graders.update(grader_info)
+                else:
+                    signature_graders[grader.language] = grader_info
+
+            init["signature_grader"] = signature_graders
+
         return init
 
     def compile(self):

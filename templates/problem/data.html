@@ -9,35 +9,33 @@
   <script type="text/javascript" src="{{ static('fine-uploader/jquery.fine-uploader.js') }}"></script>
   <script type="text/javascript">
     $(function () {
-      if (!window.PAGE_FROM_BACK_BUTTON_CACHE) {
-        $("#problem-data-zipfile_fine_uploader").fineUploader({
-          request: {
-            endpoint: "{{url('problem_zip_upload', problem.code)}}",
-            params: {
-              'csrfmiddlewaretoken': '{{ csrf_token }}'
-            }
-          },
-          chunking: {
-            enabled: true,
-            partSize: 40000000,
-          },
-          resume: {
-            enabled: true
-          },
-          validation: {
-            allowedExtensions: ['zip'],
-          },
-        }).on('complete', function (event, id, name, responseJSON) {
-          console.log(responseJSON);
-          if (!responseJSON.success) {
-            alert('Fail to upload: ' + responseJSON.error);
+      $("#problem-data-zipfile_fine_uploader").fineUploader({
+        request: {
+          endpoint: "{{url('problem_zip_upload', problem.code)}}",
+          params: {
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
           }
-          else {
-            $('#submit-button').click();
-          }
-        });
-        toggle_custom();
-      }
+        },
+        chunking: {
+          enabled: true,
+          partSize: 40000000,
+        },
+        resume: {
+          enabled: true
+        },
+        validation: {
+          allowedExtensions: ['zip'],
+        },
+      }).on('complete', function (event, id, name, responseJSON) {
+        console.log(responseJSON);
+        if (!responseJSON.success) {
+          alert('Fail to upload: ' + responseJSON.error);
+        }
+        else {
+          $('#submit-button').click();
+        }
+      });
+      toggle_custom();
 
       function update_select2() {
         $('tbody:not(.extra-row-body) .type-column select').select2({
@@ -46,6 +44,7 @@
       }
 
       $("#id_problem-data-checker").select2();
+      $("#id_problem-data-signature_language").select2();
       update_select2();
 
       function autofill_if_exists($select, file) {
@@ -141,15 +140,12 @@
         let $custom_checker = $('#id_problem-data-custom_checker');
         let $validator = $('#id_problem-data-custom_checker_cpp');
         let $interactive = $('#id_problem-data-interactive_judge');
-        let $sig_handler = $('#id_problem-data-signature_handler');
-        let $sig_header = $('#id_problem-data-signature_header');
         let $ioi_signature = $("#id_problem-data-use_ioi_signature");
+        let $signature_table = $('#signature-grader-table');
 
         $tr_checker = $custom_checker.parent().parent();
         $tr_validator = $validator.parent().parent();
         $tr_interactive = $interactive.parent().parent();
-        $tr_sig_handler = $sig_handler.parent().parent();
-        $tr_sig_header = $sig_header.parent().parent();
 
         $td = $checker.parent();
         var $sample = $("<a/>",{
@@ -174,8 +170,7 @@
         }).change();
 
         $ioi_signature.change(function() {
-          $tr_sig_header.toggle($ioi_signature.is(':checked')).change();
-          $tr_sig_handler.toggle($ioi_signature.is(':checked')).change();
+          $signature_table.toggle($ioi_signature.is(':checked'));
         }).change();
       };
 
@@ -428,7 +423,6 @@
         }
       }
       update_batch_starts();
-
     }).change();
   </script>
   {% include 'fine_uploader/script.html' %}
@@ -478,6 +472,10 @@
       padding-bottom: 1em;
       background: #e99;
     }
+
+    #submit-button {
+      margin-bottom: 1em;
+    }
   </style>
 {% endblock %}
 
@@ -524,7 +522,60 @@
         </div>
       </td>
     </table>
+
+    {{ signature_grader_formset.management_form }}
+    <div id="signature-grader-table" style="display: none; margin-top: 1em;">
+      <h3> {{_("IOI Signature Graders")}} </h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>{{ _('Language') }}</th>
+            <th>{{ _('Handler') }}</th>
+            <th>{{ _('Header') }}</th>
+            {% if signature_grader_formset.can_delete %}
+              <th>{{ _('Delete?') }}</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for form in signature_grader_formset %}
+            {% if form.non_field_errors() %}
+              <tr>
+                <td colspan="4">
+                  <ul class="errorlist">
+                    {% for error in form.non_field_errors() %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                  </ul>
+                </td>
+              </tr>
+            {% endif %}
+            <tr>
+              <td>
+                {{ form.id }}
+                {{ form.language.errors }}
+                {{ form.language }}
+              </td>
+              <td>
+                {{ form.handler.errors }}
+                {{ form.handler }}
+              </td>
+              <td>
+                {{ form.header.errors }}
+                {{ form.header }}
+              </td>
+              {% if signature_grader_formset.can_delete %}
+                <td>{{ form.DELETE }}</td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
     <input type="submit" value="{{ _('Apply!') }}" class="button" id="submit-button">
+
+    <h3> {{_("Test Cases")}} </h3>
     <table id="case-table" class="table">
       <thead>
         <tr>
@@ -557,7 +608,9 @@
             <td>
               {{ form.id }}{{ form.order.errors }}{{ form.order }}
             </td>
-            <td class="type-column">{{ form.type.errors }}{{ form.type }}</td>
+            <td class="type-column">
+              {{ form.type.errors }}{{ form.type }}
+            </td>
             <td{% if not (form.empty_permitted or form['type'].value() != 'C' or
               form['input_file'].value() in valid_files) %} class="bad-file"{% endif %}>
         {{ form.input_file.errors }}{{ form.input_file }}

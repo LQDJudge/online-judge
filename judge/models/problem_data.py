@@ -6,6 +6,7 @@ from django.core.validators import FileExtensionValidator
 from django.core.cache import cache
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 
 from judge.utils.problem_data import ProblemDataStorage, get_file_cachekey
 
@@ -202,6 +203,17 @@ class ProblemData(models.Model):
             self.signature_handler.name = problem_directory_file_helper(
                 new, self.signature_handler.name
             )
+        for grader in self.problem.signature_graders.all():
+            if grader.handler:
+                grader.handler.name = problem_directory_file_helper(
+                    new, grader.handler.name
+                )
+            if grader.header:
+                grader.header.name = problem_directory_file_helper(
+                    new, grader.header.name
+                )
+            grader.save()
+
         self.save()
 
     _update_code.alters_data = True
@@ -247,4 +259,37 @@ class ProblemTestCase(models.Model):
         verbose_name=_("checker arguments"),
         blank=True,
         help_text=_("checker arguments as a JSON object"),
+    )
+
+
+class ProblemSignatureGrader(models.Model):
+    problem = models.ForeignKey(
+        "Problem",
+        related_name="signature_graders",
+        on_delete=models.CASCADE,
+    )
+    language = models.CharField(
+        max_length=10,
+        choices=(
+            ("c", "C/C++"),
+            ("java", "Java"),
+            ("python", "Python"),
+        ),
+        verbose_name=_("signature language"),
+    )
+    handler = models.FileField(
+        verbose_name=_("signature handler"),
+        storage=problem_data_storage,
+        upload_to=problem_directory_file,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["cpp", "c", "java", "py"])
+        ],
+    )
+    header = models.FileField(
+        verbose_name=_("signature header"),
+        storage=problem_data_storage,
+        upload_to=problem_directory_file,
+        validators=[FileExtensionValidator(allowed_extensions=["h"])],
+        null=True,
+        blank=True,
     )
