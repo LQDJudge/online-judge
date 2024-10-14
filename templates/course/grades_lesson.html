@@ -2,8 +2,9 @@
 
 {% block two_col_media %}
   <style type="text/css">
-    table {
-      font-size: 15px;
+    .table-container {
+      width: 100%;
+      overflow: scroll;
     }
     td {
       height: 2.5em;
@@ -15,6 +16,11 @@
       float: right;
       margin-bottom: 1em;
     }
+    /*.static {
+      position: sticky;
+      left: 0;
+      background-color: #f2f2f2; /* Optional: Add a background color for visibility */
+    /*}*/
   </style>
 {% endblock %}
 
@@ -70,6 +76,17 @@
         });
       });
     });
+    document.addEventListener('DOMContentLoaded', function() {
+      var staticColumn = document.querySelector('.static');
+      var table = document.querySelector('.table');
+
+      // Calculate the width of the static column
+      var staticColumnWidth = staticColumn.offsetWidth;
+
+      // Set the width of the table to the width of the static column plus 100px (adjust as needed)
+      table.style.marginLeft = '0px'
+      table.style.marginTop = '10px'
+    })
   </script>
 {% endblock %}
 
@@ -82,51 +99,53 @@
     <option value="total">{{_("Score")}}</option>
   </select>
   <input type="text" id="search-input" placeholder="{{_('Search')}}" autofocus>
-  <table class="table striped" id="users-table">
-    <thead>
-      <tr>
-        <th>{{_('Student')}}</th>
-        {% if grades|length > 0 %}
-          {% for lesson_problem in lesson_problems %}
-            <th class="points">
-              <a href="{{url('problem_detail', lesson_problem.problem.code)}}">
-                {{ lesson_problem.problem.name }}
-                <div class="point-denominator">{{lesson_problem.score}}</div>
-              </a>
-            </th>
-          {% endfor %}
-        {% endif %}
-        <th>{{_('Total')}}</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for student, grade in grades.items() %}
+  <div class = "table-container">
+    <table class="table striped" id="users-table">
+      <thead>
         <tr>
-          <td class="user-name">
-            <div>
-              {{link_user(student)}}
-            </div>
-            <div>
-              {{student.first_name}}
-            </div>
-          </td>
-          {% for lesson_problem in lesson_problems %}
-            {% set val = grade.get(lesson_problem.problem.id) %}
-            <td class="partial-score">
-              <a href="{{url('user_submissions', lesson_problem.problem.code, student.username)}}">
-                {% if val and val['case_total'] %}
-                  {{ (val['case_points'] / val['case_total'] * lesson_problem.score) | floatformat(0) }}
-                {% else %}
-                  0
-                {% endif %}
-              </a>
-            </td>
-          {% endfor %}
-          <td style="font-weight: bold">
-            {{ grade['total']['percentage'] | floatformat(0) }}%
-          </td>
+          <th class = "static">{{_('Student')}}</th>
+          {% if grades|length > 0 %}
+            {% for lesson_problem in lesson_problems %}
+              <th class="points">
+                <a href="{{url('problem_detail', lesson_problem.problem.code)}}">
+                  P({{ loop.index0 }})
+                  <div class="point-denominator">{{lesson_problem.score}}</div>
+                </a>
+              </th>
+            {% endfor %}
+          {% endif %}
+          <th>{{_('Total')}}</th>
         </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for student, grade in grades.items() %}
+          <tr>
+            <td class="user-name static">
+              <div>
+                {{link_user(student)}}
+              </div>
+              <div>
+                {{student.first_name}}
+              </div>
+            </td>
+            {% for lesson_problem in lesson_problems %}
+              {% set val = grade.get(lesson_problem.problem.id) %}
+              <td class="partial-score">
+                <a href="{{url('user_submissions', lesson_problem.problem.code, student.username)}}">
+                  {% if val and val['case_total'] %}
+                    {{ (val['case_points'] / val['case_total'] * lesson_problem.score) | floatformat(0) }}
+                  {% else %}
+                    0
+                  {% endif %}
+                </a>
+              </td>
+            {% endfor %}
+            <td style="font-weight: bold">
+              {{ grade['total']['percentage'] | floatformat(0) }}%
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 {% endblock %}

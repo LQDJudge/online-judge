@@ -36,6 +36,7 @@
       {% set ns = namespace(problem_formset_has_error=false) %}
 
       {% if lesson_form.instance.id %}
+        <a href="{{url('edit_course_lessons_new', course.slug, lesson_form.instance.id)}}" target="_blank">Test</a>
         {% set problem_formset = problem_formsets[lesson_form.instance.id] %}
         {% for form in problem_formset %}
           {% if form.errors %}
@@ -44,6 +45,7 @@
           {% endif %}
         {% endfor %}
       {% endif %}
+
       <h3 class="toggle {{'open' if lesson_form.errors or ns.problem_formset_has_error else 'closed'}} form-header">
         <i class="fa fa-chevron-right fa-fw"></i>
         {% if lesson_form.title.value() %}

@@ -11,7 +11,7 @@ from django.forms import (
     BaseModelFormSet,
 )
 from django.views.generic.edit import FormView
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy, reverse
 from django.db.models import Max, F, Sum
 from django.core.exceptions import ObjectDoesNotExist
@@ -317,6 +317,101 @@ class CourseLessonProblemForm(ModelForm):
 CourseLessonProblemFormSet = modelformset_factory(
     CourseLessonProblem, form=CourseLessonProblemForm, extra=5, can_delete=True
 )
+
+
+class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
+    template_name = "course/edit_lesson_new_window.html"
+    form_class = CourseLessonFormSet
+    model = CourseLesson
+
+    def get(self, request, *args, **kwargs):
+        print(
+            "bla bla bla bla",
+        )
+        try:
+            self.lesson = CourseLesson.objects.get(id=kwargs["id"])
+            return super().get(request, *args, **kwargs)
+        except ObjectDoesNotExist:
+            raise Http404()
+
+    def get_problem_formset(self, post=False, lesson=None):
+        formset = CourseLessonProblemFormSet(
+            data=self.request.POST if post else None,
+            prefix=f"problems_{lesson.id}" if lesson else "problems",
+            queryset=CourseLessonProblem.objects.filter(lesson=self.lesson).order_by(
+                "order"
+            ),
+        )
+        if lesson:
+            for form in formset:
+                form.fields["lesson"].initial = self.lesson
+        return formset
+
+    def get_context_data(self, **kwargs):
+        context = super(EditCourseLessonsViewNewWindow, self).get_context_data(**kwargs)
+        if self.request.method == "POST":
+            context["formset"] = self.form_class(
+                self.request.POST, self.request.FILES, instance=self.course
+            )
+            context["problem_formsets"] = {
+                self.lesson.id: self.get_problem_formset(post=True, lesson=self.lesson)
+                # for lesson in context["formset"].forms
+                # if self.lesson.instance.id
+            }
+        else:
+            context["formset"] = self.form_class(
+                instance=self.course, queryset=self.course.lessons.order_by("order")
+            )
+            context["problem_formsets"] = {
+                self.lesson.id: self.get_problem_formset(post=False, lesson=self.lesson)
+                # for lesson in context["formset"].forms
+                # if lesson.instance.id
+            }
+
+        context["title"] = _("Edit lessons for %(course_name)s") % {
+            "course_name": self.course.name
+        }
+        context["content_title"] = mark_safe(
+            _("Edit lessons for <a href='%(url)s'>%(course_name)s</a>")
+            % {
+                "course_name": self.course.name,
+                "url": self.course.get_absolute_url(),
+            }
+        )
+        context["page_type"] = "edit_lesson_new"
+        context["lesson"] = self.lesson.lesson_problems.values_list
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        formset = self.form_class(request.POST, instance=self.course)
+        problem_formsets = [
+            self.get_problem_formset(post=True, lesson=lesson.instance)
+            for lesson in formset.forms
+            if lesson.instance.id
+        ]
+        for pf in problem_formsets:
+            if not pf.is_valid():
+                return self.form_invalid(pf)
+
+        if formset.is_valid():
+            formset.save()
+            for problem_formset in problem_formsets:
+                problem_formset.save()
+                for obj in problem_formset.deleted_objects:
+                    if obj.pk is not None:
+                        obj.delete()
+            return self.form_valid(formset)
+        else:
+            return self.form_invalid(formset)
+
+    def get_success_url(self):
+        return self.request.path
+
+    # def my_view(request):
+    #     # Your view logic here
+    #     # context = super(EditCourseLessonsViewNewWindow, self).get_context_data(**kwargs)
+    #     return render(request, 'course/edit_lesson.html')
 
 
 class EditCourseLessonsView(CourseEditableMixin, FormView):

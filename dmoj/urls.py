@@ -560,6 +560,11 @@ urlpatterns = [
                     name="edit_course_lessons",
                 ),
                 url(
+                    r"^/edit_lessons_new/(?P<id>\d+)$",
+                    course.EditCourseLessonsViewNewWindow.as_view(),
+                    name="edit_course_lessons_new",
+                ),
+                url(
                     r"^/grades$",
                     course.CourseStudentResults.as_view(),
                     name="course_grades",
@@ -584,6 +589,12 @@ urlpatterns = [
                     course.CourseContestList.as_view(),
                     name="course_contest_list",
                 ),
+                # url(
+                #     r"^/edit_lessons_new$",
+                #     lambda _, edit_lesson_new: HttpResponsePermanentRedirect(
+                #         reverse("edit_course_lessons_new")
+                #     ),
+                # ),
             ]
         ),
     ),
