@@ -351,7 +351,7 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
         context = super(EditCourseLessonsViewNewWindow, self).get_context_data(**kwargs)
         if self.request.method == "POST":
             context["formset"] = self.form_class(
-                self.request.POST, self.request.FILES, instance=self.course
+                self.request.POST, self.request.FILES, instance=self.lesson
             )
             context["problem_formsets"] = {
                 self.lesson.id: self.get_problem_formset(post=True, lesson=self.lesson)
@@ -379,7 +379,8 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
             }
         )
         context["page_type"] = "edit_lesson_new"
-        context["lesson"] = self.lesson.lesson_problems.values_list
+        context["lesson_field"] = CourseLessonForm(instance=self.lesson)
+        context["lesson"] = self.lesson
 
         return context
 

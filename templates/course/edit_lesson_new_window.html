@@ -28,45 +28,35 @@
 {% endblock %}
 
 {% block middle_content %}
-
+  {% if lesson.id %}
+    <h2>{{lesson.title}} </h2>
+  {% endif %}
   <form method="post">
     {% csrf_token %}
     {{ formset.management_form }}
 
-    <!--    {% for lesson in formset %}-->
+    {#<!--    {% for lesson in formset %}-->#}
     {% set ns = namespace(problem_formset_has_error=false) %}
 
     {% if lesson.id %}
-      <h1>heheheh{{lesson.id.value()}} </h1>
       {% set problem_formset = problem_formsets[lesson.id] %}
       {% for form in problem_formset %}
-
-        <h1>{{lesson.id}}</h1>
         {% if form.errors %}
           {% set ns.problem_formset_has_error = true %}
           {% break %}
         {% endif %}
       {% endfor %}
     {% endif %}
-    <!--      <h3 class="toggle {{'open' if lesson.errors or ns.problem_formset_has_error else 'closed'}} form-header">-->
-    <!--        <i class="fa fa-chevron-right fa-fw"></i>-->
-    <!--        {% if lesson.title.value() %}-->
-    <!--          {{lesson.order.value()}}. {{lesson.title.value()}}-->
-    <!--        {% else %}-->
-    <!--          + {{_("Add new")}}-->
-    <!--        {% endif %}-->
-    <!--      </h3>-->
+
     <div class="" style=" margin-bottom: 1em">
-      {{lesson.id}}
       {% if lesson.errors %}
         <div class="alert alert-danger alert-dismissable">
           <a href="#" class="close">x</a>
           {{_("Please fix below errors")}}
         </div>
       {% endif %}
-      {% for field in lesson %}
-        {% if not field.is_hidden %}
-          <!--            <h1>{{field}}</h1>-->
+      {% for field in lesson_field %}
+        {% if field %}
           <div style="margin-bottom: 1em;">
             {{ field.errors }}
             <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b> </label>
@@ -110,7 +100,7 @@
       {% endif %}
       <hr/>
     </div>
-    <!--    {% endfor %}-->
+    {#<!--    {% endfor %}-->#}
     <input type="submit" value="{{_('Save')}}" style="float: right">
   </form>
 {% endblock %}
