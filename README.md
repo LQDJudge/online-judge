@@ -90,7 +90,8 @@ $ pre-commit install
 - **Bước 6**: Compile CSS và translation
     - Giải thích: Lệnh 1 và 2 gọi sau mỗi lần thay đổi 1 file css hoặc file js (file html thì không cần)
         - Lệnh 3 và 4 gọi sau mỗi lần thay đổi file dịch
-    - Note: Sau khi chạy lệnh này, folder tương ứng với `STATIC_ROOT` trong `local_settings.py` phải được tạo. Nếu chưa được
+    - Note: Sau khi chạy lệnh này, folder tương ứng với `STATIC_ROOT` trong `local_settings.py` phải được tạo. Nếu chưa
+      được
       tạo thì mình cần tạo folder đó trước khi chạy 2 lệnh đầu.
 
 ```bash
@@ -109,7 +110,8 @@ $ python3 manage.py loaddata language_small
 $ python3 manage.py loaddata demo
 ```
 
-- **Bước 8**: Chạy site. Đến đây thì cơ bản đã hoàn thành (chưa có judge, websocket, celery). Các bạn có thể truy cập tại `localhost:8000`
+- **Bước 8**: Chạy site. Đến đây thì cơ bản đã hoàn thành (chưa có judge, websocket, celery). Các bạn có thể truy cập
+  tại `localhost:8000`
 
 ```bash
 python3 manage.py runserver 0.0.0.0:8000
@@ -122,27 +124,28 @@ python3 manage.py runserver 0.0.0.0:8000
    một số service khác như memcached, celery)
 3. Sau khi cài đặt, các bạn chỉ cần activate virtual env và chạy lệnh runserver là ok
 
-```bash
-. dmojsite/bin/activate
-python3 manage.py runserver
-```
+    ```bash
+    . dmojsite/bin/activate
+    python3 manage.py runserver
+    ```
 
-1. Đối với nginx, sau khi config xong theo guide của DMOJ, bạn cần thêm location như sau để sử dụng được tính năng
+4. Đối với nginx, sau khi config xong theo guide của DMOJ, bạn cần thêm location như sau để sử dụng được tính năng
    profile image, thay thế `path/to/oj` thành đường dẫn nơi bạn đã clone source code.
 
-```
-location /profile_images/ {
-    root /path/to/oj;
-}
-```
+    ```
+    location /profile_images/ {
+        root /path/to/oj;
+    }
+    ```
 
-1. Quy trình dev:
+5. Quy trình dev:
     1. Sau khi thay đổi code thì django tự build lại, các bạn chỉ cần F5
     2. Một số style nằm trong các file .scss. Các bạn cần recompile css thì mới thấy được thay đổi.
 
 ## Optional
 
 ### Alias
+
 Các bạn có thể lưu các alias này để sau này dùng cho nhanh
 
 - `mtrans`: để generate translation khi các bạn add một string trong code
@@ -163,7 +166,8 @@ alias cr='cd ~/LQDOJ/online-judge'
 alias css='./make_style.sh && python3 manage.py collectstatic --noinput'
 ```
 
-### Memcached 
+### Memcached
+
 Dùng cho in-memory cache
 
 ```bash
@@ -171,6 +175,7 @@ $ sudo apt install memcached
 ```
 
 ### Websocket
+
 Dùng để live update (như chat)
 
 - Tạo file `online-judge/websocket/config.js`
@@ -201,6 +206,7 @@ $ node websocket/daemon.js
 ```
 
 ### Celery
+
 Dùng cho một số task như batch rejudge
 
 ```bash
@@ -250,19 +256,19 @@ $ dmoj -c judge.yml localhost
    and you are getting the error mentioned in https://github.com/LQDJudge/online-judge/issues/45, then you can follow
    this method to fix:
 
-```bash
-# You may have to do this if you haven't set root password for MySQL, replace mypass with your password
-# SET PASSWORD FOR 'root'@'localhost' = PASSWORD('mypass');
-# FLUSH PRIVILEGES;
-mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -D mysql -u root -p 
-mysql -u root -p -e "flush tables;" mysql
-```
+    ```bash
+    # You may have to do this if you haven't set root password for MySQL, replace mypass with your password
+    # SET PASSWORD FOR 'root'@'localhost' = PASSWORD('mypass');
+    # FLUSH PRIVILEGES;
+    mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -D mysql -u root -p 
+    mysql -u root -p -e "flush tables;" mysql
+    ```
 
-1. Missing the chat secret key, you must generate a Fernet key, and assign a variable in `local_settings.py` like this
+6. Missing the chat secret key, you must generate a Fernet key, and assign a variable in `local_settings.py` like this
 
-```python
-CHAT_SECRET_KEY = "81HqDtbqAywKSOumSxxxxxxxxxxxxxxxxx="
-```
+    ```python
+    CHAT_SECRET_KEY = "81HqDtbqAywKSOumSxxxxxxxxxxxxxxxxx="
+    ```
 
 # Usage
 
@@ -270,30 +276,30 @@ Suppose you finished all the installation. Everytime you want to run a local ser
 
 1. Activate virtualenv:
 
-```bash
-source dmojsite/bin/activate
-```
+    ```bash
+    source dmojsite/bin/activate
+    ```
 
-1. Run server:
+2. Run server:
 
-```bash
-python3 manage.py runserver 0.0.0.0:8000
-```
+    ```bash
+    python3 manage.py runserver 0.0.0.0:8000
+    ```
 
-1. Create a bridge (this is opened in a different terminal with the second step if you are using the same machine)
+3. Create a bridge (this is opened in a different terminal with the second step if you are using the same machine)
 
-```bash
-python3 manage.py runbridged
-```
+    ```bash
+    python3 manage.py runbridged
+    ```
 
-1. Create a judge (another terminal)
+4. Create a judge (another terminal)
 
-```bash
-dmoj 0.0.0.0 -p 9999 -c <path to yml configure file>
-```
+    ```bash
+    dmoj 0.0.0.0 -p 9999 -c <path to yml configure file>
+    ```
 
-Here we suppose you use the default port `9999` for bridge in `settings.py`. You can create multiple judges, each should
-be in a seperate terminal.
+    Here we suppose you use the default port `9999` for bridge in `settings.py`. You can create multiple judges, each should
+    be in a seperate terminal.
 
 ### Optional
 
