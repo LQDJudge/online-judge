@@ -423,6 +423,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "resources"),
 ]
 STATIC_URL = "/static/"
+MEDIA_URL = "/media/"
 
 # Define a cache
 CACHES = {}
