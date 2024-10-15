@@ -86,6 +86,11 @@ $ pre-commit install
   `online-judge/dmoj/local_settings.py`
     - File mẫu: https://github.com/DMOJ/docs/blob/master/sample_files/local_settings.py
     - Nếu bạn đổi tên hoặc mật khẩu table databases thì thay đổi thông tin tương ứng trong `Databases`
+    - Thêm 2 dòng này vào file trên
+      ```
+      MEDIA_ROOT = '/path/to/media'
+      MEDIA_URL = '/media/'
+      ```
     - Sau khi xong, chạy lệnh `python3 manage.py check` để kiểm tra
 - **Bước 6**: Compile CSS và translation
     - Giải thích: Lệnh 1 và 2 gọi sau mỗi lần thay đổi 1 file css hoặc file js (file html thì không cần)
