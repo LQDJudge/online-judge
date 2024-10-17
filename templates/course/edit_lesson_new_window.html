@@ -100,7 +100,13 @@
       {% endif %}
       <hr/>
     </div>
+
     {#<!--    {% endfor %}-->#}
-    <input type="submit" value="{{_('Save')}}" style="float: right">
+    <div style="display: flex; justify-content: space-between;">
+      <input type="submit" value="{{_('Save')}}" >
+      <button type="submit" name="delete_lesson" onclick="return confirm('Are you sure you want to delete this lesson?')">
+        Delete Lesson
+      </button>
+    </div>
   </form>
 {% endblock %}

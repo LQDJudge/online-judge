@@ -1,8 +1,10 @@
+from django.contrib import messages
+from django.db.transaction import commit
 from django.utils.html import mark_safe
 from django.db import models
 from django.views.generic import ListView, DetailView, View
 from django.utils.translation import gettext, gettext_lazy as _
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
 from django import forms
 from django.forms import (
     inlineformset_factory,
@@ -11,7 +13,7 @@ from django.forms import (
     BaseModelFormSet,
 )
 from django.views.generic.edit import FormView
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse_lazy, reverse
 from django.db.models import Max, F, Sum
 from django.core.exceptions import ObjectDoesNotExist
@@ -319,17 +321,94 @@ CourseLessonProblemFormSet = modelformset_factory(
 )
 
 
+class CreateCourseLesson(CourseEditableMixin, FormView):
+    template_name = "course/create_lesson.html"
+    form_class = CourseLessonFormSet
+    other_form = CourseLessonForm
+    model = CourseLesson
+
+    def get_context_data(self, **kwargs):
+        context = super(CreateCourseLesson, self).get_context_data(**kwargs)
+        # get = super().get(request, *args, **kwargs)
+
+        context["problem_formsets"] = CourseLessonProblemFormSet()
+        context["title"] = _("Edit lessons for %(course_name)s") % {
+            "course_name": self.course.name
+        }
+        context["content_title"] = mark_safe(
+            _("Edit lessons for <a href='%(url)s'>%(course_name)s</a>")
+            % {
+                "course_name": self.course.name,
+                "url": self.course.get_absolute_url(),
+            }
+        )
+        context["page_type"] = "edit_lesson_new"
+        context["lesson_field"] = CourseLessonForm()
+        # context["lesson"] = self.lesson
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        # self.object = self.get_object()  # Get the lesson instance
+        # print(self.form_class.forms.data())
+        form = self.get_form(form_class=CourseLessonForm)  # Get the CourseLessonForm
+        # problem_formset = self.get_problem_formset(post=True, lesson)
+
+        if form.is_valid():
+            form.instance.course_id = self.course.id
+            self.lesson = form.save()
+            formset = CourseLessonProblemFormSet(
+                data=self.request.POST,
+                prefix=f"problems_{self.lesson.id}" if self.lesson else "problems",
+                queryset=CourseLessonProblem.objects.filter(
+                    lesson=self.lesson
+                ).order_by("order"),
+            )
+            for problem_formset in formset:
+                # print("Data:", problem_formset.data)
+                problem_formset.save()
+            return self.form_valid(form)
+        else:
+            print("Invalid")
+            return self.form_invalid(form)
+
+    def form_valid(self, form):
+        # problem_formset.save()
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def get_success_url(self):
+        return reverse(
+            "edit_course_lessons",
+            args=[self.course.slug],
+        )
+
+
 class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
     template_name = "course/edit_lesson_new_window.html"
     form_class = CourseLessonFormSet
+    other_form = CourseLessonForm
     model = CourseLesson
 
+    def dispatch(self, request, *args, **kwargs):
+        self.lesson = CourseLesson.objects.get(id=kwargs["id"])
+        res = super().dispatch(request, *args, **kwargs)
+        if not self.lesson.id:
+            print("Can not find lesson id or Delete complete")
+            return HttpResponseRedirect(
+                reverse(
+                    "edit_course_lessons",
+                    args=[self.course.slug],
+                )
+            )
+        return res
+
     def get(self, request, *args, **kwargs):
-        print(
-            "bla bla bla bla",
-        )
         try:
             self.lesson = CourseLesson.objects.get(id=kwargs["id"])
+
             return super().get(request, *args, **kwargs)
         except ObjectDoesNotExist:
             raise Http404()
@@ -349,23 +428,25 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super(EditCourseLessonsViewNewWindow, self).get_context_data(**kwargs)
+        # get = super().get(request, *args, **kwargs)
         if self.request.method == "POST":
-            context["formset"] = self.form_class(
-                self.request.POST, self.request.FILES, instance=self.lesson
-            )
-            context["problem_formsets"] = {
-                self.lesson.id: self.get_problem_formset(post=True, lesson=self.lesson)
-                # for lesson in context["formset"].forms
-                # if self.lesson.instance.id
-            }
+            print("Post Data")
+            # context["formset"] = self.form_class(
+            #     self.request.POST, self.request.FILES, instance=self.course
+            # )
+            # context["problem_formsets"] = {
+            #     self.lesson.id: self.get_problem_formset(post=True, lesson=lesson.instance)
+            #     for lesson in context["formset"].forms
+            #     if lesson.instance.id
+            # }
         else:
             context["formset"] = self.form_class(
                 instance=self.course, queryset=self.course.lessons.order_by("order")
             )
             context["problem_formsets"] = {
                 self.lesson.id: self.get_problem_formset(post=False, lesson=self.lesson)
-                # for lesson in context["formset"].forms
-                # if lesson.instance.id
+                for lesson in context["formset"].forms
+                if lesson.instance.id
             }
 
         context["title"] = _("Edit lessons for %(course_name)s") % {
@@ -385,29 +466,64 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
         return context
 
     def post(self, request, *args, **kwargs):
-        formset = self.form_class(request.POST, instance=self.course)
-        problem_formsets = [
-            self.get_problem_formset(post=True, lesson=lesson.instance)
-            for lesson in formset.forms
-            if lesson.instance.id
-        ]
-        for pf in problem_formsets:
-            if not pf.is_valid():
-                return self.form_invalid(pf)
-
-        if formset.is_valid():
-            formset.save()
-            for problem_formset in problem_formsets:
-                problem_formset.save()
-                for obj in problem_formset.deleted_objects:
-                    if obj.pk is not None:
-                        obj.delete()
-            return self.form_valid(formset)
+        # self.object = self.get_object()  # Get the lesson instance
+        # print(self.form_class.forms.data())
+        form = self.get_form(form_class=CourseLessonForm)  # Get the CourseLessonForm
+        # problem_formset = self.get_problem_formset(post=True)
+        # print("FORM", form.fields.keys())
+        # print("FORM", form.is_valid())
+        if form.is_valid():
+            if "delete_lesson" in request.POST:
+                form.instance.course_id = self.course.id
+                form.instance.lesson_id = self.lesson.id
+                self.lesson.delete()
+                messages.success(request, "Lesson deleted successfully.")
+                course_slug = self.course.slug
+                # print("Dlelelelelelele")
+                return HttpResponseRedirect(
+                    reverse(
+                        "edit_course_lessons",
+                        args=[course_slug],
+                    )
+                )
+            else:
+                # print("Form:", form)
+                form.instance.course_id = self.course.id
+                form.instance.id = self.lesson.id
+                # print(problem_formset)
+                self.lesson = form.save()
+                problem_formsets = self.get_problem_formset(
+                    post=True, lesson=self.lesson
+                )
+                if problem_formsets.is_valid():
+                    # print("Data:", problem_formsets.data)
+                    problem_formsets.save()
+                    for obj in problem_formsets.deleted_objects:
+                        if obj.pk is not None:
+                            obj.delete()
+            return self.form_valid(form)
         else:
-            return self.form_invalid(formset)
+            # print("Invalid")
+            return self.form_invalid(form)
+
+    def form_valid(self, form):
+        if "delete_lesson" in self.request.POST:
+            # ... (your deletion logic)
+            return redirect("edit_course_lessons", slug=self.course.slug)
+        else:
+            # ... (your form saving logic)
+            return super().form_valid(form)
+            # problem_formset.save()
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form))
 
     def get_success_url(self):
-        return self.request.path
+        return reverse(
+            "edit_course_lessons",
+            args=[self.course.slug],
+        )
 
     # def my_view(request):
     #     # Your view logic here

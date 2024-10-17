@@ -555,6 +555,11 @@ urlpatterns = [
                     name="course_lesson_detail",
                 ),
                 url(
+                    r"^/lesson/create$",
+                    course.CreateCourseLesson.as_view(),
+                    name="course_lesson_create",
+                ),
+                url(
                     r"^/edit_lessons$",
                     course.EditCourseLessonsView.as_view(),
                     name="edit_course_lessons",
