@@ -92,10 +92,10 @@ STATICFILES_FINDERS += ("compressor.finders.CompressorFinder",)
 # EMAIL_PORT = 587
 
 # To use Mailgun, uncomment this block.
-# You will need to run `pip install django-mailgun` for to get `MailgunBackend`.
-# EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
-# MAILGUN_ACCESS_KEY = '<your Mailgun access key>'
-# MAILGUN_SERVER_NAME = '<your Mailgun domain>'
+# You will need to run `pip install django-mailgun-mime` to get `MailgunBackend`.
+#EMAIL_BACKEND = 'django_mailgun_mime.backends.MailgunMIMEBackend'
+#MAILGUN_API_KEY = '<your Mailgun access key>'
+#MAILGUN_DOMAIN_NAME = '<your Mailgun domain>'
 
 # You can also use Sendgrid, with `pip install sendgrid-django`.
 # EMAIL_BACKEND = 'sgbackend.SendGridBackend'
