@@ -38,7 +38,7 @@ There is one minor change: Instead of `git clone https://github.com/DMOJ/site.gi
 
 ```bash
 $ apt update
-$ apt install git gcc g++ make python3-dev python3-pip libxml2-dev libxslt1-dev zlib1g-dev gettext curl redis-server
+$ apt install git gcc g++ make python3-dev python3-pip libxml2-dev libxslt1-dev zlib1g-dev gettext curl redis-server pkg-config
 $ curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 $ apt install nodejs
 $ npm install -g sass postcss-cli postcss autoprefixer
