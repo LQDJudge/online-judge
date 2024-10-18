@@ -28,6 +28,7 @@ from .models import (
     NavigationBar,
     Solution,
     ContestProblem,
+    CourseContest,
 )
 
 
@@ -185,3 +186,8 @@ def contest_problem_delete(sender, instance, **kwargs):
     Submission.objects.filter(
         contest_object=instance.contest, contest__isnull=True
     ).update(contest_object=None)
+
+
+@receiver(post_delete, sender=CourseContest)
+def course_contest_delete(sender, instance, **kwargs):
+    instance.contest.delete()

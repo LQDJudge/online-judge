@@ -71,6 +71,8 @@ from judge.models import (
     ContestsSummary,
     OfficialContestCategory,
     OfficialContestLocation,
+    Course,
+    CourseContest,
 )
 from judge.tasks import run_moss
 from judge.utils.celery import redirect_to_task_status
@@ -536,8 +538,6 @@ class ContestDetail(
         context["is_clonable"] = is_contest_clonable(self.request, self.object)
 
         if self.object.is_in_course:
-            from judge.models import Course, CourseContest
-
             course = CourseContest.get_course_of_contest(self.object)
             if Course.is_editable_by(course, self.request.profile):
                 context["editable_course"] = course
