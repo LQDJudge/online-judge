@@ -9,6 +9,14 @@
     .form-header {
       margin-bottom: 0.5em;
     }
+    .title {
+      font-size:20px;
+      padding:3px;
+    }
+    .title:hover {
+      color: blue !important;
+      text-decoration: underline;
+    }
   </style>
 {% endblock %}
 
@@ -36,6 +44,9 @@
       {% set ns = namespace(problem_formset_has_error=false) %}
 
       {% if lesson_form.instance.id %}
+        <div>
+          <a class="title" href="{{url('edit_course_lessons_new', course.slug, lesson_form.instance.id)}}" target="_blank">{{lesson_form.order.value()}}.{{lesson_form.title.value()}}</a>
+        </div>
         {% set problem_formset = problem_formsets[lesson_form.instance.id] %}
         {% for form in problem_formset %}
           {% if form.errors %}
@@ -44,68 +55,9 @@
           {% endif %}
         {% endfor %}
       {% endif %}
-      <h3 class="toggle {{'open' if lesson_form.errors or ns.problem_formset_has_error else 'closed'}} form-header">
-        <i class="fa fa-chevron-right fa-fw"></i>
-        {% if lesson_form.title.value() %}
-          {{lesson_form.order.value()}}. {{lesson_form.title.value()}}
-        {% else %}
-          + {{_("Add new")}}
-        {% endif %}
-      </h3>
-      <div class="toggled" style="{{'display: none;' if not lesson_form.errors and not ns.problem_formset_has_error}} margin-bottom: 1em">
-        {{lesson_form.id}}
-        {% if lesson_form.errors %}
-          <div class="alert alert-danger alert-dismissable">
-            <a href="#" class="close">x</a>
-            {{_("Please fix below errors")}}
-          </div>
-        {% endif %}
-        {% for field in lesson_form %}
-          {% if not field.is_hidden %}
-            <div style="margin-bottom: 1em;">
-              {{ field.errors }}
-              <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b> </label>
-              <div class="org-field-wrapper field-{{field.name}}" id="org-field-wrapper-{{field.html_name}}">
-                {{ field }}
-              </div>
-              {% if field.help_text %}
-                <small class="org-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
-              {% endif %}
-            </div>
-          {% endif %}
-        {% endfor %}
-
-        <!-- Problems Table -->
-        {% if problem_formset %}
-          {{ problem_formset.management_form }}
-          <table class="table">
-            <thead>
-              <tr>
-                {% for field in problem_formset.forms.0 %}
-                  {% if not field.is_hidden %}
-                    <th class="problems-{{field.name}}">
-                      {{field.label}}
-                    </th>
-                  {% endif %}
-                {% endfor %}
-              </tr>
-            </thead>
-            <tbody>
-              {% for form in problem_formset %}
-                <tr>
-                  {% for field in form %}
-                    <td class="problems-{{field.name}}" title="{{ field.help_text|safe if field.help_text }}" style="{{ 'display:none' if field.is_hidden }}">
-                      {{field}}<div class="red">{{field.errors}}</div>
-                    </td>
-                  {% endfor %}
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        {% endif %}
-        <hr/>
-      </div>
     {% endfor %}
-    <input type="submit" value="{{_('Save')}}" style="float: right">
   </form>
+  <button type="button" style="float: right" onclick="window.location.href='{{ url('course_lesson_create', course.slug) }}'">
+    Create New Lesson
+  </button>
 {% endblock %}

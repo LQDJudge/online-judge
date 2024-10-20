@@ -1,34 +1,43 @@
-from django.utils.html import mark_safe
-from django.db import models
-from django.views.generic import ListView, DetailView, View
-from django.utils.translation import gettext, gettext_lazy as _
-from django.http import Http404
 from django import forms
+from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Max, F, Sum
 from django.forms import (
     inlineformset_factory,
     ModelForm,
     modelformset_factory,
-    BaseModelFormSet,
 )
-from django.views.generic.edit import FormView
-from django.shortcuts import get_object_or_404
+from django.http import Http404, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy, reverse
-from django.db.models import Max, F, Sum
-from django.core.exceptions import ObjectDoesNotExist
+from django.utils.html import mark_safe
+from django.utils.translation import gettext_lazy as _
+from django.views.generic import ListView, DetailView
+from django.views.generic.edit import FormView
+from reversion import revisions
 
+from judge.forms import (
+    ContestProblemFormSet,
+)
 from judge.models import (
     Course,
     Contest,
     CourseLesson,
     Submission,
     Profile,
-    CourseRole,
     CourseLessonProblem,
     CourseContest,
     ContestProblem,
     ContestParticipation,
 )
 from judge.models.course import RoleInCourse
+from judge.utils.contest import (
+    maybe_trigger_contest_rescore,
+)
+from judge.utils.problems import (
+    user_attempted_ids,
+    user_completed_ids,
+)
 from judge.widgets import (
     HeavyPreviewPageDownWidget,
     HeavySelect2MultipleWidget,
@@ -37,17 +46,6 @@ from judge.widgets import (
     Select2MultipleWidget,
     Select2Widget,
 )
-from judge.forms import (
-    ContestProblemFormSet,
-)
-from judge.utils.problems import (
-    user_attempted_ids,
-    user_completed_ids,
-)
-from judge.utils.contest import (
-    maybe_trigger_contest_rescore,
-)
-from reversion import revisions
 
 
 def max_case_points_per_problem(profile, problems):
@@ -92,9 +90,11 @@ def calculate_lessons_progress(profile, lessons):
     res["total"] = {
         "achieved_points": total_achieved_points,
         "total_points": total_lesson_points,
-        "percentage": total_achieved_points / total_lesson_points * 100
-        if total_lesson_points
-        else 0,
+        "percentage": (
+            total_achieved_points / total_lesson_points * 100
+            if total_lesson_points
+            else 0
+        ),
     }
     return res
 
@@ -135,9 +135,11 @@ def calculate_contests_progress(profile, course_contests):
     res["total"] = {
         "achieved_points": total_achieved_points,
         "total_points": total_contest_points,
-        "percentage": total_achieved_points / total_contest_points * 100
-        if total_contest_points
-        else 0,
+        "percentage": (
+            total_achieved_points / total_contest_points * 100
+            if total_contest_points
+            else 0
+        ),
     }
     return res
 
@@ -319,6 +321,177 @@ CourseLessonProblemFormSet = modelformset_factory(
 )
 
 
+class CreateCourseLesson(CourseEditableMixin, FormView):
+    template_name = "course/create_lesson.html"
+    form_class = CourseLessonFormSet
+    other_form = CourseLessonForm
+    model = CourseLesson
+
+    def get_context_data(self, **kwargs):
+        context = super(CreateCourseLesson, self).get_context_data(**kwargs)
+
+        context["problem_formsets"] = CourseLessonProblemFormSet()
+        context["title"] = _("Edit lessons for %(course_name)s") % {
+            "course_name": self.course.name
+        }
+        context["content_title"] = mark_safe(
+            _("Edit lessons for <a href='%(url)s'>%(course_name)s</a>")
+            % {
+                "course_name": self.course.name,
+                "url": self.course.get_absolute_url(),
+            }
+        )
+        context["page_type"] = "edit_lesson_new"
+        context["lesson_field"] = CourseLessonForm()
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form(form_class=CourseLessonForm)  # Get the CourseLessonForm
+
+        if form.is_valid():
+            form.instance.course_id = self.course.id
+            self.lesson = form.save()
+            formset = CourseLessonProblemFormSet(
+                data=self.request.POST,
+                prefix=f"problems_{self.lesson.id}" if self.lesson else "problems",
+                queryset=CourseLessonProblem.objects.filter(
+                    lesson=self.lesson
+                ).order_by("order"),
+            )
+            for problem_formset in formset:
+                problem_formset.save()
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def form_valid(self, form):
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def get_success_url(self):
+        return reverse(
+            "edit_course_lessons",
+            args=[self.course.slug],
+        )
+
+
+class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
+    template_name = "course/edit_lesson_new_window.html"
+    form_class = CourseLessonFormSet
+    other_form = CourseLessonForm
+    model = CourseLesson
+
+    def dispatch(self, request, *args, **kwargs):
+        self.lesson = CourseLesson.objects.get(id=kwargs["id"])
+        res = super().dispatch(request, *args, **kwargs)
+        if not self.lesson.id:
+            return HttpResponseRedirect(
+                reverse(
+                    "edit_course_lessons",
+                    args=[self.course.slug],
+                )
+            )
+        return res
+
+    def get(self, request, *args, **kwargs):
+        try:
+            self.lesson = CourseLesson.objects.get(id=kwargs["id"])
+
+            return super().get(request, *args, **kwargs)
+        except ObjectDoesNotExist:
+            raise Http404()
+
+    def get_problem_formset(self, post=False, lesson=None):
+        formset = CourseLessonProblemFormSet(
+            data=self.request.POST if post else None,
+            prefix=f"problems_{lesson.id}" if lesson else "problems",
+            queryset=CourseLessonProblem.objects.filter(lesson=self.lesson).order_by(
+                "order"
+            ),
+        )
+        if lesson:
+            for form in formset:
+                form.fields["lesson"].initial = self.lesson
+        return formset
+
+    def get_context_data(self, **kwargs):
+        context = super(EditCourseLessonsViewNewWindow, self).get_context_data(**kwargs)
+        if self.request.method != "POST":
+            context["formset"] = self.form_class(
+                instance=self.course, queryset=self.course.lessons.order_by("order")
+            )
+            context["problem_formsets"] = {
+                self.lesson.id: self.get_problem_formset(post=False, lesson=self.lesson)
+                for lesson in context["formset"].forms
+                if lesson.instance.id
+            }
+
+        context["title"] = _("Edit lessons for %(course_name)s") % {
+            "course_name": self.course.name
+        }
+        context["content_title"] = mark_safe(
+            _("Edit lessons for <a href='%(url)s'>%(course_name)s</a>")
+            % {
+                "course_name": self.course.name,
+                "url": self.course.get_absolute_url(),
+            }
+        )
+        context["page_type"] = "edit_lesson_new"
+        context["lesson_field"] = CourseLessonForm(instance=self.lesson)
+        context["lesson"] = self.lesson
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form(form_class=CourseLessonForm)  # Get the CourseLessonForm
+        if form.is_valid():
+            if "delete_lesson" in request.POST:
+                form.instance.course_id = self.course.id
+                form.instance.lesson_id = self.lesson.id
+                self.lesson.delete()
+                messages.success(request, "Lesson deleted successfully.")
+                course_slug = self.course.slug
+                return HttpResponseRedirect(
+                    reverse(
+                        "edit_course_lessons",
+                        args=[course_slug],
+                    )
+                )
+            else:
+                form.instance.course_id = self.course.id
+                form.instance.id = self.lesson.id
+                self.lesson = form.save()
+                problem_formsets = self.get_problem_formset(
+                    post=True, lesson=self.lesson
+                )
+                if problem_formsets.is_valid():
+                    problem_formsets.save()
+                    for obj in problem_formsets.deleted_objects:
+                        if obj.pk is not None:
+                            obj.delete()
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def form_valid(self, form):
+        if "delete_lesson" in self.request.POST:
+            return redirect("edit_course_lessons", slug=self.course.slug)
+        else:
+            return super().form_valid(form)
+
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def get_success_url(self):
+        return reverse(
+            "edit_course_lessons",
+            args=[self.course.slug],
+        )
+
+
 class EditCourseLessonsView(CourseEditableMixin, FormView):
     template_name = "course/edit_lesson.html"
     form_class = CourseLessonFormSet
@@ -496,9 +669,9 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
             grades[s]["total"] = {
                 "achieved_points": achieved_points,
                 "total_points": total_points,
-                "percentage": achieved_points / total_points * 100
-                if total_points
-                else 0,
+                "percentage": (
+                    achieved_points / total_points * 100 if total_points else 0
+                ),
             }
         return grades
 
