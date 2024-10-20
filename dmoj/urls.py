@@ -1,20 +1,18 @@
-import chat_box.views as chat
-
 from django.conf import settings
 from django.conf.urls import include, url
+from django.conf.urls.static import static as url_static
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.decorators import login_required
 from django.contrib.sitemaps.views import sitemap
-from django.http import Http404, HttpResponsePermanentRedirect, HttpResponseRedirect
+from django.http import Http404, HttpResponsePermanentRedirect
 from django.templatetags.static import static
 from django.urls import reverse
-from django.utils.functional import lazystr
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import RedirectView
-from django.contrib.auth.decorators import login_required
-from django.conf.urls.static import static as url_static
 
-
+import chat_box.views as chat
+from judge import authentication
 from judge.forms import CustomAuthenticationForm
 from judge.sitemap import (
     BlogPostSitemap,
@@ -37,7 +35,6 @@ from judge.views import (
     license,
     mailgun,
     markdown_editor,
-    test_formatter,
     notification,
     organization,
     preview,
@@ -62,10 +59,6 @@ from judge.views import (
     email,
     custom_file_upload,
 )
-from judge import authentication
-
-from judge.views.test_formatter import test_formatter
-
 from judge.views.problem_data import (
     ProblemDataView,
     ProblemSubmissionDiff,
@@ -86,6 +79,7 @@ from judge.views.select2 import (
     UserSelect2View,
     ProblemAuthorSearchSelect2View,
 )
+from judge.views.test_formatter import test_formatter
 
 admin.autodiscover()
 
@@ -594,12 +588,6 @@ urlpatterns = [
                     course.CourseContestList.as_view(),
                     name="course_contest_list",
                 ),
-                # url(
-                #     r"^/edit_lessons_new$",
-                #     lambda _, edit_lesson_new: HttpResponsePermanentRedirect(
-                #         reverse("edit_course_lessons_new")
-                #     ),
-                # ),
             ]
         ),
     ),

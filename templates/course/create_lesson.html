@@ -17,7 +17,7 @@
   <script>
     $(function() {
       $('select').each(function() {
-        var selectedValues = $(this).val();
+        const selectedValues = $(this).val();
 
         $(this).select2();
 
@@ -33,10 +33,6 @@
 
   <form method="post">
     {% csrf_token %}
-    {#<!--    {{ formset.management_form }}-->#}
-
-    {#<!--    {% for lesson in formset %}-->#}
-
     <div class="" style=" margin-bottom: 1em">
       {% for field in lesson_field %}
         {% if field %}
@@ -55,7 +51,6 @@
 
       <hr/>
     </div>
-    {#<!--    {% endfor %}-->#}
     <input type="submit" value="{{_('Save')}}" style="float: right">
   </form>
 {% endblock %}

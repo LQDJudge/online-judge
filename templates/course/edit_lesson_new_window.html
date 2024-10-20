@@ -34,8 +34,6 @@
   <form method="post">
     {% csrf_token %}
     {{ formset.management_form }}
-
-    {#<!--    {% for lesson in formset %}-->#}
     {% set ns = namespace(problem_formset_has_error=false) %}
 
     {% if lesson.id %}
@@ -100,8 +98,6 @@
       {% endif %}
       <hr/>
     </div>
-
-    {#<!--    {% endfor %}-->#}
     <div style="display: flex; justify-content: space-between;">
       <input type="submit" value="{{_('Save')}}" >
       <button type="submit" name="delete_lesson" onclick="return confirm('Are you sure you want to delete this lesson?')">
