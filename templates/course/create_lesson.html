@@ -1,0 +1,56 @@
+{% extends "course/base.html" %}
+
+{% block two_col_media %}
+  {{ form.media.css }}
+  <style type="text/css">
+    .field-order, .field-title, .field-points {
+      display: inline-flex;
+    }
+    .form-header {
+      margin-bottom: 0.5em;
+    }
+  </style>
+{% endblock %}
+
+{% block js_media %}
+  {{ form.media.js }}
+  <script>
+    $(function() {
+      $('select').each(function() {
+        const selectedValues = $(this).val();
+
+        $(this).select2();
+
+        $(this).val(selectedValues);
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block middle_content %}
+
+  <h2>Create new lesson </h2>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="" style=" margin-bottom: 1em">
+      {% for field in lesson_field %}
+        {% if field %}
+          <div style="margin-bottom: 1em;">
+            {{ field.errors }}
+            <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b> </label>
+            <div class="org-field-wrapper field-{{field.name}}" id="org-field-wrapper-{{field.html_name}}">
+              {{ field }}
+            </div>
+            {% if field.help_text %}
+              <small class="org-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+
+      <hr/>
+    </div>
+    <input type="submit" value="{{_('Save')}}" style="float: right">
+  </form>
+{% endblock %}

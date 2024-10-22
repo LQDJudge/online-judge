@@ -1,0 +1,108 @@
+{% extends "course/base.html" %}
+
+{% block two_col_media %}
+  {{ form.media.css }}
+  <style type="text/css">
+    .field-order, .field-title, .field-points {
+      display: inline-flex;
+    }
+    .form-header {
+      margin-bottom: 0.5em;
+    }
+  </style>
+{% endblock %}
+
+{% block js_media %}
+  {{ form.media.js }}
+  <script>
+    $(function() {
+      $('select').each(function() {
+        var selectedValues = $(this).val();
+
+        $(this).select2();
+
+        $(this).val(selectedValues);
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block middle_content %}
+  {% if lesson.id %}
+    <h2>{{lesson.title}} </h2>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    {% set ns = namespace(problem_formset_has_error=false) %}
+
+    {% if lesson.id %}
+      {% set problem_formset = problem_formsets[lesson.id] %}
+      {% for form in problem_formset %}
+        {% if form.errors %}
+          {% set ns.problem_formset_has_error = true %}
+          {% break %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    <div class="" style=" margin-bottom: 1em">
+      {% if lesson.errors %}
+        <div class="alert alert-danger alert-dismissable">
+          <a href="#" class="close">x</a>
+          {{_("Please fix below errors")}}
+        </div>
+      {% endif %}
+      {% for field in lesson_field %}
+        {% if field %}
+          <div style="margin-bottom: 1em;">
+            {{ field.errors }}
+            <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b> </label>
+            <div class="org-field-wrapper field-{{field.name}}" id="org-field-wrapper-{{field.html_name}}">
+              {{ field }}
+            </div>
+            {% if field.help_text %}
+              <small class="org-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+
+      <!-- Problems Table -->
+      {% if problem_formset %}
+        {{ problem_formset.management_form }}
+        <table class="table">
+          <thead>
+            <tr>
+              {% for field in problem_formset.forms.0 %}
+                {% if not field.is_hidden %}
+                  <th class="problems-{{field.name}}">
+                    {{field.label}}
+                  </th>
+                {% endif %}
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for form in problem_formset %}
+              <tr>
+                {% for field in form %}
+                  <td class="problems-{{field.name}}" title="{{ field.help_text|safe if field.help_text }}" style="{{ 'display:none' if field.is_hidden }}">
+                    {{field}}<div class="red">{{field.errors}}</div>
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+      <hr/>
+    </div>
+    <div style="display: flex; justify-content: space-between;">
+      <input type="submit" value="{{_('Save')}}" >
+      <button type="submit" name="delete_lesson" onclick="return confirm('Are you sure you want to delete this lesson?')">
+        Delete Lesson
+      </button>
+    </div>
+  </form>
+{% endblock %}

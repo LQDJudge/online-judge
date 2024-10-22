@@ -13,7 +13,6 @@ from registration.backends.default.views import (
     RegistrationView as OldRegistrationView,
 )
 from registration.forms import RegistrationForm
-from sortedm2m.forms import SortedMultipleChoiceField
 
 from judge.models import Language, Profile, TIMEZONE
 from judge.utils.recaptcha import ReCaptchaField, ReCaptchaWidget
