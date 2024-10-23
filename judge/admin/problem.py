@@ -204,7 +204,7 @@ class ProblemTranslationInline(admin.StackedInline):
 class ProblemAdmin(CompareVersionAdmin):
     fieldsets = (
         (
-            None,
+            _("Content"),
             {
                 "classes": ("collapse",),
                 "fields": (
