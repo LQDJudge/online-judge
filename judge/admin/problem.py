@@ -1,22 +1,18 @@
 from operator import attrgetter
 
 from django import forms
-from django.contrib import admin, messages
-from django.db import transaction, IntegrityError
-from django.db.models import Q, Avg, Count
-from django.db.models.aggregates import StdDev
+from django.contrib import admin
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.models import Q
 from django.forms import ModelForm, TextInput
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext, gettext_lazy as _, ungettext
-from django_ace import AceWidget
-from django.utils import timezone
-from django.core.exceptions import ValidationError
-
-from reversion.admin import VersionAdmin
 from reversion_compare.admin import CompareVersionAdmin
 
-
+from django_ace import AceWidget
 from judge.models import (
     LanguageLimit,
     LanguageTemplate,
@@ -24,9 +20,9 @@ from judge.models import (
     ProblemTranslation,
     Profile,
     Solution,
-    Notification,
 )
 from judge.models.notification import make_notification
+from judge.utils.problems import user_editable_ids, user_tester_ids
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
     AdminSelect2MultipleWidget,
@@ -34,7 +30,6 @@ from judge.widgets import (
     CheckboxSelectMultipleWithSelectAll,
     HeavyPreviewAdminPageDownWidget,
 )
-from judge.utils.problems import user_editable_ids, user_tester_ids
 
 MEMORY_UNITS = (("KB", "KB"), ("MB", "MB"))
 
@@ -140,6 +135,7 @@ class LanguageLimitInlineForm(ModelForm):
 
 class LanguageLimitInline(admin.TabularInline):
     model = LanguageLimit
+    classes = ("collapse",)
     fields = ("language", "time_limit", "memory_limit", "memory_unit")
     form = LanguageLimitInlineForm
     extra = 0
@@ -155,6 +151,7 @@ class LanguageTemplateInlineForm(ModelForm):
 
 class LanguageTemplateInline(admin.TabularInline):
     model = LanguageTemplate
+    classes = ("collapse",)
     fields = ("language", "source")
     form = LanguageTemplateInlineForm
     extra = 0
@@ -180,6 +177,7 @@ class ProblemSolutionForm(ModelForm):
 
 class ProblemSolutionInline(admin.StackedInline):
     model = Solution
+    classes = ("collapse",)
     fields = ("is_public", "publish_on", "authors", "content")
     form = ProblemSolutionForm
     extra = 0
@@ -197,6 +195,7 @@ class ProblemTranslationForm(ModelForm):
 
 class ProblemTranslationInline(admin.StackedInline):
     model = ProblemTranslation
+    classes = ("collapse",)
     fields = ("language", "name", "description")
     form = ProblemTranslationForm
     extra = 0
@@ -205,8 +204,9 @@ class ProblemTranslationInline(admin.StackedInline):
 class ProblemAdmin(CompareVersionAdmin):
     fieldsets = (
         (
-            None,
+            _("Content"),
             {
+                "classes": ("collapse",),
                 "fields": (
                     "code",
                     "name",
@@ -226,12 +226,24 @@ class ProblemAdmin(CompareVersionAdmin):
             _("Social Media"),
             {"classes": ("collapse",), "fields": ("og_image", "summary")},
         ),
-        (_("Taxonomy"), {"fields": ("types", "group")}),
-        (_("Points"), {"fields": (("points", "partial"), "short_circuit")}),
-        (_("Limits"), {"fields": ("time_limit", ("memory_limit", "memory_unit"))}),
-        (_("Language"), {"fields": ("allowed_languages",)}),
-        (_("Justice"), {"fields": ("banned_users",)}),
-        (_("History"), {"fields": ("change_message",)}),
+        (_("Taxonomy"), {"classes": ("collapse",), "fields": ("types", "group")}),
+        (
+            _("Points"),
+            {
+                "classes": ("collapse",),
+                "fields": (("points", "partial"), "short_circuit"),
+            },
+        ),
+        (
+            _("Limits"),
+            {
+                "classes": ("collapse",),
+                "fields": ("time_limit", ("memory_limit", "memory_unit")),
+            },
+        ),
+        (_("Language"), {"classes": ("collapse",), "fields": ("allowed_languages",)}),
+        (_("Justice"), {"classes": ("collapse",), "fields": ("banned_users",)}),
+        (_("History"), {"classes": ("collapse",), "fields": ("change_message",)}),
     )
     list_display = [
         "code",
