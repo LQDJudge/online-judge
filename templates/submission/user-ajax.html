@@ -56,7 +56,7 @@
         <td class="case-{{submission.result}}">{{submission.display_point}}</td>
         <td class="case-{{submission.result}}">({{submission.short_status}})</td>
         <td>
-          {% if submission.contest.is_pretest %}
+          {% if submission.is_pretested %}
             [{{_('pretests')}}]
           {% else %}
             [{{_('main tests')}}]
