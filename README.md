@@ -96,7 +96,7 @@ $ pre-commit install
 
 ```bash
 $ ./make_style.sh
-$ bash manage.py collectstatic
+$ python3 manage.py collectstatic
 $ python3 manage.py compilemessages
 $ python3 manage.py compilejsi18n
 ```
@@ -298,8 +298,8 @@ Suppose you finished all the installation. Everytime you want to run a local ser
     dmoj 0.0.0.0 -p 9999 -c <path to yml configure file>
     ```
 
-    Here we suppose you use the default port `9999` for bridge in `settings.py`. You can create multiple judges, each should
-    be in a seperate terminal.
+   Here we suppose you use the default port `9999` for bridge in `settings.py`. You can create multiple judges, each
+   should be in a seperate terminal.
 
 ### Optional
 
