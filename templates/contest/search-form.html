@@ -3,7 +3,7 @@
   <div class="sidebox-content">
     <form id="filter-form" method="GET">
       <input id="search-contest" type="text" name="contest" value="{{ contest_query or '' }}"
-        placeholder="{{ _('Search contests...') }}">
+             placeholder="{{ _('Search contests...') }}">
       {% if organizations %}
         <div style="margin-bottom: 1em;">
           <input id="hide_organization_contests" type="checkbox" name="hide_organization_contests" value="1" {% if hide_organization_contests %}checked{% endif %}>

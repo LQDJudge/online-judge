@@ -1,4 +1,4 @@
-from judge.models import SubmissionTestCase, Problem
+from judge.models import SubmissionTestCase
 
 from collections import defaultdict
 

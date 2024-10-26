@@ -50,10 +50,8 @@ from judge.forms import (
 )
 from judge.models import (
     BlogPost,
-    Comment,
     Organization,
     OrganizationRequest,
-    Problem,
     Profile,
     Contest,
     ContestProblem,
@@ -74,7 +72,6 @@ from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
 from judge.views.submission import SubmissionsListBase
 from judge.views.feed import FeedView
-from judge.tasks import rescore_contest
 
 __all__ = [
     "OrganizationList",

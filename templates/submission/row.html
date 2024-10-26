@@ -57,7 +57,7 @@
     <span class="time">{{ relative_time(submission.date, format=_("d/m/Y"))}}</span>
     {% if not hide_contest_in_row and submission.contest_object_id %}
       <a href="{{ url('contest_view', submission.contest_object.key) }}"
-        class="submission-contest">
+         class="submission-contest">
         <i title="{{ submission.contest_object.name }}" class="far fa-dot-circle"></i>
       </a>
     {% endif %}

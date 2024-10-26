@@ -7,7 +7,7 @@
         data: data,
         success: function (data, textStatus, jqXHR) {
           if (typeof on_success !== 'undefined')
-          on_success();
+            on_success();
         },
         error: function (data, textStatus, jqXHR) {
           alert('Action failed: ' + data.responseText);

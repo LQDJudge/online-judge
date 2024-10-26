@@ -608,9 +608,9 @@ def _get_basic_info(profile_id):
         "mute": profile.mute,
         "first_name": user.first_name or None,
         "last_name": user.last_name or None,
-        "profile_image_url": profile.profile_image.url
-        if profile.profile_image
-        else None,
+        "profile_image_url": (
+            profile.profile_image.url if profile.profile_image else None
+        ),
         "display_rank": profile.display_rank,
         "rating": profile.rating,
     }

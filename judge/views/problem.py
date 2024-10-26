@@ -57,12 +57,10 @@ from judge.models import (
     ProblemGroup,
     ProblemTranslation,
     ProblemType,
-    ProblemPointsVote,
     RuntimeVersion,
     Solution,
     Submission,
     SubmissionSource,
-    Organization,
     Profile,
     LanguageTemplate,
     Contest,
@@ -397,9 +395,11 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
                         {
                             "problem": problem,
                             "problem_name": problem_name,
-                            "description": problem.description
-                            if trans is None
-                            else trans.description,
+                            "description": (
+                                problem.description
+                                if trans is None
+                                else trans.description
+                            ),
                             "url": request.build_absolute_uri(),
                         }
                     )
@@ -521,9 +521,9 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             if self.show_types:
                 queryset = list(queryset)
                 queryset.sort(
-                    key=lambda problem: problem.types_list[0]
-                    if problem.types_list
-                    else "",
+                    key=lambda problem: (
+                        problem.types_list[0] if problem.types_list else ""
+                    ),
                     reverse=self.order.startswith("-"),
                 )
         return queryset
@@ -1203,9 +1203,11 @@ def problem_submit(request, problem, submission=None):
             "ACE_URL": settings.ACE_URL,
             "default_lang": default_lang,
             "problem_id": problem.id,
-            "output_only": problem.data_files.output_only
-            if hasattr(problem, "data_files")
-            else False,
+            "output_only": (
+                problem.data_files.output_only
+                if hasattr(problem, "data_files")
+                else False
+            ),
             "next_valid_submit_time": next_valid_submit_time,
         },
     )

@@ -4,7 +4,7 @@ from django.utils.translation import gettext, gettext_lazy as _
 from django.urls import reverse
 from django.db.models import Q
 
-from judge.models import BlogPost, Problem, Contest
+from judge.models import Problem, Contest
 from judge.models.profile import Organization, Profile
 
 

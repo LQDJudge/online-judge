@@ -4,33 +4,33 @@
     <form id="filter-form" name="form" action="" method="get">
       <div>
         <input id="search" type="text" name="search" value="{{ search_query or '' }}"
-          placeholder="{{ _('Search problems...') }}">
+               placeholder="{{ _('Search problems...') }}">
       </div>
       {% if feed_type != 'volunteer' and request.user.is_authenticated %}
         <div>
           <input id="hide_solved" type="checkbox" name="hide_solved" value="1"
-            {% if hide_solved %}checked{% endif %}>
+                 {% if hide_solved %}checked{% endif %}>
           <label for="hide_solved">{{ _('Hide solved problems') }}</label>
         </div>
       {% endif %}
       {% if feed_type == 'volunteer' and request.user.is_authenticated %}
         <div>
           <input id="show_solved_only" type="checkbox" name="show_solved_only" value="1"
-            {% if show_solved_only %}checked{% endif %}>
+                 {% if show_solved_only %}checked{% endif %}>
           <label for="show_solved_only">{{ _('Show solved problems') }}</label>
         </div>
       {% endif %}
       {% if feed_type != 'volunteer' %}
         <div>
           <input id="show_types" type="checkbox" name="show_types" value="1"
-            {% if show_types %} checked{% endif %}>
+                 {% if show_types %} checked{% endif %}>
           <label for="show_types">{{ _('Show problem types') }}</label>
         </div>
       {% endif %}
       {% if has_show_editorial_option %}
         <div>
           <input id="show_editorial" type="checkbox" name="show_editorial" value="1"
-            {% if show_editorial %} checked{% endif %}>
+                 {% if show_editorial %} checked{% endif %}>
           <label for="show_editorial">{{ _('Show editorial') }}</label>
         </div>
       {% endif %}

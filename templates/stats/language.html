@@ -33,9 +33,9 @@
   <script type="text/javascript">
     $(function () {
       Chart.defaults.global.scaleFontFamily =
-      Chart.defaults.global.tooltipFontFamily =
-      Chart.defaults.global.tooltipTitleFontFamily =
-      $('body').css('font-family');
+        Chart.defaults.global.tooltipFontFamily =
+        Chart.defaults.global.tooltipTitleFontFamily =
+        $('body').css('font-family');
       draw_pie_chart({{ data_all }}, $('#lang-all'));
       draw_pie_chart({{ lang_ac }}, $('#lang-ac'));
       draw_pie_chart({{ status_counts }}, $('#status-counts'));

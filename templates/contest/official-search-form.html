@@ -3,15 +3,15 @@
   <div class="sidebox-content">
     <form id="filter-form" method="GET">
       <input id="search-contest" type="text" name="contest" value="{{ contest_query or '' }}"
-        placeholder="{{ _('Search contests...') }}">
+             placeholder="{{ _('Search contests...') }}">
 
       <div class="filter-form-group">
         <label class="bold-text margin-label" for="year_from"><i class="non-italics">{{ _('Year') }}</i></label>
         <div class="year-range">
           <input type="number" name="year_from" id="year_from" value="{{ year_from or '' }}"
-            placeholder="{{ _('From') }}">
+                 placeholder="{{ _('From') }}">
           <input type="number" name="year_to" id="year_to" value="{{ year_to or '' }}"
-            placeholder="{{ _('To') }}" style="float: right">
+                 placeholder="{{ _('To') }}" style="float: right">
         </div>
       </div>
 

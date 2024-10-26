@@ -12,7 +12,7 @@
 {% block after_field_sets %}{{ block.super }}
   {% if original %}
     <a style="display: none" title="{% trans "Edit profile" %}" href="{% url 'admin:judge_profile_change' original.profile.pk %}"
-      class="button profilelink">
+       class="button profilelink">
       <i class="fa fa-lg fa-user-plus"></i>
       <span class="text">{% trans "Edit profile" %}</span>
     </a>

@@ -35,7 +35,7 @@
         {% endcache %}
         {% if problem.pdf_description %}
           <embed src="{{url('problem_pdf_description', problem.code)}}" width="100%" height="500" type="application/pdf"
-            style="margin-top: 0.5em">
+                 style="margin-top: 0.5em">
         {% endif %}
       </div>
       {% if feed_type=='volunteer' and request.user.has_perm('judge.suggest_problem_changes') %}
@@ -50,7 +50,7 @@
         <button class="edit-btn" id="edit-{{problem.id}}" pid="{{problem.id}}" style="float: right">{{_('Edit')}}</button>
         <form class="volunteer-form" id="form-{{problem.id}}" pid="{{problem.id}}" style="display: none;" method="POST">
           <input type="submit" class="volunteer-submit-btn" id="submit-{{problem.id}}" pid="{{problem.id}}"
-            pcode="{{problem.code}}" style="float: right" value="{{_('Submit')}}">
+                 pcode="{{problem.code}}" style="float: right" value="{{_('Submit')}}">
           <table class="table">
             <thead>
               <tr>
@@ -98,7 +98,7 @@
                 </td>
                 <td>
                   <textarea id="feedback-{{problem.id}}" rows="2" style="width: 100%"
-                    placeholder="{{_('Any additional note here')}}"></textarea>
+                            placeholder="{{_('Any additional note here')}}"></textarea>
                 </td>
               </tr>
             </tbody>

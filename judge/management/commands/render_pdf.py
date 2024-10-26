@@ -85,9 +85,9 @@ class Command(BaseCommand):
                     {
                         "problem": problem,
                         "problem_name": problem_name,
-                        "description": problem.description
-                        if trans is None
-                        else trans.description,
+                        "description": (
+                            problem.description if trans is None else trans.description
+                        ),
                         "url": "",
                     }
                 )

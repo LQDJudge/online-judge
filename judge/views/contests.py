@@ -383,11 +383,11 @@ class ContestMixin(object):
         context = super(ContestMixin, self).get_context_data(**kwargs)
         if self.request.user.is_authenticated:
             try:
-                context[
-                    "live_participation"
-                ] = self.request.profile.contest_history.get(
-                    contest=self.object,
-                    virtual=ContestParticipation.LIVE,
+                context["live_participation"] = (
+                    self.request.profile.contest_history.get(
+                        contest=self.object,
+                        virtual=ContestParticipation.LIVE,
+                    )
                 )
             except ContestParticipation.DoesNotExist:
                 context["live_participation"] = None
@@ -413,10 +413,9 @@ class ContestMixin(object):
         context["og_image"] = self.object.og_image or metadata[1]
         context["has_moss_api_key"] = settings.MOSS_API_KEY is not None
         context["contest_has_hidden_subtasks"] = self.object.format.has_hidden_subtasks
-        context[
-            "show_final_ranking"
-        ] = self.object.format.has_hidden_subtasks and self.object.is_editable_by(
-            self.request.user
+        context["show_final_ranking"] = (
+            self.object.format.has_hidden_subtasks
+            and self.object.is_editable_by(self.request.user)
         )
         context["logo_override_image"] = self.object.logo_override_image
 
@@ -1063,9 +1062,9 @@ def make_contest_ranking_profile(
         points=points,
         cumtime=cumtime,
         tiebreaker=participation.tiebreaker,
-        participation_rating=participation.rating.rating
-        if hasattr(participation, "rating")
-        else None,
+        participation_rating=(
+            participation.rating.rating if hasattr(participation, "rating") else None
+        ),
         problem_cells=[
             contest.format.display_user_problem(
                 participation, contest_problem, show_final

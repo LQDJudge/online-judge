@@ -3,7 +3,7 @@ from django.utils.formats import date_format
 from django.utils.translation import gettext as _, gettext_lazy
 
 from judge.caching import cache_wrapper
-from judge.models import Profile, Rating, Submission, Friend, ProfileInfo
+from judge.models import Profile
 
 
 @cache_wrapper(prefix="grr")

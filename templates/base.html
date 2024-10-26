@@ -35,7 +35,7 @@
     {% block og_title %}{% endblock %}
     <meta property="og:site_name" content="{{ SITE_LONG_NAME }}">
     <meta property="og:url"
-      content="{{ DMOJ_SCHEME }}://{{ DMOJ_CANONICAL|default(site.domain) }}{{ request.get_full_path() }}">
+          content="{{ DMOJ_SCHEME }}://{{ DMOJ_CANONICAL|default(site.domain) }}{{ request.get_full_path() }}">
     {% if meta_description %}
       <meta property="og:description" content="{{ meta_description }}">
     {% endif %}
@@ -62,7 +62,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&family=Noto+Sans&display=swap" rel="stylesheet">
     <link rel="canonical"
-      href="{{ DMOJ_SCHEME }}://{{ DMOJ_CANONICAL|default(site.domain) }}{{ request.get_full_path() }}">
+          href="{{ DMOJ_SCHEME }}://{{ DMOJ_CANONICAL|default(site.domain) }}{{ request.get_full_path() }}">
     {% if request.user.is_impersonate %}
       <style>
         #nav-container {
@@ -173,7 +173,7 @@
             <div id="lang-dropdown" class="dropdown" role="tooltip">
               {% for language in language_info_list(LANGUAGES) %}
                 <div value="{{ language.code }}"
-                  class="dropdown-item lang-dropdown-item" style="{{'font-weight: bold' if language.code == LANGUAGE_CODE}}">
+                     class="dropdown-item lang-dropdown-item" style="{{'font-weight: bold' if language.code == LANGUAGE_CODE}}">
                   {{ language.name_local }}
                 </div>
               {% endfor %}
@@ -319,8 +319,8 @@
           }
 
           var selected = null,
-          x_pos = 0, y_pos = 0,
-          x_elem = 0, y_elem = 0;
+              x_pos = 0, y_pos = 0,
+              x_elem = 0, y_elem = 0;
 
           $('#contest-info').mousedown(function () {
             selected = $(this);

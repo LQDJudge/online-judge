@@ -113,19 +113,19 @@
     <form action="{{ url('contest_join', contest.key) }}" method="post">
       {% csrf_token %}
       <input type="submit" class="unselectable button full small"
-        value="{{ _('Virtual join') }}">
+             value="{{ _('Virtual join') }}">
     </form>
   {% elif request.profile.id in contest.editor_ids or request.profile.id in contest.tester_ids %}
     <form action="{{ url('contest_join', contest.key) }}" method="post">
       {% csrf_token %}
       <input type="submit" class="unselectable button full small"
-        value="{{ _('Spectate') }}">
+             value="{{ _('Spectate') }}">
     </form>
   {% else %}
     <form action="{{ url('contest_join', contest.key) }}" method="post">
       {% csrf_token %}
       <input type="submit" class="unselectable button full small join-warning"
-        value="{{ _('Join') }}">
+             value="{{ _('Join') }}">
     </form>
   {% endif %}
 {% endmacro %}

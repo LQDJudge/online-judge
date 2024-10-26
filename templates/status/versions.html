@@ -21,13 +21,13 @@
         {% for judge in judges %}
           {% set versions = matrix[judge][language.id] %}
           <td class="version version-
-            {%- if not versions -%}
-              blank
-            {%- elif versions.is_latest -%}
-              latest
-            {%- else -%}
-              outdated
-            {%- endif %}">
+                     {%- if not versions -%}
+                       blank
+                     {%- elif versions.is_latest -%}
+                       latest
+                     {%- else -%}
+                       outdated
+                     {%- endif %}">
             {%- for version in versions -%}
               {{ version.name }}{% if version.version %}&nbsp;{{ version.version }}{% endif %}
               {% if not loop.last %}<br>{% endif %}

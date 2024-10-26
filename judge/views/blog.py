@@ -13,11 +13,8 @@ from judge.models import (
     BlogPost,
     Comment,
     Contest,
-    Language,
-    Problem,
     ContestProblemClarification,
     Profile,
-    Submission,
     Ticket,
 )
 from judge.models.profile import Organization, OrganizationProfile
@@ -62,9 +59,9 @@ class HomeFeedView(FeedView):
             start_time__lte=now, end_time__gt=now
         )
         context["future_contests"] = visible_contests.filter(start_time__gt=now)
-        context[
-            "recent_organizations"
-        ] = OrganizationProfile.get_most_recent_organizations(self.request.profile)
+        context["recent_organizations"] = (
+            OrganizationProfile.get_most_recent_organizations(self.request.profile)
+        )
 
         profile_queryset = Profile.objects
         if self.request.organization:

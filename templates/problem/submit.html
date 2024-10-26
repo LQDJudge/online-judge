@@ -107,7 +107,7 @@
         $('#id_language').on('select2:open', function (evt) {
           var dropdown = $('.select2-dropdown');
           if (!$('#result-version-info').length)
-          dropdown.append($("<span id=\"result-version-info\">"));
+            dropdown.append($("<span id=\"result-version-info\">"));
           dropdown.attr('id', 'language-select2');
         });
 
@@ -233,9 +233,9 @@
             <select id="id_language" name="language">
               {% for lang in form.fields.language.queryset %}
                 <option value="{{ lang.id }}" data-id="{{ lang.id }}" data-name="{{ lang.name }}"
-                  data-info="{{ lang.info }}" data-ace="{{ lang.ace }}"
-                  data-judge-info="{{ runtime_versions(lang.runtime_versions()) }}"
-                  {% if lang.id == default_lang.id %}selected{% endif %}>{{ lang.name }}</option>
+                        data-info="{{ lang.info }}" data-ace="{{ lang.ace }}"
+                        data-judge-info="{{ runtime_versions(lang.runtime_versions()) }}"
+                        {% if lang.id == default_lang.id %}selected{% endif %}>{{ lang.name }}</option>
               {% endfor %}
             </select>
           </div>
@@ -253,7 +253,7 @@
       <div class="submit-bar">
         {{ form.judge }}
         <input id="submit-button" type="submit" value="{{ _('Submit!') }}" class="button small"
-          {% if request.in_contest and submission_limit and  submissions_left <= 0 %}disabled{% endif %}>
+               {% if request.in_contest and submission_limit and  submissions_left <= 0 %}disabled{% endif %}>
         <span id="countdown-timer"></span>
       </div>
     {% endif %}

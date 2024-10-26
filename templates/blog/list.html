@@ -73,10 +73,10 @@
           {{ _('Clarifications') }}
           {% if can_edit_contest %}
             <a href="{{url('new_contest_clarification', request.participation.contest.key)}}"
-              class="fa fa-plus-circle"
-              id="add-clarification"
-              title="{{_('Add')}}"
-              style="color: lightcyan; margin-left: auto;">
+               class="fa fa-plus-circle"
+               id="add-clarification"
+               title="{{_('Add')}}"
+               style="color: lightcyan; margin-left: auto;">
             </a>
           {% endif %}
         </h3>
@@ -86,7 +86,7 @@
               {% for clarification in clarifications %}
                 <li class="clarification">
                   <a href="{{ url('problem_detail', clarification.problem.problem.code) }}"
-                    class="problem">
+                     class="problem">
                     {{ clarification.problem.problem.name }}
                   </a>
                   <span class="time">{{ relative_time(clarification.date) }}</span>

@@ -101,7 +101,7 @@
         // This is incredibly nasty to do but it's needed because otherwise the select2 steals the focus
         $search.keypress(function (e) {
           if (e.keyCode == 13)
-          $('#go').click();
+            $('#go').click();
         });
 
         $('#random').click(function (e) {
@@ -117,7 +117,7 @@
           prep_form();
           ($('<form>').attr('action', window.location.pathname + '?' + form_serialize())
               .append($('<input>').attr('type', 'hidden').attr('name', 'csrfmiddlewaretoken')
-                .attr('value', $.cookie('csrftoken')))
+                  .attr('value', $.cookie('csrftoken')))
               .attr('method', 'POST').appendTo($('body')).submit());
         });
 
@@ -195,11 +195,11 @@
             };
             $.post("{{url('volunteer_problem_vote')}}", data)
               .fail(function() {
-              $('#thank-' + pid).html("{{_('Fail to vote!')}}");
-            })
+                $('#thank-' + pid).html("{{_('Fail to vote!')}}");
+              })
               .done(function() {
-              $('#thank-' + pid).html("{{_('Successful vote! Thank you!')}}");
-            });
+                $('#thank-' + pid).html("{{_('Successful vote! Thank you!')}}");
+              });
           });
         {% endif %}
       });

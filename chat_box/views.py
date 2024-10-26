@@ -32,7 +32,6 @@ from django.urls import reverse
 
 from judge import event_poster as event
 from judge.jinja2.gravatar import gravatar
-from judge.models import Friend
 
 from chat_box.models import Message, Profile, Room, UserRoom, Ignore, get_room_info
 from chat_box.utils import encrypt_url, decrypt_url, encrypt_channel, get_unread_boxes

@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import CASCADE, F
 from django.core.exceptions import ObjectDoesNotExist
 
-from judge.models import Profile, Comment
+from judge.models import Profile
 from judge.caching import cache_wrapper
 
 

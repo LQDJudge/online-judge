@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.shortcuts import render
 
 from judge.utils.diggpaginator import DiggPaginator
-from judge.models import VolunteerProblemVote, Problem
+from judge.models import Problem
 
 
 class InternalView(object):

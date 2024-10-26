@@ -19,12 +19,12 @@
       <div class="user-info-card">
         <div class="user-info">
           <div class="user-info-header"
-            title="
-              {%- trans trimmed counter=user.problem_count %}
-                {{ counter }} problem solved
-                {% pluralize %}
-                {{ counter }} problems solved
-              {% endtrans -%}"
+               title="
+                      {%- trans trimmed counter=user.problem_count %}
+                        {{ counter }} problem solved
+                        {% pluralize %}
+                        {{ counter }} problems solved
+                      {% endtrans -%}"
           ><i class="green icofont-tick-mark"></i> {{_('Problems')}}</div>
           <div class="user-info-body">{{user.problem_count}}</div>
         </div>
@@ -32,7 +32,7 @@
       <div class="user-info-card">
         <div class="user-info">
           <div class="user-info-header"
-            title="{{_('Total points')}}"
+               title="{{_('Total points')}}"
           ><i class="fa fa-trophy darkcyan"></i> {{_('Points')}}</div>
           <div class="user-info-body"><span title="{{ user.performance_points|floatformat(2) }}">
             {{ user.performance_points|floatformat(0) }}
@@ -94,7 +94,7 @@
           {% endif %}
           <a href={{medal.link}}>
             <img src="{{medal_url}}"
-              title="{% trans label=medal.label, date=medal.date%}{{label}} ({{date}}){% endtrans %}">
+                 title="{% trans label=medal.label, date=medal.date%}{{label}} ({{date}}){% endtrans %}">
           </a>
         {% endfor%}
       </div>
@@ -269,23 +269,23 @@
         days.forEach(obj => {
           var level = activity_breakdown.findIndex(x => x >= obj.activity);
           var text =
-          ngettext("%(cnt)d submission on %(date)s", "%(cnt)d submissions on %(date)s", obj.activity)
+            ngettext("%(cnt)d submission on %(date)s", "%(cnt)d submissions on %(date)s", obj.activity)
             .replace('%(cnt)d', obj.activity)
             .replace(
-            '%(date)s',
-            obj.date.toLocaleDateString(
-              "{{ LANGUAGE_CODE }}",
-              {month: 'short', year: 'numeric', day: 'numeric'}
+              '%(date)s',
+              obj.date.toLocaleDateString(
+                "{{ LANGUAGE_CODE }}",
+                {month: 'short', year: 'numeric', day: 'numeric'}
+              )
             )
-          )
 
           $div.find('#submission-' + obj.weekday)
             .append(
-            $('<td>').addClass(['activity-label', 'activity-' + level])
-              .attr('data-submission-activity', text)
-              .attr('data-day', obj.day_num)
-              .append('<div>')
-          );
+              $('<td>').addClass(['activity-label', 'activity-' + level])
+                .attr('data-submission-activity', text)
+                .attr('data-day', obj.day_num)
+                .append('<div>')
+            );
         });
 
         install_tooltips();

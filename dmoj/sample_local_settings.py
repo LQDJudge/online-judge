@@ -93,9 +93,9 @@ STATICFILES_FINDERS += ("compressor.finders.CompressorFinder",)
 
 # To use Mailgun, uncomment this block.
 # You will need to run `pip install django-mailgun-mime` to get `MailgunBackend`.
-#EMAIL_BACKEND = 'django_mailgun_mime.backends.MailgunMIMEBackend'
-#MAILGUN_API_KEY = '<your Mailgun access key>'
-#MAILGUN_DOMAIN_NAME = '<your Mailgun domain>'
+# EMAIL_BACKEND = 'django_mailgun_mime.backends.MailgunMIMEBackend'
+# MAILGUN_API_KEY = '<your Mailgun access key>'
+# MAILGUN_DOMAIN_NAME = '<your Mailgun domain>'
 
 # You can also use Sendgrid, with `pip install sendgrid-django`.
 # EMAIL_BACKEND = 'sgbackend.SendGridBackend'
@@ -336,7 +336,7 @@ LOGGING = {
         },
         "judge.user_ip": {
             "handlers": ["user_ip"],
-        }
+        },
         # Other loggers of interest. Configure at will.
         #  - judge.user: logs naughty user behaviours.
         #  - judge.problem.pdf: PDF generation log.

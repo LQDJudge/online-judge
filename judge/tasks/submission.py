@@ -48,9 +48,11 @@ def rescore_problem(self, problem_id):
         rescored = 0
         for submission in submissions.iterator():
             submission.points = round(
-                submission.case_points / submission.case_total * problem.points
-                if submission.case_total
-                else 0,
+                (
+                    submission.case_points / submission.case_total * problem.points
+                    if submission.case_total
+                    else 0
+                ),
                 1,
             )
             if not problem.partial and submission.points < problem.points:

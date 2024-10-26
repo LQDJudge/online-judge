@@ -10,7 +10,7 @@ from django.conf import settings
 from chat_box.utils import encrypt_url
 
 from judge.jinja2.gravatar import gravatar
-from judge.models import Comment, Contest, Organization, Problem, Profile
+from judge.models import Contest, Organization, Problem, Profile
 
 
 def _get_user_queryset(term, org_id=None):

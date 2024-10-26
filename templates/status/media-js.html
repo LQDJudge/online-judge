@@ -30,7 +30,7 @@
 
     function update_table() {
       if ($('body').hasClass('window-hidden'))
-      return outdated = true;
+        return outdated = true;
       $.ajax({
         url: '{{ url('status_table') }}'
       }).done(function (data) {
@@ -53,7 +53,7 @@
 
     $(window).on('dmoj:window-visible', function () {
       if (outdated)
-      update_table();
+        update_table();
     });
 
     setTimeout(update_table, 10000);

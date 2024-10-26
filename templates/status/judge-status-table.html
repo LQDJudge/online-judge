@@ -52,8 +52,8 @@
       {% if judge.online %}
         {% for key, info in judge.runtime_versions -%}
           <a href="javascript:void(0)" data-judge="{{ judge.id }}" data-lang="{{ key }}"
-            data-runtime-info="{{ runtime_versions(info.runtime) }}"
-            class="runtime-label">{{ info.name }}</a>
+             data-runtime-info="{{ runtime_versions(info.runtime) }}"
+             class="runtime-label">{{ info.name }}</a>
           {%- if not loop.last %}, {% endif %}
         {%- endfor %}
       {% else %}{{ _('N/A') }}{% endif %}

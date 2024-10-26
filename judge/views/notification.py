@@ -4,7 +4,7 @@ from django.utils.translation import ugettext as _
 from django.utils.timezone import now
 from django.http import Http404
 
-from judge.models import Profile, Notification, NotificationProfile
+from judge.models import Notification, NotificationProfile
 from judge.models.notification import unseen_notifications_count
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 

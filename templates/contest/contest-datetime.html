@@ -1,6 +1,6 @@
 <div id="banner">
   <a href="https://www.timeanddate.com/worldclock/fixedtime.html?msg={{ contest.name|urlquote('') }}&amp;iso=
-    {{- contest.start_time|utc|date('Y-m-d\TH:i:s') }}" class="date">
+           {{- contest.start_time|utc|date('Y-m-d\TH:i:s') }}" class="date">
     {%- if contest.is_in_contest(request.user) and not request.participation.live -%}
       {% if request.participation.spectate %}
         {% trans countdown=contest.end_time|as_countdown %}Spectating, contest ends in {{countdown}}.{% endtrans %}

@@ -79,17 +79,19 @@ def api_v1_contest_detail(request, contest):
                 "name": contest.format_name,
                 "config": contest.format_config,
             },
-            "problems": [
-                {
-                    "points": int(problem.points),
-                    "partial": problem.partial,
-                    "name": problem.problem.name,
-                    "code": problem.problem.code,
-                }
-                for problem in problems
-            ]
-            if can_see_problems
-            else [],
+            "problems": (
+                [
+                    {
+                        "points": int(problem.points),
+                        "partial": problem.partial,
+                        "name": problem.problem.name,
+                        "code": problem.problem.code,
+                    }
+                    for problem in problems
+                ]
+                if can_see_problems
+                else []
+            ),
             "rankings": [
                 {
                     "user": participation.username,

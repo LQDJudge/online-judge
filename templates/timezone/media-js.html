@@ -24,9 +24,9 @@
               }
             }).done(function (data) {
               if (data['timeZoneId'])
-              $('#id_timezone').val(data.timeZoneId).change();
+                $('#id_timezone').val(data.timeZoneId).change();
               else
-              alert('Invalid response from Google: ' + data);
+                alert('Invalid response from Google: ' + data);
             }).fail(function (jqXHR, status) {
               alert(status);
             }).always(function () {

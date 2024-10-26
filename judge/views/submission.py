@@ -469,9 +469,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         if context["in_hidden_subtasks_contest"]:
             for submission in context["submissions"]:
                 self.modify_attrs(submission)
-        context[
-            "is_in_editable_contest"
-        ] = self.in_contest and self.contest.is_editable_by(self.request.user)
+        context["is_in_editable_contest"] = (
+            self.in_contest and self.contest.is_editable_by(self.request.user)
+        )
 
         return context
 
@@ -503,9 +503,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             response = {}
             if not self.in_hidden_subtasks_contest():
                 response["results_json"] = self.get_result_data()
-                response[
-                    "results_colors_json"
-                ] = settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS
+                response["results_colors_json"] = (
+                    settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS
+                )
             else:
                 response["results_json"] = None
             return JsonResponse(response)

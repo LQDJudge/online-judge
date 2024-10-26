@@ -166,7 +166,9 @@ class ECOOContestFormat(DefaultContestFormat):
         return format_html(
             '<td class="user-points">{points}<div class="solving-time">{cumtime}</div></td>',
             points=floatformat(participation.score),
-            cumtime=nice_repr(timedelta(seconds=participation.cumtime), "noday")
-            if self.config["cumtime"]
-            else "",
+            cumtime=(
+                nice_repr(timedelta(seconds=participation.cumtime), "noday")
+                if self.config["cumtime"]
+                else ""
+            ),
         )

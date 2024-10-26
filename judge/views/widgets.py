@@ -98,6 +98,9 @@ class DetectTimezone(View):
             return HttpResponse(
                 _("Bad latitude or longitude"), content_type="text/plain", status=404
             )
-        return {"askgeo": self.askgeo, "geonames": self.geonames,}.get(
+        return {
+            "askgeo": self.askgeo,
+            "geonames": self.geonames,
+        }.get(
             backend, self.default
         )(lat, long)

@@ -4,8 +4,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext, gettext_lazy as _, ungettext
 from django.forms import ModelForm
 
-from judge.models import Course, CourseRole
-from judge.widgets import AdminSelect2MultipleWidget
+from judge.models import CourseRole
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
     AdminHeavySelect2Widget,

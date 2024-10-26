@@ -13,9 +13,9 @@
 
       function update_ticket_state(open) {
         if (open)
-        $status.removeClass('fa-check-circle').addClass('fa-exclamation-circle');
+          $status.removeClass('fa-check-circle').addClass('fa-exclamation-circle');
         else
-        $status.removeClass('fa-exclamation-circle').addClass('fa-check-circle');
+          $status.removeClass('fa-exclamation-circle').addClass('fa-check-circle');
         $('.close-ticket').toggle(open);
         $('.open-ticket').toggle(!open);
       }
@@ -51,9 +51,9 @@
 
       function increase_page_ref() {
         if (page_ref_key in localStorage)
-        localStorage[page_ref_key] = page_ref = +localStorage[page_ref_key] + 1;
+          localStorage[page_ref_key] = page_ref = +localStorage[page_ref_key] + 1;
         else
-        localStorage[page_ref_key] = page_ref = 1;
+          localStorage[page_ref_key] = page_ref = 1;
       }
 
       function decrease_page_ref() {
@@ -68,21 +68,21 @@
       function is_highest_ref() {
         console.log(localStorage[page_ref_key], page_ref);
         if (page_ref_key in localStorage)
-        return +localStorage[page_ref_key] == page_ref;
+          return +localStorage[page_ref_key] == page_ref;
         return true;
       }
 
       $(window).on('storage', function (e) {
         e = e.originalEvent;
         if (e.key == page_close_key && e.newValue !== null)
-        if (page_ref != null && page_ref > +e.newValue)
-        --page_ref;
+          if (page_ref != null && page_ref > +e.newValue)
+            --page_ref;
       });
 
       register_notify('ticket', {
         change: function (enabled) {
           if (enabled)
-          increase_page_ref();
+            increase_page_ref();
         }
       });
 
@@ -93,8 +93,8 @@
       function ticket_status(ticket) {
         update_ticket_state(ticket.open);
         if (is_highest_ref())
-        notify('ticket', (ticket.open ? '{{ _('Reopened: ') }}' :
-          '{{ _('Closed: ') }}') + $title.text());
+          notify('ticket', (ticket.open ? '{{ _('Reopened: ') }}' :
+            '{{ _('Closed: ') }}') + $title.text());
       }
 
       function ticket_message(ticket) {
@@ -106,7 +106,7 @@
           },
           error: function (data) {
             if (data.status === 403)
-            console.log('No right to see: ' + ticket.message);
+              console.log('No right to see: ' + ticket.message);
             else {
               console.log('Could not load ticket message:');
               console.log(data.responseText);
@@ -200,9 +200,9 @@
         </div>
 
         <button data-ajax="{{ url('ticket_close', ticket.id) }}" data-open="0" class="close-ticket"
-          {% if not ticket.is_open %}style="display: none"{% endif %}>{{ _('Close ticket') }}</button>
+                {% if not ticket.is_open %}style="display: none"{% endif %}>{{ _('Close ticket') }}</button>
         <button data-ajax="{{ url('ticket_open', ticket.id) }}" data-open="1" class="open-ticket"
-          {% if ticket.is_open %}style="display: none"{% endif %}>{{ _('Reopen ticket') }}</button>
+                {% if ticket.is_open %}style="display: none"{% endif %}>{{ _('Reopen ticket') }}</button>
 
         {% if perms.judge.change_ticket or request.profile in assignees %}
           <div class="info-box">

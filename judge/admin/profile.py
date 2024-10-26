@@ -21,13 +21,13 @@ class ProfileForm(ModelForm):
         super(ProfileForm, self).__init__(*args, **kwargs)
         if "current_contest" in self.base_fields:
             # form.fields['current_contest'] does not exist when the user has only view permission on the model.
-            self.fields[
-                "current_contest"
-            ].queryset = self.instance.contest_history.select_related("contest").only(
-                "contest__name", "user_id", "virtual"
+            self.fields["current_contest"].queryset = (
+                self.instance.contest_history.select_related("contest").only(
+                    "contest__name", "user_id", "virtual"
+                )
             )
-            self.fields["current_contest"].label_from_instance = (
-                lambda obj: "%s v%d" % (obj.contest.name, obj.virtual)
+            self.fields["current_contest"].label_from_instance = lambda obj: (
+                "%s v%d" % (obj.contest.name, obj.virtual)
                 if obj.virtual
                 else obj.contest.name
             )

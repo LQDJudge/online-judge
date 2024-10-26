@@ -51,9 +51,11 @@ class RankedSubmissions(ProblemSubmissions):
             """.format(
                 points=points, contest_join=contest_join, constraint=constraint
             ),
-            params=[self.problem.id, self.contest.id] * 3
-            if self.in_contest
-            else [self.problem.id] * 3,
+            params=(
+                [self.problem.id, self.contest.id] * 3
+                if self.in_contest
+                else [self.problem.id] * 3
+            ),
             alias="best_subs",
             join_fields=[("id", "id")],
             related_model=Submission,

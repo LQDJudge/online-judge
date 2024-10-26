@@ -119,9 +119,11 @@ class IOIContestFormat(DefaultContestFormat):
                 points=floatformat(
                     format_data["points"], -self.contest.points_precision
                 ),
-                time=nice_repr(timedelta(seconds=format_data["time"]), "noday")
-                if self.config["cumtime"]
-                else "",
+                time=(
+                    nice_repr(timedelta(seconds=format_data["time"]), "noday")
+                    if self.config["cumtime"]
+                    else ""
+                ),
             )
         else:
             return mark_safe('<td class="problem-score-col"></td>')
@@ -136,7 +138,9 @@ class IOIContestFormat(DefaultContestFormat):
         return format_html(
             '<td class="user-points">{points}<div class="solving-time">{cumtime}</div></td>',
             points=floatformat(score, -self.contest.points_precision),
-            cumtime=nice_repr(timedelta(seconds=cumtime), "noday")
-            if self.config["cumtime"]
-            else "",
+            cumtime=(
+                nice_repr(timedelta(seconds=cumtime), "noday")
+                if self.config["cumtime"]
+                else ""
+            ),
         )

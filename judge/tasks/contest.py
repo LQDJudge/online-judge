@@ -24,11 +24,13 @@ def rescore_contest(self, contest_key):
                 submission = contest_submission.submission
                 contest_problem = contest_submission.problem
                 contest_submission.points = round(
-                    submission.case_points
-                    / submission.case_total
-                    * contest_problem.points
-                    if submission.case_total > 0
-                    else 0,
+                    (
+                        submission.case_points
+                        / submission.case_total
+                        * contest_problem.points
+                        if submission.case_total > 0
+                        else 0
+                    ),
                     3,
                 )
                 if (

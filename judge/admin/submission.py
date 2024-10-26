@@ -269,11 +269,13 @@ class SubmissionAdmin(admin.ModelAdmin):
         )
         for submission in submissions:
             submission.points = round(
-                submission.case_points
-                / submission.case_total
-                * submission.problem.points
-                if submission.case_total
-                else 0,
+                (
+                    submission.case_points
+                    / submission.case_total
+                    * submission.problem.points
+                    if submission.case_total
+                    else 0
+                ),
                 1,
             )
             if (

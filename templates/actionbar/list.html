@@ -8,15 +8,15 @@
   <div class="page-vote actionbar {{'hide_texts_on_mobile' if hide_texts_on_mobile}} ">
     <span class="actionbar-block" style="justify-content: flex-start;">
       <span id="like-button-{{pagevote.id}}"
-        class="like-button actionbar-button {% if pagevote.vote_score(request.profile) == 1 %}voted{% endif %}"
-        onclick="javascript:pagevote_upvote({{ pagevote.id }}, event)">
+            class="like-button actionbar-button {% if pagevote.vote_score(request.profile) == 1 %}voted{% endif %}"
+            onclick="javascript:pagevote_upvote({{ pagevote.id }}, event)">
         <span class="pagevote-score" id="pagevote-score-{{pagevote.id}}">{{ pagevote.score }}</span>
         <i class="far fa-thumbs-up" style="font-size: large;"></i>
         <span class="actionbar-text">{{_("Like")}}</span>
       </span>
       <span id="dislike-button-{{pagevote.id}}"
-        class="dislike-button actionbar-button {% if pagevote.vote_score(request.profile) == -1 %}voted{% endif %}"
-        onclick="javascript:pagevote_downvote({{ pagevote.id }}, event)">
+            class="dislike-button actionbar-button {% if pagevote.vote_score(request.profile) == -1 %}voted{% endif %}"
+            onclick="javascript:pagevote_downvote({{ pagevote.id }}, event)">
         <i class="far fa-thumbs-down" style="font-size: large;"></i>
       </span>
     </span>
@@ -37,15 +37,15 @@
     {% endif %}
     <span class="actionbar-block">
       <span id="bookmark-button-{{bookmark.id}}"
-        class="bookmark-button actionbar-button {% if bookmark.is_bookmarked_by(request.profile) %} bookmarked {% endif %}"
-        onclick="javascript:bookmark({{ bookmark.id }}, event)">
+            class="bookmark-button actionbar-button {% if bookmark.is_bookmarked_by(request.profile) %} bookmarked {% endif %}"
+            onclick="javascript:bookmark({{ bookmark.id }}, event)">
         <i class="far fa-bookmark" style="font-size: large;"></i>
         <span class="actionbar-text">{{_("Bookmark")}}</span>
       </span>
     </span>
     <span class="actionbar-block">
       <span class="actionbar-button actionbar-share" style="position: relative"
-        {{"share-url=" + share_url if share_url else ""}} onclick="javascript:actionbar_share(this, event)">
+            {{"share-url=" + share_url if share_url else ""}} onclick="javascript:actionbar_share(this, event)">
         <i class=" fa fa-share" style="font-size: large;"></i>
         <span class="actionbar-text">{{_("Share")}}</span>
       </span>

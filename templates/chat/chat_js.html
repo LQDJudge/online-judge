@@ -15,41 +15,41 @@
     }
     $.get("{{ url('chat', '') }}" + window.room_id, param)
       .fail(function() {
-      console.log("Fail to load page, last_id = " + last_id);
-      window.lock = false;
-    })
+        console.log("Fail to load page, last_id = " + last_id);
+        window.lock = false;
+      })
       .done(function(data) {
-      if (refresh_html) {
-        $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
-      }
-      var time = refresh_html ? 0 : 200;
-
-      setTimeout(function() {
-        $(".has_next").remove();
-        let $chat_box = $('#chat-box');
-        let lastMsgPos = scrollTopOfBottom($chat_box)
-
-        $('#loader').hide();
-
         if (refresh_html) {
-          $('#chat-log').append(data);
-        }
-        else {
-          $('#chat-log').prepend(data);
-        }
-
-        postProcessMessages();
-
-        if (!refresh_html) {
-          $chat_box.scrollTop(scrollTopOfBottom($chat_box) - lastMsgPos);
-        }
-        else {
           $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
         }
-        window.lock = false;
-        window.has_next = parseInt($(".has_next").attr("value"));
-      }, time);
-    })
+        var time = refresh_html ? 0 : 200;
+
+        setTimeout(function() {
+          $(".has_next").remove();
+          let $chat_box = $('#chat-box');
+          let lastMsgPos = scrollTopOfBottom($chat_box)
+
+          $('#loader').hide();
+
+          if (refresh_html) {
+            $('#chat-log').append(data);
+          }
+          else {
+            $('#chat-log').prepend(data);
+          }
+
+          postProcessMessages();
+
+          if (!refresh_html) {
+            $chat_box.scrollTop(scrollTopOfBottom($chat_box) - lastMsgPos);
+          }
+          else {
+            $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+          }
+          window.lock = false;
+          window.has_next = parseInt($(".has_next").attr("value"));
+        }, time);
+      })
   }
 
   function postProcessMessages() {
@@ -79,21 +79,21 @@
   function refresh_status(refresh_chat_info=false) {
     $.get("{{url('online_status_ajax')}}")
       .fail(function() {
-      console.log("Fail to get online status");
-    })
+        console.log("Fail to get online status");
+      })
       .done(function(data) {
-      if (data.status == 403) {
-        console.log("Fail to retrieve data");
-      }
-      else {
-        $('#chat-online-list').html(data).find('.toggle').each(function () {
-          register_toggle($(this));
-        });
-        register_click_space();
-        register_setting(false);
-        color_selected_room();
-      }
-    })
+        if (data.status == 403) {
+          console.log("Fail to retrieve data");
+        }
+        else {
+          $('#chat-online-list').html(data).find('.toggle').each(function () {
+            register_toggle($(this));
+          });
+          register_click_space();
+          register_setting(false);
+          color_selected_room();
+        }
+      })
 
     var data = {
       'user': window.other_user_id,
@@ -105,13 +105,13 @@
 
     $.get("{{url('user_online_status_ajax')}}", data)
       .fail(function() {
-      console.log("Fail to get user online status");
-    })
+        console.log("Fail to get user online status");
+      })
       .done(function(data) {
-      $('#chat-info').html(data);
-      register_time($('.time-with-rel'));
-      register_setting(true);
-    })
+        $('#chat-info').html(data);
+        register_time($('.time-with-rel'));
+        register_setting(true);
+      })
   }
 
   function add_message(data) {
@@ -249,15 +249,15 @@
 
         $.post("{{ url('post_chat_message') }}", message)
           .fail(function(res) {
-          console.log('Fail to send message');
-          var $body = $('#message-text-'+ message.tmp_id);
-          $body.css('text-decoration', 'line-through');
-          $body.css('background', 'red');
-        })
+            console.log('Fail to send message');
+            var $body = $('#message-text-'+ message.tmp_id);
+            $body.css('text-decoration', 'line-through');
+            $body.css('background', 'red');
+          })
           .done(function(res, status) {
-          $('#empty_msg').hide();
-          $('#chat-input').focus();
-        })
+            $('#empty_msg').hide();
+            $('#chat-input').focus();
+          })
       }
     {% endif %}
   }
@@ -324,15 +324,15 @@
     if (encrypted_user) {
       $.get("{{url('get_or_create_room')}}" + `?other=${encrypted_user}`)
         .done(function(data) {
-        window.room_id = data.room;
-        window.other_user_id = data.other_user_id;
-        color_selected_room();
-        callback();
-        $('#chat-input').attr('maxlength', 5000);
-      })
+          window.room_id = data.room;
+          window.other_user_id = data.other_user_id;
+          color_selected_room();
+          callback();
+          $('#chat-input').attr('maxlength', 5000);
+        })
         .fail(function() {
-        console.log('Fail to get_or_create_room');
-      })
+          console.log('Fail to get_or_create_room');
+        })
     }
     else {
       window.room_id = '';
@@ -370,11 +370,11 @@
 
     $.post("{{ url('update_last_seen') }}", data)
       .fail(function(data) {
-      console.log('Fail to update last seen');
-    })
+        console.log('Fail to update last seen');
+      })
       .done(function(data) {
 
-    })
+      })
   }
 
   function remove_unread_current_user() {
@@ -540,17 +540,17 @@
       templateResult: function (data, container) {
         return $('<span>')
           .append($('<img>', {
-          'class': 'user-search-image', src: data.gravatar_url,
-          width: 24, height: 24
-        }))
+            'class': 'user-search-image', src: data.gravatar_url,
+            width: 24, height: 24
+          }))
           .append($('<span>', {'class': data.display_rank + ' user-search-name'}).text(data.text))
           .append($('<a>', {href: '/user/' + data.text, 'class': 'user-redirect'})
-            .append($('<i>', {'class': 'fa fa-mail-forward'}))
-            .mouseover(function () {
-            in_user_redirect = true;
-          }).mouseout(function () {
-            in_user_redirect = false;
-          }));
+              .append($('<i>', {'class': 'fa fa-mail-forward'}))
+              .mouseover(function () {
+                in_user_redirect = true;
+              }).mouseout(function () {
+                in_user_redirect = false;
+              }));
       }
     }).on('select2:selecting', function () {
       return !in_user_redirect;

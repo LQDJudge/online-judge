@@ -36,7 +36,7 @@ from reversion import revisions
 from reversion.models import Revision, Version
 
 from judge.jinja2.reference import get_user_from_text
-from judge.models import BlogPost, Comment, CommentVote, Notification
+from judge.models import Comment, CommentVote
 from judge.models.notification import make_notification
 from judge.models.comment import get_visible_comment_count
 from judge.utils.views import TitleMixin

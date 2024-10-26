@@ -28,14 +28,14 @@
 
       $.get("{{feed_content_url}}", params)
         .done(function(data) {
-        $(".has_next").remove();
-        $(".middle-content").append(data);
-        window.loading_page = false;
-        window.has_next_page = parseInt($(".has_next").attr("value"));
-        window.page++;
-        renderKatex($('.middle-content')[0]);
-        onWindowReady();
-      })
+          $(".has_next").remove();
+          $(".middle-content").append(data);
+          window.loading_page = false;
+          window.has_next_page = parseInt($(".has_next").attr("value"));
+          window.page++;
+          renderKatex($('.middle-content')[0]);
+          onWindowReady();
+        })
     }
 
     $(window).on("scroll", function() {

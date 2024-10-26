@@ -201,7 +201,7 @@ class DownloadTestFormatter(View):
 
         with open(file_path, "rb") as zip_file:
             response = HttpResponse(zip_file.read(), content_type="application/zip")
-            response[
-                "Content-Disposition"
-            ] = f"attachment; filename={os.path.basename(file_path)}"
+            response["Content-Disposition"] = (
+                f"attachment; filename={os.path.basename(file_path)}"
+            )
             return response

@@ -76,8 +76,8 @@
           <tr>
             {% for field in form %}
               <td class="problems-{{field.name}}" title="
-                {{ field.help_text|safe if field.help_text }}"
-                style="{{ 'display:none' if field.is_hidden }}"
+                                                         {{ field.help_text|safe if field.help_text }}"
+                  style="{{ 'display:none' if field.is_hidden }}"
               >{{field}}<div class="red">{{field.errors}}</div></td>
             {% endfor %}
           </tr>

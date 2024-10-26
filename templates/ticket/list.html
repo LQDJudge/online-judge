@@ -78,7 +78,7 @@
       $('input#own').click(function () {
         ($('<form>').attr('action', window.location.pathname + '?' + $('form#filter-form').serialize())
             .append($('<input>').attr('type', 'hidden').attr('name', 'csrfmiddlewaretoken')
-              .attr('value', $.cookie('csrftoken')))
+                .attr('value', $.cookie('csrftoken')))
             .attr('method', 'POST').appendTo($('body')).submit());
       });
 
@@ -86,9 +86,9 @@
         $checkbox: $('#desktop-notification'),
         change: function (enabled) {
           if (!enabled)
-          for (key in localStorage)
-          if (key.startsWith('ticket:open:'))
-          delete localStorage[key];
+            for (key in localStorage)
+              if (key.startsWith('ticket:open:'))
+                delete localStorage[key];
         }
       });
 
@@ -114,7 +114,7 @@
           },
           error: function (data) {
             if (data.status === 403)
-            console.log('No right to see: ' + ticket.id);
+              console.log('No right to see: ' + ticket.id);
             else {
               console.log('Could not load ticket:');
               console.log(data.responseText);
@@ -149,11 +149,11 @@
             console.log(message);
             if (filter_own_id != null && message.user != filter_own_id &&
               !~message.assignees.indexOf(filter_own_id))
-            return;
+              return;
             if (filter_user_ids.length && !~filter_user_ids.indexOf(message.user))
-            return;
+              return;
             if ($assignees.length && !$assignees.filter(message.assignees).length)
-            return;
+              return;
             switch (message.type) {
               case 'new-ticket':
                 new_ticket(message);
@@ -173,9 +173,9 @@
         templateResult: function (data, container) {
           return $('<span>')
             .append($('<img>', {
-            'class': 'user-search-image', src: data.gravatar_url,
-            width: 24, height: 24
-          }))
+              'class': 'user-search-image', src: data.gravatar_url,
+              width: 24, height: 24
+            }))
             .append($('<span>', {'class': data.display_rank + ' user-search-name'}).text(data.text));
         },
         ajax: {

@@ -49,7 +49,7 @@
 
       function autofill_if_exists($select, file) {
         if (!$select.val() && ~window.valid_files.indexOf(file))
-        $select.val(file).trigger('change');
+          $select.val(file).trigger('change');
       }
 
       var $table = $('#case-table');
@@ -69,9 +69,9 @@
             var val = $select.val();
             if (val) {
               if ($select.attr('id').endsWith('input_file'))
-              autofill_if_exists($tr.find('select[id$=output_file]'), val.replace(/in(?!.*?in)/, 'out'));
+                autofill_if_exists($tr.find('select[id$=output_file]'), val.replace(/in(?!.*?in)/, 'out'));
               else
-              autofill_if_exists($tr.find('select[id$=input_file]'), val.replace(/out(?!.*?out)/, 'in'));
+                autofill_if_exists($tr.find('select[id$=input_file]'), val.replace(/out(?!.*?out)/, 'in'));
             }
           });
         });
@@ -124,9 +124,9 @@
           style: 'width: 4em'
         }).change(function () {
           if ($checker.val().startsWith('floats'))
-          $args.val(JSON.stringify({precision: parseInt($(this).val())}));
+            $args.val(JSON.stringify({precision: parseInt($(this).val())}));
           else
-          $args.val('');
+            $args.val('');
         }).appendTo($td);
 
         $checker.change(function () {
@@ -231,9 +231,9 @@
             this.$instance.find('.generator-args-editor')
               .find('textarea').val($input.val()).end()
               .find('.button').click(function () {
-              $input.val($(this).prev().val());
-              $.featherlight.current().close();
-            }).end()
+                $input.val($(this).prev().val());
+                $.featherlight.current().close();
+              }).end()
               .show();
           }
         });
@@ -249,14 +249,14 @@
           $(this).find('input, select').each(function () {
             var $this = $(this);
             if (!$this.attr('name'))
-            return;
+              return;
             if ($this.attr('type') === 'checkbox')
-            filled |= $this.is(':checked');
+              filled |= $this.is(':checked');
             else if (!$this.attr('name').endsWith('order'))
             filled |= !!$this.val();
           });
           if (!filled)
-          $(this).find('input[id$=order]').val('');
+            $(this).find('input[id$=order]').val('');
         });
       });
 
@@ -390,7 +390,7 @@
             $item.find('input[id$=order]').val(order - 1).siblings('span.order').text(order - 1);
           }
           if (newIndex != oldIndex)
-          handle_table_reorder();
+            handle_table_reorder();
         }
       });
 
@@ -612,13 +612,13 @@
               {{ form.type.errors }}{{ form.type }}
             </td>
             <td{% if not (form.empty_permitted or form['type'].value() != 'C' or
-              form['input_file'].value() in valid_files) %} class="bad-file"{% endif %}>
-        {{ form.input_file.errors }}{{ form.input_file }}
-      </td>
-      <td{% if not (form.empty_permitted or form['type'].value() != 'C' or
-form['output_file'].value() in valid_files) %} class="bad-file"{% endif %}>
-  {{ form.output_file.errors }}{{ form.output_file }}
-</td>
+                form['input_file'].value() in valid_files) %} class="bad-file"{% endif %}>
+              {{ form.input_file.errors }}{{ form.input_file }}
+            </td>
+        <td{% if not (form.empty_permitted or form['type'].value() != 'C' or
+            form['output_file'].value() in valid_files) %} class="bad-file"{% endif %}>
+          {{ form.output_file.errors }}{{ form.output_file }}
+        </td>
 <td>{{ form.points.errors }}{{ form.points }}</td>
 <td>{{ form.is_pretest.errors }}{{ form.is_pretest }}</td>
 {% if cases_formset.can_delete %}

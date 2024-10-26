@@ -12,7 +12,7 @@
             var score = $('#pagevote-score-' + id);
             score.text(parseInt(score.text()) + delta);
             if (typeof on_success !== 'undefined')
-            on_success();
+              on_success();
           },
           error: function (data, textStatus, jqXHR) {
             alert('Could not vote: ' + data.responseText);
@@ -29,7 +29,7 @@
           },
           success: function (data, textStatus, jqXHR) {
             if (typeof on_success !== 'undefined')
-            on_success();
+              on_success();
           },
           error: function (data, textStatus, jqXHR) {
             alert('Could not bookmark: ' + data.responseText);
@@ -47,7 +47,7 @@
         } else {
           ajax_bookmark('{{ url('dobookmark') }}', id, function () {
             if ($bookmark.hasClass('bookmarked'))
-            $bookmark.removeClass('bookmarked');
+              $bookmark.removeClass('bookmarked');
             $bookmark.addClass('bookmarked');
           });
         }
@@ -78,7 +78,7 @@
           for (let i = 0; i < delta; i++) {
             ajax_vote('{{ url('pagevote_upvote') }}', id, 1, function () {
               if ($votes.downvote.hasClass('voted'))
-              $votes.downvote.removeClass('voted');
+                $votes.downvote.removeClass('voted');
               $votes.upvote.addClass('voted');
             });
           }
@@ -101,7 +101,7 @@
           for (let i = 0; i > delta; i--) {
             ajax_vote('{{ url('pagevote_downvote') }}', id, -1, function () {
               if ($votes.upvote.hasClass('voted'))
-              $votes.upvote.removeClass('voted');
+                $votes.upvote.removeClass('voted');
               $votes.downvote.addClass('voted');
             });
           }
@@ -113,8 +113,8 @@
         navigator.clipboard
           .writeText(link)
           .then(() =>  {
-          showTooltip(element, "{{_('Copied link')}}", 'n');
-        });
+            showTooltip(element, "{{_('Copied link')}}", 'n');
+          });
       };
 
       $('.actionbar-comment').on('click', function() {
