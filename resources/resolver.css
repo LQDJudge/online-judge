@@ -25,7 +25,7 @@
     --wa : #EB6440;
     --partially : #fff133;
     --ac : #80ED99;
-    --frozen : #497174;
+    --frozen : #006658;
     --untouched : #A7BBC7;
     --selected : rgb(206, 75, 199); 
     --theme-text-color : black;
@@ -77,13 +77,20 @@
 .rank-list-item {
     display: flex;
     width: 100%;
-    height: 100px;
+    height: 200px;
+    /*overflow: scroll;*/
     padding: 10px;
+    border-color: #0f3a47;
     position: relative;
     background: transparent;
     -moz-transition-duration: 1s;
     -webkit-transition-duration: 1s;
     -ms-transition-duration: 1s;
+}
+
+.rank-id {
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
 .content {
@@ -100,7 +107,7 @@
 }
 
 .frozen {
-    background-color: var(--frozen);
+    background-color: #006658;
 }
 
 .failed,
@@ -229,8 +236,10 @@
     list-style-type: none;
     padding: 5px 0;
     font-size: 12px;
+    height: 100%;
     border-radius: 10px;
-    margin: 0;
+    align-items: center;
+    background-color: white;
 }
 
 .problems .item {
@@ -251,7 +260,11 @@
 }
 
 .score {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     font-weight: bold;
+    padding: 3px;
     color: var(--theme-text-color);
 }
 
@@ -269,7 +282,7 @@
     flex-direction: row;
     margin-right: 40px;
     border-radius: 10px;
-    overflow: hidden;
+    overflow: scroll;
 }
 
 .pro-score {
@@ -387,8 +400,8 @@
 }
 
 .background-primary {
-    background-color: var(--primary_color);
+    background-color: #c9e9f8;
 }
 .background-secondary {
-    background-color: var(--secondary_color);
+    background-color: #c9e9f8;
 }

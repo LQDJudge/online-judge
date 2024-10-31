@@ -2,15 +2,19 @@
   <script type="text/javascript">
     var updateInterval = 2000;
     var curop = -1;
-    var lintHeight = 100;
-    var bonusHeight = 30;
+    var lintHeight = 200;
+    var bonusHeight = 35;
     var speed = 700;
+    var isProcessing = false
     var autopress = false;
+    var is_first_click = false
     $(document).ready(function() {
+      window.isProcessing = false
       window.data = {{ contest_json }};
       console.log("OK");
       var resolver = new Resolver(data.problem_sub, data.sub_frozen, data.problems, data.users);
       window.resolver = resolver;
+      window.length_data = resolver.operations.length
       resolver.calcOperations();
       resolver.frozen_op = resolver.operations.length - 1;
       resetCSS();
@@ -18,17 +22,20 @@
       show_rank();
     });
 
-    function updateSelector() {
+    function updateSelector(isAPress) {
+      window.isProcessing = true
       $('.show-rank').css('opacity', '0');
       $('.show-rank').css('z-index', '-1');
       var operation = resolver.operations[curop];
       var tmp = resolver.rank_frozen[operation.user_id];
       if (operation.type != 'delay') {
-        window.scrollTo({
-          top: (resolver.rank_frozen[operation.user_id].rank_show - 6) * lintHeight + bonusHeight,
-          left: 0,
-          behavior: 'smooth'
-        });
+        if (isAPress) {
+          window.scrollTo({
+            top: (resolver.rank_frozen[operation.user_id].rank_show - 1 ) * lintHeight,
+            left: 0,
+            behavior: 'smooth'
+          });
+        }
         for (let i in resolver.rank_frozen) {
           $('#rank-' + i).css({'background-color' : ''});
           if (resolver.rank_frozen[i].rank_show % 2 == 0) {
@@ -57,7 +64,8 @@
 
     }
 
-    function getNewData() {
+    function getNewData(isAPress) {
+      window.isProcessing = true
       var operation = resolver.operations[curop];
       if (operation.type == 'problem') {
         var tmp = resolver.rank_frozen[operation.user_id];
@@ -92,10 +100,10 @@
               $("#rank-" + i).removeClass('background-secondary');
               $("#rank-" + i).addClass('background-primary');
             }
-            $("#rank-" + i + ' .prob-container').removeClass('background-primary');
-            $("#rank-" + i + ' .problems').removeClass('background-primary');
-            $("#rank-" + i + ' .prob-container').addClass('background-secondary');
-            $("#rank-" + i + ' .problems').addClass('background-secondary');
+            // $("#rank-" + i + ' .prob-container').removeClass('background-primary');
+            // $("#rank-" + i + ' .problems').removeClass('background-primary');
+            // $("#rank-" + i + ' .prob-container').addClass('background-secondary');
+            // $("#rank-" + i + ' .problems').addClass('background-secondary');
             for (let problemid in resolver.rank_frozen[i].problem) {
               let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
               let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
@@ -106,10 +114,10 @@
               $("#rank-" + i).removeClass('background-primary');
               $("#rank-" + i).addClass('background-secondary');
             }
-            $("#rank-" + i + ' .prob-container').removeClass('background-secondary');
-            $("#rank-" + i + ' .problems').removeClass('background-secondary');
-            $("#rank-" + i + ' .prob-container').addClass('background-primary');
-            $("#rank-" + i + ' .problems').addClass('background-primary');
+            // $("#rank-" + i + ' .prob-container').removeClass('background-secondary');
+            // $("#rank-" + i + ' .problems').removeClass('background-secondary');
+            // $("#rank-" + i + ' .prob-container').addClass('background-primary');
+            // $("#rank-" + i + ' .problems').addClass('background-primary');
             for (let problemid in resolver.rank_frozen[i].problem) {
               let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
               let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
@@ -117,6 +125,15 @@
             }
           }
         }
+        if (!isAPress) {
+          // isProcessing = true
+          window.scrollTo({
+            top: (operation.new_rank - 2 ) * lintHeight,
+            left: 0,
+            behavior: 'smooth'
+          });
+        }
+
       } else if (operation.type == 'sub') {
         var tmp = resolver.rank_frozen[operation.user_id];
         tmp.problem[operation.problem_index][operation.problem_sub].old_verdict = operation.new_verdict;
@@ -138,6 +155,7 @@
         $('.show-rank .school-show').text(resolver.users[operation.user_id].school);
       }
 
+      // window.isProcessing = false
       $('.ac').css("background", "");
     }
 
@@ -163,6 +181,7 @@
 
         rank = document.createElement('div');
         $(rank).addClass('rank');
+        $(rank).addClass('rank-id');
         $(rank).text(resolver.rank_frozen[i].rank_show);
         $(rank_id).append($(rank));
 
@@ -282,6 +301,7 @@
               setTimeout(function () {
                 getNewData();
               }, 500);
+
             }
           } else {
             for (let x in window.resolver.operations) {
@@ -292,6 +312,61 @@
               setTimeout(function () {
                 getNewData();
               }, speed * x + speed / 2);
+
+            }
+          }
+        }
+      }
+      if (e.keyCode == 32 && !window.isProcessing) {
+        console.log("Space pressed")
+        console.log("process", window.isProcessing)
+        is_first_click = true
+        if ((curop == resolver.operations.length - 1 || is_first_click)) {
+          is_first_click = true
+          if (!window.isProcessing) {
+            // window.isProcessing = true
+            // var classstr = resolver.operations[length_data].attr('class');
+            // var index = classstr.indexOf('id-');
+            var useridstr = "";
+            var userid = parseInt(useridstr);
+            var problemid = 1;
+            var sub = 1;
+            // var rankid = resolver.rank_frozen[userid].rank_show;
+            resolver.operations = [];
+            curop = -1;
+            console.log("Clicked!");
+            console.log("resolver", resolver)
+            resolver.operation(resolver.rankarr[resolver.rankarr.length - 1].rank_show - 1, problemid, sub);
+            console.log(resolver.operations)
+            is_first_click = true
+            if (resolver.operations.length == 1) {
+              for (let x in window.resolver.operations) {
+                // window.isProcessing = true
+                curop++;
+                updateSelector(true);
+                setTimeout(function () {
+                  getNewData();
+                }, 500);
+                setTimeout(function () {
+                  window.isProcessing = false;
+                }, 750);
+              }
+            } else {
+              for (let x in window.resolver.operations) {
+
+                setTimeout(function () {
+                  window.isProcessing = true
+                  curop++;
+                  updateSelector(true);
+                }, speed * x);
+                setTimeout(function () {
+                  // window.isProcessing = true
+                  getNewData();
+                }, speed * x + speed / 2);
+                setTimeout(function () {
+                  window.isProcessing = false;
+                }, speed * x + speed);
+              }
             }
           }
         }
@@ -308,10 +383,10 @@
           for (let x in window.resolver.operations) {
             setTimeout(function () {
               curop++;
-              updateSelector();
+              updateSelector(true);
             }, speed * x);
             setTimeout(function () {
-              getNewData();
+              getNewData(true);
             }, speed * x + speed / 2);
           }
         }

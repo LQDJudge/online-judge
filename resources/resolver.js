@@ -275,6 +275,9 @@ Resolver.prototype.next_operation = function () {
 }
 
 Resolver.prototype.operation = function (rankid, problemid, sub) {
+	console.log("Arr lengt",this.rankarr.length)
+	console.log("rankid", rankid)
+	console.log(this.rankarr)
 	var id = this.rankarr[rankid].user_id;
 	if (this.check[this.rankarr[rankid].user_id - 1][problemid - 1].indexOf(sub) != -1) return false;
 	this.check[this.rankarr[rankid].user_id - 1][problemid - 1].push(sub);
