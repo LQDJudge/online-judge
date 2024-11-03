@@ -1,18 +1,18 @@
 {% compress js %}
   <script type="text/javascript">
-    var updateInterval = 2000;
-    var curop = -1;
-    var lintHeight = 200;
-    var bonusHeight = 35;
-    var speed = 700;
-    var isProcessing = false
-    var autopress = false;
-    var is_first_click = false
-    $(document).ready(function() {
+    const updateInterval = 2000;
+    let curop = -1;
+    const lintHeight = 200;
+    const bonusHeight = 35;
+    const speed = 700;
+    const isProcessing = false;
+    let autopress = false;
+    let is_first_click = false;
+    $(document).ready(function () {
       window.isProcessing = false
       window.data = {{ contest_json }};
       console.log("OK");
-      var resolver = new Resolver(data.problem_sub, data.sub_frozen, data.problems, data.users);
+      const resolver = new Resolver(data.problem_sub, data.sub_frozen, data.problems, data.users);
       window.resolver = resolver;
       window.length_data = resolver.operations.length
       resolver.calcOperations();
@@ -22,41 +22,45 @@
       show_rank();
     });
 
+    const $rank = $('.show-rank');
+
     function updateSelector(isAPress) {
       window.isProcessing = true
-      $('.show-rank').css('opacity', '0');
-      $('.show-rank').css('z-index', '-1');
-      var operation = resolver.operations[curop];
-      var tmp = resolver.rank_frozen[operation.user_id];
-      if (operation.type != 'delay') {
+      $rank.css('opacity', '0');
+      $rank.css('z-index', '-1');
+      const operation = resolver.operations[curop];
+      const tmp = resolver.rank_frozen[operation.user_id];
+      if (operation.type !== 'delay') {
         if (isAPress) {
           window.scrollTo({
-            top: (resolver.rank_frozen[operation.user_id].rank_show - 1 ) * lintHeight,
+            top: (resolver.rank_frozen[operation.user_id].rank_show - 1) * lintHeight,
             left: 0,
             behavior: 'smooth'
           });
         }
         for (let i in resolver.rank_frozen) {
-          $('#rank-' + i).css({'background-color' : ''});
-          if (resolver.rank_frozen[i].rank_show % 2 == 0) {
-            $('#rank-' + i).removeClass('background-secondary');
-            $("#rank-" + i).addClass('background-primary');
+          const $rank = $('#rank-' + i);
+          $rank.css({'background-color': ''});
+          if (resolver.rank_frozen[i].rank_show % 2 === 0) {
+            $rank.removeClass('background-secondary');
+            $rank.addClass('background-primary');
           } else {
-            $("#rank-" + i).removeClass('background-primary');
-            $("#rank-" + i).addClass('background-secondary');
+            $rank.removeClass('background-primary');
+            $rank.addClass('background-secondary');
           }
         }
-        $('#rank-' + operation.user_id).css({ "background-color": "#5382DF" });
+        $('#rank-' + operation.user_id).css({"background-color": "#5382DF"});
       }
-      if (operation.type == 'problem') {
-        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').removeClass(resolver.status(tmp.problem[operation.problem_index]));
-        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').addClass('selected');
-      } else if (operation.type == 'sub') {
+      if (operation.type === 'problem') {
+        const $1 = $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score');
+        $1.removeClass(resolver.status(tmp.problem[operation.problem_index]));
+        $1.addClass('selected');
+      } else if (operation.type === 'sub') {
         $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).removeClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
         $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .pro-content').removeClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
         $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).addClass('selected');
         $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .p-content').addClass('selected');
-        if (operation.frozen == 'ok') {
+        if (operation.frozen === 'ok') {
           $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).removeClass('frozen');
           $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .pro-content').removeClass('frozen');
         }
@@ -64,11 +68,20 @@
 
     }
 
+    let primary_color;
+    let secondary_color;
+
+    let partially;
+    let untouched;
+
+    let theme_background_color;
+
     function getNewData(isAPress) {
+      let tmp;
       window.isProcessing = true
-      var operation = resolver.operations[curop];
-      if (operation.type == 'problem') {
-        var tmp = resolver.rank_frozen[operation.user_id];
+      const operation = resolver.operations[curop];
+      if (operation.type === 'problem') {
+        tmp = resolver.rank_frozen[operation.user_id];
         for (let i in resolver.rank_frozen) {
           if (resolver.rank_frozen[i].rank_show < operation.old_rank && resolver.rank_frozen[i].rank_show >= operation.new_rank) {
             resolver.rank_frozen[i].rank_show++;
@@ -83,41 +96,42 @@
         $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').removeClass('selected');
         $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').addClass(resolver.status(tmp.problem[operation.problem_index]));
         $('#rank-' + operation.user_id + ' .score').text(tmp.score);
-        if (operation.new_rank % 2 == 0) {
+        if (operation.new_rank % 2 === 0) {
           let per = round2(tmp.problem[operation.problem_index].old_point / resolver.total_points[operation.problem_index] * 100);
           let linear = `linear-gradient(90deg, ${partially} ${per}%, ${theme_background_color} ${per}%)`;
           $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score.partially').css("background", linear);
         } else {
-          let per = round2(tmp.problem[operation.problem_index].old_point / resolver.total_points[operation.problem_index] * 100);;
+          let per = round2(tmp.problem[operation.problem_index].old_point / resolver.total_points[operation.problem_index] * 100);
           let linear = `linear-gradient(90deg, ${partially} ${per}%, ${untouched} ${per}%)`;
           $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score.partially').css("background", linear);
         }
         for (let i in resolver.rank_frozen) {
+          const $rank = $("#rank-" + i);
           $('#rank-' + i + ' .rank').text(resolver.rank_frozen[i].rank_show);
-          $("#rank-" + i).css('top', (resolver.rank_frozen[i].rank_show - 1) * lintHeight + bonusHeight);
-          if (resolver.rank_frozen[i].rank_show % 2 == 0) {
-            if (i != operation.user_id) {
-              $("#rank-" + i).removeClass('background-secondary');
-              $("#rank-" + i).addClass('background-primary');
+          $rank.css('top', (resolver.rank_frozen[i].rank_show - 1) * lintHeight + bonusHeight);
+          if (resolver.rank_frozen[i].rank_show % 2 === 0) {
+            if (i !== operation.user_id) {
+              $rank.removeClass('background-secondary');
+              $rank.addClass('background-primary');
             }
-            // $("#rank-" + i + ' .prob-container').removeClass('background-primary');
-            // $("#rank-" + i + ' .problems').removeClass('background-primary');
-            // $("#rank-" + i + ' .prob-container').addClass('background-secondary');
-            // $("#rank-" + i + ' .problems').addClass('background-secondary');
+                        // $("#rank-" + i + ' .prob-container').removeClass('background-primary');
+                        // $("#rank-" + i + ' .problems').removeClass('background-primary');
+                        // $("#rank-" + i + ' .prob-container').addClass('background-secondary');
+                        // $("#rank-" + i + ' .problems').addClass('background-secondary');
             for (let problemid in resolver.rank_frozen[i].problem) {
               let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
               let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
               $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
             }
           } else {
-            if (i != operation.user_id) {
-              $("#rank-" + i).removeClass('background-primary');
-              $("#rank-" + i).addClass('background-secondary');
+            if (i !== operation.user_id) {
+              $rank.removeClass('background-primary');
+              $rank.addClass('background-secondary');
             }
-            // $("#rank-" + i + ' .prob-container').removeClass('background-secondary');
-            // $("#rank-" + i + ' .problems').removeClass('background-secondary');
-            // $("#rank-" + i + ' .prob-container').addClass('background-primary');
-            // $("#rank-" + i + ' .problems').addClass('background-primary');
+                        // $("#rank-" + i + ' .prob-container').removeClass('background-secondary');
+                        // $("#rank-" + i + ' .problems').removeClass('background-secondary');
+                        // $("#rank-" + i + ' .prob-container').addClass('background-primary');
+                        // $("#rank-" + i + ' .problems').addClass('background-primary');
             for (let problemid in resolver.rank_frozen[i].problem) {
               let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
               let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
@@ -126,16 +140,16 @@
           }
         }
         if (!isAPress) {
-          // isProcessing = true
+                    // isProcessing = true
           window.scrollTo({
-            top: (operation.new_rank - 2 ) * lintHeight,
+            top: (operation.new_rank - 2) * lintHeight,
             left: 0,
             behavior: 'smooth'
           });
         }
 
-      } else if (operation.type == 'sub') {
-        var tmp = resolver.rank_frozen[operation.user_id];
+      } else if (operation.type === 'sub') {
+        tmp = resolver.rank_frozen[operation.user_id];
         tmp.problem[operation.problem_index][operation.problem_sub].old_verdict = operation.new_verdict;
         tmp.problem[operation.problem_index][operation.problem_sub].new_verdict = 'NA';
         tmp.problem[operation.problem_index].old_point += operation.new_point - operation.old_point;
@@ -147,15 +161,15 @@
         $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .p-content').removeClass('selected');
         $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).addClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
         $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .p-content').addClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
-      } else if (operation.type == 'show') {
-        $('.show-rank').css('opacity', '1');
-        $('.show-rank').css('z-index', '10000');
+      } else if (operation.type === 'show') {
+        $rank.css('opacity', '1');
+        $rank.css('z-index', '10000');
         $('.show-rank .rank-show').text('Rank ' + resolver.rank_frozen[operation.user_id].rank_show);
         $('.show-rank .name-show').text(resolver.users[operation.user_id].name);
         $('.show-rank .school-show').text(resolver.users[operation.user_id].school);
       }
 
-      // window.isProcessing = false
+            // window.isProcessing = false
       $('.ac').css("background", "");
     }
 
@@ -166,135 +180,136 @@
 
     function show_rank() {
       for (let i in window.resolver.rank_frozen) {
-        rank_id = document.createElement('div');
-        $(rank_id).css('position', 'absolute');
-        $(rank_id).css('top', (resolver.rank_frozen[i].rank_show - 1) * lintHeight + bonusHeight);
-        if (resolver.rank_frozen[i].rank_show % 2 == 0) {
-          $(rank_id).addClass('background-primary');
+        this.rank_id = document.createElement('div');
+        $(this.rank_id).css('position', 'absolute');
+        $(this.rank_id).css('top', (resolver.rank_frozen[i].rank_show - 1) * lintHeight + bonusHeight);
+        if (resolver.rank_frozen[i].rank_show % 2 === 0) {
+          $(this.rank_id).addClass('background-primary');
         } else {
-          $(rank_id).addClass('background-secondary');
+          $(this.rank_id).addClass('background-secondary');
         }
 
-        $(rank_id).attr('id', 'rank-' + i);
-        $(rank_id).addClass('rank-list-item');
-        $(".rank-list").append($(rank_id));
+        $(this.rank_id).attr('id', 'rank-' + i);
+        $(this.rank_id).addClass('rank-list-item');
+        $(".rank-list").append($(this.rank_id));
 
-        rank = document.createElement('div');
-        $(rank).addClass('rank');
-        $(rank).addClass('rank-id');
-        $(rank).text(resolver.rank_frozen[i].rank_show);
-        $(rank_id).append($(rank));
+        this.rank = document.createElement('div');
+        $(this.rank).addClass('rank');
+        $(this.rank).addClass('rank-id');
+        $(this.rank).text(resolver.rank_frozen[i].rank_show);
+        $(this.rank_id).append($(this.rank));
 
-        content = document.createElement('div');
-        $(content).addClass('content');
-        $(rank_id).append($(content));
+        this.content = document.createElement('div');
+        $(this.content).addClass('content');
+        $(this.rank_id).append($(this.content));
 
-        info_div = document.createElement('div');
-        $(info_div).addClass('info-container');
-        $(content).append($(info_div));
+        this.info_div = document.createElement('div');
+        $(this.info_div).addClass('info-container');
+        $(this.content).append($(this.info_div));
 
-        name_div = document.createElement('div');
-        $(name_div).addClass('name');
-        $(name_div).text(window.resolver.users[i].name);
-        $(info_div).append($(name_div));
+        this.name_div = document.createElement('div');
+        $(this.name_div).addClass('name');
+        $(this.name_div).text(window.resolver.users[i].name);
+        $(this.info_div).append($(this.name_div));
 
-        school_div = document.createElement('div');
-        $(school_div).addClass('school');
-        $(school_div).text("(" + window.resolver.users[i].school + ")");
-        $(info_div).append($(school_div));
+        this.school_div = document.createElement('div');
+        $(this.school_div).addClass('school');
+        $(this.school_div).text("(" + window.resolver.users[i].school + ")");
+        $(this.info_div).append($(this.school_div));
 
-        problem_container = document.createElement('div');
-        $(problem_container).addClass('problem-container');
+        this.problem_container = document.createElement('div');
+        $(this.problem_container).addClass('problem-container');
 
         for (let problem_id in window.resolver.rank_frozen[i].problem) {
-          problems_con = document.createElement('div');
-          $(problems_con).addClass('p-' + problem_id);
-          $(problems_con).addClass('prob-container');
-          if (resolver.rank_frozen[i].rank_show % 2 == 1) {
-            $(problems_con).addClass('background-primary');
+          this.problems_con = document.createElement('div');
+          $(this.problems_con).addClass('p-' + problem_id);
+          $(this.problems_con).addClass('prob-container');
+          if (resolver.rank_frozen[i].rank_show % 2 === 1) {
+            $(this.problems_con).addClass('background-primary');
           } else {
-            $(problems_con).addClass('background-secondary');
+            $(this.problems_con).addClass('background-secondary');
           }
-          pro_score = document.createElement('div');
-          $(pro_score).addClass('pro-score');
-          $(pro_score).text(resolver.rank_frozen[i].problem[problem_id].old_point);
-          $(pro_score).addClass(window.resolver.status(window.resolver.rank_frozen[i].problem[problem_id]));
+          this.pro_score = document.createElement('div');
+          $(this.pro_score).addClass('pro-score');
+          $(this.pro_score).text(resolver.rank_frozen[i].problem[problem_id].old_point);
+          $(this.pro_score).addClass(window.resolver.status(window.resolver.rank_frozen[i].problem[problem_id]));
 
-          if (resolver.status(window.resolver.rank_frozen[i].problem[problem_id]) == 'partially') {
-            if (resolver.rank_frozen[i].rank_show % 2 == 1) {
+          if (resolver.status(window.resolver.rank_frozen[i].problem[problem_id]) === 'partially') {
+            if (resolver.rank_frozen[i].rank_show % 2 === 1) {
               let per = round2(resolver.rank_frozen[i].problem[problem_id].old_point / resolver.total_points[problem_id] * 100);
               let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
-              $(pro_score).css("background", linear);
+              $(this.pro_score).css("background", linear);
             } else {
               let per = round2(resolver.rank_frozen[i].problem[problem_id].old_point / resolver.total_points[problem_id] * 100);
               let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
-              $(pro_score).css("background", linear);
+              $(this.pro_score).css("background", linear);
             }
           }
-          $(problems_con).append($(pro_score));
-          problems = document.createElement('ul');
-          $(problems).addClass('p-' + problem_id);
-          $(problems).addClass('problems');
+          $(this.problems_con).append($(this.pro_score));
+          this.problems = document.createElement('ul');
+          $(this.problems).addClass('p-' + problem_id);
+          $(this.problems).addClass('problems');
 
           for (let j = 1; j <= resolver.problem_sub[problem_id - 1]; j++) {
-            problem = document.createElement('li');
-            $(problem).addClass('item');
-            $(problem).addClass(window.resolver.substatus(window.resolver.rank_frozen[i].problem[problem_id], j));
-            $(problem).addClass('p-' + problem_id);
-            $(problem).addClass('s-' + j);
-            $(problem).addClass('id-' + i);
-            $(problems).append($(problem));
-            p_content = document.createElement('div');
-            $(p_content).addClass(window.resolver.substatus(window.resolver.rank_frozen[i].problem[problem_id], j));
-            $(p_content).addClass('p-content');
+            this.problem = document.createElement('li');
+            $(this.problem).addClass('item');
+            $(this.problem).addClass(window.resolver.substatus(window.resolver.rank_frozen[i].problem[problem_id], j));
+            $(this.problem).addClass('p-' + problem_id);
+            $(this.problem).addClass('s-' + j);
+            $(this.problem).addClass('id-' + i);
+            $(this.problems).append($(this.problem));
+            this.p_content = document.createElement('div');
+            $(this.p_content).addClass(window.resolver.substatus(window.resolver.rank_frozen[i].problem[problem_id], j));
+            $(this.p_content).addClass('p-content');
             if (j < resolver.sub_frozen[problem_id - 1]) {
-              $(p_content).text(window.resolver.rank_frozen[i].problem[problem_id][j].old_point);
+              $(this.p_content).text(window.resolver.rank_frozen[i].problem[problem_id][j].old_point);
             } else {
-              $(p_content).text("?");
+              $(this.p_content).text("?");
             }
-            $(problem).append($(p_content));
+            $(this.problem).append($(this.p_content));
           }
-          $(problems_con).append($(problems));
-          $(problem_container).append($(problems_con));
+          $(this.problems_con).append($(this.problems));
+          $(this.problem_container).append($(this.problems_con));
         }
 
-        $(content).append($(problem_container));
+        $(this.content).append($(this.problem_container));
 
-        score = document.createElement('div');
-        $(score).addClass('score');
-        $(score).text(window.resolver.rank_frozen[i].score);
-        $(rank_id).append($(score));
+        this.score = document.createElement('div');
+        $(this.score).addClass('score');
+        $(this.score).text(window.resolver.rank_frozen[i].score);
+        $(this.rank_id).append($(this.score));
       }
     }
 
-    var theme = 0;
+    let theme = 0;
 
     $('body').keydown(function (e) {
-      if (e.keyCode == 77) {
+      if (e.keyCode === 77) {
         console.log("Press M!");
       }
-      if (e.keyCode == 13) {
+      if (e.keyCode === 13) {
         console.log("Press Enter!");
-        if (curop == resolver.operations.length - 1) {
+        if (curop === resolver.operations.length - 1) {
           console.log("Do Enter Pressed!");
           resolver.operations = [];
           curop = -1;
           resolver.next_operation();
-          if (window.resolver.operations.length == 0) {
-            $('.show-rank').css('visibility', 'hidden');
-            $('.show-rank').css('opacity', '0');
+          if (window.resolver.operations.length === 0) {
+            $rank.css('visibility', 'hidden');
+            $rank.css('opacity', '0');
             for (let i in resolver.rank_frozen) {
-              if (resolver.rank_frozen[i].rank_show % 2 == 0) {
-                $("#rank-" + i).removeClass('background-secondary');
-                $("#rank-" + i).addClass('background-primary');
+              const $ranki = $("#rank-" + i);
+              if (resolver.rank_frozen[i].rank_show % 2 === 0) {
+                $ranki.removeClass('background-secondary');
+                $ranki.addClass('background-primary');
               } else {
-                $("#rank-" + i).removeClass('background-primary');
-                $("#rank-" + i).addClass('background-secondary');
+                $ranki.removeClass('background-primary');
+                $ranki.addClass('background-secondary');
               }
             }
           }
           console.log(resolver.operations);
-          if (resolver.operations.length == 1) {
+          if (resolver.operations.length === 1) {
             for (let x in window.resolver.operations) {
               curop++;
               updateSelector();
@@ -317,21 +332,21 @@
           }
         }
       }
-      if (e.keyCode == 32 && !window.isProcessing) {
+      if (e.keyCode === 32 && !window.isProcessing) {
         console.log("Space pressed")
         console.log("process", window.isProcessing)
         is_first_click = true
-        if ((curop == resolver.operations.length - 1 || is_first_click)) {
+        if ((curop === resolver.operations.length - 1 || is_first_click)) {
           is_first_click = true
           if (!window.isProcessing) {
-            // window.isProcessing = true
-            // var classstr = resolver.operations[length_data].attr('class');
-            // var index = classstr.indexOf('id-');
-            var useridstr = "";
-            var userid = parseInt(useridstr);
-            var problemid = 1;
-            var sub = 1;
-            // var rankid = resolver.rank_frozen[userid].rank_show;
+                        // window.isProcessing = true
+                        // var classstr = resolver.operations[length_data].attr('class');
+                        // var index = classstr.indexOf('id-');
+            const useridstr = "";
+            const userid = parseInt(useridstr);
+            const problemid = 1;
+            const sub = 1;
+                        // var rankid = resolver.rank_frozen[userid].rank_show;
             resolver.operations = [];
             curop = -1;
             console.log("Clicked!");
@@ -339,9 +354,9 @@
             resolver.operation(resolver.rankarr[resolver.rankarr.length - 1].rank_show - 1, problemid, sub);
             console.log(resolver.operations)
             is_first_click = true
-            if (resolver.operations.length == 1) {
+            if (resolver.operations.length === 1) {
               for (let x in window.resolver.operations) {
-                // window.isProcessing = true
+                                // window.isProcessing = true
                 curop++;
                 updateSelector(true);
                 setTimeout(function () {
@@ -360,7 +375,7 @@
                   updateSelector(true);
                 }, speed * x);
                 setTimeout(function () {
-                  // window.isProcessing = true
+                                    // window.isProcessing = true
                   getNewData();
                 }, speed * x + speed / 2);
                 setTimeout(function () {
@@ -371,15 +386,15 @@
           }
         }
       }
-      if (e.keyCode == 65) {
+      if (e.keyCode === 65) {
         console.log("A pressed!");
-        if (autopress == false) {
+        if (autopress === false) {
           autopress = true;
-          // for (let x in resolver.operations) {
-          //     curop++;
-          //     updateSelector();
-          //     getNewData();
-          // }
+                    // for (let x in resolver.operations) {
+                    //     curop++;
+                    //     updateSelector();
+                    //     getNewData();
+                    // }
           for (let x in window.resolver.operations) {
             setTimeout(function () {
               curop++;
@@ -391,7 +406,7 @@
           }
         }
       }
-      if (e.keyCode == 66) {
+      if (e.keyCode === 66) {
         theme = 1 - theme;
         if (theme) dark_theme();
         else light_theme();
@@ -399,22 +414,22 @@
     });
 
     $('.rank-list').on('click', 'li', function () {
-      if (curop == resolver.operations.length - 1) {
-        var classstr = $(this).attr('class');
-        var index = classstr.indexOf('id-');
-        var useridstr = "";
+      if (curop === resolver.operations.length - 1) {
+        const classstr = $(this).attr('class');
+        const index = classstr.indexOf('id-');
+        let useridstr = "";
         for (let i = index + 3; i < classstr.length; i++) {
           useridstr = useridstr + classstr[i];
         }
-        var userid = parseInt(useridstr);
-        var problemid = classstr[classstr.indexOf('p-') + 2];
-        var sub = parseInt(classstr[classstr.indexOf('s-') + 2]);
-        var rankid = resolver.rank_frozen[userid].rank_show;
+        const userid = parseInt(useridstr);
+        const problemid = classstr[classstr.indexOf('p-') + 2];
+        const sub = parseInt(classstr[classstr.indexOf('s-') + 2]);
+        const rankid = resolver.rank_frozen[userid].rank_show;
         resolver.operations = [];
         curop = -1;
         console.log("Clicked!");
         resolver.operation(rankid - 1, problemid, sub);
-        if (resolver.operations.length == 1) {
+        if (resolver.operations.length === 1) {
           for (let x in window.resolver.operations) {
             curop++;
             updateSelector();
@@ -436,9 +451,8 @@
       }
     });
 
-    var primary_color, secondary_color;
-    var wa, partially, ac, selected, frozen, untouched;
-    var theme_text_color, theme_background_color;
+    let wa, ac, selected, frozen;
+    let theme_text_color;
 
     function dark_theme() {
       primary_color = "black";
@@ -460,7 +474,7 @@
       wa = "#EB6440";
       partially = "#fff133";
       ac = "#80ED99";
-      // ac = "green";
+            // ac = "green";
       frozen = "#497174";
       untouched = "#A7BBC7";
       selected = "rgb(206, 75, 199)";
@@ -482,7 +496,7 @@
       root.style.setProperty('--theme-text-color', theme_text_color);
       root.style.setProperty('--theme-background-color', theme_background_color);
       for (let i in resolver.rank_frozen) {
-        if (resolver.rank_frozen[i].rank_show % 2 == 0) {
+        if (resolver.rank_frozen[i].rank_show % 2 === 0) {
           for (let problemid in resolver.rank_frozen[i].problem) {
             let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
             let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
