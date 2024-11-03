@@ -332,6 +332,8 @@
           }
         }
       }
+      let currentProblemId = 1;
+      let currentSub = 1;
       if (e.keyCode === 32 && !window.isProcessing) {
         console.log("Space pressed")
         console.log("process", window.isProcessing)
@@ -344,16 +346,38 @@
                         // var index = classstr.indexOf('id-');
             const useridstr = "";
             const userid = parseInt(useridstr);
-            const problemid = 1;
-            const sub = 1;
-                        // var rankid = resolver.rank_frozen[userid].rank_show;
             resolver.operations = [];
             curop = -1;
             console.log("Clicked!");
             console.log("resolver", resolver)
-            resolver.operation(resolver.rankarr[resolver.rankarr.length - 1].rank_show - 1, problemid, sub);
-            console.log(resolver.operations)
-            is_first_click = true
+                        // Get current rankid
+            const currentRankId = resolver.rankarr[resolver.rankarr.length - 1].rank_show - 1;
+
+                        // Try to find next valid sub/problem combination
+            let foundValid = false;
+            while (!foundValid && currentProblemId <= resolver.problem_sub.length) {
+                            // Check if current sub is valid for this problem
+              if (currentSub <= resolver.problem_sub[currentProblemId - 1]) {
+                foundValid = resolver.operation(currentRankId, currentProblemId, currentSub);
+                if (foundValid) {
+                                    // Successfully processed this sub, increment for next time
+                  currentSub++;
+                  if (currentSub > resolver.problem_sub[currentProblemId - 1]) {
+                    currentSub = 1;
+                    currentProblemId++;
+                  }
+                  break;
+                }
+              }
+
+                            // If we've tried all subs for this problem, move to next problem
+              if (currentSub >= resolver.problem_sub[currentProblemId - 1]) {
+                currentSub = 1;
+                currentProblemId++;
+              } else {
+                currentSub++;
+              }
+            }
             if (resolver.operations.length === 1) {
               for (let x in window.resolver.operations) {
                                 // window.isProcessing = true
@@ -368,14 +392,12 @@
               }
             } else {
               for (let x in window.resolver.operations) {
-
                 setTimeout(function () {
                   window.isProcessing = true
                   curop++;
                   updateSelector(true);
                 }, speed * x);
                 setTimeout(function () {
-                                    // window.isProcessing = true
                   getNewData();
                 }, speed * x + speed / 2);
                 setTimeout(function () {
@@ -510,6 +532,23 @@
           }
         }
       }
+    }
+
+    function findNextUnrevealed(resolver) {
+      const rankid = resolver.rankarr[resolver.rankarr.length - 1].rank_show - 1;
+      const userid = resolver.rankarr[rankid].user_id - 1;
+
+            // Loop through problems
+      for (let problemid = 1; problemid <= resolver.problem_sub.length; problemid++) {
+                // Loop through subproblems
+        for (let sub = 1; sub <= resolver.sub_frozen[problemid - 1]; sub++) {
+                    // Check if this submission is already revealed
+          if (resolver.check[userid][problemid - 1].indexOf(sub) === -1) {
+            return {problemid, sub};
+          }
+        }
+      }
+      return null; // All revealed
     }
 
   </script>

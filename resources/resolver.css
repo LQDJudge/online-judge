@@ -45,7 +45,7 @@
     common
  */
 .app {
-    color: white;
+    color: var(--theme-background-color);
     background-color: var(--theme-background-color);
     letter-spacing: 1px;
 }
