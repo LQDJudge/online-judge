@@ -90,6 +90,8 @@ class ProblemDataCompiler(object):
                     )
                 return custom_checker_path[1]
 
+            latest_cpp_key = _get_latest_cpp_key()
+
             if case.checker == "customcpp":
                 custom_checker_path = split_path_first(case.custom_checker_cpp.name)
                 if len(custom_checker_path) != 2:
@@ -100,7 +102,7 @@ class ProblemDataCompiler(object):
                     "name": "bridged",
                     "args": {
                         "files": custom_checker_path[1],
-                        "lang": "CPP14",
+                        "lang": latest_cpp_key,
                         "type": "lqdoj",
                     },
                 }
@@ -115,7 +117,7 @@ class ProblemDataCompiler(object):
                     "name": "bridged",
                     "args": {
                         "files": custom_checker_path[1],
-                        "lang": "CPP14",
+                        "lang": latest_cpp_key,
                         "type": "testlib",
                     },
                 }
@@ -373,3 +375,19 @@ def get_problem_case(problem, files):
         result[file] = qs
 
     return result
+
+
+def _get_latest_cpp_key():
+    from judge.models import Language
+
+    cpp_keys = ["CPP20", "CPP17", "CPP14", "CPP11"]
+
+    language_keys = list(
+        Language.objects.filter(key__in=cpp_keys).values_list("key", flat=True)
+    )
+
+    for key in cpp_keys:
+        if key in language_keys:
+            return key
+
+    return None
