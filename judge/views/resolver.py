@@ -1,10 +1,11 @@
-from django.views.generic import TemplateView
-from django.utils.translation import gettext as _
-from django.http import HttpResponseForbidden, JsonResponse
-from judge.models import Contest
-from django.utils.safestring import mark_safe
-
 import json
+
+from django.http import HttpResponseForbidden, JsonResponse
+from django.utils.safestring import mark_safe
+from django.utils.translation import gettext as _
+from django.views.generic import TemplateView
+
+from judge.models import Contest
 
 
 class Resolver(TemplateView):
@@ -128,6 +129,68 @@ class Resolver(TemplateView):
             order = id_to_order[i]
             sub_frozen[order - 1] = list(hidden_subtasks[i])
 
+        print(users)
+        # Set points và frozen_points để hiển thị 1 cho tổng điểm của các subtask không ẩn và 2 cho tổng điểm của các subtask ẩn
+        for u in users.values():
+            for i, p in enumerate(u["problems"].values()):
+                total_hidden = 0
+                total_not_hidden = 0
+                hidden_subtasks_list = list(hidden_subtasks.items())[i][1]
+                if len(hidden_subtasks_list) != 0:
+                    for s in p["points"]:
+                        if int(s) in hidden_subtasks_list:
+                            total_hidden += p["points"][s]
+                        else:
+                            total_not_hidden += p["points"][s]
+                    p["points"] = {
+                        "1": total_not_hidden,
+                        "2": total_hidden,
+                    }
+                    total_hidden = 0
+                    total_not_hidden = 0
+                    for s in p["frozen_points"]:
+                        if int(s) in hidden_subtasks_list:
+                            total_hidden += p["frozen_points"][s]
+                        else:
+                            total_not_hidden += p["frozen_points"][s]
+                    p["frozen_points"] = {
+                        "1": total_not_hidden,
+                        "2": total_hidden,
+                    }
+                else:
+                    p["points"] = {"1": sum(p["points"].values())}
+                    p["frozen_points"] = {"1": sum(p["frozen_points"].values())}
+
+        # TODO: Chưa hiểu tại sao thay đổi giá trị trường này lại ảnh hưởng đến việc hiên thị điểm của từng subtask trong resolver
+        for i, v in enumerate(sub_frozen):
+            if len(v) != 0:
+                sub_frozen[i] = [2]
+
+        # Thay đổi giá trị của problems_json để hiển thị tổng điểm của các subtask không ẩn và ẩn
+        for i, p in enumerate(problems_json.values()):
+            hidden_subtasks_list = list(hidden_subtasks.items())[i][1]
+            if len(hidden_subtasks_list) != 0:
+                total_hidden = 0
+                total_not_hidden = 0
+                for s in p:
+                    if int(s) in hidden_subtasks_list:
+                        total_hidden += p[s]
+                    else:
+                        total_not_hidden += p[s]
+                problems_json[str(i + 1)] = {
+                    "1": total_not_hidden,
+                    "2": total_hidden,
+                }
+            else:
+                problems_json[str(i + 1)] = {"1": sum(p.values())}
+
+        # Chỉnh sửa giá trị của problem_sub để hiển thị 2 phục vụ việc hiển thị số subtask ẩn trong resolver
+        for i, v in enumerate(problem_sub):
+            hidden_subtasks_list = list(hidden_subtasks.items())[i][1]
+            if len(hidden_subtasks_list) != 0:
+                problem_sub[i] = 2
+            else:
+                problem_sub[i] = 1
         return {
             "problem_sub": problem_sub,
             "sub_frozen": sub_frozen,
