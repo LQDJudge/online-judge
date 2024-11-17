@@ -13,6 +13,7 @@ def render_email_message(request, contexts):
         "title": None,
         "button_text": "Click here",
         "url_path": None,
+        "protocol": "https" if request.is_secure() else "http",
     }
     email_contexts.update(contexts)
     message = render_to_string("general_email.html", email_contexts)
