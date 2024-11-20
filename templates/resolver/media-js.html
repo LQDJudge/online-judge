@@ -25,7 +25,6 @@
     const $rank = $('.show-rank');
 
     function updateSelector(isAPress) {
-      window.isProcessing = true
       $rank.css('opacity', '0');
       $rank.css('z-index', '-1');
       const operation = resolver.operations[curop];
@@ -78,7 +77,6 @@
 
     function getNewData(isAPress) {
       let tmp;
-      window.isProcessing = true
       const operation = resolver.operations[curop];
       if (operation.type === 'problem') {
         tmp = resolver.rank_frozen[operation.user_id];
@@ -334,10 +332,11 @@
       }
       let currentProblemId = 1;
       let currentSub = 1;
-      if (e.keyCode === 32 && !window.isProcessing) {
+      if (e.keyCode === 32) {
         console.log("Space pressed")
         console.log("process", window.isProcessing)
         is_first_click = true
+        console.log(curop)
         if ((curop === resolver.operations.length - 1 || is_first_click)) {
           is_first_click = true
           if (!window.isProcessing) {
