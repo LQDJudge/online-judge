@@ -164,9 +164,9 @@
         $checker.change(function () {
           $tr_checker.toggle($checker.val() == 'custom').change();
           $tr_validator.toggle($checker.val() == 'customcpp' || $checker.val() == 'testlib').change();
-          $tr_interactive.toggle($checker.val() == 'interact').change();
+          $tr_interactive.toggle($checker.val() == 'interact' || $checker.val() == 'interacttl').change();
 
-          $sample.toggle(['custom', 'customcpp', 'interact'].includes($checker.val())).change();
+          $sample.toggle(['custom', 'customcpp', 'interact', 'interacttl'].includes($checker.val())).change();
         }).change();
 
         $ioi_signature.change(function() {

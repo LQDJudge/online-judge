@@ -42,6 +42,7 @@ CHECKERS = (
     ("customcpp", _("Custom checker (CPP)")),
     ("interact", _("Interactive")),
     ("testlib", _("Testlib")),
+    ("interacttl", _("Interactive (Testlib)")),
 )
 
 

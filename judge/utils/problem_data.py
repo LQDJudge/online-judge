@@ -241,14 +241,14 @@ class ProblemDataCompiler(object):
         if self.data.output_prefix is not None:
             init["output_prefix_length"] = self.data.output_prefix
         if self.data.checker:
-            if self.data.checker == "interact":
+            if self.data.checker in ("interact", "interacttl"):
                 interactor_path = split_path_first(self.data.interactive_judge.name)
                 if len(interactor_path) != 2:
                     raise ProblemDataError(_("Invalid interactor judge"))
                 init["interactive"] = {
                     "files": interactor_path[1],
                     "feedback": True,
-                    "type": "lqdoj",
+                    "type": "lqdoj" if self.data.checker == "interact" else "testlib",
                 }
                 init["unbuffered"] = True
             else:
