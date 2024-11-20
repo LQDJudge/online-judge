@@ -10,9 +10,9 @@ function Resolver(problem_sub, sub_frozen, problems, users) {
 	this.total_points = {};
 	this.delay = false;
 
-	for (var problem in this.problems) {
+	for (let problem in this.problems) {
 		this.total_points[problem] = 0;
-		for (var i in this.problems[problem]) {
+		for (let i in this.problems[problem]) {
 			this.total_points[problem] += this.problems[problem][i];
 		}
 		this.total_points[problem] = round2(this.total_points[problem]);
@@ -24,13 +24,13 @@ function round2(num) {
 }
 
 Resolver.prototype.status = function (problem) {
-	if (problem.old_verdict == 'NA' && problem.new_verdict == 'NA') {
+	if (problem.old_verdict === 'NA' && problem.new_verdict === 'NA') {
 		return 'untouched';
-	} else if (problem.old_verdict == 'AC') {
+	} else if (problem.old_verdict === 'AC') {
 		return 'ac';
-	} else if (problem.old_verdict == 'PA' && problem.new_verdict == 'NA') {
+	} else if (problem.old_verdict === 'PA' && problem.new_verdict === 'NA') {
 		return 'partially';
-	} else if (problem.new_verdict == 'NA' && problem.old_verdict == 'WA') {
+	} else if (problem.new_verdict === 'NA' && problem.old_verdict === 'WA') {
 		return 'failed';
 	} else {
 		return "frozen";
@@ -38,13 +38,13 @@ Resolver.prototype.status = function (problem) {
 }
 
 Resolver.prototype.substatus = function (problem, subproblem) {
-	if (problem.old_verdict == 'NA' && problem.new_verdict == 'NA') {
+	if (problem.old_verdict === 'NA' && problem.new_verdict === 'NA') {
 		return 'untouched';
-	} else if (problem[subproblem].old_verdict == 'AC') {
+	} else if (problem[subproblem].old_verdict === 'AC') {
 		return 'ac';
-	} else if (problem[subproblem].old_verdict == 'PA' && problem.new_verdict == 'NA') {
+	} else if (problem[subproblem].old_verdict === 'PA' && problem.new_verdict === 'NA') {
 		return 'partially';
-	} else if (problem[subproblem].old_verdict == 'WA' && problem.new_verdict == 'NA') {
+	} else if (problem[subproblem].old_verdict === 'WA' && problem.new_verdict === 'NA') {
 		return 'failed';
 	}
 	else {
@@ -53,13 +53,13 @@ Resolver.prototype.substatus = function (problem, subproblem) {
 }
 
 Resolver.prototype.pointstatus = function (point, problem, sub) {
-	if (sub == undefined) {
-		if (point == this.total_points[problem]) return 'AC';
-		if (point == 0) return 'WA';
+	if (sub === undefined) {
+		if (point === this.total_points[problem]) return 'AC';
+		if (point === 0) return 'WA';
 		return 'PA';
 	}
-	if (point == this.problems[problem][sub]) return 'AC';
-	if (point == 0) return 'WA';
+	if (point === this.problems[problem][sub]) return 'AC';
+	if (point === 0) return 'WA';
 	return 'PA';
 }
 
@@ -97,7 +97,7 @@ Resolver.prototype.calcOperations = function () {
 					this.rank[id].problem[problemid].old_point += this.rank[id].problem[problemid][j].old_point;
 					this.rank[id].problem[problemid][j].old_verdict = this.pointstatus(this.users[id].problems[problemid].frozen_points[j], problemid, j);
 					this.rank[id].problem[problemid].old_point = round2(this.rank[id].problem[problemid].old_point)
-					if (this.users[id].problems[problemid].points[j] != -1) {
+					if (this.users[id].problems[problemid].points[j] !== -1) {
 						this.rank[id].problem[problemid][j].new_point = this.users[id].problems[problemid].points[j];
 						this.rank[id].problem[problemid].new_point += this.rank[id].problem[problemid][j].new_point;
 						this.rank[id].problem[problemid].new_point = round2(this.rank[id].problem[problemid].new_point)
@@ -108,19 +108,19 @@ Resolver.prototype.calcOperations = function () {
 			this.rank[id].problem[problemid].old_verdict = this.pointstatus(this.rank[id].problem[problemid].old_point, problemid);
 			this.rank[id].score += this.rank[id].problem[problemid].old_point;
 			this.rank[id].score = round2(this.rank[id].score)
-			if (this.users[id].problems[problemid].points[1] != -1) {
+			if (this.users[id].problems[problemid].points[1] !== -1) {
 				this.rank[id].problem[problemid].new_verdict = this.pointstatus(this.rank[id].problem[problemid].new_point, problemid);
 			}
 		}
 	}
 	this.rank_frozen = $.extend(true, [], this.rank);
-	var uids = Object.keys(this.rank);
+	const uids = Object.keys(this.rank);
 	this.rankarr = [];
 	for (let key in uids) {
 		this.rankarr.push(this.rank[uids[key]]);
 	}
 	this.rankarr.sort(function (a, b) {
-		if (a.score != b.score) {
+		if (a.score !== b.score) {
 			return (b.score - a.score);
 		} else {
 			return (a.last_submission - b.last_submission);
@@ -134,15 +134,15 @@ Resolver.prototype.calcOperations = function () {
 	}
 	console.log(this.rank_frozen);
 	for (let i = this.rankarr.length - 1; i >= 0; i--) {
-		var flag = true;
+		let flag = true;
 		while (flag) {
 			flag = false;
 			for (let j = 1; j <= this.problem_sub.length; j++) {
-				if (this.status(this.rankarr[i].problem[j]) == 'frozen') {
-					frozen_op = true;
+				if (this.status(this.rankarr[i].problem[j]) === 'frozen') {
+					this.frozen_op = true;
 					flag = true;
 					for (let sub = 1; sub < this.sub_frozen[j - 1]; sub++) {
-						if (this.rankarr[i].problem[j][sub].old_verdict == 'AC') continue;
+						if (this.rankarr[i].problem[j][sub].old_verdict === 'AC') continue;
 						var op = {
 							id: this.operations.length,
 							type: 'sub',
@@ -155,7 +155,7 @@ Resolver.prototype.calcOperations = function () {
 							old_verdict: this.rankarr[i].problem[j][sub].old_verdict,
 							new_verdict: this.rankarr[i].problem[j][sub].new_verdict,
 						};
-						var tmp = this.rankarr[i];
+						let tmp = this.rankarr[i];
 						tmp.problem[j][sub].old_point = tmp.problem[j][sub].new_point;
 						tmp.problem[j][sub].new_point = 0;
 						tmp.problem[j][sub].old_verdict = tmp.problem[j][sub].new_verdict;
@@ -175,7 +175,7 @@ Resolver.prototype.calcOperations = function () {
 						old_rank: i + 1,
 						new_rank: -1,
 					};
-					var tmp = this.rankarr[i];
+					let tmp = this.rankarr[i];
 					if (tmp.problem[j].new_point > tmp.problem[j].old_point) {
 						tmp.score += tmp.problem[j].new_point - tmp.problem[j].old_point;
 						tmp.score = round2(tmp.score);
@@ -184,7 +184,7 @@ Resolver.prototype.calcOperations = function () {
 					tmp.problem[j].new_point = 0;
 					tmp.problem[j].old_verdict = tmp.problem[j].new_verdict;
 					tmp.problem[j].new_verdict = 'NA';
-					var k = i - 1;
+					let k = i - 1;
 					while (k >= 0 && this.rankarr[k].score < tmp.score) {
 						tmp.rank_show--;
 						this.rankarr[k].rank_show++;
@@ -201,9 +201,9 @@ Resolver.prototype.calcOperations = function () {
 	}
 	this.check = [];
 	for (let i = 1; i <= this.users_cnt; i++) {
-		var usercheck = [];
+		const usercheck = [];
 		for (let j = 1; j <= this.problem_sub.length; j++) {
-			var cc = [];
+			const cc = [];
 			for (let k = 1; k <= this.sub_frozen[j - 1] - 1; k++) {
 				cc.push(k);
 			}
@@ -215,17 +215,17 @@ Resolver.prototype.calcOperations = function () {
 
 Resolver.prototype.showrank = function () {
 	for (let rankid = this.rankarr.length - 1; rankid >= 0; rankid--) {
-		if (this.isshow.indexOf(this.rankarr[rankid].user_id) != -1) continue;
-		var ok = true;
+		if (this.isshow.indexOf(this.rankarr[rankid].user_id) !== -1) continue;
+		let ok = true;
 		for (let problemid in this.users[this.rankarr[rankid].user_id].problems) {
 			for (let sub = 1; sub <= this.problem_sub[problemid - 1]; sub++) {
-				if (this.check[this.rankarr[rankid].user_id - 1][problemid - 1].indexOf(sub) == -1) {
+				if (this.check[this.rankarr[rankid].user_id - 1][problemid - 1].indexOf(sub) === -1) {
 					ok = false;
 				}
 			}
 		}
 		if (ok) {
-			var op = {
+			const op = {
 				id: this.operations.length,
 				type: 'show',
 				user_id: this.rankarr[rankid].user_id,
@@ -243,7 +243,7 @@ Resolver.prototype.showrank = function () {
 
 Resolver.prototype.next_operation = function () {
 	if (this.delay) {
-		var op = {
+		const op = {
 			id: this.operations.length,
 			type: 'delay',
 		};
@@ -251,20 +251,20 @@ Resolver.prototype.next_operation = function () {
 		this.operations.push(op);
 		return true;
 	}
-	var isshowrank = this.showrank();
-	if (isshowrank == true) return true;
+	const isshowrank = this.showrank();
+	if (isshowrank === true) return true;
 	for (let i = this.rankarr.length - 1; i >= 0; i--) {
 		for (let problemid = 1; problemid <= this.problem_sub.length; problemid++) {
 			let ok = false;
-			var id = this.rankarr[i].user_id;
+			const id = this.rankarr[i].user_id;
 			for (let cc in this.users[id].problems) {
-				if (cc == problemid) ok = true;
+				if (cc === problemid) ok = true;
 			}
-			if (ok == false) {
+			if (ok === false) {
 				continue;
 			}
 			for (let sub = this.sub_frozen[problemid - 1]; sub <= this.problem_sub[problemid - 1]; sub++) {
-				if (this.check[this.rankarr[i].user_id - 1][problemid - 1].indexOf(sub) == -1) {
+				if (this.check[this.rankarr[i].user_id - 1][problemid - 1].indexOf(sub) === -1) {
 					this.operation(i, problemid, sub);
 					return true;
 				}
@@ -275,8 +275,11 @@ Resolver.prototype.next_operation = function () {
 }
 
 Resolver.prototype.operation = function (rankid, problemid, sub) {
-	var id = this.rankarr[rankid].user_id;
-	if (this.check[this.rankarr[rankid].user_id - 1][problemid - 1].indexOf(sub) != -1) return false;
+	console.log("Arr lengt",this.rankarr.length)
+	console.log("rankid", rankid)
+	console.log(this.rankarr)
+	const id = this.rankarr[rankid].user_id;
+	if (this.check[this.rankarr[rankid].user_id - 1][problemid - 1].indexOf(sub) !== -1) return false;
 	this.check[this.rankarr[rankid].user_id - 1][problemid - 1].push(sub);
 	this.rankarr[rankid].problem[problemid][sub].new_point = this.users[id].problems[problemid].points[sub];
 	this.rankarr[rankid].problem[problemid][sub].new_verdict = this.pointstatus(this.rankarr[rankid].problem[problemid][sub].new_point, problemid, sub);
@@ -284,7 +287,7 @@ Resolver.prototype.operation = function (rankid, problemid, sub) {
 		this.rankarr[rankid].problem[problemid].old_point + this.rankarr[rankid].problem[problemid][sub].new_point - this.rankarr[rankid].problem[problemid][sub].old_point;
 	this.rankarr[rankid].problem[problemid].new_verdict = this.pointstatus(this.rankarr[rankid].problem[problemid].new_point, problemid);
 	this.rankarr[rankid].problem[problemid].new_point = round2(this.rankarr[rankid].problem[problemid].new_point)
-	var op = {
+	const op = {
 		id: this.operations.length,
 		type: 'sub',
 		frozen: 'ok',
@@ -296,13 +299,13 @@ Resolver.prototype.operation = function (rankid, problemid, sub) {
 		old_verdict: this.rankarr[rankid].problem[problemid][sub].old_verdict,
 		new_verdict: this.rankarr[rankid].problem[problemid][sub].new_verdict,
 	};
-	var tmp = this.rankarr[rankid];
+	const tmp = this.rankarr[rankid];
 	tmp.problem[problemid][sub].old_point = tmp.problem[problemid][sub].new_point;
 	tmp.problem[problemid][sub].new_point = 0;
 	tmp.problem[problemid][sub].old_verdict = tmp.problem[problemid][sub].new_verdict;
 	tmp.problem[problemid][sub].new_verdict = 'NA';
 	this.operations.push(op);
-	var op1 = {
+	const op1 = {
 		id: this.operations.length,
 		type: 'problem',
 		frozen: 'ok',
@@ -323,8 +326,8 @@ Resolver.prototype.operation = function (rankid, problemid, sub) {
 	tmp.problem[problemid].new_point = 0;
 	tmp.problem[problemid].old_verdict = tmp.problem[problemid].new_verdict;
 	tmp.problem[problemid].new_verdict = 'NA';
-	var k = rankid - 1;
-	while (k >= 0 && (this.rankarr[k].score < tmp.score || (this.rankarr[k].score == tmp.score && this.rankarr[k].last_submission > tmp.last_submission))) {
+	let k = rankid - 1;
+	while (k >= 0 && (this.rankarr[k].score < tmp.score || (this.rankarr[k].score === tmp.score && this.rankarr[k].last_submission > tmp.last_submission))) {
 		tmp.rank_show--;
 		this.rankarr[k].rank_show++;
 		this.rankarr[k + 1] = this.rankarr[k];
