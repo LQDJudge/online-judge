@@ -2,7 +2,7 @@
   <script type="text/javascript">
     const updateInterval = 2000;
     let curop = -1;
-    const lintHeight = 200;
+    const lintHeight = 140;
     const bonusHeight = 35;
     const speed = 700;
     const isProcessing = false;
@@ -32,7 +32,7 @@
       if (operation.type !== 'delay') {
         if (isAPress) {
           window.scrollTo({
-            top: (resolver.rank_frozen[operation.user_id].rank_show - 1) * lintHeight,
+            top: (resolver.rank_frozen[operation.user_id].rank_show - 4) * lintHeight,
             left: 0,
             behavior: 'smooth'
           });
@@ -140,7 +140,7 @@
         if (!isAPress) {
                     // isProcessing = true
           window.scrollTo({
-            top: (operation.new_rank - 2) * lintHeight,
+            top: (operation.new_rank - 4) * lintHeight,
             left: 0,
             behavior: 'smooth'
           });
