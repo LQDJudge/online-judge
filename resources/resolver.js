@@ -240,7 +240,6 @@ Resolver.prototype.showrank = function () {
 	}
 	return false;
 }
-
 Resolver.prototype.next_operation = function () {
 	if (this.delay) {
 		const op = {
