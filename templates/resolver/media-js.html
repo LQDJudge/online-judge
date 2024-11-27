@@ -2,7 +2,7 @@
   <script type="text/javascript">
     const updateInterval = 2000;
     let curop = -1;
-    const lintHeight = 200;
+    const lintHeight = 140;
     const bonusHeight = 35;
     const speed = 700;
     const isProcessing = false;
@@ -32,7 +32,7 @@
       if (operation.type !== 'delay') {
         if (isAPress) {
           window.scrollTo({
-            top: (resolver.rank_frozen[operation.user_id].rank_show - 1) * lintHeight,
+            top: (resolver.rank_frozen[operation.user_id].rank_show - 4) * lintHeight,
             left: 0,
             behavior: 'smooth'
           });
@@ -140,7 +140,7 @@
         if (!isAPress) {
                     // isProcessing = true
           window.scrollTo({
-            top: (operation.new_rank - 2) * lintHeight,
+            top: (operation.new_rank - 4) * lintHeight,
             left: 0,
             behavior: 'smooth'
           });
@@ -279,6 +279,47 @@
       }
     }
 
+    function findNextValidSubmission(resolver, startRankId) {
+      let currentRankId = startRankId;
+
+      while (currentRankId >= 0) { // Keep trying with decreasing rank IDs until we hit 0
+        let currentProblemId = 1;
+        let currentSub = 1;
+
+        while (currentProblemId <= resolver.problem_sub.length) {
+          if (currentSub <= resolver.problem_sub[currentProblemId - 1]) {
+                        // Try to process this submission
+            const foundValid = resolver.operation(currentRankId, currentProblemId, currentSub);
+
+            if (foundValid) {
+              return {
+                found: true,
+                rankId: currentRankId,
+                problemId: currentProblemId,
+                sub: currentSub
+              };
+            }
+          }
+
+                    // Move to next sub/problem
+          if (currentSub >= resolver.problem_sub[currentProblemId - 1]) {
+            currentSub = 1;
+            currentProblemId++;
+          } else {
+            currentSub++;
+          }
+        }
+
+                // If we get here, we didn't find anything at this rank - move to previous rank
+        currentRankId--;
+      }
+
+            // If we get here, we didn't find anything at any rank
+      return {
+        found: false
+      };
+    }
+
     let theme = 0;
 
     $('body').keydown(function (e) {
@@ -352,57 +393,40 @@
                         // Get current rankid
             const currentRankId = resolver.rankarr[resolver.rankarr.length - 1].rank_show - 1;
 
-                        // Try to find next valid sub/problem combination
-            let foundValid = false;
-            while (!foundValid && currentProblemId <= resolver.problem_sub.length) {
-                            // Check if current sub is valid for this problem
-              if (currentSub <= resolver.problem_sub[currentProblemId - 1]) {
-                foundValid = resolver.operation(currentRankId, currentProblemId, currentSub);
-                if (foundValid) {
-                                    // Successfully processed this sub, increment for next time
-                  currentSub++;
-                  if (currentSub > resolver.problem_sub[currentProblemId - 1]) {
-                    currentSub = 1;
-                    currentProblemId++;
-                  }
-                  break;
-                }
-              }
+            const result = findNextValidSubmission(resolver, currentRankId);
 
-                            // If we've tried all subs for this problem, move to next problem
-              if (currentSub >= resolver.problem_sub[currentProblemId - 1]) {
-                currentSub = 1;
-                currentProblemId++;
-              } else {
-                currentSub++;
-              }
-            }
-            if (resolver.operations.length === 1) {
-              for (let x in window.resolver.operations) {
-                                // window.isProcessing = true
-                curop++;
-                updateSelector(true);
-                setTimeout(function () {
-                  getNewData();
-                }, 500);
-                setTimeout(function () {
-                  window.isProcessing = false;
-                }, 750);
-              }
-            } else {
-              for (let x in window.resolver.operations) {
-                setTimeout(function () {
-                  window.isProcessing = true
+
+            if (result.found) {
+                            // Handle animations
+              if (resolver.operations.length === 1) {
+                for (let x in window.resolver.operations) {
                   curop++;
                   updateSelector(true);
-                }, speed * x);
-                setTimeout(function () {
-                  getNewData();
-                }, speed * x + speed / 2);
-                setTimeout(function () {
-                  window.isProcessing = false;
-                }, speed * x + speed);
+                  setTimeout(function () {
+                    getNewData();
+                  }, 500);
+                  setTimeout(function () {
+                    window.isProcessing = false;
+                  }, 750);
+                }
+              } else {
+                for (let x in window.resolver.operations) {
+                  setTimeout(function () {
+                    window.isProcessing = true
+                    curop++;
+                    updateSelector(true);
+                  }, speed * x);
+                  setTimeout(function () {
+                    getNewData();
+                  }, speed * x + speed / 2);
+                  setTimeout(function () {
+                    window.isProcessing = false;
+                  }, speed * x + speed);
+                }
               }
+            } else {
+              console.log("No more submissions to reveal");
+                            // Optionally handle the case where there are no more submissions to reveal
             }
           }
         }
