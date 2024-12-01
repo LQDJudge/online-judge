@@ -1,23 +1,20 @@
-from django.views import View
-from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
-from django.core.files import File
-from django.core.files.base import ContentFile
+import os
+import uuid
+from zipfile import ZipFile, ZIP_DEFLATED
+
 from django.http import (
-    FileResponse,
     HttpResponseRedirect,
     HttpResponseBadRequest,
     HttpResponse,
 )
-from judge.models import TestFormatterModel
-from judge.forms import TestFormatterForm
-from judge.views.test_formatter import tf_logic, tf_utils
+from django.shortcuts import render
 from django.utils.translation import gettext_lazy as _
-from zipfile import ZipFile, ZIP_DEFLATED
+from django.views import View
 
-import os
-import uuid
 from dmoj import settings
+from judge.forms import TestFormatterForm
+from judge.models import TestFormatterModel
+from judge.views.test_formatter import tf_logic, tf_utils
 
 
 def id_to_path(id):
@@ -148,11 +145,8 @@ class EditTestFormatter(View):
 
             converted_zip = tf_logic.convert(preview_data)
 
-            global file_path
-            file_path = converted_zip["file_path"]
-
             zip_instance = TestFormatterModel()
-            zip_instance.file = file_path
+            zip_instance.file = converted_zip["file_path"]
             zip_instance.save()
 
             preview = tf_logic.preview(preview_data)
@@ -163,10 +157,13 @@ class EditTestFormatter(View):
                 aft = preview["aft_preview"][i]["value"]
                 response.write(f"<p>{bef} => {aft}</p>")
 
+            response["X-File-Path"] = converted_zip["file_path"]
             return response
-
         elif action == "download":
-            return HttpResponse(file_path)
+            instance = TestFormatterModel.objects.last()
+            if not instance or not instance.file:
+                return HttpResponseBadRequest("No file path found")
+            return HttpResponse(str(instance.file), content_type="text/plain")
 
         return HttpResponseBadRequest("Invalid action")
 
