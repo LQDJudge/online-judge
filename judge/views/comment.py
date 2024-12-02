@@ -146,7 +146,10 @@ def get_comments(request, limit=10):
 
     target_comment = -1
     if "target_comment" in request.GET:
-        target_comment = int(request.GET["target_comment"])
+        try:
+            target_comment = int(request.GET["target_comment"])
+        except ValueError:
+            return HttpResponseBadRequest()
 
     comment_root_id = 0
 
