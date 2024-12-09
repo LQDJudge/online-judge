@@ -1,4 +1,5 @@
 import os
+
 from judge.views.test_formatter import test_formatter as tf
 from judge.views.test_formatter import tf_pattern as pattern
 
@@ -112,5 +113,8 @@ def prefill(params):
 
 
 def preview_file(file_str):
+    """
+    Get the names of the files in the archive. Only read files that end with .in or .out.
+    """
     names = tf.get_names_in_archive(file_str)
     return names

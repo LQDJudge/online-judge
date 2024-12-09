@@ -22,6 +22,7 @@ def id_to_path(id):
 
 
 def get_names_in_archive(file_path):
+    # * Only read file that ends with "inp" or "out"
     suffixes = ("inp", "out", "INP", "OUT")
     with ZipFile(os.path.join(settings.MEDIA_ROOT, file_path)) as f:
         result = [
