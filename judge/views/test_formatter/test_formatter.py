@@ -178,7 +178,7 @@ class DownloadTestFormatter(View):
         for i in range(len(preview_file)):
             response = response + (f"<p>{preview_file[i]}</p>\n")
 
-        files_list = [preview_file[0], preview_file[1]]
+        files_list = preview_file[:2] if len(preview_file) > 2 else preview_file
 
         return render(
             request,
