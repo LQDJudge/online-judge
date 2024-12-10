@@ -1165,6 +1165,16 @@ urlpatterns = [
                     name="internal_problem_votes",
                 ),
                 url(
+                    r"^problem_queue$",
+                    internal.InternalProblemQueue.as_view(),
+                    name="internal_problem_queue",
+                ),
+                url(
+                    r"^problem_queue_mark_private$",
+                    internal.mark_problem_private,
+                    name="internal_mark_problem_private",
+                ),
+                url(
                     r"^request_time$",
                     internal.InternalRequestTime.as_view(),
                     name="internal_request_time",

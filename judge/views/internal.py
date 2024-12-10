@@ -4,7 +4,7 @@ import json
 from django.views.generic import ListView
 from django.utils.translation import gettext as _, gettext_lazy
 from django.db.models import Count, Q
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from django.urls import reverse
 from django.shortcuts import render
 
@@ -84,6 +84,54 @@ def get_problem_votes(request):
             "votes": votes,
         },
     )
+
+
+class InternalProblemQueue(InternalView, ListView):
+    model = Problem
+    title = _("Internal problem queue")
+    template_name = "internal/problem_queue.html"
+    paginate_by = 20
+    context_object_name = "problems"
+
+    def get_paginator(
+        self, queryset, per_page, orphans=0, allow_empty_first_page=True, **kwargs
+    ):
+        return DiggPaginator(
+            queryset,
+            per_page,
+            body=6,
+            padding=2,
+            orphans=orphans,
+            allow_empty_first_page=allow_empty_first_page,
+            **kwargs
+        )
+
+    def get_queryset(self):
+        queryset = Problem.objects.filter(is_public=True, is_organization_private=False)
+        return queryset.order_by("-id")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_type"] = "problem_queue"
+        context["title"] = self.title
+        context["page_prefix"] = self.request.path + "?page="
+        context["first_page_href"] = self.request.path
+
+        return context
+
+
+def mark_problem_private(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden()
+    try:
+        problem_id = int(request.POST.get("id"))
+        problem = Problem.objects.get(id=problem_id)
+    except Exception:
+        return HttpResponseForbidden()
+
+    problem.is_public = False
+    problem.save()
+    return JsonResponse({"success": True})
 
 
 class RequestTimeMixin(object):
