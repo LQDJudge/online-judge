@@ -6,7 +6,9 @@ Disallow: /problem/*/raw
 Disallow: /problem/*/submit
 Disallow: /problem/*/resubmit/
 Disallow: /problem/*/submissions/
+Disallow: /problem/*/rank/*
 Disallow: /user/*/submissions/
+Disallow: /user/*/solved/
 Disallow: /submission/
 Disallow: /submissions/
 Disallow: /single_submission

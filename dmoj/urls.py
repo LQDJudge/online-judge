@@ -1232,8 +1232,8 @@ urlpatterns = [
     url(r"^upload/$", custom_file_upload.file_upload, name="custom_file_upload"),
 ] + url_static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-# if hasattr(settings, "INTERNAL_IPS"):
-#     urlpatterns.append(url("__debug__/", include("debug_toolbar.urls")))
+if "debug_toolbar.middleware.DebugToolbarMiddleware" in settings.MIDDLEWARE:
+    urlpatterns.append(url("__debug__/", include("debug_toolbar.urls")))
 
 favicon_paths = [
     "apple-touch-icon-180x180.png",
