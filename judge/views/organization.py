@@ -6,6 +6,7 @@ from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db import IntegrityError
 from django.db.models import Count, Q, Value, BooleanField
 from django.db.utils import ProgrammingError
 from django.forms import Form, modelformset_factory
@@ -993,22 +994,19 @@ class EditOrganizationContest(
                 if problem_form.cleaned_data.get("DELETE") and problem_form.instance.pk:
                     problem_form.instance.delete()
 
-            for problem_form in problem_formset.save(commit=False):
-                if problem_form:
-                    problem_form.contest = self.contest
-                    problem_form.save()
+            for contest_problem in problem_formset.save(commit=False):
+                if contest_problem:
+                    contest_problem.contest = self.contest
+                    try:
+                        contest_problem.save()
+                    except IntegrityError as e:
+                        problem = contest_problem.problem
+                        ContestProblem.objects.filter(
+                            contest=self.contest, problem=problem
+                        ).delete()
+                        contest_problem.save()
 
-            super().post(request, *args, **kwargs)
-            return HttpResponseRedirect(
-                reverse(
-                    "organization_contest_edit",
-                    args=(
-                        self.organization_id,
-                        self.organization.slug,
-                        self.contest.key,
-                    ),
-                )
-            )
+            return super().post(request, *args, **kwargs)
 
         self.object = self.contest
         return self.render_to_response(
