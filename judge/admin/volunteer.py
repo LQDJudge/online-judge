@@ -3,7 +3,7 @@ from operator import attrgetter
 from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
-from django.utils.translation import gettext, gettext_lazy as _, ungettext
+from django.utils.translation import gettext, gettext_lazy as _, ngettext
 from django.forms import ModelForm
 
 from judge.models import VolunteerProblemVote

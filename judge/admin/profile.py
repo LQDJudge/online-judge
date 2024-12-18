@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.forms import ModelForm, CharField, TextInput
 from django.utils.html import format_html
-from django.utils.translation import gettext, gettext_lazy as _, ungettext
+from django.utils.translation import gettext, gettext_lazy as _, ngettext
 from django.contrib.auth.admin import UserAdmin as OldUserAdmin
 from django.core.exceptions import ValidationError
 from django.contrib.auth.forms import UserChangeForm
@@ -161,7 +161,7 @@ class ProfileAdmin(VersionAdmin):
             count += 1
         self.message_user(
             request,
-            ungettext(
+            ngettext(
                 "%d user have scores recalculated.",
                 "%d users have scores recalculated.",
                 count,

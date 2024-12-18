@@ -22,7 +22,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
-from django.utils.translation import gettext as _, gettext_lazy, ungettext
+from django.utils.translation import gettext as _, gettext_lazy, ngettext
 from django.views.generic import (
     DetailView,
     FormView,
@@ -738,10 +738,9 @@ class OrganizationRequestView(OrganizationRequestBaseView):
                     rejected += 1
             messages.success(
                 request,
-                ungettext("Approved %d user.", "Approved %d users.", approved)
-                % approved
+                ngettext("Approved %d user.", "Approved %d users.", approved) % approved
                 + "\n"
-                + ungettext("Rejected %d user.", "Rejected %d users.", rejected)
+                + ngettext("Rejected %d user.", "Rejected %d users.", rejected)
                 % rejected,
             )
             cache.delete(

@@ -2,7 +2,6 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_text
 from django.conf import settings
 from django import forms
 from django.utils.translation import gettext_lazy as _
@@ -49,7 +48,7 @@ def email_change_view(request):
 
         # Generate a token for email verification
         token = default_token_generator.make_token(user)
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        uid = urlsafe_base64_encode(bytes(user.pk))
 
         # Send the email to the user
         subject = settings.SITE_NAME + " - " + _("Email Change Request")
@@ -87,7 +86,7 @@ def email_change_view(request):
 
 def verify_email_view(request, uidb64, token):
     try:
-        uid = force_text(urlsafe_base64_decode(uidb64))
+        uid = str(urlsafe_base64_decode(uidb64), encoding="utf-8")
         user = User.objects.get(pk=uid)
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None

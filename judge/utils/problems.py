@@ -112,7 +112,7 @@ def _get_result_data(results):
     return {
         "categories": [
             # Using gettext_noop here since this will be tacked into the cache, so it must be language neutral.
-            # The caller, SubmissionList.get_result_data will run ugettext on the name.
+            # The caller, SubmissionList.get_result_data will run gettext on the name.
             {"code": "AC", "name": gettext_noop("Accepted"), "count": results["AC"]},
             {
                 "code": "WA",

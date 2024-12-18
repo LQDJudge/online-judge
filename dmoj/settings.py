@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 import tempfile
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django_jinja.builtins import DEFAULT_EXTENSIONS
 from jinja2 import select_autoescape
 
