@@ -9,6 +9,7 @@ from judge.logging import log_debug
 
 MAX_NUM_CHAR = 50
 NONE_RESULT = "__None__"
+NUM_CACHE_RETRY = 3
 
 
 def arg_to_str(arg):
@@ -40,12 +41,20 @@ def cache_wrapper(prefix, timeout=None, expected_type=None):
         return key
 
     def _get(key):
-        if not l0_cache:
-            return cache.get(key)
-        result = l0_cache.get(key)
-        if result is None:
-            result = cache.get(key)
-        return result
+        if l0_cache:
+            result = l0_cache.get(key)
+            if result is not None:
+                return result
+
+        # pymemcache sometimes throws KeyError when running in
+        # multi-thread environment. When it happens, we retry.
+        for attempt in range(NUM_CACHE_RETRY):
+            try:
+                result = cache.get(key)
+                return result
+            except KeyError as e:
+                if attempt == NUM_CACHE_RETRY - 1:
+                    raise e
 
     def _set_l0(key, value):
         if l0_cache:
