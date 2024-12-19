@@ -102,16 +102,6 @@ def version_matrix(request):
             if ds[i] != rep:
                 matrix[j] = x
 
-    for data in matrix.values():
-        for language, versions in data.items():
-            versions.versions = [version.parse(runtime.version) for runtime in versions]
-            if versions.versions > latest[language]:
-                latest[language] = versions.versions
-
-    for data in matrix.values():
-        for language, versions in data.items():
-            versions.is_latest = versions.versions == latest[language]
-
     # Handle invalid version strings in the language names
     def safe_version_parse(lang_name):
         try:
@@ -120,7 +110,18 @@ def version_matrix(request):
             # Return a default version or placeholder for invalid names
             return version.parse("0.0.0")
 
-    # Sort languages using safe_version_parse
+    for data in matrix.values():
+        for language, versions in data.items():
+            versions.versions = [
+                safe_version_parse(runtime.version) for runtime in versions
+            ]
+            if versions.versions > latest[language]:
+                latest[language] = versions.versions
+
+    for data in matrix.values():
+        for language, versions in data.items():
+            versions.is_latest = versions.versions == latest[language]
+
     languages = sorted(languages, key=lambda lang: safe_version_parse(lang.name))
 
     return render(
