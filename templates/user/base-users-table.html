@@ -20,7 +20,7 @@
       <td class="rank-td">{{ rank }}</td>
       {% block after_rank scoped %}{% endblock %}
       <td class="user-name">
-        <div style="display: inline-block;">
+        <div style="display: inline-block; max-width: 25em;">
           {% block user_link scoped %}
             {{ link_user(user) }}
           {% endblock %}
