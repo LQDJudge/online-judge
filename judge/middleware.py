@@ -3,11 +3,11 @@ import logging
 import random
 import json
 from datetime import datetime
+from urllib.parse import quote
 
 from django.conf import settings
 from django.http import HttpResponseRedirect, Http404
 from django.urls import Resolver404, resolve, reverse
-from django.utils.http import urlquote
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext as _
@@ -52,7 +52,7 @@ class DMOJLoginMiddleware(object):
                 and not request.path.startswith(settings.STATIC_URL)
             ):
                 return HttpResponseRedirect(
-                    login_2fa_path + "?next=" + urlquote(request.get_full_path())
+                    login_2fa_path + "?next=" + quote(request.get_full_path())
                 )
         else:
             request.profile = None
@@ -95,7 +95,7 @@ class DarkModeMiddleware(object):
     def __call__(self, request):
         if "darkmode" in request.GET:
             return HttpResponseRedirect(
-                reverse("toggle_darkmode") + "?next=" + urlquote(request.path)
+                reverse("toggle_darkmode") + "?next=" + quote(request.path)
             )
         return self.get_response(request)
 
@@ -138,7 +138,7 @@ class SubdomainMiddleware(object):
                     )
                 if not request.GET.get("next", None):
                     return HttpResponseRedirect(
-                        reverse("auth_login") + "?next=" + urlquote(request.path)
+                        reverse("auth_login") + "?next=" + quote(request.path)
                     )
         except ObjectDoesNotExist:
             return generic_message(

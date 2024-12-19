@@ -4,6 +4,7 @@ from functools import partial
 from django.shortcuts import render
 from django.utils.translation import gettext as _
 from packaging import version
+from packaging.version import InvalidVersion
 
 from judge.models import Judge, Language, RuntimeVersion
 
@@ -101,9 +102,19 @@ def version_matrix(request):
             if ds[i] != rep:
                 matrix[j] = x
 
+    # Handle invalid version strings in the language names
+    def safe_version_parse(lang_name):
+        try:
+            return version.parse(lang_name)
+        except InvalidVersion:
+            # Return a default version or placeholder for invalid names
+            return version.parse("0.0.0")
+
     for data in matrix.values():
         for language, versions in data.items():
-            versions.versions = [version.parse(runtime.version) for runtime in versions]
+            versions.versions = [
+                safe_version_parse(runtime.version) for runtime in versions
+            ]
             if versions.versions > latest[language]:
                 latest[language] = versions.versions
 
@@ -111,7 +122,8 @@ def version_matrix(request):
         for language, versions in data.items():
             versions.is_latest = versions.versions == latest[language]
 
-    languages = sorted(languages, key=lambda lang: version.parse(lang.name))
+    languages = sorted(languages, key=lambda lang: safe_version_parse(lang.name))
+
     return render(
         request,
         "status/versions.html",

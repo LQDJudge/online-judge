@@ -1,7 +1,6 @@
 from django.contrib.admin import widgets as admin_widgets
 from django.forms.utils import flatatt
 from django.template.loader import get_template
-from django.utils.encoding import force_text
 from django.utils.html import conditional_escape
 from django.conf import settings
 
@@ -104,7 +103,7 @@ else:
                     settings, "PAGEDOWN_IMAGE_UPLOAD_ENABLED", False
                 ),
                 "attrs": flatatt(attrs),
-                "body": conditional_escape(force_text(value)),
+                "body": conditional_escape(str(value)),
                 "postfix": attrs["id"],
                 "show_preview": True,
                 "preview_url": self.preview_url,

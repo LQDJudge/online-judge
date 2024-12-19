@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import re_path
 from django.db.models import TextField
 from django.forms import ModelForm, ModelMultipleChoiceField, TextInput
 from django.http import HttpResponseRedirect
@@ -126,12 +126,12 @@ class JudgeAdmin(VersionAdmin):
 
     def get_urls(self):
         return [
-            url(
+            re_path(
                 r"^(\d+)/disconnect/$",
                 self.disconnect_view,
                 name="judge_judge_disconnect",
             ),
-            url(
+            re_path(
                 r"^(\d+)/terminate/$", self.terminate_view, name="judge_judge_terminate"
             ),
         ] + super(JudgeAdmin, self).get_urls()

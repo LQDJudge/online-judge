@@ -10,7 +10,7 @@
 
 {% block user_footer %}
   <span style="margin-left: 0.5em">{% if user.rating %}{{ rating_number(user) }}{% endif %}</span>
-  <div class="gray" style="font-weight: 600; margin-top: 0.2em">{{ user.first_name or ''}}</div>
+  <div class="gray user-table-fullname" style="margin-top: 0.2em">{{ user.first_name or ''}}</div>
 {% endblock %}
 
 {% block after_point_head %}

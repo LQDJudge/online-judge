@@ -1,7 +1,7 @@
 from django.forms import ModelForm
 from django.urls import reverse_lazy
 from django.utils.html import format_html
-from django.utils.translation import gettext_lazy as _, ungettext
+from django.utils.translation import gettext_lazy as _, ngettext
 from reversion.admin import VersionAdmin
 
 from judge.models import Comment
@@ -53,7 +53,7 @@ class CommentAdmin(VersionAdmin):
         count = queryset.update(hidden=True)
         self.message_user(
             request,
-            ungettext(
+            ngettext(
                 "%d comment successfully hidden.",
                 "%d comments successfully hidden.",
                 count,
@@ -67,7 +67,7 @@ class CommentAdmin(VersionAdmin):
         count = queryset.update(hidden=False)
         self.message_user(
             request,
-            ungettext(
+            ngettext(
                 "%d comment successfully unhidden.",
                 "%d comments successfully unhidden.",
                 count,

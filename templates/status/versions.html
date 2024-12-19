@@ -17,7 +17,7 @@
     </tr>
     {% for language in languages %}
       <tr>
-        <th>{{ language.name }}</th>
+        <td>{{ language.name }}</td>
         {% for judge in judges %}
           {% set versions = matrix[judge][language.id] %}
           <td class="version version-

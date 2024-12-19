@@ -1525,7 +1525,7 @@ class ContestClarificationAjax(ContestMixin, DetailView):
 
 
 def update_contest_mode(request):
-    if not request.is_ajax() or not request.method == "POST":
+    if not request.method == "POST":
         return HttpResponseNotAllowed(["POST"])
 
     old_mode = request.session.get("contest_mode", True)

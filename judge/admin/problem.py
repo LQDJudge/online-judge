@@ -9,7 +9,7 @@ from django.forms import ModelForm, TextInput
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.utils.html import format_html
-from django.utils.translation import gettext, gettext_lazy as _, ungettext
+from django.utils.translation import gettext, gettext_lazy as _, ngettext
 from reversion_compare.admin import CompareVersionAdmin
 
 from django_ace import AceWidget
@@ -308,7 +308,7 @@ class ProblemAdmin(CompareVersionAdmin):
             self._rescore(request, problem_id)
         self.message_user(
             request,
-            ungettext(
+            ngettext(
                 "%d problem successfully marked as public.",
                 "%d problems successfully marked as public.",
                 count,
@@ -324,7 +324,7 @@ class ProblemAdmin(CompareVersionAdmin):
             self._rescore(request, problem_id)
         self.message_user(
             request,
-            ungettext(
+            ngettext(
                 "%d problem successfully marked as private.",
                 "%d problems successfully marked as private.",
                 count,

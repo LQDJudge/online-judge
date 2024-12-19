@@ -1,6 +1,6 @@
 import datetime
 
-from django.utils.translation import npgettext, pgettext, ungettext
+from django.utils.translation import npgettext, pgettext, ngettext
 
 
 def nice_repr(timedelta, display="long", sep=", "):
@@ -85,7 +85,7 @@ def nice_repr(timedelta, display="long", sep=", "):
                     .replace("%h", "%02d" % hours)
                     .replace("%m", "%02d" % minutes)
                 )
-            return ungettext("%d day", "%d days", days) % days
+            return ngettext("%d day", "%d days", days) % days
         else:
             return (
                 pgettext("hours and minutes", "%h:%m")

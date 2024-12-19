@@ -15,14 +15,14 @@
 {% block user_footer %}
   {% set profile = user.user %}
   {% if profile.first_name %}
-    <div style="font-weight: 600; display: none" class="fullname gray">
+    <div style="display: none" class="user-table-fullname fullname gray">
       {{ profile.first_name }}
     </div>
   {% endif %}
   {% if profile.last_name %}
-    <div class="school gray" style="display: none"><div style="font-weight: 600">
+    <div class="school gray user-table-fullname" style="display: none">
       {{ profile.last_name }}
-    </div></div>
+    </div>
   {% endif %}
 {% endblock %}
 
