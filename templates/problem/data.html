@@ -274,16 +274,19 @@
       });
 
       function isInpFile(x) {
-        let tail = ['.in', '.inp', '.IN', '.INP']
+        let tail = ['.in', '.inp', '.txt', '.dat', '.IN', '.INP', '.TXT', '.DAT']
         for (let i of tail) {
           if (x.endsWith(i)) {
             return true;
           }
         }
+        if (!x.includes('.') && !x.endsWith('/')) {
+          return true;
+        }
         return false;
       }
       function isOutFile(x) {
-        let tail = ['.out', '.OUT', '.ans', '.ANS']
+        let tail = ['.out', '.ans', '.res', '.a', '.OUT', '.ANS', '.RES', '.A'];
         for (let i of tail) {
           if (x.endsWith(i)) {
             return true;
@@ -296,6 +299,9 @@
         e.preventDefault();
         var inFiles = [], outFiles = [];
         for (let file of window.valid_files) {
+          if (file.endsWith('/')) {
+            continue;
+          }
           if (isInpFile(file)) {
             inFiles.push(file);
           }
@@ -303,7 +309,7 @@
             outFiles.push(file);
           }
         }
-        if (inFiles.length == 0) {
+        if (inFiles.length == 0 || outFiles.length == 0) {
           alert("No input/output files. Make sure your files' suffices are .in(p)/.out");
           return false;
         }
