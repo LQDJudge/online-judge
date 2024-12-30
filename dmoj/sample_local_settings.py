@@ -28,10 +28,17 @@ DMOJ_PROBLEM_DATA_ROOT = "/path/to/problem/folder"
 # Caching. You can use memcached or redis instead.
 # Documentation: <https://docs.djangoproject.com/en/1.11/topics/cache/>
 CACHES = {
-    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
+    "default": {
+        "BACKEND": "judge.cache_handler.CacheHandler",
+        "LOCATION": "127.0.0.1:11211",
+    },
     "l0": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "OPTIONS": {"MAX_ENTRIES": 1000},
+    },
+    "primary": {
+        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+        "LOCATION": "127.0.0.1:11211",
     },
 }
 
