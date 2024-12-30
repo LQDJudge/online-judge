@@ -4,7 +4,6 @@ from django.core.exceptions import ImproperlyConfigured
 
 NUM_CACHE_RETRY = 3
 DEFAULT_L0_TIMEOUT = 300
-NONE_RESULT = "__None__"
 l0_cache = caches["l0"] if "l0" in caches else None
 primary_cache = caches["primary"] if "primary" in caches else None
 
@@ -15,75 +14,61 @@ class CacheHandler(BaseCache):
     """
 
     def __init__(self, location, params):
-        """
-        Initialize the cache backend with L0 and primary (default) cache.
-        """
         super().__init__(params)
 
-    def get(self, key, default=None):
+    def get(self, key, default=None, **kwargs):
         """
         Retrieve a value from the cache with retry logic and L0 caching.
         """
         if l0_cache:
-            result = l0_cache.get(key)
+            result = l0_cache.get(key, **kwargs)
             if result is not None:
-                return None if result == NONE_RESULT else result
+                return result
 
         for attempt in range(NUM_CACHE_RETRY):
             try:
-                result = primary_cache.get(key)
+                result = primary_cache.get(key, **kwargs)
                 if result is not None:
                     if l0_cache:
-                        l0_cache.set(
-                            key,
-                            NONE_RESULT if result is None else result,
-                            DEFAULT_L0_TIMEOUT,
-                        )  # Cache in L0
-                    return None if result == NONE_RESULT else result
+                        l0_cache.set(key, result, DEFAULT_L0_TIMEOUT, **kwargs)
+                    return result
             except Exception:
                 if attempt == NUM_CACHE_RETRY - 1:
                     raise
         return default
 
-    def set(self, key, value, timeout=None):
+    def set(self, key, value, timeout=None, **kwargs):
         """
         Set a value in the cache and optionally in the L0 cache.
         """
-        value_to_store = NONE_RESULT if value is None else value
         if l0_cache:
-            l0_cache.set(key, value_to_store, DEFAULT_L0_TIMEOUT)
-        primary_cache.set(key, value_to_store, timeout)
+            l0_cache.set(key, value, DEFAULT_L0_TIMEOUT, **kwargs)
+        primary_cache.set(key, value, timeout, **kwargs)
 
-    def delete(self, key):
+    def delete(self, key, **kwargs):
         """
         Delete a value from both L0 and primary cache.
         """
         if l0_cache:
-            l0_cache.delete(key)
-        primary_cache.delete(key)
+            l0_cache.delete(key, **kwargs)
+        primary_cache.delete(key, **kwargs)
 
-    def add(self, key, value, timeout=None):
+    def add(self, key, value, timeout=None, **kwargs):
         """
         Add a value to the cache only if the key does not already exist.
         """
-        value_to_store = NONE_RESULT if value is None else value
-        if l0_cache and not l0_cache.get(key):
-            l0_cache.set(key, value_to_store, DEFAULT_L0_TIMEOUT)
-        primary_cache.add(key, value_to_store, timeout)
+        if l0_cache and not l0_cache.get(key, **kwargs):
+            l0_cache.set(key, value, DEFAULT_L0_TIMEOUT, **kwargs)
+        primary_cache.add(key, value, timeout, **kwargs)
 
-    def get_many(self, keys):
+    def get_many(self, keys, **kwargs):
         """
         Retrieve multiple values from the cache.
         """
         results = {}
         if l0_cache:
-            l0_results = l0_cache.get_many(keys)
-            results.update(
-                {
-                    key: (None if value == NONE_RESULT else value)
-                    for key, value in l0_results.items()
-                }
-            )
+            l0_results = l0_cache.get_many(keys, **kwargs)
+            results.update(l0_results)
             keys = [key for key in keys if key not in l0_results]
 
         if not keys:
@@ -91,75 +76,62 @@ class CacheHandler(BaseCache):
 
         for attempt in range(NUM_CACHE_RETRY):
             try:
-                cache_results = primary_cache.get_many(keys)
+                cache_results = primary_cache.get_many(keys, **kwargs)
                 if l0_cache:
                     for key, value in cache_results.items():
-                        l0_cache.set(
-                            key,
-                            NONE_RESULT if value is None else value,
-                            DEFAULT_L0_TIMEOUT,
-                        )
-                results.update(
-                    {
-                        key: (None if value == NONE_RESULT else value)
-                        for key, value in cache_results.items()
-                    }
-                )
+                        l0_cache.set(key, value, DEFAULT_L0_TIMEOUT, **kwargs)
+                results.update(cache_results)
                 return results
             except Exception:
                 if attempt == NUM_CACHE_RETRY - 1:
                     raise
         return results
 
-    def set_many(self, data, timeout=None):
+    def set_many(self, data, timeout=None, **kwargs):
         """
         Set multiple values in the cache.
         """
-        data_to_store = {
-            key: (NONE_RESULT if value is None else value)
-            for key, value in data.items()
-        }
         if l0_cache:
-            for key, value in data_to_store.items():
-                l0_cache.set(key, value, DEFAULT_L0_TIMEOUT)
-        primary_cache.set_many(data_to_store, timeout)
+            for key, value in data.items():
+                l0_cache.set(key, value, DEFAULT_L0_TIMEOUT, **kwargs)
+        primary_cache.set_many(data, timeout, **kwargs)
 
-    def delete_many(self, keys):
+    def delete_many(self, keys, **kwargs):
         """
         Delete multiple values from the cache.
         """
         if l0_cache:
-            l0_cache.delete_many(keys)
-        primary_cache.delete_many(keys)
+            l0_cache.delete_many(keys, **kwargs)
+        primary_cache.delete_many(keys, **kwargs)
 
-    def clear(self):
+    def clear(self, **kwargs):
         """
         Clear both L0 and primary caches.
         """
         if l0_cache:
-            l0_cache.clear()
-        primary_cache.clear()
+            l0_cache.clear(**kwargs)
+        primary_cache.clear(**kwargs)
 
-    def incr(self, key, delta=1):
+    def incr(self, key, delta=1, **kwargs):
         """
         Increment a value in the cache.
         """
         if l0_cache:
-            l0_value = l0_cache.get(key)
-            if l0_value and l0_value != NONE_RESULT:
+            l0_value = l0_cache.get(key, **kwargs)
+            if l0_value is not None:
                 updated_value = l0_value + delta
-                l0_cache.set(key, updated_value, DEFAULT_L0_TIMEOUT)
+                l0_cache.set(key, updated_value, DEFAULT_L0_TIMEOUT, **kwargs)
                 return updated_value
-        return primary_cache.incr(key, delta)
+        return primary_cache.incr(key, delta, **kwargs)
 
-    def decr(self, key, delta=1):
+    def decr(self, key, delta=1, **kwargs):
         """
         Decrement a value in the cache.
         """
         if l0_cache:
-            l0_value = l0_cache.get(key)
-            if l0_value and l0_value != NONE_RESULT:
+            l0_value = l0_cache.get(key, **kwargs)
+            if l0_value is not None:
                 updated_value = l0_value - delta
-                l0_cache.set(key, updated_value, DEFAULT_L0_TIMEOUT)
+                l0_cache.set(key, updated_value, DEFAULT_L0_TIMEOUT, **kwargs)
                 return updated_value
-        return primary_cache.decr(key, delta)
+        return primary_cache.decr(key, delta, **kwargs)

@@ -6,6 +6,8 @@ import hashlib
 from inspect import signature
 
 MAX_NUM_CHAR = 50
+NONE_RESULT = "__None__"  # Placeholder for None values in caching
+
 
 # Utility functions
 def arg_to_str(arg):
@@ -46,12 +48,15 @@ def cache_wrapper(prefix, timeout=None, expected_type=None):
             cache_key = get_key(func, *args, **kwargs)
             result = cache.get(cache_key)
 
-            if result is None or _validate_type(cache_key, result):
+            if result == NONE_RESULT:
+                return None
+
+            if result is not None and _validate_type(cache_key, result):
                 return result
 
             # Call the original function
             result = func(*args, **kwargs)
-            cache.set(cache_key, result, timeout)
+            cache.set(cache_key, NONE_RESULT if result is None else result, timeout)
             return result
 
         def dirty(*args, **kwargs):
@@ -61,6 +66,11 @@ def cache_wrapper(prefix, timeout=None, expected_type=None):
         def prefetch_multi(args_list):
             keys = [get_key(func, *args) for args in args_list]
             results = cache.get_many(keys)
+
+            return {
+                key: (None if value == NONE_RESULT else value)
+                for key, value in results.items()
+            }
 
         def dirty_multi(args_list):
             keys = [get_key(func, *args) for args in args_list]
@@ -81,7 +91,7 @@ class CacheableModel(models.Model):
     Base class for models with caching support using cache utilities.
     """
 
-    cache_timeout = None  # Cache timeout in seconds (default: 1 hour)
+    cache_timeout = None  # Cache timeout in seconds (default: None)
 
     class Meta:
         abstract = True  # This is an abstract base class and won't create a table
@@ -103,8 +113,14 @@ class CacheableModel(models.Model):
         cache_keys = {cls._get_cache_key(obj_id): obj_id for obj_id in ids}
         cached_objects = cache.get_many(cache_keys.keys())
 
+        # Handle NONE_RESULT logic
         results = {
-            cache_keys[key]: cls(**cached_objects[key]) for key in cached_objects
+            cache_keys[key]: (
+                None
+                if cached_objects[key] == NONE_RESULT
+                else cls(**cached_objects[key])
+            )
+            for key in cached_objects
         }
         missing_ids = [obj_id for obj_id in ids if obj_id not in results]
 
@@ -114,7 +130,7 @@ class CacheableModel(models.Model):
             for obj in missing_objects:
                 obj_dict = model_to_dict(obj)
                 cache_key = cls._get_cache_key(obj.id)
-                objects_to_cache[cache_key] = obj_dict
+                objects_to_cache[cache_key] = obj_dict if obj_dict else NONE_RESULT
                 results[obj.id] = cls(**obj_dict)
             cache.set_many(objects_to_cache, timeout=cls.cache_timeout)
 
