@@ -48,10 +48,9 @@ def cache_wrapper(prefix, timeout=None, expected_type=None):
             cache_key = get_key(func, *args, **kwargs)
             result = cache.get(cache_key)
 
-            if result == NONE_RESULT:
-                return None
-
             if result is not None and _validate_type(cache_key, result):
+                if type(result) == str and result == NONE_RESULT:
+                    result = None
                 return result
 
             # Call the original function
