@@ -30,7 +30,6 @@ DMOJ_PROBLEM_DATA_ROOT = "/path/to/problem/folder"
 CACHES = {
     "default": {
         "BACKEND": "judge.cache_handler.CacheHandler",
-        "LOCATION": "127.0.0.1:11211",
     },
     "l0": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
