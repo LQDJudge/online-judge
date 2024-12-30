@@ -1,18 +1,16 @@
-from inspect import signature
-from django.core.cache import cache, caches
+from django.core.cache import cache
 from django.db.models.query import QuerySet
 from django.core.handlers.wsgi import WSGIRequest
-
+from django.db import models
 import hashlib
-
-from judge.logging import log_debug
+from inspect import signature
 
 MAX_NUM_CHAR = 50
-NONE_RESULT = "__None__"
-NUM_CACHE_RETRY = 3
 
 
+# Utility functions
 def arg_to_str(arg):
+    """Convert arguments to strings for generating cache keys."""
     if hasattr(arg, "id"):
         return str(arg.id)
     if isinstance(arg, list) or isinstance(arg, QuerySet):
@@ -23,12 +21,11 @@ def arg_to_str(arg):
 
 
 def filter_args(args_list):
+    """Filter out arguments that are not relevant for caching (e.g., WSGIRequest)."""
     return [x for x in args_list if not isinstance(x, WSGIRequest)]
 
 
-l0_cache = caches["l0"] if "l0" in caches else None
-
-
+# Cache decorator
 def cache_wrapper(prefix, timeout=None, expected_type=None):
     def get_key(func, *args, **kwargs):
         args_list = list(args)
@@ -40,82 +37,35 @@ def cache_wrapper(prefix, timeout=None, expected_type=None):
         key = key.replace(" ", "_")
         return key
 
-    def _get(key):
-        if l0_cache:
-            result = l0_cache.get(key)
-            if result is not None:
-                return result
-
-        # pymemcache sometimes throws KeyError when running in
-        # multi-thread environment. When it happens, we retry.
-        for attempt in range(NUM_CACHE_RETRY):
-            try:
-                result = cache.get(key)
-                return result
-            except KeyError as e:
-                if attempt == NUM_CACHE_RETRY - 1:
-                    raise e
-
-    def _set_l0(key, value):
-        if l0_cache:
-            l0_cache.set(key, value, 30)
-
-    def _set(key, value, timeout):
-        _set_l0(key, value)
-        cache.set(key, value, timeout)
-
     def decorator(func):
         def _validate_type(cache_key, result):
             if expected_type and not isinstance(result, expected_type):
-                data = {
-                    "function": f"{func.__module__}.{func.__qualname__}",
-                    "result": str(result)[:30],
-                    "expected_type": expected_type,
-                    "type": type(result),
-                    "key": cache_key,
-                }
-                log_debug("invalid_key", data)
                 return False
             return True
 
         def wrapper(*args, **kwargs):
             cache_key = get_key(func, *args, **kwargs)
-            result = _get(cache_key)
-            if result is not None and _validate_type(cache_key, result):
-                _set_l0(cache_key, result)
-                if type(result) == str and result == NONE_RESULT:
-                    result = None
+            result = cache.get(cache_key)
+
+            if result is None or _validate_type(cache_key, result):
                 return result
+
+            # Call the original function
             result = func(*args, **kwargs)
-            if result is None:
-                cache_result = NONE_RESULT
-            else:
-                cache_result = result
-            _set(cache_key, cache_result, timeout)
+            cache.set(cache_key, result, timeout)
             return result
 
         def dirty(*args, **kwargs):
             cache_key = get_key(func, *args, **kwargs)
             cache.delete(cache_key)
-            if l0_cache:
-                l0_cache.delete(cache_key)
 
         def prefetch_multi(args_list):
-            keys = []
-            for args in args_list:
-                keys.append(get_key(func, *args))
+            keys = [get_key(func, *args) for args in args_list]
             results = cache.get_many(keys)
-            for key, result in results.items():
-                if result is not None:
-                    _set_l0(key, result)
 
         def dirty_multi(args_list):
-            keys = []
-            for args in args_list:
-                keys.append(get_key(func, *args))
+            keys = [get_key(func, *args) for args in args_list]
             cache.delete_many(keys)
-            if l0_cache:
-                l0_cache.delete_many(keys)
 
         wrapper.dirty = dirty
         wrapper.prefetch_multi = prefetch_multi
@@ -124,3 +74,69 @@ def cache_wrapper(prefix, timeout=None, expected_type=None):
         return wrapper
 
     return decorator
+
+
+# CacheableModel with optimized caching
+class CacheableModel(models.Model):
+    """
+    Base class for models with caching support using cache utilities.
+    """
+
+    cache_timeout = None  # Cache timeout in seconds (default: 1 hour)
+
+    class Meta:
+        abstract = True  # This is an abstract base class and won't create a table
+
+    @classmethod
+    def _get_cache_key(cls, obj_id):
+        """Generate a cache key based on the model name and object ID."""
+        return f"{cls.__name__.lower()}_{obj_id}"
+
+    @classmethod
+    def get_instance(cls, *ids):
+        """
+        Fetch one or multiple objects by IDs using caching.
+        """
+        if not ids:
+            return None
+
+        ids = ids[0] if len(ids) == 1 and isinstance(ids[0], (list, tuple)) else ids
+        cache_keys = {cls._get_cache_key(obj_id): obj_id for obj_id in ids}
+        cached_objects = cache.get_many(cache_keys.keys())
+
+        results = {
+            cache_keys[key]: cls(**cached_objects[key]) for key in cached_objects
+        }
+        missing_ids = [obj_id for obj_id in ids if obj_id not in results]
+
+        if missing_ids:
+            missing_objects = cls.objects.filter(id__in=missing_ids)
+            objects_to_cache = {}
+            for obj in missing_objects:
+                obj_dict = model_to_dict(obj)
+                cache_key = cls._get_cache_key(obj.id)
+                objects_to_cache[cache_key] = obj_dict
+                results[obj.id] = cls(**obj_dict)
+            cache.set_many(objects_to_cache, timeout=cls.cache_timeout)
+
+        return results[ids[0]] if len(ids) == 1 else [results[obj_id] for obj_id in ids]
+
+    @classmethod
+    def dirty_cache(cls, *ids):
+        """
+        Clear the cache for one or multiple object IDs using delete_many.
+        """
+        if not ids:
+            return
+
+        ids = ids[0] if len(ids) == 1 and isinstance(ids[0], (list, tuple)) else ids
+        cache_keys = [cls._get_cache_key(obj_id) for obj_id in ids]
+        cache.delete_many(cache_keys)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.dirty_cache(self.id)
+
+    def delete(self, *args, **kwargs):
+        self.dirty_cache(self.id)
+        super().delete(*args, **kwargs)
