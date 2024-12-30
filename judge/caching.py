@@ -7,7 +7,6 @@ from inspect import signature
 
 MAX_NUM_CHAR = 50
 
-
 # Utility functions
 def arg_to_str(arg):
     """Convert arguments to strings for generating cache keys."""
