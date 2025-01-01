@@ -1,18 +1,32 @@
 {% extends "admin/base_site.html" %}
 {% load i18n admin_urls static admin_modify %}
 
-{% block extrahead %}{{ block.super }}
+{% block extrahead %}
+  {{ block.super }}
+  <!-- Default Django Admin CSS -->
+  <link rel="stylesheet" href="{% static 'admin/css/forms.css' %}">
+  <link rel="stylesheet" href="{% static 'admin/css/widgets.css' %}">
+  <link rel="stylesheet" href="{% static 'admin/css/changelists.css' %}">
+  <link rel="stylesheet" href="{% static 'admin/css/dashboard.css' %}">
+
+  <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Django Admin JS -->
   <script src="{% url 'admin:jsi18n' %}"></script>
   {{ media }}
+
+  <!-- Custom Styles -->
   <style>
     .nav-tabs .nav-link.active {
       background-color: #007bff;
       color: white;
     }
-    li::marker {
-      content: "";
+    .nav-link {
+      font-size: 13px;
     }
   </style>
 {% endblock %}
@@ -29,50 +43,82 @@
       {% endif %}
     {% endblock %}
 
-    <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}{% if form_url %}action="{{ form_url }}"
-          {% endif %}method="post" id="{{ opts.model_name }}_form" novalidate>{% csrf_token %}{% block form_top %}{% endblock %}
-      <div>
-        {% if is_popup %}<input type="hidden" name="{{ is_popup_var }}" value="1">{% endif %}
-        {% if to_field %}<input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}">{% endif %}
-        {% if save_on_top %}{% block submit_buttons_top %}{% submit_row %}{% endblock %}{% endif %}
+    <!-- Display Form Errors at the Top -->
+    {% if errors %}
+      <p class="errornote">
+        {% blocktranslate count counter=errors|length %}
+          Please correct the error below.
+        {% plural %}
+          Please correct the errors below.
+        {% endblocktranslate %}
+      </p>
+    {% endif %}
 
-        {% if errors %}
-          <p class="errornote">
-            {% blocktranslate count counter=errors|length %}Please correct the error below.{% plural %}Please
-              correct the errors below.{% endblocktranslate %}
-          </p>
-          {{ adminform.form.non_field_errors }}
+    <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}
+          {% if form_url %}action="{{ form_url }}" {% endif %}
+          method="post" id="{{ opts.model_name }}_form" novalidate>
+      {% csrf_token %}
+      {% block form_top %}{% endblock %}
+
+      <div>
+        {% if is_popup %}
+          <input type="hidden" name="{{ is_popup_var }}" value="1">
+        {% endif %}
+        {% if to_field %}
+          <input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}">
+        {% endif %}
+        {% if save_on_top %}
+          {% block submit_buttons_top %}{% submit_row %}{% endblock %}
         {% endif %}
 
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <!-- Tab Navigation -->
+        <div class="nav nav-tabs" id="form-tabs" role="tablist">
           {% for fieldset in adminform %}
-            <li class="nav-item">
-              <button class="nav-link {% if forloop.first %}active{% endif %}" id="tab-{{ forloop.counter0 }}"
-                      data-bs-toggle="tab" data-bs-target="#pane-{{ forloop.counter0 }}" type="button" role="tab"
+            <div class="nav-item">
+              <button class="nav-link {% if forloop.first %}active{% endif %} {% if fieldset_error_count > 0 %}text-danger{% endif %}"
+                      id="tab-{{ forloop.counter0 }}"
+                      data-bs-toggle="tab"
+                      data-bs-target="#pane-{{ forloop.counter0 }}"
+                      type="button"
+                      role="tab"
                       aria-controls="pane-{{ forloop.counter0 }}"
-                      aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">{{ fieldset.name }}</button>
-            </li>
+                      aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                {{ fieldset.name }}
+                {% if fieldset_error_count > 0 %}
+                  <span class="badge bg-danger">{{ fieldset_error_count }}</span>
+                {% endif %}
+              </button>
+            </div>
           {% endfor %}
-
           {% for inline_admin_formset in inline_admin_formsets %}
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="tab-inline-{{ forloop.counter0 }}" data-bs-toggle="tab" data-bs-target="#pane-inline-{{ forloop.counter0 }}" type="button" role="tab" aria-controls="pane-inline-{{ forloop.counter0 }}" aria-selected="false">{{ inline_admin_formset.opts.verbose_name_plural|capfirst }}</button>
-            </li>
+            {% with inline_admin_formset.formset.errors|length as inline_error_count %}
+              <div class="nav-item">
+                <button class="nav-link {% if inline_error_count > 0 %}text-danger{% endif %}"
+                        id="tab-inline-{{ forloop.counter0 }}"
+                        data-bs-toggle="tab"
+                        data-bs-target="#pane-inline-{{ forloop.counter0 }}"
+                        type="button"
+                        role="tab"
+                        aria-controls="pane-inline-{{ forloop.counter0 }}"
+                        aria-selected="false">
+                  {{ inline_admin_formset.opts.verbose_name_plural|capfirst }}
+                  {% if inline_error_count > 0 %}
+                    <span class="badge bg-danger">{{ inline_error_count }}</span>
+                  {% endif %}
+                </button>
+              </div>
+            {% endwith %}
           {% endfor %}
+        </div>
 
-
-
-        </ul>
-
-
-        <div class="tab-content" id="myTabContent">
+        <!-- Tab Content -->
+        <div class="tab-content" id="form-tabs-content">
           {% for fieldset in adminform %}
             <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="pane-{{ forloop.counter0 }}"
                  role="tabpanel" aria-labelledby="tab-{{ forloop.counter0 }}">
-              {% include "admin/includes/fieldset.html" with heading_level=2 prefix="fieldset" id_prefix=0 id_suffix=forloop.counter0 %}
+              {% include "admin/includes/fieldset.html" with form=fieldset.form %}
             </div>
           {% endfor %}
-
           {% for inline_admin_formset in inline_admin_formsets %}
             <div class="tab-pane fade" id="pane-inline-{{ forloop.counter0 }}" role="tabpanel"
                  aria-labelledby="tab-inline-{{ forloop.counter0 }}">
@@ -81,18 +127,14 @@
           {% endfor %}
         </div>
 
-
-
         {% block submit_buttons_bottom %}{% submit_row %}{% endblock %}
-
-        {% block admin_change_form_document_ready %}
-          <script id="django-admin-form-add-constants" src="{% static 'admin/js/change_form.js' %}" {% if adminform and add %}
-                    data-model-name="{{ opts.model_name }}" {% endif %} async>
-            </script>
-        {% endblock %}
-
-        {% prepopulated_fields_js %}
       </div>
+
+      {% block admin_change_form_document_ready %}
+        <script id="django-admin-form-add-constants" src="{% static 'admin/js/change_form.js' %}"
+                {% if adminform and add %}data-model-name="{{ opts.model_name }}"{% endif %} async></script>
+      {% endblock %}
+      {% prepopulated_fields_js %}
     </form>
   </div>
 {% endblock %}
