@@ -657,8 +657,6 @@ function onWindowReady() {
         }
     });
 
-    register_copy_clipboard($('textarea.wmd-input'));
-
     $('form').submit(function (evt) {
         // Prevent multiple submissions of forms, see #565
         $("input[type='submit']").prop('disabled', true);

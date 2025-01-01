@@ -57,7 +57,8 @@ $(function () {
     });
 
     if ('django' in window && 'jQuery' in window.django)
-        django.jQuery(document).on('formset:added', function(event, $row) {
+        django.jQuery(document).on('formset:added', function(event) {
+            var $row = $(event.target);
             var $preview = $row.find('.dmmd-preview');
             if ($preview.length) {
                 var id = $row.attr('id');
