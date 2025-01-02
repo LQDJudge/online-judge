@@ -8,9 +8,8 @@
              *   https://code.djangoproject.com/ticket/15760
              */
             $('.add-row a, .grp-add-handler').click(function () {
-                $(".inline-related:not(.empty-form) fieldset .form-row textarea.wmd-input").each(function (idx, el) {
+                $(".inline-related:not(.empty-form) fieldset .form-row .wmd-wrapper").each(function (idx, el) {
                     DjangoPagedown.createEditor(el);
-                    DjangoPagedown.init();
 
                     // Hack 1! Remove second image bar - this seems to be due to the django
                     // admin javascript copying the form from the first field which
