@@ -13,6 +13,7 @@ from django.views.generic.detail import SingleObjectMixin
 from django.views.generic import View, ListView
 from django_ratelimit.decorators import ratelimit
 from django.conf import settings
+from django.http import JsonResponse
 
 from judge.models.pagevote import PageVote, PageVoteVoter, dirty_pagevote
 
@@ -24,20 +25,29 @@ __all__ = [
 ]
 
 
-@ratelimit(key="user", rate=settings.RL_VOTE)
 @login_required
-def vote_page(request, delta):
-    if abs(delta) != 1:
-        return HttpResponseBadRequest(
-            _("Messing around, are we?"), content_type="text/plain"
-        )
+def vote_page(request):
+    try:
+        delta = int(request.POST.get("delta"))
+        if delta not in [1, 0, -1]:
+            return HttpResponseBadRequest(
+                _("Invalid value for delta. It must be 1, 0, or -1."),
+                content_type="text/plain",
+            )
+    except ValueError:
+        return HttpResponseForbidden()
 
     if request.method != "POST":
         return HttpResponseForbidden()
 
-    if "id" not in request.POST:
-        return HttpResponseBadRequest()
+    pagevote_id = request.POST.get("id")
 
+    if not pagevote_id:
+        return HttpResponseBadRequest(
+            _("Missing 'id' parameter."), content_type="text/plain"
+        )
+
+    # Ensure the user has solved at least one problem, unless they are staff
     if (
         not request.user.is_staff
         and not request.profile.submission_set.filter(
@@ -50,45 +60,49 @@ def vote_page(request, delta):
         )
 
     try:
-        pagevote_id = int(request.POST["id"])
+        pagevote_id = int(pagevote_id)
     except ValueError:
-        return HttpResponseBadRequest()
+        return HttpResponseBadRequest(
+            _("Invalid ID format."), content_type="text/plain"
+        )
 
     try:
         pagevote = PageVote.objects.get(id=pagevote_id)
     except PageVote.DoesNotExist:
-        raise Http404()
+        raise Http404(_("The specified PageVote does not exist."))
 
-    vote = PageVoteVoter()
-    vote.pagevote_id = pagevote_id
-    vote.voter = request.profile
-    vote.score = delta
+    vote, created = PageVoteVoter.objects.get_or_create(
+        pagevote=pagevote, voter=request.profile, defaults={"score": 0}
+    )
 
-    try:
-        vote.save()
-    except IntegrityError:
-        try:
-            vote = PageVoteVoter.objects.get(
-                pagevote_id=pagevote_id, voter=request.profile
+    if delta == 0:
+        # Remove the vote
+        if not created:
+            PageVote.objects.filter(id=pagevote_id).update(
+                score=F("score") - vote.score
             )
-        except PageVoteVoter.DoesNotExist:
-            raise Http404()
-        vote.delete()
-        PageVote.objects.filter(id=pagevote_id).update(score=F("score") - vote.score)
+            vote.delete()
     else:
-        PageVote.objects.filter(id=pagevote_id).update(score=F("score") + delta)
+        if created:
+            # New vote
+            vote.score = delta
+            vote.save()
+            PageVote.objects.filter(id=pagevote_id).update(score=F("score") + delta)
+        else:
+            # Update existing vote
+            PageVote.objects.filter(id=pagevote_id).update(
+                score=F("score") + delta - vote.score
+            )
+            vote.score = delta
+            vote.save()
+
+    # Get the updated score
+    current_score = PageVote.objects.get(id=pagevote_id).score
 
     dirty_pagevote(pagevote, request.profile)
 
-    return HttpResponse("success", content_type="text/plain")
-
-
-def upvote_page(request):
-    return vote_page(request, 1)
-
-
-def downvote_page(request):
-    return vote_page(request, -1)
+    # Return the updated score as JSON
+    return JsonResponse({"current_score": current_score})
 
 
 class PageVoteDetailView(TemplateResponseMixin, SingleObjectMixin, View):

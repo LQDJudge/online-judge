@@ -11,11 +11,6 @@ __all__ = ["PageVote", "PageVoteVoter"]
 
 
 class PageVote(models.Model):
-    page = models.CharField(
-        max_length=30,
-        verbose_name=_("associated page"),
-        db_index=True,
-    )  # deprecated
     score = models.IntegerField(verbose_name=_("votes"), default=0)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
@@ -29,10 +24,9 @@ class PageVote(models.Model):
         ]
         unique_together = ("content_type", "object_id")
 
-    @cache_wrapper(prefix="PVvs")
-    def vote_score(self, user):
-        page_vote = PageVoteVoter.objects.filter(pagevote=self, voter=user).first()
-        return page_vote.score if page_vote else 0
+    def vote_score(self, profile):
+        vote_scores = get_vote_scores_of_profile(profile)
+        return vote_scores.get(self.id, 0)
 
     def __str__(self):
         return f"pagevote for {self.linked_object}"
@@ -65,6 +59,13 @@ class PageVotable:
         return _get_or_create_pagevote(content_type, object_id)
 
 
+@cache_wrapper(prefix="gvsop")
+def get_vote_scores_of_profile(profile):
+    page_votes = PageVoteVoter.objects.filter(voter=profile)
+    pagevote_map = {pv.pagevote_id: pv.score for pv in page_votes}
+    return pagevote_map
+
+
 def dirty_pagevote(pagevote, profile):
-    pagevote.vote_score.dirty(pagevote, profile)
+    get_vote_scores_of_profile.dirty(profile)
     _get_or_create_pagevote.dirty(pagevote.content_type, pagevote.object_id)

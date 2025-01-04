@@ -1,7 +1,6 @@
 from django.db import models
 from django.db.models import CASCADE
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
@@ -12,19 +11,32 @@ __all__ = ["BookMark"]
 
 
 class BookMark(models.Model):
-    page = models.CharField(
-        max_length=30,
-        verbose_name=_("associated page"),
-        db_index=True,
-    )  # deprecated
     score = models.IntegerField(verbose_name=_("votes"), default=0)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     linked_object = GenericForeignKey("content_type", "object_id")
+    users = models.ManyToManyField(
+        Profile, related_name="bookmarked_objects", blank=True
+    )
 
-    @cache_wrapper(prefix="BMgb")
-    def is_bookmarked_by(self, user):
-        return MakeBookMark.objects.filter(bookmark=self, user=user).exists()
+    def is_bookmarked_by(self, profile):
+        return self.id in get_all_bookmarked_object_ids(profile)
+
+    def add_bookmark(self, profile):
+        """Adds a bookmark for a user and increments the score."""
+        if not self.is_bookmarked_by(profile):
+            self.users.add(profile)
+            self.score = models.F("score") + 1
+            self.save(update_fields=["score"])
+            get_all_bookmarked_object_ids.dirty(profile)
+
+    def remove_bookmark(self, profile):
+        """Removes a bookmark for a user and decrements the score."""
+        if self.is_bookmarked_by(profile):
+            self.users.remove(profile)
+            self.score = models.F("score") - 1
+            self.save(update_fields=["score"])
+            get_all_bookmarked_object_ids.dirty(profile)
 
     class Meta:
         verbose_name = _("bookmark")
@@ -38,21 +50,6 @@ class BookMark(models.Model):
         return f"bookmark for {self.linked_object}"
 
 
-class MakeBookMark(models.Model):
-    bookmark = models.ForeignKey(BookMark, related_name="bookmark", on_delete=CASCADE)
-    user = models.ForeignKey(
-        Profile, related_name="user_bookmark", on_delete=CASCADE, db_index=True
-    )
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["user", "bookmark"]),
-        ]
-        unique_together = ["user", "bookmark"]
-        verbose_name = _("make bookmark")
-        verbose_name_plural = _("make bookmarks")
-
-
 @cache_wrapper(prefix="gocb", expected_type=BookMark)
 def _get_or_create_bookmark(content_type, object_id):
     bookmark, created = BookMark.objects.get_or_create(
@@ -62,13 +59,13 @@ def _get_or_create_bookmark(content_type, object_id):
     return bookmark
 
 
+@cache_wrapper(prefix="gaboi")
+def get_all_bookmarked_object_ids(profile):
+    return set(profile.bookmarked_objects.values_list("id", flat=True))
+
+
 class Bookmarkable:
     def get_or_create_bookmark(self):
         content_type = ContentType.objects.get_for_model(self)
         object_id = self.pk
         return _get_or_create_bookmark(content_type, object_id)
-
-
-def dirty_bookmark(bookmark, profile):
-    bookmark.is_bookmarked_by.dirty(bookmark, profile)
-    _get_or_create_bookmark.dirty(bookmark.content_type, bookmark.object_id)

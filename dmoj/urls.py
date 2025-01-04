@@ -508,8 +508,7 @@ urlpatterns = [
             ]
         ),
     ),
-    re_path(r"^pagevotes/upvote/$", pagevote.upvote_page, name="pagevote_upvote"),
-    re_path(r"^pagevotes/downvote/$", pagevote.downvote_page, name="pagevote_downvote"),
+    re_path(r"^pagevotes/vote/$", pagevote.vote_page, name="pagevote_vote"),
     re_path(r"^bookmarks/dobookmark/$", bookmark.dobookmark_page, name="dobookmark"),
     re_path(
         r"^bookmarks/undobookmark/$", bookmark.undobookmark_page, name="undobookmark"

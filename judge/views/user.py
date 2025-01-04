@@ -13,7 +13,6 @@ from django.db import transaction
 from django.db.models import Count, Max, Min
 from django.db.models.fields import DateField
 from django.db.models.functions import Cast, ExtractYear
-from judge.models.bookmark import MakeBookMark
 from django.forms import Form
 from django.http import (
     Http404,
@@ -341,9 +340,9 @@ class UserBookMarkPage(DiggPaginatorMixin, ListView, UserPage):
         else:
             model = Problem
 
-        q = MakeBookMark.objects.filter(user=self.user).select_related("bookmark")
-        q = q.filter(bookmark__content_type=ContentType.objects.get_for_model(model))
-        object_ids = q.values_list("bookmark__object_id", flat=True)
+        object_ids = self.user.bookmarked_objects.filter(
+            content_type=ContentType.objects.get_for_model(model)
+        ).values_list("object_id", flat=True)
 
         res = model.objects.filter(id__in=object_ids)
         if self.current_tab == "contests":

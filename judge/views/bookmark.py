@@ -1,6 +1,4 @@
 from django.contrib.auth.decorators import login_required
-from django.db import IntegrityError
-from django.db.models import F
 from django.http import (
     Http404,
     HttpResponse,
@@ -13,7 +11,7 @@ from django.views.generic.detail import SingleObjectMixin
 
 from django.views.generic import View, ListView
 
-from judge.models.bookmark import BookMark, MakeBookMark, dirty_bookmark
+from judge.models.bookmark import BookMark
 
 __all__ = [
     "dobookmark_page",
@@ -23,7 +21,7 @@ __all__ = [
 
 
 @login_required
-def bookmark_page(request, delta):
+def bookmark_page(request, add=True):
     if request.method != "POST":
         return HttpResponseForbidden()
 
@@ -38,34 +36,20 @@ def bookmark_page(request, delta):
     except BookMark.DoesNotExist:
         raise Http404()
 
-    if delta == 0:
-        bookmarklist = MakeBookMark.objects.filter(
-            bookmark=bookmark, user=request.profile
-        )
-        if not bookmarklist.exists():
-            newbookmark = MakeBookMark(
-                bookmark=bookmark,
-                user=request.profile,
-            )
-            newbookmark.save()
-    else:
-        bookmarklist = MakeBookMark.objects.filter(
-            bookmark=bookmark, user=request.profile
-        )
-        if bookmarklist.exists():
-            bookmarklist.delete()
-
-    dirty_bookmark(bookmark, request.profile)
+    if add:  # Add bookmark
+        bookmark.add_bookmark(request.profile)
+    else:  # Remove bookmark
+        bookmark.remove_bookmark(request.profile)
 
     return HttpResponse("success", content_type="text/plain")
 
 
 def dobookmark_page(request):
-    return bookmark_page(request, 0)
+    return bookmark_page(request, True)
 
 
 def undobookmark_page(request):
-    return bookmark_page(request, 1)
+    return bookmark_page(request, False)
 
 
 class BookMarkDetailView(TemplateResponseMixin, SingleObjectMixin, View):
