@@ -375,7 +375,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
                 )
 
     def save(self, *args, **kwargs):
-        earliest_start_time = datetime(2020, 1, 1).replace(tzinfo=timezone.utc)
+        earliest_start_time = datetime(1999, 5, 4).replace(tzinfo=timezone.utc)
         if self.start_time < earliest_start_time:
             self.start_time = earliest_start_time
 

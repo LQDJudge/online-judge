@@ -896,3 +896,25 @@ button:hover, button:focus {
         border-color: gray;
     }
 }
+
+.setting-button {
+    height: 2.3em;
+    width: 2.3em;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    padding-top: 2px;
+}
+
+.user-setting-button {
+    height: 2.3em;
+    width: 2.5em;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    padding-top: 2px;
+}

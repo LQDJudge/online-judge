@@ -6,6 +6,7 @@
       $('#mine-tab').attr('href', changeTabParameter('mine'));
       $('#public-tab').attr('href', changeTabParameter('public'));
       $('#private-tab').attr('href', changeTabParameter('private'));
+      $('#blocked-tab').attr('href', changeTabParameter('blocked'));
       registerNavigation();
 
       var $form = $('form#filter-form');
@@ -39,6 +40,9 @@
     {% endif %}
     {{ make_tab_item('public', 'fa fa-globe', request.path + '?tab=public', _('Public')) }}
     {{ make_tab_item('private', 'fa fa-lock', request.path + '?tab=private', _('Private')) }}
+    {% if request.user.is_authenticated %}
+      {{ make_tab_item('blocked', 'fa fa-ban', request.path + '?tab=blocked', _('Blocked')) }}
+    {% endif %}
   </div>
 {% endblock %}
 
@@ -69,8 +73,13 @@
               {% csrf_token %}
               <input type="submit" style="width: 100%" class="background-royalblue button small" value="{{ _('Join') }}">
             </form>
-          {% else %}
+          {% elif tab == 'private' %}
             <a href="{{ url('request_organization', org.id, org.slug) }}" style="font-size: 15px;" class="background-royalblue button small">{{ _('Request membership') }}</a>
+          {% else %}
+            <form method="post" action="{{ url('unblock_organization', org.id, org.slug) }}">
+              {% csrf_token %}
+              <input type="submit" style="width: 100%" class="background-royalblue button small" value="{{ _('Unblock') }}">
+            </form>
           {% endif %}
         </div>
       {% endfor %}
@@ -103,6 +112,14 @@
       {{ org_list(organizations, 'private') }}
     {% else %}
       <i> {{ _('There is no private organization.') }} </i>
+    {% endif %}
+  {% endif %}
+
+  {% if current_tab == 'blocked' %}
+    {% if organizations %}
+      {{ org_list(organizations, 'blocked') }}
+    {% else %}
+      <i> {{ _('There is no blocked organization.') }} </i>
     {% endif %}
   {% endif %}
 {% endblock %}

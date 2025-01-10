@@ -10,25 +10,44 @@
 {% block middle_title %}
   <div class="page-title">
     <div class="tabs" style="border: none;">
-      <h2>
+      <div class="header-container">
         {% if organization_image %}
-          <img src="{{organization_image.url}}" style="height: 3rem; vertical-align: middle; border-radius: 5px;">
+          <img
+            src="{{ organization_image.url }}"
+            alt="Organization Image"
+            class="organization-image"
+          >
         {% endif %}
-        {{title}}
-      </h2>
+        <h2 class="organization-title">{{ title }}</h2>
+      </div>
       <span class="spacer"></span>
 
       {% if request.user.is_authenticated %}
         {% if is_member %}
-        {% elif organization.is_open or can_edit %}
-          <form method="post" action="{{ url('join_organization', organization.id, organization.slug) }}">
-            {% csrf_token %}
-            <input type="submit" class="unselectable button" value="{{ _('Join') }}">
-          </form>
         {% else %}
-          <a href="{{ url('request_organization', organization.id, organization.slug) }}"
-             class="unselectable button">
-            {{ _('Request membership') }}</a>
+          {% if not is_blocked %}
+            {% if organization.is_open or can_edit %}
+              <div style="margin-right: 0.5em">
+                <form method="post" action="{{ url('join_organization', organization.id, organization.slug) }}">
+                  {% csrf_token %}
+                  <input type="submit" class="unselectable button" value="{{ _('Join') }}">
+                </form>
+              </div>
+            {% else %}
+              <div style="margin-right: 0.5em">
+                <a href="{{ url('request_organization', organization.id, organization.slug) }}"
+                   class="unselectable button">
+                  {{ _('Request membership') }}</a>
+              </div>
+            {% endif %}
+          {% else %}
+            <div>
+              <form method="post" action="{{ url('unblock_organization', organization.id, organization.slug) }}">
+                {% csrf_token %}
+                <input type="button" class="unselectable button unblock-organization" value="{{ _('Unblock group') }}">
+              </form>
+            </div>
+          {% endif %}
         {% endif %}
       {% endif %}
     </div>
@@ -43,7 +62,7 @@
     <div class="blog-sidebox sidebox">
       <h3><i class="fa fa-info-circle"></i>{{ _('About') }}</h3>
       <div class="sidebox-content">
-        <div style="margin: 0.3em;">
+        <div style="margin: 0.3em;" class="org-about">
           {% cache 3600 'organization_html' organization.id %}
             {{ organization.about|markdown|reference|str|safe }}
           {% endcache %}

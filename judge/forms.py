@@ -40,6 +40,7 @@ from judge.models import (
     ContestProblem,
     TestFormatterModel,
     ProfileInfo,
+    Block,
 )
 
 from judge.widgets import (
@@ -369,25 +370,46 @@ class AddOrganizationMemberForm(ModelForm):
         label=_("New users"),
     )
 
+    def __init__(self, *args, **kwargs):
+        self.organization = kwargs.pop("organization", None)
+        if not self.organization:
+            raise ValueError("An organization instance must be provided.")
+        super().__init__(*args, **kwargs)
+
     def clean_new_users(self):
         new_users = self.cleaned_data.get("new_users") or ""
         usernames = new_users.split()
-        invalid_usernames = []
-        valid_usernames = []
+        non_existent_usernames = []
+        blocked_usernames = []
+        valid_profiles = []
 
         for username in usernames:
-            try:
-                valid_usernames.append(Profile.objects.get(user__username=username))
-            except ObjectDoesNotExist:
-                invalid_usernames.append(username)
+            profile = Profile.objects.filter(user__username=username).first()
 
-        if invalid_usernames:
-            raise ValidationError(
-                _("These usernames don't exist: {usernames}").format(
-                    usernames=str(invalid_usernames)
+            if not profile:
+                non_existent_usernames.append(username)
+            elif Block.is_blocked(blocker=profile, blocked=self.organization):
+                blocked_usernames.append(username)
+            else:
+                valid_profiles.append(profile)
+
+        if non_existent_usernames or blocked_usernames:
+            error_messages = []
+            if non_existent_usernames:
+                error_messages.append(
+                    _("These usernames don't exist: {usernames}").format(
+                        usernames=", ".join(non_existent_usernames)
+                    )
                 )
-            )
-        return valid_usernames
+            if blocked_usernames:
+                error_messages.append(
+                    _("These users have blocked this organization: {usernames}").format(
+                        usernames=", ".join(blocked_usernames)
+                    )
+                )
+            raise ValidationError(error_messages)
+
+        return valid_profiles
 
     class Meta:
         model = Organization
