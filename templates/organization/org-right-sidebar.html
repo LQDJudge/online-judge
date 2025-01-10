@@ -1,37 +1,37 @@
 <div class="right-sidebar">
-  {% if can_edit or is_member %}
-    <div id="control-panel" class="blog-sidebox sidebox no-dot-blog-sidebox">
-      <h3><i class="fa fa-cog"></i>{{ _('Controls') }}</h3>
-      <ul id="control-list" class="sidebox-content" style="margin: 0;">
-        {% if can_edit %}
-          <div class="link-row">
-            <a href="{{ url('edit_organization', organization.id, organization.slug) }}">
-              <i class="fa fa-edit"></i>{{ _('Edit group') }}</a>
-          </div>
-        {% endif %}
-        {% if can_edit and not organization.is_open %}
-          <div class="link-row">
-            <a href="{{ url('organization_requests_pending', organization.id, organization.slug) }}">
-              <i class="fa fa-inbox"></i>{{ _('View requests') }}</a>
-            {% if pending_count > 0 %}
-              <span id="pending-count-box">
-                {{pending_count}}
-              </span>
-            {% endif %}
-          </div>
-        {% endif %}
-        {% if can_edit %}
-          <div class="link-row">
-            <a href="{{ url('add_organization_member', organization.id, organization.slug) }}">
-              <i class="fa fa-user-plus"></i>{{ _('Add members') }}</a>
-          </div>
-        {% endif %}
-        {% if is_member %}
-          <div class="link-row">
-            <a href="{{ url('add_organization_blog', organization.id, organization.slug) }}">
-              <i class="fa fa-pencil"></i>{{ _('Add blog') }}</a>
-          </div>
-        {% endif %}
+  <div id="control-panel" class="blog-sidebox sidebox no-dot-blog-sidebox">
+    <h3><i class="fa fa-cog"></i>{{ _('Controls') }}</h3>
+    <ul id="control-list" class="sidebox-content" style="margin: 0;">
+      {% if can_edit %}
+        <div class="link-row">
+          <a href="{{ url('edit_organization', organization.id, organization.slug) }}">
+            <i class="fa fa-edit"></i>{{ _('Edit group') }}</a>
+        </div>
+      {% endif %}
+      {% if can_edit and not organization.is_open %}
+        <div class="link-row">
+          <a href="{{ url('organization_requests_pending', organization.id, organization.slug) }}">
+            <i class="fa fa-inbox"></i>{{ _('View requests') }}</a>
+          {% if pending_count > 0 %}
+            <span id="pending-count-box">
+              {{pending_count}}
+            </span>
+          {% endif %}
+        </div>
+      {% endif %}
+      {% if can_edit %}
+        <div class="link-row">
+          <a href="{{ url('add_organization_member', organization.id, organization.slug) }}">
+            <i class="fa fa-user-plus"></i>{{ _('Add members') }}</a>
+        </div>
+      {% endif %}
+      {% if is_member %}
+        <div class="link-row">
+          <a href="{{ url('add_organization_blog', organization.id, organization.slug) }}">
+            <i class="fa fa-pencil"></i>{{ _('Add blog') }}</a>
+        </div>
+      {% endif %}
+      {% if is_admin %}
         <div class="link-row">
           <a href="{{ url('organization_pending_blogs', organization.id, organization.slug) }}">
             <i class="fa fa-clipboard-list"></i>{{ _('Pending blogs') }}</a>
@@ -41,31 +41,41 @@
             </span>
           {% endif %}
         </div>
-        {% if can_edit %}
-          <div class="link-row">
-            <a href="{{ url('organization_contest_add', organization.id, organization.slug) }}">
-              <i class="fa fa-calendar-plus"></i>{{ _('Add contest') }}</a>
-          </div>
-        {% endif %}
-        {% if is_member %}
-          <div class="link-row">
-            <a href="{{ organization_subdomain }}" target="_blank">
-              <i class="fa fa-globe"></i>{{_('Subdomain')}}
+      {% endif %}
+      {% if can_edit %}
+        <div class="link-row">
+          <a href="{{ url('organization_contest_add', organization.id, organization.slug) }}">
+            <i class="fa fa-calendar-plus"></i>{{ _('Add contest') }}</a>
+        </div>
+      {% endif %}
+      {% if is_member %}
+        <div class="link-row">
+          <a href="{{ organization_subdomain }}" target="_blank">
+            <i class="fa fa-globe"></i>{{_('Subdomain')}}
+          </a>
+        </div>
+      {% endif %}
+      {% if is_member and not is_admin %}
+        <div class="link-row" style="color: red;">
+          <form method="post" action="{{ url('leave_organization', organization.id, organization.slug) }}">
+            {% csrf_token %}
+            <a href="#" class="leave-organization" onclick="confirmLeaveOrganization()">
+              <i class="fa fa-sign-out-alt"></i>{{ _('Leave group') }}</a>
+          </form>
+        </div>
+      {% endif %}
+      {% if not is_admin %}
+        <div class="link-row" style="color: red;">
+          <form method="post" action="{{ url('block_organization', organization.id, organization.slug) }}">
+            {% csrf_token %}
+            <a href="#" class="block-organization">
+              <i class="fa fa-ban"></i>{{ _('Block group') }}
             </a>
-          </div>
-        {% endif %}
-        {% if is_member and not is_admin %}
-          <div class="link-row" style="color: red;">
-            <form method="post" action="{{ url('leave_organization', organization.id, organization.slug) }}">
-              {% csrf_token %}
-              <a href="#" class="leave-organization" onclick="confirmLeaveOrganization()">
-                <i class="fa fa-sign-out-alt"></i>{{ _('Leave group') }}</a>
-            </form>
-          </div>
-        {% endif %}
-      </ul>
-    </div>
-  {% endif %}
+          </form>
+        </div>
+      {% endif %}
+    </ul>
+  </div>
   {% if (is_member or can_edit) %}
     {% include 'contests-countdown.html' %}
   {% endif %}
@@ -73,7 +83,7 @@
     <div class="blog-sidebox sidebox">
       <h3><i class="fa fa-info-circle"></i>{{ _('About') }}</h3>
       <div class="sidebox-content">
-        <div style="margin: 0.3em;">
+        <div style="margin: 0.3em;" class="org-about">
           {% cache 3600 'organization_html' organization.id %}
             {{ organization.about|markdown|reference|str|safe }}
           {% endcache %}

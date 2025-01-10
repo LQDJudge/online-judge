@@ -12,9 +12,39 @@
       }
     });
   }
+  function confirmBlockOrganization(button) {
+    const confirmationMessage =
+      '{{ _("Are you sure you want to block this organization?") }}\n' +
+    `{% if is_member %}` +
+    '{{ _("You will leave this organization and have to remove block to rejoin.") }}' +
+    `{% else %}` +
+    '{{ _("You will have to remove block to join this organization.") }}' +
+    `{% endif %}`;
+
+    if (confirm(confirmationMessage)) {
+      button.closest('form').submit();
+    }
+  }
+  function confirmUnblockOrganization(button) {
+    const confirmationMessage =
+      '{{ _("Are you sure you want to unblock this organization?") }}\n';
+
+    if (confirm(confirmationMessage)) {
+      button.closest('form').submit();
+    }
+  }
   $(function () {
     $('.time-remaining').each(function () {
       count_down($(this));
+    });
+  });
+
+  $(document).ready(function () {
+    $('.block-organization').on('click', function () {
+      confirmBlockOrganization(this);
+    });
+    $('.unblock-organization').on('click', function () {
+      confirmUnblockOrganization(this);
     });
   });
 </script>

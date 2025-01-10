@@ -783,6 +783,16 @@ urlpatterns = [
                     name="leave_organization",
                 ),
                 re_path(
+                    r"^/block$",
+                    organization.BlockOrganization.as_view(),
+                    name="block_organization",
+                ),
+                re_path(
+                    r"^/unblock$",
+                    organization.UnblockOrganization.as_view(),
+                    name="unblock_organization",
+                ),
+                re_path(
                     r"^/edit$",
                     organization.EditOrganization.as_view(),
                     name="edit_organization",

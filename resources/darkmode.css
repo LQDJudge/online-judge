@@ -1650,21 +1650,6 @@ noscript #noscript {
         border-right: none;
     }
 }
-@media (max-width: 799px) {
-    #navicon {
-        color: rgb(129, 175, 255);
-    }
-    #navicon.hover {
-        color: rgb(80, 184, 254);
-        text-shadow: rgb(24, 26, 27) 0px 0px 5px;
-    }
-    #nav-list {
-        background-color: rgb(24, 26, 27);
-        background-image: initial;
-        border-color: initial;
-        box-shadow: none;
-    }
-}
 #notification {
     color: rgb(164, 192, 217);
 }
@@ -1771,16 +1756,6 @@ noscript #noscript {
 .anon a {
     color: rgb(232, 230, 227);
 }
-@media (min-width: 800px) {
-    #page-container {
-        background-color: rgb(32, 34, 36);
-        background-image: initial;
-    }
-    #content.wrapper {
-        background-color: rgb(24, 26, 27);
-        background-image: initial;
-    }
-}
 .colored-text {
     color: rgb(232, 230, 227);
 }
@@ -1805,6 +1780,64 @@ input::placeholder {
 .nav-fa-icon-active i {
     color: rgb(249, 146, 97);
 }
+.left-sidebar-item {
+    color: rgb(232, 230, 227);
+}
+.left-sidebar-item:hover {
+    background-color: rgb(40, 43, 45);
+    color: rgb(232, 230, 227);
+}
+.left-sidebar-item.active:hover {
+    background-color: rgb(125, 44, 5);
+    color: rgb(232, 230, 227);
+}
+.sidebar-icon {
+    color: rgb(232, 230, 227);
+}
+.left-sidebar-header {
+    border-bottom-color: rgb(140, 130, 115);
+    color: rgb(232, 230, 227);
+}
+@media (max-width: 799px) {
+    #navicon {
+        color: rgb(129, 175, 255);
+    }
+    #navicon.hover {
+        color: rgb(80, 184, 254);
+        text-shadow: rgb(24, 26, 27) 0px 0px 5px;
+    }
+    #nav-list {
+        background-color: rgb(24, 26, 27);
+        background-image: initial;
+        border-color: initial;
+        box-shadow: none;
+    }
+    .left-sidebar {
+        background-color: inherit;
+        background-image: inherit;
+    }
+}
+@media (min-width: 800px) {
+    .left-sidebar-item {
+        background-color: rgb(24, 26, 27);
+        border-color: rgb(60, 65, 68);
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 5px;
+    }
+    .left-sidebar {
+        scrollbar-color: auto;
+    }
+    .left-sidebar::-webkit-scrollbar {
+        background-color: transparent;
+    }
+    #page-container {
+        background-color: rgb(32, 34, 36);
+        background-image: initial;
+    }
+    #content.wrapper {
+        background-color: rgb(24, 26, 27);
+        background-image: initial;
+    }
+}
 .table {
     background-color: rgba(0, 0, 0, 0.01);
     background-image: initial;
@@ -1822,12 +1855,6 @@ input::placeholder {
     border-color: initial;
     border-style: none;
     border-width: initial;
-}
-.table td:first-child {
-    border-color: rgb(62, 68, 70);
-}
-.table tr:last-child td {
-    border-color: rgb(62, 68, 70);
 }
 .table th {
     background-color: rgb(174, 132, 26);
@@ -1945,24 +1972,6 @@ input::placeholder {
 .problem-feed-types {
     color: rgb(152, 143, 129);
 }
-.left-sidebar-item {
-    color: rgb(232, 230, 227);
-}
-.left-sidebar-item:hover {
-    background-color: rgb(40, 43, 45);
-    color: rgb(232, 230, 227);
-}
-.left-sidebar-item.active:hover {
-    background-color: rgb(125, 44, 5);
-    color: rgb(232, 230, 227);
-}
-.sidebar-icon {
-    color: rgb(232, 230, 227);
-}
-.left-sidebar-header {
-    border-bottom-color: rgb(140, 130, 115);
-    color: rgb(232, 230, 227);
-}
 .show-more {
     background-color: initial;
     background-image: linear-gradient(rgba(0, 0, 0, 0), rgb(24, 26, 27));
@@ -1972,21 +1981,7 @@ input::placeholder {
     background-color: rgb(24, 26, 27);
     background-image: initial;
 }
-@media (max-width: 799px) {
-    .left-sidebar {
-        background-color: inherit;
-        background-image: inherit;
-    }
-}
 @media (min-width: 800px) {
-    .left-sidebar-item {
-        background-color: rgb(24, 26, 27);
-        border-color: rgb(60, 65, 68);
-        box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 5px;
-    }
-    .left-sidebar::-webkit-scrollbar {
-        background-color: transparent;
-    }
     .blog-box {
         border-left-color: rgb(60, 65, 68);
         border-right-color: rgb(60, 65, 68);
@@ -3195,6 +3190,12 @@ a.voted {
 .org-help-text {
     color: rgb(152, 143, 129);
 }
+.organization-image {
+    border-color: rgb(58, 62, 65);
+}
+.organization-title {
+    color: rgb(200, 195, 188);
+}
 .ticket-container #content > h2:first-child small {
     color: rgb(168, 160, 149);
 }
@@ -3717,6 +3718,12 @@ div.dmmd-preview-stale {
     border-color: initial;
     border-style: initial;
     border-width: 0px;
+}
+.recently-attempted ul {
+    list-style-image: initial;
+}
+.organization-row:last-child {
+    border-bottom: none;
 }
 .katex * {
     border-color: currentcolor;

@@ -1,6 +1,7 @@
 from django import forms
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
@@ -57,8 +58,10 @@ from judge.models import (
     Contest,
     ContestProblem,
     OrganizationProfile,
+    Block,
 )
 from judge.models.notification import make_notification
+from judge.models.block import get_all_blocked_pairs
 from judge import event_poster as event
 from judge.utils.ranker import ranker
 from judge.utils.views import (
@@ -114,6 +117,14 @@ class OrganizationBase(object):
             return org.is_admin(self.request.profile)
         return False
 
+    def is_blocked(self, org=None):
+        if org is None:
+            org = self.object
+        if self.request.profile:
+            block = Block()
+            return block.is_blocked(self.request.profile, org)
+        return False
+
     def can_access(self, org):
         if self.request.user.is_superuser:
             return True
@@ -127,6 +138,7 @@ class OrganizationMixin(OrganizationBase):
         context = super().get_context_data(**kwargs)
         context["is_member"] = self.is_member(self.organization)
         context["is_admin"] = self.is_admin(self.organization)
+        context["is_blocked"] = self.is_blocked(self.organization)
         context["can_edit"] = self.can_edit_organization(self.organization)
         context["organization"] = self.organization
         context["organization_image"] = self.organization.organization_image
@@ -153,7 +165,7 @@ class OrganizationMixin(OrganizationBase):
                 return generic_message(
                     request,
                     _("No such organization"),
-                    _('Could not find an organization with the key "%s".') % key,
+                    _("Could not find an organization with the key %s.") % key,
                     status=403,
                 )
             else:
@@ -279,25 +291,40 @@ class OrganizationList(
     def get_queryset(self):
         organization_list = self._get_queryset()
 
+        profile = self.request.profile
+        organization_type = ContentType.objects.get_for_model(Organization)
+
+        blocked_organization_ids = set()
+        if profile:
+            blocked_pairs = get_all_blocked_pairs(profile)
+            blocked_organization_ids = {
+                blocked_id
+                for blocked_type, blocked_id in blocked_pairs
+                if blocked_type == organization_type.id
+            }
+
         my_organizations = []
-        if self.request.profile:
+        if profile:
             my_organizations = organization_list.filter(
-                id__in=self.request.profile.organizations.values("id")
-            )
+                id__in=profile.organizations.values("id")
+            ).exclude(id__in=blocked_organization_ids)
 
         if self.current_tab == "public":
-            queryset = organization_list.exclude(id__in=my_organizations).filter(
-                is_open=True
-            )
+            queryset = organization_list.exclude(
+                Q(id__in=my_organizations) | Q(id__in=blocked_organization_ids)
+            ).filter(is_open=True)
         elif self.current_tab == "private":
-            queryset = organization_list.exclude(id__in=my_organizations).filter(
-                is_open=False
-            )
+            queryset = organization_list.exclude(
+                Q(id__in=my_organizations) | Q(id__in=blocked_organization_ids)
+            ).filter(is_open=False)
+        elif self.current_tab == "blocked":
+            queryset = organization_list.filter(id__in=blocked_organization_ids)
         else:
             queryset = my_organizations
 
         if queryset:
             queryset = queryset.order_by(self.order)
+
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -561,6 +588,14 @@ class JoinOrganization(OrganizationMembershipChange):
                 _("You are already in the group."),
             )
 
+        if Block.is_blocked(blocker=profile, blocked=org):
+            return generic_message(
+                request,
+                _("Joining group"),
+                _("You cannot join since you have already blocked %s.")
+                % org.short_name,
+            )
+
         if not org.is_open:
             return generic_message(
                 request, _("Joining group"), _("This group is not open.")
@@ -587,10 +622,58 @@ class LeaveOrganization(OrganizationMembershipChange):
             return generic_message(
                 request,
                 _("Leaving group"),
-                _('You are not in "%s".') % org.short_name,
+                _("You are not in %s.") % org.short_name,
             )
         profile.organizations.remove(org)
         cache.delete(make_template_fragment_key("org_member_count", (org.id,)))
+
+
+class BlockOrganization(OrganizationMembershipChange):
+    def handle(self, request, org, profile):
+        if Block.is_blocked(blocker=profile, blocked=org):
+            return generic_message(
+                request,
+                _("Blocking group"),
+                _("You have already blocked %s.") % org.short_name,
+            )
+
+        try:
+            Block.add_block(blocker=profile, blocked=org)
+        except Exception as e:
+            return generic_message(
+                request,
+                _("Blocking group"),
+                _("An error occurred while blocking %s. Reason: %s")
+                % (org.short_name, str(e)),
+            )
+
+        if profile.organizations.filter(id=org.id).exists():
+            profile.organizations.remove(org)
+            cache.delete(make_template_fragment_key("org_member_count", (org.id,)))
+
+        return HttpResponseRedirect(reverse("organization_list") + "?tab=blocked")
+
+
+class UnblockOrganization(OrganizationMembershipChange):
+    def handle(self, request, org, profile):
+        if not Block.is_blocked(blocker=profile, blocked=org):
+            return generic_message(
+                request,
+                _("Blocking group"),
+                _("You have not blocked %s.") % org.short_name,
+            )
+
+        try:
+            Block.remove_block(blocker=profile, blocked=org)
+        except Exception as e:
+            return generic_message(
+                request,
+                _("Blocking group"),
+                _("An error occurred while unblocking %s. Reason: %s")
+                % (org.short_name, str(e)),
+            )
+
+        return HttpResponseRedirect(reverse("organization_list") + "?tab=blocked")
 
 
 class OrganizationRequestForm(Form):
@@ -606,6 +689,18 @@ class RequestJoinOrganization(LoginRequiredMixin, SingleObjectMixin, FormView):
 
     def dispatch(self, request, *args, **kwargs):
         self.object = self.get_object()
+
+        profile = self.request.profile
+        org = self.get_object()
+
+        if Block.is_blocked(blocker=profile, blocked=org):
+            return generic_message(
+                request,
+                _("Request to join group"),
+                _("You cannot request since you have already blocked %s.")
+                % org.short_name,
+            )
+
         return super(RequestJoinOrganization, self).dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -787,6 +882,11 @@ class AddOrganizationMember(
         if not self.can_edit_organization(object):
             raise PermissionDenied()
         return object
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["organization"] = self.object
+        return kwargs
 
     def form_valid(self, form):
         new_users = form.cleaned_data["new_users"]

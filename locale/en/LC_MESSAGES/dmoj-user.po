@@ -1,46 +1,44 @@
 msgid ""
-msgstr ""
-"Content-Type: text/plain; charset=UTF-8\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
-
+msgstr "Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 msgid "Problems"
-msgstr "Bài tập"
+msgstr ""
 
 msgid "Submissions"
-msgstr "Bài nộp"
+msgstr ""
 
 msgid "Users"
-msgstr "Thành viên"
+msgstr ""
 
 msgid "Contests"
-msgstr "Kỳ thi"
+msgstr ""
 
 msgid "Groups"
-msgstr "Nhóm"
+msgstr ""
 
 msgid "About"
-msgstr "Giới thiệu"
+msgstr ""
 
 msgid "Courses"
-msgstr "Khóa học"
+msgstr ""
 
 msgid "Suggestions"
-msgstr "Đề xuất ý tưởng"
+msgstr ""
 
 msgid "Proposal"
-msgstr "Đề xuất bài tập"
+msgstr ""
 
 msgid "TanKhoa"
-msgstr "Tân Khoa"
+msgstr ""
 
 msgid "Name"
-msgstr "Đăng ký tên"
+msgstr ""
 
 msgid "Report"
-msgstr "Báo cáo tiêu cực"
+msgstr ""
 
 msgid "Bug Report"
-msgstr "Báo cáo lỗi"
+msgstr ""
 
 msgid "2sat"
 msgstr ""
@@ -596,12 +594,3 @@ msgstr ""
 
 msgid "z-function"
 msgstr ""
-
-#~ msgid "Status"
-#~ msgstr "Máy chấm"
-
-#~ msgid "Insert Image"
-#~ msgstr "Chèn hình ảnh"
-
-#~ msgid "Save"
-#~ msgstr "Lưu"
