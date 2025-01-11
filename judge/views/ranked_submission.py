@@ -7,69 +7,17 @@ from judge.models import Language, Submission
 from judge.utils.problems import get_result_data
 from judge.utils.raw_sql import join_sql_subquery
 from judge.views.submission import ForceContestMixin, ProblemSubmissions
+from judge.utils.infinite_paginator import InfinitePaginationMixin
 
 __all__ = ["RankedSubmissions", "ContestRankedSubmission"]
 
 
-class RankedSubmissions(ProblemSubmissions):
+class RankedSubmissions(InfinitePaginationMixin, ProblemSubmissions):
     tab = "best_submissions_list"
     dynamic_update = False
 
     def get_queryset(self):
-        params = [self.problem.id]
-        if self.in_contest:
-            contest_join = "INNER JOIN judge_contestsubmission AS cs ON (sub.id = cs.submission_id)"
-            points = "cs.points"
-            constraint = " AND sub.contest_object_id = %s"
-            params.append(self.contest.id)
-        else:
-            contest_join = ""
-            points = "sub.points"
-            constraint = ""
-
-        if self.selected_languages:
-            lang_ids = Language.objects.filter(
-                key__in=self.selected_languages
-            ).values_list("id", flat=True)
-            if lang_ids:
-                constraint += (
-                    f' AND sub.language_id IN ({", ".join(["%s"] * len(lang_ids))})'
-                )
-                params.extend(lang_ids)
-            self.selected_languages = set()
-
-        queryset = (
-            super(RankedSubmissions, self)
-            .get_queryset()
-            .filter(user__is_unlisted=False)
-        )
-        join_sql_subquery(
-            queryset,
-            subquery="""
-                SELECT sub.id AS id
-                FROM (
-                    SELECT sub.user_id AS uid, MAX(sub.points) AS points
-                    FROM judge_submission AS sub {contest_join}
-                    WHERE sub.problem_id = %s AND {points} > 0 {constraint}
-                    GROUP BY sub.user_id
-                ) AS highscore STRAIGHT_JOIN (
-                    SELECT sub.user_id AS uid, sub.points, MIN(sub.time) as time
-                    FROM judge_submission AS sub {contest_join}
-                    WHERE sub.problem_id = %s AND {points} > 0 {constraint}
-                    GROUP BY sub.user_id, {points}
-                ) AS fastest ON (highscore.uid = fastest.uid AND highscore.points = fastest.points)
-                    STRAIGHT_JOIN judge_submission AS sub
-                        ON (sub.user_id = fastest.uid AND sub.time = fastest.time)
-                WHERE sub.problem_id = %s {constraint}
-                GROUP BY sub.user_id
-            """.format(
-                points=points, contest_join=contest_join, constraint=constraint
-            ),
-            params=params * 3,
-            alias="best_subs",
-            join_fields=[("id", "id")],
-            related_model=Submission,
-        )
+        queryset = super(RankedSubmissions, self).get_queryset()
 
         if self.in_contest:
             return queryset.order_by("-contest__points", "time")
