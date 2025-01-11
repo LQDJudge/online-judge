@@ -44,12 +44,17 @@ class Block(models.Model):
     @classmethod
     def is_blocked(self, blocker, blocked):
         """Check if a blocker has blocked a blocked entity."""
+        if blocker is None or blocked is None:
+            return False
         blocked_type = ContentType.objects.get_for_model(type(blocked))
         blocked_pair = (blocked_type.id, blocked.id)
         return blocked_pair in get_all_blocked_pairs(blocker)
 
     @classmethod
     def add_block(self, blocker, blocked):
+        if blocker is None or blocked is None:
+            raise ValueError("Blocker and blocked must not be None.")
+
         if blocker == blocked:
             raise ValueError("A user or organization cannot block itself.")
 
@@ -69,6 +74,9 @@ class Block(models.Model):
 
     @classmethod
     def remove_block(self, blocker, blocked):
+        if blocker is None or blocked is None:
+            raise ValueError("Blocker and blocked must not be None.")
+
         if blocker == blocked:
             raise ValueError("A user or organization cannot unblock itself.")
 
