@@ -528,10 +528,10 @@ def get_unread_count(rooms, user):
         if not user_room:
             return 0
         last_seen = user_room.last_seen
+        max_lobby_count = 100
         res = (
             Message.objects.filter(room__isnull=True, time__gte=last_seen)
-            .exclude(author=user)
-            .exclude(hidden=True)
+            .exclude(author=user, hidden=True)[:max_lobby_count]
             .count()
         )
 
