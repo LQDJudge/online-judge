@@ -71,7 +71,7 @@
   {% else %}
     {% if "TLE" != submission.result %}
       <div title="{{ submission.time or 0 }}s" class="time">
-        {{ (submission.time or 0)|floatformat(2) }}s
+        {{ (submission.time * 1000 or 0)|floatformat(0) }} ms
       </div>
     {% else %}
       <div class="time">---</div>

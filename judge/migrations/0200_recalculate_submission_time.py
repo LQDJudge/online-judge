@@ -3,22 +3,44 @@
 from django.db import migrations
 from django.db.models import Max
 
+BATCH_SIZE = 1000  # Number of submissions to process in each batch
+
 
 def recalculate_submission_runtimes(apps, schema_editor):
     # Calculate the new time (max of test case times)
     Submission = apps.get_model("judge", "Submission")
     SubmissionTestCase = apps.get_model("judge", "SubmissionTestCase")
 
-    for submission in Submission.objects.all():
-        test_cases = SubmissionTestCase.objects.filter(submission=submission)
+    last_id = 0  # Start with the smallest ID
+    while True:
+        submission_ids = list(
+            Submission.objects.filter(id__gt=last_id)
+            .order_by("id")
+            .values_list("id", flat=True)[:BATCH_SIZE]
+        )
 
-        if test_cases.exists():
-            max_time = test_cases.aggregate(Max("time"))["time__max"]
-        else:
-            max_time = 0
+        if not submission_ids:
+            break
 
-        submission.time = max_time
-        submission.save()
+        # Group SubmissionTestCase by submission_id and calculate max_time
+        max_times = (
+            SubmissionTestCase.objects.filter(submission_id__in=submission_ids)
+            .values("submission_id")  # Group by submission_id
+            .annotate(max_time=Max("time"))  # Get the max time for each group
+        )
+
+        max_times_dict = {
+            entry["submission_id"]: entry["max_time"] for entry in max_times
+        }
+        submissions_to_update = []
+
+        for submission_id in submission_ids:
+            max_time = max_times_dict.get(submission_id, 0)
+            submissions_to_update.append(Submission(id=submission_id, time=max_time))
+            last_id = submission_id
+
+        Submission.objects.bulk_update(submissions_to_update, ["time"])
+        print(f"Batch up to submission ID {last_id} processed.")
 
 
 class Migration(migrations.Migration):
