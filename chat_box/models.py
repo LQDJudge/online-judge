@@ -151,6 +151,9 @@ def get_room_info(room_id):
 
 @cache_wrapper(prefix="gipi")
 def get_ignored_profile_id(profile):
-    return list(
-        Ignore.objects.get(user=profile).ignored_users.values_list("id", flat=True)
-    )
+    try:
+        return list(
+            Ignore.objects.get(user=profile).ignored_users.values_list("id", flat=True)
+        )
+    except Ignore.DoesNotExist:
+        return []
