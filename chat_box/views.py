@@ -33,7 +33,15 @@ from django.urls import reverse
 from judge import event_poster as event
 from judge.jinja2.gravatar import gravatar
 
-from chat_box.models import Message, Profile, Room, UserRoom, Ignore, get_room_info
+from chat_box.models import (
+    Message,
+    Profile,
+    Room,
+    UserRoom,
+    Ignore,
+    get_room_info,
+    get_ignored_profile_id,
+)
 from chat_box.utils import encrypt_url, decrypt_url, encrypt_channel, get_unread_boxes
 
 from reversion import revisions
@@ -57,7 +65,7 @@ class ChatView(ListView):
 
     def has_next(self):
         try:
-            msg = Message.objects.filter(room=self.room_id).earliest("id")
+            msg = Message.objects.filter(room=self.room_id, hidden=False).earliest("id")
         except Exception as e:
             return False
         return msg not in self.messages
@@ -83,10 +91,10 @@ class ChatView(ListView):
             request_room = None
 
         self.room_id = request_room
-        self.messages = (
-            Message.objects.filter(hidden=False, room=self.room_id, id__lt=last_id)
-            .select_related("author")
-            .only("body", "time", "author__rating", "author__display_rank")[:page_size]
+        self.messages = list(
+            Message.objects.filter(hidden=False, room=self.room_id, id__lt=last_id)[
+                :page_size
+            ]
         )
         if not only_messages:
             return super().get(request, *args, **kwargs)
@@ -124,7 +132,7 @@ class ChatView(ListView):
         else:
             context["online_count"] = get_online_count()
         context["message_template"] = {
-            "author": self.request.profile,
+            "author_id": self.request.profile.id,
             "id": "$id",
             "time": timezone.now(),
             "body": "$body",
@@ -414,9 +422,7 @@ def get_status_context(profile, include_ignored=False):
         ignored_users = []
         queryset = Profile.objects
     else:
-        ignored_users = list(
-            Ignore.get_ignored_users(profile).values_list("id", flat=True)
-        )
+        ignored_users = get_ignored_profile_id(profile)
         queryset = Profile.objects.exclude(id__in=ignored_users)
 
     last_5_minutes = timezone.now() - timezone.timedelta(minutes=5)

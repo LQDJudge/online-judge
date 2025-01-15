@@ -1,3 +1,4 @@
+from itertools import chain
 import json
 
 from django import forms
@@ -166,13 +167,9 @@ def get_comments(request, limit=10):
     else:
         queryset = queryset.filter(parent=comment_obj, hidden=False)
     comment_count = len(queryset)
-    queryset = (
-        queryset.select_related("author__user")
-        .defer("author__about")
-        .annotate(
-            count_replies=Count("replies", distinct=True),
-        )[offset : offset + limit]
-    )
+    queryset = queryset.annotate(
+        count_replies=Count("replies", distinct=True),
+    )[offset : offset + limit]
     profile = None
     if request.user.is_authenticated:
         profile = request.profile
@@ -186,7 +183,7 @@ def get_comments(request, limit=10):
         request,
         "comments/content-list.html",
         {
-            "profile": profile,
+            "profile": request.profile,
             "comment_root_id": comment_root_id,
             "comment_list": queryset,
             "vote_hide_threshold": settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD,

@@ -3,7 +3,7 @@
   <h2 id="comment-header">
     <i style="padding-right: 0.3em" class="fa fa-comments"></i>{{ _('Comments') }}
     {% if can_comment %}
-      <a href="#" id="write-comment" style="float: right; font-size: 0.6em; margin-right: -26px;"> {{ _('Write comment') }} </a>
+      <a href="#" id="write-comment" class="button small" style="float: right; font-size: 0.6em;"><i class="fa fa-plus"></i> {{ _('Write comment') }} </a>
     {% endif %}
   </h2>
   {% if can_comment %}
@@ -37,7 +37,7 @@
     </div>
   {% endif %}
   {% if has_comments %}
-    <ul class="comments top-level-comments new-comments" id="comment-0">
+    <ul class="top-level-comments" id="comment-0">
       {% include "comments/content-list.html" %}
     </ul>
   {% elif not comment_lock %}

@@ -161,7 +161,7 @@
       <section class="message new-message">
         <div class="info">
           <a href="{{ url('user_page', request.user.username) }}" class="user">
-            <img loading="lazy" src="{{ gravatar(request.profile, 135) }}" class="gravatar">
+            <img loading="lazy" src="{{ gravatar(request.profile.id, 135) }}" class="gravatar">
             <div class="username {{ request.profile.css_class }}">{{ request.user.username }}</div>
           </a>
         </div>

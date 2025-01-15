@@ -92,7 +92,7 @@
   <div class="user-info-page">
     <div class="user-sidebar">
       <div class="user-img user-profile-img">
-        <img src="{{ gravatar(user, 145) }}">
+        <img src="{{ gravatar(user.id, 145) }}">
       </div>
       <br>
       {% if request.user.is_authenticated and request.profile != user %}

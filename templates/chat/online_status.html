@@ -23,7 +23,7 @@
       {% for user in section.user_list %}
         <li class="click_space status-row" id="click_space_{{user.user.id}}" value="{{user.url}}">
           <div class="status-container">
-            <img loading="lazy" src="{{ gravatar(user.user, 135) }}" class="status-pic user-img">
+            <img loading="lazy" src="{{ gravatar(user.user.id, 135) }}" class="status-pic user-img">
             <svg style="position:absolute;" height="32" width="32">
               <circle class="status-circle" fill="{{'green' if user.is_online else 'red'}}"/>
             </svg>

@@ -1,11 +1,11 @@
 {% set can_view = submission.is_accessible_by(profile, check_contest=False) or is_in_editable_contest %}
 <div class="sub-user-img user-img">
-  <img loading="lazy" src="{{gravatar(submission.user)}}">
+  <img loading="lazy" src="{{gravatar(submission.user_id)}}">
 </div>
 <div class="sub-details">
   <div class="sub-info{% if submission.status == 'G' %} sub-info-grading{% endif %}">
     <div class="sub-user" style="max-width: {{50 if show_problem else 100}}%">
-      {{ link_user(submission.user) }}
+      {{ link_user(submission.user_id) }}
     </div>
     {% if show_problem %}
       <span>—</span>

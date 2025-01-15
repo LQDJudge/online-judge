@@ -1,26 +1,20 @@
 <li class="message" id="message-{{ message.id }}" message-id="{{ message.id }}">
-  <a href="{{ url('user_page', message.author.username) }}">
-    <img loading="lazy" src="{{ gravatar(message.author, 135) }}" class="profile-pic user-img">
-  </a>
+  <img loading="lazy" src="{{ gravatar(message.author_id, 135) }}" class="profile-pic user-img">
   <div class="body-message">
     <div class="user-time">
-      <span class="username {{ message.author.css_class }}">
-        <a href="{{ url('user_page', message.author.username) }}">
-          {{ message.author.username }}
-        </a>
-      </span>
+      {{link_user(message.author_id)}}
       <span class="time">
         {{ relative_time(message.time, abs=_('{time}'), rel=_('{time}'), format=_('g:i a d/m/Y')) }}
       </span>
     </div>
     <span class="content-message">
       <div class="body-block" id="body-block-{{ message.id }}" title="{{ message.time|date('g:i a') }}">
-        {% if request.user.is_staff or request.profile == message.author %}
+        {% if request.user.is_staff or request.profile.id == message.author_id %}
           <a class="red chatbtn_remove_mess chat_remove" value="{{message.id}}" style="cursor: pointer;">
             {{_('Delete')}}
           </a>
         {% endif %}
-        {% if request.user.is_staff and request.profile != message.author and not message.room_id %}
+        {% if request.user.is_staff and request.profile.id != message.author_id and not message.room_id %}
           <a class="red chatbtn_remove_mess chat_mute" value="{{message.id}}" style="cursor: pointer;">
             {{_('Mute')}}
           </a>

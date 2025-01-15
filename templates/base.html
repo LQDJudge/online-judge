@@ -185,7 +185,7 @@
           </span>
           {% if request.user.is_authenticated %}
             <span id="user-links">
-              <img class="user-img" src="{{ gravatar(request.profile, 32) }}" height="24" width="24">
+              <img class="user-img" src="{{ gravatar(request.profile.id, 32) }}" height="24" width="24">
               <i class="fa fa-angle-down" style="font-size: 18px; padding-top: 8px;"></i>
             </span>
             <div class="dropdown" id="userlink_dropdown" role="tooptip">

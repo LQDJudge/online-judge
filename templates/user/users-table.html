@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block after_rank %}
-  <td><img loading="lazy" style="max-width: none;" class="user-img" src="{{ gravatar(user, 40) }}" height="40px" width="40px"></td>
+  <td><img loading="lazy" style="max-width: none;" class="user-img" src="{{ gravatar(user.id, 40) }}" height="40px" width="40px"></td>
 {% endblock %}
 
 {% block user_footer %}

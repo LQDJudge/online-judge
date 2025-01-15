@@ -230,3 +230,16 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+.pagedown-image-upload {
+    .submit-input {
+        display: flex;
+        min-width: inherit;
+        float: right;
+    }
+    .deletelink-box {
+        position: absolute;
+        top: 2px;
+        right: 1em;
+    }
+}

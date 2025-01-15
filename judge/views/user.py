@@ -454,7 +454,7 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
     def get_queryset(self):
         queryset = (
             Profile.objects.filter(is_unlisted=False)
-            .order_by(self.order, "id")
+            .order_by(self.order)
             .only(
                 "display_rank",
                 "points",

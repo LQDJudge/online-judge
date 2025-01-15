@@ -4,11 +4,13 @@ from django.contrib.auth.models import AbstractUser
 from django.utils.http import urlencode
 
 from judge.utils.unicode import utf8bytes
+from judge.models import Profile
 from . import registry
 
 
 @registry.function
-def gravatar(profile, size=80, default=None, profile_image=None, email=None):
+def gravatar(profile_id, size=80, default=None, profile_image=None, email=None):
+    profile = Profile(id=profile_id) if profile_id else None
     if profile and not profile.is_muted:
         if profile_image:
             return profile_image

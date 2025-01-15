@@ -110,7 +110,7 @@
               {% with authors=solution.get_authors() %}
                 {%- if authors -%}
                   <span class="user-img" style="width: 1.5em; height: 1.5em">
-                    <img src="{{gravatar(authors[0])}}" loading="lazy">
+                    <img src="{{gravatar(authors[0].id)}}" loading="lazy">
                   </span>
                   <span class="post-authors">{{ link_users(authors) }}</span>
                 {%- endif -%}
@@ -151,7 +151,7 @@
               {% with authors=post.get_authors() %}
                 {%- if authors -%}
                   <span class="user-img" style="width: 1.5em; height: 1.5em">
-                    <img src="{{gravatar(authors[0])}}" loading="lazy">
+                    <img src="{{gravatar(authors[0].id)}}" loading="lazy">
                   </span>
                   <span class="post-authors">{{ link_users(authors) }}</span>
                 {%- endif -%}

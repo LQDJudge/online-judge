@@ -20,6 +20,34 @@
           if ('DjangoPagedown' in window) {
             window.DjangoPagedown.createEditor($reply_form.find('div.wmd-wrapper').get(0));
           }
+          $reply_form.find('form.comment-submit-form').off('submit');
+          $reply_form.find('form.comment-submit-form').on('submit', function(event) {
+            event.preventDefault();
+
+            var $form = $(this);
+            var actionUrl = $form.attr('action');
+            var formData = $form.serialize();
+            var parentId = $form.find('input#id_parent').val();
+
+            $reply_form.append(loading_gif);
+
+            $.ajax({
+              url: actionUrl,
+              type: 'POST',
+              data: formData,
+              success: function(response) {
+                window.DjangoPagedown.destroyEditor($reply_form.find('div.wmd-wrapper').get(0));
+                $reply_form.remove();
+                comment_get_replies(parentId, 0);
+              },
+              error: function(xhr, textStatus, errorThrown) {
+                console.error('Error:', textStatus, errorThrown);
+              },
+              complete: function() {
+                $reply_form.find('.loading').remove();
+              }
+            });
+          });
         }
         $comment_reply.fadeIn();
 
@@ -99,12 +127,9 @@
         $comment_show_btn.hide();
         var $comment = $("#comment-" + id + "-children");
         $comment.append(loading_gif);
-        ajax_get_reply('{{ url('comment_get_replies') }}', id, parent_none);
-      }
 
-      function ajax_get_reply(url, id, parent_none) {
-        return $.ajax({
-          url: url,
+        $.ajax({
+          url: '{{ url('comment_get_replies') }}',
           type: 'GET',
           data: {
             id: id,
@@ -114,12 +139,82 @@
             var $comment_loading = $("#comment-" + id + "-children .loading");
             $comment_loading.hide();
             var $comment = $("#comment-" + id + "-children");
-            $comment.append(data);
+            $comment.html(data);
             renderKatex($('#comments')[0]);
             register_time($('.time-with-rel'));
+            register_comment_operations();
           }
         })
       }
+
+      window.hide_comment = function (id) {
+        if (!(confirm('Are you sure you want to hide this comment?')))
+          return;
+        $.post('{{ url('comment_hide') }}', {id: id}).then(function () {
+          $('#comment-' + id).remove();
+          $('#comment-' + id + '-children').remove();
+        }).catch(function () {
+          alert('Failed.');
+        });
+      };
+
+      window.register_comment_operations = function() {
+        var $comments = $('#comments');
+        $comments.find('a.edit-link').featherlight({
+          afterOpen: function () {
+            register_dmmd_preview($('#id-edit-comment-body-preview'));
+            if ('DjangoPagedown' in window) {
+              DjangoPagedown.createEditor(
+                $('#wmd-input-id-edit-comment-body').closest('.wmd-wrapper')[0]
+              );
+              var $wmd = $('.featherlight .wmd-wrapper');
+              if ($wmd.length) {
+                var preview = $('.featherlight div.wmd-preview')[0];
+                renderKatex(preview);
+              }
+            }
+            $('#comment-edit').submit(function (event) {
+              event.preventDefault();
+              var id = $('#comment-edit').find('.comment-id').text();
+              var readback = $('#comment-edit').find('.read-back').text();
+              $.post($(this).attr('action'), $(this).serialize()).done(function (data) {
+                $.featherlight.current().close();
+                $.ajax({
+                  url: readback
+                }).done(function (data) {
+                  var $comment = $('#comment-' + id);
+                  var $area = $comment.find('.comment-body').first();
+                  $area.html(data);
+                  update_math($comment);
+                  var $edits = $comment.find('.comment-edits').first();
+                  $edits.text('updated');
+                }).fail(function () {
+                  console.log('Failed to update comment:' + id);
+                });
+              });
+            });
+          },
+          beforeClose: function() {
+            DjangoPagedown.destroyEditor(
+              $('#wmd-input-id-edit-comment-body').closest('.wmd-wrapper')[0]
+            );
+          },
+          variant: 'featherlight-edit'
+        });
+
+        var $root = $('html, body');
+        $comments.find('a.comment-link').click(function () {
+          var href = $.attr(this, 'href');
+          $root.animate({
+            scrollTop: $(href).offset().top
+          }, 500, function () {
+            window.location.hash = href;
+          });
+          return false;
+        });
+      };
+
+      register_comment_operations();
 
       window.comment_show_more = function (id, parent_none, offset, target_comment) {
         if (parent_none == 1) {
@@ -133,12 +228,9 @@
           var $comment = $("#comment-" + id + "-children");
           $comment.append(loading_gif);
         }
-        ajax_comment_show_more('{{ url('comment_show_more') }}', id, parent_none, offset, target_comment);
-      }
 
-      function ajax_comment_show_more(url, id, parent_none, offset, target_comment) {
-        return $.ajax({
-          url: url,
+        $.ajax({
+          url: '{{ url('comment_show_more') }}',
           type: 'GET',
           data: {
             id: id,
@@ -160,6 +252,7 @@
             }
             renderKatex($('#comments')[0]);
             register_time($('.time-with-rel'));
+            register_comment_operations();
           }
         })
       }
@@ -192,74 +285,6 @@
         });
       };
 
-      var $comments = $('.comments');
-      $comments.find('a.hide-comment').click(function (e) {
-        e.preventDefault();
-        if (!(e.ctrlKey || e.metaKey || confirm('Are you sure you want to hide this comment?')))
-          return;
-
-        var id = $(this).attr('data-id');
-        $.post('{{ url('comment_hide') }}', {id: id}).then(function () {
-          $('#comment-' + id).remove();
-          $('#comment-' + id + '-children').remove();
-        }).catch(function () {
-          alert('Failed.');
-        });
-      });
-
-      $comments.find('a.edit-link').featherlight({
-        afterOpen: function () {
-          register_dmmd_preview($('#id-edit-comment-body-preview'));
-          if ('DjangoPagedown' in window) {
-            DjangoPagedown.createEditor(
-              $('#wmd-input-id-edit-comment-body').closest('.wmd-wrapper')[0]
-            );
-            var $wmd = $('.featherlight .wmd-wrapper');
-            if ($wmd.length) {
-              var preview = $('.featherlight div.wmd-preview')[0];
-              renderKatex(preview);
-            }
-          }
-          $('#comment-edit').submit(function (event) {
-            event.preventDefault();
-            var id = $('#comment-edit').find('.comment-id').text();
-            var readback = $('#comment-edit').find('.read-back').text();
-            $.post($(this).attr('action'), $(this).serialize()).done(function (data) {
-              $.featherlight.current().close();
-              $.ajax({
-                url: readback
-              }).done(function (data) {
-                var $comment = $('#comment-' + id);
-                var $area = $comment.find('.comment-body').first();
-                $area.html(data);
-                update_math($comment);
-                var $edits = $comment.find('.comment-edits').first();
-                $edits.text('updated');
-              }).fail(function () {
-                console.log('Failed to update comment:' + id);
-              });
-            });
-          });
-        },
-        beforeClose: function() {
-          DjangoPagedown.destroyEditor(
-            $('#wmd-input-id-edit-comment-body').closest('.wmd-wrapper')[0]
-          );
-        },
-        variant: 'featherlight-edit'
-      });
-
-      var $root = $('html, body');
-      $comments.find('a.comment-link').click(function () {
-        var href = $.attr(this, 'href');
-        $root.animate({
-          scrollTop: $(href).offset().top
-        }, 500, function () {
-          window.location.hash = href;
-        });
-        return false;
-      });
-
       $('img.unveil').unveil(200);
 
       window.comment_show_content = function (comment_id) {
@@ -274,6 +299,16 @@
         $("#write-comment").hide();
         $(".no-comments-message").hide();
       });
+
+      $(window).on('hashchange', function () {
+        var hash = window.location.hash;
+        if (hash.startsWith('#')) {
+          var $comment = $(hash).addClass('highlight');
+          if ($comment) {
+            $(document).scrollTop($comment.position().top - 50);
+          }
+        }
+      }).trigger('hashchange');
 
     });
   </script>

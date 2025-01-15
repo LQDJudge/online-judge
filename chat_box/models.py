@@ -112,13 +112,6 @@ class Ignore(models.Model):
             return False
 
     @classmethod
-    def get_ignored_users(self, user):
-        try:
-            return self.objects.get(user=user).ignored_users.all()
-        except:
-            return Profile.objects.none()
-
-    @classmethod
     def get_ignored_rooms(self, user):
         try:
             ignored_users = self.objects.get(user=user).ignored_users.all()
@@ -129,21 +122,23 @@ class Ignore(models.Model):
             return Room.objects.none()
 
     @classmethod
-    def add_ignore(self, current_user, friend):
+    def add_ignore(self, current_user, ignored_user):
         ignore, created = self.objects.get_or_create(user=current_user)
-        ignore.ignored_users.add(friend)
+        ignore.ignored_users.add(ignored_user)
+        get_ignored_profile_id.dirty(current_user)
 
     @classmethod
-    def remove_ignore(self, current_user, friend):
+    def remove_ignore(self, current_user, ignored_user):
         ignore, created = self.objects.get_or_create(user=current_user)
-        ignore.ignored_users.remove(friend)
+        ignore.ignored_users.remove(ignored_user)
+        get_ignored_profile_id.dirty(current_user)
 
     @classmethod
-    def toggle_ignore(self, current_user, friend):
-        if self.is_ignored(current_user, friend):
-            self.remove_ignore(current_user, friend)
+    def toggle_ignore(self, current_user, ignored_user):
+        if self.is_ignored(current_user, ignored_user):
+            self.remove_ignore(current_user, ignored_user)
         else:
-            self.add_ignore(current_user, friend)
+            self.add_ignore(current_user, ignored_user)
 
 
 @cache_wrapper(prefix="Rinfo")
@@ -152,3 +147,10 @@ def get_room_info(room_id):
     return {
         "last_message": last_msg.body if last_msg else None,
     }
+
+
+@cache_wrapper(prefix="gipi")
+def get_ignored_profile_id(profile):
+    return list(
+        Ignore.objects.get(user=profile).ignored_users.values_list("id", flat=True)
+    )

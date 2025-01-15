@@ -191,7 +191,9 @@ class Profile(models.Model):
     performance_points = models.FloatField(default=0, db_index=True)
     problem_count = models.IntegerField(default=0, db_index=True)
     ace_theme = models.CharField(max_length=30, choices=ACE_THEMES, default="github")
-    last_access = models.DateTimeField(verbose_name=_("last access time"), default=now)
+    last_access = models.DateTimeField(
+        verbose_name=_("last access time"), default=now, db_index=True
+    )
     ip = models.GenericIPAddressField(verbose_name=_("last IP"), blank=True, null=True)
     organizations = SortedManyToManyField(
         Organization,
@@ -547,32 +549,38 @@ class OrganizationProfile(models.Model):
         related_name="last_vist",
         on_delete=models.CASCADE,
     )
-    last_visit = models.AutoField(
+    last_visit_time = models.DateTimeField(
         verbose_name=_("last visit"),
-        primary_key=True,
+        default=now,
+        db_index=True,
     )
 
     @classmethod
-    def remove_organization(self, profile, organization):
-        organization_profile = self.objects.filter(
-            profile=profile, organization=organization
+    def add_organization(cls, profile, organization):
+        orgs = _get_most_recent_organizations(profile)
+        if orgs and orgs[0].id == organization.id:
+            return
+        obj, created = cls.objects.update_or_create(
+            profile=profile,
+            organization=organization,
+            defaults={"last_visit_time": now()},
         )
-        if organization_profile.exists():
-            organization_profile.delete()
-
-    @classmethod
-    def add_organization(self, profile, organization):
-        self.remove_organization(profile, organization)
-        new_row = OrganizationProfile(profile=profile, organization=organization)
-        new_row.save()
+        _get_most_recent_organizations.dirty(profile)
 
     @classmethod
     def get_most_recent_organizations(cls, profile):
-        queryset = cls.objects.filter(profile=profile).order_by("-last_visit")[:5]
-        queryset = queryset.select_related("organization").defer("organization__about")
-        organizations = [op.organization for op in queryset]
+        return _get_most_recent_organizations(profile)
 
-        return organizations
+
+@cache_wrapper("OPgmro", expected_type=list)
+def _get_most_recent_organizations(profile):
+    queryset = OrganizationProfile.objects.filter(profile=profile).order_by(
+        "-last_visit_time"
+    )[:5]
+    queryset = queryset.select_related("organization").defer("organization__about")
+    organizations = [op.organization for op in queryset]
+
+    return organizations
 
 
 @receiver([post_save], sender=User)
