@@ -8,21 +8,38 @@ from collections import defaultdict
 
 
 def gen_submissions():
-    """
-    Generate submissions using Django ORM's iterator and process data in Python.
-    """
     print("Generating submissions")
-    # Use defaultdict to group submissions by (user_id, problem_id)
+    batch_size = 10000  # Limit for each batch
+    last_id = None  # Track the last processed ID
     submissions_dict = defaultdict(lambda: None)
 
-    # Iterate over Submissions ordered by -id (latest submissions first)
-    queryset = Submission.objects.order_by("-id").iterator(chunk_size=10000)
+    while True:
+        # Fetch a batch of submissions ordered by descending ID
+        if last_id is None:
+            queryset = Submission.objects.order_by("-id").values(
+                "id", "user_id", "problem_id"
+            )[:batch_size]
+        else:
+            queryset = (
+                Submission.objects.filter(id__lt=last_id)
+                .order_by("-id")
+                .values("id", "user_id", "problem_id")[:batch_size]
+            )
 
-    for submission in queryset:
-        key = (submission.user_id, submission.problem_id)
-        # Store the first (latest) submission for each user/problem pair
-        if key not in submissions_dict:
-            submissions_dict[key] = submission
+        # Convert queryset to a list
+        submissions = list(queryset)
+        if not submissions:
+            break  # Exit the loop if no more submissions are left
+
+        # Process the batch
+        for submission in submissions:
+            key = (submission["user_id"], submission["problem_id"])
+            # Store the first (latest) submission for each user/problem pair
+            if key not in submissions_dict:
+                submissions_dict[key] = submission
+
+        # Update last_id for the next batch
+        last_id = submissions[-1]["id"]
 
     # Write the results to a CSV file
     with open(os.path.join(settings.ML_DATA_PATH, "submissions.csv"), "w") as csvfile:
