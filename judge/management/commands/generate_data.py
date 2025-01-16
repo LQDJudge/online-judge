@@ -4,47 +4,35 @@ import csv
 import os
 from django.conf import settings
 from django.db import connection
+from collections import defaultdict
 
 
 def gen_submissions():
-    print("Generating submissions")
-    batch_size = 5000  # Limit for each batch
-    offset = 0  # Start offset
-    query_template = """
-    SELECT user_id as uid, problem_id as pid FROM 
-        (SELECT user_id, problem_id, max(date) as max_date 
-            FROM judge_submission 
-            GROUP BY user_id, problem_id) t 
-            ORDER BY user_id, -max_date 
-    LIMIT {limit} OFFSET {offset};
     """
-    with connection.cursor() as cursor:
-        headers_written = False
-        with open(
-            os.path.join(settings.ML_DATA_PATH, "submissions.csv"), "w"
-        ) as csvfile:
-            f = csv.writer(csvfile)
+    Generate submissions using Django ORM's iterator and process data in Python.
+    """
+    print("Generating submissions")
+    # Use defaultdict to group submissions by (user_id, problem_id)
+    submissions_dict = defaultdict(lambda: None)
 
-            while True:
-                query = query_template.format(limit=batch_size, offset=offset)
-                cursor.execute(query)
-                rows = cursor.fetchall()
+    # Iterate over Submissions ordered by -id (latest submissions first)
+    queryset = Submission.objects.order_by("-id").iterator(chunk_size=10000)
 
-                # Write headers only once
-                if not headers_written:
-                    headers = [i[0] for i in cursor.description]
-                    f.writerow(headers)
-                    headers_written = True
+    for submission in queryset:
+        key = (submission.user_id, submission.problem_id)
+        # Store the first (latest) submission for each user/problem pair
+        if key not in submissions_dict:
+            submissions_dict[key] = submission
 
-                if not rows:
-                    # No more data to fetch
-                    break
+    # Write the results to a CSV file
+    with open(os.path.join(settings.ML_DATA_PATH, "submissions.csv"), "w") as csvfile:
+        f = csv.writer(csvfile)
+        # Write headers
+        f.writerow(["user_id", "problem_id"])
 
-                for row in rows:
-                    f.writerow(row)
-
-                # Increment offset for the next batch
-                offset += batch_size
+        # Write rows from the dictionary
+        for (user_id, problem_id), submission in submissions_dict.items():
+            f.writerow([user_id, problem_id])
 
 
 def gen_users():
