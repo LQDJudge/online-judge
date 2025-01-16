@@ -8,23 +8,43 @@ from django.db import connection
 
 def gen_submissions():
     print("Generating submissions")
-    query = """
-    SELECT user_id as uid, problem_id as pid from 
+    batch_size = 5000  # Limit for each batch
+    offset = 0  # Start offset
+    query_template = """
+    SELECT user_id as uid, problem_id as pid FROM 
         (SELECT user_id, problem_id, max(date) as max_date 
-            from judge_submission 
-            group by user_id, problem_id) t 
-            order by user_id, -max_date;
+            FROM judge_submission 
+            GROUP BY user_id, problem_id) t 
+            ORDER BY user_id, -max_date 
+    LIMIT {limit} OFFSET {offset};
     """
     with connection.cursor() as cursor:
-        cursor.execute(query)
-        headers = [i[0] for i in cursor.description]
+        headers_written = False
         with open(
             os.path.join(settings.ML_DATA_PATH, "submissions.csv"), "w"
         ) as csvfile:
             f = csv.writer(csvfile)
-            f.writerow(headers)
-            for row in cursor.fetchall():
-                f.writerow(row)
+
+            while True:
+                query = query_template.format(limit=batch_size, offset=offset)
+                cursor.execute(query)
+                rows = cursor.fetchall()
+
+                # Write headers only once
+                if not headers_written:
+                    headers = [i[0] for i in cursor.description]
+                    f.writerow(headers)
+                    headers_written = True
+
+                if not rows:
+                    # No more data to fetch
+                    break
+
+                for row in rows:
+                    f.writerow(row)
+
+                # Increment offset for the next batch
+                offset += batch_size
 
 
 def gen_users():
