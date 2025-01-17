@@ -22,13 +22,39 @@
       padding-left: 0;
       text-align: center;
     }
+
+    .hidden-field {
+      display: none;
+    }
   </style>
 {% endblock %}
 
 {% block js_media %}
   <script type="text/javascript">
-    $(function() {
-      $("#id_organization").select2();
+    $(function () {
+      $("#id_organization").select2({
+        placeholder: $("#id_organization").data("placeholder"),
+        width: "100%",
+      });
+      $("#id_course").select2({
+        placeholder: $("#id_course").data("placeholder"),
+        width: "100%",
+      });
+
+      function toggleFields() {
+        const selectedType = $('input[name="target_type"]:checked').val();
+        if (selectedType === "organization") {
+          $("#organization-container").show();
+          $("#course-container").hide();
+        } else if (selectedType === "course") {
+          $("#organization-container").hide();
+          $("#course-container").show();
+        }
+      }
+
+      $('input[name="target_type"]').on("change", toggleFields);
+
+      toggleFields();
     });
   </script>
 {% endblock %}
@@ -36,21 +62,45 @@
 {% block body %}
   <form id="contest-clone-panel" action="" method="post" class="form-area">
     {% csrf_token %}
-    {% if form.key.errors %}
-      <div id="form-errors">
-        <div>{{ form.key.errors }}</div>
+
+    <div>
+      <label class="inline-header grayed">{{ _('Enter a new key for the cloned contest:') }}</label>
+    </div>
+    <div id="contest-key-container">
+      <span class="fullwidth">{{ form.key }}</span>
+    </div>
+
+    <div style="margin-top: 1em;">
+      <label class="inline-header grayed">{{ _('Choose target type:') }}</label>
+    </div>
+    <div style="margin-top: 0.3em;">
+      {{ form.target_type }}
+    </div>
+
+    <div style="margin-top: 1em;">
+      <div id="organization-container" class="hidden-field">
+        <label class="inline-header grayed">{{ _('Select a group:') }}</label>
+        <div style="margin-top: 0.3em;">
+          {{ form.organization }}
+        </div>
       </div>
+
+      <div id="course-container" class="hidden-field">
+        <label class="inline-header grayed">{{ _('Select a course:') }}</label>
+        <div style="margin-top: 0.3em;">
+          {{ form.course }}
+        </div>
+      </div>
+    </div>
+
+    {% if form.errors %}
+      <ul style="color: red;">
+        {% for field_name, error_list in form.errors.items() %}
+          <li>{{ error_list.0 }}</li>
+        {% endfor %}
+      </ul>
     {% endif %}
 
-    <div><label class="inline-header grayed">{{ _('Enter a new key for the cloned contest:') }}</label></div>
-    <div id="contest-key-container"><span class="fullwidth">{{ form.key }}</span></div>
-    <div><label class="inline-header grayed">{{ _('Group') }}:</label></div>
-    {{form.organization}}
-    {% if form.organization.errors %}
-      <div id="form-errors">
-        <div>{{ form.organization.errors }}</div>
-      </div>
-    {% endif %}
     <hr>
     <button style="float: right;" type="submit">{{ _('Clone!') }}</button>
   </form>
