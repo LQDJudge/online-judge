@@ -556,7 +556,7 @@ def is_contest_clonable(request, contest):
     if (
         not Organization.objects.filter(admins=request.profile).exists()
         and not Course.objects.filter(
-            courserole__user=self.request.profile,
+            courserole__user=request.profile,
             courserole__role__in=EDITABLE_ROLES,
         ).exists()
     ):
