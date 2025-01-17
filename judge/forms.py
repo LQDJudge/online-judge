@@ -41,6 +41,7 @@ from judge.models import (
     TestFormatterModel,
     ProfileInfo,
     Block,
+    Course,
 )
 
 from judge.widgets import (
@@ -403,7 +404,7 @@ class AddOrganizationMemberForm(ModelForm):
                 )
             if blocked_usernames:
                 error_messages.append(
-                    _("These users have blocked this organization: {usernames}").format(
+                    _("These users have blocked this group: {usernames}").format(
                         usernames=", ".join(blocked_usernames)
                     )
                 )
@@ -528,14 +529,55 @@ class ContestCloneForm(Form):
         max_length=20,
         validators=[RegexValidator("^[a-z0-9]+$", _("Contest id must be ^[a-z0-9]+$"))],
     )
-    organization = ChoiceField(choices=(), required=True)
 
-    def __init__(self, *args, org_choices=(), profile=None, **kwargs):
+    target_type = forms.ChoiceField(
+        choices=(),
+        widget=forms.RadioSelect,
+        required=True,
+    )
+
+    organization = forms.ChoiceField(
+        choices=(),
+        required=False,
+        widget=Select2Widget(
+            attrs={"class": "organization-field hidden-field", "style": "width: 100%"}
+        ),
+    )
+    course = forms.ChoiceField(
+        choices=(),
+        required=False,
+        widget=Select2Widget(
+            attrs={"class": "course-field hidden-field", "style": "width: 100%"}
+        ),
+    )
+
+    def __init__(
+        self, *args, org_choices=(), course_choices=(), profile=None, **kwargs
+    ):
         super(ContestCloneForm, self).__init__(*args, **kwargs)
-        self.fields["organization"].widget = Select2Widget(
-            attrs={"style": "width: 100%", "data-placeholder": _("Group")},
-        )
+
         self.fields["organization"].choices = org_choices
+        self.fields["organization"].widget.attrs.update(
+            {
+                "data-placeholder": _("Select a group"),
+            }
+        )
+
+        self.fields["course"].choices = course_choices
+        self.fields["course"].widget.attrs.update(
+            {
+                "data-placeholder": _("Select a course"),
+            }
+        )
+
+        target_choices = []
+        if org_choices:
+            target_choices.append(("organization", _("Group")))
+        if course_choices:
+            target_choices.append(("course", _("Course")))
+
+        self.fields["target_type"].choices = target_choices
+
         self.profile = profile
 
     def clean_key(self):
@@ -544,15 +586,38 @@ class ContestCloneForm(Form):
             raise ValidationError(_("Contest with key already exists."))
         return key
 
-    def clean_organization(self):
-        organization_id = self.cleaned_data["organization"]
-        try:
-            organization = Organization.objects.get(id=organization_id)
-        except Exception:
-            raise ValidationError(_("Group doesn't exist."))
-        if not organization.admins.filter(id=self.profile.id).exists():
-            raise ValidationError(_("You don't have permission in this group."))
-        return organization
+    def clean(self):
+        cleaned_data = super().clean()
+        target_type = cleaned_data.get("target_type")
+        organization_id = cleaned_data.get("organization")
+        course_id = cleaned_data.get("course")
+
+        if target_type == "organization":
+            if not organization_id:
+                raise ValidationError(_("You must select a group."))
+            try:
+                organization = Organization.objects.get(id=organization_id)
+            except Organization.DoesNotExist:
+                raise ValidationError(_("Selected group doesn't exist."))
+            if not organization.admins.filter(id=self.profile.id).exists():
+                raise ValidationError(_("You don't have permission in this group."))
+            cleaned_data["organization"] = organization
+
+        elif target_type == "course":
+            if not course_id:
+                raise ValidationError(_("You must select a course."))
+            try:
+                course = Course.objects.get(id=course_id)
+            except Course.DoesNotExist:
+                raise ValidationError(_("Selected course doesn't exist."))
+            if not Course.is_editable_by(course, self.profile):
+                raise ValidationError(_("You don't have permission in this course."))
+            cleaned_data["course"] = course
+
+        else:
+            raise ValidationError(_("Invalid target type selected."))
+
+        return cleaned_data
 
 
 class ProblemPointsVoteForm(ModelForm):

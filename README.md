@@ -64,6 +64,7 @@ $ sudo mysql
 mariadb> CREATE DATABASE dmoj DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_general_ci;
 mariadb> GRANT ALL PRIVILEGES ON dmoj.* TO 'dmoj'@'localhost' IDENTIFIED BY '<password>';
 mariadb> exit
+$ mariadb-tzinfo-to-sql /usr/share/zoneinfo | sudo mariadb -u root mysql
 ```
 
 - **Bước 4**: Cài đặt môi trường ảo (virtual env) và pull code

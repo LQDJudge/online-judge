@@ -52,6 +52,14 @@
           Please correct the errors below.
         {% endblocktranslate %}
       </p>
+      <ul class="errorlist">
+        {% for field_name, error_list in adminform.errors.items %}
+          <li>
+            <strong>{{ field_name|capfirst }}:</strong>
+            {{ error_list|join:", " }}
+          </li>
+        {% endfor %}
+      </ul>
     {% endif %}
 
     <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}
@@ -75,7 +83,7 @@
         <div class="nav nav-tabs" id="form-tabs" role="tablist">
           {% for fieldset in adminform %}
             <div class="nav-item">
-              <button class="nav-link {% if forloop.first %}active{% endif %} {% if fieldset_error_count > 0 %}text-danger{% endif %}"
+              <button class="nav-link {% if forloop.first %}active{% endif %}"
                       id="tab-{{ forloop.counter0 }}"
                       data-bs-toggle="tab"
                       data-bs-target="#pane-{{ forloop.counter0 }}"
@@ -84,9 +92,6 @@
                       aria-controls="pane-{{ forloop.counter0 }}"
                       aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
                 {{ fieldset.name }}
-                {% if fieldset_error_count > 0 %}
-                  <span class="badge bg-danger">{{ fieldset_error_count }}</span>
-                {% endif %}
               </button>
             </div>
           {% endfor %}

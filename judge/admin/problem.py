@@ -64,7 +64,7 @@ class ProblemForm(ModelForm):
 
     def clean(self):
         memory_unit = self.cleaned_data.get("memory_unit", "KB")
-        if memory_unit == "MB":
+        if memory_unit == "MB" and "memory_limit" in self.cleaned_data:
             self.cleaned_data["memory_limit"] *= 1024
         date = self.cleaned_data.get("date")
         if not date or date > timezone.now():

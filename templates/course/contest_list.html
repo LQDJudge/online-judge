@@ -1,17 +1,13 @@
 {% extends "course/base.html" %}
 
 {% block two_col_media %}
-  <style>
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-  </style>
 {% endblock %}
 
 {% block middle_content %}
   <div class="container">
+    <div class="add-button-container">
+      <a href="{{url('add_course_contest', course.slug)}}" class="button background-green">{{ _('Add') }}</a>
+    </div>
     {% if course_contests %}
       {% for course_contest in course_contests %}
         <div class="course-contest-card">
@@ -28,8 +24,5 @@
     {% else %}
       <p style="text-align: center;">{{_("No contests available")}}.</p>
     {% endif %}
-    <a href="{{url('add_course_contest', course.slug)}}">
-      <button>{{ _('Add') }}</button>
-    </a>
   </div>
 {% endblock %}

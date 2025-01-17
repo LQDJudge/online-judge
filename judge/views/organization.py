@@ -925,7 +925,7 @@ class KickUserWidgetView(
             return generic_message(
                 request,
                 _("Can't kick user"),
-                _("The user you are trying to kick is not in organization: %s.")
+                _("The user you are trying to kick is not in group: %s.")
                 % organization.name,
                 status=400,
             )
@@ -934,7 +934,7 @@ class KickUserWidgetView(
             return generic_message(
                 request,
                 _("Can't kick user"),
-                _("The user you are trying to kick is an organization admin."),
+                _("The user you are trying to kick is a group admin."),
                 status=400,
             )
 
@@ -1225,7 +1225,7 @@ class EditOrganizationBlog(
             self.blog_id = kwargs["blog_pk"]
             self.blog = BlogPost.objects.get(id=self.blog_id)
             if self.organization not in self.blog.organizations.all():
-                raise Exception(_("This blog does not belong to this organization"))
+                raise Exception(_("This blog does not belong to this group"))
             if not self.request.profile.can_edit_organization(self.organization):
                 raise Exception(_("Not allowed to edit this blog"))
         except Exception as e:
