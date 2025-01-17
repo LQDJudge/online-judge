@@ -1,9 +1,9 @@
 <script type="text/javascript">
   function confirmLeaveOrganization() {
     $('.leave-organization').click(function () {
-      if (confirm('{{ _('Are you sure you want to leave this organization?') }}\n' +
+      if (confirm('{{ _('Are you sure you want to leave this group?') }}\n' +
         {% if organization.is_open %}
-          '{{ _('You will have to rejoin to show up on the organization leaderboard.') }}'
+          '{{ _('You will have to rejoin to show up on the group leaderboard.') }}'
         {% else %}
           '{{ _('You will have to request membership in order to join again.') }}'
         {% endif %}
@@ -14,11 +14,11 @@
   }
   function confirmBlockOrganization(button) {
     const confirmationMessage =
-      '{{ _("Are you sure you want to block this organization?") }}\n' +
+      '{{ _("Are you sure you want to block this group?") }}\n' +
     `{% if is_member %}` +
-    '{{ _("You will leave this organization and have to remove block to rejoin.") }}' +
+    '{{ _("You will leave this group and have to remove block to rejoin.") }}' +
     `{% else %}` +
-    '{{ _("You will have to remove block to join this organization.") }}' +
+    '{{ _("You will have to remove block to join this group.") }}' +
     `{% endif %}`;
 
     if (confirm(confirmationMessage)) {
@@ -27,7 +27,7 @@
   }
   function confirmUnblockOrganization(button) {
     const confirmationMessage =
-      '{{ _("Are you sure you want to unblock this organization?") }}\n';
+      '{{ _("Are you sure you want to unblock this group?") }}\n';
 
     if (confirm(confirmationMessage)) {
       button.closest('form').submit();

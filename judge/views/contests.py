@@ -74,6 +74,7 @@ from judge.models import (
     Course,
     CourseContest,
 )
+from judge.models.course import EDITABLE_ROLES
 from judge.tasks import run_moss
 from judge.utils.celery import redirect_to_task_status
 from judge.utils.opengraph import generate_opengraph
@@ -551,8 +552,16 @@ class ContestDetail(
 def is_contest_clonable(request, contest):
     if not request.profile:
         return False
-    if not Organization.objects.filter(admins=request.profile).exists():
+
+    if (
+        not Organization.objects.filter(admins=request.profile).exists()
+        and not Course.objects.filter(
+            courserole__user=request.profile,
+            courserole__role__in=EDITABLE_ROLES,
+        ).exists()
+    ):
         return False
+
     if request.user.has_perm("judge.clone_contest"):
         return True
     if contest.access_code and not contest.is_editable_by(request.user):
@@ -583,12 +592,17 @@ class ContestClone(ContestMixin, TitleMixin, SingleObjectFormView):
                 "id", "name"
             )
         )
+        kwargs["course_choices"] = tuple(
+            Course.objects.filter(
+                courserole__user=self.request.profile,
+                courserole__role__in=EDITABLE_ROLES,
+            ).values_list("id", "name")
+        )
         kwargs["profile"] = self.request.profile
         return kwargs
 
     def form_valid(self, form):
         tags = self.object.tags.all()
-        organization = form.cleaned_data["organization"]
         private_contestants = self.object.private_contestants.all()
         view_contest_scoreboard = self.object.view_contest_scoreboard.all()
         contest_problems = self.object.contest_problems.all()
@@ -603,26 +617,46 @@ class ContestClone(ContestMixin, TitleMixin, SingleObjectFormView):
         contest.save()
 
         contest.tags.set(tags)
-        contest.organizations.set([organization])
         contest.private_contestants.set(private_contestants)
         contest.view_contest_scoreboard.set(view_contest_scoreboard)
         contest.authors.add(self.request.profile)
+
+        target_type = form.cleaned_data["target_type"]
+        if target_type == "organization":
+            contest.is_in_course = False
+            organization = form.cleaned_data["organization"]
+            contest.organizations.set([organization])
+            redirect_url = reverse(
+                "organization_contest_edit",
+                args=(organization.id, organization.slug, contest.key),
+            )
+        elif target_type == "course":
+            course = form.cleaned_data["course"]
+            contest.is_in_course = True
+
+            # Create a CourseContest entry that links the cloned contest to the course
+            CourseContest.objects.create(
+                course=course,
+                contest=contest,
+                order=CourseContest.objects.filter(course=course).count() + 1,
+                points=0,  # Default points, can be adjusted as needed
+            )
+
+            redirect_url = reverse(
+                "edit_course_contest",
+                args=(course.slug, contest.key),
+            )
+        else:
+            raise Http404("Invalid target type selected.")
 
         for problem in contest_problems:
             problem.contest = contest
             problem.pk = None
         ContestProblem.objects.bulk_create(contest_problems)
 
-        return HttpResponseRedirect(
-            reverse(
-                "organization_contest_edit",
-                args=(
-                    organization.id,
-                    organization.slug,
-                    contest.key,
-                ),
-            )
-        )
+        contest.save()
+
+        return HttpResponseRedirect(redirect_url)
 
 
 class ContestAccessDenied(Exception):
