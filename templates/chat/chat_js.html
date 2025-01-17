@@ -196,23 +196,17 @@
       $content: null
     };
     $('.body-message').each(function() {
-      var username = $(this).find(".username a").text().trim();
+      var author_id = $(this).attr("author-id");
       var $body = $(this).find(".content-message .body-block");
       var time = moment($(this).find(".time-with-rel").attr('data-iso'));
       var $content = $(this).children('.content-message');
 
-      if (username == window.user.name) {
-        $(this).find('.message-text').each(function() {
-          $(this).removeClass('message-text-other').addClass('message-text-myself');
-        });
-      }
-
-      if (username == last.username && time.diff(last.time, 'minutes') <= time_limit) {
+      if (author_id == last.author_id && time.diff(last.time, 'minutes') <= time_limit) {
         last.$content.append($body);
         $(this).parent().remove();
       }
       else {
-        last.username = username;
+        last.author_id = author_id;
         last.time = time;
         last.$content = $content;
       }

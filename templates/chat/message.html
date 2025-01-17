@@ -1,6 +1,6 @@
 <li class="message" id="message-{{ message.id }}" message-id="{{ message.id }}">
   <img loading="lazy" src="{{ gravatar(message.author_id, 135) }}" class="profile-pic user-img">
-  <div class="body-message">
+  <div class="body-message" author-id="{{ message.author_id }}">
     <div class="user-time">
       {{link_user(message.author_id)}}
       <span class="time">
@@ -19,7 +19,7 @@
             {{_('Mute')}}
           </a>
         {% endif %}
-        <div class="message-text message-text-other" id="message-text-{{ message.id }}">
+        <div class="message-text {% if request.profile.id != message.author_id %} message-text-other{% else %}message-text-myself{% endif %}" id="message-text-{{ message.id }}">
           {{message.body|markdown(lazy_load=False)|reference|str|safe }}
         </div>
       </div>
