@@ -8,7 +8,7 @@
   {% if best_submissions_link %}
     {{ make_tab('best_submissions_list', 'fa-bar-chart', best_submissions_link, _('Best')) }}
   {% endif %}
-  {% if tab == 'user_submissions_tab' %}
+  {% if page_type == 'user_submissions_tab' %}
     {{ make_tab('user_submissions_tab', 'fa-user', None, _("%(user)s's", user=tab_username)) }}
   {% endif %}
   {% if perms.judge.change_submission %}

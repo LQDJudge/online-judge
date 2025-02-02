@@ -13,7 +13,7 @@ __all__ = ["RankedSubmissions", "ContestRankedSubmission"]
 
 
 class RankedSubmissions(InfinitePaginationMixin, ProblemSubmissions):
-    tab = "best_submissions_list"
+    page_type = "best_submissions_list"
     dynamic_update = False
 
     def get_queryset(self):
@@ -22,7 +22,7 @@ class RankedSubmissions(InfinitePaginationMixin, ProblemSubmissions):
         if self.in_contest:
             return queryset.order_by("-contest__points", "time")
         else:
-            return queryset.order_by("-points", "time")
+            return queryset.order_by("-case_points", "time")
 
     def get_title(self):
         return _("Best solutions for %s") % self.problem_name
