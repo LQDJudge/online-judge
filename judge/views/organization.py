@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
 from django.core.exceptions import PermissionDenied
+from django.utils.text import slugify
 from django.db import transaction
 from django.db import IntegrityError
 from django.db.models import Count, Q, Value, BooleanField
@@ -1180,7 +1181,7 @@ class AddOrganizationBlog(
             res = super(AddOrganizationBlog, self).form_valid(form)
             self.object.is_organization_private = True
             self.object.authors.add(self.request.profile)
-            self.object.slug = self.organization.slug + "-" + self.request.user.username
+            self.object.slug = slugify(self.object.title)
             self.object.organizations.add(self.organization)
             self.object.save()
 
