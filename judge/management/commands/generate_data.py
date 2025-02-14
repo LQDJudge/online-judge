@@ -45,7 +45,7 @@ def gen_submissions():
     with open(os.path.join(settings.ML_DATA_PATH, "submissions.csv"), "w") as csvfile:
         f = csv.writer(csvfile)
         # Write headers
-        f.writerow(["user_id", "problem_id"])
+        f.writerow(["uid", "pid"])
 
         # Write rows from the dictionary
         for (user_id, problem_id), submission in submissions_dict.items():
