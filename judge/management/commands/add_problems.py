@@ -38,7 +38,14 @@ from django.core.management.base import BaseCommand
 from django.core.files import File
 from django.utils.timezone import now
 
-from judge.models import Problem, ProblemData, Profile, ProblemTestCase, ProblemGroup
+from judge.models import (
+    Problem,
+    ProblemData,
+    Profile,
+    ProblemTestCase,
+    ProblemGroup,
+    Language,
+)
 from judge.utils.problem_data import ProblemDataCompiler
 
 
@@ -115,6 +122,7 @@ class Command(BaseCommand):
                     points=problem_dict.get("points", 1),
                     date=now(),
                 )
+                problem.allowed_languages.set(Language.objects.all())
 
                 # Set the author of the problem (assuming a Profile for the author exists)
                 author_profile = Profile.objects.filter(
