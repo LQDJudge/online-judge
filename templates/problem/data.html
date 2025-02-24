@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block js_media %}
+  {{ data_form.media.js }}
   <script type="text/javascript">
     window.valid_files = {{valid_files_json}};
     window.big_input = (window.valid_files.length > 100);
@@ -143,9 +144,9 @@
         let $ioi_signature = $("#id_problem-data-use_ioi_signature");
         let $signature_table = $('#signature-grader-table');
 
-        $tr_checker = $custom_checker.parent().parent();
-        $tr_validator = $validator.parent().parent();
-        $tr_interactive = $interactive.parent().parent();
+        $tr_checker = $custom_checker.closest("tr");
+        $tr_validator = $validator.closest("tr");
+        $tr_interactive = $interactive.closest("tr");
 
         $td = $checker.parent();
         var $sample = $("<a/>",{
@@ -435,6 +436,7 @@
 {% endblock %}
 
 {% block media %}
+  {{ data_form.media.css }}
   <link href="{{ static ('fine-uploader/fine-uploader.css') }}" rel="stylesheet">
   <style>
     #case-table .select2 {

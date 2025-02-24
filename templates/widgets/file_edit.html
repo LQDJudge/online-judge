@@ -1,0 +1,23 @@
+<div id="file-editor-container-{{ element_id }}"
+     data-file-content="{{ file_content|escape }}"
+     data-file-name="{{ file_name|escape }}"
+     data-default-file-name="{{ default_file_name|escape }}">
+  {{ file_input_html|safe }}
+  <button type="button" id="edit-file-btn-{{ element_id }}" class="small edit-file-btn" data-element-id="{{ element_id }}">
+    {{ _('Edit') }}
+  </button>
+</div>
+
+<div id="file-editor-modal-{{ element_id }}" class="file-editor-modal" style="display:none;">
+  <div class="modal-content" style="min-width:600px;">
+    <!-- Input for editing the filename -->
+    <div style="display: flex;  justify-content: space-between;">
+      <input type="text" id="filename-input-{{ element_id }}" class="filename-input" style="width: 30%; padding: 5px;" value="{{ file_name|escape }}">
+      <button type="button" id="save-file-btn-{{ element_id }}" class="small save-file-btn" data-element-id="{{ element_id }}">
+        {{ _('Save') }}
+      </button>
+    </div>
+    <!-- Ace Editor -->
+    <div class="fl-ace-editor" style="width:100%; min-height:300px; margin-bottom:10px;"></div>
+  </div>
+</div>

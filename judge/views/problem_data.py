@@ -50,13 +50,12 @@ from judge.models import (
 from judge.utils.problem_data import ProblemDataCompiler
 from judge.utils.unicode import utf8text
 from judge.utils.views import TitleMixin
-from judge.utils.fine_uploader import (
-    combine_chunks,
-    save_upload,
+from judge.widgets.fine_uploader import (
     handle_upload,
     FineUploadFileInput,
     FineUploadForm,
 )
+from judge.widgets.file_edit import FileEditWidget
 from judge.views.problem import ProblemMixin
 from judge.logging import log_exception
 
@@ -108,7 +107,21 @@ class ProblemDataForm(ModelForm):
             "fileio_output": TextInput,
             "output_only": CheckboxInput,
             "use_ioi_signature": CheckboxInput,
+            "custom_checker_cpp": FileEditWidget,
+            "custom_checker": FileEditWidget,
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["custom_checker_cpp"].widget = FileEditWidget(
+            default_file_name="checker.cpp"
+        )
+        self.fields["custom_checker"].widget = FileEditWidget(
+            default_file_name="checker.py"
+        )
+        self.fields["interactive_judge"].widget = FileEditWidget(
+            default_file_name="interactive.cpp"
+        )
 
 
 class ProblemCaseForm(ModelForm):
