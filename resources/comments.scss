@@ -33,6 +33,12 @@
         display: flex;
     }
 
+    .body-header {
+        border-radius: 10px;
+        border: 2px solid #eae8e8;
+        padding: 0.5em 0.7em;
+    }
+
     .body .comment-body {
         font-size: 1em;
         line-height: 1.5;
