@@ -121,9 +121,12 @@ def _open_external_links_in_new_tab(soup):
     for a in soup.findAll("a", href=True):
         href = a["href"]
         if href.startswith("http://") or href.startswith("https://"):
-            link_domain = urlparse(href).netloc.lower()
-            if link_domain != domain:
-                a["target"] = "_blank"
+            try:
+                link_domain = urlparse(href).netloc.lower()
+                if link_domain != domain:
+                    a["target"] = "_blank"
+            except Exception:
+                continue
     return soup
 
 
