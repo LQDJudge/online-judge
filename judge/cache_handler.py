@@ -3,7 +3,7 @@ from django.core.cache import caches
 from django.core.exceptions import ImproperlyConfigured
 
 NUM_CACHE_RETRY = 3
-DEFAULT_L0_TIMEOUT = 300
+DEFAULT_L0_TIMEOUT = 60
 l0_cache = caches["l0"] if "l0" in caches else None
 primary_cache = caches["primary"] if "primary" in caches else None
 

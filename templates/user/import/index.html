@@ -1,111 +1,137 @@
 {% extends "user/user-base.html" %}
 {% block js_media %}
   <script>
-    function getCookie(name) {
-      let cookieValue = null;
-      if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          // Does this cookie string begin with the name we want?
-          if (cookie.substring(0, name.length + 1) === (name + '=')) {
-            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-            break;
-          }
-        }
-      }
-      return cookieValue;
-    }
-
-    const csrftoken = getCookie('csrftoken');
-
     $(function() {
-      $('#load_button').on('click', function(e) {
+      // Display a preview of the CSV file
+      $('#csv-form').on('submit', function(e) {
         e.preventDefault();
-        var files = $('#csv_file').prop('files');
-        if (files.length == 1) {
-          $('#load_button').addClass('disabled');
+        var formData = new FormData(this);
+        var loadButton = $('#load_button');
 
-          var file = files[0];
-          //if (file.type != 'text/csv') {
-          //    alert("{{_('Upload CSV only')}}");
-          //    return;
-          //}
-          var form_data = new FormData();
-          form_data.append('csv_file', file, file.name);
-
-          var xhr = new XMLHttpRequest();
-          xhr.open('POST', "{{url('import_users_post_file')}}", true);
-          xhr.setRequestHeader('X-CSRFToken', csrftoken);
-          xhr.onload = function () {
-            if (xhr.status === 200) {
-              var json = JSON.parse(xhr.responseText);
-              $('#load_button').removeClass('disabled');
-
-              if (json.done) {
-                window.import_users = json.data
-                $('#table_csv').html(json.html);
-                $('#confirm_button').removeClass('disabled');
-              }
-              else {
-                window.import_users = []
-                $('#table_csv').html(json.msg);
-                $('#confirm_button').addClass('disabled');
-              }
-            } else {
-              alert('Fail to read file.');
-            }
-          };
-
-          xhr.send(form_data);
-        }
-      })
-
-      $('#confirm_button').on('click', function() {
-        $(this).addClass('disabled');
-        var data = {
-          'users': window.import_users
-        };
-
-        if (!data.users || data.users.length == 0) {
-          alert('No valid users');
+        if ($('#csv_file').prop('files').length != 1) {
           return;
         }
 
-        $('#table_csv').html('');
-        $('#log').html('Working...');
-        $.post({
-          url: "{{url('import_users_submit')}}",
-          data: JSON.stringify(data),
-          contentType:"application/json; charset=utf-8",
-          dataType:"text",
-          fail: function() {alert('Fail to import')},
-          success: function(data) {
-            data = JSON.parse(data);
-            var msg = data.msg.split('\n');
-            $('#log').html('')
-            for (var i of msg) {
-              $('#log').append(`<p>${i}</p>`);
+        loadButton.prop('disabled', true);
+
+        $.ajax({
+          url: "{{url('import_users_post_file')}}",
+          type: 'POST',
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function(response) {
+            loadButton.prop('disabled', false);
+
+            if (response.done) {
+              window.import_users = response.data;
+              $('#table_csv').html(response.html);
+              $('#submit-form').show();
+            } else {
+              window.import_users = [];
+              $('#table_csv').html(response.msg);
+              $('#submit-form').hide();
             }
+          },
+          error: function() {
+            loadButton.prop('disabled', false);
+            alert('{{ _("Failed to read file.") }}');
           }
-        })
-      })
+        });
+      });
+
+      // Handle the submission of user import
+      $('#submit-form').on('submit', function(e) {
+        e.preventDefault();
+
+        if (!window.import_users || window.import_users.length == 0) {
+          alert('{{ _("No valid users") }}');
+          return;
+        }
+
+        var submitButton = $('#confirm_button');
+        submitButton.prop('disabled', true);
+
+        $('#table_csv').html('');
+        $('#log').html('<p>{{ _("Submitting import task...") }}</p>');
+
+        var userData = JSON.stringify({ 'users': window.import_users });
+
+        // Add the user data to the form
+        $('#user_data').val(userData);
+
+        // Submit the form (this will navigate to the task status page)
+        this.submit();
+      });
     });
   </script>
 {% endblock %}
 
 {% block body %}
-  {% csrf_token %}
-  <center>
-    <label for="csv_file">{{_('User File')}}:</label>
-    <input type="file" accept=".csv" id="csv_file">
-    <a href="{{url('import_users_sample')}}">{{_('Sample')}}</a>
-    <div style="display: inline-flex">
-      <button id="load_button" style="margin-left: 1em">{{_('Load')}}</button>
-      <button id="confirm_button" style="margin-left: 1em" class="disabled">{{_('Import')}}</button>
+  <div class="import-users-container">
+    <!-- CSV Upload Form -->
+    <form id="csv-form" method="post" enctype="multipart/form-data" style="display: flex; justify-content: center;">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="csv_file">{{ _('User File') }}:</label>
+        <input type="file" accept=".csv" id="csv_file" name="csv_file" required>
+        <a href="{{ url('import_users_sample') }}" class="btn-link">{{ _('Download Sample') }}</a>
+        <button type="submit" id="load_button" class="btn">{{ _('Preview') }}</button>
+      </div>
+    </form>
+
+    <!-- CSV Preview Table -->
+    <div class="csv-preview">
+      <table id="table_csv" class="table"></table>
     </div>
-  </center>
-  <br>
-  <table id="table_csv" class="table"></table>
-  <p style="margin-left: 2em" id="log"></p>
+
+    <!-- Submit Form (Hidden until CSV is loaded) -->
+    <form id="submit-form" method="post" action="{{ url('import_users_submit') }}" style="display: none;">
+      {% csrf_token %}
+      <input type="hidden" id="user_data" name="user_data">
+      <button type="submit" id="confirm_button" class="btn">{{ _('Import Users') }}</button>
+    </form>
+
+    <!-- Log Display -->
+    <div id="log" class="import-log">
+      {% if import_log %}
+        <h4>{{ _('Previous Import Results:') }}</h4>
+        <pre>{{ import_log }}</pre>
+      {% endif %}
+    </div>
+  </div>
+
+  <style>
+    .import-users-container {
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .csv-preview {
+      margin: 20px 0;
+    }
+
+    .import-log {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+    }
+
+    .btn {
+      padding: 5px 15px;
+      cursor: pointer;
+    }
+
+    .btn-link {
+      margin-left: 10px;
+    }
+  </style>
 {% endblock %}

@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 from operator import itemgetter
 
+from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
@@ -67,6 +68,8 @@ from judge.utils.views import (
 )
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.views.problem import ProblemList
+from judge.utils.celery import redirect_to_task_status
+
 from .contests import ContestRanking
 
 
@@ -539,6 +542,13 @@ class ImportUsersView(TitleMixin, TemplateView):
     template_name = "user/import/index.html"
     title = _("Import Users")
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated and self.request.user.is_superuser:
+            cache_key = f"import_users_log_{self.request.profile.id}"
+            context["import_log"] = cache.get(cache_key)
+        return context
+
     def get(self, *args, **kwargs):
         if self.request.user.is_superuser:
             return super().get(self, *args, **kwargs)
@@ -563,14 +573,28 @@ def import_users_post_file(request):
 
 
 def import_users_submit(request):
-    import json
-
     if not request.user.is_superuser or request.method != "POST":
         return HttpResponseForbidden()
 
-    users = json.loads(request.body)["users"]
-    log = import_users.import_users(users)
-    return JsonResponse({"msg": log})
+    try:
+        # Handle form submission (regular form POST data)
+        if "user_data" in request.POST:
+            users_data = json.loads(request.POST["user_data"])
+            users = users_data.get("users", [])
+        # Handle JSON POST data directly (backwards compatibility)
+        else:
+            users = json.loads(request.body)["users"]
+
+        status = import_users.import_users.delay(users, profile_id=request.profile.id)
+        cache.delete(f"import_users_log_{request.profile.id}")
+
+        return redirect_to_task_status(
+            status,
+            message=_("Importing users..."),
+            redirect=reverse("import_users"),
+        )
+    except (KeyError, json.JSONDecodeError) as e:
+        return HttpResponseBadRequest(f"Invalid request format: {e}")
 
 
 def sample_import_users(request):

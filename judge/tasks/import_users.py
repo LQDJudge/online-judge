@@ -3,8 +3,12 @@ import re
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.cache import cache
+
+from celery import shared_task
 
 from judge.models import Profile, Language, Organization
+from judge.utils.celery import Progress
 
 
 fields = ["username", "password", "name", "school", "email", "organizations"]
@@ -46,70 +50,81 @@ def is_valid_username(username):
     return match is not None and match.group() == username
 
 
-# return result log
-def import_users(users):
+@shared_task(bind=True)
+def import_users(self, users, profile_id=None):
     log = ""
-    for i, row in enumerate(users):
-        cur_log = str(i + 1) + ". "
+    processed_count = 0
 
-        username = row["username"]
-        if not is_valid_username(username):
-            log += username + ": Invalid username\n"
-            continue
+    with Progress(self, len(users), stage="Importing users") as progress:
+        for i, row in enumerate(users):
+            cur_log = str(i + 1) + ". "
 
-        cur_log += username + ": "
-        pwd = row["password"]
-        user, created = User.objects.get_or_create(
-            username=username,
-            defaults={
-                "is_active": True,
-            },
-        )
-        profile, _ = Profile.objects.get_or_create(
-            user=user,
-            defaults={
-                "language": Language.get_python3(),
-                "timezone": settings.DEFAULT_USER_TIME_ZONE,
-            },
-        )
+            username = row["username"]
+            if not is_valid_username(username):
+                log += username + ": Invalid username\n"
+                continue
 
-        if created:
-            cur_log += "Create new - "
-        else:
-            cur_log += "Edit - "
+            cur_log += username + ": "
+            pwd = row["password"]
+            user, created = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    "is_active": True,
+                },
+            )
+            profile, _ = Profile.objects.get_or_create(
+                user=user,
+                defaults={
+                    "language": Language.get_python3(),
+                    "timezone": settings.DEFAULT_USER_TIME_ZONE,
+                },
+            )
 
-        if pwd:
-            user.set_password(pwd)
-        elif created:
-            user.set_password("lqdoj")
-            cur_log += "Missing password, set password = lqdoj - "
+            if created:
+                cur_log += "Create new - "
+            else:
+                cur_log += "Edit - "
 
-        if "name" in row.keys() and row["name"]:
-            user.first_name = row["name"]
+            if pwd:
+                user.set_password(pwd)
+            elif created:
+                user.set_password("lqdoj")
+                cur_log += "Missing password, set password = lqdoj - "
 
-        if "school" in row.keys() and row["school"]:
-            user.last_name = row["school"]
+            if "name" in row.keys() and row["name"]:
+                user.first_name = row["name"]
 
-        if row["organizations"]:
-            orgs = row["organizations"].split("&")
-            added_orgs = []
-            for o in orgs:
-                try:
-                    org = Organization.objects.get(slug=o)
-                    profile.organizations.add(org)
-                    added_orgs.append(org.name)
-                except Organization.DoesNotExist:
-                    continue
-            if added_orgs:
-                cur_log += "Added to " + ", ".join(added_orgs) + " - "
+            if "school" in row.keys() and row["school"]:
+                user.last_name = row["school"]
 
-        if row["email"]:
-            user.email = row["email"]
+            if row["organizations"]:
+                orgs = row["organizations"].split("&")
+                added_orgs = []
+                for o in orgs:
+                    try:
+                        org = Organization.objects.get(slug=o)
+                        profile.organizations.add(org)
+                        added_orgs.append(org.name)
+                    except Organization.DoesNotExist:
+                        continue
+                if added_orgs:
+                    cur_log += "Added to " + ", ".join(added_orgs) + " - "
 
-        user.save()
-        profile.save()
-        cur_log += "Saved\n"
-        log += cur_log
+            if row["email"]:
+                user.email = row["email"]
+
+            user.save()
+            profile.save()
+            processed_count += 1
+            cur_log += "Saved\n"
+            log += cur_log
+            progress.did(1)
+
     log += "FINISH"
 
-    return log
+    # Store the log in cache if a profile_id was provided
+    if profile_id:
+        cache_key = f"import_users_log_{profile_id}"
+        cache.set(cache_key, log, timeout=3600)  # Cache for 1 hour
+
+    return processed_count
