@@ -85,9 +85,9 @@
     border-color: #0f3a47;
     position: relative;
     background: transparent;
-    -moz-transition-duration: 1s;
-    -webkit-transition-duration: 1s;
-    -ms-transition-duration: 1s;
+    -moz-transition-duration: 3s;
+    -webkit-transition-duration: 3s;
+    -ms-transition-duration: 3s;
 }
 
 .rank-id {
@@ -181,9 +181,9 @@
     position: fixed;
     background-color: black;
     z-index: -1;
-    -moz-transition-duration: 1s;
-    -webkit-transition-duration: 1s;
-    -ms-transition-duration: 1s;
+    -moz-transition-duration: 3s;
+    -webkit-transition-duration: 3s;
+    -ms-transition-duration: 3s;
 }
 
 .show-rank .name-show {
