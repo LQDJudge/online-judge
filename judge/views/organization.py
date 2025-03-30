@@ -1181,7 +1181,7 @@ class AddOrganizationBlog(
             res = super(AddOrganizationBlog, self).form_valid(form)
             self.object.is_organization_private = True
             self.object.authors.add(self.request.profile)
-            self.object.slug = slugify(self.object.title)
+            self.object.slug = slugify(self.object.title)[:50]
             self.object.organizations.add(self.organization)
             self.object.save()
 
@@ -1303,6 +1303,9 @@ class EditOrganizationBlog(
             revisions.set_comment(_("Edited from site"))
             revisions.set_user(self.request.user)
             self.create_notification("Edit blog")
+
+            self.object.slug = slugify(self.object.title)[:50]
+            self.object.save()
             return res
 
     def get_success_url(self):
