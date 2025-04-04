@@ -516,10 +516,11 @@ urlpatterns = [
     re_path(r"^comments/upvote/$", comment.upvote_comment, name="comment_upvote"),
     re_path(r"^comments/downvote/$", comment.downvote_comment, name="comment_downvote"),
     re_path(r"^comments/hide/$", comment.comment_hide, name="comment_hide"),
+    re_path(r"^comments/post/$", comment.post_comment, name="comment_post"),
+    re_path(r"^comments/get_comments/$", comment.get_comments, name="get_comments"),
     re_path(
         r"^comments/get_replies/$", comment.get_replies, name="comment_get_replies"
     ),
-    re_path(r"^comments/show_more/$", comment.get_show_more, name="comment_show_more"),
     re_path(
         r"^comments/(?P<id>\d+)/",
         include(

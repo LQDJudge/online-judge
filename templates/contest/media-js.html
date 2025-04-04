@@ -82,6 +82,9 @@
   }
 
   function update_ranking() {
+    if (!$('#users-table').length) {
+      return;
+    }
     var friend = $('#show-friends-checkbox').is(':checked');
     var virtual = $('#show-virtual-checkbox').is(':checked');
     $('#loading-gif').show();

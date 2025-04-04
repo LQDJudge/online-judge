@@ -197,7 +197,7 @@
       <i class="fa fa-list-check"></i><span> {{ _('Best submissions') }}</span>
     </a>
   </div>
-  {% if editorial and editorial.is_public and not (request.user.is_authenticated and request.in_contest_mode) %}
+  {% if problem.has_public_editorial() and not (request.user.is_authenticated and request.in_contest_mode) %}
     <hr>
     <div class="link-row">
       <a href="{{ url('problem_editorial', problem.code) }}">
@@ -302,15 +302,15 @@
 
   {% if not contest_problem or not contest_problem.contest.hide_problem_tags %}
     <div id="problem-types">
-      {% with types=problem.types_list %}
+      {% with types=problem.get_types_name() %}
         <div class="toggle closed unselectable">
-          <i class="fa fa-chevron-right"></i> {% trans trimmed count=problem.types_list|length %}
+          <i class="fa fa-chevron-right"></i> {% trans trimmed count=problem.get_types_name()|length %}
             Problem type
             {% pluralize count %}
             Problem types
           {% endtrans %}
         </div>
-        <div style="display:none" class="toggled">{{ problem.types_list|join(", ") }}</div>
+        <div style="display:none" class="toggled">{{ problem.get_types_name()|join(", ") }}</div>
       {% endwith %}
     </div>
   {% endif %}
@@ -408,9 +408,7 @@
     </span>
   </div>
 
-  {% cache 86400 'problem_html' problem.id LANGUAGE_CODE %}
-    {{ description|markdown(lazy_load=True)|reference|str|safe }}
-  {% endcache %}
+  {{ description|markdown(lazy_load=True)|reference|str|safe }}
 
   {% if problem.pdf_description %}
     <embed src="{{url('problem_pdf_description', problem.code)}}" width="100%" height="500" type="application/pdf">

@@ -48,7 +48,7 @@ class Room(models.Model):
 
     @classmethod
     def prefetch_room_cache(self, room_ids):
-        get_room_info.prefetch_multi([(i,) for i in room_ids])
+        get_room_info.batch([(i,) for i in room_ids])
 
 
 class Message(models.Model):

@@ -155,3 +155,11 @@
     color: #333;
     margin: 0;
 }
+
+.organization-tag-edit {
+    margin-left: 0.3em;
+    color: $theme_color;
+    &:hover {
+        color: darken($theme_color, 15%);
+    }
+}

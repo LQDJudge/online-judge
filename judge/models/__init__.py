@@ -30,7 +30,6 @@ from judge.models.problem import (
     ProblemTranslation,
     ProblemType,
     Solution,
-    TranslatedProblemQuerySet,
     ProblemPointsVote,
 )
 from judge.models.problem_data import (

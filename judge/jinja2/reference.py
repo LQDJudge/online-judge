@@ -10,6 +10,7 @@ from lxml.html import Element
 
 from judge import lxml_tree
 from judge.models import Contest, Problem, Profile
+from judge.models.profile import get_profile_id_from_username
 from judge.ratings import rating_class, rating_progress
 from . import registry
 
@@ -55,12 +56,10 @@ def get_user_rating(username, data):
 
 
 def get_user_info(usernames):
-    return {
-        name: (rank, rating)
-        for name, rank, rating in Profile.objects.filter(
-            user__username__in=usernames
-        ).values_list("user__username", "display_rank", "rating")
-    }
+    ids = get_profile_id_from_username.batch([(username,) for username in usernames])
+    ids = [i for i in ids if i is not None]
+    profiles = Profile.get_cached_instances(*ids)
+    return {p.username: (p.display_rank, p.rating) for p in profiles}
 
 
 def get_user_from_text(text):

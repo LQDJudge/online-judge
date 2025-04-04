@@ -1,7 +1,7 @@
 {% set url_path = "/accounts/activate/" + activation_key %}
 {% set title = _("Account activation") %}
 {% set message = _("Thanks for registering! We're glad to have you. The last step is activating your account. Please activate your account in the next %(expiration_days)d days.", expiration_days=expiration_days) %}
-{% set username = user.get_username() %}
+{% set username = user.username %}
 {% set button_text = _("Activate") %}
 {% set domain = site.domain %}
 {% set protocol = "https" if request.is_secure() else "http" %}

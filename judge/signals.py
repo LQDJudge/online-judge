@@ -5,13 +5,12 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import post_delete, post_save, m2m_changed
 from django.dispatch import receiver
 
 from judge import template_context
 from judge.utils.problems import finished_submission
 from judge.utils.users import get_points_rank, get_rating_rank
-from judge.models.profile import _get_basic_info
 from .models import (
     BlogPost,
     Comment,
@@ -30,6 +29,7 @@ from .models import (
     ContestProblem,
     CourseContest,
 )
+from judge.models.problem import _get_allowed_languages
 
 
 def get_pdf_path(basename):
@@ -58,17 +58,10 @@ def problem_update(sender, instance, **kwargs):
     )
     cache.delete_many(
         [
-            make_template_fragment_key("problem_html", (instance.id, lang))
-            for lang, _ in settings.LANGUAGES
-        ]
-    )
-    cache.delete_many(
-        [
             "generated-meta-problem:%s:%d" % (lang, instance.id)
             for lang, _ in settings.LANGUAGES
         ]
     )
-    Problem.get_authors.dirty(instance)
 
     for lang, _ in settings.LANGUAGES:
         unlink_if_exists(get_pdf_path("%s.%s.pdf" % (instance.code, lang)))
@@ -82,14 +75,11 @@ def profile_update(sender, instance, **kwargs):
         return
 
     cache.delete_many(
-        [make_template_fragment_key("user_about", (instance.id,))]
-        + [
+        [
             make_template_fragment_key("org_member_count", (org_id,))
             for org_id in instance.organizations.values_list("id", flat=True)
         ]
     )
-
-    _get_basic_info.dirty(instance.id)
 
 
 @receiver(post_save, sender=Contest)
@@ -128,7 +118,7 @@ def comment_update(sender, instance, **kwargs):
 @receiver(post_save, sender=BlogPost)
 def post_update(sender, instance, **kwargs):
     cache.delete(make_template_fragment_key("post_content", (instance.id,)))
-    BlogPost.get_authors.dirty(instance)
+    BlogPost.get_author_ids.dirty(instance)
 
 
 @receiver(post_delete, sender=Submission)
@@ -146,7 +136,6 @@ def contest_submission_delete(sender, instance, **kwargs):
 @receiver(post_save, sender=Organization)
 def organization_update(sender, instance, **kwargs):
     cache.delete_many([make_template_fragment_key("organization_html", (instance.id,))])
-    Organization.get_admin_ids.dirty(instance)
 
 
 _misc_config_i18n = [code for code, _ in settings.LANGUAGES]
@@ -191,3 +180,15 @@ def contest_problem_delete(sender, instance, **kwargs):
 @receiver(post_delete, sender=CourseContest)
 def course_contest_delete(sender, instance, **kwargs):
     instance.contest.delete()
+
+
+@receiver(m2m_changed, sender=Problem.allowed_languages.through)
+def update_allowed_languages(sender, instance, **kwargs):
+    if kwargs["action"] in ["post_add", "post_remove", "post_clear"]:
+        _get_allowed_languages.dirty((instance.id,))
+
+
+@receiver(m2m_changed, sender=Problem.authors.through)
+def update_problem_authors(sender, instance, **kwargs):
+    if kwargs["action"] in ["post_add", "post_remove", "post_clear"]:
+        Problem.get_author_ids.dirty(instance)

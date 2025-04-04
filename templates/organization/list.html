@@ -64,7 +64,11 @@
           {% endif %}
           <div class="org-details">
             <span style="font-weight: bold;">{{ org.name }}</span>
-            <span style="margin-bottom: 0"><i>{{ org.member_count }} {{ _('members') }}</i></span>
+            <span style="margin-bottom: 0"><i>{{ org.member_count }} {{ _('members') }}</i>
+              {% if request.profile and org.id in request.profile.get_admin_organization_ids() %}
+                <i class="fa fa-crown" style="color: gold;" title="{{ _('You are an admin of this organization') }}"></i>
+              {% endif %}
+            </span>
           </div>
           {% if tab == 'mine' %}
             <div class="background-royalblue button small">{{ _('View') }}</div>

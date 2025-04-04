@@ -334,8 +334,8 @@ def get_online_count():
     return Profile.objects.filter(last_access__gte=last_5_minutes).count()
 
 
-def get_user_online_status(user):
-    time_diff = timezone.now() - user.last_access
+def get_user_online_status(profile):
+    time_diff = timezone.now() - profile.get_last_access()
     is_online = time_diff <= timezone.timedelta(minutes=5)
     return is_online
 
@@ -376,12 +376,7 @@ def user_online_status_ajax(request):
 def get_online_status(profile, other_profile_ids, rooms=None):
     if not other_profile_ids:
         return None
-    Profile.prefetch_profile_cache(other_profile_ids)
-
-    joined_ids = ",".join([str(id) for id in other_profile_ids])
-    other_profiles = Profile.objects.raw(
-        f"SELECT * from judge_profile where id in ({joined_ids}) order by field(id,{joined_ids})"
-    )
+    other_profiles = Profile.get_cached_instances(*other_profile_ids)
     last_5_minutes = timezone.now() - timezone.timedelta(minutes=5)
     ret = []
     if rooms:
@@ -401,7 +396,7 @@ def get_online_status(profile, other_profile_ids, rooms=None):
 
     for other_profile in other_profiles:
         is_online = False
-        if other_profile.last_access >= last_5_minutes:
+        if other_profile.get_last_access() >= last_5_minutes:
             is_online = True
         user_dict = {"user": other_profile, "is_online": is_online}
         if rooms:
@@ -440,7 +435,7 @@ def get_status_context(profile, include_ignored=False):
         .values("other_user", "id")[:20]
     )
 
-    recent_profile_ids = [str(i["other_user"]) for i in recent_profile]
+    recent_profile_ids = [i["other_user"] for i in recent_profile]
     recent_rooms = [int(i["id"]) for i in recent_profile]
     Room.prefetch_room_cache(recent_rooms)
 

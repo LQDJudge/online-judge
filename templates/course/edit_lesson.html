@@ -57,7 +57,7 @@
       {% endif %}
     {% endfor %}
   </form>
-  <button type="button" style="float: right" onclick="window.location.href='{{ url('course_lesson_create', course.slug) }}'">
-    Create New Lesson
-  </button>
+  <a class="button" style="float: right" href="{{ url('course_lesson_create', course.slug) }}">
+    {{_('Create New Lesson')}}
+  </a>
 {% endblock %}

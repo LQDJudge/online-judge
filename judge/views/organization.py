@@ -9,7 +9,7 @@ from django.core.exceptions import PermissionDenied
 from django.utils.text import slugify
 from django.db import transaction
 from django.db import IntegrityError
-from django.db.models import Count, Q, Value, BooleanField
+from django.db.models import Count, Q, Value, BooleanField, Subquery, OuterRef
 from django.db.utils import ProgrammingError
 from django.forms import Form, modelformset_factory
 from django.http import (
@@ -77,6 +77,7 @@ from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
 from judge.views.submission import SubmissionsListBase
 from judge.views.feed import FeedView
+from judge.models.profile import get_top_rating_profile, get_top_score_profile
 
 __all__ = [
     "OrganizationList",
@@ -234,18 +235,8 @@ class OrganizationHomeView(OrganizationMixin):
                 organizations=self.organization,
                 authors=self.request.profile,
             ).count()
-        context["top_rated"] = (
-            self.organization.members.filter(is_unlisted=False)
-            .order_by("-rating")
-            .only("id", "rating")[:10]
-        )
-        context["top_scorer"] = (
-            self.organization.members.filter(is_unlisted=False)
-            .order_by("-performance_points")
-            .only("id", "performance_points")[:10]
-        )
-        Profile.prefetch_profile_cache([p.id for p in context["top_rated"]])
-        Profile.prefetch_profile_cache([p.id for p in context["top_scorer"]])
+        context["top_rated"] = get_top_rating_profile(self.organization.id)
+        context["top_scorer"] = get_top_score_profile(self.organization.id)
 
         return context
 
@@ -258,10 +249,13 @@ class OrganizationList(
     template_name = "organization/list.html"
     title = gettext_lazy("Groups")
     paginate_by = 12
-    all_sorts = frozenset(("name", "member_count"))
-    default_desc = frozenset(("name", "member_count"))
+    all_sorts = frozenset(("name", "member_count", "last_visit"))
+    default_desc = frozenset(("name", "member_count", "last_visit"))
 
     def get_default_sort_order(self, request):
+        # Default to last visit time for "mine" and "public", member count for "private"
+        if self.current_tab in ("public", "mine") and self.request.profile:
+            return "-last_visit"
         return "-member_count"
 
     def get(self, request, *args, **kwargs):
@@ -274,12 +268,30 @@ class OrganizationList(
         return super(OrganizationList, self).get(request, *args, **kwargs)
 
     def _get_queryset(self):
-        queryset = (
-            super(OrganizationList, self)
-            .get_queryset()
-            .annotate(member_count=Count("member"))
-            .defer("about")
-        )
+        profile = self.request.profile
+
+        # Join with OrganizationProfile to get the last visit time
+        if profile:
+            queryset = (
+                super(OrganizationList, self)
+                .get_queryset()
+                .annotate(member_count=Count("member"))
+                .annotate(
+                    last_visit=Subquery(
+                        OrganizationProfile.objects.filter(
+                            profile=profile, organization_id=OuterRef("id")
+                        ).values("last_visit_time")[:1]
+                    )
+                )
+                .defer("about")
+            )
+        else:
+            queryset = (
+                super(OrganizationList, self)
+                .get_queryset()
+                .annotate(member_count=Count("member"))
+                .defer("about")
+            )
 
         if self.organization_query:
             queryset = queryset.filter(
@@ -335,13 +347,23 @@ class OrganizationList(
         context["current_tab"] = self.current_tab
         context["page_type"] = self.current_tab
         context["organization_query"] = self.organization_query
-        context["selected_order"] = self.request.GET.get("order")
+        context["selected_order"] = self.request.GET.get(
+            "order", self.get_default_sort_order(self.request)
+        )
         context["all_sort_options"] = [
             ("name", _("Name (asc.)")),
             ("-name", _("Name (desc.)")),
             ("member_count", _("Member count (asc.)")),
             ("-member_count", _("Member count (desc.)")),
         ]
+
+        # Only add last visit options if user is authenticated
+        if self.request.user.is_authenticated:
+            context["all_sort_options"].extend(
+                [
+                    ("-last_visit", _("Last visit")),
+                ]
+            )
 
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())
@@ -968,12 +990,10 @@ class EditOrganization(
             raise PermissionDenied()
         return object
 
-    def get_form(self, form_class=None):
-        form = super(EditOrganization, self).get_form(form_class)
-        form.fields["admins"].queryset = Profile.objects.filter(
-            Q(organizations=self.object) | Q(admin_of=self.object)
-        ).distinct()
-        return form
+    def get_form_kwargs(self):
+        kwargs = super(EditOrganization, self).get_form_kwargs()
+        kwargs["org_id"] = self.organization.id
+        return kwargs
 
     def form_valid(self, form):
         with revisions.create_revision():

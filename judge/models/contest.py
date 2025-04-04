@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models, transaction
-from django.db.models import CASCADE, Q
+from django.db.models import CASCADE, Q, Count
 from django.db.models.signals import m2m_changed
 from django.urls import reverse
 from django.utils import timezone
@@ -43,6 +43,7 @@ __all__ = [
     "OfficialContest",
     "OfficialContestCategory",
     "OfficialContestLocation",
+    "get_contest_problem_ids",
 ]
 
 
@@ -519,6 +520,18 @@ class Contest(models.Model, PageVotable, Bookmarkable):
     def tester_ids(self):
         return self._tester_ids()
 
+    def get_organization_ids(self):
+        return _get_contest_organization_ids(self.id)
+
+    @classmethod
+    def prefetch_organization_ids(cls, *contest_ids):
+        """Prefetch organization IDs for multiple contests"""
+        _get_contest_organization_ids.batch([(id,) for id in contest_ids])
+
+    def get_organizations(self):
+        organization_ids = self.get_organization_ids()
+        return Organization.get_cached_instances(*organization_ids)
+
     def __str__(self):
         return f"{self.name} ({self.key})"
 
@@ -710,6 +723,13 @@ def update_private(sender, instance, **kwargs):
         instance.save(update_fields=["is_private"])
 
 
+@receiver(m2m_changed, sender=Contest.organizations.through)
+def on_contest_organization_change(sender, instance, action, **kwargs):
+    if action in ["post_add", "post_remove", "post_clear"]:
+        if isinstance(instance, Contest):
+            _get_contest_organization_ids.dirty((instance.id,))
+
+
 class ContestParticipation(models.Model):
     LIVE = 0
     SPECTATE = -1
@@ -829,16 +849,16 @@ class ContestParticipation(models.Model):
     def __str__(self):
         if self.spectate:
             return gettext("%s spectating in %s") % (
-                self.user.username,
+                self.username,
                 self.contest.name,
             )
         if self.virtual:
             return gettext("%s in %s, v%d") % (
-                self.user.username,
+                self.username,
                 self.contest.name,
                 self.virtual,
             )
-        return gettext("%s in %s") % (self.user.username, self.contest.name)
+        return gettext("%s in %s") % (self.username, self.contest.name)
 
     class Meta:
         verbose_name = _("contest participation")
@@ -883,6 +903,23 @@ class ContestProblem(models.Model):
         max_length=20,
     )
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Invalidate the cache when a contest problem is updated
+        get_contest_problem_points.dirty(self.contest_id)
+        get_contest_problem_ids.dirty(self.contest_id)
+
+    save.alters_data = True
+
+    def delete(self, *args, **kwargs):
+        contest_id = self.contest_id
+        super().delete(*args, **kwargs)
+        # Invalidate the cache when a contest problem is deleted
+        get_contest_problem_points.dirty(contest_id)
+        get_contest_problem_ids.dirty(contest_id)
+
+    delete.alters_data = True
+
     @property
     def clarifications(self):
         return ContestProblemClarification.objects.filter(problem=self)
@@ -920,6 +957,21 @@ class ContestSubmission(models.Model):
         help_text=_("Whether this submission was ran only on pretests."),
         default=False,
     )
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Invalidate the user count cache when a submission is added or updated
+        get_contest_problem_user_count.dirty(self.problem.contest_id)
+
+    save.alters_data = True
+
+    def delete(self, *args, **kwargs):
+        contest_id = self.problem.contest_id
+        super().delete(*args, **kwargs)
+        # Invalidate the cache when a submission is deleted
+        get_contest_problem_user_count.dirty(contest_id)
+
+    delete.alters_data = True
 
     class Meta:
         verbose_name = _("contest submission")
@@ -1059,3 +1111,92 @@ class OfficialContest(models.Model):
     class Meta:
         verbose_name = _("official contest")
         verbose_name_plural = _("official contests")
+
+
+@cache_wrapper(prefix="contest_problem_points", expected_type=dict)
+def get_contest_problem_points(contest_id):
+    return {
+        cp["problem_id"]: cp["points"]
+        for cp in ContestProblem.objects.filter(contest_id=contest_id).values(
+            "problem_id", "points"
+        )
+    }
+
+
+@cache_wrapper(prefix="contest_problem_id", expected_type=list)
+def get_contest_problem_ids(contest_id):
+    """
+    Get a list of problem IDs for a given contest.
+
+    Args:
+        contest_id: The ID of the contest
+
+    Returns:
+        A list of problem IDs associated with the contest
+    """
+    return list(
+        ContestProblem.objects.filter(contest_id=contest_id)
+        .order_by("order")
+        .values_list("problem_id", flat=True)
+    )
+
+
+@cache_wrapper(prefix="contest_problem_user_count", expected_type=dict)
+def get_contest_problem_user_count(contest_id):
+    """
+    Get the number of unique users who submitted to each problem in a contest.
+
+    Args:
+        contest_id: The ID of the contest
+
+    Returns:
+        A dictionary mapping problem_id to the count of users who submitted
+    """
+    user_counts = (
+        ContestProblem.objects.filter(contest_id=contest_id)
+        .annotate(user_count=Count("submission__participation", distinct=True))
+        .values("problem_id", "user_count")
+    )
+
+    return {item["problem_id"]: item["user_count"] for item in user_counts}
+
+
+def _get_contest_organization_ids_batch(args_list):
+    """
+    Batch function to get organization IDs for multiple contests efficiently.
+
+    Args:
+        args_list: List of tuples, each containing a single contest_id
+
+    Returns:
+        List of organization ID lists, one for each contest_id in args_list
+    """
+    # Extract contest IDs from args_list
+    contest_ids = [args[0] for args in args_list]
+
+    # Direct query to the through table to avoid JOIN
+    through_model = Contest.organizations.through
+    query = through_model.objects.filter(contest_id__in=contest_ids)
+
+    # Group organization IDs by contest ID
+    contest_orgs = {}
+    for contest_id, org_id in query.values_list("contest_id", "organization_id"):
+        if contest_id not in contest_orgs:
+            contest_orgs[contest_id] = []
+        contest_orgs[contest_id].append(org_id)
+
+    # Return results in the same order as input contest_ids
+    results = []
+    for contest_id in contest_ids:
+        results.append(contest_orgs.get(contest_id, []))
+
+    return results
+
+
+@cache_wrapper(
+    prefix="Cgoi", expected_type=list, batch_fn=_get_contest_organization_ids_batch
+)
+def _get_contest_organization_ids(contest_id):
+    """Get organization IDs for a contest"""
+    results = _get_contest_organization_ids_batch([(contest_id,)])
+    return results[0]

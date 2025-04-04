@@ -104,39 +104,33 @@ class UserSearchSelect2View(BaseListView):
     def get_queryset(self):
         return _get_user_queryset(self.term)
 
-    def get_json_result_from_object(self, user_tuple):
-        pk, username, email, display_rank, profile_image = user_tuple
+    def get_json_result_from_object(self, pk):
+        profile = Profile(id=pk)
         return {
-            "text": username,
-            "id": username,
+            "text": profile.username,
+            "id": profile.username,
             "gravatar_url": gravatar(
-                None,
+                pk,
                 self.gravatar_size,
-                self.gravatar_default,
-                self.get_profile_image_url(profile_image),
-                email,
             ),
-            "display_rank": display_rank,
+            "display_rank": profile.get_display_rank(),
         }
 
     def get(self, request, *args, **kwargs):
         self.request = request
         self.kwargs = kwargs
         self.term = kwargs.get("term", request.GET.get("term", ""))
-        self.gravatar_size = request.GET.get("gravatar_size", 128)
-        self.gravatar_default = request.GET.get("gravatar_default", None)
+        self.gravatar_size = request.GET.get("gravatar_size", 32)
 
-        self.object_list = self.get_queryset().values_list(
-            "pk", "user__username", "user__email", "display_rank", "profile_image"
-        )
+        self.object_list = self.get_queryset().values_list("pk", flat=True)
 
         context = self.get_context_data()
 
         return JsonResponse(
             {
                 "results": [
-                    self.get_json_result_from_object(user_tuple)
-                    for user_tuple in context["object_list"]
+                    self.get_json_result_from_object(pk)
+                    for pk in context["object_list"]
                 ],
                 "more": context["page_obj"].has_next(),
             }
@@ -144,11 +138,6 @@ class UserSearchSelect2View(BaseListView):
 
     def get_name(self, obj):
         return str(obj)
-
-    def get_profile_image_url(self, profile_image):
-        if profile_image:
-            return urljoin(settings.MEDIA_URL, profile_image)
-        return None
 
 
 class ContestUserSearchSelect2View(UserSearchSelect2View):
@@ -179,21 +168,18 @@ class AssigneeSelect2View(UserSearchSelect2View):
 
 
 class ChatUserSearchSelect2View(UserSearchSelect2View):
-    def get_json_result_from_object(self, user_tuple):
+    def get_json_result_from_object(self, pk):
         if not self.request.user.is_authenticated:
             raise Http404()
-        pk, username, email, display_rank, profile_image = user_tuple
+        profile = Profile(id=pk)
         return {
-            "text": username,
+            "text": profile.username,
             "id": encrypt_url(self.request.profile.id, pk),
             "gravatar_url": gravatar(
-                None,
+                pk,
                 self.gravatar_size,
-                self.gravatar_default,
-                self.get_profile_image_url(profile_image),
-                email,
             ),
-            "display_rank": display_rank,
+            "display_rank": profile.get_display_rank(),
         }
 
 
@@ -203,9 +189,8 @@ class ProblemAuthorSearchSelect2View(UserSearchSelect2View):
             authored_problems__isnull=False, user__username__icontains=self.term
         ).distinct()
 
-    def get_json_result_from_object(self, user_tuple):
-        pk, username, email, display_rank, profile_image = user_tuple
+    def get_json_result_from_object(self, pk):
         return {
-            "text": username,
+            "text": Profile(pk).username,
             "id": pk,
         }

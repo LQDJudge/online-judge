@@ -22,7 +22,7 @@
     {% endif %}
     {% if not organization %}
       {% if contest.is_organization_private %}
-        {% for org in contest.organizations.all() %}
+        {% for org in contest.get_organizations() %}
           {% include "organization/tag.html" %}
         {% endfor %}
       {% endif %}

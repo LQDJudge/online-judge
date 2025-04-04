@@ -75,7 +75,7 @@
     </div>
   {% endif %}
 
-  {% if request.user.is_authenticated and request.user != user.user %}
+  {% if request.user.is_authenticated and request.profile != user %}
     <div class="hide-solved-problems"><span>
       <form name="form" action="" method="get">
         <input id="hide_solved" style="vertical-align:middle" onclick="form.submit()" type="checkbox"

@@ -15,11 +15,15 @@ from django_ratelimit.decorators import ratelimit
 from django.conf import settings
 from django.http import JsonResponse
 
-from judge.models.pagevote import PageVote, PageVoteVoter, dirty_pagevote
+from judge.models.pagevote import (
+    PageVote,
+    PageVoteVoter,
+    dirty_pagevote,
+    VoteService,
+)
 
 __all__ = [
-    "upvote_page",
-    "downvote_page",
+    "vote_page",
     "PageVoteDetailView",
     "PageVoteListView",
 ]
@@ -27,6 +31,7 @@ __all__ = [
 
 @login_required
 def vote_page(request):
+    """Vote on a page using the PageVote system"""
     try:
         delta = int(request.POST.get("delta"))
         if delta not in [1, 0, -1]:
@@ -71,35 +76,11 @@ def vote_page(request):
     except PageVote.DoesNotExist:
         raise Http404(_("The specified PageVote does not exist."))
 
-    vote, created = PageVoteVoter.objects.get_or_create(
-        pagevote=pagevote, voter=request.profile, defaults={"score": 0}
-    )
+    # Get the linked object
+    linked_object = pagevote.linked_object
 
-    if delta == 0:
-        # Remove the vote
-        if not created:
-            PageVote.objects.filter(id=pagevote_id).update(
-                score=F("score") - vote.score
-            )
-            vote.delete()
-    else:
-        if created:
-            # New vote
-            vote.score = delta
-            vote.save()
-            PageVote.objects.filter(id=pagevote_id).update(score=F("score") + delta)
-        else:
-            # Update existing vote
-            PageVote.objects.filter(id=pagevote_id).update(
-                score=F("score") + delta - vote.score
-            )
-            vote.score = delta
-            vote.save()
-
-    # Get the updated score
-    current_score = PageVote.objects.get(id=pagevote_id).score
-
-    dirty_pagevote(pagevote, request.profile)
+    # Use the VoteService to handle the vote logic
+    current_score = VoteService.vote(linked_object, request.user, delta)
 
     # Return the updated score as JSON
     return JsonResponse({"current_score": current_score})

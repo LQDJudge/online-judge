@@ -265,3 +265,8 @@ class Judge(models.Model):
         ordering = ["name"]
         verbose_name = _("judge")
         verbose_name_plural = _("judges")
+
+
+@cache_wrapper(prefix="galkn", timeout=1800)
+def get_all_languages():
+    return list(Language.objects.values("key", "name", "id", "common_name"))

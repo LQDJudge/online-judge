@@ -154,7 +154,7 @@ class UserPage(TitleMixin, UserMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super(UserPage, self).get_context_data(**kwargs)
 
-        context["followed"] = Friend.is_friend(self.request.profile, self.object)
+        context["followed"] = self.object.is_followed_by(self.request.profile)
         context["hide_solved"] = int(self.hide_solved)
         context["authored"] = self.object.authored_problems.filter(
             is_public=True, is_organization_private=False
@@ -443,14 +443,14 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
     title = gettext_lazy("Leaderboard")
     context_object_name = "users"
     template_name = "user/list.html"
-    paginate_by = 100
+    paginate_by = 10
     all_sorts = frozenset(("points", "problem_count", "rating", "performance_points"))
     default_desc = all_sorts
     default_sort = "-performance_points"
     filter_friend = False
 
     def filter_friend_queryset(self, queryset):
-        friends = self.request.profile.get_friends()
+        friends = self.request.profile.get_following_ids(True)
         ret = queryset.filter(id__in=friends)
         return ret
 
@@ -459,12 +459,7 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
             Profile.objects.filter(is_unlisted=False)
             .order_by(self.order)
             .only(
-                "display_rank",
-                "points",
-                "rating",
-                "performance_points",
-                "problem_count",
-                "about",
+                "id",
             )
         )
         if self.request.organization:
@@ -476,7 +471,8 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
 
     def get_context_data(self, **kwargs):
         context = super(UserList, self).get_context_data(**kwargs)
-        Profile.prefetch_profile_cache([u.id for u in context["users"]])
+        Profile.get_cached_instances(*[u.id for u in context["users"]])
+        Profile.prefetch_cache_about(*[u.id for u in context["users"]])
         context["users"] = ranker(
             context["users"], rank=self.paginate_by * (context["page_obj"].number - 1)
         )
@@ -625,5 +621,5 @@ def toggle_follow(request, user):
     if request.profile.id == profile_to_follow.id:
         raise Http404()
 
-    Friend.toggle_friend(request.profile, profile_to_follow)
+    Friend.toggle_follow(request.profile, profile_to_follow)
     return HttpResponseRedirect(reverse("user_page", args=(user,)))

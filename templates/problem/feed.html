@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block middle_content %}
-  <div class="tabs tabs-no-flex">
+  <div class="tabs">
     <ul>
       <li class="{{'active' if feed_type=='for_you'}}">
         <a href="{{url('problem_feed')}}">{{_('FOR YOU')}}</a>
@@ -15,17 +15,7 @@
       <li class="{{'active' if feed_type=='new'}}">
         <a href="{{url('problem_feed_new')}}">{{_('NEW')}}</a>
       </li>
-      {% if request.user.has_perm('judge.suggest_problem_changes') %}
-        <li class="{{'active' if feed_type=='volunteer'}}">
-          <a href="{{url('problem_feed_volunteer')}}">{{_('VOLUNTEER')}}</a>
-        </li>
-      {% endif %}
     </ul>
   </div>
-  {% if request.user.has_perm('judge.suggest_problem_changes') and feed_type == 'volunteer' %}
-    <ul style="margin-bottom: 1em; margin-left: auto">
-      <li><a href="{{url('admin:judge_volunteerproblemvote_changelist')}}" target="_blank">{{_('View your votes')}}</a></li>
-    </ul>
-  {% endif %}
   {% include "problem/feed/items.html" %}
 {% endblock %}

@@ -1,12 +1,16 @@
-from django.db.models import Count, Max, Q
+from django.db.models import Count, Max, Q, Case, When
 from django.http import Http404
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import lazy
 from django.utils.translation import gettext as _
 from django.views.generic import ListView
+from django.views.generic.base import TemplateResponseMixin
+from django.views.generic.detail import SingleObjectMixin
+from django.views.generic import View
+from django.contrib.contenttypes.models import ContentType
 
-from judge.views.comment import CommentedDetailView
+from judge.views.comment import CommentableMixin
 from judge.views.pagevote import PageVoteDetailView
 from judge.views.bookmark import BookMarkDetailView
 from judge.models import (
@@ -17,13 +21,19 @@ from judge.models import (
     Profile,
     Ticket,
 )
-from judge.models.profile import Organization, OrganizationProfile
+from judge.models.profile import (
+    Organization,
+    OrganizationProfile,
+    get_top_rating_profile,
+    get_top_score_profile,
+)
 from judge.utils.cachedict import CacheDict
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.tickets import filter_visible_tickets
 from judge.utils.views import TitleMixin
 from judge.utils.users import get_rating_rank, get_points_rank, get_awards
 from judge.views.feed import FeedView
+from judge.models.comment import get_visible_comment_count
 
 
 # General view for all content list on home feed
@@ -63,21 +73,12 @@ class HomeFeedView(FeedView):
             OrganizationProfile.get_most_recent_organizations(self.request.profile)
         )
 
-        profile_queryset = Profile.objects
-        if self.request.organization:
-            profile_queryset = self.request.organization.members
-        context["top_rated"] = (
-            profile_queryset.filter(is_unlisted=False)
-            .order_by("-rating")
-            .only("id", "rating")[:10]
+        context["top_rated"] = get_top_rating_profile(
+            self.request.organization.id if self.request.organization else None
         )
-        context["top_scorer"] = (
-            profile_queryset.filter(is_unlisted=False)
-            .order_by("-performance_points")
-            .only("id", "performance_points")[:10]
+        context["top_scorer"] = get_top_score_profile(
+            self.request.organization.id if self.request.organization else None
         )
-        Profile.prefetch_profile_cache([p.id for p in context["top_rated"]])
-        Profile.prefetch_profile_cache([p.id for p in context["top_scorer"]])
 
         if self.request.user.is_authenticated:
             context["rating_rank"] = get_rating_rank(self.request.profile)
@@ -108,18 +109,47 @@ class PostList(HomeFeedView):
     feed_content_template_name = "blog/content.html"
     url_name = "blog_post_list"
 
+    def get(self, request, *args, **kwargs):
+        self.feed_type = request.GET.get("feed_type", "official")
+        self.sort_by = request.GET.get("sort_by", "newest")
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
-        queryset = (
-            BlogPost.objects.filter(visible=True, publish_on__lte=timezone.now())
-            .order_by("-sticky", "-publish_on")
-            .prefetch_related("organizations")
-        )
-        filter = Q(is_organization_private=False)
-        if self.request.user.is_authenticated:
-            filter |= Q(organizations__in=self.request.profile.organizations.all())
+        queryset = BlogPost.objects.filter(visible=True, publish_on__lte=timezone.now())
+
         if self.request.organization:
-            filter &= Q(organizations=self.request.organization)
-        queryset = queryset.filter(filter)
+            queryset = queryset.filter(organizations=self.request.organization)
+
+        if self.feed_type == "official":
+            if not self.request.organization:
+                queryset = queryset.filter(is_organization_private=False)
+            if self.sort_by == "newest":
+                queryset = queryset.order_by("-sticky", "-publish_on")
+        elif self.feed_type == "group":
+            if self.request.user.is_authenticated:
+                if not self.request.organization:
+                    queryset = queryset.filter(
+                        is_organization_private=True,
+                        organizations__in=self.request.profile.get_organization_ids(),
+                    )
+                if self.sort_by == "newest":
+                    queryset = queryset.order_by("-publish_on")
+            else:
+                queryset = queryset.none()
+        elif self.feed_type == "open_group":
+            if not self.request.organization:
+                queryset = queryset.filter(
+                    is_organization_private=True,
+                    organizations__is_open=True,
+                )
+            if self.sort_by == "newest":
+                queryset = queryset.order_by("-publish_on")
+
+        if self.sort_by == "latest_comment":
+            queryset = queryset.annotate(latest_comment=Max("comments__time")).order_by(
+                "-latest_comment", "-publish_on"
+            )
+
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -128,6 +158,16 @@ class PostList(HomeFeedView):
             self.title or _("Page %d of Posts") % context["page_obj"].number
         )
         context["page_type"] = "blog"
+        context["feed_type"] = self.feed_type
+        context["sort_by"] = self.sort_by
+        context["show_organization_private_icon"] = True
+        BlogPost.prefetch_organization_ids(*[post.id for post in context["posts"]])
+        return context
+
+    def get_feed_context(self, object_list):
+        context = {}
+        context["show_organization_private_icon"] = True
+        BlogPost.prefetch_organization_ids(*[post.id for post in object_list])
         return context
 
 
@@ -187,7 +227,15 @@ class CommentFeed(HomeFeedView):
         return context
 
 
-class PostView(TitleMixin, CommentedDetailView, PageVoteDetailView, BookMarkDetailView):
+class PostView(
+    TitleMixin,
+    CommentableMixin,
+    PageVoteDetailView,
+    BookMarkDetailView,
+    TemplateResponseMixin,
+    SingleObjectMixin,
+    View,
+):
     model = BlogPost
     pk_url_kwarg = "id"
     context_object_name = "post"
@@ -196,17 +244,28 @@ class PostView(TitleMixin, CommentedDetailView, PageVoteDetailView, BookMarkDeta
     def get_title(self):
         return self.object.title
 
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return self.render_to_response(
+            self.get_context_data(
+                object=self.object,
+            )
+        )
+
     def get_context_data(self, **kwargs):
         context = super(PostView, self).get_context_data(**kwargs)
         context["og_image"] = self.object.og_image
         context["editable_orgs"] = []
 
-        orgs = list(self.object.organizations.all())
+        context["organizations"] = self.object.get_organizations()
 
         if self.request.profile:
-            for org in orgs:
+            for org in context["organizations"]:
                 if self.request.profile.can_edit_organization(org):
                     context["editable_orgs"].append(org)
+
+        # Add comment context
+        context = self.get_comment_context(context)
 
         return context
 

@@ -100,8 +100,8 @@
     </div>
     <div style="display: flex; justify-content: space-between;">
       <input type="submit" value="{{_('Save')}}" >
-      <button type="submit" name="delete_lesson" onclick="return confirm('Are you sure you want to delete this lesson?')">
-        Delete Lesson
+      <button type="submit" name="delete_lesson" onclick="return confirm('{{_('Are you sure you want to delete this lesson?')}}')">
+        {{_('Delete Lesson')}}
       </button>
     </div>
   </form>

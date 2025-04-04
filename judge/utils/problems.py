@@ -247,8 +247,7 @@ def get_related_problems(profile, problem, limit=8):
     seed = datetime.now().strftime("%d%m%Y")
     random.shuffle(results)
     results = results[:limit]
-    results = [Problem.objects.get(id=i) for i in results]
-    return results
+    return Problem.get_cached_instances(*results)
 
 
 def finished_submission(sub):

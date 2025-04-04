@@ -24,6 +24,7 @@
   {% include "feed/feed_js.html" %}
   <script type="text/javascript">
     $(document).ready(function () {
+      $("#sort-selector").select2();
       $('.time-remaining').each(function () {
         count_down($(this));
       });
@@ -36,6 +37,8 @@
         $('.middle-content').hide();
         $('.right-sidebar').show();
       });
+
+
     });
   </script>
 {% endblock %}
@@ -50,8 +53,27 @@
 {% endblock %}
 
 {% block middle_content %}
-  {% set show_organization_private_icon=True %}
   {% if page_type == 'blog' %}
+    <div class="tabs" id="home-feed-tabs">
+      <ul>
+        <li class="{{'active' if feed_type=='official'}}">
+          <a href="{{url('home')}}?feed_type=official{% if sort_by %}&sort_by={{sort_by}}{% endif %}">{{_('OFFICIAL')}}</a>
+        </li>
+        <li class="{{'active' if feed_type=='group'}}">
+          <a href="{{url('home')}}?feed_type=group{% if sort_by %}&sort_by={{sort_by}}{% endif %}">{{_('GROUP')}}</a>
+        </li>
+        <li class="{{'active' if feed_type=='open_group'}}">
+          <a href="{{url('home')}}?feed_type=open_group{% if sort_by %}&sort_by={{sort_by}}{% endif %}">{{_('PUBLIC')}}</a>
+        </li>
+      </ul>
+      <div class="sort-options" style="margin-left: auto; display: flex; align-items: center;" id="home-sort-options">
+        <span style="margin-right: 0.5em;">{{_('Order by')}}:</span>
+        <select id="sort-selector" onchange="navigateTo(this.value, '.middle-content', false)">
+          <option value="{{url('home')}}?feed_type={{feed_type}}&sort_by=newest" {% if sort_by == 'newest' or not sort_by %}selected{% endif %}>{{_('Newest')}}</option>
+          <option value="{{url('home')}}?feed_type={{feed_type}}&sort_by=latest_comment" {% if sort_by == 'latest_comment' %}selected{% endif %}>{{_('Latest Comment')}}</option>
+        </select>
+      </div>
+    </div>
     {% include "blog/content.html" %}
   {% elif page_type == 'ticket' %}
     {% if tickets %}

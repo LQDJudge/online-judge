@@ -51,6 +51,7 @@ from judge.utils.views import TitleMixin
 from judge.utils.timedelta import nice_repr
 from judge.views.contests import ContestMixin
 from judge.caching import cache_wrapper
+from judge.models.runtime import get_all_languages
 
 
 def submission_related(queryset):
@@ -450,7 +451,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["dynamic_update"] = False
         context["show_problem"] = self.show_problem
         context["profile"] = self.request.profile
-        context["all_languages"] = Language.objects.all().values_list("key", "name")
+        context["all_languages"] = get_all_languages()
         context["selected_languages"] = self.selected_languages_key
         context["all_statuses"] = self.get_searchable_status_codes()
         context["selected_statuses"] = self.selected_statuses
@@ -471,6 +472,11 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
                 self.modify_attrs(submission)
         context["is_in_editable_contest"] = (
             self.in_contest and self.contest.is_editable_by(self.request.user)
+        )
+        # Prefetch data
+        Profile.get_cached_instances(*[s.user_id for s in context["submissions"]])
+        Problem.prefetch_cache_i18n_name(
+            self.request.LANGUAGE_CODE, *[s.problem_id for s in context["submissions"]]
         )
 
         return context
@@ -525,7 +531,7 @@ class UserMixin(object):
                 ContestParticipation, id=kwargs["participation"]
             )
             self.profile = self.participation.user
-            self.username = self.profile.user.username
+            self.username = self.profile.username
         if self.profile == request.profile:
             self.include_frozen = True
         return super(UserMixin, self).get(request, *args, **kwargs)
@@ -538,7 +544,7 @@ class ConditionalUserTabMixin(object):
             context["page_type"] = "my_submissions_tab"
         else:
             context["page_type"] = "user_submissions_tab"
-            context["tab_username"] = self.profile.user.username
+            context["tab_username"] = self.profile.username
         return context
 
 
@@ -590,7 +596,7 @@ class AllFriendSubmissions(
     LoginRequiredMixin, InfinitePaginationMixin, GeneralSubmissions
 ):
     def get_queryset(self):
-        friends = self.request.profile.get_friends()
+        friends = self.request.profile.get_following_ids(True)
         return (
             super(AllFriendSubmissions, self).get_queryset().filter(user_id__in=friends)
         )
