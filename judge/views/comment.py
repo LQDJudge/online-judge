@@ -749,10 +749,6 @@ class CommentableMixin:
         else:
             context["target_comment"] = -1
 
-        # Add the comment form for authenticated users
-        if self.request.user.is_authenticated and not is_comment_locked(self.request):
-            context["comment_form"] = CommentForm(
-                self.request, initial={"parent": None}
-            )
+        context["comment_form"] = CommentForm(self.request, initial={"parent": None})
 
         return context
