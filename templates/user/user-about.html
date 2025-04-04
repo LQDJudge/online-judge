@@ -164,7 +164,7 @@
           </div>
         </div>
 
-        {% if rating %}
+        {% if user.rating %}
           <br>
           <h4>{{_('Rating History')}}</h4>
           <div id="rating-chart">
@@ -304,7 +304,7 @@
   </script>
 
 
-  {% if ratings %}
+  {% if rating_data %}
     <script type="text/javascript" src="{{ static('libs/chart.js/Chart.js') }}"></script>
     <script type="text/javascript">
       var rating_history = {{ rating_data }};

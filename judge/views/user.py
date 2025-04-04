@@ -188,31 +188,36 @@ class UserAboutPage(UserPage):
 
     def get_context_data(self, **kwargs):
         context = super(UserAboutPage, self).get_context_data(**kwargs)
-        ratings = context["ratings"] = get_contest_ratings(self.object)
+        ratings = get_contest_ratings(self.object)
 
-        context["rating_data"] = mark_safe(
-            json.dumps(
-                [
-                    {
-                        "label": rating.contest.name,
-                        "rating": rating.rating,
-                        "ranking": rating.rank,
-                        "link": reverse("contest_ranking", args=(rating.contest.key,))
-                        + "#!"
-                        + self.object.username,
-                        "timestamp": (rating.contest.end_time - EPOCH).total_seconds()
-                        * 1000,
-                        "date": date_format(
-                            timezone.localtime(rating.contest.end_time),
-                            _("M j, Y, G:i"),
-                        ),
-                        "class": rating_class(rating.rating),
-                        "height": "%.3fem" % rating_progress(rating.rating),
-                    }
-                    for rating in ratings
-                ]
+        if ratings:
+            context["rating_data"] = mark_safe(
+                json.dumps(
+                    [
+                        {
+                            "label": rating.contest.name,
+                            "rating": rating.rating,
+                            "ranking": rating.rank,
+                            "link": reverse(
+                                "contest_ranking", args=(rating.contest.key,)
+                            )
+                            + "#!"
+                            + self.object.username,
+                            "timestamp": (
+                                rating.contest.end_time - EPOCH
+                            ).total_seconds()
+                            * 1000,
+                            "date": date_format(
+                                timezone.localtime(rating.contest.end_time),
+                                _("M j, Y, G:i"),
+                            ),
+                            "class": rating_class(rating.rating),
+                            "height": "%.3fem" % rating_progress(rating.rating),
+                        }
+                        for rating in ratings
+                    ]
+                )
             )
-        )
 
         context["awards"] = get_awards(self.object)
 
