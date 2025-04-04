@@ -4136,7 +4136,7 @@ msgstr "NHÓM"
 
 #: templates/blog/list.html:66
 msgid "PUBLIC"
-msgstr ""
+msgstr "CÔNG KHAI"
 
 #: templates/blog/list.html:70 templates/comments/list.html:16
 #: templates/contest/official-search-form.html:41
