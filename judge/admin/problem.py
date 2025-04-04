@@ -403,22 +403,24 @@ class ProblemAdmin(CompareVersionAdmin):
 
         # Create notification
         if "is_public" in form.changed_data or "organizations" in form.changed_data:
-            users = set(obj.authors.all())
-            users = users.union(users, set(obj.curators.all()))
+            to_user_ids = obj.get_author_ids() + obj.get_curator_ids()
             orgs = []
             if obj.organizations.count() > 0:
                 for org in obj.organizations.all():
-                    users = users.union(users, set(org.admins.all()))
+                    to_user_ids += org.get_admin_ids()
                     orgs.append(org.name)
             else:
-                admins = Profile.objects.filter(user__is_superuser=True).all()
-                users = users.union(users, admins)
+                admins = Profile.objects.filter(user__is_superuser=True).values_list(
+                    "id", flat=True
+                )
+                to_user_ids += list(admins)
+            to_user_ids = list(set(to_user_ids))
             link = reverse_lazy("admin:judge_problem_change", args=(obj.id,))
             html = f'<a href="{link}">{obj.name}</a>'
             category = "Problem public: " + str(obj.is_public)
             if orgs:
                 category += " (" + ", ".join(orgs) + ")"
-            make_notification(users, category, html, request.profile)
+            make_notification(to_user_ids, category, html, request.profile)
 
     def construct_change_message(self, request, form, *args, **kwargs):
         if form.cleaned_data.get("change_message"):

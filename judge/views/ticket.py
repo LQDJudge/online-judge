@@ -53,7 +53,7 @@ def add_ticket_notifications(users, author, link, ticket):
     users = set(users)
     if author in users:
         users.remove(author)
-    make_notification(users, "Ticket", html, author)
+    make_notification([u.id for u in users], "Ticket", html, author)
 
 
 class TicketForm(forms.Form):

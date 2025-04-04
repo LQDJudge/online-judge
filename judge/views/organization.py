@@ -911,7 +911,9 @@ class AddOrganizationMember(
         self.object.members.add(*new_users)
         link = reverse("organization_home", args=[self.object.id, self.object.slug])
         html = f'<a href="{link}">{self.object.name}</a>'
-        make_notification(new_users, "Added to group", html, self.request.profile)
+        make_notification(
+            [u.id for u in new_users], "Added to group", html, self.request.profile
+        )
         with revisions.create_revision():
             usernames = ", ".join([u.username for u in new_users])
             revisions.set_comment(_("Added members from site") + ": " + usernames)
@@ -1211,7 +1213,10 @@ class AddOrganizationBlog(
                 f'<a href="{link}">{self.object.title} - {self.organization.name}</a>'
             )
             make_notification(
-                self.organization.admins.all(), "Add blog", html, self.request.profile
+                self.organization.get_admin_ids(),
+                "Add blog",
+                html,
+                self.request.profile,
             )
             return res
 
@@ -1309,7 +1314,7 @@ class EditOrganizationBlog(
             args=[self.organization.id, self.organization.slug, self.blog_id],
         )
         html = f'<a href="{link}">{blog.title} - {self.organization.name}</a>'
-        to_users = (self.organization.admins.all() | blog.get_authors()).distinct()
+        to_users = list(set(self.organization.get_admin_ids() + blog.get_author_ids()))
         make_notification(to_users, action, html, self.request.profile)
 
     def form_valid(self, form):
