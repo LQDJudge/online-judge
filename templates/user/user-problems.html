@@ -64,7 +64,7 @@
               <td class="problem-name">
                 <a href="{{ url('problem_detail', problem.code) }}">{{ problem.name }}</a>
               </td>
-              <td class="problem-category">{{ problem.group.full_name }}</td>
+              <td class="problem-category">{{ problem.get_group_name() }}</td>
               <td class="problem-score"><a href="{{ url('ranked_submissions', problem.code) }}">
                 {{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}
               </a></td>

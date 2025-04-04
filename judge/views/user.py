@@ -2,6 +2,7 @@ import itertools
 import json
 from datetime import datetime
 from operator import itemgetter
+from collections import defaultdict
 
 from django.core.cache import cache
 from django.conf import settings
@@ -11,6 +12,7 @@ from django.contrib.auth.models import Permission
 from django.contrib.auth.views import redirect_to_login
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
+from django.db.models import Max
 from django.forms import Form
 from django.http import (
     Http404,
@@ -83,10 +85,6 @@ __all__ = [
     "users",
     "edit_profile",
 ]
-
-
-def remap_keys(iterable, mapping):
-    return [dict((mapping.get(k, k), v) for k, v in item.items()) for item in iterable]
 
 
 class UserMixin(object):
@@ -255,7 +253,7 @@ class UserProblemsPage(UserPage):
     def get_context_data(self, **kwargs):
         context = super(UserProblemsPage, self).get_context_data(**kwargs)
 
-        result = (
+        queryset = list(
             Submission.objects.filter(
                 user=self.object,
                 points__gt=0,
@@ -266,16 +264,21 @@ class UserProblemsPage(UserPage):
                 problem__in=self.get_completed_problems() if self.hide_solved else []
             )
             .values(
-                "problem__id",
-                "problem__code",
-                "problem__name",
-                "problem__points",
-                "problem__group__full_name",
+                "problem_id",
             )
             .distinct()
             .annotate(points=Max("points"))
-            .order_by("problem__group__full_name", "problem__code")
         )
+        problems = Problem.get_cached_instances(*[p["problem_id"] for p in queryset])
+
+        group_problems = defaultdict(list)
+        group_points = defaultdict(float)
+
+        for item, problem in zip(queryset, problems):
+            points = item["points"]
+            group_name = problem.get_group_name()
+            group_problems[group_name].append(problem)
+            group_points[group_name] += points
 
         def process_group(group, problems_iter):
             problems = list(problems_iter)
@@ -283,19 +286,8 @@ class UserProblemsPage(UserPage):
             return {"name": group, "problems": problems, "points": points}
 
         context["best_submissions"] = [
-            process_group(group, problems)
-            for group, problems in itertools.groupby(
-                remap_keys(
-                    result,
-                    {
-                        "problem__code": "code",
-                        "problem__name": "name",
-                        "problem__points": "total",
-                        "problem__group__full_name": "group",
-                    },
-                ),
-                itemgetter("group"),
-            )
+            {"name": name, "problems": problems, "points": group_points[name]}
+            for name, problems in group_problems.items()
         ]
         breakdown, has_more = get_pp_breakdown(self.object, start=0, end=10)
         context["pp_breakdown"] = breakdown
