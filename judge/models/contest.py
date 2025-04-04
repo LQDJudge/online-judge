@@ -382,6 +382,12 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         if self.start_time < earliest_start_time:
             self.start_time = earliest_start_time
 
+        # If start_time is more than a year from now, set it to a year from now
+        now = timezone.now()
+        one_year_from_now = now + timedelta(days=365)
+        if self.start_time > one_year_from_now:
+            self.start_time = one_year_from_now
+
         if self.end_time < self.start_time:
             self.end_time = self.start_time + timedelta(hours=1)
 
