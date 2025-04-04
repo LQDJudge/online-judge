@@ -422,7 +422,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         )
 
     def __str__(self):
-        return "%s (%s)" % (self.get_name(), self.get_code())
+        return "%s (%s)" % (self.name, self.code)
 
     def get_absolute_url(self):
         return reverse("problem_detail", args=(self.get_code(),))
@@ -678,6 +678,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         problem_data_storage.delete_directory(self.code)
 
     save.alters_data = True
+    delete.alters_data = True
 
     class Meta:
         permissions = (
@@ -956,7 +957,7 @@ def _get_problem_description_batch(args_list):
         if problem_id in description_dict:
             results.append(description_dict[problem_id])
         else:
-            results.append(None)
+            results.append("")
 
     return results
 

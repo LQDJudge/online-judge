@@ -168,7 +168,10 @@ class CacheableModel(models.Model):
 
     def __getattribute__(self, name):
         # Avoid recursion for certain attributes
-        if name in ("_meta", "_state", "__class__", "__dict__"):
+        if name in ("_meta", "_state", "__class__", "__dict__", "id"):
+            return super().__getattribute__(name)
+
+        if not self.id:
             return super().__getattribute__(name)
 
         try:
