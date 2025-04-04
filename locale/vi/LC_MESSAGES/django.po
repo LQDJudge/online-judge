@@ -4309,10 +4309,8 @@ msgid "Post!"
 msgstr "Đăng!"
 
 #: templates/comments/list.html:58
-#, fuzzy
-#| msgid "Editing comment"
 msgid "Loading comments..."
-msgstr "Chỉnh sửa bình luận"
+msgstr "Tải bình luận..."
 
 #: templates/comments/list.html:66
 msgid "There are no comments at the moment."
@@ -4324,10 +4322,8 @@ msgstr "Bình luận bị tắt trong trang này."
 
 #: templates/comments/list.html:115 templates/comments/list.html:145
 #: templates/comments/list.html:182
-#, fuzzy
-#| msgid "Editing comment"
 msgid "Error loading comments."
-msgstr "Chỉnh sửa bình luận"
+msgstr "Tải bình luận bị lỗi."
 
 #: templates/comments/media-js.html:129
 msgid "Replying to comment"
