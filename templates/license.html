@@ -1,8 +1,6 @@
 {% extends "common-content.html" %}
 {% block description %}
-  {% cache 3600 'license_html' license.id %}
-    {{ license.text|markdown }}
-  {% endcache %}
+  {{ license.text|markdown }}
 {% endblock %}
 
 {% block info_float %}

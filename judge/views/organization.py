@@ -378,16 +378,12 @@ class OrganizationHome(OrganizationHomeView, FeedView):
     feed_content_template_name = "blog/content.html"
 
     def get_queryset(self):
-        return (
-            BlogPost.objects.filter(
-                visible=True,
-                publish_on__lte=timezone.now(),
-                is_organization_private=True,
-                organizations=self.organization,
-            )
-            .order_by("-sticky", "-publish_on")
-            .prefetch_related("authors__user", "organizations")
-        )
+        return BlogPost.objects.filter(
+            visible=True,
+            publish_on__lte=timezone.now(),
+            is_organization_private=True,
+            organizations=self.organization,
+        ).order_by("-sticky", "-publish_on")
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationHome, self).get_context_data(**kwargs)
@@ -470,7 +466,6 @@ class OrganizationUsers(
 
 class OrganizationProblems(LoginRequiredMixin, MemberOrganizationMixin, ProblemList):
     template_name = "organization/problems.html"
-    filter_organization = True
 
     def get_queryset(self):
         self.org_query = [self.organization_id]

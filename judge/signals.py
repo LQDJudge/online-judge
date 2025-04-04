@@ -87,38 +87,7 @@ def contest_update(sender, instance, **kwargs):
     if hasattr(instance, "_updating_stats_only"):
         return
 
-    cache.delete_many(
-        ["generated-meta-contest:%d" % instance.id]
-        + [make_template_fragment_key("contest_html", (instance.id,))]
-    )
-
-
-@receiver(post_save, sender=License)
-def license_update(sender, instance, **kwargs):
-    cache.delete(make_template_fragment_key("license_html", (instance.id,)))
-
-
-@receiver(post_save, sender=Language)
-def language_update(sender, instance, **kwargs):
-    cache.delete_many(
-        [make_template_fragment_key("language_html", (instance.id,)), "lang:cn_map"]
-    )
-
-
-@receiver(post_save, sender=Judge)
-def judge_update(sender, instance, **kwargs):
-    cache.delete(make_template_fragment_key("judge_html", (instance.id,)))
-
-
-@receiver(post_save, sender=Comment)
-def comment_update(sender, instance, **kwargs):
-    cache.delete("comment_feed:%d" % instance.id)
-
-
-@receiver(post_save, sender=BlogPost)
-def post_update(sender, instance, **kwargs):
-    cache.delete(make_template_fragment_key("post_content", (instance.id,)))
-    BlogPost.get_author_ids.dirty(instance)
+    cache.delete_many(["generated-meta-contest:%d" % instance.id])
 
 
 @receiver(post_delete, sender=Submission)
@@ -131,11 +100,6 @@ def submission_delete(sender, instance, **kwargs):
 def contest_submission_delete(sender, instance, **kwargs):
     participation = instance.participation
     participation.recompute_results()
-
-
-@receiver(post_save, sender=Organization)
-def organization_update(sender, instance, **kwargs):
-    cache.delete_many([make_template_fragment_key("organization_html", (instance.id,))])
 
 
 _misc_config_i18n = [code for code, _ in settings.LANGUAGES]

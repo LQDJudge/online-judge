@@ -161,13 +161,13 @@ class SolvedProblemMixin(object):
         else:
             return user_attempted_ids(self.profile) if self.profile is not None else ()
 
-    def get_latest_attempted_problems(self, limit=None, queryset=None):
+    def get_latest_attempted_problems(self, limit=None, queryset_ids=None):
         if self.in_contest or not self.profile:
             return ()
-        result = list(user_attempted_ids(self.profile).values())
-        if queryset:
-            queryset_ids = set([i.code for i in queryset])
-            result = filter(lambda i: i["code"] in queryset_ids, result)
+        result = user_attempted_ids(self.profile)
+        if queryset_ids:
+            result = {i: v for i, v in result.items() if i in queryset_ids}
+        result = list(result.values())
         result = sorted(result, key=lambda d: -d["last_submission"])
         if limit:
             result = result[:limit]
@@ -499,7 +499,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
     all_sorts = sql_sort | manual_sort
     default_desc = frozenset(("date", "points", "ac_rate", "user_count"))
     first_page_href = None
-    filter_organization = False
 
     def get_default_sort_order(self, request):
         if "search" in request.GET and settings.ENABLE_FTS:
@@ -636,8 +635,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
     def get_context_data(self, **kwargs):
         context = super(ProblemList, self).get_context_data(**kwargs)
 
-        if self.request.organization:
-            self.filter_organization = True
         context["hide_solved"] = 0 if self.in_contest else int(self.hide_solved)
         context["show_types"] = 0 if self.in_contest else int(self.show_types)
         context["full_text"] = 0 if self.in_contest else int(self.full_text)
@@ -659,9 +656,10 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         context["search_query"] = self.search_query
         context["completed_problem_ids"] = self.get_completed_problems()
         context["attempted_problems"] = self.get_attempted_problems()
-        context["last_attempted_problems"] = self.get_latest_attempted_problems(
-            15, context["problems"] if self.filter_organization else None
-        )
+        if self.org_query:
+            context["last_attempted_problems"] = self.get_latest_attempted_problems(
+                15, context["problems"]
+            )
         context["page_type"] = "list"
         context.update(self.get_sort_paginate_context())
         if not self.in_contest:

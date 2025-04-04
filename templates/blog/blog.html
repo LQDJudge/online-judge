@@ -40,9 +40,7 @@
     </div>
 
     <div class="body content-description">
-      {% cache 86400 'post_content' post.id %}
-        {{ post.content|markdown|reference|str|safe}}
-      {% endcache %}
+      {{ post.content|markdown|reference|str|safe}}
     </div>
     {% include "actionbar/list.html" %}
   </div>

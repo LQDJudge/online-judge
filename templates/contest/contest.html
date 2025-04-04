@@ -98,9 +98,7 @@
   {% endif %}
 
   <div style="padding: 0 1em;">
-    {% cache 3600 'contest_html' contest.id %}
-      {{ contest.description|markdown|reference|str|safe }}
-    {% endcache %}
+    {{ contest.description|markdown|reference|str|safe }}
   </div>
 
   {% if contest.ended or request.user.is_superuser or is_editor or is_tester %}

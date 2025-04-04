@@ -28,9 +28,7 @@
       </h2>
       <div class="blog-description">
         <div class="summary content-description">
-          {% cache 86400 'post_content' post.id %}
-            {{ post.content|markdown(lazy_load=True)|reference|str|safe }}
-          {% endcache %}
+          {{ post.content|markdown(lazy_load=True)|reference|str|safe }}
         </div>
         <div class="show-more"> {{_("...More")}} </div>
       </div>

@@ -167,6 +167,12 @@ def update_blogpost_organizations(sender, instance, action, **kwargs):
         _get_blogpost_organization_ids.dirty((instance.id,))
 
 
+@receiver(m2m_changed, sender=BlogPost.authors.through)
+def update_author_organizations(sender, instance, action, **kwargs):
+    if action in ["post_add", "post_remove", "post_clear"]:
+        BlogPost.get_author_ids.dirty(instance)
+
+
 def _get_blogpost_organization_ids_batch(args_list):
     """
     Batch function to get organization IDs for multiple blog posts efficiently.

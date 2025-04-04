@@ -14,7 +14,7 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 
-from judge.fulltext import SearchQuerySet
+from judge.fulltext import SearchManager
 from judge.models.pagevote import PageVotable
 from judge.models.bookmark import Bookmarkable
 from judge.models.profile import Organization, Profile
@@ -273,6 +273,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
     comments = GenericRelation("Comment")
     pagevote = GenericRelation("PageVote")
     bookmark = GenericRelation("BookMark")
+    objects = SearchManager(("code", "name"))
 
     organizations = models.ManyToManyField(
         Organization,
@@ -551,6 +552,17 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
 
     def get_allowed_languages(self):
         return [item["id"] for item in _get_allowed_languages(self.id)]
+
+    def get_organization_ids(self):
+        return _get_problem_organization_ids(self.id)
+
+    @classmethod
+    def prefetch_organization_ids(cls, *problem_ids):
+        _get_problem_organization_ids.batch([(id,) for id in problem_ids])
+
+    def get_organizations(self):
+        organization_ids = self.get_organization_ids()
+        return Organization.get_cached_instances(*organization_ids)
 
     def get_contest_points(self, contest_id):
         from judge.models.contest import get_contest_problem_points
@@ -845,6 +857,7 @@ def update_organization_private(sender, instance, **kwargs):
     if kwargs["action"] in ["post_add", "post_remove", "post_clear"]:
         instance.is_organization_private = instance.organizations.exists()
         instance.save(update_fields=["is_organization_private"])
+        _get_problem_organization_ids.dirty((instance.id,))
 
 
 def _get_problem_batch(args_list):
@@ -1169,3 +1182,44 @@ def _get_allowed_languages(problem_id):
     return list(
         Problem.objects.get(id=problem_id).allowed_languages.values("id", "common_name")
     )
+
+
+def _get_problem_organization_ids_batch(args_list):
+    """
+    Batch function to get organization IDs for multiple problems efficiently.
+
+    Args:
+        args_list: List of tuples, each containing a single problem_id
+
+    Returns:
+        List of organization ID lists, one for each problem_id in args_list
+    """
+    # Extract problem IDs from args_list
+    problem_ids = [args[0] for args in args_list]
+
+    # Direct query to the through table to avoid JOIN
+    through_model = Problem.organizations.through
+    query = through_model.objects.filter(problem_id__in=problem_ids)
+
+    # Group organization IDs by problem ID
+    problem_orgs = {}
+    for problem_id, org_id in query.values_list("problem_id", "organization_id"):
+        if problem_id not in problem_orgs:
+            problem_orgs[problem_id] = []
+        problem_orgs[problem_id].append(org_id)
+
+    # Return results in the same order as input problem_ids
+    results = []
+    for problem_id in problem_ids:
+        results.append(problem_orgs.get(problem_id, []))
+
+    return results
+
+
+@cache_wrapper(
+    prefix="Prgoi", expected_type=list, batch_fn=_get_problem_organization_ids_batch
+)
+def _get_problem_organization_ids(problem_id):
+    """Get organization IDs for a problem"""
+    results = _get_problem_organization_ids_batch([(problem_id,)])
+    return results[0]

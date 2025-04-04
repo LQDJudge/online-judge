@@ -80,7 +80,6 @@ from judge.views.select2 import (
     UserSelect2View,
     ProblemAuthorSearchSelect2View,
 )
-from judge.views.test_formatter import test_formatter
 
 admin.autodiscover()
 
@@ -406,28 +405,6 @@ urlpatterns = [
                 ),
                 re_path(
                     r"^/abort$", submission.abort_submission, name="submission_abort"
-                ),
-            ]
-        ),
-    ),
-    re_path(
-        r"^test_formatter/",
-        include(
-            [
-                re_path(
-                    r"^$",
-                    login_required(test_formatter.TestFormatter.as_view()),
-                    name="test_formatter",
-                ),
-                re_path(
-                    r"^edit_page$",
-                    login_required(test_formatter.EditTestFormatter.as_view()),
-                    name="test_formatter_edit",
-                ),
-                re_path(
-                    r"^download_page$",
-                    login_required(test_formatter.DownloadTestFormatter.as_view()),
-                    name="test_formatter_download",
                 ),
             ]
         ),
