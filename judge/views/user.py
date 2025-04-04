@@ -11,9 +11,6 @@ from django.contrib.auth.models import Permission
 from django.contrib.auth.views import redirect_to_login
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.db.models import Count, Max, Min
-from django.db.models.fields import DateField
-from django.db.models.functions import Cast, ExtractYear
 from django.forms import Form
 from django.http import (
     Http404,
@@ -46,6 +43,11 @@ from judge.models import (
     Problem,
     Contest,
     Solution,
+)
+from judge.models.contest import get_global_rating_range, get_user_rating_stats
+from judge.models.submission import (
+    get_user_submission_dates,
+    get_user_min_submission_year,
 )
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
@@ -160,23 +162,15 @@ class UserPage(TitleMixin, UserMixin, DetailView):
             is_public=True, is_organization_private=False
         ).order_by("code")
 
-        rating = self.object.ratings.order_by("-contest__end_time")[:1]
-        context["rating"] = rating[0] if rating else None
-
         context["points_rank"] = get_points_rank(self.object)
 
-        if rating:
+        if self.object.rating:
             context["rating_rank"] = get_rating_rank(self.object)
-            context["rated_users"] = Profile.objects.filter(
-                is_unlisted=False, rating__isnull=False
-            ).count()
-        context.update(
-            self.object.ratings.aggregate(
-                min_rating=Min("rating"),
-                max_rating=Max("rating"),
-                contests=Count("contest"),
-            )
-        )
+
+        # Use cached rating stats
+        user_rating_stats = get_user_rating_stats(self.object.id)
+        if user_rating_stats["min_rating"] is not None:
+            context.update(user_rating_stats)
         return context
 
     def get(self, request, *args, **kwargs):
@@ -225,10 +219,10 @@ class UserAboutPage(UserPage):
         context["awards"] = get_awards(self.object)
 
         if ratings:
-            user_data = self.object.ratings.aggregate(Min("rating"), Max("rating"))
-            global_data = Rating.objects.aggregate(Min("rating"), Max("rating"))
+            # Use cached global rating range
+            global_data = get_global_rating_range()
             min_ever, max_ever = global_data["rating__min"], global_data["rating__max"]
-            min_user, max_user = user_data["rating__min"], user_data["rating__max"]
+            min_user, max_user = context["min_rating"], context["max_rating"]
             delta = max_user - min_user
             ratio = (
                 (max_ever - max_user) / (max_ever - min_ever)
@@ -238,28 +232,16 @@ class UserAboutPage(UserPage):
             context["max_graph"] = max_user + ratio * delta
             context["min_graph"] = min_user + ratio * delta - delta
 
-        submissions = (
-            self.object.submission_set.annotate(date_only=Cast("date", DateField()))
-            .values("date_only")
-            .annotate(cnt=Count("id"))
-        )
+        # Use cached submission dates
+        submission_dates = get_user_submission_dates(self.object.id)
+        context["submission_data"] = mark_safe(json.dumps(submission_dates))
 
-        context["submission_data"] = mark_safe(
-            json.dumps(
-                {
-                    date_counts["date_only"].isoformat(): date_counts["cnt"]
-                    for date_counts in submissions
-                }
-            )
-        )
+        # Use cached min submission year
+        min_year = get_user_min_submission_year(self.object.id)
         context["submission_metadata"] = mark_safe(
             json.dumps(
                 {
-                    "min_year": (
-                        self.object.submission_set.annotate(
-                            year_only=ExtractYear("date")
-                        ).aggregate(min_year=Min("year_only"))["min_year"]
-                    ),
+                    "min_year": min_year,
                 }
             )
         )

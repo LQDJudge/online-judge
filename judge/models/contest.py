@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models, transaction
-from django.db.models import CASCADE, Q, Count
+from django.db.models import CASCADE, Q, Count, Max, Min
 from django.db.models.signals import m2m_changed
 from django.urls import reverse
 from django.utils import timezone
@@ -44,6 +44,8 @@ __all__ = [
     "OfficialContestCategory",
     "OfficialContestLocation",
     "get_contest_problem_ids",
+    "get_global_rating_range",
+    "get_user_rating_stats",
 ]
 
 
@@ -997,6 +999,23 @@ class Rating(models.Model):
     performance = models.FloatField(verbose_name=_("contest performance"))
     last_rated = models.DateTimeField(db_index=True, verbose_name=_("last rated"))
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Invalidate user rating stats cache
+        get_user_rating_stats.dirty(self.user_id)
+        # Invalidate global rating range cache
+        get_global_rating_range.dirty()
+
+    def delete(self, *args, **kwargs):
+        user_id = self.user_id
+        super().delete(*args, **kwargs)
+        # Invalidate caches after deletion
+        get_user_rating_stats.dirty(user_id)
+        get_global_rating_range.dirty()
+
+    save.alters_data = True
+    delete.alters_data = True
+
     class Meta:
         unique_together = ("user", "contest")
         verbose_name = _("contest rating")
@@ -1200,3 +1219,32 @@ def _get_contest_organization_ids(contest_id):
     """Get organization IDs for a contest"""
     results = _get_contest_organization_ids_batch([(contest_id,)])
     return results[0]
+
+
+@cache_wrapper(prefix="RTG_range", expected_type=dict)
+def get_global_rating_range():
+    """
+    Get the global minimum and maximum rating values.
+
+    Returns:
+        A dictionary with keys 'rating__min' and 'rating__max'.
+    """
+    return Rating.objects.aggregate(Min("rating"), Max("rating"))
+
+
+@cache_wrapper(prefix="RTG_user", expected_type=dict)
+def get_user_rating_stats(profile_id):
+    """
+    Get a user's rating statistics.
+
+    Args:
+        profile_id: The ID of the user profile
+
+    Returns:
+        A dictionary with keys 'min_rating', 'max_rating', and 'contests' (count)
+    """
+    return Rating.objects.filter(user_id=profile_id).aggregate(
+        min_rating=Min("rating"),
+        max_rating=Max("rating"),
+        contests=Count("contest"),
+    )

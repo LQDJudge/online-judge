@@ -495,6 +495,8 @@ class Profile(CacheableModel):
         return _get_follower_ids(self.id)
 
     def is_followed_by(self, profile):
+        if not profile:
+            return False
         return profile.id in self.get_follower_ids()
 
     def can_edit_organization(self, org):

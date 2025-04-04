@@ -4,17 +4,28 @@ import hmac
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.db.models import Count, Min
+from django.db.models.fields import DateField
+from django.db.models.functions import Cast, ExtractYear
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
+from judge.caching import cache_wrapper
 from judge.judgeapi import abort_submission, judge_submission
 from judge.models.problem import Problem
 from judge.models.profile import Profile
 from judge.models.runtime import Language
 from judge.utils.unicode import utf8bytes
 
-__all__ = ["SUBMISSION_RESULT", "Submission", "SubmissionSource", "SubmissionTestCase"]
+__all__ = [
+    "SUBMISSION_RESULT",
+    "Submission",
+    "SubmissionSource",
+    "SubmissionTestCase",
+    "get_user_submission_dates",
+    "get_user_min_submission_year",
+]
 
 SUBMISSION_RESULT = (
     ("AC", _("Accepted")),
@@ -263,6 +274,25 @@ class Submission(models.Model):
 
         return False
 
+    def save(self, *args, **kwargs):
+        """Override to invalidate caches on save"""
+        super().save(*args, **kwargs)
+        # Invalidate submission date caches
+        get_user_submission_dates.dirty(self.user_id)
+        get_user_min_submission_year.dirty(self.user_id)
+
+    save.alters_data = True
+
+    def delete(self, *args, **kwargs):
+        """Override to invalidate caches on delete"""
+        user_id = self.user_id
+        super().delete(*args, **kwargs)
+        # Invalidate submission date caches
+        get_user_submission_dates.dirty(user_id)
+        get_user_min_submission_year.dirty(user_id)
+
+    delete.alters_data = True
+
     class Meta:
         permissions = (
             ("abort_any_submission", "Abort any submission"),
@@ -331,3 +361,47 @@ class SubmissionTestCase(models.Model):
         unique_together = ("submission", "case")
         verbose_name = _("submission test case")
         verbose_name_plural = _("submission test cases")
+
+
+@cache_wrapper(prefix="SUB_dates", expected_type=dict)
+def get_user_submission_dates(user_id):
+    """
+    Get submission dates and counts for a user.
+
+    Args:
+        user_id: The ID of the user profile
+
+    Returns:
+        A dictionary mapping ISO-formatted dates to submission counts
+    """
+    submissions = (
+        Submission.objects.filter(user_id=user_id)
+        .annotate(date_only=Cast("date", DateField()))
+        .values("date_only")
+        .annotate(cnt=Count("id"))
+    )
+
+    return {
+        date_counts["date_only"].isoformat(): date_counts["cnt"]
+        for date_counts in submissions
+    }
+
+
+@cache_wrapper(prefix="SUB_min_year", expected_type=int)
+def get_user_min_submission_year(user_id):
+    """
+    Get the earliest year a user made a submission.
+
+    Args:
+        user_id: The ID of the user profile
+
+    Returns:
+        The minimum year as an integer, or None if no submissions exist
+    """
+    date_counts = get_user_submission_dates(user_id)
+    if not date_counts:
+        return None
+
+    # Extract years from ISO-formatted dates (YYYY-MM-DD) and find the minimum
+    years = [int(date.split("-")[0]) for date in date_counts.keys()]
+    return min(years) if years else None
