@@ -537,10 +537,10 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
                 solved = user_completed_ids(profile)
                 attempted = user_attempted_ids(profile)
 
-                def _solved_sort_order(problem):
-                    if problem.id in solved:
+                def _solved_sort_order(problem_id):
+                    if problem_id in solved:
                         return 1
-                    if problem.id in attempted:
+                    if problem_id in attempted:
                         return 0
                     return -1
 
