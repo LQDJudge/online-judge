@@ -463,6 +463,11 @@ class CommentEdit(TitleMixin, CommentEditAjax):
 class CommentContent(CommentMixin, DetailView):
     template_name = "comments/content.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["vote_hide_threshold"] = settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD
+        return context
+
 
 class CommentVotesAjax(PermissionRequiredMixin, CommentMixin, DetailView):
     template_name = "comments/votes.html"
