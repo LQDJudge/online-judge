@@ -1274,7 +1274,7 @@ class EditOrganizationBlog(
         res = self.setup_blog(request, *args, **kwargs)
         if res:
             return res
-        if request.POST["action"] == "Delete":
+        if request.POST.get("action") == "Delete":
             self.create_notification("Delete blog")
             self.delete_blog(request, *args, **kwargs)
             cur_url = reverse(
@@ -1282,7 +1282,7 @@ class EditOrganizationBlog(
                 args=(self.organization_id, self.organization.slug),
             )
             return HttpResponseRedirect(cur_url)
-        elif request.POST["action"] == "Reject":
+        elif request.POST.get("action") == "Reject":
             self.create_notification("Reject blog")
             self.delete_blog(request, *args, **kwargs)
             cur_url = reverse(
@@ -1290,7 +1290,7 @@ class EditOrganizationBlog(
                 args=(self.organization_id, self.organization.slug),
             )
             return HttpResponseRedirect(cur_url)
-        elif request.POST["action"] == "Approve":
+        elif request.POST.get("action") == "Approve":
             self.create_notification("Approve blog")
             self.publish_blog(request, *args, **kwargs)
             cur_url = reverse(
