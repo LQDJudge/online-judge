@@ -215,7 +215,7 @@
         }).done(function (body) {
           $comment.find('.previous-revision').css({visibility: show_revision == 0 ? 'hidden' : ''});
           $comment.find('.next-revision').css({visibility: show_revision == max_revision ? 'hidden' : ''});
-          $comment.find('.content').html(body);
+          $comment.find('.comment-body').html(body);
 
           var edit_text = '{{ _('edit {edits}') }}'.replace("{edits}", show_revision);
 
@@ -340,8 +340,7 @@
                   url: readback
                 }).done(function (data) {
                   var $comment = $('#comment-' + id);
-                  var $area = $comment.find('.comment-body').first();
-                  $area.html(data);
+                  $comment.html(data);
                   update_math($comment);
                   var $edits = $comment.find('.comment-edits').first();
                   $edits.text('updated');
