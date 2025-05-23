@@ -473,7 +473,9 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         ).distinct()
 
     def translated_name(self, language):
-        return _get_problem_i18n_name(self.id, language)
+        translation = _get_problem_i18n_name(self.id, language)
+        if not translation:
+            return self.get_name()
 
     @classmethod
     def get_cached_dict(cls, problem_id):
@@ -854,11 +856,11 @@ class ProblemPointsVote(models.Model):
 
 
 @receiver(m2m_changed, sender=Problem.organizations.through)
-def update_organization_private(sender, instance, **kwargs):
+def update_organization_problem(sender, instance, **kwargs):
     if kwargs["action"] in ["post_add", "post_remove", "post_clear"]:
         instance.is_organization_private = instance.organizations.exists()
         instance.save(update_fields=["is_organization_private"])
-        _get_problem_organization_ids.dirty((instance.id,))
+        _get_problem_organization_ids.dirty(instance.id)
 
 
 def _get_problem_batch(args_list):

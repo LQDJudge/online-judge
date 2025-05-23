@@ -735,7 +735,7 @@ def update_private(sender, instance, **kwargs):
 def on_contest_organization_change(sender, instance, action, **kwargs):
     if action in ["post_add", "post_remove", "post_clear"]:
         if isinstance(instance, Contest):
-            _get_contest_organization_ids.dirty((instance.id,))
+            _get_contest_organization_ids.dirty(instance.id)
 
 
 class ContestParticipation(models.Model):
