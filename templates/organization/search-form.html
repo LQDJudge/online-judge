@@ -7,7 +7,6 @@
       <div class="filter-form-group">
         <label for="order" class="bold-text margin-label">{{ _('Order by') }}</label>
         <select id="order" name="order" style="width: 100%">
-          <option value="">---</option>
           {% for value, name in all_sort_options %}
             <option value="{{value}}"{% if selected_order == value%} selected{% endif %}>
               {{ name }}

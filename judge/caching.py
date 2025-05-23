@@ -2,6 +2,8 @@ from django.core.cache import cache
 from django.db.models.query import QuerySet
 from django.core.handlers.wsgi import WSGIRequest
 from django.db import models
+from django.db.models.query_utils import DeferredAttribute
+
 import hashlib
 from inspect import signature
 
@@ -26,8 +28,7 @@ def filter_args(args_list):
     return [x for x in args_list if not isinstance(x, WSGIRequest)]
 
 
-# Cache decorator
-def cache_wrapper(prefix, timeout=None, expected_type=None):
+def cache_wrapper(prefix, timeout=None, expected_type=None, batch_fn=None):
     def get_key(func, *args, **kwargs):
         args_list = list(args)
         signature_args = list(signature(func).parameters.keys())
@@ -62,21 +63,55 @@ def cache_wrapper(prefix, timeout=None, expected_type=None):
             cache_key = get_key(func, *args, **kwargs)
             cache.delete(cache_key)
 
-        def prefetch_multi(args_list):
+        def batch(args_list):
+            """
+            Process multiple function calls efficiently using batch caching.
+
+            For each set of arguments in args_list:
+            1. Generate cache keys and check if results are in cache
+            2. For cache misses:
+               - If batch_fn is provided, call it with all missing arguments at once
+               - Otherwise, call the original function for each missing argument set
+            3. Update cache with newly computed values
+            4. Return results for all argument sets
+
+            Args:
+                args_list: List of argument lists to process
+
+            Returns:
+                List of results corresponding to each argument list
+            """
             keys = [get_key(func, *args) for args in args_list]
+            key_to_args = dict(zip(keys, args_list))
+
             results = cache.get_many(keys)
 
-            return {
-                key: (None if value == NONE_RESULT else value)
-                for key, value in results.items()
-            }
+            missing_keys = [k for k in keys if k not in results]
+            missing_args = [key_to_args[k] for k in missing_keys]
+
+            if missing_keys:
+                if batch_fn:
+                    missing_results = batch_fn(missing_args)
+                    missing_values = dict(zip(missing_keys, missing_results))
+                else:
+                    missing_values = {}
+                    for key, args in zip(missing_keys, missing_args):
+                        result = func(*args)
+                        missing_values[key] = NONE_RESULT if result is None else result
+
+                cache.set_many(missing_values, timeout)
+                results.update(missing_values)
+
+            final_results = [results[k] for k in keys]
+
+            return [None if r == NONE_RESULT else r for r in final_results]
 
         def dirty_multi(args_list):
             keys = [get_key(func, *args) for args in args_list]
             cache.delete_many(keys)
 
         wrapper.dirty = dirty
-        wrapper.prefetch_multi = prefetch_multi
+        wrapper.batch = batch
         wrapper.dirty_multi = dirty_multi
 
         return wrapper
@@ -84,68 +119,44 @@ def cache_wrapper(prefix, timeout=None, expected_type=None):
     return decorator
 
 
-# CacheableModel with optimized caching
 class CacheableModel(models.Model):
-    """
-    Base class for models with caching support using cache utilities.
-    """
-
+    cache_version = 1  # Default version, override in subclasses
     cache_timeout = None  # Cache timeout in seconds (default: None)
 
     class Meta:
-        abstract = True  # This is an abstract base class and won't create a table
+        abstract = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        cls = self.__class__
+        if not hasattr(cls, "_field_names_cache"):
+            # Cache all field names
+            field_names = {field.name for field in cls._meta.fields}
+
+            # Cache which fields have getter methods
+            cls._fields_with_getters = {}
+            for field_name in field_names:
+                getter_name = f"get_{field_name}"
+                cls._fields_with_getters[field_name] = hasattr(cls, getter_name)
 
     @classmethod
-    def _get_cache_key(cls, obj_id):
-        """Generate a cache key based on the model name and object ID."""
-        return f"{cls.__name__.lower()}_{obj_id}"
-
-    @classmethod
-    def get_instance(cls, *ids):
+    def get_cached_dict(self, id):
         """
-        Fetch one or multiple objects by IDs using caching.
+        Override this method to define what data should be cached.
+        Return a dictionary.
         """
-        if not ids:
-            return None
-
-        ids = ids[0] if len(ids) == 1 and isinstance(ids[0], (list, tuple)) else ids
-        cache_keys = {cls._get_cache_key(obj_id): obj_id for obj_id in ids}
-        cached_objects = cache.get_many(cache_keys.keys())
-
-        # Handle NONE_RESULT logic
-        results = {
-            cache_keys[key]: (
-                None
-                if cached_objects[key] == NONE_RESULT
-                else cls(**cached_objects[key])
-            )
-            for key in cached_objects
-        }
-        missing_ids = [obj_id for obj_id in ids if obj_id not in results]
-
-        if missing_ids:
-            missing_objects = cls.objects.filter(id__in=missing_ids)
-            objects_to_cache = {}
-            for obj in missing_objects:
-                obj_dict = model_to_dict(obj)
-                cache_key = cls._get_cache_key(obj.id)
-                objects_to_cache[cache_key] = obj_dict if obj_dict else NONE_RESULT
-                results[obj.id] = cls(**obj_dict)
-            cache.set_many(objects_to_cache, timeout=cls.cache_timeout)
-
-        return results[ids[0]] if len(ids) == 1 else [results[obj_id] for obj_id in ids]
+        raise NotImplementedError("Subclasses must implement get_cached_dict()")
 
     @classmethod
     def dirty_cache(cls, *ids):
-        """
-        Clear the cache for one or multiple object IDs using delete_many.
-        """
-        if not ids:
-            return
+        raise NotImplementedError("Subclasses must implement dirty_cache()")
 
-        ids = ids[0] if len(ids) == 1 and isinstance(ids[0], (list, tuple)) else ids
-        cache_keys = [cls._get_cache_key(obj_id) for obj_id in ids]
-        cache.delete_many(cache_keys)
+    def get_cached_value(self, key, default_value=None):
+        """Get a value from the cached dictionary."""
+        if not hasattr(self, "_cached_dict") or self._cached_dict is None:
+            self._cached_dict = self.__class__.get_cached_dict(self.pk)
+        return self._cached_dict.get(key, default_value)
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -154,3 +165,50 @@ class CacheableModel(models.Model):
     def delete(self, *args, **kwargs):
         self.dirty_cache(self.id)
         super().delete(*args, **kwargs)
+
+    def __getattribute__(self, name):
+        # Avoid recursion for certain attributes
+        if name in ("_meta", "_state", "__class__", "__dict__", "id"):
+            return super().__getattribute__(name)
+
+        if not self.id:
+            return super().__getattribute__(name)
+
+        try:
+            # Get class to check for field names cache
+            cls = super().__getattribute__("__class__")
+
+            if cls._fields_with_getters.get(name, False):
+                is_adding = (
+                    super().__getattribute__("_state").adding
+                    if hasattr(super().__getattribute__("_state"), "adding")
+                    else True
+                )
+                is_loaded = not is_adding
+
+                # Use getter if:
+                # 1. This isn't a database instance (a fresh Model() call)
+                # 2. The field isn't loaded or is deferred
+                if not is_loaded:
+                    getter_method_name = f"get_{name}"
+                    if hasattr(
+                        super().__getattribute__("__class__"), getter_method_name
+                    ):
+                        getter_method = super().__getattribute__(getter_method_name)
+                        if callable(getter_method):
+                            return getter_method()
+                elif hasattr(super(), "get_deferred_fields"):
+                    deferred_method = super().__getattribute__("get_deferred_fields")
+                    is_deferred = name in deferred_method()
+                    if is_deferred:
+                        getter_method_name = f"get_{name}"
+                        if hasattr(
+                            super().__getattribute__("__class__"), getter_method_name
+                        ):
+                            getter_method = super().__getattribute__(getter_method_name)
+                            if callable(getter_method):
+                                return getter_method()
+        except Exception as e:
+            pass
+
+        return super().__getattribute__(name)

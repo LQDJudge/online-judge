@@ -41,7 +41,7 @@
             </th>
             {% if show_types %}
               <th>
-                <a href="{{ sort_links.type }}">{{ _('Types') }}{{ sort_order.type }}</a>
+                {{ _('Types') }}
               </th>
             {% endif %}
             <th class="points">
@@ -62,7 +62,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for problem in object_list %}
+        {% for problem in problems %}
           <tr>
             {% if request.user.is_authenticated and not has_hidden_subtasks %}
               {% if problem.id in completed_problem_ids %}
@@ -96,30 +96,38 @@
               {% endif %}
             {% endif %}
             <td class="problem">
-              <a href="{{ url('problem_detail', problem.code) }}">{{ problem.i18n_name }}</a>
+              <a href="{{ url('problem_detail', problem.code) }}">{{ problem.translated_name(LANGUAGE_CODE) }}</a>
             </td>
             <td class="pcode">
               <a class="pcodecell" href="{{ url('problem_detail', problem.code) }}">{{ problem.code }}</a>
             </td>
             {% if not show_contest_mode %}
-              <td class="category">{{ problem.group.full_name }}</td>
+              <td class="category">{{ problem.get_group_name() }}</td>
             {% endif %}
             {% if show_types %}
               <td class="types">
-                {% for type in problem.types_list %}
+                {% for type in problem.get_types_name() %}
                   <span class="type-tag">{{ type }}</span>{% if not loop.last %}, {% endif %}
                 {% endfor %}
               </td>
             {% endif %}
-            <td class="p">{{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}</td>
+            {% if current_contest %}
+              <td class="p">{{ problem.get_contest_points(current_contest.id)|floatformat }}</td>
+            {% else %}
+              <td class="p">{{ problem.points|floatformat }}{% if problem.get_partial() %}p{% endif %}</td>
+            {% endif %}
             {% if not show_contest_mode %}
-              <td class="ac-rate">{{ problem.ac_rate|floatformat(0) }}%</td>
+              <td class="ac-rate">{{ problem.get_ac_rate()|floatformat(0) }}%</td>
             {% endif %}
             {% if not has_hidden_subtasks %}
               <td class="users">
                 <a href="{{ url('ranked_submissions', problem.code) }}">
                   {% if not show_contest_mode or not hide_contest_scoreboard %}
-                    {{ problem.user_count }}
+                    {% if current_contest %}
+                      {{ problem.get_contest_user_count(current_contest.id) }}
+                    {% else %}
+                      {{ problem.user_count }}
+                    {% endif %}
                   {% else %}
                     ???
                   {% endif %}
@@ -129,7 +137,7 @@
 
             {% if show_editorial%}
               <td class="editorial">
-                {% if problem.has_public_editorial %}
+                {% if problem.has_public_editorial() %}
                   <a href="{{ url('problem_editorial', problem.code) }}">{{ _('Editorial') }}</a>
                 {% endif %}
               </td>

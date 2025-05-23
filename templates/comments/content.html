@@ -1,1 +1,5 @@
-{{ comment.body|markdown|reference|str|safe }}
+{# Template for rendering a single comment for AJAX operations #}
+{% with item=comment %}
+  {% include "comments/comment-item.html" %}
+{% endwith %}
+<ul id="comment-{{ comment.id }}-children" class="ul-comments"></ul>

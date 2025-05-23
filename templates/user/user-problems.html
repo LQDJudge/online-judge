@@ -64,7 +64,7 @@
               <td class="problem-name">
                 <a href="{{ url('problem_detail', problem.code) }}">{{ problem.name }}</a>
               </td>
-              <td class="problem-category">{{ problem.group.full_name }}</td>
+              <td class="problem-category">{{ problem.get_group_name() }}</td>
               <td class="problem-score"><a href="{{ url('ranked_submissions', problem.code) }}">
                 {{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}
               </a></td>
@@ -75,7 +75,7 @@
     </div>
   {% endif %}
 
-  {% if request.user.is_authenticated and request.user != user.user %}
+  {% if request.user.is_authenticated and request.profile != user %}
     <div class="hide-solved-problems"><span>
       <form name="form" action="" method="get">
         <input id="hide_solved" style="vertical-align:middle" onclick="form.submit()" type="checkbox"

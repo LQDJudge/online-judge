@@ -1,8 +1,13 @@
-<a href="{{ org.get_absolute_url() }}">
-  <span class="organization-tag" style="gap: 0.2em;">
-    {% if org.organization_image %}
-      <img class="user-img" style="height: 1.5em; width: 1.5em;" loading="lazy" src="{{ org.organization_image.url }}">
+<span class="organization-tag" style="gap: 0.2em;">
+  <a href="{{ org.get_absolute_url() }}" style="display: flex; gap: 0.2em; align-items: center;">
+    {% if org.get_organization_image_url() %}
+      <img class="user-img" style="height: 1.5em; width: 1.5em;" loading="lazy" src="{{ org.get_organization_image_url() }}">
     {% endif %}
     {{ org.name }}
-  </span>
-</a>
+  </a>
+  {% if edit_url %}
+    <a href="{{ edit_url }}" class="organization-edit" title="{{ _('Edit') }}">
+      <i class="fa fa-pencil-alt"></i>
+    </a>
+  {% endif %}
+</span>

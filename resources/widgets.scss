@@ -918,3 +918,10 @@ button:hover, button:focus {
     cursor: pointer;
     padding-top: 2px;
 }
+
+@media (max-width: 799px) {
+    .tabs {
+        margin-left: 1em;
+        margin-right: 1em;
+    }
+}

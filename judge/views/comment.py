@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError
-from django.db.models import Count, F, FilteredRelation, Q
+from django.db.models import Count, F, FilteredRelation, Q, Case, When
 from django.db.models.expressions import Value
 from django.db.models.functions import Coalesce
 from django.forms import ModelForm
@@ -39,7 +39,10 @@ from reversion.models import Revision, Version
 from judge.jinja2.reference import get_user_from_text
 from judge.models import Comment, CommentVote
 from judge.models.notification import make_notification
-from judge.models.comment import get_visible_comment_count
+from judge.models.comment import (
+    get_visible_comment_count,
+    get_visible_top_level_comment_count,
+)
 from judge.utils.views import TitleMixin
 from judge.widgets import HeavyPreviewPageDownWidget
 
@@ -49,9 +52,14 @@ __all__ = [
     "CommentEditAjax",
     "CommentContent",
     "CommentEdit",
+    "get_comments",
+    "get_replies",
+    "comment_hide",
+    "post_comment",
+    "CommentableMixin",
 ]
 
-DEFAULT_OFFSET = 10
+DEFAULT_COMMENT_LIMIT = 10
 
 
 def _get_html_link_notification(comment):
@@ -59,9 +67,13 @@ def _get_html_link_notification(comment):
 
 
 def add_mention_notifications(comment):
-    users_mentioned = get_user_from_text(comment.body).exclude(id=comment.author.id)
+    users_mentioned = (
+        get_user_from_text(comment.body)
+        .exclude(id=comment.author.id)
+        .values_list("id", flat=True)
+    )
     link = _get_html_link_notification(comment)
-    make_notification(users_mentioned, "Mention", link, comment.author)
+    make_notification(list(users_mentioned), "Mention", link, comment.author)
 
 
 @ratelimit(key="user", rate=settings.RL_VOTE)
@@ -128,81 +140,236 @@ def downvote_comment(request):
     return vote_comment(request, -1)
 
 
-def get_comments(request, limit=10):
-    try:
-        comment_id = int(request.GET["id"])
-        parent_none = int(request.GET["parent_none"])
-    except (ValueError, MultiValueDictKeyError):
-        return HttpResponseBadRequest()
-    else:
-        if comment_id and not Comment.objects.filter(id=comment_id).exists():
-            raise Http404()
+def get_comments_data(request, limit=DEFAULT_COMMENT_LIMIT):
+    """
+    Common function to fetch comments data for both the API endpoint and the mixin.
 
-    offset = 0
+    Returns a tuple of:
+    - comments_qs: QuerySet of comments
+    - context: Dict with render context
+    - error: HttpResponse with error or None
+    """
+    try:
+        # Check if we're fetching top-level comments (is_top_level=1) or replies (is_top_level=0)
+        is_top_level = int(request.GET.get("is_top_level", "1"))
+
+        # Parse sorting parameters
+        sort_by = request.GET.get("sort_by", "time")  # Default: sort by time
+        sort_order = request.GET.get("sort_order", "desc")  # Default: newest first
+
+        # Validate sort parameters
+        if sort_by not in ["time", "score"]:
+            sort_by = "time"
+        if sort_order not in ["asc", "desc"]:
+            sort_order = "desc"
+
+        # Determine if we're fetching replies to a comment or comments for an object
+        if "id" in request.GET:
+            # Fetching replies to a comment
+            source_id = int(request.GET["id"])
+            if not Comment.objects.filter(id=source_id).exists():
+                return None, None, Http404()
+            source_comment = Comment.objects.get(pk=source_id)
+            comment_root_id = source_comment.id
+
+            # Get the comments based on parent relationship
+            if is_top_level:
+                comments_qs = source_comment.linked_object.comments.filter(
+                    parent=None, hidden=False
+                )
+            else:
+                comments_qs = source_comment.linked_object.comments.filter(
+                    parent=source_comment, hidden=False
+                )
+        elif "content_type_id" in request.GET and "object_id" in request.GET:
+            # Fetching comments for a specific object using ContentType
+            content_type_id = int(request.GET["content_type_id"])
+            object_id = int(request.GET["object_id"])
+
+            # Get the content type and verify it exists
+            try:
+                content_type = ContentType.objects.get(id=content_type_id)
+                model_class = content_type.model_class()
+                source_object = model_class.objects.get(id=object_id)
+                comment_root_id = 0
+                source_comment = None
+
+                # Check if we're highlighting a specific comment
+                target_comment_id = request.GET.get("target_comment", -1)
+                try:
+                    target_comment_id = int(target_comment_id)
+                    if target_comment_id > 0:
+                        # Get the target comment to highlight
+                        target_comment = Comment.objects.get(
+                            id=target_comment_id,
+                            content_type=content_type,
+                            object_id=object_id,
+                        )
+
+                        # Get top-level comments, but prioritize the comment tree containing the target
+                        comments_qs = Comment.objects.filter(
+                            content_type=content_type,
+                            object_id=object_id,
+                            parent=None,
+                            hidden=False,
+                        )
+                    else:
+                        # Normal case - just get all top-level comments
+                        comments_qs = Comment.objects.filter(
+                            content_type=content_type,
+                            object_id=object_id,
+                            parent=None,
+                            hidden=False,
+                        )
+                except (ValueError, Comment.DoesNotExist):
+                    # Default to all top-level comments if target_comment is invalid
+                    comments_qs = Comment.objects.filter(
+                        content_type=content_type,
+                        object_id=object_id,
+                        parent=None,
+                        hidden=False,
+                    )
+            except (ContentType.DoesNotExist, model_class.DoesNotExist):
+                return None, None, Http404()
+        else:
+            return None, None, HttpResponseBadRequest("Missing required parameters")
+    except (ValueError, MultiValueDictKeyError):
+        return None, None, HttpResponseBadRequest()
+
+    # Handle pagination
+    page_offset = 0
     if "offset" in request.GET:
         try:
-            offset = int(request.GET["offset"])
+            page_offset = int(request.GET["offset"])
         except ValueError:
-            return HttpResponseBadRequest()
+            return None, None, HttpResponseBadRequest()
 
-    target_comment = -1
+    # Handle highlighted comment
+    target_comment_id = -1
     if "target_comment" in request.GET:
         try:
-            target_comment = int(request.GET["target_comment"])
+            target_comment_id = int(request.GET["target_comment"])
         except ValueError:
-            return HttpResponseBadRequest()
+            return None, None, HttpResponseBadRequest()
 
-    comment_root_id = 0
+    # Check if we need to prioritize a specific comment tree
+    # Only do this for the initial request (offset=0), not for pagination (show_more)
+    root_comment = None
+    if (
+        target_comment_id > 0
+        and page_offset == 0
+        and "content_type_id" in request.GET
+        and "object_id" in request.GET
+    ):
+        try:
+            target_comment = Comment.objects.get(id=target_comment_id)
 
-    if comment_id:
-        comment_obj = Comment.objects.get(pk=comment_id)
-        comment_root_id = comment_obj.id
-    else:
-        comment_obj = None
+            root_comment = target_comment.get_root()
 
-    queryset = comment_obj.linked_object.comments
-    if parent_none:
-        queryset = queryset.filter(parent=None, hidden=False)
-        queryset = queryset.exclude(pk=target_comment)
-    else:
-        queryset = queryset.filter(parent=comment_obj, hidden=False)
-    comment_count = len(queryset)
-    queryset = queryset.annotate(
+            if not (
+                root_comment.content_type_id == int(request.GET["content_type_id"])
+                and root_comment.object_id == int(request.GET["object_id"])
+            ):
+                root_comment = None
+        except (Comment.DoesNotExist, ValueError):
+            root_comment = None
+
+    total_comments = comments_qs.count()
+
+    comments_qs = comments_qs.annotate(
         count_replies=Count("replies", distinct=True),
-    )[offset : offset + limit]
-    profile = None
-    if request.user.is_authenticated:
-        profile = request.profile
-        queryset = queryset.annotate(
-            my_vote=FilteredRelation("votes", condition=Q(votes__voter_id=profile.id)),
-        ).annotate(vote_score=Coalesce(F("my_vote__score"), Value(0)))
-
-    new_offset = offset + min(len(queryset), limit)
-
-    return render(
-        request,
-        "comments/content-list.html",
-        {
-            "profile": request.profile,
-            "comment_root_id": comment_root_id,
-            "comment_list": queryset,
-            "vote_hide_threshold": settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD,
-            "perms": PermWrapper(request.user),
-            "offset": new_offset,
-            "limit": limit,
-            "comment_count": comment_count,
-            "comment_parent_none": parent_none,
-            "target_comment": target_comment,
-            "comment_more": comment_count - new_offset,
-        },
     )
 
+    if request.user.is_authenticated:
+        comments_qs = comments_qs.annotate(
+            my_vote=FilteredRelation(
+                "votes", condition=Q(votes__voter_id=request.profile.id)
+            ),
+        ).annotate(vote_score=Coalesce(F("my_vote__score"), Value(0)))
 
-def get_show_more(request):
-    return get_comments(request)
+    # Apply sorting
+    if sort_by == "score":
+        if sort_order == "desc":
+            comments_qs = comments_qs.order_by("-score", "-time")
+        else:
+            comments_qs = comments_qs.order_by("score", "-time")
+    else:  # sort_by == "time"
+        if sort_order == "desc":
+            comments_qs = comments_qs.order_by("-time")
+        else:
+            comments_qs = comments_qs.order_by("time")
+
+    comments_qs = comments_qs[page_offset : page_offset + limit]
+
+    comments_list = list(comments_qs)
+
+    if root_comment is not None:
+        root_tree = root_comment.get_descendants(include_self=True)
+        root_tree = root_tree.annotate(
+            count_replies=Count("replies", distinct=True),
+        )
+        if request.user.is_authenticated:
+            root_tree = root_tree.annotate(
+                my_vote=FilteredRelation(
+                    "votes", condition=Q(votes__voter_id=request.profile.id)
+                ),
+            ).annotate(vote_score=Coalesce(F("my_vote__score"), Value(0)))
+        comments_list = [
+            comment for comment in comments_list if comment.id != target_comment_id
+        ]
+        comments_list = list(root_tree) + comments_list
+        total_comments += 1
+
+    comments_qs = comments_list
+
+    next_page_offset = page_offset + min(len(comments_qs), limit)
+
+    context = {
+        "profile": request.profile,
+        "comment_root_id": comment_root_id,
+        "comment_list": comments_qs,
+        "vote_hide_threshold": settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD,
+        "perms": PermWrapper(request.user),
+        "offset": next_page_offset,
+        "limit": limit,
+        "comment_count": total_comments,
+        "is_top_level": is_top_level,
+        "target_comment": target_comment_id,
+        "comment_more": total_comments - next_page_offset,
+        "sort_by": sort_by,
+        "sort_order": sort_order,
+    }
+
+    return comments_qs, context, None
+
+
+def get_comments(request, limit=DEFAULT_COMMENT_LIMIT):
+    """
+    Get comments for a specific object or fetch replies for a specific comment.
+
+    This function works in two modes:
+    1. When content_type and object_id are provided, it fetches top-level comments for an object
+    2. When id (comment_id) is provided, it fetches replies to that comment
+
+    Parameters from request.GET:
+    - content_type_id: ContentType ID of the object being commented on (optional)
+    - object_id: ID of the object being commented on (optional)
+    - id: ID of the comment to get replies for (optional)
+    - is_top_level: 1 if fetching top-level comments, 0 if fetching replies
+    - offset: Pagination offset (optional)
+    - target_comment: ID of a specific comment to highlight (optional)
+    """
+    comments_qs, context, error = get_comments_data(request, limit)
+    if error:
+        return error
+
+    return render(request, "comments/content-list.html", context)
 
 
 def get_replies(request):
+    """
+    Fetch replies for a specific comment, an alias for get_comments.
+    """
     return get_comments(request)
 
 
@@ -296,6 +463,11 @@ class CommentEdit(TitleMixin, CommentEditAjax):
 class CommentContent(CommentMixin, DetailView):
     template_name = "comments/content.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["vote_hide_threshold"] = settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD
+        return context
+
 
 class CommentVotesAjax(PermissionRequiredMixin, CommentMixin, DetailView):
     template_name = "comments/votes.html"
@@ -313,6 +485,7 @@ class CommentVotesAjax(PermissionRequiredMixin, CommentMixin, DetailView):
 def comment_hide(request):
     if not request.user.has_perm("judge.change_comment"):
         raise PermissionDenied()
+
     try:
         comment_id = int(request.POST["id"])
     except ValueError:
@@ -320,8 +493,148 @@ def comment_hide(request):
 
     comment = get_object_or_404(Comment, id=comment_id)
     comment.get_descendants(include_self=True).update(hidden=True)
+
     get_visible_comment_count.dirty(comment.content_type, comment.object_id)
+    get_visible_top_level_comment_count.dirty(comment.content_type, comment.object_id)
+
     return HttpResponse("ok")
+
+
+def is_comment_locked(request):
+    """
+    Check if comments are locked for the current user.
+
+    Returns True if comments are locked, False otherwise.
+    """
+    if request.user.has_perm("judge.override_comment_lock"):
+        return False
+    return request.in_contest and request.participation.contest.use_clarifications
+
+
+@ratelimit(key="user", rate=settings.RL_COMMENT)
+@login_required
+@require_POST
+def post_comment(request):
+    """
+    Endpoint for posting a comment via AJAX.
+
+    Expected POST parameters:
+    - parent: ID of parent comment (optional)
+    - content_type_id: ContentType ID of the object being commented on
+    - object_id: ID of the object being commented on
+    - body: Comment text content
+    """
+    # Check if user is allowed to comment (not in a locked contest)
+    if is_comment_locked(request):
+        return HttpResponseForbidden("Comments are locked in this contest")
+
+    # Check if user has solved at least one problem
+    if (
+        not request.user.is_staff
+        and not request.profile.submission_set.filter(
+            points=F("problem__points")
+        ).exists()
+    ):
+        return HttpResponseBadRequest(
+            "You need to solve at least one problem before commenting"
+        )
+
+    # Get and validate parent comment if provided
+    parent = request.POST.get("parent")
+    content_type_id = request.POST.get("content_type_id")
+    object_id = request.POST.get("object_id")
+
+    try:
+        content_type = ContentType.objects.get(id=int(content_type_id))
+        object_id = int(object_id)
+    except (ValueError, ContentType.DoesNotExist):
+        return HttpResponseBadRequest("Invalid content type or object ID")
+
+    # Try to get the target object
+    try:
+        model_class = content_type.model_class()
+        target_object = model_class.objects.get(id=object_id)
+    except model_class.DoesNotExist:
+        return HttpResponseBadRequest("Target object does not exist")
+
+    # Check parent comment if specified
+    if parent:
+        try:
+            parent = int(parent)
+            if not Comment.objects.filter(
+                content_type=content_type, object_id=object_id, hidden=False, id=parent
+            ).exists():
+                return HttpResponseNotFound("Parent comment not found")
+        except ValueError:
+            return HttpResponseBadRequest("Invalid parent comment ID")
+
+    # Create and validate the comment
+    form = CommentForm(request, request.POST)
+    if not form.is_valid():
+        errors = {}
+        for field, error_list in form.errors.items():
+            errors[field] = [str(error) for error in error_list]
+        return HttpResponseBadRequest(
+            json.dumps(errors), content_type="application/json"
+        )
+
+    # Save the comment
+    comment = form.save(commit=False)
+    comment.author = request.profile
+    comment.content_type = content_type
+    comment.object_id = object_id
+
+    with revisions.create_revision():
+        revisions.set_user(request.user)
+        revisions.set_comment(_("Posted comment"))
+        comment.save()
+
+    # Add notifications
+    comment_notif_link = _get_html_link_notification(comment)
+
+    # Notify parent comment author if replying
+    if comment.parent and comment.parent.author != comment.author:
+        make_notification(
+            [comment.parent.author_id], "Reply", comment_notif_link, comment.author
+        )
+
+    # Notify page authors if applicable
+    if hasattr(target_object, "authors"):
+        page_authors = list(target_object.authors.values_list("id", flat=True))
+        make_notification(page_authors, "Comment", comment_notif_link, comment.author)
+
+    # Add mention notifications
+    add_mention_notifications(comment)
+
+    # Update comment count cache
+    get_visible_comment_count.dirty(comment.content_type, comment.object_id)
+    get_visible_top_level_comment_count.dirty(comment.content_type, comment.object_id)
+
+    # Return the newly created comment HTML for insertion
+    # First, annotate with vote score for the current user
+    comment = (
+        Comment.objects.filter(id=comment.id)
+        .annotate(
+            count_replies=Count("replies", distinct=True),
+            my_vote=FilteredRelation(
+                "votes", condition=Q(votes__voter_id=request.profile.id)
+            ),
+        )
+        .annotate(vote_score=Coalesce(F("my_vote__score"), Value(0)))
+        .first()
+    )
+
+    # Render the comment as HTML for insertion
+    return render(
+        request,
+        "comments/content.html",
+        {
+            "comment": comment,
+            "profile": request.profile,
+            "vote_hide_threshold": settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD,
+            "perms": PermWrapper(request.user),
+        },
+    )
 
 
 class CommentForm(ModelForm):
@@ -364,120 +677,31 @@ class CommentForm(ModelForm):
         return super(CommentForm, self).clean()
 
 
-class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
-    comment_page = None
+class CommentableMixin:
+    """
+    Mixin for views that include comments.
 
-    def is_comment_locked(self):
-        if self.request.user.has_perm("judge.override_comment_lock"):
-            return False
-        return (
-            self.request.in_contest
-            and self.request.participation.contest.use_clarifications
-        )
+    Provides the necessary context for AJAX-loaded comments and comment form,
+    but does not render comments directly.
+    """
 
-    @method_decorator(ratelimit(key="user", rate=settings.RL_COMMENT))
-    @method_decorator(login_required)
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        if self.is_comment_locked():
-            return HttpResponseForbidden()
+    def get_comment_context(self, context=None):
+        """
+        Add comment-related context data.
 
-        parent = request.POST.get("parent")
-        if parent:
-            try:
-                parent = int(parent)
-            except ValueError:
-                return HttpResponseNotFound()
-            else:
-                if not self.object.comments.filter(hidden=False, id=parent).exists():
-                    return HttpResponseNotFound()
+        Can be called from get_context_data() in the implementing view.
+        """
+        if context is None:
+            context = {}
 
-        form = CommentForm(request, request.POST)
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.author = request.profile
-            comment.linked_object = self.object
-
-            with revisions.create_revision():
-                revisions.set_user(request.user)
-                revisions.set_comment(_("Posted comment"))
-                comment.save()
-
-            # add notification for reply
-            comment_notif_link = _get_html_link_notification(comment)
-            if comment.parent and comment.parent.author != comment.author:
-                make_notification(
-                    [comment.parent.author], "Reply", comment_notif_link, comment.author
-                )
-
-            # add notification for page authors
-            page_authors = comment.linked_object.authors.all()
-            make_notification(
-                page_authors, "Comment", comment_notif_link, comment.author
-            )
-
-            add_mention_notifications(comment)
-            get_visible_comment_count.dirty(comment.content_type, comment.object_id)
-
-            return HttpResponseRedirect(comment.get_absolute_url())
-
-        context = self.get_context_data(object=self.object, comment_form=form)
-        return self.render_to_response(context)
-
-    def get(self, request, *args, **kwargs):
-        target_comment = None
-        self.object = self.get_object()
-        if "comment-id" in request.GET:
-            try:
-                comment_id = int(request.GET["comment-id"])
-                comment_obj = Comment.objects.get(id=comment_id)
-            except (Comment.DoesNotExist, ValueError):
-                raise Http404
-            if comment_obj.linked_object != self.object:
-                raise Http404
-            target_comment = comment_obj.get_root()
-        return self.render_to_response(
-            self.get_context_data(
-                object=self.object,
-                target_comment=target_comment,
-                comment_form=CommentForm(request, initial={"parent": None}),
-            )
-        )
-
-    def _get_queryset(self, target_comment):
-        if target_comment:
-            queryset = target_comment.get_descendants(include_self=True)
-            queryset = queryset.filter(hidden=False)
-        else:
-            queryset = self.object.comments
-            queryset = queryset.filter(parent=None, hidden=False)
-            queryset = queryset.filter(hidden=False).annotate(
-                count_replies=Count("replies", distinct=True),
-            )[:DEFAULT_OFFSET]
-
-        if self.request.user.is_authenticated:
-            profile = self.request.profile
-            queryset = queryset.annotate(
-                my_vote=FilteredRelation(
-                    "votes", condition=Q(votes__voter_id=profile.id)
-                ),
-            ).annotate(vote_score=Coalesce(F("my_vote__score"), Value(0)))
-
-        return queryset
-
-    def get_context_data(self, target_comment=None, **kwargs):
-        context = super(CommentedDetailView, self).get_context_data(**kwargs)
-        queryset = self._get_queryset(target_comment)
-        comment_count = self.object.comments.filter(parent=None, hidden=False).count()
-
+        # Get metadata about comments for this object
         content_type = ContentType.objects.get_for_model(self.object)
-        all_comment_count = get_visible_comment_count(content_type, self.object.pk)
+        object_id = self.object.pk
 
-        if target_comment != None:
-            context["target_comment"] = target_comment.id
-        else:
-            context["target_comment"] = -1
+        total_comment_count = get_visible_comment_count(content_type, object_id)
+        top_level_count = get_visible_top_level_comment_count(content_type, object_id)
 
+        # Check if user is new (hasn't solved any problems)
         if self.request.user.is_authenticated:
             context["is_new_user"] = (
                 not self.request.user.is_staff
@@ -486,29 +710,54 @@ class CommentedDetailView(TemplateResponseMixin, SingleObjectMixin, View):
                 ).exists()
             )
 
-        context["comment_lock"] = self.is_comment_locked()
-        context["comment_list"] = list(queryset)
-        context["has_comments"] = len(context["comment_list"]) > 0
+        # Get sort parameters from request or use defaults
+        sort_by = self.request.GET.get("sort_by", "time")
+        sort_order = self.request.GET.get("sort_order", "desc")
 
-        context["vote_hide_threshold"] = settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD
+        # Validate sort parameters
+        if sort_by not in ["time", "score"]:
+            sort_by = "time"
+        if sort_order not in ["asc", "desc"]:
+            sort_order = "desc"
 
-        if queryset.exists():
-            context["comment_root_id"] = context["comment_list"][0].id
+        # Basic comment configuration
+        context.update(
+            {
+                "comment_lock": is_comment_locked(self.request),
+                "has_comments": top_level_count > 0,
+                "all_comment_count": total_comment_count,
+                "comment_count": top_level_count,
+                "vote_hide_threshold": settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD,
+                "comment_content_type_id": content_type.id,
+                "comment_object_id": object_id,
+                "limit": DEFAULT_COMMENT_LIMIT,
+                "is_top_level": 1,
+                "sort_by": sort_by,
+                "sort_order": sort_order,
+            }
+        )
+
+        # Check for either parameter name for backward compatibility
+        target_comment_id = None
+        if "target_comment" in self.request.GET:
+            target_comment_id = self.request.GET["target_comment"]
+
+        if target_comment_id:
+            try:
+                comment_id = int(target_comment_id)
+                comment_obj = Comment.objects.get(id=comment_id)
+                if (
+                    comment_obj.content_type != content_type
+                    or comment_obj.object_id != object_id
+                ):
+                    raise Http404
+                context["initial_comment_id"] = comment_id
+                context["target_comment"] = comment_obj.get_root().id
+            except (ValueError, Comment.DoesNotExist):
+                context["target_comment"] = -1
         else:
-            context["comment_root_id"] = 0
+            context["target_comment"] = -1
 
-        context["comment_parent_none"] = 1
-
-        if target_comment != None:
-            context["offset"] = 0
-            context["comment_more"] = comment_count - 1
-        else:
-            context["offset"] = DEFAULT_OFFSET
-            context["comment_more"] = comment_count - DEFAULT_OFFSET
-
-        context["limit"] = DEFAULT_OFFSET
-        context["comment_count"] = comment_count
-        context["profile"] = self.request.profile
-        context["all_comment_count"] = all_comment_count
+        context["comment_form"] = CommentForm(self.request, initial={"parent": None})
 
         return context

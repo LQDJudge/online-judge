@@ -313,7 +313,7 @@
       {% set profile_id = request.profile.id if request.user.is_authenticated else 0 %}
       {% for submission in submissions %}
         <div class="submission-row" id="{{ submission.id }}">
-          {% with problem_name=show_problem and submission.problem.i18n_name %}
+          {% with problem_name=show_problem and submission.problem.translated_name(LANGUAGE_CODE) %}
             {% include "submission/row.html" %}
           {% endwith %}
         </div>
@@ -344,9 +344,9 @@
             <div class="filter-form-group">
               <label class="bold-text margin-label" for="language"><i class="non-italics">{{ _('Language') }}</i></label>
               <select id="language" name="language" multiple>
-                {% for code, name in all_languages %}
-                  <option {% if code in selected_languages %}selected{% endif %}
-                          value="{{ code }}">{{ name }}</option>
+                {% for lang in all_languages %}
+                  <option {% if lang.key in selected_languages %}selected{% endif %}
+                          value="{{ lang.key }}">{{ lang.name }}</option>
                 {% endfor %}
               </select>
             </div>

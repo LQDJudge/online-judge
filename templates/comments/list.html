@@ -1,11 +1,26 @@
 {% set can_comment = request.user.is_authenticated and comment_form and not comment_lock %}
 <div id="comments" class="comment-area">
-  <h2 id="comment-header">
-    <i style="padding-right: 0.3em" class="fa fa-comments"></i>{{ _('Comments') }}
-    {% if can_comment %}
-      <a href="#" id="write-comment" class="button small" style="float: right; font-size: 0.6em;"><i class="fa fa-plus"></i> {{ _('Write comment') }} </a>
-    {% endif %}
-  </h2>
+  <div class="comment-header-wrapper">
+    <div style="display: flex; gap: 1em;">
+      <h2 id="comment-header">
+        <i style="padding-right: 0.3em" class="fa fa-comments"></i>{{ _('Comments') }}
+        {% if all_comment_count > 0 %}
+          <span class="comment-count-badge">({{ all_comment_count }})</span>
+        {% endif %}
+      </h2>
+      {% if can_comment %}
+        <a href="#" id="write-comment" class="button small"><i class="fa fa-plus"></i> {{ _('Write comment') }} </a>
+      {% endif %}
+    </div>
+    <div class="comment-sort-controls">
+      <span>{{ _('Order by') }}</span>
+      <select id="comment-sort-combined">
+        <option value="time_desc" {% if sort_by == 'time' and sort_order == 'desc' %}selected{% endif %}>{{ _('Most recent') }}</option>
+        <option value="time_asc" {% if sort_by == 'time' and sort_order == 'asc' %}selected{% endif %}>{{ _('Least recent') }}</option>
+        <option value="score_desc" {% if sort_by == 'score' and sort_order == 'desc' %}selected{% endif %}>{{ _('Score') }}</option>
+      </select>
+    </div>
+  </div>
   {% if can_comment %}
     <div id="new-comment" class="form-area comment-submit" style="display: none;" >
       {% block comment_submit_title %}
@@ -17,7 +32,7 @@
           {{ _('You need to have solved at least one problem before your voice can be heard.') }}
         </div>
       {% else %}
-        <form class="comment-submit-form" action="" method="post">
+        <form class="comment-submit-form" action="{{ url('comment_post') }}" method="post">
           {% csrf_token %}
           {% if comment_form.errors %}
             <div id="form-errors">
@@ -36,11 +51,18 @@
       {% endif %}
     </div>
   {% endif %}
-  {% if has_comments %}
-    <ul class="top-level-comments" id="comment-0">
-      {% include "comments/content-list.html" %}
-    </ul>
-  {% elif not comment_lock %}
+
+  <!-- Comments will be loaded via AJAX -->
+  <div id="comment-loading">
+    <i class="fa fa-spinner fa-pulse loading" style="font-size: 1.5em; margin: 1em;"></i>
+    <span>{{ _('Loading comments...') }}</span>
+  </div>
+
+  <ul class="top-level-comments" id="comment-0">
+    <!-- Comments will be inserted here via AJAX -->
+  </ul>
+
+  {% if not has_comments and not comment_lock %}
     <p class="no-comments-message">{{ _('There are no comments at the moment.') }}</p>
   {% endif %}
 
@@ -50,3 +72,121 @@
     </div>
   {% endif %}
 </div>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    // Initialize comments on page load
+    function loadInitialComments() {
+      $('#comment-loading').show();
+      $('#comment-0').empty();
+
+      // Determine if we should load a specific comment or the default top-level comments
+      {% if target_comment != -1 %}
+        // Load a specific comment and its replies
+        $.ajax({
+          url: '{{ url("get_comments") }}',
+          data: {
+            content_type_id: {{ comment_content_type_id }},
+            object_id: {{ comment_object_id }},
+            is_top_level: 1,  // Use top-level view
+            target_comment: {{ target_comment }},
+            sort_by: '{{ sort_by }}',
+            sort_order: '{{ sort_order }}'
+          },
+          success: function(data) {
+            $('#comment-loading').hide();
+            $('#comment-0').html(data);
+            var urlParams = new URLSearchParams(window.location.search);
+            var targetComment = urlParams.get('target_comment');
+            var $targetComment = $(`#comment-${targetComment}`);
+
+            if ($targetComment.length) {
+              $targetComment.addClass('highlight');
+              $('html, body').animate({
+                scrollTop: $targetComment.offset().top - 100
+              }, 500);
+            }
+            renderKatex($('#comments')[0]);
+            register_time($('.time-with-rel'));
+            register_comment_operations();
+          },
+          error: function() {
+            $('#comment-loading').hide();
+            $('#comment-0').html('<p class="error-message">{{ _("Error loading comments.") }}</p>');
+          }
+        });
+      {% else %}
+        // Load top-level comments
+        $.ajax({
+          url: '{{ url("get_comments") }}',
+          data: {
+            content_type_id: {{ comment_content_type_id }},
+            object_id: {{ comment_object_id }},
+            is_top_level: 1,  // Top-level comments
+            target_comment: -1,
+            sort_by: '{{ sort_by }}',
+            sort_order: '{{ sort_order }}'
+          },
+          success: function(data) {
+            $('#comment-loading').hide();
+
+            {% if has_comments %}
+              $('#comment-0').html(data);
+              renderKatex($('#comments')[0]);
+              register_time($('.time-with-rel'));
+              register_comment_operations();
+            {% else %}
+              // Show no comments message
+              $('.no-comments-message').show();
+            {% endif %}
+          },
+          error: function() {
+            $('#comment-loading').hide();
+            $('#comment-0').html('<p class="error-message">{{ _("Error loading comments.") }}</p>');
+          }
+        });
+      {% endif %}
+    }
+
+    // Load comments when the page is ready
+    loadInitialComments();
+
+    // Handle comment sorting
+    function reloadCommentsWithSort() {
+      var combinedSort = $('#comment-sort-combined').val();
+      var sortParts = combinedSort.split('_');
+      var sortBy = sortParts[0];
+      var sortOrder = sortParts[1];
+
+      $('#comment-loading').show();
+      $('#comment-0').empty();
+
+      $.ajax({
+        url: '{{ url("get_comments") }}',
+        data: {
+          content_type_id: {{ comment_content_type_id }},
+          object_id: {{ comment_object_id }},
+          is_top_level: 1,
+          sort_by: sortBy,
+          sort_order: sortOrder
+        },
+        success: function(data) {
+          $('#comment-loading').hide();
+          $('#comment-0').html(data);
+          renderKatex($('#comments')[0]);
+          register_time($('.time-with-rel'));
+          register_comment_operations();
+        },
+        error: function() {
+          $('#comment-loading').hide();
+          $('#comment-0').html('<p class="error-message">{{ _("Error loading comments.") }}</p>');
+        }
+      });
+    }
+
+    // Handle sort control change event
+    $('#comment-sort-combined').on('change', function() {
+      reloadCommentsWithSort();
+    });
+  });
+</script>

@@ -71,9 +71,11 @@ class NotificationProfile(models.Model):
     user = models.OneToOneField(Profile, on_delete=CASCADE)
 
 
-def make_notification(to_users, category, html_link, author):
+def make_notification(to_user_ids, category, html_link, author):
+    to_user_ids = list(set(to_user_ids))
+    to_users = Profile.get_cached_instances(*to_user_ids)
     for user in to_users:
-        if user == author:
+        if user.id == author.id:
             continue
         notif = Notification(
             owner=user, category=category, html_link=html_link, author=author

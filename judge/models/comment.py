@@ -65,7 +65,7 @@ class Comment(MPTTModel):
         verbose_name = _("comment")
         verbose_name_plural = _("comments")
         indexes = [
-            models.Index(fields=["content_type", "object_id"]),
+            models.Index(fields=["content_type", "object_id", "hidden"]),
         ]
 
     class MPTTMeta:
@@ -176,4 +176,11 @@ class CommentLock(models.Model):
 def get_visible_comment_count(content_type, object_id):
     return Comment.objects.filter(
         content_type=content_type, object_id=object_id, hidden=False
+    ).count()
+
+
+@cache_wrapper(prefix="gvtlcc")
+def get_visible_top_level_comment_count(content_type, object_id):
+    return Comment.objects.filter(
+        content_type=content_type, object_id=object_id, parent=None, hidden=False
     ).count()

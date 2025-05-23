@@ -1,0 +1,1792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Graph Editor</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Custom theme colors */
+        :root {
+            --color-primary: #5D5CDE;
+            --color-primary-hover: #4A49B0;
+            --color-selected: #FF5722;
+        }
+        
+        /* Custom classes for primary color */
+        .text-primary { color: var(--color-primary); }
+        .bg-primary { background-color: var(--color-primary); }
+        .hover\:bg-primary-light:hover { background-color: var(--color-primary-hover); }
+        .hover\:bg-opacity-90:hover { opacity: 0.9; }
+        .border-primary { border-color: var(--color-primary); }
+        
+        /* Dark mode support */
+        .dark .dark\:bg-gray-700 { background-color: #374151; }
+        .dark .dark\:bg-gray-800 { background-color: #1F2937; }
+        .dark .dark\:bg-gray-900 { background-color: #111827; }
+        .dark .dark\:text-gray-200 { color: #E5E7EB; }
+        .dark .dark\:text-gray-400 { color: #9CA3AF; }
+        .dark .dark\:border-gray-600 { border-color: #4B5563; }
+        .dark .dark\:border-gray-700 { border-color: #374151; }
+        
+        /* Toggle custom styling */
+        .peer:checked + div.peer-checkbox-bg {
+            background-color: var(--color-primary);
+        }
+        
+        .peer:checked + div.peer-checkbox-bg::after {
+            transform: translateX(100%);
+        }
+        
+        .peer-checkbox-bg::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            background-color: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 9999px;
+            height: 1.25rem;
+            width: 1.25rem;
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+        
+        /* Resize handles */
+        .resize-handle {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background-color: var(--color-primary);
+            border: 2px solid white;
+            z-index: 10;
+        }
+        
+        .resize-handle.bottom-right {
+            bottom: -7px;
+            right: -7px;
+            cursor: nwse-resize;
+            border-radius: 0 0 4px 0;
+        }
+        
+        .resize-handle.bottom-left {
+            bottom: -7px;
+            left: -7px;
+            cursor: nesw-resize;
+            border-radius: 0 0 0 4px;
+        }
+        
+        .resize-handle.top-right {
+            top: -7px;
+            right: -7px;
+            cursor: nesw-resize;
+            border-radius: 0 4px 0 0;
+        }
+        
+        .resize-handle.top-left {
+            top: -7px;
+            left: -7px;
+            cursor: nwse-resize;
+            border-radius: 4px 0 0 0;
+        }
+        
+        /* Dark mode styles for resize handles */
+        .dark .resize-handle {
+            border-color: #1F2937;
+        }
+        
+        .canvas-container {
+            position: relative;
+            min-width: 300px;
+            min-height: 400px;
+            height: 400px;
+            resize: both;
+            overflow: hidden;
+        }
+        
+        /* Tab panel sizing to prevent layout shifts */
+        .tab-panel {
+            min-height: 270px;
+        }
+        
+        /* Tab styling */
+        .tab-active {
+            border-bottom: 2px solid var(--color-primary);
+            color: var(--color-primary);
+        }
+        
+        .tab-inactive {
+            color: #6B7280;
+        }
+        
+        .dark .tab-inactive {
+            color: #9CA3AF;
+        }
+        
+        /* Modal styling fixes */
+        .modal-content {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-image {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-200 min-h-screen">
+    <div class="container mx-auto p-4 flex flex-col h-screen max-w-6xl">
+        <!-- Header with title, language and theme toggles -->
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-2xl font-bold text-primary" id="title">Interactive Graph Editor</h1>
+            <div class="flex gap-2">
+                <select id="languageToggle" class="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">
+                    <option value="en">English</option>
+                    <option value="vi">Tiếng Việt</option>
+                </select>
+                <button id="darkModeToggle" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 hidden dark:block">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 block dark:hidden">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Main content: Left controls + Right canvas -->
+        <div class="flex flex-col md:flex-row gap-4 flex-grow mb-4">
+            <!-- Left Controls Section -->
+            <div class="md:w-2/5 flex flex-col p-4 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+                <!-- Tab Navigation -->
+                <div class="flex border-b border-gray-300 dark:border-gray-700 mb-4">
+                    <button id="inputTab" class="px-4 py-2 font-medium tab-active">Graph Input</button>
+                    <button id="settingsTab" class="px-4 py-2 font-medium tab-inactive">Settings</button>
+                </div>
+                
+                <!-- Tab Panels Container - Fixed Height -->
+                <div class="flex-grow">
+                    <!-- Graph Input Panel -->
+                    <div id="inputPanel" class="tab-panel">
+                        <div class="flex justify-between items-center mb-2">
+                            <select id="formatType" class="px-3 py-1 rounded border dark:bg-gray-700 dark:border-gray-600 text-sm w-2/3">
+                                <option value="mixed">Mixed Format (nodes and edges)</option>
+                                <option value="edge-list">Edge List (u v)</option>
+                                <option value="adjacency-list">Adjacency List (u: v1 v2 ...)</option>
+                            </select>
+                            <button id="showExampleBtn" class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition">Show Example</button>
+                        </div>
+                        
+                        <textarea id="cpInput" rows="10" placeholder="Enter graph format..." class="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600 text-base mb-2"></textarea>
+                        
+                        <div class="flex gap-2">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="autoUpdateToggle" class="mr-2" checked>
+                                <label for="autoUpdateToggle" class="text-sm" id="auto-update-label">Auto-update</label>
+                            </div>
+                            <div class="ml-auto">
+                                <button id="parseBtn" class="px-3 py-1 bg-primary text-white rounded hover:bg-opacity-90 transition">Generate Graph</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Settings Panel -->
+                    <div id="settingsPanel" class="hidden tab-panel">
+                        <div class="mb-4">
+                            <h3 class="text-sm font-semibold mb-2" id="graph-options">Graph Options</h3>
+                            <div class="flex items-center mb-2">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="checkbox" id="directedToggle" class="sr-only peer">
+                                    <div class="relative w-11 h-6 bg-gray-300 dark:bg-gray-700 rounded-full peer-checkbox-bg">
+                                    </div>
+                                    <span class="ml-2" id="directed-label">Directed Graph</span>
+                                </label>
+                            </div>
+                            
+                            <div id="edgeWeightInput" class="hidden mb-4">
+                                <label class="block text-sm mb-1" id="weight-label">Edge Weight:</label>
+                                <input type="text" id="edgeWeight" placeholder="Weight (optional)" class="px-3 py-1 rounded border dark:bg-gray-700 dark:border-gray-600 text-base w-full">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h3 class="text-sm font-semibold mb-2" id="graph-actions">Actions</h3>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button id="clearBtn" class="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition">Clear Graph</button>
+                                <button id="saveImageBtn" class="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">Save as PNG</button>
+                                <button id="deleteNodeBtn" class="px-3 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition">Delete Node</button>
+                                <button id="deleteEdgeBtn" class="px-3 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition">Delete Edge</button>
+                                <button id="addEdgeBtn" class="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition">Add Edge</button>
+                                <button id="arrangeBtn" class="px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition">Arrange Nodes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Canvas Section - Fixed Height -->
+            <div class="md:w-3/5 relative border-2 border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800 canvas-container" id="canvasContainer">
+                <canvas id="graphCanvas" class="absolute top-0 left-0 w-full h-full cursor-crosshair"></canvas>
+                <!-- Resize handles -->
+                <div class="resize-handle top-left" id="resizeHandleTL"></div>
+                <div class="resize-handle top-right" id="resizeHandleTR"></div>
+                <div class="resize-handle bottom-left" id="resizeHandleBL"></div>
+                <div class="resize-handle bottom-right" id="resizeHandleBR"></div>
+            </div>
+        </div>
+        
+        <!-- Instructions Section -->
+        <div class="text-sm text-gray-600 dark:text-gray-400 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <p><strong id="instruction-title">Instructions:</strong></p>
+            <ul class="list-disc pl-5" id="instructions">
+                <li>Click on canvas to add a node</li>
+                <li>Double-click on a node to start creating an edge, then click on another node to connect</li>
+                <li>Use "Add Edge" to create edges with weights</li>
+                <li>Drag nodes to reposition them</li>
+                <li>Drag the corner handles to resize the canvas</li>
+                <li>The graph input will update automatically as you modify the graph</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Image Preview Modal with Improved Scrolling -->
+    <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg max-w-5xl w-full overflow-hidden">
+            <div class="p-4 border-b border-gray-300 dark:border-gray-700 flex justify-between items-center">
+                <h3 class="text-lg font-semibold" id="modal-title">Graph Image</h3>
+                <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-4 flex flex-col items-center modal-content">
+                <img id="graphImage" class="modal-image border border-gray-300 dark:border-gray-700 mb-4" alt="Graph preview">
+                <p id="saveInstructions" class="text-center text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Right-click on the image and select "Save image as..." to download
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Translations
+        const translations = {
+            en: {
+                title: "Interactive Graph Editor",
+                settingsTitle: "Graph Settings",
+                inputTitle: "Graph Input",
+                instructionTitle: "Instructions:",
+                directedLabel: "Directed Graph",
+                weightLabel: "Edge Weight:",
+                clearBtn: "Clear Graph",
+                deleteNodeBtn: "Delete Node",
+                deleteEdgeBtn: "Delete Edge",
+                addEdgeBtn: "Add Edge",
+                arrangeBtn: "Arrange Nodes",
+                saveImageBtn: "Save as PNG",
+                showExampleBtn: "Show Example",
+                parseBtn: "Generate Graph",
+                syncCanvasBtn: "Update Input from Canvas",
+                modalTitle: "Graph Image",
+                saveInstructions: "Right-click on the image and select \"Save image as...\" to download",
+                autoUpdateLabel: "Auto-update",
+                graphOptions: "Graph Options",
+                graphActions: "Actions",
+                inputTab: "Graph Input",
+                settingsTab: "Settings",
+                instructions: [
+                    "Click on canvas to add a node",
+                    "Double-click on a node to start creating an edge, then click on another node to connect",
+                    "Use \"Add Edge\" to create edges with weights",
+                    "Drag nodes to reposition them",
+                    "Drag the corner handles to resize the canvas",
+                    "The graph input will update automatically as you modify the graph"
+                ],
+                edgeWeightPlaceholder: "Weight (optional)",
+                graphInputPlaceholder: "Enter graph format...",
+                formats: {
+                    mixed: "Mixed Format (nodes and edges)",
+                    edgeList: "Edge List (u v)",
+                    adjacencyList: "Adjacency List (u: v1 v2 ...)"
+                },
+                deleteNodeMode: "Delete Node Mode: Click on a node to delete it",
+                deleteEdgeMode: "Delete Edge Mode: Click on an edge to delete it",
+                addEdgeSelectSource: "Add Edge Mode: Select source node",
+                addEdgeSelectTarget: "Adding edge from {0}: Select target node",
+                edgeCreationModeActive: "Edge creation mode: Click on another node to create an edge from {0}"
+            },
+            vi: {
+                title: "Trình Soạn Thảo Đồ Thị",
+                settingsTitle: "Cài Đặt Đồ Thị",
+                inputTitle: "Nhập Đồ Thị",
+                instructionTitle: "Hướng dẫn:",
+                directedLabel: "Đồ Thị Có Hướng",
+                weightLabel: "Trọng Số Cạnh:",
+                clearBtn: "Xóa Đồ Thị",
+                deleteNodeBtn: "Xóa Đỉnh",
+                deleteEdgeBtn: "Xóa Cạnh",
+                addEdgeBtn: "Thêm Cạnh",
+                arrangeBtn: "Sắp Xếp Đỉnh",
+                saveImageBtn: "Lưu dạng PNG",
+                showExampleBtn: "Xem Ví Dụ",
+                parseBtn: "Tạo Đồ Thị",
+                syncCanvasBtn: "Cập Nhật Dữ Liệu Từ Bản Vẽ",
+                modalTitle: "Ảnh Đồ Thị",
+                saveInstructions: "Nhấp chuột phải vào ảnh và chọn \"Lưu hình ảnh thành...\" để tải xuống",
+                autoUpdateLabel: "Tự động cập nhật",
+                graphOptions: "Tùy Chọn Đồ Thị",
+                graphActions: "Hành Động",
+                inputTab: "Nhập Đồ Thị",
+                settingsTab: "Cài Đặt",
+                instructions: [
+                    "Nhấp vào bản vẽ để thêm đỉnh",
+                    "Nhấp đúp vào đỉnh để bắt đầu tạo cạnh, sau đó nhấp vào đỉnh khác để kết nối",
+                    "Sử dụng \"Thêm Cạnh\" để tạo cạnh có trọng số",
+                    "Kéo các đỉnh để di chuyển chúng",
+                    "Kéo các góc để thay đổi kích thước bản vẽ",
+                    "Dữ liệu đồ thị sẽ tự động cập nhật khi bạn chỉnh sửa bản vẽ"
+                ],
+                edgeWeightPlaceholder: "Trọng số (tùy chọn)",
+                graphInputPlaceholder: "Nhập định dạng đồ thị...",
+                formats: {
+                    mixed: "Định Dạng Hỗn Hợp (đỉnh và cạnh)",
+                    edgeList: "Danh Sách Cạnh (u v)",
+                    adjacencyList: "Danh Sách Kề (u: v1 v2 ...)"
+                },
+                deleteNodeMode: "Chế độ Xóa Đỉnh: Nhấp vào đỉnh để xóa",
+                deleteEdgeMode: "Chế độ Xóa Cạnh: Nhấp vào cạnh để xóa",
+                addEdgeSelectSource: "Chế độ Thêm Cạnh: Chọn đỉnh nguồn",
+                addEdgeSelectTarget: "Thêm cạnh từ {0}: Chọn đỉnh đích",
+                edgeCreationModeActive: "Chế độ tạo cạnh: Nhấp vào đỉnh khác để tạo cạnh từ {0}"
+            }
+        };
+        
+        // Sample inputs for different formats (with multilingual comments)
+        const sampleInputs = {
+            en: {
+                'mixed': `# Lines with single value create nodes
+# Lines with two values create edges
+# Lines with three values create weighted edges
+# Nodes can be numbers or letters
+
+A
+B
+C
+D
+E
+A B
+B C
+C D
+D E
+E A
+A C 5
+B E 2`,
+                'edge-list': `# Format: source target [weight]
+# Each line represents an edge
+
+A B
+B C
+C D
+D E
+E A
+A C 5
+B E 2`,
+                'adjacency-list': `# Format: node: neighbor1 neighbor2 ...
+# Or with weights: node: neighbor1(weight1) neighbor2(weight2) ...
+
+A: B C(5)
+B: A C E(2)
+C: B D
+D: C E
+E: A D`
+            },
+            vi: {
+                'mixed': `# Dòng với một giá trị tạo đỉnh
+# Dòng với hai giá trị tạo cạnh
+# Dòng với ba giá trị tạo cạnh có trọng số
+# Đỉnh có thể là số hoặc chữ cái
+
+A
+B
+C
+D
+E
+A B
+B C
+C D
+D E
+E A
+A C 5
+B E 2`,
+                'edge-list': `# Định dạng: nguồn đích [trọng số]
+# Mỗi dòng biểu diễn một cạnh
+
+A B
+B C
+C D
+D E
+E A
+A C 5
+B E 2`,
+                'adjacency-list': `# Định dạng: đỉnh: láng giềng1 láng giềng2 ...
+# Hoặc với trọng số: đỉnh: láng giềng1(trọng số1) láng giềng2(trọng số2) ...
+
+A: B C(5)
+B: A C E(2)
+C: B D
+D: C E
+E: A D`
+            }
+        };
+
+        // Setup dark mode
+        function setDarkMode(enabled) {
+            if (enabled) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+        
+        // Initialize dark mode based on system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            setDarkMode(true);
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            setDarkMode(event.matches);
+        });
+
+        // Graph Editor Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('graphCanvas');
+            const canvasContainer = document.getElementById('canvasContainer');
+            const ctx = canvas.getContext('2d');
+            
+            // Tab elements
+            const inputTab = document.getElementById('inputTab');
+            const settingsTab = document.getElementById('settingsTab');
+            const inputPanel = document.getElementById('inputPanel');
+            const settingsPanel = document.getElementById('settingsPanel');
+            
+            // Graph controls
+            const directedToggle = document.getElementById('directedToggle');
+            const clearBtn = document.getElementById('clearBtn');
+            const deleteNodeBtn = document.getElementById('deleteNodeBtn');
+            const deleteEdgeBtn = document.getElementById('deleteEdgeBtn');
+            const addEdgeBtn = document.getElementById('addEdgeBtn');
+            const arrangeBtn = document.getElementById('arrangeBtn');
+            const edgeWeightInput = document.getElementById('edgeWeightInput');
+            const edgeWeight = document.getElementById('edgeWeight');
+            const parseBtn = document.getElementById('parseBtn');
+            const cpInput = document.getElementById('cpInput');
+            const formatType = document.getElementById('formatType');
+            const showExampleBtn = document.getElementById('showExampleBtn');
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const autoUpdateToggle = document.getElementById('autoUpdateToggle');
+            const languageToggle = document.getElementById('languageToggle');
+            
+            // Get resize handles
+            const resizeHandleTL = document.getElementById('resizeHandleTL');
+            const resizeHandleTR = document.getElementById('resizeHandleTR');
+            const resizeHandleBL = document.getElementById('resizeHandleBL');
+            const resizeHandleBR = document.getElementById('resizeHandleBR');
+            
+            // All state variables declared at the beginning
+            let nodes = [];
+            let edges = [];
+            let selectedNode = null;
+            let selectedEdge = null;
+            let draggedNode = null;
+            let edgeCreationMode = false;
+            let edgeSourceNode = null;
+            let deleteNodeMode = false;
+            let deleteEdgeMode = false;
+            let addEdgeMode = false;
+            let addEdgeSourceNode = null;
+            let mousePos = { x: 0, y: 0 };
+            let currentLanguage = 'en';
+            let inputUpdateTimeout = null;
+            let lastClickTime = 0; // For double-click detection
+            
+            // Resize state
+            let isResizing = false;
+            let resizeHandle = null;
+            let originalCanvas = { width: 0, height: 0 };
+            let originalMouse = { x: 0, y: 0 };
+            
+            // Constants
+            const NODE_RADIUS = 20;
+            const NODE_COLOR = '#5D5CDE';
+            const NODE_SELECTED_COLOR = '#FF5722';
+            const EDGE_COLOR = '#666666';
+            const EDGE_WIDTH = 2;
+            const EDGE_SELECTED_COLOR = '#FF5722';
+            const ARROW_SIZE = 10;
+            const MIN_CANVAS_WIDTH = 300;
+            const MIN_CANVAS_HEIGHT = 250;
+            const MAX_CANVAS_WIDTH = 3000;
+            const MAX_CANVAS_HEIGHT = 3000;
+            const INPUT_UPDATE_DELAY = 500; // Delay in ms before parsing input
+            const DOUBLE_CLICK_DELAY = 300; // Max ms between clicks to count as double-click
+
+            // Tab navigation
+            inputTab.addEventListener('click', function() {
+                inputTab.classList.add('tab-active');
+                inputTab.classList.remove('tab-inactive');
+                settingsTab.classList.remove('tab-active');
+                settingsTab.classList.add('tab-inactive');
+                
+                inputPanel.classList.remove('hidden');
+                settingsPanel.classList.add('hidden');
+            });
+            
+            settingsTab.addEventListener('click', function() {
+                settingsTab.classList.add('tab-active');
+                settingsTab.classList.remove('tab-inactive');
+                inputTab.classList.remove('tab-active');
+                inputTab.classList.add('tab-inactive');
+                
+                settingsPanel.classList.remove('hidden');
+                inputPanel.classList.add('hidden');
+            });
+
+            // Update UI language
+            function updateLanguage(lang) {
+                currentLanguage = lang;
+                
+                // Update tab navigation
+                inputTab.textContent = translations[lang].inputTab;
+                settingsTab.textContent = translations[lang].settingsTab;
+                
+                // Update static text elements
+                document.getElementById('title').textContent = translations[lang].title;
+                document.getElementById('graph-options').textContent = translations[lang].graphOptions;
+                document.getElementById('graph-actions').textContent = translations[lang].graphActions;
+                document.getElementById('directed-label').textContent = translations[lang].directedLabel;
+                document.getElementById('weight-label').textContent = translations[lang].weightLabel;
+                document.getElementById('auto-update-label').textContent = translations[lang].autoUpdateLabel;
+                document.getElementById('instruction-title').textContent = translations[lang].instructionTitle;
+                
+                // Update buttons
+                clearBtn.textContent = translations[lang].clearBtn;
+                deleteNodeBtn.textContent = translations[lang].deleteNodeBtn;
+                deleteEdgeBtn.textContent = translations[lang].deleteEdgeBtn;
+                addEdgeBtn.textContent = translations[lang].addEdgeBtn;
+                arrangeBtn.textContent = translations[lang].arrangeBtn;
+                showExampleBtn.textContent = translations[lang].showExampleBtn;
+                parseBtn.textContent = translations[lang].parseBtn;
+                saveImageBtn.textContent = translations[lang].saveImageBtn;
+                
+                // Update placeholders
+                edgeWeight.placeholder = translations[lang].edgeWeightPlaceholder;
+                cpInput.placeholder = translations[lang].graphInputPlaceholder;
+                
+                // Update select options
+                formatType.options[0].text = translations[lang].formats.mixed;
+                formatType.options[1].text = translations[lang].formats.edgeList;
+                formatType.options[2].text = translations[lang].formats.adjacencyList;
+                
+                // Update instructions
+                const instructionsList = document.getElementById('instructions');
+                instructionsList.innerHTML = '';
+                translations[lang].instructions.forEach(instruction => {
+                    const li = document.createElement('li');
+                    li.textContent = instruction;
+                    instructionsList.appendChild(li);
+                });
+                
+                // Update modal text
+                document.getElementById('modal-title').textContent = translations[lang].modalTitle;
+                document.getElementById('saveInstructions').textContent = translations[lang].saveInstructions;
+                
+                // Re-render the canvas to update any text there
+                render();
+            }
+            
+            // Debounce function for input updates
+            function debounce(func, wait) {
+                return function(...args) {
+                    clearTimeout(inputUpdateTimeout);
+                    inputUpdateTimeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            }
+            
+            // Generate a random color for a node
+            function getRandomColor() {
+                const hue = Math.floor(Math.random() * 360);
+                return `hsl(${hue}, 70%, 60%)`;
+            }
+            
+            // Is the node label a number or a letter
+            function isNumeric(str) {
+                return !isNaN(str) && !isNaN(parseFloat(str));
+            }
+            
+            // Get next available numeric ID
+            function getNextNumericId() {
+                let maxId = 0;
+                for (const node of nodes) {
+                    if (isNumeric(node.id) && parseInt(node.id) > maxId) {
+                        maxId = parseInt(node.id);
+                    }
+                }
+                return (maxId + 1).toString();
+            }
+            
+            // Get next available letter ID (A, B, C, ..., Z, AA, AB, ...)
+            function getNextLetterId() {
+                const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                
+                // Find existing letter IDs
+                const existingIds = new Set();
+                for (const node of nodes) {
+                    if (!isNumeric(node.id)) {
+                        existingIds.add(node.id);
+                    }
+                }
+                
+                // Try single letters first
+                for (let i = 0; i < letters.length; i++) {
+                    const id = letters[i];
+                    if (!existingIds.has(id)) {
+                        return id;
+                    }
+                }
+                
+                // Then try double letters
+                for (let i = 0; i < letters.length; i++) {
+                    for (let j = 0; j < letters.length; j++) {
+                        const id = letters[i] + letters[j];
+                        if (!existingIds.has(id)) {
+                            return id;
+                        }
+                    }
+                }
+                
+                // Fallback to numeric
+                return getNextNumericId();
+            }
+            
+            // Draw an arrow for directed edges
+            function drawArrow(fromx, fromy, tox, toy) {
+                const headlen = ARROW_SIZE;
+                const dx = tox - fromx;
+                const dy = toy - fromy;
+                const angle = Math.atan2(dy, dx);
+                
+                // Adjust the end point to not overlap with the target node
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const ratio = (distance - NODE_RADIUS) / distance;
+                
+                const endX = fromx + dx * ratio;
+                const endY = fromy + dy * ratio;
+                
+                ctx.beginPath();
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(
+                    endX - headlen * Math.cos(angle - Math.PI / 6),
+                    endY - headlen * Math.sin(angle - Math.PI / 6)
+                );
+                ctx.lineTo(
+                    endX - headlen * Math.cos(angle + Math.PI / 6),
+                    endY - headlen * Math.sin(angle + Math.PI / 6)
+                );
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            // Draw a connecting line while creating an edge
+            function drawConnectingLine() {
+                if ((edgeCreationMode && edgeSourceNode) || (addEdgeMode && addEdgeSourceNode)) {
+                    const source = addEdgeMode ? addEdgeSourceNode : edgeSourceNode;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(source.x, source.y);
+                    ctx.lineTo(mousePos.x, mousePos.y);
+                    ctx.strokeStyle = EDGE_COLOR;
+                    ctx.lineWidth = EDGE_WIDTH;
+                    ctx.stroke();
+                    
+                    if (directedToggle.checked) {
+                        ctx.fillStyle = EDGE_COLOR;
+                        const angle = Math.atan2(mousePos.y - source.y, mousePos.x - source.x);
+                        const arrowX = mousePos.x - ARROW_SIZE * Math.cos(angle);
+                        const arrowY = mousePos.y - ARROW_SIZE * Math.sin(angle);
+                        drawArrow(source.x, source.y, arrowX, arrowY);
+                    }
+                }
+            }
+            
+            // Calculate midpoint of an edge for weight display
+            function getEdgeMidpoint(edge) {
+                const source = edge.source;
+                const target = edge.target;
+                return {
+                    x: (source.x + target.x) / 2,
+                    y: (source.y + target.y) / 2
+                };
+            }
+            
+            // Render the entire graph
+            function render() {
+                // Get dark mode status
+                const isDarkMode = document.documentElement.classList.contains('dark');
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Set background color
+                ctx.fillStyle = isDarkMode ? '#1F2937' : '#FFFFFF';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw edges
+                for (const edge of edges) {
+                    const source = edge.source;
+                    const target = edge.target;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(source.x, source.y);
+                    ctx.lineTo(target.x, target.y);
+                    
+                    // Selected edge or normal edge
+                    ctx.strokeStyle = (selectedEdge === edge) ? EDGE_SELECTED_COLOR : EDGE_COLOR;
+                    ctx.lineWidth = EDGE_WIDTH;
+                    ctx.stroke();
+                    
+                    // Draw arrow for directed graphs
+                    if (directedToggle.checked) {
+                        ctx.fillStyle = (selectedEdge === edge) ? EDGE_SELECTED_COLOR : EDGE_COLOR;
+                        drawArrow(source.x, source.y, target.x, target.y);
+                    }
+                    
+                    // Draw weight if it exists
+                    if (edge.weight !== undefined) {
+                        const midpoint = getEdgeMidpoint(edge);
+                        
+                        // Draw background for the weight text
+                        ctx.fillStyle = isDarkMode ? 'rgba(31, 41, 55, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+                        ctx.beginPath();
+                        ctx.arc(midpoint.x, midpoint.y, 12, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Draw the weight
+                        ctx.fillStyle = isDarkMode ? '#FFFFFF' : '#000000';
+                        ctx.font = 'bold 12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(edge.weight, midpoint.x, midpoint.y);
+                    }
+                }
+                
+                // Draw connecting line while creating edge
+                drawConnectingLine();
+                
+                // Draw nodes
+                for (const node of nodes) {
+                    // Draw node circle
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+                    
+                    // Color the node based on selection state
+                    if (selectedNode === node || draggedNode === node || 
+                        (addEdgeMode && addEdgeSourceNode === node) ||
+                        (edgeCreationMode && edgeSourceNode === node)) {
+                        ctx.fillStyle = NODE_SELECTED_COLOR;
+                    } else {
+                        ctx.fillStyle = node.color;
+                    }
+                    
+                    ctx.fill();
+                    
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = isDarkMode ? '#FFFFFF' : '#000000';
+                    ctx.stroke();
+                    
+                    // Draw node label
+                    ctx.fillStyle = isDarkMode ? '#FFFFFF' : '#000000';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(node.id, node.x, node.y);
+                }
+                
+                // Draw mode indicator
+                ctx.fillStyle = isDarkMode ? '#FFFFFF' : '#000000';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                
+                if (deleteNodeMode) {
+                    ctx.fillText(translations[currentLanguage].deleteNodeMode, 10, 10);
+                } else if (deleteEdgeMode) {
+                    ctx.fillText(translations[currentLanguage].deleteEdgeMode, 10, 10);
+                } else if (addEdgeMode) {
+                    if (addEdgeSourceNode) {
+                        const text = translations[currentLanguage].addEdgeSelectTarget.replace('{0}', addEdgeSourceNode.id);
+                        ctx.fillText(text, 10, 10);
+                    } else {
+                        ctx.fillText(translations[currentLanguage].addEdgeSelectSource, 10, 10);
+                    }
+                } else if (edgeCreationMode && edgeSourceNode) {
+                    const text = translations[currentLanguage].edgeCreationModeActive.replace('{0}', edgeSourceNode.id);
+                    ctx.fillText(text, 10, 10);
+                }
+            }
+            
+            // Resize canvas to match container
+            function resizeCanvas() {
+                canvas.width = canvasContainer.clientWidth;
+                canvas.height = canvasContainer.clientHeight;
+                render();
+            }
+            
+            // Create a new node
+            function addNode(x, y, id = null) {
+                // If ID is not provided, create a new one
+                if (id === null) {
+                    // Choose numeric or letter ID based on existing nodes
+                    const useLetters = nodes.some(node => !isNumeric(node.id));
+                    id = useLetters ? getNextLetterId() : getNextNumericId();
+                }
+                
+                // Check if a node with this ID already exists
+                if (nodes.some(node => node.id === id)) {
+                    return null;
+                }
+                
+                const color = getRandomColor();
+                const newNode = { id, x, y, radius: NODE_RADIUS, color };
+                nodes.push(newNode);
+                
+                // Update the graph input
+                updateGraphInput();
+                
+                render();
+                return newNode;
+            }
+            
+            // Find or create a node with the given ID
+            function findOrCreateNode(id) {
+                // Check if node exists
+                let node = nodes.find(n => n.id === id);
+                
+                if (!node) {
+                    // Create node at a random position on the canvas
+                    const padding = NODE_RADIUS * 3;
+                    const x = padding + Math.random() * (canvas.width - padding * 2);
+                    const y = padding + Math.random() * (canvas.height - padding * 2);
+                    
+                    node = addNode(x, y, id);
+                }
+                
+                return node;
+            }
+            
+            // Add an edge between two nodes
+            function addEdge(sourceNode, targetNode, weight) {
+                if (!sourceNode || !targetNode) return null;
+                
+                // Check if the edge already exists
+                const existingEdge = edges.find(edge => 
+                    edge.source === sourceNode && edge.target === targetNode ||
+                    (!directedToggle.checked && edge.source === targetNode && edge.target === sourceNode)
+                );
+                
+                if (existingEdge) {
+                    // Update weight if provided
+                    if (weight !== undefined) {
+                        existingEdge.weight = weight;
+                        updateGraphInput();
+                        render();
+                    }
+                    return existingEdge;
+                } else {
+                    // Create new edge
+                    const newEdge = { 
+                        source: sourceNode, 
+                        target: targetNode
+                    };
+                    
+                    if (weight !== undefined) {
+                        newEdge.weight = weight;
+                    }
+                    
+                    edges.push(newEdge);
+                    
+                    // Update the graph input
+                    updateGraphInput();
+                    
+                    render();
+                    return newEdge;
+                }
+            }
+            
+            // Check if a point is inside a node
+            function isPointInNode(x, y, node) {
+                const dx = x - node.x;
+                const dy = y - node.y;
+                return Math.sqrt(dx*dx + dy*dy) <= node.radius;
+            }
+            
+            // Find a node at the given coordinates
+            function findNodeAt(x, y) {
+                for (let i = nodes.length - 1; i >= 0; i--) {
+                    if (isPointInNode(x, y, nodes[i])) {
+                        return nodes[i];
+                    }
+                }
+                return null;
+            }
+            
+            // Calculate distance from a point to a line segment
+            function distanceToLine(px, py, x1, y1, x2, y2) {
+                const A = px - x1;
+                const B = py - y1;
+                const C = x2 - x1;
+                const D = y2 - y1;
+                
+                const dot = A * C + B * D;
+                const len_sq = C * C + D * D;
+                let param = -1;
+                
+                if (len_sq !== 0) {
+                    param = dot / len_sq;
+                }
+                
+                let xx, yy;
+                
+                if (param < 0) {
+                    xx = x1;
+                    yy = y1;
+                } else if (param > 1) {
+                    xx = x2;
+                    yy = y2;
+                } else {
+                    xx = x1 + param * C;
+                    yy = y1 + param * D;
+                }
+                
+                const dx = px - xx;
+                const dy = py - yy;
+                
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+            
+            // Find an edge at the given coordinates
+            function findEdgeAt(x, y) {
+                const MAX_DISTANCE = 5; // Max distance to select an edge
+                
+                for (const edge of edges) {
+                    const source = edge.source;
+                    const target = edge.target;
+                    
+                    // Calculate distance from point to line segment
+                    const dist = distanceToLine(x, y, source.x, source.y, target.x, target.y);
+                    
+                    if (dist <= MAX_DISTANCE) {
+                        return edge;
+                    }
+                }
+                
+                return null;
+            }
+            
+            // Delete a node and its connected edges
+            function deleteNode(node) {
+                edges = edges.filter(edge => 
+                    edge.source !== node && edge.target !== node
+                );
+                
+                nodes = nodes.filter(n => n !== node);
+                
+                // Update the graph input
+                updateGraphInput();
+                
+                render();
+            }
+            
+            // Delete an edge
+            function deleteEdge(edge) {
+                edges = edges.filter(e => e !== edge);
+                
+                // Update the graph input
+                updateGraphInput();
+                
+                render();
+            }
+            
+            // Clear the entire graph
+            function clearGraph() {
+                nodes = [];
+                edges = [];
+                
+                // Update the graph input
+                updateGraphInput();
+                
+                render();
+            }
+            
+            // Exit any special modes
+            function exitAllModes() {
+                deleteNodeMode = false;
+                deleteEdgeMode = false;
+                addEdgeMode = false;
+                addEdgeSourceNode = null;
+                edgeCreationMode = false;
+                edgeSourceNode = null;
+                edgeWeightInput.classList.add('hidden');
+                render();
+            }
+            
+            // Update the input textarea based on the current graph
+            function updateGraphInput() {
+                const format = formatType.value;
+                let output = '';
+                
+                if (format === 'mixed' || format === 'edge-list') {
+                    // For mixed format, first list all nodes
+                    if (format === 'mixed') {
+                        // Add nodes first
+                        for (const node of nodes) {
+                            output += node.id + '\n';
+                        }
+                        if (nodes.length > 0) output += '\n';
+                    }
+                    
+                    // Then list all edges
+                    for (const edge of edges) {
+                        output += edge.source.id + ' ' + edge.target.id;
+                        if (edge.weight !== undefined) {
+                            output += ' ' + edge.weight;
+                        }
+                        output += '\n';
+                    }
+                } else if (format === 'adjacency-list') {
+                    // Group edges by source node
+                    const adjacencyMap = {};
+                    
+                    // Initialize map with all nodes
+                    for (const node of nodes) {
+                        adjacencyMap[node.id] = [];
+                    }
+                    
+                    // Add all edges
+                    for (const edge of edges) {
+                        const sourceId = edge.source.id;
+                        const targetId = edge.target.id;
+                        
+                        if (!adjacencyMap[sourceId]) {
+                            adjacencyMap[sourceId] = [];
+                        }
+                        
+                        // Add target with optional weight
+                        if (edge.weight !== undefined) {
+                            adjacencyMap[sourceId].push(`${targetId}(${edge.weight})`);
+                        } else {
+                            adjacencyMap[sourceId].push(targetId);
+                        }
+                        
+                        // For undirected graphs, add the reverse edge too
+                        if (!directedToggle.checked) {
+                            if (!adjacencyMap[targetId]) {
+                                adjacencyMap[targetId] = [];
+                            }
+                            
+                            // Only add if not already present
+                            const existingIndex = adjacencyMap[targetId].findIndex(n => 
+                                n === sourceId || n.startsWith(`${sourceId}(`));
+                                
+                            if (existingIndex === -1) {
+                                if (edge.weight !== undefined) {
+                                    adjacencyMap[targetId].push(`${sourceId}(${edge.weight})`);
+                                } else {
+                                    adjacencyMap[targetId].push(sourceId);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Generate the output
+                    for (const sourceId in adjacencyMap) {
+                        if (adjacencyMap[sourceId].length > 0) {
+                            output += sourceId + ': ' + adjacencyMap[sourceId].join(' ') + '\n';
+                        } else {
+                            output += sourceId + ':\n';
+                        }
+                    }
+                }
+                
+                cpInput.value = output;
+            }
+            
+            // Parse the graph input and create the graph
+            function parseGraphInput() {
+                const format = formatType.value;
+                const input = cpInput.value.trim();
+                
+                if (!input) {
+                    return;
+                }
+                
+                // Clear existing graph
+                clearGraph();
+                
+                // Split into lines and remove comments
+                const lines = input.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line && !line.startsWith('#'));
+                
+                if (format === 'mixed') {
+                    // Process each line - could be a node or an edge
+                    for (const line of lines) {
+                        const parts = line.trim().split(/\s+/).filter(Boolean);
+                        
+                        if (parts.length === 1) {
+                            // Single value - create a node
+                            findOrCreateNode(parts[0]);
+                        } else if (parts.length >= 2) {
+                            // Two or more values - create an edge
+                            const sourceId = parts[0];
+                            const targetId = parts[1];
+                            
+                            const source = findOrCreateNode(sourceId);
+                            const target = findOrCreateNode(targetId);
+                            
+                            // Check for weight (three values)
+                            if (parts.length >= 3) {
+                                const weight = parts[2];
+                                addEdge(source, target, weight);
+                            } else {
+                                addEdge(source, target);
+                            }
+                        }
+                    }
+                } else if (format === 'edge-list') {
+                    // Process each line as an edge
+                    for (const line of lines) {
+                        const parts = line.trim().split(/\s+/).filter(Boolean);
+                        
+                        if (parts.length >= 2) {
+                            const sourceId = parts[0];
+                            const targetId = parts[1];
+                            
+                            const source = findOrCreateNode(sourceId);
+                            const target = findOrCreateNode(targetId);
+                            
+                            // Check for weight
+                            if (parts.length >= 3) {
+                                const weight = parts[2];
+                                addEdge(source, target, weight);
+                            } else {
+                                addEdge(source, target);
+                            }
+                        }
+                    }
+                } else if (format === 'adjacency-list') {
+                    // Process each line as a node with its neighbors
+                    for (const line of lines) {
+                        const parts = line.trim().split(':');
+                        
+                        if (parts.length === 2) {
+                            const sourceId = parts[0].trim();
+                            const neighborsText = parts[1].trim();
+                            
+                            // Create the source node
+                            const source = findOrCreateNode(sourceId);
+                            
+                            if (!neighborsText) continue;
+                            
+                            // Parse neighbors, which could have weights in the format target(weight)
+                            const neighborMatches = neighborsText.match(/\S+/g) || [];
+                            
+                            for (const neighborMatch of neighborMatches) {
+                                // Check if neighbor has a weight in parentheses
+                                const weightMatch = neighborMatch.match(/^([^(]+)\(([^)]+)\)$/);
+                                
+                                if (weightMatch) {
+                                    // Neighbor with weight: target(weight)
+                                    const targetId = weightMatch[1];
+                                    const weight = weightMatch[2];
+                                    
+                                    const target = findOrCreateNode(targetId);
+                                    addEdge(source, target, weight);
+                                } else {
+                                    // Simple neighbor without weight
+                                    const targetId = neighborMatch;
+                                    const target = findOrCreateNode(targetId);
+                                    addEdge(source, target);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Update the graph layout to distribute nodes nicely
+                if (nodes.length > 0) {
+                    arrangeNodesInCircle();
+                }
+            }
+            
+            // Arrange nodes in a circle
+            function arrangeNodesInCircle() {
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const radius = Math.min(canvas.width, canvas.height) * 0.4;
+                
+                nodes.forEach((node, index) => {
+                    const angle = (index * 2 * Math.PI) / nodes.length;
+                    node.x = centerX + radius * Math.cos(angle);
+                    node.y = centerY + radius * Math.sin(angle);
+                });
+                
+                render();
+            }
+            
+            // Set canvas size and update DOM elements
+            function setCanvasSize(width, height) {
+                // Ensure dimensions are within allowed range
+                width = Math.max(MIN_CANVAS_WIDTH, Math.min(MAX_CANVAS_WIDTH, width));
+                height = Math.max(MIN_CANVAS_HEIGHT, Math.min(MAX_CANVAS_HEIGHT, height));
+                
+                // Update container dimensions
+                canvasContainer.style.width = width + 'px';
+                canvasContainer.style.height = height + 'px';
+                
+                // Update canvas dimensions
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Re-render the graph
+                render();
+            }
+            
+            // Handle resize start
+            function startResize(e, handle) {
+                e.preventDefault();
+                isResizing = true;
+                resizeHandle = handle;
+                
+                // Store original dimensions
+                originalCanvas = {
+                    width: canvasContainer.clientWidth,
+                    height: canvasContainer.clientHeight
+                };
+                
+                originalMouse = {
+                    x: e.clientX,
+                    y: e.clientY
+                };
+                
+                // Add the mousemove and mouseup event listeners
+                document.addEventListener('mousemove', handleResize);
+                document.addEventListener('mouseup', endResize);
+            }
+            
+            // Handle resize during mouse movement
+            function handleResize(e) {
+                if (!isResizing) return;
+                
+                e.preventDefault();
+                
+                const dx = e.clientX - originalMouse.x;
+                const dy = e.clientY - originalMouse.y;
+                
+                let newWidth = originalCanvas.width;
+                let newHeight = originalCanvas.height;
+                
+                // Calculate new dimensions based on which handle is being dragged
+                switch(resizeHandle) {
+                    case 'br': // Bottom-right
+                        newWidth = originalCanvas.width + dx;
+                        newHeight = originalCanvas.height + dy;
+                        break;
+                    case 'bl': // Bottom-left
+                        newWidth = originalCanvas.width - dx;
+                        newHeight = originalCanvas.height + dy;
+                        break;
+                    case 'tr': // Top-right
+                        newWidth = originalCanvas.width + dx;
+                        newHeight = originalCanvas.height - dy;
+                        break;
+                    case 'tl': // Top-left
+                        newWidth = originalCanvas.width - dx;
+                        newHeight = originalCanvas.height - dy;
+                        break;
+                }
+                
+                // Apply new dimensions
+                setCanvasSize(newWidth, newHeight);
+            }
+            
+            // End resize operation
+            function endResize() {
+                isResizing = false;
+                
+                // Remove the event listeners when no longer needed
+                document.removeEventListener('mousemove', handleResize);
+                document.removeEventListener('mouseup', endResize);
+                
+                // Rearrange nodes to fit new canvas size if needed
+                if (nodes.length > 0) {
+                    // Check if any nodes are now outside the canvas boundaries
+                    let needsRearrangement = false;
+                    const padding = NODE_RADIUS;
+                    
+                    for (const node of nodes) {
+                        if (node.x < padding || node.x > canvas.width - padding || 
+                            node.y < padding || node.y > canvas.height - padding) {
+                            needsRearrangement = true;
+                            break;
+                        }
+                    }
+                    
+                    if (needsRearrangement) {
+                        arrangeNodesInCircle();
+                    }
+                }
+            }
+            
+            // Initialize canvas size
+            resizeCanvas();
+            window.addEventListener('resize', function() {
+                // Only auto-resize if we haven't manually set custom dimensions
+                if (!canvasContainer.style.width && !canvasContainer.style.height) {
+                    resizeCanvas();
+                }
+            });
+            
+            // Event Listeners for resize handles
+            resizeHandleBR.addEventListener('mousedown', (e) => startResize(e, 'br'));
+            resizeHandleBL.addEventListener('mousedown', (e) => startResize(e, 'bl'));
+            resizeHandleTR.addEventListener('mousedown', (e) => startResize(e, 'tr'));
+            resizeHandleTL.addEventListener('mousedown', (e) => startResize(e, 'tl'));
+            
+            // Add touch support for resize handles
+            resizeHandleBR.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                startResize({
+                    preventDefault: () => {},
+                    clientX: e.touches[0].clientX,
+                    clientY: e.touches[0].clientY
+                }, 'br');
+            });
+            
+            resizeHandleBL.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                startResize({
+                    preventDefault: () => {},
+                    clientX: e.touches[0].clientX,
+                    clientY: e.touches[0].clientY
+                }, 'bl');
+            });
+            
+            resizeHandleTR.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                startResize({
+                    preventDefault: () => {},
+                    clientX: e.touches[0].clientX,
+                    clientY: e.touches[0].clientY
+                }, 'tr');
+            });
+            
+            resizeHandleTL.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                startResize({
+                    preventDefault: () => {},
+                    clientX: e.touches[0].clientX,
+                    clientY: e.touches[0].clientY
+                }, 'tl');
+            });
+            
+            // Convert touch move and end events to mouse events
+            document.addEventListener('touchmove', (e) => {
+                if (isResizing) {
+                    e.preventDefault();
+                    handleResize({
+                        preventDefault: () => {},
+                        clientX: e.touches[0].clientX,
+                        clientY: e.touches[0].clientY
+                    });
+                }
+            }, { passive: false });
+            
+            document.addEventListener('touchend', () => {
+                if (isResizing) {
+                    endResize();
+                }
+            });
+            
+            // Canvas mouse events
+            canvas.addEventListener('mousedown', function(e) {
+                if (isResizing) return;
+                
+                // Check for right-click (button 2) and ignore for node creation
+                if (e.button === 2) {
+                    return; // Exit early on right-click, allowing browser context menu
+                }
+                
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const node = findNodeAt(x, y);
+                const edge = findEdgeAt(x, y);
+                
+                // Handle delete node mode
+                if (deleteNodeMode) {
+                    if (node) {
+                        deleteNode(node);
+                        exitAllModes();
+                    }
+                    return;
+                }
+                
+                // Handle delete edge mode
+                if (deleteEdgeMode) {
+                    if (edge) {
+                        deleteEdge(edge);
+                        exitAllModes();
+                    }
+                    return;
+                }
+                
+                // Handle add edge mode (using the Add Edge button)
+                if (addEdgeMode) {
+                    if (node) {
+                        if (!addEdgeSourceNode) {
+                            // First click - select source node
+                            addEdgeSourceNode = node;
+                        } else if (node !== addEdgeSourceNode) {
+                            // Second click - create edge to target node
+                            const weight = edgeWeight.value.trim() || undefined;
+                            addEdge(addEdgeSourceNode, node, weight);
+                            
+                            // Reset edge creation state
+                            addEdgeSourceNode = null;
+                            
+                            // Exit add edge mode if not holding shift
+                            if (!e.shiftKey) {
+                                exitAllModes();
+                            }
+                        }
+                        render();
+                    }
+                    return;
+                }
+
+                // Handle edge creation mode (using double-click)
+                if (edgeCreationMode && edgeSourceNode) {
+                    if (node && node !== edgeSourceNode) {
+                        // Create edge between source and target nodes
+                        addEdge(edgeSourceNode, node);
+                        // Exit edge creation mode
+                        edgeCreationMode = false;
+                        edgeSourceNode = null;
+                        render();
+                    }
+                    return;
+                }
+                
+                // Normal mode - handle node selection, drag, or canvas click
+                if (node) {
+                    selectedNode = node;
+                    
+                    // Check for double-click to enter edge creation mode
+                    const now = Date.now();
+                    if (now - lastClickTime < DOUBLE_CLICK_DELAY) {
+                        // Double click detected - enter edge creation mode
+                        edgeCreationMode = true;
+                        edgeSourceNode = node;
+                        // Prevent dragging in edge creation mode
+                        draggedNode = null;
+                    } else {
+                        // Single click - prepare for potential drag
+                        draggedNode = node;
+                    }
+                    
+                    lastClickTime = now;
+                } else if (edge) {
+                    selectedEdge = edge;
+                } else {
+                    // Left click on empty canvas - add new node
+                    addNode(x, y);
+                }
+                
+                render();
+            });
+            
+            canvas.addEventListener('mousemove', function(e) {
+                if (isResizing) return;
+                
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                mousePos = { x, y };
+                
+                // Only update position if dragging a node
+                if (draggedNode) {
+                    draggedNode.x = x;
+                    draggedNode.y = y;
+                    updateGraphInput();
+                }
+                
+                render();
+            });
+            
+            canvas.addEventListener('mouseup', function(e) {
+                if (isResizing) return;
+                
+                // Reset dragged node
+                draggedNode = null;
+                
+                render();
+            });
+            
+            // Auto-update from input
+            const debouncedParseInput = debounce(() => {
+                if (autoUpdateToggle.checked) {
+                    parseGraphInput();
+                }
+            }, INPUT_UPDATE_DELAY);
+            
+            cpInput.addEventListener('input', debouncedParseInput);
+            
+            // Button click handlers
+            clearBtn.addEventListener('click', clearGraph);
+            
+            deleteNodeBtn.addEventListener('click', function() {
+                exitAllModes();
+                deleteNodeMode = true;
+                
+                // Switch to settings tab when activating this mode
+                settingsTab.click();
+                
+                render();
+            });
+            
+            deleteEdgeBtn.addEventListener('click', function() {
+                exitAllModes();
+                deleteEdgeMode = true;
+                
+                // Switch to settings tab when activating this mode
+                settingsTab.click();
+                
+                render();
+            });
+            
+            addEdgeBtn.addEventListener('click', function() {
+                exitAllModes();
+                addEdgeMode = true;
+                edgeWeightInput.classList.remove('hidden');
+                
+                // Switch to settings tab when activating this mode
+                settingsTab.click();
+                
+                render();
+            });
+            
+            arrangeBtn.addEventListener('click', function() {
+                if (nodes.length > 0) {
+                    arrangeNodesInCircle();
+                }
+            });
+            
+            parseBtn.addEventListener('click', parseGraphInput);
+            
+            showExampleBtn.addEventListener('click', function() {
+                const format = formatType.value;
+                cpInput.value = sampleInputs[currentLanguage][format] || '';
+                // Auto-update from the example
+                debouncedParseInput();
+            });
+            
+            formatType.addEventListener('change', function() {
+                // Update the graph input format when the format changes
+                updateGraphInput();
+            });
+            
+            // Toggle for directed/undirected graph
+            directedToggle.addEventListener('change', function() {
+                // Update the graph input to reflect directedness change
+                updateGraphInput();
+                render();
+            });
+            
+            // Dark mode toggle
+            darkModeToggle.addEventListener('click', function() {
+                const isDark = document.documentElement.classList.contains('dark');
+                setDarkMode(!isDark);
+                render();
+            });
+            
+            // Language toggle
+            languageToggle.addEventListener('change', function() {
+                updateLanguage(languageToggle.value);
+                // Show example in the selected language
+                const format = formatType.value;
+                // Only update if the user hasn't entered any custom input yet
+                if (!cpInput.value.trim() || cpInput.value === sampleInputs['en'][format] || cpInput.value === sampleInputs['vi'][format]) {
+                    cpInput.value = sampleInputs[currentLanguage][format] || '';
+                    // Auto-update from the new example
+                    debouncedParseInput();
+                }
+            });
+            
+            // Save canvas as PNG image
+            const saveImageBtn = document.getElementById('saveImageBtn');
+            const imageModal = document.getElementById('imageModal');
+            const graphImage = document.getElementById('graphImage');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const modalTitle = document.getElementById('modal-title');
+            const saveInstructions = document.getElementById('saveInstructions');
+
+            // Function to save the canvas as a PNG image
+            function saveCanvasAsImage() {
+                // Create a copy of the current canvas to preserve the graph without UI indicators
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                // Get dark mode status
+                const isDarkMode = document.documentElement.classList.contains('dark');
+                
+                // Fill background
+                tempCtx.fillStyle = isDarkMode ? '#1F2937' : '#FFFFFF';
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                
+                // Draw edges
+                for (const edge of edges) {
+                    const source = edge.source;
+                    const target = edge.target;
+                    
+                    tempCtx.beginPath();
+                    tempCtx.moveTo(source.x, source.y);
+                    tempCtx.lineTo(target.x, target.y);
+                    tempCtx.strokeStyle = EDGE_COLOR;
+                    tempCtx.lineWidth = EDGE_WIDTH;
+                    tempCtx.stroke();
+                    
+                    // Draw arrow for directed graphs
+                    if (directedToggle.checked) {
+                        tempCtx.fillStyle = EDGE_COLOR;
+                        const dx = target.x - source.x;
+                        const dy = target.y - source.y;
+                        const angle = Math.atan2(dy, dx);
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const ratio = (distance - NODE_RADIUS) / distance;
+                        const endX = source.x + dx * ratio;
+                        const endY = source.y + dy * ratio;
+                        
+                        tempCtx.beginPath();
+                        tempCtx.moveTo(endX, endY);
+                        tempCtx.lineTo(
+                            endX - ARROW_SIZE * Math.cos(angle - Math.PI / 6),
+                            endY - ARROW_SIZE * Math.sin(angle - Math.PI / 6)
+                        );
+                        tempCtx.lineTo(
+                            endX - ARROW_SIZE * Math.cos(angle + Math.PI / 6),
+                            endY - ARROW_SIZE * Math.sin(angle + Math.PI / 6)
+                        );
+                        tempCtx.closePath();
+                        tempCtx.fill();
+                    }
+                    
+                    // Draw weight if it exists
+                    if (edge.weight !== undefined) {
+                        const midpoint = getEdgeMidpoint(edge);
+                        
+                        // Draw background for the weight text
+                        tempCtx.fillStyle = isDarkMode ? 'rgba(31, 41, 55, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+                        tempCtx.beginPath();
+                        tempCtx.arc(midpoint.x, midpoint.y, 12, 0, Math.PI * 2);
+                        tempCtx.fill();
+                        
+                        // Draw the weight
+                        tempCtx.fillStyle = isDarkMode ? '#FFFFFF' : '#000000';
+                        tempCtx.font = 'bold 12px Arial';
+                        tempCtx.textAlign = 'center';
+                        tempCtx.textBaseline = 'middle';
+                        tempCtx.fillText(edge.weight, midpoint.x, midpoint.y);
+                    }
+                }
+                
+                // Draw nodes
+                for (const node of nodes) {
+                    // Draw node circle
+                    tempCtx.beginPath();
+                    tempCtx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+                    tempCtx.fillStyle = node.color;
+                    tempCtx.fill();
+                    
+                    tempCtx.lineWidth = 2;
+                    tempCtx.strokeStyle = isDarkMode ? '#FFFFFF' : '#000000';
+                    tempCtx.stroke();
+                    
+                    // Draw node label
+                    tempCtx.fillStyle = isDarkMode ? '#FFFFFF' : '#000000';
+                    tempCtx.font = 'bold 16px Arial';
+                    tempCtx.textAlign = 'center';
+                    tempCtx.textBaseline = 'middle';
+                    tempCtx.fillText(node.id, node.x, node.y);
+                }
+                
+                // Convert the canvas to an image
+                const dataUrl = tempCanvas.toDataURL('image/png');
+                
+                // Set the image in the modal
+                graphImage.src = dataUrl;
+                
+                // Update modal text with current language
+                modalTitle.textContent = translations[currentLanguage].modalTitle;
+                saveInstructions.textContent = translations[currentLanguage].saveInstructions;
+                
+                // Show the modal
+                imageModal.classList.remove('hidden');
+                imageModal.style.display = 'flex';
+            }
+            
+            // Event listeners for the Save as PNG button and modal
+            saveImageBtn.addEventListener('click', saveCanvasAsImage);
+            
+            closeModalBtn.addEventListener('click', function() {
+                imageModal.classList.add('hidden');
+                imageModal.style.display = 'none';
+            });
+            
+            // Close modal when clicking outside of it
+            imageModal.addEventListener('click', function(e) {
+                if (e.target === imageModal) {
+                    imageModal.classList.add('hidden');
+                    imageModal.style.display = 'none';
+                }
+            });
+            
+            // Canvas keyboard events for canceling edge creation
+            canvas.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    exitAllModes();
+                }
+            });
+            
+            // Make canvas focusable for keyboard events
+            canvas.tabIndex = 0;
+            
+            // Initial setup
+            updateLanguage('en');
+            render();
+            
+            // Show a sample input initially
+            cpInput.value = sampleInputs['en']['mixed'];
+            // Generate the graph from the sample input
+            parseGraphInput();
+        });
+    </script>
+</body>
+</html>

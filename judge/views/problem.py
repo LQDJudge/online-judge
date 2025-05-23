@@ -45,7 +45,7 @@ from django.views.generic import ListView, View
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
-from judge.views.comment import CommentedDetailView
+from judge.views.comment import CommentableMixin
 from judge.forms import ProblemCloneForm, ProblemSubmitForm, ProblemPointsVoteForm
 from judge.models import (
     ContestProblem,
@@ -90,6 +90,12 @@ from judge.ml.collab_filter import CollabFilter
 from judge.views.pagevote import PageVoteDetailView
 from judge.views.bookmark import BookMarkDetailView
 from judge.views.feed import FeedView
+from judge.models.problem import (
+    get_distinct_problem_points,
+    get_all_problem_types,
+    get_all_problem_groups,
+)
+from judge.models.runtime import get_all_languages
 
 
 def get_contest_problem(problem, profile):
@@ -155,13 +161,13 @@ class SolvedProblemMixin(object):
         else:
             return user_attempted_ids(self.profile) if self.profile is not None else ()
 
-    def get_latest_attempted_problems(self, limit=None, queryset=None):
+    def get_latest_attempted_problems(self, limit=None, queryset_ids=None):
         if self.in_contest or not self.profile:
             return ()
-        result = list(user_attempted_ids(self.profile).values())
-        if queryset:
-            queryset_ids = set([i.code for i in queryset])
-            result = filter(lambda i: i["code"] in queryset_ids, result)
+        result = user_attempted_ids(self.profile)
+        if queryset_ids:
+            result = {i: v for i, v in result.items() if i in queryset_ids}
+        result = list(result.values())
         result = sorted(result, key=lambda d: -d["last_submission"])
         if limit:
             result = result[:limit]
@@ -190,9 +196,12 @@ class ProblemSolution(
     SolvedProblemMixin,
     ProblemMixin,
     TitleMixin,
-    CommentedDetailView,
+    CommentableMixin,
     PageVoteDetailView,
     BookMarkDetailView,
+    TemplateResponseMixin,
+    SingleObjectMixin,
+    View,
 ):
     context_object_name = "solution"
     template_name = "problem/editorial.html"
@@ -212,9 +221,17 @@ class ProblemSolution(
         solution = get_object_or_404(Solution, problem=self.problem)
         return solution
 
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return self.render_to_response(
+            self.get_context_data(
+                object=self.object,
+            )
+        )
+
     def get_context_data(self, **kwargs):
         context = super(ProblemSolution, self).get_context_data(**kwargs)
-        solution = self.get_object()
+        solution = self.object
         if (
             not solution.is_public or solution.publish_on > timezone.now()
         ) and not self.request.user.has_perm("judge.see_private_solution"):
@@ -222,6 +239,10 @@ class ProblemSolution(
 
         context["problem"] = self.problem
         context["has_solved_problem"] = self.problem.id in self.get_completed_problems()
+
+        # Add comment context
+        context = self.get_comment_context(context)
+
         return context
 
 
@@ -260,12 +281,23 @@ class ProblemRaw(
 class ProblemDetail(
     ProblemMixin,
     SolvedProblemMixin,
-    CommentedDetailView,
+    CommentableMixin,
     PageVoteDetailView,
     BookMarkDetailView,
+    TemplateResponseMixin,
+    SingleObjectMixin,
+    View,
 ):
     context_object_name = "problem"
     template_name = "problem/problem.html"
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return self.render_to_response(
+            self.get_context_data(
+                object=self.object,
+            )
+        )
 
     def get_context_data(self, **kwargs):
         context = super(ProblemDetail, self).get_context_data(**kwargs)
@@ -277,6 +309,9 @@ class ProblemDetail(
                 user=user.profile, problem=self.object
             ).exists()
         )
+
+        # Make sure we pass the object to the template
+        context["object"] = self.object
         contest_problem = (
             None
             if not authed or user.profile.current_contest is None
@@ -301,8 +336,8 @@ class ProblemDetail(
         context["available_judges"] = Judge.objects.filter(
             online=True, problems=self.object
         )
-        context["show_languages"] = (
-            self.object.allowed_languages.count() != Language.objects.count()
+        context["show_languages"] = len(self.object.get_allowed_languages()) != len(
+            get_all_languages()
         )
         context["has_pdf_render"] = HAS_PDF
         context["completed_problem_ids"] = self.get_completed_problems()
@@ -314,28 +349,23 @@ class ProblemDetail(
             tickets = self.object.tickets
             if not can_edit:
                 tickets = tickets.filter(own_ticket_filter(user.profile.id))
-            context["has_tickets"] = tickets.exists()
-            context["num_open_tickets"] = (
-                tickets.filter(is_open=True).values("id").distinct().count()
-            )
+            tickets = list(tickets.values("id", "is_open"))
 
-        try:
-            context["editorial"] = Solution.objects.get(problem=self.object)
-        except ObjectDoesNotExist:
-            pass
-        try:
-            translation = self.object.translations.get(
-                language=self.request.LANGUAGE_CODE
-            )
-        except ProblemTranslation.DoesNotExist:
+            context["has_tickets"] = len(tickets) > 0
+            context["num_open_tickets"] = len([t for t in tickets if t["is_open"]])
+
+        translation_name = self.object.translated_name(self.request.LANGUAGE_CODE)
+        if not translation_name:
             context["title"] = self.object.name
             context["language"] = settings.LANGUAGE_CODE
             context["description"] = self.object.description
             context["translated"] = False
         else:
-            context["title"] = translation.name
+            context["title"] = translation_name
             context["language"] = self.request.LANGUAGE_CODE
-            context["description"] = translation.description
+            context["description"] = self.object.translated_description(
+                self.request.LANGUAGE_CODE
+            )
             context["translated"] = True
 
         if not self.object.og_image or not self.object.summary:
@@ -355,6 +385,9 @@ class ProblemDetail(
             context["related_problems"] = get_related_problems(
                 self.profile, self.object
             )
+
+        # Add comment context
+        context = self.get_comment_context(context)
 
         return context
 
@@ -462,11 +495,10 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
     template_name = "problem/list.html"
     paginate_by = 50
     sql_sort = frozenset(("date", "points", "ac_rate", "user_count", "code"))
-    manual_sort = frozenset(("name", "group", "solved", "type"))
+    manual_sort = frozenset(("name", "group", "solved"))
     all_sorts = sql_sort | manual_sort
     default_desc = frozenset(("date", "points", "ac_rate", "user_count"))
     first_page_href = None
-    filter_organization = False
 
     def get_default_sort_order(self, request):
         if "search" in request.GET and settings.ENABLE_FTS:
@@ -487,7 +519,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             **kwargs,
         )
         if not self.in_contest:
-            queryset = queryset.add_i18n_name(self.request.LANGUAGE_CODE)
             queryset = self.sort_queryset(queryset)
             paginator.object_list = queryset
         return paginator
@@ -497,7 +528,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         if sort_key in self.sql_sort:
             queryset = queryset.order_by(self.order)
         elif sort_key == "name":
-            queryset = queryset.order_by(self.order.replace("name", "i18n_name"))
+            queryset = queryset.order_by(self.order)
         elif sort_key == "group":
             queryset = queryset.order_by(self.order + "__name")
         elif sort_key == "solved":
@@ -506,10 +537,10 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
                 solved = user_completed_ids(profile)
                 attempted = user_attempted_ids(profile)
 
-                def _solved_sort_order(problem):
-                    if problem.id in solved:
+                def _solved_sort_order(problem_id):
+                    if problem_id in solved:
                         return 1
-                    if problem.id in attempted:
+                    if problem_id in attempted:
                         return 0
                     return -1
 
@@ -517,15 +548,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
                 queryset.sort(
                     key=_solved_sort_order, reverse=self.order.startswith("-")
                 )
-        elif sort_key == "type":
-            if self.show_types:
-                queryset = list(queryset)
-                queryset.sort(
-                    key=lambda problem: (
-                        problem.types_list[0] if problem.types_list else ""
-                    ),
-                    reverse=self.order.startswith("-"),
-                )
+
         return queryset
 
     @cached_property
@@ -535,52 +558,9 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         return self.request.profile
 
     def get_contest_queryset(self):
-        queryset = (
-            self.profile.current_contest.contest.contest_problems.select_related(
-                "problem__group"
-            )
-            .defer("problem__description")
-            .order_by("problem__code")
-            .annotate(user_count=Count("submission__participation", distinct=True))
-            .annotate(
-                i18n_translation=FilteredRelation(
-                    "problem__translations",
-                    condition=Q(
-                        problem__translations__language=self.request.LANGUAGE_CODE
-                    ),
-                )
-            )
-            .annotate(
-                i18n_name=Coalesce(
-                    F("i18n_translation__name"),
-                    F("problem__name"),
-                    output_field=CharField(),
-                )
-            )
-            .order_by("order")
-        )
-        return [
-            {
-                "id": p["problem_id"],
-                "code": p["problem__code"],
-                "name": p["problem__name"],
-                "i18n_name": p["i18n_name"],
-                "group": {"full_name": p["problem__group__full_name"]},
-                "points": p["points"],
-                "partial": p["partial"],
-                "user_count": p["user_count"],
-            }
-            for p in queryset.values(
-                "problem_id",
-                "problem__code",
-                "problem__name",
-                "i18n_name",
-                "problem__group__full_name",
-                "points",
-                "partial",
-                "user_count",
-            )
-        ]
+        return self.profile.current_contest.contest.contest_problems.order_by(
+            "order"
+        ).values_list("problem_id", flat=True)
 
     def get_org_query(self, query):
         if not self.profile:
@@ -593,7 +573,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
 
     def get_normal_queryset(self):
         queryset = Problem.get_visible_problems(self.request.user)
-        queryset = queryset.select_related("group")
         if self.profile is not None and self.hide_solved:
             solved_problems = self.get_completed_problems()
             queryset = queryset.exclude(id__in=solved_problems)
@@ -640,22 +619,12 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
                     )
                 else:
                     queryset = substr_queryset
-        self.prepoint_queryset = queryset
         if self.point_start is not None:
             queryset = queryset.filter(points__gte=self.point_start)
         if self.point_end is not None:
             queryset = queryset.filter(points__lte=self.point_end)
 
-        queryset = queryset.annotate(
-            has_public_editorial=Sum(
-                Case(
-                    When(solution__is_public=True, then=1),
-                    default=0,
-                    output_field=IntegerField(),
-                )
-            )
-        )
-        return queryset.distinct()
+        return queryset.distinct().values_list("id", flat=True)
 
     def get_queryset(self):
         if self.in_contest:
@@ -666,8 +635,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
     def get_context_data(self, **kwargs):
         context = super(ProblemList, self).get_context_data(**kwargs)
 
-        if self.request.organization:
-            self.filter_organization = True
         context["hide_solved"] = 0 if self.in_contest else int(self.hide_solved)
         context["show_types"] = 0 if self.in_contest else int(self.show_types)
         context["full_text"] = 0 if self.in_contest else int(self.full_text)
@@ -677,21 +644,22 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         )
 
         if self.request.profile:
-            context["organizations"] = self.request.profile.organizations.all()
+            context["organizations"] = self.request.profile.get_organizations()
         context["category"] = self.category
-        context["categories"] = ProblemGroup.objects.all()
+        context["categories"] = get_all_problem_groups()
         if self.show_types:
             context["selected_types"] = self.selected_types
-            context["problem_types"] = ProblemType.objects.all()
+            context["problem_types"] = get_all_problem_types()
         context["has_fts"] = settings.ENABLE_FTS
         context["org_query"] = self.org_query
         context["author_query"] = Profile.objects.filter(id__in=self.author_query)
         context["search_query"] = self.search_query
         context["completed_problem_ids"] = self.get_completed_problems()
         context["attempted_problems"] = self.get_attempted_problems()
-        context["last_attempted_problems"] = self.get_latest_attempted_problems(
-            15, context["problems"] if self.filter_organization else None
-        )
+        if self.org_query:
+            context["last_attempted_problems"] = self.get_latest_attempted_problems(
+                15, context["problems"]
+            )
         context["page_type"] = "list"
         context.update(self.get_sort_paginate_context())
         if not self.in_contest:
@@ -713,16 +681,15 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             )
             context["has_clarifications"] = False
 
-            if self.request.user.is_authenticated:
-                participation = self.request.profile.current_contest
-                if participation:
-                    clarifications = ContestProblemClarification.objects.filter(
-                        problem__in=participation.contest.contest_problems.all()
-                    )
-                    context["has_clarifications"] = clarifications.count() > 0
-                    context["clarifications"] = clarifications.order_by("-date")
-                    if participation.contest.is_editable_by(self.request.user):
-                        context["can_edit_contest"] = True
+            participation = self.request.profile.current_contest
+            clarifications = ContestProblemClarification.objects.filter(
+                problem__in=participation.contest.contest_problems.all()
+            )
+            context["has_clarifications"] = clarifications.count() > 0
+            context["clarifications"] = clarifications.order_by("-date")
+            context["current_contest"] = participation.contest
+            if participation.contest.is_editable_by(self.request.user):
+                context["can_edit_contest"] = True
 
         context["page_prefix"] = None
         context["page_suffix"] = suffix = (
@@ -731,12 +698,21 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         context["first_page_href"] = (self.first_page_href or ".") + suffix
         context["has_show_editorial_option"] = True
         context["show_contest_mode"] = self.request.in_contest_mode
+
+        Problem.prefetch_cache_has_public_editorial(*context["problems"])
+        if context["show_types"]:
+            Problem.prefetch_cache_types_name(*context["problems"])
+        if context["show_editorial"]:
+            Problem.prefetch_cache_i18n_name(
+                self.request.LANGUAGE_CODE, *context["problems"]
+            )
+
+        context["problems"] = Problem.get_cached_instances(*context["problems"])
+
         return context
 
     def get_noui_slider_points(self):
-        points = sorted(
-            self.prepoint_queryset.values_list("points", flat=True).distinct()
-        )
+        points = get_distinct_problem_points()
         if not points:
             return 0, 0, {}
         if len(points) == 1:
@@ -842,9 +818,8 @@ class ProblemFeed(ProblemList, FeedView):
     title = _("Problem feed")
     feed_type = None
 
-    def get_recommended_problem_ids(self, queryset):
+    def get_recommended_problem_ids(self, problem_ids):
         user_id = self.request.profile.id
-        problem_ids = queryset.values_list("id", flat=True)
         rec_types = [
             RecommendationType.CF_DOT,
             RecommendationType.CF_COSINE,
@@ -872,54 +847,27 @@ class ProblemFeed(ProblemList, FeedView):
         )
 
     def get_queryset(self):
-        if self.feed_type == "volunteer":
-            self.hide_solved = 0
-            self.show_types = 1
         queryset = super(ProblemFeed, self).get_queryset()
 
-        user = self.request.profile
-
         if self.feed_type == "new":
-            return queryset.order_by("-date").add_i18n_name(self.request.LANGUAGE_CODE)
-        elif user and self.feed_type == "volunteer":
-            voted_problems = (
-                user.volunteer_problem_votes.values_list("problem", flat=True)
-                if not bool(self.search_query)
-                else []
-            )
-            if self.show_solved_only:
-                queryset = queryset.filter(
-                    id__in=Submission.objects.filter(
-                        user=self.profile, points=F("problem__points")
-                    ).values_list("problem__id", flat=True)
-                )
-            return (
-                queryset.exclude(id__in=voted_problems)
-                .order_by("?")
-                .add_i18n_name(self.request.LANGUAGE_CODE)
-            )
+            return queryset.order_by("-date").values_list("id", flat=True)
+
         if "search" in self.request.GET:
-            return queryset.add_i18n_name(self.request.LANGUAGE_CODE)
-        if not settings.ML_OUTPUT_PATH or not user:
-            return queryset.order_by("?").add_i18n_name(self.request.LANGUAGE_CODE)
+            return queryset.values_list("id", flat=True)
 
-        q = self.get_recommended_problem_ids(queryset)
+        if not settings.ML_OUTPUT_PATH or not self.request.profile:
+            return queryset.order_by("?").values_list("id", flat=True)
 
-        queryset = Problem.objects.filter(id__in=q)
-        queryset = queryset.add_i18n_name(self.request.LANGUAGE_CODE)
-
-        # Reorder results from database to correct positions
-        res = [None for _ in range(len(q))]
-        position_in_q = {i: idx for idx, i in enumerate(q)}
-        for problem in queryset:
-            res[position_in_q[problem.id]] = problem
-        return res
+        return self.get_recommended_problem_ids(queryset.values_list("id", flat=True))
 
     def get_feed_context(self, object_list):
+        Problem.prefetch_cache_description(self.request.LANGUAGE_CODE, *object_list)
+
         return {
             "completed_problem_ids": self.get_completed_problems(),
             "attempted_problems": self.get_attempted_problems(),
             "show_types": self.show_types,
+            "problems": Problem.get_cached_instances(*object_list),
         }
 
     def get_context_data(self, **kwargs):
@@ -928,6 +876,9 @@ class ProblemFeed(ProblemList, FeedView):
         context["title"] = self.title
         context["feed_type"] = self.feed_type
         context["has_show_editorial_option"] = False
+
+        problem_ids = [problem.id for problem in context["problems"]]
+        Problem.prefetch_cache_description(self.request.LANGUAGE_CODE, *problem_ids)
 
         return context
 

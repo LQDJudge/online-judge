@@ -6,7 +6,7 @@ from judge.utils.infinite_paginator import InfinitePaginationMixin
 
 
 class FeedView(InfinitePaginationMixin, ListView):
-    def get_feed_context(selfl, object_list):
+    def get_feed_context(self, object_list):
         return {}
 
     def get(self, request, *args, **kwargs):

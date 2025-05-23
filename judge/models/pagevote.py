@@ -1,5 +1,5 @@
-from django.db import models
-from django.db.models import CASCADE
+from django.db import models, IntegrityError
+from django.db.models import CASCADE, F
 from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from judge.models.profile import Profile
 from judge.caching import cache_wrapper
 
-__all__ = ["PageVote", "PageVoteVoter"]
+__all__ = ["PageVote", "PageVoteVoter", "PageVotable", "VoteService"]
 
 
 class PageVote(models.Model):
@@ -25,8 +25,8 @@ class PageVote(models.Model):
         unique_together = ("content_type", "object_id")
 
     def vote_score(self, profile):
-        vote_scores = get_vote_scores_of_profile(profile)
-        return vote_scores.get(self.id, 0)
+        voter_scores = get_voter_scores(self.id)
+        return voter_scores.get(profile.id, 0)
 
     def __str__(self):
         return f"pagevote for {self.linked_object}"
@@ -59,13 +59,71 @@ class PageVotable:
         return _get_or_create_pagevote(content_type, object_id)
 
 
-@cache_wrapper(prefix="gvsop")
-def get_vote_scores_of_profile(profile):
-    page_votes = PageVoteVoter.objects.filter(voter=profile)
-    pagevote_map = {pv.pagevote_id: pv.score for pv in page_votes}
-    return pagevote_map
+@cache_wrapper(prefix="pvgvs")
+def get_voter_scores(pagevote_id):
+    page_votes = PageVoteVoter.objects.filter(pagevote=pagevote_id)
+    return {pv.voter_id: pv.score for pv in page_votes}
 
 
-def dirty_pagevote(pagevote, profile):
-    get_vote_scores_of_profile.dirty(profile)
+def dirty_pagevote(pagevote):
+    get_voter_scores.dirty(pagevote.id)
     _get_or_create_pagevote.dirty(pagevote.content_type, pagevote.object_id)
+
+
+# Service layer to provide better abstraction
+class VoteService:
+    @staticmethod
+    def vote(obj, user, value):
+        """
+        Apply a vote to an object
+
+        Args:
+            obj: Any PageVotable object
+            user: User who is voting
+            value: +1, 0, or -1
+        """
+        # Get the pagevote for this object
+        pagevote = obj.get_or_create_pagevote()
+
+        # Get or create voter record
+        try:
+            voter, created = PageVoteVoter.objects.get_or_create(
+                pagevote=pagevote, voter=user.profile, defaults={"score": 0}
+            )
+        except IntegrityError:
+            # Handle rare race condition
+            voter = PageVoteVoter.objects.get(pagevote=pagevote, voter=user.profile)
+            created = False
+
+        # Calculate score change
+        old_value = voter.score
+
+        if value == 0:
+            # Remove the vote
+            if not created:
+                PageVote.objects.filter(id=pagevote.id).update(
+                    score=F("score") - old_value
+                )
+                voter.delete()
+        else:
+            # Update existing vote
+            PageVote.objects.filter(id=pagevote.id).update(
+                score=F("score") + value - old_value
+            )
+            voter.score = value
+            voter.save()
+
+        # Invalidate cache
+        dirty_pagevote(pagevote)
+
+        # Return updated score
+        return PageVote.objects.get(id=pagevote.id).score
+
+    @staticmethod
+    def get_vote(obj, user):
+        """Get a user's vote on an object"""
+        if not user or not user.is_authenticated:
+            return 0
+
+        pagevote = obj.get_or_create_pagevote()
+        return pagevote.vote_score(user.profile)

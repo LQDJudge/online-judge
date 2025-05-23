@@ -202,7 +202,7 @@ class EditOrganizationForm(ModelForm):
             "is_open",
         ]
         widgets = {
-            "admins": Select2MultipleWidget(),
+            "admins": HeavySelect2MultipleWidget(data_view="profile_select2"),
             "organization_image": ImageWidget,
         }
         if HeavyPreviewPageDownWidget is not None:
@@ -211,8 +211,15 @@ class EditOrganizationForm(ModelForm):
             )
 
     def __init__(self, *args, **kwargs):
+        self.org_id = kwargs.pop("org_id", 0)
         super(EditOrganizationForm, self).__init__(*args, **kwargs)
         self.fields["organization_image"].required = False
+        for field in [
+            "admins",
+        ]:
+            self.fields[field].widget.data_url = (
+                self.fields[field].widget.get_url() + f"?org_id={self.org_id}"
+            )
 
     def clean_organization_image(self):
         organization_image = self.cleaned_data.get("organization_image")

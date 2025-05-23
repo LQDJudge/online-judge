@@ -7,13 +7,6 @@
 {% block middle_content %}
   {% for post in blogs %}
     <section class="{% if post.sticky %}sticky {% endif %} blog-box" id="post-{{post.id}}">
-      {% if post.is_organization_private and show_organization_private_icon %}
-        <div style="margin-bottom: 1em; display: flex;">
-          {% for org in post.organizations.all() %}
-            {% include "organization/tag.html" %}
-          {% endfor %}
-        </div>
-      {% endif %}
       <div style="margin-bottom: 0.5em">
         <span class="post-content-header time">
           {% with authors=post.get_authors() %}
@@ -35,9 +28,7 @@
       </h2>
       <div class="blog-description">
         <div class="summary content-description">
-          {% cache 86400 'post_content' post.id %}
-            {{ post.content|markdown(lazy_load=True)|reference|str|safe }}
-          {% endcache %}
+          {{ post.content|markdown(lazy_load=True)|reference|str|safe }}
         </div>
         <div class="show-more"> {{_("...More")}} </div>
       </div>

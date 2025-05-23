@@ -1,12 +1,5 @@
 {% for post in posts %}
   <section class="{% if post.sticky %}sticky {% endif %}blog-box">
-    {% if post.is_organization_private and show_organization_private_icon %}
-      <div style="margin-bottom: 1em; display: flex;">
-        {% for org in post.organizations.all() %}
-          {% include "organization/tag.html" %}
-        {% endfor %}
-      </div>
-    {% endif %}
     <div style="margin-bottom: 0.5em">
       <span class="post-content-header time">
         {% with authors=post.get_authors() %}
@@ -17,6 +10,14 @@
             <span class="post-authors">{{ link_users(authors) }}</span>
           {%- endif -%}
         {% endwith %}
+        {% if post.is_organization_private and show_organization_private_icon %}
+          &#8226;
+          <div style="display: flex; margin-left: 0.2em;">
+            {% for org in post.get_organizations() %}
+              {% include "organization/tag.html" %}
+            {% endfor %}
+          </div>
+        {% endif %}
         &#8226;
         {{ relative_time(post.publish_on) }}
         {%- if post.sticky %} &#8226;
@@ -36,9 +37,7 @@
     </h2>
     <div class="blog-description">
       <div class="summary content-description">
-        {% cache 86400 'post_content' post.id %}
-          {{ post.content|markdown(lazy_load=True)|reference|str|safe }}
-        {% endcache %}
+        {{ post.content|markdown(lazy_load=True)|reference|str|safe }}
       </div>
       <div class="show-more"> {{_("...More")}} </div>
     </div>

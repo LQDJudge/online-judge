@@ -80,7 +80,6 @@ from judge.views.select2 import (
     UserSelect2View,
     ProblemAuthorSearchSelect2View,
 )
-from judge.views.test_formatter import test_formatter
 
 admin.autodiscover()
 
@@ -411,28 +410,6 @@ urlpatterns = [
         ),
     ),
     re_path(
-        r"^test_formatter/",
-        include(
-            [
-                re_path(
-                    r"^$",
-                    login_required(test_formatter.TestFormatter.as_view()),
-                    name="test_formatter",
-                ),
-                re_path(
-                    r"^edit_page$",
-                    login_required(test_formatter.EditTestFormatter.as_view()),
-                    name="test_formatter_edit",
-                ),
-                re_path(
-                    r"^download_page$",
-                    login_required(test_formatter.DownloadTestFormatter.as_view()),
-                    name="test_formatter_download",
-                ),
-            ]
-        ),
-    ),
-    re_path(
         r"^markdown_editor/",
         markdown_editor.MarkdownEditor.as_view(),
         name="markdown_editor",
@@ -516,10 +493,11 @@ urlpatterns = [
     re_path(r"^comments/upvote/$", comment.upvote_comment, name="comment_upvote"),
     re_path(r"^comments/downvote/$", comment.downvote_comment, name="comment_downvote"),
     re_path(r"^comments/hide/$", comment.comment_hide, name="comment_hide"),
+    re_path(r"^comments/post/$", comment.post_comment, name="comment_post"),
+    re_path(r"^comments/get_comments/$", comment.get_comments, name="get_comments"),
     re_path(
         r"^comments/get_replies/$", comment.get_replies, name="comment_get_replies"
     ),
-    re_path(r"^comments/show_more/$", comment.get_show_more, name="comment_show_more"),
     re_path(
         r"^comments/(?P<id>\d+)/",
         include(

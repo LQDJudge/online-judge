@@ -145,14 +145,14 @@
           {% if request.user.is_authenticated %}
             <span title="{{_('Chat')}}">
               <a id="chat-icon" href="{{ url('chat', '') }}" class="fab fa-weixin navbar-icon" aria-hidden="true" style="font-size: 22.5px;">
-                {% set unread_chat = request.profile.count_unread_chat_boxes %}
+                {% set unread_chat = request.profile.get_num_unread_chat_boxes() %}
                 {% if unread_chat %}
                   <sub class="unread_boxes">{{unread_chat}}</sub>
                 {% endif %}
               </a>
             </span>
 
-            {% set unseen_cnt = request.profile.count_unseen_notifications %}
+            {% set unseen_cnt = request.profile.get_num_unseen_notifications() %}
             <span title="{{_('Notification')}}" class="{{ 'notification-open' if unseen_cnt > 0 }}">
               <a href="{{ url('notification') }}" class="far fa-bell navbar-icon" id="notification" aria-hidden="true" style="font-size: 22.5px;">
                 {% if unseen_cnt > 0 %}

@@ -18,28 +18,29 @@
 {% block body %}
   <div class="post-full">
     <div class="post-title">{{ title }}</div>
-    <div class="time">
+    <div class="time" style="display: flex; align-items: center;">
+      {% if organizations %}
+        {% for org in organizations %}
+          {% with edit_url = url('edit_organization_blog', org.id , org.slug , post.id) if org in editable_orgs else None %}
+            {% include "organization/tag.html" %}
+          {% endwith %}
+        {% endfor %}
+      {% endif %}
       {% with authors=post.get_authors() %}
         {% if authors %}
           <span class="post-authors">{{ link_users(authors) }}</span>
         {% endif %}
       {% endwith %}
-      <span class="post-time">
+      <span class="post-time" style="margin-left: 0.3em;">
         {% trans time=post.publish_on|date(_("N j, Y, g:i a")) %} posted on {{ time }}{% endtrans %}
       </span>
       {% if post.is_editable_by(request.user) %}
         <span> [<a href="{{ url('admin:judge_blogpost_change', post.id) }}">{{ _('Edit') }}</a>]</span>
       {% endif %}
-      {% if editable_orgs %}
-        {% for org in editable_orgs %}
-          <span> [<a href="{{ url('edit_organization_blog', org.id , org.slug , post.id) }}">{{ _('Edit in') }} {{org.slug}}</a>]</span>
-        {% endfor %}
-      {% endif %}
     </div>
+
     <div class="body content-description">
-      {% cache 86400 'post_content' post.id %}
-        {{ post.content|markdown|reference|str|safe}}
-      {% endcache %}
+      {{ post.content|markdown|reference|str|safe}}
     </div>
     {% include "actionbar/list.html" %}
   </div>

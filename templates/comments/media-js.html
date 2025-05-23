@@ -3,56 +3,186 @@
   <script type="text/javascript">
     $(document).ready(function () {
       let loading_gif = "<i class=\"fa fa-spinner fa-pulse loading\" style=\"font-size: 1.5em; margin-bottom: 1em;\"></i>";
-      window.reply_comment = function (parent) {
-        var $comment_reply = $('#comment-' + parent + '-reply');
-        var reply_id = 'reply-' + parent;
-        var new_id = 'id' + parent + '_body';
-        if ($comment_reply.find('#' + reply_id).length == 0) {
-          var $reply_form = $('#new-comment').clone(true).prop('id', reply_id).css("display", "");
-          $reply_form.find('h3').html('{{ _('Replying to comment') }}');
-          $reply_form.prepend('<a class="close">x</a>');
-          $reply_form.find('form.comment-submit-form input#id_parent').val(parent);
-          $reply_form.find('div#wmd-button-bar-id_body').empty().prop('id','wmd-button-bar-' + new_id);
-          $reply_form.find('textarea.wmd-input').val('').prop('id', 'wmd-input-' + new_id);
-          $reply_form.find('div#id_body-preview').attr('data-textarea-id', 'wmd-input-' + new_id).prop('id', new_id + '-preview');
-          $reply_form.appendTo($comment_reply);
-          register_dmmd_preview($reply_form.find('div#' + new_id + '-preview'));
-          if ('DjangoPagedown' in window) {
-            window.DjangoPagedown.createEditor($reply_form.find('div.wmd-wrapper').get(0));
+      /**
+       * Submit a comment via AJAX
+       * 
+       * @param {jQuery} $form - The form to submit
+       * @param {Object} options - Additional options
+       * @returns {Promise} - jQuery AJAX promise
+       */
+      function submitCommentForm($form, options) {
+        const opts = {
+          isReply: false,
+          parentId: null,
+          onSuccess: null,
+          onError: null,
+          ...options
+        };
+
+        // Get form data
+        const formData = $form.serializeArray();
+        const formDataObj = {};
+
+        // Convert form data to object
+        formData.forEach(item => {
+          formDataObj[item.name] = item.value;
+        });
+
+        // Add content type and object ID
+        formDataObj.content_type_id = {{ comment_content_type_id }};
+        formDataObj.object_id = {{ comment_object_id }};
+
+        // Show loading indicator
+        const $loading = $(loading_gif);
+        $form.append($loading);
+
+        // Submit via AJAX
+        return $.ajax({
+          url: '{{ url('comment_post') }}',
+          type: 'POST',
+          data: formDataObj,
+          success: function(response) {
+            // Clear the form
+            $form.find('textarea').val('');
+
+            if (opts.isReply) {
+              // For replies, reload the parent's replies
+              if (opts.parentId) {
+                comment_get_replies(opts.parentId, 0);
+              }
+            } else {
+              // For new top-level comments, prepend to the list
+              $('#comment-0').prepend(response);
+              $('.no-comments-message').hide();
+
+              // Update comment count
+              var $commentCountBadge = $('.comment-count-badge');
+              if ($commentCountBadge.length) {
+                var currentCount = parseInt($commentCountBadge.text().replace(/[()]/g, ''));
+                $commentCountBadge.text('(' + (currentCount + 1) + ')');
+              } else {
+                $('#comment-header').append(' <span class="comment-count-badge">(1)</span>');
+              }
+
+              // Initialize new comment functionality
+              renderKatex($('#comments')[0]);
+              register_time($('.time-with-rel'));
+              register_comment_operations();
+            }
+
+            // Call success callback if provided
+            if (typeof opts.onSuccess === 'function') {
+              opts.onSuccess(response);
+            }
+          },
+          error: function(xhr) {
+            let errorMessage = 'An error occurred while posting your comment.';
+
+            // Try to parse error message from response
+            try {
+              const response = JSON.parse(xhr.responseText);
+              if (typeof response === 'object') {
+                errorMessage = Object.values(response).flat().join('<br>');
+              } else if (xhr.responseText) {
+                errorMessage = xhr.responseText;
+              }
+            } catch (e) {
+              if (xhr.responseText) {
+                errorMessage = xhr.responseText;
+              }
+            }
+
+            // Show error message
+            alert(errorMessage);
+
+            // Call error callback if provided
+            if (typeof opts.onError === 'function') {
+              opts.onError(xhr);
+            }
+          },
+          complete: function() {
+            // Remove loading indicator
+            $loading.remove();
           }
-          $reply_form.find('form.comment-submit-form').off('submit');
-          $reply_form.find('form.comment-submit-form').on('submit', function(event) {
+        });
+      }
+
+      /**
+       * Create and show a comment reply form
+       * 
+       * @param {number} parentId - ID of the comment being replied to
+       */
+      window.reply_comment = function (parentId) {
+        // Get the container for the reply form
+        var $replyContainer = $('#comment-' + parentId + '-reply');
+        var formId = 'reply-' + parentId;
+        var editorId = 'id' + parentId + '_body';
+
+        // Only create the form if it doesn't already exist
+        if ($replyContainer.find('#' + formId).length === 0) {
+          // Clone the main comment form and customize it for the reply
+          var $replyForm = $('#new-comment').clone(true)
+            .prop('id', formId)
+            .css("display", "");
+
+          // Update form elements and text
+          $replyForm.find('h3').html('{{ _('Replying to comment') }}');
+          $replyForm.prepend('<a class="close">x</a>');
+
+          // Set the parent ID in the form
+          $replyForm.find('form.comment-submit-form input#id_parent').val(parentId);
+
+          // Update IDs for the Markdown editor
+          $replyForm.find('div#wmd-button-bar-id_body').empty()
+            .prop('id', 'wmd-button-bar-' + editorId);
+          $replyForm.find('textarea.wmd-input').val('')
+            .prop('id', 'wmd-input-' + editorId);
+          $replyForm.find('div#id_body-preview')
+            .attr('data-textarea-id', 'wmd-input-' + editorId)
+            .prop('id', editorId + '-preview');
+
+          // Add the form to the reply container
+          $replyForm.appendTo($replyContainer);
+
+          // Initialize the Markdown preview
+          register_dmmd_preview($replyForm.find('div#' + editorId + '-preview'));
+
+          // Initialize PageDown editor if available
+          if ('DjangoPagedown' in window) {
+            window.DjangoPagedown.createEditor($replyForm.find('div.wmd-wrapper').get(0));
+          }
+
+          // Override form submission to use AJAX
+          $replyForm.find('form.comment-submit-form').off('submit');
+          $replyForm.find('form.comment-submit-form').on('submit', function(event) {
             event.preventDefault();
 
-            var $form = $(this);
-            var actionUrl = $form.attr('action');
-            var formData = $form.serialize();
-            var parentId = $form.find('input#id_parent').val();
+            // Get the submit button and disable it temporarily
+            var $submitButton = $(this).find('input[type="submit"]');
+            $submitButton.prop('disabled', true);
 
-            $reply_form.append(loading_gif);
-
-            $.ajax({
-              url: actionUrl,
-              type: 'POST',
-              data: formData,
-              success: function(response) {
-                window.DjangoPagedown.destroyEditor($reply_form.find('div.wmd-wrapper').get(0));
-                $reply_form.remove();
-                comment_get_replies(parentId, 0);
+            submitCommentForm($(this), {
+              isReply: true,
+              parentId: parentId,
+              onSuccess: function() {
+                // Clean up the editor
+                window.DjangoPagedown.destroyEditor($replyForm.find('div.wmd-wrapper').get(0));
+                $replyForm.remove();
               },
-              error: function(xhr, textStatus, errorThrown) {
-                console.error('Error:', textStatus, errorThrown);
-              },
-              complete: function() {
-                $reply_form.find('.loading').remove();
+              onError: function() {
+                // Re-enable the button if there was an error
+                $submitButton.prop('disabled', false);
               }
             });
           });
         }
-        $comment_reply.fadeIn();
 
+        // Show the reply container
+        $replyContainer.fadeIn();
+
+        // Scroll to the reply form
         $('html, body').animate({
-          scrollTop: $comment_reply.offset().top - $('#navigation').height() - 4
+          scrollTop: $replyContainer.offset().top - $('#navigation').height() - 4
         }, 500);
       };
 
@@ -85,7 +215,7 @@
         }).done(function (body) {
           $comment.find('.previous-revision').css({visibility: show_revision == 0 ? 'hidden' : ''});
           $comment.find('.next-revision').css({visibility: show_revision == max_revision ? 'hidden' : ''});
-          $comment.find('.content').html(body);
+          $comment.find('.comment-body').html(body);
 
           var edit_text = '{{ _('edit {edits}') }}'.replace("{edits}", show_revision);
 
@@ -100,18 +230,31 @@
         });
       };
 
-      function ajax_vote(url, id, delta, on_success) {
+      /**
+       * Send a vote request to the server
+       * 
+       * @param {string} url - Vote endpoint URL
+       * @param {number} commentId - ID of the comment being voted on
+       * @param {number} voteValue - +1 for upvote, -1 for downvote
+       * @param {Function} onSuccess - Callback function after successful vote
+       */
+      function ajax_vote(url, commentId, voteValue, onSuccess) {
         return $.ajax({
           url: url,
           type: 'POST',
           data: {
-            id: id
+            id: commentId
           },
           success: function (data, textStatus, jqXHR) {
-            var score = $('#comment-' + id + ' .comment-score').first();
-            score.text(parseInt(score.text()) + delta);
-            if (typeof on_success !== 'undefined')
-              on_success();
+            // Update the comment score display
+            var $scoreElement = $('#comment-' + commentId + ' .comment-score').first();
+            var newScore = parseInt($scoreElement.text()) + voteValue;
+            $scoreElement.text(newScore);
+
+            // Execute success callback if provided
+            if (typeof onSuccess === 'function') {
+              onSuccess();
+            }
           },
           error: function (data, textStatus, jqXHR) {
             alert('Could not vote: ' + data.responseText);
@@ -122,24 +265,32 @@
       const urlParams = new URLSearchParams(queryString);
       const target_comment = urlParams.get('comment-id');
 
-      window.comment_get_replies = function (id, parent_none) {
-        var $comment_show_btn = $("#comment-" + id  + " .show_more_reply");
-        $comment_show_btn.hide();
-        var $comment = $("#comment-" + id + "-children");
-        $comment.append(loading_gif);
+      window.comment_get_replies = function (commentId, isTopLevel) {
+        // Hide the "show replies" button
+        var $showRepliesButton = $("#comment-" + commentId  + " .show_more_reply");
+        $showRepliesButton.hide();
 
+        // Get the container for child comments and show loading indicator
+        var $childrenContainer = $("#comment-" + commentId + "-children");
+        $childrenContainer.append(loading_gif);
+
+        // Fetch replies via AJAX
         $.ajax({
           url: '{{ url('comment_get_replies') }}',
           type: 'GET',
           data: {
-            id: id,
-            parent_none: parent_none,
+            id: commentId,
+            is_top_level: isTopLevel,
           },
           success: function(data) {
-            var $comment_loading = $("#comment-" + id + "-children .loading");
-            $comment_loading.hide();
-            var $comment = $("#comment-" + id + "-children");
-            $comment.html(data);
+            // Remove loading indicator
+            var $loadingIndicator = $("#comment-" + commentId + "-children .loading");
+            $loadingIndicator.hide();
+
+            // Update container with fetched content
+            $childrenContainer.html(data);
+
+            // Initialize required components
             renderKatex($('#comments')[0]);
             register_time($('.time-with-rel'));
             register_comment_operations();
@@ -147,15 +298,21 @@
         })
       }
 
-      window.hide_comment = function (id) {
+      window.hide_comment = function (commentId) {
+        // Ask for confirmation before hiding a comment
         if (!(confirm('Are you sure you want to hide this comment?')))
           return;
-        $.post('{{ url('comment_hide') }}', {id: id}).then(function () {
-          $('#comment-' + id).remove();
-          $('#comment-' + id + '-children').remove();
-        }).catch(function () {
-          alert('Failed.');
-        });
+
+        // Send request to hide the comment
+        $.post('{{ url('comment_hide') }}', {id: commentId})
+          .then(function () {
+            // Remove the comment and its children from the DOM
+            $('#comment-' + commentId).remove();
+            $('#comment-' + commentId + '-children').remove();
+          })
+          .catch(function () {
+            alert('Failed to hide comment.');
+          });
       };
 
       window.register_comment_operations = function() {
@@ -183,8 +340,7 @@
                   url: readback
                 }).done(function (data) {
                   var $comment = $('#comment-' + id);
-                  var $area = $comment.find('.comment-body').first();
-                  $area.html(data);
+                  $comment.html(data);
                   update_math($comment);
                   var $edits = $comment.find('.comment-edits').first();
                   $edits.text('updated');
@@ -216,40 +372,61 @@
 
       register_comment_operations();
 
-      window.comment_show_more = function (id, parent_none, offset, target_comment) {
-        if (parent_none == 1) {
-          var $comment_show_btn = $("#comment-0"  + " .show_more_comment");
-          $comment_show_btn.hide();
-          var $comment = $("#comment-0");
-          $comment.append(loading_gif);
+      window.comment_show_more = function (sourceId, isTopLevel, currentOffset, highlightedCommentId) {
+        var $showMoreButton, $commentsContainer;
+
+        // Determine which container to use based on whether we're showing top-level or nested comments
+        if (isTopLevel == 1) {
+          // For top-level comments
+          $showMoreButton = $("#comment-0 .show_more_comment");
+          $commentsContainer = $("#comment-0");
         } else {
-          var $comment_show_btn = $("#comment-" + id  + "-children" + " .show_more_comment");
-          $comment_show_btn.hide();
-          var $comment = $("#comment-" + id + "-children");
-          $comment.append(loading_gif);
+          // For nested comments
+          $showMoreButton = $("#comment-" + sourceId + "-children .show_more_comment");
+          $commentsContainer = $("#comment-" + sourceId + "-children");
         }
 
+        // Hide the "show more" button and show loading indicator
+        $showMoreButton.hide();
+        $commentsContainer.append(loading_gif);
+
+        // Get current sort parameters from the combined dropdown
+        var combinedSort = $('#comment-sort-combined').val() || 'time_desc';
+        var sortParts = combinedSort.split('_');
+        var sortBy = sortParts[0];
+        var sortOrder = sortParts[1];
+
+        // Prepare data object for AJAX request
+        var requestData = {
+          is_top_level: isTopLevel,
+          offset: currentOffset,
+          target_comment: highlightedCommentId,
+          sort_by: sortBy,
+          sort_order: sortOrder
+        };
+
+        // For top-level comments, we use content_type_id and object_id
+        // For nested comments, we use the comment id
+        if (isTopLevel == 1) {
+          requestData.content_type_id = {{ comment_content_type_id }};
+          requestData.object_id = {{ comment_object_id }};
+        } else {
+          requestData.id = sourceId;
+        }
+
+        // Fetch more comments via AJAX
         $.ajax({
-          url: '{{ url('comment_show_more') }}',
+          url: '{{ url('get_comments') }}',
           type: 'GET',
-          data: {
-            id: id,
-            parent_none: parent_none,
-            offset: offset,
-            target_comment: target_comment,
-          },
+          data: requestData,
           success: function(data) {
-            if (parent_none == 1) {
-              var $comment_loading = $("#comment-0" + " .loading");
-              $comment_loading.hide();
-              var $comment = $("#comment-0");
-              $comment.append(data);
-            } else {
-              var $comment_loading = $("#comment-" + id + "-children .loading");
-              $comment_loading.hide();
-              var $comment = $("#comment-" + id + "-children");
-              $comment.append(data);
-            }
+            // Remove loading indicator
+            $commentsContainer.find(".loading").hide();
+
+            // Append new comments to the container
+            $commentsContainer.append(data);
+
+            // Initialize required components
             renderKatex($('#comments')[0]);
             register_time($('.time-with-rel'));
             register_comment_operations();
@@ -257,39 +434,57 @@
         })
       }
 
-      var get_$votes = function (id) {
-        var $comment = $('#comment-' + id);
+      /**
+       * Get vote buttons for a comment
+       */
+      var getVoteElements = function (commentId) {
+        var $comment = $('#comment-' + commentId);
         return {
           upvote: $comment.find('.upvote-link').first(),
           downvote: $comment.find('.downvote-link').first()
         };
       };
 
-      window.comment_upvote = function (id) {
-        ajax_vote('{{ url('comment_upvote') }}', id, 1, function () {
-          var $votes = get_$votes(id);
-          if ($votes.downvote.hasClass('voted'))
-            $votes.downvote.removeClass('voted');
+      /**
+       * Upvote a comment
+       */
+      window.comment_upvote = function (commentId) {
+        ajax_vote('{{ url('comment_upvote') }}', commentId, 1, function () {
+          var $voteButtons = getVoteElements(commentId);
+          // If comment was previously downvoted, remove downvote class
+          if ($voteButtons.downvote.hasClass('voted'))
+            $voteButtons.downvote.removeClass('voted');
           else
-            $votes.upvote.addClass('voted');
+            // Otherwise, mark as upvoted
+          $voteButtons.upvote.addClass('voted');
         });
       };
 
-      window.comment_downvote = function (id) {
-        ajax_vote('{{ url('comment_downvote') }}', id, -1, function () {
-          var $votes = get_$votes(id);
-          if ($votes.upvote.hasClass('voted'))
-            $votes.upvote.removeClass('voted');
+      /**
+       * Downvote a comment
+       */
+      window.comment_downvote = function (commentId) {
+        ajax_vote('{{ url('comment_downvote') }}', commentId, -1, function () {
+          var $voteButtons = getVoteElements(commentId);
+          // If comment was previously upvoted, remove upvote class
+          if ($voteButtons.upvote.hasClass('voted'))
+            $voteButtons.upvote.removeClass('voted');
           else
-            $votes.downvote.addClass('voted');
+            // Otherwise, mark as downvoted
+          $voteButtons.downvote.addClass('voted');
         });
       };
 
       $('img.unveil').unveil(200);
 
-      window.comment_show_content = function (comment_id) {
-        var $comment = $('#comment-' + comment_id);
+      /**
+       * Show a hidden comment (that was hidden due to negative score)
+       */
+      window.comment_show_content = function (commentId) {
+        var $comment = $('#comment-' + commentId);
+        // Show the actual comment content
         $comment.find('.comment-body').show();
+        // Hide the "comment hidden due to negative feedback" message
         $comment.find('.bad-comment-body').hide();
       };
 
@@ -298,6 +493,30 @@
         $("#new-comment").show("slow");
         $("#write-comment").hide();
         $(".no-comments-message").hide();
+      });
+
+      // Set up AJAX submission for the main comment form
+      $('.comment-submit-form').submit(function(event) {
+        event.preventDefault();
+
+        // Get the submit button and disable it temporarily
+        var $submitButton = $(this).find('input[type="submit"]');
+        $submitButton.prop('disabled', true);
+
+        submitCommentForm($(this), {
+          onSuccess: function() {
+            // Hide the form after successful submission
+            $("#new-comment").hide();
+            $("#write-comment").show();
+
+            // Re-enable the submit button
+            $submitButton.prop('disabled', false);
+          },
+          onError: function() {
+            // Also re-enable the button if there was an error
+            $submitButton.prop('disabled', false);
+          }
+        });
       });
 
       $(window).on('hashchange', function () {

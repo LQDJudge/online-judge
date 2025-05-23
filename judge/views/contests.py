@@ -55,7 +55,7 @@ from django.views.generic.detail import (
 )
 
 from judge import event_poster as event
-from judge.views.comment import CommentedDetailView
+from judge.views.comment import CommentableMixin
 from judge.forms import ContestCloneForm
 from judge.models import (
     Contest,
@@ -75,6 +75,7 @@ from judge.models import (
     CourseContest,
 )
 from judge.models.course import EDITABLE_ROLES
+from judge.models.contest import get_contest_problem_ids
 from judge.tasks import run_moss
 from judge.utils.celery import redirect_to_task_status
 from judge.utils.opengraph import generate_opengraph
@@ -221,11 +222,7 @@ class ContestList(
         return queryset
 
     def _get_queryset(self):
-        queryset = (
-            super(ContestList, self)
-            .get_queryset()
-            .prefetch_related("tags", "organizations")
-        )
+        queryset = super(ContestList, self).get_queryset().prefetch_related("tags")
 
         if self.contest_query:
             substr_queryset = queryset.filter(
@@ -327,7 +324,7 @@ class ContestList(
         context["org_query"] = self.org_query
         context["hide_organization_contests"] = int(self.hide_organization_contests)
         if self.request.profile:
-            context["organizations"] = self.request.profile.organizations.all()
+            context["organizations"] = self.request.profile.get_organizations()
         context["page_type"] = "list"
         context["selected_order"] = self.request.GET.get("order")
         context["all_sort_options"] = [
@@ -340,6 +337,9 @@ class ContestList(
         ]
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())
+        Contest.prefetch_organization_ids(
+            *[contest.id for contest in context["contests"]]
+        )
         return context
 
 
@@ -419,14 +419,12 @@ class ContestMixin(object):
             and self.object.is_editable_by(self.request.user)
         )
         context["logo_override_image"] = self.object.logo_override_image
+        context["organizations"] = self.object.get_organizations()
 
-        if (
-            not context["logo_override_image"]
-            and self.object.organizations.count() == 1
-        ):
-            org_image = self.object.organizations.first().organization_image
+        if not context["logo_override_image"] and len(context["organizations"]) > 0:
+            org_image = context["organizations"][0].get_organization_image_url()
             if org_image:
-                context["logo_override_image"] = org_image.url
+                context["logo_override_image"] = org_image
 
         return context
 
@@ -492,7 +490,8 @@ class ContestMixin(object):
 class ContestDetail(
     ContestMixin,
     TitleMixin,
-    CommentedDetailView,
+    CommentableMixin,
+    DetailView,
     PageVoteDetailView,
     BookMarkDetailView,
 ):
@@ -501,51 +500,48 @@ class ContestDetail(
     def get_title(self):
         return self.object.name
 
+    def _is_editable_organization(self, organization):
+        if self.request.profile.can_edit_organization(organization):
+            return True
+        if self.request.profile in organization and self.object.is_editable_by(
+            self.request.user
+        ):
+            return True
+        return False
+
     def get_editable_organizations(self):
         if not self.request.profile:
             return []
         res = []
-        for organization in self.object.organizations.all():
-            can_edit = False
-            if self.request.profile.can_edit_organization(organization):
-                can_edit = True
-            if self.request.profile in organization and self.object.is_editable_by(
-                self.request.user
-            ):
-                can_edit = True
-            if can_edit:
+        for organization in self.object.get_organizations():
+            if self._is_editable_organization(organization):
                 res.append(organization)
         return res
 
     def get_context_data(self, **kwargs):
         context = super(ContestDetail, self).get_context_data(**kwargs)
-        context["contest_problems"] = (
-            Problem.objects.filter(contests__contest=self.object)
-            .order_by("contests__order")
-            .defer("description")
-            .annotate(
-                has_public_editorial=Sum(
-                    Case(
-                        When(solution__is_public=True, then=1),
-                        default=0,
-                        output_field=IntegerField(),
-                    )
-                )
-            )
-            .add_i18n_name(self.request.LANGUAGE_CODE)
+        contest_problem_ids = get_contest_problem_ids(self.object.id)
+        Problem.prefetch_cache_i18n_name(
+            self.request.LANGUAGE_CODE, *contest_problem_ids
         )
+        context["contest_problems"] = Problem.get_cached_instances(*contest_problem_ids)
         context["editable_organizations"] = self.get_editable_organizations()
         context["is_clonable"] = is_contest_clonable(self.request, self.object)
 
         if self.object.is_in_course:
             course = CourseContest.get_course_of_contest(self.object)
-            if Course.is_editable_by(course, self.request.profile):
-                context["editable_course"] = course
+            context["course"] = course
+            context["is_editable_course"] = Course.is_editable_by(
+                course, self.request.profile
+            )
 
         if self.request.in_contest:
             context["current_contest"] = self.request.participation.contest
         else:
             context["current_contest"] = None
+
+        context = self.get_comment_context(context)
+
         return context
 
 
@@ -554,7 +550,7 @@ def is_contest_clonable(request, contest):
         return False
 
     if (
-        not Organization.objects.filter(admins=request.profile).exists()
+        not request.profile.get_admin_organization_ids()
         and not Course.objects.filter(
             courserole__user=request.profile,
             courserole__role__in=EDITABLE_ROLES,
@@ -1131,7 +1127,7 @@ def base_contest_ranking_list(
             *fields_to_fetch
         )
     ]
-    Profile.prefetch_profile_cache([p.id for p in res])
+    Profile.get_cached_instances(*[p.id for p in res])
     return res
 
 
@@ -1252,8 +1248,8 @@ class ContestRanking(ContestRankingBase):
 
         queryset = self.object.users
         if self.friend_only:
-            friends = self.request.profile.get_friends()
-            queryset = queryset.filter(user_id__in=friends)
+            followings = self.request.profile.get_following_ids(True)
+            queryset = queryset.filter(user_id__in=followings)
         if not self.include_virtual:
             queryset = queryset.filter(virtual=0)
         else:

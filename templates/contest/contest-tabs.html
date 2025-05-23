@@ -29,6 +29,9 @@
   {% if show_final_ranking %}
     {{ make_tab_item('final_ranking', 'fa fa-bar-chart', url('contest_final_ranking', contest.key), _('Final rankings')) }}
   {% endif %}
+  {% if is_clonable %}
+    {{ make_tab_item('clone', 'fas fa-clone', url('contest_clone', contest.key), _('Clone')) }}
+  {% endif %}
   {% if can_edit %}
     {% if perms.judge.moss_contest and has_moss_api_key %}
       {{ make_tab_item('moss', 'fa fa-gavel', url('contest_moss', contest.key), _('MOSS')) }}
