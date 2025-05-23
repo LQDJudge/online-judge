@@ -930,6 +930,7 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
     template_name = "submission/user-ajax.html"
 
     def contest_time(self, s):
+        return None
         if s.contest.participation.live:
             if self.contest.time_limit:
                 return s.date - s.contest.participation.real_start
@@ -958,10 +959,13 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
             ):
                 if contest_problem.id != problem_id or total_subtask_points == 0:
                     continue
+
                 if not subtask:
                     subtask = 0
+
                 problem_points = pp
                 submission = Submission.objects.get(id=sub_id)
+
                 if subtask in hidden_subtasks.get(
                     str(problem_id), set()
                 ) and not self.contest.is_editable_by(self.request.user):
@@ -972,16 +976,21 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
                         "total": total_subtask_points,
                     }
                 else:
+                    submission_time = self.contest_time(submission)
+                    if submission_time:
+                        contest_time = nice_repr(submission_time, "noday")
+                    else:
+                        contest_time = None
                     best_subtasks[subtask] = {
                         "submission": submission,
-                        "contest_time": nice_repr(
-                            self.contest_time(submission), "noday"
-                        ),
+                        "contest_time": contest_time,
                         "points": subtask_points,
                         "total": total_subtask_points,
                     }
                     achieved_points += subtask_points
+
                 total_points += total_subtask_points
+
             for subtask in best_subtasks.values():
                 if subtask["points"] != "???":
                     subtask["points"] = floatformat(
@@ -992,9 +1001,11 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
                     subtask["total"] / total_points * problem_points,
                     -self.contest.points_precision,
                 )
+
             if total_points > 0 and best_subtasks:
                 achieved_points = achieved_points / total_points * problem_points
                 return best_subtasks, achieved_points, problem_points
+
         return None
 
     def get_context_data(self, **kwargs):
