@@ -989,23 +989,17 @@ def _get_problem_i18n_name_batch(args_list):
     results_dict = {}
 
     for language, problem_ids in problems_by_lang.items():
-        problem_names = {
-            p["id"]: p["name"]
-            for p in Problem.objects.filter(id__in=problem_ids).values("id", "name")
-        }
-
         translations = ProblemTranslation.objects.filter(
             problem_id__in=problem_ids, language=language
         ).values("problem_id", "name")
 
+        problem_id_to_name = {}
+
         for trans in translations:
-            problem_names[trans["problem_id"]] = trans["name"]
+            problem_id_to_name[trans["problem_id"]] = trans["name"]
 
         for problem_id in problem_ids:
-            if problem_id in problem_names:
-                results_dict[(problem_id, language)] = problem_names[problem_id]
-            else:
-                results_dict[(problem_id, language)] = None
+            results_dict[(problem_id, language)] = problem_id_to_name.get(problem_id)
 
     results = []
     for problem_id, language in args_list:
@@ -1015,7 +1009,7 @@ def _get_problem_i18n_name_batch(args_list):
 
 
 @cache_wrapper(
-    prefix="Pri18n", expected_type=str, batch_fn=_get_problem_i18n_name_batch
+    prefix="Pri18n2", expected_type=str, batch_fn=_get_problem_i18n_name_batch
 )
 def _get_problem_i18n_name(problem_id, language):
     results = _get_problem_i18n_name_batch([(problem_id, language)])
