@@ -228,11 +228,11 @@ $ sudo pip3 install -e .
 - Tạo một file judge.yml ở bên ngoài folder judge-server (file
   mẫu https://github.com/DMOJ/docs/blob/master/sample_files/judge_conf.yml)
 - Thêm judge vào site bằng UI: Admin → Judge → Thêm Judge → nhập id và key (chỉ cần thêm 1 lần) hoặc dùng lệnh
-  `python3 managed.py addjudge <id> <key>`.
+  `python3 manage.py addjudge <id> <key>`.
 - Chạy Bridge (cầu nối giữa judge và site) trong 1 tab riêng trong folder online-judge:
 
 ```bash
-$ python3 managed.py runbridged
+$ python3 manage.py runbridged
 ```
 
 - Khởi động Judge (trong 1 tab riêng):
