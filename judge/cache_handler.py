@@ -1,8 +1,6 @@
 from django.core.cache.backends.base import BaseCache
 from django.core.cache import caches
-from django.core.exceptions import ImproperlyConfigured
 
-NUM_CACHE_RETRY = 3
 DEFAULT_L0_TIMEOUT = 60
 l0_cache = caches["l0"] if "l0" in caches else None
 primary_cache = caches["primary"] if "primary" in caches else None
@@ -18,23 +16,18 @@ class CacheHandler(BaseCache):
 
     def get(self, key, default=None, **kwargs):
         """
-        Retrieve a value from the cache with retry logic and L0 caching.
+        Retrieve a value from the cache with L0 caching.
         """
         if l0_cache:
             result = l0_cache.get(key, **kwargs)
             if result is not None:
                 return result
 
-        for attempt in range(NUM_CACHE_RETRY):
-            try:
-                result = primary_cache.get(key, **kwargs)
-                if result is not None:
-                    if l0_cache:
-                        l0_cache.set(key, result, DEFAULT_L0_TIMEOUT, **kwargs)
-                    return result
-            except Exception:
-                if attempt == NUM_CACHE_RETRY - 1:
-                    raise
+        result = primary_cache.get(key, **kwargs)
+        if result is not None:
+            if l0_cache:
+                l0_cache.set(key, result, DEFAULT_L0_TIMEOUT, **kwargs)
+            return result
         return default
 
     def set(self, key, value, timeout=None, **kwargs):
@@ -59,7 +52,7 @@ class CacheHandler(BaseCache):
         """
         if l0_cache and not l0_cache.get(key, **kwargs):
             l0_cache.set(key, value, DEFAULT_L0_TIMEOUT, **kwargs)
-        primary_cache.add(key, value, timeout, **kwargs)
+        return primary_cache.add(key, value, timeout, **kwargs)
 
     def get_many(self, keys, **kwargs):
         """
@@ -74,17 +67,10 @@ class CacheHandler(BaseCache):
         if not keys:
             return results
 
-        for attempt in range(NUM_CACHE_RETRY):
-            try:
-                cache_results = primary_cache.get_many(keys, **kwargs)
-                if l0_cache:
-                    for key, value in cache_results.items():
-                        l0_cache.set(key, value, DEFAULT_L0_TIMEOUT, **kwargs)
-                results.update(cache_results)
-                return results
-            except Exception:
-                if attempt == NUM_CACHE_RETRY - 1:
-                    raise
+        cache_results = primary_cache.get_many(keys, **kwargs)
+        if l0_cache and cache_results:  # Only update L0 if we have results
+            l0_cache.set_many(cache_results, DEFAULT_L0_TIMEOUT, **kwargs)
+        results.update(cache_results)
         return results
 
     def set_many(self, data, timeout=None, **kwargs):
@@ -92,8 +78,7 @@ class CacheHandler(BaseCache):
         Set multiple values in the cache.
         """
         if l0_cache:
-            for key, value in data.items():
-                l0_cache.set(key, value, DEFAULT_L0_TIMEOUT, **kwargs)
+            l0_cache.set_many(data, DEFAULT_L0_TIMEOUT, **kwargs)
         primary_cache.set_many(data, timeout, **kwargs)
 
     def delete_many(self, keys, **kwargs):
@@ -116,22 +101,16 @@ class CacheHandler(BaseCache):
         """
         Increment a value in the cache.
         """
+        result = primary_cache.incr(key, delta, **kwargs)
         if l0_cache:
-            l0_value = l0_cache.get(key, **kwargs)
-            if l0_value is not None:
-                updated_value = l0_value + delta
-                l0_cache.set(key, updated_value, DEFAULT_L0_TIMEOUT, **kwargs)
-                return updated_value
-        return primary_cache.incr(key, delta, **kwargs)
+            l0_cache.set(key, result, DEFAULT_L0_TIMEOUT, **kwargs)
+        return result
 
     def decr(self, key, delta=1, **kwargs):
         """
         Decrement a value in the cache.
         """
+        result = primary_cache.decr(key, delta, **kwargs)
         if l0_cache:
-            l0_value = l0_cache.get(key, **kwargs)
-            if l0_value is not None:
-                updated_value = l0_value - delta
-                l0_cache.set(key, updated_value, DEFAULT_L0_TIMEOUT, **kwargs)
-                return updated_value
-        return primary_cache.decr(key, delta, **kwargs)
+            l0_cache.set(key, result, DEFAULT_L0_TIMEOUT, **kwargs)
+        return result
