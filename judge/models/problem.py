@@ -543,6 +543,9 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
     def get_description(self):
         return _get_problem_description(self.id)
 
+    def get_pdf_description(self):
+        return self.get_cached_value("pdf_description")
+
     def translated_description(self, language):
         return _get_problem_i18n_description(self.id, language)
 
@@ -894,6 +897,7 @@ def _get_problem_batch(args_list):
             "group__full_name",
             "user_count",
             "ac_rate",
+            "pdf_description",
         )
     )
 
@@ -914,6 +918,7 @@ def _get_problem_batch(args_list):
             "group_name": problem["group__full_name"],
             "user_count": problem["user_count"],
             "ac_rate": problem["ac_rate"],
+            "pdf_description": problem["pdf_description"],
         }
         # Remove None values to save cache space
         problem_dict[problem_id] = {
@@ -931,7 +936,7 @@ def _get_problem_batch(args_list):
     return results
 
 
-@cache_wrapper(prefix="Prgp2", expected_type=dict, batch_fn=_get_problem_batch)
+@cache_wrapper(prefix="Prgp3", expected_type=dict, batch_fn=_get_problem_batch)
 def _get_problem(problem_id):
     results = _get_problem_batch([(problem_id,)])
     return results[0]
