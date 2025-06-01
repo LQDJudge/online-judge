@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError
-from django.db.models import Count, F, FilteredRelation, Q, Case, When
+from django.db.models import Count, F, FilteredRelation, Q, Case, When, Max, Prefetch
 from django.db.models.expressions import Value
 from django.db.models.functions import Coalesce
 from django.forms import ModelForm
@@ -31,13 +31,13 @@ from django.views.generic import DetailView, UpdateView, View
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 from django_ratelimit.decorators import ratelimit
-from django.contrib.contenttypes.models import ContentType
 
 from reversion import revisions
 from reversion.models import Revision, Version
 
 from judge.jinja2.reference import get_user_from_text
-from judge.models import Comment, CommentVote
+from judge.models import Comment, CommentVote, Problem, Contest, BlogPost
+from judge.models.problem import Solution
 from judge.models.notification import make_notification
 from judge.models.comment import (
     get_visible_comment_count,
@@ -45,6 +45,7 @@ from judge.models.comment import (
 )
 from judge.utils.views import TitleMixin
 from judge.widgets import HeavyPreviewPageDownWidget
+from judge.views.feed import FeedView, HomeFeedView
 
 __all__ = [
     "upvote_comment",
@@ -57,6 +58,7 @@ __all__ = [
     "comment_hide",
     "post_comment",
     "CommentableMixin",
+    "CommentFeed",
 ]
 
 DEFAULT_COMMENT_LIMIT = 10
@@ -759,5 +761,36 @@ class CommentableMixin:
             context["target_comment"] = -1
 
         context["comment_form"] = CommentForm(self.request, initial={"parent": None})
+
+        return context
+
+
+class CommentFeed(HomeFeedView):
+    model = Comment
+    context_object_name = "comments"
+    paginate_by = 50
+    feed_content_template_name = "comments/feed.html"
+
+    def get_queryset(self):
+        view_type = self.request.GET.get("view", "all")
+        content_filter = self.request.GET.get("content", "all")
+
+        # Overfetch before filtering
+        needed_count = min(500, self.page * self.paginate_by * 2)
+
+        return Comment.most_recent(
+            user=self.request.user,
+            view_type=view_type,
+            content_filter=content_filter,
+            organization=self.request.organization,
+            n=needed_count,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super(CommentFeed, self).get_context_data(**kwargs)
+        context["title"] = _("Comment feed")
+        context["page_type"] = "comment"
+        context["view_type"] = self.request.GET.get("view", "all")
+        context["content_filter"] = self.request.GET.get("content", "all")
 
         return context

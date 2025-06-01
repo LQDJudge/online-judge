@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block content_title %}
+  {% set ticket_title %}
+    <a href="{{ url('ticket', ticket.id) }}">{{ _('Ticket #%(id)d', id=ticket.id) }}</a>
+  {% endset %}
+  {{ _('History for %(ticket)s', ticket=ticket_title) }}
+{% endblock %}
+
+{% block body %}
+  <div class="ticket-logs">
+
+    {% if logs %}
+      <div class="log-entries">
+        {% for version in logs %}
+          <div class="log-entry">
+            <div class="log-header">
+              <div class="log-user">
+                {% if version.revision.user %}
+                  <img src="{{ gravatar(version.revision.user.profile.id, 32) }}"
+                       class="gravatar" width="24" height="24" loading="lazy">
+                  <a href="{{ url('user_page', version.revision.user.username) }}"
+                     class="{{ version.revision.user.profile.css_class }}">
+                    {{ version.revision.user.username }}
+                  </a>
+                {% else %}
+                  <span class="system-user">{{ _('System') }}</span>
+                {% endif %}
+              </div>
+              <div class="log-time">
+                {{ relative_time(version.revision.date_created) }}
+              </div>
+            </div>
+
+            <div class="log-action">
+              {% if version.revision.comment %}
+                <strong>{{ version.revision.comment }}</strong>
+              {% else %}
+                <em>{{ _('No description provided') }}</em>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if page_obj.has_other_pages and page_obj.paginator.num_pages > 1 %}
+        {% include "list-pages.html" %}
+      {% endif %}
+
+    {% else %}
+      <div class="no-logs">
+        <p>{{ _('No history available for this ticket.') }}</p>
+      </div>
+    {% endif %}
+
+    <div class="actions">
+      <a href="{{ url('ticket', ticket.id) }}">{{ _('Back to ticket') }}</a>
+    </div>
+  </div>
+
+  <style>
+    .ticket-logs {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .log-entries {
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .log-entry {
+      border-bottom: 1px solid #dee2e6;
+      padding: 15px;
+    }
+
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .log-user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .log-user .gravatar {
+      border-radius: 50%;
+    }
+
+    .log-time {
+      color: #6c757d;
+      font-size: 0.9em;
+    }
+
+    .log-action {
+      margin-bottom: 10px;
+    }
+
+
+    .no-logs {
+      text-align: center;
+      padding: 40px;
+      color: #6c757d;
+      font-style: italic;
+    }
+
+    .actions {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .system-user {
+      color: #6c757d;
+      font-style: italic;
+    }
+  </style>
+{% endblock %}

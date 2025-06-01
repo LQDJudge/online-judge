@@ -1,0 +1,10 @@
+{% extends "ticket/new.html" %}
+
+{% block guideline_message %}
+  <div class="alert alert-warning alert-dismissable">
+    <a class="close">x</a>
+    <b>{{ _('Thanks for opening a ticket!') }}</b>
+    <br><br>
+    {{ _('Please keep in mind that this form is for reporting issues with a blog post, and not for general discussion. If you want to discuss the content, please use the comments section instead.') }}
+  </div>
+{% endblock %}

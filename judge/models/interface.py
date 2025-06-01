@@ -101,6 +101,7 @@ class BlogPost(models.Model, PageVotable, Bookmarkable):
     comments = GenericRelation("Comment")
     pagevote = GenericRelation("PageVote")
     bookmark = GenericRelation("BookMark")
+    tickets = GenericRelation("Ticket")
 
     def __str__(self):
         return self.title

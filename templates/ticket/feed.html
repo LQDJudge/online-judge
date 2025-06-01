@@ -1,29 +1,32 @@
 {% for ticket in tickets %}
-  <div class="blog-box">
-    <h3 class="problem-feed-name">
-      <a href="{{ ticket.linked_item.get_absolute_url() }}">
-        {{ ticket.linked_item|item_title }}</a>
-      &#183
-      <a href="{{ url('ticket', ticket.id) }}">
-        {{ ticket.title }}
-      </a>
-    </h3>
-    {% with author_id = ticket.user_id %}
-      {% if author_id %}
-        <div class="problem-feed-info-entry">
-          <i class="far fa-pen-to-square"></i>
-          <span class="pi-value">{{ link_user(author_id) }}</span>
-        </div>
-      {% endif %}
-    {% endwith %}
-    {% set last_message = ticket.messages.last() %}
-    <div class="problem-feed-types">
-      <i class="fa fa-tag"></i>
-      {{link_user(last_message.user_id)}} {{_('replied')}}
+  <div class="ticket-item background-white">
+    <div class="ticket-status {% if ticket.is_open %}open{% else %}closed{% endif %}">
+      <span>
+        {% if ticket.is_open %}{{_('Open')}}{% else %}{{_('Closed')}}{% endif %}
+      </span>
     </div>
-    <div class='blog-description content-description'>
-      {{ last_message.body|markdown(lazy_load=True)|reference|str|safe }}
-      <div class="show-more"> {{_("...More")}} </div>
+    <div class="ticket-content">
+      <div class="ticket-title">
+        <a href="{{ url('ticket', ticket.id) }}">
+          {{ ticket.title }}
+        </a>
+      </div>
+      <div class="ticket-link">
+        <i class="fa fa-link"></i>
+        <a href="{{ ticket.linked_item.get_absolute_url() }}">{{ ticket.linked_item|item_title }}</a>
+      </div>
+    </div>
+    <div class="ticket-meta">
+      <div class="ticket-user">
+        <span>{{ link_user(ticket.user_id) }}</span>
+      </div>
+      <span class="ticket-time">
+        {% if ticket.last_action_time %}
+          {{ relative_time(ticket.last_action_time, format=_("d/m/Y")) }}
+        {% else %}
+          {{ relative_time(ticket.time) }}
+        {% endif %}
+      </span>
     </div>
   </div>
 {% endfor %}

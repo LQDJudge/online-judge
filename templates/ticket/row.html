@@ -2,6 +2,6 @@
   <td><i class="fa {% if ticket.is_open %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i></td>
   <td>{{ ticket.id }}</td>
   <td><a href="{{ url('ticket', ticket.id) }}">{{ ticket.title }}</a></td>
-  <td>{{ link_user(ticket.user) }}</td>
-  <td>{{ link_users(ticket.assignees.all()) }}</td>
+  <td>{{ link_user(ticket.user_id) }}</td>
+  <td>{{ link_users(ticket.get_assignee_ids()) }}</td>
 </tr>

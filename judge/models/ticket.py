@@ -2,8 +2,11 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 
 from judge.models.profile import Profile
+from judge.caching import cache_wrapper
 
 
 class Ticket(models.Model):
@@ -29,6 +32,13 @@ class Ticket(models.Model):
     object_id = models.PositiveIntegerField(verbose_name=_("linked item ID"))
     linked_item = GenericForeignKey()
     is_open = models.BooleanField(verbose_name=_("is ticket open?"), default=True)
+
+    @cache_wrapper(prefix="Tgai", expected_type=list)
+    def get_assignee_ids(self):
+        return list(self.assignees.values_list("id", flat=True))
+
+    def get_assignees(self):
+        return Profile.get_cached_instances(*self.get_assignee_ids())
 
 
 class TicketMessage(models.Model):

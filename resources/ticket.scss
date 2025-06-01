@@ -173,3 +173,100 @@
         flex-direction: column-reverse;
     }
 }
+
+// Ticket feed styles
+.ticket-item {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e8e8e8;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s ease;
+
+    .ticket-status {
+        margin-right: 16px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 60px;
+        height: 30px;
+        border-radius: 6px;
+
+        &.open {
+            background-color: #f39c12;
+        }
+
+        &.closed {
+            background-color: #27ae60;
+        }
+
+        span {
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    }
+
+    .ticket-content {
+        flex: 1;
+        min-width: 0;
+
+        .ticket-title {
+            margin-bottom: 2px;
+
+            a {
+                font-size: 16px;
+                font-weight: 700;
+                color: #2c3e50;
+                text-decoration: none;
+                line-height: 1.4;
+            }
+        }
+
+        .ticket-link {
+            font-size: 13px;
+            color: #7f8c8d;
+            font-weight: 500;
+
+            .fa {
+                margin-right: 4px;
+                font-size: 11px;
+            }
+
+            a {
+                color: #7f8c8d;
+                text-decoration: none;
+            }
+        }
+    }
+
+    .ticket-meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-shrink: 0;
+        text-align: right;
+
+        .ticket-user {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+
+            span {
+                color: #34495e;
+                font-size: 14px;
+                font-weight: 500;
+                margin-bottom: 2px;
+            }
+        }
+
+        .ticket-time {
+            font-size: 13px;
+            color: #7f8c8d;
+            font-weight: 500;
+            min-width: 80px;
+        }
+    }
+}

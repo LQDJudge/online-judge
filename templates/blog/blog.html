@@ -36,12 +36,16 @@
       </span>
       {% if post.is_editable_by(request.user) %}
         <span> [<a href="{{ url('admin:judge_blogpost_change', post.id) }}">{{ _('Edit') }}</a>]</span>
+        <span> [<a href="{{ url('blog_post_ticket_list', post.id) }}">{{ _('Manage tickets') }}</a>]</span>
       {% endif %}
     </div>
 
     <div class="body content-description">
       {{ post.content|markdown|reference|str|safe}}
     </div>
+    {% if request.user.is_authenticated and not request.profile.mute %}
+      {% set actionbar_report_url = url('new_blog_post_ticket', post.id) %}
+    {% endif %}
     {% include "actionbar/list.html" %}
   </div>
   <hr style="width: 60%; margin:4em auto;">

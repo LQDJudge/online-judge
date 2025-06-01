@@ -2,8 +2,7 @@
   $(function () {
     $('#search-handle').replaceWith($('<select>').attr({
       id: 'search-handle',
-      name: 'handle',
-      onchange: 'form.submit()'
+      name: 'handle'
     }));
     var in_user_redirect = false;
     $('#search-handle').select2({
@@ -31,9 +30,27 @@
               }).mouseout(function () {
                 in_user_redirect = false;
               }));
+      },
+      templateSelection: function (data) {
+        return data.text || data.id;
       }
     }).on('select2:selecting', function () {
       return !in_user_redirect;
+    }).on('select2:select', function (e) {
+      var selectedData = e.params.data;
+      var username = selectedData.text;
+
+      var $form = $(this).closest('form');
+      var $hiddenHandle = $form.find('input[name="handle"]');
+
+      if ($hiddenHandle.length === 0) {
+        $hiddenHandle = $('<input type="hidden" name="handle">');
+        $form.append($hiddenHandle);
+      }
+
+      $hiddenHandle.val(username);
+
+      $form.submit();
     });
 
     var $last = null;

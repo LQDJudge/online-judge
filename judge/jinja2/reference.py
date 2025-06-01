@@ -9,7 +9,7 @@ from django.utils.safestring import mark_safe
 from lxml.html import Element
 
 from judge import lxml_tree
-from judge.models import Contest, Problem, Profile
+from judge.models import BlogPost, Contest, Problem, Profile
 from judge.models.profile import get_profile_id_from_username
 from judge.ratings import rating_class, rating_progress
 from . import registry
@@ -149,6 +149,8 @@ def item_title(item):
         return item.name
     elif isinstance(item, Contest):
         return item.name
+    elif isinstance(item, BlogPost):
+        return item.title
     return "<Unknown>"
 
 

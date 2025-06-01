@@ -226,9 +226,9 @@ urlpatterns = [
         r"^feed/",
         include(
             [
-                re_path(r"^tickets/$", blog.TicketFeed.as_view(), name="ticket_feed"),
+                re_path(r"^tickets/$", ticket.TicketFeed.as_view(), name="ticket_feed"),
                 re_path(
-                    r"^comments/$", blog.CommentFeed.as_view(), name="comment_feed"
+                    r"^comments/$", comment.CommentFeed.as_view(), name="comment_feed"
                 ),
             ]
         ),
@@ -872,6 +872,16 @@ urlpatterns = [
         r"^post/(?P<id>\d+)-(?P<slug>.*)$", blog.PostView.as_view(), name="blog_post"
     ),
     re_path(
+        r"^post/(?P<id>\d+)/tickets$",
+        ticket.BlogTicketListView.as_view(),
+        name="blog_post_ticket_list",
+    ),
+    re_path(
+        r"^post/(?P<id>\d+)/tickets/new$",
+        ticket.NewBlogTicketView.as_view(),
+        name="new_blog_post_ticket",
+    ),
+    re_path(
         r"^license/(?P<key>[-\w.]+)$", license.LicenseDetail.as_view(), name="license"
     ),
     re_path(
@@ -1066,6 +1076,16 @@ urlpatterns = [
                     r"^/notes$",
                     ticket.TicketNotesEditView.as_view(),
                     name="ticket_notes",
+                ),
+                re_path(
+                    r"^/assignees$",
+                    ticket.TicketAssigneeEditView.as_view(),
+                    name="ticket_assignees",
+                ),
+                re_path(
+                    r"^/logs$",
+                    ticket.TicketLogView.as_view(),
+                    name="ticket_logs",
                 ),
             ]
         ),

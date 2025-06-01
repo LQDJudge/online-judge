@@ -1,21 +1,37 @@
 {% for comment in comments %}
-  <div class="blog-box">
-    <h3 class="problem-feed-name">
+  <div class="comment-item background-white">
+    <div class="comment-icon">
+      {% if comment.linked_object %}
+        {% if comment.linked_object.__class__.__name__ == 'Problem' %}
+          <i class="fa fa-puzzle-piece"></i>
+        {% elif comment.linked_object.__class__.__name__ == 'Contest' %}
+          <i class="fa fa-trophy"></i>
+        {% elif comment.linked_object.__class__.__name__ == 'BlogPost' %}
+          <i class="fa fa-rss"></i>
+        {% else %}
+          <i class="fa fa-file"></i>
+        {% endif %}
+      {% else %}
+        <i class="fa fa-comment"></i>
+      {% endif %}
+    </div>
+    <div class="comment-content">
       <a href="{{ comment.get_absolute_url() }}">
         {{ comment.page_title }}
       </a>
-    </h3>
-    {% with author_id=comment.author_id %}
-      {% if author_id %}
-        <div class="problem-feed-info-entry">
-          <i class="far fa-pen-to-square"></i>
-          <span class="pi-value">{{ link_user(author_id) }}</span>
-        </div>
-      {% endif %}
-    {% endwith %}
-    <div class='blog-description content-description'>
-      {{ comment.body|markdown(lazy_load=True)|reference|str|safe }}
-      <div class="show-more"> {{_("...More")}} </div>
+    </div>
+    <div class="comment-meta">
+      <div class="comment-user">
+        <span class="user-name">{{ link_user(comment.author_id) }}</span>
+        {% if comment.score != 0 %}
+          <span class="comment-score {% if comment.score > 0 %}positive{% else %}negative{% endif %}">
+            {% if comment.score > 0 %}+{% endif %}{{ comment.score }}
+          </span>
+        {% endif %}
+      </div>
+      <span class="comment-time">
+        {{ relative_time(comment.time, format=_("d/m/Y")) }}
+      </span>
     </div>
   </div>
 {% endfor %}

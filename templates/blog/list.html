@@ -25,6 +25,8 @@
   <script type="text/javascript">
     $(document).ready(function () {
       $("#sort-selector").select2();
+      $("#status-selector").select2();
+      $("#content-selector").select2();
       $('.time-remaining').each(function () {
         count_down($(this));
       });
@@ -76,13 +78,59 @@
     </div>
     {% include "blog/content.html" %}
   {% elif page_type == 'ticket' %}
+    <div class="tabs" id="ticket-feed-tabs">
+      {% if can_view_all %}
+        <ul>
+          <li class="{{'active' if view_type=='own'}}">
+            <a href="{{url('ticket_feed')}}?view=own{% if status_filter != 'all' %}&status={{status_filter}}{% endif %}">{{_('My Tickets')}}</a>
+          </li>
+          <li class="{{'active' if view_type=='all'}}">
+            <a href="{{url('ticket_feed')}}?view=all{% if status_filter != 'all' %}&status={{status_filter}}{% endif %}">{{_('All Tickets')}}</a>
+          </li>
+        </ul>
+      {% endif %}
+      <div class="sort-options" style="margin-left: auto; display: flex; align-items: center;" id="ticket-sort-options">
+        <span style="margin-right: 0.5em;">{{_('Status')}}:</span>
+        <select id="status-selector" onchange="navigateTo(this.value, '.middle-content', false)">
+          <option value="{{url('ticket_feed')}}{% if can_view_all %}?view={{view_type}}&status=all{% else %}?status=all{% endif %}" {% if status_filter == 'all' %}selected{% endif %}>{{_('All')}}</option>
+          <option value="{{url('ticket_feed')}}{% if can_view_all %}?view={{view_type}}&status=open{% else %}?status=open{% endif %}" {% if status_filter == 'open' %}selected{% endif %}>{{_('Open')}}</option>
+          <option value="{{url('ticket_feed')}}{% if can_view_all %}?view={{view_type}}&status=closed{% else %}?status=closed{% endif %}" {% if status_filter == 'closed' %}selected{% endif %}>{{_('Closed')}}</option>
+        </select>
+      </div>
+    </div>
     {% if tickets %}
       {% include "ticket/feed.html" %}
     {% else %}
-      <h3 style="text-align: center">{{_('You have no ticket')}}</h3>
+      <h3 style="text-align: center">{{_('No tickets found')}}</h3>
     {% endif %}
   {% elif page_type == 'comment' %}
-    {% include "comments/feed.html" %}
+    <div class="tabs" id="comment-feed-tabs">
+      <ul>
+        <li class="{{'active' if view_type=='all'}}">
+          <a href="{{url('comment_feed')}}?view=all{% if content_filter != 'all' %}&content={{content_filter}}{% endif %}">{{_('All Comments')}}</a>
+        </li>
+        {% if request.user.is_authenticated %}
+          <li class="{{'active' if view_type=='own'}}">
+            <a href="{{url('comment_feed')}}?view=own{% if content_filter != 'all' %}&content={{content_filter}}{% endif %}">{{_('My Comments')}}</a>
+          </li>
+        {% endif %}
+      </ul>
+      <div class="sort-options" style="margin-left: auto; display: flex; align-items: center;" id="comment-sort-options">
+        <span style="margin-right: 0.5em;">{{_('Content')}}:</span>
+        <select id="content-selector" onchange="navigateTo(this.value, '.middle-content', false)">
+          <option value="{{url('comment_feed')}}?view={{view_type}}&content=all" {% if content_filter == 'all' %}selected{% endif %}>{{_('All')}}</option>
+          <option value="{{url('comment_feed')}}?view={{view_type}}&content=problem" {% if content_filter == 'problem' %}selected{% endif %}>{{_('Problems')}}</option>
+          <option value="{{url('comment_feed')}}?view={{view_type}}&content=contest" {% if content_filter == 'contest' %}selected{% endif %}>{{_('Contests')}}</option>
+          <option value="{{url('comment_feed')}}?view={{view_type}}&content=blog" {% if content_filter == 'blog' %}selected{% endif %}>{{_('Blogs')}}</option>
+          <option value="{{url('comment_feed')}}?view={{view_type}}&content=other" {% if content_filter == 'other' %}selected{% endif %}>{{_('Other')}}</option>
+        </select>
+      </div>
+    </div>
+    {% if comments %}
+      {% include "comments/feed.html" %}
+    {% else %}
+      <h3 style="text-align: center">{{_('No comments found')}}</h3>
+    {% endif %}
   {% endif %}
 {% endblock %}
 

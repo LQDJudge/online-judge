@@ -1,6 +1,39 @@
 {% extends "base.html" %}
 {% block media %}
   {{ form.media.css }}
+  <style>
+    .save-btn:hover {
+      background-color: #0056b3 !important;
+    }
+
+    .featherlight .featherlight-content .django-select2 {
+      width: 100% !important;
+      min-height: 38px;
+    }
+
+    .ticket-history-link {
+      display: inline-block;
+      color: #007bff;
+      text-decoration: none;
+      padding: 4px 0;
+    }
+
+    .ticket-history-link:hover {
+      color: #0056b3;
+      text-decoration: underline;
+    }
+
+    .ticket-history-link i {
+      margin-right: 5px;
+    }
+
+    @media (max-width: 600px) {
+      .featherlight .featherlight-content > div {
+        min-width: 300px !important;
+        padding: 15px !important;
+      }
+    }
+  </style>
 {% endblock %}
 
 {% block js_media %}
@@ -41,6 +74,42 @@
               $('#ticket-notes').find('.info-empty').toggle(!data).end().find('.info-real').html(data);
               $.featherlight.current().close();
             });
+            return false;
+          });
+        }
+      });
+
+      $('.edit-assignees').featherlight({
+        afterOpen: function () {
+          var $form = $('#edit-assignees');
+          $form.find('.save-btn').click(function () {
+            var $btn = $(this);
+
+            // Disable button and show loading
+            $btn.prop('disabled', true).text('{{ _('Saving...') }}');
+
+            $.post($form.attr('action'), $form.serialize())
+              .done(function(data) {
+                if (data.success) {
+                  // Close modal and reload page to show updated assignees
+                  $.featherlight.current().close();
+                  window.location.reload();
+                } else {
+                  alert('{{ _('Error: Could not update assignees') }}');
+                  $btn.prop('disabled', false).text('{{ _('Save') }}');
+                }
+              })
+              .fail(function(xhr) {
+                console.log('Error response:', xhr);
+                var errorMsg = '{{ _('Could not update assignees') }}';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                  errorMsg = xhr.responseJSON.error;
+                } else if (xhr.responseText) {
+                  console.log('Response text:', xhr.responseText);
+                }
+                alert(errorMsg);
+                $btn.prop('disabled', false).text('{{ _('Save') }}');
+              });
             return false;
           });
         }
@@ -182,6 +251,10 @@
     </div>
     <aside class="ticket-sidebar">
       <div class="ticket-info">
+        <button data-ajax="{{ url('ticket_close', ticket.id) }}" data-open="0" class="close-ticket"
+                {% if not ticket.is_open %}style="display: none"{% endif %}>{{ _('Close ticket') }}</button>
+        <button data-ajax="{{ url('ticket_open', ticket.id) }}" data-open="1" class="open-ticket"
+                {% if ticket.is_open %}style="display: none"{% endif %}>{{ _('Reopen ticket') }}</button>
         <div class="info-box">
           <div class="info-title">{{ _('Associated object') }}</div>
           <div class="info-data">
@@ -189,8 +262,14 @@
           </div>
         </div>
         <div class="info-box">
-          <div class="info-title">{{ _('Assignees') }}</div>
-          <div class="info-data">
+          <div class="info-title">{{ _('Assignees') }}
+            {% if can_edit_assignees %}
+              <a href="#" data-featherlight="{{ url('ticket_assignees', ticket.id) }}" class="edit-assignees" style="float:right;">
+                <i class="fa fa-pencil"></i>
+              </a>
+            {% endif %}
+          </div>
+          <div id="ticket-assignees" class="info-data">
             {% if assignees %}
               {{ link_users(assignees) }}
             {% else %}
@@ -198,11 +277,6 @@
             {% endif %}
           </div>
         </div>
-
-        <button data-ajax="{{ url('ticket_close', ticket.id) }}" data-open="0" class="close-ticket"
-                {% if not ticket.is_open %}style="display: none"{% endif %}>{{ _('Close ticket') }}</button>
-        <button data-ajax="{{ url('ticket_open', ticket.id) }}" data-open="1" class="open-ticket"
-                {% if ticket.is_open %}style="display: none"{% endif %}>{{ _('Reopen ticket') }}</button>
 
         {% if perms.judge.change_ticket or request.profile in assignees %}
           <div class="info-box">
@@ -219,6 +293,15 @@
             </div>
           </div>
         {% endif %}
+
+        <div class="info-box">
+          <div class="info-title">{{ _('Actions') }}</div>
+          <div class="info-data">
+            <a href="{{ url('ticket_logs', ticket.id) }}" class="ticket-history-link">
+              <i class="fa fa-history"></i> {{ _('View history') }}
+            </a>
+          </div>
+        </div>
       </div>
     </aside>
   </div>

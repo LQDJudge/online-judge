@@ -108,7 +108,7 @@ class UserSearchSelect2View(BaseListView):
         profile = Profile(id=pk)
         return {
             "text": profile.username,
-            "id": profile.username,
+            "id": pk,
             "gravatar_url": gravatar(
                 pk,
                 self.gravatar_size,

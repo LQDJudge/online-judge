@@ -96,4 +96,6 @@ revisions.register(Rating)
 revisions.register(PageVoteVoter)
 revisions.register(VolunteerProblemVote)
 revisions.register(Course)
+revisions.register(Ticket)
+revisions.register(TicketMessage)
 del revisions

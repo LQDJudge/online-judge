@@ -547,7 +547,9 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         return self.get_cached_value("pdf_description")
 
     def translated_description(self, language):
-        return _get_problem_i18n_description(self.id, language)
+        translation = _get_problem_i18n_description(self.id, language)
+        if not translation:
+            return self.get_description()
 
     def get_types_name(self):
         return _get_problem_types_name(self.id)
@@ -1042,13 +1044,7 @@ def _get_problem_i18n_description_batch(args_list):
     results_dict = {}
 
     for language, problem_ids in problems_by_lang.items():
-        problem_descriptions = {
-            p["id"]: p["description"]
-            for p in Problem.objects.filter(id__in=problem_ids).values(
-                "id", "description"
-            )
-        }
-
+        problem_descriptions = {}
         translations = ProblemTranslation.objects.filter(
             problem_id__in=problem_ids, language=language
         ).values("problem_id", "description")
@@ -1059,8 +1055,6 @@ def _get_problem_i18n_description_batch(args_list):
         for problem_id in problem_ids:
             if problem_id in problem_descriptions:
                 results_dict[(problem_id, language)] = problem_descriptions[problem_id]
-            else:
-                results_dict[(problem_id, language)] = None
 
     results = []
     for problem_id, language in args_list:
@@ -1070,7 +1064,9 @@ def _get_problem_i18n_description_batch(args_list):
 
 
 @cache_wrapper(
-    prefix="Pri18ndesc", expected_type=str, batch_fn=_get_problem_i18n_description_batch
+    prefix="Pri18ndesc2",
+    expected_type=str,
+    batch_fn=_get_problem_i18n_description_batch,
 )
 def _get_problem_i18n_description(problem_id, language):
     results = _get_problem_i18n_description_batch([(problem_id, language)])

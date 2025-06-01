@@ -631,7 +631,6 @@ class JoinOrganization(OrganizationMembershipChange):
 
         profile.organizations.add(org)
         profile.save()
-        cache.delete(make_template_fragment_key("org_member_count", (org.id,)))
 
 
 class LeaveOrganization(OrganizationMembershipChange):
@@ -643,7 +642,6 @@ class LeaveOrganization(OrganizationMembershipChange):
                 _("You are not in %s.") % org.short_name,
             )
         profile.organizations.remove(org)
-        cache.delete(make_template_fragment_key("org_member_count", (org.id,)))
 
 
 class BlockOrganization(OrganizationMembershipChange):
@@ -667,7 +665,6 @@ class BlockOrganization(OrganizationMembershipChange):
 
         if profile.organizations.filter(id=org.id).exists():
             profile.organizations.remove(org)
-            cache.delete(make_template_fragment_key("org_member_count", (org.id,)))
 
         return HttpResponseRedirect(reverse("organization_list") + "?tab=blocked")
 
@@ -855,9 +852,6 @@ class OrganizationRequestView(OrganizationRequestBaseView):
                 + "\n"
                 + ngettext("Rejected %d user.", "Rejected %d users.", rejected)
                 % rejected,
-            )
-            cache.delete(
-                make_template_fragment_key("org_member_count", (organization.id,))
             )
             return HttpResponseRedirect(request.get_full_path())
         return self.render_to_response(self.get_context_data(object=organization))
