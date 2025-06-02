@@ -476,6 +476,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         translation = _get_problem_i18n_name(self.id, language)
         if not translation:
             return self.get_name()
+        return translation
 
     @classmethod
     def get_cached_dict(cls, problem_id):
@@ -550,6 +551,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         translation = _get_problem_i18n_description(self.id, language)
         if not translation:
             return self.get_description()
+        return translation
 
     def get_types_name(self):
         return _get_problem_types_name(self.id)
@@ -966,14 +968,12 @@ def _get_problem_description_batch(args_list):
         if problem_id in description_dict:
             results.append(description_dict[problem_id])
         else:
-            results.append("")
+            results.append(None)
 
     return results
 
 
-@cache_wrapper(
-    prefix="Prdesc", expected_type=str, batch_fn=_get_problem_description_batch
-)
+@cache_wrapper(prefix="Prdesc", batch_fn=_get_problem_description_batch)
 def _get_problem_description(problem_id):
     results = _get_problem_description_batch([(problem_id,)])
     return results[0]
@@ -1017,9 +1017,7 @@ def _get_problem_i18n_name_batch(args_list):
     return results
 
 
-@cache_wrapper(
-    prefix="Pri18n2", expected_type=str, batch_fn=_get_problem_i18n_name_batch
-)
+@cache_wrapper(prefix="Pri18n2", batch_fn=_get_problem_i18n_name_batch)
 def _get_problem_i18n_name(problem_id, language):
     results = _get_problem_i18n_name_batch([(problem_id, language)])
     return results[0]
@@ -1065,7 +1063,6 @@ def _get_problem_i18n_description_batch(args_list):
 
 @cache_wrapper(
     prefix="Pri18ndesc2",
-    expected_type=str,
     batch_fn=_get_problem_i18n_description_batch,
 )
 def _get_problem_i18n_description(problem_id, language):

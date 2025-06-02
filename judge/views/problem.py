@@ -354,19 +354,11 @@ class ProblemDetail(
             context["has_tickets"] = len(tickets) > 0
             context["num_open_tickets"] = len([t for t in tickets if t["is_open"]])
 
-        translation_name = self.object.translated_name(self.request.LANGUAGE_CODE)
-        if not translation_name:
-            context["title"] = self.object.name
-            context["language"] = settings.LANGUAGE_CODE
-            context["description"] = self.object.description
-            context["translated"] = False
-        else:
-            context["title"] = translation_name
-            context["language"] = self.request.LANGUAGE_CODE
-            context["description"] = self.object.translated_description(
-                self.request.LANGUAGE_CODE
-            )
-            context["translated"] = True
+        context["title"] = self.object.translated_name(self.request.LANGUAGE_CODE)
+        context["language"] = self.request.LANGUAGE_CODE
+        context["description"] = self.object.translated_description(
+            self.request.LANGUAGE_CODE
+        )
 
         if not self.object.og_image or not self.object.summary:
             metadata = generate_opengraph(
