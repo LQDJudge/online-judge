@@ -42,9 +42,6 @@ msgstr "Báo cáo tiêu cực"
 msgid "Bug Report"
 msgstr "Báo cáo lỗi"
 
-msgid "Status"
-msgstr "Máy chấm"
-
 msgid "2sat"
 msgstr ""
 
@@ -599,6 +596,9 @@ msgstr ""
 
 msgid "z-function"
 msgstr ""
+
+#~ msgid "Status"
+#~ msgstr "Máy chấm"
 
 #~ msgid "Insert Image"
 #~ msgstr "Chèn hình ảnh"
