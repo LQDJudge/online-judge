@@ -1,0 +1,30 @@
+Một số nguyên dương được gọi là siêu đối xứng nếu tất cả các chữ số của nó giống nhau. Chẳng hạn số $777$ hoặc $4444$ là các số nguyên dương siêu đối xứng.
+
+Nhập từ bàn phím một số nguyên dương $x$. Hãy tìm và in ra màn hình số nguyên dương $y$ nhỏ nhất sao cho tổng $x + y$ là một số nguyên dương siêu đối xứng.
+
+#### Input
+- Gồm 1 dòng duy nhất chứa số nguyên dương $x$ $(1 \leq x \leq 10^{16})$.
+
+<h4>Scoring</h4>
+
+ - Subtask $1$ ($50\%$ số test): $x \le 10^6$.
+ - Subtask $2$ ($30\%$ số test): $10^6 < x \le 10^9$.
+ - Subtask $3$ ($20\%$ số test): $10^9 \le x \le 10^{16}$.
+
+<h4>Example</h4>
+
+!!! question "Test 1"
+
+    ???+ "Input"
+        ```sample
+        45
+        ```
+    
+    ???+ success "Output"
+        ```sample
+        10
+        ```
+    
+    ??? warning "Note"
+
+        $45 + 10 = 55$
