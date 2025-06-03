@@ -85,6 +85,10 @@ class ProfileInfoForm(ModelForm):
 
 
 class ProfileForm(ModelForm):
+    background_image_upload = forms.ImageField(
+        required=False, label=_("Background Image")
+    )
+
     class Meta:
         model = Profile
         fields = [
@@ -113,6 +117,7 @@ class ProfileForm(ModelForm):
         user = kwargs.pop("user", None)
         super(ProfileForm, self).__init__(*args, **kwargs)
         self.fields["profile_image"].required = False
+        self.fields["background_image_upload"].widget = ImageWidget()
 
     def clean_profile_image(self):
         profile_image = self.cleaned_data.get("profile_image")
@@ -122,6 +127,15 @@ class ProfileForm(ModelForm):
                     _("File size exceeds the maximum allowed limit of 5MB.")
                 )
         return profile_image
+
+    def clean_background_image_upload(self):
+        background_image = self.cleaned_data.get("background_image_upload")
+        if background_image:
+            if background_image.size > 10 * 1024 * 1024:
+                raise ValidationError(
+                    _("File size exceeds the maximum allowed limit of 10MB.")
+                )
+        return background_image
 
 
 def file_size_validator(file):

@@ -5,6 +5,7 @@ from operator import itemgetter
 from collections import defaultdict
 
 from django.core.cache import cache
+from django.core.files.storage import default_storage
 from django.conf import settings
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
@@ -51,6 +52,7 @@ from judge.models.submission import (
     get_user_submission_dates,
     get_user_min_submission_year,
 )
+from judge.models.profile import profile_background_path
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
 from judge.tasks import import_users
@@ -304,7 +306,7 @@ class UserProblemsPage(UserPage):
 class UserBookMarkPage(DiggPaginatorMixin, ListView, UserPage):
     template_name = "user/user-bookmarks.html"
     context_object_name = "bookmarks"
-    paginate_by = 10
+    paginate_by = 100
 
     def get(self, request, *args, **kwargs):
         self.current_tab = self.request.GET.get("tab", "problems")
@@ -389,6 +391,26 @@ def edit_profile(request):
         if form_user.is_valid() and form.is_valid():
             with revisions.create_revision():
                 form_user.save()
+
+                if request.POST.get("remove_avatar"):
+                    if profile.profile_image:
+                        profile.profile_image.delete(save=False)
+                        profile.profile_image = None
+
+                background_upload = form.cleaned_data.get("background_image_upload")
+                if background_upload:
+                    if profile.css_background and "url(" in profile.css_background:
+                        pass
+
+                    file_path = profile_background_path(
+                        profile.id, background_upload.name
+                    )
+                    saved_path = default_storage.save(file_path, background_upload)
+                    file_url = default_storage.url(saved_path)
+                    profile.css_background = f'url("{file_url}")'
+
+                if request.POST.get("remove_background"):
+                    profile.css_background = None
                 form.save()
                 form_info.save()
                 revisions.set_user(request.user)
@@ -422,7 +444,7 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
     title = gettext_lazy("Leaderboard")
     context_object_name = "users"
     template_name = "user/list.html"
-    paginate_by = 10
+    paginate_by = 100
     all_sorts = frozenset(("points", "problem_count", "rating", "performance_points"))
     default_desc = all_sorts
     default_sort = "-performance_points"
@@ -552,11 +574,9 @@ def import_users_submit(request):
         return HttpResponseForbidden()
 
     try:
-        # Handle form submission (regular form POST data)
         if "user_data" in request.POST:
             users_data = json.loads(request.POST["user_data"])
             users = users_data.get("users", [])
-        # Handle JSON POST data directly (backwards compatibility)
         else:
             users = json.loads(request.body)["users"]
 

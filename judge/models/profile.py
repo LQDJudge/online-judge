@@ -50,6 +50,12 @@ def profile_image_path(profile, filename):
     return os.path.join(settings.DMOJ_PROFILE_IMAGE_ROOT, new_filename)
 
 
+def profile_background_path(profile_id, filename):
+    tail = filename.split(".")[-1]
+    new_filename = f"bg_user_{profile_id}.{tail}"
+    return os.path.join(settings.DMOJ_PROFILE_IMAGE_ROOT, new_filename)
+
+
 def organization_image_path(organization, filename):
     tail = filename.split(".")[-1]
     new_filename = f"organization_{organization.id}.{tail}"

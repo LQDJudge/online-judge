@@ -130,7 +130,29 @@
         </tr>
         <tr>
           <td>{{ _('Avatar') }}: </td>
-          <td>{{ form.profile_image }}</td>
+          <td>
+            {{ form.profile_image }}
+            {% if request.profile.profile_image %}
+              <div style="margin-top: 10px;">
+                <label>
+                  <input type="checkbox" name="remove_avatar" value="1"> {{ _('Remove avatar') }}
+                </label>
+              </div>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td>{{ _('Background') }}: </td>
+          <td>
+            {{ form.background_image_upload }}
+            {% if request.profile.css_background %}
+              <div style="margin-top: 10px;">
+                <label>
+                  <input type="checkbox" name="remove_background" value="1"> {{ _('Remove background') }}
+                </label>
+              </div>
+            {% endif %}
+          </td>
         </tr>
       </table>
       <hr>
@@ -173,10 +195,6 @@
           <a href="{{ url('enable_2fa') }}" class="button inline-button">{{_('Enable')}}</a>
         {% endif %}
       </div>
-      <br><hr>
-      <span class="block-header">{{ _('CSS background') }}:</span>
-      {{ form.css_background }}
-      <div><i>{{form.css_background.help_text}}</i></div>
       <br><br>
       <input type="submit" style="float:right" value="{{ _('Update profile') }}">
     </form>

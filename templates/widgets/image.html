@@ -9,5 +9,11 @@
 <input type="{{ widget.type }}" name="{{ widget.name }}">
 {% if widget.is_initial %}
   </div>
+  {% if not widget.required %}
+    <div style="margin-top: 5px;">
+      <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}">
+      <label for="{{ widget.checkbox_id }}">{{ widget.clear_checkbox_label|default(_('Remove')) }}</label>
+    </div>
+  {% endif %}
   </div>
 {% endif %}
