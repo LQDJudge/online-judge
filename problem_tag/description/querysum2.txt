@@ -1,0 +1,35 @@
+Cho dãy $a$ gồm $n$ phần tử là các số nguyên dương $a_{1}, a_{2}, \ldots, a_{n}$. Cho $q$ thao tác thực hiện lần lượt, thao tác thứ $i$ sẽ có một trong hai loại như sau:
+- $1$ $u_{i}$ $v_{i}$ $x_{i}$: Tăng mỗi phần tử từ vị trí $u_{i}$ tới vị trí $v_{i}$ lên $x_{i}$ đơn vị.
+- $2$ $u_{i}$ $v_{i}$: Tính tổng các phần tử từ vị trí $u_{i}$ tới vị trí $v_{i}$.
+
+**Yêu cầu**: thực hiện tất cả lần lượt $q$ thao tác, và in ra kết quả của thao tác loại $2$.
+
+#### Input
+- Dòng thứ nhất gồm hai số nguyên dương $n, q$ $(1 \leq n, q \leq 10^{5})$.
+- Dòng thứ hai gồm $n$ số nguyên dương $a_{1}, a_{2}, \ldots, a_{n}$ $(a_{i} \leq 10^{9})$.
+- $q$ dòng tiếp theo, với dòng thứ $i$: số đầu tiên trên dòng là $1$ hoặc $2$. Số $1$ theo sau bởi ba số nguyên dương $u_{i}$, $v_{i}$ và $x_{i}$ $(1 \leq u_{i} \leq v_{i} \leq n, 1 \leq x_{i} \leq 10^{9})$. Số $2$ theo sau bởi hai số nguyên dương $u_{i}$ và $v_{i}$ $(1 \leq u_{i} \leq v_{i} \leq n)$.
+
+#### Output
+- Với thao tác loại $2$ có dạng $2$ $u$ $v$, in ra tổng các phần tử từ vị trí $u$ tới vị trí $v$ trên một dòng.
+
+#### Scoring
+- Subtask $1$ ($30\%$ số điểm): $n, q \leq 10^{3}$.
+- Subtask $2$ ($30\%$ số điểm): mọi thao tác loại $1$ có $u = v$.
+- Subtask $3$ ($40\%$ số điểm): không có rằng buộc gì thêm.
+
+#### Example
+!!! question "Test 1"
+    ???+ "Input"
+        ```sample
+        5 4
+        1 4 6 2 3
+        2 1 4
+        1 2 5 3
+        1 3 4 5
+        2 3 5
+        ```
+    ???+ success "Output"
+        ```sample
+        13
+        30
+        ```

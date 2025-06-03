@@ -1,0 +1,4 @@
+('22thtbdna2', 1600, ['math', 'implementation', 'number-theory', 'constructive'])
+('querysum2', 1700, ['rangequeries', 'prefix-sum', 'fenwick(bit)', 'segtree-general'])
+('cses1144', 1800, ['rangequeries', 'segtree-dynamic', 'data-structures'])
+('lmhis', 2000, ['dp', 'binary-search', 'prefix-sum', 'sequence'])

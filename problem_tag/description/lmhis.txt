@@ -1,0 +1,48 @@
+Cho dãy số nguyên dương $A = (a_1, a_2, ..., a_n)$, phần tử $a_i$ có trọng số là $w_i$. Mỗi dãy $(a_{i_1}, a_{i_2}, ..., a_{i_k})$ thỏa mãn:
+
+- $1 < i_1 < i_2 < ... < i_k < n$
+- $a_{i_1} < a_{i_2} <... < a_{i_k}$
+
+được gọi là một dãy con tăng của dãy $A$. Chú ý rằng dãy chỉ gồm duy nhất một phần tử của $A$ cũng được gọi là một
+dãy con tăng của dãy $A$.
+
+Yêu cầu: Trong số các dãy con tăng của dãy $A$ hãy chỉ ra một dãy có tổng trọng số các phần tử là lớn nhất có thể.
+
+#### Input
+
+- Vào từ file văn bản IS.INP
+
+    - Dòng $1$ chứa số nguyên dương $n \le 10^5$
+    
+    - Dòng $2$ chứa $n$ số nguyên dương $a_1, a_2, ..., a_n$ theo đúng thứ tự đó ($\forall i: a_i \le 10^5$)
+    
+    - Dòng $3$ chứa $n$ số nguyên dương $w_1, w_2, ..., w_n$ theo đúng thứ tự đó ($\forall i: w_i \le 10^9$)
+
+#### Output
+
+- Ghi ra file văn bản IS.OUT
+
+    - Dòng 1 ghi số phần tử trong dãy con tăng tìm được $(m)$
+    
+    - Dòng 2 ghi $m$ chỉ số của các phần tử được chọn theo thứ tự tăng đần
+
+Các số trên một dòng của Input/Output files được/phải ghi cách nhau ít nhất một dấu cách
+
+#### Example
+
+!!! question "Test 1"
+
+    ???+ "Input"
+
+        ```sample
+        10
+        1 2 3 6 4 5 9 6 7 8
+        11 22 33 66 44 55 999 66 77 88
+        ```
+
+    ???+ success "Output"
+
+        ```sample
+        6
+        1 2 3 5 6 7
+        ```

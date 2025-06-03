@@ -1,0 +1,36 @@
+o3
+('22thtbdna2', 800, ['ad-hoc', 'constructive'])
+('querysum2', 1500, ['fenwick(bit)', 'data-structures'])
+('cses1144', 1500, ['fenwick(bit)', 'data-structures', 'binary-search'])
+('lmhis', 1700, ['dp', 'fenwick(bit)'])
+
+
+o3-mini-high
+('22thtbdna2', 800, ['adhoc', 'math', 'constructive'])
+('querysum2', 1200, ['fenwick(bit)', 'data-structures'])
+('cses1144', 1500, ['data-structures', 'rangequeries', 'fenwick(bit)'])
+('lmhis', 1600, ['dp', 'fenwick(bit)'])
+
+gpt 4o
+
+('22thtbdna2', 1300, ['math', 'implementation', 'greedy'])
+('querysum2', 1800, ['rangequeries', 'fenwick(bit)', 'prefix-sum', 'segtree-general'])
+('cses1144', 1800, ['rangequeries', 'fenwick(bit)', 'segtree-general', 'offline'])
+('lmhis', 2000, ['dp-general', 'binary-search', 'prefix-sum', 'constructive'])
+
+o1
+('22thtbdna2', 1200, ['constructive', 'implementation', 'math'])
+('querysum2', 1600, ['rangequeries', 'fenwick(bit)', 'segtree-general'])
+('cses1144', 1700, ['data-structures', 'fenwick(bit)', 'rangequeries'])
+('lmhis', 1800, ['dp', 'fenwick(bit)'])
+
+claude 3.5 sonnet
+('22thtbdna2', 1600, ['bignum', 'brute-force', 'constructive'])
+('querysum2', 1500, ['segtree-general', 'data-structures', 'rangequeries'])
+('cses1144', 1500, ['data-structures', 'rangequeries', 'binary-search', 'sortings', 'segtree-general'])
+('lmhis', 1400, ['dp', 'sequence'])
+
+('22thtbdna2', 1200, ['math', 'constructive', 'implementation'])
+('querysum2', 1800, ['rangequeries', 'fenwick(bit)', 'segtree-general', 'prefix-sum'])
+('cses1144', 1800, ['rangequeries', 'fenwick(bit)', 'segtree-general'])
+('lmhis', 2000, ['dp-general', 'binary-search', 'prefix-sum'])

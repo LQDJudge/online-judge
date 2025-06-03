@@ -1,0 +1,56 @@
+Trong dịp Tết Nguyên Đán, làng **LQDOJ** được trang hoàng bởi một cây Phúc Lộc Thọ đặc biệt, được kết nối bởi các nhánh tượng trưng cho các khía cạnh may mắn trong năm mới. Cây này có $n$ đỉnh và $n-1$ cạnh, mỗi cạnh $(u_1,v_1)$ có độ dài $w_1$, $(u_2,v_2)$ có độ dài $w_2$,,..., $(u_{n-1},v_{n-1})$ có độ dài $w_{n-1}$, đại diện cho sự liên kết giữa các yếu tố Phúc, Lộc, và Thọ.
+
+[user:shiba] được giao nhiệm vụ quản lý cây Phúc Lộc Thọ này trong suốt mùa Tết, thực hiện $q$ thao tác với $2$ truy vấn sau:
+
+ - ```1 x k n_1,n_2,...,n_k```: Tìm độ dài của đường đi dài nhất từ đỉnh $x$ đến một đỉnh $y$ sao cho đường đi này không đi qua bất kỳ đỉnh nào trong tập ${n_1, n_2,...,n_k}$ (các đỉnh bị cấm vì có điều không may trong năm mới).
+ - ```2 i w```: Thay đổi độ dài của cạnh thứ $i$ $(u_i,v_i)$ thành $w$.
+
+Tuy nhiên khối lượng công việc của [user:shiba] quá lớn, không thể thực hiện hết được. Bạn hãy giúp [user:shiba] bằng cách viết chương trình thực hiện các thao tác đó cho [user:shiba], rồi [user:Flower_On_Stone] sẽ lì xì cho bạn :Đ 
+
+**Yêu cầu:** Bạn hãy viết chương trình thực hiện các truy vấn trên.
+
+#### Input
+
+ - Dòng đầu tiên chứa số nguyên dương $n$ $(1 \le n \le 2 \times 10^5)$.
+ - $n-1$ dòng tiếp theo, mỗi dòng chứa ba số nguyên $u_i,v_i,w_i$. $(1 \le u_i,v_i \le n, 1 \le w_i \le 10^9)$.
+ - Dòng tiếp theo chứa số nguyên dương $q$ $(1 \le q \le 2 \times 10^5)$.
+  - $q$ dòng tiếp theo, mỗi dòng chứa một truy vấn thuộc loại ```1``` hoặc loại ```2``` như đã mô tả ở trên:
+    - Trong truy vấn loại ```1```, dữ kiện đề bài luôn đảm bảo rằng $n_i \neq x$ với mọi $1 \le i \le k$ và $n_i \neq n_j$ với mọi $1 \le i < j \le k$.
+    - Tổng của tất cả các $k$ trong các truy vấn loại ```1``` không vượt quá $2 \times 10^5$.
+
+#### Output 
+
+ - Với mỗi truy vấn loại ```1```, in ra độ dài của đường đi dài nhất tìm được theo yêu cầu.
+
+#### Scoring
+ - Subtask $1$ ($20\%$ số điểm): Có $n,q \le 5000$.
+ - Subtask $2$ ($20\%$ số điểm): Mỗi đỉnh có bậc tối đa là bậc $2$.
+ - Subtask $3$ ($20\%$ số điểm): Có $k = 0$ với tất cả các truy vấn loại ```1```.
+ - Subtask $4$ ($20\%$ số điểm): Không có truy vấn loại ```2```.
+ - Subtask $5$ ($20\%$ số điểm): Không có ràng buộc gì thêm.
+
+#### Example
+
+!!! question "Test 1"
+    ???+ "Input"
+        ```sample
+        6
+        1 2 3
+        1 3 2
+        2 4 4
+        2 5 5
+        3 6 1
+        5
+        1 1 0
+        1 2 1 4
+        2 3 10
+        1 1 1 3
+        1 3 0
+        ```
+    ???+ success "Output"
+        ```sample
+        8
+        6
+        13
+        15
+        ```

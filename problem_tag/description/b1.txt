@@ -1,0 +1,34 @@
+Vào dịp Tết Nguyên Đán, làng **LQDOJ** tổ chức cuộc thi gói bánh chưng truyền thống hàng năm. Trong kho của làng chỉ có đúng $M$ nắm gạo nếp, được chuẩn bị kỹ lưỡng để chia cho những người tham gia gói bánh.
+
+Mỗi gia đình sẽ **lần lượt tham gia** từ gia đình thứ $1$, gia đình thứ $2$, và lần lượt cho đến hết. Khi tham gia mỗi gia đình sẽ cần một số lượng gạo khác nhau tùy vào kế hoạch gói bánh của họ. Cụ thể, gia đình thứ $i$ cần $a_i$ nắm gạo nếp có thể gói bánh chưng. Mỗi gia đình chỉ được phép gói bánh nếu họ nhận đủ số nắm gạo mà họ cần.
+
+**Yêu cầu:** Bạn hãy xác định xem có bao nhiêu gia đình có thể nhận đủ số nắm gạo để có thể gói bánh chưng theo trước khi gạo nếp cạn kiệt. Biết rằng nếu số gạo còn lại không đủ cho một gia đình, họ sẽ nhận số gạo còn lại nhưng không thể gói thành bánh chưng.
+
+#### Input
+
+ - Dòng đầu tiên chứa hai số nguyên dương lần lượt là $N$ và $M$ $(1 \le N\le 10^5,1 \le M \le 10^8)$.
+ - Dòng tiếp theo chứa $N$ số nguyên dương cách nhau một khoảng trắng lần lượt là $a_1,a_2,...,a_N$ $(1 \le a_i \le 10^5).$
+
+#### Output 
+
+ - In ra kết quả bài toán sau khi thực hiện yêu cầu đề bài.
+
+#### Example
+
+!!! question "Test 1"
+    ???+ "Input"
+        ```sample
+        5 10
+        2 5 2 3 3
+        ```
+    ???+ success "Output"
+        ```sample
+        3
+        ```
+    ??? warning "Note"
+         - Gia đình thứ $1$ cần $2$ nắm gạo, số nắm gạo còn lại là $10-2 = 8$.
+         - Gia đình thứ $2$ cần $5$ nắm gạo, số nắm gạo còn lại là $8 - 5 = 3$.
+         - Gia đình thứ $3$ cần $2$ nắm gạo, số nắm gạo còn lại là $3 - 2 = 1$.
+         - Gia đình thứ $4$ cần $3$ nắm gạo, nhưng làng chỉ còn $1$ nắm gạo nên gia đình này nhận số nắm gạo còn lại nhưng không đủ để gói bánh chưng.
+         - Gia đình thứ $5$ không còn số gạo nào để nhận.
+        Vậy có $3$ gia đình có thể gói bánh chưng.
