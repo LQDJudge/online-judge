@@ -57,7 +57,7 @@ class ProblemType(models.Model):
             problemtype_id=self.id
         ).values_list("problem_id", flat=True)
         if problem_ids:
-            _get_problem_types_name.dirty_multi(*problem_ids)
+            _get_problem_types_name.dirty_multi([(id,) for id in problem_ids])
 
     save.alters_data = True
 
