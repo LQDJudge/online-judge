@@ -306,7 +306,7 @@ class UserProblemsPage(UserPage):
 class UserBookMarkPage(DiggPaginatorMixin, ListView, UserPage):
     template_name = "user/user-bookmarks.html"
     context_object_name = "bookmarks"
-    paginate_by = 100
+    paginate_by = 20
 
     def get(self, request, *args, **kwargs):
         self.current_tab = self.request.GET.get("tab", "problems")
@@ -444,7 +444,7 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
     title = gettext_lazy("Leaderboard")
     context_object_name = "users"
     template_name = "user/list.html"
-    paginate_by = 100
+    paginate_by = 20
     all_sorts = frozenset(("points", "problem_count", "rating", "performance_points"))
     default_desc = all_sorts
     default_sort = "-performance_points"

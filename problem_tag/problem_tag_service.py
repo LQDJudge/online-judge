@@ -205,9 +205,11 @@ class ProblemTagService:
 
             # Update points (difficulty) if available and requested
             predicted_points = tag_result.get("predicted_points")
+            points_updated = False
             if update_points and predicted_points is not None and predicted_points > 0:
                 problem.points = float(predicted_points)
                 updated = True
+                points_updated = True
                 logger.info(
                     f"Updated problem {problem.code} points to {predicted_points}"
                 )
@@ -229,6 +231,14 @@ class ProblemTagService:
 
             if updated:
                 problem.save()
+
+                # If points were updated, trigger rescore task to update all submission points
+                if points_updated:
+                    from judge.tasks.submission import rescore_problem
+
+                    rescore_problem.delay(problem.id)
+                    logger.info(f"Triggered rescore task for problem {problem.code}")
+
                 return True
             else:
                 logger.warning(f"No updates made to problem {problem.code}")
