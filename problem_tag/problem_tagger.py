@@ -26,7 +26,7 @@ class ProblemTagger:
     def parse_json_response(self, response: str) -> Dict[str, Any]:
         """
         Parse JSON response from the LLM.
-        Expected format: {"is_valid": true/false, "points": 1500, "tags": ["tag1", "tag2"]}
+        Expected format: {"is_valid": true/false, "points": 1500, "tags": ["tag1", "tag2"], "reason": "explanation_if_invalid"}
         """
         try:
             # Try to extract JSON from response
@@ -44,6 +44,7 @@ class ProblemTagger:
                     "is_valid": parsed.get("is_valid", False),
                     "points": parsed.get("points"),
                     "tags": parsed.get("tags", []),
+                    "reason": parsed.get("reason"),
                 }
 
                 # Validate types
@@ -58,13 +59,23 @@ class ProblemTagger:
                 if not isinstance(result["tags"], list):
                     result["tags"] = []
 
+                if result["reason"] is not None and not isinstance(
+                    result["reason"], str
+                ):
+                    result["reason"] = str(result["reason"])
+
                 return result
             else:
                 raise ValueError("No JSON found in response")
 
         except Exception as e:
             logger.error(f"Error parsing JSON response: {e}")
-            return {"is_valid": False, "points": None, "tags": []}
+            return {
+                "is_valid": False,
+                "points": None,
+                "tags": [],
+                "reason": f"Parse error: {e}",
+            }
 
     def _get_author_solution(self, problem_obj) -> Optional[str]:
         """
@@ -187,10 +198,10 @@ MULTI-PROBLEM FILES: If a file contains multiple problems (like a contest proble
 If files (images, PDFs, etc.) are provided as attachments, they may contain the complete problem description, so analyze them carefully. If the file contains multiple problems, focus ONLY on the problem that matches the code and name above.
 
 RESPONSE FORMAT: Return ONLY valid JSON in this exact format:
-{{"is_valid": true/false, "points": difficulty_rating_or_null, "tags": ["tag1", "tag2"] }}
+{{"is_valid": true/false, "points": difficulty_rating_or_null, "tags": ["tag1", "tag2"], "reason": "explanation_if_invalid" }}
 
-If is_valid is false, set points to null and tags to empty array.
-If is_valid is true, analyze the solution approach and provide accurate difficulty and tags.
+If is_valid is false, set points to null, tags to empty array, and provide a clear reason explaining what's missing or incomplete in the problem statement.
+If is_valid is true, analyze the solution approach and provide accurate difficulty and tags. Set reason to null.
 
 PROBLEM STATEMENT:
 {problem_statement}
@@ -215,10 +226,10 @@ AUTHOR'S ACCEPTED SOLUTION:
 If files (images, PDFs, etc.) are provided as attachments, they may contain the complete problem description, so analyze them carefully. If the file contains multiple problems, focus ONLY on the problem that matches the code and name above.
 
 RESPONSE FORMAT: Return ONLY valid JSON in this exact format:
-{{"is_valid": true/false, "points": difficulty_rating_or_null, "tags": ["tag1", "tag2"] }}
+{{"is_valid": true/false, "points": difficulty_rating_or_null, "tags": ["tag1", "tag2"], "reason": "explanation_if_invalid" }}
 
-If is_valid is false, set points to null and tags to empty array.
-If is_valid is true, provide accurate difficulty and tags based on the problem requirements.
+If is_valid is false, set points to null, tags to empty array, and provide a clear reason explaining what's missing or incomplete in the problem statement.
+If is_valid is true, provide accurate difficulty and tags based on the problem requirements. Set reason to null.
 
 PROBLEM STATEMENT:
 {problem_statement}"""
@@ -233,19 +244,29 @@ PROBLEM STATEMENT:
                 parsed_result = self.parse_json_response(response)
 
                 # If we got a valid result, return it
-                if parsed_result["is_valid"] or attempt == max_retries - 1:
+                if parsed_result["is_valid"]:
                     logger.info(f"Analysis result: {parsed_result}")
+                    return parsed_result
+                else:
+                    # If is_valid is false, do not retry and print the reason
+                    reason = parsed_result.get("reason", "No reason provided")
+                    logger.warning(f"Problem format is invalid. Reason: {reason}")
                     return parsed_result
             else:
                 logger.warning("Failed to get a valid LLM response")
 
-            # Delay before retrying
+            # Delay before retrying (only reached if no response)
             if attempt < max_retries - 1:
                 logger.info(f"Retrying in {self.sleep_time} seconds...")
                 time.sleep(self.sleep_time)
 
-        # Return invalid result if all retries fail
-        return {"is_valid": False, "points": None, "tags": []}
+        # Return invalid result if all retries fail (only happens if no response at all)
+        return {
+            "is_valid": False,
+            "points": None,
+            "tags": [],
+            "reason": "Failed to get valid LLM response after all attempts",
+        }
 
     def process_problem_batch(
         self,
