@@ -1,4 +1,0 @@
-('22thtbdna2', 1300, ['math', 'greedy', 'implementation'])
-('querysum2', 1600, ['rangequeries', 'fenwick(bit)', 'segtree-general'])
-('cses1144', 1900, ['rangequeries', 'fenwick(bit)', 'segtree-general', 'binary-search'])
-('lmhis', 1800, ['dp-general', 'binary-search', 'prefix-sum'])

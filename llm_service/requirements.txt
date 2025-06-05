@@ -1,0 +1,10 @@
+# Core LLM API
+fastapi-poe
+python-dotenv
+
+# HTTP requests for file downloads
+requests
+
+# Optional: PDF processing (if needed for local PDF analysis)
+# PyPDF2
+# pdfplumber

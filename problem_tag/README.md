@@ -1,157 +1,185 @@
-# LQDOJ PROBLEM TAG
+# Problem Tagging for LQDOJ
 
+This package provides AI-powered problem analysis for LQDOJ using large language models to predict difficulty ratings and algorithmic tags.
 
-# **Coding Problem Difficulty Predictor**
+## Features
 
-This project is designed to predict the difficulty and associated tags for coding problems based on their descriptions using a chatbot API powered by Poe. The chatbot processes problem descriptions and returns predictions in the form of difficulty points (e.g., Codeforces rating) and relevant tags (e.g., `['greedy', 'implementation']`). The project handles multiple bot types (`GPT-4o`, `o3-mini`, `o1-mini`) and ensures robust error handling, logging, and retries for failed responses.
+- **Problem Analysis**: Predict difficulty (points) and algorithmic types using problem statements and author solutions
+- **PDF Support**: Automatically detects and analyzes PDF statements from `problem.pdf_description`
+- **Multi-Problem Support**: Handles PDFs/images containing multiple problems by using problem name/code for identification
+- **Format Validation**: Only updates database for problems with valid, complete formats
+- **Django Integration**: Works seamlessly with LQDOJ Problem models
+- **Management Command**: Batch process problems via Django command
 
----
+## Dependencies
 
-## **Features**
+This package depends on the general LLM service (`llm_service/`) for API interactions:
+- `llm_service.llm_api.LLMService` - General LLM API wrapper
+- `llm_service.config.get_config` - Configuration management
 
-1. **Difficulty and Tag Prediction**:
-   - Uses a chatbot to analyze coding problem descriptions and predict their difficulty rating and associated tags.
+## Installation & Configuration
 
-2. **Multiple Bot Compatibility**:
-   - Works with different bot types like `GPT-4o`, `o3-mini`, and `o1-mini`.
-   - Handles varied output formats, including intermediate messages like `"Thinking..."`.
-
-3. **Error Handling and Retries**:
-   - Retries failed requests up to 5 times.
-   - Logs errors to a `log_errors.txt` file, including timestamps and raw responses for debugging.
-
-4. **Response Sanitization**:
-   - Ensures the chatbot's response is properly formatted and valid.
-   - Sanitizes tags by wrapping unquoted tags (e.g., `greedy`) with quotes to avoid parsing errors.
-
-5. **Rate Limit Compliance**:
-   - Adds a 1-second delay between requests to avoid exceeding the API rate limit.
-
-6. **Output Logging**:
-   - Saves predictions to a `predictions.txt` file.
-
----
-
-## **Project Structure**
-
-```
-.
-├── listtagFull.txt         # File containing a list of valid tags (e.g., ['greedy', 'implementation', ...]).
-├── listcode.txt            # File containing a list of problem codes (e.g., ['b1', 'b2', 'b3', ...]).
-├── description/            # Directory containing problem descriptions (one file per problem, named <code>.txt).
-│   ├── b1.txt
-│   ├── b2.txt
-│   └── ...
-├── log_errors.txt          # Log file for failed attempts (created automatically if errors occur).
-├── predictions.txt         # Output file containing the results (problem code, difficulty, and tags).
-├── PredictProblem.py               # Main Python script that runs the project.
-├── .env                    # Environment file containing the Poe API key.
-└── README.md               # Documentation file describing the project.
+1. Install dependencies:
+```bash
+pip install -r llm_service/requirements.txt
 ```
 
----
+2. Configure API key and settings in Django `local_settings.py`:
+```python
+# Poe API Configuration
+POE_API_KEY = "your-poe-api-key"
+POE_BOT_NAME = "Claude-3.7-Sonnet"  # Optional, default: Claude-3.7-Sonnet
+POE_SLEEP_TIME = 2.5                # Optional, default: 2.5 seconds
+POE_TIMEOUT = 30                    # Optional, default: 30 seconds
+POE_MAX_RETRIES = 5                 # Optional, default: 5
 
-## **How It Works**
-
-### **1. Input Files**
-- **`listtagFull.txt`**: Contains all valid tags (e.g., `['greedy', 'implementation', 'graph', ...]`).
-- **`listcode.txt`**: Contains the list of problem codes (e.g., `['b1', 'b2', 'b3']`).
-- **`description/<code>.txt`**: Individual text files for each problem, containing the problem description.
-
-### **2. Main Script (`PredictProblem.py`)**
-The script performs the following steps:
-1. **Load Input Data**:
-   - Reads tags from `listtagFull.txt`.
-   - Reads problem codes from `listcode.txt` and loads their corresponding descriptions from the `description/` folder.
-
-2. **Initialize Chatbot**:
-   - Sends an initial "system" message to the chatbot, providing the list of valid tags and instructions on the response format.
-
-3. **Process Problems**:
-   - For each problem, sends the description to the chatbot and requests difficulty and tags.
-   - Handles intermediate messages like `"Thinking..."` and extracts the final response.
-   - Sanitizes the response to ensure it is valid Python syntax.
-
-4. **Error Handling**:
-   - Retries failed requests up to 5 times.
-   - Logs errors (with timestamps and raw responses) to `log_errors.txt`.
-
-5. **Save Results**:
-   - Writes the predictions to `predictions.txt` in the format:
-     ```
-     ('b1', 800, ['greedy', 'implementation'])
-     ('b2', 1300, ['graph', 'bfs'])
-     ('b3', None, ['Error'])
-     ```
-
----
-
-## **How to Run the Project**
-
-### **1. Prerequisites**
-- Python 3.8 or higher.
-- `fastapi-poe` library for interacting with the Poe API.
-- API key for Poe (stored in a `.env` file).
-
-### **2. Set Up the Environment**
-1. Install the required Python libraries:
-   ```
-   pip install fastapi-poe python-dotenv
-   ```
-2. Create a `.env` file in the project directory:
-   ```
-   API_KEY=<your_poe_api_key>
-   ```
-   Replace `<your_poe_api_key>` with your Poe API key.
-
-### **3. Prepare Input Files**
-Ensure the following files are present:
-- `listtagFull.txt`: Contains the list of valid tags.
-- `listcode.txt`: Contains the list of problem codes.
-- `description/<code>.txt`: Contains the problem descriptions.
-
-### **4. Run the Script**
-Run the main script:
-```
-python PredictProblem.py
+# Storage settings for file support
+MEDIA_ROOT = '/path/to/your/media/files'              # For images, user uploads
+DMOJ_PROBLEM_DATA_ROOT = '/path/to/your/problem/data' # For problem PDFs
 ```
 
-### **5. Check the Output**
-- **Predictions**: Check `predictions.txt` for the results.
-- **Errors**: Check `log_errors.txt` for any failed attempts.
+## Usage
 
----
+### Django Management Command
 
-## **Example Workflow**
+The `tag_problems` command provides comprehensive options for problem analysis:
 
-### **Input Files**
-- `listtagFull.txt`:
-  ```
-  ['greedy', 'implementation', 'graph', 'dp', 'math']
-  ```
+#### Basic Usage
+```bash
+# Tag first 10 problems
+python manage.py tag_problems
 
-- `listcode.txt`:
-  ```
-  ['b1', 'b2', 'b3']
-  ```
+# Tag specific problems
+python manage.py tag_problems --codes "problem1,problem2,problem3"
 
-- `description/b1.txt`:
-  ```
-  Find the maximum sum of a subarray in a given array of integers.
-  ```
+# Tag a single problem
+python manage.py tag_problems --codes "single_problem" --update-db
+```
 
-### **Output Files**
-- **`predictions.txt`**:
-  ```
-  ('b1', 800, ['greedy', 'implementation'])
-  ('b2', 1300, ['graph', 'bfs'])
-  ('b3', None, ['Error'])
-  ```
+#### Advanced Options
+```bash
+# Tag all problems
+python manage.py tag_problems --all-problems --update-db
 
-- **`log_errors.txt`**:
-  ```
-  [2025-02-17 15:00:00] Failed attempt 1 for problem b3: Thinking...Thinking...(None, [Error])
-  [2025-02-17 15:00:01] Failed attempt 2 for problem b3: Thinking...(None, [Error])
-  ```
+# Only tag public problems
+python manage.py tag_problems --public-only --limit 50 --update-db
 
----
+# Update only difficulty points, not types
+python manage.py tag_problems --codes "prob1,prob2" --update-db --update-points
+
+# Update only types, not difficulty
+python manage.py tag_problems --codes "prob1,prob2" --update-db --update-types
+
+# Dry run to see what would be processed
+python manage.py tag_problems --all-problems --public-only --dry-run
+
+# Save results to file without updating database
+python manage.py tag_problems --limit 20 --output-file results.txt
+```
+
+### Python API
+
+```python
+from problem_tag import get_problem_tag_service
+from judge.models import Problem
+
+# Initialize service
+tag_service = get_problem_tag_service()
+
+# Tag single problem
+problem = Problem.objects.get(code='example')
+result = tag_service.tag_single_problem(problem)
+
+# Tag batch of problems
+codes = ['prob1', 'prob2', 'prob3']
+results = tag_service.tag_problem_batch(codes)
+
+# Update problem with results (only if format is valid)
+if result['success'] and result['is_valid']:
+    tag_service.update_problem_with_tags(problem, result)
+
+# Get problems by codes
+problems = tag_service.get_problems_by_codes(['prob1', 'prob2', 'prob3'])
+```
+
+## File Structure
+
+```
+problem_tag/
+├── __init__.py               # Package exports
+├── problem_tagger.py         # Core problem analysis with format validation
+├── problem_tag_service.py    # Django Problem model integration
+└── README.md                 # This file
+```
+
+## What are "types"?
+
+In LQDOJ, "types" refer to algorithmic categories that help classify problems:
+- Examples: `dp`, `graph`, `greedy`, `binary-search`, `number-theory`, etc.
+- Purpose: Help users find problems by algorithm type and prepare for contests
+- Current status: ~3,100 problems have types, ~1,850 need classification
+
+## PDF Support
+
+The system automatically detects and processes PDF problem statements:
+
+### Supported Patterns
+- **Text + PDF**: Problems with both description and PDF reference
+- **PDF Only**: Problems with only PDF statements  
+- **Multi-Problem PDFs**: Contest problem sets with multiple problems per file
+
+### Storage Systems
+- **PDF Files**: Stored in `DMOJ_PROBLEM_DATA_ROOT/{problem_code}/{filename}`
+- **Access**: Local files first, then public URLs via `https://lqdoj.edu.vn`
+
+### Multi-Problem Identification
+When PDFs contain multiple problems (like contest problem sets), the system automatically includes the problem code and name in the analysis prompt:
+
+```
+PROBLEM TO ANALYZE:
+- Problem Code: problemB
+- Problem Name: Dynamic Programming
+
+If the file contains multiple problems, focus ONLY on the problem that matches the code and name above.
+```
+
+## JSON Response Format
+
+The LLM returns a unified JSON response that handles both format validation and prediction:
+
+```json
+{
+  "is_valid": true,           // Whether problem has complete format
+  "points": 1500,             // Difficulty rating (Codeforces-style)
+  "tags": ["dp", "graph"]     // 1-4 core algorithmic tags
+}
+```
+
+- **Format validation**: Checks for complete problem statement, input/output format, constraints, examples
+- **Conditional updates**: Database only updated if `is_valid` is `true`
+- **Smart retries**: Retries up to 5 times for invalid responses
+- **Author solution integration**: Uses accepted author solutions when available for better analysis
+
+## Error Handling
+
+- **Format validation**: Only updates problems with complete, valid formats
+- **Automatic retries**: Up to 5 retries for failed API calls or invalid responses
+- **File upload fallbacks**: If local PDF files not found, tries public URLs
+- **Graceful fallbacks**: Handles unsupported formats and missing author solutions
+- **Comprehensive logging**: Full debug information for troubleshooting
+- **Transaction safety**: Database updates are atomic and reversible
+
+## Rate Limiting & Performance
+
+- **Configurable delays**: 2.5 second default between API calls
+- **Timeout protection**: 30 second timeout for long responses  
+- **Batch processing**: Efficient handling of large problem sets with progress tracking
+- **Memory efficient**: Processes problems one at a time to avoid memory issues
+
+## Integration with LLM Service
+
+This package uses the general `llm_service` for all LLM interactions:
+- File upload and processing
+- Multi-format support (images, PDFs, text)
+- Dual storage system handling
+- Public URL fallback for PDFs
