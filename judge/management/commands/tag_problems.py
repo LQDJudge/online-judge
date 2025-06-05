@@ -62,6 +62,22 @@ class Command(BaseCommand):
             action="store_true",
             help="Show what would be analyzed without making changes",
         )
+        parser.add_argument(
+            "--start-id",
+            type=int,
+            help="Start from problem ID (default: 1, or minimum ID if not set)",
+        )
+        parser.add_argument(
+            "--end-id",
+            type=int,
+            help="End at problem ID (default: maximum ID if not set)",
+        )
+        parser.add_argument(
+            "--batch-size",
+            type=int,
+            default=10,
+            help="Save results every N problems to prevent data loss (default: 10)",
+        )
 
     def handle(self, *args, **options):
         try:
@@ -99,7 +115,7 @@ class Command(BaseCommand):
                 return
 
             # Run tagging (synchronous)
-            results = self.tag_problems(tag_service, problems)
+            results = self.tag_problems(tag_service, problems, options)
 
             # Process results
             self.process_results(results, options)
@@ -124,18 +140,26 @@ class Command(BaseCommand):
                 self.stdout.write(
                     self.style.WARNING(f"Problem codes not found: {missing_codes}")
                 )
-        elif options["all_problems"]:
-            # Analyze all problems
+        elif options["all_problems"] or options["start_id"] or options["end_id"]:
+            # Analyze all problems or ID range
             queryset = Problem.objects.all()
+
+            # Apply ID range filters
+            if options["start_id"]:
+                queryset = queryset.filter(id__gte=options["start_id"])
+            if options["end_id"]:
+                queryset = queryset.filter(id__lte=options["end_id"])
 
             # Apply public-only filter if specified
             if options["public_only"]:
                 queryset = queryset.filter(is_public=True)
 
+            # Order by ID for consistent processing
+            queryset = queryset.order_by("id")
             problems = queryset
         else:
             # Analyze first N problems
-            queryset = Problem.objects.all()
+            queryset = Problem.objects.all().order_by("id")
 
             # Apply public-only filter if specified
             if options["public_only"]:
@@ -145,10 +169,15 @@ class Command(BaseCommand):
 
         return list(problems)
 
-    def tag_problems(self, tag_service, problems):
-        """Run LLM tagging on problems (synchronous)"""
+    def tag_problems(self, tag_service, problems, options):
+        """Run LLM tagging on problems (synchronous) with batch processing"""
         results = []
         total = len(problems)
+        batch_size = options.get("batch_size", 10)
+
+        # Initialize batch processing
+        current_batch = []
+        batch_count = 0
 
         for i, problem in enumerate(problems, 1):
             self.stdout.write(f"Tagging {i}/{total}: {problem.code}")
@@ -157,6 +186,7 @@ class Command(BaseCommand):
                 # Synchronous tagging call
                 result = tag_service.tag_single_problem(problem)
                 results.append(result)
+                current_batch.append(result)
 
                 # Show progress
                 if result["success"]:
@@ -181,6 +211,33 @@ class Command(BaseCommand):
                         )
                     )
 
+                # Process batch if we've reached batch size or end of problems
+                if len(current_batch) >= batch_size or i == total:
+                    batch_count += 1
+                    self.stdout.write(
+                        f"\n--- Processing batch {batch_count} ({len(current_batch)} problems) ---"
+                    )
+
+                    # Save batch results to file if needed
+                    if options.get("output_file"):
+                        self.save_batch_results_to_file(
+                            current_batch,
+                            options["output_file"],
+                            append=(batch_count > 1),
+                        )
+
+                    # Update database for this batch if requested
+                    if options.get("update_db"):
+                        successful_batch = [r for r in current_batch if r["success"]]
+                        if successful_batch:
+                            self.update_database_batch(
+                                successful_batch, options, batch_count
+                            )
+
+                    # Clear current batch
+                    current_batch = []
+                    self.stdout.write(f"--- Batch {batch_count} completed ---\n")
+
                 # Sleep between requests to respect rate limits
                 if i < total:  # Don't sleep after the last request
                     sleep_time = tag_service.config.sleep_time
@@ -189,37 +246,38 @@ class Command(BaseCommand):
 
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"  → Exception: {e}"))
-                results.append(
-                    {
-                        "problem_code": problem.code,
-                        "success": False,
-                        "is_valid": False,
-                        "error": str(e),
-                    }
-                )
+                error_result = {
+                    "problem_code": problem.code,
+                    "success": False,
+                    "is_valid": False,
+                    "error": str(e),
+                }
+                results.append(error_result)
+                current_batch.append(error_result)
 
         return results
 
     def process_results(self, results, options):
-        """Process and save analysis results"""
+        """Process and save analysis results (final summary since batching handles most processing)"""
         successful_results = [r for r in results if r["success"]]
         failed_results = [r for r in results if not r["success"]]
 
-        self.stdout.write(self.style.SUCCESS(f"\nAnalysis completed:"))
+        self.stdout.write(self.style.SUCCESS(f"\n=== FINAL ANALYSIS SUMMARY ==="))
+        self.stdout.write(f"  Total processed: {len(results)}")
         self.stdout.write(f"  Successful: {len(successful_results)}")
         self.stdout.write(f"  Failed: {len(failed_results)}")
 
-        # Save to file if requested
-        if options["output_file"]:
-            self.save_results_to_file(results, options["output_file"])
+        # Note: File saving and database updates are handled in batches during processing
+        if not options.get("update_db"):
+            # Only save to file at the end if not doing database updates (since batches handle it)
+            if options["output_file"] and not any(
+                "batch" in str(options.get("output_file", "")) for _ in [1]
+            ):
+                self.save_results_to_file(results, options["output_file"])
 
-        # Update database if requested (only for valid problems)
-        if options["update_db"] and successful_results:
-            self.update_database(successful_results, options)
-
-        # Show failed results
+        # Show failed results summary
         if failed_results:
-            self.stdout.write(self.style.ERROR("\nFailed analyses:"))
+            self.stdout.write(self.style.ERROR("\nFailed analyses summary:"))
             for result in failed_results:
                 self.stdout.write(
                     f'  {result["problem_code"]}: {result.get("error", "Unknown error")}'
@@ -242,6 +300,28 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Results saved to {filename}"))
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Failed to save results: {e}"))
+
+    def save_batch_results_to_file(self, batch_results, filename, append=False):
+        """Save batch results to a file"""
+        try:
+            mode = "a" if append else "w"
+            with open(filename, mode, encoding="utf-8") as f:
+                for result in batch_results:
+                    if result["success"]:
+                        code = result["problem_code"]
+                        points = result.get("predicted_points")
+                        types = result.get("predicted_types", [])
+                        f.write(f"('{code}', {points}, {types})\n")
+                    else:
+                        code = result["problem_code"]
+                        f.write(f"('{code}', None, ['Error'])\n")
+
+            action = "appended to" if append else "saved to"
+            self.stdout.write(
+                self.style.SUCCESS(f"  Batch results {action} {filename}")
+            )
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"  Failed to save batch results: {e}"))
 
     def update_database(self, successful_results, options):
         """Update database with tagging results (only for valid problems)"""
@@ -287,5 +367,54 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(
                 f"Database updated: {updated_count} problems, {skipped_invalid} skipped (invalid format)"
+            )
+        )
+
+    def update_database_batch(self, successful_results, options, batch_number):
+        """Update database with batch tagging results (only for valid problems)"""
+        tag_service = get_problem_tag_service()
+        updated_count = 0
+        skipped_invalid = 0
+
+        update_points = options.get("update_points", False)
+        update_types = options.get("update_types", False)
+
+        # If neither is specified, update both
+        if not update_points and not update_types:
+            update_points = update_types = True
+
+        self.stdout.write(f"  Updating database for batch {batch_number}...")
+
+        for result in successful_results:
+            try:
+                problem = Problem.objects.get(code=result["problem_code"])
+
+                with transaction.atomic():
+                    success = tag_service.update_problem_with_tags(
+                        problem, result, update_points, update_types
+                    )
+                    if success:
+                        updated_count += 1
+                        self.stdout.write(f"    ✓ Updated: {problem.code}")
+                    elif result.get("is_valid"):
+                        self.stdout.write(f"    - No changes: {problem.code}")
+                    else:
+                        skipped_invalid += 1
+                        self.stdout.write(f"    ⚠ Skipped (invalid): {problem.code}")
+
+            except Problem.DoesNotExist:
+                self.stdout.write(
+                    self.style.ERROR(f'    Problem not found: {result["problem_code"]}')
+                )
+            except Exception as e:
+                self.stdout.write(
+                    self.style.ERROR(
+                        f'    Error updating {result["problem_code"]}: {e}'
+                    )
+                )
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"  Batch {batch_number} database update: {updated_count} problems updated, {skipped_invalid} skipped"
             )
         )
