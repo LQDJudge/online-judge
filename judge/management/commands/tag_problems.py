@@ -152,7 +152,9 @@ class Command(BaseCommand):
 
             # Apply public-only filter if specified
             if options["public_only"]:
-                queryset = queryset.filter(is_public=True)
+                queryset = queryset.filter(
+                    is_public=True, is_organization_private=False
+                )
 
             # Order by ID for consistent processing
             queryset = queryset.order_by("id")
@@ -163,7 +165,9 @@ class Command(BaseCommand):
 
             # Apply public-only filter if specified
             if options["public_only"]:
-                queryset = queryset.filter(is_public=True)
+                queryset = queryset.filter(
+                    is_public=True, is_organization_private=False
+                )
 
             problems = queryset[: options["limit"]]
 
