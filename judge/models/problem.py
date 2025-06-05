@@ -1218,3 +1218,14 @@ def _get_problem_organization_ids(problem_id):
     """Get organization IDs for a problem"""
     results = _get_problem_organization_ids_batch([(problem_id,)])
     return results[0]
+
+
+@receiver(m2m_changed, sender=Problem.types.through)
+def problem_types_changed(sender, instance, action, pk_set, **kwargs):
+    """
+    Signal handler to clear cache when problem types are added/removed from problems.
+    This automatically handles cache invalidation for _get_problem_types_name.
+    """
+    if action in ("post_add", "post_remove", "post_clear"):
+        # Clear cache for the problem whose types changed
+        _get_problem_types_name.dirty(instance.id)
