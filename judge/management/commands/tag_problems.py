@@ -79,6 +79,19 @@ class Command(BaseCommand):
                 self.style.SUCCESS(f"Found {len(problems)} problems to tag")
             )
 
+            # Auto-enable logging to results.txt for all public problems
+            if (
+                options["public_only"]
+                and not options["codes"]
+                and not options["output_file"]
+            ):
+                options["output_file"] = "results.txt"
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        "Auto-logging to results.txt for all public problems"
+                    )
+                )
+
             if options["dry_run"]:
                 self.stdout.write("DRY RUN - would tag:")
                 for problem in problems:
