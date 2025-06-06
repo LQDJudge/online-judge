@@ -45,7 +45,7 @@ from judge.models import (
 from judge.utils.problems import get_result_data
 from judge.utils.problem_data import get_problem_case
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
-from judge.utils.views import DiggPaginatorMixin
+from judge.utils.views import DiggPaginatorMixin, paginate_query_context
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.utils.views import TitleMixin
 from judge.utils.timedelta import nice_repr
@@ -294,7 +294,6 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     page_type = "all_submissions_list"
     template_name = "submission/list.html"
     context_object_name = "submissions"
-    first_page_href = None
     include_frozen = False
     organization = None
 
@@ -456,10 +455,6 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["all_statuses"] = self.get_searchable_status_codes()
         context["selected_statuses"] = self.selected_statuses
         context["can_show_result_data"] = not self.in_hidden_subtasks_contest()
-        context["page_suffix"] = suffix = (
-            ("?" + self.request.GET.urlencode()) if self.request.GET else ""
-        )
-        context["first_page_href"] = (self.first_page_href or ".") + suffix
         context["my_submissions_link"] = self.get_my_submissions_page()
         context["friend_submissions_link"] = self.get_friend_submissions_page()
         context["all_submissions_link"] = self.get_all_submissions_page()
@@ -473,6 +468,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["is_in_editable_contest"] = (
             self.in_contest and self.contest.is_editable_by(self.request.user)
         )
+        # Add pagination context for parameter-based pagination
+        context.update(paginate_query_context(self.request))
+
         # Prefetch data
         Profile.get_cached_instances(*[s.user_id for s in context["submissions"]])
         Problem.prefetch_cache_i18n_name(
