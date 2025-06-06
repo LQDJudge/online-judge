@@ -492,7 +492,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
     manual_sort = frozenset(("name", "group", "solved"))
     all_sorts = sql_sort | manual_sort
     default_desc = frozenset(("date", "points", "ac_rate", "user_count"))
-    first_page_href = None
 
     def get_default_sort_order(self, request):
         if "search" in request.GET and settings.ENABLE_FTS:
@@ -685,11 +684,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             if participation.contest.is_editable_by(self.request.user):
                 context["can_edit_contest"] = True
 
-        context["page_prefix"] = None
-        context["page_suffix"] = suffix = (
-            ("?" + self.request.GET.urlencode()) if self.request.GET else ""
-        )
-        context["first_page_href"] = (self.first_page_href or ".") + suffix
         context["has_show_editorial_option"] = True
         context["show_contest_mode"] = self.request.in_contest_mode
 

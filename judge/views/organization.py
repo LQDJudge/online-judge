@@ -265,7 +265,26 @@ class OrganizationList(
         self.current_tab = self.request.GET.get("tab", default_tab)
         self.organization_query = request.GET.get("organization", "")
 
-        return super(OrganizationList, self).get(request, *args, **kwargs)
+        # Handle order parameter validation
+        order = request.GET.get("order", "")
+
+        # If user is not authenticated and tries to use last_visit ordering,
+        # fallback to default ordering
+        if not self.request.user.is_authenticated and order.lstrip("-") == "last_visit":
+            order = self.get_default_sort_order(request)
+
+        # Validate order parameter against available sorts
+        if not (
+            (not order.startswith("-") or order.count("-") == 1)
+            and (order.lstrip("-") in self.all_sorts)
+        ):
+            order = self.get_default_sort_order(request)
+
+        self.order = order
+
+        # Call ListView.get() directly to skip QueryStringSortMixin.get()
+        # since we've already handled the order validation above
+        return super(QueryStringSortMixin, self).get(request, *args, **kwargs)
 
     def _get_queryset(self):
         profile = self.request.profile
@@ -343,7 +362,6 @@ class OrganizationList(
     def get_context_data(self, **kwargs):
         context = super(OrganizationList, self).get_context_data(**kwargs)
 
-        context["first_page_href"] = "."
         context["current_tab"] = self.current_tab
         context["page_type"] = self.current_tab
         context["organization_query"] = self.organization_query
@@ -458,7 +476,6 @@ class OrganizationUsers(
             context["users"], rank=self.paginate_by * (context["page_obj"].number - 1)
         )
 
-        context["first_page_href"] = "."
         context["page_type"] = "users"
         context.update(self.get_sort_context())
         return context
@@ -559,11 +576,6 @@ class OrganizationSubmissions(
         # context["last_msg"] = event.last()
         context["stats_update_interval"] = 3600
         context["page_type"] = "submissions"
-        context["page_prefix"] = None
-        context["page_suffix"] = suffix = (
-            ("?" + self.request.GET.urlencode()) if self.request.GET else ""
-        )
-        context["first_page_href"] = (self.first_page_href or ".") + suffix
 
         return context
 
