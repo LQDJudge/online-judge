@@ -758,7 +758,7 @@ class ContestParticipation(models.Model):
         verbose_name=_("start time"), default=timezone.now, db_column="start"
     )
     score = models.FloatField(verbose_name=_("score"), default=0, db_index=True)
-    cumtime = models.PositiveIntegerField(verbose_name=_("cumulative time"), default=0)
+    cumtime = models.BigIntegerField(verbose_name=_("cumulative time"), default=0)
     is_disqualified = models.BooleanField(
         verbose_name=_("is disqualified"),
         default=False,
@@ -779,7 +779,7 @@ class ContestParticipation(models.Model):
         blank=True,
     )
     score_final = models.FloatField(verbose_name=_("final score"), default=0)
-    cumtime_final = models.PositiveIntegerField(
+    cumtime_final = models.BigIntegerField(
         verbose_name=_("final cumulative time"), default=0
     )
 
