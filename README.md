@@ -161,7 +161,7 @@ You can save these aliases for faster development:
 - `css`: compile CSS files
 
 ```bash
-alias mtrans='python3 manage.py makemessages -l vi && python3 manage.py makedmojmessages -l vi'
+alias mtrans='python3 manage.py makemessages -l vi && python3 manage.py makedmojmessages -l vi --no-mark-obsolete'
 alias pr='python3 manage.py runserver'
 alias sd='source ~/LQDOJ/dmojsite/bin/activate'
 alias sm='sudo service mysql restart && sudo service redis-server start && sudo service memcached start'
@@ -512,7 +512,7 @@ python3 manage.py runserver 0.0.0.0:8000
 Các bạn có thể lưu các alias này để sau này dùng cho nhanh:
 
 ```bash
-alias mtrans='python3 manage.py makemessages -l vi && python3 manage.py makedmojmessages -l vi'
+alias mtrans='python3 manage.py makemessages -l vi && python3 manage.py makedmojmessages -l vi --no-mark-obsolete'
 alias pr='python3 manage.py runserver'
 alias sd='source ~/LQDOJ/dmojsite/bin/activate'
 alias sm='sudo service mysql restart && sudo service redis-server start && sudo service memcached start'

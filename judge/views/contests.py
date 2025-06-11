@@ -1708,9 +1708,7 @@ class ContestProblemset(ContestMixin, TitleMixin, DetailView):
         contest_problems = list(
             self.object.contest_problems.select_related(
                 "problem", "problem__data_files"
-            )
-            .order_by("order")
-            .prefetch_related("problem__types")
+            ).order_by("order")
         )
 
         # Get contest problem IDs for prefetching
