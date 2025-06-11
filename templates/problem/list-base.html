@@ -206,6 +206,7 @@
     </script>
   {% endcompress %}
   {% if show_contest_mode %}
+    {% include "contest/pdf-problemset-js.html" %}
     <script type="text/javascript">
       $(function() {
         window.register_contest_notification("{{url('contest_clarification_ajax', request.participation.contest.key)}}");
@@ -215,7 +216,6 @@
         {% endif %}
 
         // Initialize PDF button functionality for contest problemset
-        {% include "contest/pdf-problemset-js.html" %}
         initContestProblemsetPdf('{{ url("contest_problemset", request.participation.contest.key) }}');
       });
     </script>

@@ -15,8 +15,8 @@
   {% include "comments/media-js.html" %}
   {% include "actionbar/media-js.html" %}
   {% include "contest/contest-datetime-js.html" %}
+  {% include "contest/pdf-problemset-js.html" %}
   <script type="text/javascript">
-    {% include "contest/pdf-problemset-js.html" %}
 
     $(function() {
       initContestProblemsetPdf('{{ url("contest_problemset", contest.key) }}');
