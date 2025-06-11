@@ -224,12 +224,12 @@
         </div>
 
         <form id="filter-form" name="form" action="" method="get">
-          <div id="own-box" class="filter-check">
+          <div id="own-box" class="filter-check" style="padding-bottom: 1em;">
             <input id="own" type="checkbox" name="own"{% if filter_status.own %} checked{% endif %} value="1">
             <label for="own">{{ _('Show my tickets only') }}</label>
           </div>
 
-          <div id="user-box" class="filter-select2">
+          <div id="user-box" class="filter-select2" style="padding-bottom: 1em;">
             <label for="filter-user">{{ _('Filing user') }}</label>
             <select id="filter-user" style="width: 100%" multiple name="user">
               {% for username in filter_status.user %}
@@ -238,7 +238,7 @@
             </select>
           </div>
 
-          <div id="assignee-box" class="filter-select2">
+          <div id="assignee-box" class="filter-select2" style="padding-bottom: 1em;">
             <label for="filter-user">{{ _('Assignee') }}</label>
             <select id="filter-assignee" style="width: 100%" multiple name="assignee">
               {% for username in filter_status.assignee %}
@@ -247,7 +247,7 @@
             </select>
           </div>
 
-          <button type="submit" style="margin-left: auto" class="submit">{{ _('Go') }}</button>
+          <button type="submit" style="margin-left: auto" class="action-btn">{{ _('Go') }}</button>
         </form>
       </div>
     </aside>

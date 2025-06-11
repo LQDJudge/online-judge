@@ -15,47 +15,7 @@
     }
 
     pre, code, kbd, samp, span.code {
-        color: #000;
         page-break-inside: avoid;
-        font-family: $monospace-fonts;
-        font-size: 0.98em;
-    }
-
-    code, span.code {
-        font-family: $monospace-fonts !important;
-        margin: 0 2px;
-        padding: 0 5px;
-        background-color: var(--md-code-bg-color);
-        border-radius: $widget_border_radius;
-        color: var(--md-code-fg-color);
-    }
-
-    pre {
-        code, div.code {
-            border: 0;
-            line-height: 1em;
-            margin: 0;
-            padding: 0;
-            background: transparent;
-            font-size: 1em;
-            color: var(--md-code-fg-color);
-
-        }
-
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        padding: 0.5em 1em;
-        background-color: var(--md-code-bg-color);
-        color: var(--md-code-fg-color);
-        border-radius: 3px;
-    }
-
-    pre.no-border {
-        margin-top: 0.4em;
-        padding: 0.5em;
-        border: none;
-        background-color: inherit;
-        border-radius: none;
     }
 
     .linenos pre {
@@ -132,39 +92,83 @@
     margin-right: auto;
 }
 
-.codehilitetable {
+// Code highlighting table styles for PyMdown Extensions
+.content-description .highlighttable {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    margin: 1.5em 0 !important;
+    border-radius: 8px;
+    overflow: hidden;
+    background: transparent !important;
+
     pre {
         padding: 0.5em;
         padding-right: 0;
-        background-color: hsla(0,0%,92.5%,.5);
+        margin: 0 !important;
+        background-color: var(--md-code-bg-color, #2f3129);
+        color: var(--md-code-fg-color, #f8f8f2);
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
     }
 
     .linenos {
-        width: 4%;
+        width: auto;
+        min-width: 3em;
+        vertical-align: top !important;
 
         pre {
-            color: rgba(0,0,0,.26);
-            background-color: rgba(0,0,0,.07);
+            color: rgba(255,255,255,.4) !important;
+            background-color: rgba(0,0,0,.15) !important;
             width: 100%;
-            border-right: 0;
+            border: none !important;
+            border-right: 1px solid var(--md-code-border-color, #444) !important;
+            text-align: right !important;
+            padding-right: 0.8em !important;
+            padding-left: 0.5em !important;
 
             span {
-                margin-left: 0.4em;
+                margin: 0 !important;
             }
         }
     }
 
     .code {
-        padding-left: 0.2em;
+        width: 100%;
+        vertical-align: top !important;
 
         pre {
-            padding-left: 1em;
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
+            padding-left: 1em !important;
+            border: none !important;
+            width: 100%;
         }
     }
 
-    width: 100%;
+    // Filename header styling
+    .filename {
+        background: var(--md-filename-bg-color, black);
+        color: var(--md-filename-fg-color, #cccccc);
+        padding: 0.8em 1.2em;
+        font-weight: 500;
+        font-family: inherit;
+        border-bottom: 2px solid var(--md-code-border-color, #444);
+    }
+
+    // Remove table cell borders and spacing - with high specificity
+    td, th {
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        text-align: left !important;
+        vertical-align: top !important;
+    }
+}
+
+// Legacy support for older codehilitetable class name  
+.codehilitetable {
+    @extend .highlighttable;
 }
 
 textarea,

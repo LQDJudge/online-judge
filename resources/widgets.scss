@@ -27,7 +27,7 @@
 }
 
 // Bootstrap-y buttons
-.button, button, input[type=submit] {
+.button {
     -webkit-transition: .3s all ease;
     -o-transition: .3s all ease;
     transition: .3s all ease;
@@ -119,18 +119,18 @@
 
 }
 
-.button:hover, button:hover, input[type=submit]:hover {
+.button:hover {
     background-color: $theme_color;
     box-shadow: rgba(0, 0, 0, 0.1) 0 4px 12px;
     transform: translateY(-1px);
 }
 
-.button:focus, button:focus, input[type=submit]:focus {
+.button:focus {
     background-color: $theme_color;
     box-shadow: rgba(0, 0, 0, 0.1) 0 4px 12px;
 }
 
-.button:active, button:active, input[type=submit]:hover {
+.button:active {
     background-color: $theme_color;
     box-shadow: rgba(0, 0, 0, .06) 0 2px 4px;
     transform: translateY(0);

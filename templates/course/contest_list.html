@@ -6,7 +6,7 @@
 {% block middle_content %}
   <div class="container">
     <div class="add-button-container">
-      <a href="{{url('add_course_contest', course.slug)}}" class="button background-green">{{ _('Add') }}</a>
+      <a href="{{url('add_course_contest', course.slug)}}" class="action-btn background-green large">{{ _('Add') }}</a>
     </div>
     {% if course_contests %}
       {% for course_contest in course_contests %}
@@ -18,7 +18,7 @@
             <p><strong>{{_("Start")}}:</strong> {{ course_contest.contest.start_time|date(_("H:i d/m/Y")) }}</p>
             <p><strong>{{_("End")}}:</strong> {{ course_contest.contest.end_time|date(_("H:i d/m/Y")) }}</p>
           </div>
-          <a href="{{url('edit_course_contest', course.slug, course_contest.contest.key)}}" class="button">{{ _('Edit') }}</a>
+          <a href="{{url('edit_course_contest', course.slug, course_contest.contest.key)}}" class="action-btn large">{{ _('Edit') }}</a>
         </div>
       {% endfor %}
     {% else %}

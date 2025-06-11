@@ -1,9 +1,8 @@
 {% extends "user/base-users-two-col.html" %}
 {% block users_media %}
   <style>
-    .kick-form .button {
+    .kick-form .action-btn {
       margin: -8px 0;
-      padding: 3px 12px;
     }
     #users-table td:nth-child(3), #users-table th:nth-child(3) {
       text-align: left;
@@ -31,8 +30,10 @@
 {% block users_js_media %}
   <script type="text/javascript">
     $(function () {
-      $('form.kick-form').find('a.button').click(function () {
-        $(this).parent().submit();
+      $('form.kick-form').find('a.action-btn').click(function () {
+        if (confirm('{{ _("Are you sure you want to kick this user from the organization?") }}')) {
+          $(this).parent().submit();
+        }
         return false;
       })
     });

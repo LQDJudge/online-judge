@@ -278,37 +278,147 @@ function registerPopper($trigger, $dropdown) {
 }
 
 function populateCopyButton() {
-    var copyButton;
-    $('pre code').each(function () {
-        var copyButton = $('<span>', {
-            'class': 'btn-clipboard',
-            'data-clipboard-text': $(this).text(),
-            'title': 'Click to copy'
-        }).append('<i class="far fa-copy"></i>');
-
-        if ($(this).parent().width() > 100) {
-            copyButton.append('<span style="margin-left: 2px">Copy</span>');
-        }
+    // Copy functionality for filename headers (only on copy button click)
+    $('.highlight span.filename').off('click.copy').on('click.copy', function(e) {
+        var rect = this.getBoundingClientRect();
+        var clickX = e.clientX - rect.left;
+        var clickY = e.clientY - rect.top;
         
-        $(this).before($('<div>', {'class': 'copy-clipboard'})
-                .append(copyButton));
-
-        $(copyButton.get(0)).mouseleave(function () {
-            $(this).attr('class', 'btn-clipboard');
-            $(this).removeAttr('aria-label');
-        });
-
-        var curClipboard = new Clipboard(copyButton.get(0));
-
-        curClipboard.on('success', function (e) {
-            e.clearSelection();
-            showTooltip(e.trigger, 'Copied!');
-        });
-
-        curClipboard.on('error', function (e) {
-            showTooltip(e.trigger, fallbackMessage(e.action));
-        });
+        // Check if click is on the copy button area (right side of filename)
+        var isCopyButtonArea = (clickX > rect.width - 60 && clickY > rect.height * 0.25 && clickY < rect.height * 0.75);
+        
+        if (isCopyButtonArea) {
+            var codeElement = $(this).next('pre').find('code');
+            if (codeElement.length === 0) {
+                codeElement = $(this).next('pre');
+            }
+            
+            var textToCopy = codeElement.text();
+            copyToClipboard(textToCopy, this);
+        }
     });
+    
+    // Copy functionality for code blocks without filename (click on copy button area)
+    $('.content-description pre').not('.highlight span.filename + pre').off('click.copy').on('click.copy', function(e) {
+        var rect = this.getBoundingClientRect();
+        var clickX = e.clientX - rect.left;
+        var clickY = e.clientY - rect.top;
+        
+        // Check if click is on the copy button (small area in top-right)
+        var isButtonArea = (clickX > rect.width - 40 && clickY < 32);
+        
+        if (isButtonArea) {
+            var codeElement = $(this).find('code');
+            if (codeElement.length === 0) {
+                codeElement = $(this);
+            }
+            
+            var textToCopy = codeElement.text();
+            copyToClipboard(textToCopy, this);
+        }
+    });
+}
+
+function copyToClipboard(text, target) {
+    // Use modern Clipboard API if available
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function() {
+            showCopyFeedback(target, 'Copied!');
+        }).catch(function(err) {
+            fallbackCopy(text, target);
+        });
+    } else {
+        fallbackCopy(text, target);
+    }
+}
+
+function fallbackCopy(text, target) {
+    // Fallback for older browsers
+    var textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        showCopyFeedback(target, 'Copied!');
+    } catch (err) {
+        showCopyFeedback(target, 'Copy failed');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showCopyFeedback(target, message) {
+    // Get the position of the copy button relative to the viewport
+    var container = $(target).closest('pre, .filename');
+    var containerRect = container[0].getBoundingClientRect();
+    var copyButtonTop = containerRect.top + (container.hasClass('filename') ? container.height() / 2 : 8);
+    var copyButtonRight = containerRect.right - 12;
+    
+    // Create a temporary feedback element positioned fixed to viewport
+    var feedback = $('<div>', {
+        class: 'copy-feedback',
+        text: message
+    }).css({
+        position: 'fixed',
+        top: copyButtonTop + 25 + 'px', // Position below the copy button
+        left: copyButtonRight - 45 + 'px', // Align with copy button, adjust for tooltip width
+        background: 'rgba(0, 0, 0, 0.9)',
+        color: '#fff',
+        padding: '6px 12px',
+        borderRadius: '6px',
+        fontSize: '12px',
+        fontFamily: 'system-ui, sans-serif',
+        zIndex: '10000', // Higher z-index to appear above everything
+        pointerEvents: 'none',
+        transform: 'translateY(-10px)',
+        opacity: '0',
+        transition: 'all 0.3s ease',
+        whiteSpace: 'nowrap',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+        maxWidth: '120px',
+        textAlign: 'center'
+    });
+
+    
+    // Append to body to avoid affecting parent containers
+    $('body').append(feedback);
+    
+    // Check if tooltip would go off-screen and adjust position
+    var feedbackRect = feedback[0].getBoundingClientRect();
+    if (feedbackRect.right > window.innerWidth) {
+        feedback.css('left', (window.innerWidth - feedbackRect.width - 10) + 'px');
+    }
+    if (feedbackRect.left < 0) {
+        feedback.css('left', '10px');
+    }
+    if (feedbackRect.bottom > window.innerHeight) {
+        feedback.css('top', (copyButtonTop - 45) + 'px'); // Show above instead
+    }
+    
+    // Animate in
+    setTimeout(function() {
+        feedback.css({
+            opacity: '1',
+            transform: 'translateY(0)'
+        });
+    }, 10);
+    
+    // Remove after delay
+    setTimeout(function() {
+        feedback.css({
+            opacity: '0',
+            transform: 'translateY(-10px)'
+        });
+        setTimeout(function() {
+            feedback.remove();
+        }, 300);
+    }, 1500);
 }
 
 function register_copy_clipboard($elements, callback) {

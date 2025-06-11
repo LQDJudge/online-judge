@@ -257,7 +257,15 @@ class ProblemRaw(
 
     def get_context_data(self, **kwargs):
         context = super(ProblemRaw, self).get_context_data(**kwargs)
+        user = self.request.user
+        authed = user.is_authenticated
         context["problem_name"] = self.object.name
+        contest_problem = (
+            None
+            if not authed or user.profile.current_contest is None
+            else get_contest_problem(self.object, user.profile)
+        )
+        context["contest_problem"] = contest_problem
         context["url"] = self.request.build_absolute_uri()
         context["description"] = self.object.description
         if hasattr(self.object, "data_files"):
@@ -900,26 +908,42 @@ class RandomProblem(ProblemList):
     def get(self, request, *args, **kwargs):
         self.setup_problem_list(request)
 
-        try:
-            return super().get(request, *args, **kwargs)
-        except ProgrammingError as e:
-            return generic_message(request, "FTS syntax error", e.args[1], status=400)
-
         if self.in_contest:
             raise Http404()
 
-        queryset = self.get_normal_queryset()
-        count = queryset.count()
+        try:
+            problem_ids = self.get_normal_queryset()
+            count = problem_ids.count()
+        except ProgrammingError as e:
+            return generic_message(request, "FTS syntax error", e.args[1], status=400)
+
         if not count:
+            query_string = request.META.get("QUERY_STRING", "")
             return HttpResponseRedirect(
                 "%s%s%s"
                 % (
                     reverse("problem_list"),
-                    request.META["QUERY_STRING"] and "?",
-                    request.META["QUERY_STRING"],
+                    query_string and "?",
+                    query_string,
                 )
             )
-        return HttpResponseRedirect(queryset[randrange(count)].get_absolute_url())
+
+        # Get a random problem ID and fetch the Problem object
+        random_problem_id = problem_ids[randrange(count)]
+        try:
+            problem = Problem.objects.get(id=random_problem_id)
+            return HttpResponseRedirect(problem.get_absolute_url())
+        except Problem.DoesNotExist:
+            # Fallback to problem list if the problem was deleted between queries
+            query_string = request.META.get("QUERY_STRING", "")
+            return HttpResponseRedirect(
+                "%s%s%s"
+                % (
+                    reverse("problem_list"),
+                    query_string and "?",
+                    query_string,
+                )
+            )
 
 
 user_logger = logging.getLogger("judge.user")

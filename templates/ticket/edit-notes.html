@@ -1,5 +1,5 @@
 <form id="edit-notes" action="{{ url('ticket_notes', ticket.id) }}" method="post">
   {% csrf_token %}
   {{ form.notes }}
-  <button type="submit" class="submit">{{ _('Update') }}</button>
+  <button type="submit" class="action-btn">{{ _('Update') }}</button>
 </form>

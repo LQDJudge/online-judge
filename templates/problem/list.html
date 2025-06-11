@@ -146,6 +146,18 @@
         {% endfor %}
       </tbody>
     </table>
+
+    {% if show_contest_mode %}
+      <div style="margin-top: 1em; display: flex; justify-content: space-between; padding-right: 1em; font-size: 1.1em;">
+        <a href="{{ url('contest_problemset', request.participation.contest.key) }}">
+          <i class="fa fa-book black"></i>{{ _('Complete problemset') }}
+        </a>
+        <a href="#" id="pdf_button">
+          <i class="fa fa-file-pdf red"></i>{{ _('View as PDF') }}
+        </a>
+      </div>
+    {% endif %}
+
     {% if show_contest_mode and request.participation.contest.use_clarifications %}
       <br><br>
       {% if can_edit_contest %}
@@ -185,4 +197,5 @@
   {% if page_obj.num_pages > 1 %}
     <div style="margin-top:10px;">{% include "list-pages.html" %}</div>
   {% endif %}
+  <iframe name="raw_problemset" id="raw_problemset" style="visibility: hidden;width: 0; height: 0;"></iframe>
 {% endblock %}

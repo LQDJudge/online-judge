@@ -688,6 +688,11 @@ urlpatterns = [
                     name="contest_clarification_ajax",
                 ),
                 re_path(
+                    r"^/problemset$",
+                    contests.ContestProblemset.as_view(),
+                    name="contest_problemset",
+                ),
+                re_path(
                     r"^/$",
                     lambda _, contest: HttpResponsePermanentRedirect(
                         reverse("contest_view", args=[contest])

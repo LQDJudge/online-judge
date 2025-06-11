@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html class="problem-raw">
   <head>
     <link rel="stylesheet" href="{{ static('style.css') }}">
     <link rel="stylesheet" href="{{ static('pygment-github.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ static('markdown.css') }}">
+    <link rel="stylesheet" href="{{ static('fontawesome/css/all.min.css') }}">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="pygment-github.css" type="text/css">
     <link rel="stylesheet" href="markdown.css">
@@ -15,7 +16,6 @@
       }
 
       body {
-        overflow: hidden;
         page-break-after: always;
         background: white;
       }
@@ -56,43 +56,60 @@
         display: inline-block;
         text-align: left;
       }
+
     </style>
   </head>
 
   <body>
-    <h2 style="color:#393630; display: inline-block;">{{ problem_name }}</h2>
-    <hr>
-    <div align="center" style="position: relative;">
-      <div class="problem-info-entry">
-        <b>{{ _('Input:') }}</b> {{ fileio_input or _('stdin') }}
-      </div>
-      <div class="problem-info-entry">
-        <b>{{ _('Output:') }}</b> {{ fileio_output or _('stdout') }}
-      </div>
-      <div class="problem-info-entry">
-        <b>{{ _('Time Limit:') }}</b> {{ problem.time_limit }}s
-        {% for name, limit in problem.language_time_limit %}
-          <div class="lang-limit">
-            <span class="lang-name">{{ name }}</span>
-            <span>{{ limit }}s</span>
-          </div>
-        {% endfor %}
-      </div>
-      <div class="problem-info-entry">
-        <b>{{ _('Memory Limit:') }}</b> {{ problem.memory_limit|kbsimpleformat}}
-        {% for name, limit in problem.language_memory_limit %}
-          <div class="lang-limit">
-            <span class="lang-name">{{ name }}</span>
-            <span>{{ limit|kbsimpleformat }}</span>
-          </div>
-        {% endfor %}
-      </div>
+    <h2 style="display: inline-block;">{{ problem_name }}</h2>
+
+    <div class="new-problem-info">
+      <span class="info-block">
+        <i class="fa fa-check"></i><span class="pi-name"> {{ _('Points:') }}</span>
+        <span class="new-pi-value">
+          {% if contest_problem %}
+            {{ contest_problem.points }} {% if contest_problem.partial %}(p){% endif %}
+          {% else %}
+            {{ problem.points|floatformat }} {% if problem.partial %}(p){% endif %}
+          {% endif %}
+        </span>
+      </span>
+
+      <span class="info-block">
+        <i class="fa fa-clock"></i><span class="pi-name"> {{ _('Time limit:') }}</span>
+        <span class="new-pi-value">{{ problem.time_limit }}s</span>
+      </span>
+
+      <span class="info-block">
+        <i class="fa fa-server"></i><span class="pi-name"> {{ _('Memory limit:') }}</span>
+        <span class="new-pi-value">{{ problem.memory_limit|kbsimpleformat }}</span>
+      </span>
+
+      <span class="info-block">
+        <i class="fa fa-file"></i><span class="pi-name"> {{ _('Input:') }}</span>
+        <span class="new-pi-value">
+          {{ fileio_input or _('stdin') }}
+        </span>
+      </span>
+
+      <span class="info-block">
+        <i class="fa fa-file"></i><span class="pi-name"> {{ _('Output:') }}</span>
+        <span class="new-pi-value">{{ fileio_output or _('stdout') }}</span>
+      </span>
     </div>
-    <hr style="clear: both;">
     <div class="content-description printing">
       {{ description|markdown|reference|absolutify(url)|str|safe }}
     </div>
     <script src="{{ static('katex_config.js') }}"></script>
     {% include "katex-load.html" %}
+    <script>
+      // Auto-open all spoilers/details elements
+      document.addEventListener('DOMContentLoaded', function() {
+        const details = document.querySelectorAll('details');
+        details.forEach(function(detail) {
+          detail.open = true;
+        });
+      });
+    </script>
   </body>
 </html>

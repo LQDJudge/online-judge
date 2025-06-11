@@ -108,23 +108,23 @@
 
 {% macro contest_join(contest, request, is_past=False) %}
   {% if request.in_contest and request.participation.contest == contest %}
-    <button class="small" disabled>{{ _('In contest') }}</button>
+    <button class="action-btn" disabled>{{ _('In contest') }}</button>
   {% elif is_past %}
     <form action="{{ url('contest_join', contest.key) }}" method="post">
       {% csrf_token %}
-      <input type="submit" class="unselectable button full small"
+      <input type="submit" class="action-btn full"
              value="{{ _('Virtual join') }}">
     </form>
   {% elif request.profile.id in contest.editor_ids or request.profile.id in contest.tester_ids %}
     <form action="{{ url('contest_join', contest.key) }}" method="post">
       {% csrf_token %}
-      <input type="submit" class="unselectable button full small"
+      <input type="submit" class="action-btn full"
              value="{{ _('Spectate') }}">
     </form>
   {% else %}
     <form action="{{ url('contest_join', contest.key) }}" method="post">
       {% csrf_token %}
-      <input type="submit" class="unselectable button full small join-warning"
+      <input type="submit" class="action-btn full join-warning"
              value="{{ _('Join') }}">
     </form>
   {% endif %}

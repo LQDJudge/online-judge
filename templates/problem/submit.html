@@ -252,7 +252,7 @@
       {{ form.source_file }}
       <div class="submit-bar">
         {{ form.judge }}
-        <input id="submit-button" type="submit" value="{{ _('Submit!') }}" class="button small"
+        <input id="submit-button" type="submit" value="{{ _('Submit!') }}" class="submit-btn"
                {% if request.in_contest and submission_limit and  submissions_left <= 0 %}disabled{% endif %}>
         <span id="countdown-timer"></span>
       </div>

@@ -235,7 +235,7 @@ class SubmissionStatus(SubmissionDetailBase):
         context["highlighted_source"] = highlight_code(
             submission.source.source,
             submission.language.pygments,
-            linenos=True,
+            linenos=False,
             title=submission.language,
         )
 

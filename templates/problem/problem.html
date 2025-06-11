@@ -64,9 +64,14 @@
       $('#pdf_button').click(async function(e) {
         e.preventDefault();
         if (!$('#raw_problem').attr('src')) {
-          $('#raw_problem').attr('src', '{{problem.code}}/raw')
+          $('#raw_problem').attr('src', "{{url('problem_raw', problem.code)}}");
           $('#raw_problem').on('load', function() {
             renderKatex(frames['raw_problem'].document);
+            // Auto-open all spoilers/details elements in the PDF view
+            const details = frames['raw_problem'].document.querySelectorAll('details');
+            details.forEach(function(detail) {
+              detail.open = true;
+            });
             setTimeout(() => {
               frames['raw_problem'].print();
             }, 500);
@@ -144,7 +149,7 @@
   {% if request.user.is_authenticated and request.in_contest_mode and submission_limit %}
     {% if submissions_left > 0 %}
       <a href="{{ url('problem_submit', problem.code) }}">
-        <button class="btn-green btn btn-primary btn-block btn-round">
+        <button class="submit-btn btn-green btn btn-primary btn-block btn-round">
           <span>{{ _('Submit') }}</span>
           <div class="icon icon-round d-flex align-items-center justify-content-center">
             <i class="fa fa-paper-plane"></i>
@@ -159,7 +164,7 @@
         {% endtrans %}
       </div>
     {% else %}
-      <button class="btn btn-disabled btn-block btn-round">
+      <button class="submit-btn btn btn-disabled btn-block btn-round">
         <span>{{ _('Submit') }}</span>
         <div class="icon icon-round d-flex align-items-center justify-content-center">
           <i class="fa fa-paper-plane"></i>
@@ -169,7 +174,7 @@
     {% endif %}
   {% else %}
     <a href="{{ url('problem_submit', problem.code) }}">
-      <button class="btn-green btn btn-primary btn-block btn-round">
+      <button class="submit-btn btn-green btn btn-primary btn-block btn-round">
         <span>{{ _('Submit') }}</span>
         <div class="icon icon-round d-flex align-items-center justify-content-center">
           <i class="fa fa-paper-plane"></i>
@@ -402,7 +407,7 @@
       </span>
     </span>
 
-    <span>
+    <span class="info-block">
       <i class="fa fa-file"></i><span class="pi-name"> {{ _('Output:') }}</span>
       <span class="new-pi-value">{{ fileio_output or _('stdout') }}</span>
     </span>
