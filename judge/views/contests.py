@@ -39,8 +39,9 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import date as date_filter
+from django.template.loader import get_template
 from django.urls import reverse, reverse_lazy
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.functional import cached_property
 from django.utils.html import format_html, escape
 from django.utils.safestring import mark_safe
@@ -89,6 +90,7 @@ from judge.utils.views import (
     TitleMixin,
     generic_message,
 )
+from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.widgets import HeavyPreviewPageDownWidget
 from judge.views.pagevote import PageVoteDetailView
 from judge.views.bookmark import BookMarkDetailView
@@ -112,6 +114,7 @@ __all__ = [
     "ContestClarificationView",
     "update_contest_mode",
     "OfficialContestList",
+    "ContestProblemset",
 ]
 
 
@@ -1688,4 +1691,34 @@ class OfficialContestList(ContestList):
         context["year_from"] = self.year_from
         context["year_to"] = self.year_to
 
+        return context
+
+
+class ContestProblemset(ContestMixin, TitleMixin, DetailView):
+    template_name = "contest/problemset.html"
+
+    def get_title(self):
+        contest_name = self.object.name or ""
+        return _("{contest_name} Problemset").format(contest_name=contest_name)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get all contest problems with their details
+        contest_problems = list(
+            self.object.contest_problems.select_related(
+                "problem", "problem__data_files"
+            )
+            .order_by("order")
+            .prefetch_related("problem__types")
+        )
+
+        # Get contest problem IDs for prefetching
+        contest_problem_ids = [cp.problem_id for cp in contest_problems]
+        Problem.prefetch_cache_i18n_name(
+            self.request.LANGUAGE_CODE, *contest_problem_ids
+        )
+
+        context["contest_problems"] = contest_problems
+        context["problems"] = [cp.problem for cp in contest_problems]
         return context

@@ -15,6 +15,13 @@
   {% include "comments/media-js.html" %}
   {% include "actionbar/media-js.html" %}
   {% include "contest/contest-datetime-js.html" %}
+  <script type="text/javascript">
+    {% include "contest/pdf-problemset-js.html" %}
+
+    $(function() {
+      initContestProblemsetPdf('{{ url("contest_problemset", contest.key) }}');
+    });
+  </script>
 {% endblock %}
 
 {% block two_col_media %}
@@ -31,16 +38,16 @@
         {# Allow users to leave the virtual contest #}
         {% if in_contest %}
           <form action="{{ url('contest_leave', contest.key) }}" method="post"
-                class="contest-join-pseudotab btn-red">
+                class="contest-join-pseudotab">
             {% csrf_token %}
-            <input type="submit" class="leaving-forever" value="{{ _('Leave contest') }}">
+            <input type="submit" class="action-btn large leaving-forever" value="{{ _('Leave contest') }}">
           </form>
         {% else %}
           {# Allow users to virtual join #}
           <form action="{{ url('contest_join', contest.key) }}" method="post"
-                class="contest-join-pseudotab btn-midnightblue">
+                class="contest-join-pseudotab">
             {% csrf_token %}
-            <input type="submit" value="{{ _('Virtual join') }}">
+            <input type="submit" class="action-btn large" value="{{ _('Virtual join') }}">
           </form>
         {% endif %}
       {% else %}
@@ -49,7 +56,7 @@
           <form action="{{ url('contest_leave', contest.key) }}" method="post"
                 class="contest-join-pseudotab">
             {% csrf_token %}
-            <input type="submit" class="btn-midnightblue" value="
+            <input type="submit" class="action-btn large" value="
                                                                  {%- if request.participation.spectate %}
                                                                    {{- _('Stop spectating') -}}
                                                                  {% else %}
@@ -59,12 +66,12 @@
         {% elif is_editor or is_tester or live_participation.ended %}
           <form action="{{ url('contest_join', contest.key) }}" method="post" class="contest-join-pseudotab">
             {% csrf_token %}
-            <input type="submit" class="btn-midnightblue" value="{{ _('Spectate contest') }}">
+            <input type="submit" class="action-btn large" value="{{ _('Spectate contest') }}">
           </form>
         {% else %}
           <form action="{{ url('contest_join', contest.key) }}" method="post" class="contest-join-pseudotab">
             {% csrf_token %}
-            <input type="submit" class="btn-midnightblue {% if not has_joined %}first-join{% endif %}"
+            <input type="submit" class="action-btn large {% if not has_joined %}first-join{% endif %}"
                    value="{{ _('Join contest') }}">
           </form>
         {% endif %}
@@ -74,7 +81,7 @@
     <form action="{{ url('auth_login') }}" method="get"
           class="contest-join-pseudotab unselectable">
       <input type="hidden" name="next" value="{{ LOGIN_RETURN_PATH|urlencode }}">
-      <input type="submit" class="btn-midnightblue" value="{{ _('Login to participate') }}">
+      <input type="submit" class="action-btn large" value="{{ _('Login to participate') }}">
     </form>
   {% endif %}
   <div style="clear: both"></div>
@@ -143,6 +150,15 @@
           {% endfor %}
         </tbody>
       </table>
+
+      <div style="margin-top: 1em; display: flex; justify-content: space-between; padding-right: 1em; font-size: 1.1em;">
+        <a href="{{ url('contest_problemset', contest.key) }}">
+          <i class="fa fa-book black"></i>{{ _('Complete problemset') }}
+        </a>
+        <a href="#" id="pdf_button">
+          <i class="fa fa-file-pdf red"></i>{{ _('View as PDF') }}
+        </a>
+      </div>
     </div>
     <hr>
   {% endif %}
@@ -151,4 +167,5 @@
   {% include "actionbar/list.html" %}
   <br>
   {% include "comments/list.html" %}
+  <iframe name="raw_problemset" id="raw_problemset" style="visibility: hidden;width: 0; height: 0;"></iframe>
 {% endblock %}

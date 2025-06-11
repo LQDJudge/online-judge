@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html class="contest-problemset">
+  <head>
+    <title>{{ contest.name }} - {{ _('Problemset') }} - {{ SITE_LONG_NAME }}</title>
+    <link rel="stylesheet" href="{{ static('style.css') }}">
+    <link rel="stylesheet" href="{{ static('pygment-github.css') }}" type="text/css">
+    <link rel="stylesheet" href="{{ static('markdown.css') }}">
+    <link rel="stylesheet" href="{{ static('fontawesome/css/all.min.css') }}">
+
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+
+  <body>
+    <div class="contest-header">
+      <h1>{{ contest.name }}</h1>
+      <h2>{{ _('Problemset') }}</h2>
+      <div class="back-link">
+        <a href="{{ url('contest_view', contest.key) }}">
+          <i class="fa fa-arrow-left"></i> {{ _('Back to Contest') }}
+        </a>
+      </div>
+    </div>
+
+    {% for contest_problem in contest_problems %}
+      <div class="problem-section">
+        <h2 class="problem-title">
+          {{ contest.get_label_for_problem(loop.index0) }}. {{ contest_problem.problem.translated_name(LANGUAGE_CODE) }}
+        </h2>
+
+        <div class="new-problem-info">
+          <span class="info-block">
+            <i class="fa fa-check"></i><span class="pi-name"> {{ _('Points:') }}</span>
+            <span class="new-pi-value">
+              {{ contest_problem.points }}{% if contest_problem.partial %} (p){% endif %}
+            </span>
+          </span>
+
+          <span class="info-block">
+            <i class="fa fa-clock"></i><span class="pi-name"> {{ _('Time limit:') }}</span>
+            <span class="new-pi-value">{{ contest_problem.problem.time_limit }}s</span>
+          </span>
+
+          <span class="info-block">
+            <i class="fa fa-server"></i><span class="pi-name"> {{ _('Memory limit:') }}</span>
+            <span class="new-pi-value">{{ contest_problem.problem.memory_limit|kbsimpleformat }}</span>
+          </span>
+
+          <span class="info-block">
+            <i class="fa fa-file"></i><span class="pi-name"> {{ _('Input:') }}</span>
+            <span class="new-pi-value">
+              {% if contest_problem.problem.data_files %}{{ contest_problem.problem.data_files.fileio_input or _('stdin') }}{% else %}{{ _('stdin') }}{% endif %}
+            </span>
+          </span>
+
+          <span class="info-block">
+            <i class="fa fa-file"></i><span class="pi-name"> {{ _('Output:') }}</span>
+            <span class="new-pi-value">{% if contest_problem.problem.data_files %}{{ contest_problem.problem.data_files.fileio_output or _('stdout') }}{% else %}{{ _('stdout') }}{% endif %}</span>
+          </span>
+        </div>
+
+        <div class="content-description printing">
+          {{ contest_problem.problem.description|markdown|reference|str|safe }}
+        </div>
+      </div>
+    {% endfor %}
+
+    <script src="{{ static('katex_config.js') }}"></script>
+    {% include "katex-load.html" %}
+    <script>
+      // Auto-open all spoilers/details elements
+      document.addEventListener('DOMContentLoaded', function() {
+        const details = document.querySelectorAll('details');
+        details.forEach(function(detail) {
+          detail.open = true;
+        });
+      });
+    </script>
+  </body>
+</html>

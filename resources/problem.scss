@@ -121,7 +121,10 @@ ul.problem-list {
 }
 
 .pi-name {
-    font-weight: bold;
+    font-weight: 700;
+    color: #343a40;
+    margin: 0;
+    font-size: 15px;
 }
 
 .pi-name:after {
@@ -410,23 +413,299 @@ ul.problem-list {
 }
 
 .new-problem-info {
-    background-color: #fff6dd;
-    border-radius: 25px;
-    font-size: 14px;
-    height: 25px;
-    width: 98%;
-    display: table;
-    padding: 5px 10px;
-    margin-top: 14px;
-    border: solid;
-    border-color: black;
-    border-width: 0.1px;
+    background: linear-gradient(135deg, #e9ecef 0%, #d6d8db 100%);
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    padding: 16px 8px;
+    margin: 16px 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px 8px;
+    font-size: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.12);
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 80px;
+}
+
+.new-problem-info::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #007bff, #28a745, #ffc107, #dc3545);
 }
 
 .info-block {
-    display:table-cell;
-    vertical-align:middle;
-    margin-right: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    padding: 8px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.7);
+    transition: all 0.2s ease;
+    margin: 0;
+    font-size: 16px;
+    justify-content: center;
+    min-width: 0;
+}
+
+.info-block:nth-child(4) {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+}
+
+.info-block:nth-child(5) {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+}
+
+.info-block:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+}
+
+.info-block i {
+    color: #495057;
+    width: 16px;
+    text-align: center;
+    font-size: 15px;
+    padding: 0;
+    border-radius: 2px;
+    background: rgba(0, 123, 255, 0.1);
+}
+
+.info-block .fa-check {
+    background: rgba(40, 167, 69, 0.15);
+    color: #155724;
+}
+
+.info-block .fa-clock {
+    background: rgba(255, 193, 7, 0.15);
+    color: #856404;
+}
+
+.info-block .fa-server {
+    background: rgba(40, 167, 69, 0.15);
+    color: #155724;
+}
+
+.info-block .fa-file {
+    background: rgba(0, 123, 255, 0.15);
+    color: #004085;
+}
+
+.new-pi-value {
+    color: #495057;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 0 4px;
+    border-radius: 2px;
+}
+
+// Responsive adjustments for problem info
+@media screen and (max-width: 1200px) {
+    .new-problem-info {
+        font-size: 15px;
+        padding: 14px 8px;
+        gap: 10px 6px;
+    }
+
+    .info-block {
+        font-size: 15px;
+        gap: 5px;
+        padding: 6px 4px;
+    }
+
+    .info-block i {
+        font-size: 14px;
+        width: 15px;
+    }
+
+    .pi-name {
+        font-size: 14px;
+    }
+
+    .new-pi-value {
+        font-size: 14px;
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .new-problem-info {
+        font-size: 14px;
+        padding: 12px 6px;
+        gap: 8px 4px;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr 1fr;
+    }
+
+    .info-block {
+        font-size: 14px;
+        gap: 4px;
+        padding: 5px 3px;
+    }
+
+    .info-block:nth-child(3) {
+        grid-column: 1 / 3;
+        grid-row: 2 / 3;
+    }
+
+    .info-block:nth-child(4) {
+        grid-column: 1 / 2;
+        grid-row: 3 / 4;
+    }
+
+    .info-block:nth-child(5) {
+        grid-column: 2 / 3;
+        grid-row: 3 / 4;
+    }
+
+    .info-block i {
+        font-size: 13px;
+        width: 14px;
+    }
+
+    .pi-name {
+        font-size: 13px;
+    }
+
+    .new-pi-value {
+        font-size: 13px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .new-problem-info {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(5, 1fr);
+        gap: 8px;
+    }
+
+    .info-block {
+        justify-content: flex-start;
+    }
+
+    .info-block:nth-child(3) {
+        grid-column: 1 / 2;
+        grid-row: 3 / 4;
+    }
+
+    .info-block:nth-child(4) {
+        grid-column: 1 / 2;
+        grid-row: 4 / 5;
+    }
+
+    .info-block:nth-child(5) {
+        grid-column: 1 / 2;
+        grid-row: 5 / 6;
+    }
+}
+
+// Raw page specific styling - inherits from main problem info but with adjustments
+.problem-raw {
+    body {
+        page-break-after: always;
+        background: white;
+        padding: 1.5em 2em 4em 2em;
+    }
+
+    .new-problem-info {
+        padding: 18px 8px;
+        gap: 12px 8px;
+        font-size: 16px;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+    }
+
+    .info-block {
+        gap: 6px;
+        padding: 8px 6px;
+        border-radius: 4px;
+        font-size: 16px;
+        justify-content: center;
+    }
+
+    .info-block:nth-child(4) {
+        grid-column: 1 / 2;
+        grid-row: 2 / 3;
+    }
+
+    .info-block:nth-child(5) {
+        grid-column: 2 / 3;
+        grid-row: 2 / 3;
+    }
+
+    .info-block i {
+        width: 16px;
+        font-size: 15px;
+        padding: 0;
+    }
+
+    .pi-name {
+        font-size: 15px;
+    }
+
+    .new-pi-value {
+        font-size: 15px;
+        padding: 0 4px;
+    }
+
+    // Auto-open spoilers
+    .md-typeset details {
+        box-shadow: var(--md-shadow-z1);
+        padding-bottom: 0.6rem;
+    }
+
+    .md-typeset details[open] > summary {
+        border-radius: 0.1rem 0.1rem 0 0;
+    }
+
+    .content-description {
+        padding-bottom: 0.5em;
+    }
+
+    // Print-specific styles for raw page
+    @media print {
+        .new-problem-info {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            page-break-inside: avoid;
+            gap: 12px !important;
+            padding: 12px 8px !important;
+            font-size: 12px !important;
+        }
+
+        .info-block {
+            display: flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            margin: 0 !important;
+            padding: 3px 6px !important;
+            font-size: 11px !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            min-width: auto !important;
+            width: auto !important;
+        }
+
+        .info-block i {
+            display: none !important;
+        }
+
+        .pi-name, .new-pi-value {
+            font-size: 11px !important;
+            margin: 0 !important;
+            padding: 0 2px !important;
+        }
+    }
 }
 
 @media screen and (min-width: 1100px) {
@@ -434,5 +713,35 @@ ul.problem-list {
         display: -webkit-box;
         display: -ms-flexbox;
         display: flex;
+    }
+}
+
+// Main problem page specific adjustments (not raw page)
+body:not(.problem-raw) {
+    .new-problem-info {
+        font-size: 15px;
+        padding: 15px 8px;
+        min-height: 75px;
+        gap: 10px 6px;
+    }
+
+    .info-block {
+        font-size: 15px;
+        gap: 5px;
+        padding: 7px 5px;
+    }
+
+    .info-block i {
+        font-size: 14px;
+        width: 15px;
+    }
+
+    .pi-name {
+        font-size: 14px;
+    }
+
+    .new-pi-value {
+        font-size: 14px;
+        padding: 0 3px;
     }
 }

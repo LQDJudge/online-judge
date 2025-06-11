@@ -43,6 +43,317 @@ img {
     width: 100% !important;
 }
 
+// Shared action button style for use throughout the app
+.action-btn {
+    background: linear-gradient(135deg, $theme_color 0%, lighten($theme_color, 8%) 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.8em 1.4em;
+    font-size: 1em;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    box-shadow: 0 3px 10px rgba($theme_color, 0.25);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+
+    // Subtle shine effect
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+        transition: left 0.5s ease;
+    }
+
+    &:hover {
+        background: linear-gradient(135deg, lighten($theme_color, 5%) 0%, lighten($theme_color, 12%) 100%);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-1px);
+        box-shadow: 0 5px 15px rgba($theme_color, 0.35);
+
+        &::before {
+            left: 100%;
+        }
+    }
+
+    &:active {
+        transform: translateY(0);
+        box-shadow: 0 3px 8px rgba($theme_color, 0.3);
+    }
+
+    i.fa {
+        font-size: 1em;
+        opacity: 0.9;
+    }
+
+    // Disabled state
+    &:disabled,
+    &.disabled {
+        background: linear-gradient(135deg, darkgray 0%, gray 100%) !important;
+        color: #f1efef !important;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: 0 2px 6px rgba(128, 128, 128, 0.25) !important;
+
+        &::before {
+            display: none;
+        }
+
+        &:hover {
+            background: linear-gradient(135deg, darkgray 0%, gray 100%) !important;
+            transform: none !important;
+            box-shadow: 0 2px 6px rgba(128, 128, 128, 0.25) !important;
+        }
+
+        &:active {
+            transform: none !important;
+            box-shadow: 0 2px 6px rgba(128, 128, 128, 0.25) !important;
+        }
+    }
+}
+
+// Background color variants
+.action-btn.background-green {
+    background: linear-gradient(135deg, #28a745 0%, lighten(#28a745, 8%) 100%);
+    box-shadow: 0 3px 10px rgba(40, 167, 69, 0.25);
+
+    &:hover {
+        background: linear-gradient(135deg, lighten(#28a745, 5%) 0%, lighten(#28a745, 12%) 100%);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.35);
+    }
+
+    &:active {
+        box-shadow: 0 3px 8px rgba(40, 167, 69, 0.3);
+    }
+}
+
+.action-btn.background-red {
+    background: linear-gradient(135deg, $announcement_red 0%, lighten($announcement_red, 8%) 100%);
+    box-shadow: 0 3px 10px rgba(174, 0, 0, 0.25);
+
+    &:hover {
+        background: linear-gradient(135deg, lighten($announcement_red, 5%) 0%, lighten($announcement_red, 12%) 100%);
+        box-shadow: 0 5px 15px rgba(174, 0, 0, 0.35);
+    }
+
+    &:active {
+        box-shadow: 0 3px 8px rgba(174, 0, 0, 0.3);
+    }
+}
+
+.action-btn.background-blue {
+    background: linear-gradient(135deg, #007bff 0%, lighten(#007bff, 8%) 100%);
+    box-shadow: 0 3px 10px rgba(0, 123, 255, 0.25);
+
+    &:hover {
+        background: linear-gradient(135deg, lighten(#007bff, 5%) 0%, lighten(#007bff, 12%) 100%);
+        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.35);
+    }
+
+    &:active {
+        box-shadow: 0 3px 8px rgba(0, 123, 255, 0.3);
+    }
+}
+
+.action-btn.background-gray {
+    background: linear-gradient(135deg, #6c757d 0%, lighten(#6c757d, 8%) 100%);
+    box-shadow: 0 3px 10px rgba(108, 117, 125, 0.25);
+
+    &:hover {
+        background: linear-gradient(135deg, lighten(#6c757d, 5%) 0%, lighten(#6c757d, 12%) 100%);
+        box-shadow: 0 5px 15px rgba(108, 117, 125, 0.35);
+    }
+
+    &:active {
+        box-shadow: 0 3px 8px rgba(108, 117, 125, 0.3);
+    }
+}
+
+.action-btn.background-warning {
+    background: linear-gradient(135deg, #ffc107 0%, lighten(#ffc107, 8%) 100%);
+    box-shadow: 0 3px 10px rgba(255, 193, 7, 0.25);
+    color: #212529;
+
+    &:hover {
+        background: linear-gradient(135deg, lighten(#ffc107, 5%) 0%, lighten(#ffc107, 12%) 100%);
+        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.35);
+        color: #212529;
+    }
+
+    &:active {
+        box-shadow: 0 3px 8px rgba(255, 193, 7, 0.3);
+    }
+}
+
+.action-btn.background-theme {
+    // Explicit theme color option (same as default but can be used for clarity)
+    background: linear-gradient(135deg, $theme_color 0%, lighten($theme_color, 8%) 100%);
+    box-shadow: 0 3px 10px rgba($theme_color, 0.25);
+
+    &:hover {
+        background: linear-gradient(135deg, lighten($theme_color, 5%) 0%, lighten($theme_color, 12%) 100%);
+        box-shadow: 0 5px 15px rgba($theme_color, 0.35);
+    }
+
+    &:active {
+        box-shadow: 0 3px 8px rgba($theme_color, 0.3);
+    }
+}
+
+// Size variants
+.action-btn.small {
+    padding: 0.5em 1em;
+    font-size: 0.9em;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba($theme_color, 0.25);
+
+    &:hover {
+        box-shadow: 0 3px 10px rgba($theme_color, 0.35);
+    }
+
+    &:active {
+        box-shadow: 0 2px 5px rgba($theme_color, 0.3);
+    }
+}
+
+.action-btn.large {
+    padding: 1em 1.8em;
+    font-size: 1.1em;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba($theme_color, 0.25);
+
+    &:hover {
+        box-shadow: 0 6px 20px rgba($theme_color, 0.35);
+    }
+
+    &:active {
+        box-shadow: 0 4px 10px rgba($theme_color, 0.3);
+    }
+}
+
+// Mobile optimizations
+@media (max-width: 799px) {
+    .action-btn {
+        font-size: 0.9em;
+        padding: 0.7em 1.2em;
+        border-radius: 8px;
+
+        &:hover {
+            transform: none;
+            box-shadow: 0 4px 12px rgba($theme_color, 0.3);
+        }
+
+        &::before {
+            display: none; // Disable shine effect on mobile for performance
+        }
+
+        &.small {
+            font-size: 0.85em;
+            padding: 0.6em 1em;
+        }
+
+        &.large {
+            font-size: 1em;
+            padding: 0.8em 1.4em;
+        }
+    }
+}
+
+// Submit button style - preserves the original problem submit button design
+.submit-btn, input[type="submit"].submit-btn {
+    // Inherit from the existing .btn styles for the special submit button design
+    // This preserves the original rounded submit button with icon design
+    // Override action-btn styles when both classes are present
+    background: #28a745 !important;
+    border: 1px solid #28a745 !important;
+    color: white !important;
+    border-radius: 40px !important;
+    padding: 12px 18px !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+    box-shadow: 0px 10px 20px -6px rgba(0, 0, 0, 0.12) !important;
+    overflow: hidden !important;
+    position: relative !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+
+    // Override action-btn styles
+    text-decoration: none !important;
+    display: inline-block !important;
+    align-items: center !important;
+    gap: normal !important;
+
+    // Remove action-btn specific effects
+    &::before {
+        display: none !important;
+    }
+
+    span {
+        font-size: 15px !important;
+        margin-left: -25px !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .icon {
+        position: absolute !important;
+        top: 0 !important;
+        right: 0 !important;
+        width: 50px !important;
+        bottom: 0 !important;
+        background: #fff !important;
+
+        i {
+            font-size: 21px !important;
+            color: #28a745 !important;
+        }
+
+        &.icon-round {
+            border-radius: 50% !important;
+        }
+    }
+
+    &:hover, &:active, &:focus {
+        outline: none !important;
+        background: #218838 !important;
+        border-color: #218838 !important;
+        color: white !important;
+        text-decoration: none !important;
+        transform: none !important;
+        box-shadow: 0px 12px 25px -6px rgba(0, 0, 0, 0.18) !important;
+
+        span {
+            margin-left: -12px !important;
+        }
+    }
+
+    &.btn-disabled {
+        background: gray !important;
+        border-color: gray !important;
+        color: #fff !important;
+        cursor: not-allowed !important;
+
+        &:hover, &:active, &:focus {
+            background: gray !important;
+            border-color: gray !important;
+            color: #fff !important;
+
+            span {
+                margin-left: -25px !important;
+            }
+        }
+    }
+}
+
 table.sortable thead {
     background-color: $background_gray;
     color: #666;

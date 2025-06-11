@@ -213,6 +213,10 @@
         {% if show_contest_mode %}
           $('.left-sidebar').hide();
         {% endif %}
+
+        // Initialize PDF button functionality for contest problemset
+        {% include "contest/pdf-problemset-js.html" %}
+        initContestProblemsetPdf('{{ url("contest_problemset", request.participation.contest.key) }}');
       });
     </script>
     {% compress js %}

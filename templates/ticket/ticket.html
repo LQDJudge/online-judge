@@ -27,6 +27,10 @@
       margin-right: 5px;
     }
 
+    .close-ticket, .open-ticket {
+      margin-bottom: 1em;
+    }
+
     @media (max-width: 600px) {
       .featherlight .featherlight-content > div {
         min-width: 300px !important;
@@ -69,11 +73,27 @@
       $('.edit-notes').featherlight({
         afterOpen: function () {
           var $form = $('#edit-notes');
-          $form.find('.submit').click(function () {
-            $.post($form.attr('action'), $form.serialize()).done(function (data) {
-              $('#ticket-notes').find('.info-empty').toggle(!data).end().find('.info-real').html(data);
-              $.featherlight.current().close();
-            });
+          $form.find('button[type="submit"]').click(function () {
+            var $btn = $(this);
+
+            // Disable button and show loading
+            $btn.prop('disabled', true).text('{{ _('Saving...') }}');
+
+            $.post($form.attr('action'), $form.serialize())
+              .done(function (data) {
+                // Close modal and reload page to show updated notes
+                $.featherlight.current().close();
+                window.location.reload();
+              })
+              .fail(function (xhr) {
+                console.log('Error response:', xhr);
+                var errorMsg = '{{ _('Could not update notes') }}';
+                if (xhr.responseText) {
+                  console.log('Response text:', xhr.responseText);
+                }
+                alert(errorMsg);
+                $btn.prop('disabled', false).text('{{ _('Update') }}');
+              });
             return false;
           });
         }
@@ -244,16 +264,16 @@
               </div>
             {% endif %}
             <div class="body-block">{{ form.body }}</div>
-            <button type="submit" class="submit">{{ _('Post') }}</button>
+            <button type="submit" class="action-btn">{{ _('Post') }}</button>
           </form>
         </div>
       </section>
     </div>
     <aside class="ticket-sidebar">
       <div class="ticket-info">
-        <button data-ajax="{{ url('ticket_close', ticket.id) }}" data-open="0" class="close-ticket"
+        <button data-ajax="{{ url('ticket_close', ticket.id) }}" data-open="0" class="action-btn close-ticket"
                 {% if not ticket.is_open %}style="display: none"{% endif %}>{{ _('Close ticket') }}</button>
-        <button data-ajax="{{ url('ticket_open', ticket.id) }}" data-open="1" class="open-ticket"
+        <button data-ajax="{{ url('ticket_open', ticket.id) }}" data-open="1" class="action-btn open-ticket"
                 {% if ticket.is_open %}style="display: none"{% endif %}>{{ _('Reopen ticket') }}</button>
         <div class="info-box">
           <div class="info-title">{{ _('Associated object') }}</div>

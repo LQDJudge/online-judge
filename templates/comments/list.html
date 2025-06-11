@@ -1,7 +1,7 @@
 {% set can_comment = request.user.is_authenticated and comment_form and not comment_lock %}
 <div id="comments" class="comment-area">
   <div class="comment-header-wrapper">
-    <div style="display: flex; gap: 1em;">
+    <div style="display: flex; gap: 1em; align-items: center;">
       <h2 id="comment-header">
         <i style="padding-right: 0.3em" class="fa fa-comments"></i>{{ _('Comments') }}
         {% if all_comment_count > 0 %}
@@ -9,16 +9,29 @@
         {% endif %}
       </h2>
       {% if can_comment %}
-        <a href="#" id="write-comment" class="button small"><i class="fa fa-plus"></i> {{ _('Write comment') }} </a>
+        <a href="#" id="write-comment" class="action-btn">
+          <i class="fa fa-plus"></i> {{ _('Write comment') }}
+        </a>
       {% endif %}
     </div>
     <div class="comment-sort-controls">
-      <span>{{ _('Order by') }}</span>
-      <select id="comment-sort-combined">
-        <option value="time_desc" {% if sort_by == 'time' and sort_order == 'desc' %}selected{% endif %}>{{ _('Most recent') }}</option>
-        <option value="time_asc" {% if sort_by == 'time' and sort_order == 'asc' %}selected{% endif %}>{{ _('Least recent') }}</option>
-        <option value="score_desc" {% if sort_by == 'score' and sort_order == 'desc' %}selected{% endif %}>{{ _('Score') }}</option>
-      </select>
+      <div class="action-btn comment-sort-dropdown">
+        <span class="current-sort-text">
+          {% if sort_by == 'time' and sort_order == 'asc' %}
+            {{ _('Least recent') }}
+          {% elif sort_by == 'score' and sort_order == 'desc' %}
+            {{ _('Score') }}
+          {% else %}
+            {{ _('Most recent') }}
+          {% endif %}
+        </span>
+        <i class="fa fa-chevron-down"></i>
+        <select id="comment-sort-combined" class="hidden-select">
+          <option value="time_desc" {% if sort_by == 'time' and sort_order == 'desc' %}selected{% endif %}>{{ _('Most recent') }}</option>
+          <option value="time_asc" {% if sort_by == 'time' and sort_order == 'asc' %}selected{% endif %}>{{ _('Least recent') }}</option>
+          <option value="score_desc" {% if sort_by == 'score' and sort_order == 'desc' %}selected{% endif %}>{{ _('Score') }}</option>
+        </select>
+      </div>
     </div>
   </div>
   {% if can_comment %}
@@ -186,6 +199,10 @@
 
     // Handle sort control change event
     $('#comment-sort-combined').on('change', function() {
+      // Update the display text
+      var selectedText = $(this).find('option:selected').text();
+      $('.current-sort-text').text(selectedText);
+
       reloadCommentsWithSort();
     });
   });

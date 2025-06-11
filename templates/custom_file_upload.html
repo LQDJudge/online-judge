@@ -9,7 +9,7 @@
       <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.as_p() }}
-        <button type="submit">{{_('Upload file')}}</button>
+        <button type="submit" class="action-btn">{{_('Upload file')}}</button>
       </form>
     {% endif %}
   </center>

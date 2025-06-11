@@ -1,3 +1,5 @@
+@import "vars";
+
 .comment-area {
     .user-img {
         height: 3em;
@@ -170,25 +172,88 @@
     }
 }
 
-.comment-sort-controls {
-    margin-left: auto;
-    font-size: 1.2em;
-}
+// Comment-specific styles that extend the theme-btn
 
-.comment-sort-controls select {
-    font-size: 1em;
+// Comment sort controls in row layout
+.comment-sort-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    margin-left: auto;
+
+    .sort-label {
+        font-size: 1em;
+        color: #555;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .comment-sort-dropdown {
+        position: relative;
+
+        .current-sort-text {
+            font-size: 0.95em;
+        }
+
+        .hidden-select {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+
+            option {
+                background: $theme_color;
+                color: white;
+                padding: 0.3em;
+            }
+        }
+
+        i.fa-chevron-down {
+            font-size: 0.85em;
+            opacity: 0.8;
+            transition: transform 0.2s ease;
+        }
+
+        &:hover i.fa-chevron-down {
+            transform: rotate(180deg);
+        }
+    }
 }
 
 .comment-header-wrapper {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5em;
 }
 
 /* Mobile styles for comment sorting */
 @media (max-width: 799px) {
     .comment-header-wrapper {
         flex-direction: column;
-        gap: 1.5em;
+        gap: 1.2em;
+        align-items: flex-start;
+    }
+
+    .comment-sort-controls {
+        margin-left: 0;
+
+        .sort-label {
+            font-size: 0.9em;
+        }
+
+        .comment-sort-dropdown {
+            .current-sort-text {
+                font-size: 0.9em;
+            }
+
+            i.fa-chevron-down {
+                font-size: 0.8em;
+            }
+        }
     }
 }
 

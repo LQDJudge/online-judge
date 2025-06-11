@@ -1,0 +1,23 @@
+function initContestProblemsetPdf(problemsetUrl) {
+$('#pdf_button').click(async function(e) {
+e.preventDefault();
+if (!$('#raw_problemset').attr('src')) {
+$('#raw_problemset').attr('src', problemsetUrl);
+$('#raw_problemset').on('load', function() {
+renderKatex(frames['raw_problemset'].document);
+// Auto-open all spoilers/details elements in the PDF view
+const details = frames['raw_problemset'].document.querySelectorAll('details');
+details.forEach(function(detail) {
+detail.open = true;
+});
+setTimeout(() => {
+frames['raw_problemset'].print();
+}, 500);
+});
+}
+else {
+frames['raw_problemset'].print();
+return;
+}
+});
+}

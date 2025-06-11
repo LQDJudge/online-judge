@@ -2,13 +2,16 @@ import glob
 import io
 import os
 import sys
+from pathlib import Path
 
 from django.conf import settings
 from django.core.management import CommandError
 from django.core.management.commands.makemessages import (
     Command as MakeMessagesCommand,
     check_programs,
+    normalize_eols,
 )
+from django.core.management.utils import popen_wrapper
 
 from judge.models import NavigationBar, ProblemType
 
@@ -48,9 +51,9 @@ class Command(MakeMessagesCommand):
             help="Don't break long message lines into several lines.",
         )
         parser.add_argument(
-            "--no-obsolete",
+            "--remove-obsolete",
             action="store_true",
-            dest="no_obsolete",
+            dest="remove_obsolete",
             default=False,
             help="Remove obsolete message strings.",
         )
@@ -60,6 +63,13 @@ class Command(MakeMessagesCommand):
             dest="keep_pot",
             default=False,
             help="Keep .pot file after making messages. Useful when debugging.",
+        )
+        parser.add_argument(
+            "--no-mark-obsolete",
+            action="store_false",
+            dest="mark_obsolete",
+            default=True,
+            help="Keep obsolete strings uncommented (without #~ prefix). By default, obsolete strings are marked with #~.",
         )
 
     def handle(self, *args, **options):
@@ -87,7 +97,12 @@ class Command(MakeMessagesCommand):
             self.msgattrib_options = self.msgattrib_options[:] + ["--no-location"]
             self.xgettext_options = self.xgettext_options[:] + ["--no-location"]
 
-        self.no_obsolete = options.get("no_obsolete")
+        # Handle obsolete string behavior
+        # By default, keep obsolete strings marked with #~
+        # Remove them completely only if --remove-obsolete is explicitly specified
+        self.mark_obsolete = options.get("mark_obsolete")
+
+        self.remove_obsolete = options.get("remove_obsolete")
         self.keep_pot = options.get("keep_pot")
 
         if locale is None and not exclude and not process_all:
@@ -186,3 +201,71 @@ msgstr ""
                 if self.verbosity > 2:
                     self.stdout.write('processing problem type name "%s"\n' % name)
                 self._emit_message(potfile, name)
+
+    def write_po_file(self, potfile, locale):
+        """
+        Create or update the PO file for self.domain and `locale`.
+        Use contents of the existing `potfile`.
+
+        Override Django's default behavior to handle obsolete strings differently:
+        - By default: keep obsolete strings marked with #~ (new default behavior)
+        - With --remove-obsolete: remove obsolete strings completely
+        """
+        basedir = os.path.join(os.path.dirname(potfile), locale, "LC_MESSAGES")
+        os.makedirs(basedir, exist_ok=True)
+        pofile = os.path.join(basedir, "%s.po" % self.domain)
+
+        if os.path.exists(pofile):
+            args = ["msgmerge"] + self.msgmerge_options + [pofile, potfile]
+            _, errors, status = popen_wrapper(args)
+            if errors:
+                if status != 0:  # STATUS_OK
+                    raise CommandError(
+                        "errors happened while running msgmerge\n%s" % errors
+                    )
+                elif self.verbosity > 0:
+                    self.stdout.write(errors)
+            msgs = Path(pofile).read_text(encoding="utf-8")
+        else:
+            with open(potfile, encoding="utf-8") as fp:
+                msgs = fp.read()
+            if not self.invoked_for_django:
+                msgs = self.copy_plural_forms(msgs, locale)
+
+        msgs = normalize_eols(msgs)
+        msgs = msgs.replace(
+            "#. #-#-#-#-#  %s.pot (PACKAGE VERSION)  #-#-#-#-#\n" % self.domain, ""
+        )
+        with open(pofile, "w", encoding="utf-8") as fp:
+            fp.write(msgs)
+
+        # Handle obsolete strings based on flags
+        if self.remove_obsolete:
+            # --remove-obsolete flag: remove obsolete strings completely
+            args = ["msgattrib"] + self.msgattrib_options + ["-o", pofile, pofile]
+            msgs, errors, status = popen_wrapper(args)
+            if errors:
+                if status != 0:  # STATUS_OK
+                    raise CommandError(
+                        "errors happened while running msgattrib\n%s" % errors
+                    )
+                elif self.verbosity > 0:
+                    self.stdout.write(errors)
+        elif not self.mark_obsolete:
+            # --no-mark-obsolete flag: keep obsolete strings but remove #~ markers
+            with open(pofile, "r", encoding="utf-8") as fp:
+                content = fp.read()
+
+            # Remove #~ markers from obsolete entries
+            lines = content.split("\n")
+            processed_lines = []
+            for line in lines:
+                if line.startswith("#~ "):
+                    # Remove the #~ prefix but keep the content
+                    processed_lines.append(line[3:])
+                else:
+                    processed_lines.append(line)
+
+            with open(pofile, "w", encoding="utf-8") as fp:
+                fp.write("\n".join(processed_lines))
+        # By default (mark_obsolete=True), we keep obsolete strings marked with #~

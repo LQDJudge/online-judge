@@ -41,6 +41,12 @@
       font-weight: bolder;
       cursor: pointer;
     }
+
+    /* Remove gap between source code and test cases */
+    .toggled + #test-cases {
+      margin-top: 0 !important;
+    }
+
     @media(max-width: 799px) {
       .source-ln {
         display: none;
@@ -51,6 +57,12 @@
       }
       .source-wrap {
         padding: 0.7em;
+      }
+
+      /* Mobile optimization for code blocks */
+      .highlight pre {
+        padding: 0.8em !important;
+        font-size: 0.9em !important;
       }
     }
   </style>
@@ -155,10 +167,9 @@
 
   <br>
   <h3 id="source-header" class="toggle closed"><i class="fa fa-chevron-right fa-fw"></i>{{_('Source code')}}</h3>
-  <div class="toggled" style="display: none; margin-bottom: 1em">
+  <div class="toggled" style="display: none; margin-bottom: 0;">
     {{ highlighted_source }}
   </div>
-
   <div id="test-cases">{% include "submission/status-testcases.html" %}</div>
   {% if not submission.is_graded %}
     {% if perms.judge.abort_any_submission %}

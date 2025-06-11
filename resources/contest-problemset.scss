@@ -1,0 +1,209 @@
+@import "vars";
+
+.contest-problemset {
+    html {
+        background: white;
+    }
+
+    body {
+        background: white;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .contest-header {
+        text-align: center;
+        margin-bottom: 2em;
+        border-bottom: 3px solid #ddd;
+        padding-bottom: 1em;
+
+        h1 {
+            color: #393630;
+            font-size: 2.5em;
+            margin-bottom: 0.2em;
+        }
+
+        h2 {
+            color: #666;
+            font-size: 1.5em;
+            margin-top: 0;
+        }
+
+        .back-link {
+            margin-top: 1em;
+
+            a {
+                color: #007bff;
+                text-decoration: none;
+                font-size: 1.1em;
+
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+        }
+    }
+
+    .problem-section {
+        margin-bottom: 4em;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 2em;
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+
+    .problem-title {
+        color: #393630;
+        font-size: 2em;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 0.5em;
+        margin-bottom: 1em;
+    }
+
+    // Extend existing info-block styling for contest problemset
+    .new-problem-info {
+        margin-bottom: 2em;
+
+        .info-block {
+            margin-right: 2em;
+            margin-bottom: 0.8em;
+            font-size: 0.95em;
+
+            .fa {
+                color: #007bff;
+                margin-right: 0.5em;
+                width: 16px;
+            }
+        }
+
+        .info-block .fa-check {
+            background: rgba(40, 167, 69, 0.15);
+            color: #155724;
+        }
+
+        .info-block .fa-clock {
+            background: rgba(255, 193, 7, 0.15);
+            color: #856404;
+        }
+
+        .info-block .fa-server {
+            background: rgba(40, 167, 69, 0.15);
+            color: #155724;
+        }
+
+        .info-block .fa-file {
+            background: rgba(0, 123, 255, 0.15);
+            color: #004085;
+        }
+    }
+
+    // Override content-description for better problemset display
+    .content-description {
+        line-height: 1.7;
+
+        h1, h2, h3, h4, h5, h6 {
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+        }
+
+        pre, .codehilite {
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 1.2em;
+            margin: 1.5em 0;
+            overflow-x: auto;
+        }
+
+        table {
+            background: white;
+
+            th, td {
+                padding: 12px;
+            }
+
+            th {
+                font-weight: bold;
+            }
+        }
+
+        blockquote {
+            border-left: 4px solid #007bff;
+            margin: 1.5em 0;
+            color: #666;
+            background: #f9f9f9;
+            padding: 1em 1em 1em 2em;
+            border-radius: 0 5px 5px 0;
+        }
+    }
+
+    @media print {
+        .contest-header .back-link {
+            display: none;
+        }
+
+        .problem-section {
+            page-break-after: always;
+        }
+
+        .problem-section:last-child {
+            page-break-after: auto;
+        }
+
+        body {
+            page-break-after: always;
+        }
+
+        // Remove icons and use black color for print
+        .fa {
+            display: none !important;
+        }
+
+        .info-block .fa-check,
+        .info-block .fa-clock,
+        .info-block .fa-server,
+        .info-block .fa-file {
+            display: none !important;
+        }
+
+        .problem-title {
+            border-bottom-color: black !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        body {
+            padding: 10px;
+        }
+
+        .contest-header h1 {
+            font-size: 2em;
+        }
+
+        .problem-title {
+            font-size: 1.5em;
+        }
+
+        .new-problem-info .info-block {
+            display: block;
+            margin-bottom: 0.5em;
+        }
+    }
+}
+
+// Contest page links styling - keep simple
+.contest-problems, .problems {
+    a {
+        color: #007bff;
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+
+        .fa {
+            margin-right: 0.5em;
+        }
+    }
+}

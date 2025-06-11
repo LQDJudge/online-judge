@@ -34,7 +34,7 @@
     <form action="" method="post" class="form-area">
       {% csrf_token %}
       <table border="0" style="text-align:left">{{ form.as_table() }}</table>
-      <input type="submit" style="float:right;" value="{{ _('Continue >') }}">
+      <input type="submit" style="float:right;" value="{{ _('Continue >') }}" class="action-btn">
     </form>
   </div>
 

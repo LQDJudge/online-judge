@@ -159,12 +159,36 @@ class TicketUserSelect2View(UserSearchSelect2View):
             tickets__isnull=False, user__username__icontains=self.term
         ).distinct()
 
+    def get_json_result_from_object(self, pk):
+        profile = Profile.objects.select_related("user").get(id=pk)
+        return {
+            "text": profile.username,
+            "id": profile.username,  # Use username as ID instead of pk for filtering
+            "gravatar_url": gravatar(
+                pk,
+                self.gravatar_size,
+            ),
+            "display_rank": profile.get_display_rank(),
+        }
+
 
 class AssigneeSelect2View(UserSearchSelect2View):
     def get_queryset(self):
         return Profile.objects.filter(
             assigned_tickets__isnull=False, user__username__icontains=self.term
         ).distinct()
+
+    def get_json_result_from_object(self, pk):
+        profile = Profile.objects.select_related("user").get(id=pk)
+        return {
+            "text": profile.username,
+            "id": profile.username,  # Use username as ID instead of pk for filtering
+            "gravatar_url": gravatar(
+                pk,
+                self.gravatar_size,
+            ),
+            "display_rank": profile.get_display_rank(),
+        }
 
 
 class ChatUserSearchSelect2View(UserSearchSelect2View):
