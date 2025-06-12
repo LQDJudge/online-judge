@@ -9,6 +9,12 @@
           <input id="hide_organization_contests" type="checkbox" name="hide_organization_contests" value="1" {% if hide_organization_contests %}checked{% endif %}>
           <label for="hide_organization_contests">{{ _('Hide organization contests') }}</label>
         </div>
+      {% endif %}
+      <div style="margin-bottom: 1em;">
+        <input id="show_only_rated_contests" type="checkbox" name="show_only_rated_contests" value="1" {% if show_only_rated_contests %}checked{% endif %}>
+        <label for="show_only_rated_contests">{{ _('Show only rated contests') }}</label>
+      </div>
+      {% if organizations %}
         <label for="search-org" class="bold-text margin-label">{{ _('Group') }}</label>
         <select id="search-org" name="orgs" multiple>
           {% for org in organizations %}
