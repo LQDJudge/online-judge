@@ -4,7 +4,7 @@ from django.utils.html import escape
 from bs4 import BeautifulSoup
 from pymdownx import superfences
 from django.conf import settings
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 from judge.markdown_extensions import YouTubeExtension, EmoticonExtension
 
@@ -130,6 +130,57 @@ def _open_external_links_in_new_tab(soup):
     return soup
 
 
+def _sanitize_iframe_autoplay(soup):
+    """Remove autoplay parameters from iframe src URLs and attributes to prevent autoplay"""
+    for iframe in soup.findAll("iframe"):
+        try:
+            # 1. Sanitize src URL parameters
+            src = iframe.get("src")
+            if src:
+                # Parse the URL
+                parsed = urlparse(src)
+
+                # Get query parameters
+                query_params = parse_qs(parsed.query)
+
+                # Remove autoplay parameters (set to 0 if present)
+                autoplay_params = ["autoplay", "auto_play", "auto-play"]
+                modified = False
+
+                for param in autoplay_params:
+                    if param in query_params:
+                        # Set autoplay to 0 instead of removing to be explicit
+                        query_params[param] = ["0"]
+                        modified = True
+
+                # If we modified parameters, rebuild the URL
+                if modified:
+                    new_query = urlencode(query_params, doseq=True)
+                    new_parsed = parsed._replace(query=new_query)
+                    iframe["src"] = urlunparse(new_parsed)
+
+            # 2. Remove/sanitize allow attribute that might permit autoplay
+            allow_attr = iframe.get("allow")
+            if allow_attr:
+                # Remove autoplay from allow attribute
+                allow_values = [val.strip() for val in allow_attr.split(";")]
+                allow_values = [
+                    val for val in allow_values if not val.startswith("autoplay")
+                ]
+
+                if allow_values:
+                    iframe["allow"] = "; ".join(allow_values)
+                else:
+                    # Remove empty allow attribute
+                    del iframe["allow"]
+
+        except Exception:
+            # If URL parsing fails, continue with next iframe
+            continue
+
+    return soup
+
+
 def markdown(value, lazy_load=False):
     extensions = EXTENSIONS
     html = _markdown.markdown(
@@ -147,6 +198,7 @@ def markdown(value, lazy_load=False):
 
     soup = _wrap_images_with_featherlight(soup)
     soup = _open_external_links_in_new_tab(soup)
+    soup = _sanitize_iframe_autoplay(soup)
     html = str(soup)
 
     return '<div class="md-typeset content-description">%s</div>' % html

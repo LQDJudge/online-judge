@@ -14,11 +14,13 @@ class YouTubeEmbedProcessor(InlineProcessor):
         if not youtube_id:
             return None, None, None
 
-        # Create an iframe element with the YouTube embed URL
+        # Create an iframe element with the YouTube embed URL, preventing autoplay
         iframe = etree.Element("iframe")
         iframe.set("width", "100%")
         iframe.set("height", "360")
-        iframe.set("src", f"https://www.youtube.com/embed/{youtube_id}")
+        iframe.set(
+            "src", f"https://www.youtube.com/embed/{youtube_id}?autoplay=0&rel=0"
+        )
         iframe.set("frameborder", "0")
         iframe.set("allowfullscreen", "true")
         center = etree.Element("center")
