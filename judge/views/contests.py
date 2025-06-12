@@ -310,6 +310,20 @@ class ContestList(
         return participations
 
     def get_queryset(self):
+        # If no specific tab is requested and user is authenticated, check if we should default to current instead of active
+        if (
+            self.current_tab == "active"
+            and not self.request.GET.get("tab")
+            and self.request.user.is_authenticated
+        ):
+            active_participations = self._get_active_participations_queryset()
+            if len(active_participations) == 0:
+                # Switch to current tab since there are no active contests
+                self.current_tab = "current"
+                return self._get_current_contests_queryset()
+            else:
+                return active_participations
+
         if self.current_tab == "past":
             return self._get_past_contests_queryset()
         elif self.current_tab == "current":
@@ -322,15 +336,11 @@ class ContestList(
     def get_context_data(self, **kwargs):
         context = super(ContestList, self).get_context_data(**kwargs)
 
+        context["current_tab"] = self.current_tab
+
         context["current_count"] = self._get_current_contests_queryset().count()
         context["future_count"] = self._get_future_contests_queryset().count()
-
-        active_count = len(self._get_active_participations_queryset())
-        context["active_count"] = active_count
-
-        if not active_count:
-            self.current_tab = self.request.GET.get("tab", "current")
-        context["current_tab"] = self.current_tab
+        context["active_count"] = len(self._get_active_participations_queryset())
 
         context["now"] = self._now
         context["first_page_href"] = "."
