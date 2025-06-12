@@ -98,7 +98,7 @@
       {% if request.user.is_authenticated and request.profile != user %}
         <form method="post" action="{{ url('user_toggle_follow', user.username) }}">
           {% csrf_token %}
-          <button class="small {{ 'unfollow' if followed else 'follow' }}" style="width:100%">
+          <button class="action-btn {{ 'unfollow' if followed else 'follow' }}" style="width:100%">
             {% if followed %}
               <i class="fa fa-remove"></i>
               {{ _('Unfollow') }}
@@ -111,7 +111,7 @@
       {% endif %}
       {% if request.user.is_authenticated and request.profile != user %}
         <br>
-        <button class="small btn-midnightblue" style="width:100%" id="message-button">
+        <button class="action-btn background-blue" style="width:100%" id="message-button">
           <i class="fa fa-envelope"></i> {{ _('Message') }}
         </button>
       {% endif %}

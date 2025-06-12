@@ -21,20 +21,26 @@ msgstr "Nhóm"
 msgid "About"
 msgstr "Giới thiệu"
 
+msgid "Status"
+msgstr "Máy chấm"
+
 msgid "Courses"
 msgstr "Khóa học"
 
 msgid "Suggestions"
 msgstr "Đề xuất ý tưởng"
 
-msgid "Proposal"
+msgid "Problem Proposal"
 msgstr "Đề xuất bài tập"
 
-msgid "TanKhoa"
-msgstr "Tân Khoa"
+msgid "Contest Proposal"
+msgstr "Đề xuất kỳ thi"
 
 msgid "Name"
 msgstr "Đăng ký tên"
+
+msgid "Tools"
+msgstr "Công cụ"
 
 msgid "Report"
 msgstr "Báo cáo tiêu cực"
@@ -597,22 +603,8 @@ msgstr ""
 msgid "z-function"
 msgstr ""
 
-msgid "Status"
-msgstr "Máy chấm"
-
 msgid "Insert Image"
 msgstr "Chèn hình ảnh"
 
 msgid "Save"
 msgstr "Lưu"
-
-msgid "Tools"
-msgstr "Công cụ"
-
-msgid "Problem Proposal"
-msgstr "Đề xuất bài tập"
-
-msgid "Contest Proposal"
-msgstr "Đề xuất kỳ thi"
-
-

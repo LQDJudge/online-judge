@@ -185,6 +185,10 @@ class ContestList(
         if self.GET_with_session(request, "hide_organization_contests"):
             self.hide_organization_contests = 1
 
+        self.show_only_rated_contests = 0
+        if self.GET_with_session(request, "show_only_rated_contests"):
+            self.show_only_rated_contests = 1
+
         self.org_query = []
         if request.GET.get("orgs") and request.profile:
             try:
@@ -205,6 +209,7 @@ class ContestList(
         default_tab = "active"
         if not self.request.user.is_authenticated:
             default_tab = "current"
+
         self.current_tab = self.request.GET.get("tab", default_tab)
 
         self.setup_contest_list(request)
@@ -212,7 +217,7 @@ class ContestList(
         return super(ContestList, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        to_update = ("hide_organization_contests",)
+        to_update = ("hide_organization_contests", "show_only_rated_contests")
         for key in to_update:
             if key in request.GET:
                 val = request.GET.get(key) == "1"
@@ -243,6 +248,8 @@ class ContestList(
             self.org_query = [self.request.organization.id]
         if self.hide_organization_contests:
             queryset = queryset.filter(organizations=None)
+        if self.show_only_rated_contests:
+            queryset = queryset.filter(is_rated=True)
         if self.org_query:
             queryset = queryset.filter(organizations__in=self.org_query)
         queryset = self.extra_queryset_filters(queryset)
@@ -315,17 +322,22 @@ class ContestList(
     def get_context_data(self, **kwargs):
         context = super(ContestList, self).get_context_data(**kwargs)
 
-        context["current_tab"] = self.current_tab
-
         context["current_count"] = self._get_current_contests_queryset().count()
         context["future_count"] = self._get_future_contests_queryset().count()
-        context["active_count"] = len(self._get_active_participations_queryset())
+
+        active_count = len(self._get_active_participations_queryset())
+        context["active_count"] = active_count
+
+        if not active_count:
+            self.current_tab = self.request.GET.get("tab", "current")
+        context["current_tab"] = self.current_tab
 
         context["now"] = self._now
         context["first_page_href"] = "."
         context["contest_query"] = self.contest_query
         context["org_query"] = self.org_query
         context["hide_organization_contests"] = int(self.hide_organization_contests)
+        context["show_only_rated_contests"] = int(self.show_only_rated_contests)
         if self.request.profile:
             context["organizations"] = self.request.profile.get_organizations()
         context["page_type"] = "list"
@@ -1638,6 +1650,7 @@ class OfficialContestList(ContestList):
         self.contest_query = request.GET.get("contest", "")
         self.org_query = []
         self.hide_organization_contests = False
+        self.show_only_rated_contests = False
 
         self.selected_categories = []
         self.selected_locations = []
