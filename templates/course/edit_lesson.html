@@ -1,63 +1,28 @@
 {% extends "course/base.html" %}
 
 {% block two_col_media %}
-  {{ form.media.css }}
-  <style type="text/css">
-    .field-order, .field-title, .field-points {
-      display: inline-flex;
-    }
-    .form-header {
-      margin-bottom: 0.5em;
-    }
-    .title {
-      font-size:20px;
-      padding:3px;
-    }
-    .title:hover {
-      color: blue !important;
-      text-decoration: underline;
-    }
-  </style>
-{% endblock %}
-
-{% block js_media %}
-  {{ form.media.js }}
-  <script>
-    $(function() {
-      $('select').each(function() {
-        var selectedValues = $(this).val();
-
-        $(this).select2();
-
-        $(this).val(selectedValues);
-      });
-    });
-  </script>
 {% endblock %}
 
 {% block middle_content %}
-  <form method="post">
-    {% csrf_token %}
-    {{ formset.management_form }}
-
-    {% for lesson_form in formset %}
-      {% set ns = namespace(problem_formset_has_error=false) %}
-
-      {% if lesson_form.instance.id %}
-        <div>
-          <a class="title" href="{{url('edit_course_lessons_new', course.slug, lesson_form.instance.id)}}" target="_blank">{{lesson_form.order.value()}}.{{lesson_form.title.value()}}</a>
+  <center><h2>{{content_title}}</h2></center>
+  <div class="container">
+    <div class="add-button-container">
+      <a href="{{ url('course_lesson_create', course.slug) }}" class="action-btn background-green large">{{ _('Add') }}</a>
+    </div>
+    {% if lessons %}
+      {% for lesson in lessons %}
+        <div class="course-lesson-card">
+          <div>
+            <h5><a href="{{ url('course_lesson_detail', course.slug, lesson.id) }}">{{ loop.index }}. {{ lesson.title }}</a></h5>
+            <p><strong>{{_("Order")}}:</strong> {{ lesson.order }}</p>
+            <p><strong>{{_("Points")}}:</strong> {{ lesson.points }}</p>
+            <p><strong>{{_("Publicly Visible")}}:</strong> {% if lesson.is_visible %}{{_("Yes")}}{% else %}{{_("No")}}{% endif %}</p>
+          </div>
+          <a href="{{ url('edit_course_lessons_new', course.slug, lesson.id) }}" class="action-btn large">{{ _('Edit') }}</a>
         </div>
-        {% set problem_formset = problem_formsets[lesson_form.instance.id] %}
-        {% for form in problem_formset %}
-          {% if form.errors %}
-            {% set ns.problem_formset_has_error = true %}
-            {% break %}
-          {% endif %}
-        {% endfor %}
-      {% endif %}
-    {% endfor %}
-  </form>
-  <a class="action-btn" style="float: right" href="{{ url('course_lesson_create', course.slug) }}">
-    {{_('Create New Lesson')}}
-  </a>
+      {% endfor %}
+    {% else %}
+      <p style="text-align: center;">{{_("No lessons available")}}</p>
+    {% endif %}
+  </div>
 {% endblock %}

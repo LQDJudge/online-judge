@@ -29,11 +29,11 @@
 
 {% block middle_content %}
 
-  <h2>{{_('Create new lesson')}} </h2>
+  <center><h2>{{_('Create new lesson')}} </h2></center>
 
   <form method="post">
     {% csrf_token %}
-    <div class="" style=" margin-bottom: 1em">
+    <div class="" style="margin-top:1em; margin-bottom: 1em">
       {% for field in lesson_field %}
         {% if field %}
           <div style="margin-bottom: 1em;">
@@ -51,6 +51,6 @@
 
       <hr/>
     </div>
-    <input type="submit" value="{{_('Save')}}" style="float: right">
+    <input type="submit" value="{{_('Save')}}" style="float: right" class="action-btn">
   </form>
 {% endblock %}

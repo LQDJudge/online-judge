@@ -567,9 +567,29 @@ urlpatterns = [
                     name="course_grades",
                 ),
                 re_path(
+                    r"^/members$",
+                    course.CourseMembers.as_view(),
+                    name="course_members",
+                ),
+                re_path(
+                    r"^/members/remove$",
+                    course.CourseRemoveMember.as_view(),
+                    name="course_remove_member",
+                ),
+                re_path(
+                    r"^/members/update_role$",
+                    course.CourseUpdateMemberRole.as_view(),
+                    name="course_update_member_role",
+                ),
+                re_path(
                     r"^/grades/lesson/(?P<id>\d+)$",
                     course.CourseStudentResultsLesson.as_view(),
                     name="course_grades_lesson",
+                ),
+                re_path(
+                    r"^/lesson/(?P<lesson_id>\d+)/clone$",
+                    course.LessonClone.as_view(),
+                    name="clone_course_lesson",
                 ),
                 re_path(
                     r"^/add_contest$",
@@ -585,6 +605,11 @@ urlpatterns = [
                     r"^/contests$",
                     course.CourseContestList.as_view(),
                     name="course_contest_list",
+                ),
+                re_path(
+                    r"^/edit$",
+                    course.CourseEdit.as_view(),
+                    name="course_edit",
                 ),
             ]
         ),
@@ -1132,6 +1157,11 @@ urlpatterns = [
                 ),
                 re_path(
                     r"^contest/$", ContestSelect2View.as_view(), name="contest_select2"
+                ),
+                re_path(
+                    r"^course/$",
+                    course.CourseSelect2View.as_view(),
+                    name="course_select2",
                 ),
             ]
         ),

@@ -1,0 +1,58 @@
+{% extends "course/base.html" %}
+
+{% block two_col_media %}
+  {{ form.media.css }}
+  <style type="text/css">
+    .form-header {
+      margin-bottom: 0.5em;
+    }
+  </style>
+{% endblock %}
+
+{% block js_media %}
+  {{ form.media.js }}
+  <script>
+    $(function() {
+      $('select').each(function() {
+        var selectedValues = $(this).val();
+
+        $(this).select2();
+
+        $(this).val(selectedValues);
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block middle_content %}
+  <center><h2>{{content_title}}</h2></center>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="" style="margin-bottom: 1em">
+      {% if form.errors %}
+        <div class="alert alert-danger alert-dismissable">
+          <a href="#" class="close">x</a>
+          {{ _("Please fix below errors") }}
+        </div>
+      {% endif %}
+
+      {% for field in form %}
+        {% if field %}
+          <div style="margin-bottom: 1em;">
+            {{ field.errors }}
+            <label for="{{ field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b> </label>
+            <div class="org-field-wrapper field-{{ field.name }}" id="org-field-wrapper-{{ field.html_name }}">
+              {{ field }}
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+      <hr/>
+    </div>
+
+    <div style="display: flex; justify-content: flex-start; align-items: center;">
+      <input type="submit" value="{{ _('Save') }}" class="action-btn">
+    </div>
+  </form>
+{% endblock %}

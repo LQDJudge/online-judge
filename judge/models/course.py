@@ -1,3 +1,5 @@
+import os
+from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.translation import gettext, gettext_lazy as _
@@ -6,6 +8,12 @@ from django.db.models import Q
 
 from judge.models import Problem, Contest
 from judge.models.profile import Organization, Profile
+
+
+def course_image_path(course, filename):
+    tail = filename.split(".")[-1]
+    new_filename = f"course_{course.id}.{tail}"
+    return os.path.join(settings.DMOJ_COURSE_IMAGE_ROOT, new_filename)
 
 
 class RoleInCourse(models.TextChoices):
@@ -46,10 +54,10 @@ class Course(models.Model):
         verbose_name=_("public registration"),
         default=False,
     )
-    image_url = models.CharField(
+    course_image = models.ImageField(
         verbose_name=_("course image"),
-        default="",
-        max_length=150,
+        upload_to=course_image_path,
+        null=True,
         blank=True,
     )
 
@@ -61,6 +69,10 @@ class Course(models.Model):
 
     @classmethod
     def is_editable_by(cls, course, profile):
+        # Admins can edit any course
+        if profile and profile.user.is_superuser:
+            return True
+
         try:
             course_role = CourseRole.objects.get(course=course, user=profile)
             return course_role.role in EDITABLE_ROLES
@@ -71,16 +83,28 @@ class Course(models.Model):
     def is_accessible_by(cls, course, profile):
         if not profile:
             return False
+
+        # Admins can access any course
+        if profile.user.is_superuser:
+            return True
+
         try:
             course_role = CourseRole.objects.get(course=course, user=profile)
-            if course_role.course.is_public:
+            # Any enrolled user can access the course (students, assistants, teachers)
+            if course.is_public or course_role.role in EDITABLE_ROLES:
                 return True
-            return course_role.role in EDITABLE_ROLES
-        except CourseRole.DoesNotExist:
+
             return False
+        except CourseRole.DoesNotExist:
+            # Non-enrolled users can only access public courses if they have open registration
+            return course.is_public and course.is_open
 
     @classmethod
     def get_accessible_courses(cls, profile):
+        # Admins can access all courses
+        if profile and profile.user.is_superuser:
+            return Course.objects.all()
+
         return Course.objects.filter(
             Q(is_public=True) | Q(courserole__role__in=EDITABLE_ROLES),
             courserole__user=profile,
