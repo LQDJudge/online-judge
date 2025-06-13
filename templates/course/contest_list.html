@@ -4,6 +4,7 @@
 {% endblock %}
 
 {% block middle_content %}
+  <center><h2>{{content_title}}</h2></center>
   <div class="container">
     <div class="add-button-container">
       <a href="{{url('add_course_contest', course.slug)}}" class="action-btn background-green large">{{ _('Add') }}</a>
@@ -22,7 +23,7 @@
         </div>
       {% endfor %}
     {% else %}
-      <p style="text-align: center;">{{_("No contests available")}}.</p>
+      <p style="text-align: center;">{{_("No contests available")}}</p>
     {% endif %}
   </div>
 {% endblock %}

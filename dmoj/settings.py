@@ -86,6 +86,7 @@ DMOJ_STATS_SUBMISSION_RESULT_COLORS = {
 }
 DMOJ_PROFILE_IMAGE_ROOT = "profile_images"
 DMOJ_ORGANIZATION_IMAGE_ROOT = "organization_images"
+DMOJ_COURSE_IMAGE_ROOT = "course_images"
 DMOJ_TEST_FORMATTER_ROOT = "test_formatter"
 
 MARKDOWN_STYLES = {}
@@ -264,6 +265,7 @@ MIDDLEWARE = (
     "impersonate.middleware.ImpersonateMiddleware",
     "judge.middleware.DMOJImpersonationMiddleware",
     "judge.middleware.ContestMiddleware",
+    "judge.middleware.CourseMiddleware",
     "judge.middleware.DarkModeMiddleware",
     "judge.middleware.SubdomainMiddleware",
     "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",

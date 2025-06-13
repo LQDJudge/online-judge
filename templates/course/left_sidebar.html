@@ -4,6 +4,8 @@
     {{ make_tab_item('edit_lesson', 'fa fa-edit', url('edit_course_lessons', course.slug), _('Edit lessons')) }}
     {{ make_tab_item('contests', 'fa fa-ranking-star', url('course_contest_list', course.slug), _('Contests')) }}
     {{ make_tab_item('grades', 'fa fa-check-square', url('course_grades', course.slug), _('Grades')) }}
+    {{ make_tab_item('members', 'fa fa-users', url('course_members', course.slug), _('Members')) }}
+    {{ make_tab_item('edit', 'fa fa-gear', url('course_edit', course.slug), _('Settings')) }}
   {% endif %}
   {% if perms.judge.change_course %}
     {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_course_change', course.id), _('Admin'), force_new_page=True) }}

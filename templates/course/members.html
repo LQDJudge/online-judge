@@ -1,0 +1,175 @@
+{% extends "course/base.html" %}
+
+{% block two_col_media %}
+  {{ form.media.css }}
+{% endblock %}
+
+{% block js_media %}
+  {{ form.media.js }}
+  <script type="text/javascript">
+    $(function() {
+      // Store original values before any initialization
+      $('.role-select').each(function() {
+        $(this).data('original-value', $(this).val());
+      });
+
+      // Confirm deletion - use event delegation to ensure it works
+      $(document).on('click', '.action-btn.background-red', function(e) {
+        if (!confirm('{{ _("Are you sure you want to remove this member?") }}')) {
+          e.preventDefault(); // Prevent form submission
+          return false;
+        }
+      });
+
+      // Handle role change confirmation - use event delegation
+      $(document).on('change', '.role-select', function(e) {
+        e.preventDefault(); // Prevent default behavior
+
+        var $select = $(this);
+        var form = $select.closest('form');
+        var originalValue = $select.data('original-value');
+        var newValue = $select.val();
+
+        // Don't submit if no change
+        if (originalValue === newValue) {
+          return;
+        }
+
+        if (confirm('{{ _("Are you sure you want to change role of this user?") }}')) {
+          // Update stored value and submit form
+          $select.data('original-value', newValue);
+          form.submit();
+        } else {
+          // Reset to original value
+          $select.val(originalValue); // Revert selection
+        }
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block middle_content %}
+  <center><h2>{{content_title}}</h2></center>
+  <div class="container">
+    {% if members %}
+      <table class="members-table">
+        <thead>
+          <tr>
+            <th>{{ _('User') }}</th>
+            <th>{{ _('Role') }}</th>
+            <th>{{ _('Actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for member in members %}
+            <tr>
+              <td class="user-name">
+                <div>
+                  {{link_user(member.user)}}
+                </div>
+                <div>
+                  {{member.user.first_name}}
+                </div>
+              </td>
+              <td>
+                {% set can_change_role = false %}
+                {% if current_user_role == 'ADMIN' %}
+                  {% set can_change_role = true %}
+                {% elif current_user_role == 'TE' and member.role in ['AS', 'ST'] %}
+                  {% set can_change_role = true %}
+                {% elif current_user_role == 'AS' and member.role == 'ST' %}
+                  {% set can_change_role = true %}
+                {% endif %}
+
+                {% if can_change_role %}
+                  <form method="post" action="{{ url('course_update_member_role', course.slug) }}" class="inline-role-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="member_id" value="{{ member.id }}">
+                    <select name="role" class="role-select">
+                      {% for role_value, role_label in role_choices %}
+                        {% set show_option = false %}
+                        {% if current_user_role == 'ADMIN' %}
+                          {% set show_option = true %}
+                        {% elif current_user_role == 'TE' and member.role in ['AS', 'ST'] %}
+                          {% set show_option = true %}
+                        {% elif current_user_role == 'AS' and member.role == 'ST' and role_value in ['AS', 'ST'] %}
+                          {% set show_option = true %}
+                        {% endif %}
+
+                        {% if show_option %}
+                          <option value="{{ role_value }}" {% if member.role == role_value %}selected{% endif %}>
+                            {{ role_label }}
+                          </option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                  </form>
+                {% else %}
+                  <span class="role-badge role-{{ member.role|lower }}">
+                    {{ member.get_role_display() }}
+                  </span>
+                {% endif %}
+              </td>
+              <td>
+                {% set can_remove_member = false %}
+                {% if current_user_role == 'ADMIN' %}
+                  {% set can_remove_member = true %}
+                {% elif current_user_role == 'TE' and member.role in ['AS', 'ST'] %}
+                  {% set can_remove_member = true %}
+                {% elif current_user_role == 'AS' and member.role == 'ST' %}
+                  {% set can_remove_member = true %}
+                {% endif %}
+
+                {% if can_remove_member %}
+                  <form method="post" action="{{ url('course_remove_member', course.slug) }}" class="inline-delete-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="member_id" value="{{ member.id }}">
+                    <button type="submit" class="action-btn background-red">{{ _('Delete') }}</button>
+                  </form>
+                {% else %}
+                  <span class="no-permission-text">{{ _('No permission') }}</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="no-members-text">
+        {{ _('No members found') }}
+      </p>
+    {% endif %}
+
+    <div class="add-member-form">
+      <h4>{{ _('Add New Member') }}</h4>
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-row">
+          <div class="form-field">
+            <label for="{{ form.user.id_for_label }}">{{ form.user.label }}</label>
+            {{ form.user }}
+            {% if form.user.errors %}
+              <div class="form-error">
+                {{ form.user.errors }}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-field">
+            <label for="{{ form.role.id_for_label }}">{{ form.role.label }}</label>
+            {{ form.role }}
+            {% if form.role.errors %}
+              <div class="form-error">
+                {{ form.role.errors }}
+              </div>
+            {% endif %}
+          </div>
+
+          <div>
+            <button type="submit" class="action-btn background-green">{{ _('Save') }}</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}

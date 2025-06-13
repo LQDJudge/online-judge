@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block media %}
+  <style>
+    #lesson-clone-panel {
+      position: relative;
+      margin: 5em auto auto -10em;
+      top: 40%;
+      left: 50%;
+    }
+
+    #lesson-title-container {
+      margin: 0.5em 0;
+    }
+
+    #id_title {
+      width: 100%;
+    }
+
+    #lesson-course-container {
+      margin: 0.5em 0;
+    }
+
+    ul.errorlist {
+      list-style-type: none;
+      padding-left: 0;
+      text-align: center;
+    }
+  </style>
+{% endblock %}
+
+{% block js_media %}
+  <script type="text/javascript">
+    $(function () {
+      $("#id_course").select2({
+        placeholder: $("#id_course").data("placeholder"),
+        width: "100%",
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block body %}
+  <form id="lesson-clone-panel" action="" method="post" class="form-area">
+    {% csrf_token %}
+
+    <div>
+      <label class="inline-header grayed">{{ _('Enter a new title for the cloned lesson:') }}</label>
+    </div>
+    <div id="lesson-title-container">
+      <span class="fullwidth">{{ form.title }}</span>
+    </div>
+
+    <div style="margin-top: 1em;">
+      <label class="inline-header grayed">{{ _('Select target course:') }}</label>
+    </div>
+    <div id="lesson-course-container" style="margin-top: 0.3em;">
+      {{ form.course }}
+    </div>
+
+    {% if form.errors %}
+      <ul style="color: red;">
+        {% for field_name, error_list in form.errors.items() %}
+          <li>{{ error_list.0 }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <hr>
+    <button style="float: right;" type="submit" class="action-btn">{{ _('Clone!') }}</button>
+  </form>
+{% endblock %}

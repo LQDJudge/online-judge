@@ -1,6 +1,7 @@
+from copy import deepcopy
 from django import forms
 from django.contrib import messages
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models import Max, F, Sum
 from django.forms import (
     inlineformset_factory,
@@ -12,12 +13,13 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy, reverse
 from django.utils.html import mark_safe
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, View
 from django.views.generic.edit import FormView
 from reversion import revisions
 
 from judge.forms import (
     ContestProblemFormSet,
+    LessonCloneForm,
 )
 from judge.models import (
     Course,
@@ -29,8 +31,9 @@ from judge.models import (
     CourseContest,
     ContestProblem,
     ContestParticipation,
+    CourseRole,
 )
-from judge.models.course import RoleInCourse
+from judge.models.course import RoleInCourse, EDITABLE_ROLES
 from judge.utils.contest import (
     maybe_trigger_contest_rescore,
 )
@@ -45,7 +48,9 @@ from judge.widgets import (
     DateTimePickerWidget,
     Select2MultipleWidget,
     Select2Widget,
+    ImageWidget,
 )
+from judge.utils.views import SingleObjectFormView, TitleMixin
 
 
 def max_case_points_per_problem(profile, problems):
@@ -194,6 +199,74 @@ class CourseEditableMixin(CourseDetailMixin):
         if not self.is_editable:
             raise Http404()
         return res
+
+
+class CourseAdminMixin(CourseDetailMixin):
+    def dispatch(self, request, *args, **kwargs):
+        res = super(CourseAdminMixin, self).dispatch(request, *args, **kwargs)
+        # Allow admins, teachers, and assistants only
+        if not (request.user.is_superuser or self.is_editable):
+            raise Http404()
+
+        # Double-check: ensure the user has an appropriate role
+        current_role = self.get_user_role_in_course()
+        if current_role not in ["ADMIN", RoleInCourse.TEACHER, RoleInCourse.ASSISTANT]:
+            raise Http404()
+
+        return res
+
+    def get_user_role_in_course(self):
+        """Get the current user's role in the course"""
+        if self.request.user.is_superuser:
+            return "ADMIN"
+        try:
+            course_role = CourseRole.objects.get(
+                course=self.course, user=self.request.profile
+            )
+            return course_role.role
+        except CourseRole.DoesNotExist:
+            return None
+
+    def user_can_manage_user(self, target_user_current_role):
+        """Check if current user can manage users with the target_user_current_role"""
+        current_role = self.get_user_role_in_course()
+
+        # Admins can manage anyone
+        if current_role == "ADMIN":
+            return True
+
+        # Teachers can manage assistants and students, but not other teachers
+        if current_role == RoleInCourse.TEACHER:
+            return target_user_current_role in [
+                RoleInCourse.ASSISTANT,
+                RoleInCourse.STUDENT,
+            ]
+
+        # Assistants can only manage students
+        if current_role == RoleInCourse.ASSISTANT:
+            return target_user_current_role == RoleInCourse.STUDENT
+
+        # Students and non-members cannot manage anyone
+        return False
+
+    def user_can_assign_role(self, new_role):
+        """Check if current user can assign the new_role to someone"""
+        current_role = self.get_user_role_in_course()
+
+        # Admins can assign any role
+        if current_role == "ADMIN":
+            return True
+
+        # Teachers can assign any role (when they can manage the target user)
+        if current_role == RoleInCourse.TEACHER:
+            return True
+
+        # Assistants can only assign assistant or student roles
+        if current_role == RoleInCourse.ASSISTANT:
+            return new_role in [RoleInCourse.ASSISTANT, RoleInCourse.STUDENT]
+
+        # Students and non-members cannot assign roles
+        return False
 
 
 class CourseDetail(CourseDetailMixin, DetailView):
@@ -350,17 +423,27 @@ class CreateCourseLesson(CourseEditableMixin, FormView):
         form = self.get_form(form_class=CourseLessonForm)  # Get the CourseLessonForm
 
         if form.is_valid():
-            form.instance.course_id = self.course.id
-            self.lesson = form.save()
-            formset = CourseLessonProblemFormSet(
-                data=self.request.POST,
-                prefix=f"problems_{self.lesson.id}" if self.lesson else "problems",
-                queryset=CourseLessonProblem.objects.filter(
-                    lesson=self.lesson
-                ).order_by("order"),
-            )
-            for problem_formset in formset:
-                problem_formset.save()
+            with revisions.create_revision():
+                form.instance.course_id = self.course.id
+                self.lesson = form.save()
+                formset = CourseLessonProblemFormSet(
+                    data=self.request.POST,
+                    prefix=f"problems_{self.lesson.id}" if self.lesson else "problems",
+                    queryset=CourseLessonProblem.objects.filter(
+                        lesson=self.lesson
+                    ).order_by("order"),
+                )
+                for problem_formset in formset:
+                    problem_formset.save()
+
+                # Add revision tracking details
+                revisions.set_comment(
+                    _("Created lesson '{}' in course {}").format(
+                        form.cleaned_data["title"], self.course.name
+                    )
+                )
+                revisions.set_user(request.user)
+
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
@@ -385,48 +468,95 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
     model = CourseLesson
 
     def dispatch(self, request, *args, **kwargs):
-        self.lesson = CourseLesson.objects.get(id=kwargs["id"])
-        res = super().dispatch(request, *args, **kwargs)
-        if not self.lesson.id:
+        # First, set up the course from CourseDetailMixin without calling FormView dispatch
+        self.course = get_object_or_404(Course, slug=kwargs["slug"])
+        if not Course.is_accessible_by(self.course, request.profile):
+            raise Http404()
+        self.is_editable = Course.is_editable_by(self.course, request.profile)
+
+        # Check if user can edit (from CourseEditableMixin)
+        if not self.is_editable:
+            raise Http404()
+
+        # Now fetch and validate the lesson belongs to this course
+        try:
+            lesson_id = kwargs.get("id")
+            if not lesson_id:
+                raise Http404("No lesson ID provided in URL")
+
+            # Security: Ensure lesson belongs to the current course
+            self.lesson = CourseLesson.objects.get(id=lesson_id, course=self.course)
+
+        except CourseLesson.DoesNotExist:
+            # More detailed error for debugging
+            lesson_exists = CourseLesson.objects.filter(id=lesson_id).exists()
+            if lesson_exists:
+                actual_lesson = CourseLesson.objects.get(id=lesson_id)
+                raise Http404(
+                    f"Lesson {lesson_id} exists but belongs to course '{actual_lesson.course.slug}', not '{self.course.slug}'"
+                )
+            else:
+                raise Http404(f"Lesson {lesson_id} does not exist")
+        except Exception as e:
+            raise Http404(f"Error accessing lesson: {e}")
+
+        # Redirect if lesson doesn't have an ID (shouldn't happen but keeping original logic)
+        if not self.lesson or not self.lesson.id:
             return HttpResponseRedirect(
                 reverse(
                     "edit_course_lessons",
                     args=[self.course.slug],
                 )
             )
-        return res
+
+        # Now that everything is set up, call the FormView dispatch
+        return super(CourseEditableMixin, self).dispatch(request, *args, **kwargs)
+
+    def get_user_role_in_course(self):
+        """Get the current user's role in the course"""
+        if self.request.user.is_superuser:
+            return "ADMIN"
+        try:
+            course_role = CourseRole.objects.get(
+                course=self.course, user=self.request.profile
+            )
+            return course_role.role
+        except CourseRole.DoesNotExist:
+            return None
 
     def get(self, request, *args, **kwargs):
-        try:
-            self.lesson = CourseLesson.objects.get(id=kwargs["id"])
-
-            return super().get(request, *args, **kwargs)
-        except ObjectDoesNotExist:
-            raise Http404()
+        # Lesson is already validated and fetched in dispatch method
+        return super().get(request, *args, **kwargs)
 
     def get_problem_formset(self, post=False, lesson=None):
+        # Use the passed lesson parameter or fall back to self.lesson
+        target_lesson = lesson if lesson is not None else self.lesson
+
+        # Safety check
+        if not target_lesson:
+            raise ValueError("No lesson specified for problem formset")
+
         formset = CourseLessonProblemFormSet(
             data=self.request.POST if post else None,
-            prefix=f"problems_{lesson.id}" if lesson else "problems",
-            queryset=CourseLessonProblem.objects.filter(lesson=self.lesson).order_by(
+            prefix=f"problems_{target_lesson.id}",
+            queryset=CourseLessonProblem.objects.filter(lesson=target_lesson).order_by(
                 "order"
             ),
         )
-        if lesson:
-            for form in formset:
-                form.fields["lesson"].initial = self.lesson
+        for form in formset:
+            form.fields["lesson"].initial = target_lesson
         return formset
 
     def get_context_data(self, **kwargs):
         context = super(EditCourseLessonsViewNewWindow, self).get_context_data(**kwargs)
+
         if self.request.method != "POST":
             context["formset"] = self.form_class(
                 instance=self.course, queryset=self.course.lessons.order_by("order")
             )
+            # Create problem formset only for the current lesson
             context["problem_formsets"] = {
                 self.lesson.id: self.get_problem_formset(post=False, lesson=self.lesson)
-                for lesson in context["formset"].forms
-                if lesson.instance.id
             }
 
         context["title"] = _("Edit lessons for %(course_name)s") % {
@@ -442,36 +572,67 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
         context["page_type"] = "edit_lesson_new"
         context["lesson_field"] = CourseLessonForm(instance=self.lesson)
         context["lesson"] = self.lesson
+        context["current_user_role"] = self.get_user_role_in_course()
 
         return context
 
     def post(self, request, *args, **kwargs):
         form = self.get_form(form_class=CourseLessonForm)  # Get the CourseLessonForm
         if form.is_valid():
-            if "delete_lesson" in request.POST:
-                form.instance.course_id = self.course.id
-                form.instance.lesson_id = self.lesson.id
-                self.lesson.delete()
-                messages.success(request, "Lesson deleted successfully.")
-                course_slug = self.course.slug
-                return HttpResponseRedirect(
-                    reverse(
-                        "edit_course_lessons",
-                        args=[course_slug],
+            with revisions.create_revision():
+                if "delete_lesson" in request.POST:
+                    # Check if user has permission to delete lessons
+                    current_role = self.get_user_role_in_course()
+                    if current_role == RoleInCourse.ASSISTANT:
+                        messages.error(request, _("Assistants cannot delete lessons."))
+                        return HttpResponseRedirect(
+                            reverse(
+                                "edit_course_lessons_new",
+                                args=[self.course.slug, self.lesson.id],
+                            )
+                        )
+
+                    form.instance.course_id = self.course.id
+                    form.instance.lesson_id = self.lesson.id
+
+                    # Add revision tracking details for lesson deletion
+                    revisions.set_comment(
+                        _("Deleted lesson '{}' from course {}").format(
+                            self.lesson.title, self.course.name
+                        )
                     )
-                )
-            else:
-                form.instance.course_id = self.course.id
-                form.instance.id = self.lesson.id
-                self.lesson = form.save()
-                problem_formsets = self.get_problem_formset(
-                    post=True, lesson=self.lesson
-                )
-                if problem_formsets.is_valid():
-                    problem_formsets.save()
-                    for obj in problem_formsets.deleted_objects:
-                        if obj.pk is not None:
-                            obj.delete()
+                    revisions.set_user(request.user)
+
+                    self.lesson.delete()
+                    messages.success(request, "Lesson deleted successfully.")
+                    course_slug = self.course.slug
+                    return HttpResponseRedirect(
+                        reverse(
+                            "edit_course_lessons",
+                            args=[course_slug],
+                        )
+                    )
+                else:
+                    form.instance.course_id = self.course.id
+                    form.instance.id = self.lesson.id
+                    self.lesson = form.save()
+
+                    # Add revision tracking details for lesson editing
+                    revisions.set_comment(
+                        _("Updated lesson '{}' in course {}").format(
+                            form.cleaned_data["title"], self.course.name
+                        )
+                    )
+                    revisions.set_user(request.user)
+
+                    problem_formsets = self.get_problem_formset(
+                        post=True, lesson=self.lesson
+                    )
+                    if problem_formsets.is_valid():
+                        problem_formsets.save()
+                        for obj in problem_formsets.deleted_objects:
+                            if obj.pk is not None:
+                                obj.delete()
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
@@ -511,29 +672,13 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super(EditCourseLessonsView, self).get_context_data(**kwargs)
-        if self.request.method == "POST":
-            context["formset"] = self.form_class(
-                self.request.POST, self.request.FILES, instance=self.course
-            )
-            context["problem_formsets"] = {
-                lesson.instance.id: self.get_problem_formset(
-                    post=True, lesson=lesson.instance
-                )
-                for lesson in context["formset"].forms
-                if lesson.instance.id
-            }
-        else:
-            context["formset"] = self.form_class(
-                instance=self.course, queryset=self.course.lessons.order_by("order")
-            )
-            context["problem_formsets"] = {
-                lesson.instance.id: self.get_problem_formset(
-                    post=False, lesson=lesson.instance
-                )
-                for lesson in context["formset"].forms
-                if lesson.instance.id
-            }
 
+        # Get lessons with related problem data for the new design
+        lessons = self.course.lessons.prefetch_related(
+            "lesson_problems__problem"
+        ).order_by("order")
+
+        context["lessons"] = lessons
         context["title"] = _("Edit lessons for %(course_name)s") % {
             "course_name": self.course.name
         }
@@ -583,7 +728,7 @@ class CourseStudentResults(CourseEditableMixin, DetailView):
 
     def get_grades(self):
         students = self.course.get_students()
-        students.sort(key=lambda u: u.username.lower())
+
         lessons = (
             self.course.lessons.filter(is_visible=True)
             .prefetch_related("lesson_problems")
@@ -606,6 +751,13 @@ class CourseStudentResults(CourseEditableMixin, DetailView):
             grade_total[s] = calculate_total_progress(
                 s, lesson_progress, contest_progress
             )
+
+        students.sort(key=lambda s: (-grade_total[s]["percentage"], s.username.lower()))
+
+        grade_lessons = {s: grade_lessons[s] for s in students}
+        grade_contests = {s: grade_contests[s] for s in students}
+        grade_total = {s: grade_total[s] for s in students}
+
         return grade_lessons, grade_contests, grade_total
 
     def get_context_data(self, **kwargs):
@@ -646,6 +798,11 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
             self.lesson = CourseLesson.objects.get(
                 course=self.course, id=self.kwargs["id"]
             )
+            # Security: Only allow access to visible lessons or if user can edit course
+            if not self.lesson.is_visible and not Course.is_editable_by(
+                self.course, self.request.profile
+            ):
+                raise Http404()
             return self.lesson
         except ObjectDoesNotExist:
             raise Http404()
@@ -784,6 +941,13 @@ class CourseContestList(CourseEditableMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = _("Contest list")
+        context["content_title"] = mark_safe(
+            _("Edit contests for <a href='%(url)s'>%(course_name)s</a>")
+            % {
+                "course_name": self.course.name,
+                "url": self.course.get_absolute_url(),
+            }
+        )
         context["page_type"] = "contests"
         return context
 
@@ -952,3 +1116,480 @@ class EditCourseContest(CourseEditableMixin, FormView):
             "edit_course_contest",
             args=[self.course.slug, self.contest.key],
         )
+
+
+def is_lesson_clonable(request, lesson):
+    # Admins can clone any lesson
+    if request.user.is_superuser:
+        return True
+
+    # User must be able to edit the source course
+    if not Course.is_editable_by(lesson.course, request.profile):
+        return False
+
+    # User must have at least one other course they can edit
+    other_editable_courses = Course.objects.filter(
+        courserole__user=request.profile,
+        courserole__role__in=EDITABLE_ROLES,
+    )
+
+    return other_editable_courses.exists()
+
+
+class CourseSelect2View(View):
+    def get(self, request, *args, **kwargs):
+        from django.http import JsonResponse
+        from django.utils.encoding import smart_str
+
+        term = request.GET.get("term", "")
+
+        # Admins can see all courses
+        if request.user.is_superuser:
+            queryset = Course.objects.all()
+        else:
+            # Only show courses the user can edit
+            queryset = Course.objects.filter(
+                courserole__user=request.profile,
+                courserole__role__in=EDITABLE_ROLES,
+            )
+
+        if term:
+            queryset = queryset.filter(name__icontains=term)
+
+        results = []
+        for course in queryset[:20]:  # Limit to 20 results
+            results.append(
+                {
+                    "id": course.slug,
+                    "text": smart_str(course.name),
+                }
+            )
+
+        return JsonResponse(
+            {
+                "results": results,
+                "more": False,
+            }
+        )
+
+
+class LessonClone(CourseEditableMixin, TitleMixin, SingleObjectFormView):
+    title = _("Clone Lesson")
+    template_name = "course/clone.html"
+    form_class = LessonCloneForm
+    model = CourseLesson
+
+    def get_object(self, queryset=None):
+        try:
+            lesson = CourseLesson.objects.get(
+                course=self.course, id=self.kwargs["lesson_id"]
+            )
+            if not is_lesson_clonable(self.request, lesson):
+                raise Http404()
+            return lesson
+        except ObjectDoesNotExist:
+            raise Http404()
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["profile"] = self.request.profile
+        return kwargs
+
+    def form_valid(self, form):
+        target_course = form.cleaned_data["course"]
+        new_title = form.cleaned_data["title"]
+
+        with revisions.create_revision():
+            # Store lesson problems before cloning
+            lesson_problems = list(self.object.lesson_problems.all())
+
+            # Deep copy the lesson
+            cloned_lesson = deepcopy(self.object)
+            cloned_lesson.pk = None  # New ID will be auto-generated
+            cloned_lesson.course = target_course
+            cloned_lesson.title = new_title  # Use new title from form
+            cloned_lesson.is_visible = False  # Public visibility off
+            cloned_lesson.order = (  # Calculate next order
+                target_course.lessons.aggregate(Max("order"))["order__max"] or 0
+            ) + 1
+            cloned_lesson.save()
+
+            # Copy all lesson problems
+            cloned_problems = []
+            for lesson_problem in lesson_problems:
+                cloned_problem = deepcopy(lesson_problem)
+                cloned_problem.pk = None  # New ID will be auto-generated
+                cloned_problem.lesson = cloned_lesson
+                cloned_problems.append(cloned_problem)
+
+            if cloned_problems:
+                CourseLessonProblem.objects.bulk_create(cloned_problems)
+
+            # Add revision tracking details
+            revisions.set_comment(
+                _("Cloned lesson '{}' to course {}").format(
+                    new_title, target_course.name
+                )
+            )
+            revisions.set_user(self.request.user)
+
+        # Redirect to edit the cloned lesson in target course
+        return HttpResponseRedirect(
+            reverse(
+                "edit_course_lessons_new", args=[target_course.slug, cloned_lesson.id]
+            )
+        )
+
+
+class CourseMemberForm(forms.Form):
+    user = forms.CharField(
+        max_length=150,
+        widget=HeavySelect2Widget(
+            data_view="profile_select2", attrs={"style": "width: 100%"}
+        ),
+        label=_("User"),
+    )
+    role = forms.ChoiceField(
+        choices=RoleInCourse.choices, widget=Select2Widget(), label=_("Role")
+    )
+
+    def __init__(self, *args, course=None, current_user_role=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.course = course
+        self.current_user_role = current_user_role
+
+        # Restrict role choices based on current user's role
+        if current_user_role == RoleInCourse.ASSISTANT:
+            # Assistants can only assign assistant and student roles
+            self.fields["role"].choices = [
+                (RoleInCourse.ASSISTANT, _("Assistant")),
+                (RoleInCourse.STUDENT, _("Student")),
+            ]
+        # Teachers and Admins get all choices by default
+
+    def clean_user(self):
+        user_id = self.cleaned_data["user"]
+        try:
+            # The HeavySelect2Widget returns the profile ID, not username
+            profile = Profile.objects.get(id=user_id)
+            return profile
+        except (Profile.DoesNotExist, ValueError):
+            raise ValidationError(_("User does not exist."))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        profile = cleaned_data.get("user")
+        role = cleaned_data.get("role")
+
+        if profile and self.course:
+            # Check if user is already in the course
+            if CourseRole.objects.filter(course=self.course, user=profile).exists():
+                raise ValidationError(_("User is already a member of this course."))
+
+        # Validate role assignment permissions
+        if role and self.current_user_role:
+            if self.current_user_role == RoleInCourse.ASSISTANT and role not in [
+                RoleInCourse.ASSISTANT,
+                RoleInCourse.STUDENT,
+            ]:
+                raise ValidationError(
+                    _("Assistants can only assign assistant and student roles.")
+                )
+
+        return cleaned_data
+
+
+class CourseMembers(CourseAdminMixin, FormView):
+    template_name = "course/members.html"
+    form_class = CourseMemberForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["course"] = self.course
+        kwargs["current_user_role"] = self.get_user_role_in_course()
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super(CourseMembers, self).get_context_data(**kwargs)
+
+        # Get all course members with their roles, ordered by role priority (Teacher, Assistant, Student)
+        from django.db.models import Case, When, Value, IntegerField
+
+        members = (
+            CourseRole.objects.filter(course=self.course)
+            .select_related("user")
+            .annotate(
+                role_priority=Case(
+                    When(role=RoleInCourse.TEACHER, then=Value(1)),
+                    When(role=RoleInCourse.ASSISTANT, then=Value(2)),
+                    When(role=RoleInCourse.STUDENT, then=Value(3)),
+                    default=Value(4),
+                    output_field=IntegerField(),
+                )
+            )
+            .order_by("role_priority", "user__user__username")
+        )
+
+        context["members"] = members
+        context["title"] = _("Manage members for %(course_name)s") % {
+            "course_name": self.course.name
+        }
+        context["content_title"] = mark_safe(
+            _("Manage members for <a href='%(url)s'>%(course_name)s</a>")
+            % {
+                "course_name": self.course.name,
+                "url": self.course.get_absolute_url(),
+            }
+        )
+        context["page_type"] = "members"
+        context["role_choices"] = RoleInCourse.choices
+        context["current_user_role"] = self.get_user_role_in_course()
+
+        return context
+
+    def form_valid(self, form):
+        with revisions.create_revision():
+            profile = form.cleaned_data[
+                "user"
+            ]  # This is now a Profile object from clean_user
+            role = form.cleaned_data["role"]
+
+            # Create the course role (form validation ensures user is not already in course)
+            course_role = CourseRole.objects.create(
+                course=self.course, user=profile, role=role
+            )
+
+            # Add revision tracking details
+            revisions.set_comment(
+                _("Added member '{}' with role {} to course {}").format(
+                    profile.user.username,
+                    course_role.get_role_display(),
+                    self.course.name,
+                )
+            )
+            revisions.set_user(self.request.user)
+
+            messages.success(self.request, _("User added successfully."))
+            return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("course_members", args=[self.course.slug])
+
+
+class CourseRemoveMember(CourseAdminMixin, View):
+    def post(self, request, *args, **kwargs):
+        member_id = request.POST.get("member_id")
+
+        try:
+            course_role = CourseRole.objects.get(id=member_id, course=self.course)
+
+            current_user_role = self.get_user_role_in_course()
+            target_role = course_role.role
+
+            # Check permissions for member removal
+            if not self.user_can_manage_user(target_role):
+                messages.error(
+                    request, _("You do not have permission to remove this user.")
+                )
+                return HttpResponseRedirect(
+                    reverse("course_members", args=[self.course.slug])
+                )
+
+            with revisions.create_revision():
+                # Add revision tracking details before deletion
+                revisions.set_comment(
+                    _("Removed member '{}' with role {} from course {}").format(
+                        course_role.user.user.username,
+                        course_role.get_role_display(),
+                        self.course.name,
+                    )
+                )
+                revisions.set_user(request.user)
+
+                course_role.delete()
+
+            messages.success(request, _("Member removed successfully."))
+        except CourseRole.DoesNotExist:
+            messages.error(request, _("Member not found."))
+
+        return HttpResponseRedirect(reverse("course_members", args=[self.course.slug]))
+
+
+class CourseUpdateMemberRole(CourseAdminMixin, View):
+    def post(self, request, *args, **kwargs):
+        member_id = request.POST.get("member_id")
+        new_role = request.POST.get("role")
+
+        if new_role not in [choice[0] for choice in RoleInCourse.choices]:
+            messages.error(request, _("Invalid role selected."))
+            return HttpResponseRedirect(
+                reverse("course_members", args=[self.course.slug])
+            )
+
+        try:
+            course_role = CourseRole.objects.get(id=member_id, course=self.course)
+
+            current_user_role = self.get_user_role_in_course()
+            old_role = course_role.role
+
+            # Check permissions for role changes
+            # First check if user can manage the target user
+            if not self.user_can_manage_user(old_role):
+                messages.error(
+                    request, _("You do not have permission to manage this user.")
+                )
+                return HttpResponseRedirect(
+                    reverse("course_members", args=[self.course.slug])
+                )
+
+            # Then check if user can assign the new role
+            if not self.user_can_assign_role(new_role):
+                messages.error(
+                    request, _("You do not have permission to assign this role.")
+                )
+                return HttpResponseRedirect(
+                    reverse("course_members", args=[self.course.slug])
+                )
+
+            with revisions.create_revision():
+                old_role_display = course_role.get_role_display()
+                course_role.role = new_role
+                course_role.save()
+
+                # Add revision tracking details
+                revisions.set_comment(
+                    _("Updated member '{}'s role from {} to {} in course {}").format(
+                        course_role.user.user.username,
+                        old_role_display,
+                        CourseRole(role=new_role).get_role_display(),
+                        self.course.name,
+                    )
+                )
+                revisions.set_user(request.user)
+
+            new_role_display = CourseRole(role=new_role).get_role_display()
+            messages.success(
+                request,
+                _("Updated %(user)s's role from %(old_role)s to %(new_role)s.")
+                % {
+                    "user": course_role.user.user.username,
+                    "old_role": old_role_display,
+                    "new_role": new_role_display,
+                },
+            )
+        except CourseRole.DoesNotExist:
+            messages.error(request, _("Member not found."))
+
+        return HttpResponseRedirect(reverse("course_members", args=[self.course.slug]))
+
+
+class CourseEditForm(forms.ModelForm):
+    class Meta:
+        model = Course
+        fields = ["name", "about", "is_public", "slug", "course_image"]
+        widgets = {
+            "name": forms.TextInput(attrs={"style": "width: 100%"}),
+            "about": HeavyPreviewPageDownWidget(preview=reverse_lazy("blog_preview")),
+            "slug": forms.TextInput(attrs={"style": "width: 100%"}),
+            "course_image": ImageWidget,
+        }
+        labels = {
+            "name": _("Course Name"),
+            "about": _("Course Description"),
+            "is_public": _("Publicly Visible"),
+            "slug": _("Course Slug"),
+            "course_image": _("Course Image"),
+        }
+        help_texts = {
+            "name": _("Required. Maximum 128 characters."),
+            "about": _("Optional. Detailed description of the course."),
+            "slug": _(
+                "Required. Course name shown in URL. Only alphanumeric characters and hyphens."
+            ),
+            "is_public": _("Whether this course is visible to all users"),
+            "course_image": _(
+                "Optional. Upload an image for the course (maximum 5MB)."
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make required fields as specified by user
+        self.fields["name"].required = True
+        self.fields["about"].required = False  # Description is optional
+        self.fields["slug"].required = True
+        self.fields["course_image"].required = False  # Image is optional
+
+    def clean_slug(self):
+        slug = self.cleaned_data.get("slug")
+        if slug:
+            # Check for slug uniqueness, excluding current instance if editing
+            queryset = Course.objects.filter(slug=slug)
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+
+            if queryset.exists():
+                raise forms.ValidationError(
+                    _("A course with this slug already exists.")
+                )
+
+        return slug
+
+    def clean_name(self):
+        name = self.cleaned_data.get("name")
+        if name and len(name) > 128:
+            raise forms.ValidationError(_("Course name cannot exceed 128 characters."))
+        return name
+
+    def clean_course_image(self):
+        course_image = self.cleaned_data.get("course_image")
+        if course_image:
+            if course_image.size > 5 * 1024 * 1024:  # 5MB limit
+                raise forms.ValidationError(
+                    _("File size exceeds the maximum allowed limit of 5MB.")
+                )
+        return course_image
+
+
+class CourseEdit(CourseEditableMixin, SingleObjectFormView):
+    title = _("Edit Course")
+    template_name = "course/edit.html"
+    form_class = CourseEditForm
+    model = Course
+
+    def get_object(self, queryset=None):
+        return self.course
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["instance"] = self.course
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = _("Edit %(course_name)s") % {"course_name": self.course.name}
+        context["content_title"] = mark_safe(
+            _('Edit <a href="%(url)s">%(course_name)s</a>')
+            % {
+                "course_name": self.course.name,
+                "url": self.course.get_absolute_url(),
+            }
+        )
+        context["page_type"] = "edit"
+        return context
+
+    def form_valid(self, form):
+        with revisions.create_revision():
+            self.object = form.save()
+
+            # Add revision tracking details
+            revisions.set_comment(
+                _("Updated course details for {}").format(self.course.name)
+            )
+            revisions.set_user(self.request.user)
+
+            messages.success(self.request, _("Course updated successfully."))
+            return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("course_edit", args=[self.object.slug])

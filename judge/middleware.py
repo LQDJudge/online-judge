@@ -12,7 +12,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext as _
 
-from judge.models import Organization
+from judge.models import Organization, Course
 from judge.utils.views import generic_message
 
 
@@ -147,6 +147,31 @@ class SubdomainMiddleware(object):
                 _("No such group"),
                 status=404,
             )
+        return self.get_response(request)
+
+
+class CourseMiddleware(object):
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        request.course = None
+        try:
+            # Check if the URL is a course-related path
+            resolved = resolve(request.path)
+            if "slug" in resolved.kwargs and request.path.startswith("/course/"):
+                course_slug = resolved.kwargs["slug"]
+                try:
+                    course = Course.objects.get(slug=course_slug)
+                    # Only set request.course if user has access to the course
+                    # getattr handles the case where request.profile might not exist yet
+                    profile = getattr(request, "profile", None)
+                    if Course.is_accessible_by(course, profile):
+                        request.course = course
+                except Course.DoesNotExist:
+                    pass
+        except Resolver404:
+            pass
         return self.get_response(request)
 
 

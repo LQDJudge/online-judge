@@ -705,3 +705,38 @@ class TestFormatterForm(ModelForm):
     class Meta:
         model = TestFormatterModel
         fields = ["file"]
+
+
+class LessonCloneForm(Form):
+    title = CharField(max_length=200, label=_("Lesson Title"))
+
+    course = forms.CharField(
+        max_length=100,
+        widget=HeavySelect2Widget(
+            data_view="course_select2", attrs={"style": "width: 100%"}
+        ),
+        label=_("Target Course"),
+    )
+
+    def __init__(self, *args, profile=None, **kwargs):
+        super(LessonCloneForm, self).__init__(*args, **kwargs)
+
+        self.fields["course"].widget.attrs.update(
+            {
+                "data-placeholder": _("Search for a course"),
+            }
+        )
+        self.profile = profile
+
+    def clean_course(self):
+        course_slug = self.cleaned_data["course"]
+        try:
+            course = Course.objects.get(slug=course_slug)
+            # Check if user can edit the target course
+            if not Course.is_editable_by(course, self.profile):
+                raise ValidationError(
+                    _("You don't have permission to edit this course.")
+                )
+            return course
+        except Course.DoesNotExist:
+            raise ValidationError(_("Selected course does not exist."))
