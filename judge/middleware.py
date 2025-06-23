@@ -13,7 +13,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext as _
 from django.contrib.auth.models import User
 
-from judge.models import Organization, Course, Language
+from judge.models import Organization, Course, Language, Profile
 from judge.utils.views import generic_message
 
 
