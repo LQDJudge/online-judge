@@ -15,6 +15,8 @@ from judge.caching import cache_wrapper
 
 __all__ = ["Language", "RuntimeVersion", "Judge"]
 
+_default_language_pk = None
+
 
 class Language(models.Model):
     key = models.CharField(
@@ -152,7 +154,10 @@ class Language(models.Model):
 
     @classmethod
     def get_default_language_pk(cls):
-        return _get_default_language().pk
+        global _default_language_pk
+        if _default_language_pk is None:
+            _default_language_pk = _get_default_language().pk
+        return _default_language_pk
 
     class Meta:
         ordering = ["key"]
