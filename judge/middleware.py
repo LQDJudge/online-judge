@@ -11,8 +11,9 @@ from django.urls import Resolver404, resolve, reverse
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext as _
+from django.contrib.auth.models import User
 
-from judge.models import Organization, Course
+from judge.models import Organization, Course, Language
 from judge.utils.views import generic_message
 
 
@@ -43,7 +44,17 @@ class DMOJLoginMiddleware(object):
 
     def __call__(self, request):
         if request.user.is_authenticated:
-            profile = request.profile = request.user.profile
+            try:
+                profile = request.profile = request.user.profile
+            except User.profile.RelatedObjectDoesNotExist:
+                profile, _ = Profile.objects.get_or_create(
+                    user=user,
+                    defaults={
+                        "language": Language.get_default_language(),
+                    },
+                )
+                request.profile = profile
+
             login_2fa_path = reverse("login_2fa")
             if (
                 profile.is_totp_enabled
