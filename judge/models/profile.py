@@ -148,6 +148,7 @@ class Organization(CacheableModel):
                 contest.delete()
         args_list = [(profile_id,) for profile_id in self.get_member_ids()]
         _get_most_recent_organization_ids.dirty_multi(args_list)
+        Profile.get_organization_ids.dirty_multi(args_list)
         super().delete(*args, **kwargs)
 
     def __str__(self):
