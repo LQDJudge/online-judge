@@ -12,6 +12,7 @@ from registration.backends.default.views import (
     ActivationView as OldActivationView,
     RegistrationView as OldRegistrationView,
 )
+from celery import shared_task
 from registration.forms import RegistrationForm
 
 from judge.models import Language, Profile, TIMEZONE
@@ -97,7 +98,18 @@ class RegistrationView(OldRegistrationView):
         profile.timezone = cleaned_data["timezone"]
         profile.language = cleaned_data["language"]
         profile.save()
+
+        self.send_activation_email_task.delay(user.id)
         return user
+
+    def send_activation_email(self, user):
+        pass
+
+    @shared_task
+    def send_activation_email_task(user_id):
+        user = User.objects.get(id=user_id)
+        registration_view = OldRegistrationView()
+        registration_view.send_activation_email(user)
 
     def get_initial(self, *args, **kwargs):
         initial = super(RegistrationView, self).get_initial(*args, **kwargs)
