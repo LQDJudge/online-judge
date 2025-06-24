@@ -13,6 +13,7 @@ from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save, m2m_changed
+from django.http import Http404
 
 from fernet_fields import EncryptedCharField
 from sortedm2m.fields import SortedManyToManyField
@@ -298,7 +299,6 @@ class Profile(CacheableModel):
         help_text=_("Notes for administrators regarding this user."),
     )
     profile_image = models.ImageField(upload_to=profile_image_path, null=True)
-    email_change_pending = models.EmailField(blank=True, null=True)
     css_background = models.TextField(
         verbose_name=_("Custom background"),
         null=True,
