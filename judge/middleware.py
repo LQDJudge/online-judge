@@ -48,7 +48,7 @@ class DMOJLoginMiddleware(object):
                 profile = request.profile = request.user.profile
             except User.profile.RelatedObjectDoesNotExist:
                 profile, _ = Profile.objects.get_or_create(
-                    user=user,
+                    user=request.user,
                     defaults={
                         "language": Language.get_default_language(),
                     },
