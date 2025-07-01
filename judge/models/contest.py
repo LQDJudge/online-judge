@@ -399,6 +399,9 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         if self.time_limit and self.time_limit > max_duration:
             self.time_limit = max_duration
 
+        if self.freeze_after and self.freeze_after > max_duration:
+            self.freeze_after = max_duration
+
         super().save(*args, **kwargs)
 
     def is_in_contest(self, user):
