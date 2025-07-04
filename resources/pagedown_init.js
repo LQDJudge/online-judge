@@ -192,8 +192,8 @@ DjangoPagedown = (function () {
 
   const init = function () {
     const elements = document.getElementsByClassName('wmd-wrapper');
-    if (elements.length > 0) {
-      createEditor(elements[0]); // Only handle the first element
+    for (let i = 0; i < elements.length; i++) {
+      createEditor(elements[i]); // Handle all elements
     }
   };
 

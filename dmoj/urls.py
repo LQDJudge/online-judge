@@ -234,6 +234,7 @@ urlpatterns = [
         ),
     ),
     re_path(r"^problems/", paged_list_view(problem.ProblemList, "problem_list")),
+    re_path(r"^problems/add/$", problem.ProblemAdd.as_view(), name="problem_add"),
     re_path(
         r"^problems/random/$", problem.RandomProblem.as_view(), name="problem_random"
     ),
@@ -278,6 +279,27 @@ urlpatterns = [
                 ),
                 re_path(
                     r"^/clone", problem.ProblemClone.as_view(), name="problem_clone"
+                ),
+                re_path(r"^/edit$", problem.ProblemEdit.as_view(), name="problem_edit"),
+                re_path(
+                    r"^/edit/language_limits$",
+                    problem.ProblemEditLanguageLimits.as_view(),
+                    name="problem_edit_language_limits",
+                ),
+                re_path(
+                    r"^/edit/language_templates$",
+                    problem.ProblemEditLanguageTemplates.as_view(),
+                    name="problem_edit_language_templates",
+                ),
+                re_path(
+                    r"^/edit/solutions$",
+                    problem.ProblemEditSolutions.as_view(),
+                    name="problem_edit_solutions",
+                ),
+                re_path(
+                    r"^/edit/translations$",
+                    problem.ProblemEditTranslations.as_view(),
+                    name="problem_edit_translations",
                 ),
                 re_path(r"^/submit$", problem.problem_submit, name="problem_submit"),
                 re_path(

@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block js_media %}
+  {{ form.media.js }}
+  <script src="{{ static('jquery-ui.min.js') }}"></script>
+  <script src="{{ static('problem_form.js') }}"></script>
+  <script type="text/javascript">
+    $(document).ready(function() {
+    // Initialize shared problem form utilities
+      initializeProblemForm();
+    });
+  </script>
+{% endblock %}
+
+{% block body %}
+  <div class="problem-edit-form">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      {% if form.non_field_errors() %}
+        <div class="alert alert-danger">
+          {% for error in form.non_field_errors() %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+            <!-- Tab Navigation -->
+      <div class="tab-navigation">
+        <button class="tab-button active" id="tab-content" data-target="#pane-content">{{ _('Content') }}</button>
+        <button class="tab-button" id="tab-metadata" data-target="#pane-metadata">{{ _('Metadata') }}</button>
+      </div>
+
+            <!-- Tab Content -->
+      <div class="tab-content">
+                <!-- Content Tab -->
+        <div class="tab-pane active" id="pane-content">
+          <div class="form-row">
+            <label for="{{ form.code.id_for_label }}"><b>{{ _('Problem Code') }}{% if form.code.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            {{ form.code }}
+            {% if form.code.errors %}
+              <div class="alert alert-danger alert-dismissable">
+                {% for error in form.code.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ form.name.id_for_label }}"><b>{{ _('Problem Name') }}{% if form.name.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            {{ form.name }}
+            {% if form.name.errors %}
+              <div class="alert alert-danger alert-dismissable">
+                {% for error in form.name.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-row checkbox-field">
+            <label for="{{ form.is_public.id_for_label }}"><b>{{ form.is_public.label }}{% if form.is_public.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            {{ form.is_public }}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ form.organizations.id_for_label }}"><b>{{ _('Organizations') }}{% if form.organizations.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            {{ form.organizations }}
+            {% if form.organizations.errors %}
+              <div class="alert alert-danger alert-dismissable">
+                {% for error in form.organizations.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ form.date.id_for_label }}"><b>{{ _('Publication Date') }}{% if form.date.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            {{ form.date }}
+            {% if form.date.errors %}
+              <div class="alert alert-danger alert-dismissable">
+                {% for error in form.date.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ form.authors.id_for_label }}"><b>{{ _('Authors') }}{% if form.authors.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            {{ form.authors }}
+            {% if form.authors.errors %}
+              <div class="alert alert-danger alert-dismissable">
+                {% for error in form.authors.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ form.curators.id_for_label }}"><b>{{ _('Curators') }}{% if form.curators.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            {{ form.curators }}
+            {% if form.curators.errors %}
+              <div class="alert alert-danger alert-dismissable">
+                {% for error in form.curators.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ form.testers.id_for_label }}"><b>{{ _('Testers') }}{% if form.testers.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            {{ form.testers }}
+            {% if form.testers.errors %}
+              <div class="alert alert-danger alert-dismissable">
+                {% for error in form.testers.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ form.description.id_for_label }}"><b>{{ _('Problem Description') }}{% if form.description.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            <div style="width: 100%">
+              {{ form.description }}
+            </div>
+            {% if form.description.errors %}
+              <div class="alert alert-danger alert-dismissable">
+                {% for error in form.description.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ form.pdf_description.id_for_label }}"><b>{{ _('PDF Description') }}{% if form.pdf_description.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            {{ form.pdf_description }}
+            {% if form.pdf_description.errors %}
+              <div class="alert alert-danger alert-dismissable">
+                {% for error in form.pdf_description.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+        </div>
+
+
+                <!-- Metadata Tab -->
+        <div class="tab-pane" id="pane-metadata">
+          <div class="form-row">
+            <label for="{{ form.types.id_for_label }}"><b>{{ _('Problem Types') }}{% if form.types.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            {{ form.types }}
+            {% if form.types.errors %}
+              <div class="alert alert-danger alert-dismissable">
+                {% for error in form.types.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ form.group.id_for_label }}"><b>{{ _('Problem Group') }}{% if form.group.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            {{ form.group }}
+            {% if form.group.errors %}
+              <div class="alert alert-danger alert-dismissable">
+                {% for error in form.group.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <hr>
+
+          <div class="inline-fields">
+            <div class="form-row">
+              <label for="{{ form.points.id_for_label }}"><b>{{ _('Points') }}{% if form.points.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+              {{ form.points }}
+              {% if form.points.errors %}
+                <div class="alert alert-danger alert-dismissable">
+                  {% for error in form.points.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="form-row checkbox-field">
+              <label for="{{ form.partial.id_for_label }}"><b>{{ form.partial.label }}{% if form.partial.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+              {{ form.partial }}
+            </div>
+          </div>
+
+          <div class="form-row checkbox-field">
+            <label for="{{ form.short_circuit.id_for_label }}"><b>{{ form.short_circuit.label }}{% if form.short_circuit.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            {{ form.short_circuit }}
+          </div>
+
+          <hr>
+
+          <div class="form-row">
+            <label for="{{ form.time_limit.id_for_label }}"><b>{{ _('Time Limit (s)') }}{% if form.time_limit.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            {{ form.time_limit }}
+            {% if form.time_limit.errors %}
+              <div class="alert alert-danger alert-dismissable">
+                {% for error in form.time_limit.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="inline-fields">
+            <div class="form-row">
+              <label for="{{ form.memory_limit.id_for_label }}"><b>{{ _('Memory Limit') }}{% if form.memory_limit.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+              {{ form.memory_limit }}
+              {% if form.memory_limit.errors %}
+                <div class="alert alert-danger alert-dismissable">
+                  {% for error in form.memory_limit.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="form-row">
+              <label for="{{ form.memory_unit.id_for_label }}"><b>{{ _('Memory Unit') }}{% if form.memory_unit.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+              {{ form.memory_unit }}
+              {% if form.memory_unit.errors %}
+                <div class="alert alert-danger alert-dismissable">
+                  {% for error in form.memory_unit.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="form-row">
+            <label for="{{ form.allowed_languages.id_for_label }}"><b>{{ _('Allowed Languages') }}{% if form.allowed_languages.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            <div class="checkbox-list">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="select-all-languages">
+                <label class="form-check-label" for="select-all-languages">{{ _('Select All') }}</label>
+              </div>
+              {{ form.allowed_languages }}
+            </div>
+            {% if form.allowed_languages.errors %}
+              <div class="alert alert-danger alert-dismissable">
+                {% for error in form.allowed_languages.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+
+      <div class="form-actions" style="margin-top: 1em;">
+        <button type="submit" class="action-btn">{{ _('Save') }}</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

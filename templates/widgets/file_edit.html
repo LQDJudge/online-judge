@@ -11,7 +11,7 @@
 <div id="file-editor-modal-{{ element_id }}" class="file-editor-modal" style="display:none;">
   <div class="modal-content" style="min-width:600px;">
     <!-- Input for editing the filename -->
-    <div style="display: flex;  justify-content: space-between;">
+    <div style="display: flex;  justify-content: space-between; padding-bottom: 1em;">
       <input type="text" id="filename-input-{{ element_id }}" class="filename-input" style="width: 30%; padding: 5px;" value="{{ file_name|escape }}">
       <button type="button" id="save-file-btn-{{ element_id }}" class="small save-file-btn" data-element-id="{{ element_id }}">
         {{ _('Save') }}

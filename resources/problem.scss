@@ -1,3 +1,5 @@
+@use "vars" as *;
+
 #problem-table {
     td {
         &.category {
@@ -365,8 +367,168 @@ ul.problem-list {
 
 .problem-data-form {
     .bad-file input, .bad-file .select2-selection {
-        border-color: red;
+        border-color: gray;
     }
+}
+
+// Problem data page styles - moved from inline CSS
+#case-table {
+    .select2 {
+        text-align: initial;
+    }
+
+    tbody td {
+        white-space: nowrap;
+    }
+}
+
+.order-column {
+    width: 1em;
+}
+
+.type-column {
+    width: 8em;
+}
+
+span.order {
+    padding-right: 0.5em;
+}
+
+// Drag and drop functionality
+body.dragging, body.dragging * {
+    cursor: move !important;
+}
+
+.dragged {
+    position: absolute;
+    opacity: 0.5;
+    z-index: 2000;
+}
+
+i.fa-ellipsis-v {
+    cursor: move;
+}
+
+// Error list styling
+ul.errorlist {
+    border: 3px red solid;
+    border-radius: 5px;
+    padding-top: 1em;
+    padding-bottom: 1em;
+    background: #e99;
+}
+
+#submit-button {
+    margin-bottom: 1em;
+}
+
+// Generator args styling
+input[name*="generator_args"] {
+    font-size: 14px;
+    padding: 3px 6px;
+}
+
+.generator-args-container {
+    position: relative;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+}
+
+.generator-args-icon {
+    color: #666;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 8px;
+    border: 1px dashed #ccc;
+    border-radius: 3px;
+    background: #f9f9f9;
+
+    &:hover {
+        color: #333;
+        border-color: #999;
+        background: #f0f0f0;
+    }
+}
+
+.generator-args-hidden {
+    display: none !important;
+}
+
+// Generator Script Modal
+#generator-script-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    .modal-content {
+        background: white;
+        padding: 20px;
+        border-radius: 5px;
+        max-width: 800px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+}
+
+.generator-script-container .btn {
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    background: #f5f5f5;
+    cursor: pointer;
+    border-radius: 3px;
+
+    &:hover {
+        background: #e5e5e5;
+    }
+}
+
+// Textarea with line numbers
+.textarea-with-lines {
+    position: relative;
+    display: flex;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+#line-numbers {
+    background: #f5f5f5;
+    border-right: 1px solid #ddd;
+    color: #666;
+    padding: 10px 5px;
+    text-align: right;
+    min-width: 30px;
+    user-select: none;
+    white-space: pre-line;
+}
+
+#generator-script-textarea {
+    flex: 1;
+    min-height: 300px;
+    line-height: 1.4;
+}
+
+#add-case-row {
+    background: #28a745;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+    display: inline-block;
 }
 
 .problem-clarification {
@@ -743,5 +905,395 @@ body:not(.problem-raw) {
     .new-pi-value {
         font-size: 14px;
         padding: 0 3px;
+    }
+}
+
+// Shared form and layout styles for problem management pages
+.problem-page-container {
+    padding: 20px;
+}
+
+.problem-content-layout {
+    width: 100%;
+}
+
+.problem-content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: start;
+
+    &.single-column {
+        grid-template-columns: 1fr;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+}
+
+.problem-card {
+    margin-bottom: 10px;
+
+    .card-header {
+        padding: 20px 20px;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+}
+
+.problem-form-group {
+    margin-bottom: 25px;
+}
+
+.problem-form-label {
+    display: inline-block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.problem-help-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+.problem-form-actions {
+    margin-top: 20px;
+    display: flex;
+
+    .action-btn {
+        margin-right: 10px;
+    }
+}
+
+// Error and validation styling
+.required-asterisk {
+    color: $announcement_red !important;
+}
+
+.error-message {
+    color: $announcement_red !important;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+// Alert message styling
+.alert {
+    margin-bottom: 20px;
+    border-radius: 4px;
+    padding: 15px;
+    border: 1px solid;
+    position: relative;
+
+    .fa {
+        margin-right: 8px;
+    }
+
+    .close {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: inherit;
+        opacity: 0.7;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+}
+
+.alert-success {
+    background-color: #d4edda !important;
+    border-color: #c3e6cb !important;
+    color: #155724 !important;
+    animation: fadeInOut 5s ease-in-out forwards;
+}
+
+.alert-danger {
+    background-color: #f8d7da !important;
+    border-color: #f5c6cb !important;
+    color: #721c24 !important;
+}
+
+.alert-info {
+    background-color: #d1ecf1 !important;
+    border-color: #bee5eb !important;
+    color: #0c5460 !important;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(-10px); }
+    10% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); }
+}
+
+// Language limits specific styles
+.language-limits-page {
+    .table {
+        margin-bottom: 0;
+
+        th {
+            padding: 12px 15px;
+            font-size: 1em;
+        }
+
+        td {
+            padding: 12px 15px;
+        }
+    }
+
+    .default-limits-box {
+        background-color: $background_light_gray;
+        border: 1px solid $border_gray;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 20px;
+    }
+
+    .select2-container {
+        width: 50% !important;
+    }
+
+    #id_memory_unit {
+        min-width: 45px;
+        height: 25px;
+        font-size: 14px;
+        margin-left: 6px;
+    }
+}
+
+// Language templates specific styles
+.language-templates-page {
+    .template-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .template-source-code {
+        height: 200px;
+        border: 1px solid $border_gray;
+        border-radius: 4px;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+
+        .ace_editor {
+            font-size: 13px !important;
+        }
+
+        .ace_gutter {
+            background: $background_light_gray;
+            border-right: 1px solid #e9ecef;
+        }
+    }
+
+    .template-card {
+        margin-bottom: 15px;
+    }
+
+    .template-language {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    #id_language {
+        width: 50% !important;
+    }
+}
+
+// Solutions specific styles
+.solutions-page {
+    .form-section {
+        min-height: 400px;
+    }
+
+    .solution-card {
+        margin-bottom: 15px;
+    }
+
+    .solution-authors {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .solution-content {
+        max-height: 300px;
+        overflow-y: auto;
+        background-color: $background_light_gray;
+        padding: 15px;
+        border-radius: 4px;
+        border: 1px solid $border_gray;
+    }
+}
+
+// Translations specific styles
+.translations-page {
+    .translation-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .translation-card {
+        margin-bottom: 15px;
+    }
+
+    .translation-language {
+        font-weight: 600;
+        color: #495057;
+    }
+}
+
+// Problem edit form styles
+.problem-edit-form {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.tab-navigation {
+    display: flex;
+    border-bottom: 2px solid #e0e0e0;
+    background: #f5f5f5;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 15px 10px;
+    text-align: center;
+    font-weight: 600;
+    color: #555;
+    border: none;
+    background: none;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-size: 15px;
+
+    &:hover {
+        background: rgba(0,124,186,0.05);
+        color: #007cba;
+    }
+
+    &.active {
+        color: #007cba;
+        border-bottom-color: #007cba;
+        background: rgba(0,124,186,0.1);
+    }
+
+    &.has-errors {
+        color: #dc3545;
+        position: relative;
+
+        &::after {
+            content: '!';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: #dc3545;
+            color: white;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    }
+}
+
+.tab-pane {
+    display: none;
+    padding: 30px;
+
+    &.active {
+        display: block;
+    }
+}
+
+.form-row {
+    margin-bottom: 20px;
+    align-items: baseline !important;
+
+    label {
+        display: inline-block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+    }
+}
+
+.alert-danger {
+    color: #dc3545;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 4px;
+}
+
+.form-actions {
+    display: flex;
+    padding: 20px;
+    background: #f5f5f5;
+    border-top: 1px solid #e0e0e0;
+}
+
+.checkbox-field {
+    display: flex;
+    margin-bottom: 15px;
+}
+
+.checkbox-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 2px solid #e9ecef;
+    padding: 20px;
+    border-radius: 6px;
+    background: #f8f9fa;
+}
+
+.inline-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+// Form validation styling
+.form-row.has-errors {
+    input, textarea, select {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    }
+
+    label {
+        color: #dc3545;
+    }
+}
+
+.tab-button.has-errors {
+    background-color: #f8d7da !important;
+    border-color: #dc3545 !important;
+    color: #721c24 !important;
+
+    &:hover {
+        background-color: #f1b0b7 !important;
+    }
+
+    &.active {
+        background-color: #dc3545 !important;
+        color: white !important;
     }
 }

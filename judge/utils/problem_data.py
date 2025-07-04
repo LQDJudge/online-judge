@@ -162,7 +162,7 @@ class ProblemDataCompiler(object):
                 if case.points is not None:
                     data["points"] = case.points
                 if case.generator_args:
-                    data["generator_args"] = case.generator_args.splitlines()
+                    data["generator_args"] = case.generator_args.split()
                 if case.output_limit is not None:
                     data["output_limit_length"] = case.output_limit
                 if case.output_prefix is not None:
@@ -186,7 +186,7 @@ class ProblemDataCompiler(object):
                     "is_pretest": case.is_pretest,
                 }
                 if case.generator_args:
-                    batch["generator_args"] = case.generator_args.splitlines()
+                    batch["generator_args"] = case.generator_args.split()
                 if case.output_limit is not None:
                     batch["output_limit_length"] = case.output_limit
                 if case.output_prefix is not None:

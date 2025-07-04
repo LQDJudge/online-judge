@@ -67,6 +67,10 @@ class ProblemData(models.Model):
         blank=True,
         upload_to=problem_directory_file,
     )
+    generator_script = models.TextField(
+        verbose_name=_("generator script"),
+        blank=True,
+    )
     output_prefix = models.IntegerField(
         verbose_name=_("output prefix length"), blank=True, null=True
     )

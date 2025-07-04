@@ -202,7 +202,7 @@
       <i class="fa fa-list-check"></i><span> {{ _('Best submissions') }}</span>
     </a>
   </div>
-  {% if problem.has_public_editorial() and not (request.user.is_authenticated and request.in_contest_mode) %}
+  {% if problem.has_public_editorial() and not request.in_contest_mode %}
     <hr>
     <div class="link-row">
       <a href="{{ url('problem_editorial', problem.code) }}">
@@ -220,18 +220,6 @@
         </span>
       </a>
     </div>
-    <div class="link-row">
-      <a href="{{ url('admin:judge_problem_change', problem.id) }}">
-        <i class="fa fa-edit"></i><span> {{ _('Edit problem') }}</span>
-      </a>
-    </div>
-    {% if not problem.is_manually_managed %}
-      <div class="link-row">
-        <a href="{{ url('problem_data', problem.code) }}">
-          <i class="fa fa-database"></i><span> {{ _('Edit test data') }}</span>
-        </a>
-      </div>
-    {% endif %}
   {% elif request.user.is_authenticated and has_tickets %}
     <hr>
     <div class="link-row">
@@ -251,10 +239,52 @@
     </div>
   {% endif %}
 
-  {% if perms.judge.clone_problem %}
+  {% if request.user.is_superuser %}
     <div class="link-row">
       <a href="{{ url('problem_clone', problem.code) }}">
         <i class="fas fa-clone"></i><span> {{ _('Clone problem') }}</span>
+      </a>
+    </div>
+
+    <div class="link-row">
+      <a href="{{ url('admin:judge_problem_change', problem.id) }}">
+        <i class="fa fa-user-shield"></i><span> {{ _('Admin') }}</span>
+      </a>
+    </div>
+  {% endif %}
+
+  {% if can_edit_problem %}
+    <hr>
+    <div class="link-row">
+      <a href="{{ url('problem_edit', problem.code) }}">
+        <i class="fa fa-edit"></i><span> {{ _('Edit problem') }}</span>
+      </a>
+    </div>
+    {% if not problem.is_manually_managed %}
+      <div class="link-row">
+        <a href="{{ url('problem_data', problem.code) }}">
+          <i class="fa fa-database"></i><span> {{ _('Edit test data') }}</span>
+        </a>
+      </div>
+    {% endif %}
+    <div class="link-row">
+      <a href="{{ url('problem_edit_language_limits', problem.code) }}">
+        <i class="fa fa-stopwatch"></i><span> {{ _('Edit language limits') }}</span>
+      </a>
+    </div>
+    <div class="link-row">
+      <a href="{{ url('problem_edit_language_templates', problem.code) }}">
+        <i class="fa fa-code"></i><span> {{ _('Edit templates') }}</span>
+      </a>
+    </div>
+    <div class="link-row">
+      <a href="{{ url('problem_edit_solutions', problem.code) }}">
+        <i class="fa fa-lightbulb"></i><span> {{ _('Edit solutions') }}</span>
+      </a>
+    </div>
+    <div class="link-row">
+      <a href="{{ url('problem_edit_translations', problem.code) }}">
+        <i class="fa fa-language"></i><span> {{ _('Edit translations') }}</span>
       </a>
     </div>
   {% endif %}
@@ -338,7 +368,7 @@
       </div>
     </div>
   {% endif %}
-  {% if problem.is_editable_by(request.user) %}
+  {% if can_edit_problem %}
     <div id="available-judges">
       <div class="toggle closed" id="judge-toggle">
         <i class="fa fa-chevron-right"></i><span
