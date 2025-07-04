@@ -9,6 +9,7 @@ from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db import transaction
 from django.db.models import (
@@ -41,17 +42,30 @@ from django.utils.functional import cached_property
 from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _, gettext_lazy
-from django.views.generic import ListView, View
+from django.views.generic import ListView, View, CreateView
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
+from django.views.generic.edit import FormMixin
 
 from judge.views.comment import CommentableMixin
-from judge.forms import ProblemCloneForm, ProblemSubmitForm, ProblemPointsVoteForm
+from judge.forms import (
+    ProblemCloneForm,
+    ProblemSubmitForm,
+    ProblemPointsVoteForm,
+    ProblemEditForm,
+    ProblemAddForm,
+    LanguageLimitEditForm,
+    LanguageTemplateEditForm,
+    ProblemSolutionEditForm,
+    ProblemTranslationEditForm,
+)
 from judge.models import (
     ContestProblem,
     ContestSubmission,
     Judge,
     Language,
+    LanguageLimit,
+    LanguageTemplate,
     Problem,
     ContestProblemClarification,
     ProblemGroup,
@@ -62,7 +76,6 @@ from judge.models import (
     Submission,
     SubmissionSource,
     Profile,
-    LanguageTemplate,
     Contest,
 )
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
@@ -1184,6 +1197,18 @@ class ProblemClone(
     form_class = ProblemCloneForm
     permission_required = "judge.clone_problem"
 
+    def has_permission(self):
+        if not self.request.user.is_authenticated:
+            return False
+
+        # Ensure the user has clone_problem permission
+        if not self.request.user.has_perm("judge.clone_problem"):
+            return False
+
+        # Additional checks to ensure problem is accessible
+        problem = self.get_object()
+        return problem.is_accessible_by(self.request.user)
+
     def form_valid(self, form):
         languages = self.object.allowed_languages.all()
         language_limits = self.object.language_limits.all()
@@ -1204,4 +1229,642 @@ class ProblemClone(
 
         return HttpResponseRedirect(
             reverse("admin:judge_problem_change", args=(problem.id,))
+        )
+
+
+class ProblemEdit(
+    ProblemMixin, PermissionRequiredMixin, TitleMixin, SingleObjectFormView
+):
+    title = _("Edit Problem")
+    template_name = "problem/edit.html"
+    form_class = ProblemEditForm
+
+    def get_title(self):
+        return _("Edit {0}").format(self.object.name)
+
+    def get_content_title(self):
+        return mark_safe(
+            escape(_("Editing problem for %s"))
+            % (
+                format_html(
+                    '<a href="{1}">{0}</a>',
+                    self.object.name,
+                    reverse("problem_detail", args=[self.object.code]),
+                )
+            )
+        )
+
+    def has_permission(self):
+        if not self.request.user.is_authenticated:
+            return False
+
+        problem = self.get_object()
+        return problem.is_editable_by(self.request.user)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        # Add the instance to form kwargs (since SingleObjectFormView doesn't include ModelFormMixin)
+        if hasattr(self, "object"):
+            kwargs.update({"instance": self.object})
+
+        # Set initial memory unit based on current memory_limit
+        if self.object and self.object.memory_limit:
+            # If memory is divisible by 1024, show in MB
+            if self.object.memory_limit % 1024 == 0:
+                kwargs.setdefault("initial", {})
+                kwargs["initial"]["memory_unit"] = "MB"
+                kwargs["initial"]["memory_limit"] = self.object.memory_limit // 1024
+            else:
+                kwargs.setdefault("initial", {})
+                kwargs["initial"]["memory_unit"] = "KB"
+        return kwargs
+
+    def form_valid(self, form):
+        from judge.tasks import rescore_problem
+        from django.db import transaction
+
+        # Save the main form
+        problem = form.save(commit=False)
+
+        # Handle memory unit conversion (already done in clean method)
+        (
+            form.changed_data.remove("memory_unit")
+            if "memory_unit" in form.changed_data
+            else None
+        )
+
+        problem.save()
+        form.save_m2m()
+
+        # Add the current user as a curator if they're not already an author/curator
+        if not problem.is_editor(self.request.profile):
+            problem.curators.add(self.request.profile)
+
+        # Rescore if necessary fields changed
+        if form.changed_data and any(
+            f in form.changed_data for f in ("is_public", "points", "partial")
+        ):
+            transaction.on_commit(rescore_problem.s(problem.id).delay)
+
+        return HttpResponseRedirect(reverse("problem_detail", args=[problem.code]))
+
+    def form_invalid(self, form):
+        """Handle invalid form with formsets"""
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["problem"] = self.object
+        return context
+
+
+class ProblemAdd(PermissionRequiredMixin, CreateView):
+    title = _("Add Problem")
+    template_name = "problem/add.html"
+    form_class = ProblemAddForm
+    model = Problem
+
+    def has_permission(self):
+        if not self.request.user.is_authenticated:
+            return False
+
+        # Check if user is superuser or has explicit add problem permission
+        user = self.request.user
+        return user.is_superuser or user.has_perm("judge.add_problem")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        """Handle valid form submission"""
+        problem = form.save()
+
+        # Set default values for new problem
+        if not problem.date:
+            problem.date = timezone.now()
+
+        problem.save()
+
+        # Add success message
+        messages.success(
+            self.request,
+            _("Problem '%(name)s' has been created successfully!")
+            % {"name": problem.name},
+        )
+
+        return HttpResponseRedirect(reverse("problem_detail", args=[problem.code]))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = self.title
+        context["page_type"] = "add"
+        return context
+
+
+class ProblemEditLanguageLimits(
+    ProblemMixin,
+    PermissionRequiredMixin,
+    TitleMixin,
+    TemplateResponseMixin,
+    SingleObjectMixin,
+    View,
+):
+    """Manage language-specific limits for a problem"""
+
+    template_name = "problem/language_limits.html"
+
+    def get_title(self):
+        return _("Edit Language Limits - {0}").format(self.object.name)
+
+    def get_content_title(self):
+        return mark_safe(
+            escape(_("Editing language limits for %s"))
+            % (
+                format_html(
+                    '<a href="{1}">{0}</a>',
+                    self.object.name,
+                    reverse("problem_detail", args=[self.object.code]),
+                )
+            )
+        )
+
+    def has_permission(self):
+        if not self.request.user.is_authenticated:
+            return False
+
+        problem = self.get_object()
+        return problem.is_editable_by(self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        language_limits = self.object.language_limits.all().order_by("language__name")
+
+        # Create form for adding new language limit
+        form = LanguageLimitEditForm(problem=self.object)
+
+        return self.render_to_response(
+            {
+                "language_limits": language_limits,
+                "problem": self.object,
+                "form": form,
+                "title": self.get_title(),
+                "content_title": self.get_content_title(),
+            }
+        )
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        # Handle delete requests
+        if "delete_limit" in request.POST:
+            limit_id = request.POST.get("limit_id")
+            try:
+                limit = self.object.language_limits.get(id=limit_id)
+                limit.delete()
+            except LanguageLimit.DoesNotExist:
+                pass
+            return HttpResponseRedirect(
+                reverse("problem_edit_language_limits", args=[self.object.code])
+            )
+
+        # Handle add form submission
+        form = LanguageLimitEditForm(request.POST, problem=self.object)
+
+        if form.is_valid():
+            language_limit = form.save(commit=False)
+            language_limit.problem = self.object
+            language_limit.save()
+            return HttpResponseRedirect(
+                reverse("problem_edit_language_limits", args=[self.object.code])
+            )
+
+        # Form is invalid, redisplay with errors
+        language_limits = self.object.language_limits.all().order_by("language__name")
+        return self.render_to_response(
+            {
+                "language_limits": language_limits,
+                "problem": self.object,
+                "form": form,
+                "title": self.get_title(),
+                "content_title": self.get_content_title(),
+            }
+        )
+
+
+class ProblemEditLanguageTemplates(
+    ProblemMixin,
+    PermissionRequiredMixin,
+    TitleMixin,
+    TemplateResponseMixin,
+    SingleObjectMixin,
+    View,
+):
+    """Manage language templates for a problem"""
+
+    template_name = "problem/language_templates.html"
+
+    def get_title(self):
+        return _("Edit Language Templates - {0}").format(self.object.name)
+
+    def get_content_title(self):
+        return mark_safe(
+            escape(_("Editing language templates for %s"))
+            % (
+                format_html(
+                    '<a href="{1}">{0}</a>',
+                    self.object.name,
+                    reverse("problem_detail", args=[self.object.code]),
+                )
+            )
+        )
+
+    def has_permission(self):
+        if not self.request.user.is_authenticated:
+            return False
+
+        problem = self.get_object()
+        return problem.is_editable_by(self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        language_templates = self.object.language_templates.all().order_by(
+            "language__name"
+        )
+
+        # Create form for adding new language template
+        form = LanguageTemplateEditForm(problem=self.object)
+
+        return self.render_to_response(
+            {
+                "language_templates": language_templates,
+                "problem": self.object,
+                "form": form,
+                "title": self.get_title(),
+                "content_title": self.get_content_title(),
+                "ACE_URL": settings.ACE_URL,
+            }
+        )
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        # Handle delete requests
+        if "delete_template" in request.POST:
+            template_id = request.POST.get("template_id")
+            try:
+                template = self.object.language_templates.get(id=template_id)
+                template.delete()
+                messages.success(request, _("Language template deleted successfully."))
+            except LanguageTemplate.DoesNotExist:
+                messages.error(request, _("Language template not found."))
+            return HttpResponseRedirect(
+                reverse("problem_edit_language_templates", args=[self.object.code])
+            )
+
+        # Handle edit requests
+        if "edit_template" in request.POST:
+            template_id = request.POST.get("template_id")
+            try:
+                template = self.object.language_templates.get(id=template_id)
+                # Update the template directly without using form validation for simplicity
+                new_source = request.POST.get("source", "")
+                template.source = new_source
+                template.save()
+                messages.success(request, _("Language template updated successfully."))
+                return HttpResponseRedirect(
+                    reverse("problem_edit_language_templates", args=[self.object.code])
+                )
+            except LanguageTemplate.DoesNotExist:
+                messages.error(request, _("Language template not found."))
+                return HttpResponseRedirect(
+                    reverse("problem_edit_language_templates", args=[self.object.code])
+                )
+
+        # Handle add form submission
+        form = LanguageTemplateEditForm(request.POST, problem=self.object)
+
+        if form.is_valid():
+            language_template = form.save(commit=False)
+            language_template.problem = self.object
+            language_template.save()
+            messages.success(request, _("Language template added successfully."))
+            return HttpResponseRedirect(
+                reverse("problem_edit_language_templates", args=[self.object.code])
+            )
+
+        # Form is invalid, redisplay with errors
+        language_templates = self.object.language_templates.all().order_by(
+            "language__name"
+        )
+        return self.render_to_response(
+            {
+                "language_templates": language_templates,
+                "problem": self.object,
+                "form": form,
+                "title": self.get_title(),
+                "content_title": self.get_content_title(),
+                "ACE_URL": settings.ACE_URL,
+            }
+        )
+
+
+class ProblemEditSolutions(
+    ProblemMixin,
+    PermissionRequiredMixin,
+    TitleMixin,
+    TemplateResponseMixin,
+    SingleObjectMixin,
+    View,
+):
+    """Manage solutions for a problem"""
+
+    template_name = "problem/solutions.html"
+
+    def get_title(self):
+        return _("Edit Solutions - {0}").format(self.object.name)
+
+    def get_content_title(self):
+        return mark_safe(
+            escape(_("Editing solutions for %s"))
+            % (
+                format_html(
+                    '<a href="{1}">{0}</a>',
+                    self.object.name,
+                    reverse("problem_detail", args=[self.object.code]),
+                )
+            )
+        )
+
+    def has_permission(self):
+        if not self.request.user.is_authenticated:
+            return False
+
+        problem = self.get_object()
+        return problem.is_editable_by(self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        solutions = Solution.objects.filter(problem=self.object)
+        existing_solution = solutions.first() if solutions.exists() else None
+
+        # If there's an existing solution, create an edit form
+        if existing_solution:
+            form = ProblemSolutionEditForm(instance=existing_solution)
+        else:
+            form = ProblemSolutionEditForm()
+
+        return self.render_to_response(
+            {
+                "solutions": solutions,
+                "problem": self.object,
+                "form": form,
+                "existing_solution": existing_solution,
+                "title": self.get_title(),
+                "content_title": self.get_content_title(),
+            }
+        )
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        solutions = Solution.objects.filter(problem=self.object)
+        existing_solution = solutions.first() if solutions.exists() else None
+
+        # Handle delete requests
+        if "delete_solution" in request.POST:
+            solution_id = request.POST.get("solution_id")
+            try:
+                solution = Solution.objects.get(id=solution_id, problem=self.object)
+                solution.delete()
+
+                messages.success(request, _("Solution deleted successfully."))
+            except Solution.DoesNotExist:
+                messages.error(request, _("Solution not found."))
+            return HttpResponseRedirect(
+                reverse("problem_edit_solutions", args=[self.object.code])
+            )
+
+        # Handle add/edit form submission
+        if existing_solution:
+            # Edit existing solution
+            form = ProblemSolutionEditForm(request.POST, instance=existing_solution)
+            success_message = _("Solution updated successfully.")
+        else:
+            # Check if a solution was created while we were editing
+            if Solution.objects.filter(problem=self.object).exists():
+                messages.error(
+                    request, _("A solution already exists for this problem.")
+                )
+                return HttpResponseRedirect(
+                    reverse("problem_edit_solutions", args=[self.object.code])
+                )
+
+            # Add new solution
+            form = ProblemSolutionEditForm(request.POST)
+            success_message = _("Solution added successfully.")
+
+        if form.is_valid():
+            solution = form.save(commit=False)
+            if not existing_solution:
+                solution.problem = self.object
+            solution.save()
+            form.save_m2m()  # Save many-to-many relationships
+
+            messages.success(request, success_message)
+            return HttpResponseRedirect(
+                reverse("problem_edit_solutions", args=[self.object.code])
+            )
+
+        # If form is invalid, show the page with errors
+        solutions = Solution.objects.filter(problem=self.object)
+        existing_solution = solutions.first() if solutions.exists() else None
+        return self.render_to_response(
+            {
+                "solutions": solutions,
+                "problem": self.object,
+                "form": form,
+                "existing_solution": existing_solution,
+                "title": self.get_title(),
+                "content_title": self.get_content_title(),
+            }
+        )
+
+
+class ProblemEditTranslations(
+    ProblemMixin,
+    PermissionRequiredMixin,
+    TitleMixin,
+    TemplateResponseMixin,
+    SingleObjectMixin,
+    View,
+):
+    """Manage translations for a problem"""
+
+    template_name = "problem/translations.html"
+
+    def get_title(self):
+        return _("Edit Translations - {0}").format(self.object.name)
+
+    def get_content_title(self):
+        return mark_safe(
+            escape(_("Editing translations for %s"))
+            % (
+                format_html(
+                    '<a href="{1}">{0}</a>',
+                    self.object.name,
+                    reverse("problem_detail", args=[self.object.code]),
+                )
+            )
+        )
+
+    def has_permission(self):
+        if not self.request.user.is_authenticated:
+            return False
+
+        problem = self.get_object()
+        return problem.is_editable_by(self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        translations = self.object.translations.all()
+        form = ProblemTranslationEditForm(prefix="add")
+
+        # Create individual forms for each existing translation
+        translation_forms = []
+        for translation in translations:
+            translation_form = ProblemTranslationEditForm(
+                instance=translation, prefix=f"edit_{translation.id}"
+            )
+            translation_forms.append(
+                {"translation": translation, "form": translation_form}
+            )
+
+        return self.render_to_response(
+            {
+                "translations": translations,
+                "translation_forms": translation_forms,
+                "problem": self.object,
+                "form": form,
+                "title": self.get_title(),
+                "content_title": self.get_content_title(),
+            }
+        )
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        # Handle delete requests
+        if "delete_translation" in request.POST:
+            translation_id = request.POST.get("translation_id")
+            try:
+                translation = self.object.translations.get(id=translation_id)
+                translation.delete()
+                messages.success(request, _("Translation deleted successfully."))
+            except ProblemTranslation.DoesNotExist:
+                messages.error(request, _("Translation not found."))
+            return HttpResponseRedirect(
+                reverse("problem_edit_translations", args=[self.object.code])
+            )
+
+        # Handle edit requests
+        if "edit_translation" in request.POST:
+            translation_id = request.POST.get("translation_id")
+            try:
+                translation = self.object.translations.get(id=translation_id)
+                prefix = f"edit_{translation.id}"
+
+                # Use Django's built-in prefix handling - pass the full POST data with prefix
+                form = ProblemTranslationEditForm(
+                    request.POST, instance=translation, prefix=prefix
+                )
+
+                if form.is_valid():
+                    saved_translation = form.save()
+                    messages.success(request, _("Translation updated successfully."))
+                    return HttpResponseRedirect(
+                        reverse("problem_edit_translations", args=[self.object.code])
+                    )
+                else:
+                    # If form has errors, render the page with errors
+                    translations = self.object.translations.all()
+                    translation_forms = []
+                    for trans in translations:
+                        if trans.id == translation.id:
+                            # Use the submitted form with errors for this translation
+                            translation_forms.append(
+                                {"translation": trans, "form": form}
+                            )
+                        else:
+                            # Create clean forms for other translations
+                            translation_forms.append(
+                                {
+                                    "translation": trans,
+                                    "form": ProblemTranslationEditForm(
+                                        instance=trans, prefix=f"edit_{trans.id}"
+                                    ),
+                                }
+                            )
+
+                    return self.render_to_response(
+                        {
+                            "translations": translations,
+                            "translation_forms": translation_forms,
+                            "problem": self.object,
+                            "form": ProblemTranslationEditForm(prefix="add"),
+                            "title": self.get_title(),
+                            "content_title": self.get_content_title(),
+                        }
+                    )
+            except ProblemTranslation.DoesNotExist:
+                messages.error(request, _("Translation not found."))
+                return HttpResponseRedirect(
+                    reverse("problem_edit_translations", args=[self.object.code])
+                )
+
+        # Handle add form submission
+        form = ProblemTranslationEditForm(request.POST, prefix="add")
+        if form.is_valid():
+            # Check for duplicate language
+            language = form.cleaned_data["language"]
+            if self.object.translations.filter(language=language).exists():
+                messages.error(
+                    request, _("A translation for this language already exists.")
+                )
+                return HttpResponseRedirect(
+                    reverse("problem_edit_translations", args=[self.object.code])
+                )
+
+            translation = form.save(commit=False)
+            translation.problem = self.object
+            translation.save()
+            messages.success(request, _("Translation added successfully."))
+            return HttpResponseRedirect(
+                reverse("problem_edit_translations", args=[self.object.code])
+            )
+
+        # If form is invalid, show the page with errors
+        translations = self.object.translations.all()
+
+        # Create individual forms for each existing translation
+        translation_forms = []
+        for translation in translations:
+            translation_form = ProblemTranslationEditForm(
+                instance=translation, prefix=f"edit_{translation.id}"
+            )
+            translation_forms.append(
+                {"translation": translation, "form": translation_form}
+            )
+
+        # Keep the form with errors (it already has the prefix)
+
+        return self.render_to_response(
+            {
+                "translations": translations,
+                "translation_forms": translation_forms,
+                "problem": self.object,
+                "form": form,
+                "title": self.get_title(),
+                "content_title": self.get_content_title(),
+            }
         )

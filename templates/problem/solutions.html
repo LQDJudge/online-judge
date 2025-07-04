@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block js_media %}
+  <script type="text/javascript">
+    $(document).ready(function() {
+    // Handle alert close buttons
+      $('.alert .close').click(function() {
+        $(this).closest('.alert').fadeOut(300);
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block media %}
+  {{ form.media }}
+{% endblock %}
+
+{% block body %}
+  <div class="problem-page-container solutions-page">
+    <!-- Success/Error Messages -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% else %}alert-info{% endif %} alert-dismissible" role="alert">
+          <i class="fa fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="problem-content-layout">
+      <div class="problem-content-grid single-column">
+        <!-- Add/Edit Solution Form -->
+        <div class="form-section">
+          {% if existing_solution %}
+              <!-- Edit Solution Form -->
+            <div class="problem-card">
+              <div class="card-body">
+                <form method="post">
+                  {% csrf_token %}
+
+                  {% if form.non_field_errors() %}
+                    <div class="alert alert-danger">
+                      {% for error in form.non_field_errors() %}
+                        <div><i class="fa fa-exclamation-triangle"></i> {{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+
+                  <div class="problem-form-group">
+                    <label for="{{ form.is_public.id_for_label }}" class="problem-form-label">
+                      <strong>{{ form.is_public.label }}:</strong>
+                    </label>
+                    {{ form.is_public }}
+                    {% if form.is_public.errors %}
+                      <div class="error-message">
+                        {% for error in form.is_public.errors %}{{ error }}{% endfor %}
+                      </div>
+                    {% endif %}
+                    <div class="problem-help-text">{{ _('Whether this solution should be publicly visible to all users.') }}</div>
+                  </div>
+
+                  <div class="problem-form-group">
+                    <label for="{{ form.publish_on.id_for_label }}" class="problem-form-label">
+                      <strong>{{ form.publish_on.label }}<span class="required-asterisk"> * </span>:</strong>
+                    </label>
+                    {{ form.publish_on }}
+                    {% if form.publish_on.errors %}
+                      <div class="error-message">
+                        {% for error in form.publish_on.errors %}{{ error }}{% endfor %}
+                      </div>
+                    {% endif %}
+                    <div class="problem-help-text">{{ _('Date and time when this solution should become available.') }}</div>
+                  </div>
+
+                  <div class="problem-form-group">
+                    <label for="{{ form.authors.id_for_label }}" class="problem-form-label">
+                      <strong>{{ form.authors.label }}{% if form.authors.field.required %}<span class="required-asterisk"> *</span>{% endif %}:</strong>
+                    </label>
+                    {{ form.authors }}
+                    {% if form.authors.errors %}
+                      <div class="error-message">
+                        {% for error in form.authors.errors %}{{ error }}{% endfor %}
+                      </div>
+                    {% endif %}
+                    <div class="problem-help-text">{{ _('Select the authors who contributed to this solution.') }}</div>
+                  </div>
+
+                  <div class="problem-form-group">
+                    <label for="{{ form.content.id_for_label }}" class="problem-form-label">
+                      <strong>{{ form.content.label }}{% if form.content.field.required %}<span class="required-asterisk"> *</span>{% endif %}:</strong>
+                    </label>
+                    {{ form.content }}
+                    {% if form.content.errors %}
+                      <div class="error-message">
+                        {% for error in form.content.errors %}{{ error }}{% endfor %}
+                      </div>
+                    {% endif %}
+                    <div class="problem-help-text">{{ _('Write the solution explanation, approach, and implementation details.') }}</div>
+                  </div>
+
+                  <div class="problem-form-actions">
+                    <button type="submit" class="action-btn">
+                      <i class="fa fa-save"></i> {{ _('Update Solution') }}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          {% else %}
+              <!-- Add Solution Form -->
+            <div class="problem-card">
+              <div class="card-body">
+                <form method="post">
+                  {% csrf_token %}
+
+                  {% if form.non_field_errors() %}
+                    <div class="alert alert-danger">
+                      {% for error in form.non_field_errors() %}
+                        <div><i class="fa fa-exclamation-triangle"></i> {{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+
+                  <div class="problem-form-group">
+                    <label for="{{ form.is_public.id_for_label }}" class="problem-form-label">
+                      <strong>{{ form.is_public.label }}:</strong>
+                    </label>
+                    {{ form.is_public }}
+                    {% if form.is_public.errors %}
+                      <div class="error-message">
+                        {% for error in form.is_public.errors %}{{ error }}{% endfor %}
+                      </div>
+                    {% endif %}
+                    <div class="problem-help-text">{{ _('Whether this solution should be publicly visible to all users.') }}</div>
+                  </div>
+
+                  <div class="problem-form-group">
+                    <label for="{{ form.publish_on.id_for_label }}" class="problem-form-label">
+                      <strong>{{ form.publish_on.label }}<span class="required-asterisk"> * </span>:</strong>
+                    </label>
+                    {{ form.publish_on }}
+                    {% if form.publish_on.errors %}
+                      <div class="error-message">
+                        {% for error in form.publish_on.errors %}{{ error }}{% endfor %}
+                      </div>
+                    {% endif %}
+                    <div class="problem-help-text">{{ _('Date and time when this solution should become available.') }}</div>
+                  </div>
+
+                  <div class="problem-form-group">
+                    <label for="{{ form.authors.id_for_label }}" class="problem-form-label">
+                      <strong>{{ form.authors.label }}{% if form.authors.field.required %}<span class="required-asterisk"> *</span>{% endif %}:</strong>
+                    </label>
+                    {{ form.authors }}
+                    {% if form.authors.errors %}
+                      <div class="error-message">
+                        {% for error in form.authors.errors %}{{ error }}{% endfor %}
+                      </div>
+                    {% endif %}
+                    <div class="problem-help-text">{{ _('Select the authors who contributed to this solution.') }}</div>
+                  </div>
+
+                  <div class="problem-form-group">
+                    <label for="{{ form.content.id_for_label }}" class="problem-form-label">
+                      <strong>{{ form.content.label }}{% if form.content.field.required %}<span class="required-asterisk"> *</span>{% endif %}:</strong>
+                    </label>
+                    {{ form.content }}
+                    {% if form.content.errors %}
+                      <div class="error-message">
+                        {% for error in form.content.errors %}{{ error }}{% endfor %}
+                      </div>
+                    {% endif %}
+                    <div class="problem-help-text">{{ _('Write the solution explanation, approach, and implementation details.') }}</div>
+                  </div>
+
+                  <div class="problem-form-actions">
+                    <button type="submit" class="action-btn">
+                      <i class="fa fa-plus"></i> {{ _('Add Solution') }}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

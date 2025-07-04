@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block js_media %}
+  {{ form.media.js }}
+  <script type="text/javascript">
+    $(document).ready(function() {
+    // Setup Select2 for language dropdown
+      $('#id_language').select2({
+        placeholder: 'Search language',
+        allowClear: false,
+        width: '50%'
+      });
+
+    // Memory unit conversion
+      var $memoryLimit = $('#id_memory_limit');
+      var $memoryUnit = $('#id_memory_unit');
+
+      $memoryUnit.on('change', function() {
+        var currentValue = parseFloat($memoryLimit.val());
+        var currentUnit = $(this).val();
+
+        if (!isNaN(currentValue)) {
+          if (currentUnit === 'MB' && $memoryUnit.data('prev-unit') === 'KB') {
+            $memoryLimit.val((currentValue / 1024).toFixed(0));
+          } else if (currentUnit === 'KB' && $memoryUnit.data('prev-unit') === 'MB') {
+            $memoryLimit.val(currentValue * 1024);
+          }
+        }
+        $memoryUnit.data('prev-unit', currentUnit);
+      });
+
+    // Store initial unit
+      $memoryUnit.data('prev-unit', $memoryUnit.val());
+    });
+  </script>
+{% endblock %}
+
+{% block body %}
+  <div class="problem-page-container language-limits-page">
+    <div class="problem-content-layout">
+      <div class="problem-content-grid">
+        <!-- Existing Language Limits -->
+        <div class="form-section">
+          <div class="problem-card">
+            <div class="section-spacing">
+              <div class="card-header">
+                <h4>{{ _('Edit Language Limits') }}</h4>
+              </div>
+
+              {% if language_limits %}
+                <div class="table-responsive">
+                  <table class="table table-striped table-bordered">
+                    <thead class="table-light">
+                      <tr>
+                        <th>{{ _('Language') }}</th>
+                        <th>{{ _('Time Limit (s)') }}</th>
+                        <th>{{ _('Memory Limit') }}</th>
+                        <th>{{ _('Actions') }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for limit in language_limits %}
+                        <tr>
+                          <td>{{ limit.language.name }}</td>
+                          <td>{{ limit.time_limit }}</td>
+                          <td>
+                            {% if limit.memory_limit % 1024 == 0 %}
+                              {{ (limit.memory_limit // 1024) }} MB
+                            {% else %}
+                              {{ limit.memory_limit }} KB
+                            {% endif %}
+                          </td>
+                          <td>
+                            <form method="post" style="display: inline;">
+                              {% csrf_token %}
+                              <input type="hidden" name="delete_limit" value="1">
+                              <input type="hidden" name="limit_id" value="{{ limit.id }}">
+                              <button type="submit" class="btn btn-sm btn-outline-danger red"
+                                      onclick="return confirm('{{ _('Are you sure you want to delete this language limit?') }}')">
+                                <i class="fa fa-trash"></i> {{ _('Delete') }}
+                              </button>
+                            </form>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <div class="alert alert-info">
+                  <i class="fa fa-info-circle"></i>
+                  {{ _('No language-specific limits have been set.') }}
+                </div>
+              {% endif %}
+
+              <div class="default-limits-box">
+                <h4>{{ _('Default Limits') }}</h4>
+                <p class="mb-2">
+                  <strong>{{ _('Time') }}:</strong> {{ problem.time_limit }}s &nbsp;&nbsp;
+                  <strong>{{ _('Memory') }}:</strong>
+                  {% if problem.memory_limit % 1024 == 0 %}
+                    {{ (problem.memory_limit // 1024) }} MB
+                  {% else %}
+                    {{ problem.memory_limit }} KB
+                  {% endif %}
+                </p>
+                <i class="fa fa-info-circle"></i> {{ _('Languages without specific limits will use these default values.') }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Language Limit Form -->
+        <div class="form-section">
+          <div class="problem-card">
+            <div class="card-header">
+              <h4>{{ _('Add Language Limit') }}</h4>
+            </div>
+            <div class="card-body">
+              <form method="post">
+                {% csrf_token %}
+
+                {% if form.non_field_errors() %}
+                  <div class="alert alert-danger">
+                    {% for error in form.non_field_errors() %}
+                      <div><i class="fa fa-exclamation-triangle"></i> {{ error }}</div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+
+                <div class="problem-form-group">
+                  <label for="{{ form.language.id_for_label }}" class="problem-form-label">
+                    <strong>{{ _('Language') }}{% if form.language.field.required %}<span class="required-asterisk"> * </span>{% endif %}:</strong>
+                  </label>
+                  {{ form.language }}
+                  {% if form.language.errors %}
+                    <div class="error-message">
+                      {% for error in form.language.errors %}{{ error }}{% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+
+                <div class="problem-form-group">
+                  <label for="{{ form.time_limit.id_for_label }}" class="problem-form-label">
+                    <strong>{{ _('Time Limit (s)') }}{% if form.time_limit.field.required %}<span class="required-asterisk"> * </span>{% endif %}:</strong>
+                  </label>
+                  {{ form.time_limit }}
+                  {% if form.time_limit.errors %}
+                    <div class="error-message">
+                      {% for error in form.time_limit.errors %}{{ error }}{% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+
+                <div class="problem-form-group">
+                  <label for="{{ form.memory_limit.id_for_label }}" class="problem-form-label">
+                    <strong>{{ _('Memory Limit') }}{% if form.memory_limit.field.required %}<span class="required-asterisk"> * </span>{% endif %}:</strong>
+                  </label>
+                  {{ form.memory_limit }}
+                  {% if form.memory_limit.errors %}
+                    <div class="error-message">
+                      {% for error in form.memory_limit.errors %}{{ error }}{% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+
+                <div class="problem-form-group">
+                  <label for="{{ form.memory_unit.id_for_label }}" class="problem-form-label">
+                    <strong>{{ _('Memory Unit') }}{% if form.memory_limit.field.required %}<span class="required-asterisk"> * </span>{% endif %}:</strong>
+                  </label>
+                  {{ form.memory_unit }}
+                  {% if form.memory_unit.errors %}
+                    <div class="error-message">
+                      {% for error in form.memory_unit.errors %}{{ error }}{% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+
+                <div class="problem-form-actions">
+                  <button type="submit" class="action-btn">
+                    {{ _('Add Language Limit') }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

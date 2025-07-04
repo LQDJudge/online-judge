@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block js_media %}
+  <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
+  {{ form.media.js }}
+  <script type="text/javascript">
+    $(document).ready(function() {
+    // Style the language dropdown
+      $('#id_language').css('width', '50%');
+
+    // Handle alert close buttons
+      $('.alert .close').click(function() {
+        $(this).closest('.alert').fadeOut(300);
+      });
+
+    // Initialize syntax highlighting for existing templates - make them all editable
+      $('.template-source-code').each(function() {
+        var editor = ace.edit(this);
+        var language = $(this).data('language');
+        var templateId = $(this).data('template-id');
+
+        editor.setTheme('ace/theme/github');
+        editor.getSession().setMode('ace/mode/' + language);
+        editor.setReadOnly(false); // Make editable
+        editor.setShowPrintMargin(false);
+        editor.setHighlightActiveLine(true);
+        editor.renderer.setShowGutter(true);
+        editor.setFontSize(13);
+        editor.getSession().setUseWrapMode(true);
+
+      // Store the editor reference for saving
+        if (!window.templateEditors) {
+          window.templateEditors = {};
+        }
+        window.templateEditors[templateId] = editor;
+      });
+
+    // Handle language change for the form editor
+      $('#id_language').change(function() {
+        var selectedOption = $(this).find('option:selected');
+        var aceMode = selectedOption.attr('data-ace') || 'text';
+        console.log('Language changed to:', aceMode);
+        if (window.ace_source) {
+          window.ace_source.getSession().setMode('ace/mode/' + aceMode);
+        }
+      });
+
+    // Initialize form editor when ACE loads
+      $('#ace_source').on('ace_load', function(e, editor) {
+        console.log('ACE editor loaded');
+        window.ace_source = editor;
+        editor.setTheme('ace/theme/github');
+        editor.getSession().setUseWrapMode(true);
+        editor.setFontSize(14);
+        editor.setShowPrintMargin(false);
+
+      // Set initial mode based on selected language
+        var selectedOption = $('#id_language').find('option:selected');
+        var aceMode = selectedOption.attr('data-ace') || 'text';
+        console.log('Initial ACE mode:', aceMode);
+        editor.getSession().setMode('ace/mode/' + aceMode);
+      });
+
+    // Alternative initialization in case ace_load doesn't fire
+      setTimeout(function() {
+        if (!window.ace_source) {
+          var aceElement = document.getElementById('ace_source');
+          if (aceElement && typeof ace !== 'undefined') {
+            console.log('Fallback ACE initialization');
+            window.ace_source = ace.edit('ace_source');
+            window.ace_source.setTheme('ace/theme/github');
+            window.ace_source.getSession().setUseWrapMode(true);
+            window.ace_source.setFontSize(14);
+            window.ace_source.setShowPrintMargin(false);
+
+            var selectedOption = $('#id_language').find('option:selected');
+            var aceMode = selectedOption.attr('data-ace') || 'text';
+            window.ace_source.getSession().setMode('ace/mode/' + aceMode);
+          }
+        }
+      }, 1000);
+    });
+
+  // Simple save function - save the current content of the editor
+    function saveTemplate(templateId) {
+      var editor = window.templateEditors[templateId];
+      if (!editor) return;
+
+    // Get the current content from the editor
+      var currentContent = editor.getValue();
+
+    // Update the hidden textarea
+      var sourceTextarea = document.getElementById('source-' + templateId);
+      sourceTextarea.value = currentContent;
+
+    // Submit the form
+      var form = document.getElementById('edit-form-' + templateId);
+      form.submit();
+    }
+  </script>
+{% endblock %}
+
+{% block media %}
+  {{ form.media }}
+{% endblock %}
+
+{% block body %}
+  <div class="problem-page-container language-templates-page">
+    <!-- Success/Error Messages -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% else %}alert-info{% endif %} alert-dismissible" role="alert">
+          <i class="fa fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="problem-content-layout">
+      <div class="problem-content-grid">
+        <!-- Existing Language Templates -->
+        <div class="form-section">
+          <div class="problem-card">
+            <div class="card-header">
+              <h4>{{ _('Edit Language Templates') }}</h4>
+            </div>
+            {% if language_templates %}
+              {% for template in language_templates %}
+                <div class="problem-card template-card" id="template-card-{{ template.id }}">
+                  <div class="card-header template-header">
+                    <span class="template-language">{{ _('Language') }}: {{ template.language.name }}</span>
+                    <div>
+                      <button type="button" class="btn btn-sm btn-success"
+                              onclick="saveTemplate({{ template.id }})">
+                        <i class="fa fa-save"></i> {{ _('Save') }}
+                      </button>
+                      <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="delete_template" value="1">
+                        <input type="hidden" name="template_id" value="{{ template.id }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger red"
+                                onclick="return confirm('{{ _('Are you sure you want to delete this language template?') }}')">
+                          <i class="fa fa-trash"></i> {{ _('Delete') }}
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="template-source-code" data-language="{{ template.language.ace }}" data-template-id="{{ template.id }}" id="template-{{ template.id }}">{{ template.source }}</div>
+                    <!-- Hidden form for saving edits -->
+                    <form method="post" style="display: none;" id="edit-form-{{ template.id }}">
+                      {% csrf_token %}
+                      <input type="hidden" name="edit_template" value="1">
+                      <input type="hidden" name="template_id" value="{{ template.id }}">
+                      <input type="hidden" name="language" value="{{ template.language.id }}">
+                      <textarea name="source" id="source-{{ template.id }}" style="display: none;">{{ template.source }}</textarea>
+                    </form>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="alert alert-info">
+                <i class="fa fa-info-circle"></i>
+                {{ _('No language templates have been added. Templates provide starter code for specific languages.') }}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Add Language Template Form -->
+        <div class="form-section">
+          <div class="problem-card">
+            <div class="card-header">
+              <h4>{{ _('Add Language Template') }}</h4>
+            </div>
+            <div class="card-body">
+              <form method="post">
+                {% csrf_token %}
+
+                {% if form.non_field_errors() %}
+                  <div class="alert alert-danger">
+                    {% for error in form.non_field_errors() %}
+                      <div><i class="fa fa-exclamation-triangle"></i> {{ error }}</div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+
+                <div class="problem-form-group">
+                  <label for="{{ form.language.id_for_label }}" class="problem-form-label">
+                    <strong>{{ _('Language') }}{% if form.language.field.required %}<span class="required-asterisk"> *</span>{% endif %}:</strong>
+                  </label>
+                  <select id="id_language" name="language" class="form-control">
+                    <option value="">---------</option>
+                    {% for lang in form.fields.language.queryset %}
+                      <option value="{{ lang.id }}" data-ace="{{ lang.ace }}">{{ lang.name }}</option>
+                    {% endfor %}
+                  </select>
+                  {% if form.language.errors %}
+                    <div class="error-message">
+                      {% for error in form.language.errors %}{{ error }}{% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+
+                <div class="problem-form-group">
+                  <label for="{{ form.source.id_for_label }}" class="problem-form-label">
+                    <strong>{{ _('Template Source Code') }}{% if form.source.field.required %}<span class="required-asterisk"> *</span>{% endif %}:</strong>
+                  </label>
+                  <div style="padding-top: 1em;">
+                    {{ form.source }}
+                  </div>
+                  {% if form.source.errors %}
+                    <div class="error-message">
+                      {% for error in form.source.errors %}{{ error }}{% endfor %}
+                    </div>
+                  {% endif %}
+                  <div class="problem-help-text">{{ _('Provide starter code that will be pre-filled when users select this language.') }}</div>
+                </div>
+
+                <div class="problem-form-actions">
+                  <button type="submit" class="action-btn">
+                    <i class="fa fa-plus"></i> {{ _('Add Language Template') }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -28,7 +28,6 @@
           allowedExtensions: ['zip'],
         },
       }).on('complete', function (event, id, name, responseJSON) {
-        console.log(responseJSON);
         if (!responseJSON.success) {
           alert('Fail to upload: ' + responseJSON.error);
         }
@@ -144,9 +143,34 @@
         let $ioi_signature = $("#id_problem-data-use_ioi_signature");
         let $signature_table = $('#signature-grader-table');
 
+        // Generator fields
+        let $generator = $('#id_problem-data-generator');
+        let $generator_script = $('#id_problem-data-generator_script');
+
         $tr_checker = $custom_checker.closest("tr");
         $tr_validator = $validator.closest("tr");
         $tr_interactive = $interactive.closest("tr");
+
+        // Check if generator has content
+        var hasGenerator = {% if data_form.generator.value() %}true{% else %}false{% endif %};
+
+        // Generator script row - create it dynamically
+        let $tr_generator_script = $('<tr></tr>').html(
+          '<th><label for="id_problem-data-generator_script">{{_("Generator script")}}:</label></th>' +
+          '<td>' +
+          '<div class="generator-script-container">' +
+          '<button type="button" class="btn btn-sm" id="add-generator-script">' +
+          '<i class="fa fa-plus"></i> {{_("Add Generator Script")}}' +
+          '</button>' +
+          '<button type="button" class="btn btn-sm" id="edit-generator-script" style="display: none;">' +
+          '<i class="fa fa-edit"></i> {{_("Edit Generator Script")}}' +
+          '</button>' +
+          '</div>' +
+          '</td>'
+        );
+
+        // Move the original generator_script field to the dynamic row instead of duplicating it
+        $tr_generator_script.find('.generator-script-container').prepend($generator_script);
 
         $td = $checker.parent();
         var $sample = $("<a/>",{
@@ -173,7 +197,86 @@
         $ioi_signature.change(function() {
           $signature_table.toggle($ioi_signature.is(':checked'));
         }).change();
+
+        // Generator toggle logic  
+        function checkGeneratorToggle() {
+          // Check FileEditWidget content for dynamic updates
+          var $contentTextarea = $('#id_problem-data-generator-content');
+          var currentHasGenerator = hasGenerator || ($contentTextarea.length && $contentTextarea.val().trim());
+
+          if (currentHasGenerator) {
+            if (!$tr_generator_script.parent().length) {
+              // Insert generator script row right after generator row
+              $generator.closest("tr").after($tr_generator_script);
+
+              // Attach event handlers to the new buttons
+              $tr_generator_script.find('#add-generator-script, #edit-generator-script').off('click').on('click', function() {
+                openGeneratorScriptModal();
+              });
+            }
+            $tr_generator_script.show();
+          } else {
+            $tr_generator_script.hide();
+          }
+
+          updateGeneratorScriptButton();
+        }
+
+        // Check when content in FileEditWidget changes
+        $(document).on('change keyup input', '#id_problem-data-generator-content', checkGeneratorToggle);
+
+        // Initial check
+        setTimeout(checkGeneratorToggle, 100);
       };
+
+      // Generator script functions - define early so they're available for toggle
+      function updateLineNumbers() {
+        var textarea = $('#generator-script-textarea');
+        var lineNumbers = $('#line-numbers');
+        var lines = textarea.val().split('\n');
+        var numberHtml = '';
+
+        for (var i = 1; i <= Math.max(lines.length, 15); i++) {
+          numberHtml += i + '\n';
+        }
+
+        lineNumbers.text(numberHtml);
+      }
+
+      function openGeneratorScriptModal() {
+        var currentScript = $('#id_problem-data-generator_script').val() || '';
+        $('#generator-script-textarea').val(currentScript);
+        updateLineNumbers();
+        $('#generator-script-modal').css('display', 'flex');
+      }
+
+      function closeGeneratorScriptModal() {
+        $('#generator-script-modal').hide();
+      }
+
+      function saveGeneratorScript() {
+        var scriptContent = $('#generator-script-textarea').val();
+        $('#id_problem-data-generator_script').val(scriptContent);
+
+        // Update button text based on content
+        updateGeneratorScriptButton();
+
+        closeGeneratorScriptModal();
+      }
+
+      function updateGeneratorScriptButton() {
+        var hasScript = $('#id_problem-data-generator_script').val() && $('#id_problem-data-generator_script').val().trim();
+        var $addBtn = $('#add-generator-script');
+        var $editBtn = $('#edit-generator-script');
+
+        if (hasScript) {
+          $addBtn.hide();
+          $editBtn.show();
+        } else {
+          $addBtn.show();
+          $editBtn.hide();
+        }
+      }
 
       checker_precision($('#id_problem-data-checker'));
 
@@ -207,37 +310,6 @@
             .find('input[id$=pretest]').toggle(!disabled);
         }).change();
 
-        var tooltip_classes = 'tooltipped tooltipped-s';
-        $tr.find('a.edit-generator-args').mouseover(function () {
-          switch ($tr.attr('data-type')) {
-            case 'C':
-            case 'S':
-              var $this = $(this).addClass(tooltip_classes);
-              $this.attr('aria-label', $this.prev().val() || '(none)');
-          }
-        }).mouseout(function () {
-          $(this).removeClass(tooltip_classes).removeAttr('aria-label');
-        }).featherlight($('.generator-args-editor'), {
-          beforeOpen: function () {
-            switch ($tr.attr('data-type')) {
-              case 'C':
-              case 'S':
-                return true;
-              default:
-                return false;
-            }
-          },
-          afterOpen: function () {
-            var $input = this.$currentTarget.prev();
-            this.$instance.find('.generator-args-editor')
-              .find('textarea').val($input.val()).end()
-              .find('.button').click(function () {
-                $input.val($(this).prev().val());
-                $.featherlight.current().close();
-              }).end()
-              .show();
-          }
-        });
 
         checker_precision($tr.find('select[id$=checker]'));
       }).find('tbody:first').find('tr').each(function () {
@@ -268,6 +340,17 @@
         $table.find('tbody:first').append($tr = $($table.find('.extra-row-body').html()
             .replace(/__prefix__/g, $total.val())));
         $tr.find('.type-column select option[value="C"]').attr('selected', true);
+
+        // Ensure new row has proper generator args structure
+        $tr.find('td').each(function() {
+          var $cell = $(this);
+          var $input = $cell.find('input[name*="generator_args"]');
+          if ($input.length && !$cell.find('.generator-args-container').length) {
+            $input.wrap('<div class="generator-args-container"></div>');
+            $input.before('<i class="fa fa-plus generator-args-icon" title="Click to add generator arguments" style="display: none;"></i>');
+          }
+        });
+
         $total.val(parseInt($total.val()) + 1);
         $table.trigger('add-row', [$tr]);
         window.scrollBy(0, $tr.height());
@@ -298,6 +381,12 @@
 
       $('a#fill-testcases').click(function (e) {
         e.preventDefault();
+
+        // Check if generator script is provided
+        var generatorScriptField = $('#id_problem-data-generator_script');
+        var hasGeneratorScript = generatorScriptField.length && generatorScriptField.val().trim();
+
+        // First, handle zip file mode (input/output files)
         var inFiles = [], outFiles = [];
         for (let file of window.valid_files) {
           if (file.endsWith('/')) {
@@ -310,43 +399,75 @@
             outFiles.push(file);
           }
         }
-        if (inFiles.length == 0 || outFiles.length == 0) {
-          alert("No input/output files. Make sure your files' suffices are .in(p)/.out");
+
+        var hasZipFiles = inFiles.length > 0 && outFiles.length > 0 && inFiles.length == outFiles.length;
+
+        if (!hasZipFiles && !hasGeneratorScript) {
           return false;
         }
-        if (inFiles.length != outFiles.length) {
-          alert("The input files do not match the output files!");
+
+        // Find existing test cases with generator args
+        var existingGeneratorArgs = [];
+        $('#case-table tbody tr').each(function() {
+          var $generatorArgs = $(this).find('input[name*="generator_args"]');
+          var args = $generatorArgs.val().trim();
+          if (args) {
+            existingGeneratorArgs.push(args);
+          }
+        });
+
+        var scriptLines = [];
+        var zipFileCount = 0;
+        var existingGeneratorCount = existingGeneratorArgs.length;
+        var newGeneratorCount = 0;
+
+        if (hasZipFiles) {
+          inFiles.sort();
+          outFiles.sort();
+          zipFileCount = inFiles.length;
+
+          // big number of input
+          if (inFiles.length > 100) {
+            window.big_input = true;
+          }
+        }
+
+        if (hasGeneratorScript) {
+          scriptLines = generatorScriptField.val().trim().split('\n').filter(line => line.trim());
+          newGeneratorCount = scriptLines.length;
+        }
+
+        var totalTestCases = zipFileCount + existingGeneratorCount + newGeneratorCount;
+
+        if (totalTestCases === 0) {
           return false;
         }
 
-        inFiles.sort();
-        outFiles.sort();
-
-        // big number of input
-        if (inFiles.length > 100) {
-          window.big_input = true;
-        }
-
+        // Add batch handling from original code
         var batch_starts = $('#batch_starts').val();
         batch_starts = batch_starts.split(',');
         batch_starts = batch_starts.filter(e => {
           return e.length && e == +e;
         });
-        batch_starts = new Set(batch_starts.map(x => Math.min(Math.max(1, parseInt(x)), inFiles.length - 1)));
-        batch_starts.add(inFiles.length + 1);
+        batch_starts = new Set(batch_starts.map(x => Math.min(Math.max(1, parseInt(x)), totalTestCases - 1)));
+        batch_starts.add(totalTestCases + 1);
 
-        var numRows = inFiles.length + 2 * batch_starts.size - 2;
-        while ($total.val() < numRows) {
+        var totalRowsNeeded = totalTestCases + 2 * batch_starts.size - 2;
+        while ($total.val() < totalRowsNeeded) {
           $('a#add-case-row').click();
         }
 
-        // fill cases
         var row = 0;
-        for (var i = 0; i < inFiles.length; i++) {
-          if (batch_starts.has(i + 1)) {
+        var caseIndex = 1;
+
+        // First: Create test cases from zip files (without generator args)
+        for (var i = 0; i < zipFileCount; i++) {
+          if (batch_starts.has(caseIndex)) {
             $("#id_cases-"+row+"-type").val('S').change();
             row += 1;
           }
+
+          // Set input/output files from zip
           var $input = $("#id_cases-"+row+"-input_file");
           $input.select2('destroy').empty().select2({ data: [inFiles[i]] });
           $input.val(inFiles[i]).change();
@@ -354,21 +475,119 @@
           $output.select2('destroy').empty().select2({ data: [outFiles[i]] });
           $output.val(outFiles[i]).change();
 
+          // Clear any existing generator args for file-based test cases
+          var $generatorInput = $("#id_cases-"+row+"-generator_args");
+          $generatorInput.val('');
+
+          // Update display for cleared generator args
+          var $container = $generatorInput.closest('.generator-args-container');
+          var $icon = $container.find('.generator-args-icon');
+          $icon.show();
+          $generatorInput.addClass('generator-args-hidden');
+
+          // Set points
           if ($("#problem-type").val() == "ICPC") {
             $("#id_cases-"+row+"-points").val('0').change();
-          }
-          else {
+          } else {
             $("#id_cases-"+row+"-points").val('1').change();
           }
-          row += 1;
 
-          if (batch_starts.has(i + 2)) {
+          row += 1;
+          caseIndex += 1;
+
+          if (batch_starts.has(caseIndex)) {
             $("#id_cases-"+(row-1)+"-points").val('1').change();
             $("#id_cases-"+row+"-type").val('E').change();
             row += 1;
           }
         }
+
+        // Second: Use existing test cases with generator args
+        for (var i = 0; i < existingGeneratorCount; i++) {
+          if (batch_starts.has(caseIndex)) {
+            $("#id_cases-"+row+"-type").val('S').change();
+            row += 1;
+          }
+
+          // Use existing generator args
+          var $generatorInput = $("#id_cases-"+row+"-generator_args");
+          $generatorInput.val(existingGeneratorArgs[i]);
+
+          // Set generated file names
+          $("#id_cases-"+row+"-input_file").val('existing_gen_case' + (i + 1) + '.in');
+          $("#id_cases-"+row+"-output_file").val('existing_gen_case' + (i + 1) + '.out');
+
+          // Update display for generator args
+          var $container = $generatorInput.closest('.generator-args-container');
+          var $icon = $container.find('.generator-args-icon');
+          $icon.hide();
+          $generatorInput.removeClass('generator-args-hidden').show();
+
+          // Set points
+          if ($("#problem-type").val() == "ICPC") {
+            $("#id_cases-"+row+"-points").val('0').change();
+          } else {
+            $("#id_cases-"+row+"-points").val('1').change();
+          }
+
+          row += 1;
+          caseIndex += 1;
+
+          if (batch_starts.has(caseIndex)) {
+            $("#id_cases-"+(row-1)+"-points").val('1').change();
+            $("#id_cases-"+row+"-type").val('E').change();
+            row += 1;
+          }
+        }
+
+        // Third: Create test cases from generator script (without test files)
+        for (var i = 0; i < newGeneratorCount; i++) {
+          if (batch_starts.has(caseIndex)) {
+            $("#id_cases-"+row+"-type").val('S').change();
+            row += 1;
+          }
+
+          // Set generated file names
+          $("#id_cases-"+row+"-input_file").val('new_gen_case' + (i + 1) + '.in');
+          $("#id_cases-"+row+"-output_file").val('new_gen_case' + (i + 1) + '.out');
+
+          // Set generator args from script
+          var args = scriptLines[i].trim();
+          if (args) {
+            var $generatorInput = $("#id_cases-"+row+"-generator_args");
+            $generatorInput.val(args);
+
+            // Update display for generator args
+            var $container = $generatorInput.closest('.generator-args-container');
+            var $icon = $container.find('.generator-args-icon');
+            $icon.hide();
+            $generatorInput.removeClass('generator-args-hidden').show();
+          }
+
+          // Set points
+          if ($("#problem-type").val() == "ICPC") {
+            $("#id_cases-"+row+"-points").val('0').change();
+          } else {
+            $("#id_cases-"+row+"-points").val('1').change();
+          }
+
+          row += 1;
+          caseIndex += 1;
+
+          if (batch_starts.has(caseIndex)) {
+            $("#id_cases-"+(row-1)+"-points").val('1').change();
+            $("#id_cases-"+row+"-type").val('E').change();
+            row += 1;
+          }
+        }
+
         update_select2();
+
+        // Update generator args displays for all newly created rows
+        setTimeout(function() {
+          updateAllGeneratorArgsDisplays();
+        }, 100);
+
         return false;
       });
 
@@ -430,6 +649,130 @@
         }
       }
       update_batch_starts();
+
+      // Handle generator args icon/input display
+      function setupGeneratorArgsDisplay() {
+        $('.generator-args-container').each(function() {
+          var $container = $(this);
+          var $input = $container.find('input[name*="generator_args"]');
+          var $icon = $container.find('.generator-args-icon');
+
+          function updateDisplay() {
+            var hasValue = $input.val() && $input.val().trim();
+            if (hasValue) {
+              $icon.hide();
+              $input.removeClass('generator-args-hidden').show();
+            } else {
+              $icon.show();
+              $input.addClass('generator-args-hidden');
+            }
+          }
+
+          // Initial setup
+          updateDisplay();
+
+          // Click icon to show input
+          $icon.click(function() {
+            $icon.hide();
+            $input.removeClass('generator-args-hidden').show().focus();
+          });
+
+          // Hide input if empty when focus lost
+          $input.blur(function() {
+            setTimeout(function() {
+              updateDisplay();
+            }, 100);
+          });
+
+          // Update display when value changes (including programmatic changes)
+          $input.on('input change', function() {
+            updateDisplay();
+          });
+
+          // Make updateDisplay available on the input element for external calls
+          $input.data('updateDisplay', updateDisplay);
+        });
+      }
+
+      // Global function to update all generator args displays
+      window.updateAllGeneratorArgsDisplays = function() {
+        $('.generator-args-container input[name*="generator_args"]').each(function() {
+          var updateFn = $(this).data('updateDisplay');
+          if (updateFn) {
+            updateFn();
+          }
+        });
+      };
+
+      // Setup initial generator args display
+      setupGeneratorArgsDisplay();
+
+      // Global modal event handlers (set up once)
+      $('#cancel-generator-script').click(function() {
+        closeGeneratorScriptModal();
+      });
+
+      $('#save-generator-script').click(function() {
+        saveGeneratorScript();
+      });
+
+      // Update line numbers when typing
+      $('#generator-script-textarea').on('input scroll', function() {
+        updateLineNumbers();
+
+        // Sync scroll position
+        var lineNumbers = $('#line-numbers');
+        lineNumbers.scrollTop($(this).scrollTop());
+      });
+
+      // Close modal when clicking outside
+      $('#generator-script-modal').click(function(e) {
+        if (e.target === this) {
+          closeGeneratorScriptModal();
+        }
+      });
+
+      // Setup generator args display for new rows
+      $table.on('add-row', function (e, $tr) {
+        $tr.find('.generator-args-container').each(function() {
+          var $container = $(this);
+          var $input = $container.find('input[name*="generator_args"]');
+          var $icon = $container.find('.generator-args-icon');
+
+          function updateDisplay() {
+            var hasValue = $input.val() && $input.val().trim();
+            if (hasValue) {
+              $icon.hide();
+              $input.removeClass('generator-args-hidden').show();
+            } else {
+              $icon.show();
+              $input.addClass('generator-args-hidden');
+            }
+          }
+
+          // Initial setup for new row
+          updateDisplay();
+
+          $icon.click(function() {
+            $icon.hide();
+            $input.removeClass('generator-args-hidden').show().focus();
+          });
+
+          $input.blur(function() {
+            setTimeout(function() {
+              updateDisplay();
+            }, 100);
+          });
+
+          $input.on('input change', function() {
+            updateDisplay();
+          });
+
+          // Make updateDisplay available on the input element for external calls
+          $input.data('updateDisplay', updateDisplay);
+        });
+      });
+
     }).change();
   </script>
   {% include 'fine_uploader/script.html' %}
@@ -438,53 +781,6 @@
 {% block media %}
   {{ data_form.media.css }}
   <link href="{{ static ('fine-uploader/fine-uploader.css') }}" rel="stylesheet">
-  <style>
-    #case-table .select2 {
-      text-align: initial;
-    }
-
-    .order-column {
-      width: 1em;
-    }
-
-    span.order {
-      padding-right: 0.5em;
-    }
-
-    body.dragging, body.dragging * {
-      cursor: move !important;
-    }
-
-    .dragged {
-      position: absolute;
-      opacity: 0.5;
-      z-index: 2000;
-    }
-
-    i.fa-ellipsis-v {
-      cursor: move;
-    }
-
-    #case-table tbody td {
-      white-space: nowrap;
-    }
-
-    .type-column {
-      width: 8em;
-    }
-
-    ul.errorlist {
-      border: 3px red solid;
-      border-radius: 5px;
-      padding-top: 1em;
-      padding-bottom: 1em;
-      background: #e99;
-    }
-
-    #submit-button {
-      margin-bottom: 1em;
-    }
-  </style>
 {% endblock %}
 
 {% block header %}
@@ -530,6 +826,22 @@
         </div>
       </td>
     </table>
+
+    <!-- Generator Script Modal -->
+    <div id="generator-script-modal" style="display: none;">
+      <div class="modal-content">
+        <h3>{{_('Generator Script')}}</h3>
+        <p>{{_('Enter generator arguments for test cases. Each line represents arguments for one test case.')}}</p>
+        <div class="textarea-with-lines">
+          <div id="line-numbers"></div>
+          <textarea id="generator-script-textarea" rows="15" style="width: 100%; font-family: monospace; padding: 10px; border: none; outline: none; resize: vertical;"></textarea>
+        </div>
+        <div class="modal-buttons" style="margin-top: 15px; text-align: right;">
+          <button type="button" class="btn" id="cancel-generator-script">{{_('Cancel')}}</button>
+          <button type="button" class="action-btn" id="save-generator-script">{{_('Save')}}</button>
+        </div>
+      </div>
+    </div>
 
     {{ signature_grader_formset.management_form }}
     <div id="signature-grader-table" style="display: none; margin-top: 1em;">
@@ -581,7 +893,7 @@
       </table>
     </div>
 
-    <input type="submit" value="{{ _('Apply!') }}" class="button" id="submit-button">
+    <input type="submit" value="{{ _('Apply!') }}" class="action-btn" id="submit-button">
 
     <h3> {{_("Test Cases")}} </h3>
     <table id="case-table" class="table">
@@ -593,6 +905,7 @@
           <th>{{ _('Output file') }}</th>
           <th>{{ _('Points') }}</th>
           <th>{{ _('Pretest?') }}</th>
+          <th>{{ _('Generator Args') }}</th>
           {% if cases_formset.can_delete %}
             <th>{{ _('Delete?') }}
               <br>
@@ -605,7 +918,7 @@
         {% for form in all_case_forms %}
           {% if form.non_field_errors() %}
             <tr>
-              <td colspan="{{ 9 + cases_formset.can_delete }}">{{ form.non_field_errors() }}</td>
+              <td colspan="{{ 10 + cases_formset.can_delete }}">{{ form.non_field_errors() }}</td>
             </tr>
           {% endif %}
           {% if form.prefix and '__prefix__' in form.prefix %}
@@ -629,6 +942,13 @@
         </td>
 <td>{{ form.points.errors }}{{ form.points }}</td>
 <td>{{ form.is_pretest.errors }}{{ form.is_pretest }}</td>
+<td>
+  {{ form.generator_args.errors }}
+  <div class="generator-args-container">
+    <i class="fa fa-plus generator-args-icon" title="Click to add generator arguments" style="display: none;"></i>
+    {{ form.generator_args }}
+  </div>
+</td>
 {% if cases_formset.can_delete %}
   <td>{{ form.DELETE }}</td>
 {% endif %}
@@ -636,7 +956,8 @@
 {% endfor %}
 </tbody>
 </table>
-<input type="submit" value="{{ _('Apply!') }}" class="button" id="submit-button">
-<a id="add-case-row" href="#"><i class="fa fa-plus"></i> {{ _('Add new case') }}</a>
+<input type="submit" value="{{ _('Apply!') }}" class="action-btn" id="submit-button">
+<div><a id="add-case-row" class="action-btn" href="#"><i class="fa fa-plus"></i> {{ _('Add new case') }}</a></div>
 </form>
+
 {% endblock %}

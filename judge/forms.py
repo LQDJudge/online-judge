@@ -29,12 +29,19 @@ from django_ace import AceWidget
 from judge.models import (
     Contest,
     Language,
+    LanguageLimit,
+    LanguageTemplate,
+    License,
+    ProblemGroup,
+    ProblemType,
     TestFormatterModel,
     Organization,
     PrivateMessage,
     Problem,
     ProblemPointsVote,
+    ProblemTranslation,
     Profile,
+    Solution,
     Submission,
     BlogPost,
     ContestProblem,
@@ -740,3 +747,448 @@ class LessonCloneForm(Form):
             return course
         except Course.DoesNotExist:
             raise ValidationError(_("Selected course does not exist."))
+
+
+MEMORY_UNITS = (("KB", "KB"), ("MB", "MB"))
+
+
+class ProblemEditForm(ModelForm):
+    change_message = forms.CharField(
+        max_length=256, label="Edit reason", required=False
+    )
+    memory_unit = forms.ChoiceField(choices=MEMORY_UNITS)
+
+    def __init__(self, *args, **kwargs):
+        super(ProblemEditForm, self).__init__(*args, **kwargs)
+        self.fields["authors"].widget.can_add_related = False
+        self.fields["curators"].widget.can_add_related = False
+        self.fields["testers"].widget.can_add_related = False
+        self.fields["change_message"].widget.attrs.update(
+            {
+                "placeholder": _("Describe the changes you made (optional)"),
+            }
+        )
+
+    def clean_code(self):
+        code = self.cleaned_data.get("code")
+
+        # Check for duplicate codes, excluding the current problem's code
+        existing_problem = Problem.objects.filter(code=code)
+
+        # If editing an existing problem, exclude its own code from the check
+        if self.instance.pk:
+            existing_problem = existing_problem.exclude(pk=self.instance.pk)
+
+        if existing_problem.exists():
+            raise ValidationError(_("A problem with this code already exists."))
+
+        return code
+
+    def clean(self):
+        memory_unit = self.cleaned_data.get("memory_unit", "KB")
+        if memory_unit == "MB" and "memory_limit" in self.cleaned_data:
+            self.cleaned_data["memory_limit"] *= 1024
+        date = self.cleaned_data.get("date")
+        if not date or date > timezone.now():
+            self.cleaned_data["date"] = timezone.now()
+        return self.cleaned_data
+
+    def non_field_errors(self):
+        # Check if there are any non-field errors
+        errors = super().non_field_errors()
+
+        # Collect potential non-field errors from the form
+        if hasattr(self, "_non_field_errors"):
+            errors.extend(self._non_field_errors)
+
+        return errors
+
+    class Meta:
+        model = Problem
+        fields = [
+            # Content fields
+            "code",
+            "name",
+            "is_public",
+            "organizations",
+            "date",
+            "authors",
+            "curators",
+            "testers",
+            "description",
+            "pdf_description",
+            # Taxonomy fields
+            "types",
+            "group",
+            # Points fields
+            "points",
+            "partial",
+            "short_circuit",
+            # Limits fields
+            "time_limit",
+            "memory_limit",
+            # Language fields
+            "allowed_languages",
+        ]
+        widgets = {
+            "authors": HeavySelect2MultipleWidget(
+                data_view="profile_select2",
+                attrs={
+                    "style": "width: 50%",
+                    "class": "django-select2",
+                    "placeholder": _("Search and select authors"),
+                },
+            ),
+            "curators": HeavySelect2MultipleWidget(
+                data_view="profile_select2",
+                attrs={
+                    "style": "width: 50%",
+                    "class": "django-select2",
+                    "placeholder": _("Search and select curators"),
+                },
+            ),
+            "testers": HeavySelect2MultipleWidget(
+                data_view="profile_select2",
+                attrs={
+                    "style": "width: 50%",
+                    "class": "django-select2",
+                    "placeholder": _("Search and select testers"),
+                },
+            ),
+            "organizations": HeavySelect2MultipleWidget(
+                data_view="organization_select2",
+                attrs={
+                    "style": "width: 50%",
+                    "class": "django-select2",
+                    "placeholder": _("Search and select organizations"),
+                },
+            ),
+            "types": Select2MultipleWidget(
+                attrs={
+                    "style": "width: 50%",
+                    "class": "django-select2",
+                    "placeholder": _("Search and select problem types"),
+                }
+            ),
+            "group": Select2Widget(
+                attrs={
+                    "style": "width: 30%",
+                    "class": "django-select2",
+                    "placeholder": _("Search and select problem group"),
+                }
+            ),
+            "memory_limit": forms.TextInput(attrs={"size": "20"}),
+            "time_limit": forms.NumberInput(attrs={"step": "0.1"}),
+            "points": forms.NumberInput(attrs={"step": "0.5"}),
+            "allowed_languages": forms.CheckboxSelectMultiple(),
+            "date": DateTimePickerWidget(),
+        }
+
+        if HeavyPreviewPageDownWidget is not None:
+            widgets["description"] = HeavyPreviewPageDownWidget(
+                preview=reverse_lazy("problem_preview")
+            )
+
+
+class ProblemAddForm(ModelForm):
+    memory_unit = forms.ChoiceField(choices=MEMORY_UNITS, initial="KB")
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super(ProblemAddForm, self).__init__(*args, **kwargs)
+        self.fields["authors"].widget.can_add_related = False
+        self.fields["curators"].widget.can_add_related = False
+        self.fields["testers"].widget.can_add_related = False
+
+        # Set current user as default author
+        if self.user and self.user.is_authenticated:
+            self.fields["authors"].initial = [self.user.profile]
+
+    def clean_code(self):
+        code = self.cleaned_data.get("code")
+        if Problem.objects.filter(code=code).exists():
+            raise ValidationError(_("A problem with this code already exists."))
+        return code
+
+    def clean(self):
+        memory_unit = self.cleaned_data.get("memory_unit", "KB")
+        if memory_unit == "MB" and "memory_limit" in self.cleaned_data:
+            self.cleaned_data["memory_limit"] *= 1024
+        date = self.cleaned_data.get("date")
+        if not date or date > timezone.now():
+            self.cleaned_data["date"] = timezone.now()
+        return self.cleaned_data
+
+    class Meta:
+        model = Problem
+        fields = [
+            # Content fields
+            "code",
+            "name",
+            "is_public",
+            "organizations",
+            "date",
+            "authors",
+            "curators",
+            "testers",
+            "description",
+            "pdf_description",
+            # Taxonomy fields
+            "types",
+            "group",
+            # Points fields
+            "points",
+            "partial",
+            "short_circuit",
+            # Limits fields
+            "time_limit",
+            "memory_limit",
+            # Language fields
+            "allowed_languages",
+        ]
+        widgets = {
+            "authors": HeavySelect2MultipleWidget(
+                data_view="profile_select2",
+                attrs={
+                    "style": "width: 50%",
+                    "class": "django-select2",
+                    "placeholder": _("Search and select authors"),
+                },
+            ),
+            "curators": HeavySelect2MultipleWidget(
+                data_view="profile_select2",
+                attrs={
+                    "style": "width: 50%",
+                    "class": "django-select2",
+                    "placeholder": _("Search and select curators"),
+                },
+            ),
+            "testers": HeavySelect2MultipleWidget(
+                data_view="profile_select2",
+                attrs={
+                    "style": "width: 50%",
+                    "class": "django-select2",
+                    "placeholder": _("Search and select testers"),
+                },
+            ),
+            "organizations": HeavySelect2MultipleWidget(
+                data_view="organization_select2",
+                attrs={
+                    "style": "width: 50%",
+                    "class": "django-select2",
+                    "placeholder": _("Search and select organizations"),
+                },
+            ),
+            "types": Select2MultipleWidget(
+                attrs={
+                    "style": "width: 50%",
+                    "class": "django-select2",
+                    "placeholder": _("Search and select problem types"),
+                }
+            ),
+            "group": Select2Widget(
+                attrs={
+                    "style": "width: 30%",
+                    "class": "django-select2",
+                    "placeholder": _("Search and select problem group"),
+                }
+            ),
+            "memory_limit": forms.TextInput(attrs={"size": "20"}),
+            "time_limit": forms.NumberInput(attrs={"step": "0.1"}),
+            "points": forms.NumberInput(attrs={"step": "0.5"}),
+            "allowed_languages": forms.CheckboxSelectMultiple(),
+            "date": DateTimePickerWidget(),
+        }
+
+        if HeavyPreviewPageDownWidget is not None:
+            widgets["description"] = HeavyPreviewPageDownWidget(
+                preview=reverse_lazy("problem_preview")
+            )
+
+
+class LanguageLimitEditForm(ModelForm):
+    memory_unit = forms.ChoiceField(
+        choices=MEMORY_UNITS, label=_("Memory unit"), initial="KB"
+    )
+
+    def __init__(self, *args, **kwargs):
+        problem = kwargs.pop("problem", None)
+        super().__init__(*args, **kwargs)
+        self.problem = problem
+        if problem:
+            # Limit language choices to problem's allowed languages
+            self.fields["language"].queryset = problem.allowed_languages.order_by(
+                "name"
+            )
+
+        # Make all fields required
+        self.fields["language"].required = True
+        self.fields["time_limit"].required = True
+        self.fields["memory_limit"].required = True
+
+        # Add form styling
+        self.fields["language"].widget.attrs.update({"class": "form-control"})
+        self.fields["time_limit"].widget.attrs.update(
+            {"class": "form-control", "step": "0.1"}
+        )
+        self.fields["memory_limit"].widget.attrs.update(
+            {"class": "form-control", "min": "1"}
+        )
+        self.fields["memory_unit"].widget.attrs.update({"class": "form-select"})
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Check for duplicate language limit
+        language = cleaned_data.get("language")
+        if language and self.problem:
+            existing_limit = LanguageLimit.objects.filter(
+                problem=self.problem, language=language
+            )
+            if existing_limit.exists():
+                raise ValidationError(
+                    {
+                        "language": _(
+                            "A language limit for this language already exists for this problem."
+                        )
+                    }
+                )
+
+        # Validate that time and memory limits are positive
+        time_limit = cleaned_data.get("time_limit")
+        memory_limit = cleaned_data.get("memory_limit")
+
+        if time_limit is not None and time_limit <= 0:
+            raise ValidationError({"time_limit": _("Time limit must be positive.")})
+
+        if memory_limit is not None and memory_limit <= 0:
+            raise ValidationError({"memory_limit": _("Memory limit must be positive.")})
+
+        # Convert memory limit based on selected unit
+        memory_unit = cleaned_data.get("memory_unit", "KB")
+
+        # Convert memory limit if it's in MB to KB
+        if memory_limit is not None and memory_unit == "MB":
+            cleaned_data["memory_limit"] = int(memory_limit * 1024)
+
+        # Remove memory_unit from cleaned_data since it's not a model field
+        cleaned_data.pop("memory_unit", None)
+
+        return cleaned_data
+
+    class Meta:
+        model = LanguageLimit
+        fields = ["language", "time_limit", "memory_limit"]
+        widgets = {
+            "language": Select2Widget(
+                attrs={
+                    "style": "width: 50%",
+                    "class": "django-select2",
+                    "placeholder": "Search and select language",
+                }
+            ),
+            "memory_limit": forms.TextInput(attrs={"size": "20"}),
+            "time_limit": forms.TextInput(attrs={"step": "0.3"}),
+        }
+
+
+class LanguageTemplateEditForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        problem = kwargs.pop("problem", None)
+        super().__init__(*args, **kwargs)
+        self.problem = problem
+        if problem:
+            # Limit language choices to problem's allowed languages
+            self.fields["language"].queryset = problem.allowed_languages.order_by(
+                "name"
+            )
+
+        # Make fields required
+        self.fields["language"].required = True
+        self.fields["source"].required = True
+
+        # Add form styling
+        self.fields["language"].widget.attrs.update({"class": "form-control"})
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Check for duplicate language template
+        language = cleaned_data.get("language")
+        if language and self.problem:
+            existing_template = LanguageTemplate.objects.filter(
+                problem=self.problem, language=language
+            )
+            if existing_template.exists():
+                raise ValidationError(
+                    {
+                        "language": _(
+                            "A language template for this language already exists for this problem."
+                        )
+                    }
+                )
+
+        return cleaned_data
+
+    class Meta:
+        model = LanguageTemplate
+        fields = ["language", "source"]
+        widgets = {
+            "source": AceWidget(width="100%", height="300px", toolbar=False),
+        }
+
+
+class ProblemSolutionEditForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(ProblemSolutionEditForm, self).__init__(*args, **kwargs)
+        self.fields["authors"].widget.can_add_related = False
+
+        # Set default values for new solutions
+        if not self.instance.pk:
+            # Set default publish date to now if not specified
+            if not self.initial.get("publish_on"):
+                self.initial["publish_on"] = timezone.now()
+            # Set default to private if not specified
+            if not self.initial.get("is_public"):
+                self.initial["is_public"] = False
+
+        # Add helpful help text
+        self.fields["is_public"].help_text = _(
+            "Must be checked for the editorial to be visible to users."
+        )
+        self.fields["publish_on"].help_text = _(
+            "Editorial will only be visible after this date/time."
+        )
+        self.fields["content"].help_text = _(
+            "The editorial content explaining the solution approach."
+        )
+        self.fields["authors"].help_text = _(
+            "Authors who contributed to this editorial solution."
+        )
+
+    class Meta:
+        model = Solution
+        fields = ["is_public", "publish_on", "authors", "content"]
+        widgets = {
+            "authors": HeavySelect2MultipleWidget(
+                data_view="profile_select2", attrs={"style": "width: 50%"}
+            ),
+            "publish_on": DateTimePickerWidget(),
+        }
+
+        if HeavyPreviewPageDownWidget is not None:
+            widgets["content"] = HeavyPreviewPageDownWidget(
+                preview=reverse_lazy("solution_preview")
+            )
+
+
+class ProblemTranslationEditForm(ModelForm):
+    class Meta:
+        model = ProblemTranslation
+        fields = ["language", "name", "description"]
+        if HeavyPreviewPageDownWidget is not None:
+            widgets = {
+                "description": HeavyPreviewPageDownWidget(
+                    preview=reverse_lazy("problem_preview")
+                )
+            }

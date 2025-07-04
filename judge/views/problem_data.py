@@ -27,6 +27,7 @@ from django.forms import (
     formset_factory,
     FileInput,
     TextInput,
+    Textarea,
     CheckboxInput,
     modelformset_factory,
 )
@@ -87,6 +88,8 @@ class ProblemDataForm(ModelForm):
         model = ProblemData
         fields = [
             "zipfile",
+            "generator",
+            "generator_script",
             "checker",
             "checker_args",
             "custom_checker",
@@ -99,8 +102,9 @@ class ProblemDataForm(ModelForm):
         ]
         widgets = {
             "zipfile": FineUploadFileInput,
+            "generator": FileEditWidget,
+            "generator_script": HiddenInput,
             "checker_args": HiddenInput,
-            "generator": HiddenInput,
             "output_limit": HiddenInput,
             "output_prefix": HiddenInput,
             "fileio_input": TextInput,
@@ -113,6 +117,7 @@ class ProblemDataForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["generator"].widget = FileEditWidget(default_file_name="gen.cpp")
         self.fields["custom_checker_cpp"].widget = FileEditWidget(
             default_file_name="checker.cpp"
         )
@@ -138,9 +143,10 @@ class ProblemCaseForm(ModelForm):
             "is_pretest",
             "checker",
             "checker_args",
+            "generator_args",
         )  # , 'output_limit', 'output_prefix', 'generator_args')
         widgets = {
-            # 'generator_args': HiddenInput,
+            "generator_args": TextInput(attrs={"style": "width: 100%"}),
             "type": Select(attrs={"style": "width: 100%"}),
             "points": NumberInput(attrs={"style": "width: 4em"}),
             # 'output_prefix': NumberInput(attrs={'style': 'width: 4.5em'}),

@@ -1,8 +1,11 @@
 {% extends "tabs-base.html" %}
 
 {% block tabs %}
+  {{ make_tab('list', 'fa-list', url('problem_list'), _('List')) }}
+  {% if user.is_superuser or perms.judge.add_problem %}
+    {{ make_tab('add', 'fa-plus', url('problem_add'), _('Add')) }}
+  {% endif %}
   {% if perms.judge.edit_all_problem or perms.judge.edit_public_problem or perms.judge.edit_own_problem %}
-    {{ make_tab('list', 'fa-list', url('problem_list'), _('List')) }}
     {{ make_tab('admin', 'fa-edit', url('admin:judge_problem_changelist'), _('Admin')) }}
   {% endif %}
 {% endblock %}

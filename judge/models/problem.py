@@ -204,7 +204,14 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
             MaxValueValidator(settings.DMOJ_PROBLEM_MAX_MEMORY_LIMIT),
         ],
     )
-    short_circuit = models.BooleanField(default=False)
+    short_circuit = models.BooleanField(
+        default=False,
+        verbose_name=_("stop on first fail"),
+        help_text=_(
+            "Stop judging when the first test case fails (ICPC-style). "
+            "If disabled, all test cases will be judged."
+        ),
+    )
     points = models.FloatField(
         verbose_name=_("points"),
         help_text=_(
@@ -310,13 +317,9 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
     def is_editable_by(self, user):
         if not user.is_authenticated:
             return False
-        if (
-            user.has_perm("judge.edit_all_problem")
-            or user.has_perm("judge.edit_public_problem")
-            and self.is_public
-        ):
+        if user.is_superuser:
             return True
-        return user.has_perm("judge.edit_own_problem") and self.is_editor(user.profile)
+        return self.is_editor(user.profile)
 
     def is_accessible_by(self, user, in_contest_mode=True):
         # Problem is public.
@@ -325,25 +328,20 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
             if not self.is_organization_private:
                 return True
 
-            # If the user can see all organization private problems.
-            if user.has_perm("judge.see_organization_problem"):
-                return True
-
             # If the user is in the organization.
             if user.is_authenticated and self.organizations.filter(
                 id__in=user.profile.organizations.all()
             ):
                 return True
 
-        # If the user can view all problems.
-        if user.has_perm("judge.see_private_problem"):
-            return True
-
         if not user.is_authenticated:
             return False
 
+        if user.is_superuser:
+            return True
+
         # If the user authored the problem or is a curator.
-        if user.has_perm("judge.edit_own_problem") and self.is_editor(user.profile):
+        if self.is_editor(user.profile):
             return True
 
         # If user is a tester.
@@ -361,11 +359,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         ).exists()
 
     def is_subs_manageable_by(self, user):
-        return (
-            user.is_staff
-            and user.has_perm("judge.rejudge_submission")
-            and self.is_editable_by(user)
-        )
+        return self.is_editable_by(user)
 
     @classmethod
     def get_visible_problems(cls, user, profile=None):
@@ -609,6 +603,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
 
     update_stats.alters_data = True
 
+    @cache_wrapper(prefix="Pgl", expected_type=list)
     def _get_limits(self, key):
         global_limit = getattr(self, key)
         limits = {
@@ -637,23 +632,11 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
 
     @property
     def language_time_limit(self):
-        key = "problem_tls:%d" % self.id
-        result = cache.get(key)
-        if result is not None:
-            return result
-        result = self._get_limits("time_limit")
-        cache.set(key, result)
-        return result
+        return self._get_limits("time_limit")
 
     @property
     def language_memory_limit(self):
-        key = "problem_mls:%d" % self.id
-        result = cache.get(key)
-        if result is not None:
-            return result
-        result = self._get_limits("memory_limit")
-        cache.set(key, result)
-        return result
+        return self._get_limits("memory_limit")
 
     def handle_code_change(self):
         has_data = hasattr(self, "data_files")
@@ -763,6 +746,19 @@ class LanguageLimit(models.Model):
         ],
     )
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Invalidate language limit cache after saving
+        Problem._get_limits.dirty(self.problem, "time_limit")
+        Problem._get_limits.dirty(self.problem, "memory_limit")
+
+    def delete(self, *args, **kwargs):
+        problem = self.problem  # Store reference before deletion
+        super().delete(*args, **kwargs)
+        # Invalidate language limit cache after deletion
+        Problem._get_limits.dirty(problem, "time_limit")
+        Problem._get_limits.dirty(problem, "memory_limit")
+
     class Meta:
         unique_together = ("problem", "language")
         verbose_name = _("language-specific resource limit")
@@ -808,7 +804,7 @@ class Solution(models.Model, PageVotable, Bookmarkable):
         super().save(*args, **kwargs)
         if self.problem:
             # Invalidate the has_public_editorial cache
-            _get_problem_has_public_editorial.dirty((self.problem_id,))
+            _get_problem_has_public_editorial.dirty(self.problem_id)
 
     save.alters_data = True
 

@@ -29,7 +29,7 @@
 
 {% block middle_content %}
   {% if lesson.id %}
-    <h2>{{lesson.title}} </h2>
+    <center><h2>{{lesson.title}} </h2></center>
   {% endif %}
   <form method="post">
     {% csrf_token %}

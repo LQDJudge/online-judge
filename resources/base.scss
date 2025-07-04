@@ -1,6 +1,7 @@
 @charset "UTF-8";
+@use "vars" as *;
+@use "sass:color";
 
-@import "vars";
 
 @-ms-viewport {
     min-width: 480px;
@@ -45,7 +46,7 @@ img {
 
 // Shared action button style for use throughout the app
 .action-btn {
-    background: linear-gradient(135deg, $theme_color 0%, lighten($theme_color, 8%) 100%);
+    background: linear-gradient(135deg, $theme_color 0%, color.adjust($theme_color, $lightness: 8%) 100%);
     color: white;
     border: none;
     border-radius: 10px;
@@ -75,7 +76,7 @@ img {
     }
 
     &:hover {
-        background: linear-gradient(135deg, lighten($theme_color, 5%) 0%, lighten($theme_color, 12%) 100%);
+        background: linear-gradient(135deg, color.adjust($theme_color, $lightness: 5%) 0%, color.adjust($theme_color, $lightness: 12%) 100%);
         color: white;
         text-decoration: none;
         transform: translateY(-1px);
@@ -124,11 +125,11 @@ img {
 
 // Background color variants
 .action-btn.background-green {
-    background: linear-gradient(135deg, #28a745 0%, lighten(#28a745, 8%) 100%);
+    background: linear-gradient(135deg, #28a745 0%, color.adjust(#28a745, $lightness: 8%) 100%);
     box-shadow: 0 3px 10px rgba(40, 167, 69, 0.25);
 
     &:hover {
-        background: linear-gradient(135deg, lighten(#28a745, 5%) 0%, lighten(#28a745, 12%) 100%);
+        background: linear-gradient(135deg, color.adjust(#28a745, $lightness: 5%) 0%, color.adjust(#28a745, $lightness: 12%) 100%);
         box-shadow: 0 5px 15px rgba(40, 167, 69, 0.35);
     }
 
@@ -138,11 +139,11 @@ img {
 }
 
 .action-btn.background-red {
-    background: linear-gradient(135deg, $announcement_red 0%, lighten($announcement_red, 8%) 100%);
+    background: linear-gradient(135deg, $announcement_red 0%, color.adjust($announcement_red, $lightness: 8%) 100%);
     box-shadow: 0 3px 10px rgba(174, 0, 0, 0.25);
 
     &:hover {
-        background: linear-gradient(135deg, lighten($announcement_red, 5%) 0%, lighten($announcement_red, 12%) 100%);
+        background: linear-gradient(135deg, color.adjust($announcement_red, $lightness: 5%) 0%, color.adjust($announcement_red, $lightness: 12%) 100%);
         box-shadow: 0 5px 15px rgba(174, 0, 0, 0.35);
     }
 
@@ -152,11 +153,11 @@ img {
 }
 
 .action-btn.background-blue {
-    background: linear-gradient(135deg, #007bff 0%, lighten(#007bff, 8%) 100%);
+    background: linear-gradient(135deg, #007bff 0%, color.adjust(#007bff, $lightness: 8%) 100%);
     box-shadow: 0 3px 10px rgba(0, 123, 255, 0.25);
 
     &:hover {
-        background: linear-gradient(135deg, lighten(#007bff, 5%) 0%, lighten(#007bff, 12%) 100%);
+        background: linear-gradient(135deg, color.adjust(#007bff, $lightness: 5%) 0%, color.adjust(#007bff, $lightness: 12%) 100%);
         box-shadow: 0 5px 15px rgba(0, 123, 255, 0.35);
     }
 
@@ -166,11 +167,11 @@ img {
 }
 
 .action-btn.background-gray {
-    background: linear-gradient(135deg, #6c757d 0%, lighten(#6c757d, 8%) 100%);
+    background: linear-gradient(135deg, #6c757d 0%, color.adjust(#6c757d, $lightness: 8%) 100%);
     box-shadow: 0 3px 10px rgba(108, 117, 125, 0.25);
 
     &:hover {
-        background: linear-gradient(135deg, lighten(#6c757d, 5%) 0%, lighten(#6c757d, 12%) 100%);
+        background: linear-gradient(135deg, color.adjust(#6c757d, $lightness: 5%) 0%, color.adjust(#6c757d, $lightness: 12%) 100%);
         box-shadow: 0 5px 15px rgba(108, 117, 125, 0.35);
     }
 
@@ -180,12 +181,12 @@ img {
 }
 
 .action-btn.background-warning {
-    background: linear-gradient(135deg, #ffc107 0%, lighten(#ffc107, 8%) 100%);
+    background: linear-gradient(135deg, #ffc107 0%, color.adjust(#ffc107, $lightness: 8%) 100%);
     box-shadow: 0 3px 10px rgba(255, 193, 7, 0.25);
     color: #212529;
 
     &:hover {
-        background: linear-gradient(135deg, lighten(#ffc107, 5%) 0%, lighten(#ffc107, 12%) 100%);
+        background: linear-gradient(135deg, color.adjust(#ffc107, $lightness: 5%) 0%, color.adjust(#ffc107, $lightness: 12%) 100%);
         box-shadow: 0 5px 15px rgba(255, 193, 7, 0.35);
         color: #212529;
     }
@@ -197,11 +198,11 @@ img {
 
 .action-btn.background-theme {
     // Explicit theme color option (same as default but can be used for clarity)
-    background: linear-gradient(135deg, $theme_color 0%, lighten($theme_color, 8%) 100%);
+    background: linear-gradient(135deg, $theme_color 0%, color.adjust($theme_color, $lightness: 8%) 100%);
     box-shadow: 0 3px 10px rgba($theme_color, 0.25);
 
     &:hover {
-        background: linear-gradient(135deg, lighten($theme_color, 5%) 0%, lighten($theme_color, 12%) 100%);
+        background: linear-gradient(135deg, color.adjust($theme_color, $lightness: 5%) 0%, color.adjust($theme_color, $lightness: 12%) 100%);
         box-shadow: 0 5px 15px rgba($theme_color, 0.35);
     }
 
