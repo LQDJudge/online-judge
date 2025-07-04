@@ -1092,7 +1092,7 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
 
 ContestRankingProfile = namedtuple(
     "ContestRankingProfile",
-    "id user username points cumtime tiebreaker participation "
+    "id user points cumtime tiebreaker participation "
     "participation_rating problem_cells result_cell",
 )
 
@@ -1113,7 +1113,6 @@ def make_contest_ranking_profile(
     return ContestRankingProfile(
         id=user.id,
         user=user,
-        username=user.username,
         points=points,
         cumtime=cumtime,
         tiebreaker=participation.tiebreaker,
@@ -1195,6 +1194,7 @@ def get_contest_ranking_list(
         .defer("problem__description")
         .order_by("order")
     )
+    Problem.get_cached_instances(*[problem.problem_id for problem in problems])
 
     if participation is None:
         participation = _get_current_virtual_participation(request, contest)

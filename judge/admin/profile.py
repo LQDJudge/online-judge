@@ -121,6 +121,12 @@ class ProfileAdmin(VersionAdmin):
             fields += ("is_totp_enabled",)
         return fields
 
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
     def show_public(self, obj):
         return format_html(
             '<a href="{0}" style="white-space:nowrap;">{1}</a>',
@@ -224,4 +230,7 @@ class UserAdmin(OldUserAdmin):
         return fields
 
     def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False

@@ -9,10 +9,12 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
+from django.http import Http404
+from django.utils.encoding import force_bytes
 
 from urllib.parse import urlencode, urlunparse, urlparse
 
-from judge.models import Profile
+from judge.models import Profile, EmailChangeRequest
 from judge.utils.email_render import render_email_message
 
 
@@ -48,7 +50,7 @@ def email_change_view(request):
 
         # Generate a token for email verification
         token = default_token_generator.make_token(user)
-        uid = urlsafe_base64_encode(bytes(user.pk))
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
 
         # Send the email to the user
         subject = settings.SITE_NAME + " - " + _("Email Change Request")
@@ -70,8 +72,8 @@ def email_change_view(request):
             [new_email],
             html_message=message,
         )
-        profile.email_change_pending = new_email
-        profile.save()
+        EmailChangeRequest.objects.filter(profile=profile).delete()
+        EmailChangeRequest.objects.create(profile=profile, new_email=new_email)
         return redirect("email_change_pending")
 
     return render(
@@ -92,12 +94,17 @@ def verify_email_view(request, uidb64, token):
         user = None
     if user is not None and default_token_generator.check_token(user, token):
         profile = Profile.objects.get(user=user)
-        new_email = profile.email_change_pending
-        if new_email and not User.objects.filter(email=new_email).exists():
-            user.email = new_email
-            profile.email_change_pending = None
+        email_change_request = EmailChangeRequest.objects.filter(
+            profile=profile
+        ).first()
+
+        if (
+            email_change_request
+            and not User.objects.filter(email=email_change_request.new_email).exists()
+        ):
+            user.email = email_change_request.new_email
             user.save()
-            profile.save()
+            email_change_request.delete()
 
             return render(
                 request,
@@ -111,10 +118,14 @@ def verify_email_view(request, uidb64, token):
 
 
 def email_change_pending_view(request):
+    email_change_request = EmailChangeRequest.objects.filter(
+        profile=request.profile
+    ).first()
+    if not email_change_request:
+        raise Http404()
+    new_email = email_change_request.new_email
     return render(
         request,
         "email_change/email_change_pending.html",
-        {
-            "title": _("Email change pending"),
-        },
+        {"title": _("Email change pending"), "new_email": new_email},
     )

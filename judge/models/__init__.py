@@ -71,6 +71,7 @@ from judge.models.course import (
 from judge.models.notification import Notification, NotificationProfile
 from judge.models.test_formatter import TestFormatterModel
 from judge.models.block import Block
+from judge.models.email_change import EmailChangeRequest
 
 revisions.register(Profile, exclude=["points", "last_access", "ip", "rating"])
 revisions.register(Problem, follow=["language_limits"])

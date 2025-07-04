@@ -13,6 +13,7 @@ from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save, m2m_changed
+from django.http import Http404
 
 from fernet_fields import EncryptedCharField
 from sortedm2m.fields import SortedManyToManyField
@@ -146,6 +147,9 @@ class Organization(CacheableModel):
         for contest in contests.all():
             if contest.organizations.count() == 1:
                 contest.delete()
+        args_list = [(profile_id,) for profile_id in self.get_member_ids()]
+        _get_most_recent_organization_ids.dirty_multi(args_list)
+        Profile.get_organization_ids.dirty_multi(args_list)
         super().delete(*args, **kwargs)
 
     def __str__(self):
@@ -295,7 +299,6 @@ class Profile(CacheableModel):
         help_text=_("Notes for administrators regarding this user."),
     )
     profile_image = models.ImageField(upload_to=profile_image_path, null=True)
-    email_change_pending = models.EmailField(blank=True, null=True)
     css_background = models.TextField(
         verbose_name=_("Custom background"),
         null=True,

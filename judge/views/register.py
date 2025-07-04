@@ -8,10 +8,12 @@ from django.contrib.auth.password_validation import get_default_password_validat
 from django.forms import ChoiceField, ModelChoiceField
 from django.shortcuts import render
 from django.utils.translation import gettext, gettext_lazy as _
+from django.contrib.sites.shortcuts import get_current_site
 from registration.backends.default.views import (
     ActivationView as OldActivationView,
     RegistrationView as OldRegistrationView,
 )
+from registration.models import RegistrationProfile
 from registration.forms import RegistrationForm
 
 from judge.models import Language, Profile, TIMEZONE
@@ -74,6 +76,9 @@ class RegistrationView(OldRegistrationView):
     form_class = CustomRegistrationForm
     template_name = "registration/registration_form.html"
 
+    # Set to False to disable parent sending email, which sends before creating profile
+    SEND_ACTIVATION_EMAIL = False
+
     def get_context_data(self, **kwargs):
         if "title" not in kwargs:
             kwargs["title"] = self.title
@@ -97,7 +102,15 @@ class RegistrationView(OldRegistrationView):
         profile.timezone = cleaned_data["timezone"]
         profile.language = cleaned_data["language"]
         profile.save()
+
+        self.send_activation_email(user.id)
         return user
+
+    def send_activation_email(self, user_id):
+        site = get_current_site(self.request)
+        RegistrationProfile.objects.get(user_id=user_id).send_activation_email(
+            site, self.request
+        )
 
     def get_initial(self, *args, **kwargs):
         initial = super(RegistrationView, self).get_initial(*args, **kwargs)
