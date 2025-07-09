@@ -58,7 +58,7 @@ from judge.widgets.fine_uploader import (
 )
 from judge.widgets.file_edit import FileEditWidget
 from judge.views.problem import ProblemMixin
-from judge.logging import log_exception
+from judge.logging import log_exception, notify_problem_authors
 
 mimetypes.init()
 mimetypes.add_type("application/x-yaml", ".yml")
@@ -307,7 +307,11 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
         except BadZipfile:
             return []
         except FileNotFoundError as e:
-            log_exception(e)
+            notify_problem_authors(
+                self.object,
+                f"Problem data zip file not found: {str(e)}. Please upload the problem data archive.",
+                "Problem Data File Not Found",
+            )
             return []
         return []
 
