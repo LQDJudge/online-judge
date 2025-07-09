@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.core.cache import cache
 
-from judge.logging import log_exception
+from judge.logging import log_exception, notify_problem_authors
 
 if os.altsep:
 
@@ -299,6 +299,10 @@ class ProblemDataCompiler(object):
             self.data.feedback = e.message
             self.data.save()
             problem_data_storage.delete(yml_file)
+            # Notify problem authors about the checker error
+            notify_problem_authors(
+                self.problem, e.message, "Problem Data Checker Error"
+            )
         else:
             self.data.feedback = ""
             self.data.save()
@@ -345,12 +349,21 @@ def get_problem_case(problem, files):
         settings.DMOJ_PROBLEM_DATA_ROOT, str(problem.data_files.zipfile)
     )
     if not os.path.exists(archive_path):
-        log_exception('archive file "%s" does not exist' % archive_path)
+        notify_problem_authors(
+            problem,
+            f'Problem data archive file "{archive_path}" does not exist. Please upload the problem data archive.',
+            "Problem Data Archive Missing",
+        )
         return {}
     try:
         archive = zipfile.ZipFile(archive_path, "r")
     except zipfile.BadZipfile:
-        log_exception('bad archive: "%s"' % archive_path)
+
+        notify_problem_authors(
+            problem,
+            f'Problem data archive file "{archive_path}" is corrupted or invalid. Please re-upload a valid zip archive.',
+            "Problem Data Archive Corrupted",
+        )
         return {}
 
     for file in uncached_files:
