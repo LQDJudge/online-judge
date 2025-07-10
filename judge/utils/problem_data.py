@@ -448,10 +448,10 @@ def notify_problem_authors(
         "error_message": error_message,
         "error_type": error_type,
         "site_name": getattr(settings, "SITE_NAME", "LQDOJ"),
-        "problem_url": f"{getattr(settings, 'SITE_URL', '')}/problem/{problem.code}",
-        "edit_url": f"{getattr(settings, 'SITE_URL', '')}/problem/{problem.code}/test_data",
+        "problem_url": f"{getattr(settings, 'SITE_DOMAIN', '')}/problem/{problem.code}",
+        "edit_url": f"{getattr(settings, 'SITE_DOMAIN', '')}/problem/{problem.code}/test_data",
         "protocol": "http",
-        "domain": getattr(settings, "SITE_URL", "")
+        "domain": getattr(settings, "SITE_DOMAIN", "")
         .replace("http://", "")
         .replace("https://", ""),
     }
@@ -459,7 +459,7 @@ def notify_problem_authors(
     # Add submission URL if submission is provided
     if submission:
         context["submission_url"] = (
-            f"{getattr(settings, 'SITE_URL', '')}/submission/{submission.id}"
+            f"{getattr(settings, 'SITE_DOMAIN', '')}/submission/{submission.id}"
         )
 
     # Create email body
