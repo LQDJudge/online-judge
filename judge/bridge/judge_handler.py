@@ -26,6 +26,7 @@ from judge.models import (
 )
 from judge.bridge.utils import VanishedSubmission
 from judge.caching import cache_wrapper
+from judge.utils.problem_data import notify_problem_authors
 
 logger = logging.getLogger("judge.bridge")
 json_log = logging.getLogger("judge.json.bridge")
@@ -691,18 +692,13 @@ class JudgeHandler(ZlibPacketHandler):
             )
 
     def on_internal_error(self, packet):
-        try:
-            raise ValueError("\n\n" + packet["message"])
-        except ValueError:
-            logger.exception(
-                "Judge %s failed while handling submission %s",
-                self.name,
-                packet["submission-id"],
-            )
         self._free_self(packet)
 
         id = packet["submission-id"]
         self._update_internal_error_submission(id, packet["message"])
+
+        # Notify problem authors about judge internal error
+        self._notify_problem_authors_on_error(id, packet["message"])
 
     def _update_internal_error_submission(self, id, message):
         if Submission.objects.filter(id=id).update(
@@ -732,6 +728,48 @@ class JudgeHandler(ZlibPacketHandler):
                     finish=True,
                     result="IE",
                 )
+            )
+
+    def _notify_problem_authors_on_error(self, submission_id, error_message):
+        """
+        Notify problem authors when a judge internal error occurs during submission evaluation.
+        """
+        try:
+            submission = Submission.objects.select_related("problem").get(
+                id=submission_id
+            )
+            problem = submission.problem
+
+            # Create detailed error message
+            detailed_message = (
+                f"Judge internal error occurred during submission evaluation.\n"
+            )
+            detailed_message += f"Judge: {self.name}\n"
+            detailed_message += f"Submission ID: {submission_id}\n"
+            detailed_message += f"Error details:\n{error_message}"
+
+            # Notify problem authors with submission link
+            notify_problem_authors(
+                problem=problem,
+                error_message=detailed_message,
+                error_type="Judge Internal Error",
+                submission=submission,
+            )
+
+            logger.info(
+                "Notified problem authors for submission %s internal error",
+                submission_id,
+            )
+
+        except Submission.DoesNotExist:
+            logger.warning(
+                "Cannot notify authors: submission %s not found", submission_id
+            )
+        except Exception as e:
+            logger.exception(
+                "Failed to notify problem authors for submission %s: %s",
+                submission_id,
+                e,
             )
 
     def on_submission_terminated(self, packet):
