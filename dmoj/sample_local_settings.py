@@ -178,20 +178,23 @@ BAD_MAIL_PROVIDERS = set()
 # Uncomment to change the submission limit.
 REJUDGE_SUBMISSION_LIMIT = 10
 
-## Event server.
+## Event server (WebSocket for real-time updates like chat).
 # Uncomment to enable live updating.
 # EVENT_DAEMON_USE = True
 
-# If you are using the defaults from the guide, it is this:
-# EVENT_DAEMON_URL = 'ws://127.0.0.1:15100/'
-# EVENT_DAEMON_KEY = 'lqdoj' # same as websocket/config.js
+# WebSocket daemon connection settings - used by Django to post events
+# Must match the settings in websocket/config.js
+# EVENT_DAEMON_URL = 'http://127.0.0.1:15100'
+# EVENT_DAEMON_KEY = 'lqdoj'  # Must match backend_auth_token in websocket/config.js
 
-# These are the publicly accessed interface configurations.
-# They should match those used by the script.
-# In local development, you can set it to be the same as EVENT_DAEMON_URL
-# EVENT_DAEMON_PUBLIC_URL= '<public ws:// URL for clients>'
-# EVENT_DAEMON_PUBLIC_URL_SSL = '<public wss:// URL for clients>'
+# Public URL for client WebSocket connections
+# In development, set to same value as EVENT_DAEMON_URL
+# EVENT_DAEMON_PUBLIC_URL = 'http://127.0.0.1:15100'
 
+# In production, use your domain with wss:// (nginx will proxy to port 15100)
+# EVENT_DAEMON_PUBLIC_URL = 'wss://your-domain.com'
+
+# Alternative AMQP-based event server (more complex setup)
 # If you would like to use the AMQP-based event server from <https://github.com/DMOJ/event-server>,
 # uncomment this section instead. This is more involved, and recommended to be done
 # only after you have a working event server.

@@ -182,31 +182,45 @@ $ sudo apt install memcached
 
 Used for live updates (like chat):
 
-- Create file `online-judge/websocket/config.js`
+- The WebSocket configuration file `online-judge/websocket/config.js` is already included with default settings.
 
-```jsx
-module.exports = {
-    get_host: '127.0.0.1',
-    get_port: 15100,
-    post_host: '127.0.0.1',
-    post_port: 15101,
-    http_host: '127.0.0.1',
-    http_port: 15102,
-    long_poll_timeout: 29000,
-};
-```
-
-- Install libraries
+- Install Node.js dependencies:
 
 ```bash
-$ npm install qu ws simplesets
-$ pip3 install websocket-client
+$ cd websocket
+$ npm install
+```
+
+- Add WebSocket settings to `local_settings.py`:
+
+```python
+# WebSocket daemon settings
+EVENT_DAEMON_KEY = 'lqdoj'  # Must match backend_auth_token in config.js
+EVENT_DAEMON_URL = 'http://127.0.0.1:15100'
+EVENT_DAEMON_PUBLIC_URL = 'http://127.0.0.1:15100'  # Same as EVENT_DAEMON_URL in development
+
+# For production with SSL/domain
+# EVENT_DAEMON_PUBLIC_URL = 'wss://your-domain.com'  # nginx proxies to port 15100
 ```
 
 - Start (in a separate tab)
 
 ```bash
 $ node websocket/daemon.js
+```
+
+**Production Deployment:**
+
+For nginx, add this location block:
+
+```nginx
+location /socket.io/ {
+    proxy_pass http://127.0.0.1:15100/socket.io/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_read_timeout 86400;
+}
 ```
 
 ### Celery
@@ -533,31 +547,45 @@ $ sudo apt install memcached
 
 Dùng để live update (như chat):
 
-- Tạo file `online-judge/websocket/config.js`
+- File cấu hình WebSocket `online-judge/websocket/config.js` đã được bao gồm với cài đặt mặc định.
 
-```jsx
-module.exports = {
-    get_host: '127.0.0.1',
-    get_port: 15100,
-    post_host: '127.0.0.1',
-    post_port: 15101,
-    http_host: '127.0.0.1',
-    http_port: 15102,
-    long_poll_timeout: 29000,
-};
-```
-
-- Cài các thư viện
+- Cài các thư viện Node.js:
 
 ```bash
-$ npm install qu ws simplesets
-$ pip3 install websocket-client
+$ cd websocket
+$ npm install
+```
+
+- Thêm cài đặt WebSocket vào `local_settings.py`:
+
+```python
+# WebSocket daemon settings
+EVENT_DAEMON_KEY = 'lqdoj'  # Phải giống backend_auth_token trong config.js
+EVENT_DAEMON_URL = 'http://127.0.0.1:15100'
+EVENT_DAEMON_PUBLIC_URL = 'http://127.0.0.1:15100'  # Giống EVENT_DAEMON_URL trong development
+
+# Cho production với SSL/domain
+# EVENT_DAEMON_PUBLIC_URL = 'wss://your-domain.com'  # nginx proxy đến port 15100
 ```
 
 - Khởi động (trong 1 tab riêng)
 
 ```bash
 $ node websocket/daemon.js
+```
+
+**Triển khai Production:**
+
+Cho nginx, thêm location block này:
+
+```nginx
+location /socket.io/ {
+    proxy_pass http://127.0.0.1:15100/socket.io/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_read_timeout 86400;
+}
 ```
 
 ### Celery

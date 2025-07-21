@@ -46,6 +46,20 @@ This will install:
 - Adjust `http_host` and `http_port` as needed
 - Configure connection limits and timeouts
 
+## Django Configuration
+
+Add these settings to your `local_settings.py`:
+
+```python
+# WebSocket daemon settings
+EVENT_DAEMON_KEY = 'your-secret-token'  # Must match backend_auth_token in config.js
+EVENT_DAEMON_URL = 'http://127.0.0.1:15100'
+EVENT_DAEMON_PUBLIC_URL = 'http://127.0.0.1:15100'  # Same as EVENT_DAEMON_URL in development
+
+# For production with SSL/domain
+# EVENT_DAEMON_PUBLIC_URL = 'wss://your-domain.com'  # nginx proxies to port 15100
+```
+
 ## Running the Service
 
 Start the WebSocket daemon:
@@ -54,6 +68,27 @@ node websocket/daemon.js
 ```
 
 The service will listen on the configured host/port (default: 127.0.0.1:15100).
+
+## Production Deployment
+
+For production deployments with nginx, add this location block to your nginx configuration:
+
+```nginx
+location /socket.io/ {
+    proxy_pass http://127.0.0.1:15100/socket.io/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_read_timeout 86400;
+}
+```
+
+Then configure Django to use the public WebSocket URL:
+
+```python
+# In local_settings.py for production
+EVENT_DAEMON_PUBLIC_URL = 'wss://your-domain.com'  # nginx proxies to port 15100
+```
 
 ## Integration
 
