@@ -1,119 +1,108 @@
-function EventReceiver(websocket, poller, channels, last_msg, onmessage) {
-    this.websocket_path = websocket;
-    this.channels = channels;
-    this.last_msg = last_msg;
-    this.poller_base = poller;
-    this.poller_path = poller + channels.join('|');
-    if (onmessage)
-        this.onmessage = onmessage;
-    var receiver = this;
-    var time_retry = 1000;
-    var isPageHidden = false;
-    var currentWebSocket = null;
-
-    function init_poll() {
-        function long_poll() {
-            if (isPageHidden) return;
-
-            $.ajax({
-                url: receiver.poller_path,
-                data: { last: receiver.last_msg },
-                success: function (data, status, jqXHR) {
-                    receiver.onmessage(data.message);
-                    receiver.last_msg = data.id;
-                    long_poll();
-                },
-                error: function (jqXHR, status, error) {
-                    if (jqXHR.status == 504)
-                        long_poll();
-                    else {
-                        console.log('Long poll failure: ' + status);
-                        console.log(jqXHR);
-                        setTimeout(long_poll, 2000);
-                    }
-                },
-                dataType: "json"
-            });
-        }
-        long_poll();
+function EventReceiver(socketUrl, channels, last_msg, onmessage) {
+  // Configuration
+  this.socketUrl = socketUrl;
+  this.channels = channels;
+  this.last_msg = last_msg || 0;
+  
+  // Set message handler
+  if (onmessage) {
+    this.onmessage = onmessage;
+  } else {
+    this.onmessage = function() {};
+  }
+  
+  // Custom event handler
+  this.onwsclose = null;
+  
+  // Socket reference
+  let socket = null;
+  
+  // Connect to Socket.IO server
+  const connect = () => {
+    // Disconnect existing connection if any
+    if (socket) {
+      socket.disconnect();
     }
-
-    this.onwsclose = null;
-
-    function disconnect() {
-        if (currentWebSocket) {
-            currentWebSocket.onclose = null; // Prevent triggering reconnect logic during clean-up
-            currentWebSocket.close(1000);
-            currentWebSocket = null;
-        }
-    }
-
-    function connect() {
-        if (isPageHidden || currentWebSocket) return; // Skip if page is hidden or a connection already exists
-
-        if (!window.WebSocket) {
-            init_poll();
-            return;
-        }
-
-        currentWebSocket = new WebSocket(websocket);
-        var timeout = setTimeout(function () {
-            if (currentWebSocket) {
-                currentWebSocket.close();
-                currentWebSocket = null;
-                init_poll();
-            }
-        }, 2000);
-
-        currentWebSocket.onopen = function (event) {
-            clearTimeout(timeout);
-            this.send(JSON.stringify({
-                command: 'start-msg',
-                start: last_msg
-            }));
-            this.send(JSON.stringify({
-                command: 'set-filter',
-                filter: channels
-            }));
-        };
-
-        currentWebSocket.onmessage = function (event) {
-            var data = JSON.parse(event.data);
-            receiver.onmessage(data.message);
-            receiver.last_msg = data.id;
-        };
-
-        currentWebSocket.onclose = function (event) {
-            currentWebSocket = null; // Clear reference on close
-            if (event.code != 1000 && receiver.onwsclose !== null)
-                receiver.onwsclose(event);
-            if (event.code == 1006 && !isPageHidden) {
-                setTimeout(connect, time_retry);
-                time_retry += 2000;
-            }
-        };
-    }
-
-    window.addEventListener('pagehide', function () {
-        isPageHidden = true;
-        disconnect();
+    
+    // Create new Socket.IO connection with client role
+    socket = io(this.socketUrl, {
+      auth: {
+        role: 'client'
+      },
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 10000
     });
-
-    window.addEventListener('pageshow', function () {
-        if (!isPageHidden) return; // Ensure pageshow logic doesn't trigger multiple times
-        isPageHidden = false;
-        time_retry = 1000;
-
-        // Add a small timeout before reconnecting
-        setTimeout(function () {
-            connect();
-        }, 500);
+    
+    // Socket.IO event handlers
+    socket.on('connect', () => {
+      // Initialize with last message ID
+      socket.emit('start-msg', {
+        start: this.last_msg
+      });
+      
+      // Set channel filter
+      socket.emit('set-filter', {
+        filter: this.channels
+      });
     });
-
-    if (window.WebSocket) {
-        connect();
+    
+    socket.on('message', (data) => {
+      this.onmessage(data.message);
+      this.last_msg = data.id;
+    });
+    
+    socket.on('error', (error) => {
+      console.error('Socket error:', error);
+    });
+    
+    socket.on('disconnect', (reason) => {
+      if (this.onwsclose) {
+        this.onwsclose({ code: 1006, reason: reason });
+      }
+    });
+    
+    socket.on('reconnect_failed', () => {
+      console.error('Failed to reconnect after multiple attempts');
+    });
+  };
+  
+  // Handle page visibility changes
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      // Page is hidden, disconnect to save resources
+      if (socket) {
+        socket.disconnect();
+      }
     } else {
-        this.websocket = null;
-        init_poll();
+      // Page is visible again, reconnect
+      connect();
     }
+  });
+  
+  // Start the connection
+  connect();
+  
+  // Public methods
+  this.disconnect = () => {
+    if (socket) {
+      socket.disconnect();
+      socket = null;
+    }
+  };
+  
+  this.reconnect = () => {
+    connect();
+  };
+  
+  // Add method to update channels
+  this.updateChannels = (newChannels) => {
+    this.channels = newChannels;
+    if (socket && socket.connected) {
+      socket.emit('set-filter', {
+        filter: newChannels
+      });
+    }
+  };
 }

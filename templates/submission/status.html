@@ -68,7 +68,7 @@
   </style>
 {% endblock %}
 {% block content_js_media %}
-  <script type="text/javascript" src="{{ static('event.js') }}"></script>
+  {% include "event-load.html" %}
   <script type="text/javascript">
     function setup_icons() {
       $(".case-icons i").each(function() {
@@ -125,7 +125,7 @@
       }
 
       var receiver = new EventReceiver(
-        "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
+        "{{ EVENT_DAEMON_LOCATION }}",
         ['sub_{{ submission.id_secret }}'], {{ last_msg }}, function (message) {
           switch (message.type) {
             case 'internal-error':

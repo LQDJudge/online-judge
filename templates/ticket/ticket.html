@@ -42,7 +42,7 @@
 
 {% block js_media %}
   {{ form.media.js }}
-  <script type="text/javascript" src="{{ static('event.js') }}"></script>
+  {% include "event-load.html" %}
   <script type="text/javascript">
     $(function () {
       var $h2 = $('#content').find('> h2:first-child');
@@ -206,7 +206,7 @@
 
       window.load_dynamic_update = function (last_msg) {
         return new EventReceiver(
-          "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
+          "{{ EVENT_DAEMON_LOCATION }}",
           ['ticket-{{ ticket.id }}'], last_msg, function (message) {
             switch (message.type) {
               case 'ticket-status':

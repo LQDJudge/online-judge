@@ -182,23 +182,13 @@ REJUDGE_SUBMISSION_LIMIT = 10
 # Uncomment to enable live updating.
 # EVENT_DAEMON_USE = True
 
-# Uncomment this section to use websocket/daemon.js included in the site.
-# EVENT_DAEMON_POST = '<ws:// URL to post to>'
-
 # If you are using the defaults from the guide, it is this:
-# EVENT_DAEMON_POST = 'ws://127.0.0.1:15101/'
+# EVENT_DAEMON_URL = 'ws://127.0.0.1:15100/'
+# EVENT_DAEMON_KEY = 'lqdoj' # same as websocket/config.js
 
 # These are the publicly accessed interface configurations.
 # They should match those used by the script.
-# EVENT_DAEMON_GET = '<public ws:// URL for clients>'
-# EVENT_DAEMON_GET_SSL = '<public wss:// URL for clients>'
-# EVENT_DAEMON_POLL = '<public URL to access the HTTP long polling of event server>'
-# i.e. the path to /channels/ exposed by the daemon, through whatever proxy setup you have.
-
-# Using our standard nginx configuration, these should be.
-# EVENT_DAEMON_GET = 'ws://127.0.0.1:15100/'
-# EVENT_DAEMON_GET_SSL = 'wss://lqdoj.edu.vn/event/' # Optional
-# EVENT_DAEMON_POLL = 'ws://127.0.0.1:15102/'
+# EVENT_DAEMON_URL_SSL = '<public wss:// URL for clients>'
 
 # If you would like to use the AMQP-based event server from <https://github.com/DMOJ/event-server>,
 # uncomment this section instead. This is more involved, and recommended to be done

@@ -4,7 +4,7 @@
 {% block title_ruler %}{% endblock %}
 {% block title %} {{_('Chat Box')}} {% endblock %}
 {% block js_media %}
-  <script type="text/javascript" src="{{ static('event.js') }}"></script>
+  {% include "event-load.html" %}
   <script type="module" src="https://unpkg.com/emoji-picker-element@1"></script>
   {% compress js %}
     {% include "chat/chat_js.html" %}
@@ -21,7 +21,7 @@
 
     window.load_dynamic_update = function (last_msg) {
       var receiver = new EventReceiver(
-        "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
+        "{{ EVENT_DAEMON_LOCATION }}",
         ['{{chat_lobby_channel}}', '{{chat_channel}}'], last_msg, function (message) {
           if (window.pushed_messages.has(message.message)) {
             return;

@@ -72,7 +72,7 @@
     window.filter_own_id = {{filter_status.own_id}};
     window.filter_assignee_ids = {{filter_status.assignee_id}};
   </script>
-  <script type="text/javascript" src="{{ static('event.js') }}"></script>
+  {% include "event-load.html" %}
   <script type="text/javascript">
     $(function () {
       $('input#own').click(function () {
@@ -144,7 +144,7 @@
         var $assignees = $(filter_assignee_ids);
 
         return new EventReceiver(
-          "{{ EVENT_DAEMON_LOCATION }}", "{{ EVENT_DAEMON_POLL_LOCATION }}",
+          "{{ EVENT_DAEMON_LOCATION }}",
           ['tickets'], last_msg, function (message) {
             console.log(message);
             if (filter_own_id != null && message.user != filter_own_id &&
