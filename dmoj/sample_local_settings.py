@@ -188,7 +188,8 @@ REJUDGE_SUBMISSION_LIMIT = 10
 
 # These are the publicly accessed interface configurations.
 # They should match those used by the script.
-# EVENT_DAEMON_URL_SSL = '<public wss:// URL for clients>'
+# EVENT_DAEMON_PUBLIC_URL= '<public ws:// URL for clients>'
+# EVENT_DAEMON_PUBLIC_URL_SSL = '<public wss:// URL for clients>'
 
 # If you would like to use the AMQP-based event server from <https://github.com/DMOJ/event-server>,
 # uncomment this section instead. This is more involved, and recommended to be done
