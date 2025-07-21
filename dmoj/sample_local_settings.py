@@ -188,6 +188,7 @@ REJUDGE_SUBMISSION_LIMIT = 10
 
 # These are the publicly accessed interface configurations.
 # They should match those used by the script.
+# In local development, you can set it to be the same as EVENT_DAEMON_URL
 # EVENT_DAEMON_PUBLIC_URL= '<public ws:// URL for clients>'
 # EVENT_DAEMON_PUBLIC_URL_SSL = '<public wss:// URL for clients>'
 

@@ -391,6 +391,7 @@ BRIDGED_AUTO_CREATE_JUDGE = False
 # Event Server configuration
 EVENT_DAEMON_USE = False
 EVENT_DAEMON_URL = "ws://localhost:9996/"
+EVENT_DAEMON_PUBLIC_URL = "ws://localhost:9996/"
 EVENT_DAEMON_KEY = None
 EVENT_DAEMON_AMQP_EXCHANGE = "dmoj-events"
 EVENT_DAEMON_SUBMISSION_KEY = (
