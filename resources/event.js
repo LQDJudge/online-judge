@@ -72,11 +72,14 @@ function EventReceiver(socketUrl, channels, last_msg, onmessage) {
   window.addEventListener('pagehide', () => {
     if (socket) {
       socket.disconnect();
+      socket = null;
     }
   });
 
   window.addEventListener('pageshow', (event) => {
-    connect();
+    if (!socket) {
+      connect();
+    }
   });
   
   // Public methods
