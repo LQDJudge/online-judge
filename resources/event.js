@@ -68,21 +68,16 @@ function EventReceiver(socketUrl, channels, last_msg, onmessage) {
     });
   };
   
-  // Handle page visibility changes
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      // Page is hidden, disconnect to save resources
-      if (socket) {
-        socket.disconnect();
-      }
-    } else {
-      // Page is visible again, reconnect
-      connect();
+  // Handle page hide/show events
+  window.addEventListener('pagehide', () => {
+    if (socket) {
+      socket.disconnect();
     }
   });
-  
-  // Start the connection
-  connect();
+
+  window.addEventListener('pageshow', (event) => {
+    connect();
+  });
   
   // Public methods
   this.disconnect = () => {
