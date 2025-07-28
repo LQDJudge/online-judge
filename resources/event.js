@@ -81,6 +81,8 @@ function EventReceiver(socketUrl, channels, last_msg, onmessage) {
       connect();
     }
   });
+
+  connect();
   
   // Public methods
   this.disconnect = () => {
