@@ -32,6 +32,7 @@ from judge.views import (
     blog,
     comment,
     contests,
+    docs,
     language,
     license,
     mailgun,
@@ -1211,6 +1212,23 @@ urlpatterns = [
         r"^custom_checker_sample/",
         about.custom_checker_sample,
         name="custom_checker_sample",
+    ),
+    re_path(
+        r"^docs/",
+        include(
+            [
+                re_path(
+                    r"^contest_format_instructions/$",
+                    docs.contest_format_instructions,
+                    name="contest_format_instructions",
+                ),
+                re_path(
+                    r"^custom_checker_sample/$",
+                    docs.custom_checker_sample,
+                    name="custom_checker_sample",
+                ),
+            ]
+        ),
     ),
     re_path(
         r"^chat/",

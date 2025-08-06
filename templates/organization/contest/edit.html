@@ -29,6 +29,16 @@
     #three-col-container {
       overflow: auto;
     }
+    #format_config-field {
+      display: none;
+    }
+    .config-toggle-btn {
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.85em;
+      cursor: pointer;
+      margin-left: 5px;
+    }
   </style>
 {% endblock %}
 
@@ -43,14 +53,25 @@
     {% endif %}
     {% for field in form %}
       {% if not field.is_hidden %}
-        <div style="margin-bottom: 1em;">
+        <div style="margin-bottom: 1em;" id="{{field.html_name}}-field">
           {{ field.errors }}
           <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b> </label>
           <div class="org-field-wrapper" id="org-field-wrapper-{{field.html_name }}">
             {{ field }}
           </div>
           {% if field.help_text %}
-            <small class="org-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
+            <small class="org-help-text">
+              <i class="fa fa-exclamation-circle"></i>{{ field.help_text|safe }}
+              {% if field.html_name == 'format_name' %}
+                <a href="{{ url('contest_format_instructions') }}" target="_blank">
+                  ({{ _('Instruction') }})
+                </a>
+                <button type="button" class="config-toggle-btn" onclick="toggleFormatConfig()">
+                  {{ _('Config') }}
+                </button>
+              {% endif %}
+            </small>
+
           {% endif %}
         </div>
       {% endif %}
@@ -86,4 +107,30 @@
     </table>
     <button type="submit" class="action-btn">{{ _('Save') }}</button>
   </form>
+
+  <script>
+    function toggleFormatConfig() {
+      var $configField = $('#format_config-field');
+      var $toggleBtn = $(event.target);
+
+      if ($configField.is(':hidden')) {
+        $configField.show();
+        $toggleBtn.text('{{ _("Hide Config") }}');
+      } else {
+        $configField.hide();
+        $toggleBtn.text('{{ _("Config") }}');
+      }
+    }
+
+    $(document).ready(function() {
+      var $configField = $('#format_config-field');
+      var $configErrors = $configField.find('.errorlist, .red');
+      var hasErrors = $configErrors.length > 0 || $configField.find('input, textarea').hasClass('error');
+
+      if (hasErrors) {
+        $configField.show();
+        $('.config-toggle-btn').text('{{ _("Hide Config") }}');
+      }
+    });
+  </script>
 {% endblock %}

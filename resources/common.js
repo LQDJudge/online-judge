@@ -784,9 +784,10 @@ function onWindowReady() {
     $('a').click(function() {
         var href = $(this).attr('href');
         var target = $(this).attr('target');
-        if (!href || href === '#' || href.startsWith("javascript") || 
+        if (!href || href === '#' || href.startsWith("javascript") ||
             $(this).attr("data-featherlight") ||
-            target === "_blank"
+            target === "_blank" ||
+            href.startsWith("#")
         ) {
             return;
         }
@@ -795,7 +796,7 @@ function onWindowReady() {
         $("#loading-bar").animate({ width: "100%" }, 2000, function() {
             $(this).stop(true, true);
             $(this).hide().css({ width: 0});
-        }); 
+        });
     });
 
     $('.errorlist').each(function() {

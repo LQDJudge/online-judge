@@ -31,9 +31,6 @@ from judge.models import (
     Language,
     LanguageLimit,
     LanguageTemplate,
-    License,
-    ProblemGroup,
-    ProblemType,
     TestFormatterModel,
     Organization,
     PrivateMessage,
@@ -50,6 +47,7 @@ from judge.models import (
     Block,
     Course,
 )
+from judge import contest_format
 
 from judge.widgets import (
     HeavyPreviewPageDownWidget,
@@ -324,6 +322,7 @@ class AddOrganizationContestForm(ModelForm):
 class EditOrganizationContestForm(ModelForm):
     def __init__(self, *args, **kwargs):
         self.org_id = kwargs.pop("org_id", 0)
+        self.request = kwargs.pop("request", None)
         super(EditOrganizationContestForm, self).__init__(*args, **kwargs)
         for field in [
             "authors",
@@ -337,6 +336,24 @@ class EditOrganizationContestForm(ModelForm):
                 self.fields[field].widget.get_url() + f"?org_id={self.org_id}"
             )
 
+        # Set user's preferred ace theme for format_config
+        if self.request and hasattr(self.request, "profile"):
+            self.fields["format_config"].widget.theme = self.request.profile.ace_theme
+
+    def clean(self):
+        cleaned_data = super().clean()
+        format_name = cleaned_data.get("format_name")
+        format_config = cleaned_data.get("format_config")
+
+        if format_name and format_config:
+            try:
+                format_class = contest_format.formats[format_name]
+                format_class.validate(format_config)
+            except Exception as e:
+                self.add_error("format_config", str(e))
+
+        return cleaned_data
+
     class Meta:
         model = Contest
         fields = (
@@ -346,6 +363,7 @@ class EditOrganizationContestForm(ModelForm):
             "start_time",
             "end_time",
             "format_name",
+            "format_config",
             "authors",
             "curators",
             "testers",
@@ -387,6 +405,7 @@ class EditOrganizationContestForm(ModelForm):
             "start_time": DateTimePickerWidget(),
             "end_time": DateTimePickerWidget(),
             "format_name": Select2Widget(),
+            "format_config": AceWidget(mode="json", width="100%", height="200px"),
             "scoreboard_visibility": Select2Widget(),
         }
 

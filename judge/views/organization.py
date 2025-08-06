@@ -3,20 +3,15 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.cache import cache
-from django.core.cache.utils import make_template_fragment_key
 from django.core.exceptions import PermissionDenied
 from django.utils.text import slugify
-from django.db import transaction
 from django.db import IntegrityError
-from django.db.models import Count, Q, Value, BooleanField, Subquery, OuterRef
-from django.db.utils import ProgrammingError
+from django.db.models import Count, Q, Subquery, OuterRef
 from django.forms import Form, modelformset_factory
 from django.http import (
     Http404,
     HttpResponsePermanentRedirect,
     HttpResponseRedirect,
-    HttpResponseBadRequest,
 )
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -1099,6 +1094,7 @@ class EditOrganizationContest(
     def get_form_kwargs(self):
         kwargs = super(EditOrganizationContest, self).get_form_kwargs()
         kwargs["org_id"] = self.organization.id
+        kwargs["request"] = self.request
         return kwargs
 
     def get(self, request, *args, **kwargs):
