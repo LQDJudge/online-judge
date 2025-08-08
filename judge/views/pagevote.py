@@ -11,14 +11,12 @@ from django.utils.translation import gettext as _
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic import View, ListView
-from django_ratelimit.decorators import ratelimit
 from django.conf import settings
 from django.http import JsonResponse
 
+from judge.utils.ratelimit import ratelimit
 from judge.models.pagevote import (
     PageVote,
-    PageVoteVoter,
-    dirty_pagevote,
     VoteService,
 )
 
@@ -29,6 +27,7 @@ __all__ = [
 ]
 
 
+@ratelimit(key="user", rate=settings.RL_VOTE)
 @login_required
 def vote_page(request):
     """Vote on a page using the PageVote system"""

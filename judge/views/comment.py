@@ -30,7 +30,6 @@ from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, UpdateView, View
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
-from django_ratelimit.decorators import ratelimit
 
 from reversion import revisions
 from reversion.models import Revision, Version
@@ -44,6 +43,7 @@ from judge.models.comment import (
     get_visible_top_level_comment_count,
 )
 from judge.utils.views import TitleMixin
+from judge.utils.ratelimit import ratelimit
 from judge.widgets import HeavyPreviewPageDownWidget
 from judge.views.feed import FeedView, HomeFeedView
 
