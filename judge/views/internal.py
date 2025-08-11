@@ -3,13 +3,17 @@ import json
 
 from django.views.generic import ListView
 from django.utils.translation import gettext as _, gettext_lazy
+from django.db import transaction
 from django.db.models import Count, Q
 from django.http import HttpResponseForbidden, JsonResponse
 from django.urls import reverse
 from django.shortcuts import render
 
 from judge.utils.diggpaginator import DiggPaginator
-from judge.models import Problem
+from judge.models import Problem, ProblemType
+from judge.tasks import rescore_problem
+
+from problem_tag import get_problem_tag_service
 
 
 class InternalView(object):
@@ -36,7 +40,7 @@ class InternalProblem(InternalView, ListView):
             padding=2,
             orphans=orphans,
             allow_empty_first_page=allow_empty_first_page,
-            **kwargs
+            **kwargs,
         )
 
     def get_search_query(self):
@@ -103,7 +107,7 @@ class InternalProblemQueue(InternalView, ListView):
             padding=2,
             orphans=orphans,
             allow_empty_first_page=allow_empty_first_page,
-            **kwargs
+            **kwargs,
         )
 
     def get_queryset(self):
@@ -132,6 +136,139 @@ def mark_problem_private(request):
     problem.is_public = False
     problem.save()
     return JsonResponse({"success": True})
+
+
+def problem_tag(request):
+    """Handle AI tagging requests from the problem queue"""
+    if not request.user.is_superuser:
+        return HttpResponseForbidden()
+
+    try:
+        # Handle GET request - show suggestions modal
+        if request.method == "GET":
+            problem_code = request.GET.get("problem_code")
+            if not problem_code:
+                return JsonResponse(
+                    {"success": False, "error": "Problem code is required"}
+                )
+
+            try:
+                problem = Problem.objects.get(code=problem_code)
+            except Problem.DoesNotExist:
+                return JsonResponse({"success": False, "error": "Problem not found"})
+
+            # Use the problem tag service
+            tag_service = get_problem_tag_service()
+
+            # Call the AI service to analyze the problem
+            result = tag_service.tag_single_problem(problem)
+
+            if result["success"]:
+                # Get current problem types for pre-selection
+                current_types = list(problem.types.values("id", "name"))
+
+                # Get all problem types for the select2 dropdown
+                all_types = list(ProblemType.objects.all().values("id", "name"))
+
+                # Convert predicted type names to type objects
+                predicted_types = []
+                if result.get("predicted_types"):
+                    predicted_types = list(
+                        ProblemType.objects.filter(
+                            name__in=result["predicted_types"]
+                        ).values("id", "name")
+                    )
+
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "is_valid": result["is_valid"],
+                        "problem_code": problem.code,
+                        "problem_name": problem.name,
+                        "current_points": problem.points,
+                        "predicted_points": result.get("predicted_points"),
+                        "current_types": current_types,
+                        "predicted_types": predicted_types,
+                        "all_types": all_types,
+                    }
+                )
+            else:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": result.get("error", "Unknown error occurred"),
+                    }
+                )
+
+        # Handle POST request - apply the changes
+        elif request.method == "POST":
+            problem_code = request.POST.get("problem_code")
+            if not problem_code:
+                return JsonResponse(
+                    {"success": False, "error": "Problem code is required"}
+                )
+
+            try:
+                problem = Problem.objects.get(code=problem_code)
+            except Problem.DoesNotExist:
+                return JsonResponse({"success": False, "error": "Problem not found"})
+
+            updated_info = []
+            points_updated = False
+
+            # Update points if provided
+            points = request.POST.get("points")
+            if points:
+                try:
+                    new_points = int(points)
+                    old_points = problem.points
+                    problem.points = new_points
+                    points_updated = old_points != new_points
+                    updated_info.append(f"Points: {new_points}")
+                except ValueError:
+                    return JsonResponse(
+                        {"success": False, "error": "Invalid points value"}
+                    )
+
+            # Update types - handle both provided types and clearing all types
+            type_ids = request.POST.getlist("types")
+            try:
+                if type_ids:
+                    type_ids = [
+                        int(tid) for tid in type_ids if tid
+                    ]  # Filter out empty strings
+                    type_objects = ProblemType.objects.filter(id__in=type_ids)
+                    problem.types.set(type_objects)
+                    type_names = ", ".join([t.name for t in type_objects])
+                    updated_info.append(
+                        f"Types: {type_names}" if type_names else "Types: (cleared)"
+                    )
+                else:
+                    # If no types provided, clear all types
+                    problem.types.clear()
+                    updated_info.append("Types: (cleared)")
+            except ValueError:
+                return JsonResponse({"success": False, "error": "Invalid type IDs"})
+
+            # Save the problem
+            problem.save()
+
+            # Trigger rescoring if points changed
+            if points_updated:
+                transaction.on_commit(lambda: rescore_problem.delay(problem.id))
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "updated_info": " | ".join(updated_info) if updated_info else None,
+                    "problem_code": problem.code,
+                }
+            )
+
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in problem AI tagging: {e}")
+        return JsonResponse({"success": False, "error": "An unexpected error occurred"})
 
 
 class RequestTimeMixin(object):

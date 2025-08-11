@@ -16,6 +16,7 @@ from judge.models import Problem, Submission
 from judge.ml.collab_filter import CollabFilter
 from judge.caching import cache_wrapper
 
+
 __all__ = [
     "contest_completed_ids",
     "get_result_data",

@@ -1475,14 +1475,6 @@ ul.problem-list {
     border-right-color: var(--darkreader-border-808080, #545b5e);
     border-top-color: var(--darkreader-border-808080, #545b5e);
 }
-ul.errorlist {
-    background-color: var(--darkreader-background-ee9999, #691111);
-    background-image: initial;
-    border-bottom-color: var(--darkreader-border-ff0000, #b30000);
-    border-left-color: var(--darkreader-border-ff0000, #b30000);
-    border-right-color: var(--darkreader-border-ff0000, #b30000);
-    border-top-color: var(--darkreader-border-ff0000, #b30000);
-}
 .generator-args-icon {
     background-color: var(--darkreader-background-f9f9f9, #1b1e1f);
     background-image: initial;
@@ -1782,6 +1774,61 @@ ul.errorlist {
 .tab-button.has-errors.active {
     background-color: var(--darkreader-background-dc3545, #a51d2a) !important;
     color: var(--darkreader-text-ffffff, #e8e6e3) !important;
+}
+.suggestion-modal {
+    background-color: var(--darkreader-background-00000080, rgba(0, 0, 0, 0.5));
+}
+.suggestion-modal .suggestion-modal-content {
+    background-color: var(--darkreader-background-fefefe, #191b1c);
+    border-bottom-color: var(--darkreader-border-888888, #52585c);
+    border-left-color: var(--darkreader-border-888888, #52585c);
+    border-right-color: var(--darkreader-border-888888, #52585c);
+    border-top-color: var(--darkreader-border-888888, #52585c);
+    box-shadow: var(--darkreader-background-0000001a, rgba(0, 0, 0, 0.1)) 0px 4px 8px;
+}
+.suggestion-modal .suggestion-modal-header {
+    border-bottom-color: var(--darkreader-border-eeeeee, #35393b);
+}
+.suggestion-modal .suggestion-modal-header h3 {
+    color: var(--darkreader-text-333333, #c8c3bc);
+}
+.suggestion-modal .close {
+    color: var(--darkreader-text-aaaaaa, #b2aca2);
+}
+.suggestion-modal .close:hover,
+.suggestion-modal .close:focus {
+    color: var(--darkreader-text-000000, #e8e6e3);
+}
+.suggestion-modal .form-group label {
+    color: var(--darkreader-text-333333, #c8c3bc);
+}
+.suggestion-modal .form-group input,
+.suggestion-modal .form-group select {
+    border-bottom-color: var(--darkreader-border-dddddd, #3a3e41);
+    border-left-color: var(--darkreader-border-dddddd, #3a3e41);
+    border-right-color: var(--darkreader-border-dddddd, #3a3e41);
+    border-top-color: var(--darkreader-border-dddddd, #3a3e41);
+}
+.suggestion-modal .form-group input:focus,
+.suggestion-modal .form-group select:focus {
+    border-bottom-color: var(--darkreader-border-007bff, #0056b3);
+    border-left-color: var(--darkreader-border-007bff, #0056b3);
+    border-right-color: var(--darkreader-border-007bff, #0056b3);
+    border-top-color: var(--darkreader-border-007bff, #0056b3);
+    box-shadow: var(--darkreader-background-007bff40, rgba(0, 98, 204, 0.25)) 0px 0px 0px 2px;
+    outline-color: initial;
+}
+.suggestion-modal .alert-info {
+    background-color: var(--darkreader-background-d1ecf1, #143b43);
+    border-bottom-color: var(--darkreader-border-bee5eb, #1e5961);
+    border-left-color: var(--darkreader-border-17a2b8, #1597ab);
+    border-right-color: var(--darkreader-border-bee5eb, #1e5961);
+    border-top-color: var(--darkreader-border-bee5eb, #1e5961);
+    color: var(--darkreader-text-0c5460, #8ee3f1);
+}
+.suggestion-modal .predicted-badge {
+    background-color: var(--darkreader-background-28a745, #208637);
+    color: var(--darkreader-text-ffffff, #e8e6e3);
 }
 .admin a,
 .admin {
@@ -4685,7 +4732,10 @@ mitid-authenticators-code-app > .code-app-container {
 iframe#unpaywall[src$="unpaywall.html"] {
     color-scheme: light !important;
 }
-select option {
+select {
+    --darkreader-bg--form-control-background-color: rgba(22, 22, 22, 0) !important;
+}
+select * {
     background-color: var(--darkreader-neutral-background) !important;
 }
 body#tumblr {

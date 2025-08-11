@@ -876,6 +876,7 @@ body:not(.problem-raw) {
         padding: 15px 8px;
         min-height: 75px;
         gap: 10px 6px;
+        justify-content: space-between;
     }
 
     .info-block {
@@ -1286,5 +1287,157 @@ body:not(.problem-raw) {
     &.active {
         background-color: #dc3545 !important;
         color: white !important;
+    }
+}
+
+// Mobile responsive layout for language limits page
+@media (max-width: 799px) {
+    .language-limits-page {
+        .problem-content-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .problem-page-container {
+            padding: 15px;
+        }
+    }
+}
+
+// Mobile responsive layout for language templates page
+@media (max-width: 799px) {
+    .language-templates-page {
+        .problem-content-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .problem-page-container {
+            padding: 15px;
+        }
+    }
+}
+
+// Mobile responsive layout for translations page
+@media (max-width: 799px) {
+    .translations-page {
+        .problem-content-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .problem-page-container {
+            padding: 15px;
+        }
+    }
+}
+
+// Problem queue suggestion modal styles
+.suggestion-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    overflow-y: auto;
+
+    &.show {
+        display: block !important;
+    }
+
+    .suggestion-modal-content {
+        background-color: #fefefe;
+        margin: 2% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 500px;
+        max-width: 90%;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        max-height: 95vh;
+        overflow-y: auto;
+        position: relative;
+    }
+
+    .suggestion-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+
+        h3 {
+            margin: 0;
+            color: #333;
+        }
+    }
+
+    .close {
+        color: #aaa;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+
+        &:hover,
+        &:focus {
+            color: black;
+        }
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+
+            &:focus {
+                outline: none;
+                border-color: #007bff;
+                box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+            }
+        }
+    }
+
+    .alert-info {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+        border-left: 4px solid #17a2b8;
+    }
+
+    .suggestion-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .predicted-badge {
+        display: inline-block;
+        background-color: #28a745;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 12px;
+        margin-left: 5px;
     }
 }
