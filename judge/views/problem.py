@@ -109,6 +109,9 @@ from judge.models.problem import (
     get_all_problem_groups,
 )
 from judge.models.runtime import get_all_languages
+from judge.tasks import rescore_problem
+
+from problem_tag import get_problem_tag_service
 
 
 def get_contest_problem(problem, profile):
@@ -1280,9 +1283,6 @@ class ProblemEdit(
         return kwargs
 
     def form_valid(self, form):
-        from judge.tasks import rescore_problem
-        from django.db import transaction
-
         # Save the main form
         problem = form.save(commit=False)
 
@@ -1311,6 +1311,77 @@ class ProblemEdit(
     def form_invalid(self, form):
         """Handle invalid form with formsets"""
         return self.render_to_response(self.get_context_data(form=form))
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests - either AI tagging or regular form submission"""
+        self.object = self.get_object()
+
+        # Check if this is an AI tagging request
+        if request.POST.get("problem_tag") == "1":
+            return self.handle_problem_tag(request)
+
+        # Otherwise, handle regular form submission
+        return super().post(request, *args, **kwargs)
+
+    def handle_problem_tag(self, request):
+        """Handle AI tagging request"""
+        try:
+            # Check if user is superuser (only superusers can use AI tagging)
+            if not request.user.is_superuser:
+                return JsonResponse({"success": False, "error": "Permission denied"})
+
+            problem_code = request.POST.get("problem_code")
+            if not problem_code:
+                return JsonResponse(
+                    {"success": False, "error": "Problem code is required"}
+                )
+
+            try:
+                problem = Problem.objects.get(code=problem_code)
+            except Problem.DoesNotExist:
+                return JsonResponse({"success": False, "error": "Problem not found"})
+
+            # Use the problem tag service
+            tag_service = get_problem_tag_service()
+
+            # Call the AI service to analyze the problem
+            result = tag_service.tag_single_problem(problem)
+
+            if result["success"]:
+                # Convert type names to type IDs for Select2 compatibility (for edit form)
+                predicted_types = []
+                if result.get("predicted_types"):
+                    # Get type IDs from ProblemType objects (Select2 uses IDs as values)
+                    type_ids = list(
+                        ProblemType.objects.filter(
+                            name__in=result["predicted_types"]
+                        ).values_list("id", flat=True)
+                    )
+                    predicted_types = type_ids
+
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "is_valid": result["is_valid"],
+                        "predicted_points": result.get("predicted_points"),
+                        "predicted_types": predicted_types,
+                        "problem_code": problem.code,
+                    }
+                )
+            else:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": result.get("error", "Unknown error occurred"),
+                    }
+                )
+
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in AI tagging: {e}")
+            return JsonResponse(
+                {"success": False, "error": "An unexpected error occurred"}
+            )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

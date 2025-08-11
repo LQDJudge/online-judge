@@ -1296,6 +1296,11 @@ urlpatterns = [
                     name="internal_mark_problem_private",
                 ),
                 re_path(
+                    r"^problem_tag$",
+                    internal.problem_tag,
+                    name="internal_problem_tag",
+                ),
+                re_path(
                     r"^request_time$",
                     internal.InternalRequestTime.as_view(),
                     name="internal_request_time",
