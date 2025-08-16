@@ -5,9 +5,12 @@ from django.db import models
 from django.utils.translation import gettext, gettext_lazy as _
 from django.urls import reverse
 from django.db.models import Q
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 
 from judge.models import Problem, Contest
 from judge.models.profile import Organization, Profile
+from judge.caching import cache_wrapper
 
 
 def course_image_path(course, filename):
@@ -140,6 +143,16 @@ class Course(models.Model):
         for profile in profiles:
             CourseRole.make_role(course=course, user=profile, role="AS")
 
+    def get_lessons(self):
+        return self.lessons.filter(is_visible=True).order_by("order")
+
+    def get_contests(self):
+        return (
+            self.contests.select_related("contest")
+            .filter(contest__is_visible=True)
+            .order_by("order")
+        )
+
 
 class CourseRole(models.Model):
     course = models.ForeignKey(
@@ -199,6 +212,25 @@ class CourseLesson(models.Model):
             ),
         )
 
+    def get_problems(self):
+        """
+        Get all problem IDs for this lesson in order.
+        Returns a list of problem IDs.
+        """
+        return Problem.get_cached_instances(
+            *[p["problem_id"] for p in self.get_problems_and_scores()]
+        )
+
+    @cache_wrapper(prefix="CLgps", expected_type=list)
+    def get_problems_and_scores(self):
+        """
+        Get all problems with their scores for this lesson in order.
+        Returns a list of dictionaries with problem_id and score.
+        """
+        return list(
+            self.lesson_problems.order_by("order").values("problem_id", "score")
+        )
+
 
 class CourseLessonProblem(models.Model):
     lesson = models.ForeignKey(
@@ -223,3 +255,11 @@ class CourseContest(models.Model):
         course_contest = contest.course.get()
         course = course_contest.course
         return course
+
+
+# Signal handlers to invalidate cache when CourseLessonProblem changes
+@receiver([post_save, post_delete], sender=CourseLessonProblem)
+def invalidate_lesson_problems_cache(sender, instance, **kwargs):
+    """Invalidate the cached problems and scores list when a CourseLessonProblem is saved or deleted."""
+    if instance.lesson_id:
+        CourseLesson.get_problems_and_scores.dirty(instance.lesson_id)

@@ -13,7 +13,7 @@
   </div>
   <h3 class="course-content-title">{{_("Problems")}}</h3>
   <ul class="course-problem-list">
-    {% for lesson_problem in lesson.lesson_problems.order_by('order') %}
+    {% for lesson_problem in lesson_problems %}
       {% set problem = lesson_problem.problem %}
       <a href="{{url('problem_detail', problem.code)}}">
         <li>

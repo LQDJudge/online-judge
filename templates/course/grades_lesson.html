@@ -76,7 +76,6 @@
 
 {% block middle_content %}
   <center><h2>{{content_title}}</h2></center>
-  {% set lesson_problems = lesson.lesson_problems.order_by('order') %}
   {{_("Sort by")}}:
   <select id="sortSelect">
     <option value="username">{{_("Username")}}</option>
@@ -89,11 +88,11 @@
         <tr>
           <th class = "static">{{_('Student')}}</th>
           {% if grades|length > 0 %}
-            {% for lesson_problem in lesson_problems %}
+            {% for lesson_problem in problems %}
               <th class="points">
-                <a href="{{url('problem_detail', lesson_problem.problem.code)}}">
-                  P({{ loop.index0 }})
-                  <div class="point-denominator">{{lesson_problem.score}}</div>
+                <a href="{{ url('problem_detail', lesson_problem.problem.code) }}">
+                  P({{ loop.index0 + 1 }})
+                  <div class="point-denominator">{{ lesson_problem.score }}</div>
                 </a>
               </th>
             {% endfor %}
@@ -112,7 +111,7 @@
                 {{student.first_name}}
               </div>
             </td>
-            {% for lesson_problem in lesson_problems %}
+            {% for lesson_problem in problems %}
               {% set val = grade.get(lesson_problem.problem.id) %}
               <td class="partial-score">
                 <a href="{{url('user_submissions', lesson_problem.problem.code, student.username)}}">

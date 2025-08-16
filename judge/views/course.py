@@ -53,103 +53,181 @@ from judge.widgets import (
 from judge.utils.views import SingleObjectFormView, TitleMixin
 
 
-def max_case_points_per_problem(profile, problems):
-    # return a dict {problem_id: {case_points, case_total}}
-    q = (
-        Submission.objects.filter(user=profile, problem__in=problems)
-        .values("problem")
-        .annotate(case_points=Max("case_points"), case_total=F("case_total"))
-        .order_by("problem")
+def bulk_max_case_points_per_problem(students, all_problems):
+    """
+    Fetch max case points for all students and problems in one query.
+    Returns nested dict for O(1) lookups: {user_id: {problem_id: {case_points, case_total}}}
+
+    """
+    if not students or not all_problems:
+        return {}
+
+    submissions = (
+        Submission.objects.filter(user__in=students, problem__in=all_problems)
+        .values("user", "problem")
+        .annotate(max_points=Max("case_points"), case_total=F("case_total"))
     )
-    res = {}
-    for problem in q:
-        res[problem["problem"]] = problem
-    return res
+
+    # Build nested dict: {user_id: {problem_id: {case_points, case_total}}}
+    result = {}
+    for sub in submissions:
+        user_id = sub["user"]
+        problem_id = sub["problem"]
+        if user_id not in result:
+            result[user_id] = {}
+        result[user_id][problem_id] = {
+            "case_points": sub["max_points"],
+            "case_total": sub["case_total"],
+        }
+    return result
 
 
-def calculate_lessons_progress(profile, lessons):
-    res = {}
-    total_achieved_points = total_lesson_points = 0
+def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
+    """
+    Calculate progress for all students and lessons using pre-fetched data.
+    No additional database queries needed.
+
+    Args:
+        students: List of Profile objects
+        lessons: QuerySet of CourseLesson objects (should be prefetched)
+        bulk_problem_points: Dict from bulk_max_case_points_per_problem()
+
+    Returns:
+        Dict: {student: lesson_progress_dict}
+    """
+    results = {}
+
+    # Pre-fetch all lesson problems data to avoid repeated queries
+    lesson_problems_data = {}
     for lesson in lessons:
-        problems = lesson.lesson_problems.values_list("problem", flat=True)
-        problem_points = max_case_points_per_problem(profile, problems)
-        achieved_points = total_points = 0
+        lesson_problems_data[lesson.id] = [
+            {"problem_id": p["problem_id"], "score": p["score"]}
+            for p in lesson.get_problems_and_scores()
+        ]
 
-        for lesson_problem in lesson.lesson_problems.all():
-            val = problem_points.get(lesson_problem.problem.id)
-            if val and val["case_total"]:
-                achieved_points += (
-                    val["case_points"] / val["case_total"] * lesson_problem.score
+    for student in students:
+        student_results = {}
+        total_achieved_points = total_lesson_points = 0
+
+        for lesson in lessons:
+            achieved_points = total_points = 0
+
+            student_points = bulk_problem_points.get(student.id, {})
+
+            for lp_data in lesson_problems_data[lesson.id]:
+                problem_data = student_points.get(lp_data["problem_id"])
+                if problem_data and problem_data["case_total"]:
+                    achieved_points += (
+                        problem_data["case_points"]
+                        / problem_data["case_total"]
+                        * lp_data["score"]
+                    )
+                total_points += lp_data["score"]
+
+            student_results[lesson.id] = {
+                "achieved_points": achieved_points,
+                "total_points": total_points,
+                "percentage": (
+                    achieved_points / total_points * 100 if total_points else 0
+                ),
+            }
+
+            if total_points:
+                total_achieved_points += achieved_points / total_points * lesson.points
+            total_lesson_points += lesson.points
+
+        student_results["total"] = {
+            "achieved_points": total_achieved_points,
+            "total_points": total_lesson_points,
+            "percentage": (
+                total_achieved_points / total_lesson_points * 100
+                if total_lesson_points
+                else 0
+            ),
+        }
+        results[student] = student_results
+
+    return results
+
+
+def bulk_calculate_contests_progress(students, course_contests):
+    """
+    Calculate contest progress for all students using bulk queries.
+    Returns nested dict: {student: contest_progress_dict}
+    """
+    if not students or not course_contests:
+        return {
+            student: {
+                "total": {"achieved_points": 0, "total_points": 0, "percentage": 0}
+            }
+            for student in students
+        }
+
+    # Get all contests from course_contests
+    contests = [cc.contest for cc in course_contests]
+
+    # Bulk query for all participations
+    participations = ContestParticipation.objects.filter(
+        contest__in=contests, user__in=students, virtual=0
+    ).values("contest", "user", "score")
+
+    # Build participation lookup: {(contest_id, user_id): score}
+    participation_lookup = {}
+    for p in participations:
+        participation_lookup[(p["contest"], p["user"])] = p["score"]
+
+    # Bulk query for contest total points
+    contest_totals = (
+        ContestProblem.objects.filter(contest__in=contests)
+        .values("contest")
+        .annotate(total_points=Sum("points"))
+    )
+
+    # Build contest totals lookup: {contest_id: total_points}
+    contest_points_lookup = {}
+    for ct in contest_totals:
+        contest_points_lookup[ct["contest"]] = ct["total_points"] or 0
+
+    # Calculate progress for all students
+    results = {}
+    for student in students:
+        student_results = {}
+        total_achieved_points = total_contest_points = 0
+
+        for course_contest in course_contests:
+            contest = course_contest.contest
+            achieved_points = participation_lookup.get((contest.id, student.id), 0)
+            total_points = contest_points_lookup.get(contest.id, 0)
+
+            student_results[course_contest.id] = {
+                "achieved_points": achieved_points,
+                "total_points": total_points,
+                "percentage": (
+                    achieved_points / total_points * 100 if total_points else 0
+                ),
+            }
+
+            if total_points:
+                total_achieved_points += (
+                    achieved_points / total_points * course_contest.points
                 )
-            total_points += lesson_problem.score
+            total_contest_points += course_contest.points
 
-        res[lesson.id] = {
-            "achieved_points": achieved_points,
-            "total_points": total_points,
-            "percentage": achieved_points / total_points * 100 if total_points else 0,
+        student_results["total"] = {
+            "achieved_points": total_achieved_points,
+            "total_points": total_contest_points,
+            "percentage": (
+                total_achieved_points / total_contest_points * 100
+                if total_contest_points
+                else 0
+            ),
         }
-        if total_points:
-            total_achieved_points += achieved_points / total_points * lesson.points
-        total_lesson_points += lesson.points
+        results[student] = student_results
 
-    res["total"] = {
-        "achieved_points": total_achieved_points,
-        "total_points": total_lesson_points,
-        "percentage": (
-            total_achieved_points / total_lesson_points * 100
-            if total_lesson_points
-            else 0
-        ),
-    }
-    return res
+    return results
 
 
-def calculate_contests_progress(profile, course_contests):
-    res = {}
-    total_achieved_points = total_contest_points = 0
-    for course_contest in course_contests:
-        contest = course_contest.contest
-
-        achieved_points = 0
-        participation = ContestParticipation.objects.filter(
-            contest=contest, user=profile, virtual=0
-        ).first()
-
-        if participation:
-            achieved_points = participation.score
-
-        total_points = (
-            ContestProblem.objects.filter(contest=contest).aggregate(Sum("points"))[
-                "points__sum"
-            ]
-            or 0
-        )
-
-        res[course_contest.id] = {
-            "achieved_points": achieved_points,
-            "total_points": total_points,
-            "percentage": achieved_points / total_points * 100 if total_points else 0,
-        }
-
-        if total_points:
-            total_achieved_points += (
-                achieved_points / total_points * course_contest.points
-            )
-        total_contest_points += course_contest.points
-
-    res["total"] = {
-        "achieved_points": total_achieved_points,
-        "total_points": total_contest_points,
-        "percentage": (
-            total_achieved_points / total_contest_points * 100
-            if total_contest_points
-            else 0
-        ),
-    }
-    return res
-
-
-def calculate_total_progress(profile, lesson_progress, contest_progress):
+def calculate_total_progress(lesson_progress, contest_progress):
     lesson_total = lesson_progress["total"]
     contest_total = contest_progress["total"]
     total_achieved_points = (
@@ -278,30 +356,30 @@ class CourseDetail(CourseDetailMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(CourseDetail, self).get_context_data(**kwargs)
-        lessons = (
-            self.course.lessons.filter(is_visible=True)
-            .order_by("order")
-            .prefetch_related("lesson_problems")
-            .all()
+
+        lessons = self.course.get_lessons()
+        contests = self.course.get_contests()
+
+        # Use bulk functions for single user (still more efficient due to better queries)
+        students = [self.request.profile]
+        all_problems = []
+        for lesson in lessons:
+            all_problems.extend(lesson.get_problems())
+
+        bulk_problem_points = bulk_max_case_points_per_problem(students, all_problems)
+        lesson_progress_bulk = bulk_calculate_lessons_progress(
+            students, lessons, bulk_problem_points
         )
-        course_contests = (
-            self.course.contests.select_related("contest")
-            .filter(contest__is_visible=True)
-            .order_by("order")
-        )
+        contest_progress_bulk = bulk_calculate_contests_progress(students, contests)
+
         context["title"] = self.course.name
         context["page_type"] = "home"
         context["lessons"] = lessons
-        context["lesson_progress"] = calculate_lessons_progress(
-            self.request.profile, lessons
-        )
-        context["course_contests"] = course_contests
-        context["contest_progress"] = calculate_contests_progress(
-            self.request.profile, course_contests
-        )
+        context["lesson_progress"] = lesson_progress_bulk[self.request.profile]
+        context["course_contests"] = contests
+        context["contest_progress"] = contest_progress_bulk[self.request.profile]
 
         context["total_progress"] = calculate_total_progress(
-            self.request.profile,
             context["lesson_progress"],
             context["contest_progress"],
         )
@@ -350,14 +428,24 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super(CourseLessonDetail, self).get_context_data(**kwargs)
         profile = self.get_profile()
+        problems = self.lesson.get_problems()
+
+        # Use bulk function even for single user for consistency
+        bulk_problem_points = bulk_max_case_points_per_problem([profile], problems)
+        problem_points = bulk_problem_points.get(profile.id, {})
+
         context["profile"] = profile
         context["title"] = self.lesson.title
         context["lesson"] = self.lesson
         context["completed_problem_ids"] = user_completed_ids(profile)
         context["attempted_problems"] = user_attempted_ids(profile)
-        context["problem_points"] = max_case_points_per_problem(
-            profile, self.lesson.lesson_problems.values_list("problem", flat=True)
-        )
+        context["problem_points"] = problem_points
+        context["lesson_problems"] = [
+            {"problem": p, "score": ps["score"]}
+            for p, ps in zip(
+                self.lesson.get_problems(), self.lesson.get_problems_and_scores()
+            )
+        ]
         return context
 
 
@@ -724,32 +812,28 @@ class CourseStudentResults(CourseEditableMixin, DetailView):
     template_name = "course/grades.html"
 
     def get_object(self):
+        self.lessons = self.course.get_lessons()
+        self.contests = self.course.get_contests()
         return self.course
 
     def get_grades(self):
         students = self.course.get_students()
 
-        lessons = (
-            self.course.lessons.filter(is_visible=True)
-            .prefetch_related("lesson_problems")
-            .all()
-        )
-        course_contests = (
-            self.course.contests.select_related("contest")
-            .filter(contest__is_visible=True)
-            .order_by("order")
-        )
+        # Collect all problems from all lessons for bulk query
+        all_problems = []
+        for lesson in self.lessons:
+            all_problems.extend(lesson.get_problems())
 
-        grade_lessons = {}
-        grade_contests = {}
+        bulk_problem_points = bulk_max_case_points_per_problem(students, all_problems)
+        grade_lessons = bulk_calculate_lessons_progress(
+            students, self.lessons, bulk_problem_points
+        )
+        grade_contests = bulk_calculate_contests_progress(students, self.contests)
+
         grade_total = {}
-        for s in students:
-            grade_lessons[s] = lesson_progress = calculate_lessons_progress(s, lessons)
-            grade_contests[s] = contest_progress = calculate_contests_progress(
-                s, course_contests
-            )
-            grade_total[s] = calculate_total_progress(
-                s, lesson_progress, contest_progress
+        for student in students:
+            grade_total[student] = calculate_total_progress(
+                grade_lessons[student], grade_contests[student]
             )
 
         students.sort(key=lambda s: (-grade_total[s]["percentage"], s.username.lower()))
@@ -778,14 +862,8 @@ class CourseStudentResults(CourseEditableMixin, DetailView):
             context["grade_contests"],
             context["grade_total"],
         ) = self.get_grades()
-        context["lessons"] = self.course.lessons.filter(is_visible=True).order_by(
-            "order"
-        )
-        context["course_contests"] = (
-            self.course.contests.select_related("contest")
-            .filter(contest__is_visible=True)
-            .order_by("order")
-        )
+        context["lessons"] = self.lessons
+        context["contests"] = self.contests
         return context
 
 
@@ -803,6 +881,8 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
                 self.course, self.request.profile
             ):
                 raise Http404()
+
+            self.problems = self.lesson.get_problems()
             return self.lesson
         except ObjectDoesNotExist:
             raise Http404()
@@ -810,20 +890,26 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
     def get_lesson_grades(self):
         students = self.course.get_students()
         students.sort(key=lambda u: u.username.lower())
-        problems = self.lesson.lesson_problems.values_list("problem", flat=True)
-        lesson_problems = self.lesson.lesson_problems.all()
+
+        bulk_problem_points = bulk_max_case_points_per_problem(students, self.problems)
+
         grades = {}
-        for s in students:
-            grades[s] = problem_points = max_case_points_per_problem(s, problems)
+        for student in students:
+            student_points = bulk_problem_points.get(student.id, {})
+            grades[student] = dict(student_points)
+
             achieved_points = total_points = 0
-            for lesson_problem in lesson_problems:
-                val = problem_points.get(lesson_problem.problem.id)
-                if val and val["case_total"]:
+            for ps in self.lesson.get_problems_and_scores():
+                problem_data = student_points.get(ps["problem_id"])
+                if problem_data and problem_data["case_total"]:
                     achieved_points += (
-                        val["case_points"] / val["case_total"] * lesson_problem.score
+                        problem_data["case_points"]
+                        / problem_data["case_total"]
+                        * ps["score"]
                     )
-                total_points += lesson_problem.score
-            grades[s]["total"] = {
+                total_points += ps["score"]
+
+            grades[student]["total"] = {
                 "achieved_points": achieved_points,
                 "total_points": total_points,
                 "percentage": (
@@ -852,6 +938,10 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
         )
         context["page_type"] = "grades"
         context["grades"] = self.get_lesson_grades()
+        context["problems"] = [
+            {"problem": p, "score": ps["score"]}
+            for p, ps in zip(self.problems, self.lesson.get_problems_and_scores())
+        ]
         return context
 
 
