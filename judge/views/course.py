@@ -863,7 +863,7 @@ class CourseStudentResults(CourseEditableMixin, DetailView):
             context["grade_total"],
         ) = self.get_grades()
         context["lessons"] = self.lessons
-        context["contests"] = self.contests
+        context["course_contests"] = self.contests
         return context
 
 

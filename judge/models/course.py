@@ -149,6 +149,7 @@ class Course(models.Model):
     def get_contests(self):
         return (
             self.contests.select_related("contest")
+            .defer("contest__description")
             .filter(contest__is_visible=True)
             .order_by("order")
         )
