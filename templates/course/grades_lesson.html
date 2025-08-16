@@ -108,7 +108,7 @@
                 {{link_user(student)}}
               </div>
               <div>
-                {{student.first_name}}
+                {{student.first_name or ""}}
               </div>
             </td>
             {% for lesson_problem in problems %}
