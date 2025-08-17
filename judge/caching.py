@@ -4,10 +4,10 @@ from django.core.handlers.wsgi import WSGIRequest
 from django.db import models
 from django.db.models.query_utils import DeferredAttribute
 
-import hashlib
+import xxhash
 from inspect import signature
 
-MAX_NUM_CHAR = 50
+MAX_NUM_CHAR = 8
 NONE_RESULT = "__None__"  # Placeholder for None values in caching
 
 
@@ -17,10 +17,13 @@ def arg_to_str(arg):
     if hasattr(arg, "id"):
         return str(arg.id)
     if isinstance(arg, list) or isinstance(arg, QuerySet):
-        return hashlib.sha1(str(list(arg)).encode()).hexdigest()[:MAX_NUM_CHAR]
-    if len(str(arg)) > MAX_NUM_CHAR:
-        return str(arg)[:MAX_NUM_CHAR]
-    return str(arg)
+        return xxhash.xxh64_hexdigest(str(list(arg)))[:MAX_NUM_CHAR]
+
+    arg_str = str(arg)
+    if len(arg_str) > MAX_NUM_CHAR:
+        hash_suffix = xxhash.xxh64_hexdigest(arg_str)[: MAX_NUM_CHAR - 4]
+        return f"{arg_str[:4]}{hash_suffix}"
+    return arg_str
 
 
 def filter_args(args_list):
