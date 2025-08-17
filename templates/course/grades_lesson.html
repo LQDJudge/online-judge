@@ -48,8 +48,8 @@
         var rows = $('#users-table tbody tr').get();
         var sortBy = $(this).val();
         rows.sort(function(a, b) {
-          var keyA = $(a).find(sortBy === 'username' ? '.user-name' : 'td:last-child').text().trim();
-          var keyB = $(b).find(sortBy === 'username' ? '.user-name' : 'td:last-child').text().trim();
+          var keyA = $(a).find(sortBy === 'username' ? '.user-name' : 'td:nth-child(2)').text().trim();
+          var keyB = $(b).find(sortBy === 'username' ? '.user-name' : 'td:nth-child(2)').text().trim();
 
           if(sortBy === 'total') {
             // Convert percentage string to number for comparison
@@ -78,8 +78,8 @@
   <center><h2>{{content_title}}</h2></center>
   {{_("Sort by")}}:
   <select id="sortSelect">
-    <option value="username">{{_("Username")}}</option>
     <option value="total">{{_("Score")}}</option>
+    <option value="username">{{_("Username")}}</option>
   </select>
   <input type="text" id="search-input" placeholder="{{_('Search')}}" autofocus>
   <div class = "table-container">
@@ -87,17 +87,17 @@
       <thead>
         <tr>
           <th class = "static">{{_('Student')}}</th>
+          <th>{{_('Total')}}</th>
           {% if grades|length > 0 %}
             {% for lesson_problem in problems %}
               <th class="points">
                 <a href="{{ url('problem_detail', lesson_problem.problem.code) }}">
-                  P({{ loop.index0 + 1 }})
+                  {{ loop.index0 + 1 }}
                   <div class="point-denominator">{{ lesson_problem.score }}</div>
                 </a>
               </th>
             {% endfor %}
           {% endif %}
-          <th>{{_('Total')}}</th>
         </tr>
       </thead>
       <tbody>
@@ -111,6 +111,9 @@
                 {{student.first_name or ""}}
               </div>
             </td>
+            <td style="font-weight: bold">
+              {{ grade['total']['percentage'] | floatformat(0) }}%
+            </td>
             {% for lesson_problem in problems %}
               {% set val = grade.get(lesson_problem.problem.id) %}
               <td class="partial-score">
@@ -123,9 +126,6 @@
                 </a>
               </td>
             {% endfor %}
-            <td style="font-weight: bold">
-              {{ grade['total']['percentage'] | floatformat(0) }}%
-            </td>
           </tr>
         {% endfor %}
       </tbody>

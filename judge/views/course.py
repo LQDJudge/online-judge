@@ -889,7 +889,6 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
 
     def get_lesson_grades(self):
         students = self.course.get_students()
-        students.sort(key=lambda u: u.username.lower())
 
         bulk_problem_points = bulk_max_case_points_per_problem(students, self.problems)
 
@@ -916,7 +915,18 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
                     achieved_points / total_points * 100 if total_points else 0
                 ),
             }
-        return grades
+
+        # Sort students by total percentage (descending), then by username
+        students.sort(
+            key=lambda s: (-grades[s]["total"]["percentage"], s.username.lower())
+        )
+
+        # Return grades in sorted order
+        sorted_grades = {}
+        for student in students:
+            sorted_grades[student] = grades[student]
+
+        return sorted_grades
 
     def get_context_data(self, **kwargs):
         context = super(CourseStudentResultsLesson, self).get_context_data(**kwargs)

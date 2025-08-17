@@ -77,13 +77,11 @@
   <center><h2>{{content_title}}</h2></center>
   <div style="margin-top: 0.5em;">
     {{_("Sort by")}}:
-    <div style="margin-top: 0.5em;">
-      <select id="sortSelect">
-        <option value="total">{{_("Score")}}</option>
-        <option value="username">{{_("Username")}}</option>
-      </select>
-      <input type="text" id="search-input" placeholder="{{_('Search')}}" autofocus>
-    </div>
+    <select id="sortSelect">
+      <option value="total">{{_("Score")}}</option>
+      <option value="username">{{_("Username")}}</option>
+    </select>
+    <input type="text" id="search-input" placeholder="{{_('Search')}}" autofocus>
   </div>
   <div style="overflow-x: auto; margin-top: 1em; clear: both;">
     <table class="table striped" id="users-table">
