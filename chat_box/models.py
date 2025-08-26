@@ -299,7 +299,7 @@ def get_user_room_list(profile_id):
     return room_ids
 
 
-@cache_wrapper(prefix="giui", expected_type=set)
+@cache_wrapper(prefix="giuis", expected_type=set)
 def get_ignored_user_ids(user):
     """
     Returns a set of all user IDs that the given user has ignored.
@@ -352,10 +352,11 @@ def _get_ignored_room_ids(user):
     return ignored_room_ids
 
 
-@cache_wrapper(prefix="giui")
+@cache_wrapper(prefix="gfmi")
 def get_first_msg_id(room_id):
-    msg = Message.objects.filter(room=room_id, hidden=False).earliest("id")
-    if not msg:
+    try:
+        msg = Message.objects.filter(room=room_id, hidden=False).earliest("id")
+    except Message.DoesNotExist:
         return None
     return msg.id
 

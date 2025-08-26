@@ -230,6 +230,8 @@ def post_message(request):
                 "tmp_id": request.POST.get("tmp_id"),
             },
         )
+        if not get_first_msg_id(None):
+            get_first_msg_id.dirty(None)
     else:
         Room.dirty_cache(room.id)
         room.last_msg_id = new_message.id
@@ -253,6 +255,9 @@ def post_message(request):
                     unread_count=F("unread_count") + 1
                 )
                 get_unread_boxes.dirty(user)
+
+        if not get_first_msg_id(room.id):
+            get_first_msg_id.dirty(room.id)
 
     return JsonResponse(ret)
 
