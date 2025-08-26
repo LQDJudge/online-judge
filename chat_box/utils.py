@@ -41,7 +41,7 @@ def encrypt_channel(channel):
 
 @cache_wrapper(prefix="gub")
 def get_unread_boxes(profile):
-    ignored_rooms = Ignore.get_ignored_rooms(profile)
+    ignored_rooms = Ignore.get_ignored_room_ids(profile)
     unread_boxes = (
         UserRoom.objects.filter(user=profile, unread_count__gt=0)
         .exclude(room__in=ignored_rooms)

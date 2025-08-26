@@ -5,27 +5,13 @@ from operator import itemgetter
 from random import randrange
 from copy import deepcopy
 
-from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db import transaction
-from django.db.models import (
-    BooleanField,
-    Case,
-    CharField,
-    Count,
-    F,
-    FilteredRelation,
-    Prefetch,
-    Q,
-    When,
-    IntegerField,
-    Sum,
-)
-from django.db.models.functions import Coalesce
+from django.db.models import Prefetch, Q
 from django.db.utils import ProgrammingError
 from django.http import (
     Http404,
@@ -714,10 +700,10 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         Problem.prefetch_cache_has_public_editorial(*context["problems"])
         if context["show_types"]:
             Problem.prefetch_cache_types_name(*context["problems"])
-        if context["show_editorial"]:
-            Problem.prefetch_cache_i18n_name(
-                self.request.LANGUAGE_CODE, *context["problems"]
-            )
+
+        Problem.prefetch_cache_i18n_name(
+            self.request.LANGUAGE_CODE, *context["problems"]
+        )
 
         context["problems"] = Problem.get_cached_instances(*context["problems"])
 

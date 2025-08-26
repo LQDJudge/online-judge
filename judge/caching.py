@@ -96,6 +96,9 @@ def cache_wrapper(prefix, timeout=None, expected_type=None, batch_fn=None):
                 if batch_fn:
                     missing_results = batch_fn(missing_args)
                     missing_values = dict(zip(missing_keys, missing_results))
+                    for key, value in missing_values.items():
+                        if value is None:
+                            missing_values[key] = NONE_RESULT
                 else:
                     missing_values = {}
                     for key, args in zip(missing_keys, missing_args):

@@ -323,6 +323,10 @@ class Profile(CacheableModel):
         _get_about.batch([(id,) for id in ids])
 
     @classmethod
+    def prefetch_cache_last_access(cls, *ids):
+        _get_profile_last_access.batch([(id,) for id in ids])
+
+    @classmethod
     def dirty_cache(cls, *ids):
         id_list = [(id,) for id in ids]
         _get_profile.dirty_multi(id_list)
@@ -511,7 +515,6 @@ class Profile(CacheableModel):
     def can_edit_organization(self, org):
         if not self.user.is_authenticated:
             return False
-        profile_id = self.id
         return org.is_admin(self) or self.user.is_superuser
 
     class Meta:
@@ -746,9 +749,33 @@ def _get_profile(profile_id):
     return results[0]
 
 
-@cache_wrapper(prefix="Pgla", expected_type=datetime)
+def _get_profile_last_access_batch(args_list):
+    """Batch function to get last_access for multiple profiles"""
+    profile_ids = [args[0] for args in args_list]
+
+    # Get last_access times for all profiles in one query
+    last_access_dict = dict(
+        Profile.objects.filter(id__in=profile_ids).values_list("id", "last_access")
+    )
+
+    # Return results in the same order as input
+    results = []
+    for profile_id in profile_ids:
+        if profile_id in last_access_dict:
+            results.append(last_access_dict[profile_id])
+        else:
+            # Return a default value if profile not found
+            results.append(now())
+
+    return results
+
+
+@cache_wrapper(
+    prefix="Pgla", expected_type=datetime, batch_fn=_get_profile_last_access_batch
+)
 def _get_profile_last_access(profile_id):
-    return Profile.objects.values_list("last_access", flat=True).get(id=profile_id)
+    results = _get_profile_last_access_batch([(profile_id,)])
+    return results[0]
 
 
 def _get_about_batch(args_list):
