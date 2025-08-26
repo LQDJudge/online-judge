@@ -431,7 +431,7 @@ def get_status_context(profile, include_ignored=False):
 
     for room_id in user_rooms:
         other_user_id = Room(id=room_id).other_user_id(profile)
-        if other_user_id not in ignored_users:
+        if other_user_id and other_user_id not in ignored_users:
             recent_profile_ids.append(other_user_id)
             recent_rooms.append(room_id)
 
