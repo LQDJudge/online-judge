@@ -134,7 +134,11 @@ STATIC_ROOT = "/path/to/static-root"
 # STATIC_URL = '/static/'
 
 # Uncomment to use hashed filenames with the cache framework.
-# STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.CachedStaticFilesStorage'
+# STORAGES = {
+#     "staticfiles": {
+#         "BACKEND": "judge.storage.IgnoreMissingManifestStaticFilesStorage",
+#     },
+# }
 
 MEDIA_ROOT = "/path/to/media"
 
