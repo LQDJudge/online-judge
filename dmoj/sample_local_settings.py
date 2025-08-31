@@ -69,6 +69,7 @@ USE_TZ = True
 
 ## django-compressor settings, for speeding up page load times by minifying CSS and JavaScript files.
 # Documentation: https://django-compressor.readthedocs.io/en/latest/
+COMPRESS_ENABLED = False
 COMPRESS_OUTPUT_DIR = "cache"
 COMPRESS_CSS_FILTERS = [
     "compressor.filters.css_default.CssAbsoluteFilter",
@@ -133,8 +134,11 @@ STATIC_ROOT = "/path/to/static-root"
 # URL to access static files.
 # STATIC_URL = '/static/'
 
-# Uncomment to use hashed filenames with the cache framework.
+# Uncomment to use hashed filenames with the cache framework (not tested with compressor yet).
 # STORAGES = {
+#     "default": {
+#         "BACKEND": "django.core.files.storage.FileSystemStorage",
+#     },
 #     "staticfiles": {
 #         "BACKEND": "judge.storage.IgnoreMissingManifestStaticFilesStorage",
 #     },
