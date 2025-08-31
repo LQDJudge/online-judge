@@ -13,8 +13,6 @@
     .contest-header {
         text-align: center;
         margin-bottom: 2em;
-        border-bottom: 3px solid #ddd;
-        padding-bottom: 1em;
 
         h1 {
             color: #393630;
@@ -140,6 +138,15 @@
     @media print {
         .contest-header .back-link {
             display: none;
+        }
+
+        // Hide links in the summary table for print
+        .table {
+            a {
+                color: inherit !important;
+                text-decoration: none !important;
+                pointer-events: none;
+            }
         }
 
         .problem-section {

@@ -22,8 +22,50 @@
       </div>
     </div>
 
+    <!-- Problems Summary Table -->
+    <div style="width: 90%; margin-left: auto; margin-right: auto;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>{{ _('#') }}</th>
+            <th>{{ _('Problem') }}</th>
+            <th>{{ _('Points') }}</th>
+            <th>{{ _('Time Limit') }}</th>
+            <th>{{ _('Memory Limit') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for contest_problem in contest_problems %}
+            <tr>
+              <td class="problem-label">
+                <a href="#problem-{{ loop.index0 }}">
+                  {{ contest.get_label_for_problem(loop.index0) }}
+                </a>
+              </td>
+              <td class="problem-name">
+                <a href="#problem-{{ loop.index0 }}">
+                  {{ contest_problem.problem.translated_name(LANGUAGE_CODE) }}
+                </a>
+              </td>
+              <td class="problem-points">
+                {{ contest_problem.points }}{% if contest_problem.partial %} (p){% endif %}
+              </td>
+              <td class="problem-time">
+                {{ contest_problem.problem.time_limit }}s
+              </td>
+              <td class="problem-memory">
+                {{ contest_problem.problem.memory_limit|kbsimpleformat }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <hr style="margin: 2em 0;">
+
     {% for contest_problem in contest_problems %}
-      <div class="problem-section">
+      <div class="problem-section" id="problem-{{ loop.index0 }}">
         <h2 class="problem-title">
           {{ contest.get_label_for_problem(loop.index0) }}. {{ contest_problem.problem.translated_name(LANGUAGE_CODE) }}
         </h2>
