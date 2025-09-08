@@ -57,28 +57,48 @@ def bulk_max_case_points_per_problem(students, all_problems):
     """
     Fetch max case points for all students and problems in one query.
     Returns nested dict for O(1) lookups: {user_id: {problem_id: {case_points, case_total}}}
-
+    Gets the submission with the highest percentage (case_points/case_total) when case_total > 0.
     """
     if not students or not all_problems:
         return {}
 
-    submissions = (
-        Submission.objects.filter(user__in=students, problem__in=all_problems)
-        .values("user", "problem")
-        .annotate(max_points=Max("case_points"), case_total=F("case_total"))
-    )
+    # Get all submissions and find the best percentage for each user-problem pair
+    submissions = Submission.objects.filter(
+        user__in=students, problem__in=all_problems, case_total__gt=0
+    ).values("user", "problem", "case_points", "case_total")
 
-    # Build nested dict: {user_id: {problem_id: {case_points, case_total}}}
+    # Build nested dict and keep only the best submission per user-problem
     result = {}
     for sub in submissions:
         user_id = sub["user"]
         problem_id = sub["problem"]
+
+        percentage = (
+            sub["case_points"] / sub["case_total"] if sub["case_total"] > 0 else 0
+        )
+
         if user_id not in result:
             result[user_id] = {}
-        result[user_id][problem_id] = {
-            "case_points": sub["max_points"],
-            "case_total": sub["case_total"],
-        }
+
+        if problem_id in result[user_id]:
+            existing = result[user_id][problem_id]
+            existing_percentage = (
+                existing["case_points"] / existing["case_total"]
+                if existing["case_total"] > 0
+                else 0
+            )
+
+            if percentage > existing_percentage:
+                result[user_id][problem_id] = {
+                    "case_points": sub["case_points"],
+                    "case_total": sub["case_total"],
+                }
+        else:
+            result[user_id][problem_id] = {
+                "case_points": sub["case_points"],
+                "case_total": sub["case_total"],
+            }
+
     return result
 
 
