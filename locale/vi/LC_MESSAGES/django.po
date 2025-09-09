@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-11 12:12+0700\n"
+"POT-Creation-Date: 2025-09-09 13:41+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -265,7 +265,7 @@ msgstr ""
 #: templates/contest/contests_summary.html:41
 #: templates/course/contest_list.html:18 templates/course/edit_lesson.html:18
 #: templates/internal/problem_queue.html:268 templates/problem/add.html:212
-#: templates/problem/data.html:906 templates/problem/edit.html:282
+#: templates/problem/data.html:907 templates/problem/edit.html:282
 #: templates/problem/list.html:22 templates/problem/list.html:48
 #: templates/profile-table.html:31 templates/profile-table.html:41
 #: templates/user/base-users-table.html:10 templates/user/user-about.html:36
@@ -278,7 +278,7 @@ msgid "Limits"
 msgstr "Giới hạn"
 
 #: judge/admin/problem.py:237 judge/admin/submission.py:353
-#: templates/base.html:164 templates/problem/data.html:852
+#: templates/base.html:164 templates/problem/data.html:853
 #: templates/problem/language_limits.html:55
 #: templates/problem/language_limits.html:133
 #: templates/problem/language_templates.html:134
@@ -2113,11 +2113,11 @@ msgstr "trình chấm"
 
 #: judge/models/problem_data.py:87 judge/models/problem_data.py:264
 msgid "checker arguments"
-msgstr "các biến trong trình chấm"
+msgstr "tham số trong trình chấm"
 
 #: judge/models/problem_data.py:89 judge/models/problem_data.py:266
 msgid "checker arguments as a JSON object"
-msgstr "các biến trong trình chấm theo dạng JSON"
+msgstr "tham số trong trình chấm theo dạng JSON"
 
 #: judge/models/problem_data.py:92
 msgid "custom checker file"
@@ -2197,7 +2197,7 @@ msgstr "Kết thúc nhóm"
 
 #: judge/models/problem_data.py:251
 msgid "generator arguments"
-msgstr "biến trong file sinh test"
+msgstr "tham số sinh test"
 
 #: judge/models/problem_data.py:252
 msgid "point value"
@@ -2980,15 +2980,9 @@ msgstr "j M, Y"
 msgid "About"
 msgstr "Giới thiệu"
 
-#: judge/views/about.py:31 judge/views/docs.py:72
-msgid "Custom Checker Sample"
-msgstr "Hướng dẫn viết trình chấm"
-
-#: judge/views/about.py:51 judge/views/docs.py:53
-#, fuzzy
-#| msgid "contest format configuration"
+#: judge/views/about.py:32 judge/views/docs.py:53
 msgid "Contest Format Instructions"
-msgstr "Tùy chỉnh format kỳ thi"
+msgstr "Hướng dẫn thể thức kỳ thi"
 
 #: judge/views/blog.py:77
 #, python-format
@@ -3439,6 +3433,10 @@ msgstr "Khóa học cập nhật thành công"
 msgid "File Upload"
 msgstr "Tải file lên"
 
+#: judge/views/docs.py:72
+msgid "Test Data Instructions"
+msgstr "Hướng dẫn Test Data"
+
 #: judge/views/email.py:22
 msgid "New Email"
 msgstr "Email mới"
@@ -3510,7 +3508,7 @@ msgstr "Bài tập nội bộ"
 msgid "Internal problem queue"
 msgstr "Bài trong hàng đợi nội bộ"
 
-#: judge/views/internal.py:276
+#: judge/views/internal.py:291
 msgid "Request times"
 msgstr "thời gian đăng ký"
 
@@ -3885,108 +3883,108 @@ msgstr "Chỉnh sửa {0}"
 msgid "Editing problem for %s"
 msgstr "Chỉnh sửa bài tập cho %s"
 
-#: judge/views/problem.py:1386
+#: judge/views/problem.py:1393
 msgid "Add Problem"
 msgstr "Thêm bài tập"
 
-#: judge/views/problem.py:1417
+#: judge/views/problem.py:1424
 #, python-format
 msgid "Problem '%(name)s' has been created successfully!"
 msgstr "Bài tập '%(name)s' đã được tạo thành công!"
 
-#: judge/views/problem.py:1443
+#: judge/views/problem.py:1450
 #, python-brace-format
 msgid "Edit Language Limits - {0}"
 msgstr "Chỉnh sửa giới hạn ngôn ngữ - {0}"
 
-#: judge/views/problem.py:1447
+#: judge/views/problem.py:1454
 #, python-format
 msgid "Editing language limits for %s"
 msgstr "Chỉnh sửa giới hạn ngôn ngữ cho %s"
 
-#: judge/views/problem.py:1533
+#: judge/views/problem.py:1540
 #, python-brace-format
 msgid "Edit Language Templates - {0}"
 msgstr "Chỉnh sửa code mẫu - {0}"
 
-#: judge/views/problem.py:1537
+#: judge/views/problem.py:1544
 #, python-format
 msgid "Editing language templates for %s"
 msgstr "Chỉnh sửa code mẫu cho %s"
 
-#: judge/views/problem.py:1583
+#: judge/views/problem.py:1590
 msgid "Language template deleted successfully."
 msgstr "Đoạn code mẫu được xóa thành công."
 
-#: judge/views/problem.py:1585 judge/views/problem.py:1604
+#: judge/views/problem.py:1592 judge/views/problem.py:1611
 msgid "Language template not found."
 msgstr "Code mẫu không tìm thấy"
 
-#: judge/views/problem.py:1599
+#: judge/views/problem.py:1606
 msgid "Language template updated successfully."
 msgstr "Đoạn code mẫu được cập nhật thành công"
 
-#: judge/views/problem.py:1616
+#: judge/views/problem.py:1623
 msgid "Language template added successfully."
 msgstr "Code mẫu được thêm thành công"
 
-#: judge/views/problem.py:1650
+#: judge/views/problem.py:1657
 #, python-brace-format
 msgid "Edit Solutions - {0}"
 msgstr "Chỉnh sửa lời giải - {0}"
 
-#: judge/views/problem.py:1654
+#: judge/views/problem.py:1661
 #, python-format
 msgid "Editing solutions for %s"
 msgstr "Chỉnh sửa lời giải cho %s"
 
-#: judge/views/problem.py:1705
+#: judge/views/problem.py:1712
 msgid "Solution deleted successfully."
 msgstr "Lời giải đã xóa thành công"
 
-#: judge/views/problem.py:1707
+#: judge/views/problem.py:1714
 msgid "Solution not found."
 msgstr "Lời giải không tìm thấy"
 
-#: judge/views/problem.py:1716
+#: judge/views/problem.py:1723
 msgid "Solution updated successfully."
 msgstr "Lời giải cập nhật thành công"
 
-#: judge/views/problem.py:1721
+#: judge/views/problem.py:1728
 msgid "A solution already exists for this problem."
 msgstr "Lời giải đã tồn tại cho bài tập này."
 
-#: judge/views/problem.py:1729
+#: judge/views/problem.py:1736
 msgid "Solution added successfully."
 msgstr "Lời giải được thêm thành công"
 
-#: judge/views/problem.py:1771
+#: judge/views/problem.py:1778
 #, python-brace-format
 msgid "Edit Translations - {0}"
 msgstr "Chỉnh sửa bản dịch - {0}"
 
-#: judge/views/problem.py:1775
+#: judge/views/problem.py:1782
 #, python-format
 msgid "Editing translations for %s"
 msgstr "Chỉnh sửa bản dịch cho %s"
 
-#: judge/views/problem.py:1827
+#: judge/views/problem.py:1834
 msgid "Translation deleted successfully."
 msgstr "Bản dịch cập nhật thành công"
 
-#: judge/views/problem.py:1829 judge/views/problem.py:1884
+#: judge/views/problem.py:1836 judge/views/problem.py:1891
 msgid "Translation not found."
 msgstr "Bản dịch không tìm thấy"
 
-#: judge/views/problem.py:1848
+#: judge/views/problem.py:1855
 msgid "Translation updated successfully."
 msgstr "Bản dịch cập nhật thành công"
 
-#: judge/views/problem.py:1896
+#: judge/views/problem.py:1903
 msgid "A translation for this language already exists."
 msgstr "Bản dịch với ngôn ngữ này đã tồn tại"
 
-#: judge/views/problem.py:1905
+#: judge/views/problem.py:1912
 msgid "Translation added successfully."
 msgstr "Bản dịch được thêm thành công"
 
@@ -5389,7 +5387,7 @@ msgstr "Tạo bài học mới"
 #: templates/organization/blog/edit.html:36
 #: templates/organization/contest/edit.html:108
 #: templates/organization/form.html:30 templates/pagedown.html:31
-#: templates/problem/data.html:841 templates/problem/edit.html:368
+#: templates/problem/data.html:842 templates/problem/edit.html:368
 #: templates/problem/language_templates.html:138
 #: templates/problem/translations.html:75
 #: templates/ticket/edit-assignees.html:22 templates/ticket/ticket.html:119
@@ -5524,7 +5522,7 @@ msgstr "Kéo file vào đây để tải lên"
 #: templates/fine_uploader/script.html:23
 #: templates/internal/problem_queue.html:284
 #: templates/markdown_editor/markdown_editor.html:123
-#: templates/pagedown.html:32 templates/problem/data.html:840
+#: templates/pagedown.html:32 templates/problem/data.html:841
 msgid "Cancel"
 msgstr "Hủy"
 
@@ -5596,7 +5594,8 @@ msgstr "Gán nhãn bài không thành công: "
 #: templates/internal/problem_queue.html:60
 #: templates/internal/problem_queue.html:166
 msgid "Problem tagging failed: Network error occurred - please try again later"
-msgstr "Gán nhãn bài không thành công: Đã xảy ra lỗi mạng - vui lòng thử lại sau"
+msgstr ""
+"Gán nhãn bài không thành công: Đã xảy ra lỗi mạng - vui lòng thử lại sau"
 
 #: templates/internal/problem_queue.html:71
 #: templates/internal/problem_queue.html:255
@@ -5736,8 +5735,7 @@ msgstr "Chấp thuận"
 msgid "Reject"
 msgstr "Từ chối"
 
-#: templates/organization/contest/edit.html:67 templates/problem/data.html:177
-#: templates/problem/data.html:184
+#: templates/organization/contest/edit.html:67 templates/problem/data.html:178
 msgid "Instruction"
 msgstr "Hướng dẫn"
 
@@ -5904,7 +5902,7 @@ msgid "There are no requests to approve."
 msgstr "Không có đơn đăng ký."
 
 #: templates/organization/requests/pending.html:24
-#: templates/problem/data.html:856 templates/problem/data.html:910
+#: templates/problem/data.html:857 templates/problem/data.html:911
 msgid "Delete?"
 msgstr "Xóa?"
 
@@ -6031,28 +6029,36 @@ msgstr "Thêm script sinh test"
 msgid "Edit Generator Script"
 msgstr "Chỉnh sửa script sinh test"
 
-#: templates/problem/data.html:789
+#: templates/problem/data.html:781
 msgid "View YAML"
 msgstr "Xem YAML"
 
-#: templates/problem/data.html:806
+#: templates/problem/data.html:795
+msgid "Test Data Setup"
+msgstr "Cách tạo Test Data"
+
+#: templates/problem/data.html:797
+msgid "View Instructions"
+msgstr "Xem hướng dẫn"
+
+#: templates/problem/data.html:807
 msgid "Autofill testcases"
 msgstr "Tự động điền test"
 
-#: templates/problem/data.html:810 templates/problem/problem.html:342
+#: templates/problem/data.html:811 templates/problem/problem.html:342
 msgid "Problem type"
 msgid_plural "Problem types"
 msgstr[0] "Dạng bài"
 
-#: templates/problem/data.html:817
+#: templates/problem/data.html:818
 msgid "Fill testcases"
 msgstr "Điền test"
 
-#: templates/problem/data.html:821
+#: templates/problem/data.html:822
 msgid "Batch start positions"
 msgstr "Vị trí bắt đầu nhóm"
 
-#: templates/problem/data.html:825
+#: templates/problem/data.html:826
 msgid ""
 "Leave empty if not use batch. If you want to divide to three batches [1, 4], "
 "[5, 8], [9, 10], enter: 1, 5, 9"
@@ -6060,11 +6066,11 @@ msgstr ""
 "Để trống nếu không dùng nhóm. Nếu muốn chia test thành các nhóm [1, 4], [5, "
 "8], [9, 10], nhập: 1, 5, 9"
 
-#: templates/problem/data.html:833
+#: templates/problem/data.html:834
 msgid "Generator Script"
 msgstr "Script sinh test"
 
-#: templates/problem/data.html:834
+#: templates/problem/data.html:835
 msgid ""
 "Enter generator arguments for test cases. Each line represents arguments for "
 "one test case."
@@ -6072,47 +6078,47 @@ msgstr ""
 "Nhập các tham số cho script sinh test. Mỗi dòng đại diện cho tham số của một "
 "test."
 
-#: templates/problem/data.html:848
+#: templates/problem/data.html:849
 msgid "IOI Signature Graders"
 msgstr "Trình chấm IOI"
 
-#: templates/problem/data.html:853
+#: templates/problem/data.html:854
 msgid "Handler"
 msgstr "File xử lý"
 
-#: templates/problem/data.html:854
+#: templates/problem/data.html:855
 msgid "Header"
 msgstr "File định nghĩa"
 
-#: templates/problem/data.html:896 templates/problem/data.html:959
+#: templates/problem/data.html:897 templates/problem/data.html:960
 msgid "Apply!"
 msgstr "Lưu!"
 
-#: templates/problem/data.html:898
+#: templates/problem/data.html:899
 msgid "Test Cases"
 msgstr "Bộ Test"
 
-#: templates/problem/data.html:903
+#: templates/problem/data.html:904
 msgid "Type"
 msgstr "Kiểu"
 
-#: templates/problem/data.html:904
+#: templates/problem/data.html:905
 msgid "Input file"
 msgstr "File Input"
 
-#: templates/problem/data.html:905
+#: templates/problem/data.html:906
 msgid "Output file"
 msgstr "File Output"
 
-#: templates/problem/data.html:907
+#: templates/problem/data.html:908
 msgid "Pretest?"
 msgstr "Pretest?"
 
-#: templates/problem/data.html:908
+#: templates/problem/data.html:909
 msgid "Generator Args"
-msgstr "Biến trong file sinh test"
+msgstr "Tham số sinh test"
 
-#: templates/problem/data.html:960
+#: templates/problem/data.html:961
 msgid "Add new case"
 msgstr "Thêm test mới"
 
@@ -7500,6 +7506,9 @@ msgstr "Thông tin"
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Chọn tất cả"
+
+#~ msgid "Custom Checker Sample"
+#~ msgstr "Hướng dẫn viết trình chấm"
 
 #~ msgid "Create New Lesson"
 #~ msgstr "Tạo Bài Học Mới"

@@ -1,7 +1,141 @@
 [TOC]
 
+## 1. Test Generator
 
-## 1. Custom Checker (Python)
+The Test Generator feature allows you to automatically generate test data for problems using a C++ generator program. Instead of uploading test file, you can write generator code and provide parameters to automatically create multiple diverse test cases.
+
+### How It Works
+
+The generator system follows this workflow:
+
+1. **Upload Generator Code**: Create a C++ file to generate test data
+2. **Write Generator Script**: Provide parameters for each test case
+3. **Auto-generate tests**: System uses generator + parameters to create test data when submissions are evaluated
+
+### Step 1: Add Generator Code
+
+**When No Generator Exists:**
+- Access the problem's test data management page (e.g., `/problem/aplusb/test_data`)
+- You'll see two options:
+  - **Upload file**: Upload a generator (.cpp) file from your computer
+  - **Edit**: Open a modal to write generator code directly on the page
+
+**After Adding Generator:**
+Once a generator file exists, the interface will display an additional "Generator Script" field for writing the test generation script.
+
+### Step 2: Write Generator Script
+
+The Generator Script is where you provide parameters for each test case. Each line in the script represents one test case.
+
+**How to write Generator Script:**
+1. Click on **"Edit Generator Script"**
+2. A modal will appear with a line-numbered textarea
+3. Each line contains parameters for one test case
+4. Click **"Save"** to save
+
+### Step 3: Create Test Cases
+
+**Two ways to add test cases:**
+
+**Method 1: Manual Addition**
+- Add each test case manually by clicking **"Add new case"**
+- Enter parameters in the **"Generator Args"** field
+
+**Method 2: Use Generator Script**
+1. Write Generator Script as instructed in Step 2
+2. Click "Fill testcases" in the "Autofill testcases" field
+3. System will create test cases equal to the number of lines in the script
+4. Each test case will have parameters from the corresponding line in the script
+
+⚠️ **Important**: When clicking "Fill testcases", if there is a file in the "Data zip file" field, testcases in the file will also be added. You can also edit the parameters of each test in "Generator Args" after clicking "Fill testcases"
+
+⚠️ **Important**: Remember to click **"Save"** at the bottom of the page to save all problem data!
+
+### Complete Example: A + B Problem (aplusb)
+
+**Generator Code (C++):**
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int main(int args_length, char* args[]) {
+    if (args_length != 4) {
+        cerr << "Usage: ./generator <x> <y> <global_seed>" << endl;
+        return 1;
+    }
+
+    int x = stoi(args[1]);
+    int y = stoi(args[2]);
+    int global_seed = stoi(args[3]); // Global seed for all tests
+
+    if (x > y) {
+        cerr << "Error: x should be less than or equal to y" << endl;
+        return 1;
+    }
+
+    // Combine global seed with x and y to create unique seed
+    int combined_seed = global_seed ^ (x * 31 + y * 37);
+
+    // Initialize random with computed seed
+    mt19937 gen(combined_seed);
+    uniform_int_distribution<> dist(x, y);
+
+    // Generate two random integers a and b
+    int a = dist(gen);
+    int b = dist(gen);
+
+    // Output input data (a and b)
+    cout << a << " " << b << endl;
+
+    // Output answer (a + b) to stderr for debugging
+    cerr << (a + b) << endl;
+
+    return 0;
+}
+```
+
+**Generator Script:**
+```
+1 10 12
+1 10 5123
+1 10 254
+100 200 51234
+100 200 4135
+100 200 123
+1000 2000 456
+1000 2000 4129
+1000 2000 5912
+1000 2000 4753
+```
+
+With this script, clicking "Add new tests" will create 10 test cases:
+- Test 1: generator runs with parameters `1 10 12`
+- Test 2: generator runs with parameters `1 10 5123`
+- ...
+
+### Test Cases Table
+
+After creating test cases, you'll see a table displaying tests with:
+- **ZIP File**: Test data from uploaded ZIP file
+- **Generator Args**: Parameters to run generator
+
+Each test case uses **only one of two methods**:
+- Either get data from ZIP file
+- Or generate data from generator + parameters
+
+### Important Notes
+
+1. **Generator code** must accept parameters from command line arguments
+2. **Output** of generator must print to `stdout` (input data for test)
+3. **Expected output** can print to `stderr` for debugging
+4. **Random seed** should be designed to ensure deterministic behavior
+5. Remember to click **"Save"** after completing all steps
+
+## 2. Custom Checker
+
+Custom Checker allows you to define custom judging logic instead of just direct output comparison. This is very useful for problems with multiple correct answers or special format requirements.
+
+### Python
 
 This is the default checker for the website, allowing users to update the most information (see details below). We need to complete the `check` function below:
 
@@ -57,7 +191,7 @@ def check(process_output, judge_output, judge_input, **kwargs):
     return wa('a + b != n')
 ```
 
-## 2. Custom Checker (C++)
+### C++
 
 To use this feature, you need to write a C++ program that takes 3 arguments in order: `input_file`, `output_file`, `ans_file` corresponding to input, output, and answer files.
 
@@ -196,7 +330,7 @@ For a problem: input number n. Write function `solve(int n)` that returns `n * 2
 - First line contains `t` as number of tests
 - Each line contains an integer `n`
 
-### a. C/C++
+### C/C++
 
 **Header (header.h):**
 ```cpp
@@ -233,7 +367,7 @@ int solve(int n) {
 }
 ```
 
-### b. Python
+### Python
 Student submission will be saved to file _submission.py.
 
 **Handler (handler.py):**
@@ -256,7 +390,7 @@ def solve(n):
     return n * 2
 ```
 
-### c. Java
+### Java
 Students must name the class correctly as required by the problem for the handler to use.
 
 **Handler (handler.java):**

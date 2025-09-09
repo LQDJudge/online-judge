@@ -1441,3 +1441,25 @@ body:not(.problem-raw) {
         margin-left: 5px;
     }
 }
+
+// Help section for test data instructions
+.help-section {
+    margin-bottom: 1em;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-left: 4px solid #007bff;
+    border-radius: 4px;
+
+    .fa-info-circle {
+        color: #007bff;
+        margin-right: 8px;
+    }
+
+    a {
+        margin-left: 10px;
+
+        .fa-external-link {
+            font-size: 0.8em;
+        }
+    }
+}
