@@ -173,25 +173,17 @@
         $tr_generator_script.find('.generator-script-container').prepend($generator_script);
 
         $td = $checker.parent();
-        var $sample = $("<a/>",{
-          text: "{{_('Instruction')}}",
-          style: "margin-left:3em;",
-          target: "_blank",
-          href: "{{url('custom_checker_sample')}}"
-        }).appendTo($td);
 
         $("<a/>",{
           text: " ({{_('Instruction')}})",
           target: "_blank",
-          href: "{{url('custom_checker_sample')}}"
+          href: "{{url('test_data_instructions')}}"
         }).appendTo($ioi_signature.parent());
 
         $checker.change(function () {
           $tr_checker.toggle($checker.val() == 'custom').change();
           $tr_validator.toggle($checker.val() == 'customcpp' || $checker.val() == 'testlib').change();
           $tr_interactive.toggle($checker.val() == 'interact' || $checker.val() == 'interacttl').change();
-
-          $sample.toggle(['custom', 'customcpp', 'interact', 'interacttl'].includes($checker.val())).change();
         }).change();
 
         $ioi_signature.change(function() {
@@ -797,6 +789,15 @@
       <li>{{ data_form.instance.feedback }}</li>
     </ul>
   {% endif %}
+
+  <div class="help-section">
+    <i class="fa fa-info-circle"></i>
+    <strong>{{ _('Test Data Setup') }}:</strong>
+    <a href="{{ url('test_data_instructions') }}" target="_blank">
+      {{ _('View Instructions') }} <i class="fa fa-external-link"></i>
+    </a>
+  </div>
+
   <form class="problem-data-form" action="" method="POST" enctype="multipart/form-data">
     {% csrf_token %}
     {{ cases_formset.management_form }}

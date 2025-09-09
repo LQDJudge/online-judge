@@ -1830,6 +1830,13 @@ ul.problem-list {
     background-color: var(--darkreader-background-28a745, #208637);
     color: var(--darkreader-text-ffffff, #e8e6e3);
 }
+.help-section {
+    background-color: var(--darkreader-background-f8f9fa, #1b1e1f);
+    border-left-color: var(--darkreader-border-007bff, #0056b3);
+}
+.help-section .fa-info-circle {
+    color: var(--darkreader-text-007bff, #33a2ff);
+}
 .admin a,
 .admin {
     color: var(--darkreader-text-000000, #e8e6e3) !important;
@@ -3829,6 +3836,20 @@ div.dmmd-preview-stale {
     border-color: initial;
     border-style: initial;
     border-width: 0px;
+}
+.village-iframe {
+    background-color: var(--darkreader-background-0000003d, rgba(0, 0, 0, 0.24));
+    background-image: initial;
+    border-color: initial;
+    border-style: none;
+    border-width: initial;
+    color-scheme: dark;
+}
+.village-iframe > .village-spinner {
+    border-bottom-color: transparent;
+    border-left-color: transparent;
+    border-right-color: var(--darkreader-border-000000, #8c8273);
+    border-top-color: var(--darkreader-border-000000, #8c8273);
 }
 .recently-attempted ul {
     list-style-image: initial;

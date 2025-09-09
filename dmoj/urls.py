@@ -1209,11 +1209,6 @@ urlpatterns = [
     ),
     re_path(r"^about/", about.about, name="about"),
     re_path(
-        r"^custom_checker_sample/",
-        about.custom_checker_sample,
-        name="custom_checker_sample",
-    ),
-    re_path(
         r"^docs/",
         include(
             [
@@ -1223,9 +1218,9 @@ urlpatterns = [
                     name="contest_format_instructions",
                 ),
                 re_path(
-                    r"^custom_checker_sample/$",
-                    docs.custom_checker_sample,
-                    name="custom_checker_sample",
+                    r"^test_data_instructions/$",
+                    docs.test_data_instructions,
+                    name="test_data_instructions",
                 ),
             ]
         ),
