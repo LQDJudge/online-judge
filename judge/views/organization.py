@@ -34,6 +34,7 @@ from django.views.generic.detail import (
 )
 from django.core.paginator import Paginator
 from django.contrib.sites.shortcuts import get_current_site
+from django.urls.exceptions import NoReverseMatch
 from reversion import revisions
 
 from judge.forms import (
@@ -1138,8 +1139,18 @@ class EditOrganizationContest(
         return _("Edit %s") % self.contest.key
 
     def get_content_title(self):
-        href = reverse("contest_view", args=[self.contest.key])
-        return mark_safe(_("Edit") + f' <a href="{href}">{self.contest.key}</a>')
+        try:
+            href = reverse("contest_view", args=[self.contest.key])
+            return mark_safe(_("Edit") + f' <a href="{href}">{self.contest.key}</a>')
+        except NoReverseMatch:
+            if self.contest.pk:
+                original_contest = Contest.objects.get(pk=self.contest.pk)
+                href = reverse("contest_view", args=[original_contest.key])
+                return mark_safe(
+                    _("Edit") + f' <a href="{href}">{original_contest.key}</a>'
+                )
+            else:
+                return _("Edit contest")
 
     def get_object(self):
         return self.contest
@@ -1173,7 +1184,11 @@ class EditOrganizationContest(
         return context
 
     def get_success_url(self):
-        return self.request.path
+        # Use the updated contest key in case it was changed
+        return reverse(
+            "organization_contest_edit",
+            args=[self.organization.id, self.organization.slug, self.object.key],
+        )
 
 
 class AddOrganizationBlog(
