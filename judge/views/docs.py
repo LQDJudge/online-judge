@@ -57,19 +57,19 @@ def contest_format_instructions(request):
     )
 
 
-def custom_checker_sample(request):
+def test_data_instructions(request):
     """
-    Display custom checker sample with language support.
+    Display test data instructions with language support.
     """
     content, lang_code = get_localized_markdown_content(
-        "custom-checker-sample", request
+        "test-data-instructions", request
     )
 
     return render(
         request,
-        "docs/custom-checker-sample.html",
+        "docs/test-data-instructions.html",
         {
-            "title": _("Custom Checker Sample"),
+            "title": _("Test Data Instructions"),
             "content": content,
             "language": lang_code,
         },
