@@ -1,0 +1,400 @@
+@charset "UTF-8";
+@use "vars" as *;
+@use "sass:color";
+
+// User upload system styles - wrapped in parent class to avoid affecting other pages
+.user-upload-page {
+    .user-files-container {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 20px;
+    }
+
+    // Top section with storage and upload side by side
+    .top-section {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+
+        @media (max-width: 768px) {
+            flex-direction: column;
+        }
+    }
+
+    .storage-summary {
+        flex: 1;
+        padding: 15px;
+        background: $background_light_gray;
+        border-radius: $widget_border_radius;
+        border: 1px solid $border_gray;
+
+        h4 {
+            margin: 0 0 10px 0;
+            color: $widget_black;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        p {
+            margin: 0;
+            font-size: 13px;
+            color: $widget_black;
+            opacity: 0.8;
+        }
+    }
+
+    .storage-bar {
+        width: 100%;
+        height: 20px;
+        background: $background_gray;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+
+    .storage-used {
+        height: 100%;
+        background: linear-gradient(90deg, $theme_color, color.adjust($theme_color, $lightness: 8%));
+        transition: width 0.3s ease;
+    }
+
+    .upload-section {
+        flex: 2;
+        padding: 15px;
+        background: $background_light_gray;
+        border-radius: 8px;
+        border: 2px dashed $border_gray;
+
+        h4 {
+            margin: 0 0 10px 0;
+            color: $widget_black;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        small {
+            display: block;
+            margin-top: 8px;
+            color: $widget_black;
+            opacity: 0.7;
+            font-size: 12px;
+        }
+    }
+
+    .upload-controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    #file-input {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid $border_gray;
+        border-radius: 4px;
+        background: white;
+    }
+
+    #upload-status {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 4px;
+        display: none;
+
+        &.success {
+            background: rgba(40, 167, 69, 0.1);
+            color: green;
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            display: block;
+        }
+
+        &.error {
+            background: rgba($announcement_red, 0.1);
+            color: $announcement_red;
+            border: 1px solid rgba($announcement_red, 0.3);
+            display: block;
+        }
+    }
+
+    // File Controls
+    .file-controls {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: white;
+        border: 1px solid $border_gray;
+        border-radius: $widget_border_radius;
+    }
+
+    .search-box {
+        flex: 1;
+        position: relative;
+
+        i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: $widget_black;
+        }
+    }
+
+    #file-search {
+        width: 100%;
+        padding: 8px 8px 8px 35px;
+        border: 1px solid $border_gray;
+        border-radius: 4px;
+        background: white;
+    }
+
+    .sort-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    #sort-select {
+        padding: 8px;
+        border: 1px solid $border_gray;
+        border-radius: 4px;
+        background: white;
+    }
+
+    .view-controls {
+        display: flex;
+        gap: 5px;
+    }
+
+    .view-btn {
+        padding: 8px 12px;
+        border: 1px solid $border_gray;
+        background: white;
+        cursor: pointer;
+        border-radius: 4px;
+        color: $widget_black;
+
+        &.active {
+            background: $theme_color;
+            color: white;
+            border-color: $theme_color;
+        }
+
+        &:hover:not(.active) {
+            background: $background_light_gray;
+        }
+    }
+
+    // Grid View
+    .view-grid .files-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    // List View
+    .view-list .files-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .view-list .file-card {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid $border_gray;
+        border-radius: $widget_border_radius;
+    }
+
+    .view-list .file-icon {
+        margin-right: 15px;
+
+        i {
+            font-size: 1.5em !important;
+        }
+    }
+
+    .view-list .file-info {
+        flex: 1;
+    }
+
+    .view-list .file-actions {
+        display: flex;
+        gap: 5px;
+    }
+
+    // File Cards
+    .file-card {
+        border: 1px solid $border_gray;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        transition: all 0.3s;
+        background: white;
+
+        &:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        &.removing {
+            opacity: 0.5;
+            transform: scale(0.9);
+        }
+
+        &.hidden {
+            display: none !important;
+        }
+    }
+
+    .file-icon {
+        margin-bottom: 10px;
+        color: $widget_black;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .image-thumbnail {
+        width: 100%;
+        height: 80px;
+        overflow: hidden;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: $background_light_gray;
+
+        img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+    }
+
+    .view-list {
+        .file-icon {
+            height: 40px;
+            width: 60px;
+            margin-right: 15px;
+        }
+
+        .image-thumbnail {
+            height: 40px;
+            width: 60px;
+        }
+    }
+
+    .file-name {
+        font-weight: bold;
+        margin-bottom: 5px;
+        word-break: break-word;
+        color: $widget_black;
+    }
+
+    .file-meta {
+        font-size: 12px;
+        color: $widget_black;
+        opacity: 0.7;
+        margin-bottom: 10px;
+    }
+
+    .file-actions {
+        display: flex;
+        justify-content: center;
+        gap: 5px;
+    }
+
+    .btn-action {
+        padding: 5px 10px;
+        border: 1px solid $border_gray;
+        border-radius: 4px;
+        background: white;
+        color: $widget_black;
+        cursor: pointer;
+        text-decoration: none;
+
+        &:hover {
+            background: $background_light_gray;
+            color: $widget_black;
+        }
+
+        &.copy-url-btn {
+            color: #28a745;
+
+            &:hover {
+                background: rgba(40, 167, 69, 0.1);
+                border-color: #28a745;
+            }
+        }
+
+        &.rename-btn {
+            color: #007bff;
+
+            &:hover {
+                background: rgba(0, 123, 255, 0.1);
+                border-color: #007bff;
+            }
+        }
+
+        &.btn-danger {
+            color: $announcement_red;
+
+            &:hover {
+                background: rgba($announcement_red, 0.1);
+                border-color: $announcement_red;
+            }
+        }
+    }
+
+    .no-files {
+        text-align: center;
+        padding: 50px;
+        color: $widget_black;
+        opacity: 0.7;
+
+        i {
+            color: $widget_black;
+            opacity: 0.5;
+        }
+    }
+
+    // Upload button - use existing action-btn styles
+    #upload-btn {
+        // Will use action-btn class from base.scss
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    }
+
+    // Mobile optimizations
+    @media (max-width: 799px) {
+        .file-controls {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .search-box {
+            width: 100%;
+        }
+
+        .sort-controls {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .view-controls {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .view-grid .files-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+        }
+    }
+}

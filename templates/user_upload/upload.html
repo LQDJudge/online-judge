@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block media %}
+  <!-- Styles are in resources/user_upload.scss which compiles to the global style.css -->
+{% endblock %}
+
+{% block js_media %}
+  <script type="text/javascript">
+    $(document).ready(function() {
+      // Search functionality
+      $('#file-search').on('input', function() {
+        var searchTerm = $(this).val().toLowerCase();
+        $('.file-card').each(function() {
+          var filename = $(this).data('filename').toLowerCase();
+          if (filename.includes(searchTerm)) {
+            $(this).removeClass('hidden');
+          } else {
+            $(this).addClass('hidden');
+          }
+        });
+      });
+
+      // Sort functionality
+      $('#sort-select').on('change', function() {
+        var sortBy = $(this).val();
+        var $container = $('#files-grid');
+        var $cards = $container.find('.file-card').toArray();
+
+        $cards.sort(function(a, b) {
+          var aVal, bVal;
+
+          switch(sortBy) {
+            case 'name-asc':
+              aVal = $(a).data('filename').toLowerCase();
+              bVal = $(b).data('filename').toLowerCase();
+              return aVal.localeCompare(bVal);
+            case 'name-desc':
+              aVal = $(a).data('filename').toLowerCase();
+              bVal = $(b).data('filename').toLowerCase();
+              return bVal.localeCompare(aVal);
+            case 'date-asc':
+              aVal = parseFloat($(a).data('date'));
+              bVal = parseFloat($(b).data('date'));
+              return aVal - bVal;
+            case 'date-desc':
+              aVal = parseFloat($(a).data('date'));
+              bVal = parseFloat($(b).data('date'));
+              return bVal - aVal;
+            case 'size-asc':
+              aVal = parseInt($(a).data('size'));
+              bVal = parseInt($(b).data('size'));
+              return aVal - bVal;
+            case 'size-desc':
+              aVal = parseInt($(a).data('size'));
+              bVal = parseInt($(b).data('size'));
+              return bVal - aVal;
+          }
+        });
+
+        $container.empty().append($cards);
+      });
+
+      // View toggle
+      $('.view-btn').on('click', function() {
+        $('.view-btn').removeClass('active');
+        $(this).addClass('active');
+
+        var view = $(this).data('view');
+        $('#files-container').removeClass('view-grid view-list').addClass('view-' + view);
+      });
+
+      // AJAX Upload
+      $('#upload-form').on('submit', function(e) {
+        e.preventDefault();
+
+        var formData = new FormData(this);
+        var uploadBtn = $('#upload-btn');
+        var statusDiv = $('#upload-status');
+        var fileInput = $('#file-input');
+
+        // Disable button during upload
+        uploadBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> {{ _("Uploading...")|escapejs }}');
+        statusDiv.removeClass('success error').hide();
+
+        $.ajax({
+          url: '{{ url("custom_file_upload") }}',
+          type: 'POST',
+          data: formData,
+          processData: false,
+          contentType: false,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          success: function(response) {
+            if (response.success) {
+              statusDiv.addClass('success').text(response.message).show();
+
+              // If in iframe, send message to parent
+              if (window.parent !== window) {
+                var fileName = fileInput[0].files[0].name;
+                var fileUrl = '/media/user_uploads/' + '{{ request.user.username }}' + '/' + fileName;
+                var isImage = /\.(jpg|jpeg|png|gif|bmp|svg)$/i.test(fileName);
+
+                window.parent.postMessage({
+                  type: 'file-uploaded',
+                  url: fileUrl,
+                  name: fileName,
+                  isImage: isImage
+                }, window.location.origin);
+              }
+
+              fileInput.val('');
+
+              // Reload the page to show new file
+              setTimeout(function() {
+                location.reload();
+              }, 1000);
+            } else {
+              statusDiv.addClass('error').text(response.error || '{{ _("Upload failed")|escapejs }}').show();
+            }
+          },
+          error: function(xhr) {
+            var errorMsg = '{{ _("Upload failed")|escapejs }}';
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+              errorMsg = xhr.responseJSON.error;
+            }
+            statusDiv.addClass('error').text(errorMsg).show();
+          },
+          complete: function() {
+            uploadBtn.prop('disabled', false).html('<i class="fa fa-upload"></i> {{ _("Upload")|escapejs }}');
+          }
+        });
+      });
+
+      // Delete file
+      $(document).on('click', '.delete-btn', function() {
+        var filename = $(this).data('filename');
+        if (!confirm('{{ _("Delete")|escapejs }} ' + filename + '?')) {
+          return;
+        }
+
+        var card = $(this).closest('.file-card');
+        card.addClass('removing');
+
+        $.ajax({
+          url: '/upload/my-files/delete/' + encodeURIComponent(filename) + '/',
+          type: 'POST',
+          data: {
+            csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+          },
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          success: function(response) {
+            if (response.success) {
+              card.fadeOut(300, function() {
+                $(this).remove();
+
+                // Update file count
+                var currentCount = $('.file-card:not(.removing)').length;
+                $('#file-count').text(currentCount);
+
+                // Check if no files left
+                if (currentCount === 0) {
+                  $('#files-container').html(
+                    '<div class="no-files">' +
+                    '<i class="fa fa-folder-open fa-5x"></i>' +
+                    '<p>{{ _("You haven\'t uploaded any files yet.")|escapejs }}</p>' +
+                    '</div>'
+                  );
+                }
+              });
+
+              // Update storage info
+              if (response.storage) {
+                $('.storage-used').css('width', response.storage.percentage + '%');
+                $('#storage-text').text(response.storage.used_formatted + ' / ' + response.storage.max_formatted + ' (' + response.storage.percentage + '%)');
+              }
+            } else {
+              card.removeClass('removing');
+              alert(response.error || '{{ _("Delete failed")|escapejs }}');
+            }
+          },
+          error: function() {
+            card.removeClass('removing');
+            alert('{{ _("Delete failed")|escapejs }}');
+          }
+        });
+      });
+
+      // Copy URL to clipboard
+      $(document).on('click', '.copy-url-btn', function() {
+        var url = window.location.origin + $(this).data('url');
+        var $btn = $(this);
+
+        // Create temporary input element
+        var $temp = $('<input>');
+        $('body').append($temp);
+        $temp.val(url).select();
+
+        try {
+          document.execCommand('copy');
+          // Show success feedback
+          var originalHtml = $btn.html();
+          $btn.html('<i class="fa fa-check"></i>');
+          setTimeout(function() {
+            $btn.html(originalHtml);
+          }, 2000);
+        } catch(err) {
+          alert('{{ _("Failed to copy URL")|escapejs }}');
+        }
+
+        $temp.remove();
+      });
+
+      // Rename file
+      $(document).on('click', '.rename-btn', function() {
+        var oldName = $(this).data('filename');
+        var $card = $(this).closest('.file-card');
+        var $nameDiv = $card.find('.file-name');
+
+        // Extract name without extension for suggestion
+        var nameParts = oldName.split('.');
+        var extension = nameParts.length > 1 ? '.' + nameParts.pop() : '';
+        var baseName = nameParts.join('.');
+
+        var newName = prompt('{{ _("Enter new filename:")|escapejs }}', baseName);
+
+        if (newName && newName !== baseName) {
+          // Add extension if not provided
+          if (extension && !newName.endsWith(extension)) {
+            newName = newName + extension;
+          }
+
+          $.ajax({
+            url: '/upload/my-files/rename/' + encodeURIComponent(oldName) + '/',
+            type: 'POST',
+            data: {
+              csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val(),
+              new_name: newName
+            },
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+              if (response.success) {
+                // Update the UI with new filename
+                $nameDiv.text(response.new_name.substring(0, 30));
+                $nameDiv.attr('title', response.new_name);
+
+                // Update data attributes
+                $card.attr('data-filename', response.new_name);
+                $card.find('.rename-btn').attr('data-filename', response.new_name);
+                $card.find('.delete-btn').attr('data-filename', response.new_name);
+                $card.find('.copy-url-btn').attr('data-url', response.new_url);
+
+                // Update download link
+                var newDownloadUrl = '{{ url("user_file_download", "__FILENAME__") }}'.replace('__FILENAME__', response.new_name);
+                $card.find('a[href*="download"]').attr('href', newDownloadUrl);
+
+                // Update view link
+                $card.find('a[target="_blank"]').attr('href', response.new_url);
+
+                // Show success message
+                var $status = $('<div class="rename-success">{{ _("File renamed successfully!")|escapejs }}</div>');
+                $status.css({
+                  'position': 'fixed',
+                  'top': '20px',
+                  'right': '20px',
+                  'background': '#28a745',
+                  'color': 'white',
+                  'padding': '10px 20px',
+                  'border-radius': '4px',
+                  'z-index': '9999'
+                });
+                $('body').append($status);
+                setTimeout(function() {
+                  $status.fadeOut(function() {
+                    $(this).remove();
+                  });
+                }, 3000);
+              } else {
+                alert(response.error || '{{ _("Rename failed")|escapejs }}');
+              }
+            },
+            error: function(xhr) {
+              var errorMsg = '{{ _("Rename failed")|escapejs }}';
+              if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMsg = xhr.responseJSON.error;
+              }
+              alert(errorMsg);
+            }
+          });
+        }
+      });
+
+      // Add click handler for file cards to send URL to parent if in iframe
+      if (window.parent !== window) {
+        $(document).on('click', '.file-card .copy-url-btn, .file-card a[target="_blank"]', function(e) {
+          var url = $(this).data('url') || $(this).attr('href');
+          var filename = $(this).closest('.file-card').data('filename');
+          var isImage = /\.(jpg|jpeg|png|gif|bmp|svg)$/i.test(filename);
+
+          // Send message to parent
+          window.parent.postMessage({
+            type: 'file-selected',
+            url: url,
+            name: filename,
+            isImage: isImage
+          }, window.location.origin);
+
+          // If it's the view link, prevent default to avoid opening in iframe
+          if ($(this).is('a')) {
+            e.preventDefault();
+          }
+        });
+      }
+    });
+  </script>
+{% endblock %}
+
+{% block body %}
+  <div class="user-upload-page">
+    <div class="user-files-container">
+    <!-- Top Section with Storage and Upload side by side -->
+      <div class="top-section">
+      <!-- Storage Summary -->
+        <div class="storage-summary">
+          <h4>{{ _("Storage Usage") }}</h4>
+          <div class="storage-bar">
+            <div class="storage-used" style="width: {{ storage.percentage }}%"></div>
+          </div>
+          <p>
+            <span id="storage-text">{{ storage.used|filesizeformat }} / {{ storage.max|filesizeformat }} ({{ storage.percentage }}%)</span>
+            <br>
+            {{ _("Files:") }} <span id="file-count">{{ files|length }}</span> / {{ max_files }}
+          </p>
+        </div>
+
+      <!-- Upload Form -->
+        <div class="upload-section">
+          <h4>{{ _("Upload Files") }}</h4>
+          <form id="upload-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="upload-controls">
+              <input type="file" id="file-input" name="file" required>
+              <button type="submit" class="action-btn" id="upload-btn">
+                <i class="fa fa-upload"></i> {{ _("Upload") }}
+              </button>
+            </div>
+            <small>{{ _("Max: ") }}{{ max_file_size|filesizeformat }} {{ _("per file, ") }}{{ max_files }} {{ _("files total") }}</small>
+          </form>
+          <div id="upload-status"></div>
+        </div>
+      </div>
+
+  <!-- File Controls -->
+      <div class="file-controls">
+        <div class="search-box">
+          <i class="fa fa-search"></i>
+          <input type="text" id="file-search" placeholder="{{ _('Search files...') }}">
+        </div>
+        <div class="sort-controls">
+          <label>{{ _("Sort by:") }}</label>
+          <select id="sort-select">
+            <option value="name-asc">{{ _("Name (A-Z)") }}</option>
+            <option value="name-desc">{{ _("Name (Z-A)") }}</option>
+            <option value="date-desc" selected>{{ _("Date (Newest)") }}</option>
+            <option value="date-asc">{{ _("Date (Oldest)") }}</option>
+            <option value="size-desc">{{ _("Size (Largest)") }}</option>
+            <option value="size-asc">{{ _("Size (Smallest)") }}</option>
+          </select>
+        </div>
+        <div class="view-controls">
+          <button class="view-btn active" data-view="grid"><i class="fa fa-th"></i></button>
+          <button class="view-btn" data-view="list"><i class="fa fa-list"></i></button>
+        </div>
+      </div>
+
+  <!-- Files List -->
+      <div id="files-container" class="view-grid">
+        {% if files %}
+          <div class="files-grid" id="files-grid">
+            {% for file in files %}
+              <div class="file-card" data-filename="{{ file.name }}" data-size="{{ file.size }}" data-date="{{ file.modified.timestamp() }}">
+                <div class="file-icon">
+                  {% if 'image' in file.mime_type %}
+                    <div class="image-thumbnail">
+                      <img src="{{ file.url }}" alt="{{ file.name }}" loading="lazy">
+                    </div>
+                  {% elif 'pdf' in file.mime_type %}
+                    <i class="fa fa-file-pdf fa-3x"></i>
+                  {% elif 'zip' in file.mime_type or 'compressed' in file.mime_type %}
+                    <i class="fa fa-file-archive fa-3x"></i>
+                  {% elif 'text' in file.mime_type %}
+                    <i class="fa fa-file-alt fa-3x"></i>
+                  {% else %}
+                    <i class="fa fa-file fa-3x"></i>
+                  {% endif %}
+                </div>
+                <div class="file-info">
+                  <div class="file-name" title="{{ file.name }}">{{ file.name[:30] }}</div>
+                  <div class="file-meta">
+                    <span class="file-size">{{ file.size|filesizeformat }}</span> •
+                    <span class="file-date">{{ file.modified.strftime('%Y-%m-%d %H:%M') }}</span>
+                  </div>
+                </div>
+                <div class="file-actions">
+                  <a href="{{ file.url }}" target="_blank" class="btn-action" title="{{ _('View') }}">
+                    <i class="fa fa-eye"></i>
+                  </a>
+                  <a href="{{ url('user_file_download', file.name) }}" class="btn-action" title="{{ _('Download') }}">
+                    <i class="fa fa-download"></i>
+                  </a>
+                  <button class="btn-action copy-url-btn" data-url="{{ file.url }}" title="{{ _('Copy URL') }}">
+                    <i class="fa fa-link"></i>
+                  </button>
+                  <button class="btn-action rename-btn" data-filename="{{ file.name }}" title="{{ _('Rename') }}">
+                    <i class="fa fa-edit"></i>
+                  </button>
+                  <button class="btn-action btn-danger delete-btn" data-filename="{{ file.name }}" title="{{ _('Delete') }}">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="no-files">
+            <i class="fa fa-folder-open fa-5x"></i>
+            <p>{{ _("You haven't uploaded any files yet.") }}</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+{% endblock %}

@@ -72,7 +72,7 @@
     {% endif %}
 
     {% if use_darkmode %}
-      <link rel="stylesheet" href="{{ static('darkmode.css') }}">
+      <link rel="stylesheet" href="{{ static('darkmode.min.css') }}">
       <link rel="stylesheet" href="{{ static('darkmode-svg.css') }}">
     {% endif %}
 
@@ -209,6 +209,11 @@
               <a href="{{ url('user_bookmark') }}">
                 <div class="dropdown-item"><i class="fa fa-bookmark"></i> {{ _('Bookmarks') }}</div>
               </a>
+              {% if request.user|can_upload_files %}
+                <a href="{{ url('custom_file_upload') }}">
+                  <div class="dropdown-item"><i class="fa fa-upload"></i> {{ _('My Files') }}</div>
+                </a>
+              {% endif %}
               <a href="{{ url('user_edit_profile') }}">
                 <div class="dropdown-item"><i class="fa fa-gear"></i> {{ _('Settings') }}</div>
               </a>

@@ -15,7 +15,9 @@ sass_processed
 <desired bridge log path>
 node_modules/
 package-lock.json
+package.json
 /src
 
 .DS_Store
 CLAUDE.md
+Roo.md

@@ -23,6 +23,7 @@ from . import (
     spaceless,
     timedelta,
     comment,
+    upload,
 )
 from . import registry
 

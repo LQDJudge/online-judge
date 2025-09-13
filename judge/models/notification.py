@@ -88,7 +88,7 @@ def make_notification(to_user_ids, category, html_link, author):
         unseen_notifications_count.dirty(user)
 
 
-@cache_wrapper(prefix="unc")
+@cache_wrapper(prefix="unc", expected_type=int)
 def unseen_notifications_count(profile):
     try:
         return NotificationProfile.objects.get(user=profile).unread_count

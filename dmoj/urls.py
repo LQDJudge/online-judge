@@ -1356,7 +1356,26 @@ urlpatterns = [
     re_path(
         r"^resolver/(?P<contest>\w+)", resolver.Resolver.as_view(), name="resolver"
     ),
+    # User file upload and management
     re_path(r"^upload/$", custom_file_upload.file_upload, name="custom_file_upload"),
+    re_path(
+        r"^upload/my-files/$", custom_file_upload.user_file_list, name="user_file_list"
+    ),
+    re_path(
+        r"^upload/my-files/delete/(?P<filename>.+)/$",
+        custom_file_upload.user_file_delete,
+        name="user_file_delete",
+    ),
+    re_path(
+        r"^upload/my-files/download/(?P<filename>.+)/$",
+        custom_file_upload.user_file_download,
+        name="user_file_download",
+    ),
+    re_path(
+        r"^upload/my-files/rename/(?P<filename>.+)/$",
+        custom_file_upload.user_file_rename,
+        name="user_file_rename",
+    ),
 ] + url_static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if "debug_toolbar.middleware.DebugToolbarMiddleware" in settings.MIDDLEWARE:
