@@ -7664,7 +7664,7 @@ msgstr "tệp tổng cộng"
 
 #: templates/user_upload/upload.html:361
 msgid "Search files..."
-msgstr "Tìm bài tập..."
+msgstr "Tìm files..."
 
 #: templates/user_upload/upload.html:364
 msgid "Sort by:"
@@ -7672,11 +7672,11 @@ msgstr "Sắp xếp theo"
 
 #: templates/user_upload/upload.html:366
 msgid "Name (A-Z)"
-msgstr "Tên (tăng)"
+msgstr "Tên (A-Z)"
 
 #: templates/user_upload/upload.html:367
 msgid "Name (Z-A)"
-msgstr "Tên (tăng)"
+msgstr "Tên (Z-A)"
 
 #: templates/user_upload/upload.html:368
 msgid "Date (Newest)"
