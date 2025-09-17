@@ -1,4 +1,3 @@
-
 .contest-problemset {
     html {
         background: white;
@@ -93,6 +92,23 @@
         .info-block .fa-file {
             background: rgba(0, 123, 255, 0.15);
             color: #004085;
+        }
+    }
+
+    // Contest page links styling - keep simple
+    .contest-problems,
+    .problems {
+        a {
+            color: #007bff;
+            text-decoration: none;
+
+            &:hover {
+                text-decoration: underline;
+            }
+
+            .fa {
+                margin-right: 0.5em;
+            }
         }
     }
 
@@ -198,18 +214,3 @@
     }
 }
 
-// Contest page links styling - keep simple
-.contest-problems, .problems {
-    a {
-        color: #007bff;
-        text-decoration: none;
-
-        &:hover {
-            text-decoration: underline;
-        }
-
-        .fa {
-            margin-right: 0.5em;
-        }
-    }
-}
