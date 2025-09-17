@@ -1256,6 +1256,9 @@ class ProblemEdit(
         if hasattr(self, "object"):
             kwargs.update({"instance": self.object})
 
+        # Pass the user to the form for validation
+        kwargs["user"] = self.request.user
+
         # Set initial memory unit based on current memory_limit
         if self.object and self.object.memory_limit:
             # If memory is divisible by 1024, show in MB

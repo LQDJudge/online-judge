@@ -1,13 +1,18 @@
 import logging
 import json
 
+from django.conf import settings
 from django.views.generic import ListView
-from django.utils.translation import gettext as _, gettext_lazy
+from django.utils.translation import gettext as _, gettext_lazy, get_language
 from django.db import transaction
 from django.db.models import Count, Q
 from django.http import HttpResponseForbidden, JsonResponse
 from django.urls import reverse
 from django.shortcuts import render
+
+from judge.utils.strings import safe_float_or_none, safe_int_or_none
+from judge.models.problem import get_distinct_problem_points
+from judge.models import Profile
 
 from judge.utils.diggpaginator import DiggPaginator
 from judge.models import Problem, ProblemType
@@ -110,16 +115,125 @@ class InternalProblemQueue(InternalView, ListView):
             **kwargs,
         )
 
+    def setup_problem_filter(self, request):
+        """Setup filter parameters similar to ProblemList.setup_problem_list"""
+        self.search_query = None
+        self.author_query = []
+        self.point_start = safe_float_or_none(request.GET.get("point_start"))
+        self.point_end = safe_float_or_none(request.GET.get("point_end"))
+
+        # Handle author filter
+        if "authors" in request.GET:
+            try:
+                self.author_query = list(map(int, request.GET.getlist("authors")))
+            except ValueError:
+                pass
+
     def get_queryset(self):
+        """Enhanced queryset with filtering similar to ProblemList.get_normal_queryset"""
+        # Setup filters
+        self.setup_problem_filter(self.request)
+
+        # Base queryset - public problems only
         queryset = Problem.objects.filter(is_public=True, is_organization_private=False)
-        return queryset.order_by("-id")
+
+        # Apply search filter (same logic as ProblemList)
+        if "search" in self.request.GET:
+            self.search_query = query = " ".join(
+                self.request.GET.getlist("search")
+            ).strip()
+            if query:
+                substr_queryset = queryset.filter(
+                    Q(code__icontains=query)
+                    | Q(name__icontains=query)
+                    | Q(
+                        translations__name__icontains=query,
+                        translations__language=get_language(),
+                    )
+                )
+                if settings.ENABLE_FTS:
+                    queryset = (
+                        queryset.search(query, queryset.BOOLEAN).extra(
+                            order_by=["-relevance"]
+                        )
+                        | substr_queryset
+                    )
+                else:
+                    queryset = substr_queryset
+
+        # Apply author filter
+        if self.author_query:
+            queryset = queryset.filter(authors__in=self.author_query)
+
+        # Apply point range filter
+        if self.point_start is not None:
+            queryset = queryset.filter(points__gte=self.point_start)
+        if self.point_end is not None:
+            queryset = queryset.filter(points__lte=self.point_end)
+
+        return queryset.distinct().order_by("-id")
+
+    def get_noui_slider_points(self):
+        """Get point range data for slider (same logic as ProblemList)"""
+        points = get_distinct_problem_points()
+        if not points:
+            return 0, 0, {}
+        if len(points) == 1:
+            return (
+                points[0],
+                points[0],
+                {
+                    "min": points[0] - 1,
+                    "max": points[0] + 1,
+                },
+            )
+
+        start, end = points[0], points[-1]
+        if self.point_start is not None:
+            start = self.point_start
+        if self.point_end is not None:
+            end = self.point_end
+        points_map = {0.0: "min", 1.0: "max"}
+        size = len(points) - 1
+        return (
+            start,
+            end,
+            {
+                points_map.get(i / size, "%.2f%%" % (100 * i / size,)): j
+                for i, j in enumerate(points)
+            },
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["page_type"] = "problem_queue"
         context["title"] = self.title
-        context["page_prefix"] = self.request.path + "?page="
-        context["first_page_href"] = self.request.path
+
+        # Add filter context data
+        context["search_query"] = getattr(self, "search_query", None)
+        context["author_query"] = Profile.objects.filter(
+            id__in=getattr(self, "author_query", [])
+        )
+
+        # Point range context
+        (
+            context["point_start"],
+            context["point_end"],
+            context["point_values"],
+        ) = self.get_noui_slider_points()
+
+        # Build pagination URLs that preserve filter parameters
+        query_params = self.request.GET.copy()
+        if "page" in query_params:
+            del query_params["page"]
+
+        if query_params:
+            query_string = query_params.urlencode()
+            context["page_prefix"] = self.request.path + "?" + query_string + "&page="
+            context["first_page_href"] = self.request.path + "?" + query_string
+        else:
+            context["page_prefix"] = self.request.path + "?page="
+            context["first_page_href"] = self.request.path
 
         return context
 
