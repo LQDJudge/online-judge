@@ -82,6 +82,8 @@ ALLOWED_TAGS = list(bleach.sanitizer.ALLOWED_TAGS) + [
     "br",
     "details",
     "summary",
+    "video",
+    "source",
 ]
 
 ALLOWED_ATTRS = [
@@ -97,6 +99,7 @@ ALLOWED_ATTRS = [
     "allow",
     "allowfullscreen",
     "loading",
+    "controls",
 ]
 
 

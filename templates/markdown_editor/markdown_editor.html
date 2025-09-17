@@ -1,12 +1,14 @@
-{% set layout='no_wrapper' %}
 {% extends "base.html" %}
 
 {% block media %}
+  {% compress css %}
+    {{ form.media.css }}
+  {% endcompress %}
   <style>
-    body{
+    body {
       overflow: hidden;
     }
-    #content{
+    #content {
       width: 100%;
       height: calc(100vh - 50px);
       margin-bottom: 0;
@@ -15,73 +17,52 @@
     #content-body {
       padding: 0;
       height: 100%;
-      display: flex;
     }
 
-    .wmd-preview{
-      float: right;
+    @media (min-width: 800px) {
+      #content.wrapper {
+        padding: 0;
+        border-radius: 0;
+      }
+    }
+    .wmd-wrapper {
+      display: flex;
+      height: 100%;
+    }
+    .wmd-panel:first-child {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .wmd-input {
+      flex: 1;
+      width: 100%;
+      resize: none;
+      border: none;
+      padding: 15px;
+      overflow-y: auto;
+    }
+    div.dmmd-no-button:not(.dmmd-preview-has-content) {
+      display: block;
+    }
+    .wmd-preview {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      height: calc(100vh - 50px);
       margin-top: 0;
+      border-radius: 0;
     }
-    .width-controller{
-      width: 51%;
-    }
-    #id_body-preview{
-      overflow: scroll;
-    }
-    .form-area {
-      flex-grow: 1;
+
+    /* Hide the update preview button for cleaner interface */
+    .dmmd-preview-update {
+      display: none;
     }
   </style>
 {% endblock %}
 
 {% block js_media %}
-  <script>
-    function debounce(func, wait) {
-      let timeout;
-
-      return function executedFunction(...args) {
-        const context = this;
-        const later = () => {
-          clearTimeout(timeout);
-          func.apply(context, args);
-        };
-
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-      };
-    }
-
-    function update_preview() {
-      $.ajax({
-        url: "{{url('blog_preview')}}",
-        type: 'POST',
-        data: {
-          preview: $(this).val()
-        },
-        success: function(data) {
-          $('#display').html(data);
-          renderKatex();
-          populateCopyButton();
-        },
-        error: function(error) {
-          console.log(error.message);
-        }
-      })
-    }
-
-    $(document).ready(function(){
-      const debounced_update_preview = debounce(update_preview, 250);
-      $("#wmd-input-id_body").on("keyup", debounced_update_preview);
-    });
-  </script>
-
-  <script src="{{ static('pagedown/Markdown.Converter.js') }}"></script>
-  <script src="{{ static('pagedown-extra/pagedown/Markdown.Converter.js') }}"></script>
-  <script src="{{ static('pagedown/Markdown.Sanitizer.js') }}"></script>
-  <script src="{{ static('pagedown/Markdown.Editor.js') }}"></script>
-  <script src="{{ static('pagedown-extra/Markdown.Extra.js') }}"></script>
-  <script src="{{ static('pagedown_init.js') }}"></script>
-  <script src="{{ static('pagedown_math.js') }}"></script>
+  {{ form.media.js }}
 {% endblock %}
 
 {% block title_row %}
@@ -91,44 +72,8 @@
 {% endblock %}
 
 {% block body %}
-  <div id="new-comment" class="form-area">
-    <input type="hidden" name="parent" id="id_parent">
-    <div class="comment-post-wrapper">
-      <div id="comment-form-body"><div class="wmd-wrapper image-upload-enabled">
-        <div class="wmd-panel">
-          <div id="wmd-button-bar-id_body"></div>
-          <textarea id="wmd-input-id_body" class="wmd-input" name="body" required=""></textarea>
-        </div>
-        <div id="id_body-preview" data-preview-url="{{url('comment_preview')}}" data-textarea-id="wmd-input-id_body" data-timeout="1000" class="wmd-panel wmd-preview dmmd-preview dmmd-no-button">
-          <div class="dmmd-preview-update"><i class="fa fa-refresh"></i> {{_('Update Preview')}}</div>
-          <div class="dmmd-preview-content content-description"></div>
-        </div>
-        <div class="pagedown-image-upload">
-          <h2>{{_('Insert Image')}}</h2>
-          <div class="form-row">
-            <div>
-              <label class="label">{{_('From the web')}}</label>
-              <input class="url-input" type="text" placeholder="http://">
-            </div>
-          </div>
-          <div class="form-row">
-            <div>
-              <label class="label">{{_('From your computer')}}</label>
-              <input class="file-input" type="file" name="image" id="file" data-action="/pagedown/image-upload/" accept="image/*">
-            </div>
-          </div>
-          <div class="submit-row">
-            <div class="submit-loading"></div>
-            <input class="submit-input show" type="submit" value="{{_('Save')}}" name="_addanother">
-            <p class="deletelink-box"><a href="#" class="close-image-upload deletelink">{{_('Cancel')}}</a></p>
-          </div>
-        </div>
-      </div></div>
-    </div>
-  </div>
-
-  <div id="id_body-preview" data-preview-url="{{url('comment_preview')}}" data-textarea-id="wmd-input-id_body" data-timeout="1000" class="width-controller wmd-panel wmd-preview dmmd-preview dmmd-no-button dmmd-preview-has-content">
-    <div class="right-markdown dmmd-preview-content content-description" id="display"></div>
-  </div>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.body }}
+  </form>
 {% endblock %}
-
