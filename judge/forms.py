@@ -778,6 +778,7 @@ class ProblemEditForm(ModelForm):
     memory_unit = forms.ChoiceField(choices=MEMORY_UNITS)
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
         super(ProblemEditForm, self).__init__(*args, **kwargs)
         self.fields["authors"].widget.can_add_related = False
         self.fields["curators"].widget.can_add_related = False
@@ -804,13 +805,37 @@ class ProblemEditForm(ModelForm):
         return code
 
     def clean(self):
-        memory_unit = self.cleaned_data.get("memory_unit", "KB")
-        if memory_unit == "MB" and "memory_limit" in self.cleaned_data:
-            self.cleaned_data["memory_limit"] *= 1024
-        date = self.cleaned_data.get("date")
+        cleaned_data = super().clean()
+        memory_unit = cleaned_data.get("memory_unit", "KB")
+        if memory_unit == "MB" and "memory_limit" in cleaned_data:
+            cleaned_data["memory_limit"] *= 1024
+        date = cleaned_data.get("date")
         if not date or date > timezone.now():
-            self.cleaned_data["date"] = timezone.now()
-        return self.cleaned_data
+            cleaned_data["date"] = timezone.now()
+
+        # Validate when non-admin users try to make problem public without organizations
+        organizations = cleaned_data.get("organizations")
+        is_public = cleaned_data.get("is_public", False)
+
+        if self.user and not self.user.is_superuser and self.instance:
+            # Get the original values from the database
+            original_is_public = self.instance.is_public
+            original_organizations = self.instance.organizations.all()
+
+            # Check if new state is public with no organizations
+            new_has_no_orgs = not organizations or organizations.count() == 0
+            original_has_no_orgs = original_organizations.count() == 0
+
+            if is_public and new_has_no_orgs:
+                # If trying to make public without orgs, old state must be the same
+                if not (original_is_public and original_has_no_orgs):
+                    raise ValidationError(
+                        _(
+                            "You cannot publish this problem without selecting at least one organization."
+                        )
+                    )
+
+        return cleaned_data
 
     def non_field_errors(self):
         # Check if there are any non-field errors
@@ -930,13 +955,30 @@ class ProblemAddForm(ModelForm):
         return code
 
     def clean(self):
-        memory_unit = self.cleaned_data.get("memory_unit", "KB")
-        if memory_unit == "MB" and "memory_limit" in self.cleaned_data:
-            self.cleaned_data["memory_limit"] *= 1024
-        date = self.cleaned_data.get("date")
+        cleaned_data = super().clean()
+        memory_unit = cleaned_data.get("memory_unit", "KB")
+        if memory_unit == "MB" and "memory_limit" in cleaned_data:
+            cleaned_data["memory_limit"] *= 1024
+        date = cleaned_data.get("date")
         if not date or date > timezone.now():
-            self.cleaned_data["date"] = timezone.now()
-        return self.cleaned_data
+            cleaned_data["date"] = timezone.now()
+
+        # Validate when non-admin users try to create public problem without organizations
+        organizations = cleaned_data.get("organizations")
+        is_public = cleaned_data.get("is_public", False)
+
+        if self.user and not self.user.is_superuser:
+            # For new problems, prevent creating public problems without organizations
+            new_has_no_orgs = not organizations or organizations.count() == 0
+
+            if is_public and new_has_no_orgs:
+                raise ValidationError(
+                    _(
+                        "You cannot create a public problem without selecting at least one organization."
+                    )
+                )
+
+        return cleaned_data
 
     class Meta:
         model = Problem
