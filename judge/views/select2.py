@@ -72,7 +72,23 @@ class UserSelect2View(Select2View):
 
 class OrganizationSelect2View(Select2View):
     def get_queryset(self):
-        return Organization.objects.filter(name__icontains=self.term)
+        queryset = Organization.objects.filter(name__icontains=self.term)
+
+        # If user is superuser, show all organizations
+        if self.request.user.is_superuser:
+            return queryset
+
+        # For regular users, only show organizations they are admin of
+        if self.request.user.is_authenticated:
+            profile = self.request.user.profile
+            # Show only organizations where user is an admin
+            admin_org_ids = profile.get_admin_organization_ids()
+            queryset = queryset.filter(id__in=admin_org_ids)
+        else:
+            # Anonymous users should see no organizations
+            queryset = queryset.none()
+
+        return queryset
 
 
 class ProblemSelect2View(Select2View):
