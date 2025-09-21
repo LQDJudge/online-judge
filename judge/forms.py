@@ -21,6 +21,8 @@ from django.forms import (
     BaseModelFormSet,
     FileField,
 )
+from django.utils.html import format_html
+from django.forms.utils import flatatt
 from django.urls import reverse_lazy, reverse
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
@@ -61,6 +63,33 @@ from judge.widgets import (
     ImageWidget,
     DatePickerWidget,
 )
+
+
+class HTMLDisplayWidget(forms.Widget):
+    """Widget that displays HTML content without escaping"""
+
+    def __init__(self, attrs=None):
+        default_attrs = {"readonly": "readonly", "style": "width: 100%"}
+        if attrs:
+            default_attrs.update(attrs)
+        super().__init__(default_attrs)
+
+    def render(self, name, value, attrs=None, renderer=None):
+        if value is None:
+            value = ""
+
+        final_attrs = self.build_attrs(attrs, {"name": name})
+
+        # Create a div that displays the HTML content
+        return format_html(
+            '<div{} style="padding: 8px; border: 1px solid #ccc; background-color: #f9f9f9; border-radius: 4px;">{}</div>',
+            flatatt(final_attrs),
+            value,
+        )
+
+    def value_from_datadict(self, data, files, name):
+        # This widget is read-only, so return None
+        return None
 
 
 def fix_unicode(string, unsafe=tuple("\u202a\u202b\u202d\u202e")):
@@ -766,6 +795,102 @@ class LessonCloneForm(Form):
             return course
         except Course.DoesNotExist:
             raise ValidationError(_("Selected course does not exist."))
+
+
+class AddCourseForm(ModelForm):
+    organizations = forms.ModelMultipleChoiceField(
+        queryset=Organization.objects.none(),
+        required=False,
+        widget=HeavySelect2MultipleWidget(
+            data_view="organization_select2", attrs={"style": "width: 100%"}
+        ),
+        label=_("Organizations"),
+        help_text=_(
+            "Select organizations for this course. Leave empty for public course."
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request", None)
+        self.organization = kwargs.pop("organization", None)
+        super(AddCourseForm, self).__init__(*args, **kwargs)
+
+        # Set organizations queryset based on user permissions
+        if self.request:
+            admin_org_ids = self.request.profile.get_admin_organization_ids()
+            if admin_org_ids:
+                self.fields["organizations"].queryset = Organization.objects.filter(
+                    id__in=admin_org_ids
+                )
+            else:
+                self.fields["organizations"].queryset = Organization.objects.none()
+
+        # Pre-select organization if provided
+        if self.organization:
+            self.fields["organizations"].initial = [self.organization]
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Validation for non-superusers creating courses
+        if self.request and not self.request.user.is_superuser:
+            # For new courses, non-superusers must select at least one organization
+            organizations = cleaned_data.get("organizations", [])
+            if not organizations:
+                raise ValidationError(
+                    _(
+                        "You must select at least one organization when creating a course."
+                    )
+                )
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        course = super().save(commit=commit)
+        if commit:
+            # Handle organizations assignment
+            organizations = self.cleaned_data.get("organizations", [])
+            if organizations:
+                course.organizations.set(organizations)
+                course.is_organization_private = True
+                # Don't automatically set is_public to False - let user control it
+            else:
+                course.organizations.clear()
+                course.is_organization_private = False
+            course.save()
+        return course
+
+    class Meta:
+        model = Course
+        fields = [
+            "name",
+            "slug",
+            "about",
+            "is_public",
+            "is_open",
+            "course_image",
+            "organizations",
+        ]
+        widgets = {
+            "course_image": ImageWidget,
+        }
+        help_texts = {
+            "name": _("Required. Maximum 128 characters."),
+            "about": _("Optional. Detailed description of the course."),
+            "slug": _(
+                "Required. Course name shown in URL. Only alphanumeric characters and hyphens."
+            ),
+            "is_public": _("Whether this course is visible to all users"),
+            "is_open": _("If checked, users can join this course"),
+            "course_image": _(
+                "Optional. Upload an image for the course (maximum 5MB)."
+            ),
+        }
+        if HeavyPreviewPageDownWidget is not None:
+            widgets["about"] = HeavyPreviewPageDownWidget(
+                preview=reverse_lazy("blog_preview"),
+                attrs={"style": "width: 100%; min-height: 300px;"},
+            )
 
 
 MEMORY_UNITS = (("KB", "KB"), ("MB", "MB"))

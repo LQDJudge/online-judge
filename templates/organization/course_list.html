@@ -27,21 +27,64 @@
       $('#go').click(clean_submit);
 
       $('#role_filter').select2();
+
+      // Tab navigation
+      $('#my-courses-url').attr('href', changeTabParameter('my'));
+      $('#joinable-courses-url').attr('href', changeTabParameter('joinable'));
+      registerNavigation();
     });
+
+    function changeTabParameter(tab) {
+      var url = new URL(window.location);
+      url.searchParams.set('tab', tab);
+      return url.toString();
+    }
+
+    function registerNavigation() {
+      // Add any navigation registration logic here if needed
+    }
   </script>
 {% endblock %}
 
 {% block left_sidebar %}
-  {% include "course/list_left_sidebar.html" %}
+  {% include "organization/org-left-sidebar.html" %}
 {% endblock %}
 
 {% block right_sidebar %}
-  <div id="content-right" class="courses right-sidebar">
+  <div class="right-sidebar">
     {% include "course/search-form.html" %}
+
+    {% if can_create_course %}
+      <div class="sidebox">
+        <h3><i class="fa fa-plus"></i> {{ _('Course Management') }}</h3>
+        <div class="sidebox-content">
+          <a href="{{ url('course_add') }}?organization={{ organization.id }}" class="button primary" style="width: 100%;">
+            <i class="fa fa-plus"></i> {{ _('Create Course') }}
+          </a>
+        </div>
+      </div>
+    {% endif %}
   </div>
 {% endblock %}
 
 {% block middle_content %}
+  <div class="tabs tabs-no-flex" style="width: 100%;margin-left: auto;margin-right: auto;">
+    <ul>
+      {% if request.user.is_authenticated %}
+        <li class="{{'active' if current_tab=='my'}}">
+          <a id='my-courses-url'>{{ _('My Courses') }}</a>
+        </li>
+        <li class="{{'active' if current_tab=='joinable'}}">
+          <a id='joinable-courses-url'>{{ _('Join Courses') }}</a>
+        </li>
+      {% else %}
+        <li class="{{'active' if current_tab=='joinable'}}">
+          <a id='joinable-courses-url'>{{ _('Available Courses') }}</a>
+        </li>
+      {% endif %}
+    </ul>
+  </div>
+
   <div class="course-list-page">
     {% if courses %}
       <div class="course-list">
@@ -103,16 +146,10 @@
                   </div>
                 {% endif %}
 
-                {% if course.organizations.exists() %}
-                  <div class="course-meta-item">
-                    <i class="fa fa-building"></i>
-                    <div class="course-organizations">
-                      {% for org in course.organizations.all() %}
-                        {% include "organization/tag.html" %}
-                      {% endfor %}
-                    </div>
-                  </div>
-                {% endif %}
+                <div class="course-meta-item">
+                  <i class="fa fa-building"></i>
+                  <span>{{ organization.name }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -127,11 +164,11 @@
     {% else %}
       <div class="no-courses">
         {% if current_tab == 'my' %}
-          <h3>{{ _('No courses enrolled') }}</h3>
-          <p>{{ _('You are not enrolled in any courses yet. Browse available courses and join to start learning!') }}</p>
+          <h3>{{ _('No courses enrolled in %(org)s', org=organization.name) }}</h3>
+          <p>{{ _('You are not enrolled in any courses in this organization yet. Browse available courses and join to start learning!') }}</p>
         {% else %}
-          <h3>{{ _('No courses available to join') }}</h3>
-          <p>{{ _('There are no open courses available for you to join at this time.') }}</p>
+          <h3>{{ _('No courses available to join in %(org)s', org=organization.name) }}</h3>
+          <p>{{ _('There are no open courses available for you to join in this organization at this time.') }}</p>
         {% endif %}
       </div>
     {% endif %}

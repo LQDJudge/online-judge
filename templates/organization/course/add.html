@@ -1,0 +1,65 @@
+{% extends "organization/home-base.html" %}
+
+{% block js_media %}
+  {{ form.media.js }}
+  <script>
+    $(document).ready(function() {
+      // Auto-generate slug from name
+      $('#id_name').on('input', function() {
+        var name = $(this).val();
+        var slug = name.toLowerCase()
+          .replace(/[^\w\s-]/g, '') // Remove special characters
+          .replace(/\s+/g, '-')      // Replace spaces with -
+          .replace(/--+/g, '-')      // Replace multiple - with single -
+          .trim();
+
+        // Only update if slug field is empty or matches previous auto-generated value
+        var currentSlug = $('#id_slug').val();
+        if (!currentSlug || currentSlug === $('#id_slug').data('auto-generated')) {
+          $('#id_slug').val(slug);
+          $('#id_slug').data('auto-generated', slug);
+        }
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block three_col_media %}
+  {{ form.media.css }}
+{% endblock %}
+
+{% block middle_content %}
+  <h2>{{ _('Add Course to ') }}{{ organization.name }}</h2>
+
+  <form action="" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if form.errors %}
+      <div class="alert alert-danger alert-dismissable">
+        <a href="#" class="close">x</a>
+        {{ _("Please fix below errors") }}
+        {% if form.non_field_errors %}
+          <ul>
+            {% for error in form.non_field_errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    {% endif %}
+    {% for field in form %}
+      {% if not field.is_hidden %}
+        <div style="margin-bottom: 1em;">
+          {{ field.errors }}
+          <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b> </label>
+          <div class="org-field-wrapper" id="org-field-wrapper-{{field.html_name }}">
+            {{ field }}
+          </div>
+          {% if field.help_text %}
+            <small class="org-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+    <button type="submit" style="display: inline;" name="action" value="Save" class="action-btn" >{{ _('Save') }} </button>
+  </form>
+{% endblock %}

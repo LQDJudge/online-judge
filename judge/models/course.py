@@ -42,7 +42,7 @@ class Course(models.Model):
         Organization,
         blank=True,
         verbose_name=_("organizations"),
-        help_text=_("If private, only these organizations may see the course"),
+        help_text=_("If not empty, only these organizations may see the course"),
     )
     slug = models.SlugField(
         max_length=128,
@@ -84,40 +84,96 @@ class Course(models.Model):
 
     @classmethod
     def is_accessible_by(cls, course, profile):
+        """Check if a user can access a course. Only enrolled users can access courses."""
         if not profile:
             return False
 
-        # Admins can access any course
         if profile.user.is_superuser:
             return True
 
         try:
             course_role = CourseRole.objects.get(course=course, user=profile)
-            # Any enrolled user can access the course (students, assistants, teachers)
-            if course.is_public or course_role.role in EDITABLE_ROLES:
-                return True
-
-            return False
+            return True  # Any enrolled user can access the course
         except CourseRole.DoesNotExist:
-            # Non-enrolled users can only access public courses if they have open registration
-            return course.is_public and course.is_open
+            return False  # Only enrolled users can access courses
+
+    @classmethod
+    def is_joinable(cls, course, profile):
+        """Check if a user can join an open course."""
+        if not profile:
+            return False
+
+        if profile.user.is_superuser:
+            return False  # Admins don't need to join courses
+
+        # User must not already be enrolled
+        if CourseRole.objects.filter(course=course, user=profile).exists():
+            return False
+
+        # Course must be open for registration
+        if not course.is_open:
+            return False
+
+        # Check if course is in user's organizations
+        if course.organizations.exists():
+            user_orgs = profile.organizations.all()
+            if course.organizations.filter(id__in=user_orgs).exists():
+                return course.is_public
+            return False
+
+        return course.is_public
 
     @classmethod
     def get_accessible_courses(cls, profile):
+        """Get courses that a user can access (only enrolled courses)."""
         # Admins can access all courses
         if profile and profile.user.is_superuser:
             return Course.objects.all()
 
-        return Course.objects.filter(
-            Q(is_public=True) | Q(courserole__role__in=EDITABLE_ROLES),
-            courserole__user=profile,
-        ).distinct()
+        if not profile:
+            return Course.objects.none()
+
+        # Only return courses where user has a role (is enrolled)
+        return Course.objects.filter(courserole__user=profile).distinct()
+
+    @classmethod
+    def get_joinable_courses(cls, profile):
+        """Get courses that a user can join (open courses they're not enrolled in)."""
+        if not profile:
+            return Course.objects.filter(
+                is_public=True, is_open=True, organizations__isnull=True
+            )
+
+        # Get courses user is already enrolled in
+        enrolled_course_ids = Course.objects.filter(
+            courserole__user=profile
+        ).values_list("id", flat=True)
+
+        # Get public open courses
+        public_courses = Course.objects.filter(
+            is_public=True, is_open=True, organizations__isnull=True
+        ).exclude(id__in=enrolled_course_ids)
+
+        # Get organization courses for user's organizations
+        user_orgs = profile.get_organization_ids()
+        org_courses = Course.objects.filter(
+            is_public=True, is_open=True, organizations__in=user_orgs
+        ).exclude(id__in=enrolled_course_ids)
+
+        # Combine all joinable courses
+        return (public_courses | org_courses).distinct()
+
+    @classmethod
+    def get_user_courses(cls, profile):
+        """Get courses where user is enrolled (has a role)"""
+        if not profile:
+            return Course.objects.none()
+
+        return Course.objects.filter(courserole__user=profile).distinct()
 
     def _get_users_by_role(self, role):
-        course_roles = CourseRole.objects.filter(course=self, role=role).select_related(
-            "user"
-        )
-        return [course_role.user for course_role in course_roles]
+        profile_ids = get_course_role_profile_ids(self.id, role)
+        return Profile.get_cached_instances(*profile_ids)
 
     def get_students(self):
         return self._get_users_by_role(RoleInCourse.STUDENT)
@@ -264,3 +320,24 @@ def invalidate_lesson_problems_cache(sender, instance, **kwargs):
     """Invalidate the cached problems and scores list when a CourseLessonProblem is saved or deleted."""
     if instance.lesson_id:
         CourseLesson.get_problems_and_scores.dirty(instance.lesson_id)
+
+
+# Signal handlers to invalidate cache when CourseRole changes
+@receiver([post_save, post_delete], sender=CourseRole)
+def invalidate_course_role_cache(sender, instance, **kwargs):
+    """Invalidate the cached course role profile IDs when a CourseRole is saved or deleted."""
+    if instance.course_id and instance.role:
+        get_course_role_profile_ids.dirty(instance.course_id, instance.role)
+
+
+@cache_wrapper(prefix="CRubr", expected_type=list)
+def get_course_role_profile_ids(course_id, role):
+    """
+    Get profile IDs for users with a specific role in a course.
+    This function is cached and will be invalidated when CourseRole changes.
+    """
+    return list(
+        CourseRole.objects.filter(course_id=course_id, role=role).values_list(
+            "user_id", flat=True
+        )
+    )

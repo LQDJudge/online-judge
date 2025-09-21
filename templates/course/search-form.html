@@ -1,0 +1,26 @@
+<div class="sidebox">
+  <h3><i class="fa fa-search"></i> {{ _('Search') }}</h3>
+  <div class="sidebox-content">
+    <form id="filter-form" name="form" action="" method="get">
+      {% if current_tab %}
+        <input type="hidden" name="tab" value="{{ current_tab }}">
+      {% endif %}
+      <p>
+        <input id="search" type="text" name="search" value="{{ search_query or '' }}" placeholder="{{ _('Search courses...') }}">
+      </p>
+      {% if current_tab == 'my' and request.user.is_authenticated %}
+        <p>
+          <label for="role_filter">{{ _('Filter by role:') }}</label>
+          <select id="role_filter" name="role_filter">
+            <option value="">{{ _('All roles') }}</option>
+            <option value="teaching" {% if role_filter == 'teaching' %}selected{% endif %}>{{ _('Teaching + Assistant') }}</option>
+            <option value="student" {% if role_filter == 'student' %}selected{% endif %}>{{ _('Student') }}</option>
+          </select>
+        </p>
+      {% endif %}
+      <p>
+        <button id="go" type="submit" class="button small">{{ _('Search') }}</button>
+      </p>
+    </form>
+  </div>
+</div>

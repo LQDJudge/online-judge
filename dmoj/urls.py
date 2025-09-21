@@ -559,11 +559,22 @@ urlpatterns = [
         paged_list_view(contests.OfficialContestList, "official_contest_list"),
     ),
     re_path(r"^courses/", paged_list_view(course.CourseList, "course_list")),
+    re_path(r"^courses/add/$", course.CourseAdd.as_view(), name="course_add"),
     re_path(
         r"^course/(?P<slug>[\w-]*)",
         include(
             [
                 re_path(r"^$", course.CourseDetail.as_view(), name="course_detail"),
+                re_path(
+                    r"^/join$",
+                    course.CourseJoin.as_view(),
+                    name="course_join",
+                ),
+                re_path(
+                    r"^/leave$",
+                    course.CourseLeave.as_view(),
+                    name="course_leave",
+                ),
                 re_path(
                     r"^/lesson/(?P<id>\d+)$",
                     course.CourseLessonDetail.as_view(),
@@ -893,6 +904,11 @@ urlpatterns = [
                             ),
                         ]
                     ),
+                ),
+                re_path(
+                    r"^/courses/$",
+                    organization.OrganizationCourses.as_view(),
+                    name="organization_courses",
                 ),
                 re_path(
                     r"^/$",

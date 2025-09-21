@@ -1,0 +1,133 @@
+{% extends "organization/home-base.html" %}
+
+{% block js_media %}
+  {{ form.media.js }}
+  <script>
+    $(document).ready(function() {
+      // Auto-generate slug from name only if slug is empty
+      $('#id_name').on('input', function() {
+        var slugField = $('#id_slug');
+        if (!slugField.val()) {
+          var name = $(this).val();
+          var slug = name.toLowerCase()
+            .replace(/[^\w\s-]/g, '') // Remove special characters
+            .replace(/\s+/g, '-')      // Replace spaces with -
+            .replace(/--+/g, '-')      // Replace multiple - with single -
+            .trim();
+          slugField.val(slug);
+        }
+      });
+
+      // Confirm before deleting course
+      $('#delete-course-btn').click(function(e) {
+        if (!confirm('{{ _("Are you sure you want to delete this course? This action cannot be undone.") }}')) {
+          e.preventDefault();
+        }
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block three_col_media %}
+  {{ form.media.css }}
+  <link rel="stylesheet" href="{{ static('course.css') }}">
+{% endblock %}
+
+{% block middle_content %}
+  <div class="org-course-edit-page">
+    <h2>{{ _('Edit Course: ') }}{{ course.name }}</h2>
+
+    <div class="course-info">
+      <h4>{{ _('Course Information') }}</h4>
+      <ul>
+        <li>{{ _('Created: ') }}{{ course.created_at|date:"Y-m-d H:i" }}</li>
+        <li>{{ _('Students Enrolled: ') }}{{ course.students.count }}</li>
+        <li>{{ _('Lessons: ') }}{{ course.lessons.count }}</li>
+        <li>{{ _('Contests: ') }}{{ course.contests.count }}</li>
+      </ul>
+    </div>
+
+    <form action="" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% if form.errors %}
+        <div class="alert alert-danger alert-dismissable">
+          <a href="#" class="close">x</a>
+          {{ _("Please fix below errors") }}
+          {% if form.non_field_errors %}
+            <ul>
+              {% for error in form.non_field_errors() %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% for field in form %}
+        {% if not field.is_hidden %}
+          <div class="form-field-wrapper">
+            {{ field.errors }}
+            <label for="{{ field.id_for_label }}">
+              <b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b>
+            </label>
+            <div class="org-field-wrapper" id="org-field-wrapper-{{ field.html_name }}">
+              {{ field }}
+            </div>
+            {% if field.help_text %}
+              <small class="org-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+
+      <div class="form-actions">
+        <div class="form-actions-left">
+          <button type="submit" name="action" value="Save" class="action-btn">
+            <i class="fa fa-save"></i> {{ _('Save Changes') }}
+          </button>
+          <a href="{{ url('organization_courses', organization.slug) }}" class="action-btn">
+            {{ _('Cancel') }}
+          </a>
+        </div>
+
+        {% if request.user.is_superuser or organization.is_admin(request.profile) %}
+          <form method="post" action="{{ url('organization_course_delete', organization.slug, course.slug) }}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" id="delete-course-btn" class="action-btn delete-course-btn">
+              <i class="fa fa-trash"></i> {{ _('Delete Course') }}
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+{% endblock %}
+
+{% block right_sidebar %}
+  <div class="right-sidebar">
+    <div class="sidebox">
+      <h3>{{ _('Quick Actions') }}</h3>
+      <ul class="sidebar-links">
+        <li>
+          <a href="{{ url('course_detail', course.slug) }}">
+            <i class="fa fa-eye"></i> {{ _('View Course') }}
+          </a>
+        </li>
+        {% if course.lessons %}
+          <li>
+            <a href="{{ url('course_detail', course.slug) }}#lessons">
+              <i class="fa fa-book"></i> {{ _('View Lessons') }}
+            </a>
+          </li>
+        {% endif %}
+        {% if course.contests %}
+          <li>
+            <a href="{{ url('course_detail', course.slug) }}#contests">
+              <i class="fa fa-trophy"></i> {{ _('View Contests') }}
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+{% endblock %}

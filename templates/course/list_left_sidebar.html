@@ -1,0 +1,17 @@
+{% set query_string = request.GET.urlencode() %}
+{% set my_courses_url = url('course_list') + '?tab=my' %}
+{% set joinable_courses_url = url('course_list') + '?tab=joinable' %}
+<div class="left-sidebar">
+  {% if request.user.is_authenticated %}
+    {{ make_tab_item('my', 'fa fa-user', my_courses_url, _('My Courses')) }}
+    {{ make_tab_item('joinable', 'fa fa-plus-circle', joinable_courses_url, _('Join Courses')) }}
+  {% else %}
+    {{ make_tab_item('joinable', 'fa fa-list', joinable_courses_url, _('Available Courses')) }}
+  {% endif %}
+  {% if can_create_course %}
+    {{ make_tab_item('add', 'fa fa-plus', url('course_add'), _('Add')) }}
+  {% endif %}
+  {% if request.user.is_superuser %}
+    {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_course_changelist'), _('Admin'), force_new_page=True) }}
+  {% endif %}
+</div>

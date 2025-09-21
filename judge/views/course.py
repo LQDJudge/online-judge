@@ -1,8 +1,9 @@
 from copy import deepcopy
 from django import forms
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.db.models import Max, F, Sum
+from django.db.models import Max, F, Sum, Q
 from django.forms import (
     inlineformset_factory,
     ModelForm,
@@ -13,13 +14,14 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy, reverse
 from django.utils.html import mark_safe
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import ListView, DetailView, View
+from django.views.generic import ListView, DetailView, View, CreateView
 from django.views.generic.edit import FormView
 from reversion import revisions
 
 from judge.forms import (
     ContestProblemFormSet,
     LessonCloneForm,
+    AddCourseForm,
 )
 from judge.models import (
     Course,
@@ -32,6 +34,7 @@ from judge.models import (
     ContestProblem,
     ContestParticipation,
     CourseRole,
+    Organization,
 )
 from judge.models.course import RoleInCourse, EDITABLE_ROLES
 from judge.utils.contest import (
@@ -50,7 +53,8 @@ from judge.widgets import (
     Select2Widget,
     ImageWidget,
 )
-from judge.utils.views import SingleObjectFormView, TitleMixin
+from judge.forms import HTMLDisplayWidget
+from judge.utils.views import SingleObjectFormView, TitleMixin, DiggPaginatorMixin
 
 
 def bulk_max_case_points_per_problem(students, all_problems):
@@ -263,24 +267,200 @@ def calculate_total_progress(lesson_progress, contest_progress):
     return res
 
 
-class CourseList(ListView):
+class CoursePermissionMixin:
+    """Mixin to handle course creation permissions and context"""
+
+    def get_can_create_course(self):
+        """Check if user can create courses"""
+        if not self.request.user.is_authenticated:
+            return False
+
+        # Check if user is admin of any organization
+        admin_org_ids = self.request.profile.get_admin_organization_ids()
+        return bool(admin_org_ids)
+
+    def get_course_context_data(self, context):
+        """Add course-related context data"""
+        context["can_create_course"] = self.get_can_create_course()
+        return context
+
+
+class CourseList(CoursePermissionMixin, DiggPaginatorMixin, ListView):
     model = Course
     template_name = "course/list.html"
-    queryset = Course.objects.filter(is_public=True).filter(is_open=True)
+    paginate_by = 10
+    context_object_name = "courses"
+
+    def get(self, request, *args, **kwargs):
+        default_tab = "my" if request.user.is_authenticated else "joinable"
+        self.current_tab = request.GET.get("tab", default_tab)
+        self.search_query = request.GET.get("search", "")
+        self.role_filter = request.GET.get("role_filter", "")
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        profile = self.request.profile if self.request.user.is_authenticated else None
+
+        if self.current_tab == "my":
+            if not profile:
+                return Course.objects.none()
+            queryset = Course.get_user_courses(profile)
+
+            # Apply role filter only for "my" courses tab
+            if self.role_filter:
+                if self.role_filter == "teaching":
+                    # Filter for Teaching + Assistant roles
+                    queryset = queryset.filter(
+                        courserole__user=profile,
+                        courserole__role__in=[
+                            RoleInCourse.TEACHER,
+                            RoleInCourse.ASSISTANT,
+                        ],
+                    )
+                elif self.role_filter == "student":
+                    # Filter for Student role
+                    queryset = queryset.filter(
+                        courserole__user=profile, courserole__role=RoleInCourse.STUDENT
+                    )
+        else:  # Default to "joinable" tab
+            queryset = Course.get_joinable_courses(profile)
+
+        if self.search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=self.search_query)
+                | Q(slug__icontains=self.search_query)
+            )
+
+        return queryset.order_by("-id").prefetch_related("organizations")
 
     def get_context_data(self, **kwargs):
         context = super(CourseList, self).get_context_data(**kwargs)
-        context["courses"] = Course.get_accessible_courses(self.request.profile)
         context["title"] = _("Courses")
-        context["page_type"] = "list"
+        context["page_type"] = (
+            self.current_tab
+        )  # Set page_type to current tab for active styling
+        context["current_tab"] = self.current_tab
+        context["search_query"] = self.search_query
+        context["role_filter"] = self.role_filter
+
+        # Build URL parameters for pagination
+        url_params = []
+        if self.current_tab:
+            url_params.append(f"tab={self.current_tab}")
+        if self.search_query:
+            url_params.append(f"search={self.search_query}")
+        if self.role_filter:
+            url_params.append(f"role_filter={self.role_filter}")
+
+        # Set pagination URLs that preserve tab and search parameters
+        if url_params:
+            param_string = "&".join(url_params)
+            context["first_page_href"] = f"?{param_string}"
+            context["page_prefix"] = f"?{param_string}&page="
+            context["page_suffix"] = ""
+        else:
+            context["first_page_href"] = "."
+            context["page_prefix"] = "?page="
+            context["page_suffix"] = ""
+
+        # Add course permission context using mixin
+        context = self.get_course_context_data(context)
+
         return context
+
+
+class CourseAdd(CoursePermissionMixin, LoginRequiredMixin, TitleMixin, CreateView):
+    model = Course
+    template_name = "course/create.html"
+    form_class = AddCourseForm
+
+    def get_title(self):
+        return _("Add Course")
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            raise Http404()
+
+        if request.user.is_superuser:
+            return super().dispatch(request, *args, **kwargs)
+
+        if not hasattr(request, "profile") or not request.profile:
+            raise Http404()
+
+        admin_org_ids = request.profile.get_admin_organization_ids()
+        if not admin_org_ids:
+            raise Http404()
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_type"] = "add"
+
+        admin_org_ids = self.request.profile.get_admin_organization_ids()
+        if admin_org_ids:
+            context["organizations"] = Organization.get_cached_instances(*admin_org_ids)
+        else:
+            context["organizations"] = []
+
+        context = self.get_course_context_data(context)
+
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["request"] = self.request
+
+        # Check for organization parameter in URL path (for organization-specific course creation)
+        org_id = self.kwargs.get("org_id")
+        if org_id:
+            org = get_object_or_404(Organization, id=org_id)
+            if (
+                not org.is_admin(self.request.profile)
+                and not self.request.user.is_superuser
+            ):
+                raise Http404()
+            kwargs["organization"] = org
+        else:
+            # Check for organization parameter in query string (from organization course list)
+            org_param = self.request.GET.get("organization")
+            if org_param:
+                try:
+                    org = get_object_or_404(Organization, id=int(org_param))
+                    if (
+                        org.is_admin(self.request.profile)
+                        or self.request.user.is_superuser
+                    ):
+                        kwargs["organization"] = org
+                except (ValueError, TypeError):
+                    # Invalid organization ID, ignore
+                    pass
+
+        return kwargs
+
+    def form_valid(self, form):
+        with revisions.create_revision():
+            course = form.save()  # Form now handles organizations assignment
+
+            # Add creator as teacher
+            CourseRole.objects.create(
+                course=course, user=self.request.profile, role=RoleInCourse.TEACHER
+            )
+
+            revisions.set_comment(_("Created course"))
+            revisions.set_user(self.request.user)
+
+            messages.success(self.request, _("Course created successfully."))
+            return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("course_detail", args=[self.object.slug])
 
 
 class CourseDetailMixin(object):
     def dispatch(self, request, *args, **kwargs):
         self.course = get_object_or_404(Course, slug=self.kwargs["slug"])
-        if not Course.is_accessible_by(self.course, self.request.profile):
-            raise Http404()
+        self.is_accessible = Course.is_accessible_by(self.course, self.request.profile)
         self.is_editable = Course.is_editable_by(self.course, self.request.profile)
         return super(CourseDetailMixin, self).dispatch(request, *args, **kwargs)
 
@@ -288,6 +468,7 @@ class CourseDetailMixin(object):
         context = super(CourseDetailMixin, self).get_context_data(**kwargs)
         context["course"] = self.course
         context["is_editable"] = self.is_editable
+        context["is_accessible"] = self.is_accessible
         return context
 
 
@@ -297,6 +478,18 @@ class CourseEditableMixin(CourseDetailMixin):
         if not self.is_editable:
             raise Http404()
         return res
+
+    def get_user_role_in_course(self):
+        """Get the current user's role in the course"""
+        if self.request.user.is_superuser:
+            return "ADMIN"
+        try:
+            course_role = CourseRole.objects.get(
+                course=self.course, user=self.request.profile
+            )
+            return course_role.role
+        except CourseRole.DoesNotExist:
+            return None
 
 
 class CourseAdminMixin(CourseDetailMixin):
@@ -374,8 +567,23 @@ class CourseDetail(CourseDetailMixin, DetailView):
     def get_object(self):
         return self.course
 
+    def get_template_names(self):
+        if not self.is_accessible:
+            return ["course/enrollment_required.html"]
+        return [self.template_name]
+
     def get_context_data(self, **kwargs):
         context = super(CourseDetail, self).get_context_data(**kwargs)
+
+        # If user doesn't have access, show enrollment message
+        if not self.is_accessible:
+            context["title"] = self.course.name
+            context["page_type"] = "enrollment_required"
+
+            # Check if user can join this course
+            context["can_join"] = Course.is_joinable(self.course, self.request.profile)
+
+            return context
 
         lessons = self.course.get_lessons()
         contests = self.course.get_contests()
@@ -392,12 +600,24 @@ class CourseDetail(CourseDetailMixin, DetailView):
         )
         contest_progress_bulk = bulk_calculate_contests_progress(students, contests)
 
+        # Get user's role in the course
+        user_role = None
+        if self.request.user.is_authenticated:
+            try:
+                course_role = CourseRole.objects.get(
+                    course=self.course, user=self.request.profile
+                )
+                user_role = course_role.role
+            except CourseRole.DoesNotExist:
+                user_role = None
+
         context["title"] = self.course.name
         context["page_type"] = "home"
         context["lessons"] = lessons
         context["lesson_progress"] = lesson_progress_bulk[self.request.profile]
         context["course_contests"] = contests
         context["contest_progress"] = contest_progress_bulk[self.request.profile]
+        context["user_role"] = user_role
 
         context["total_progress"] = calculate_total_progress(
             context["lesson_progress"],
@@ -1604,9 +1824,65 @@ class CourseUpdateMemberRole(CourseAdminMixin, View):
 
 
 class CourseEditForm(forms.ModelForm):
+    organizations = forms.ModelMultipleChoiceField(
+        queryset=Organization.objects.none(),
+        required=False,
+        widget=HeavySelect2MultipleWidget(
+            data_view="organization_select2", attrs={"style": "width: 100%"}
+        ),
+        label=_("Organizations"),
+        help_text=_(
+            "Select organizations for this course. Leave empty for public course."
+        ),
+    )
+
+    # Read-only field for displaying current organizations to non-superusers
+    organizations_display = forms.CharField(
+        required=False,
+        widget=HTMLDisplayWidget(),
+        label=_("Organizations"),
+        help_text=_("Current organizations for this course."),
+    )
+
+    # Read-only display fields for TAs
+    slug_display = forms.CharField(
+        required=False,
+        widget=HTMLDisplayWidget(),
+        label=_("Course Slug"),
+        help_text=_("Course name shown in URL (read-only for assistants)."),
+    )
+
+    is_public_display = forms.CharField(
+        required=False,
+        widget=HTMLDisplayWidget(),
+        label=_("Publicly Visible"),
+        help_text=_(
+            "Whether this course is visible to all users (read-only for assistants)."
+        ),
+    )
+
+    is_open_display = forms.CharField(
+        required=False,
+        widget=HTMLDisplayWidget(),
+        label=_("Public Registration"),
+        help_text=_("Whether users can join this course (read-only for assistants)."),
+    )
+
     class Meta:
         model = Course
-        fields = ["name", "about", "is_public", "slug", "course_image"]
+        fields = [
+            "name",
+            "about",
+            "is_public",
+            "is_open",
+            "slug",
+            "course_image",
+            "organizations",
+            "organizations_display",
+            "slug_display",
+            "is_public_display",
+            "is_open_display",
+        ]
         widgets = {
             "name": forms.TextInput(attrs={"style": "width: 100%"}),
             "about": HeavyPreviewPageDownWidget(preview=reverse_lazy("blog_preview")),
@@ -1617,6 +1893,7 @@ class CourseEditForm(forms.ModelForm):
             "name": _("Course Name"),
             "about": _("Course Description"),
             "is_public": _("Publicly Visible"),
+            "is_open": _("Public Registration"),
             "slug": _("Course Slug"),
             "course_image": _("Course Image"),
         }
@@ -1627,18 +1904,119 @@ class CourseEditForm(forms.ModelForm):
                 "Required. Course name shown in URL. Only alphanumeric characters and hyphens."
             ),
             "is_public": _("Whether this course is visible to all users"),
+            "is_open": _("If checked, users can join this course"),
             "course_image": _(
                 "Optional. Upload an image for the course (maximum 5MB)."
             ),
         }
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request", None)
+        self.user_role = kwargs.pop("user_role", None)
         super().__init__(*args, **kwargs)
+
+        # Check if user is superuser to determine field visibility
+        is_superuser = self.request and self.request.user.is_superuser
+        is_teacher = self.user_role == RoleInCourse.TEACHER or is_superuser
+        is_assistant = self.user_role == RoleInCourse.ASSISTANT
+
+        # Handle organizations field (superuser only)
+        if is_superuser:
+            # Superusers can edit organizations - hide the display field
+            del self.fields["organizations_display"]
+
+            # Set organizations queryset for superusers (all organizations)
+            self.fields["organizations"].queryset = Organization.objects.all()
+        else:
+            # Non-superusers cannot edit organizations - hide the editable field
+            del self.fields["organizations"]
+
+            # Set up the read-only display field with clickable links
+            if self.instance and self.instance.pk:
+                from django.utils.html import format_html
+                from django.urls import reverse
+
+                organizations = self.instance.organizations.all()
+                if organizations:
+                    org_links = []
+                    for org in organizations:
+                        org_url = reverse("organization_home", args=[org.pk, org.slug])
+                        org_links.append(
+                            format_html(
+                                '<a href="{}" target="_blank">{}</a>', org_url, org.name
+                            )
+                        )
+                    self.fields["organizations_display"].initial = format_html(
+                        ", ".join(org_links)
+                    )
+                else:
+                    self.fields["organizations_display"].initial = _("No organizations")
+            else:
+                self.fields["organizations_display"].initial = _("No organizations")
+
+        # Handle role-based field restrictions for Teachers vs Assistants
+        if is_assistant and not is_superuser:
+            # TAs cannot edit these administrative fields - replace with read-only versions
+
+            # Remove editable fields
+            del self.fields["slug"]
+            del self.fields["is_public"]
+            del self.fields["is_open"]
+
+            # Set up read-only display fields
+            if self.instance and self.instance.pk:
+                self.fields["slug_display"].initial = self.instance.slug
+                self.fields["is_public_display"].initial = (
+                    _("Yes") if self.instance.is_public else _("No")
+                )
+                self.fields["is_open_display"].initial = (
+                    _("Yes") if self.instance.is_open else _("No")
+                )
+            else:
+                self.fields["slug_display"].initial = _("Not set")
+                self.fields["is_public_display"].initial = _("No")
+                self.fields["is_open_display"].initial = _("No")
+        else:
+            # Teachers and superusers can edit all fields - remove display fields
+            del self.fields["slug_display"]
+            del self.fields["is_public_display"]
+            del self.fields["is_open_display"]
+
         # Make required fields as specified by user
         self.fields["name"].required = True
         self.fields["about"].required = False  # Description is optional
-        self.fields["slug"].required = True
+        if "slug" in self.fields:
+            self.fields["slug"].required = True
         self.fields["course_image"].required = False  # Image is optional
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Validate that non-superusers cannot modify organizations
+        if self.request and not self.request.user.is_superuser:
+            # For non-superusers, organizations should not be in cleaned_data
+            # since the field is removed in __init__
+            if "organizations" in cleaned_data:
+                raise forms.ValidationError(
+                    _("You do not have permission to modify course organizations.")
+                )
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        course = super().save(commit=commit)
+        if commit:
+            # Only allow superusers to modify organizations
+            if self.request and self.request.user.is_superuser:
+                # Handle organizations assignment for superusers
+                organizations = self.cleaned_data.get("organizations", [])
+                if organizations:
+                    course.organizations.set(organizations)
+                else:
+                    course.organizations.clear()
+            # For non-superusers, organizations remain unchanged
+            course.save()
+        return course
 
     def clean_slug(self):
         slug = self.cleaned_data.get("slug")
@@ -1683,6 +2061,8 @@ class CourseEdit(CourseEditableMixin, SingleObjectFormView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["instance"] = self.course
+        kwargs["request"] = self.request
+        kwargs["user_role"] = self.get_user_role_in_course()
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -1713,3 +2093,92 @@ class CourseEdit(CourseEditableMixin, SingleObjectFormView):
 
     def get_success_url(self):
         return reverse("course_edit", args=[self.object.slug])
+
+
+class CourseJoin(LoginRequiredMixin, View):
+    """View to handle joining a course"""
+
+    def post(self, request, slug):
+        course = get_object_or_404(Course, slug=slug)
+        profile = request.profile
+
+        # Check if user can join this course
+        if not Course.is_joinable(course, profile):
+            messages.error(request, _("You cannot join this course."))
+            return redirect("course_list")
+
+        # Check if user is already enrolled
+        if CourseRole.objects.filter(course=course, user=profile).exists():
+            messages.warning(request, _("You are already enrolled in this course."))
+            return redirect("course_detail", slug=course.slug)
+
+        # Join the course as a student
+        with revisions.create_revision():
+            CourseRole.objects.create(
+                course=course, user=profile, role=RoleInCourse.STUDENT
+            )
+
+            revisions.set_comment(
+                _("User '{}' joined course '{}'").format(
+                    profile.user.username, course.name
+                )
+            )
+            revisions.set_user(request.user)
+
+        messages.success(
+            request, _("Successfully joined course: {}").format(course.name)
+        )
+        return redirect("course_detail", slug=course.slug)
+
+    def get(self, request, slug):
+        # Redirect GET requests to course list
+        return redirect("course_list")
+
+
+class CourseLeave(LoginRequiredMixin, View):
+    """View to handle leaving a course"""
+
+    def post(self, request, slug):
+        course = get_object_or_404(Course, slug=slug)
+        profile = request.profile
+
+        # Check if user is enrolled in this course
+        try:
+            course_role = CourseRole.objects.get(course=course, user=profile)
+        except CourseRole.DoesNotExist:
+            messages.error(request, _("You are not enrolled in this course."))
+            return redirect("course_detail", slug=course.slug)
+
+        # Prevent teachers and assistants from leaving (they need to be removed by admin)
+        if course_role.role in [RoleInCourse.TEACHER, RoleInCourse.ASSISTANT]:
+            messages.error(
+                request,
+                _(
+                    "Teachers and assistants cannot leave the course. Please contact an administrator."
+                ),
+            )
+            return redirect("course_detail", slug=course.slug)
+
+        # Only students can leave
+        if course_role.role == RoleInCourse.STUDENT:
+            with revisions.create_revision():
+                revisions.set_comment(
+                    _("User '{}' left course '{}'").format(
+                        profile.user.username, course.name
+                    )
+                )
+                revisions.set_user(request.user)
+
+                course_role.delete()
+
+            messages.success(
+                request, _("Successfully left course: {}").format(course.name)
+            )
+            return redirect("course_list")
+
+        messages.error(request, _("Unable to leave course."))
+        return redirect("course_detail", slug=course.slug)
+
+    def get(self, request, slug):
+        # Redirect GET requests to course detail
+        return redirect("course_detail", slug=slug)

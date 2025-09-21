@@ -21,32 +21,29 @@ msgstr "Nhóm"
 msgid "About"
 msgstr "Giới thiệu"
 
-msgid "Status"
-msgstr "Máy chấm"
-
 msgid "Courses"
 msgstr "Khóa học"
 
 msgid "Suggestions"
 msgstr "Đề xuất ý tưởng"
 
-msgid "Problem Proposal"
-msgstr "Đề xuất bài tập"
+msgid "Proposal"
+msgstr "Đề xuất"
 
-msgid "Contest Proposal"
-msgstr "Đề xuất kỳ thi"
+msgid "TanKhoa"
+msgstr ""
 
-msgid "Name"
-msgstr "Đăng ký tên"
-
-msgid "Tools"
-msgstr "Công cụ"
+msgid "Name1"
+msgstr "Tên 1"
 
 msgid "Report"
 msgstr "Báo cáo tiêu cực"
 
 msgid "Bug Report"
 msgstr "Báo cáo lỗi"
+
+msgid "Status"
+msgstr "Máy chấm"
 
 msgid "2sat"
 msgstr ""
@@ -57,10 +54,10 @@ msgstr ""
 msgid "aho-corasick"
 msgstr ""
 
-msgid "articulation-point (điểm khớp)"
+msgid "articulation-point"
 msgstr ""
 
-msgid "backtrack (quay lui)"
+msgid "backtrack"
 msgstr ""
 
 msgid "bellman-ford"
@@ -69,7 +66,7 @@ msgstr ""
 msgid "bfs-01"
 msgstr ""
 
-msgid "biconnected-component (song liên thông)"
+msgid "biconnected-component"
 msgstr ""
 
 msgid "bignum"
@@ -78,10 +75,13 @@ msgstr ""
 msgid "binary-lifting"
 msgstr ""
 
-msgid "binary-search (tìm kiếm nhị phân)"
+msgid "binary-search"
 msgstr ""
 
 msgid "binary-search-parallel"
+msgstr ""
+
+msgid "bit"
 msgstr ""
 
 msgid "bit2d"
@@ -90,7 +90,7 @@ msgstr ""
 msgid "bitset"
 msgstr ""
 
-msgid "bitwise (phép toán bit)"
+msgid "bitwise"
 msgstr ""
 
 msgid "block-cut-tree"
@@ -99,10 +99,10 @@ msgstr ""
 msgid "boruvka"
 msgstr ""
 
-msgid "branch&bound (nhánh cận)"
+msgid "branch&bound"
 msgstr ""
 
-msgid "bridge (cầu)"
+msgid "bridge"
 msgstr ""
 
 msgid "brute force"
@@ -111,34 +111,34 @@ msgstr ""
 msgid "cactus-graph"
 msgstr ""
 
-msgid "casework (xử lý trường hợp)"
+msgid "casework"
 msgstr ""
 
 msgid "centroid"
 msgstr ""
 
-msgid "chinese-remainder (thặng dư Trung Hoa)"
+msgid "chinese-remainder"
 msgstr ""
 
-msgid "combinatorics (tổ hợp)"
+msgid "combinatorics"
 msgstr ""
 
-msgid "constructive (xây dựng)"
+msgid "constructive"
 msgstr ""
 
-msgid "convex-hull (bao lồi)"
+msgid "convex-hull"
 msgstr ""
 
-msgid "counting (đếm phân phối)"
+msgid "counting"
 msgstr ""
 
-msgid "cycle (chu trình)"
+msgid "cycle"
 msgstr ""
 
-msgid "data structures (cấu trúc dữ liệu)"
+msgid "data structures"
 msgstr ""
 
-msgid "deep-optimization (tối ưu hóa)"
+msgid "deep-optimization"
 msgstr ""
 
 msgid "dfs/bfs/pfs"
@@ -147,58 +147,58 @@ msgstr ""
 msgid "dijkstra"
 msgstr ""
 
-msgid "divide and conquer (chia để trị)"
+msgid "divide and conquer"
 msgstr ""
 
 msgid "dp-alien"
 msgstr ""
 
-msgid "dp-bitmask (quy hoạch động bitmask)"
+msgid "dp-bitmask"
 msgstr ""
 
 msgid "dp-cc"
 msgstr ""
 
-msgid "dp-convexhull (quy hoạch động bao lồi)"
+msgid "dp-convexhull"
 msgstr ""
 
-msgid "dp-count (quy hoạch động đếm)"
+msgid "dp-count"
 msgstr ""
 
-msgid "dp-dag (quy hoạch động trên DAG)"
+msgid "dp-dag"
 msgstr ""
 
-msgid "dp-digit (quy hoạch động chữ số)"
+msgid "dp-digit"
 msgstr ""
 
-msgid "dp-dnc (quy hoạch động chia để trị)"
+msgid "dp-dnc"
 msgstr ""
 
-msgid "dp-general (quy hoạch động cơ bản)"
+msgid "dp-general"
 msgstr ""
 
-msgid "dp-knuth (quy hoạch động Knuth)"
+msgid "dp-knuth"
 msgstr ""
 
-msgid "dp-matrix (quy hoạch động ma trận)"
+msgid "dp-matrix"
 msgstr ""
 
 msgid "dp-openclose"
 msgstr ""
 
-msgid "dp-permutation (quy hoạch động hoán vị)"
+msgid "dp-permutation"
 msgstr ""
 
-msgid "dp-slope (quy hoạch động slope-trick)"
+msgid "dp-slope"
 msgstr ""
 
-msgid "dp-sos (quy hoạch động SOS)"
+msgid "dp-sos"
 msgstr ""
 
-msgid "dp-swap-label (quy hoạch động đảo nhãn)"
+msgid "dp-swap-label"
 msgstr ""
 
-msgid "dp-tree (quy hoạch động trên cây)"
+msgid "dp-tree"
 msgstr ""
 
 msgid "dsu"
@@ -210,34 +210,31 @@ msgstr ""
 msgid "dynamic programming"
 msgstr ""
 
-msgid "euler-path (đường đi Euler)"
+msgid "euler-path"
 msgstr ""
 
 msgid "euler-theorem"
 msgstr ""
 
-msgid "euler-tour (đường đi Euler trên cây)"
+msgid "euler-tour"
 msgstr ""
 
-msgid "extgcd (Euclid mở rộng)"
+msgid "extgcd"
 msgstr ""
 
 msgid "Fenwick Tree (Binary Indexed Tree)"
 msgstr ""
 
-msgid "fenwick-tree (bit)"
-msgstr ""
-
 msgid "fft/ntt"
 msgstr ""
 
-msgid "flow-demands (luồng với điều kiện)"
+msgid "flow-demands"
 msgstr ""
 
-msgid "flow-general (luồng tổng quát)"
+msgid "flow-general"
 msgstr ""
 
-msgid "flow-mincost (luồng chi phí nhỏ nhất)"
+msgid "flow-mincost"
 msgstr ""
 
 msgid "flows"
@@ -246,7 +243,7 @@ msgstr ""
 msgid "floyd"
 msgstr ""
 
-msgid "function-graph (đồ thị hàm)"
+msgid "function-graph"
 msgstr ""
 
 msgid "game theory"
@@ -267,10 +264,10 @@ msgstr ""
 msgid "gauss-elim"
 msgstr ""
 
-msgid "genetic (thuật toán di truyền)"
+msgid "genetic"
 msgstr ""
 
-msgid "geometry (hình học)"
+msgid "geometry"
 msgstr ""
 
 msgid "geometry-general"
@@ -279,13 +276,13 @@ msgstr ""
 msgid "gomory-hu-tree"
 msgstr ""
 
-msgid "graph (đồ thị)"
+msgid "graph"
 msgstr ""
 
 msgid "graph theory"
 msgstr ""
 
-msgid "greedy (tham lam)"
+msgid "greedy"
 msgstr ""
 
 msgid "greedy-exchange"
@@ -312,10 +309,10 @@ msgstr ""
 msgid "ICPC"
 msgstr ""
 
-msgid "implementation (cài đặt)"
+msgid "implementation"
 msgstr ""
 
-msgid "inclusion-exclusion (bao hàm loại trừ)"
+msgid "inclusion-exclusion"
 msgstr ""
 
 msgid "interactive"
@@ -342,7 +339,7 @@ msgstr ""
 msgid "language"
 msgstr ""
 
-msgid "lca (tổ tiên chung gần nhất)"
+msgid "lca"
 msgstr ""
 
 msgid "lichao-tree"
@@ -357,58 +354,58 @@ msgstr ""
 msgid "manacher"
 msgstr ""
 
-msgid "matching-bipartie (cặp ghép hai phía)"
+msgid "matching-bipartie"
 msgstr ""
 
-msgid "matching-general (cặp ghép)"
+msgid "matching-general"
 msgstr ""
 
-msgid "matching-hall (định lý Hall)"
+msgid "matching-hall"
 msgstr ""
 
-msgid "matching-hungarian (thuật toán Hungary)"
+msgid "matching-hungarian"
 msgstr ""
 
-msgid "matching-konig (định lý Konig)"
+msgid "matching-konig"
 msgstr ""
 
-msgid "math (toán học)"
+msgid "math"
 msgstr ""
 
 msgid "math-general"
 msgstr ""
 
-msgid "matrix multiplication (nhân ma trận)"
+msgid "matrix multiplication"
 msgstr ""
 
 msgid "max-clique"
 msgstr ""
 
-msgid "meet-in-the-middle (duyệt phân tập)"
+msgid "meet-in-the-middle"
 msgstr ""
 
 msgid "Miscellaneous"
 msgstr ""
 
-msgid "mo-general (thuật toán Mo)"
+msgid "mo-general"
 msgstr ""
 
-msgid "mo-tree (Mo trên cây)"
+msgid "mo-tree"
 msgstr ""
 
-msgid "mo-update (Mo với cập nhật)"
+msgid "mo-update"
 msgstr ""
 
 msgid "mobius"
 msgstr ""
 
-msgid "modular (số học modulo)"
+msgid "modular"
 msgstr ""
 
-msgid "modular-inverse (nghịch đảo modulo)"
+msgid "modular-inverse"
 msgstr ""
 
-msgid "monotonic-queue (hàng đợi đơn điệu)"
+msgid "monotonic-queue"
 msgstr ""
 
 msgid "mst"
@@ -447,28 +444,28 @@ msgstr ""
 msgid "precision-issue"
 msgstr ""
 
-msgid "prefix-sum (mảng tiền tố)"
+msgid "prefix-sum"
 msgstr ""
 
-msgid "primality-test (kiểm tra số nguyên tố)"
+msgid "primality-test"
 msgstr ""
 
-msgid "probability (xác suất)"
+msgid "probability"
 msgstr ""
 
-msgid "randomized (thuật toán ngẫu nhiên)"
+msgid "randomized"
 msgstr ""
 
 msgid "Range Queries"
 msgstr ""
 
-msgid "recursion (đệ quy)"
+msgid "recursion"
 msgstr ""
 
-msgid "rmq (truy vấn đoạn)"
+msgid "rmq"
 msgstr ""
 
-msgid "rmq-2d (truy vấn đoạn 2D)"
+msgid "rmq-2d"
 msgstr ""
 
 msgid "rmq2d"
@@ -483,7 +480,7 @@ msgstr ""
 msgid "search"
 msgstr ""
 
-msgid "segtree-2d (cây phân đoạn 2D)"
+msgid "segtree-2d"
 msgstr ""
 
 msgid "segtree-beats"
@@ -492,7 +489,7 @@ msgstr ""
 msgid "segtree-dynamic"
 msgstr ""
 
-msgid "segtree-general (cây phân đoạn)"
+msgid "segtree-general"
 msgstr ""
 
 msgid "segtree-persistent"
@@ -504,7 +501,7 @@ msgstr ""
 msgid "sequence"
 msgstr ""
 
-msgid "sieve (sàng nguyên tố)"
+msgid "sieve"
 msgstr ""
 
 msgid "sieve-segment"
@@ -549,19 +546,19 @@ msgstr ""
 msgid "stl"
 msgstr ""
 
-msgid "string (chuỗi)"
+msgid "string"
 msgstr ""
 
-msgid "suffix-array (mảng hậu tố)"
+msgid "suffix-array"
 msgstr ""
 
 msgid "sweep-line"
 msgstr ""
 
-msgid "ternary-search (tìm kiếm tam phân)"
+msgid "ternary-search"
 msgstr ""
 
-msgid "topo-sort (sắp xếp topo)"
+msgid "topo-sort"
 msgstr ""
 
 msgid "tortoise-hare"
@@ -588,7 +585,7 @@ msgstr ""
 msgid "TST"
 msgstr ""
 
-msgid "two-pointers (hai con trỏ)"
+msgid "two-pointers"
 msgstr ""
 
 msgid "unlabelled"
@@ -602,6 +599,12 @@ msgstr ""
 
 msgid "z-function"
 msgstr ""
+
+msgid "Contest Proposal"
+msgstr "Đề xuất kỳ thi"
+
+msgid "Tools"
+msgstr "Công cụ"
 
 msgid "Insert Image"
 msgstr "Chèn hình ảnh"

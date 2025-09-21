@@ -56,7 +56,10 @@ from judge.models import (
     ContestProblem,
     OrganizationProfile,
     Block,
+    Course,
+    CourseRole,
 )
+from judge.models.course import RoleInCourse
 from judge.models.notification import make_notification
 from judge.models.block import get_all_blocked_pairs
 from judge import event_poster as event
@@ -66,11 +69,13 @@ from judge.utils.views import (
     generic_message,
     QueryStringSortMixin,
     DiggPaginatorMixin,
+    SingleObjectFormView,
 )
 from judge.utils.problems import user_attempted_ids, user_completed_ids
 from judge.utils.contest import maybe_trigger_contest_rescore
 from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
+from judge.views.course import CourseList
 from judge.views.submission import SubmissionsListBase
 from judge.views.feed import FeedView
 from judge.models.profile import get_top_rating_profile, get_top_score_profile
@@ -90,6 +95,7 @@ __all__ = [
     "OrganizationRequestView",
     "OrganizationRequestLog",
     "KickUserWidgetView",
+    "OrganizationCourses",
 ]
 
 
@@ -516,6 +522,20 @@ class OrganizationContestMixin(
         return contest.is_editable_by(request.user) or self.can_edit_organization(
             self.organization
         )
+
+
+class OrganizationCourseMixin(
+    LoginRequiredMixin,
+    TitleMixin,
+    OrganizationHomeView,
+):
+    model = Course
+
+    def is_course_editable(self, request, course):
+        """Check if course is editable by current user or organization admin"""
+        return Course.is_editable_by(
+            course, request.profile
+        ) or self.can_edit_organization(self.organization)
 
 
 class OrganizationContests(
@@ -1376,4 +1396,81 @@ class PendingBlogs(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["org"] = self.organization
+        return context
+
+
+class OrganizationCourses(OrganizationCourseMixin, MemberOrganizationMixin, CourseList):
+    template_name = "organization/course_list.html"
+
+    def get(self, request, *args, **kwargs):
+        # Initialize kwargs if not present
+        self.kwargs = kwargs
+        default_tab = "my" if request.user.is_authenticated else "joinable"
+        self.current_tab = request.GET.get("tab", default_tab)
+        self.search_query = request.GET.get("search", "")
+        self.role_filter = request.GET.get("role_filter", "")
+        return super(CourseList, self).get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        profile = self.request.profile if self.request.user.is_authenticated else None
+
+        # Start with courses in this organization
+        queryset = Course.objects.filter(organizations=self.organization)
+
+        if self.current_tab == "my":
+            if not profile:
+                return Course.objects.none()
+            # Filter to user's courses within this organization
+            queryset = queryset.filter(courserole__user=profile)
+
+            # Apply role filter only for "my" courses tab
+            if self.role_filter:
+                if self.role_filter == "teaching":
+                    # Filter for Teaching + Assistant roles
+                    queryset = queryset.filter(
+                        courserole__user=profile,
+                        courserole__role__in=[
+                            RoleInCourse.TEACHER,
+                            RoleInCourse.ASSISTANT,
+                        ],
+                    )
+                elif self.role_filter == "student":
+                    # Filter for Student role
+                    queryset = queryset.filter(
+                        courserole__user=profile, courserole__role=RoleInCourse.STUDENT
+                    )
+        else:  # Default to "joinable" tab
+            # Show joinable courses within this organization
+            if profile:
+                # Exclude courses user is already in
+                user_course_ids = Course.objects.filter(
+                    courserole__user=profile
+                ).values_list("id", flat=True)
+                queryset = queryset.exclude(id__in=user_course_ids)
+            # Only show public and open courses for joinable tab
+            queryset = queryset.filter(is_public=True, is_open=True)
+
+        if self.search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=self.search_query)
+                | Q(slug__icontains=self.search_query)
+            )
+
+        return queryset.order_by("-id").prefetch_related("organizations").distinct()
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizationCourses, self).get_context_data(**kwargs)
+        context["title"] = _("Courses in %s") % self.organization.name
+        context["page_type"] = "courses"
+
+        # Remove global organizations from context since we're in organization view
+        if "organizations" in context:
+            context.pop("organizations")
+
+        # Add organization-specific course creation permissions
+        context["can_create_course"] = (
+            self.request.user.is_superuser
+            or self.organization.is_admin(self.request.profile)
+        )
+
         return context

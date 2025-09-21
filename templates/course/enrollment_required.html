@@ -1,0 +1,45 @@
+{% extends "course/base.html" %}
+
+{% block two_col_media %}
+  <link rel="stylesheet" href="{{ static('course.css') }}">
+{% endblock %}
+
+{% block middle_content %}
+  <div class="course-enrollment-page">
+    <center><h2>{{ title }}</h2></center>
+
+    <div class="enrollment-message">
+      <h2><i class="fa fa-lock"></i> {{ _('Enrollment Required') }}</h2>
+      <p>{{ _('You need to enroll in this course to access its content.') }}</p>
+
+      {% if request.user.is_authenticated %}
+        {% if can_join %}
+          <p>{{ _('This course is open for enrollment. Click the button below to join.') }}</p>
+          <center>
+            <div class="enrollment-form">
+              <form method="post" action="{{ url('course_join', course.slug) }}">
+                {% csrf_token %}
+                <button type="submit" class="button small">
+                  <i class="fa fa-plus"></i> {{ _('Join Course') }}
+                </button>
+              </form>
+            </div>
+          </center>
+        {% else %}
+          <p>{{ _('This course is not open for public enrollment. Please contact the course instructor for access.') }}</p>
+        {% endif %}
+      {% else %}
+        <p>{{ _('Please log in to enroll in this course.') }}</p>
+      {% endif %}
+    </div>
+
+    {% if course.about %}
+      <div class="course-info">
+        <h3>{{ _('About This Course') }}</h3>
+        <div>
+          {{ course.about|markdown|reference|str|safe }}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

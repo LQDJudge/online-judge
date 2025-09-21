@@ -75,8 +75,8 @@ class OrganizationSelect2View(Select2View):
         queryset = Organization.objects.filter(name__icontains=self.term)
 
         # If user is superuser, show all organizations
-        if self.request.user.is_superuser:
-            return queryset
+        # if self.request.user.is_superuser:
+        #     return queryset
 
         # For regular users, only show organizations they are admin of
         if self.request.user.is_authenticated:
