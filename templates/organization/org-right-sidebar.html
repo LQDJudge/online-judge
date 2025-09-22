@@ -31,15 +31,17 @@
             <i class="fa fa-pencil"></i>{{ _('Add blog') }}</a>
         </div>
       {% endif %}
-      <div class="link-row">
-        <a href="{{ url('organization_pending_blogs', organization.id, organization.slug) }}">
-          <i class="fa fa-clipboard-list"></i>{{ _('Pending blogs') }}</a>
-        {% if pending_blog_count > 0 %}
-          <span id="pending-count-box">
-            {{pending_blog_count}}
-          </span>
-        {% endif %}
-      </div>
+      {% if is_member %}
+        <div class="link-row">
+          <a href="{{ url('organization_pending_blogs', organization.id, organization.slug) }}">
+            <i class="fa fa-clipboard-list"></i>{{ _('Pending blogs') }}</a>
+          {% if pending_blog_count > 0 %}
+            <span id="pending-count-box">
+              {{pending_blog_count}}
+            </span>
+          {% endif %}
+        </div>
+      {% endif %}
       {% if can_edit %}
         <div class="link-row">
           <a href="{{ url('organization_contest_add', organization.id, organization.slug) }}">
