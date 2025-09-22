@@ -15,6 +15,7 @@ from django.contrib.auth.models import User
 
 from judge.models import Organization, Course, Language, Profile
 from judge.utils.views import generic_message
+from judge.cache_handler import clear_request_l0_cache
 
 
 USED_DOMAINS = ["www"]
@@ -213,4 +214,20 @@ class SlowRequestMiddleware(object):
                     logger.info(json.dumps(message))
             except Exception:
                 pass
+        return response
+
+
+class RequestScopedCacheMiddleware:
+    """
+    Middleware to clear request-scoped L0 cache at the end of each request.
+    This ensures that the L0 cache is only valid within a single request.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        # Clear the request-scoped L0 cache after processing the request
+        clear_request_l0_cache()
         return response

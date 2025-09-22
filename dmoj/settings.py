@@ -253,6 +253,7 @@ MIDDLEWARE = (
     "judge.middleware.SlowRequestMiddleware",
     "judge.middleware.ShortCircuitMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "judge.middleware.RequestScopedCacheMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
