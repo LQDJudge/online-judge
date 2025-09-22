@@ -637,8 +637,7 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
                 course=self.course, id=self.kwargs["id"]
             )
 
-            is_editable = Course.is_editable_by(self.course, self.request.profile)
-            if not self.lesson.is_visible and not is_editable:
+            if not Course.is_accessible_by(self.course, self.request.profile):
                 raise Http404()
 
             return self.lesson
