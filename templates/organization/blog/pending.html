@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block middle_content %}
+  {% include "messages.html" %}
   {% for post in blogs %}
     <section class="{% if post.sticky %}sticky {% endif %} blog-box" id="post-{{post.id}}">
       <div style="margin-bottom: 0.5em">
@@ -32,30 +33,39 @@
         </div>
         <div class="show-more"> {{_("...More")}} </div>
       </div>
-      {% if request.profile.can_edit_organization(org) %}
-        <div class="actionbar-box">
-          <div class="actionbar {{'hide_texts_on_mobile' if hide_texts_on_mobile}}">
+      <div class="actionbar-box">
+        <div class="actionbar {{'hide_texts_on_mobile' if hide_texts_on_mobile}}">
+          {% if is_admin %}
             <span class="actionbar-block">
               <a class="actionbar-button white background-green" href="#" onclick="javascript:approvePost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
                 <i class="fa fa-check" style="font-size: large;"></i>
                 <span class="actionbar-text">{{_("Approve")}}</span>
               </a>
             </span>
-            <span class="actionbar-block">
-              <a class="actionbar-button black" href="{{ url('edit_organization_blog', org.id , org.slug , post.id) }}">
-                <i class="fa fa-edit" style="font-size: large;"></i>
-                <span class="actionbar-text">{{_("Edit")}}</span>
-              </a>
-            </span>
+          {% endif %}
+          <span class="actionbar-block">
+            <a class="actionbar-button black" href="{{ url('edit_organization_blog', org.id , org.slug , post.id) }}">
+              <i class="fa fa-edit" style="font-size: large;"></i>
+              <span class="actionbar-text">{{_("Edit")}}</span>
+            </a>
+          </span>
+          {% if is_admin %}
             <span class="actionbar-block">
               <a class="actionbar-button white background-red" href="#" onclick="javascript:rejectPost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
                 <i class="fa fa-times" style="font-size: large;"></i>
                 <span class="actionbar-text">{{_("Reject")}}</span>
               </a>
             </span>
-          </div>
+          {% else %}
+            <span class="actionbar-block">
+              <a class="actionbar-button white background-red" href="#" onclick="javascript:deletePost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
+                <i class="fa fa-trash" style="font-size: large;"></i>
+                <span class="actionbar-text">{{_("Delete")}}</span>
+              </a>
+            </span>
+          {% endif %}
         </div>
-      {% endif %}
+      </div>
     </section>
   {% endfor %}
   {% include "feed/has_next.html" %}

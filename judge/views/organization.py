@@ -80,6 +80,7 @@ from judge.views.submission import SubmissionsListBase
 from judge.views.feed import FeedView
 from judge.models.profile import get_top_rating_profile, get_top_score_profile
 
+
 __all__ = [
     "OrganizationList",
     "OrganizationHome",
@@ -1255,9 +1256,24 @@ class AddOrganizationBlog(
                 html,
                 self.request.profile,
             )
+
+            # Add success message for user feedback
+            if not self.object.visible:
+                messages.success(
+                    self.request,
+                    _(
+                        "Your blog post has been submitted successfully and is waiting for admin approval."
+                    ),
+                )
+
             return res
 
     def get_success_url(self):
+        if not self.object.visible:
+            return reverse(
+                "organization_pending_blogs",
+                args=[self.organization.id, self.organization.slug],
+            )
         return reverse(
             "organization_home", args=[self.organization.id, self.organization.slug]
         )
@@ -1267,7 +1283,7 @@ class EditOrganizationBlog(
     LoginRequiredMixin,
     TitleMixin,
     OrganizationHomeView,
-    AdminOrganizationMixin,
+    MemberOrganizationMixin,
     UpdateView,
 ):
     template_name = "organization/blog/edit.html"
@@ -1284,13 +1300,27 @@ class EditOrganizationBlog(
             self.blog = BlogPost.objects.get(id=self.blog_id)
             if self.organization not in self.blog.organizations.all():
                 raise Exception(_("This blog does not belong to this group"))
-            if not self.request.profile.can_edit_organization(self.organization):
+
+            self.is_org_admin = self.request.profile.can_edit_organization(
+                self.organization
+            )
+            self.is_blog_author = self.request.profile.id in self.blog.get_author_ids()
+
+            if not (self.is_org_admin or self.is_blog_author):
                 raise Exception(_("Not allowed to edit this blog"))
+        except BlogPost.DoesNotExist:
+            return generic_message(
+                request,
+                _("Permission denied"),
+                _("Blog post not found"),
+                status=404,
+            )
         except Exception as e:
             return generic_message(
                 request,
                 _("Permission denied"),
-                e,
+                str(e),
+                status=403,
             )
 
     def publish_blog(self, request, *args, **kwargs):
@@ -1311,7 +1341,16 @@ class EditOrganizationBlog(
         res = self.setup_blog(request, *args, **kwargs)
         if res:
             return res
-        if request.POST.get("action") == "Delete":
+        action = request.POST.get("action")
+
+        if action == "Delete":
+            if not (self.is_org_admin or self.is_blog_author):
+                return generic_message(
+                    request,
+                    _("Permission denied"),
+                    _("You are not allowed to delete this blog."),
+                    status=403,
+                )
             self.create_notification("Delete blog")
             self.delete_blog(request, *args, **kwargs)
             cur_url = reverse(
@@ -1319,7 +1358,15 @@ class EditOrganizationBlog(
                 args=(self.organization_id, self.organization.slug),
             )
             return HttpResponseRedirect(cur_url)
-        elif request.POST.get("action") == "Reject":
+        elif action == "Reject":
+            if not self.is_org_admin:
+                return generic_message(
+                    request,
+                    _("Permission denied"),
+                    _("Only organization admins can reject blog posts."),
+                    status=403,
+                )
+
             self.create_notification("Reject blog")
             self.delete_blog(request, *args, **kwargs)
             cur_url = reverse(
@@ -1327,7 +1374,14 @@ class EditOrganizationBlog(
                 args=(self.organization_id, self.organization.slug),
             )
             return HttpResponseRedirect(cur_url)
-        elif request.POST.get("action") == "Approve":
+        elif action == "Approve":
+            if not self.is_org_admin:
+                return generic_message(
+                    request,
+                    _("Permission denied"),
+                    _("Only organization admins can approve blog posts."),
+                    status=403,
+                )
             self.create_notification("Approve blog")
             self.publish_blog(request, *args, **kwargs)
             cur_url = reverse(
@@ -1366,6 +1420,11 @@ class EditOrganizationBlog(
             return res
 
     def get_success_url(self):
+        if not self.object.visible:
+            return reverse(
+                "organization_pending_blogs",
+                args=[self.organization.id, self.organization.slug],
+            )
         return reverse(
             "organization_home", args=[self.organization.id, self.organization.slug]
         )

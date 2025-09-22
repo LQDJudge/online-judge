@@ -33,7 +33,10 @@
         </div>
       {% endif %}
     {% endfor %}
-    <button type="submit" style="display: inline;" name="action" value="Save" >{{ _('Save') }} </button>
-    <button type="submit" style="background-color: red; float: right;" name="action" value="Delete" > {{ _('Delete') }} </button>
+    <button type="submit" style="display: inline;" class="button" name="action" value="Save">{{ _('Save') }} </button>
+    <button type="submit" style="float: right;" class="button background-red" name="action" value="Delete">
+      <i class="fa fa-trash"></i>
+      {{ _('Delete') }}
+    </button>
   </form>
 {% endblock %}

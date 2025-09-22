@@ -44,5 +44,17 @@
         removePost(postId);
       });
     }
+
+    window.deletePost = function (url, postId, e) {
+      e.preventDefault();
+      const csrfToken = '{{ csrf_token }}';
+      ajax_post(url, {
+        id: postId,
+        action: 'Delete',
+        csrfmiddlewaretoken: csrfToken
+      }, function () {
+        removePost(postId);
+      });
+    }
   });
 </script>
