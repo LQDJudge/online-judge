@@ -62,9 +62,20 @@
 
 /* Base Typography */
 .content-description {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.7;
+  color: #333;
+  max-width: none;
+  word-wrap: break-word;
+}
+
+/* Improve readability on larger screens */
+@media (min-width: 1200px) {
+  .content-description {
+    font-size: 17px;
+    line-height: 1.8;
+  }
 }
 
 /* Headings */
@@ -90,9 +101,35 @@
 .content-description h4 { font-size: 1.1em; }
 
 /* Text Elements */
-.content-description p { margin: 1em 0; }
-.content-description strong { font-weight: 600; }
-.content-description em { font-style: italic; }
+.content-description p {
+  margin: 1em 0;
+  text-align: justify;
+  hyphens: auto;
+}
+
+.content-description strong {
+  font-weight: 600;
+  color: #333;
+}
+
+.content-description em {
+  font-style: italic;
+  color: #555;
+}
+
+/* Strikethrough text */
+.content-description del,
+.content-description s {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+/* Mark/highlight text */
+.content-description mark {
+  background: linear-gradient(120deg, #a8e6cf 0%, #dcedc1 100%);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
 
 /* Links */
 .content-description a {
@@ -110,7 +147,92 @@
   margin: 1em 0;
   padding-left: 2em;
 }
-.content-description li { margin: 0.25em 0; }
+
+.content-description li {
+  margin: 0.5em 0;
+  line-height: 1.6;
+}
+
+/* Better bullet points for unordered lists */
+.content-description ul {
+  list-style: none;
+  padding-left: 1.5em;
+}
+
+.content-description ul > li {
+  position: relative;
+}
+
+.content-description ul > li::before {
+  content: "•";
+  color: var(--primary);
+  font-weight: bold;
+  position: absolute;
+  left: -1em;
+  top: 0;
+}
+
+/* Nested lists */
+.content-description ul ul > li::before {
+  content: "◦";
+  color: var(--primary-light);
+}
+
+.content-description ul ul ul > li::before {
+  content: "▪";
+  color: var(--primary);
+}
+
+/* Ordered lists with better numbering */
+.content-description ol {
+  counter-reset: list-counter;
+  list-style: none;
+  padding-left: 1.8em;
+}
+
+.content-description ol > li {
+  counter-increment: list-counter;
+  position: relative;
+}
+
+.content-description ol > li::before {
+  content: counter(list-counter) ".";
+  color: var(--primary);
+  font-weight: 600;
+  position: absolute;
+  left: -1.5em;
+  top: 0;
+}
+
+/* Task Lists (GitHub style) */
+.content-description ul.task-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.content-description ul.task-list > li {
+  position: relative;
+  padding-left: 1.8em;
+}
+
+.content-description ul.task-list > li::before {
+  display: none;
+}
+
+.content-description ul.task-list > li input[type="checkbox"] {
+  position: absolute;
+  left: 0;
+  top: 0.3em;
+  margin: 0;
+  width: 1.2em;
+  height: 1.2em;
+  accent-color: var(--primary);
+}
+
+.content-description ul.task-list > li input[type="checkbox"]:checked + * {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
 
 /* Dark Mode Code Blocks - HackMD Style */
 .content-description pre, .content-description code, .content-description kbd, .content-description samp, .content-description span.code {
@@ -274,46 +396,113 @@
 .content-description blockquote {
   border-left: 4px solid var(--primary);
   background: var(--bg-alt);
-  margin: 1em 0;
-  padding: 0.5em 1em;
+  margin: 1.5em 0;
+  padding: 1em 1.5em;
   border-radius: 0 var(--radius) var(--radius) 0;
   font-style: italic;
-  color: var(--text-light);
+  color: #555;
+  position: relative;
+  box-shadow: var(--shadow);
+}
+
+.content-description blockquote::before {
+  content: "\201C";
+  font-size: 3em;
+  color: var(--primary);
+  position: absolute;
+  left: 0.2em;
+  top: -0.1em;
+  font-family: Georgia, serif;
+  opacity: 0.3;
+}
+
+.content-description blockquote p {
+  margin: 0.5em 0;
+}
+
+.content-description blockquote p:first-child {
+  margin-top: 0;
+}
+
+.content-description blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Nested blockquotes */
+.content-description blockquote blockquote {
+  border-left-color: var(--primary-light);
+  margin: 1em 0;
+  background: rgba(248, 249, 250, 0.5);
 }
 
 /* Tables */
 .content-description table {
   border-collapse: collapse;
-  margin: 1em 0;
+  margin: 1.5em 0;
   width: 100%;
   box-shadow: var(--shadow);
   border-radius: var(--radius);
   overflow: hidden;
+  background: white;
 }
 
 .content-description th, .content-description td {
   border: 1px solid var(--border);
-  padding: 0.75em;
+  padding: 0.875em 1em;
   text-align: left;
+  vertical-align: top;
 }
 
 .content-description th {
   background: var(--primary);
   color: white;
   font-weight: 600;
+  font-size: 0.95em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .content-description tr:nth-child(even) {
   background: var(--bg-alt);
 }
 
+.content-description tr:hover {
+  background: rgba(25, 118, 210, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+/* Table responsiveness */
+@media (max-width: 768px) {
+  .content-description table {
+    font-size: 0.9em;
+  }
+  
+  .content-description th, .content-description td {
+    padding: 0.5em 0.75em;
+  }
+}
+
 /* Horizontal Rules */
-.md-typeset hr {
+.content-description hr {
   border: none;
-  height: 2px;
-  background: linear-gradient(90deg, var(--primary), var(--primary-light));
-  margin: 2em 0;
-  border-radius: 1px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-light), var(--primary));
+  margin: 2.5em 0;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(25, 118, 210, 0.3);
+}
+
+/* Alternative HR styles */
+.content-description hr.dashed {
+  background: none;
+  border-top: 2px dashed var(--primary);
+  height: 0;
+}
+
+.content-description hr.dotted {
+  background: none;
+  border-top: 3px dotted var(--primary);
+  height: 0;
 }
 
 /* ORIGINAL MATERIAL DESIGN ADMONITIONS & SPOILERS */
