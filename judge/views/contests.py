@@ -1333,7 +1333,10 @@ class ContestParticipationList(LoginRequiredMixin, ContestRankingBase):
     def get_title(self):
         if self.profile == self.request.profile:
             return _("Your participation in %s") % self.object.name
-        return _("%s's participation in %s") % (self.profile.username, self.object.name)
+        return _("%(username)s's participation in %(contest)s") % {
+            "username": self.profile.username,
+            "contest": self.object.name,
+        }
 
     def get_ranking_list(self):
         if (

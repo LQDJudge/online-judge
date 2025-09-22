@@ -152,13 +152,17 @@ class ProblemDataCompiler(object):
                 if not self.generator:
                     if case.input_file not in self.files:
                         raise ProblemDataError(
-                            _("Input file for case %d does not exist: %s")
-                            % (i, case.input_file)
+                            _(
+                                "Input file for case %(case_num)d does not exist: %(filename)s"
+                            )
+                            % {"case_num": i, "filename": case.input_file}
                         )
                     if case.output_file not in self.files:
                         raise ProblemDataError(
-                            _("Output file for case %d does not exist: %s")
-                            % (i, case.output_file)
+                            _(
+                                "Output file for case %(case_num)d does not exist: %(filename)s"
+                            )
+                            % {"case_num": i, "filename": case.output_file}
                         )
 
                 if case.input_file:

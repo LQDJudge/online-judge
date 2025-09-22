@@ -688,8 +688,8 @@ class BlockOrganization(OrganizationMembershipChange):
             return generic_message(
                 request,
                 _("Blocking group"),
-                _("An error occurred while blocking %s. Reason: %s")
-                % (org.short_name, str(e)),
+                _("An error occurred while blocking %(org)s. Reason: %(reason)s")
+                % {"org": org.short_name, "reason": str(e)},
             )
 
         if profile.organizations.filter(id=org.id).exists():
@@ -713,8 +713,8 @@ class UnblockOrganization(OrganizationMembershipChange):
             return generic_message(
                 request,
                 _("Blocking group"),
-                _("An error occurred while unblocking %s. Reason: %s")
-                % (org.short_name, str(e)),
+                _("An error occurred while unblocking %(org)s. Reason: %(reason)s")
+                % {"org": org.short_name, "reason": str(e)},
             )
 
         return HttpResponseRedirect(reverse("organization_list") + "?tab=blocked")
@@ -859,10 +859,10 @@ class OrganizationRequestView(OrganizationRequestBaseView):
                     messages.error(
                         request,
                         _(
-                            "Your organization can only receive %d more members. "
-                            "You cannot approve %d users."
+                            "Your organization can only receive %(can_add)d more members. "
+                            "You cannot approve %(to_approve)d users."
                         )
-                        % (can_add, to_approve),
+                        % {"can_add": can_add, "to_approve": to_approve},
                     )
                     return self.render_to_response(
                         self.get_context_data(object=organization)
@@ -1258,12 +1258,13 @@ class AddOrganizationBlog(
             )
 
             # Add success message for user feedback
+            success_message = _(
+                "Your blog post has been submitted successfully and is waiting for admin approval."
+            )
             if not self.object.visible:
                 messages.success(
                     self.request,
-                    _(
-                        "Your blog post has been submitted successfully and is waiting for admin approval."
-                    ),
+                    success_message,
                 )
 
             return res

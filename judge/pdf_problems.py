@@ -321,8 +321,11 @@ class SeleniumPDFRender(BasePdfMaker):
         "displayHeaderFooter": True,
         "headerTemplate": "<div></div>",
         "footerTemplate": '<center style="margin: 0 auto; font-family: Segoe UI; font-size: 10px">'
-        + gettext("Page %s of %s")
-        % ('<span class="pageNumber"></span>', '<span class="totalPages"></span>')
+        + gettext("Page %(page)s of %(total)s")
+        % {
+            "page": '<span class="pageNumber"></span>',
+            "total": '<span class="totalPages"></span>',
+        }
         + "</center>",
     }
 

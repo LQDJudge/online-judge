@@ -31,7 +31,7 @@ msgid "Proposal"
 msgstr "Đề xuất"
 
 msgid "TanKhoa"
-msgstr ""
+msgstr "TanKhoa"
 
 msgid "Name1"
 msgstr "Tên 1"
@@ -46,559 +46,559 @@ msgid "Status"
 msgstr "Máy chấm"
 
 msgid "2sat"
-msgstr ""
+msgstr "2-SAT"
 
 msgid "adhoc"
-msgstr ""
+msgstr "Tùy ý"
 
 msgid "aho-corasick"
-msgstr ""
+msgstr "Aho-Corasick"
 
 msgid "articulation-point"
-msgstr ""
+msgstr "Khớp"
 
 msgid "backtrack"
-msgstr ""
+msgstr "Quay lui"
 
 msgid "bellman-ford"
-msgstr ""
+msgstr "Bellman-Ford"
 
 msgid "bfs-01"
-msgstr ""
+msgstr "BFS 0-1"
 
 msgid "biconnected-component"
-msgstr ""
+msgstr "Thành phần liên thông mạnh"
 
 msgid "bignum"
-msgstr ""
+msgstr "Số lớn"
 
 msgid "binary-lifting"
-msgstr ""
+msgstr "Nhảy nhị phân"
 
 msgid "binary-search"
-msgstr ""
+msgstr "Tìm kiếm nhị phân"
 
 msgid "binary-search-parallel"
-msgstr ""
+msgstr "Tìm kiếm nhị phân song song"
 
 msgid "bit"
-msgstr ""
+msgstr "BIT"
 
 msgid "bit2d"
-msgstr ""
+msgstr "BIT 2D"
 
 msgid "bitset"
-msgstr ""
+msgstr "Bitset"
 
 msgid "bitwise"
-msgstr ""
+msgstr "Thao tác bit"
 
 msgid "block-cut-tree"
-msgstr ""
+msgstr "Cây khối-cắt"
 
 msgid "boruvka"
-msgstr ""
+msgstr "Borůvka"
 
 msgid "branch&bound"
-msgstr ""
+msgstr "Nhánh cận"
 
 msgid "bridge"
-msgstr ""
+msgstr "Cầu"
 
 msgid "brute force"
-msgstr ""
+msgstr "Vét cạn"
 
 msgid "cactus-graph"
-msgstr ""
+msgstr "Đồ thị xương rồng"
 
 msgid "casework"
-msgstr ""
+msgstr "Phân tích trường hợp"
 
 msgid "centroid"
-msgstr ""
+msgstr "Trọng tâm"
 
 msgid "chinese-remainder"
-msgstr ""
+msgstr "Định lý thặng dư Trung Hoa"
 
 msgid "combinatorics"
-msgstr ""
+msgstr "Tổ hợp"
 
 msgid "constructive"
-msgstr ""
+msgstr "Xây dựng"
 
 msgid "convex-hull"
-msgstr ""
+msgstr "Bao lồi"
 
 msgid "counting"
-msgstr ""
+msgstr "Đếm"
 
 msgid "cycle"
-msgstr ""
+msgstr "Chu trình"
 
 msgid "data structures"
-msgstr ""
+msgstr "Cấu trúc dữ liệu"
 
 msgid "deep-optimization"
-msgstr ""
+msgstr "Tối ưu sâu"
 
 msgid "dfs/bfs/pfs"
-msgstr ""
+msgstr "DFS/BFS/PFS"
 
 msgid "dijkstra"
-msgstr ""
+msgstr "Dijkstra"
 
 msgid "divide and conquer"
-msgstr ""
+msgstr "Chia để trị"
 
 msgid "dp-alien"
-msgstr ""
+msgstr "DP Alien"
 
 msgid "dp-bitmask"
-msgstr ""
+msgstr "DP Bitmask"
 
 msgid "dp-cc"
-msgstr ""
+msgstr "DP Thành phần liên thông"
 
 msgid "dp-convexhull"
-msgstr ""
+msgstr "DP Bao lồi"
 
 msgid "dp-count"
-msgstr ""
+msgstr "DP Đếm"
 
 msgid "dp-dag"
-msgstr ""
+msgstr "DP DAG"
 
 msgid "dp-digit"
-msgstr ""
+msgstr "DP Chữ số"
 
 msgid "dp-dnc"
-msgstr ""
+msgstr "DP Chia để trị"
 
 msgid "dp-general"
-msgstr ""
+msgstr "DP Tổng quát"
 
 msgid "dp-knuth"
-msgstr ""
+msgstr "DP Knuth"
 
 msgid "dp-matrix"
-msgstr ""
+msgstr "DP Ma trận"
 
 msgid "dp-openclose"
-msgstr ""
+msgstr "DP Mở-đóng"
 
 msgid "dp-permutation"
-msgstr ""
+msgstr "DP Hoán vị"
 
 msgid "dp-slope"
-msgstr ""
+msgstr "DP Độ dốc"
 
 msgid "dp-sos"
-msgstr ""
+msgstr "DP SOS"
 
 msgid "dp-swap-label"
-msgstr ""
+msgstr "DP Hoán đổi nhãn"
 
 msgid "dp-tree"
-msgstr ""
+msgstr "DP Cây"
 
 msgid "dsu"
-msgstr ""
+msgstr "DSU"
 
 msgid "dsu-roll-back"
-msgstr ""
+msgstr "DSU Rollback"
 
 msgid "dynamic programming"
-msgstr ""
+msgstr "Quy hoạch động"
 
 msgid "euler-path"
-msgstr ""
+msgstr "Đường đi Euler"
 
 msgid "euler-theorem"
-msgstr ""
+msgstr "Định lý Euler"
 
 msgid "euler-tour"
-msgstr ""
+msgstr "Tour Euler"
 
 msgid "extgcd"
-msgstr ""
+msgstr "GCD mở rộng"
 
 msgid "Fenwick Tree (Binary Indexed Tree)"
-msgstr ""
+msgstr "Cây Fenwick (BIT)"
 
 msgid "fft/ntt"
-msgstr ""
+msgstr "FFT/NTT"
 
 msgid "flow-demands"
-msgstr ""
+msgstr "Luồng có yêu cầu"
 
 msgid "flow-general"
-msgstr ""
+msgstr "Luồng tổng quát"
 
 msgid "flow-mincost"
-msgstr ""
+msgstr "Luồng chi phí tối thiểu"
 
 msgid "flows"
-msgstr ""
+msgstr "Luồng"
 
 msgid "floyd"
-msgstr ""
+msgstr "Floyd"
 
 msgid "function-graph"
-msgstr ""
+msgstr "Đồ thị hàm"
 
 msgid "game theory"
-msgstr ""
+msgstr "Lý thuyết trò chơi"
 
 msgid "game-ad-hoc"
-msgstr ""
+msgstr "Trò chơi tùy ý"
 
 msgid "game-minimax"
-msgstr ""
+msgstr "Trò chơi Minimax"
 
 msgid "game-nim"
-msgstr ""
+msgstr "Trò chơi Nim"
 
 msgid "game-sprague-grundy"
-msgstr ""
+msgstr "Trò chơi Sprague-Grundy"
 
 msgid "gauss-elim"
-msgstr ""
+msgstr "Khử Gauss"
 
 msgid "genetic"
-msgstr ""
+msgstr "Thuật toán di truyền"
 
 msgid "geometry"
-msgstr ""
+msgstr "Hình học"
 
 msgid "geometry-general"
-msgstr ""
+msgstr "Hình học tổng quát"
 
 msgid "gomory-hu-tree"
-msgstr ""
+msgstr "Cây Gomory-Hu"
 
 msgid "graph"
-msgstr ""
+msgstr "Đồ thị"
 
 msgid "graph theory"
-msgstr ""
+msgstr "Lý thuyết đồ thị"
 
 msgid "greedy"
-msgstr ""
+msgstr "Tham lam"
 
 msgid "greedy-exchange"
-msgstr ""
+msgstr "Tham lam hoán đổi"
 
 msgid "greedy-general"
-msgstr ""
+msgstr "Tham lam tổng quát"
 
 msgid "greedy-moore"
-msgstr ""
+msgstr "Tham lam Moore"
 
 msgid "hashing"
-msgstr ""
+msgstr "Băm"
 
 msgid "heuristic"
-msgstr ""
+msgstr "Heuristic"
 
 msgid "hld"
-msgstr ""
+msgstr "HLD"
 
 msgid "HSG"
-msgstr ""
+msgstr "HSG"
 
 msgid "ICPC"
-msgstr ""
+msgstr "ICPC"
 
 msgid "implementation"
-msgstr ""
+msgstr "Cài đặt"
 
 msgid "inclusion-exclusion"
-msgstr ""
+msgstr "Bao hàm - loại trừ"
 
 msgid "interactive"
-msgstr ""
+msgstr "Tương tác"
 
 msgid "inversive-geometry"
-msgstr ""
+msgstr "Hình học nghịch đảo"
 
 msgid "kd-tree"
-msgstr ""
+msgstr "Cây KD"
 
 msgid "kirchoff"
-msgstr ""
+msgstr "Kirchhoff"
 
 msgid "kmp"
-msgstr ""
+msgstr "KMP"
 
 msgid "kruskal"
-msgstr ""
+msgstr "Kruskal"
 
 msgid "lagrange-inter"
-msgstr ""
+msgstr "Nội suy Lagrange"
 
 msgid "language"
-msgstr ""
+msgstr "Ngôn ngữ"
 
 msgid "lca"
-msgstr ""
+msgstr "LCA"
 
 msgid "lichao-tree"
-msgstr ""
+msgstr "Cây Li Chao"
 
 msgid "local-search"
-msgstr ""
+msgstr "Tìm kiếm cục bộ"
 
 msgid "ltt"
-msgstr ""
+msgstr "LTT"
 
 msgid "manacher"
-msgstr ""
+msgstr "Manacher"
 
 msgid "matching-bipartie"
-msgstr ""
+msgstr "Ghép cặp hai phía"
 
 msgid "matching-general"
-msgstr ""
+msgstr "Ghép cặp tổng quát"
 
 msgid "matching-hall"
-msgstr ""
+msgstr "Ghép cặp Hall"
 
 msgid "matching-hungarian"
-msgstr ""
+msgstr "Ghép cặp Hungary"
 
 msgid "matching-konig"
-msgstr ""
+msgstr "Ghép cặp König"
 
 msgid "math"
-msgstr ""
+msgstr "Toán học"
 
 msgid "math-general"
-msgstr ""
+msgstr "Toán học tổng quát"
 
 msgid "matrix multiplication"
-msgstr ""
+msgstr "Nhân ma trận"
 
 msgid "max-clique"
-msgstr ""
+msgstr "Clique tối đa"
 
 msgid "meet-in-the-middle"
-msgstr ""
+msgstr "Gặp ở giữa"
 
 msgid "Miscellaneous"
-msgstr ""
+msgstr "Khác"
 
 msgid "mo-general"
-msgstr ""
+msgstr "Mo tổng quát"
 
 msgid "mo-tree"
-msgstr ""
+msgstr "Mo trên cây"
 
 msgid "mo-update"
-msgstr ""
+msgstr "Mo có cập nhật"
 
 msgid "mobius"
-msgstr ""
+msgstr "Möbius"
 
 msgid "modular"
-msgstr ""
+msgstr "Modular"
 
 msgid "modular-inverse"
-msgstr ""
+msgstr "Nghịch đảo modular"
 
 msgid "monotonic-queue"
-msgstr ""
+msgstr "Hàng đợi đơn điệu"
 
 msgid "mst"
-msgstr ""
+msgstr "Cây khung tối thiểu"
 
 msgid "multiplicative"
-msgstr ""
+msgstr "Nhân tính"
 
 msgid "NEW"
-msgstr ""
+msgstr "MỚI"
 
 msgid "number theory"
-msgstr ""
+msgstr "Lý thuyết số"
 
 msgid "offline"
-msgstr ""
+msgstr "Offline"
 
 msgid "order-statistic"
-msgstr ""
+msgstr "Thống kê thứ tự"
 
 msgid "output-only"
-msgstr ""
+msgstr "Chỉ xuất"
 
 msgid "palin-tree"
-msgstr ""
+msgstr "Cây palindrome"
 
 msgid "picks-theorem"
-msgstr ""
+msgstr "Định lý Pick"
 
 msgid "planar-graph"
-msgstr ""
+msgstr "Đồ thị phẳng"
 
 msgid "polygon-triangulation"
-msgstr ""
+msgstr "Tam giác hóa đa giác"
 
 msgid "precision-issue"
-msgstr ""
+msgstr "Vấn đề độ chính xác"
 
 msgid "prefix-sum"
-msgstr ""
+msgstr "Tổng tiền tố"
 
 msgid "primality-test"
-msgstr ""
+msgstr "Kiểm tra số nguyên tố"
 
 msgid "probability"
-msgstr ""
+msgstr "Xác suất"
 
 msgid "randomized"
-msgstr ""
+msgstr "Ngẫu nhiên hóa"
 
 msgid "Range Queries"
-msgstr ""
+msgstr "Truy vấn đoạn"
 
 msgid "recursion"
-msgstr ""
+msgstr "Đệ quy"
 
 msgid "rmq"
-msgstr ""
+msgstr "RMQ"
 
 msgid "rmq-2d"
-msgstr ""
+msgstr "RMQ 2D"
 
 msgid "rmq2d"
-msgstr ""
+msgstr "RMQ 2D"
 
 msgid "scc"
-msgstr ""
+msgstr "Thành phần liên thông mạnh"
 
 msgid "scheduling"
-msgstr ""
+msgstr "Lập lịch"
 
 msgid "search"
-msgstr ""
+msgstr "Tìm kiếm"
 
 msgid "segtree-2d"
-msgstr ""
+msgstr "Segment Tree 2D"
 
 msgid "segtree-beats"
-msgstr ""
+msgstr "Segment Tree Beats"
 
 msgid "segtree-dynamic"
-msgstr ""
+msgstr "Segment Tree động"
 
 msgid "segtree-general"
-msgstr ""
+msgstr "Segment Tree tổng quát"
 
 msgid "segtree-persistent"
-msgstr ""
+msgstr "Segment Tree bền vững"
 
 msgid "segtree-walk"
-msgstr ""
+msgstr "Segment Tree walk"
 
 msgid "sequence"
-msgstr ""
+msgstr "Dãy số"
 
 msgid "sieve"
-msgstr ""
+msgstr "Sàng"
 
 msgid "sieve-segment"
-msgstr ""
+msgstr "Sàng đoạn"
 
 msgid "small-to-large"
-msgstr ""
+msgstr "Nhỏ đến lớn"
 
 msgid "sortings"
-msgstr ""
+msgstr "Sắp xếp"
 
 msgid "spanning-tree"
-msgstr ""
+msgstr "Cây khung"
 
 msgid "sparse-table"
-msgstr ""
+msgstr "Sparse Table"
 
 msgid "spfa"
-msgstr ""
+msgstr "SPFA"
 
 msgid "sqrt"
-msgstr ""
+msgstr "Căn bậc hai"
 
 msgid "sqrt-babygiant"
-msgstr ""
+msgstr "Căn Baby-Giant"
 
 msgid "sqrt-buckets"
-msgstr ""
+msgstr "Căn Buckets"
 
 msgid "sqrt-buffer"
-msgstr ""
+msgstr "Căn Buffer"
 
 msgid "sqrt-time"
-msgstr ""
+msgstr "Căn thời gian"
 
 msgid "stack-queue"
-msgstr ""
+msgstr "Ngăn xếp - hàng đợi"
 
 msgid "static-data"
-msgstr ""
+msgstr "Dữ liệu tĩnh"
 
 msgid "stl"
-msgstr ""
+msgstr "STL"
 
 msgid "string"
-msgstr ""
+msgstr "Chuỗi"
 
 msgid "suffix-array"
-msgstr ""
+msgstr "Mảng hậu tố"
 
 msgid "sweep-line"
-msgstr ""
+msgstr "Quét đường thẳng"
 
 msgid "ternary-search"
-msgstr ""
+msgstr "Tìm kiếm tam phân"
 
 msgid "topo-sort"
-msgstr ""
+msgstr "Sắp xếp topo"
 
 msgid "tortoise-hare"
-msgstr ""
+msgstr "Rùa và thỏ"
 
 msgid "Training"
-msgstr ""
+msgstr "Luyện tập"
 
 msgid "treap/splay"
-msgstr ""
+msgstr "Treap/Splay"
 
 msgid "Tree - general"
-msgstr ""
+msgstr "Cây - tổng quát"
 
 msgid "tree-isomorphism"
-msgstr ""
+msgstr "Đồng cấu cây"
 
 msgid "trie"
-msgstr ""
+msgstr "Trie"
 
 msgid "TSP"
-msgstr ""
+msgstr "TSP"
 
 msgid "TST"
-msgstr ""
+msgstr "TST"
 
 msgid "two-pointers"
-msgstr ""
+msgstr "Hai con trỏ"
 
 msgid "unlabelled"
-msgstr ""
+msgstr "Không nhãn"
 
 msgid "VOI"
-msgstr ""
+msgstr "VOI"
 
 msgid "voronoi"
-msgstr ""
+msgstr "Voronoi"
 
 msgid "z-function"
-msgstr ""
+msgstr "Hàm Z"
 
 msgid "Contest Proposal"
 msgstr "Đề xuất kỳ thi"

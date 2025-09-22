@@ -859,17 +859,20 @@ class ContestParticipation(models.Model):
 
     def __str__(self):
         if self.spectate:
-            return gettext("%s spectating in %s") % (
-                self.user.username,
-                self.contest.name,
-            )
+            return gettext("%(username)s spectating in %(contest)s") % {
+                "username": self.user.username,
+                "contest": self.contest.name,
+            }
         if self.virtual:
-            return gettext("%s in %s, v%d") % (
-                self.user.username,
-                self.contest.name,
-                self.virtual,
-            )
-        return gettext("%s in %s") % (self.user.username, self.contest.name)
+            return gettext("%(username)s in %(contest)s, v%(virtual)d") % {
+                "username": self.user.username,
+                "contest": self.contest.name,
+                "virtual": self.virtual,
+            }
+        return gettext("%(username)s in %(contest)s") % {
+            "username": self.user.username,
+            "contest": self.contest.name,
+        }
 
     class Meta:
         verbose_name = _("contest participation")
