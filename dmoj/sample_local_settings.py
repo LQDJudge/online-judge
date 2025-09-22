@@ -31,15 +31,15 @@ CACHES = {
     "default": {
         "BACKEND": "judge.cache_handler.CacheHandler",
     },
-    "l0": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "OPTIONS": {"MAX_ENTRIES": 1000},
-    },
     "primary": {
         "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
         "LOCATION": "127.0.0.1:11211",
     },
 }
+
+# If using CacheHandler
+# L0_CACHE_MAX_ENTRIES = 1000
+# L0_CACHE_MAX_MEMORY_MB = 10
 
 # Your database credentials. Only MySQL is supported by DMOJ.
 # Documentation: <https://docs.djangoproject.com/en/1.11/ref/databases/>
