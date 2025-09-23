@@ -2,58 +2,25 @@
 
 ## 1. Test Generator
 
-The Test Generator feature allows you to automatically generate test data for problems using a C++ generator program. Instead of uploading test file, you can write generator code and provide parameters to automatically create multiple diverse test cases.
+Test Generator allows you to generate tests using a generator program written in C++, instead of uploading test files as usual.
 
-### How It Works
+### Generator File
 
-The generator system follows this workflow:
+First, you need to write a generator file in C++ (can be uploaded or edited directly) that takes as arguments representing the constraint of the input and adds an argument as the seed used for random. The program will randomize the input from the constraint and the seed is entered from the argument.
 
-1. **Upload Generator Code**: Create a C++ file to generate test data
-2. **Write Generator Script**: Provide parameters for each test case
-3. **Auto-generate tests**: System uses generator + parameters to create test data when submissions are evaluated
+Once you have the input, you need to code the solution with that input in the file to create the output. Finally, print the input to stdout (use cout) and print the output to stderr (use cerr).
 
-### Step 1: Add Generator Code
+To test the program on your computer, you can use the following command (Windows):
 
-**When No Generator Exists:**
-- Access the problem's test data management page (e.g., `/problem/aplusb/test_data`)
-- You'll see two options:
-  - **Upload file**: Upload a generator (.cpp) file from your computer
-  - **Edit**: Open a modal to write generator code directly on the page
+```bash
+generator.exe [arg_1] [arg_2] ... [arg_n] [seed]
+```
 
-**After Adding Generator:**
-Once a generator file exists, the interface will display an additional "Generator Script" field for writing the test generation script.
+or with `./main` on Linux/MacOS.
 
-### Step 2: Write Generator Script
+**Ví dụ:**
+Here is an example of a problem: Input contains 2 integers a, b (1 <= a, b <= 100000). Print the sum a + b.
 
-The Generator Script is where you provide parameters for each test case. Each line in the script represents one test case.
-
-**How to write Generator Script:**
-1. Click on **"Edit Generator Script"**
-2. A modal will appear with a line-numbered textarea
-3. Each line contains parameters for one test case
-4. Click **"Save"** to save
-
-### Step 3: Create Test Cases
-
-**Two ways to add test cases:**
-
-**Method 1: Manual Addition**
-- Add each test case manually by clicking **"Add new case"**
-- Enter parameters in the **"Generator Args"** field
-
-**Method 2: Use Generator Script**
-1. Write Generator Script as instructed in Step 2
-2. Click "Fill testcases" in the "Autofill testcases" field
-3. System will create test cases equal to the number of lines in the script
-4. Each test case will have parameters from the corresponding line in the script
-
-⚠️ **Important**: When clicking "Fill testcases", if there is a file in the "Data zip file" field, testcases in the file will also be added. You can also edit the parameters of each test in "Generator Args" after clicking "Fill testcases"
-
-⚠️ **Important**: Remember to click **"Save"** at the bottom of the page to save all problem data!
-
-### Complete Example: A + B Problem (aplusb)
-
-**Generator Code (C++):**
 ```cpp
 #include <bits/stdc++.h>
 using namespace std;
@@ -64,9 +31,9 @@ int main(int args_length, char* args[]) {
         return 1;
     }
 
-    int x = stoi(args[1]);
-    int y = stoi(args[2]);
-    int global_seed = stoi(args[3]); // Global seed for all tests
+    int x = stoi(args[1]); // lower bound for the limits of a and b
+    int y = stoi(args[2]); // upper bound for the limits of a and b
+    int global_seed = stoi(args[3]); // random seed
 
     if (x > y) {
         cerr << "Error: x should be less than or equal to y" << endl;
@@ -80,56 +47,62 @@ int main(int args_length, char* args[]) {
     mt19937 gen(combined_seed);
     uniform_int_distribution<> dist(x, y);
 
-    // Generate two random integers a and b
+    // Input: Generate two random integers a and b
     int a = dist(gen);
     int b = dist(gen);
 
-    // Output input data (a and b)
+    // Output: Solution to create output
+    int c = a + b;
+
+    // Print input to stdout
     cout << a << " " << b << endl;
 
-    // Output answer (a + b) to stderr for debugging
-    cerr << (a + b) << endl;
+    // Print output to stderr
+    cerr << c << endl;
 
     return 0;
 }
 ```
 
+### Generator Script
+
+Generator Script will appear under Generator file after you save the generator file. Generator Script helps you create a test suite quickly by entering arguments, each line corresponding to a test. Each argument line is used in the generator file to generate a test with input/output printed from the file, thereby creating a complete test suite.
+
+Take the problem a + b for example. You want to create 10 test cases with diverse constraints to cover all cases, an example of a strong test suite would have 3 tests with a, b in the range 1 to 10, 3 tests from 100 to 1000, and 4 tests from 10000 to 100000. With this division, your test suite will cover both small and large values.
+
+**Note**, you should leave a distinct seed for the tests to ensure that the generated tests will not be duplicated.
+
 **Generator Script:**
+
 ```
 1 10 12
 1 10 5123
 1 10 254
-100 200 51234
-100 200 4135
-100 200 123
-1000 2000 456
-1000 2000 4129
-1000 2000 5912
-1000 2000 4753
+100 1000 51234
+100 1000 4135
+100 1000 123
+10000 100000 456
+10000 100000 4129
+10000 100000 5912
+10000 100000 4753
 ```
 
-With this script, clicking "Add new tests" will create 10 test cases:
-- Test 1: generator runs with parameters `1 10 12`
-- Test 2: generator runs with parameters `1 10 5123`
-- ...
+After having the generator script, click the "Fill testcases" button in the "Autofill testcases" section. The testcases table will be added with the number of tests equal to the number of lines in the script, each test will have arguments (shown in Generator Args) from the corresponding line in the script. 
 
-### Test Cases Table
+**Note**: When clicking "Fill testcases", if there is a file in the "Data zip file" section, the testcases in the file will also be added.
 
-After creating test cases, you'll see a table displaying tests with:
-- **ZIP File**: Test data from uploaded ZIP file
-- **Generator Args**: Parameters to run generator
+### Generator Args
 
-Each test case uses **only one of two methods**:
+The arguments of each test will be shown in the generator args section and you can change the arguments of the test there. 
+
+You can also add individual testcases by "Add new case" and enter arguments in the generator args section of that test.
+
+**Important Note**
+Each test case only uses **one of two ways**:
 - Either get data from ZIP file
-- Or generate data from generator + parameters
+- Or generate data from generator + argument
 
-### Important Notes
-
-1. **Generator code** must accept parameters from command line arguments
-2. **Output** of generator must print to `stdout` (input data for test)
-3. **Expected output** can print to `stderr` for debugging
-4. **Random seed** should be designed to ensure deterministic behavior
-5. Remember to click **"Save"** after completing all steps
+Remember to click **"Apply!"** at the bottom of the page to save the changes.
 
 ## 2. Custom Checker
 
