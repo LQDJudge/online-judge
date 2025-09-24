@@ -1,59 +1,26 @@
 [TOC]
 
-## 1. Test Generator / Sinh Test Tự Động
+## 1. Test Generator
 
-Tính năng Generator Test cho phép bạn tự động sinh dữ liệu test cho bài toán bằng cách sử dụng một chương trình generator viết bằng C++. Thay vì upload file test, bạn có thể viết code generator và cung cấp các tham số để tự động tạo ra nhiều test case khác nhau.
+Test Generator cho phép bạn sinh test bằng một chương trình generator viết bằng C++, thay vì upload file test như thông thường.
 
-### Cách Thức Hoạt Động
+### Generator File (File sinh test)
 
-Hệ thống generator hoạt động theo quy trình sau:
+Đầu tiên, bạn cần viết một generator file bằng C++ (có thể upload hoặc Edit trực tiếp) nhận argument là các số đại diện cho giới hạn của input và thêm một argument là seed dùng cho random. Chương trình sẽ random input từ giới hạn và seed được nhập từ argument.
 
-1. **Upload Generator Code**: Tạo file C++ để sinh test data
-2. **Viết Generator Script**: Cung cấp tham số cho từng test case
-3. **Tự động tạo test**: Hệ thống sử dụng generator + tham số để sinh test data khi có người dùng nộp bài
+Sau khi có input, bạn cần code lời giải bài toán trong file với input đó để tạo ra output. Cuối cùng, in input ra stdout (dùng cout) và in output ra stderr (dùng cerr).
 
-### Bước 1: Thêm Generator Code
+Để test chương trình trên máy tính của bạn, bạn có thể sử dụng lệnh sau (Windows):
 
-**Khi chưa có Generator:**
-- Truy cập trang quản lý test data của bài toán (ví dụ: `/problem/aplusb/test_data`)
-- Bạn sẽ thấy hai tùy chọn:
-  - **Upload file**: Tải lên file generator (.cpp) từ máy tính
-  - **Edit**: Mở modal để viết code generator trực tiếp trên trang
+```bash
+generator.exe [arg_1] [arg_2] ... [arg_n] [seed]
+```
 
-**Sau khi thêm Generator:**
-Khi đã có generator file, giao diện sẽ hiển thị thêm mục "Script sinh test" hay "Generator Script" để viết script sinh test.
+hoặc thay bằng `./main` trên Linux/MacOS.
 
-### Bước 2: Viết Generator Script
+**Ví dụ:**
+Dưới đây là ví dụ cho một bài toán: Input chứa 2 số nguyên a, b (1 <= a, b <= 100000). In ra tổng a + b.
 
-Generator Script là nơi bạn cung cấp tham số cho từng test case. Mỗi dòng trong script đại diện cho một test case.
-
-**Cách viết Generator Script:**
-1. Click vào **"Chỉnh sửa script sinh test"** hay **"Edit Generator Script"**
-2. Modal sẽ hiện ra với textarea có đánh số dòng
-3. Mỗi dòng viết tham số cho một test case
-4. Click **"Save"** để lưu
-
-### Bước 3: Tạo Test Cases
-
-**Có hai cách để thêm test cases:**
-
-**Cách 1: Thêm từng test**
-- Thêm từng test case bằng cách click **"Thêm test mới"** hay **"Add new case"**
-- Nhập tham số vào mục **"Tham số sinh test"** hay **"Generator Args"** cho từng test
-
-**Cách 2: Sử dụng Generator Script**
-1. Viết Generator Script như hướng dẫn ở Bước 2
-2. Click "Điền test" ở mục "Tự động điền test"
-3. Hệ thống sẽ thêm số lượng test cases bằng với số dòng trong script
-4. Mỗi test case sẽ có tham số từ dòng tương ứng trong script
-
-⚠️ **Lưu ý**: Khi click "Điền test", nếu có file trong mục "File zip chứa test", testcases trong file cũng sẽ được thêm. Bạn cũng có thể chỉnh sửa tham số của từng test trong "Tham số sinh test" sau khi "Điền test"
-
-⚠️ **Lưu ý**: Nhớ click **"Lưu"** hoặc **"Save"** cuối trang để lưu toàn bộ dữ liệu bài toán!
-
-### Ví Dụ Hoàn Chỉnh: Bài Toán A + B (aplusb)
-
-**Generator Code (C++):**
 ```cpp
 #include <bits/stdc++.h>
 using namespace std;
@@ -64,9 +31,9 @@ int main(int args_length, char* args[]) {
         return 1;
     }
 
-    int x = stoi(args[1]);
-    int y = stoi(args[2]);
-    int global_seed = stoi(args[3]); // Seed chung cho toàn bộ test
+    int x = stoi(args[1]); // cận dưới cho giới hạn của a và b
+    int y = stoi(args[2]); // cận trên cho giới hạn của a và b
+    int global_seed = stoi(args[3]); // seed để random
 
     if (x > y) {
         cerr << "Error: x should be less than or equal to y" << endl;
@@ -80,56 +47,62 @@ int main(int args_length, char* args[]) {
     mt19937 gen(combined_seed);
     uniform_int_distribution<> dist(x, y);
 
-    // Sinh hai số ngẫu nhiên a và b
+    // Input: Sinh hai số random a và b cho input
     int a = dist(gen);
     int b = dist(gen);
 
-    // Output dữ liệu đầu vào (a và b)
+    // Output: Lời giải để tạo ra output
+    int c = a + b;
+
+    // In input ra stdout
     cout << a << " " << b << endl;
 
-    // Output đáp án (a + b) ra stderr để debug
-    cerr << (a + b) << endl;
+    // In output ra stderr
+    cerr << c << endl;
 
     return 0;
 }
 ```
 
+### Generator Script (Script sinh test)
+
+Generator Script sẽ hiện ra dưới mục Generator file sau khi bạn lưu file generator. Generator Script giúp bạn tạo ra bộ test nhanh chóng bằng cách nhập các argument (tham số), mỗi dòng tương ứng một test. Mỗi dòng argument được dùng trong generator file để sinh ra một test với input/output in ra từ file, từ đó tạo ra bộ test hoàn chỉnh.
+
+Lấy ví dụ bài toán a + b. Bạn muốn tạo ra 10 test với giới hạn đa dạng để bao quát hết mọi trường hợp, một ví dụ về bộ test mạnh sẽ có 3 test với a, b nằm trong đoạn 1 đến 10, 3 test từ 100 đến 1000, và 4 test từ 10000 đến 100000. Với cách chia này, bộ test của bạn sẽ bao quát cho giá trị nhỏ lẫn giá trị lớn. 
+
+**Lưu ý**, bạn nên để seed phân biệt cho các test để đảm bảo các test tạo ra sẽ không trùng nhau.
+
 **Generator Script:**
+
 ```
 1 10 12
 1 10 5123
 1 10 254
-100 200 51234
-100 200 4135
-100 200 123
-1000 2000 456
-1000 2000 4129
-1000 2000 5912
-1000 2000 4753
+100 1000 51234
+100 1000 4135
+100 1000 123
+10000 100000 456
+10000 100000 4129
+10000 100000 5912
+10000 100000 4753
 ```
 
-Với script này, khi click "Thêm test mới", hệ thống sẽ tạo 10 test cases:
-- Test 1: generator chạy với tham số `1 10 12`
-- Test 2: generator chạy với tham số `1 10 5123`
-- ...
+Sau khi có generator script, bạn hãy click nút "Fill testcases" (Điền tests) trong mục "Autofill testcases". Bảng testcases sẽ được thêm số lượng test bằng với số dòng trong script, mỗi test sẽ có argument (hiện trong Generator Args) từ dòng tương ứng trong script.
 
-### Bảng bộ Test
+**Lưu ý**: Khi click "Fill testcases", nếu có file trong mục "Data zip file", testcases trong file cũng sẽ được thêm.
 
-Sau khi tạo test cases, bạn sẽ thấy bảng hiển thị các test với:
-- **File từ ZIP**: Test data lấy từ file ZIP upload
-- **Generator Args**: Tham số để chạy generator
+### Generator Args (Tham số sinh test)
 
+Argument của mỗi test sẽ hiện ở mục generator args và bạn có thể thay đổi argument của test ở đó. 
+
+Bạn cũng có thể thêm từng testcase bằng cách "Add new case" (Thêm test mới) và nhập argument vào mục generator args của test đó.
+
+**Lưu ý quan trọng**
 Mỗi test case chỉ sử dụng **một trong hai cách**:
 - Hoặc lấy data từ file ZIP
-- Hoặc sinh data từ generator + tham số
+- Hoặc sinh data từ generator + argument
 
-### Lưu Ý Quan Trọng
-
-1. **Generator code** phải nhận tham số từ command line arguments
-2. **Output** của generator phải in ra `stdout` (dữ liệu input cho test)
-3. **Expected output** có thể in ra `stderr` để debug
-4. **Seed ngẫu nhiên** nên được thiết kế để đảm bảo tính deterministic
-5. Nhớ click **"Lưu"** sau khi hoàn thành tất cả các bước
+Nhớ click **"Apply!"** ở cuối trang để lưu lại các thay đổi.
 
 ## 2. Custom Checker
 
@@ -201,7 +174,7 @@ def check(process_output, judge_output, judge_input, **kwargs):
 main.exe [input_file] [output_file] [ans_file]
 ```
 
-hoặc thay bằng `./main` trên Linux/MacOS.
+hoặc thay bằng ``` trên Linux/MacOS.
 
 **Trả về:**
 Chương trình trả về:
@@ -260,7 +233,7 @@ int main(int argc, char** argv) {
 main.exe [input_file] [answer_file]
 ```
 
-hoặc thay bằng `./main` trên Linux/MacOS.
+hoặc thay bằng ``` trên Linux/MacOS.
 
 **Trả về:**
 Chương trình trả về:
