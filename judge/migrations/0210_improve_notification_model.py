@@ -139,7 +139,7 @@ class Migration(migrations.Migration):
             model_name="notification",
             name="category",
             field=models.CharField(
-                max_length=100000,  # Temporary larger size
+                max_length=16000,  # Temporary larger size
                 verbose_name="category",
                 db_index=True,
             ),
