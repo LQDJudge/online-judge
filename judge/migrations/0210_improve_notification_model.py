@@ -29,10 +29,23 @@ def migrate_notification_categories(apps, schema_editor):
         # Handle problem visibility categories
         if "Problem public" in old_category:
             is_public = "True" in old_category
+            groups = ""
+
+            # Parse groups from strings like "Problem public (True) (group1,group2)"
             if "(" in old_category and ")" in old_category:
-                groups = old_category.split("(", 1)[1].strip(")")
-                # Store groups info in extra_data
-                notification.extra_data = {"groups": groups}
+                # Split by opening parenthesis and get everything after first one
+                parts = old_category.split("(", 1)[1]
+                # If there are multiple closing/opening parentheses, extract groups
+                if ") (" in parts:
+                    # Extract the groups part after ") ("
+                    groups = parts.split(") (", 1)[1].strip(")")
+                elif parts.strip(")") not in ["True", "False"]:
+                    # Single parenthesis case, check if it's not just True/False
+                    groups = parts.strip(")")
+
+                # Store groups info in extra_data if we found any
+                if groups and groups not in ["True", "False"]:
+                    notification.extra_data = {"groups": groups}
 
             notification.category = "problem_public" if is_public else "problem_private"
         else:
@@ -74,7 +87,7 @@ def reverse_migrate_notification_categories(apps, schema_editor):
                 else ""
             )
 
-            if groups:
+            if groups and groups not in ["True", "False"]:
                 notification.category = (
                     f"Problem public (True) ({groups})"
                     if is_public
@@ -121,7 +134,22 @@ class Migration(migrations.Migration):
                 verbose_name="extra data",
             ),
         ),
-        # Update existing field definitions
+        # First, increase category field length to accommodate existing long values
+        migrations.AlterField(
+            model_name="notification",
+            name="category",
+            field=models.CharField(
+                max_length=100000,  # Temporary larger size
+                verbose_name="category",
+                db_index=True,
+            ),
+        ),
+        # Run the data migration to convert categories
+        migrations.RunPython(
+            migrate_notification_categories,
+            reverse_migrate_notification_categories,
+        ),
+        # Now reduce to final size with choices after data migration
         migrations.AlterField(
             model_name="notification",
             name="category",
@@ -135,6 +163,8 @@ class Migration(migrations.Migration):
                     ("approve_blog", "Approved a post"),
                     ("edit_blog", "Edited a post"),
                     ("mention", "Mentioned you"),
+                    ("organization", "Organization"),
+                    ("problem", "Problem"),
                     ("reply", "Replied you"),
                     ("ticket", "Ticket"),
                     ("problem_public", "Problem visibility changed"),
@@ -231,10 +261,5 @@ class Migration(migrations.Migration):
                 "verbose_name": "notification profile",
                 "verbose_name_plural": "notification profiles",
             },
-        ),
-        # Run the data migration to convert categories
-        migrations.RunPython(
-            migrate_notification_categories,
-            reverse_migrate_notification_categories,
         ),
     ]
