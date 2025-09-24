@@ -60,7 +60,7 @@ from judge.models import (
     CourseRole,
 )
 from judge.models.course import RoleInCourse
-from judge.models.notification import make_notification
+from judge.models.notification import Notification, NotificationCategory
 from judge.models.block import get_all_blocked_pairs
 from judge import event_poster as event
 from judge.utils.ranker import ranker
@@ -934,8 +934,11 @@ class AddOrganizationMember(
         self.object.members.add(*new_users)
         link = reverse("organization_home", args=[self.object.id, self.object.slug])
         html = f'<a href="{link}">{self.object.name}</a>'
-        make_notification(
-            [u.id for u in new_users], "Added to group", html, self.request.profile
+        Notification.objects.bulk_create_notifications(
+            user_ids=[u.id for u in new_users],
+            category=NotificationCategory.ORGANIZATION,
+            html_link=html,
+            author=self.request.profile,
         )
         with revisions.create_revision():
             usernames = ", ".join([u.username for u in new_users])
@@ -1250,11 +1253,11 @@ class AddOrganizationBlog(
             html = (
                 f'<a href="{link}">{self.object.title} - {self.organization.name}</a>'
             )
-            make_notification(
-                self.organization.get_admin_ids(),
-                "Add blog",
-                html,
-                self.request.profile,
+            Notification.objects.bulk_create_notifications(
+                user_ids=self.organization.get_admin_ids(),
+                category=NotificationCategory.ADD_BLOG,
+                html_link=html,
+                author=self.request.profile,
             )
 
             # Add success message for user feedback
@@ -1309,6 +1312,12 @@ class EditOrganizationBlog(
 
             if not (self.is_org_admin or self.is_blog_author):
                 raise Exception(_("Not allowed to edit this blog"))
+
+            # Prevent authors from accessing edit page after post is approved (visible=True)
+            # Only allow admins to edit approved posts
+            if self.blog.visible and not self.is_org_admin:
+                raise Exception(_("Cannot edit approved blog posts"))
+
         except BlogPost.DoesNotExist:
             return generic_message(
                 request,
@@ -1401,13 +1410,37 @@ class EditOrganizationBlog(
 
     def create_notification(self, action):
         blog = BlogPost.objects.get(pk=self.blog_id)
-        link = reverse(
-            "edit_organization_blog",
-            args=[self.organization.id, self.organization.slug, self.blog_id],
-        )
+
+        # Use different links based on action - post link for approve/reject, edit link for edit/delete
+        if action in ["Approve blog", "Reject blog"]:
+            # For approve/reject, link to the actual blog post
+            link = blog.get_absolute_url()
+        else:
+            # For edit/delete, link to the edit page
+            link = reverse(
+                "edit_organization_blog",
+                args=[self.organization.id, self.organization.slug, self.blog_id],
+            )
+
         html = f'<a href="{link}">{blog.title} - {self.organization.name}</a>'
         to_users = list(set(self.organization.get_admin_ids() + blog.get_author_ids()))
-        make_notification(to_users, action, html, self.request.profile)
+
+        # Use different categories based on action
+        if action == "Delete blog":
+            category = NotificationCategory.DELETE_BLOG
+        elif action == "Reject blog":
+            category = NotificationCategory.REJECT_BLOG
+        elif action == "Approve blog":
+            category = NotificationCategory.APPROVE_BLOG
+        else:  # "Edit blog"
+            category = NotificationCategory.EDIT_BLOG
+
+        Notification.objects.bulk_create_notifications(
+            user_ids=to_users,
+            category=category,
+            html_link=html,
+            author=self.request.profile,
+        )
 
     def form_valid(self, form):
         with revisions.create_revision():

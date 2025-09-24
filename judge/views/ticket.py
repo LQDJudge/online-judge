@@ -39,7 +39,7 @@ from judge.utils.views import SingleObjectFormView, TitleMixin, paginate_query_c
 from judge.views.problem import ProblemMixin
 from judge.views.feed import FeedView, HomeFeedView
 from judge.widgets import HeavyPreviewPageDownWidget, HeavySelect2MultipleWidget
-from judge.models.notification import make_notification
+from judge.models.notification import Notification, NotificationCategory
 
 ticket_widget = (
     forms.Textarea()
@@ -57,7 +57,12 @@ def add_ticket_notifications(users, author, link, ticket):
     users = set(users)
     if author in users:
         users.remove(author)
-    make_notification([u.id for u in users], "Ticket", html, author)
+    Notification.objects.bulk_create_notifications(
+        user_ids=[u.id for u in users],
+        category=NotificationCategory.TICKET,
+        html_link=html,
+        author=author,
+    )
 
 
 class TicketForm(forms.Form):

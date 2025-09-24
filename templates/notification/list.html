@@ -1,38 +1,194 @@
 {% extends "base.html" %}
 
-{% block body %}
-  {% if not notifications %}
-    <h2 style="text-align: center;">{{ _('You have no notifications') }}</h2>
-  {% else %}
-    <table class="table">
-      <tr>
-        <th>{{ _('User') }}</th>
-        <th>{{ _('Activity') }}</th>
-        <th>{{ _('Link') }}</th>
-        <th>{{ _('Time') }}</th>
-      </tr>
-      {% for notification in notifications %}
-        <tr class="{{ 'highlight' if not notification.seen }}">
-          <td>
-            {{ link_user(notification.author_id) }}
-          </td>
-          <td>
-            {{ notification.verbose_activity() }}
-          </td>
-          <td>
-            {% autoescape off %}
-              {{notification.html_link}}
-            {% endautoescape %}
-          </td>
-          <td>
-            {{ relative_time(notification.time) }}
-          </td>
-        </tr>
-      {% endfor %}
-    </table>
-  {% endif %}
-  <div style="margin-top: 10px;">
-    {% include "list-pages.html" %}
-  </div>
+{% block js_media %}
+  <script type="text/javascript">
+    $(document).ready(function() {
+      // Initialize select2 for dropdowns
+      $('#category, #status').select2({
+        width: '200px',
+        minimumResultsForSearch: Infinity // Disable search for small lists
+      });
+
+      // Handle filter form submission
+      $('#filter-form').on('submit', function(e) {
+        e.preventDefault();
+        var formData = $(this).serialize();
+        window.location.href = '?' + formData;
+      });
+
+      // Handle clear filters
+      $('#clear-filters').on('click', function() {
+        window.location.href = window.location.pathname;
+      });
+
+      // Handle mark all as read
+      $('#mark-all-read').on('click', function() {
+        var notificationIds = [];
+        $('.notification-row:not(.read)').each(function() {
+          notificationIds.push($(this).data('notification-id'));
+        });
+        if (notificationIds.length > 0) {
+          markAsRead(notificationIds);
+        }
+      });
+
+      // Handle content click to mark as read and open link
+      $('.notification-content').on('click', function(e) {
+        e.preventDefault();
+        var $row = $(this).closest('.notification-row');
+        var notificationId = $row.data('notification-id');
+        var $link = $(this).find('a');
+
+        if ($link.length > 0) {
+          var href = $link.attr('href');
+
+          // Mark as read if unread
+          if (!$row.hasClass('read')) {
+            markAsRead([notificationId]);
+          }
+
+          // Open link in new tab
+          window.open(href, '_blank');
+        }
+      });
+
+      function markAsRead(notificationIds) {
+        $.post('{{ url("notification_mark_read") }}', {
+          'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val(),
+          'notification_ids': notificationIds
+        }).done(function(data) {
+          if (data.success) {
+            notificationIds.forEach(function(id) {
+              var $row = $('[data-notification-id="' + id + '"]');
+              $row.addClass('read').removeClass('unread');
+
+              // Change "Unread" to "Read" in the status column
+              var $statusSpan = $row.find('td:first-child span');
+              $statusSpan.removeClass('red').addClass('green').text('{{ _("Read") }}');
+            });
+          }
+        }).fail(function() {
+          alert('{{ _("Error occurred while marking as read") }}');
+        });
+      }
+    });
+  </script>
 {% endblock %}
 
+{% block body %}
+  {% csrf_token %}
+
+  <div class="notification-page">
+    <div class="notification-container">
+      <!-- Filter Section -->
+      <div class="filter-section">
+        <form id="filter-form" method="get" class="filter-form">
+          <div class="filter-group">
+            <label for="category">{{ _("Category") }}</label>
+            <select name="category" id="category">
+              <option value="">{{ _("All Categories") }}</option>
+              {% for value, label in notification_categories %}
+                <option value="{{ value }}" {% if current_category == value %}selected{% endif %}>
+                  {{ label }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="status">{{ _("Status") }}</label>
+            <select name="status" id="status">
+              <option value="">{{ _("All") }}</option>
+              <option value="unread" {% if current_status == 'unread' %}selected{% endif %}>{{ _("Unread") }}</option>
+              <option value="read" {% if current_status == 'read' %}selected{% endif %}>{{ _("Read") }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="author">{{ _("Author") }}</label>
+            <input type="text" name="author" id="author" value="{{ current_author }}" placeholder="{{ _('Username') }}">
+          </div>
+
+          <div class="filter-group">
+            <label for="search">{{ _("Search") }}</label>
+            <input type="text" name="search" id="search" value="{{ current_search }}" placeholder="{{ _('Search in content') }}">
+          </div>
+
+          <div class="filter-actions">
+            <button type="submit" class="button">{{ _("Filter") }}</button>
+            <button type="button" id="clear-filters" class="button secondary">{{ _("Clear") }}</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Action Buttons -->
+      {% if unread_notifications > 0 %}
+        <div class="action-section">
+          <button id="mark-all-read" class="button">{{ _("Mark All as Read") }}</button>
+        </div>
+      {% endif %}
+
+      <!-- Notifications List -->
+      {% if not notifications %}
+        <div class="empty-state">
+          <h3>{{ _("No notifications found") }}</h3>
+          {% if current_category or current_status or current_author or current_search %}
+            <p>{{ _("Try adjusting your filters to see more notifications.") }}</p>
+          {% else %}
+            <p>{{ _("You have no notifications yet.") }}</p>
+          {% endif %}
+        </div>
+      {% else %}
+        <table class="notification-table">
+          <thead>
+            <tr>
+              <th>{{ _("Status") }}</th>
+              <th>{{ _("Category") }}</th>
+              <th>{{ _("Author") }}</th>
+              <th>{{ _("Content") }}</th>
+              <th>{{ _("Time") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for notification in notifications %}
+              <tr class="notification-row {% if not notification.is_read %}unread{% else %}read{% endif %}"
+                  data-notification-id="{{ notification.id }}">
+                <td>
+                  {% if notification.is_read %}
+                    <span class="green">{{ _("Read") }}</span>
+                  {% else %}
+                    <span class="red">{{ _("Unread") }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {{ notification.get_category_display() }}
+                </td>
+                <td>
+                  {% if notification.author %}
+                    {{ link_user(notification.author_id) }}
+                  {% else %}
+                    <em>{{ _("System") }}</em>
+                  {% endif %}
+                </td>
+                <td class="notification-content">
+                  {{ notification.html_link|safe }}
+                </td>
+                <td class="notification-time">
+                  {{ relative_time(notification.time) }}
+                  {% if notification.read_at %}
+                    <small>{{ _("Read") }}: {{ relative_time(notification.read_at) }}</small>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+
+      <!-- Pagination -->
+      <div style="margin-top: 30px;">
+        {% include "list-pages.html" %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

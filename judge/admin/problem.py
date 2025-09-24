@@ -21,7 +21,7 @@ from judge.models import (
     Profile,
     Solution,
 )
-from judge.models.notification import make_notification
+from judge.models.notification import Notification, NotificationCategory
 from judge.utils.problems import user_editable_ids, user_tester_ids
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
@@ -420,7 +420,12 @@ class ProblemAdmin(CompareVersionAdmin):
             category = "Problem public: " + str(obj.is_public)
             if orgs:
                 category += " (" + ", ".join(orgs) + ")"
-            make_notification(to_user_ids, category, html, request.profile)
+            Notification.objects.bulk_create_notifications(
+                user_ids=to_user_ids,
+                category=NotificationCategory.PROBLEM,
+                html_link=html,
+                author=request.profile,
+            )
 
     def construct_change_message(self, request, form, *args, **kwargs):
         if form.cleaned_data.get("change_message"):

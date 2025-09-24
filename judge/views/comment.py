@@ -37,7 +37,7 @@ from reversion.models import Revision, Version
 from judge.jinja2.reference import get_user_from_text
 from judge.models import Comment, CommentVote, Problem, Contest, BlogPost
 from judge.models.problem import Solution
-from judge.models.notification import make_notification
+from judge.models.notification import Notification, NotificationCategory
 from judge.models.comment import (
     get_visible_comment_count,
     get_visible_top_level_comment_count,
@@ -75,7 +75,12 @@ def add_mention_notifications(comment):
         .values_list("id", flat=True)
     )
     link = _get_html_link_notification(comment)
-    make_notification(list(users_mentioned), "Mention", link, comment.author)
+    Notification.objects.bulk_create_notifications(
+        user_ids=list(users_mentioned),
+        category=NotificationCategory.MENTION,
+        html_link=link,
+        author=comment.author,
+    )
 
 
 @ratelimit(key="user", rate=settings.RL_VOTE)
@@ -596,14 +601,22 @@ def post_comment(request):
 
     # Notify parent comment author if replying
     if comment.parent and comment.parent.author != comment.author:
-        make_notification(
-            [comment.parent.author_id], "Reply", comment_notif_link, comment.author
+        Notification.objects.bulk_create_notifications(
+            user_ids=[comment.parent.author_id],
+            category=NotificationCategory.REPLY,
+            html_link=comment_notif_link,
+            author=comment.author,
         )
 
     # Notify page authors if applicable
     if hasattr(target_object, "authors"):
         page_authors = list(target_object.authors.values_list("id", flat=True))
-        make_notification(page_authors, "Comment", comment_notif_link, comment.author)
+        Notification.objects.bulk_create_notifications(
+            user_ids=page_authors,
+            category=NotificationCategory.COMMENT,
+            html_link=comment_notif_link,
+            author=comment.author,
+        )
 
     # Add mention notifications
     add_mention_notifications(comment)

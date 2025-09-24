@@ -27,8 +27,8 @@ msgstr "Khóa học"
 msgid "Suggestions"
 msgstr "Đề xuất ý tưởng"
 
-msgid "Proposal"
-msgstr "Đề xuất"
+msgid "Problem Proposal"
+msgstr "Đề xuất bài tập"
 
 msgid "TanKhoa"
 msgstr "TanKhoa"

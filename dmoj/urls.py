@@ -1336,7 +1336,23 @@ urlpatterns = [
     ),
     re_path(
         r"^notifications/",
-        paged_list_view(notification.NotificationList, "notification"),
+        include(
+            [
+                re_path(
+                    r"^$", notification.NotificationList.as_view(), name="notification"
+                ),
+                re_path(
+                    r"^(?P<page>\d+)$",
+                    notification.NotificationList.as_view(),
+                    name="notification",
+                ),
+                re_path(
+                    r"^mark_read/$",
+                    notification.NotificationMarkAsRead.as_view(),
+                    name="notification_mark_read",
+                ),
+            ]
+        ),
     ),
     re_path(
         r"^import_users/",
