@@ -98,155 +98,143 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Database already has the required fields and indexes
-        # This migration just updates Django's migration state to match
-        migrations.SeparateDatabaseAndState(
-            state_operations=[
-                # Add field definitions to migration state (fields already exist in DB)
-                migrations.AddField(
-                    model_name="notification",
-                    name="is_read",
-                    field=models.BooleanField(
-                        default=False, verbose_name="is read", db_index=True
-                    ),
-                ),
-                migrations.AddField(
-                    model_name="notification",
-                    name="read_at",
-                    field=models.DateTimeField(
-                        blank=True, null=True, verbose_name="read at"
-                    ),
-                ),
-                migrations.AddField(
-                    model_name="notification",
-                    name="extra_data",
-                    field=models.JSONField(
-                        blank=True,
-                        default=dict,
-                        help_text="Additional data for complex notifications",
-                        verbose_name="extra data",
-                    ),
-                ),
-                # Update field definitions
-                migrations.AlterField(
-                    model_name="notification",
-                    name="category",
-                    field=models.CharField(
-                        choices=[
-                            ("add_blog", "Added a post"),
-                            ("added_to_group", "You are added to a group"),
-                            ("comment", "You have a new comment"),
-                            ("delete_blog", "Deleted a post"),
-                            ("reject_blog", "Rejected a post"),
-                            ("approve_blog", "Approved a post"),
-                            ("edit_blog", "Edited a post"),
-                            ("mention", "Mentioned you"),
-                            ("reply", "Replied you"),
-                            ("ticket", "Ticket"),
-                            ("problem_public", "Problem visibility changed"),
-                            ("problem_private", "Problem visibility changed"),
-                        ],
-                        db_index=True,
-                        max_length=50,
-                        verbose_name="category",
-                    ),
-                ),
-                migrations.AlterField(
-                    model_name="notification",
-                    name="owner",
-                    field=models.ForeignKey(
-                        db_index=True,
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="notifications",
-                        to="judge.profile",
-                        verbose_name="owner",
-                    ),
-                ),
-                migrations.AlterField(
-                    model_name="notification",
-                    name="time",
-                    field=models.DateTimeField(
-                        auto_now_add=True, db_index=True, verbose_name="posted time"
-                    ),
-                ),
-                migrations.AlterField(
-                    model_name="notification",
-                    name="author",
-                    field=models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="authored_notifications",
-                        to="judge.profile",
-                        verbose_name="who triggered, used for non-comment",
-                    ),
-                ),
-                # Update NotificationProfile model
-                migrations.AlterField(
-                    model_name="notificationprofile",
-                    name="unread_count",
-                    field=models.IntegerField(default=0, db_index=True),
-                ),
-                migrations.AlterField(
-                    model_name="notificationprofile",
-                    name="user",
-                    field=models.OneToOneField(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="notification_profile",
-                        to="judge.profile",
-                    ),
-                ),
-                migrations.AddField(
-                    model_name="notificationprofile",
-                    name="last_read_time",
-                    field=models.DateTimeField(
-                        blank=True, null=True, verbose_name="last read time"
-                    ),
-                ),
-                # Add indexes that don't already exist
-                migrations.AddIndex(
-                    model_name="notification",
-                    index=models.Index(
-                        fields=["owner", "is_read"],
-                        name="judge_notif_owner_i_090eba_idx",
-                    ),
-                ),
-                migrations.AddIndex(
-                    model_name="notification",
-                    index=models.Index(
-                        fields=["category", "-time"],
-                        name="judge_notif_categor_052919_idx",
-                    ),
-                ),
-                migrations.AddIndex(
-                    model_name="notification",
-                    index=models.Index(
-                        fields=["time"], name="judge_notif_time_94feb0_idx"
-                    ),
-                ),
-                # Update model metadata
-                migrations.AlterModelOptions(
-                    name="notification",
-                    options={
-                        "ordering": ["-time"],
-                        "verbose_name": "notification",
-                        "verbose_name_plural": "notifications",
-                    },
-                ),
-                migrations.AlterModelOptions(
-                    name="notificationprofile",
-                    options={
-                        "verbose_name": "notification profile",
-                        "verbose_name_plural": "notification profiles",
-                    },
-                ),
-            ],
-            database_operations=[
-                # Only run the data migration to convert categories
-                migrations.RunPython(
-                    migrate_notification_categories,
-                    reverse_migrate_notification_categories,
-                ),
-            ],
+        # Add new fields to the notification model
+        migrations.AddField(
+            model_name="notification",
+            name="is_read",
+            field=models.BooleanField(
+                default=False, verbose_name="is read", db_index=True
+            ),
+        ),
+        migrations.AddField(
+            model_name="notification",
+            name="read_at",
+            field=models.DateTimeField(blank=True, null=True, verbose_name="read at"),
+        ),
+        migrations.AddField(
+            model_name="notification",
+            name="extra_data",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="Additional data for complex notifications",
+                verbose_name="extra data",
+            ),
+        ),
+        # Update existing field definitions
+        migrations.AlterField(
+            model_name="notification",
+            name="category",
+            field=models.CharField(
+                choices=[
+                    ("add_blog", "Added a post"),
+                    ("added_to_group", "You are added to a group"),
+                    ("comment", "You have a new comment"),
+                    ("delete_blog", "Deleted a post"),
+                    ("reject_blog", "Rejected a post"),
+                    ("approve_blog", "Approved a post"),
+                    ("edit_blog", "Edited a post"),
+                    ("mention", "Mentioned you"),
+                    ("reply", "Replied you"),
+                    ("ticket", "Ticket"),
+                    ("problem_public", "Problem visibility changed"),
+                    ("problem_private", "Problem visibility changed"),
+                ],
+                db_index=True,
+                max_length=50,
+                verbose_name="category",
+            ),
+        ),
+        migrations.AlterField(
+            model_name="notification",
+            name="owner",
+            field=models.ForeignKey(
+                db_index=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="notifications",
+                to="judge.profile",
+                verbose_name="owner",
+            ),
+        ),
+        migrations.AlterField(
+            model_name="notification",
+            name="time",
+            field=models.DateTimeField(
+                auto_now_add=True, db_index=True, verbose_name="posted time"
+            ),
+        ),
+        migrations.AlterField(
+            model_name="notification",
+            name="author",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="authored_notifications",
+                to="judge.profile",
+                verbose_name="who triggered, used for non-comment",
+            ),
+        ),
+        # Update NotificationProfile model
+        migrations.AlterField(
+            model_name="notificationprofile",
+            name="unread_count",
+            field=models.IntegerField(default=0, db_index=True),
+        ),
+        migrations.AlterField(
+            model_name="notificationprofile",
+            name="user",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="notification_profile",
+                to="judge.profile",
+            ),
+        ),
+        migrations.AddField(
+            model_name="notificationprofile",
+            name="last_read_time",
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="last read time"
+            ),
+        ),
+        # Add indexes
+        migrations.AddIndex(
+            model_name="notification",
+            index=models.Index(
+                fields=["owner", "is_read"],
+                name="judge_notif_owner_i_090eba_idx",
+            ),
+        ),
+        migrations.AddIndex(
+            model_name="notification",
+            index=models.Index(
+                fields=["category", "-time"],
+                name="judge_notif_categor_052919_idx",
+            ),
+        ),
+        migrations.AddIndex(
+            model_name="notification",
+            index=models.Index(fields=["time"], name="judge_notif_time_94feb0_idx"),
+        ),
+        # Update model metadata
+        migrations.AlterModelOptions(
+            name="notification",
+            options={
+                "ordering": ["-time"],
+                "verbose_name": "notification",
+                "verbose_name_plural": "notifications",
+            },
+        ),
+        migrations.AlterModelOptions(
+            name="notificationprofile",
+            options={
+                "verbose_name": "notification profile",
+                "verbose_name_plural": "notification profiles",
+            },
+        ),
+        # Run the data migration to convert categories
+        migrations.RunPython(
+            migrate_notification_categories,
+            reverse_migrate_notification_categories,
         ),
     ]
