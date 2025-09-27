@@ -602,12 +602,14 @@ class Friend(models.Model):
         friend, created = cls.objects.get_or_create(current_user=from_profile)
         friend.users.add(to_profile)
         _get_follower_ids.dirty(to_profile.id)
+        _get_following_ids.dirty(from_profile.id)
 
     @classmethod
     def remove_follow(cls, from_profile, to_profile):
         friend, created = cls.objects.get_or_create(current_user=from_profile)
         friend.users.remove(to_profile)
         _get_follower_ids.dirty(to_profile.id)
+        _get_following_ids.dirty(from_profile.id)
 
     @classmethod
     def toggle_follow(cls, from_profile, to_profile):
@@ -916,7 +918,7 @@ def _get_follower_ids(profile_id):
     return followers
 
 
-@cache_wrapper(prefix="Pgfgids", expected_type=list)
+@cache_wrapper(prefix="Pgfgids2", expected_type=list)
 def _get_following_ids(profile_id):
     """Get a list of profile IDs that given profile is following"""
     return list(
