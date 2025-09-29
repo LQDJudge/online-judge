@@ -580,15 +580,17 @@ nav {
                 }
 
                 &:hover {
-                    border-top: 2px;
                     color: black;
-                    background: rgba(255, 255, 255, 0.25);
+                    background: transparent;
                     margin: 0;
                 }
 
                 &.active {
-                    border-top: 2px solid $theme_color;
                     color: $theme_color;
+                    background: transparent;
+                    border-bottom: 3px solid $theme_color;
+                    border-bottom-left-radius: 0;
+                    border-bottom-right-radius: 0;
                 }
 
                 .nav-expand {
@@ -1590,15 +1592,17 @@ input::placeholder {
                     }
 
                     &:hover {
-                        border-top: 2px solid $theme_color;
                         color: black;
-                        background: rgba(255, 255, 255, 0.25);
+                        background: transparent;
                         margin: 0;
                     }
 
                     &.active {
-                        border-top: 2px solid $theme_color;
                         color: $theme_color;
+                        background: transparent;
+                        border-bottom: 3px solid $theme_color;
+                        border-bottom-left-radius: 0;
+                        border-bottom-right-radius: 0;
                     }
                 }
             }
@@ -1676,10 +1680,13 @@ input::placeholder {
                 }
 
                 &.active {
-                    background: $theme_color;
+                    background: transparent;
+                    border-bottom: 3px solid $theme_color;
+                    border-bottom-left-radius: 0;
+                    border-bottom-right-radius: 0;
 
                     .nav-icon-container i {
-                        color: white;
+                        color: $theme_color;
                     }
                 }
             }
