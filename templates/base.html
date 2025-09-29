@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE }}">
+
   <head>
     <title>{% block title %}{{ title }} - {{ SITE_LONG_NAME }}{% endblock %}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -10,7 +11,7 @@
       <meta name="description" content="{{ meta_description }}">
     {% endif %}
     <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Favicons-->
+  <!-- Favicons-->
     <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
     <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
@@ -27,7 +28,7 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="msapplication-TileColor" content="#FFBB33">
     <meta name="msapplication-TileImage" content="/mstile-144x144.png">
-    {# Chrome 39 for Android colour #}
+  {# Chrome 39 for Android colour #}
     <meta name="theme-color" content="#FFBB33">
     {% if og_image %}
       <meta property="og:image" content="{{ request.build_absolute_uri(og_image) }}">
@@ -39,7 +40,7 @@
     {% if meta_description %}
       <meta property="og:description" content="{{ meta_description }}">
     {% endif %}
-    <!--[if lt IE 9]>
+  <!--[if lt IE 9]>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
     <script>window.bad_browser = true</script>
     <![endif]-->
@@ -91,7 +92,13 @@
       <style>
         @media(min-width: 800px) {
           #page-container {
-            background: {{request.profile.css_background|safe}};
+            background: {
+              {
+                request.profile.css_background|safe
+              }
+            }
+
+            ;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -106,10 +113,13 @@
       <script src="{{ static('libs/jquery-3.4.1.min.js') }}"></script>
     {% endif %}
   </head>
+
   <body>
     <svg width="0" height="0" style="display: block">
       <defs>
-        <clipPath id="rating-clip"><circle cx="8" cy="8" r="7"/></clipPath>
+        <clipPath id="rating-clip">
+          <circle cx="8" cy="8" r="7" />
+        </clipPath>
       </defs>
     </svg>
     <nav id="navigation" class="unselectable">
@@ -120,31 +130,59 @@
           <li class="home-menu-item"><a href="{{ url('home') }}" class="nav-home">{{ _('Home') }}</a></li>
           {% for node in mptt_tree(nav_bar) recursive %}
             <li>
-              <a href="{{ node.path }}" id="fa-icon-links" class="normal-text nav-{{ node.key }}{% if node.key in nav_tab %} active{% endif %}">
-                <span class="nav-fa-icon{{'-active' if node.key in nav_tab else''}}">
-                  {% if node.key == "problems" %} <i class="fa fa-puzzle-piece"></i> {% endif %}
-                  {% if node.key == "submit" %} <i class="fa fa-code"></i> {% endif %}
-                  {% if node.key == "user" %} <i class="fa fa-user"></i> {% endif %}
-                  {% if node.key == "contest" %} <i class="fa fa-ranking-star"></i> {% endif %}
-                  {% if node.key == "group" %} <i class="fa fa-building-columns"></i> {% endif %}
-                  {% if node.key == "about" %} <i class="fa fa-at"></i> {% endif %}
-                </span>
-                {{ user_trans(node.label) }}
-                {% if not node.is_leaf_node %}
-                  <div href="javascript:void(0)" class="nav-expand">></div>
-                {% endif %}
-              </a>
-              {% with children=node.get_children() %}
-                {% if children %}<ul>{{ loop(children) }}</ul>{% endif %}
-              {% endwith %}
+              {% if node.key == "more" %}
+                <a href="#" onclick="return false;"
+                   class="nav-icon-link nav-{{ node.key }}{% if node.key in nav_tab %} active{% endif %}"
+                   data-tooltip="{{ user_trans(node.label) }}">
+                  <span class="nav-icon-container">
+                    <i class="fa fa-ellipsis"></i>
+                  </span>
+                </a>
+                {% with children=node.get_children() %}
+                  {% if children %}
+                    <div class="nav-dropdown">
+                      {% for child in children %}
+                        <a href="{{ child.path }}" class="nav-dropdown-item">
+                          {{ user_trans(child.label) }}
+                        </a>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endwith %}
+              {% else %}
+                <a href="{{ node.path }}"
+                   class="nav-icon-link nav-{{ node.key }}{% if node.key in nav_tab %} active{% endif %}"
+                   data-tooltip="{{ user_trans(node.label) }}">
+                  <span class="nav-icon-container">
+                    {% if node.key == "problems" %} <i class="fa fa-puzzle-piece"></i> {% endif %}
+                    {% if node.key == "submit" %} <i class="fa fa-code"></i> {% endif %}
+                    {% if node.key == "user" %} <i class="fa fa-user"></i> {% endif %}
+                    {% if node.key == "contest" %} <i class="fa fa-ranking-star"></i> {% endif %}
+                    {% if node.key == "group" %} <i class="fa fa-building-columns"></i> {% endif %}
+                    {% if node.key == "courses" %} <i class="fa fa-graduation-cap"></i> {% endif %}
+                  </span>
+                </a>
+                {% with children=node.get_children() %}
+                  {% if children %}
+                    <div class="nav-dropdown">
+                      {% for child in children %}
+                        <a href="{{ child.path }}" class="nav-dropdown-item">
+                          {{ user_trans(child.label) }}
+                        </a>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endwith %}
+              {% endif %}
             </li>
           {% endfor %}
         </ul>
 
-        <div style="display: flex; font-size: larger; align-items: center; height: 100%; gap: 1em;">
+        <div style="display: flex; font-size: larger; align-items: center; height: 100%; gap: 1em; padding-left: 2em;">
           {% if request.user.is_authenticated %}
             <span title="{{_('Chat')}}">
-              <a id="chat-icon" href="{{ url('chat', '') }}" class="fab fa-weixin navbar-icon" aria-hidden="true" style="font-size: 22.5px;">
+              <a id="chat-icon" href="{{ url('chat', '') }}" class="fab fa-weixin navbar-icon" aria-hidden="true"
+                 style="font-size: 22.5px;">
                 {% set unread_chat = request.profile.get_num_unread_chat_boxes() %}
                 {% if unread_chat %}
                   <sub class="unread_boxes">{{unread_chat}}</sub>
@@ -154,7 +192,8 @@
 
             {% set unseen_cnt = request.profile.get_num_unseen_notifications() %}
             <span title="{{_('Notification')}}" class="{{ 'notification-open' if unseen_cnt > 0 }}">
-              <a href="{{ url('notification') }}" class="far fa-bell navbar-icon" id="notification" aria-hidden="true" style="font-size: 22.5px;">
+              <a href="{{ url('notification') }}" class="far fa-bell navbar-icon" id="notification" aria-hidden="true"
+                 style="font-size: 22.5px;">
                 {% if unseen_cnt > 0 %}
                   <sub class="unread_boxes">{{unseen_cnt}}</sub>
                 {% endif %}
@@ -172,8 +211,8 @@
             </div>
             <div id="lang-dropdown" class="dropdown" role="tooltip">
               {% for language in language_info_list(LANGUAGES) %}
-                <div value="{{ language.code }}"
-                     class="dropdown-item lang-dropdown-item" style="{{'font-weight: bold' if language.code == LANGUAGE_CODE}}">
+                <div value="{{ language.code }}" class="dropdown-item lang-dropdown-item"
+                     style="{{'font-weight: bold' if language.code == LANGUAGE_CODE}}">
                   {{ language.name_local }}
                 </div>
               {% endfor %}
@@ -181,7 +220,8 @@
             </div>
           </span>
           <span title="{{_('Dark Mode')}}">
-            <a class="far fa-moon navbar-icon black" id="nav-darkmode-icon" aria-hidden="true" href="?darkmode=1" style="font-size: 22.5px;"></a>
+            <a class="far fa-moon navbar-icon black" id="nav-darkmode-icon" aria-hidden="true" href="?darkmode=1"
+               style="font-size: 22.5px;"></a>
           </span>
           {% if request.user.is_authenticated %}
             <span id="user-links">
@@ -234,8 +274,12 @@
             </div>
           {% else %}
             <span class="anon">
-              <a href="{{ url('auth_login') }}?next={{ LOGIN_RETURN_PATH|urlencode }}"><h4 class="nav-right-text">{{ _('Log in') }}</h4></a>
-              <a href="{{ url('registration_register') }}"><h4 class="nav-right-text">{{ _('Sign up') }}</h4></a>
+              <a href="{{ url('auth_login') }}?next={{ LOGIN_RETURN_PATH|urlencode }}">
+                <h4 class="nav-right-text">{{ _('Log in') }}</h4>
+              </a>
+              <a href="{{ url('registration_register') }}">
+                <h4 class="nav-right-text">{{ _('Sign up') }}</h4>
+              </a>
             </span>
           {% endif %}
         </div>
@@ -246,7 +290,8 @@
     {% if request.in_contest %}
       <div id="contest-info">
         <div id="contest-info-main">
-          <a href="{{ url('contest_view', request.participation.contest.key) }}" style="vertical-align: middle; display: inline">
+          <a href="{{ url('contest_view', request.participation.contest.key) }}"
+             style="vertical-align: middle; display: inline">
             {{ request.participation.contest.name }} -
             {% if request.participation.spectate %}
               {{ _('spectating') }}
@@ -259,7 +304,8 @@
             {% endif %}
           </a>
         </div>
-        <div id="contest-info-toggle" class="{{'contest-info-toggle-mode-on' if request.contest_mode else 'contest-info-toggle-mode-off'}}">
+        <div id="contest-info-toggle"
+             class="{{'contest-info-toggle-mode-on' if request.contest_mode else 'contest-info-toggle-mode-off'}}">
           {% if request.contest_mode %}
             <i class="fa fa-toggle-on white"></i> {{_('In contest')}}
           {% else %}
@@ -295,7 +341,7 @@
       {% endif %}
 
       {% compress js %}
-        <script>{{ inlinei18n(LANGUAGE_CODE)|safe }}</script>
+        <script>{ { inlinei18n(LANGUAGE_CODE) | safe } }</script>
         <script src="{{ static('libs/popper.min.js') }}"></script>
         <script src="{{ static('libs/jquery-cookie.js') }}"></script>
         <script src="{{ static('libs/jquery-taphold.js') }}"></script>
@@ -311,6 +357,7 @@
           moment.locale('{{ LANGUAGE_CODE }}');
           $(function () {
             $('img.unveil').unveil(200);
+
           });
         </script>
       {% endcompress %}
@@ -344,8 +391,8 @@
 
           $("#contest-info").show();
 
-          $("#contest-info-toggle").on('click', function() {
-            $.post("{{url('contest_mode_ajax')}}", function() {
+          $("#contest-info-toggle").on('click', function () {
+            $.post("{{url('contest_mode_ajax')}}", function () {
               window.location.reload();
             })
           });
@@ -400,7 +447,8 @@
         <footer>
           <span id="footer-content">
             <br>
-            <a class="background-footer" target="_blank" href="https://dmoj.ca">proudly powered by <b>DMOJ</b></a>|<a target="_blank" href="https://github.com/LQDJudge/online-judge"> developed by LQDJudge team</a>
+            <a class="background-footer" target="_blank" href="https://dmoj.ca">proudly powered by <b>DMOJ</b></a>|<a
+              target="_blank" href="https://github.com/LQDJudge/online-judge"> developed by LQDJudge team</a>
             {% if i18n_config.footer %}
               {{ i18n_config.footer|safe }} |
             {% endif %}
@@ -409,7 +457,7 @@
               <input name="next" type="hidden" value="{{ request.get_full_path() }}">
               <select name="language" onchange="form.submit()" style="height: 1.5em">
                 {% for language in language_info_list(LANGUAGES) %}
-                  <option value="{{ language.code }}" {% if language.code == LANGUAGE_CODE %}selected{% endif %}>
+                  <option value="{{ language.code }}" {% if language.code==LANGUAGE_CODE %}selected{% endif %}>
                     {{ language.name_local }} ({{ language.code }})
                   </option>
                 {% endfor %}
@@ -420,4 +468,5 @@
       {% endblock %}
     </div>
   </body>
+
 </html>

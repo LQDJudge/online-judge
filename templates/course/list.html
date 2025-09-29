@@ -68,7 +68,7 @@
                     <div class="course-join-form">
                       <form method="post" action="{{ url('course_join', course.slug) }}">
                         {% csrf_token %}
-                        <button type="submit" class="button small">
+                        <button type="submit" class="action-btn small background-green">
                           {{ _('Join') }}
                         </button>
                       </form>

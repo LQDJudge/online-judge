@@ -28,7 +28,7 @@
 
       $('#role_filter').select2();
 
-      // Tab navigation
+    // Tab navigation
       $('#my-courses-url').attr('href', changeTabParameter('my'));
       $('#joinable-courses-url').attr('href', changeTabParameter('joinable'));
       registerNavigation();
@@ -41,7 +41,7 @@
     }
 
     function registerNavigation() {
-      // Add any navigation registration logic here if needed
+    // Add any navigation registration logic here if needed
     }
   </script>
 {% endblock %}
@@ -58,7 +58,7 @@
       <div class="sidebox">
         <h3><i class="fa fa-plus"></i> {{ _('Course Management') }}</h3>
         <div class="sidebox-content">
-          <a href="{{ url('course_add') }}?organization={{ organization.id }}" class="button primary" style="width: 100%;">
+          <a href="{{ url('course_add') }}?organization={{ organization.id }}" class="action-btn">
             <i class="fa fa-plus"></i> {{ _('Create Course') }}
           </a>
         </div>
@@ -111,7 +111,7 @@
                     <div class="course-join-form">
                       <form method="post" action="{{ url('course_join', course.slug) }}">
                         {% csrf_token %}
-                        <button type="submit" class="button small">
+                        <button type="submit" class="action-btn small background-green">
                           {{ _('Join') }}
                         </button>
                       </form>
@@ -165,7 +165,8 @@
       <div class="no-courses">
         {% if current_tab == 'my' %}
           <h3>{{ _('No courses enrolled in %(org)s', org=organization.name) }}</h3>
-          <p>{{ _('You are not enrolled in any courses in this organization yet. Browse available courses and join to start learning!') }}</p>
+          <p>{{ _('You are not enrolled in any courses in this organization yet. Browse available courses and join to start
+            learning!') }}</p>
         {% else %}
           <h3>{{ _('No courses available to join in %(org)s', org=organization.name) }}</h3>
           <p>{{ _('There are no open courses available for you to join in this organization at this time.') }}</p>

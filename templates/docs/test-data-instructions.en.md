@@ -16,7 +16,7 @@ To test the program on your computer, you can use the following command (Windows
 generator.exe [arg_1] [arg_2] ... [arg_n] [seed]
 ```
 
-or with `./main` on Linux/MacOS.
+or with `./generator` on Linux/MacOS.
 
 **Ví dụ:**
 Here is an example of a problem: Input contains 2 integers a, b (1 <= a, b <= 100000). Print the sum a + b.
