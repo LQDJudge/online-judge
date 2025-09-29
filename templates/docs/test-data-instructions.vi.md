@@ -16,7 +16,7 @@ Sau khi có input, bạn cần code lời giải bài toán trong file với inp
 generator.exe [arg_1] [arg_2] ... [arg_n] [seed]
 ```
 
-hoặc thay bằng `./main` trên Linux/MacOS.
+hoặc thay bằng `./generator` trên Linux/MacOS.
 
 **Ví dụ:**
 Dưới đây là ví dụ cho một bài toán: Input chứa 2 số nguyên a, b (1 <= a, b <= 100000). In ra tổng a + b.

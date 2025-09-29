@@ -83,7 +83,7 @@
     </div>
     {% if can_create_course %}
       <div>
-        <a href="{{ url('course_add') }}" class="btn btn-primary">
+        <a href="{{ url('course_add') }}" class="action-btn">
           <i class="fa fa-plus"></i> {{ _('Add Course') }}
         </a>
       </div>
@@ -139,11 +139,11 @@
           {% if can_edit or Course.is_editable_by(course, request.profile) %}
             <div class="course-actions">
               <a href="{{ url('course_edit', course.slug) }}"
-                 class="btn btn-sm btn-secondary">
+                 class="action-btn small background-gray">
                 <i class="fa fa-edit"></i> {{ _('Edit') }}
               </a>
               <a href="{{ url('course_detail', course.slug) }}"
-                 class="btn btn-sm btn-primary">
+                 class="action-btn small">
                 <i class="fa fa-eye"></i> {{ _('View') }}
               </a>
             </div>
@@ -162,7 +162,7 @@
       <h3>{{ _('No courses in this organization yet.') }}</h3>
       {% if can_create_course %}
         <p>{{ _('Create your first course to get started.') }}</p>
-        <a href="{{ url('course_add') }}" class="btn btn-primary">
+        <a href="{{ url('course_add') }}" class="action-btn">
           <i class="fa fa-plus"></i> {{ _('Create Course') }}
         </a>
       {% endif %}
