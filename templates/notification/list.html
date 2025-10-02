@@ -2,29 +2,29 @@
 
 {% block js_media %}
   <script type="text/javascript">
-    $(document).ready(function() {
-      // Initialize select2 for dropdowns
+    $(document).ready(function () {
+    // Initialize select2 for dropdowns
       $('#category, #status').select2({
         width: '200px',
         minimumResultsForSearch: Infinity // Disable search for small lists
       });
 
-      // Handle filter form submission
-      $('#filter-form').on('submit', function(e) {
+    // Handle filter form submission
+      $('#filter-form').on('submit', function (e) {
         e.preventDefault();
         var formData = $(this).serialize();
         window.location.href = '?' + formData;
       });
 
-      // Handle clear filters
-      $('#clear-filters').on('click', function() {
+    // Handle clear filters
+      $('#clear-filters').on('click', function () {
         window.location.href = window.location.pathname;
       });
 
-      // Handle mark all as read
-      $('#mark-all-read').on('click', function() {
+    // Handle mark all as read
+      $('#mark-all-read').on('click', function () {
         var notificationIds = [];
-        $('.notification-row:not(.read)').each(function() {
+        $('.notification-row:not(.read)').each(function () {
           notificationIds.push($(this).data('notification-id'));
         });
         if (notificationIds.length > 0) {
@@ -32,8 +32,8 @@
         }
       });
 
-      // Handle content click to mark as read and open link
-      $('.notification-content').on('click', function(e) {
+    // Handle content click to mark as read and open link
+      $('.notification-content').on('click', function (e) {
         e.preventDefault();
         var $row = $(this).closest('.notification-row');
         var notificationId = $row.data('notification-id');
@@ -42,12 +42,12 @@
         if ($link.length > 0) {
           var href = $link.attr('href');
 
-          // Mark as read if unread
+        // Mark as read if unread
           if (!$row.hasClass('read')) {
             markAsRead([notificationId]);
           }
 
-          // Open link in new tab
+        // Open link in new tab
           window.open(href, '_blank');
         }
       });
@@ -56,18 +56,18 @@
         $.post('{{ url("notification_mark_read") }}', {
           'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val(),
           'notification_ids': notificationIds
-        }).done(function(data) {
+        }).done(function (data) {
           if (data.success) {
-            notificationIds.forEach(function(id) {
+            notificationIds.forEach(function (id) {
               var $row = $('[data-notification-id="' + id + '"]');
               $row.addClass('read').removeClass('unread');
 
-              // Change "Unread" to "Read" in the status column
+            // Change "Unread" to "Read" in the status column
               var $statusSpan = $row.find('td:first-child span');
               $statusSpan.removeClass('red').addClass('green').text('{{ _("Read") }}');
             });
           }
-        }).fail(function() {
+        }).fail(function () {
           alert('{{ _("Error occurred while marking as read") }}');
         });
       }
@@ -80,7 +80,7 @@
 
   <div class="notification-page">
     <div class="notification-container">
-      <!-- Filter Section -->
+    <!-- Filter Section -->
       <div class="filter-section">
         <form id="filter-form" method="get" class="filter-form">
           <div class="filter-group">
@@ -88,7 +88,7 @@
             <select name="category" id="category">
               <option value="">{{ _("All Categories") }}</option>
               {% for value, label in notification_categories %}
-                <option value="{{ value }}" {% if current_category == value %}selected{% endif %}>
+                <option value="{{ value }}" {% if current_category==value %}selected{% endif %}>
                   {{ label }}
                 </option>
               {% endfor %}
@@ -99,8 +99,8 @@
             <label for="status">{{ _("Status") }}</label>
             <select name="status" id="status">
               <option value="">{{ _("All") }}</option>
-              <option value="unread" {% if current_status == 'unread' %}selected{% endif %}>{{ _("Unread") }}</option>
-              <option value="read" {% if current_status == 'read' %}selected{% endif %}>{{ _("Read") }}</option>
+              <option value="unread" {% if current_status=='unread' %}selected{% endif %}>{{ _("Unread") }}</option>
+              <option value="read" {% if current_status=='read' %}selected{% endif %}>{{ _("Read") }}</option>
             </select>
           </div>
 
@@ -111,24 +111,25 @@
 
           <div class="filter-group">
             <label for="search">{{ _("Search") }}</label>
-            <input type="text" name="search" id="search" value="{{ current_search }}" placeholder="{{ _('Search in content') }}">
+            <input type="text" name="search" id="search" value="{{ current_search }}"
+                   placeholder="{{ _('Search in content') }}">
           </div>
 
           <div class="filter-actions">
-            <button type="submit" class="button">{{ _("Filter") }}</button>
-            <button type="button" id="clear-filters" class="button secondary">{{ _("Clear") }}</button>
+            <button type="submit" class="action-btn">{{ _("Filter") }}</button>
+            <button type="button" id="clear-filters" class="action-btn background-gray">{{ _("Clear") }}</button>
           </div>
         </form>
       </div>
 
-      <!-- Action Buttons -->
+    <!-- Action Buttons -->
       {% if unread_notifications > 0 %}
         <div class="action-section">
-          <button id="mark-all-read" class="button">{{ _("Mark All as Read") }}</button>
+          <button id="mark-all-read" class="action-btn">{{ _("Mark All as Read") }}</button>
         </div>
       {% endif %}
 
-      <!-- Notifications List -->
+    <!-- Notifications List -->
       {% if not notifications %}
         <div class="empty-state">
           <h3>{{ _("No notifications found") }}</h3>
@@ -185,7 +186,7 @@
         </table>
       {% endif %}
 
-      <!-- Pagination -->
+    <!-- Pagination -->
       <div style="margin-top: 30px;">
         {% include "list-pages.html" %}
       </div>
