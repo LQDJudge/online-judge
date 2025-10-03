@@ -420,8 +420,8 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     def get_searchable_status_codes(self):
         all_statuses = list(Submission.RESULT)
         all_statuses.extend([i for i in Submission.STATUS if i not in all_statuses])
-        hidden_codes = ["SC", "D", "G"]
-        if not self.request.user.is_superuser and not self.request.user.is_staff:
+        hidden_codes = ["SC"]
+        if not self.request.user.is_staff:
             hidden_codes += ["IE"]
         return [(key, value) for key, value in all_statuses if key not in hidden_codes]
 

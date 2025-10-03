@@ -108,12 +108,10 @@
 
 .content-description strong {
   font-weight: 600;
-  color: #333;
 }
 
 .content-description em {
   font-style: italic;
-  color: #555;
 }
 
 /* Strikethrough text */
