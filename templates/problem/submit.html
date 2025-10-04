@@ -26,7 +26,9 @@
               id: lang_id,
               problem: {{problem_id}}
             }).done(function (template) {
-              update_submit_area(template);
+              if (template && template.trim()) {
+                update_submit_area(template);
+              }
             });
           }
         }

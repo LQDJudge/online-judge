@@ -341,7 +341,7 @@
       {% endif %}
 
       {% compress js %}
-        <script>{ { inlinei18n(LANGUAGE_CODE) | safe } }</script>
+        <script>{{ inlinei18n(LANGUAGE_CODE) | safe }}</script>
         <script src="{{ static('libs/popper.min.js') }}"></script>
         <script src="{{ static('libs/jquery-cookie.js') }}"></script>
         <script src="{{ static('libs/jquery-taphold.js') }}"></script>
