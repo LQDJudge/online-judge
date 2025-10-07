@@ -101,7 +101,7 @@ def make_profile(backend, user, response, is_new=False, *args, **kwargs):
     if is_new:
         if not hasattr(user, "profile"):
             profile = Profile(user=user)
-            profile.language = Language.get_default_language()
+            profile.language_id = Language.get_default_language_pk()
             logger.info("Info from %s: %s", backend.name, response)
             profile.save()
             form = ProfileForm(instance=profile, user=user)

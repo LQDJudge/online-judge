@@ -30,10 +30,10 @@ class JudgeAppConfig(AppConfig):
         from django.contrib.auth.models import User
 
         try:
-            lang = Language.get_default_language()
+            lang_pk = Language.get_default_language_pk()
             for user in User.objects.filter(profile=None):
                 # These poor profileless users
-                profile = Profile(user=user, language=lang)
+                profile = Profile(user=user, language_id=lang_pk)
                 profile.save()
         except DatabaseError:
             pass

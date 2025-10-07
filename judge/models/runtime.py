@@ -15,8 +15,6 @@ from judge.caching import cache_wrapper
 
 __all__ = ["Language", "RuntimeVersion", "Judge"]
 
-_default_language_pk = None
-
 
 class Language(models.Model):
     key = models.CharField(
@@ -149,15 +147,8 @@ class Language(models.Model):
         return reverse("runtime_list") + "#" + self.key
 
     @classmethod
-    def get_default_language(cls):
-        return _get_default_language()
-
-    @classmethod
     def get_default_language_pk(cls):
-        global _default_language_pk
-        if _default_language_pk is None:
-            _default_language_pk = _get_default_language().pk
-        return _default_language_pk
+        return _get_default_language_pk()
 
     class Meta:
         ordering = ["key"]
@@ -165,12 +156,14 @@ class Language(models.Model):
         verbose_name_plural = _("languages")
 
 
-@cache_wrapper(prefix="gdl")
-def _get_default_language():
+@cache_wrapper(prefix="gdlpk", expected_type=int)
+def _get_default_language_pk():
     try:
-        return Language.objects.get(key=settings.DEFAULT_USER_LANGUAGE)
+        return Language.objects.values_list("pk", flat=True).get(
+            key=settings.DEFAULT_USER_LANGUAGE
+        )
     except Language.DoesNotExist:
-        return cls.get_python3()
+        return Language.get_python3().pk
 
 
 class RuntimeVersion(models.Model):

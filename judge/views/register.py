@@ -94,7 +94,7 @@ class RegistrationView(OldRegistrationView):
         profile, _ = Profile.objects.get_or_create(
             user=user,
             defaults={
-                "language": Language.get_default_language(),
+                "language_id": Language.get_default_language_pk(),
             },
         )
 
