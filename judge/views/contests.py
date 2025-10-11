@@ -1642,16 +1642,27 @@ def recalculate_contest_summary_result(request, contest_summary):
         users, problems = get_contest_ranking_list(request, contest)
         users = list(users)  # Convert generator to list for multiple iterations
 
-        # Count users per rank to distribute points equally
-        rank_counts = defaultdict(int)
+        # Group users by rank and calculate sum of points for tied positions
+        rank_groups = defaultdict(list)
         for rank, user in users:
-            rank_counts[rank] += 1
+            rank_groups[rank].append(user)
 
+        # Calculate points for each rank group
+        rank_points = {}
+        for rank, group_users in rank_groups.items():
+            num_users = len(group_users)
+            # Sum the points for all positions occupied by tied users
+            total_rank_points = 0
+            for j in range(num_users):
+                position_index = rank - 1 + j
+                if position_index < len(scores_system):
+                    total_rank_points += scores_system[position_index]
+            # Divide the sum equally among all tied users
+            rank_points[rank] = total_rank_points / num_users if num_users > 0 else 0
+
+        # Assign calculated points to each user
         for rank, user in users:
-            curr_score = 0
-            if rank - 1 < len(scores_system):
-                # Divide the points by the number of users with the same rank
-                curr_score = scores_system[rank - 1] / rank_counts[rank]
+            curr_score = rank_points[rank]
             total_points[user.user] += curr_score
             result_per_contest[user.user][i] = (curr_score, rank)
 
