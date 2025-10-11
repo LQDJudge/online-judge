@@ -12,7 +12,8 @@
       font-size: 1em;
     }
 
-    th, td {
+    th,
+    td {
       padding: 12px 15px;
       border: 1px solid #595656;
       padding: 15px;
@@ -43,27 +44,29 @@
     </thead>
     <tbody>
       {% for rank, item in page_obj %}
+        {% set profile = profiles[item.user_id] %}
         <tr>
           <td>
             {{ rank }}
           </td>
           <td>
             <div>
-              <a href="{{url('user_page', item.username)}}"> <span class="username {{ item.css_class }} wrapline">{{item.username}}</span></a>
+              <a href="{{url('user_page', profile.username)}}"> <span
+                class="username {{ profile.css_class }} wrapline">{{profile.username}}</span></a>
             </div>
-            <div>{{item.first_name}}</div>
-            <div>{{item.last_name}}</div>
+            <div>{{profile.first_name if profile.first_name else ''}}</div>
+            <div>{{profile.last_name if profile.last_name else ''}}</div>
           </td>
           {% for point_contest, rank_contest in item.point_contests %}
             <td>
-              <div>{{ point_contest }}</div>
+              <div>{{ point_contest|floatformat(0) }}</div>
               {% if rank_contest %}
                 <div><small>(#{{ rank_contest }})</small></div>
               {% endif %}
             </td>
           {% endfor %}
           <td>
-            <b>{{ item.points }}</b>
+            <b>{{ item.points|floatformat(2) }}</b>
           </td>
         </tr>
       {% endfor %}
