@@ -127,7 +127,7 @@
             <tr>
               <td>
                 {% if problem.is_public %}
-                  <a href="{{ url('problem_detail', problem.code) }}">{{ problem.translated_name(LANGUAGE_CODE) }}</a>
+                  <a href="{{ url('problem_detail', problem.code) }}" target="_blank">{{ problem.translated_name(LANGUAGE_CODE) }}</a>
                 {% else %}
                   {{ problem.translated_name(LANGUAGE_CODE) }}
                 {% endif %}
@@ -136,14 +136,14 @@
               <td>{{ problem.ac_rate|floatformat(1) }}%</td>
               <td>
                 {% if problem.is_public %}
-                  <a href="{{ url('ranked_submissions', problem.code) }}">{{ problem.user_count }}</a>
+                  <a href="{{ url('ranked_submissions', problem.code) }}" target="_blank">{{ problem.user_count }}</a>
                 {% else %}
                   {{ problem.user_count }}
                 {% endif %}
               </td>
               <td>
                 {% if problem.is_public and problem.has_public_editorial() %}
-                  <a href="{{ url('problem_editorial', problem.code) }}">{{ _('Editorial') }}</a>
+                  <a href="{{ url('problem_editorial', problem.code) }}" target="_blank">{{ _('Editorial') }}</a>
                 {% endif %}
               </td>
             </tr>

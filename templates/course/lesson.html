@@ -15,7 +15,7 @@
   <ul class="course-problem-list">
     {% for lesson_problem in lesson_problems %}
       {% set problem = lesson_problem.problem %}
-      <a href="{{url('problem_detail', problem.code)}}">
+      <a href="{{url('problem_detail', problem.code)}}" target="_blank">
         <li>
           {% if problem.id in completed_problem_ids %}
             <i class="solved-problem-color fa fa-check-circle"></i>

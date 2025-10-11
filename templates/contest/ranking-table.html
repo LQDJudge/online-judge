@@ -62,7 +62,7 @@
 
 {% block after_point_head %}
   {% for problem in problems %}
-    <th class="points header problem-score-col" title="{{ problem.problem.name }}"><a href="{{ url('problem_detail', problem.problem.code) }}">
+    <th class="points header problem-score-col" title="{{ problem.problem.name }}"><a href="{{ url('problem_detail', problem.problem.code) }}" target="_blank">
       {{- contest.get_label_for_problem(loop.index0) }}
       <div class="point-denominator">{{ problem.points }}</div>
       <div class="problem-code" style="display: none;">{{ problem.problem.code }}</div>

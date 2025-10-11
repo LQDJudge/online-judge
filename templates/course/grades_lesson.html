@@ -91,7 +91,7 @@
           {% if grades|length > 0 %}
             {% for lesson_problem in problems %}
               <th class="points">
-                <a href="{{ url('problem_detail', lesson_problem.problem.code) }}">
+                <a href="{{ url('problem_detail', lesson_problem.problem.code) }}" target="_blank">
                   {{ loop.index0 + 1 }}
                   <div class="point-denominator">{{ lesson_problem.score }}</div>
                 </a>
@@ -117,7 +117,7 @@
             {% for lesson_problem in problems %}
               {% set val = grade.get(lesson_problem.problem.id) %}
               <td class="partial-score">
-                <a href="{{url('user_submissions', lesson_problem.problem.code, student.username)}}">
+                <a href="{{url('user_submissions', lesson_problem.problem.code, student.username)}}" target="_blank">
                   {% if val and val['case_total'] %}
                     {{ (val['case_points'] / val['case_total'] * lesson_problem.score) | floatformat(0) }}
                   {% else %}

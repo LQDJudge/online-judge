@@ -96,10 +96,10 @@
               {% endif %}
             {% endif %}
             <td class="problem">
-              <a href="{{ url('problem_detail', problem.code) }}">{{ problem.translated_name(LANGUAGE_CODE) }}</a>
+              <a href="{{ url('problem_detail', problem.code) }}" target="_blank">{{ problem.translated_name(LANGUAGE_CODE) }}</a>
             </td>
             <td class="pcode">
-              <a class="pcodecell" href="{{ url('problem_detail', problem.code) }}">{{ problem.code }}</a>
+              <a class="pcodecell" href="{{ url('problem_detail', problem.code) }}" target="_blank">{{ problem.code }}</a>
             </td>
             {% if not show_contest_mode %}
               <td class="category">{{ problem.get_group_name() }}</td>
@@ -121,7 +121,7 @@
             {% endif %}
             {% if not has_hidden_subtasks %}
               <td class="users">
-                <a href="{{ url('ranked_submissions', problem.code) }}">
+                <a href="{{ url('ranked_submissions', problem.code) }}" target="_blank">
                   {% if not show_contest_mode or not hide_contest_scoreboard %}
                     {% if current_contest %}
                       {{ problem.get_contest_user_count(current_contest.id) }}
@@ -138,7 +138,7 @@
             {% if show_editorial%}
               <td class="editorial">
                 {% if problem.has_public_editorial() %}
-                  <a href="{{ url('problem_editorial', problem.code) }}">{{ _('Editorial') }}</a>
+                  <a href="{{ url('problem_editorial', problem.code) }}" target="_blank">{{ _('Editorial') }}</a>
                 {% endif %}
               </td>
             {% endif %}
@@ -177,7 +177,7 @@
           {% for clarification in clarifications %}
             <tr>
               <td>
-                <a href="{{ url('problem_detail', clarification.problem.problem.code) }}"
+                <a href="{{ url('problem_detail', clarification.problem.problem.code) }}" target="_blank"
                    class="problem">
                   {{ clarification.problem.problem.name }}
                 </a>
