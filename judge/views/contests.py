@@ -1630,10 +1630,17 @@ def recalculate_contest_summary_result(request, contest_summary):
     for i in range(len(contests)):
         contest = contests[i]
         users, problems = get_contest_ranking_list(request, contest)
+
+        # Count users per rank to distribute points equally
+        rank_counts = defaultdict(int)
+        for rank, user in users:
+            rank_counts[rank] += 1
+
         for rank, user in users:
             curr_score = 0
             if rank - 1 < len(scores_system):
-                curr_score = scores_system[rank - 1]
+                # Divide the points by the number of users with the same rank
+                curr_score = scores_system[rank - 1] / rank_counts[rank]
             total_points[user.user] += curr_score
             result_per_contest[user.user][i] = (curr_score, rank)
             user_css_class[user.user] = user.user.css_class
