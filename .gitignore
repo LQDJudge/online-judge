@@ -17,6 +17,7 @@ node_modules/
 package-lock.json
 package.json
 /src
+websocket/config.js
 
 .DS_Store
 CLAUDE.md

@@ -1593,7 +1593,7 @@ def update_contest_mode(request):
 
 ContestsSummaryData = namedtuple(
     "ContestsSummaryData",
-    "username first_name last_name points point_contests css_class",
+    "user_id points point_contests",
 )
 
 
@@ -1617,6 +1617,17 @@ class ContestsSummaryView(DiggPaginatorMixin, ListView):
         context["contests"] = self.contests_summary.contests.all()
         context["title"] = _("Contests")
         context["first_page_href"] = "."
+
+        # Prefetch all user profiles using cached instances
+        user_ids = [item[1]["user_id"] for item in context["object_list"]]
+        profiles = {}
+        if user_ids:
+            # Get cached profile instances and create a lookup dictionary
+            profiles = {p.id: p for p in Profile.get_cached_instances(*user_ids)}
+
+        # Add profile lookup to context
+        context["profiles"] = profiles
+
         return context
 
 
@@ -1625,11 +1636,11 @@ def recalculate_contest_summary_result(request, contest_summary):
     contests = contest_summary.contests.all()
     total_points = defaultdict(int)
     result_per_contest = defaultdict(lambda: [(0, 0)] * len(contests))
-    user_css_class = {}
 
     for i in range(len(contests)):
         contest = contests[i]
         users, problems = get_contest_ranking_list(request, contest)
+        users = list(users)  # Convert generator to list for multiple iterations
 
         # Count users per rank to distribute points equally
         rank_counts = defaultdict(int)
@@ -1643,16 +1654,12 @@ def recalculate_contest_summary_result(request, contest_summary):
                 curr_score = scores_system[rank - 1] / rank_counts[rank]
             total_points[user.user] += curr_score
             result_per_contest[user.user][i] = (curr_score, rank)
-            user_css_class[user.user] = user.user.css_class
 
     sorted_total_points = [
         ContestsSummaryData(
-            username=user.username,
-            first_name=user.first_name,
-            last_name=user.last_name,
+            user_id=user.id,
             points=total_points[user],
             point_contests=result_per_contest[user],
-            css_class=user_css_class[user],
         )
         for user in total_points
     ]
