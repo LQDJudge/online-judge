@@ -13,7 +13,7 @@
       {% for course_contest in course_contests %}
         <div class="course-contest-card">
           <div>
-            <h5><a href="{{url('contest_view', course_contest.contest.key)}}">{{ loop.index }}. {{ course_contest.contest.name }}</a></h5>
+            <h5><a href="{{url('contest_view', course_contest.contest.key)}}" target="_blank">{{ loop.index }}. {{ course_contest.contest.name }}</a></h5>
             <p><strong>{{_("Order")}}:</strong> {{ course_contest.order }}</p>
             <p><strong>{{_("Points")}}:</strong> {{ course_contest.points }}</p>
             <p><strong>{{_("Start")}}:</strong> {{ course_contest.contest.start_time|date(_("H:i d/m/Y")) }}</p>

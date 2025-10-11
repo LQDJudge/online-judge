@@ -84,7 +84,7 @@
             {% set progress = contest_progress[course_contest.id] %}
             <tr>
               <td>
-                <a href="{{ url('contest_view', contest.key) }}" class="contest-name">{{ contest.name }}</a>
+                <a href="{{ url('contest_view', contest.key) }}" class="contest-name" target="_blank">{{ contest.name }}</a>
               </td>
               <td>
                 {{ contest.start_time|date(_("H:i d/m/Y")) }}

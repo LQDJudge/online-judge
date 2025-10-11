@@ -1,5 +1,5 @@
 {% macro contest_head(contest, organization=None) %}
-  <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title" style="margin-right: 5px;">
+  <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title" style="margin-right: 5px;" target="_blank">
     {{contest.name}}
   </a>
   <div class="contest-tags">
@@ -71,7 +71,7 @@
 
 {% macro user_count(contest, user) %}
   {% if contest.can_see_own_scoreboard(user) %}
-    <a href="{{ url('contest_ranking', contest.key) }}"><i class="fa fa-users"></i> {{ contest.user_count }}</a>
+    <a href="{{ url('contest_ranking', contest.key) }}" target="_blank"><i class="fa fa-users"></i> {{ contest.user_count }}</a>
   {% else %}
     <i class="fa fa-users"></i>{{ contest.user_count }}
   {% endif %}
