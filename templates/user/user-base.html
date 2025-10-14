@@ -8,6 +8,7 @@
       width: 150px;
       height: 150px;
     }
+
     .page-title {
       display: -webkit-box;
       display: -webkit-flex;
@@ -72,13 +73,13 @@
 {% block js_media %}
   {% if request.user.is_authenticated %}
     <script type="text/javascript">
-      $(function() {
-        $("#message-button").on("click", function() {
+      $(function () {
+        $("#message-button").on("click", function () {
           $.get("{{ url('get_or_create_room') }}", {
             "other": "{{ chat_param(request.profile, user) }}"
-          }, function(response) {
+          }, function (response) {
             window.location.href = response.url;
-          }).fail(function(error) {
+          }).fail(function (error) {
             console.log("Error: ", error);
           });
         });
@@ -115,13 +116,11 @@
           <i class="fa fa-envelope"></i> {{ _('Message') }}
         </button>
       {% endif %}
-
-      {% if ratings %}
-        <br>
-        <div style="border: 3px dashed darkgray; padding: 0.3em; border-radius: 6px;">
+      {% if rating_count > 0 %}
+        <div style="border: 3px dashed darkgray; padding: 0.3em; border-radius: 6px; margin-top: 1em;">
           <div class="user-stat-container">
             <div class="user-stat-header">{{_('Contests written')}}:</div>
-            <div class="user-stat">{{ratings|length}}</div>
+            <div class="user-stat">{{ rating_count }}</div>
           </div>
           <div class="user-stat-container">
             <div class="user-stat-header">{{ _('Min. rating:') }}</div>

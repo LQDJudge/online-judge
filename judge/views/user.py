@@ -47,7 +47,7 @@ from judge.models import (
     Contest,
     Solution,
 )
-from judge.models.contest import get_global_rating_range, get_user_rating_stats
+from judge.models.contest import get_global_rating_range
 from judge.models.submission import (
     get_user_submission_dates,
     get_user_min_submission_year,
@@ -64,6 +64,7 @@ from judge.utils.users import (
     get_points_rank,
     get_awards,
     get_contest_ratings,
+    get_user_rating_stats,
 )
 from judge.utils.views import (
     QueryStringSortMixin,
@@ -167,7 +168,6 @@ class UserPage(TitleMixin, UserMixin, DetailView):
         if self.object.rating:
             context["rating_rank"] = get_rating_rank(self.object)
 
-        # Use cached rating stats
         user_rating_stats = get_user_rating_stats(self.object.id)
         if user_rating_stats["min_rating"] is not None:
             context.update(user_rating_stats)
@@ -190,31 +190,31 @@ class UserAboutPage(UserPage):
 
     def get_context_data(self, **kwargs):
         context = super(UserAboutPage, self).get_context_data(**kwargs)
-        ratings = get_contest_ratings(self.object)
+        ratings = get_contest_ratings(self.object.id)
 
         if ratings:
             context["rating_data"] = mark_safe(
                 json.dumps(
                     [
                         {
-                            "label": rating.contest.name,
-                            "rating": rating.rating,
-                            "ranking": rating.rank,
+                            "label": rating["contest_name"],
+                            "rating": rating["rating"],
+                            "ranking": rating["rank"],
                             "link": reverse(
-                                "contest_ranking", args=(rating.contest.key,)
+                                "contest_ranking", args=(rating["contest_key"],)
                             )
                             + "#!"
                             + self.object.username,
                             "timestamp": (
-                                rating.contest.end_time - EPOCH
+                                rating["contest_end_time"] - EPOCH
                             ).total_seconds()
                             * 1000,
                             "date": date_format(
-                                timezone.localtime(rating.contest.end_time),
+                                timezone.localtime(rating["contest_end_time"]),
                                 _("M j, Y, G:i"),
                             ),
-                            "class": rating_class(rating.rating),
-                            "height": "%.3fem" % rating_progress(rating.rating),
+                            "class": rating_class(rating["rating"]),
+                            "height": "%.3fem" % rating_progress(rating["rating"]),
                         }
                         for rating in ratings
                     ]
