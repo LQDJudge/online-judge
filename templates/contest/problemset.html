@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html class="contest-problemset">
+
   <head>
     <title>{{ contest.name }} - {{ _('Problemset') }} - {{ SITE_LONG_NAME }}</title>
     <link rel="stylesheet" href="{{ static('style.css') }}">
@@ -22,7 +23,7 @@
       </div>
     </div>
 
-    <!-- Problems Summary Table -->
+  <!-- Problems Summary Table -->
     <div style="width: 90%; margin-left: auto; margin-right: auto;">
       <table class="table">
         <thead>
@@ -91,32 +92,51 @@
           <span class="info-block">
             <i class="fa fa-file"></i><span class="pi-name"> {{ _('Input:') }}</span>
             <span class="new-pi-value">
-              {% if contest_problem.problem.data_files %}{{ contest_problem.problem.data_files.fileio_input or _('stdin') }}{% else %}{{ _('stdin') }}{% endif %}
+              {% if contest_problem.problem.data_files %}{{ contest_problem.problem.data_files.fileio_input or _('stdin')
+                }}{% else %}{{ _('stdin') }}{% endif %}
             </span>
           </span>
 
           <span class="info-block">
             <i class="fa fa-file"></i><span class="pi-name"> {{ _('Output:') }}</span>
-            <span class="new-pi-value">{% if contest_problem.problem.data_files %}{{ contest_problem.problem.data_files.fileio_output or _('stdout') }}{% else %}{{ _('stdout') }}{% endif %}</span>
-          </span>
-        </div>
+            <span class="new-pi-value">{% if contest_problem.problem.data_files %}{{
+              contest_problem.problem.data_files.fileio_output or _('stdout') }}{% else %}{{ _('stdout') }}{% endif
+      %}</span>
+      </span>
+      </div>
 
-        <div class="content-description printing">
-          {{ contest_problem.problem.description|markdown|reference|str|safe }}
-        </div>
+      <div class="content-description printing">
+        {{ contest_problem.problem.description|markdown|reference|str|safe }}
+      </div>
       </div>
     {% endfor %}
 
+  <!-- jQuery and clipboard libraries -->
+    <script src="{{ static('libs/jquery-3.4.1.min.js') }}"></script>
+    <script src="{{ static('libs/clipboard/clipboard.js') }}"></script>
+    <script src="{{ static('common.js') }}"></script>
+    <script src="{{ static('libs/clipboard/tooltip.js') }}"></script>
+
+  <!-- KaTeX for math rendering -->
     <script src="{{ static('katex_config.js') }}"></script>
     {% include "katex-load.html" %}
+
     <script>
-      // Auto-open all spoilers/details elements
-      document.addEventListener('DOMContentLoaded', function() {
+    // Auto-open all spoilers/details elements
+      document.addEventListener('DOMContentLoaded', function () {
         const details = document.querySelectorAll('details');
-        details.forEach(function(detail) {
+        details.forEach(function (detail) {
           detail.open = true;
         });
+
+      // Initialize copy button functionality
+        if (typeof populateCopyButton === 'function') {
+          populateCopyButton();
+        }
       });
     </script>
+
+
   </body>
+
 </html>
