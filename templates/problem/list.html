@@ -96,7 +96,8 @@
               {% endif %}
             {% endif %}
             <td class="problem">
-              <a href="{{ url('problem_detail', problem.code) }}" target="_blank">{{ problem.translated_name(LANGUAGE_CODE) }}</a>
+              <a href="{{ url('problem_detail', problem.code) }}" target="_blank">{{ problem.translated_name(LANGUAGE_CODE)
+                }}</a>
             </td>
             <td class="pcode">
               <a class="pcodecell" href="{{ url('problem_detail', problem.code) }}" target="_blank">{{ problem.code }}</a>
@@ -150,10 +151,10 @@
     {% if show_contest_mode %}
       <div style="margin-top: 1em; display: flex; justify-content: space-between; padding-right: 1em; font-size: 1.1em;">
         <a href="{{ url('contest_problemset', request.participation.contest.key) }}">
-          <i class="fa fa-book black"></i>{{ _('Complete problemset') }}
+          <i class="fa fa-book black"></i> {{ _('Complete problemset') }}
         </a>
         <a href="#" id="pdf_button">
-          <i class="fa fa-file-pdf red"></i>{{ _('View as PDF') }}
+          <i class="fa fa-file-pdf red"></i> {{ _('View as PDF') }}
         </a>
       </div>
     {% endif %}
@@ -162,12 +163,14 @@
       <br><br>
       {% if can_edit_contest %}
         <div style="float: right; font-size: 1.2em">
-          <a href="{{url('new_contest_clarification', request.participation.contest.key)}}"><i class="fa fa-plus-circle" class="green"></i> <u>{{_('Add clarifications')}}</u></a>
+          <a href="{{url('new_contest_clarification', request.participation.contest.key)}}"><i class="fa fa-plus-circle"
+                                                                                               class="green"></i> <u>{{_('Add clarifications')}}</u></a>
         </div>
       {% endif %}
       {% if has_clarifications %}
         <div style="font-size: 1.2em; font-style: bold">
-          <i class="fa fa-question-circle"></i> {{_('Clarifications')}}</div>
+          <i class="fa fa-question-circle"></i> {{_('Clarifications')}}
+        </div>
         <table class="table">
           <tr>
             <th>{{_('Problem')}}</th>
@@ -177,13 +180,14 @@
           {% for clarification in clarifications %}
             <tr>
               <td>
-                <a href="{{ url('problem_detail', clarification.problem.problem.code) }}" target="_blank"
-                   class="problem">
+                <a href="{{ url('problem_detail', clarification.problem.problem.code) }}" target="_blank" class="problem">
                   {{ clarification.problem.problem.name }}
                 </a>
               </td>
               <td class="time">{{ relative_time(clarification.date) }}</td>
-              <td><p style="overflow-wrap: break-word; word-break: break-word">{{clarification.description}}</p></td>
+              <td>
+                <p style="overflow-wrap: break-word; word-break: break-word">{{clarification.description}}</p>
+              </td>
             </tr>
           {% endfor %}
         </table>

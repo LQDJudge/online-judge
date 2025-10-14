@@ -18,7 +18,7 @@
   {% include "contest/pdf-problemset-js.html" %}
   <script type="text/javascript">
 
-    $(function() {
+    $(function () {
       initContestProblemsetPdf('{{ url("contest_problemset", contest.key) }}');
     });
   </script>
@@ -35,26 +35,23 @@
     {% if contest.can_join or is_editor or is_tester %}
       {% set in_contest = contest.is_in_contest(request.user) %}
       {% if contest.ended %}
-        {# Allow users to leave the virtual contest #}
+{# Allow users to leave the virtual contest #}
         {% if in_contest %}
-          <form action="{{ url('contest_leave', contest.key) }}" method="post"
-                class="contest-join-pseudotab">
+          <form action="{{ url('contest_leave', contest.key) }}" method="post" class="contest-join-pseudotab">
             {% csrf_token %}
             <input type="submit" class="action-btn large leaving-forever" value="{{ _('Leave contest') }}">
           </form>
         {% else %}
-          {# Allow users to virtual join #}
-          <form action="{{ url('contest_join', contest.key) }}" method="post"
-                class="contest-join-pseudotab">
+{# Allow users to virtual join #}
+          <form action="{{ url('contest_join', contest.key) }}" method="post" class="contest-join-pseudotab">
             {% csrf_token %}
             <input type="submit" class="action-btn large" value="{{ _('Virtual join') }}">
           </form>
         {% endif %}
       {% else %}
-        {# Allow users to leave the contest #}
+{# Allow users to leave the contest #}
         {% if in_contest %}
-          <form action="{{ url('contest_leave', contest.key) }}" method="post"
-                class="contest-join-pseudotab">
+          <form action="{{ url('contest_leave', contest.key) }}" method="post" class="contest-join-pseudotab">
             {% csrf_token %}
             <input type="submit" class="action-btn large" value="
                                                                  {%- if request.participation.spectate %}
@@ -78,8 +75,7 @@
       {% endif %}
     {% endif %}
   {% elif contest.can_join %}
-    <form action="{{ url('auth_login') }}" method="get"
-          class="contest-join-pseudotab unselectable">
+    <form action="{{ url('auth_login') }}" method="get" class="contest-join-pseudotab unselectable">
       <input type="hidden" name="next" value="{{ LOGIN_RETURN_PATH|urlencode }}">
       <input type="submit" class="action-btn large" value="{{ _('Login to participate') }}">
     </form>
@@ -89,83 +85,85 @@
   {% if contest.is_organization_private %}
     <div style="display: flex; margin-bottom: 1em">
       {% for org in organizations %}
-        {% with edit_url = url('organization_contest_edit', org.id, org.slug, contest.key) if org in editable_organizations else None %}
-          {% include "organization/tag.html" %}
-        {% endwith %}
-      {% endfor %}
-    </div>
-  {% endif %}
-
-  {% if course %}
-    <div style="display: flex; margin-bottom: 1em">
-      {% with edit_url = url('edit_course_contest', course.slug, contest.key) if is_editable_course else None %}
-        {% include "course/tag.html" %}
+        {% with edit_url = url('organization_contest_edit', org.id, org.slug, contest.key) if org in editable_organizations
+        else None %}
+        {% include "organization/tag.html" %}
       {% endwith %}
-    </div>
-  {% endif %}
-
-  <div style="padding: 0 1em;">
-    {{ contest.description|markdown|reference|str|safe }}
+  {% endfor %}
   </div>
+{% endif %}
 
-  {% if contest.ended or request.user.is_superuser or is_editor or is_tester %}
-    <hr>
-    <div class="contest-problems">
-      <h2 style="margin-bottom: 0.2em"><i class="fa fa-fw fa-question-circle"></i>{{ _('Problems') }} </h2>
-      <table id="contest-problems" class="table">
-        <thead>
+{% if course %}
+  <div style="display: flex; margin-bottom: 1em">
+    {% with edit_url = url('edit_course_contest', course.slug, contest.key) if is_editable_course else None %}
+      {% include "course/tag.html" %}
+    {% endwith %}
+  </div>
+{% endif %}
+
+<div style="padding: 0 1em;">
+  {{ contest.description|markdown|reference|str|safe }}
+</div>
+
+{% if contest.ended or request.user.is_superuser or is_editor or is_tester %}
+  <hr>
+  <div class="contest-problems">
+    <h2 style="margin-bottom: 0.2em"><i class="fa fa-fw fa-question-circle"></i>{{ _('Problems') }} </h2>
+    <table id="contest-problems" class="table">
+      <thead>
+        <tr>
+          <th>{{ _('Problem') }}</th>
+          <th>{{ _('Points') }}</th>
+          <th>{{ _('AC Rate') }}</th>
+          <th>{{ _('Users') }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for problem in contest_problems %}
           <tr>
-            <th>{{ _('Problem') }}</th>
-            <th>{{ _('Points') }}</th>
-            <th>{{ _('AC Rate') }}</th>
-            <th>{{ _('Users') }}</th>
-            <th></th>
+            <td>
+              {% if problem.is_public %}
+                <a href="{{ url('problem_detail', problem.code) }}" target="_blank">{{ problem.translated_name(LANGUAGE_CODE)
+                  }}</a>
+              {% else %}
+                {{ problem.translated_name(LANGUAGE_CODE) }}
+              {% endif %}
+            </td>
+            <td>{{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}</td>
+            <td>{{ problem.ac_rate|floatformat(1) }}%</td>
+            <td>
+              {% if problem.is_public %}
+                <a href="{{ url('ranked_submissions', problem.code) }}" target="_blank">{{ problem.user_count }}</a>
+              {% else %}
+                {{ problem.user_count }}
+              {% endif %}
+            </td>
+            <td>
+              {% if problem.is_public and problem.has_public_editorial() %}
+                <a href="{{ url('problem_editorial', problem.code) }}" target="_blank">{{ _('Editorial') }}</a>
+              {% endif %}
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {% for problem in contest_problems %}
-            <tr>
-              <td>
-                {% if problem.is_public %}
-                  <a href="{{ url('problem_detail', problem.code) }}" target="_blank">{{ problem.translated_name(LANGUAGE_CODE) }}</a>
-                {% else %}
-                  {{ problem.translated_name(LANGUAGE_CODE) }}
-                {% endif %}
-              </td>
-              <td>{{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}</td>
-              <td>{{ problem.ac_rate|floatformat(1) }}%</td>
-              <td>
-                {% if problem.is_public %}
-                  <a href="{{ url('ranked_submissions', problem.code) }}" target="_blank">{{ problem.user_count }}</a>
-                {% else %}
-                  {{ problem.user_count }}
-                {% endif %}
-              </td>
-              <td>
-                {% if problem.is_public and problem.has_public_editorial() %}
-                  <a href="{{ url('problem_editorial', problem.code) }}" target="_blank">{{ _('Editorial') }}</a>
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+        {% endfor %}
+      </tbody>
+    </table>
 
-      <div style="margin-top: 1em; display: flex; justify-content: space-between; padding-right: 1em; font-size: 1.1em;">
-        <a href="{{ url('contest_problemset', contest.key) }}">
-          <i class="fa fa-book black"></i>{{ _('Complete problemset') }}
-        </a>
-        <a href="#" id="pdf_button">
-          <i class="fa fa-file-pdf red"></i>{{ _('View as PDF') }}
-        </a>
-      </div>
+    <div style="margin-top: 1em; display: flex; justify-content: space-between; padding-right: 1em; font-size: 1.1em;">
+      <a href="{{ url('contest_problemset', contest.key) }}">
+        <i class="fa fa-book black"></i> {{ _('Complete problemset') }}
+      </a>
+      <a href="#" id="pdf_button">
+        <i class="fa fa-file-pdf red"></i> {{ _('View as PDF') }}
+      </a>
     </div>
-    <hr>
-  {% endif %}
-  <div style="clear: both"></div>
-  <br>
-  {% include "actionbar/list.html" %}
-  <br>
-  {% include "comments/list.html" %}
-  <iframe name="raw_problemset" id="raw_problemset" style="visibility: hidden;width: 0; height: 0;"></iframe>
+  </div>
+  <hr>
+{% endif %}
+<div style="clear: both"></div>
+<br>
+{% include "actionbar/list.html" %}
+<br>
+{% include "comments/list.html" %}
+<iframe name="raw_problemset" id="raw_problemset" style="visibility: hidden;width: 0; height: 0;"></iframe>
 {% endblock %}
