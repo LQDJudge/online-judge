@@ -116,7 +116,7 @@
           <i class="fa fa-envelope"></i> {{ _('Message') }}
         </button>
       {% endif %}
-      {% if rating_count > 0 %}
+      {% if rating_count and rating_count > 0 %}
         <div style="border: 3px dashed darkgray; padding: 0.3em; border-radius: 6px; margin-top: 1em;">
           <div class="user-stat-container">
             <div class="user-stat-header">{{_('Contests written')}}:</div>
