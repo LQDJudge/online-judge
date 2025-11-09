@@ -9,7 +9,7 @@
     </div>
     {% if show_problem %}
       <span>—</span>
-      <div class="sub-problem"><a href="{{ url('problem_detail', submission.problem.code) }}" target="_blank">{{ problem_name }}</a></div>
+      <div class="sub-problem"><a href="{{ url('problem_detail', submission.problem.code) }}">{{ problem_name }}</a></div>
     {% endif %}
   </div>
   <div class="sub-result">
@@ -21,7 +21,7 @@
             {% if batch.id %}
               {{ '+' if ns.is_first else '' }}
               {% set ns.is_first = True %}
-              <span class={{'green' if batch.AC else 'red'}}>
+              <span class={{'green' if batch.AC else 'red' }}>
                 {{ batch.points|floatformat(0) }}
               </span>
             {% endif %}
@@ -56,8 +56,7 @@
     </div>
     <span class="time">{{ relative_time(submission.date, format=_("d/m/Y"))}}</span>
     {% if not hide_contest_in_row and submission.contest_object_id %}
-      <a href="{{ url('contest_view', submission.contest_object.key) }}" target="_blank"
-         class="submission-contest">
+      <a href="{{ url('contest_view', submission.contest_object.key) }}" class="submission-contest">
         <i title="{{ submission.contest_object.name }}" class="far fa-dot-circle"></i>
       </a>
     {% endif %}
@@ -79,20 +78,22 @@
     <div class="memory">{{ (submission.memory_bytes|filesizeformat(True)).replace('i', '') }}</div>
   {% endif %}
   {% if can_view %}
-    <div class="sub-prop"><div>
-      <a href="{{ url('submission_status', submission.id) }}" target="_blank">
-        <i class="fa fa-eye fa-fw"></i><span class="label">{{ _('view') }}</span>
-      </a>
-      {% if perms.judge.rejudge_submission %} ·
-        <a href="#" onclick="rejudge_submission({{ submission.id }}, event);return false">
-          <i class="fa fa-refresh fa-fw"></i><span class="label">{{ _('rejudge') }}</span>
+    <div class="sub-prop">
+      <div>
+        <a href="{{ url('submission_status', submission.id) }}">
+          <i class="fa fa-eye fa-fw"></i><span class="label">{{ _('view') }}</span>
         </a>
-      {% endif %}
-      {% if perms.judge.change_submission %} ·
-        <a href="{{ url('admin:judge_submission_change', submission.id) }}">
-          <i class="fa fa-cog fa-fw"></i><span class="label">{{ _('admin') }}</span>
-        </a>
-      {% endif %}
-    </div></div>
+        {% if perms.judge.rejudge_submission %} ·
+          <a href="#" onclick="rejudge_submission({{ submission.id }}, event);return false">
+            <i class="fa fa-refresh fa-fw"></i><span class="label">{{ _('rejudge') }}</span>
+          </a>
+        {% endif %}
+        {% if perms.judge.change_submission %} ·
+          <a href="{{ url('admin:judge_submission_change', submission.id) }}">
+            <i class="fa fa-cog fa-fw"></i><span class="label">{{ _('admin') }}</span>
+          </a>
+        {% endif %}
+      </div>
+    </div>
   {% endif %}
 </div>

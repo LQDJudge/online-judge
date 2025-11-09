@@ -25,7 +25,7 @@
         </span>
       </div>
       <h2 class="title">
-        <a href="{{ url('blog_post', post.id, post.slug) }}" target="_blank">{{ post.title }}</a>
+        <a href="{{ url('blog_post', post.id, post.slug) }}">{{ post.title }}</a>
       </h2>
       <div class="blog-description">
         <div class="summary content-description">
@@ -37,7 +37,8 @@
         <div class="actionbar {{'hide_texts_on_mobile' if hide_texts_on_mobile}}">
           {% if is_admin %}
             <span class="actionbar-block">
-              <a class="actionbar-button white background-green" href="#" onclick="javascript:approvePost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
+              <a class="actionbar-button white background-green" href="#"
+                 onclick="javascript:approvePost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
                 <i class="fa fa-check" style="font-size: large;"></i>
                 <span class="actionbar-text">{{_("Approve")}}</span>
               </a>
@@ -51,14 +52,16 @@
           </span>
           {% if is_admin %}
             <span class="actionbar-block">
-              <a class="actionbar-button white background-red" href="#" onclick="javascript:rejectPost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
+              <a class="actionbar-button white background-red" href="#"
+                 onclick="javascript:rejectPost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
                 <i class="fa fa-times" style="font-size: large;"></i>
                 <span class="actionbar-text">{{_("Reject")}}</span>
               </a>
             </span>
           {% else %}
             <span class="actionbar-block">
-              <a class="actionbar-button white background-red" href="#" onclick="javascript:deletePost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
+              <a class="actionbar-button white background-red" href="#"
+                 onclick="javascript:deletePost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
                 <i class="fa fa-trash" style="font-size: large;"></i>
                 <span class="actionbar-text">{{_("Delete")}}</span>
               </a>

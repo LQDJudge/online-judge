@@ -1,6 +1,6 @@
 <h4>
   {{_('Contest submissions of')}} {{link_user(profile)}} <a
-    href="{{url('contest_user_submissions', contest.key, profile.username, problem.code)}}" target="_blank">#</a>
+    href="{{url('contest_user_submissions', contest.key, profile.username, problem.code)}}">#</a>
 </h4>
 <hr>
 {% if best_subtasks and subtasks %}
@@ -69,7 +69,7 @@
           </td>
           {% if can_view %}
             <td>
-              → <a href="{{url('submission_status', submission.id)}}" target="_blank">{{submission.id}}</a>
+              → <a href="{{url('submission_status', submission.id)}}">{{submission.id}}</a>
             </td>
           {% endif %}
         </tr>
