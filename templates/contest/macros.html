@@ -1,5 +1,5 @@
 {% macro contest_head(contest, organization=None) %}
-  <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title" style="margin-right: 5px;" target="_blank">
+  <a href="{{ url('contest_view', contest.key) }}" class="contest-list-title" style="margin-right: 5px;">
     {{contest.name}}
   </a>
   <div class="contest-tags">
@@ -34,8 +34,7 @@
     {% endif %}
     {% for tag in contest.tags.all() %}
       <span style="background-color: {{ tag.color }}" class="contest-tag">
-        <a href="{{ url('contest_tag', tag.name) }}"
-           style="color: {{ tag.text_color }}"
+        <a href="{{ url('contest_tag', tag.name) }}" style="color: {{ tag.text_color }}"
            data-featherlight="{{ url('contest_tag_ajax', tag.name) }}">
           {{- tag.name -}}
         </a>
@@ -71,7 +70,8 @@
 
 {% macro user_count(contest, user) %}
   {% if contest.can_see_own_scoreboard(user) %}
-    <a href="{{ url('contest_ranking', contest.key) }}" target="_blank"><i class="fa fa-users"></i> {{ contest.user_count }}</a>
+    <a href="{{ url('contest_ranking', contest.key) }}"><i class="fa fa-users"></i> {{ contest.user_count
+      }}</a>
   {% else %}
     <i class="fa fa-users"></i>{{ contest.user_count }}
   {% endif %}
