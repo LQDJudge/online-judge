@@ -254,6 +254,8 @@
 
 /* ===== CONTEST RANKING TABLE - Clean Design ===== */
 .contest-ranking-page {
+    // Note: No overflow-x on wrapper to allow position:sticky to work on thead
+
     #users-table {
         border-collapse: collapse;
         border-spacing: 0;
@@ -267,7 +269,6 @@
             padding: 0.45rem 0.4rem;
             border-bottom: 1px solid $border_gray;
             vertical-align: middle;
-            font-size: 0.85rem;
         }
 
         td a:hover {
@@ -280,8 +281,10 @@
             color: white;
             font-weight: 600;
             padding: 0.5rem 0.4rem;
-            border-bottom: 2px solid $theme_color;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
+            position: sticky;
+            top: $navbar_height;
+            z-index: 10;
 
             a {
                 color: white;
@@ -512,7 +515,7 @@
         .filter-option {
             cursor: pointer;
             user-select: none;
-            font-size: 0.75rem;
+            font-size: 0.85rem;
             display: inline-flex;
             align-items: center;
             gap: 0.2rem;
@@ -539,7 +542,6 @@
             border-radius: 4px;
             border: 1px solid $border_gray;
             padding: 0 0.5em;
-            font-size: 0.8rem;
 
             &:focus {
                 border-color: $theme_color;
