@@ -5,10 +5,9 @@ from django.conf import settings
 from django.views.generic import ListView
 from django.utils.translation import gettext as _, gettext_lazy, get_language
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Q
 from django.http import HttpResponseForbidden, JsonResponse
 from django.urls import reverse
-from django.shortcuts import render
 
 from judge.utils.strings import safe_float_or_none, safe_int_or_none
 from judge.models.problem import get_distinct_problem_points
@@ -26,73 +25,6 @@ class InternalView(object):
         if request.user.is_superuser:
             return super(InternalView, self).get(request, *args, **kwargs)
         return HttpResponseForbidden()
-
-
-class InternalProblem(InternalView, ListView):
-    model = Problem
-    title = _("Internal problems")
-    template_name = "internal/problem/problem.html"
-    paginate_by = 100
-    context_object_name = "problems"
-
-    def get_paginator(
-        self, queryset, per_page, orphans=0, allow_empty_first_page=True, **kwargs
-    ):
-        return DiggPaginator(
-            queryset,
-            per_page,
-            body=6,
-            padding=2,
-            orphans=orphans,
-            allow_empty_first_page=allow_empty_first_page,
-            **kwargs,
-        )
-
-    def get_search_query(self):
-        return self.request.GET.get("q") or self.request.POST.get("q")
-
-    def get_queryset(self):
-        queryset = Problem.objects.annotate(
-            vote_count=Count("volunteer_user_votes")
-        ).filter(vote_count__gte=1)
-        query = self.get_search_query()
-        if query:
-            queryset = queryset.filter(
-                Q(code__icontains=query) | Q(name__icontains=query)
-            )
-        return queryset.order_by("-vote_count")
-
-    def get_context_data(self, **kwargs):
-        context = super(InternalProblem, self).get_context_data(**kwargs)
-        context["page_type"] = "problem"
-        context["title"] = self.title
-        context["page_prefix"] = self.request.path + "?page="
-        context["first_page_href"] = self.request.path
-        context["query"] = self.get_search_query()
-
-        return context
-
-
-def get_problem_votes(request):
-    if not request.user.is_superuser:
-        return HttpResponseForbidden()
-    try:
-        problem = Problem.objects.get(id=request.GET.get("id"))
-    except:
-        return HttpResponseForbidden()
-    votes = (
-        problem.volunteer_user_votes.select_related("voter")
-        .prefetch_related("types")
-        .order_by("id")
-    )
-    return render(
-        request,
-        "internal/problem/votes.html",
-        {
-            "problem": problem,
-            "votes": votes,
-        },
-    )
 
 
 class InternalProblemQueue(InternalView, ListView):

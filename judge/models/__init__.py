@@ -58,7 +58,6 @@ from judge.models.submission import (
 
 from judge.models.test_formatter import TestFormatterModel
 from judge.models.ticket import Ticket, TicketMessage
-from judge.models.volunteer import VolunteerProblemVote
 from judge.models.pagevote import PageVote, PageVoteVoter
 from judge.models.bookmark import BookMark
 from judge.models.course import (
@@ -95,7 +94,6 @@ revisions.register(ProblemTestCase)
 revisions.register(ContestParticipation)
 revisions.register(Rating)
 revisions.register(PageVoteVoter)
-revisions.register(VolunteerProblemVote)
 revisions.register(Course)
 revisions.register(Ticket)
 revisions.register(TicketMessage)

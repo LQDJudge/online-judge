@@ -27,7 +27,6 @@ from judge.admin.taxon import (
     OfficialContestLocationAdmin,
 )
 from judge.admin.ticket import TicketAdmin
-from judge.admin.volunteer import VolunteerProblemVoteAdmin
 from judge.admin.course import CourseAdmin
 from judge.models import (
     BlogPost,
@@ -50,7 +49,6 @@ from judge.models import (
     Profile,
     Submission,
     Ticket,
-    VolunteerProblemVote,
     Course,
     ContestsSummary,
     OfficialContestCategory,
@@ -79,7 +77,6 @@ admin.site.register(ProblemType, ProblemTypeAdmin)
 admin.site.register(Profile, ProfileAdmin)
 admin.site.register(Submission, SubmissionAdmin)
 admin.site.register(Ticket, TicketAdmin)
-admin.site.register(VolunteerProblemVote, VolunteerProblemVoteAdmin)
 admin.site.register(Course, CourseAdmin)
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)

@@ -51,7 +51,6 @@ from judge.views import (
     ticket,
     totp,
     user,
-    volunteer,
     pagevote,
     bookmark,
     widgets,
@@ -248,11 +247,6 @@ urlpatterns = [
         r"^problems/feed/new/$",
         problem.ProblemFeed.as_view(feed_type="new"),
         name="problem_feed_new",
-    ),
-    re_path(
-        r"^problems/feed/volunteer/$",
-        problem.ProblemFeed.as_view(feed_type="volunteer"),
-        name="problem_feed_volunteer",
     ),
     re_path(
         r"^problem/(?P<problem>[^/]+)",
@@ -1287,16 +1281,6 @@ urlpatterns = [
         include(
             [
                 re_path(
-                    r"^problem$",
-                    internal.InternalProblem.as_view(),
-                    name="internal_problem",
-                ),
-                re_path(
-                    r"^problem_votes$",
-                    internal.get_problem_votes,
-                    name="internal_problem_votes",
-                ),
-                re_path(
                     r"^problem_queue$",
                     internal.InternalProblemQueue.as_view(),
                     name="internal_problem_queue",
@@ -1369,18 +1353,6 @@ urlpatterns = [
                 ),
                 re_path(
                     r"sample/$", user.sample_import_users, name="import_users_sample"
-                ),
-            ]
-        ),
-    ),
-    re_path(
-        r"^volunteer/",
-        include(
-            [
-                re_path(
-                    r"^problem/vote$",
-                    volunteer.vote_problem,
-                    name="volunteer_problem_vote",
                 ),
             ]
         ),

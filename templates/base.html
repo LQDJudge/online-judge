@@ -239,7 +239,7 @@
                 </a>
               {% endif %}
               {% if request.user.is_superuser %}
-                <a href="{{ url('internal_problem') }}">
+                <a href="{{ url('internal_problem_queue') }}">
                   <div class="dropdown-item"><i class="fa fa-circle-info"></i> {{ _('Internal') }}</div>
                 </a>
                 <a href="{{ url('site_stats') }}">
