@@ -94,8 +94,9 @@ class IOIContestFormat(DefaultContestFormat):
         else:
             format_data = (participation.format_data or {}).get(str(contest_problem.id))
         if format_data:
+            time_seconds = int(format_data["time"]) if self.config["cumtime"] else None
             return format_html(
-                '<td class="{state} problem-score-col"><a data-featherlight="{url}" href="#">{points}<div class="solving-time">{time}</div></a></td>',
+                '<td class="{state} problem-score-col"><a data-featherlight="{url}" href="#">{points}<div class="solving-time"{time_attr}>{time}</div></a></td>',
                 state=(
                     (
                         "pretest-"
@@ -120,8 +121,15 @@ class IOIContestFormat(DefaultContestFormat):
                     format_data["points"], -self.contest.points_precision
                 ),
                 time=(
-                    nice_repr(timedelta(seconds=format_data["time"]), "noday")
+                    nice_repr(
+                        timedelta(seconds=format_data["time"]), "noday-no-seconds"
+                    )
                     if self.config["cumtime"]
+                    else ""
+                ),
+                time_attr=(
+                    mark_safe(' data-time="{}"'.format(time_seconds))
+                    if time_seconds is not None
                     else ""
                 ),
             )
@@ -139,7 +147,7 @@ class IOIContestFormat(DefaultContestFormat):
             '<td class="user-points">{points}<div class="solving-time">{cumtime}</div></td>',
             points=floatformat(score, -self.contest.points_precision),
             cumtime=(
-                nice_repr(timedelta(seconds=cumtime), "noday")
+                nice_repr(timedelta(seconds=cumtime), "noday-no-seconds")
                 if self.config["cumtime"]
                 else ""
             ),

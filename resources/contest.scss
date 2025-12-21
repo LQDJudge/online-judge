@@ -115,7 +115,83 @@
     }
 }
 
-#banner {
+// Contest banner - structured card design
+#banner.contest-banner {
+    text-align: center;
+    padding: 1em 1.5em;
+    margin-bottom: 1em;
+    background: $background_light_gray;
+    border-radius: 8px;
+    border-left: 4px solid $theme_color;
+
+    .contest-title {
+        font-size: 1.4em;
+        font-weight: 700;
+        margin: 0 0 0.5em 0;
+        color: #111;
+
+        a {
+            color: inherit;
+            text-decoration: none;
+
+            &:hover {
+                color: $theme_color;
+            }
+        }
+    }
+
+    .contest-status {
+        margin-bottom: 0.4em;
+
+        .status-text {
+            font-size: 1.15em;
+            font-weight: 600;
+            color: #111;
+        }
+
+        .status-ended::before {
+            content: '✓ ';
+            color: #6b7280;
+        }
+
+        .status-active {
+            color: $theme_color;
+
+            &::before {
+                content: '● ';
+                animation: pulse 1.5s infinite;
+            }
+        }
+
+        .status-upcoming {
+            color: #2563eb;
+
+            &::before {
+                content: '◷ ';
+            }
+        }
+    }
+
+    .contest-time-info {
+        font-size: 0.9em;
+        color: #4b5563;
+    }
+
+    .contest-freeze-info {
+        font-size: 0.85em;
+        color: $announcement_red;
+        margin-top: 0.4em;
+        font-weight: 500;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+// Legacy banner styles (for backwards compatibility)
+#banner:not(.contest-banner) {
     padding-bottom: 1em;
 
     a.date {
@@ -162,8 +238,377 @@
     }
 }
 
+// First solve - subtle star indicator
 .first-solve {
-    background: #00f9a1;
+    position: relative;
+
+    &::after {
+        content: '★';
+        position: absolute;
+        top: 2px;
+        right: 10%;
+        font-size: 0.6rem;
+        color: #f59e0b;
+    }
+}
+
+/* ===== CONTEST RANKING TABLE - Clean Design ===== */
+.contest-ranking-page {
+    #users-table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        background: white;
+
+        a {
+            display: block;
+        }
+
+        td {
+            padding: 0.45rem 0.4rem;
+            border-bottom: 1px solid $border_gray;
+            vertical-align: middle;
+            font-size: 0.85rem;
+        }
+
+        td a:hover {
+            text-decoration: none;
+        }
+
+        // Header styling - theme color
+        thead th {
+            background: $theme_color;
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 0.4rem;
+            border-bottom: 2px solid $theme_color;
+            font-size: 0.8rem;
+
+            a {
+                color: white;
+                text-decoration: none;
+
+                &:hover {
+                    opacity: 0.9;
+                }
+            }
+        }
+
+        // Problem column headers
+        thead th.problem-score-col {
+            min-width: 45px;
+            padding: 0.4rem 0.2rem;
+
+            a {
+                color: white;
+                font-weight: 600;
+            }
+
+            .point-denominator {
+                font-size: 0.7em;
+                opacity: 0.8;
+                font-weight: 400;
+                margin-top: 1px;
+            }
+
+            .problem-code {
+                display: none;
+            }
+        }
+
+        // Row styling
+        tbody tr {
+            background: white;
+            transition: background 0.15s ease;
+        }
+
+        tbody tr:hover {
+            background: $background_light_gray;
+        }
+
+        // Last row no border
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+    }
+
+    // Rank styling
+    #users-table tbody {
+        // Current user highlight
+        tr.highlight {
+            background: #fffbeb !important;
+
+            td:first-child {
+                box-shadow: inset 3px 0 0 $theme_color;
+            }
+        }
+
+        // Disqualified
+        tr.disqualified {
+            opacity: 0.5;
+
+            td {
+                text-decoration: line-through;
+                color: #9ca3af;
+            }
+        }
+    }
+
+    // Column styling
+    .rank {
+        min-width: 2.5em;
+        font-weight: 600;
+        text-align: center;
+        font-size: 0.85rem;
+    }
+
+    .points {
+        min-width: 3.5em;
+        font-weight: 700;
+        font-size: 0.85rem;
+    }
+
+    .start-time {
+        font-size: 0.7rem;
+        color: #9ca3af;
+    }
+
+    // Username column
+    .user-name {
+        padding: 0.35rem 0.5rem !important;
+        text-align: left !important;
+        font-size: 0.85rem;
+
+        .user-img {
+            border-radius: 50%;
+            border: 1px solid $border_gray;
+        }
+
+        a.user-name {
+            display: inline !important;
+            font-weight: 500;
+            font-size: 0.85rem;
+
+            &:hover {
+                color: $theme_color;
+            }
+        }
+
+        form {
+            display: inline !important;
+        }
+    }
+
+    // Admin edit buttons - hidden by default, shown when admin mode is enabled
+    .contest-participation-operation {
+        display: none;  // Hidden by default
+        align-items: center;
+        gap: 0.2rem;
+        margin-left: 0.3rem;
+        vertical-align: middle;
+
+        form {
+            display: inline !important;
+            margin: 0;
+        }
+
+        a {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            width: 1.4em;
+            height: 1.4em;
+            padding: 0;
+            color: #666;
+            opacity: 0.6;
+            transition: opacity 0.15s;
+
+            &:hover {
+                opacity: 1;
+                color: $theme_color;
+            }
+
+            i.fa {
+                font-size: 0.8em;
+            }
+        }
+
+        .disqualify-participation:hover {
+            color: $announcement_red;
+        }
+
+        .un-disqualify-participation:hover {
+            color: #28a745;
+        }
+    }
+
+    // Show admin buttons when admin mode is active
+    &.admin-mode .contest-participation-operation {
+        display: inline-flex;
+    }
+
+    // Score cells - readable design
+    td.problem-score-col {
+        padding: 0.2rem !important;
+        text-align: center;
+
+        a {
+            display: flex !important;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem 0.2rem;
+            border-radius: 3px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            min-height: 1.6rem;
+            background: transparent;
+
+            &:hover {
+                background: $background_light_gray;
+            }
+        }
+    }
+
+    .solving-time {
+        font-size: 0.7rem;
+        font-weight: 400;
+        color: #6b7280;
+        line-height: 1.2;
+    }
+
+    // School and fullname - readable display below username
+    .fullname,
+    .user-table-fullname {
+        display: block;
+        font-size: 0.8rem;
+        color: #4b5563;
+        line-height: 1.3;
+        margin-top: 2px;
+        font-weight: 400;
+    }
+
+    .school {
+        display: block;
+        font-size: 0.75rem;
+        color: #6b7280;
+        line-height: 1.2;
+    }
+
+    .organization-column {
+        display: none;
+        text-align: left !important;
+    }
+
+    // Filter controls - compact inline style
+    .ranking-filters-container {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.3rem 0.8rem;
+        padding: 0.3rem 0;
+        margin-bottom: 0.4rem;
+
+        .filter-option {
+            cursor: pointer;
+            user-select: none;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            white-space: nowrap;
+
+            input[type="checkbox"] {
+                accent-color: $theme_color;
+                width: 0.85rem;
+                height: 0.85rem;
+                cursor: pointer;
+                margin: 0;
+            }
+        }
+
+        .action-btn.small {
+            padding: 0.35rem 0.7rem;
+            font-size: 0.75rem;
+        }
+
+        .ranking-search-input {
+            margin-left: auto;
+            width: 150px;
+            height: 1.8em;
+            border-radius: 4px;
+            border: 1px solid $border_gray;
+            padding: 0 0.5em;
+            font-size: 0.8rem;
+
+            &:focus {
+                border-color: $theme_color;
+                outline: none;
+            }
+        }
+    }
+
+    // Search box
+    #search-contest {
+        width: 180px;
+        height: 2em;
+        border-radius: 4px;
+        border: 1px solid $border_gray;
+        padding: 0 0.5em;
+        font-size: 0.8rem;
+
+        &:focus {
+            border-color: $theme_color;
+            outline: none;
+        }
+    }
+
+    // Modal - note: featherlight-content styles moved to root level below
+
+    // Select2 tweaks
+    .select2-selection__arrow {
+        display: none;
+    }
+
+    .select2-selection__rendered {
+        cursor: text;
+        overflow: initial !important;
+    }
+
+    .select2-results__option {
+        white-space: nowrap;
+    }
+
+    // Responsive
+    @media (max-width: 799px) {
+        .ranking-filters-container {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.3rem;
+
+            .download-link {
+                margin-left: 0;
+                margin-top: 0.2rem;
+            }
+        }
+
+        #users-table thead th {
+            padding: 0.4rem 0.2rem;
+            font-size: 0.7rem;
+        }
+
+        #users-table td {
+            padding: 0.25rem 0.15rem;
+        }
+    }
+}
+
+// Empty state message
+.no-participations-message {
+    text-align: center;
+    padding: 2em;
+    color: #6b7280;
+    font-size: 0.95rem;
 }
 
 .contest-tag {
@@ -236,4 +681,18 @@ form.contest-join-pseudotab {
 
 #add-clarification:hover {
     color: cyan;
+}
+
+// Contest ranking modal - featherlight styles (global scope)
+.featherlight .featherlight-content {
+    height: 80%;
+    width: 60%;
+    overflow: auto;
+    border-radius: 8px;
+}
+
+@media (max-width: 799px) {
+    .featherlight .featherlight-content {
+        width: 95%;
+    }
 }

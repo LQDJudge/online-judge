@@ -134,7 +134,7 @@ class ECOOContestFormat(DefaultContestFormat):
             )
 
             return format_html(
-                '<td class="{state}"><a data-featherlight="{url}" href="#">{points}{bonus}<div class="solving-time">{time}</div></a></td>',
+                '<td class="{state}"><a data-featherlight="{url}" href="#">{points}{bonus}<div class="solving-time" data-time="{time_seconds}">{time}</div></a></td>',
                 state=(
                     (
                         "pretest-"
@@ -157,7 +157,10 @@ class ECOOContestFormat(DefaultContestFormat):
                 ),
                 points=floatformat(format_data["points"]),
                 bonus=bonus,
-                time=nice_repr(timedelta(seconds=format_data["time"]), "noday"),
+                time=nice_repr(
+                    timedelta(seconds=format_data["time"]), "noday-no-seconds"
+                ),
+                time_seconds=int(format_data["time"]),
             )
         else:
             return mark_safe("<td></td>")
@@ -167,7 +170,7 @@ class ECOOContestFormat(DefaultContestFormat):
             '<td class="user-points">{points}<div class="solving-time">{cumtime}</div></td>',
             points=floatformat(participation.score),
             cumtime=(
-                nice_repr(timedelta(seconds=participation.cumtime), "noday")
+                nice_repr(timedelta(seconds=participation.cumtime), "noday-no-seconds")
                 if self.config["cumtime"]
                 else ""
             ),

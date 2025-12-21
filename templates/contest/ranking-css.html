@@ -1,99 +1,16 @@
-<style>
-  #users-table td {
-    min-height: 2.5em;
-  }
-
-  #users-table a {
-    display: block;
-  }
-
-  .userinfo a, .user-name a, .user-name form {
-    display: inline !important;
-  }
-
-  #users-table td a:hover {
-    text-decoration: underline;
-  }
-
-  .rank {
-    min-width: 2.5em
-  }
-
-  .points {
-    min-width: 2.5em;
-  }
-
-  .start-time {
-    display: none;
-  }
-
-  .user-name {
-    padding-left: 1em !important;
-    padding-right: 1em !important;
-    display: flex;
-    min-width: max-content;
-    align-items: center;
-  }
-
-  .organization-column {
-    display: none;
-    text-align: left !important;
-    border-right: none !important;
-  }
-
-  .featherlight-content {
-    height: 80%;
-    width:  60%;
-    overflow: auto;
-  }
-
-  .select2-selection__arrow {
-    display: none;
-  }
-
-  .select2-selection__rendered {
-    cursor: text;
-    overflow: initial !important
-  }
-
-  .select2-results__option {
-    white-space: nowrap;
-  }
-
-  #search-contest, #search-contest + .select2 {
-    margin-top: 0.5em;
-  }
-
-  #search-contest {
-    width: 200px;
-    height: 2.3em;
-  }
-  html.with-featherlight {
-    overflow: unset;
-  }
-
-  @media (max-width: 799px) {
-    .featherlight-content {
-      width:  95%;
-    }
-    #users-table .username {
-      min-width: fit-content;
-    }
-  }
-</style>
-
 {% if has_rating %}
-  <style>#users-table .rate-box {
-    font-size: 0.85em;
-    float: left;
-  }
+  <style>
+    .contest-ranking-page #users-table .rate-box {
+      font-size: 0.85em;
+      float: left;
+    }
 
-    #users-table td:nth-child(1) .rating {
+    .contest-ranking-page #users-table td:nth-child(1) .rating {
       margin-left: 1.25em;
       display: block;
     }
 
-    #users-table td:nth-child(2) a {
+    .contest-ranking-page #users-table td:nth-child(2) a {
       display: block;
     }
   </style>

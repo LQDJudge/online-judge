@@ -124,7 +124,7 @@ class AtCoderContestFormat(DefaultContestFormat):
                 else ""
             )
             return format_html(
-                '<td class="{state} problem-score-col"><a data-featherlight="{url}" href="#">{points}{penalty}<div class="solving-time">{time}</div></a></td>',
+                '<td class="{state} problem-score-col"><a data-featherlight="{url}" href="#">{points}{penalty}<div class="solving-time" data-time="{time_seconds}">{time}</div></a></td>',
                 state=(
                     (
                         "pretest-"
@@ -147,7 +147,10 @@ class AtCoderContestFormat(DefaultContestFormat):
                 ),
                 points=floatformat(format_data["points"]),
                 penalty=penalty,
-                time=nice_repr(timedelta(seconds=format_data["time"]), "noday"),
+                time=nice_repr(
+                    timedelta(seconds=format_data["time"]), "noday-no-seconds"
+                ),
+                time_seconds=int(format_data["time"]),
             )
         else:
             return mark_safe('<td class="problem-score-col"></td>')

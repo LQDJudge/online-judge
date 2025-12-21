@@ -72,8 +72,7 @@
 {% endblock %}
 
 {% block row_extra %}
-  class="{{ 'disqualified' if user.participation.is_disqualified }} {{'highlight' if user.username ==
-  request.user.username}}"
+  class="{{ 'disqualified' if user.participation.is_disqualified }} {{'highlight' if user.id == request.user.id}}"
 {% endblock %}
 
 {% block before_point %}

@@ -98,41 +98,39 @@
                 {{ contest.end_time|date(_("H:i d/m/Y"))}}
                 <div class="contest-details">
                   {% if contest.time_before_end %}
-                    <span class="time">{% trans countdown=contest.end_time|as_countdown %}Ends in {{ countdown }}{% endtrans
-                      %}</span>
-                    {% endif %}
-                    </div>
-                    </td>
-                    <td>
-                      {% if contest.time_limit %}
-                        {% trans time_limit=contest.time_limit|timedelta('localized-no-seconds') %}{{ time_limit }}{% endtrans %}
-                      {% else %}
-                        {% trans duration=contest.contest_window_length|timedelta('localized-no-seconds') %}{{ duration }}{% endtrans
-                        %}
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if progress['total_points'] %}
-                        {{ (progress['achieved_points'] / progress['total_points'] * course_contest.points) | floatformat(1) }} / {{
-                        course_contest.points }}
-                      {% else %}
-                        0 / {{ course_contest.points }}
-                      {% endif %}
-                    </td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-          {% endif %}
-          <br>
-          <h3 class="course-content-title">
-            {% set achieved_points = total_progress['achieved_points'] %}
-            {% set total_points = total_progress['total_points'] %}
-            {% set percentage = total_progress['percentage'] %}
-            {{_("Total achieved points")}}:
-            <span class="course-total-points">
-              {{ achieved_points | floatformat(2) }} / {{ total_points }} ({{percentage|floatformat(1)}}%)
-            </span>
-          </h3>
-        </div>
-    {% endblock %}
+                    <span class="time">{% trans countdown=contest.end_time|as_countdown %}Ends in {{ countdown }}{% endtrans %}</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td>
+                {% if contest.time_limit %}
+                  {% trans time_limit=contest.time_limit|timedelta('localized-no-seconds') %}{{ time_limit }}{% endtrans %}
+                {% else %}
+                  {% trans duration=contest.contest_window_length|timedelta('localized-no-seconds') %}{{ duration }}{% endtrans %}
+                {% endif %}
+              </td>
+              <td>
+                {% if progress['total_points'] %}
+                  {{ (progress['achieved_points'] / progress['total_points'] * course_contest.points) | floatformat(1) }} / {{
+                  course_contest.points }}
+                {% else %}
+                  0 / {{ course_contest.points }}
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+    <br>
+    <h3 class="course-content-title">
+      {% set achieved_points = total_progress['achieved_points'] %}
+      {% set total_points = total_progress['total_points'] %}
+      {% set percentage = total_progress['percentage'] %}
+      {{_("Total achieved points")}}:
+      <span class="course-total-points">
+        {{ achieved_points | floatformat(2) }} / {{ total_points }} ({{percentage|floatformat(1)}}%)
+      </span>
+    </h3>
+  </div>
+{% endblock %}

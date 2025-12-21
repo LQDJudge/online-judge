@@ -65,7 +65,7 @@ class DefaultContestFormat(BaseContestFormat):
         format_data = (participation.format_data or {}).get(str(contest_problem.id))
         if format_data:
             return format_html(
-                '<td class="{state} problem-score-col"><a data-featherlight="{url}" href="#">{points}<div class="solving-time">{time}</div></a></td>',
+                '<td class="{state} problem-score-col"><a data-featherlight="{url}" href="#">{points}<div class="solving-time" data-time="{time_seconds}">{time}</div></a></td>',
                 state=(
                     (
                         "pretest-"
@@ -89,7 +89,10 @@ class DefaultContestFormat(BaseContestFormat):
                 points=floatformat(
                     format_data["points"], -self.contest.points_precision
                 ),
-                time=nice_repr(timedelta(seconds=format_data["time"]), "noday"),
+                time=nice_repr(
+                    timedelta(seconds=format_data["time"]), "noday-no-seconds"
+                ),
+                time_seconds=int(format_data["time"]),
             )
         else:
             return mark_safe('<td class="problem-score-col"></td>')
@@ -98,7 +101,9 @@ class DefaultContestFormat(BaseContestFormat):
         return format_html(
             '<td class="user-points">{points}<div class="solving-time">{cumtime}</div></td>',
             points=floatformat(participation.score, -self.contest.points_precision),
-            cumtime=nice_repr(timedelta(seconds=participation.cumtime), "noday"),
+            cumtime=nice_repr(
+                timedelta(seconds=participation.cumtime), "noday-no-seconds"
+            ),
         )
 
     def get_problem_breakdown(self, participation, contest_problems):

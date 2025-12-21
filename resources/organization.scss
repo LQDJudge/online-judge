@@ -129,8 +129,68 @@
 }
 
 .org-about {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: #4b5563;
+
+    .content-description {
+        font-size: inherit;
+        line-height: inherit;
+        color: inherit;
+    }
+
     p {
-        margin-block-start: 0;
+        margin: 0 0 0.5em 0;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-size: 1em;
+        margin: 0.5em 0 0.3em 0;
+        font-weight: 600;
+        color: #374151;
+
+        &:first-child {
+            margin-top: 0;
+        }
+    }
+
+    ul, ol {
+        margin: 0.3em 0;
+        padding-left: 1.5em;
+    }
+
+    li {
+        margin-bottom: 0.2em;
+    }
+
+    img {
+        max-width: 100%;
+        max-height: 150px;
+        border-radius: 4px;
+    }
+
+    a {
+        color: $theme_color;
+    }
+
+    code {
+        font-size: 0.9em;
+        background: $background_light_gray;
+        padding: 0.1em 0.3em;
+        border-radius: 3px;
+    }
+
+    pre {
+        font-size: 0.85em;
+        margin: 0.5em 0;
+        padding: 0.5em;
+        background: $background_light_gray;
+        border-radius: 4px;
+        overflow-x: auto;
     }
 }
 

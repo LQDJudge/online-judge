@@ -102,6 +102,10 @@ def nice_repr(timedelta, display="long", sep=", "):
         days += weeks * 7
         hours += days * 24
         return "%02d:%02d:%02d" % (hours, minutes, seconds)
+    elif display == "noday-no-seconds":
+        days += weeks * 7
+        hours += days * 24
+        return "%02d:%02d" % (hours, minutes)
     elif display == "minimal":
         words = ["w", "d", "h", "m", "s"]
     elif display == "short":

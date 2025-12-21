@@ -36,7 +36,7 @@ $(function () {
         var last_event = null;
         var last_text = $textarea.val();
         if (timeout) {
-            $textarea.on('keyup paste', function () {
+            $textarea.on('input', function () {
                 var text = $textarea.val();
                 if (last_text == text) return;
                 last_text = text;

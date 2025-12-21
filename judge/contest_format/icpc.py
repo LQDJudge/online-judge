@@ -126,7 +126,7 @@ class ICPCContestFormat(DefaultContestFormat):
                 else ""
             )
             return format_html(
-                '<td class="{state}"><a data-featherlight="{url}" href="#">{points}{penalty}<div class="solving-time">{time}</div></a></td>',
+                '<td class="{state}"><a data-featherlight="{url}" href="#">{points}{penalty}<div class="solving-time" data-time="{time_seconds}">{time}</div></a></td>',
                 state=(
                     (
                         "pretest-"
@@ -149,7 +149,10 @@ class ICPCContestFormat(DefaultContestFormat):
                 ),
                 points=floatformat(format_data["points"]),
                 penalty=penalty,
-                time=nice_repr(timedelta(seconds=format_data["time"]), "noday"),
+                time=nice_repr(
+                    timedelta(seconds=format_data["time"]), "noday-no-seconds"
+                ),
+                time_seconds=int(format_data["time"]),
             )
         else:
             return mark_safe("<td></td>")

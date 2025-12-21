@@ -1755,3 +1755,34 @@ input::placeholder {
         display: none;
     }
 }
+
+// Page banner - reusable card-style header
+.page-banner {
+    text-align: center;
+    padding: 1em 1.5em;
+    margin-bottom: 1em;
+    background: $background_light_gray;
+    border-radius: 8px;
+    border-left: 4px solid $theme_color;
+
+    .page-title {
+        font-size: 1.4em;
+        font-weight: 700;
+        margin: 0 0 0.3em 0;
+        color: #111;
+
+        a {
+            color: inherit;
+            text-decoration: none;
+
+            &:hover {
+                color: $theme_color;
+            }
+        }
+    }
+
+    .page-subtitle {
+        font-size: 0.9em;
+        color: #4b5563;
+    }
+}

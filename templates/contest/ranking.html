@@ -124,41 +124,66 @@
     </script>
   {% endif %}
   {% include "contest/media-js.html" %}
+  <script type="text/javascript">
+    $(function() {
+      $('#ranking-search').on('input', function() {
+        var searchText = $(this).val().toLowerCase().trim();
+        $('#users-table tbody tr').each(function() {
+          var row = $(this);
+          var username = row.find('td.user-name, td.user').text().toLowerCase();
+          if (searchText === '' || username.indexOf(searchText) !== -1) {
+            row.show();
+          } else {
+            row.hide();
+          }
+        });
+      });
+    });
+  </script>
 {% endblock %}
 
-{% block before_table %}
-  {% include "contest/contest-datetime.html" %}
-  {% if page_type == 'participation' %}
-    {% if contest.can_see_full_scoreboard(request.user) %}
-      <div style="margin-bottom: 0.5em">
-        <input id="search-contest" type="text" placeholder="{{ _('View user participation') }}">
+{% block before_table %}{% endblock %}
+
+{% block middle_content %}
+  <div class="contest-ranking-page">
+    {% if page_obj and page_obj.num_pages > 1 %}
+      <div style="margin-bottom: 7px; margin-top: 3px;">
+        {% include "list-pages.html" %}
+        <form id="search-form" name="form" action="{{ url('user_ranking_redirect') }}" method="get">
+          <input id="search-handle" type="text" name="search" placeholder="{{ _('Search by handle...') }}">
+        </form>
+        <div style="clear:both"></div>
       </div>
     {% endif %}
-  {% else %}
-    <div style="margin-bottom: 0.5em">
-      <input id="show-schools-checkbox" type="checkbox" style="vertical-align: bottom">
-      <label for="show-schools-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show schools') }}</label>
 
-      <input id="show-fullnames-checkbox" type="checkbox" style="vertical-align: bottom">
+    {% include "contest/contest-datetime.html" %}
 
-      <label for="show-fullnames-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show full name') }}</label>
-      {% if request.user.is_authenticated %}
-        <input id="show-friends-checkbox" type="checkbox" style="vertical-align: bottom;" {{"checked" if friend_only}}>
-        <label for="show-friends-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show friends only') }}</label>
-      {% endif %}
-      <input id="show-total-score-checkbox" type="checkbox" style="vertical-align: bottom; ">
-      <label for="show-total-score-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Total score only') }}</label>
-      <input id="show-virtual-checkbox" type="checkbox" style="vertical-align: bottom;" {{"checked" if include_virtual}}>
-      <label id="show-virtual-label" for="show-virtual-checkbox" style="vertical-align: bottom; margin-right: 1em;">{{ _('Show virtual participation') }}</label>
-      <i class="fa fa-spinner fa-pulse" style="display: none" id="loading-gif"></i>
-      <a href="#" onclick="download_ranking_as_csv()">
-        <i class="fa fa-download" aria-hidden="true"></i>
-        {{ _('Download as CSV') }}
-      </a>
+    {% if page_type == 'ranking' %}
+      <div class="ranking-filters-container">
+        <label class="filter-option"><input id="show-schools-checkbox" type="checkbox">{{ _('Schools') }}</label>
+        <label class="filter-option"><input id="show-fullnames-checkbox" type="checkbox">{{ _('Full name') }}</label>
+        {% if request.user.is_authenticated %}
+          <label class="filter-option"><input id="show-friends-checkbox" type="checkbox" {{"checked" if friend_only}}>{{ _('Friends only') }}</label>
+        {% endif %}
+        <label class="filter-option"><input id="show-total-score-checkbox" type="checkbox">{{ _('Score only') }}</label>
+        <label class="filter-option" id="show-virtual-label"><input id="show-virtual-checkbox" type="checkbox" {{"checked" if include_virtual}}>{{ _('Virtual') }}</label>
+        {% if can_edit %}
+          <label class="filter-option"><input id="show-admin-checkbox" type="checkbox">{{ _('Admin') }}</label>
+        {% endif %}
+        <i class="fa fa-spinner fa-pulse" style="display: none" id="loading-gif"></i>
+        <a class="action-btn small" href="#" onclick="download_ranking_as_csv(); return false;"><i class="fa fa-download"></i> {{ _('CSV') }}</a>
+        <input type="text" id="ranking-search" class="ranking-search-input" placeholder="{{ _('Search...') }}">
+      </div>
+    {% endif %}
+
+    <div style="overflow-x: auto;">
+      <table id="users-table" class="table striped no-border">
+        {% include "contest/ranking-table.html" %}
+      </table>
     </div>
-  {% endif %}
-{% endblock %}
 
-{% block users_table %}
-  {% include "contest/ranking-table.html" %}
+    {% if page_obj and page_obj.num_pages > 1 %}
+      <div style="margin-top:10px;">{% include "list-pages.html" %}</div>
+    {% endif %}
+  </div>
 {% endblock %}

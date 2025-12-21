@@ -57,21 +57,66 @@ th.header.rank {
     padding-left: 0.5em;
 }
 
+// Leaderboard table - matching contest ranking style
 #users-table {
-    th a, th a:link, th a:visited {
-        color: black;
+    border-collapse: collapse;
+    border-spacing: 0;
+    background: white;
+
+    // Header styling - theme color
+    thead th {
+        background: $theme_color;
+        color: white;
+        font-weight: 600;
+        padding: 0.5rem 0.6rem;
+        border-bottom: 2px solid $theme_color;
+        vertical-align: middle;
+
+        a, a:link, a:visited {
+            color: white;
+            text-decoration: none;
+        }
+
+        a:hover {
+            opacity: 0.9;
+        }
     }
 
-    th a:hover {
-        color: navajowhite;
+    // Cell styling
+    td {
+        padding: 0.5rem 0.5rem;
+        border-bottom: 1px solid $border_gray;
+        vertical-align: middle;
+    }
+
+    // Rating badge styling
+    .user-rating-badge {
+        margin-left: 0.5em;
+        display: inline-flex;
+        align-items: center;
+        vertical-align: middle;
+    }
+
+    // Row styling
+    tbody tr {
+        background: white;
+        transition: background 0.15s ease;
+
+        &:hover {
+            background: $background_light_gray;
+        }
+
+        &.highlight, &:target {
+            background: #fffbeb !important;
+        }
+    }
+
+    tbody tr:last-child td {
+        border-bottom: none;
     }
 
     .about-column {
         width: 30%;
-    }
-
-    .header {
-        vertical-align: middle;
     }
 
     .rank, .points, .problems {
@@ -81,33 +126,48 @@ th.header.rank {
     }
 
     .about-td {
-        max-height: 45px;
+        max-height: 3.5em;
         overflow: hidden;
         cursor: pointer;
         position: relative;
         overflow-wrap: anywhere;
-    }
+        padding: 0.3em 0.5em;
+        font-size: 0.75rem;
+        line-height: 1.4;
+        color: #4b5563;
 
-    tr {
-        transition: background-color linear .2s;
+        // Override content-description styling for compact display
+        .content-description {
+            font-size: inherit;
+            line-height: inherit;
+            color: inherit;
 
-        &:hover {
-            background: #EAEAEA;
-        }
+            p {
+                margin: 0;
+            }
 
-        &.highlight {
-            background: #fff897;
-        }
-        padding-bottom: 96px;
+            // Remove extra spacing from markdown elements
+            h1, h2, h3, h4, h5, h6 {
+                font-size: 1em;
+                margin: 0;
+                font-weight: 600;
+            }
 
-        &:target {
-            background: #fff897;
+            ul, ol {
+                margin: 0;
+                padding-left: 1.2em;
+            }
+
+            img {
+                max-height: 2em;
+                vertical-align: middle;
+            }
         }
     }
 
     .organization-column a {
-        color: gray !important;
-        font-weight: 600;
+        color: #6b7280 !important;
+        font-weight: 500;
     }
 
     .disqualified {
@@ -147,19 +207,18 @@ th.header.rank {
     }
 
     .user-points {
-        font-weight: bold;
-        color: black;
+        font-weight: 700;
+        font-size: 0.9rem;
     }
 
     .solving-time {
-        color: gray;
+        color: #6b7280;
         font-weight: normal;
-        font-size: 0.75em;
-        padding-bottom: -0.75em;
+        font-size: 0.7rem;
     }
 
     .point-denominator {
-        border-top: 1px solid gray;
+        border-top: 1px solid $border_gray;
         font-size: 0.7em;
     }
 
@@ -169,13 +228,15 @@ th.header.rank {
     }
 
     .fullname-column span {
-        color: gray !important;
-        font-weight: 600;
+        color: #6b7280 !important;
+        font-weight: 500;
     }
 
     .rank-td {
-        font-weight: bold;
-        width: 2em;
+        font-weight: 600;
+        width: 2.5em;
+        text-align: center;
+        font-size: 0.85rem;
     }
 }
 

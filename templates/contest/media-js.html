@@ -1,21 +1,9 @@
 <script src="//cdn.jsdelivr.net/npm/featherlight@1.7.14/release/featherlight.min.js" type="text/javascript" charset="utf-8"></script>
 <script type="text/javascript">
-  function isFaster(time1, time2) {
-    let arr1 = time1.split(':');
-    let arr2 = time2.split(':');
-
-    for (let i in arr1) {
-      let val1 = parseInt(arr1[i]);
-      let val2 = parseInt(arr2[i]);
-      if (val1 < val2) return true;
-      if (val1 > val2) return false;
-    }
-    return false;
-  }
-
   function scoretimeComparison(sub1, sub2) {
     if (!sub2) return true;
-    return sub1['score'] > sub2['score'] || (sub1['score'] === sub2['score'] && isFaster(sub1['time'], sub2['time']));
+    // Higher score wins, or same score with faster time (lower seconds) wins
+    return sub1['score'] > sub2['score'] || (sub1['score'] === sub2['score'] && sub1['time'] < sub2['time']);
   }
 
   function highlightFirstSolve() {
@@ -24,35 +12,40 @@
 
     // get information
     $('td a').each(function() {
-      var td = $(this)[0];
-      var link = $(this).attr('data-featherlight');
+      var $anchor = $(this);
+      var link = $anchor.attr('data-featherlight');
       if (link && link.includes('submissions')) {
-        let scoreAndTime = (td.innerText.split('\n'))
-        let linkElements = link.split('/')
+        let linkElements = link.split('/');
 
         // get information
         let problem = linkElements[linkElements.length - 2];
-        let score = parseFloat(scoreAndTime[0].replace(',', '.'));
-        let time = scoreAndTime[1];
+        let scoreText = $anchor.contents().filter(function() {
+          return this.nodeType === 3; // text nodes only
+        }).text().trim();
+        let score = parseFloat(scoreText.replace(',', '.'));
 
-        if (time) {
+        // get time from data-time attribute (in seconds)
+        let $solvingTime = $anchor.find('.solving-time');
+        let time = $solvingTime.data('time');
+
+        if (time !== undefined && score) {
           let curSubmission = {
-            'td': $(this).parent(),
+            'td': $anchor.parent(),
             'score': score,
             'time': time
-          }
+          };
 
           // update best submissions
-          let curBest = bestSubmissions[problem]
+          let curBest = bestSubmissions[problem];
 
-          if (scoretimeComparison(curSubmission, curBest) && score) {
+          if (scoretimeComparison(curSubmission, curBest)) {
             bestSubmissions[problem] = curSubmission;
           }
         }
       }
-    })
+    });
     for (let problem in bestSubmissions) {
-      bestSubmissions[problem]['td'].addClass('first-solve')
+      bestSubmissions[problem]['td'].addClass('first-solve');
     }
   }
 
@@ -165,6 +158,10 @@
     })
     $('#show-total-score-checkbox').click(function() {
       $('.problem-score-col').toggle();
+    })
+
+    $('#show-admin-checkbox').click(function() {
+      $('.contest-ranking-page').toggleClass('admin-mode');
     })
 
     highlightFirstSolve();
