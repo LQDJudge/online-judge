@@ -371,6 +371,8 @@ class ProblemAdmin(CompareVersionAdmin):
 
     def save_model(self, request, obj, form, change):
         form.changed_data.remove("memory_unit")
+        # Allow superusers to bypass points cap for non-public problems
+        obj._bypass_points_cap = request.user.is_superuser
         super().save_model(request, obj, form, change)
         if form.changed_data and any(
             f in form.changed_data for f in ("is_public", "points", "partial")

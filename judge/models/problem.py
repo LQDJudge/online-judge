@@ -661,6 +661,13 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
 
     def save(self, should_move_data=True, *args, **kwargs):
         code_changed = self.__original_code and self.code != self.__original_code
+        # Cap points to 1 for non-public problems to prevent abuse
+        # Superusers can bypass this by setting _bypass_points_cap=True on the instance
+        bypass_points_cap = getattr(self, "_bypass_points_cap", False)
+        if not bypass_points_cap and (
+            not self.is_public or self.is_organization_private
+        ):
+            self.points = min(self.points, 1)
         super(Problem, self).save(*args, **kwargs)
         if code_changed and should_move_data:
             self.handle_code_change()

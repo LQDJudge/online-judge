@@ -1210,6 +1210,7 @@ class ProblemClone(
         problem.ac_rate = 0
         problem.user_count = 0
         problem.code = form.cleaned_data["code"]
+        problem._bypass_points_cap = self.request.user.is_superuser
         problem.save(should_move_data=False)
         problem.authors.add(self.request.profile)
         problem.allowed_languages.set(languages)
@@ -1282,6 +1283,7 @@ class ProblemEdit(
             else None
         )
 
+        problem._bypass_points_cap = self.request.user.is_superuser
         problem.save()
         form.save_m2m()
 
@@ -1405,6 +1407,7 @@ class ProblemAdd(PermissionRequiredMixin, CreateView):
         if not problem.date:
             problem.date = timezone.now()
 
+        problem._bypass_points_cap = self.request.user.is_superuser
         problem.save()
 
         # Add success message
