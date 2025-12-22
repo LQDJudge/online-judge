@@ -87,7 +87,6 @@ class BlogPostAdmin(CompareVersionAdmin):
                     "visible",
                     "sticky",
                     "publish_on",
-                    "is_organization_private",
                     "organizations",
                 )
             },

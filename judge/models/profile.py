@@ -11,8 +11,6 @@ from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
-from django.dispatch import receiver
-from django.db.models.signals import post_save, pre_save, m2m_changed
 from django.http import Http404
 
 from fernet_fields import EncryptedCharField
@@ -517,6 +515,11 @@ class Profile(CacheableModel):
             return False
         return org.is_admin(self) or self.user.is_superuser
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        get_points_rank.dirty(self.id)
+        get_rating_rank.dirty(self.id)
+
     class Meta:
         indexes = [
             models.Index(fields=["is_unlisted", "performance_points"]),
@@ -527,6 +530,35 @@ class Profile(CacheableModel):
         )
         verbose_name = _("user profile")
         verbose_name_plural = _("user profiles")
+
+
+@cache_wrapper(prefix="grr")
+def get_rating_rank(profile):
+    if profile.is_unlisted:
+        return None
+    rank = None
+    if profile.rating:
+        rank = (
+            Profile.objects.filter(
+                is_unlisted=False,
+                rating__gt=profile.rating,
+            ).count()
+            + 1
+        )
+    return rank
+
+
+@cache_wrapper(prefix="gpr")
+def get_points_rank(profile):
+    if profile.is_unlisted:
+        return None
+    return (
+        Profile.objects.filter(
+            is_unlisted=False,
+            performance_points__gt=profile.performance_points,
+        ).count()
+        + 1
+    )
 
 
 class ProfileInfo(models.Model):
@@ -667,41 +699,6 @@ def _get_most_recent_organization_ids(profile):
         .order_by("-last_visit_time")
         .values_list("organization_id", flat=True)[:5]
     )
-
-
-@receiver([post_save], sender=User)
-def on_user_save(sender, instance, **kwargs):
-    try:
-        profile = instance.profile
-        _get_profile.dirty(profile.id)
-    except:
-        pass
-
-
-@receiver(m2m_changed, sender=Profile.organizations.through)
-def on_profile_organization_change(sender, instance, action, **kwargs):
-    if action in ["post_add", "post_remove", "post_clear"]:
-        if isinstance(instance, Profile):
-            Profile.get_organization_ids.dirty(instance)
-
-            # Also invalidate the organization's member cache
-            org_pk_set = kwargs.get("pk_set")
-            if org_pk_set:
-                for org_id in org_pk_set:
-                    Organization.get_member_ids.dirty(org_id)
-
-
-@receiver(m2m_changed, sender=Organization.admins.through)
-def on_organization_admin_change(sender, instance, action, **kwargs):
-    if action in ["post_add", "post_remove", "post_clear"]:
-        if isinstance(instance, Organization):
-            Organization.get_admin_ids.dirty(instance)
-
-            # Also invalidate the admin_of cache for each affected profile
-            profile_pk_set = kwargs.get("pk_set")
-            if profile_pk_set:
-                for profile_id in profile_pk_set:
-                    Profile.get_admin_organization_ids.dirty(profile_id)
 
 
 def _get_profile_batch(args_list):

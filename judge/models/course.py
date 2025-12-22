@@ -5,8 +5,6 @@ from django.db import models
 from django.utils.translation import gettext, gettext_lazy as _
 from django.urls import reverse
 from django.db.models import Q
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
 
 from judge.models import Problem, Contest
 from judge.models.profile import Organization, Profile
@@ -312,22 +310,6 @@ class CourseContest(models.Model):
         course_contest = contest.course.get()
         course = course_contest.course
         return course
-
-
-# Signal handlers to invalidate cache when CourseLessonProblem changes
-@receiver([post_save, post_delete], sender=CourseLessonProblem)
-def invalidate_lesson_problems_cache(sender, instance, **kwargs):
-    """Invalidate the cached problems and scores list when a CourseLessonProblem is saved or deleted."""
-    if instance.lesson_id:
-        CourseLesson.get_problems_and_scores.dirty(instance.lesson_id)
-
-
-# Signal handlers to invalidate cache when CourseRole changes
-@receiver([post_save, post_delete], sender=CourseRole)
-def invalidate_course_role_cache(sender, instance, **kwargs):
-    """Invalidate the cached course role profile IDs when a CourseRole is saved or deleted."""
-    if instance.course_id and instance.role:
-        get_course_role_profile_ids.dirty(instance.course_id, instance.role)
 
 
 @cache_wrapper(prefix="CRubr", expected_type=list)

@@ -9,9 +9,11 @@ from judge.models.profile import (
     OrganizationProfile,
     get_top_rating_profile,
     get_top_score_profile,
+    get_rating_rank,
+    get_points_rank,
 )
 from judge.models import ContestProblemClarification, Contest
-from judge.utils.users import get_rating_rank, get_points_rank, get_awards
+from judge.utils.users import get_awards
 
 
 class FeedView(InfinitePaginationMixin, ListView):

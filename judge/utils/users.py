@@ -6,35 +6,6 @@ from judge.caching import cache_wrapper
 from judge.models import Profile, Rating
 
 
-@cache_wrapper(prefix="grr")
-def get_rating_rank(profile):
-    if profile.is_unlisted:
-        return None
-    rank = None
-    if profile.rating:
-        rank = (
-            Profile.objects.filter(
-                is_unlisted=False,
-                rating__gt=profile.rating,
-            ).count()
-            + 1
-        )
-    return rank
-
-
-@cache_wrapper(prefix="gpr")
-def get_points_rank(profile):
-    if profile.is_unlisted:
-        return None
-    return (
-        Profile.objects.filter(
-            is_unlisted=False,
-            performance_points__gt=profile.performance_points,
-        ).count()
-        + 1
-    )
-
-
 @cache_wrapper(prefix="gcr2")
 def get_contest_ratings(profile_id):
     ratings = (

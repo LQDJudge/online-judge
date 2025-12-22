@@ -59,9 +59,8 @@ from judge.tasks import import_users
 from judge.utils.problems import contest_completed_ids, user_completed_ids
 from judge.utils.ranker import ranker
 from judge.utils.unicode import utf8text
+from judge.models.profile import get_rating_rank, get_points_rank
 from judge.utils.users import (
-    get_rating_rank,
-    get_points_rank,
     get_awards,
     get_contest_ratings,
     get_user_rating_stats,

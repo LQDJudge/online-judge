@@ -7,8 +7,6 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.functional import cached_property
 from django.contrib.contenttypes.fields import GenericRelation
-from django.db.models.signals import m2m_changed
-from django.dispatch import receiver
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
@@ -160,18 +158,6 @@ class BlogPost(models.Model, PageVotable, Bookmarkable):
         permissions = (("edit_all_post", _("Edit all posts")),)
         verbose_name = _("blog post")
         verbose_name_plural = _("blog posts")
-
-
-@receiver(m2m_changed, sender=BlogPost.organizations.through)
-def update_blogpost_organizations(sender, instance, action, **kwargs):
-    if action in ["post_add", "post_remove", "post_clear"]:
-        _get_blogpost_organization_ids.dirty((instance.id,))
-
-
-@receiver(m2m_changed, sender=BlogPost.authors.through)
-def update_author_organizations(sender, instance, action, **kwargs):
-    if action in ["post_add", "post_remove", "post_clear"]:
-        BlogPost.get_author_ids.dirty(instance)
 
 
 def _get_blogpost_organization_ids_batch(args_list):

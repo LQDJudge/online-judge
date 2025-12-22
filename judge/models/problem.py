@@ -1,4 +1,5 @@
 import errno
+import os
 
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
@@ -11,8 +12,6 @@ from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
-from django.db.models.signals import m2m_changed
-from django.dispatch import receiver
 
 from judge.fulltext import SearchManager
 from judge.models.pagevote import PageVotable
@@ -672,6 +671,27 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         if code_changed and should_move_data:
             self.handle_code_change()
 
+        if not hasattr(self, "_updating_stats_only"):
+            self._invalidate_pdf_cache()
+
+    def _invalidate_pdf_cache(self):
+        cache.delete_many(
+            [
+                "generated-meta-problem:%s:%d" % (lang, self.id)
+                for lang, _ in settings.LANGUAGES
+            ]
+        )
+
+        for lang, _ in settings.LANGUAGES:
+            pdf_path = os.path.join(
+                settings.DMOJ_PDF_PROBLEM_CACHE, "%s.%s.pdf" % (self.code, lang)
+            )
+            try:
+                os.unlink(pdf_path)
+            except OSError as e:
+                if e.errno != errno.ENOENT:
+                    raise
+
     def delete(self, *args, **kwargs):
         super().delete(*args, **kwargs)
         problem_data_storage.delete_directory(self.code)
@@ -863,14 +883,6 @@ class ProblemPointsVote(models.Model):
 
     def __str__(self):
         return f"{self.voter}: {self.points} for {self.problem.code}"
-
-
-@receiver(m2m_changed, sender=Problem.organizations.through)
-def update_organization_problem(sender, instance, **kwargs):
-    if kwargs["action"] in ["post_add", "post_remove", "post_clear"]:
-        instance.is_organization_private = instance.organizations.exists()
-        instance.save(update_fields=["is_organization_private"])
-        _get_problem_organization_ids.dirty(instance.id)
 
 
 def _get_problem_batch(args_list):
@@ -1221,14 +1233,3 @@ def _get_problem_organization_ids(problem_id):
     """Get organization IDs for a problem"""
     results = _get_problem_organization_ids_batch([(problem_id,)])
     return results[0]
-
-
-@receiver(m2m_changed, sender=Problem.types.through)
-def problem_types_changed(sender, instance, action, pk_set, **kwargs):
-    """
-    Signal handler to clear cache when problem types are added/removed from problems.
-    This automatically handles cache invalidation for _get_problem_types_name.
-    """
-    if action in ("post_add", "post_remove", "post_clear"):
-        # Clear cache for the problem whose types changed
-        _get_problem_types_name.dirty(instance.id)
