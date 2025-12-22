@@ -661,6 +661,73 @@
         #users-table td {
             padding: 0.25rem 0.15rem;
         }
+
+        // Mobile-optimized sticky columns - only rank and username are sticky
+        // Use smaller widths to leave more room for problem scores
+        $mobile-rank-col-width: 1.8rem;
+        $mobile-username-col-width: 6rem;
+
+        // Header sticky columns on mobile
+        #users-table thead th.rank {
+            min-width: $mobile-rank-col-width;
+            max-width: $mobile-rank-col-width;
+        }
+
+        #users-table thead th.username {
+            left: $mobile-rank-col-width;
+            min-width: $mobile-username-col-width;
+            max-width: $mobile-username-col-width;
+        }
+
+        // Remove sticky from points column on mobile to save space
+        #users-table thead th.points:not(.problem-score-col) {
+            position: static;
+            min-width: 3rem;
+        }
+
+        // Body sticky columns on mobile
+        #users-table tbody td.rank-td {
+            min-width: $mobile-rank-col-width;
+            font-size: 0.75rem;
+        }
+
+        #users-table tbody td.user-name {
+            left: $mobile-rank-col-width;
+            min-width: $mobile-username-col-width;
+            max-width: $mobile-username-col-width;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+
+            // Override inline max-width: 25em on the inner div
+            > div {
+                max-width: 100% !important;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            // Hide avatar on mobile to save space
+            .user-img {
+                display: none !important;
+            }
+
+            // Truncate username link
+            a {
+                display: inline !important;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                font-size: 0.75rem;
+            }
+        }
+
+        // Remove sticky from points column on mobile
+        #users-table tbody td.user-points {
+            position: static;
+            min-width: 3rem;
+            font-size: 0.75rem;
+        }
     }
 }
 
