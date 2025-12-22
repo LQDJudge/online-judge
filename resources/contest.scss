@@ -254,7 +254,10 @@
 
 /* ===== CONTEST RANKING TABLE - Clean Design ===== */
 .contest-ranking-page {
-    // Note: No overflow-x on wrapper to allow position:sticky to work on thead
+    // Table wrapper with horizontal scroll
+    .ranking-table-wrapper {
+        overflow-x: auto;
+    }
 
     #users-table {
         border-collapse: collapse;
@@ -276,6 +279,7 @@
         }
 
         // Header styling - theme color
+        // Header is sticky within the scroll container (top: 0)
         thead th {
             background: $theme_color;
             color: white;
@@ -283,7 +287,7 @@
             padding: 0.5rem 0.4rem;
             font-size: 0.85rem;
             position: sticky;
-            top: $navbar_height;
+            top: 0;
             z-index: 10;
 
             a {
@@ -356,16 +360,72 @@
         }
     }
 
+    // Sticky column variables - use rem (not em) for consistent sizing across elements with different font-sizes
+    $rank-col-width: 2.5rem;
+    $username-col-width: 12rem;
+    $points-col-width: 4.5rem;
+
+    // Sticky columns - rank, username, points stay fixed while scrolling horizontally
+    // Header sticky columns (use #users-table for higher specificity)
+    #users-table thead th.rank {
+        position: sticky;
+        left: 0;
+        z-index: 12;
+        min-width: $rank-col-width;
+        max-width: $rank-col-width;
+    }
+
+    #users-table thead th.username {
+        position: sticky;
+        left: $rank-col-width;
+        z-index: 12;
+        min-width: $username-col-width;
+        max-width: $username-col-width;
+    }
+
+    #users-table thead th.points:not(.problem-score-col) {
+        position: sticky;
+        left: calc(#{$rank-col-width} + #{$username-col-width});
+        z-index: 12;
+        min-width: $points-col-width;
+    }
+
+    // Body sticky columns - use inherit for dark mode compatibility
+    #users-table tbody td.rank-td {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: inherit;
+        min-width: $rank-col-width;
+    }
+
+    #users-table tbody td.user-name {
+        position: sticky;
+        left: $rank-col-width;
+        z-index: 2;
+        background: inherit;
+        min-width: $username-col-width;
+        max-width: $username-col-width;
+    }
+
+    #users-table tbody td.user-points {
+        position: sticky;
+        left: calc(#{$rank-col-width} + #{$username-col-width});
+        z-index: 2;
+        background: inherit;
+        min-width: $points-col-width;
+    }
+
     // Column styling
     .rank {
-        min-width: 2.5em;
+        min-width: $rank-col-width;
         font-weight: 600;
         text-align: center;
         font-size: 0.85rem;
     }
 
     .points {
-        min-width: 3.5em;
+        min-width: $points-col-width;
         font-weight: 700;
         font-size: 0.85rem;
     }
@@ -444,15 +504,14 @@
         }
     }
 
-    // Show admin buttons when admin mode is active
     &.admin-mode .contest-participation-operation {
         display: inline-flex;
     }
 
-    // Score cells - readable design
     td.problem-score-col {
         padding: 0.2rem !important;
         text-align: center;
+        cursor: pointer;
 
         a {
             display: flex !important;
@@ -462,13 +521,13 @@
             padding: 0.25rem 0.2rem;
             border-radius: 3px;
             text-decoration: none;
-            font-weight: 600;
             font-size: 0.85rem;
             min-height: 1.6rem;
             background: transparent;
+            transition: background 0.15s ease;
 
             &:hover {
-                background: $background_light_gray;
+                background: rgba(0, 0, 0, 0.06);
             }
         }
     }

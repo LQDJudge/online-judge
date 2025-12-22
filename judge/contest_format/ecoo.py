@@ -3,9 +3,7 @@ from datetime import timedelta
 from django.core.exceptions import ValidationError
 from django.db import connection
 from django.template.defaultfilters import floatformat
-from django.urls import reverse
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy
 
 from judge.contest_format.default import DefaultContestFormat
@@ -132,38 +130,19 @@ class ECOOContestFormat(DefaultContestFormat):
                 if format_data.get("bonus")
                 else ""
             )
-
-            return format_html(
-                '<td class="{state}"><a data-featherlight="{url}" href="#">{points}{bonus}<div class="solving-time" data-time="{time_seconds}">{time}</div></a></td>',
-                state=(
-                    (
-                        "pretest-"
-                        if self.contest.run_pretests_only
-                        and contest_problem.is_pretested
-                        else ""
-                    )
-                    + self.best_solution_state(
-                        format_data["points"], contest_problem.points
-                    )
-                    + (" frozen" if format_data.get("frozen") else "")
-                ),
-                url=reverse(
-                    "contest_user_submissions_ajax",
-                    args=[
-                        self.contest.key,
-                        participation.id,
-                        contest_problem.problem.code,
-                    ],
-                ),
+            return self.display_problem_cell(
+                participation,
+                contest_problem,
+                format_data,
                 points=floatformat(format_data["points"]),
-                bonus=bonus,
+                extra=bonus,
                 time=nice_repr(
                     timedelta(seconds=format_data["time"]), "noday-no-seconds"
                 ),
                 time_seconds=int(format_data["time"]),
             )
         else:
-            return mark_safe("<td></td>")
+            return self.display_empty_cell(contest_problem)
 
     def display_participation_result(self, participation, show_final=False):
         return format_html(

@@ -1,18 +1,13 @@
 from datetime import timedelta
 
 from django.core.exceptions import ValidationError
-from django.db import connection
+from django.db.models import Min, OuterRef, Subquery
 from django.template.defaultfilters import floatformat
-from django.urls import reverse
-from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy
 
 from judge.contest_format.default import DefaultContestFormat
 from judge.contest_format.registry import register_contest_format
-from judge.timezone import from_database_time
 from judge.utils.timedelta import nice_repr
-from django.db.models import Min, OuterRef, Subquery
 
 
 @register_contest_format("ioi")
@@ -95,46 +90,23 @@ class IOIContestFormat(DefaultContestFormat):
             format_data = (participation.format_data or {}).get(str(contest_problem.id))
         if format_data:
             time_seconds = int(format_data["time"]) if self.config["cumtime"] else None
-            return format_html(
-                '<td class="{state} problem-score-col"><a data-featherlight="{url}" href="#">{points}<div class="solving-time"{time_attr}>{time}</div></a></td>',
-                state=(
-                    (
-                        "pretest-"
-                        if self.contest.run_pretests_only
-                        and contest_problem.is_pretested
-                        else ""
-                    )
-                    + self.best_solution_state(
-                        format_data["points"], contest_problem.points
-                    )
-                    + (" frozen" if format_data.get("frozen") else "")
-                ),
-                url=reverse(
-                    "contest_user_submissions_ajax",
-                    args=[
-                        self.contest.key,
-                        participation.id,
-                        contest_problem.problem.code,
-                    ],
-                ),
+            time_display = (
+                nice_repr(timedelta(seconds=format_data["time"]), "noday-no-seconds")
+                if self.config["cumtime"]
+                else ""
+            )
+            return self.display_problem_cell(
+                participation,
+                contest_problem,
+                format_data,
                 points=floatformat(
                     format_data["points"], -self.contest.points_precision
                 ),
-                time=(
-                    nice_repr(
-                        timedelta(seconds=format_data["time"]), "noday-no-seconds"
-                    )
-                    if self.config["cumtime"]
-                    else ""
-                ),
-                time_attr=(
-                    mark_safe(' data-time="{}"'.format(time_seconds))
-                    if time_seconds is not None
-                    else ""
-                ),
+                time=time_display,
+                time_seconds=time_seconds,
             )
         else:
-            return mark_safe('<td class="problem-score-col"></td>')
+            return self.display_empty_cell(contest_problem)
 
     def display_participation_result(self, participation, show_final=False):
         if show_final:

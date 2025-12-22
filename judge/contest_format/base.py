@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from django.db.models import Max
+from django.utils.translation import gettext as _
 
 
 class abstractclassmethod(classmethod):
@@ -98,6 +99,15 @@ class BaseContestFormat(metaclass=ABCMeta):
         if points == total:
             return "full-score"
         return "partial-score"
+
+    def get_problem_tooltip(self, contest_problem):
+        """
+        Returns the tooltip text for a problem cell in the ranking table.
+
+        :param contest_problem: The ContestProblem object.
+        :return: A translated string like "Problem 1".
+        """
+        return _("Problem %(order)s") % {"order": contest_problem.order}
 
     def handle_frozen_state(self, participation, format_data):
         hidden_subtasks = {}

@@ -61,31 +61,82 @@ class DefaultContestFormat(BaseContestFormat):
         participation.format_data = format_data
         participation.save()
 
+    def display_empty_cell(self, contest_problem):
+        """
+        Returns the HTML fragment for an empty problem cell (no submissions).
+        """
+        return format_html(
+            '<td class="problem-score-col" title="{tooltip}"></td>',
+            tooltip=self.get_problem_tooltip(contest_problem),
+        )
+
+    def get_cell_state(self, contest_problem, format_data):
+        """
+        Returns the CSS state classes for a problem cell.
+        """
+        return (
+            (
+                "pretest-"
+                if self.contest.run_pretests_only and contest_problem.is_pretested
+                else ""
+            )
+            + self.best_solution_state(format_data["points"], contest_problem.points)
+            + (" frozen" if format_data.get("frozen") else "")
+        )
+
+    def get_submission_url(self, participation, contest_problem):
+        """
+        Returns the URL for viewing user submissions for a problem.
+        """
+        return reverse(
+            "contest_user_submissions_ajax",
+            args=[self.contest.key, participation.id, contest_problem.problem.code],
+        )
+
+    def display_problem_cell(
+        self,
+        participation,
+        contest_problem,
+        format_data,
+        points,
+        extra="",
+        time="",
+        time_seconds=None,
+    ):
+        """
+        Returns the HTML fragment for a problem cell with submission data.
+
+        :param participation: The ContestParticipation object.
+        :param contest_problem: The ContestProblem object.
+        :param format_data: The format data dict for this problem.
+        :param points: Formatted points string to display.
+        :param extra: Optional extra HTML (e.g., penalty, bonus).
+        :param time: Formatted time string to display.
+        :param time_seconds: Time in seconds for data-time attribute (None to omit).
+        """
+        time_attr = (
+            mark_safe(' data-time="{}"'.format(time_seconds))
+            if time_seconds is not None
+            else ""
+        )
+        return format_html(
+            '<td class="{state} problem-score-col" title="{tooltip}"><a data-featherlight="{url}" href="#">{points}{extra}<div class="solving-time"{time_attr}>{time}</div></a></td>',
+            state=self.get_cell_state(contest_problem, format_data),
+            tooltip=self.get_problem_tooltip(contest_problem),
+            url=self.get_submission_url(participation, contest_problem),
+            points=points,
+            extra=extra,
+            time=time,
+            time_attr=time_attr,
+        )
+
     def display_user_problem(self, participation, contest_problem, show_final=False):
         format_data = (participation.format_data or {}).get(str(contest_problem.id))
         if format_data:
-            return format_html(
-                '<td class="{state} problem-score-col"><a data-featherlight="{url}" href="#">{points}<div class="solving-time" data-time="{time_seconds}">{time}</div></a></td>',
-                state=(
-                    (
-                        "pretest-"
-                        if self.contest.run_pretests_only
-                        and contest_problem.is_pretested
-                        else ""
-                    )
-                    + self.best_solution_state(
-                        format_data["points"], contest_problem.points
-                    )
-                    + (" frozen" if format_data.get("frozen") else "")
-                ),
-                url=reverse(
-                    "contest_user_submissions_ajax",
-                    args=[
-                        self.contest.key,
-                        participation.id,
-                        contest_problem.problem.code,
-                    ],
-                ),
+            return self.display_problem_cell(
+                participation,
+                contest_problem,
+                format_data,
                 points=floatformat(
                     format_data["points"], -self.contest.points_precision
                 ),
@@ -95,7 +146,7 @@ class DefaultContestFormat(BaseContestFormat):
                 time_seconds=int(format_data["time"]),
             )
         else:
-            return mark_safe('<td class="problem-score-col"></td>')
+            return self.display_empty_cell(contest_problem)
 
     def display_participation_result(self, participation, show_final=False):
         return format_html(
