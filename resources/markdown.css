@@ -93,7 +93,6 @@
 }
 .content-description h2 {
   font-size: 1.35em;
-  border-bottom: 1px solid var(--primary-light);
   padding-bottom: 0.15em;
 }
 .content-description h3 { font-size: 1.15em; }

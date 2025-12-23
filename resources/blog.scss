@@ -235,6 +235,103 @@
         margin-bottom: 10px;
         font-family: serif;
     }
+
+    .post-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid $border_gray;
+    }
+
+    .post-author-img {
+        flex-shrink: 0;
+
+        img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+    }
+
+    .post-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .post-organizations {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .post-info {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        font-size: 0.9rem;
+    }
+
+    .post-separator {
+        opacity: 0.5;
+    }
+
+    .post-time {
+        opacity: 0.7;
+
+        i {
+            margin-right: 0.25rem;
+            font-size: 0.85rem;
+        }
+    }
+
+    .post-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+
+    .post-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #6b7280;
+        background: $background_light_gray;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.15s ease;
+
+        i {
+            font-size: 0.9rem;
+        }
+
+        &:hover {
+            background: rgba(0, 0, 0, 0.08);
+            color: #374151;
+        }
+
+        .badge {
+            background: $theme_color;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.15rem 0.4rem;
+            border-radius: 10px;
+            min-width: 1.2rem;
+            text-align: center;
+        }
+    }
 }
 
 .middle-right-content.wrapper {
@@ -263,7 +360,7 @@
     }
 
     .post-title {
-        font-size: 2em;
+        font-size: 1.6em;
     }
 
     #home-feed-tabs {
@@ -292,12 +389,8 @@
         margin-left: auto;
         margin-right: auto;
 
-        .content-description {
-            font-size: 18px;
-        }
-
         .post-title {
-            font-size: 2.5em;
+            font-size: 1.6em;
         }
     }
 }

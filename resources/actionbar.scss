@@ -1,51 +1,162 @@
+@use "vars" as *;
+@use "sass:color";
+
 .actionbar {
     display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid $border_gray;
+    margin-top: 0.75rem;
 
-    .actionbar-button {
-        cursor: pointer;
-        padding: 0.8em;
-        border-radius: 5em;
-        font-weight: bold;
-        display: inherit;
-        background: lightgray;
-    }
     .actionbar-block {
         display: flex;
         flex: 1;
         justify-content: center;
     }
-    .pagevote-score {
-        margin-right: 0.3em;
+
+    .actionbar-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        cursor: pointer;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.875rem;
+        color: darkslategray;
+        background: transparent;
+        border: none;
+        transition: all 0.15s ease;
+
+        i {
+            font-size: 1.1rem;
+            transition: transform 0.15s ease;
+        }
+
+        &:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: #374151;
+
+            i {
+                transform: scale(1.1);
+            }
+        }
+
+        &:active {
+            transform: scale(0.95);
+        }
     }
+
+    // Like button styles
     .like-button {
-        padding-right: 0.5em;
-        border-radius: 5em 0 0 5em;
+        padding-right: 0.6rem;
+        border-radius: 6px 0 0 6px;
+
+        &.voted {
+            color: $theme_color;
+            background: rgba($theme_color, 0.1);
+
+            i {
+                font-weight: 900;
+            }
+
+            &:hover {
+                background: rgba($theme_color, 0.15);
+                color: $theme_color;
+            }
+        }
     }
-    .actionbar-button:hover {
-        background: darkgray;
-    }
+
+    // Dislike button styles
     .dislike-button {
-        padding-left: 0.5em;
-        border-radius: 0 5em 5em 0;
-        border-left: 0;
+        padding-left: 0.6rem;
+        border-radius: 0 6px 6px 0;
+
+        &.voted {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+
+            i {
+                font-weight: 900;
+            }
+
+            &:hover {
+                background: rgba(239, 68, 68, 0.15);
+                color: #ef4444;
+            }
+        }
     }
-    .like-button.voted {
-        color: blue;
+
+    // Like/dislike group
+    .like-button,
+    .dislike-button {
+        &:hover {
+            background: rgba(0, 0, 0, 0.06);
+        }
     }
-    .dislike-button.voted {
-        color: red;
+
+    // Bookmark button styles
+    .bookmark-button {
+        &.bookmarked {
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+
+            i {
+                font-weight: 900;
+            }
+
+            &:hover {
+                background: rgba(245, 158, 11, 0.15);
+                color: #f59e0b;
+            }
+        }
     }
+
+    // Share button hover effect
+    .actionbar-share {
+        &:hover {
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.08);
+        }
+    }
+
+    // Score display
+    .pagevote-score {
+        font-weight: 600;
+        min-width: 1.25rem;
+        text-align: center;
+    }
+
     .actionbar-text {
-        padding-left: 0.4em;
-    }
-    .bookmarked {
-        color: rgb(180, 180, 7);
+        font-weight: 500;
     }
 }
 
-
+// Mobile responsive
 @media (max-width: 799px) {
+    .actionbar {
+        gap: 0.25rem;
+        padding: 0.4rem 0;
+
+        .actionbar-button {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
+
+            i {
+                font-size: 1rem;
+            }
+        }
+    }
+
     .hide_texts_on_mobile .actionbar-text {
         display: none;
     }
+}
+
+// Compact version for feed items
+.actionbar-box .actionbar {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
 }

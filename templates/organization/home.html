@@ -8,48 +8,88 @@
 {% endblock %}
 
 {% block middle_title %}
-  <div class="page-title">
-    <div class="tabs" style="border: none;">
-      <div class="header-container">
+  <div class="org-header">
+    <div class="org-header-main">
+      <div class="org-header-left">
         {% if organization_image %}
           <img
             src="{{ organization_image.url }}"
             alt="Organization Image"
-            class="organization-image"
+            class="org-logo-large"
           >
-        {% endif %}
-        <h2 class="organization-title">{{ title }}</h2>
-      </div>
-      <span class="spacer"></span>
-
-      {% if request.user.is_authenticated %}
-        {% if is_member %}
         {% else %}
-          {% if not is_blocked %}
-            {% if organization.is_open or can_edit %}
-              <div style="margin-right: 0.5em">
-                <form method="post" action="{{ url('join_organization', organization.id, organization.slug) }}">
-                  {% csrf_token %}
-                  <input type="submit" class="unselectable button" value="{{ _('Join') }}">
-                </form>
-              </div>
+          <div class="org-logo-placeholder">
+            <i class="fa fa-users"></i>
+          </div>
+        {% endif %}
+        <div class="org-header-info">
+          <h1 class="org-name">{{ title }}</h1>
+          <div class="org-meta">
+            {% if organization.is_open %}
+              <span class="org-badge org-badge-public">
+                <i class="fa fa-globe"></i> {{ _('Public') }}
+              </span>
             {% else %}
-              <div style="margin-right: 0.5em">
-                <a href="{{ url('request_organization', organization.id, organization.slug) }}"
-                   class="unselectable button">
-                  {{ _('Request membership') }}</a>
-              </div>
+              <span class="org-badge org-badge-private">
+                <i class="fa fa-lock"></i> {{ _('Private') }}
+              </span>
             {% endif %}
-          {% else %}
-            <div>
-              <form method="post" action="{{ url('unblock_organization', organization.id, organization.slug) }}">
-                {% csrf_token %}
-                <input type="button" class="unselectable button unblock-organization" value="{{ _('Unblock group') }}">
-              </form>
+            <span class="org-stat">
+              <i class="fa fa-users"></i> {{ member_count }} {{ _('members') }}
+            </span>
+          </div>
+          {% if member_preview and (is_member or can_edit or organization.is_open) %}
+            <div class="org-member-preview">
+              {% for member in member_preview %}
+                <a href="{{ url('user_page', member.username) }}" title="{{ member.username }}">
+                  <img src="{{ gravatar(member.id, 32) }}" alt="{{ member.username }}">
+                </a>
+              {% endfor %}
+              {% if member_count > 5 %}
+                <a href="{{ organization.get_users_url() }}" class="org-member-more">
+                  +{{ member_count - 5 }}
+                </a>
+              {% endif %}
             </div>
           {% endif %}
+        </div>
+      </div>
+      <div class="org-header-actions">
+        {% if request.user.is_authenticated %}
+          {% if is_member %}
+            <span class="org-joined-badge">
+              <i class="fa fa-check"></i> {{ _('Joined') }}
+            </span>
+          {% else %}
+            {% if not is_blocked %}
+              {% if organization.is_open or can_edit %}
+                <form method="post" action="{{ url('join_organization', organization.id, organization.slug) }}">
+                  {% csrf_token %}
+                  <button type="submit" class="org-join-btn">
+                    <i class="fa fa-plus"></i> {{ _('Join Group') }}
+                  </button>
+                </form>
+              {% else %}
+                <a href="{{ url('request_organization', organization.id, organization.slug) }}"
+                   class="org-join-btn org-request-btn">
+                  <i class="fa fa-paper-plane"></i> {{ _('Request to Join') }}
+                </a>
+              {% endif %}
+            {% else %}
+              <form method="post" action="{{ url('unblock_organization', organization.id, organization.slug) }}">
+                {% csrf_token %}
+                <button type="button" class="org-join-btn unblock-organization">
+                  <i class="fa fa-unlock"></i> {{ _('Unblock') }}
+                </button>
+              </form>
+            {% endif %}
+          {% endif %}
+        {% else %}
+          <a href="{{ url('auth_login') }}?next={{ request.path }}" class="org-join-btn">
+            <i class="fa fa-sign-in-alt"></i> {{ _('Login to Join') }}
+          </a>
         {% endif %}
-      {% endif %}
+      </div>
     </div>
   </div>
 {% endblock %}

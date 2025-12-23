@@ -31,8 +31,6 @@
       {{ solution.content|markdown(lazy_load=True)|reference|str|safe }}
     {% endcache %}
   </div>
-  <hr>
   {% include "actionbar/list.html" %}
-  <br>
   {% include "comments/list.html" %}
 {% endblock %}

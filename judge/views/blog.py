@@ -127,6 +127,12 @@ class PostView(
                 if self.request.profile.can_edit_organization(org):
                     context["editable_orgs"].append(org)
 
+        # Add ticket count for editors
+        if self.object.is_editable_by(self.request.user):
+            context["num_open_tickets"] = self.object.tickets.filter(
+                is_open=True
+            ).count()
+
         # Add comment context
         context = self.get_comment_context(context)
 

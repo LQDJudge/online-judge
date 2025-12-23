@@ -161,7 +161,7 @@ msgstr "Thể thức"
 #: templates/profile-table.html:14 templates/profile-table.html:37
 #: templates/user/user-about.html:15 templates/user/user-about.html:44
 msgid "Rating"
-msgstr "Xếp hạng"
+msgstr "Rating"
 
 #: judge/admin/contest.py:231
 msgid "Access"

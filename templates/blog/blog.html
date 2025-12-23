@@ -18,25 +18,44 @@
 {% block body %}
   <div class="post-full">
     <div class="post-title">{{ title }}</div>
-    <div class="time" style="display: flex; align-items: center;">
-      {% if organizations %}
-        {% for org in organizations %}
-          {% with edit_url = url('edit_organization_blog', org.id , org.slug , post.id) if org in editable_orgs else None %}
-            {% include "organization/tag.html" %}
+    <div class="post-header">
+      <div class="post-meta">
+        <div class="post-info">
+          {% with authors=post.get_authors() %}
+            {% if authors %}
+              <span class="user-img" style="width: 1.5em; height: 1.5em;">
+                <img src="{{ gravatar(authors[0].id, 48) }}" loading="lazy">
+              </span>
+              <span class="post-authors">{{ link_users(authors) }}</span>
+            {% endif %}
           {% endwith %}
-        {% endfor %}
-      {% endif %}
-      {% with authors=post.get_authors() %}
-        {% if authors %}
-          <span class="post-authors">{{ link_users(authors) }}</span>
-        {% endif %}
-      {% endwith %}
-      <span class="post-time" style="margin-left: 0.3em;">
-        {% trans time=post.publish_on|date(_("N j, Y, g:i a")) %} posted on {{ time }}{% endtrans %}
-      </span>
+          {% if organizations %}
+            <span class="post-separator">•</span>
+            <div class="post-organizations">
+              {% for org in organizations %}
+                {% with edit_url = url('edit_organization_blog', org.id , org.slug , post.id) if org in editable_orgs else None %}
+                  {% include "organization/tag.html" %}
+                {% endwith %}
+              {% endfor %}
+            </div>
+          {% endif %}
+          <span class="post-separator">•</span>
+          <span class="post-time">
+            <i class="fa fa-clock"></i>
+            {{ post.publish_on|date(_("N j, Y, g:i a")) }}
+          </span>
+        </div>
+      </div>
       {% if post.is_editable_by(request.user) %}
-        <span> [<a href="{{ url('admin:judge_blogpost_change', post.id) }}">{{ _('Edit') }}</a>]</span>
-        <span> [<a href="{{ url('blog_post_ticket_list', post.id) }}">{{ _('Manage tickets') }}</a>]</span>
+        <div class="post-actions">
+          <a href="{{ url('admin:judge_blogpost_change', post.id) }}" class="post-action-btn">
+            <i class="fa fa-edit"></i> {{ _('Edit') }}
+          </a>
+          <a href="{{ url('blog_post_ticket_list', post.id) }}" class="post-action-btn">
+            <i class="fa fa-clipboard-list"></i> {{ _('Tickets') }}
+            {% if num_open_tickets %}<span class="badge">{{ num_open_tickets }}</span>{% endif %}
+          </a>
+        </div>
       {% endif %}
     </div>
 
@@ -47,7 +66,6 @@
       {% set actionbar_report_url = url('new_blog_post_ticket', post.id) %}
     {% endif %}
     {% include "actionbar/list.html" %}
+    {% include "comments/list.html" %}
   </div>
-  <hr style="width: 60%; margin:4em auto;">
-  {% include "comments/list.html" %}
 {% endblock %}

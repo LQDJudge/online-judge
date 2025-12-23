@@ -426,6 +426,14 @@ class OrganizationHome(OrganizationHomeView, FeedView):
         context["future_contests"] = visible_contests.filter(start_time__gt=now)
         context["page_type"] = "home"
 
+        # Stats for header (using cached member IDs)
+        member_ids = self.organization.get_member_ids()
+        context["member_count"] = len(member_ids)
+
+        # Member avatars for preview (up to 5, using cached instances)
+        preview_ids = member_ids[:5]
+        context["member_preview"] = Profile.get_cached_instances(*preview_ids)
+
         return context
 
 

@@ -9,13 +9,13 @@
         {% endif %}
       </h2>
       {% if can_comment %}
-        <a href="#" id="write-comment" class="action-btn">
+        <a href="#" id="write-comment" class="action-btn small">
           <i class="fa fa-plus"></i> {{ _('Write comment') }}
         </a>
       {% endif %}
     </div>
     <div class="comment-sort-controls">
-      <div class="action-btn comment-sort-dropdown">
+      <div class="action-btn comment-sort-dropdown small">
         <span class="current-sort-text">
           {% if sort_by == 'time' and sort_order == 'asc' %}
             {{ _('Least recent') }}
