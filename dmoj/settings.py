@@ -185,6 +185,23 @@ else:
                     ],
                 },
                 {
+                    "model": "judge.Quiz",
+                    "icon": "fa-list-alt",
+                    "children": [
+                        "judge.QuizQuestion",
+                        "judge.QuizAttempt",
+                        "judge.QuizAnswer",
+                    ],
+                },
+                {
+                    "model": "judge.Course",
+                    "icon": "fa-graduation-cap",
+                    "children": [
+                        "judge.CourseLesson",
+                        "judge.CourseLessonQuiz",
+                    ],
+                },
+                {
                     "model": "auth.User",
                     "icon": "fa-user",
                     "children": [
