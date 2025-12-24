@@ -79,6 +79,9 @@ from judge.views.select2 import (
     UserSearchSelect2View,
     UserSelect2View,
     ProblemAuthorSearchSelect2View,
+    QuizSelect2View,
+    QuizQuestionSelect2View,
+    CourseLessonSelect2View,
 )
 
 admin.autodiscover()
@@ -1195,6 +1198,21 @@ urlpatterns = [
                     r"^course/$",
                     course.CourseSelect2View.as_view(),
                     name="course_select2",
+                ),
+                re_path(
+                    r"^quiz/$",
+                    QuizSelect2View.as_view(),
+                    name="quiz_select2",
+                ),
+                re_path(
+                    r"^quiz_question/$",
+                    QuizQuestionSelect2View.as_view(),
+                    name="quiz_question_select2",
+                ),
+                re_path(
+                    r"^course_lesson/$",
+                    CourseLessonSelect2View.as_view(),
+                    name="course_lesson_select2",
                 ),
             ]
         ),

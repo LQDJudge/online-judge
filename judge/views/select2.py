@@ -10,7 +10,15 @@ from django.conf import settings
 from chat_box.utils import encrypt_url
 
 from judge.jinja2.gravatar import gravatar
-from judge.models import Contest, Organization, Problem, Profile
+from judge.models import (
+    Contest,
+    Organization,
+    Problem,
+    Profile,
+    Quiz,
+    QuizQuestion,
+    CourseLesson,
+)
 
 
 def _get_user_queryset(term, org_id=None):
@@ -234,3 +242,75 @@ class ProblemAuthorSearchSelect2View(UserSearchSelect2View):
             "text": Profile(pk).username,
             "id": pk,
         }
+
+
+class QuizSelect2View(Select2View):
+    def get_queryset(self):
+        queryset = Quiz.objects.filter(
+            Q(code__icontains=self.term) | Q(title__icontains=self.term)
+        )
+
+        # Filter by permissions if user is not superuser
+        if self.request.user.is_authenticated and not self.request.user.is_superuser:
+            profile = self.request.user.profile
+            queryset = queryset.filter(
+                Q(authors__id=profile.id) | Q(curators__id=profile.id)
+            ).distinct()
+        elif not self.request.user.is_authenticated:
+            queryset = queryset.none()
+
+        return queryset
+
+    def get_name(self, obj):
+        return f"{obj.code} - {obj.title}"
+
+
+class QuizQuestionSelect2View(Select2View):
+    def get_queryset(self):
+        queryset = QuizQuestion.objects.filter(
+            Q(title__icontains=self.term) | Q(content__icontains=self.term)
+        )
+
+        # Filter by permissions if user is not superuser
+        if self.request.user.is_authenticated:
+            if not self.request.user.is_superuser:
+                profile = self.request.user.profile
+                # Show public questions or questions user can edit
+                queryset = queryset.filter(
+                    Q(is_public=True)
+                    | Q(authors__id=profile.id)
+                    | Q(curators__id=profile.id)
+                ).distinct()
+        else:
+            # Anonymous users only see public questions
+            queryset = queryset.filter(is_public=True)
+
+        return queryset
+
+    def get_name(self, obj):
+        return f"Q{obj.pk}: {obj.title}"
+
+
+class CourseLessonSelect2View(Select2View):
+    def get_queryset(self):
+        queryset = CourseLesson.objects.filter(title__icontains=self.term)
+
+        # Filter by course access
+        if self.request.user.is_authenticated and not self.request.user.is_superuser:
+            from judge.models import Course
+
+            profile = self.request.user.profile
+            # Get courses the user can access
+            accessible_courses = Course.objects.filter(
+                Q(is_public=True)
+                | Q(organizations__in=profile.organizations.all())
+                | Q(course_roles__user=profile)
+            ).distinct()
+            queryset = queryset.filter(course__in=accessible_courses)
+        elif not self.request.user.is_authenticated:
+            queryset = queryset.none()
+
+        return queryset.select_related("course")
+
+    def get_name(self, obj):
+        return f"{obj.course.name} - {obj.title}"
