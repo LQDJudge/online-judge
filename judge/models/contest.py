@@ -862,8 +862,23 @@ class ContestParticipation(models.Model):
 
 
 class ContestProblem(models.Model):
+    # Made nullable to support quiz integration
     problem = models.ForeignKey(
-        Problem, verbose_name=_("problem"), related_name="contests", on_delete=CASCADE
+        Problem,
+        verbose_name=_("problem"),
+        related_name="contests",
+        on_delete=CASCADE,
+        null=True,
+        blank=True,
+    )
+    # New field for quiz support
+    quiz = models.ForeignKey(
+        "Quiz",  # String reference to avoid circular import
+        verbose_name=_("quiz"),
+        related_name="contest_quizzes",
+        on_delete=CASCADE,
+        null=True,
+        blank=True,
     )
     contest = models.ForeignKey(
         Contest,
@@ -897,7 +912,15 @@ class ContestProblem(models.Model):
         max_length=20,
     )
 
+    def clean(self):
+        # Ensure exactly one of problem or quiz is set
+        if not self.problem and not self.quiz:
+            raise ValidationError(_("Either problem or quiz must be set"))
+        if self.problem and self.quiz:
+            raise ValidationError(_("Cannot set both problem and quiz"))
+
     def save(self, *args, **kwargs):
+        self.full_clean()  # Validate before saving
         super().save(*args, **kwargs)
         # Invalidate the cache when a contest problem is updated
         get_contest_problem_points.dirty(self.contest_id)
@@ -918,8 +941,33 @@ class ContestProblem(models.Model):
     def clarifications(self):
         return ContestProblemClarification.objects.filter(problem=self)
 
+    @property
+    def display_name(self):
+        """Get display name for either problem or quiz"""
+        if self.problem:
+            return self.problem.name
+        elif self.quiz:
+            return self.quiz.title
+        return ""
+
+    @property
+    def is_quiz(self):
+        """Check if this is a quiz rather than a problem"""
+        return self.quiz is not None
+
+    def __str__(self):
+        if self.problem:
+            return f"{self.contest.name} - {self.problem.name}"
+        elif self.quiz:
+            return f"{self.contest.name} - {self.quiz.title}"
+        return f"{self.contest.name} - Unknown"
+
     class Meta:
-        unique_together = ("problem", "contest")
+        # Updated to handle both problem and quiz uniqueness
+        unique_together = [
+            ("problem", "contest"),
+            ("quiz", "contest"),
+        ]
         verbose_name = _("contest problem")
         verbose_name_plural = _("contest problems")
 

@@ -67,6 +67,16 @@ from judge.models.course import (
     CourseLessonProblem,
     CourseContest,
 )
+from judge.models.quiz import (
+    QuizQuestion,
+    QuizQuestionType,
+    Quiz,
+    QuizQuestionAssignment,
+    CourseLessonQuiz,
+    QuizAttempt,
+    QuizAnswer,
+    QuizAnswerFile,
+)
 from judge.models.notification import Notification, NotificationProfile
 from judge.models.test_formatter import TestFormatterModel
 from judge.models.block import Block
@@ -97,4 +107,10 @@ revisions.register(PageVoteVoter)
 revisions.register(Course)
 revisions.register(Ticket)
 revisions.register(TicketMessage)
+revisions.register(QuizQuestion)
+revisions.register(Quiz)
+revisions.register(QuizQuestionAssignment)
+revisions.register(CourseLessonQuiz)
+revisions.register(QuizAttempt)
+revisions.register(QuizAnswer)
 del revisions
