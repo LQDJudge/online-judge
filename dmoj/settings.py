@@ -495,6 +495,8 @@ CHUNK_UPLOAD_DIR = "/tmp/chunk_upload_tmp"
 # Rate limit
 RL_VOTE = "200/h"
 RL_COMMENT = "30/h"
+RL_EMAIL_CHANGE = "5/h"
+RL_PASSWORD_RESET = "20/h"
 
 
 try:

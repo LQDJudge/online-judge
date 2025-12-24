@@ -147,7 +147,7 @@ register_patterns = [
     ),
     re_path(
         r"^password/reset/$",
-        auth_views.PasswordResetView.as_view(
+        email.RateLimitedPasswordResetView.as_view(
             template_name="registration/password_reset.html",
             html_email_template_name="registration/password_reset_email.html",
             email_template_name="registration/password_reset_email.txt",

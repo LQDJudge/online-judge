@@ -1,6 +1,8 @@
 from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.views import PasswordResetView
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
+from django.utils.decorators import method_decorator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.conf import settings
 from django import forms
@@ -16,6 +18,15 @@ from urllib.parse import urlencode, urlunparse, urlparse
 
 from judge.models import Profile, EmailChangeRequest
 from judge.utils.email_render import render_email_message
+from judge.utils.ratelimit import ratelimit
+
+
+@method_decorator(
+    ratelimit(key="ip", rate=settings.RL_PASSWORD_RESET, method=["POST"]),
+    name="dispatch",
+)
+class RateLimitedPasswordResetView(PasswordResetView):
+    pass
 
 
 class EmailChangeForm(forms.Form):
@@ -39,6 +50,7 @@ class EmailChangeForm(forms.Form):
         return password
 
 
+@ratelimit(key="user", rate=settings.RL_EMAIL_CHANGE, method=["POST"])
 @login_required
 def email_change_view(request):
     form = EmailChangeForm(request.POST or None, user=request.user)
