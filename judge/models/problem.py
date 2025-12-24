@@ -351,7 +351,8 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         current = user.profile.current_contest_id
         if not in_contest_mode or current is None:
             return False
-        from judge.models import ContestProblem
+
+        from judge.models.contest import ContestProblem
 
         return ContestProblem.objects.filter(
             problem_id=self.id, contest__users__id=current
