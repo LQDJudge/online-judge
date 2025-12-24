@@ -107,20 +107,3 @@ class IOIContestFormat(DefaultContestFormat):
             )
         else:
             return self.display_empty_cell(contest_problem)
-
-    def display_participation_result(self, participation, show_final=False):
-        if show_final:
-            score = participation.score_final
-            cumtime = participation.cumtime_final
-        else:
-            score = participation.score
-            cumtime = participation.cumtime
-        return format_html(
-            '<td class="user-points">{points}<div class="solving-time">{cumtime}</div></td>',
-            points=floatformat(score, -self.contest.points_precision),
-            cumtime=(
-                nice_repr(timedelta(seconds=cumtime), "noday-no-seconds")
-                if self.config["cumtime"]
-                else ""
-            ),
-        )

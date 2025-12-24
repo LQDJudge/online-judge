@@ -143,14 +143,3 @@ class ECOOContestFormat(DefaultContestFormat):
             )
         else:
             return self.display_empty_cell(contest_problem)
-
-    def display_participation_result(self, participation, show_final=False):
-        return format_html(
-            '<td class="user-points">{points}<div class="solving-time">{cumtime}</div></td>',
-            points=floatformat(participation.score),
-            cumtime=(
-                nice_repr(timedelta(seconds=participation.cumtime), "noday-no-seconds")
-                if self.config["cumtime"]
-                else ""
-            ),
-        )

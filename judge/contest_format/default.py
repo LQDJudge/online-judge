@@ -25,6 +25,7 @@ class DefaultContestFormat(BaseContestFormat):
             )
 
     def __init__(self, contest, config):
+        self.config = config or {}
         super(DefaultContestFormat, self).__init__(contest, config)
 
     def update_participation(self, participation):
@@ -120,7 +121,7 @@ class DefaultContestFormat(BaseContestFormat):
             else ""
         )
         return format_html(
-            '<td class="{state} problem-score-col" title="{tooltip}"><a data-featherlight="{url}" href="#">{points}{extra}<div class="solving-time"{time_attr}>{time}</div></a></td>',
+            '<td class="{state} problem-score-col" title="{tooltip}"><a data-featherlight="{url}" href="#"><span>{points}{extra}</span><div class="solving-time"{time_attr}>{time}</div></a></td>',
             state=self.get_cell_state(contest_problem, format_data),
             tooltip=self.get_problem_tooltip(contest_problem),
             url=self.get_submission_url(participation, contest_problem),
@@ -149,11 +150,22 @@ class DefaultContestFormat(BaseContestFormat):
             return self.display_empty_cell(contest_problem)
 
     def display_participation_result(self, participation, show_final=False):
+        if show_final and hasattr(participation, "score_final"):
+            score = participation.score_final
+            cumtime = participation.cumtime_final
+        else:
+            score = participation.score
+            cumtime = participation.cumtime
+
+        show_cumtime = (getattr(self, "config", None) or {}).get("cumtime", True)
+
         return format_html(
             '<td class="user-points">{points}<div class="solving-time">{cumtime}</div></td>',
-            points=floatformat(participation.score, -self.contest.points_precision),
-            cumtime=nice_repr(
-                timedelta(seconds=participation.cumtime), "noday-no-seconds"
+            points=floatformat(score, -self.contest.points_precision),
+            cumtime=(
+                nice_repr(timedelta(seconds=cumtime), "noday-no-seconds")
+                if show_cumtime
+                else ""
             ),
         )
 
