@@ -68,7 +68,7 @@ def email_change_view(request):
         send_mail(
             subject,
             message,
-            settings.EMAIL_HOST_USER,
+            settings.DEFAULT_FROM_EMAIL,
             [new_email],
             html_message=message,
         )

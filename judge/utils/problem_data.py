@@ -474,7 +474,7 @@ def notify_problem_authors(
         send_mail(
             subject=subject,
             message=plain_message,
-            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@lqdoj.edu.vn"),
+            from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=author_emails,
             html_message=html_message,
             fail_silently=False,
