@@ -101,7 +101,6 @@
           data: {
             content_type_id: {{ comment_content_type_id }},
             object_id: {{ comment_object_id }},
-            is_top_level: 1,  // Use top-level view
             target_comment: {{ target_comment }},
             sort_by: '{{ sort_by }}',
             sort_order: '{{ sort_order }}'
@@ -135,7 +134,6 @@
           data: {
             content_type_id: {{ comment_content_type_id }},
             object_id: {{ comment_object_id }},
-            is_top_level: 1,  // Top-level comments
             target_comment: -1,
             sort_by: '{{ sort_by }}',
             sort_order: '{{ sort_order }}'
@@ -179,7 +177,6 @@
         data: {
           content_type_id: {{ comment_content_type_id }},
           object_id: {{ comment_object_id }},
-          is_top_level: 1,
           sort_by: sortBy,
           sort_order: sortOrder
         },

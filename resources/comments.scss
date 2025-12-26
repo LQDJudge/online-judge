@@ -328,7 +328,7 @@
 
         // Hover effect on thread line - highlight the line
         &:hover::before {
-            background: $theme_color;
+            background: darkgray;
         }
 
         .comment {
@@ -408,7 +408,6 @@
     // Highlighted comment (when linked directly)
     .highlight_comment {
         background: rgba($theme_color, 0.05);
-        border-left: 3px solid $theme_color;
         padding-left: 12px;
         margin-left: -12px;
         border-radius: 0 8px 8px 0;

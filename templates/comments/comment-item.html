@@ -65,7 +65,7 @@
           {% endif %}
         </div>
         <a href="javascript:reply_comment({{ item.id }})" title="{{ _('Reply') }}" class="action-link reply-link"><i class="fa-regular fa-comment-dots"></i>{{_('Reply')}}</a>
-        <a href="?target_comment={{ item.id }}#comment-{{ item.id }}" title="{{ _('Share') }}" class="action-link share-link"><i class="fa fa-link fa-fw"></i>{{_('Share')}}</a>
+        <a href="javascript:void(0)" onclick="comment_share(this, {{ item.id }})" title="{{ _('Share') }}" class="action-link share-link" style="position: relative"><i class="fa fa-link fa-fw"></i>{{_('Share')}}</a>
         {% if profile and not comment_lock %}
           {% set can_edit = item.author_id == profile.id and not profile.mute %}
           {% if can_edit %}
@@ -83,7 +83,7 @@
       {% set count_replies=item.count_replies %}
       {% if count_replies and not item.get_children() %}
         <div>
-          <a href="javascript:comment_get_replies({{ item.id }}, 0)" class="show_more_reply">
+          <a href="javascript:comment_get_replies({{ item.id }})" class="show_more_reply">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-arrow-forward" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
               <path d="M15 11l4 4l-4 4m4 -4h-11a4 4 0 0 1 0 -8h1"></path>

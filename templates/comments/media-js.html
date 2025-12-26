@@ -48,7 +48,7 @@
             if (opts.isReply) {
               // For replies, reload the parent's replies
               if (opts.parentId) {
-                comment_get_replies(opts.parentId, 0);
+                comment_get_replies(opts.parentId);
               }
             } else {
               // For new top-level comments, prepend to the list
@@ -265,32 +265,27 @@
       const urlParams = new URLSearchParams(queryString);
       const target_comment = urlParams.get('comment-id');
 
-      window.comment_get_replies = function (commentId, isTopLevel) {
-        // Hide the "show replies" button
+      window.comment_get_replies = function (commentId) {
         var $showRepliesButton = $("#comment-" + commentId  + " .show_more_reply");
         $showRepliesButton.hide();
 
-        // Get the container for child comments and show loading indicator
         var $childrenContainer = $("#comment-" + commentId + "-children");
         $childrenContainer.append(loading_gif);
 
-        // Fetch replies via AJAX
+        var combinedSort = $('#comment-sort-combined').val() || 'time_desc';
+        var sortParts = combinedSort.split('_');
+
         $.ajax({
           url: '{{ url('comment_get_replies') }}',
           type: 'GET',
           data: {
             id: commentId,
-            is_top_level: isTopLevel,
+            sort_by: sortParts[0],
+            sort_order: sortParts[1]
           },
           success: function(data) {
-            // Remove loading indicator
-            var $loadingIndicator = $("#comment-" + commentId + "-children .loading");
-            $loadingIndicator.hide();
-
-            // Update container with fetched content
+            $("#comment-" + commentId + "-children .loading").hide();
             $childrenContainer.html(data);
-
-            // Initialize required components
             renderKatex($('#comments')[0]);
             register_time($('.time-with-rel'));
             register_comment_operations();
@@ -372,61 +367,47 @@
 
       register_comment_operations();
 
-      window.comment_show_more = function (sourceId, isTopLevel, currentOffset, highlightedCommentId) {
-        var $showMoreButton, $commentsContainer;
+      window.comment_show_more = function (sourceId, currentOffset, highlightedCommentId) {
+        var $showMoreButton, $commentsContainer, url, requestData;
+        var combinedSort = $('#comment-sort-combined').val() || 'time_desc';
+        var sortParts = combinedSort.split('_');
 
-        // Determine which container to use based on whether we're showing top-level or nested comments
-        if (isTopLevel == 1) {
-          // For top-level comments
+        if (sourceId == 0) {
           $showMoreButton = $("#comment-0 .show_more_comment");
           $commentsContainer = $("#comment-0");
+
+          url = '{{ url('get_comments') }}';
+          requestData = {
+            content_type_id: {{ comment_content_type_id }},
+            object_id: {{ comment_object_id }},
+            offset: currentOffset,
+            target_comment: highlightedCommentId,
+            sort_by: sortParts[0],
+            sort_order: sortParts[1]
+          };
         } else {
-          // For nested comments
           $showMoreButton = $("#comment-" + sourceId + "-children .show_more_comment");
           $commentsContainer = $("#comment-" + sourceId + "-children");
+
+          url = '{{ url('comment_get_replies') }}';
+          requestData = {
+            id: sourceId,
+            offset: currentOffset,
+            sort_by: sortParts[0],
+            sort_order: sortParts[1]
+          };
         }
 
-        // Hide the "show more" button and show loading indicator
         $showMoreButton.hide();
         $commentsContainer.append(loading_gif);
 
-        // Get current sort parameters from the combined dropdown
-        var combinedSort = $('#comment-sort-combined').val() || 'time_desc';
-        var sortParts = combinedSort.split('_');
-        var sortBy = sortParts[0];
-        var sortOrder = sortParts[1];
-
-        // Prepare data object for AJAX request
-        var requestData = {
-          is_top_level: isTopLevel,
-          offset: currentOffset,
-          target_comment: highlightedCommentId,
-          sort_by: sortBy,
-          sort_order: sortOrder
-        };
-
-        // For top-level comments, we use content_type_id and object_id
-        // For nested comments, we use the comment id
-        if (isTopLevel == 1) {
-          requestData.content_type_id = {{ comment_content_type_id }};
-          requestData.object_id = {{ comment_object_id }};
-        } else {
-          requestData.id = sourceId;
-        }
-
-        // Fetch more comments via AJAX
         $.ajax({
-          url: '{{ url('get_comments') }}',
+          url: url,
           type: 'GET',
           data: requestData,
           success: function(data) {
-            // Remove loading indicator
             $commentsContainer.find(".loading").hide();
-
-            // Append new comments to the container
             $commentsContainer.append(data);
-
-            // Initialize required components
             renderKatex($('#comments')[0]);
             register_time($('.time-with-rel'));
             register_comment_operations();
@@ -482,10 +463,15 @@
        */
       window.comment_show_content = function (commentId) {
         var $comment = $('#comment-' + commentId);
-        // Show the actual comment content
         $comment.find('.comment-body').show();
-        // Hide the "comment hidden due to negative feedback" message
         $comment.find('.bad-comment-body').hide();
+      };
+
+      window.comment_share = function (element, commentId) {
+        var url = window.location.origin + window.location.pathname + '?target_comment=' + commentId + '#comment-' + commentId;
+        navigator.clipboard.writeText(url).then(function() {
+          showTooltip(element, "{{ _('Copied link') }}", 'n');
+        });
       };
 
       $("#write-comment").click( function(event)  {
