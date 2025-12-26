@@ -284,7 +284,7 @@ def get_comments_data(request, limit=DEFAULT_COMMENT_LIMIT):
     total_comments = comments_qs.count()
 
     comments_qs = comments_qs.annotate(
-        count_replies=Count("replies", distinct=True),
+        count_replies=Count("replies", distinct=True, filter=Q(replies__hidden=False)),
     )
 
     if request.user.is_authenticated:
@@ -313,7 +313,9 @@ def get_comments_data(request, limit=DEFAULT_COMMENT_LIMIT):
     if root_comment is not None:
         root_tree = root_comment.get_descendants(include_self=True)
         root_tree = root_tree.annotate(
-            count_replies=Count("replies", distinct=True),
+            count_replies=Count(
+                "replies", distinct=True, filter=Q(replies__hidden=False)
+            ),
         )
         if request.user.is_authenticated:
             root_tree = root_tree.annotate(
@@ -630,7 +632,9 @@ def post_comment(request):
     comment = (
         Comment.objects.filter(id=comment.id)
         .annotate(
-            count_replies=Count("replies", distinct=True),
+            count_replies=Count(
+                "replies", distinct=True, filter=Q(replies__hidden=False)
+            ),
             my_vote=FilteredRelation(
                 "votes", condition=Q(votes__voter_id=request.profile.id)
             ),
