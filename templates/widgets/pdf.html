@@ -1,0 +1,26 @@
+<div class="pdf-file-widget">
+  {% if widget.is_initial %}
+    <div class="current-file">
+      <i class="fa fa-file-pdf fa-lg pdf-icon"></i>
+      <a href="{{ widget.value.url }}" target="_blank">
+        {{ widget.value.name }}
+      </a>
+    </div>
+    <div class="file-actions">
+      {% if not widget.required %}
+        <div class="clear-file">
+          <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}">
+          <label for="{{ widget.checkbox_id }}">{{ widget.clear_checkbox_label }}</label>
+        </div>
+      {% endif %}
+      <div class="change-file">
+        <span>{{ widget.input_text }}:</span>
+        <input type="{{ widget.type }}" name="{{ widget.name }}" accept=".pdf">
+      </div>
+    </div>
+  {% else %}
+    <div class="change-file">
+      <input type="{{ widget.type }}" name="{{ widget.name }}" accept=".pdf">
+    </div>
+  {% endif %}
+</div>

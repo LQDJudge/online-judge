@@ -924,3 +924,97 @@ button:hover, button:focus {
         margin-right: 1em;
     }
 }
+// PDF file widget styling
+.pdf-file-widget {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: $background_light_gray;
+    border: 1px solid $border_gray;
+    border-radius: 8px;
+
+    .current-file {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: white;
+        border: 1px solid $border_gray;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+        .pdf-icon {
+            color: #e74c3c;
+            font-size: 1.8em;
+            flex-shrink: 0;
+        }
+
+        a {
+            text-decoration: none;
+            word-break: break-all;
+            font-weight: 500;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+
+    .file-actions {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .clear-file {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid $border_gray;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s;
+
+        &:hover {
+            background: #fff5f5;
+            border-color: #e74c3c;
+        }
+
+        input[type="checkbox"] {
+            margin: 0;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        label {
+            margin: 0;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+        }
+    }
+
+    .change-file {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid $border_gray;
+        border-radius: 6px;
+
+        span {
+            font-weight: 500;
+            color: #666;
+        }
+
+        input[type="file"] {
+            cursor: pointer;
+        }
+    }
+}

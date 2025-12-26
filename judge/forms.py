@@ -62,6 +62,7 @@ from judge.widgets import (
     DateTimePickerWidget,
     ImageWidget,
     DatePickerWidget,
+    PDFWidget,
 )
 
 
@@ -1051,6 +1052,7 @@ class ProblemEditForm(ModelForm):
             "points": forms.NumberInput(attrs={"step": "0.5"}),
             "allowed_languages": forms.CheckboxSelectMultiple(),
             "date": DateTimePickerWidget(),
+            "pdf_description": PDFWidget(),
         }
 
         if HeavyPreviewPageDownWidget is not None:
