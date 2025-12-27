@@ -19,14 +19,14 @@
         }
       });
 
-      // Poll for task result
+      // Poll for task result using existing task status endpoint
       function pollTaskResult(taskId, $btn, $status) {
         var pollInterval = setInterval(function() {
           $.ajax({
-            url: '/api/llm-task/' + taskId,
+            url: '{{ url('task_status_ajax') }}?id=' + taskId,
             type: 'GET',
             success: function(data) {
-              if (data.status === 'completed') {
+              if (data.code === 'SUCCESS') {
                 clearInterval(pollInterval);
                 // Re-enable buttons
                 $btn.prop('disabled', false);
@@ -51,11 +51,13 @@
                 setTimeout(function() {
                   $status.text('').css('color', '#666');
                 }, 10000);
-              } else if (data.status === 'pending') {
-                // Task may have expired or not started yet
-                $status.text('{{ _('Processing... please wait') }}').css('color', '#666');
+              } else if (data.code === 'FAILURE') {
+                clearInterval(pollInterval);
+                $btn.prop('disabled', false);
+                $('#generate-solution-btn').prop('disabled', false);
+                $status.text('{{ _('Error: ') }}' + (data.error || 'Task failed')).css('color', 'red');
               }
-              // If status is 'processing', continue polling
+              // If code is 'WORKING' or 'PROGRESS', continue polling
             },
             error: function() {
               clearInterval(pollInterval);

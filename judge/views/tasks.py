@@ -30,6 +30,9 @@ def get_task_status(task_id):
             "stage": info["stage"],
         }
     elif result.state == "SUCCESS":
+        # Return result data if it's a dict, otherwise just success code
+        if isinstance(info, dict):
+            return {"code": "SUCCESS", **info}
         return {"code": "SUCCESS"}
     elif result.state == "FAILURE":
         return {"code": "FAILURE", "error": str(info)}

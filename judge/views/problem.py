@@ -95,7 +95,6 @@ from judge.models.problem import (
     get_all_problem_groups,
 )
 from judge.models.runtime import get_all_languages
-from celery.result import AsyncResult
 
 from judge.tasks import rescore_problem
 from judge.tasks.llm import generate_solution_task
@@ -244,6 +243,7 @@ class ProblemSolution(
 
         context["problem"] = self.problem
         context["has_solved_problem"] = self.problem.id in self.get_completed_problems()
+        context["can_edit_problem"] = self.problem.is_editable_by(self.request.user)
 
         # Add comment context
         context = self.get_comment_context(context)
@@ -2014,40 +2014,3 @@ class ProblemEditTranslations(
                 "content_title": self.get_content_title(),
             }
         )
-
-
-@login_required
-def llm_task_status(request, task_id):
-    """
-    Polling endpoint for LLM task status.
-    Returns the current status and result of an async LLM task.
-    Uses Celery's AsyncResult directly.
-    """
-    if not request.user.is_superuser:
-        return JsonResponse({"success": False, "error": "Permission denied"})
-
-    result = AsyncResult(task_id)
-
-    if result.state == "PENDING":
-        return JsonResponse({"success": True, "status": "pending"})
-    elif result.state == "STARTED" or result.state == "RETRY":
-        return JsonResponse({"success": True, "status": "processing"})
-    elif result.state == "SUCCESS":
-        task_result = result.result or {}
-        return JsonResponse(
-            {
-                "success": True,
-                "status": "completed",
-                **task_result,
-            }
-        )
-    elif result.state == "FAILURE":
-        return JsonResponse(
-            {
-                "success": False,
-                "status": "completed",
-                "error": str(result.result),
-            }
-        )
-    else:
-        return JsonResponse({"success": True, "status": "processing"})

@@ -11,8 +11,8 @@
 
 {% block header %}
   <div style="float:right">
-    {% if perms.judge.change_problem %}
-      [<a href="{{ url('admin:judge_problem_change', problem.id) }}">{{ _('Edit') }}</a>]
+    {% if can_edit_problem %}
+      [<a href="{{ url('problem_edit_solutions', problem.code) }}">{{ _('Edit') }}</a>]
     {% endif %}
   </div>
 {% endblock %}
