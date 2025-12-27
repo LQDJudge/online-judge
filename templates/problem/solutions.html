@@ -3,9 +3,99 @@
 {% block js_media %}
   <script type="text/javascript">
     $(document).ready(function() {
-    // Handle alert close buttons
+      // Handle alert close buttons
       $('.alert .close').click(function() {
         $(this).closest('.alert').fadeOut(300);
+      });
+
+      // Toggle rough ideas input area
+      $('#generate-solution-btn').click(function() {
+        var $inputArea = $('#rough-ideas-input');
+        if ($inputArea.is(':visible')) {
+          $inputArea.slideUp();
+        } else {
+          $inputArea.slideDown();
+          $('#rough-ideas-textarea').focus();
+        }
+      });
+
+      // Handle actual generation
+      $('#do-generate-solution-btn').click(function() {
+        var $btn = $(this);
+        var $status = $('#generate-solution-status');
+        var roughIdeas = $('#rough-ideas-textarea').val().trim();
+
+        // Disable button and show loading
+        $btn.prop('disabled', true);
+        $('#generate-solution-btn').prop('disabled', true);
+        $status.text('{{ _('Generating solution...') }}').css('color', '#666');
+
+        $.ajax({
+          url: window.location.href,
+          type: 'POST',
+          data: {
+            'generate_solution': '1',
+            'rough_ideas': roughIdeas,
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+          },
+          success: function(data) {
+            if (data.success) {
+              if (data.solution_content) {
+                // Show result below button
+                $('#generated-solution-result').show();
+                $('#generated-solution-content').val(data.solution_content);
+                var statusText = '{{ _('Solution generated!') }}';
+                if (data.has_ac_code) {
+                  statusText += ' ({{ _('based on AC code') }})';
+                }
+                $status.text(statusText).css('color', 'green');
+              } else {
+                $status.text('{{ _('No solution generated') }}').css('color', 'orange');
+              }
+            } else {
+              $status.text('{{ _('Error: ') }}' + data.error).css('color', 'red');
+            }
+          },
+          error: function(xhr, status, error) {
+            $status.text('{{ _('Network error occurred') }}').css('color', 'red');
+          },
+          complete: function() {
+            // Re-enable buttons
+            $btn.prop('disabled', false);
+            $('#generate-solution-btn').prop('disabled', false);
+
+            // Clear status after 10 seconds
+            setTimeout(function() {
+              $status.text('').css('color', '#666');
+            }, 10000);
+          }
+        });
+      });
+
+      // Copy generated solution to clipboard
+      $('#generated-solution-copy').click(function() {
+        var $content = $('#generated-solution-content');
+        $content.select();
+        document.execCommand('copy');
+        $(this).text('{{ _('Copied!') }}');
+        setTimeout(function() {
+          $('#generated-solution-copy').text('{{ _('Copy') }}');
+        }, 2000);
+      });
+
+      // Insert generated solution into editor
+      $('#generated-solution-insert').click(function() {
+        var content = $('#generated-solution-content').val();
+        var $textarea = $('#id_content');
+        if ($textarea.length) {
+          $textarea.val(content);
+          // Trigger change event for any listeners
+          $textarea.trigger('change');
+          $('#generate-solution-status').text('{{ _('Inserted into editor!') }}').css('color', 'green');
+          setTimeout(function() {
+            $('#generate-solution-status').text('').css('color', '#666');
+          }, 3000);
+        }
       });
     });
   </script>
@@ -88,6 +178,39 @@
                     <div class="problem-help-text">{{ _('Select the authors who contributed to this solution.') }}</div>
                   </div>
 
+                  <!-- Auto Generate Solution Button (only for superusers) -->
+                  {% if request.user.is_superuser %}
+                    <div class="problem-form-group">
+                      <button type="button" id="generate-solution-btn" class="action-btn small" style="margin-right: 10px;">
+                        <i class="fa fa-magic"></i> {{ _('Auto Generate Solution') }}
+                      </button>
+                      <span id="generate-solution-status" style="margin-left: 10px;"></span>
+                    </div>
+                    <div class="problem-form-group" style="margin-top: -10px;">
+                      <small class="gray">{{ _('Tip: Uses AI to generate a solution based on the problem statement and AC submissions. You can optionally provide your rough ideas.') }}</small>
+                    </div>
+                    <!-- Rough ideas input area (hidden by default) -->
+                    <div id="rough-ideas-input" class="problem-form-group" style="display: none; flex-direction: column; margin-top: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
+                      <label style="margin-bottom: 8px;"><strong>{{ _('Your rough ideas (optional):') }}</strong></label>
+                      <textarea id="rough-ideas-textarea" placeholder="{{ _('Enter your solution approach, main ideas, or rough draft here. Leave empty to generate from scratch...') }}" style="width: 100%; min-height: 120px; font-family: monospace; font-size: 13px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; resize: vertical; margin-bottom: 10px;"></textarea>
+                      <div>
+                        <button type="button" id="do-generate-solution-btn" class="action-btn small">
+                          <i class="fa fa-cogs"></i> {{ _('Generate Solution') }}
+                        </button>
+                      </div>
+                    </div>
+                    <div id="generated-solution-result" class="problem-form-group" style="display: none; flex-direction: column;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <label><strong>{{ _('Generated Solution:') }}</strong></label>
+                        <div>
+                          <button type="button" id="generated-solution-insert" class="action-btn small" style="margin-right: 5px;">{{ _('Insert') }}</button>
+                          <button type="button" id="generated-solution-copy" class="action-btn small">{{ _('Copy') }}</button>
+                        </div>
+                      </div>
+                      <textarea id="generated-solution-content" readonly style="width: 100%; min-height: 300px; font-family: monospace; font-size: 13px; padding: 10px; border-radius: 4px; resize: vertical;"></textarea>
+                    </div>
+                  {% endif %}
+
                   <div class="problem-form-group">
                     <label for="{{ form.content.id_for_label }}" class="problem-form-label">
                       <strong>{{ form.content.label }}{% if form.content.field.required %}<span class="required-asterisk"> *</span>{% endif %}:</strong>
@@ -162,6 +285,39 @@
                     {% endif %}
                     <div class="problem-help-text">{{ _('Select the authors who contributed to this solution.') }}</div>
                   </div>
+
+                  <!-- Auto Generate Solution Button (only for superusers) -->
+                  {% if request.user.is_superuser %}
+                    <div class="problem-form-group">
+                      <button type="button" id="generate-solution-btn" class="action-btn small" style="margin-right: 10px;">
+                        <i class="fa fa-magic"></i> {{ _('Auto Generate Solution') }}
+                      </button>
+                      <span id="generate-solution-status" style="margin-left: 10px;"></span>
+                    </div>
+                    <div class="problem-form-group" style="margin-top: -10px;">
+                      <small class="gray">{{ _('Tip: Uses AI to generate a solution based on the problem statement and AC submissions. You can optionally provide your rough ideas.') }}</small>
+                    </div>
+                    <!-- Rough ideas input area (hidden by default) -->
+                    <div id="rough-ideas-input" class="problem-form-group" style="display: none; flex-direction: column; margin-top: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
+                      <label style="margin-bottom: 8px;"><strong>{{ _('Your rough ideas (optional):') }}</strong></label>
+                      <textarea id="rough-ideas-textarea" placeholder="{{ _('Enter your solution approach, main ideas, or rough draft here. Leave empty to generate from scratch...') }}" style="width: 100%; min-height: 120px; font-family: monospace; font-size: 13px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; resize: vertical; margin-bottom: 10px;"></textarea>
+                      <div>
+                        <button type="button" id="do-generate-solution-btn" class="action-btn small">
+                          <i class="fa fa-cogs"></i> {{ _('Generate Solution') }}
+                        </button>
+                      </div>
+                    </div>
+                    <div id="generated-solution-result" class="problem-form-group" style="display: none; flex-direction: column;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <label><strong>{{ _('Generated Solution:') }}</strong></label>
+                        <div>
+                          <button type="button" id="generated-solution-insert" class="action-btn small" style="margin-right: 5px;">{{ _('Insert') }}</button>
+                          <button type="button" id="generated-solution-copy" class="action-btn small">{{ _('Copy') }}</button>
+                        </div>
+                      </div>
+                      <textarea id="generated-solution-content" readonly style="width: 100%; min-height: 300px; font-family: monospace; font-size: 13px; padding: 10px; border-radius: 4px; resize: vertical;"></textarea>
+                    </div>
+                  {% endif %}
 
                   <div class="problem-form-group">
                     <label for="{{ form.content.id_for_label }}" class="problem-form-label">

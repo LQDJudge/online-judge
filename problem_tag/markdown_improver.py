@@ -120,6 +120,23 @@ IMPORTANT FORMATTING RULES:
 7. Use \\cdot for multiplication in math mode
 8. Format large numbers with scientific notation where appropriate (e.g., $10^9$)
 
+MARKDOWN INDENTATION AND LATEX RULES:
+9. Sublist items MUST have 4 spaces indentation more than their parent item (NOT 2 spaces)
+   Example:
+   - Parent item
+       - Child item (4 spaces before -)
+           - Grandchild item (8 spaces before -)
+10. Display LaTeX with $$...$$ MUST be a separate paragraph with a blank line above and below:
+    Example:
+    Some text here.
+
+    $$x = \\\\frac{{-b \\\\pm \\\\sqrt{{b^2 - 4ac}}}}{{2a}}$$
+
+    More text here.
+11. For string literals, do NOT use LaTeX. Use `code` backticks or "raw" quotes instead:
+    - WRONG: $"hello"$ or $\\\\text{{"hello"}}$
+    - CORRECT: `hello` or "hello"
+
 HERE IS THE TARGET FORMAT TEMPLATE:
 {template}
 

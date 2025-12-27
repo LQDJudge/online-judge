@@ -1742,6 +1742,11 @@ class ProblemEditSolutions(
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+
+        # Handle AJAX request for auto-generating solution
+        if "generate_solution" in request.POST:
+            return self.handle_generate_solution(request)
+
         solutions = Solution.objects.filter(problem=self.object)
         existing_solution = solutions.first() if solutions.exists() else None
 
@@ -1803,6 +1808,40 @@ class ProblemEditSolutions(
                 "content_title": self.get_content_title(),
             }
         )
+
+    def handle_generate_solution(self, request):
+        """Handle AJAX request for auto-generating solution using LLM"""
+        if not request.user.is_superuser:
+            return JsonResponse({"success": False, "error": "Permission denied"})
+
+        try:
+            problem = self.object
+            rough_ideas = request.POST.get("rough_ideas", "").strip()
+            tag_service = get_problem_tag_service()
+            result = tag_service.generate_problem_solution(
+                problem, rough_ideas=rough_ideas
+            )
+
+            if result["success"]:
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "solution_content": result.get("solution_content"),
+                        "has_ac_code": result.get("has_ac_code", False),
+                        "ac_language": result.get("ac_language"),
+                        "problem_code": problem.code,
+                    }
+                )
+            else:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": result.get("error", "Unknown error occurred"),
+                    }
+                )
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
 
 
 class ProblemEditTranslations(

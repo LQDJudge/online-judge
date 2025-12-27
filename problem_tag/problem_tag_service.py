@@ -8,6 +8,7 @@ import time
 from typing import List, Dict, Optional
 from .problem_tagger import ProblemTagger
 from .markdown_improver import MarkdownImprover
+from .solution_generator import SolutionGenerator
 from llm_service.llm_api import LLMService
 from llm_service.config import get_config
 import logging
@@ -31,6 +32,11 @@ class ProblemTagService:
             sleep_time=self.config.sleep_time,
         )
         self.markdown_improver = MarkdownImprover(
+            api_key=self.config.api_key,
+            bot_name=self.config.bot_name,
+            sleep_time=self.config.sleep_time,
+        )
+        self.solution_generator = SolutionGenerator(
             api_key=self.config.api_key,
             bot_name=self.config.bot_name,
             sleep_time=self.config.sleep_time,
@@ -179,6 +185,53 @@ class ProblemTagService:
             }
         except Exception as e:
             logger.error(f"Error improving markdown for problem {problem.code}: {e}")
+            return {
+                "problem_code": problem.code,
+                "success": False,
+                "error": str(e),
+            }
+
+    def generate_problem_solution(
+        self, problem, rough_ideas: str = ""
+    ) -> Dict[str, any]:
+        """
+        Generate a solution/editorial for a problem using LLM
+
+        Args:
+            problem: Django Problem model instance
+            rough_ideas: Optional user-provided rough ideas or draft solution
+
+        Returns:
+            Dict with generation results including 'success' and 'solution_content'
+        """
+        statement = self.get_problem_statement(problem)
+        if not statement:
+            return {
+                "problem_code": problem.code,
+                "success": False,
+                "error": "Could not extract problem statement",
+            }
+
+        try:
+            result = self.solution_generator.generate_solution(
+                problem_statement=statement,
+                problem_name=problem.name,
+                problem_code=problem.code,
+                problem_obj=problem,
+                rough_ideas=rough_ideas,
+                max_retries=self.config.max_retries,
+            )
+
+            return {
+                "problem_code": problem.code,
+                "success": result["success"],
+                "solution_content": result.get("solution_content"),
+                "has_ac_code": result.get("has_ac_code", False),
+                "ac_language": result.get("ac_language"),
+                "error": result.get("error"),
+            }
+        except Exception as e:
+            logger.error(f"Error generating solution for problem {problem.code}: {e}")
             return {
                 "problem_code": problem.code,
                 "success": False,
