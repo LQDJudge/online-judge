@@ -19,6 +19,54 @@
         }
       });
 
+      // Poll for task result
+      function pollTaskResult(taskId, $btn, $status) {
+        var pollInterval = setInterval(function() {
+          $.ajax({
+            url: '/api/llm-task/' + taskId,
+            type: 'GET',
+            success: function(data) {
+              if (data.status === 'completed') {
+                clearInterval(pollInterval);
+                // Re-enable buttons
+                $btn.prop('disabled', false);
+                $('#generate-solution-btn').prop('disabled', false);
+
+                if (data.success && data.solution_content) {
+                  // Show result below button
+                  $('#generated-solution-result').show();
+                  $('#generated-solution-content').val(data.solution_content);
+                  var statusText = '{{ _('Solution generated!') }}';
+                  if (data.has_ac_code) {
+                    statusText += ' ({{ _('based on AC code') }})';
+                  }
+                  $status.text(statusText).css('color', 'green');
+                } else if (data.error) {
+                  $status.text('{{ _('Error: ') }}' + data.error).css('color', 'red');
+                } else {
+                  $status.text('{{ _('No solution generated') }}').css('color', 'orange');
+                }
+
+                // Clear status after 10 seconds
+                setTimeout(function() {
+                  $status.text('').css('color', '#666');
+                }, 10000);
+              } else if (data.status === 'pending') {
+                // Task may have expired or not started yet
+                $status.text('{{ _('Processing... please wait') }}').css('color', '#666');
+              }
+              // If status is 'processing', continue polling
+            },
+            error: function() {
+              clearInterval(pollInterval);
+              $btn.prop('disabled', false);
+              $('#generate-solution-btn').prop('disabled', false);
+              $status.text('{{ _('Network error occurred') }}').css('color', 'red');
+            }
+          });
+        }, 2000); // Poll every 2 seconds
+      }
+
       // Handle actual generation
       $('#do-generate-solution-btn').click(function() {
         var $btn = $(this);
@@ -39,35 +87,20 @@
             'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
           },
           success: function(data) {
-            if (data.success) {
-              if (data.solution_content) {
-                // Show result below button
-                $('#generated-solution-result').show();
-                $('#generated-solution-content').val(data.solution_content);
-                var statusText = '{{ _('Solution generated!') }}';
-                if (data.has_ac_code) {
-                  statusText += ' ({{ _('based on AC code') }})';
-                }
-                $status.text(statusText).css('color', 'green');
-              } else {
-                $status.text('{{ _('No solution generated') }}').css('color', 'orange');
-              }
-            } else {
+            if (data.success && data.task_id) {
+              // Task dispatched, start polling
+              $status.text('{{ _('Processing... please wait') }}').css('color', '#666');
+              pollTaskResult(data.task_id, $btn, $status);
+            } else if (data.error) {
               $status.text('{{ _('Error: ') }}' + data.error).css('color', 'red');
+              $btn.prop('disabled', false);
+              $('#generate-solution-btn').prop('disabled', false);
             }
           },
           error: function(xhr, status, error) {
             $status.text('{{ _('Network error occurred') }}').css('color', 'red');
-          },
-          complete: function() {
-            // Re-enable buttons
             $btn.prop('disabled', false);
             $('#generate-solution-btn').prop('disabled', false);
-
-            // Clear status after 10 seconds
-            setTimeout(function() {
-              $status.text('').css('color', '#666');
-            }, 10000);
           }
         });
       });

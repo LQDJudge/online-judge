@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-27 13:15+0700\n"
+"POT-Creation-Date: 2025-12-27 13:41+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -4579,26 +4579,26 @@ msgstr "ID không hợp lệ."
 msgid "The specified PageVote does not exist."
 msgstr "PageVote được chỉ định không tồn tại."
 
-#: judge/views/problem.py:141
+#: judge/views/problem.py:142
 msgid "No such problem"
 msgstr "Không có bài nào như vậy"
 
-#: judge/views/problem.py:142
+#: judge/views/problem.py:143
 #, python-format
 msgid "Could not find a problem with the code \"%s\"."
 msgstr "Không tìm thấy bài tập với mã bài \"%s\"."
 
-#: judge/views/problem.py:212
+#: judge/views/problem.py:213
 #, python-brace-format
 msgid "Editorial for {0}"
 msgstr "Hướng dẫn cho {0}"
 
-#: judge/views/problem.py:216
+#: judge/views/problem.py:217
 #, python-brace-format
 msgid "Editorial for <a href=\"{1}\">{0}</a>"
 msgstr "Hướng dẫn cho <a href=\"{1}\">{0}</a>"
 
-#: judge/views/problem.py:497 templates/blog/list.html:122
+#: judge/views/problem.py:498 templates/blog/list.html:122
 #: templates/contest/contest.html:107 templates/course/lesson.html:14
 #: templates/organization/org-left-sidebar.html:4
 #: templates/profile-table.html:25 templates/user/user-bookmarks.html:16
@@ -4606,157 +4606,157 @@ msgstr "Hướng dẫn cho <a href=\"{1}\">{0}</a>"
 msgid "Problems"
 msgstr "Bài tập"
 
-#: judge/views/problem.py:816
+#: judge/views/problem.py:817
 msgid "Problem feed"
 msgstr "Bài tập"
 
-#: judge/views/problem.py:1011 judge/views/problem.py:1044
+#: judge/views/problem.py:1012 judge/views/problem.py:1045
 msgid "<h1>You have submitted too many submissions.</h1>"
 msgstr "<h1>Bạn nộp quá nhiều bài.</h1>"
 
-#: judge/views/problem.py:1023
+#: judge/views/problem.py:1024
 msgid "Banned from submitting"
 msgstr "Bị cấm nộp bài"
 
-#: judge/views/problem.py:1025
+#: judge/views/problem.py:1026
 msgid ""
 "You have been declared persona non grata for this problem. You are "
 "permanently barred from submitting this problem."
 msgstr "Bạn đã bị cấm nộp bài này."
 
-#: judge/views/problem.py:1063
+#: judge/views/problem.py:1064
 msgid "Too many submissions"
 msgstr "Quá nhiều lần nộp"
 
-#: judge/views/problem.py:1065
+#: judge/views/problem.py:1066
 msgid "You have exceeded the submission limit for this problem."
 msgstr "Bạn đã vượt quá số lần nộp cho bài này."
 
-#: judge/views/problem.py:1150 judge/views/problem.py:1155
+#: judge/views/problem.py:1151 judge/views/problem.py:1156
 #, python-format
 msgid "Submit to %(problem)s"
 msgstr "Nộp bài cho %(problem)s"
 
-#: judge/views/problem.py:1184
+#: judge/views/problem.py:1185
 msgid "Clone Problem"
 msgstr "Nhân bản bài tập"
 
-#: judge/views/problem.py:1228
+#: judge/views/problem.py:1229
 msgid "Edit Problem"
 msgstr "Chỉnh sửa bài tập"
 
-#: judge/views/problem.py:1233
+#: judge/views/problem.py:1234
 #, python-brace-format
 msgid "Edit {0}"
 msgstr "Chỉnh sửa {0}"
 
-#: judge/views/problem.py:1237
+#: judge/views/problem.py:1238
 #, python-format
 msgid "Editing problem for %s"
 msgstr "Chỉnh sửa bài tập cho %s"
 
-#: judge/views/problem.py:1435
+#: judge/views/problem.py:1436
 msgid "Add Problem"
 msgstr "Thêm bài tập"
 
-#: judge/views/problem.py:1467
+#: judge/views/problem.py:1468
 #, python-format
 msgid "Problem '%(name)s' has been created successfully!"
 msgstr "Bài tập '%(name)s' đã được tạo thành công!"
 
-#: judge/views/problem.py:1493
+#: judge/views/problem.py:1494
 #, python-brace-format
 msgid "Edit Language Limits - {0}"
 msgstr "Chỉnh sửa giới hạn ngôn ngữ - {0}"
 
-#: judge/views/problem.py:1497
+#: judge/views/problem.py:1498
 #, python-format
 msgid "Editing language limits for %s"
 msgstr "Chỉnh sửa giới hạn ngôn ngữ cho %s"
 
-#: judge/views/problem.py:1583
+#: judge/views/problem.py:1584
 #, python-brace-format
 msgid "Edit Language Templates - {0}"
 msgstr "Chỉnh sửa code mẫu - {0}"
 
-#: judge/views/problem.py:1587
+#: judge/views/problem.py:1588
 #, python-format
 msgid "Editing language templates for %s"
 msgstr "Chỉnh sửa code mẫu cho %s"
 
-#: judge/views/problem.py:1633
+#: judge/views/problem.py:1634
 msgid "Language template deleted successfully."
 msgstr "Đoạn code mẫu được xóa thành công."
 
-#: judge/views/problem.py:1635 judge/views/problem.py:1654
+#: judge/views/problem.py:1636 judge/views/problem.py:1655
 msgid "Language template not found."
 msgstr "Code mẫu không tìm thấy"
 
-#: judge/views/problem.py:1649
+#: judge/views/problem.py:1650
 msgid "Language template updated successfully."
 msgstr "Đoạn code mẫu được cập nhật thành công"
 
-#: judge/views/problem.py:1666
+#: judge/views/problem.py:1667
 msgid "Language template added successfully."
 msgstr "Code mẫu được thêm thành công"
 
-#: judge/views/problem.py:1700
+#: judge/views/problem.py:1701
 #, python-brace-format
 msgid "Edit Solutions - {0}"
 msgstr "Chỉnh sửa lời giải - {0}"
 
-#: judge/views/problem.py:1704
+#: judge/views/problem.py:1705
 #, python-format
 msgid "Editing solutions for %s"
 msgstr "Chỉnh sửa lời giải cho %s"
 
-#: judge/views/problem.py:1760
+#: judge/views/problem.py:1761
 msgid "Solution deleted successfully."
 msgstr "Lời giải đã xóa thành công"
 
-#: judge/views/problem.py:1762
+#: judge/views/problem.py:1763
 msgid "Solution not found."
 msgstr "Lời giải không tìm thấy"
 
-#: judge/views/problem.py:1771
+#: judge/views/problem.py:1772
 msgid "Solution updated successfully."
 msgstr "Lời giải cập nhật thành công"
 
-#: judge/views/problem.py:1776
+#: judge/views/problem.py:1777
 msgid "A solution already exists for this problem."
 msgstr "Lời giải đã tồn tại cho bài tập này."
 
-#: judge/views/problem.py:1784
+#: judge/views/problem.py:1785
 msgid "Solution added successfully."
 msgstr "Lời giải được thêm thành công"
 
-#: judge/views/problem.py:1858
+#: judge/views/problem.py:1851
 #, python-brace-format
 msgid "Edit Translations - {0}"
 msgstr "Chỉnh sửa bản dịch - {0}"
 
-#: judge/views/problem.py:1862
+#: judge/views/problem.py:1855
 #, python-format
 msgid "Editing translations for %s"
 msgstr "Chỉnh sửa bản dịch cho %s"
 
-#: judge/views/problem.py:1914
+#: judge/views/problem.py:1907
 msgid "Translation deleted successfully."
 msgstr "Bản dịch cập nhật thành công"
 
-#: judge/views/problem.py:1916 judge/views/problem.py:1971
+#: judge/views/problem.py:1909 judge/views/problem.py:1964
 msgid "Translation not found."
 msgstr "Bản dịch không tìm thấy"
 
-#: judge/views/problem.py:1935
+#: judge/views/problem.py:1928
 msgid "Translation updated successfully."
 msgstr "Bản dịch cập nhật thành công"
 
-#: judge/views/problem.py:1983
+#: judge/views/problem.py:1976
 msgid "A translation for this language already exists."
 msgstr "Bản dịch với ngôn ngữ này đã tồn tại"
 
-#: judge/views/problem.py:1992
+#: judge/views/problem.py:1985
 msgid "Translation added successfully."
 msgstr "Bản dịch được thêm thành công"
 
@@ -7239,22 +7239,22 @@ msgid "No improvements needed"
 msgstr "Không cần cải thiện"
 
 #: templates/problem/edit.html:46 templates/problem/edit.html:141
-#: templates/problem/solutions.html:56
+#: templates/problem/solutions.html:45 templates/problem/solutions.html:95
 msgid "Error: "
 msgstr "Lỗi: "
 
 #: templates/problem/edit.html:50 templates/problem/edit.html:145
-#: templates/problem/solutions.html:60
+#: templates/problem/solutions.html:64 templates/problem/solutions.html:101
 msgid "Network error occurred"
 msgstr "Xảy ra lỗi mạng"
 
-#: templates/problem/edit.html:69 templates/problem/solutions.html:80
+#: templates/problem/edit.html:69 templates/problem/solutions.html:113
 msgid "Copied!"
 msgstr "Đã sao chép!"
 
 #: templates/problem/edit.html:71 templates/problem/edit.html:302
-#: templates/problem/solutions.html:82 templates/problem/solutions.html:207
-#: templates/problem/solutions.html:315
+#: templates/problem/solutions.html:115 templates/problem/solutions.html:240
+#: templates/problem/solutions.html:348
 msgid "Copy"
 msgstr "Sao chép"
 
@@ -7610,44 +7610,48 @@ msgstr "Dạng bài"
 msgid "Random"
 msgstr "Ngẫu nhiên"
 
-#: templates/problem/solutions.html:31
-msgid "Generating solution..."
-msgstr "Đang tạo lời giải..."
-
-#: templates/problem/solutions.html:47
+#: templates/problem/solutions.html:39
 msgid "Solution generated!"
 msgstr "Đã tạo lời giải!"
 
-#: templates/problem/solutions.html:49
+#: templates/problem/solutions.html:41
 msgid "based on AC code"
 msgstr "dựa trên code AC"
 
-#: templates/problem/solutions.html:53
+#: templates/problem/solutions.html:47
 msgid "No solution generated"
 msgstr "Không tạo được lời giải"
 
-#: templates/problem/solutions.html:94
+#: templates/problem/solutions.html:56 templates/problem/solutions.html:92
+msgid "Processing... please wait"
+msgstr "Đang xử lý... vui lòng chờ"
+
+#: templates/problem/solutions.html:79
+msgid "Generating solution..."
+msgstr "Đang tạo lời giải..."
+
+#: templates/problem/solutions.html:127
 msgid "Inserted into editor!"
 msgstr "Đã chèn vào trình soạn thảo!"
 
-#: templates/problem/solutions.html:152 templates/problem/solutions.html:260
+#: templates/problem/solutions.html:185 templates/problem/solutions.html:293
 msgid "Whether this solution should be publicly visible to all users."
 msgstr ""
 "Lời giải này có được hiển thị công khai cho tất cả người dùng hay không."
 
-#: templates/problem/solutions.html:165 templates/problem/solutions.html:273
+#: templates/problem/solutions.html:198 templates/problem/solutions.html:306
 msgid "Date and time when this solution should become available."
 msgstr "Ngày và giờ lời giải này sẽ được công bố."
 
-#: templates/problem/solutions.html:178 templates/problem/solutions.html:286
+#: templates/problem/solutions.html:211 templates/problem/solutions.html:319
 msgid "Select the authors who contributed to this solution."
 msgstr "Chọn các tác giả đã đóng góp cho lời giải này."
 
-#: templates/problem/solutions.html:185 templates/problem/solutions.html:293
+#: templates/problem/solutions.html:218 templates/problem/solutions.html:326
 msgid "Auto Generate Solution"
 msgstr "Tự động tạo lời giải"
 
-#: templates/problem/solutions.html:190 templates/problem/solutions.html:298
+#: templates/problem/solutions.html:223 templates/problem/solutions.html:331
 msgid ""
 "Tip: Uses AI to generate a solution based on the problem statement and AC "
 "submissions. You can optionally provide your rough ideas."
@@ -7655,11 +7659,11 @@ msgstr ""
 "Mẹo: Sử dụng AI để tạo lời giải dựa trên đề bài và các bài nộp AC. Bạn có "
 "thể nhập ý tưởng sơ bộ của mình."
 
-#: templates/problem/solutions.html:194 templates/problem/solutions.html:302
+#: templates/problem/solutions.html:227 templates/problem/solutions.html:335
 msgid "Your rough ideas (optional):"
 msgstr "Ý tưởng sơ bộ của bạn (tùy chọn):"
 
-#: templates/problem/solutions.html:195 templates/problem/solutions.html:303
+#: templates/problem/solutions.html:228 templates/problem/solutions.html:336
 msgid ""
 "Enter your solution approach, main ideas, or rough draft here. Leave empty "
 "to generate from scratch..."
@@ -7667,27 +7671,27 @@ msgstr ""
 "Nhập cách tiếp cận, ý tưởng chính hoặc bản nháp của bạn ở đây. Để trống nếu "
 "muốn tạo từ đầu..."
 
-#: templates/problem/solutions.html:198 templates/problem/solutions.html:306
+#: templates/problem/solutions.html:231 templates/problem/solutions.html:339
 msgid "Generate Solution"
 msgstr "Tạo lời giải"
 
-#: templates/problem/solutions.html:204 templates/problem/solutions.html:312
+#: templates/problem/solutions.html:237 templates/problem/solutions.html:345
 msgid "Generated Solution:"
 msgstr "Lời giải đã tạo:"
 
-#: templates/problem/solutions.html:206 templates/problem/solutions.html:314
+#: templates/problem/solutions.html:239 templates/problem/solutions.html:347
 msgid "Insert"
 msgstr "Chèn"
 
-#: templates/problem/solutions.html:224 templates/problem/solutions.html:332
+#: templates/problem/solutions.html:257 templates/problem/solutions.html:365
 msgid "Write the solution explanation, approach, and implementation details."
 msgstr "Viết lời giải, phương pháp tiếp cận và chi tiết cài đặt."
 
-#: templates/problem/solutions.html:229
+#: templates/problem/solutions.html:262
 msgid "Update Solution"
 msgstr "Cập nhật lời giải"
 
-#: templates/problem/solutions.html:337
+#: templates/problem/solutions.html:370
 msgid "Add Solution"
 msgstr "Thêm lời giải"
 

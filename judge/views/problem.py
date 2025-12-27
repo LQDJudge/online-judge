@@ -95,7 +95,10 @@ from judge.models.problem import (
     get_all_problem_groups,
 )
 from judge.models.runtime import get_all_languages
+from celery.result import AsyncResult
+
 from judge.tasks import rescore_problem
+from judge.tasks.llm import generate_solution_task
 
 from problem_tag import get_problem_tag_service
 
@@ -1810,35 +1813,25 @@ class ProblemEditSolutions(
         )
 
     def handle_generate_solution(self, request):
-        """Handle AJAX request for auto-generating solution using LLM"""
+        """Handle AJAX request for auto-generating solution using LLM - dispatches async Celery task"""
         if not request.user.is_superuser:
             return JsonResponse({"success": False, "error": "Permission denied"})
 
         try:
             problem = self.object
             rough_ideas = request.POST.get("rough_ideas", "").strip()
-            tag_service = get_problem_tag_service()
-            result = tag_service.generate_problem_solution(
-                problem, rough_ideas=rough_ideas
-            )
 
-            if result["success"]:
-                return JsonResponse(
-                    {
-                        "success": True,
-                        "solution_content": result.get("solution_content"),
-                        "has_ac_code": result.get("has_ac_code", False),
-                        "ac_language": result.get("ac_language"),
-                        "problem_code": problem.code,
-                    }
-                )
-            else:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": result.get("error", "Unknown error occurred"),
-                    }
-                )
+            # Dispatch async Celery task
+            task = generate_solution_task.delay(problem.code, rough_ideas)
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "task_id": task.id,
+                    "status": "processing",
+                    "problem_code": problem.code,
+                }
+            )
 
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
@@ -2021,3 +2014,40 @@ class ProblemEditTranslations(
                 "content_title": self.get_content_title(),
             }
         )
+
+
+@login_required
+def llm_task_status(request, task_id):
+    """
+    Polling endpoint for LLM task status.
+    Returns the current status and result of an async LLM task.
+    Uses Celery's AsyncResult directly.
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({"success": False, "error": "Permission denied"})
+
+    result = AsyncResult(task_id)
+
+    if result.state == "PENDING":
+        return JsonResponse({"success": True, "status": "pending"})
+    elif result.state == "STARTED" or result.state == "RETRY":
+        return JsonResponse({"success": True, "status": "processing"})
+    elif result.state == "SUCCESS":
+        task_result = result.result or {}
+        return JsonResponse(
+            {
+                "success": True,
+                "status": "completed",
+                **task_result,
+            }
+        )
+    elif result.state == "FAILURE":
+        return JsonResponse(
+            {
+                "success": False,
+                "status": "completed",
+                "error": str(result.result),
+            }
+        )
+    else:
+        return JsonResponse({"success": True, "status": "processing"})
