@@ -121,7 +121,7 @@ class DefaultContestFormat(BaseContestFormat):
             else ""
         )
         return format_html(
-            '<td class="{state} problem-score-col" title="{tooltip}"><a data-featherlight="{url}" href="#"><span>{points}{extra}</span><div class="solving-time"{time_attr}>{time}</div></a></td>',
+            '<td class="{state} problem-score-col" title="{tooltip}"><a data-featherlight="{url}" data-featherlight-variant="contest-tag-lightbox" href="#"><span>{points}{extra}</span><div class="solving-time"{time_attr}>{time}</div></a></td>',
             state=self.get_cell_state(contest_problem, format_data),
             tooltip=self.get_problem_tooltip(contest_problem),
             url=self.get_submission_url(participation, contest_problem),

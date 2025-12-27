@@ -120,10 +120,6 @@ class ProfileInfoForm(ModelForm):
 
 
 class ProfileForm(ModelForm):
-    background_image_upload = forms.ImageField(
-        required=False, label=_("Background Image")
-    )
-
     class Meta:
         model = Profile
         fields = [
@@ -132,14 +128,14 @@ class ProfileForm(ModelForm):
             "language",
             "ace_theme",
             "profile_image",
-            "css_background",
+            "background_image",
         ]
         widgets = {
             "timezone": Select2Widget(attrs={"style": "width:200px"}),
             "language": Select2Widget(attrs={"style": "width:200px"}),
             "ace_theme": Select2Widget(attrs={"style": "width:200px"}),
             "profile_image": ImageWidget,
-            "css_background": forms.TextInput(),
+            "background_image": ImageWidget,
         }
 
         if HeavyPreviewPageDownWidget is not None:
@@ -152,7 +148,7 @@ class ProfileForm(ModelForm):
         user = kwargs.pop("user", None)
         super(ProfileForm, self).__init__(*args, **kwargs)
         self.fields["profile_image"].required = False
-        self.fields["background_image_upload"].widget = ImageWidget()
+        self.fields["background_image"].required = False
 
     def clean_profile_image(self):
         profile_image = self.cleaned_data.get("profile_image")
@@ -163,8 +159,8 @@ class ProfileForm(ModelForm):
                 )
         return profile_image
 
-    def clean_background_image_upload(self):
-        background_image = self.cleaned_data.get("background_image_upload")
+    def clean_background_image(self):
+        background_image = self.cleaned_data.get("background_image")
         if background_image:
             if background_image.size > 10 * 1024 * 1024:
                 raise ValidationError(
@@ -247,12 +243,14 @@ class EditOrganizationForm(ModelForm):
             "short_name",
             "about",
             "organization_image",
+            "cover_image",
             "admins",
             "is_open",
         ]
         widgets = {
             "admins": HeavySelect2MultipleWidget(data_view="profile_select2"),
             "organization_image": ImageWidget,
+            "cover_image": ImageWidget,
         }
         if HeavyPreviewPageDownWidget is not None:
             widgets["about"] = HeavyPreviewPageDownWidget(
@@ -263,6 +261,7 @@ class EditOrganizationForm(ModelForm):
         self.org_id = kwargs.pop("org_id", 0)
         super(EditOrganizationForm, self).__init__(*args, **kwargs)
         self.fields["organization_image"].required = False
+        self.fields["cover_image"].required = False
         for field in [
             "admins",
         ]:
@@ -278,6 +277,15 @@ class EditOrganizationForm(ModelForm):
                     _("File size exceeds the maximum allowed limit of 5MB.")
                 )
         return organization_image
+
+    def clean_cover_image(self):
+        cover_image = self.cleaned_data.get("cover_image")
+        if cover_image:
+            if cover_image.size > 10 * 1024 * 1024:
+                raise ValidationError(
+                    _("File size exceeds the maximum allowed limit of 10MB.")
+                )
+        return cover_image
 
 
 class AddOrganizationForm(ModelForm):

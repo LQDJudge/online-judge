@@ -144,14 +144,7 @@
         <tr>
           <td>{{ _('Background') }}: </td>
           <td>
-            {{ form.background_image_upload }}
-            {% if request.profile.css_background %}
-              <div style="margin-top: 10px;">
-                <label>
-                  <input type="checkbox" name="remove_background" value="1"> {{ _('Remove background') }}
-                </label>
-              </div>
-            {% endif %}
+            {{ form.background_image }}
           </td>
         </tr>
       </table>

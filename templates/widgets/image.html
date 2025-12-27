@@ -1,19 +1,100 @@
-{% if widget.is_initial %}
-  <div>
-    <a href="{{widget.value.url}}" target=_blank>
-      <img src="{{widget.value.url}}" width="{{widget.width}}" height="{{widget.height}}" style="border-radius: 3px;">
-    </a>
-    <div>
-      {{ widget.input_text }}:
-{% endif %}
-<input type="{{ widget.type }}" name="{{ widget.name }}">
-{% if widget.is_initial %}
-  </div>
-  {% if not widget.required %}
-    <div style="margin-top: 5px;">
-      <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}">
-      <label for="{{ widget.checkbox_id }}">{{ widget.clear_checkbox_label|default(_('Remove')) }}</label>
+<div class="image-file-widget" data-widget-id="image-widget-{{ widget.name }}">
+  {% if widget.is_initial %}
+    <div class="current-image">
+      <a href="{{widget.value.url}}" data-featherlight="image" data-featherlight-variant="image-widget-lightbox">
+        <img src="{{widget.value.url}}" width="{{widget.width}}" height="{{widget.height}}" alt="Current image">
+        <div class="image-overlay">
+          <i class="fa fa-search-plus"></i>
+        </div>
+      </a>
     </div>
+    <div class="image-actions">
+      <label class="change-image">
+        <i class="fa fa-upload"></i>
+        <span>{{ widget.input_text }}</span>
+        <input type="{{ widget.type }}" name="{{ widget.name }}" class="hidden-file-input" accept="image/*" data-widget-target="image-widget-{{ widget.name }}">
+      </label>
+      {% if not widget.required %}
+        <label class="clear-image">
+          <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}">
+          <i class="fa fa-trash-o"></i>
+          <span>{{ widget.clear_checkbox_label|default(_('Remove')) }}</span>
+        </label>
+      {% endif %}
+    </div>
+  {% else %}
+    <label class="upload-area">
+      <i class="fa fa-cloud-upload"></i>
+      <span>{{_("Choose an image")}}</span>
+      <input type="{{ widget.type }}" name="{{ widget.name }}" class="hidden-file-input" accept="image/*" data-widget-target="image-widget-{{ widget.name }}">
+    </label>
   {% endif %}
-  </div>
-{% endif %}
+</div>
+<script>
+  (function() {
+    var scriptTag = document.currentScript;
+
+    function initWidget() {
+    // Find widget using data attribute (more reliable than previousElementSibling)
+      var widgetId = 'image-widget-{{ widget.name }}';
+      var widget = document.querySelector('[data-widget-id="' + widgetId + '"]');
+
+    // Fallback to previousElementSibling if data attribute lookup fails
+      if (!widget && scriptTag) {
+        widget = scriptTag.previousElementSibling;
+      }
+
+      if (!widget || !widget.classList.contains('image-file-widget')) return;
+
+      var fileInput = widget.querySelector('.hidden-file-input');
+      if (!fileInput) return;
+
+    // Prevent double initialization
+      if (fileInput.hasAttribute('data-initialized')) return;
+      fileInput.setAttribute('data-initialized', 'true');
+
+      fileInput.addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (!file || !file.type.startsWith('image/')) return;
+
+        var reader = new FileReader();
+        reader.onload = function(event) {
+          var currentImage = widget.querySelector('.current-image');
+          var uploadArea = widget.querySelector('.upload-area');
+
+          if (currentImage) {
+            var img = currentImage.querySelector('img');
+            var link = currentImage.querySelector('a');
+            if (img) {
+              img.src = event.target.result;
+              img.removeAttribute('width');
+              img.removeAttribute('height');
+              img.style.maxWidth = '150px';
+              img.style.maxHeight = '150px';
+            }
+            if (link) {
+              link.href = event.target.result;
+            }
+          } else if (uploadArea) {
+            var preview = document.createElement('div');
+            preview.className = 'current-image';
+            preview.innerHTML = '<a href="' + event.target.result + '" data-featherlight="image" data-featherlight-variant="image-widget-lightbox">' +
+            '<img src="' + event.target.result + '" style="max-width: 150px; max-height: 150px;" alt="Selected image">' +
+            '<div class="image-overlay"><i class="fa fa-search-plus"></i></div></a>';
+            widget.insertBefore(preview, uploadArea);
+            uploadArea.querySelector('span').textContent = '{{ _("Change image") }}';
+            uploadArea.querySelector('i').className = 'fa fa-upload';
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+  // Initialize immediately if DOM is ready, otherwise wait
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initWidget);
+    } else {
+      initWidget();
+    }
+  })();
+</script>

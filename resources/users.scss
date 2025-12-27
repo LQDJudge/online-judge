@@ -49,11 +49,17 @@ th.header.rank {
     height: 2.3em;
 }
 
-.user-search-image, .user-search-name {
+.user-search-image {
     vertical-align: middle;
+    width: 24px;
+    height: 24px;
+    max-width: 24px;
+    max-height: 24px;
+    border-radius: 4px;
 }
 
 .user-search-name {
+    vertical-align: middle;
     padding-left: 0.5em;
 }
 
@@ -350,6 +356,11 @@ a.edit-profile {
 .user-sidebar {
     flex: 0 0 150px;
     padding-right: 1em;
+
+    .user-profile-img {
+        width: 145px;
+        height: 145px;
+    }
 }
 
 .user-content {
@@ -358,18 +369,12 @@ a.edit-profile {
     word-wrap: break-word;
 }
 
+// Base user-img styles for img elements
 .user-img {
     flex-shrink: 0;
     background-color: #ddd;
     border-radius: 50%;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-
-    img {
-        width: 100%;
-        height: auto;
-    }
+    object-fit: cover;
 }
 
 @media not all and (min-width: 600px) {
@@ -572,13 +577,320 @@ a.edit-profile {
     }
 }
 
-.user-info-header {
-    color: gray;
+// ============================================
+// Modern User Profile Page Styles
+// ============================================
+
+// Profile content wrapper
+.user-profile-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
-.user-stat-header {
-    color: gray;
+// Stats Grid - Modern card-based layout
+.user-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
 }
+
+.user-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: white;
+    border: 1px solid $border_gray;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+
+    &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+    }
+
+    .stat-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.05);
+        font-size: 1.1rem;
+        flex-shrink: 0;
+
+        &.green { background: rgba(34, 197, 94, 0.1); }
+        &.darkcyan { background: rgba(0, 139, 139, 0.1); }
+        &.peru { background: rgba(205, 133, 63, 0.1); }
+        &.blue { background: rgba(59, 130, 246, 0.1); }
+    }
+
+    .stat-content {
+        min-width: 0;
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: #6b7280;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+// User fullname display
+.user-fullname {
+    font-size: 1.25rem;
+    font-weight: 500;
+    text-align: center;
+    color: #374151;
+}
+
+// About Section
+.user-about-section {
+    .admin-notes {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+
+        i { color: #d97706; }
+    }
+
+    .about-content {
+        background: $background_light_gray;
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+    }
+
+    .no-about-text {
+        color: #9ca3af;
+        font-style: italic;
+        padding: 1rem;
+        text-align: center;
+        background: $background_light_gray;
+        border-radius: 10px;
+
+        i {
+            margin-right: 0.5rem;
+        }
+    }
+}
+
+// Section styling
+.user-section {
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #374151;
+        margin: 0 0 0.75rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        i {
+            color: $theme_color;
+            font-size: 0.9rem;
+        }
+    }
+}
+
+// Awards Section
+.awards-section {
+    .awards-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .award-item {
+        display: inline-block;
+        transition: transform 0.2s ease;
+
+        &:hover {
+            transform: scale(1.05);
+        }
+
+        img {
+            height: 80px;
+            width: auto;
+        }
+    }
+}
+
+// Activity Section
+.activity-section {
+    #submission-activity-display {
+        border-radius: 10px;
+    }
+}
+
+// Rating Section
+.rating-section {
+    #rating-chart {
+        margin-top: 0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+}
+
+// ============================================
+// Modern Sidebar Styles
+// ============================================
+
+.user-sidebar {
+    .sidebar-avatar-wrapper {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .user-profile-img {
+        width: 145px;
+        height: 145px;
+        border: 3px solid white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .sidebar-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .sidebar-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.6rem 1rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &.follow {
+            background: #22c55e;
+            color: white;
+
+            &:hover {
+                background: #16a34a;
+            }
+        }
+
+        &.unfollow {
+            background: #ef4444;
+            color: white;
+
+            &:hover {
+                background: #dc2626;
+            }
+        }
+
+        &.message {
+            background: #3b82f6;
+            color: white;
+
+            &:hover {
+                background: #2563eb;
+            }
+        }
+    }
+
+    .sidebar-contest-stats {
+        background: $background_light_gray;
+        border-radius: 10px;
+        padding: 0.75rem;
+        margin-top: 1rem;
+
+        .contest-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.4rem 0;
+
+            &:not(:last-child) {
+                border-bottom: 1px solid $border_gray;
+            }
+
+            .stat-label {
+                font-size: 0.8rem;
+                color: #6b7280;
+            }
+
+            .stat-value {
+                font-weight: 600;
+                font-size: 0.85rem;
+            }
+        }
+    }
+}
+
+// Dark mode support
+.dark-mode, [data-theme="dark"] {
+    .user-stat-card {
+        background: #1f2937;
+        border-color: #374151;
+
+        &:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-label {
+            color: #9ca3af;
+        }
+    }
+
+    .user-fullname {
+        color: #e5e7eb;
+    }
+
+    .user-about-section {
+        .about-content,
+        .no-about-text {
+            background: #1f2937;
+        }
+
+        .no-about-text {
+            color: #6b7280;
+        }
+    }
+
+    .user-section .section-title {
+        color: #e5e7eb;
+    }
+
+    .sidebar-contest-stats {
+        background: #1f2937;
+
+        .contest-stat-row {
+            border-bottom-color: #374151;
+
+            .stat-label {
+                color: #9ca3af;
+            }
+
+            .stat-value {
+                color: #e5e7eb;
+            }
+        }
+    }
+}
+
 
 .profile-card {
     border: 1px solid #ddd;
@@ -597,10 +909,9 @@ a.edit-profile {
         padding: 10px;
     }
 
-    .avatar {
+    .user-img {
         width: 80px;
         height: 80px;
-        border-radius: 50%;
     }
 
     .card-body {

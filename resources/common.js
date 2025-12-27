@@ -63,24 +63,6 @@ function featureTest(property, value, noPrefixes) {
     return !!mStyle[property];
 }
 
-window.fix_div = function (div, height) {
-    var div_offset = div.offset().top - $('html').offset().top;
-    var is_moving;
-    var moving = function () {
-        div.css('position', 'absolute').css('top', div_offset);
-        is_moving = true;
-    };
-    var fix = function () {
-        div.css('position', 'fixed').css('top', height);
-        is_moving = false;
-    };
-    ($(window).scrollTop() - div_offset > -height) ? fix() : moving();
-    $(window).scroll(function () {
-        if (($(window).scrollTop() - div_offset > -height) == is_moving)
-            is_moving ? fix() : moving();
-    });
-};
-
 if (!Date.now) {
     Date.now = function () {
         return new Date().getTime();
@@ -252,6 +234,23 @@ $.fn.textWidth = function () {
 };
 
 function registerPopper($trigger, $dropdown) {
+    // Guard: check if elements exist
+    if (!$trigger || !$trigger.length || !$dropdown || !$dropdown.length) {
+        return;
+    }
+
+    // Guard: check if Popper is available
+    if (typeof Popper === 'undefined') {
+        console.warn('Popper.js not loaded, dropdown will not work');
+        return;
+    }
+
+    // Prevent double initialization
+    if ($trigger.data('popper-initialized')) {
+        return;
+    }
+    $trigger.data('popper-initialized', true);
+
     const popper = Popper.createPopper($trigger[0], $dropdown[0], {
         placement: 'bottom-end',
         modifiers: [
@@ -263,18 +262,24 @@ function registerPopper($trigger, $dropdown) {
             },
         ],
     });
-    $trigger.click(function(e) {
+
+    $trigger.on('click.popper', function(e) {
+        e.stopPropagation();
         $dropdown.toggle();
         popper.update();
     });
+
     $dropdown.css("min-width", $trigger.width() + 'px');
-    
-    $(document).on("click touchend", function(e) {
-        var target = $(e.target);
-        if (target.closest($trigger).length === 0 && target.closest($dropdown).length === 0) {
-            $dropdown.hide();
-        }
-    })
+
+    // Use namespaced event to prevent duplicate handlers
+    var dropdownId = $dropdown.attr('id') || Math.random().toString(36).substr(2, 9);
+    $(document).off('click.popper-' + dropdownId + ' touchend.popper-' + dropdownId)
+        .on('click.popper-' + dropdownId + ' touchend.popper-' + dropdownId, function(e) {
+            var target = $(e.target);
+            if (target.closest($trigger).length === 0 && target.closest($dropdown).length === 0) {
+                $dropdown.hide();
+            }
+        });
 }
 
 function populateCopyButton() {

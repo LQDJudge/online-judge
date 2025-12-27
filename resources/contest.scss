@@ -811,16 +811,17 @@ form.contest-join-pseudotab {
     color: cyan;
 }
 
-// Contest ranking modal - featherlight styles (global scope)
-.featherlight .featherlight-content {
+// Contest ranking modal - featherlight styles (scoped to contest-tag modals)
+.featherlight.contest-tag-lightbox .featherlight-content {
     height: 80%;
     width: 60%;
+    min-width: 60%;
     overflow: auto;
     border-radius: 8px;
 }
 
 @media (max-width: 799px) {
-    .featherlight .featherlight-content {
+    .featherlight.contest-tag-lightbox .featherlight-content {
         width: 95%;
     }
 }

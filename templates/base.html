@@ -88,17 +88,11 @@
         }
       </style>
     </noscript>
-    {% if request.profile.css_background %}
+    {% if request.profile.background_image %}
       <style>
         @media(min-width: 800px) {
           #page-container {
-            background: {
-              {
-                request.profile.css_background|safe
-              }
-            }
-
-            ;
+            background: url("{{request.profile.background_image.url}}");
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;

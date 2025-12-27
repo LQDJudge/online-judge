@@ -9,7 +9,12 @@
 
 {% block middle_title %}
   <div class="org-header">
-    <div class="org-header-main">
+    {% if cover_image %}
+      <div class="org-cover-image">
+        <img src="{{ cover_image.url }}" alt="Cover image">
+      </div>
+    {% endif %}
+    <div class="org-header-main{% if cover_image %} has-cover{% endif %}">
       <div class="org-header-left">
         {% if organization_image %}
           <img

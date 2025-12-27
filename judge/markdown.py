@@ -116,7 +116,14 @@ def _wrap_img_iframe_with_lazy_load(soup):
 def _wrap_images_with_featherlight(soup):
     for img in soup.findAll("img"):
         if img.get("src"):
-            link = soup.new_tag("a", href=img["src"], **{"data-featherlight": "image"})
+            link = soup.new_tag(
+                "a",
+                href=img["src"],
+                **{
+                    "data-featherlight": "image",
+                    "data-featherlight-variant": "image-widget-lightbox",
+                }
+            )
             img.wrap(link)
     return soup
 

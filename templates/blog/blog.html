@@ -23,9 +23,7 @@
         <div class="post-info">
           {% with authors=post.get_authors() %}
             {% if authors %}
-              <span class="user-img" style="width: 1.5em; height: 1.5em;">
-                <img src="{{ gravatar(authors[0].id, 48) }}" loading="lazy">
-              </span>
+              <img class="user-img" style="width: 1.5em; height: 1.5em;" src="{{ gravatar(authors[0].id, 48) }}" loading="lazy">
               <span class="post-authors">{{ link_users(authors) }}</span>
             {% endif %}
           {% endwith %}

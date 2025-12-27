@@ -1,8 +1,6 @@
 <span class="{{ profile.css_class }} {{'user-with-img' if show_image}}">
   {% if show_image %}
-    <span class="user-img">
-      <img loading="lazy" src="{{gravatar(profile.id)}}">
-    </span>
+    <img class="user-img" loading="lazy" src="{{gravatar(profile.id)}}">
   {% endif %}
   <a href="{{ url('user_page', profile.username) }}">
     {{ profile.username }}

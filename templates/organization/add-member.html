@@ -2,6 +2,84 @@
 
 {% block org_js %}
   {{ form.media.js }}
+  <script>
+    $(function() {
+      // Create user search select box
+      var $searchContainer = $('<div class="user-search-container" style="margin-top: 1em;">');
+      var $label = $('<label><b>{{ _("Search user") }}:</b></label>');
+      var $select = $('<select id="user-search-select" style="width: 100%;"></select>');
+
+      $searchContainer.append($label);
+      $searchContainer.append($select);
+
+      // Insert after the new_users field (below textarea and help text)
+      var $fieldWrapper = $('#org-field-wrapper-new_users').parent();
+      var $helpText = $fieldWrapper.find('.org-help-text');
+      if ($helpText.length) {
+        $helpText.after($searchContainer);
+      } else {
+        $fieldWrapper.append($searchContainer);
+      }
+
+      // Initialize Select2
+      $select.select2({
+        placeholder: '{{ _("Search by handle...") }}',
+        allowClear: true,
+        ajax: {
+          url: '{{ url("user_search_select2_ajax") }}',
+          delay: 250,
+          cache: true,
+        },
+        minimumInputLength: 1,
+        escapeMarkup: function(markup) {
+          return markup;
+        },
+        templateResult: function(data, container) {
+          if (!data.id) return data.text;
+          return $('<span>')
+            .append($('<img>', {
+              'class': 'user-search-image',
+              src: data.gravatar_url
+            }))
+            .append($('<span>', {'class': data.display_rank + ' user-search-name'}).text(data.text));
+        },
+        templateSelection: function(data) {
+          return data.text || data.id;
+        }
+      }).on('select2:select', function(e) {
+        var selectedData = e.params.data;
+        var username = selectedData.text;
+
+        // Get the textarea
+        var $textarea = $('#id_new_users');
+        var currentValue = $textarea.val().trim();
+
+        // Check if username already exists
+        var existingUsernames = currentValue.split(/\s+/).filter(function(u) { return u.length > 0; });
+        if (existingUsernames.indexOf(username) === -1) {
+          // Append username
+          if (currentValue.length > 0) {
+            $textarea.val(currentValue + ' ' + username);
+          } else {
+            $textarea.val(username);
+          }
+        }
+
+        // Clear the select2 selection
+        $(this).val(null).trigger('change');
+        $(this).select2('close');
+      });
+    });
+  </script>
+  <style>
+    .user-search-container {
+      margin-bottom: 1.5em;
+    }
+    .user-search-container label {
+      display: block;
+      margin-bottom: 0.5em;
+    }
+  </style>
 {% endblock %}
 
 {% block middle_content %}

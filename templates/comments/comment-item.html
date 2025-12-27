@@ -1,9 +1,7 @@
 <li id="comment-{{ item.id }}" data-revision="{{ item.revision_count - 1 }}" data-max-revision="{{ item.revision_count - 1 }}"
     data-revision-ajax="{{ url('comment_revision_ajax', item.id) }}" class="comment">
   <div class="comment-wrapper">
-    <div class="user-img">
-      <img loading="lazy" src="{{gravatar(item.author_id)}}">
-    </div>
+    <img class="user-img" loading="lazy" src="{{gravatar(item.author_id)}}">
     <div class="comment-content">
       <div class="body-header">
         <div class="header">

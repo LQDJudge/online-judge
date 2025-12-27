@@ -924,6 +924,231 @@ button:hover, button:focus {
         margin-right: 1em;
     }
 }
+// Featherlight modal customization for image widget only
+.featherlight.image-widget-lightbox {
+    .featherlight-content {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        min-width: unset !important;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow: hidden;
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        margin: 0 !important;
+
+        img {
+            display: block;
+            max-width: 85vw;
+            max-height: 85vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+    }
+
+    .featherlight-close-icon {
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        line-height: 32px;
+        text-align: center;
+        top: 10px;
+        right: 10px;
+    }
+}
+
+// Image file widget styling
+.image-file-widget {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: $background_light_gray;
+    border: 1px solid $border_gray;
+    border-radius: 8px;
+    max-width: 300px;
+
+    .current-image {
+        display: flex;
+        justify-content: center;
+        padding: 12px;
+        background: white;
+        border: 1px solid $border_gray;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+        a {
+            display: block;
+            line-height: 0;
+            position: relative;
+            cursor: zoom-in;
+        }
+
+        img {
+            border-radius: 8px;
+            object-fit: cover;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+
+            i {
+                color: white;
+                font-size: 1.5em;
+            }
+        }
+
+        a:hover {
+            img {
+                transform: scale(1.02);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            }
+
+            .image-overlay {
+                opacity: 1;
+            }
+        }
+    }
+
+    .image-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .hidden-file-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+    }
+
+    .change-image {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid $border_gray;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+        margin: 0;
+
+        &:hover {
+            border-color: $theme_color;
+            background: #fef9f7;
+        }
+
+        i {
+            color: $theme_color;
+            font-size: 1.1em;
+        }
+
+        span {
+            font-weight: 500;
+            color: #666;
+        }
+    }
+
+    .clear-image {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid $border_gray;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+        margin: 0;
+
+        &:hover {
+            background: #fff5f5;
+            border-color: #e74c3c;
+
+            i {
+                color: #e74c3c;
+            }
+        }
+
+        input[type="checkbox"] {
+            margin: 0;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        i {
+            color: #999;
+            transition: color 0.2s;
+        }
+
+        span {
+            font-weight: 500;
+            color: #666;
+        }
+    }
+
+    .upload-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 24px;
+        background: white;
+        border: 2px dashed $border_gray;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+
+        &:hover {
+            border-color: $theme_color;
+            background: #fef9f7;
+
+            i {
+                color: $theme_color;
+            }
+        }
+
+        i {
+            font-size: 2.5em;
+            color: #999;
+            transition: color 0.2s;
+        }
+
+        span {
+            font-weight: 500;
+            color: #666;
+        }
+    }
+}
+
 // PDF file widget styling
 .pdf-file-widget {
     display: flex;

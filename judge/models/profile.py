@@ -49,15 +49,21 @@ def profile_image_path(profile, filename):
     return os.path.join(settings.DMOJ_PROFILE_IMAGE_ROOT, new_filename)
 
 
-def profile_background_path(profile_id, filename):
+def profile_background_path(profile, filename):
     tail = filename.split(".")[-1]
-    new_filename = f"bg_user_{profile_id}.{tail}"
+    new_filename = f"bg_user_{profile.id}.{tail}"
     return os.path.join(settings.DMOJ_PROFILE_IMAGE_ROOT, new_filename)
 
 
 def organization_image_path(organization, filename):
     tail = filename.split(".")[-1]
     new_filename = f"organization_{organization.id}.{tail}"
+    return os.path.join(settings.DMOJ_ORGANIZATION_IMAGE_ROOT, new_filename)
+
+
+def organization_cover_image_path(organization, filename):
+    tail = filename.split(".")[-1]
+    new_filename = f"cover_organization_{organization.id}.{tail}"
     return os.path.join(settings.DMOJ_ORGANIZATION_IMAGE_ROOT, new_filename)
 
 
@@ -117,7 +123,18 @@ class Organization(CacheableModel):
         null=True,
         blank=True,
     )
-    organization_image = models.ImageField(upload_to=organization_image_path, null=True)
+    organization_image = models.ImageField(
+        upload_to=organization_image_path,
+        null=True,
+        blank=True,
+        verbose_name=_("Organization image"),
+    )
+    cover_image = models.ImageField(
+        upload_to=organization_cover_image_path,
+        null=True,
+        blank=True,
+        verbose_name=_("Cover image"),
+    )
 
     @classmethod
     def get_cached_dict(cls, org_id):
@@ -179,6 +196,9 @@ class Organization(CacheableModel):
 
     def get_organization_image_url(self):
         return self.get_cached_value("organization_image_url")
+
+    def get_cover_image_url(self):
+        return self.get_cached_value("cover_image_url")
 
     @classmethod
     def get_cached_instances(cls, *ids):
@@ -297,12 +317,11 @@ class Profile(CacheableModel):
         help_text=_("Notes for administrators regarding this user."),
     )
     profile_image = models.ImageField(upload_to=profile_image_path, null=True)
-    css_background = models.TextField(
-        verbose_name=_("Custom background"),
+    background_image = models.ImageField(
+        upload_to=profile_background_path,
         null=True,
         blank=True,
-        help_text=_('CSS custom background properties: url("image_url"), color, etc'),
-        max_length=300,
+        verbose_name=_("Background image"),
     )
 
     @classmethod
@@ -840,7 +859,7 @@ def _get_organization_batch(args_list):
     org_ids = [args[0] for args in args_list]
 
     organizations = Organization.objects.filter(id__in=org_ids).only(
-        "name", "slug", "short_name", "organization_image"
+        "name", "slug", "short_name", "organization_image", "cover_image"
     )
 
     org_dict = {}
@@ -853,6 +872,7 @@ def _get_organization_batch(args_list):
             "organization_image_url": (
                 org.organization_image.url if org.organization_image else None
             ),
+            "cover_image_url": (org.cover_image.url if org.cover_image else None),
         }
         org_dict[org_id] = {k: v for k, v in org_dict[org_id].items() if v is not None}
 

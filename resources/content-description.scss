@@ -213,6 +213,27 @@ pre {
             position: sticky;
             top: 70px;
             width: 100%;
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
+            overflow-x: hidden;
+
+            // Custom scrollbar styling
+            &::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            &::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background: #ccc;
+                border-radius: 2px;
+
+                &:hover {
+                    background: #aaa;
+                }
+            }
         }
     }
 }
@@ -254,12 +275,6 @@ a.view-pdf {
 .info-float .fa {
     color: #000;
     padding-right: 0.2em;
-}
-
-#problem-types, #allowed-langs {
-    .toggled {
-        margin-left: 1.3em;
-    }
 }
 details summary {
     cursor: pointer;

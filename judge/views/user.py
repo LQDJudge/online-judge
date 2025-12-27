@@ -396,20 +396,6 @@ def edit_profile(request):
                         profile.profile_image.delete(save=False)
                         profile.profile_image = None
 
-                background_upload = form.cleaned_data.get("background_image_upload")
-                if background_upload:
-                    if profile.css_background and "url(" in profile.css_background:
-                        pass
-
-                    file_path = profile_background_path(
-                        profile.id, background_upload.name
-                    )
-                    saved_path = default_storage.save(file_path, background_upload)
-                    file_url = default_storage.url(saved_path)
-                    profile.css_background = f'url("{file_url}")'
-
-                if request.POST.get("remove_background"):
-                    profile.css_background = None
                 form.save()
                 form_info.save()
                 revisions.set_user(request.user)

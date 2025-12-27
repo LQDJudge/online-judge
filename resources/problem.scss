@@ -94,6 +94,164 @@
     }
 }
 
+// ============================================
+// Problem Page Sidebar Styles
+// ============================================
+
+.problem-sidebar {
+    padding-bottom: 1em;
+}
+
+.info-float {
+    // Sidebar sections with visual grouping
+    .sidebar-section {
+        background: $background_light_gray;
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    // Improved link rows
+    .link-row {
+        border-radius: 6px;
+        margin: 2px 0;
+        padding: 8px 10px;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background: $background_light_gray;
+            transform: translateX(2px);
+        }
+
+        a {
+            font-size: 0.9rem;
+
+            i {
+                color: $theme_color;
+                width: 1.4em;
+            }
+        }
+
+        .badge {
+            background: $announcement_red;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 0.5em;
+        }
+    }
+
+    // Horizontal separators
+    hr {
+        border: none;
+        border-top: 1px solid $border_gray;
+        margin: 0.5rem 0;
+    }
+
+    // Problem info entries
+    .problem-info-entry {
+        padding: 0.4rem 0;
+        font-size: 0.9rem;
+
+        i {
+            color: $theme_color;
+            width: 1.4em;
+        }
+    }
+
+    // Problem language limits
+    .problem-lang-limits {
+        background: $background_light_gray;
+        border-radius: 6px;
+        padding: 0.5rem;
+        margin-top: 0.3rem;
+        font-size: 0.85rem;
+
+        .lang-limit {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.2rem 0.5rem;
+
+            &:not(:last-child) {
+                border-bottom: 1px solid $border_gray;
+            }
+
+            .lang-name {
+                font-weight: 500;
+            }
+
+            .lang-tl, .lang-ml {
+                color: #666;
+            }
+        }
+    }
+
+    // Authors value styling
+    .authors-value, .judges-value {
+        font-size: 0.85rem;
+        margin-top: 0.3rem;
+    }
+
+    // Toggle sections
+    .toggle {
+        cursor: pointer;
+        padding: 0.4rem 0;
+        font-size: 0.9rem;
+        font-weight: 500;
+
+        &:hover {
+            color: $theme_color;
+        }
+
+        i {
+            transition: transform 0.2s ease;
+            width: 1em;
+        }
+
+        &.open i {
+            transform: rotate(90deg);
+        }
+    }
+
+    .toggled {
+        font-size: 0.85rem;
+        color: #555;
+        padding: 0.3rem 0 0.3rem 1.4rem;
+    }
+}
+
+// Dark mode support for problem sidebar
+.dark-mode, [data-theme="dark"] {
+    .info-float {
+        .sidebar-section {
+            background: #1f2937;
+        }
+
+        .link-row {
+            &:hover {
+                background: #374151;
+            }
+        }
+
+        .problem-lang-limits {
+            background: #1f2937;
+
+            .lang-limit {
+                border-bottom-color: #374151;
+
+                .lang-tl, .lang-ml {
+                    color: #9ca3af;
+                }
+            }
+        }
+
+        .toggled {
+            color: #9ca3af;
+        }
+    }
+}
+
 #search {
     width: 100%;
     height: 2.3em;
