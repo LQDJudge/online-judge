@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-27 10:13+0700\n"
+"POT-Creation-Date: 2025-12-27 11:09+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -2913,10 +2913,10 @@ msgstr ""
 msgid "Is Submitted"
 msgstr "Nộp bài"
 
-#: judge/models/quiz.py:563 templates/comments/list.html:18
-#: templates/comments/list.html:27 templates/course/course.html:78
-#: templates/course/grades.html:86 templates/course/grades_lesson.html:81
-#: templates/user/user-problems.html:99
+#: judge/models/quiz.py:563 templates/comments/inline-comments.html:22
+#: templates/comments/list.html:18 templates/comments/list.html:27
+#: templates/course/course.html:78 templates/course/grades.html:86
+#: templates/course/grades_lesson.html:81 templates/user/user-problems.html:99
 msgid "Score"
 msgstr "Điểm"
 
@@ -3605,33 +3605,33 @@ msgstr "Bạn phải giải ít nhất 1 bài trước khi được vote."
 msgid "You already voted."
 msgstr "Bạn đã vote."
 
-#: judge/views/comment.py:471 judge/views/organization.py:1032
+#: judge/views/comment.py:501 judge/views/organization.py:1032
 #: judge/views/organization.py:1193 judge/views/organization.py:1457
 msgid "Edited from site"
 msgstr "Chỉnh sửa từ web"
 
-#: judge/views/comment.py:492
+#: judge/views/comment.py:522
 msgid "Editing comment"
 msgstr "Chỉnh sửa bình luận"
 
-#: judge/views/comment.py:618
+#: judge/views/comment.py:648
 msgid "Posted comment"
 msgstr "Bình luận đã đăng"
 
-#: judge/views/comment.py:681
+#: judge/views/comment.py:711
 msgid "Comment body"
 msgstr "Nội dung bình luận"
 
-#: judge/views/comment.py:687 judge/views/ticket.py:82
+#: judge/views/comment.py:717 judge/views/ticket.py:82
 msgid "Your part is silent, little toad."
 msgstr "Bạn không được phép bình luận."
 
-#: judge/views/comment.py:696 templates/comments/media-js.html:20
+#: judge/views/comment.py:726 templates/comments/media-js.html:20
 msgid ""
 "You need to have solved at least one problem before your voice can be heard."
 msgstr "Bạn phải giải ít nhất một bài trước khi được phép bình luận."
 
-#: judge/views/comment.py:791
+#: judge/views/comment.py:821
 msgid "Comment feed"
 msgstr "Bình luận"
 
@@ -5131,25 +5131,37 @@ msgstr "Kinh độ / Vĩ độ không hợp lệ"
 msgid "Like"
 msgstr "Thích"
 
-#: templates/actionbar/list.html:28 templates/blog/list.html:51
+#: templates/actionbar/list.html:33 templates/blog/list.html:51
 msgid "Comment"
 msgstr "Bình luận"
 
-#: templates/actionbar/list.html:44
+#: templates/actionbar/list.html:48
 msgid "Bookmark"
 msgstr "Lưu"
 
-#: templates/actionbar/list.html:51 templates/comments/comment-item.html:66
+#: templates/actionbar/list.html:55 templates/comments/comment-item.html:66
 msgid "Share"
 msgstr "Chia sẻ"
 
-#: templates/actionbar/list.html:58
+#: templates/actionbar/list.html:62
 msgid "Report"
 msgstr "Báo cáo"
 
-#: templates/actionbar/media-js.html:103 templates/comments/media-js.html:664
+#: templates/actionbar/media-js.html:103
+#: templates/comments/inline-comments.html:389
+#: templates/comments/media-js.html:664
 msgid "Copied link"
 msgstr "Đã sao chép link"
+
+#: templates/actionbar/media-js.html:149 templates/comments/list.html:39
+msgid "Loading comments..."
+msgstr "Tải bình luận..."
+
+#: templates/actionbar/media-js.html:176
+#, fuzzy
+#| msgid "Error loading comments."
+msgid "Failed to load comments"
+msgstr "Tải bình luận bị lỗi."
 
 #: templates/admin/judge/contest/change_form.html:9
 msgid "Are you sure you want to rejudge ALL the submissions?"
@@ -5263,11 +5275,11 @@ msgstr "Trang web này hoạt động tốt nhất khi bật JavaScript."
 msgid "Tickets"
 msgstr "Báo cáo"
 
-#: templates/blog/content.html:40 templates/internal/problem_queue.html:378
+#: templates/blog/content.html:32 templates/internal/problem_queue.html:378
 #: templates/organization/blog/pending.html:32
 #: templates/problem/feed/items.html:38 templates/user/user-bookmarks.html:59
 #: templates/user/user-bookmarks.html:127
-#: templates/user/user-bookmarks.html:172
+#: templates/user/user-bookmarks.html:164
 msgid "...More"
 msgstr "...Xem thêm"
 
@@ -5482,7 +5494,10 @@ msgstr ""
 msgid "Please login to vote"
 msgstr "Đăng nhập để vote"
 
-#: templates/comments/comment-item.html:65 templates/comments/media-js.html:196
+#: templates/comments/comment-item.html:65
+#: templates/comments/inline-comments.html:350
+#: templates/comments/inline-comments.html:377
+#: templates/comments/media-js.html:196
 msgid "Reply"
 msgstr "Phản hồi"
 
@@ -5501,10 +5516,12 @@ msgid "more comment"
 msgid_plural "more comments"
 msgstr[0] "bình luận nữa"
 
-#: templates/comments/edit-ajax.html:12 templates/comments/media-js.html:451
-#: templates/comments/media-js.html:511 templates/comments/media-js.html:528
-#: templates/course/create_lesson.html:54 templates/course/edit.html:55
-#: templates/course/edit_contest.html:90
+#: templates/comments/edit-ajax.html:12
+#: templates/comments/inline-comments.html:437
+#: templates/comments/inline-comments.html:487
+#: templates/comments/media-js.html:451 templates/comments/media-js.html:511
+#: templates/comments/media-js.html:528 templates/course/create_lesson.html:54
+#: templates/course/edit.html:55 templates/course/edit_contest.html:90
 #: templates/course/edit_lesson_new_window.html:103
 #: templates/course/members.html:169 templates/organization/blog/edit.html:36
 #: templates/organization/contest/edit.html:108
@@ -5518,9 +5535,12 @@ msgstr[0] "bình luận nữa"
 msgid "Save"
 msgstr "Lưu"
 
-#: templates/comments/edit-ajax.html:13 templates/comments/media-js.html:79
-#: templates/comments/media-js.html:197 templates/comments/media-js.html:452
-#: templates/course/create.html:68 templates/fine_uploader/script.html:23
+#: templates/comments/edit-ajax.html:13
+#: templates/comments/inline-comments.html:349
+#: templates/comments/inline-comments.html:436
+#: templates/comments/media-js.html:79 templates/comments/media-js.html:197
+#: templates/comments/media-js.html:452 templates/course/create.html:68
+#: templates/fine_uploader/script.html:23
 #: templates/internal/problem_queue.html:430
 #: templates/organization/course/edit.html:89 templates/pagedown.html:32
 #: templates/problem/data.html:841
@@ -5532,17 +5552,71 @@ msgstr "Hủy"
 msgid "d/m/Y"
 msgstr "d/m/Y"
 
-#: templates/comments/list.html:16 templates/comments/list.html:26
-msgid "Least recent"
-msgstr "Xa nhất"
-
-#: templates/comments/list.html:20 templates/comments/list.html:25
+#: templates/comments/inline-comments.html:20 templates/comments/list.html:20
+#: templates/comments/list.html:25
 msgid "Most recent"
 msgstr "Gần nhất"
 
-#: templates/comments/list.html:39
-msgid "Loading comments..."
-msgstr "Tải bình luận..."
+#: templates/comments/inline-comments.html:21 templates/comments/list.html:16
+#: templates/comments/list.html:26
+msgid "Least recent"
+msgstr "Xa nhất"
+
+#: templates/comments/inline-comments.html:30
+msgid "No comments yet."
+msgstr "Chưa có bình luận nào."
+
+#: templates/comments/inline-comments.html:54
+msgid "Load more comments"
+msgstr "Tải thêm bình luận"
+
+#: templates/comments/inline-comments.html:61
+msgid "View all comments"
+msgstr "Xem tất cả bình luận"
+
+#: templates/comments/inline-comments.html:140
+msgid "Solve a problem to comment"
+msgstr "Giải một bài để bình luận"
+
+#: templates/comments/inline-comments.html:146
+#: templates/comments/media-js.html:21
+msgid "Write a comment..."
+msgstr "Thêm bình luận"
+
+#: templates/comments/inline-comments.html:148
+#: templates/comments/inline-comments.html:201
+#: templates/comments/inline-comments.html:215
+#: templates/comments/media-js.html:78 templates/ticket/ticket.html:267
+msgid "Post"
+msgstr "Đăng"
+
+#: templates/comments/inline-comments.html:185
+#: templates/comments/inline-comments.html:360
+msgid "Posting..."
+msgstr "Đang đăng..."
+
+#: templates/comments/inline-comments.html:214
+msgid "Error posting comment"
+msgstr "Lỗi khi đăng bình luận"
+
+#: templates/comments/inline-comments.html:348
+#: templates/comments/media-js.html:195
+msgid "Write a reply..."
+msgstr "Viết phản hồi..."
+
+#: templates/comments/inline-comments.html:397
+msgid "Are you sure you want to hide this comment?"
+msgstr "Bạn có chắc chắn muốn ẩn bình luận này không?"
+
+#: templates/comments/inline-comments.html:411
+msgid "Error hiding comment"
+msgstr "Lỗi khi ẩn bình luận"
+
+#: templates/comments/inline-comments.html:459
+#: templates/comments/media-js.html:480 templates/ticket/ticket.html:80
+#: templates/ticket/ticket.html:109
+msgid "Saving..."
+msgstr "Đang lưu..."
 
 #: templates/comments/list.html:47
 msgid "There are no comments at the moment."
@@ -5557,14 +5631,6 @@ msgstr "Bình luận bị tắt trong trang này."
 msgid "Error loading comments."
 msgstr "Tải bình luận bị lỗi."
 
-#: templates/comments/media-js.html:21
-msgid "Write a comment..."
-msgstr "Thêm bình luận"
-
-#: templates/comments/media-js.html:78 templates/ticket/ticket.html:267
-msgid "Post"
-msgstr "Đăng"
-
 #: templates/comments/media-js.html:80 templates/comments/media-js.html:198
 #: templates/comments/media-js.html:453
 msgid "Expand editor"
@@ -5574,10 +5640,6 @@ msgstr "Mở rộng trình soạn thảo"
 #: templates/comments/media-js.html:454
 msgid "Collapse editor"
 msgstr "Thu gọn trình soạn thảo"
-
-#: templates/comments/media-js.html:195
-msgid "Write a reply..."
-msgstr "Viết phản hồi..."
 
 #: templates/comments/media-js.html:316
 #, python-brace-format
@@ -5591,11 +5653,6 @@ msgstr "original"
 #: templates/comments/media-js.html:449
 msgid "Edit your comment..."
 msgstr "Chỉnh sửa bình luận"
-
-#: templates/comments/media-js.html:480 templates/ticket/ticket.html:80
-#: templates/ticket/ticket.html:109
-msgid "Saving..."
-msgstr "Đang lưu..."
 
 #: templates/comments/media-js.html:516
 msgid "An error occurred while saving your comment."
@@ -8479,7 +8536,7 @@ msgstr "Không có kỳ thi đã lưu."
 msgid "There is no saved editorial."
 msgstr "Không có lời giải nào đã lưu."
 
-#: templates/user/user-bookmarks.html:182
+#: templates/user/user-bookmarks.html:174
 msgid "There is no saved post."
 msgstr "Không có bài đăng nào đã lưu."
 
@@ -8654,6 +8711,13 @@ msgstr "Thay đổi ảnh"
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Chọn tất cả"
+
+#~ msgid "No comments yet. Be the first to comment!"
+#~ msgstr "Chưa có bình luận nào. Hãy là người đầu tiên bình luận!"
+
+#~ msgid "View all %(count)s comment"
+#~ msgid_plural "View all %(count)s comments"
+#~ msgstr[0] "Xem tất cả %(count)s bình luận"
 
 #~ msgid "New comment"
 #~ msgstr "Bình luận mới"

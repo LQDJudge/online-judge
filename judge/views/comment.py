@@ -248,6 +248,9 @@ def _get_highlighted_root_tree(target_comment_id, content_type_id, object_id, us
         return None
 
 
+COMPACT_COMMENT_LIMIT = 3
+
+
 class CommentListView(ListView):
     template_name = "comments/content-list.html"
     context_object_name = "comment_list"
@@ -263,6 +266,10 @@ class CommentListView(ListView):
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         self.sort_by, self.sort_order = _parse_sort_params(request)
+        self.compact = request.GET.get("compact") == "1"
+        if self.compact:
+            self.limit = COMPACT_COMMENT_LIMIT
+            self.template_name = "comments/inline-comments.html"
         try:
             self.offset = int(request.GET.get("offset", 0))
         except ValueError:
@@ -296,6 +303,16 @@ class CommentListView(ListView):
 
         next_page_offset = self.offset + min(len(comments_list), self.limit)
 
+        # Determine if user is new (can't comment)
+        is_new_user = False
+        if self.request.user.is_authenticated:
+            is_new_user = (
+                not self.request.user.is_staff
+                and not self.request.profile.submission_set.filter(
+                    points=F("problem__points")
+                ).exists()
+            )
+
         context = super().get_context_data(**kwargs)
         context.update(
             {
@@ -310,6 +327,9 @@ class CommentListView(ListView):
                 "comment_more": self.total_comments - next_page_offset,
                 "sort_by": self.sort_by,
                 "sort_order": self.sort_order,
+                "compact": getattr(self, "compact", False),
+                "comment_lock": is_comment_locked(self.request),
+                "is_new_user": is_new_user,
             }
         )
         return context
@@ -336,7 +356,8 @@ class TopLevelCommentsView(CommentListView):
         try:
             content_type = ContentType.objects.get(id=params.content_type_id)
             model_class = content_type.model_class()
-            model_class.objects.get(id=params.object_id)
+            self.target_object = model_class.objects.get(id=params.object_id)
+            self.content_type = content_type
         except (ContentType.DoesNotExist, model_class.DoesNotExist):
             self.error_response = HttpResponseNotFound()
             return Comment.objects.none()
@@ -354,6 +375,15 @@ class TopLevelCommentsView(CommentListView):
 
     def get_target_comment_id(self):
         return self.params.target_comment_id
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if hasattr(self, "params") and hasattr(self, "target_object"):
+            context["content_type_id"] = self.params.content_type_id
+            context["object_id"] = self.params.object_id
+            if hasattr(self.target_object, "get_absolute_url"):
+                context["page_url"] = self.target_object.get_absolute_url()
+        return context
 
     def post_process_comments(self, comments_list, total_comments):
         if (

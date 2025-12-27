@@ -40,11 +40,15 @@
     <div class="actionbar-box">
       {% set pagevote = problem.get_or_create_pagevote() %}
       {% set bookmark = problem.get_or_create_bookmark() %}
-      {% set hide_actionbar_comment = True %}
+      {% set hide_actionbar_comment = False %}
+      {% set all_comment_count = comment_count(problem) %}
+      {% set actionbar_content_type_id = get_content_type_id(problem) %}
+      {% set actionbar_object_id = problem.id %}
       {% set include_hr = False %}
       {% set share_url = request.build_absolute_uri(problem.get_absolute_url()) %}
       {% include "actionbar/list.html" %}
     </div>
+    <div class="inline-comments-container" data-content-type-id="{{ get_content_type_id(problem) }}" data-object-id="{{ problem.id }}" style="display: none;"></div>
   </div>
 {% endfor %}
 {% include "feed/has_next.html" %}

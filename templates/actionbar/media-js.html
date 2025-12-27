@@ -104,13 +104,79 @@
           });
       };
 
-      $('.actionbar-comment').on('click', function() {
+      // Original page comment section toggle (for detail pages)
+      $('.actionbar-comment:not([data-content-type-id])').on('click', function() {
         if ($('#comment-section').css('display') == 'none') {
           $('#comment-section').show();
         } else {
           $('#write-comment').click();
         }
-      })
+      });
+
+      /**
+       * Toggle inline comments for feed items
+       * Lazily loads a compact comment section below the post/problem card
+       */
+      window.toggle_inline_comments = function(element, e) {
+        e.stopPropagation();
+
+        var $button = $(element);
+        var contentTypeId = $button.data('content-type-id');
+        var objectId = $button.data('object-id');
+
+        if (!contentTypeId || !objectId) return;
+
+        // Find the closest inline-comments-container
+        var $container = $button.closest('.blog-box, section').find('.inline-comments-container');
+        if ($container.length === 0) return;
+
+        // Toggle visibility
+        if ($container.is(':visible')) {
+          $container.slideUp(200);
+          $button.removeClass('active');
+          return;
+        }
+
+        $button.addClass('active');
+
+        // Check if already loaded
+        if ($container.data('loaded')) {
+          $container.slideDown(200);
+          return;
+        }
+
+        // Show loading indicator
+        $container.html('<div class="inline-comments-loading"><i class="fa fa-spinner fa-pulse"></i> {{ _("Loading comments...") }}</div>');
+        $container.slideDown(200);
+
+        // Load comments via AJAX
+        $.ajax({
+          url: '{{ url("get_comments") }}',
+          type: 'GET',
+          data: {
+            content_type_id: contentTypeId,
+            object_id: objectId,
+            compact: 1
+          },
+          success: function(data) {
+            $container.html(data);
+            $container.data('loaded', true);
+
+            // Initialize any KaTeX rendering
+            if (typeof renderKatex === 'function') {
+              renderKatex($container[0]);
+            }
+
+            // Initialize time display
+            if (typeof register_time === 'function') {
+              register_time($container.find('.time-with-rel'));
+            }
+          },
+          error: function() {
+            $container.html('<div class="inline-comments-error">{{ _("Failed to load comments") }}</div>');
+          }
+        });
+      };
     });
   </script>
 {% endcompress %}

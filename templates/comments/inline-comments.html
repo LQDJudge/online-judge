@@ -1,0 +1,511 @@
+{% set can_comment = request.user.is_authenticated and not comment_lock %}
+<div class="comment-area compact-comments"
+     data-content-type-id="{{ content_type_id }}"
+     data-object-id="{{ object_id }}"
+     data-post-url="{{ url('comment_post') }}"
+     data-preview-url="{{ url('comment_preview') }}"
+     data-is-new-user="{{ 'true' if is_new_user else 'false' }}"
+     data-offset="{{ offset }}"
+     data-has-more="{{ 'true' if comment_more > 0 else 'false' }}"
+     data-sort-by="{{ sort_by }}"
+     data-sort-order="{{ sort_order }}"
+     onclick="event.stopPropagation();">
+
+  <div class="inline-comments-header">
+    {% if can_comment %}
+      <div class="inline-new-comment-container"></div>
+    {% endif %}
+    <div class="inline-sort-controls">
+      <select class="inline-sort-select">
+        <option value="time_desc" {% if sort_by == 'time' and sort_order == 'desc' %}selected{% endif %}>{{ _('Most recent') }}</option>
+        <option value="time_asc" {% if sort_by == 'time' and sort_order == 'asc' %}selected{% endif %}>{{ _('Least recent') }}</option>
+        <option value="score_desc" {% if sort_by == 'score' and sort_order == 'desc' %}selected{% endif %}>{{ _('Score') }}</option>
+      </select>
+    </div>
+  </div>
+
+  {% if comment_count == 0 %}
+    {% if not can_comment %}
+      <div class="inline-comments-empty">
+        <p>{{ _('No comments yet.') }}</p>
+      </div>
+    {% endif %}
+  {% else %}
+    <ul class="top-level-comments compact-comment-list" id="inline-comments-{{ content_type_id }}-{{ object_id }}">
+      {% for node in mptt_tree(comment_list) recursive %}
+        {% with item=node %}
+          {% include "comments/comment-item.html" %}
+        {% endwith %}
+
+        {% with children=node.get_children() %}
+          {% if children %}
+            <ul id="comment-{{ node.id }}-children" class="ul-comments">{{ loop(children) }}</ul>
+          {% else %}
+            <ul id="comment-{{ node.id }}-children" class="ul-comments"></ul>
+          {% endif %}
+        {% endwith %}
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if comment_more > 0 %}
+    <button type="button" class="inline-load-more" data-loading="false">
+      <i class="fa fa-chevron-down"></i>
+      <span>{{ _('Load more comments') }} ({{ comment_more }})</span>
+    </button>
+  {% endif %}
+
+  {% if page_url %}
+    <div class="inline-comments-footer">
+      <a href="{{ page_url }}#comments" class="view-all-comments-link">
+        {{ _('View all comments') }} <i class="fa fa-arrow-right"></i>
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+  (function() {
+    var $container = $('.compact-comments[data-content-type-id="{{ content_type_id }}"][data-object-id="{{ object_id }}"]');
+    if (!$container.length) return;
+
+    var config = {
+      contentTypeId: {{ content_type_id }},
+      objectId: {{ object_id }},
+      postUrl: '{{ url("comment_post") }}',
+      getCommentsUrl: '{{ url("get_comments") }}',
+      isNewUser: {{ 'true' if is_new_user else 'false' }},
+      offset: {{ offset }},
+      hasMore: {{ 'true' if comment_more > 0 else 'false' }},
+      sortBy: '{{ sort_by }}',
+      sortOrder: '{{ sort_order }}'
+    };
+
+  // Initialize sort controls
+    function initSortControls() {
+      var $sortSelect = $container.find('.inline-sort-select');
+      $sortSelect.on('change', function(e) {
+        e.stopPropagation();
+        var val = $(this).val().split('_');
+        config.sortBy = val[0];
+        config.sortOrder = val[1];
+        config.offset = 0;
+        reloadComments();
+      });
+    }
+
+    function reloadComments() {
+      var $list = $container.find('.compact-comment-list');
+      var $loadMore = $container.find('.inline-load-more');
+      $list.html('<li style="text-align:center;padding:16px;"><i class="fa fa-spinner fa-pulse"></i></li>');
+      $loadMore.remove();
+
+      $.ajax({
+        url: config.getCommentsUrl,
+        type: 'GET',
+        data: {
+          content_type_id: config.contentTypeId,
+          object_id: config.objectId,
+          sort_by: config.sortBy,
+          sort_order: config.sortOrder,
+          compact: 1
+        },
+        success: function(response) {
+          var $tempDiv = $('<div>').html(response);
+          var $newComments = $tempDiv.find('.compact-comment-list').html();
+          var $newLoadMore = $tempDiv.find('.inline-load-more');
+
+          $list.html($newComments);
+          if ($newLoadMore.length) {
+            $list.after($newLoadMore);
+            config.offset = parseInt($tempDiv.find('.compact-comments').data('offset')) || 0;
+            initLoadMore();
+          }
+
+          if (typeof renderKatex === 'function') renderKatex($container[0]);
+          if (typeof register_time === 'function') register_time($container.find('.time-with-rel'));
+        },
+        error: function() {
+          $list.html('<li style="text-align:center;padding:16px;color:red;">Error loading comments</li>');
+        }
+      });
+    }
+
+  // Initialize simple comment form
+    function initInlineCommentForm() {
+      var $formContainer = $container.find('.inline-new-comment-container');
+      if (!$formContainer.length) return;
+
+      if (config.isNewUser) {
+        $formContainer.html('<div class="inline-new-user-notice">{{ _("Solve a problem to comment") }}</div>');
+        return;
+      }
+
+      var uniqueId = 'inline-' + config.contentTypeId + '-' + config.objectId;
+      var formHtml = '<div class="inline-simple-form">' +
+      '<textarea id="' + uniqueId + '-input" class="inline-comment-input" placeholder="{{ _("Write a comment...") }}" rows="1"></textarea>' +
+      '<div class="inline-form-actions" style="display:none;">' +
+      '<button type="button" class="inline-submit-btn">{{ _("Post") }}</button>' +
+      '</div></div>';
+      $formContainer.html(formHtml);
+
+      var $textarea = $formContainer.find('.inline-comment-input');
+      var $actions = $formContainer.find('.inline-form-actions');
+      var $submitBtn = $formContainer.find('.inline-submit-btn');
+
+    // Auto-grow textarea
+      $textarea.on('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+      });
+
+      $textarea.on('focus', function() {
+        this.rows = 3;
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+        $actions.show();
+      });
+
+      $textarea.on('blur', function() {
+        var self = this;
+      // Delay to allow button clicks
+        setTimeout(function() {
+          if (!$formContainer.find(':focus').length && !self.value.trim()) {
+            self.rows = 1;
+            self.style.height = 'auto';
+            $actions.hide();
+          }
+        }, 150);
+      });
+
+      $submitBtn.on('click', function() {
+        var body = $textarea.val();
+        if (!body.trim()) return;
+
+        $submitBtn.prop('disabled', true).text('{{ _("Posting...") }}');
+
+        $.ajax({
+          url: config.postUrl,
+          type: 'POST',
+          data: {
+            csrfmiddlewaretoken: $.cookie('csrftoken'),
+            parent: '',
+            body: body,
+            content_type_id: config.contentTypeId,
+            object_id: config.objectId
+          },
+          success: function(response) {
+            $textarea.val('').css('height', 'auto');
+            $textarea[0].rows = 1;
+            $actions.hide();
+            $submitBtn.prop('disabled', false).text('{{ _("Post") }}');
+
+            var $list = $container.find('.compact-comment-list');
+            if (!$list.length) {
+              $container.find('.inline-comments-empty').remove();
+              $container.find('.inline-new-comment-container').after('<ul class="top-level-comments compact-comment-list" id="inline-comments-' + config.contentTypeId + '-' + config.objectId + '"></ul>');
+              $list = $container.find('.compact-comment-list');
+            }
+            $list.prepend(response);
+            if (typeof renderKatex === 'function') renderKatex($container[0]);
+            if (typeof register_time === 'function') register_time($container.find('.time-with-rel'));
+          },
+          error: function(xhr) {
+            alert(xhr.responseText || '{{ _("Error posting comment") }}');
+            $submitBtn.prop('disabled', false).text('{{ _("Post") }}');
+          }
+        });
+      });
+    }
+
+  // Load more comments
+    function initLoadMore() {
+      var $loadMoreBtn = $container.find('.inline-load-more');
+      if (!$loadMoreBtn.length) return;
+
+      $loadMoreBtn.on('click', function(e) {
+        e.stopPropagation();
+        if ($loadMoreBtn.data('loading')) return;
+
+        $loadMoreBtn.data('loading', true);
+        var $icon = $loadMoreBtn.find('i');
+        $icon.removeClass('fa-chevron-down').addClass('fa-spinner fa-pulse');
+
+        $.ajax({
+          url: config.getCommentsUrl,
+          type: 'GET',
+          data: {
+            content_type_id: config.contentTypeId,
+            object_id: config.objectId,
+            offset: config.offset,
+            compact: 1
+          },
+          success: function(response) {
+            var $tempDiv = $('<div>').html(response);
+            var $newComments = $tempDiv.find('.compact-comment-list > li');
+            var $newLoadMore = $tempDiv.find('.inline-load-more');
+
+          // Append new comments
+            $container.find('.compact-comment-list').append($newComments);
+
+          // Update or remove load more button
+            if ($newLoadMore.length) {
+              $loadMoreBtn.replaceWith($newLoadMore);
+            // Update config offset
+              config.offset = parseInt($tempDiv.find('.compact-comments').data('offset')) || config.offset;
+              initLoadMore(); // Re-init for new button
+            } else {
+              $loadMoreBtn.remove();
+            }
+
+            if (typeof renderKatex === 'function') renderKatex($container[0]);
+            if (typeof register_time === 'function') register_time($container.find('.time-with-rel'));
+          },
+          error: function() {
+            $icon.removeClass('fa-spinner fa-pulse').addClass('fa-chevron-down');
+            $loadMoreBtn.data('loading', false);
+          }
+        });
+      });
+    }
+
+  // Define inline comment functions if not already defined
+    if (typeof window.comment_upvote === 'undefined') {
+      window.comment_upvote = function(commentId) {
+        $.ajax({
+          url: '{{ url("comment_upvote") }}',
+          type: 'POST',
+          data: { id: commentId },
+          success: function() {
+            var $comment = $('#comment-' + commentId);
+            var $score = $comment.find('.comment-score').first();
+            var $upvote = $comment.find('.upvote-link').first();
+            var $downvote = $comment.find('.downvote-link').first();
+            if ($downvote.hasClass('voted')) {
+              $downvote.removeClass('voted');
+            } else {
+              $upvote.addClass('voted');
+            }
+            $score.text(parseInt($score.text()) + 1);
+          },
+          error: function(xhr) { alert(xhr.responseText || 'Error voting'); }
+        });
+      };
+    }
+
+    if (typeof window.comment_downvote === 'undefined') {
+      window.comment_downvote = function(commentId) {
+        $.ajax({
+          url: '{{ url("comment_downvote") }}',
+          type: 'POST',
+          data: { id: commentId },
+          success: function() {
+            var $comment = $('#comment-' + commentId);
+            var $score = $comment.find('.comment-score').first();
+            var $upvote = $comment.find('.upvote-link').first();
+            var $downvote = $comment.find('.downvote-link').first();
+            if ($upvote.hasClass('voted')) {
+              $upvote.removeClass('voted');
+            } else {
+              $downvote.addClass('voted');
+            }
+            $score.text(parseInt($score.text()) - 1);
+          },
+          error: function(xhr) { alert(xhr.responseText || 'Error voting'); }
+        });
+      };
+    }
+
+    if (typeof window.comment_get_replies === 'undefined') {
+      window.comment_get_replies = function(commentId) {
+        var $showBtn = $('#comment-' + commentId + ' .show_more_reply');
+        $showBtn.hide();
+        var $children = $('#comment-' + commentId + '-children');
+        $children.html('<i class="fa fa-spinner fa-pulse"></i>');
+        $.ajax({
+          url: '{{ url("comment_get_replies") }}',
+          type: 'GET',
+          data: { id: commentId },
+          success: function(data) {
+            $children.html(data);
+            if (typeof renderKatex === 'function') renderKatex($children[0]);
+            if (typeof register_time === 'function') register_time($children.find('.time-with-rel'));
+          },
+          error: function() { $children.html('Error loading replies'); }
+        });
+      };
+    }
+
+    if (typeof window.reply_comment === 'undefined') {
+      window.reply_comment = function(parentId) {
+        var $replyContainer = $('#comment-' + parentId + '-reply');
+        if ($replyContainer.find('.inline-reply-form').length) {
+          $replyContainer.removeAttr('hidden').show();
+          $replyContainer.find('textarea').focus();
+          return;
+        }
+        var formHtml = '<div class="inline-reply-form inline-simple-form">' +
+        '<textarea class="inline-comment-input" placeholder="{{ _("Write a reply...") }}" rows="2"></textarea>' +
+        '<div class="inline-reply-actions"><button type="button" class="inline-cancel-btn">{{ _("Cancel") }}</button>' +
+        '<button type="button" class="inline-submit-btn">{{ _("Reply") }}</button></div></div>';
+        $replyContainer.html(formHtml).removeAttr('hidden').show();
+        var $textarea = $replyContainer.find('textarea');
+        var $submitBtn = $replyContainer.find('.inline-submit-btn');
+        var $cancelBtn = $replyContainer.find('.inline-cancel-btn');
+        $textarea.focus();
+        $cancelBtn.on('click', function() { $replyContainer.hide(); });
+        $submitBtn.on('click', function() {
+          var body = $textarea.val();
+          if (!body.trim()) return;
+          $submitBtn.prop('disabled', true).text('{{ _("Posting...") }}');
+          $.ajax({
+            url: config.postUrl,
+            type: 'POST',
+            data: {
+              csrfmiddlewaretoken: $.cookie('csrftoken'),
+              parent: parentId,
+              body: body,
+              content_type_id: config.contentTypeId,
+              object_id: config.objectId
+            },
+            success: function() {
+              $replyContainer.hide().html('');
+              comment_get_replies(parentId);
+            },
+            error: function(xhr) {
+              alert(xhr.responseText || 'Error posting reply');
+              $submitBtn.prop('disabled', false).text('{{ _("Reply") }}');
+            }
+          });
+        });
+      };
+    }
+
+    if (typeof window.comment_share === 'undefined') {
+      window.comment_share = function(element, commentId) {
+        var url = window.location.origin + window.location.pathname + '?target_comment=' + commentId + '#comment-' + commentId;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(url);
+          if (typeof showTooltip === 'function') showTooltip(element, '{{ _("Copied link") }}', 'n');
+        }
+      };
+    }
+
+  // Hide comment
+    if (typeof window.hide_comment === 'undefined') {
+      window.hide_comment = function(commentId) {
+        if (!confirm('{{ _("Are you sure you want to hide this comment?") }}')) return;
+        $.ajax({
+          url: '{{ url("comment_hide") }}',
+          type: 'POST',
+          data: {
+            csrfmiddlewaretoken: $.cookie('csrftoken'),
+            id: commentId
+          },
+          success: function() {
+            $('#comment-' + commentId).fadeOut(300, function() {
+              $(this).remove();
+            });
+          },
+          error: function(xhr) {
+            alert(xhr.responseText || '{{ _("Error hiding comment") }}');
+          }
+        });
+      };
+    }
+
+  // Simple edit comment for inline comments (uses textarea instead of MarkdownEditor)
+    if (typeof window.edit_comment === 'undefined') {
+      window.edit_comment = function(commentId) {
+        var $comment = $('#comment-' + commentId);
+        var $body = $comment.find('.body').first();
+        var $commentBody = $body.find('.comment-body').first();
+        var $editLink = $comment.find('.edit-link').first();
+
+        if ($body.find('.inline-edit-container').length > 0) return;
+
+        var rawBody = String($editLink.data('body') || '');
+        var editUrl = $editLink.data('edit-url');
+
+        $commentBody.hide();
+        $body.find('.bad-comment-body').hide();
+
+        var $editorContainer = $('<div class="inline-edit-container inline-simple-form">' +
+          '<textarea class="inline-comment-input" rows="3">' + rawBody.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>' +
+          '<div class="inline-reply-actions">' +
+          '<button type="button" class="inline-cancel-btn">{{ _("Cancel") }}</button>' +
+          '<button type="button" class="inline-submit-btn">{{ _("Save") }}</button>' +
+          '</div></div>');
+        $body.append($editorContainer);
+
+        var $textarea = $editorContainer.find('textarea');
+        var $saveBtn = $editorContainer.find('.inline-submit-btn');
+        var $cancelBtn = $editorContainer.find('.inline-cancel-btn');
+
+      // Decode HTML entities for editing
+        $textarea.val($('<div>').html(rawBody).text());
+        $textarea.focus();
+
+        $cancelBtn.on('click', function() {
+          $editorContainer.remove();
+          $commentBody.show();
+          $body.find('.bad-comment-body').show();
+        });
+
+        $saveBtn.on('click', function() {
+          var newBody = $textarea.val();
+          if (!newBody.trim()) return;
+
+          $saveBtn.prop('disabled', true).text('{{ _("Saving...") }}');
+
+          $.ajax({
+            url: editUrl,
+            type: 'POST',
+            data: {
+              csrfmiddlewaretoken: $.cookie('csrftoken'),
+              body: newBody
+            },
+            success: function(response) {
+            // Reload the comment content
+              $.ajax({
+                url: '{{ url("comment_content", 0) }}'.replace('0', commentId),
+                success: function(data) {
+                  var $newComment = $(data);
+                  $comment.find('.comment-wrapper').first().replaceWith($newComment.find('.comment-wrapper').first());
+                  if (typeof renderKatex === 'function') renderKatex($comment[0]);
+                  if (typeof register_time === 'function') register_time($comment.find('.time-with-rel'));
+                },
+                error: function() {
+                  $editorContainer.remove();
+                  $commentBody.show();
+                  location.reload();
+                }
+              });
+            },
+            error: function(xhr) {
+              alert(xhr.responseText || 'Error saving comment');
+              $saveBtn.prop('disabled', false).text('{{ _("Save") }}');
+            }
+          });
+        });
+      };
+    }
+
+  // Initialize when ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        initInlineCommentForm();
+        initLoadMore();
+        initSortControls();
+      });
+    } else {
+      initInlineCommentForm();
+      initLoadMore();
+      initSortControls();
+    }
+
+  // Render math and register time
+    if (typeof renderKatex === 'function') renderKatex($container[0]);
+    if (typeof register_time === 'function') register_time($container.find('.time-with-rel'));
+  })();
+</script>

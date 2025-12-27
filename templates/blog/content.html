@@ -21,14 +21,6 @@
         {%- if post.sticky %} &#8226;
           <i title="Sticky" class="fa fa-star fa-fw"></i>{% endif -%}
       </span>
-      <span style="float: right">
-        <a href="{{ url('blog_post', post.id, post.slug) }}#comments" class="blog-comment-count-link">
-          <i class="fa fa-comments blog-comment-icon"></i>
-          <span class="blog-comment-count">
-            {{ comment_count(post) }}
-          </span>
-        </a>
-      </span>
     </div>
     <h2 class="title">
       <a href="{{ url('blog_post', post.id, post.slug) }}">{{ post.title }}</a>
@@ -42,11 +34,15 @@
     <div class="actionbar-box">
       {% set pagevote = post.get_or_create_pagevote() %}
       {% set bookmark = post.get_or_create_bookmark() %}
-      {% set hide_actionbar_comment = True %}
+      {% set hide_actionbar_comment = False %}
+      {% set all_comment_count = comment_count(post) %}
+      {% set actionbar_content_type_id = get_content_type_id(post) %}
+      {% set actionbar_object_id = post.id %}
       {% set include_hr = False %}
       {% set share_url = request.build_absolute_uri(post.get_absolute_url()) %}
       {% include "actionbar/list.html" %}
     </div>
+    <div class="inline-comments-container" data-content-type-id="{{ get_content_type_id(post) }}" data-object-id="{{ post.id }}" style="display: none;"></div>
   </section>
 {% endfor %}
 {% include "feed/has_next.html" %}

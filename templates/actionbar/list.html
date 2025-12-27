@@ -22,17 +22,21 @@
     </span>
     {% if not hide_actionbar_comment %}
       <span class="actionbar-block">
-        <span class="actionbar-button actionbar-comment">
+        <span class="actionbar-button actionbar-comment"
+              {% if actionbar_content_type_id %}
+                data-content-type-id="{{ actionbar_content_type_id }}"
+                data-object-id="{{ actionbar_object_id }}"
+                onclick="toggle_inline_comments(this, event)"
+              {% endif %}>
           <i class="far fa-comment" style="font-size: large;"></i>
           <span class="actionbar-text">
             {{_("Comment")}}
           </span>
-
-          {% if all_comment_count %}
-            <span>
+          <span class="actionbar-comment-count">
+            {% if all_comment_count %}
               {{ all_comment_count }}
-            </span>
-          {% endif %}
+            {% endif %}
+          </span>
         </span>
       </span>
     {% endif %}
