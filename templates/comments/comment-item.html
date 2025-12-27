@@ -67,7 +67,10 @@
         {% if profile and not comment_lock %}
           {% set can_edit = item.author_id == profile.id and not profile.mute %}
           {% if can_edit %}
-            <a data-featherlight="{{ url('comment_edit_ajax', item.id) }}" href="#" title="{{ _('Edit') }}" class="action-link edit-link">
+            <a href="javascript:edit_comment({{ item.id }})" title="{{ _('Edit') }}"
+               class="action-link edit-link"
+               data-edit-url="{{ url('comment_edit_ajax', item.id) }}"
+               data-body="{{ item.body|e }}">
               <i class="fa fa-pencil fa-fw"></i>{{_('Edit')}}
             </a>
           {% endif %}

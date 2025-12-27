@@ -426,6 +426,11 @@ function showCopyFeedback(target, message) {
     }, 1500);
 }
 
+/**
+ * Register clipboard image paste handler for simple textareas.
+ * Note: For full PageDown editors, use MarkdownEditor class instead,
+ * which handles clipboard paste internally.
+ */
 function register_copy_clipboard($elements, callback) {
     $elements.on('paste', function(event) {
         const items = (event.clipboardData || event.originalEvent.clipboardData).items;

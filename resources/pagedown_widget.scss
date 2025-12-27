@@ -8,7 +8,6 @@
 
 .wmd-button-bar {
     width: 100%;
-    background-color: white;
 }
 
 .wmd-input {
@@ -241,5 +240,209 @@
         position: absolute;
         top: 2px;
         right: 1em;
+    }
+}
+
+/* Minimal mode styles - YouTube-like comment input */
+.wmd-wrapper-minimal {
+    .minimal-editor-container {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .minimal-input {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        max-height: 200px;
+        padding: 8px 8px;
+        border: none;
+        border-bottom: 1px solid $border_gray;
+        background: transparent;
+        resize: none;
+        transition: border-color 0.2s ease;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        overflow-y: hidden;
+        box-sizing: border-box;
+
+        &:focus {
+            border-bottom-color: $theme_color;
+            border-bottom-width: 2px;
+            outline: none;
+        }
+
+        &::placeholder {
+            color: #909090;
+        }
+    }
+
+    .minimal-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+
+    // Show actions when input is focused or has content
+    &.has-focus .minimal-actions,
+    &.has-content .minimal-actions {
+        opacity: 1;
+        max-height: 50px;
+    }
+
+    .minimal-cancel-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 18px;
+        background: transparent;
+        color: $widget_black;
+        font-weight: 500;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.2s ease;
+
+        &:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+    }
+
+    .minimal-submit-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 18px;
+        background: $border_gray;
+        color: #606060;
+        font-weight: 500;
+        font-size: 0.9rem;
+        cursor: not-allowed;
+        transition: all 0.2s ease;
+
+        &.active {
+            background: $theme_color;
+            color: white;
+            cursor: pointer;
+
+            &:hover {
+                background: darken($theme_color, 10%);
+            }
+        }
+    }
+
+    .minimal-expand-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        color: #606060;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+
+        &:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: $widget_black;
+        }
+
+        i {
+            font-size: 14px;
+        }
+    }
+}
+
+/* Full mode header with toolbar and collapse button */
+.full-editor-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+
+    .wmd-button-bar {
+        flex: 1;
+    }
+
+    .full-collapse-btn {
+        width: 28px;
+        height: 28px;
+        border: 1px solid $border_gray;
+        border-radius: 4px;
+        background: $background_light_gray;
+        color: $widget_black;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+
+        &:hover {
+            background: $theme_color;
+            border-color: $theme_color;
+            color: white;
+        }
+
+        i {
+            font-size: 12px;
+        }
+    }
+}
+
+/* Full mode action buttons */
+.full-editor-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid $border_gray;
+
+    .full-cancel-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 18px;
+        background: transparent;
+        color: $widget_black;
+        font-weight: 500;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.2s ease;
+
+        &:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+    }
+
+    .full-submit-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 18px;
+        background: $theme_color;
+        color: white;
+        font-weight: 500;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background: darken($theme_color, 10%);
+        }
+
+        &:disabled {
+            background: $border_gray;
+            color: #606060;
+            cursor: not-allowed;
+        }
     }
 }

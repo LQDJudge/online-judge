@@ -1,57 +1,123 @@
 {% compress js %}
-  {{ comment_form.media.js }}
+  <script src="{{ static('pagedown/Markdown.Converter.js') }}"></script>
+  <script src="{{ static('pagedown-extra/pagedown/Markdown.Converter.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Sanitizer.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Editor.js') }}"></script>
+  <script src="{{ static('pagedown-extra/Markdown.Extra.js') }}"></script>
+  <script src="{{ static('pagedown_init.js') }}"></script>
   <script type="text/javascript">
     $(document).ready(function () {
       let loading_gif = "<i class=\"fa fa-spinner fa-pulse loading\" style=\"font-size: 1.5em; margin-bottom: 1em;\"></i>";
+
+      // Configuration passed from Django
+      var commentConfig = {
+        contentTypeId: {{ comment_content_type_id }},
+        objectId: {{ comment_object_id }},
+        postUrl: '{{ url('comment_post') }}',
+        previewUrl: '{{ url('comment_preview') }}',
+        imageUploadUrl: '/pagedown/image-upload/',
+        isNewUser: {{ 'true' if is_new_user else 'false' }},
+        newUserMessage: '{{ _('You need to have solved at least one problem before your voice can be heard.') }}',
+        placeholder: '{{ _('Write a comment...') }}'
+      };
+
       /**
-       * Submit a comment via AJAX
-       * 
-       * @param {jQuery} $form - The form to submit
-       * @param {Object} options - Additional options
-       * @returns {Promise} - jQuery AJAX promise
+       * Wait for MarkdownEditor to be loaded (handles race condition with pagedown_init.js)
        */
-      function submitCommentForm($form, options) {
-        const opts = {
-          isReply: false,
-          parentId: null,
-          onSuccess: null,
-          onError: null,
-          ...options
-        };
+      function waitForMarkdownEditor(callback, maxRetries) {
+        maxRetries = maxRetries || 10;
+        var attempts = 0;
+        function check() {
+          if (typeof MarkdownEditor !== 'undefined') {
+            callback();
+          } else if (attempts < maxRetries) {
+            attempts++;
+            setTimeout(check, 200);
+          } else {
+            console.error('MarkdownEditor not loaded after ' + maxRetries + ' attempts');
+          }
+        }
+        check();
+      }
 
-        // Get form data
-        const formData = $form.serializeArray();
-        const formDataObj = {};
+      /**
+       * Initialize the new comment form
+       */
+      function initNewCommentForm() {
+        var $container = $('#new-comment-container');
+        if ($container.length === 0) return;
 
-        // Convert form data to object
-        formData.forEach(item => {
-          formDataObj[item.name] = item.value;
+        // Check if user is new and can't comment
+        if (commentConfig.isNewUser) {
+          $container.html(`
+            <div class="alert alert-info" style="margin-top: 1em;">
+              ${commentConfig.newUserMessage}
+            </div>
+          `);
+          return;
+        }
+
+        // Create the minimal comment form container
+        var formHtml = `
+          <div id="new-comment-form" class="new-comment-minimal">
+            <div id="new-comment-editor-container" class="editor-container"></div>
+          </div>
+        `;
+
+        $container.html(formHtml);
+
+        // Create MarkdownEditor instance in minimal mode
+        var editorContainer = document.getElementById('new-comment-editor-container');
+        var newCommentEditor = new MarkdownEditor(editorContainer, {
+          id: 'new-comment-editor',
+          previewUrl: commentConfig.previewUrl,
+          imageUploadUrl: commentConfig.imageUploadUrl,
+          enableImageUpload: true,
+          mode: 'minimal',
+          placeholder: commentConfig.placeholder,
+          submitLabel: '{{ _("Post") }}',
+          cancelLabel: '{{ _("Cancel") }}',
+          expandLabel: '{{ _("Expand editor") }}',
+          collapseLabel: '{{ _("Collapse editor") }}',
+          onSubmit: function() {
+            submitNewComment();
+          }
         });
 
-        // Add content type and object ID
-        formDataObj.content_type_id = {{ comment_content_type_id }};
-        formDataObj.object_id = {{ comment_object_id }};
+        // Store editor reference
+        $container.find('#new-comment-form').data('editor', newCommentEditor);
 
-        // Show loading indicator
-        const $loading = $(loading_gif);
-        $form.append($loading);
+        // Handle comment submission
+        function submitNewComment() {
+          var body = newCommentEditor.getValue();
+          if (!body.trim()) return;
 
-        // Submit via AJAX
-        return $.ajax({
-          url: '{{ url('comment_post') }}',
-          type: 'POST',
-          data: formDataObj,
-          success: function(response) {
-            // Clear the form
-            $form.find('textarea').val('');
+          // Disable submit button (works in both minimal and full modes)
+          var $submitBtn = $container.find('.minimal-submit-btn, .full-submit-btn');
+          $submitBtn.prop('disabled', true);
 
-            if (opts.isReply) {
-              // For replies, reload the parent's replies
-              if (opts.parentId) {
-                comment_get_replies(opts.parentId);
-              }
-            } else {
-              // For new top-level comments, prepend to the list
+          // Prepare form data
+          var formDataObj = {
+            csrfmiddlewaretoken: $.cookie('csrftoken'),
+            parent: '',
+            body: body,
+            content_type_id: commentConfig.contentTypeId,
+            object_id: commentConfig.objectId
+          };
+
+          // Show loading
+          var $loading = $(loading_gif);
+          $container.find('#new-comment-editor-container').append($loading);
+
+          $.ajax({
+            url: commentConfig.postUrl,
+            type: 'POST',
+            data: formDataObj,
+            success: function(response) {
+              // Reset the editor to minimal mode
+              newCommentEditor.reset();
+
+              // Prepend new comment to the list
               $('#comment-0').prepend(response);
               $('.no-comments-message').hide();
 
@@ -68,126 +134,156 @@
               renderKatex($('#comments')[0]);
               register_time($('.time-with-rel'));
               register_comment_operations();
-            }
 
-            // Call success callback if provided
-            if (typeof opts.onSuccess === 'function') {
-              opts.onSuccess(response);
-            }
-          },
-          error: function(xhr) {
-            let errorMessage = 'An error occurred while posting your comment.';
-
-            // Try to parse error message from response
-            try {
-              const response = JSON.parse(xhr.responseText);
-              if (typeof response === 'object') {
-                errorMessage = Object.values(response).flat().join('<br>');
-              } else if (xhr.responseText) {
-                errorMessage = xhr.responseText;
+              $submitBtn.prop('disabled', false);
+            },
+            error: function(xhr) {
+              var errorMessage = 'An error occurred while posting your comment.';
+              try {
+                var response = JSON.parse(xhr.responseText);
+                if (typeof response === 'object') {
+                  errorMessage = Object.values(response).flat().join('<br>');
+                }
+              } catch (e) {
+                if (xhr.responseText) {
+                  errorMessage = xhr.responseText;
+                }
               }
-            } catch (e) {
-              if (xhr.responseText) {
-                errorMessage = xhr.responseText;
-              }
+              alert(errorMessage);
+              $submitBtn.prop('disabled', false);
+            },
+            complete: function() {
+              $loading.remove();
             }
-
-            // Show error message
-            alert(errorMessage);
-
-            // Call error callback if provided
-            if (typeof opts.onError === 'function') {
-              opts.onError(xhr);
-            }
-          },
-          complete: function() {
-            // Remove loading indicator
-            $loading.remove();
-          }
-        });
+          });
+        }
       }
+
+      // Initialize the new comment form (wait for MarkdownEditor to load)
+      waitForMarkdownEditor(initNewCommentForm);
 
       /**
        * Create and show a comment reply form
-       * 
+       * Uses MarkdownEditor class for clean, encapsulated editor creation
+       *
        * @param {number} parentId - ID of the comment being replied to
        */
       window.reply_comment = function (parentId) {
-        // Get the container for the reply form
         var $replyContainer = $('#comment-' + parentId + '-reply');
-        var formId = 'reply-' + parentId;
-        var editorId = 'id' + parentId + '_body';
+        var formId = 'reply-form-' + parentId;
+        var editorId = 'reply-editor-' + parentId;
 
         // Only create the form if it doesn't already exist
         if ($replyContainer.find('#' + formId).length === 0) {
-          // Clone the main comment form and customize it for the reply
-          var $replyForm = $('#new-comment').clone(true)
-            .prop('id', formId)
-            .css("display", "");
+          // Create the reply form container
+          var formHtml = `
+            <div id="${formId}" class="reply-comment-minimal">
+              <div id="${editorId}-container" class="editor-container"></div>
+            </div>
+          `;
 
-          // Update form elements and text
-          $replyForm.find('h3').html('{{ _('Replying to comment') }}');
-          $replyForm.prepend('<a class="close">x</a>');
+          $replyContainer.append(formHtml);
 
-          // Set the parent ID in the form
-          $replyForm.find('form.comment-submit-form input#id_parent').val(parentId);
+          // Create MarkdownEditor instance in minimal mode
+          var editorContainer = document.getElementById(editorId + '-container');
+          var editor = new MarkdownEditor(editorContainer, {
+            id: editorId,
+            previewUrl: commentConfig.previewUrl,
+            imageUploadUrl: commentConfig.imageUploadUrl,
+            enableImageUpload: true,
+            mode: 'minimal',
+            placeholder: '{{ _("Write a reply...") }}',
+            submitLabel: '{{ _("Reply") }}',
+            cancelLabel: '{{ _("Cancel") }}',
+            expandLabel: '{{ _("Expand editor") }}',
+            collapseLabel: '{{ _("Collapse editor") }}',
+            onSubmit: function() {
+              submitReply();
+            },
+            onCancel: function() {
+              // Clean up editor and form
+              editor.destroy();
+              $('#' + formId).remove();
+            }
+          });
 
-          // Update IDs for the Markdown editor
-          $replyForm.find('div#wmd-button-bar-id_body').empty()
-            .prop('id', 'wmd-button-bar-' + editorId);
-          $replyForm.find('textarea.wmd-input').val('')
-            .prop('id', 'wmd-input-' + editorId);
-          $replyForm.find('div#id_body-preview')
-            .attr('data-textarea-id', 'wmd-input-' + editorId)
-            .prop('id', editorId + '-preview');
+          // Store editor reference on the form element
+          $replyContainer.find('#' + formId).data('editor', editor);
 
-          // Add the form to the reply container
-          $replyForm.appendTo($replyContainer);
+          // Handle reply submission
+          function submitReply() {
+            var body = editor.getValue();
+            if (!body.trim()) return;
 
-          // Initialize the Markdown preview
-          register_dmmd_preview($replyForm.find('div#' + editorId + '-preview'));
+            // Disable submit button
+            var $submitBtn = $replyContainer.find('.minimal-submit-btn');
+            $submitBtn.prop('disabled', true);
 
-          // Initialize PageDown editor if available
-          if ('DjangoPagedown' in window) {
-            window.DjangoPagedown.createEditor($replyForm.find('div.wmd-wrapper').get(0));
-          }
+            // Prepare form data
+            var formDataObj = {
+              csrfmiddlewaretoken: $.cookie('csrftoken'),
+              parent: parentId,
+              body: body,
+              content_type_id: commentConfig.contentTypeId,
+              object_id: commentConfig.objectId
+            };
 
-          // Override form submission to use AJAX
-          $replyForm.find('form.comment-submit-form').off('submit');
-          $replyForm.find('form.comment-submit-form').on('submit', function(event) {
-            event.preventDefault();
+            // Show loading
+            var $loading = $(loading_gif);
+            $replyContainer.find('.reply-comment-minimal').append($loading);
 
-            // Get the submit button and disable it temporarily
-            var $submitButton = $(this).find('input[type="submit"]');
-            $submitButton.prop('disabled', true);
+            $.ajax({
+              url: commentConfig.postUrl,
+              type: 'POST',
+              data: formDataObj,
+              success: function(response) {
+                // Clean up editor and form
+                editor.destroy();
+                $('#' + formId).remove();
 
-            submitCommentForm($(this), {
-              isReply: true,
-              parentId: parentId,
-              onSuccess: function() {
-                // Clean up the editor
-                window.DjangoPagedown.destroyEditor($replyForm.find('div.wmd-wrapper').get(0));
-                $replyForm.remove();
+                // Reload replies
+                comment_get_replies(parentId);
               },
-              onError: function() {
-                // Re-enable the button if there was an error
-                $submitButton.prop('disabled', false);
+              error: function(xhr) {
+                var errorMessage = 'An error occurred while posting your comment.';
+                try {
+                  var response = JSON.parse(xhr.responseText);
+                  if (typeof response === 'object') {
+                    errorMessage = Object.values(response).flat().join('<br>');
+                  }
+                } catch (e) {
+                  if (xhr.responseText) {
+                    errorMessage = xhr.responseText;
+                  }
+                }
+                alert(errorMessage);
+                $submitBtn.prop('disabled', false);
+              },
+              complete: function() {
+                $loading.remove();
               }
             });
-          });
+          }
         }
 
-        // Show the reply container
-        $replyContainer.fadeIn();
-
-        // Scroll to the reply form
-        $('html, body').animate({
-          scrollTop: $replyContainer.offset().top - $('#navigation').height() - 4
-        }, 500);
+        // Show the reply container (remove hidden attr as fadeIn may not handle it)
+        $replyContainer.removeAttr('hidden').fadeIn();
+        var editor = $replyContainer.find('#' + formId).data('editor');
+        if (editor) {
+          editor.focus();
+        }
       };
 
+      // Close button handler for old-style reply forms
       $(document).on('click', '.close', function() {
-        $(this).closest('.reply-comment').fadeOut();
+        $(this).closest('.reply-comment, .reply-comment-minimal').fadeOut();
+      });
+
+      // Allow Escape key to close the reply form
+      $(document).on('keydown', '.reply-comment-minimal textarea', function(e) {
+        if (e.key === 'Escape') {
+          $(this).closest('.reply-comment-minimal').fadeOut();
+        }
       });
 
       function update_math($comment) {
@@ -310,48 +406,143 @@
           });
       };
 
-      window.register_comment_operations = function() {
-        var $comments = $('#comments');
-        $comments.find('a.edit-link').featherlight({
-          afterOpen: function () {
-            register_dmmd_preview($('#id-edit-comment-body-preview'));
-            if ('DjangoPagedown' in window) {
-              DjangoPagedown.createEditor(
-                $('#wmd-input-id-edit-comment-body').closest('.wmd-wrapper')[0]
-              );
-              var $wmd = $('.featherlight .wmd-wrapper');
-              if ($wmd.length) {
-                var preview = $('.featherlight div.wmd-preview')[0];
-                renderKatex(preview);
-              }
-            }
-            $('#comment-edit').submit(function (event) {
-              event.preventDefault();
-              var id = $('#comment-edit').find('.comment-id').text();
-              var readback = $('#comment-edit').find('.read-back').text();
-              $.post($(this).attr('action'), $(this).serialize()).done(function (data) {
-                $.featherlight.current().close();
-                $.ajax({
-                  url: readback
-                }).done(function (data) {
-                  var $comment = $('#comment-' + id);
+      // Store inline edit editors by comment ID
+      var inlineEditEditors = {};
+
+      /**
+       * Inline edit a comment
+       * Replaces the comment body with an editor in place
+       */
+      window.edit_comment = function(commentId) {
+        var $comment = $('#comment-' + commentId);
+        var $body = $comment.find('.body').first();
+        var $commentBody = $body.find('.comment-body').first();
+        var $editLink = $comment.find('.edit-link').first();
+
+        // Don't allow editing if already editing
+        if ($body.find('.inline-edit-container').length > 0) {
+          return;
+        }
+
+        // Get the raw markdown from data attribute
+        var rawBody = $editLink.data('body') || '';
+        var editUrl = $editLink.data('edit-url');
+
+        // Store original HTML for cancel
+        var originalHtml = $body.html();
+
+        // Hide original content and create editor container
+        $commentBody.hide();
+        $body.find('.bad-comment-body').hide();
+
+        var editorContainerId = 'inline-edit-' + commentId;
+        var $editorContainer = $('<div id="' + editorContainerId + '" class="inline-edit-container"></div>');
+        $body.append($editorContainer);
+
+        // Create MarkdownEditor in minimal mode with expand/collapse
+        var editor = new MarkdownEditor($editorContainer[0], {
+          id: 'inline-edit-editor-' + commentId,
+          previewUrl: commentConfig.previewUrl,
+          imageUploadUrl: commentConfig.imageUploadUrl,
+          enableImageUpload: true,
+          mode: 'minimal',
+          placeholder: '{{ _("Edit your comment...") }}',
+          initialValue: rawBody,
+          submitLabel: '{{ _("Save") }}',
+          cancelLabel: '{{ _("Cancel") }}',
+          expandLabel: '{{ _("Expand editor") }}',
+          collapseLabel: '{{ _("Collapse editor") }}',
+          onSubmit: function() {
+            submitEdit();
+          },
+          onCancel: function() {
+            cancelEdit();
+          }
+        });
+
+        // Store editor reference
+        inlineEditEditors[commentId] = editor;
+
+        // Add focus state classes to show buttons immediately
+        var $wrapper = $editorContainer.find('.wmd-wrapper-minimal');
+        $wrapper.addClass('has-focus has-content');
+
+        // Focus the editor
+        editor.focus();
+
+        // Submit edit handler
+        function submitEdit() {
+          var body = editor.getValue();
+          if (!body.trim()) return;
+
+          // Disable submit button
+          var $submitBtn = $editorContainer.find('.full-submit-btn');
+          $submitBtn.prop('disabled', true).text('{{ _("Saving...") }}');
+
+          $.ajax({
+            url: editUrl,
+            type: 'POST',
+            data: {
+              csrfmiddlewaretoken: $.cookie('csrftoken'),
+              body: body
+            },
+            success: function() {
+              // Fetch updated comment content
+              $.ajax({
+                url: '{{ url("comment_content", 0) }}'.replace('0', commentId),
+                success: function(data) {
+                  // Clean up editor
+                  editor.destroy();
+                  delete inlineEditEditors[commentId];
+
+                  // Update comment HTML
                   $comment.html(data);
                   update_math($comment);
-                  var $edits = $comment.find('.comment-edits').first();
-                  $edits.text('updated');
-                }).fail(function () {
-                  console.log('Failed to update comment:' + id);
-                });
+
+                  // Update the edit link's data-body attribute with new content
+                  var $newEditLink = $comment.find('.edit-link').first();
+                  $newEditLink.data('body', body);
+
+                  // Re-register comment operations
+                  register_comment_operations();
+                },
+                error: function() {
+                  console.log('Failed to fetch updated comment');
+                  $submitBtn.prop('disabled', false).text('{{ _("Save") }}');
+                }
               });
-            });
-          },
-          beforeClose: function() {
-            DjangoPagedown.destroyEditor(
-              $('#wmd-input-id-edit-comment-body').closest('.wmd-wrapper')[0]
-            );
-          },
-          variant: 'featherlight-edit'
-        });
+            },
+            error: function(xhr) {
+              var errorMessage = '{{ _("An error occurred while saving your comment.") }}';
+              try {
+                var response = JSON.parse(xhr.responseText);
+                if (typeof response === 'object') {
+                  errorMessage = Object.values(response).flat().join('<br>');
+                }
+              } catch (e) {
+                if (xhr.responseText) {
+                  errorMessage = xhr.responseText;
+                }
+              }
+              alert(errorMessage);
+              $submitBtn.prop('disabled', false).text('{{ _("Save") }}');
+            }
+          });
+        }
+
+        // Cancel edit handler
+        function cancelEdit() {
+          // Clean up editor
+          editor.destroy();
+          delete inlineEditEditors[commentId];
+
+          // Restore original content
+          $body.html(originalHtml);
+        }
+      };
+
+      window.register_comment_operations = function() {
+        var $comments = $('#comments');
 
         var $root = $('html, body');
         $comments.find('a.comment-link').click(function () {
@@ -473,37 +664,6 @@
           showTooltip(element, "{{ _('Copied link') }}", 'n');
         });
       };
-
-      $("#write-comment").click( function(event)  {
-        event.preventDefault();
-        $("#new-comment").show("slow");
-        $("#write-comment").hide();
-        $(".no-comments-message").hide();
-      });
-
-      // Set up AJAX submission for the main comment form
-      $('.comment-submit-form').submit(function(event) {
-        event.preventDefault();
-
-        // Get the submit button and disable it temporarily
-        var $submitButton = $(this).find('input[type="submit"]');
-        $submitButton.prop('disabled', true);
-
-        submitCommentForm($(this), {
-          onSuccess: function() {
-            // Hide the form after successful submission
-            $("#new-comment").hide();
-            $("#write-comment").show();
-
-            // Re-enable the submit button
-            $submitButton.prop('disabled', false);
-          },
-          onError: function() {
-            // Also re-enable the button if there was an error
-            $submitButton.prop('disabled', false);
-          }
-        });
-      });
 
       $(window).on('hashchange', function () {
         var hash = window.location.hash;

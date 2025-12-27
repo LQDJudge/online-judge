@@ -1,4 +1,4 @@
-{% set can_comment = request.user.is_authenticated and comment_form and not comment_lock %}
+{% set can_comment = request.user.is_authenticated and not comment_lock %}
 <div id="comments" class="comment-area">
   <div class="comment-header-wrapper">
     <div style="display: flex; gap: 1em; align-items: center;">
@@ -8,11 +8,6 @@
           <span class="comment-count-badge">({{ all_comment_count }})</span>
         {% endif %}
       </h2>
-      {% if can_comment %}
-        <a href="#" id="write-comment" class="action-btn small">
-          <i class="fa fa-plus"></i> {{ _('Write comment') }}
-        </a>
-      {% endif %}
     </div>
     <div class="comment-sort-controls">
       <div class="action-btn comment-sort-dropdown small">
@@ -35,34 +30,7 @@
     </div>
   </div>
   {% if can_comment %}
-    <div id="new-comment" class="form-area comment-submit" style="display: none;" >
-      {% block comment_submit_title %}
-        <h3>{{ _('New comment') }}</h3>
-        <hr>
-      {% endblock %}
-      {% if is_new_user %}
-        <div style="margin-bottom: 0" class="alert alert-info">
-          {{ _('You need to have solved at least one problem before your voice can be heard.') }}
-        </div>
-      {% else %}
-        <form class="comment-submit-form" action="{{ url('comment_post') }}" method="post">
-          {% csrf_token %}
-          {% if comment_form.errors %}
-            <div id="form-errors">
-              {{ comment_form.non_field_errors() }}
-              {{ comment_form.parent.errors }}
-              {% if comment_form.body.errors %}{{ _('Invalid comment body.') }}{% endif %}
-            </div>
-          {% endif %}
-          {{ comment_form.parent }}
-          <div class="comment-post-wrapper">
-            <div id="comment-form-body">{{ comment_form.body }}</div>
-          </div>
-          <hr>
-          <input style="float:right" type="submit" value="{{ _('Post!') }}" class="button">
-        </form>
-      {% endif %}
-    </div>
+    <div id="new-comment-container"></div>
   {% endif %}
 
   <!-- Comments will be loaded via AJAX -->

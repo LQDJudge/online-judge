@@ -498,6 +498,9 @@ class CommentContent(CommentMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["vote_hide_threshold"] = settings.DMOJ_COMMENT_VOTE_HIDE_THRESHOLD
+        context["profile"] = self.request.profile
+        context["perms"] = PermWrapper(self.request.user)
+        context["comment_lock"] = is_comment_locked(self.request)
         return context
 
 

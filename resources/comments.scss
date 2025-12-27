@@ -367,11 +367,42 @@
         }
     }
 
-    // Comment form
-    #new-comment, .comment-submit {
-        margin-top: 1em;
-        width: 100%;
-        margin-bottom: 1em;
+    // Minimal new comment form (YouTube-style)
+    .new-comment-minimal {
+        margin: 16px 0;
+
+        .editor-container {
+            width: 100%;
+        }
+    }
+
+    // Inline edit container
+    .inline-edit-container {
+        margin-top: 8px;
+
+        .wmd-wrapper {
+            margin: 0;
+        }
+
+        // Full mode editor min-height (not for minimal mode)
+        .wmd-wrapper:not(.wmd-wrapper-minimal) .wmd-input {
+            min-height: 100px;
+            max-height: 400px;
+        }
+
+        .wmd-preview {
+            margin-top: 10px;
+        }
+    }
+
+    // Minimal reply form (YouTube-style)
+    .reply-comment-minimal {
+        margin: 12px 0;
+        padding-left: 52px; // Align with comment content
+
+        .editor-container {
+            width: 100%;
+        }
     }
 
     // Show more comments link
@@ -771,5 +802,32 @@
         .comment-time {
             color: #e4e6eb;
         }
+    }
+}
+
+// Comment edit modal
+.comment-edit-modal {
+    padding: 16px;
+    min-width: 400px;
+    max-width: 600px;
+
+    .editor-container {
+        margin-bottom: 16px;
+    }
+
+    .edit-comment-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 16px;
+    }
+}
+
+// Featherlight edit modal customization
+.featherlight-edit {
+    .featherlight-content {
+        padding: 0;
+        border-radius: 8px;
+        overflow: hidden;
     }
 }

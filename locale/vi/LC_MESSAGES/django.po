@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-27 08:22+0700\n"
+"POT-Creation-Date: 2025-12-27 10:13+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -64,8 +64,8 @@ msgstr "Gần đây"
 #: templates/organization/users-table.html:19
 #: templates/problem/left-sidebar.html:16
 #: templates/problem/problem-list-tabs.html:9
-#: templates/problem/problem.html:251 templates/submission/info-base.html:12
-#: templates/submission/list.html:394
+#: templates/problem/problem.html:247 templates/submission/info-base.html:12
+#: templates/submission/list.html:382
 #: templates/submission/submission-list-tabs.html:15
 msgid "Admin"
 msgstr "Admin"
@@ -290,7 +290,7 @@ msgstr "Giới hạn"
 #: templates/problem/language_templates.html:134
 #: templates/problem/language_templates.html:193
 #: templates/problem/translations.html:71 templates/stats/tab.html:4
-#: templates/submission/list.html:345
+#: templates/submission/list.html:333
 msgid "Language"
 msgstr "Ngôn ngữ"
 
@@ -2913,8 +2913,8 @@ msgstr ""
 msgid "Is Submitted"
 msgstr "Nộp bài"
 
-#: judge/models/quiz.py:563 templates/comments/list.html:23
-#: templates/comments/list.html:32 templates/course/course.html:78
+#: judge/models/quiz.py:563 templates/comments/list.html:18
+#: templates/comments/list.html:27 templates/course/course.html:78
 #: templates/course/grades.html:86 templates/course/grades_lesson.html:81
 #: templates/user/user-problems.html:99
 msgid "Score"
@@ -3614,24 +3614,24 @@ msgstr "Chỉnh sửa từ web"
 msgid "Editing comment"
 msgstr "Chỉnh sửa bình luận"
 
-#: judge/views/comment.py:615
+#: judge/views/comment.py:618
 msgid "Posted comment"
 msgstr "Bình luận đã đăng"
 
-#: judge/views/comment.py:678
+#: judge/views/comment.py:681
 msgid "Comment body"
 msgstr "Nội dung bình luận"
 
-#: judge/views/comment.py:684 judge/views/ticket.py:82
+#: judge/views/comment.py:687 judge/views/ticket.py:82
 msgid "Your part is silent, little toad."
 msgstr "Bạn không được phép bình luận."
 
-#: judge/views/comment.py:693 templates/comments/list.html:45
+#: judge/views/comment.py:696 templates/comments/media-js.html:20
 msgid ""
 "You need to have solved at least one problem before your voice can be heard."
 msgstr "Bạn phải giải ít nhất một bài trước khi được phép bình luận."
 
-#: judge/views/comment.py:788
+#: judge/views/comment.py:791
 msgid "Comment feed"
 msgstr "Bình luận"
 
@@ -4498,7 +4498,7 @@ msgstr "Bạn không được phép chỉnh sửa kỳ thi này."
 
 #: judge/views/organization.py:1177 judge/views/organization.py:1183
 #: templates/blog/blog.html:50 templates/comments/comment-item.html:70
-#: templates/comments/comment-item.html:71
+#: templates/comments/comment-item.html:74
 #: templates/contest/contest-tabs.html:39 templates/contest/macros.html:14
 #: templates/contest/tag-title.html:9 templates/course/edit_lesson.html:21
 #: templates/course/lesson.html:44 templates/course/tag.html:9
@@ -4902,7 +4902,7 @@ msgstr "Thống kê"
 
 #: judge/views/status.py:27 templates/blog/list.html:93
 #: templates/notification/list.html:99 templates/notification/list.html:146
-#: templates/submission/list.html:336
+#: templates/submission/list.html:324
 msgid "Status"
 msgstr "Kết quả chấm"
 
@@ -4916,7 +4916,7 @@ msgid "Submission of %(problem)s by %(user)s"
 msgstr "Bài nộp của %(user)s cho bài %(problem)s"
 
 #: judge/views/submission.py:292 judge/views/submission.py:293
-#: templates/problem/problem.html:197
+#: templates/problem/problem.html:193
 msgid "All submissions"
 msgstr "Tất cả bài nộp"
 
@@ -5147,7 +5147,7 @@ msgstr "Chia sẻ"
 msgid "Report"
 msgstr "Báo cáo"
 
-#: templates/actionbar/media-js.html:103 templates/comments/media-js.html:473
+#: templates/actionbar/media-js.html:103 templates/comments/media-js.html:664
 msgid "Copied link"
 msgstr "Đã sao chép link"
 
@@ -5327,7 +5327,7 @@ msgstr "Tất cả"
 #: templates/blog/list.html:95 templates/blog/list.html:121
 #: templates/contest/contest-list-tabs.html:2
 #: templates/notification/list.html:101 templates/problem/search-form.html:66
-#: templates/problem/search-form.html:68 templates/submission/list.html:380
+#: templates/problem/search-form.html:68 templates/submission/list.html:368
 #: templates/submission/submission-list-tabs.html:4
 msgid "All"
 msgstr "Tất cả"
@@ -5367,7 +5367,7 @@ msgid "No comments found"
 msgstr "không có bình luận"
 
 #: templates/blog/list.html:143 templates/problem/list.html:172
-#: templates/problem/problem.html:480
+#: templates/problem/problem.html:476
 msgid "Clarifications"
 msgstr "Thông báo"
 
@@ -5381,7 +5381,7 @@ msgid "Add"
 msgstr "Thêm mới"
 
 #: templates/blog/list.html:168 templates/problem/list.html:196
-#: templates/problem/problem.html:491
+#: templates/problem/problem.html:487
 msgid "No clarifications have been made at this time."
 msgstr "Không có thông báo nào."
 
@@ -5461,7 +5461,7 @@ msgstr "người đang trực tuyến"
 msgid "edit %(edits)s"
 msgstr "chỉnh sửa %(edits)s"
 
-#: templates/comments/comment-item.html:17 templates/comments/media-js.html:225
+#: templates/comments/comment-item.html:17 templates/comments/media-js.html:321
 msgid "edited"
 msgstr "đã chỉnh sửa"
 
@@ -5482,16 +5482,16 @@ msgstr ""
 msgid "Please login to vote"
 msgstr "Đăng nhập để vote"
 
-#: templates/comments/comment-item.html:65
+#: templates/comments/comment-item.html:65 templates/comments/media-js.html:196
 msgid "Reply"
 msgstr "Phản hồi"
 
-#: templates/comments/comment-item.html:75
-#: templates/comments/comment-item.html:76
+#: templates/comments/comment-item.html:78
+#: templates/comments/comment-item.html:79
 msgid "Hide"
 msgstr "Ẩn"
 
-#: templates/comments/comment-item.html:90
+#: templates/comments/comment-item.html:93
 msgid "reply"
 msgid_plural "replies"
 msgstr[0] "phản hồi"
@@ -5501,64 +5501,105 @@ msgid "more comment"
 msgid_plural "more comments"
 msgstr[0] "bình luận nữa"
 
+#: templates/comments/edit-ajax.html:12 templates/comments/media-js.html:451
+#: templates/comments/media-js.html:511 templates/comments/media-js.html:528
+#: templates/course/create_lesson.html:54 templates/course/edit.html:55
+#: templates/course/edit_contest.html:90
+#: templates/course/edit_lesson_new_window.html:103
+#: templates/course/members.html:169 templates/organization/blog/edit.html:36
+#: templates/organization/contest/edit.html:108
+#: templates/organization/course/add.html:63
+#: templates/organization/form.html:30 templates/pagedown.html:31
+#: templates/problem/data.html:842 templates/problem/edit.html:368
+#: templates/problem/language_templates.html:138
+#: templates/problem/translations.html:75
+#: templates/ticket/edit-assignees.html:22 templates/ticket/ticket.html:119
+#: templates/ticket/ticket.html:131 templates/widgets/file_edit.html:17
+msgid "Save"
+msgstr "Lưu"
+
+#: templates/comments/edit-ajax.html:13 templates/comments/media-js.html:79
+#: templates/comments/media-js.html:197 templates/comments/media-js.html:452
+#: templates/course/create.html:68 templates/fine_uploader/script.html:23
+#: templates/internal/problem_queue.html:430
+#: templates/organization/course/edit.html:89 templates/pagedown.html:32
+#: templates/problem/data.html:841
+msgid "Cancel"
+msgstr "Hủy"
+
 #: templates/comments/feed.html:33 templates/submission/row.html:55
 #: templates/ticket/feed.html:25
 msgid "d/m/Y"
 msgstr "d/m/Y"
 
-#: templates/comments/list.html:13
-msgid "Write comment"
-msgstr "Thêm bình luận"
-
-#: templates/comments/list.html:21 templates/comments/list.html:31
+#: templates/comments/list.html:16 templates/comments/list.html:26
 msgid "Least recent"
 msgstr "Xa nhất"
 
-#: templates/comments/list.html:25 templates/comments/list.html:30
+#: templates/comments/list.html:20 templates/comments/list.html:25
 msgid "Most recent"
 msgstr "Gần nhất"
 
-#: templates/comments/list.html:40
-msgid "New comment"
-msgstr "Bình luận mới"
-
-#: templates/comments/list.html:54
-msgid "Invalid comment body."
-msgstr "Nội dung không hợp lệ."
-
-#: templates/comments/list.html:62
-msgid "Post!"
-msgstr "Đăng!"
-
-#: templates/comments/list.html:71
+#: templates/comments/list.html:39
 msgid "Loading comments..."
 msgstr "Tải bình luận..."
 
-#: templates/comments/list.html:79
+#: templates/comments/list.html:47
 msgid "There are no comments at the moment."
 msgstr "Không có bình luận nào."
 
-#: templates/comments/list.html:84
+#: templates/comments/list.html:52
 msgid "Comments are disabled on this page."
 msgstr "Bình luận bị tắt trong trang này."
 
-#: templates/comments/list.html:127 templates/comments/list.html:156
-#: templates/comments/list.html:192
+#: templates/comments/list.html:95 templates/comments/list.html:124
+#: templates/comments/list.html:160
 msgid "Error loading comments."
 msgstr "Tải bình luận bị lỗi."
 
-#: templates/comments/media-js.html:129
-msgid "Replying to comment"
-msgstr "Trả lời bình luận"
+#: templates/comments/media-js.html:21
+msgid "Write a comment..."
+msgstr "Thêm bình luận"
 
-#: templates/comments/media-js.html:220
+#: templates/comments/media-js.html:78 templates/ticket/ticket.html:267
+msgid "Post"
+msgstr "Đăng"
+
+#: templates/comments/media-js.html:80 templates/comments/media-js.html:198
+#: templates/comments/media-js.html:453
+msgid "Expand editor"
+msgstr "Mở rộng trình soạn thảo"
+
+#: templates/comments/media-js.html:81 templates/comments/media-js.html:199
+#: templates/comments/media-js.html:454
+msgid "Collapse editor"
+msgstr "Thu gọn trình soạn thảo"
+
+#: templates/comments/media-js.html:195
+msgid "Write a reply..."
+msgstr "Viết phản hồi..."
+
+#: templates/comments/media-js.html:316
 #, python-brace-format
 msgid "edit {edits}"
 msgstr "chỉnh sửa {edits}"
 
-#: templates/comments/media-js.html:223
+#: templates/comments/media-js.html:319
 msgid "original"
 msgstr "original"
+
+#: templates/comments/media-js.html:449
+msgid "Edit your comment..."
+msgstr "Chỉnh sửa bình luận"
+
+#: templates/comments/media-js.html:480 templates/ticket/ticket.html:80
+#: templates/ticket/ticket.html:109
+msgid "Saving..."
+msgstr "Đang lưu..."
+
+#: templates/comments/media-js.html:516
+msgid "An error occurred while saving your comment."
+msgstr "Đã xảy ra lỗi khi lưu bình luận của bạn."
 
 #: templates/contest/access_code.html:26
 msgid "Invalid access code."
@@ -5712,7 +5753,7 @@ msgstr "Lịch"
 msgid "Info"
 msgstr "Thông tin"
 
-#: templates/contest/contest-tabs.html:13 templates/submission/list.html:362
+#: templates/contest/contest-tabs.html:13 templates/submission/list.html:350
 msgid "Statistics"
 msgstr "Thống kê"
 
@@ -5776,7 +5817,7 @@ msgid "Complete problemset"
 msgstr "Bộ đề bài"
 
 #: templates/contest/contest.html:153 templates/problem/list.html:157
-#: templates/problem/problem.html:142
+#: templates/problem/problem.html:138
 msgid "View as PDF"
 msgstr "Xem PDF"
 
@@ -5972,7 +6013,7 @@ msgstr "Đến"
 #: templates/contest/search-form.html:39
 #: templates/internal/problem_queue.html:334
 #: templates/organization/search-form.html:19
-#: templates/problem/search-form.html:86 templates/submission/list.html:354
+#: templates/problem/search-form.html:86 templates/submission/list.html:342
 #: templates/ticket/list.html:250
 msgid "Go"
 msgstr "Lọc"
@@ -6011,37 +6052,37 @@ msgstr "Thời gian:"
 msgid "Memory Limit"
 msgstr "Giới hạn bộ nhớ"
 
-#: templates/contest/problemset.html:76 templates/problem/problem.html:413
+#: templates/contest/problemset.html:76 templates/problem/problem.html:409
 #: templates/problem/raw.html:68
 msgid "Points:"
 msgstr "Điểm:"
 
-#: templates/contest/problemset.html:83 templates/problem/problem.html:297
-#: templates/problem/problem.html:424 templates/problem/raw.html:79
+#: templates/contest/problemset.html:83 templates/problem/problem.html:293
+#: templates/problem/problem.html:420 templates/problem/raw.html:79
 msgid "Time limit:"
 msgstr "Thời gian:"
 
-#: templates/contest/problemset.html:88 templates/problem/problem.html:310
-#: templates/problem/problem.html:429 templates/problem/raw.html:84
+#: templates/contest/problemset.html:88 templates/problem/problem.html:306
+#: templates/problem/problem.html:425 templates/problem/raw.html:84
 msgid "Memory limit:"
 msgstr "Bộ nhớ:"
 
-#: templates/contest/problemset.html:93 templates/problem/problem.html:434
+#: templates/contest/problemset.html:93 templates/problem/problem.html:430
 #: templates/problem/raw.html:89 templates/submission/status-testcases.html:155
 msgid "Input:"
 msgstr "Input:"
 
-#: templates/contest/problemset.html:96 templates/problem/problem.html:436
+#: templates/contest/problemset.html:96 templates/problem/problem.html:432
 #: templates/problem/raw.html:91
 msgid "stdin"
 msgstr "bàn phím"
 
-#: templates/contest/problemset.html:101 templates/problem/problem.html:441
+#: templates/contest/problemset.html:101 templates/problem/problem.html:437
 #: templates/problem/raw.html:96 templates/submission/status-testcases.html:159
 msgid "Output:"
 msgstr "Output:"
 
-#: templates/contest/problemset.html:103 templates/problem/problem.html:442
+#: templates/contest/problemset.html:103 templates/problem/problem.html:438
 #: templates/problem/raw.html:97
 msgid "stdout"
 msgstr "màn hình"
@@ -6186,31 +6227,9 @@ msgstr "Vui lòng sửa các lỗi bên dưới"
 msgid "Create Course"
 msgstr "Tạo khóa học"
 
-#: templates/course/create.html:68 templates/fine_uploader/script.html:23
-#: templates/internal/problem_queue.html:430
-#: templates/organization/course/edit.html:89 templates/pagedown.html:32
-#: templates/problem/data.html:841
-msgid "Cancel"
-msgstr "Hủy"
-
 #: templates/course/create_lesson.html:32
 msgid "Create new lesson"
 msgstr "Tạo bài học mới"
-
-#: templates/course/create_lesson.html:54 templates/course/edit.html:55
-#: templates/course/edit_contest.html:90
-#: templates/course/edit_lesson_new_window.html:103
-#: templates/course/members.html:169 templates/organization/blog/edit.html:36
-#: templates/organization/contest/edit.html:108
-#: templates/organization/course/add.html:63
-#: templates/organization/form.html:30 templates/pagedown.html:31
-#: templates/problem/data.html:842 templates/problem/edit.html:368
-#: templates/problem/language_templates.html:138
-#: templates/problem/translations.html:75
-#: templates/ticket/edit-assignees.html:22 templates/ticket/ticket.html:119
-#: templates/ticket/ticket.html:131 templates/widgets/file_edit.html:17
-msgid "Save"
-msgstr "Lưu"
 
 #: templates/course/edit_contest.html:64
 #: templates/organization/contest/edit.html:82
@@ -6822,7 +6841,7 @@ msgstr "Bỏ chặn"
 msgid "Login to Join"
 msgstr "Đăng nhập để tham gia"
 
-#: templates/organization/list.html:39 templates/submission/list.html:382
+#: templates/organization/list.html:39 templates/submission/list.html:370
 #: templates/submission/submission-list-tabs.html:6
 msgid "Mine"
 msgstr "Tôi"
@@ -7071,7 +7090,7 @@ msgstr "Xem hướng dẫn"
 msgid "Autofill testcases"
 msgstr "Tự động điền test"
 
-#: templates/problem/data.html:811 templates/problem/problem.html:342
+#: templates/problem/data.html:811 templates/problem/problem.html:338
 msgid "Problem type"
 msgid_plural "Problem types"
 msgstr[0] "Dạng bài"
@@ -7315,7 +7334,7 @@ msgid ""
 msgstr "Bạn chuẩn bị {action} vài bài nộp. Tiếp tục?"
 
 #: templates/problem/manage_submission.html:141
-#: templates/submission/list.html:332
+#: templates/submission/list.html:320
 msgid "Filter submissions"
 msgstr "Lọc bài nộp"
 
@@ -7368,103 +7387,103 @@ msgstr "Bạn có chắc muốn tính điểm lại %(count)d bài nộp?"
 msgid "Rescore all submissions"
 msgstr "Tính điểm lại các bài nộp"
 
-#: templates/problem/problem.html:153 templates/problem/problem.html:168
-#: templates/problem/problem.html:178
+#: templates/problem/problem.html:149 templates/problem/problem.html:164
+#: templates/problem/problem.html:174
 msgid "Submit"
 msgstr "Nộp bài"
 
-#: templates/problem/problem.html:160
+#: templates/problem/problem.html:156
 #, python-format
 msgid "%(counter)s submission left"
 msgid_plural "%(counter)s submissions left"
 msgstr[0] "Còn %(counter)s lần nộp"
 
-#: templates/problem/problem.html:173
+#: templates/problem/problem.html:169
 msgid "0 submissions left"
 msgstr "Còn 0 lần nộp"
 
-#: templates/problem/problem.html:191
+#: templates/problem/problem.html:187
 msgid "My submissions"
 msgstr "Bài nộp của tôi"
 
-#: templates/problem/problem.html:202
+#: templates/problem/problem.html:198
 msgid "Best submissions"
 msgstr "Các bài nộp tốt nhất"
 
-#: templates/problem/problem.html:209
+#: templates/problem/problem.html:205
 msgid "Read editorial"
 msgstr "Xem hướng dẫn"
 
-#: templates/problem/problem.html:218
+#: templates/problem/problem.html:214
 msgid "Manage tickets"
 msgstr "Xử lý báo cáo"
 
-#: templates/problem/problem.html:227
+#: templates/problem/problem.html:223
 msgid "My tickets"
 msgstr "Báo cáo của tôi"
 
-#: templates/problem/problem.html:237
+#: templates/problem/problem.html:233
 msgid "Manage submissions"
 msgstr "Quản lý bài nộp"
 
-#: templates/problem/problem.html:245
+#: templates/problem/problem.html:241
 msgid "Clone problem"
 msgstr "Nhân bản bài"
 
-#: templates/problem/problem.html:260
+#: templates/problem/problem.html:256
 msgid "Edit problem"
 msgstr "Chỉnh sửa bài"
 
-#: templates/problem/problem.html:266
+#: templates/problem/problem.html:262
 msgid "Edit test data"
 msgstr "Chỉnh sửa test"
 
-#: templates/problem/problem.html:272
+#: templates/problem/problem.html:268
 msgid "Edit language limits"
 msgstr "Chỉnh sửa giới hạn ngôn ngữ"
 
-#: templates/problem/problem.html:277
+#: templates/problem/problem.html:273
 msgid "Edit templates"
 msgstr "Chỉnh sửa code mẫu"
 
-#: templates/problem/problem.html:282
+#: templates/problem/problem.html:278
 msgid "Edit solutions"
 msgstr "Chỉnh sửa lời giải"
 
-#: templates/problem/problem.html:287
+#: templates/problem/problem.html:283
 msgid "Edit translations"
 msgstr "Chỉnh sửa bản dịch"
 
-#: templates/problem/problem.html:328
+#: templates/problem/problem.html:324
 msgid "Author:"
 msgid_plural "Authors:"
 msgstr[0] "Tác giả:"
 
-#: templates/problem/problem.html:355
+#: templates/problem/problem.html:351
 msgid "Allowed languages"
 msgstr "Ngôn ngữ cho phép"
 
-#: templates/problem/problem.html:363
+#: templates/problem/problem.html:359
 #, python-format
 msgid "No %(lang)s judge online"
 msgstr "Không có máy chấm cho %(lang)s"
 
-#: templates/problem/problem.html:375
+#: templates/problem/problem.html:371
 #: templates/status/judge-status-table.html:2
 msgid "Judge"
 msgid_plural "Judges"
 msgstr[0] "Máy chấm"
 
-#: templates/problem/problem.html:393
+#: templates/problem/problem.html:389
 msgid "none available"
 msgstr "Bài này chưa có máy chấm"
 
-#: templates/problem/problem.html:405
+#: templates/problem/problem.html:401
 #, python-format
 msgid "This problem has %(length)s clarification(s)"
 msgstr "Bài này có %(length)s thông báo"
 
-#: templates/problem/problem.html:467
+#: templates/problem/problem.html:463
 msgid "Request clarification"
 msgstr "Yêu cầu làm rõ đề"
 
@@ -7917,33 +7936,33 @@ msgstr "Lỗi hệ thống xảy ra trong quá trình chấm."
 msgid "Error information"
 msgstr "Thông tin lỗi"
 
-#: templates/submission/list.html:119
+#: templates/submission/list.html:107
 msgid "Filter by status..."
 msgstr "Lọc theo kết quả..."
 
-#: templates/submission/list.html:125
+#: templates/submission/list.html:113
 msgid "Filter by language..."
 msgstr "Lọc theo ngôn ngữ..."
 
-#: templates/submission/list.html:309
+#: templates/submission/list.html:297
 msgid "You were disconnected. Refresh to show latest updates."
 msgstr "Bạn bị ngắt kết nối. Hãy làm mới để xem cập nhật mới nhất."
 
-#: templates/submission/list.html:368
+#: templates/submission/list.html:356
 msgid "Total:"
 msgstr "Tổng:"
 
-#: templates/submission/list.html:385
+#: templates/submission/list.html:373
 #: templates/submission/submission-list-tabs.html:9
 msgid "Best"
 msgstr "Tốt nhất"
 
-#: templates/submission/list.html:388
+#: templates/submission/list.html:376
 #, python-format
 msgid "%(user)s"
 msgstr "%(user)s"
 
-#: templates/submission/list.html:391 templates/user/user-left-sidebar.html:3
+#: templates/submission/list.html:379 templates/user/user-left-sidebar.html:3
 #: templates/user/user-list-tabs.html:5
 msgid "Friends"
 msgstr "Bạn bè"
@@ -8173,10 +8192,6 @@ msgstr ""
 "Lưu ý rằng đây là đơn báo cáo các vấn đề trong đề bài, không phải nơi để hỏi "
 "bài hay nộp bài."
 
-#: templates/ticket/ticket.html:80 templates/ticket/ticket.html:109
-msgid "Saving..."
-msgstr "Đang lưu..."
-
 #: templates/ticket/ticket.html:90
 msgid "Could not update notes"
 msgstr "Không thể cập nhật ghi chú"
@@ -8188,10 +8203,6 @@ msgstr "Lỗi: Không thể cập nhật người chỉ định"
 #: templates/ticket/ticket.html:124
 msgid "Could not update assignees"
 msgstr "Không thể cập nhật người chỉ định"
-
-#: templates/ticket/ticket.html:267
-msgid "Post"
-msgstr "Đăng"
 
 #: templates/ticket/ticket.html:275
 msgid "Close ticket"
@@ -8643,6 +8654,18 @@ msgstr "Thay đổi ảnh"
 #: templates/widgets/select_all.html:8
 msgid "Check all"
 msgstr "Chọn tất cả"
+
+#~ msgid "New comment"
+#~ msgstr "Bình luận mới"
+
+#~ msgid "Invalid comment body."
+#~ msgstr "Nội dung không hợp lệ."
+
+#~ msgid "Post!"
+#~ msgstr "Đăng!"
+
+#~ msgid "Replying to comment"
+#~ msgstr "Trả lời bình luận"
 
 #~ msgid "Custom background"
 #~ msgstr "Hình nền tự chọn"
