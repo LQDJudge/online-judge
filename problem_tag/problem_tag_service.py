@@ -7,6 +7,7 @@ import os
 import time
 from typing import List, Dict, Optional
 from .problem_tagger import ProblemTagger
+from .markdown_improver import MarkdownImprover
 from llm_service.llm_api import LLMService
 from llm_service.config import get_config
 import logging
@@ -25,6 +26,11 @@ class ProblemTagService:
             sleep_time=self.config.sleep_time,
         )
         self.llm_service = LLMService(
+            api_key=self.config.api_key,
+            bot_name=self.config.bot_name,
+            sleep_time=self.config.sleep_time,
+        )
+        self.markdown_improver = MarkdownImprover(
             api_key=self.config.api_key,
             bot_name=self.config.bot_name,
             sleep_time=self.config.sleep_time,
@@ -136,6 +142,46 @@ class ProblemTagService:
                 "problem_code": problem.code,
                 "success": False,
                 "is_valid": False,
+                "error": str(e),
+            }
+
+    def improve_problem_markdown(self, problem) -> Dict[str, any]:
+        """
+        Improve the markdown formatting of a problem's description using LLM
+
+        Args:
+            problem: Django Problem model instance
+
+        Returns:
+            Dict with improvement results including 'success' and 'improved_markdown'
+        """
+        statement = self.get_problem_statement(problem)
+        if not statement:
+            return {
+                "problem_code": problem.code,
+                "success": False,
+                "error": "Could not extract problem statement",
+            }
+
+        try:
+            result = self.markdown_improver.improve_markdown(
+                problem_statement=statement,
+                problem_name=problem.name,
+                problem_code=problem.code,
+                max_retries=self.config.max_retries,
+            )
+
+            return {
+                "problem_code": problem.code,
+                "success": result["success"],
+                "improved_markdown": result.get("improved_markdown"),
+                "error": result.get("error"),
+            }
+        except Exception as e:
+            logger.error(f"Error improving markdown for problem {problem.code}: {e}")
+            return {
+                "problem_code": problem.code,
+                "success": False,
                 "error": str(e),
             }
 

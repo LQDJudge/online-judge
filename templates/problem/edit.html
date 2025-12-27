@@ -9,6 +9,69 @@
     // Initialize shared problem form utilities
       initializeProblemForm();
 
+      // Handle Auto Improve Markdown button click
+      $('#improve-markdown-btn').click(function() {
+        var $btn = $(this);
+        var $status = $('#improve-markdown-status');
+        var problemCode = $('#id_code').val();
+
+        if (!problemCode) {
+          alert('{{ _('Please enter a problem code first.') }}');
+          return;
+        }
+
+        // Disable button and show loading
+        $btn.prop('disabled', true);
+        $status.text('{{ _('Improving markdown...') }}');
+
+        $.ajax({
+          url: '{{ url("problem_edit", problem=problem.code) }}',
+          type: 'POST',
+          data: {
+            'improve_markdown': '1',
+            'problem_code': problemCode,
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+          },
+          success: function(data) {
+            if (data.success) {
+              if (data.improved_markdown) {
+                // Show result below button
+                $('#improved-markdown-result').show();
+                $('#improved-markdown-content').val(data.improved_markdown);
+                $status.text('{{ _('Markdown improved!') }}').css('color', 'green');
+              } else {
+                $status.text('{{ _('No improvements needed') }}').css('color', 'orange');
+              }
+            } else {
+              $status.text('{{ _('Error: ') }}' + data.error).css('color', 'red');
+            }
+          },
+          error: function(xhr, status, error) {
+            $status.text('{{ _('Network error occurred') }}').css('color', 'red');
+          },
+          complete: function() {
+            // Re-enable button
+            $btn.prop('disabled', false);
+
+            // Clear status after 5 seconds
+            setTimeout(function() {
+              $status.text('').css('color', '#666');
+            }, 5000);
+          }
+        });
+      });
+
+      // Copy to clipboard
+      $('#improved-markdown-copy').click(function() {
+        var $content = $('#improved-markdown-content');
+        $content.select();
+        document.execCommand('copy');
+        $(this).text('{{ _('Copied!') }}');
+        setTimeout(function() {
+          $('#improved-markdown-copy').text('{{ _('Copy') }}');
+        }, 2000);
+      });
+
       // Handle AI tagging button click
       $('#tag-btn').click(function() {
         var $btn = $(this);
@@ -222,6 +285,26 @@
             {% endif %}
           </div>
 
+          <!-- AI Improve Markdown Button (only for superusers) -->
+          {% if request.user.is_superuser %}
+            <div class="form-row">
+              <button type="button" id="improve-markdown-btn" class="action-btn small" style="margin-right: 10px;">
+                <i class="fa fa-magic"></i> {{ _('Auto Improve Markdown') }}
+              </button>
+              <span id="improve-markdown-status" style="margin-left: 10px;"></span>
+            </div>
+            <div class="form-row" style="margin-top: -10px;">
+              <small class="gray">{{ _('Tip: Upload a PDF below and save first, then use this to convert PDF to markdown. Or use it to reformat existing markdown.') }}</small>
+            </div>
+            <div id="improved-markdown-result" class="form-row" style="display: none; flex-direction: column;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <label><b>{{ _('Improved Markdown:') }}</b></label>
+                <button type="button" id="improved-markdown-copy" class="action-btn small">{{ _('Copy') }}</button>
+              </div>
+              <textarea id="improved-markdown-content" readonly style="width: 100%; min-height: 200px; font-family: monospace; font-size: 13px; padding: 10px; border-radius: 4px; resize: vertical;"></textarea>
+            </div>
+          {% endif %}
+
           <div class="form-row">
             <label for="{{ form.pdf_description.id_for_label }}"><b>{{ _('PDF Description') }}{% if form.pdf_description.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
             {{ form.pdf_description }}
@@ -369,4 +452,5 @@
       </div>
     </form>
   </div>
+
 {% endblock %}

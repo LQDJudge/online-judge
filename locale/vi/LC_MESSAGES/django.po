@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-27 11:09+0700\n"
+"POT-Creation-Date: 2025-12-27 12:35+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -220,7 +220,7 @@ msgstr "đường dẫn"
 #: judge/admin/interface.py:94 judge/admin/problem.py:203
 #: templates/blog/list.html:119 templates/course/lesson.html:10
 #: templates/notification/list.html:149 templates/problem/add.html:57
-#: templates/problem/edit.html:114
+#: templates/problem/edit.html:177
 msgid "Content"
 msgstr "Nội dung"
 
@@ -272,7 +272,7 @@ msgstr "Phân loại"
 #: templates/contest/problemset.html:33 templates/course/contest_list.html:21
 #: templates/course/edit_lesson.html:18
 #: templates/internal/problem_queue.html:414 templates/problem/add.html:212
-#: templates/problem/data.html:907 templates/problem/edit.html:282
+#: templates/problem/data.html:907 templates/problem/edit.html:365
 #: templates/problem/list.html:22 templates/problem/list.html:48
 #: templates/profile-table.html:31 templates/profile-table.html:41
 #: templates/user/base-users-table.html:10 templates/user/user-problems.html:58
@@ -300,7 +300,7 @@ msgstr "Lịch sử"
 
 #: judge/admin/problem.py:291 judge/admin/quiz.py:147 judge/admin/quiz.py:298
 #: templates/internal/problem_queue.html:65 templates/problem/add.html:119
-#: templates/problem/edit.html:176 templates/problem/list-base.html:90
+#: templates/problem/edit.html:239 templates/problem/list-base.html:90
 msgid "Authors"
 msgstr "Các tác giả"
 
@@ -753,7 +753,7 @@ msgid "Selected course does not exist."
 msgstr "Khóa học bạn chọn không tồn tại."
 
 #: judge/forms.py:816 judge/views/course.py:1832 judge/views/course.py:1842
-#: templates/problem/add.html:95 templates/problem/edit.html:152
+#: templates/problem/add.html:95 templates/problem/edit.html:215
 #: templates/user/import/table_csv.html:9
 msgid "Organizations"
 msgstr "Nhóm"
@@ -4655,108 +4655,108 @@ msgstr "Chỉnh sửa {0}"
 msgid "Editing problem for %s"
 msgstr "Chỉnh sửa bài tập cho %s"
 
-#: judge/views/problem.py:1384
+#: judge/views/problem.py:1435
 msgid "Add Problem"
 msgstr "Thêm bài tập"
 
-#: judge/views/problem.py:1416
+#: judge/views/problem.py:1467
 #, python-format
 msgid "Problem '%(name)s' has been created successfully!"
 msgstr "Bài tập '%(name)s' đã được tạo thành công!"
 
-#: judge/views/problem.py:1442
+#: judge/views/problem.py:1493
 #, python-brace-format
 msgid "Edit Language Limits - {0}"
 msgstr "Chỉnh sửa giới hạn ngôn ngữ - {0}"
 
-#: judge/views/problem.py:1446
+#: judge/views/problem.py:1497
 #, python-format
 msgid "Editing language limits for %s"
 msgstr "Chỉnh sửa giới hạn ngôn ngữ cho %s"
 
-#: judge/views/problem.py:1532
+#: judge/views/problem.py:1583
 #, python-brace-format
 msgid "Edit Language Templates - {0}"
 msgstr "Chỉnh sửa code mẫu - {0}"
 
-#: judge/views/problem.py:1536
+#: judge/views/problem.py:1587
 #, python-format
 msgid "Editing language templates for %s"
 msgstr "Chỉnh sửa code mẫu cho %s"
 
-#: judge/views/problem.py:1582
+#: judge/views/problem.py:1633
 msgid "Language template deleted successfully."
 msgstr "Đoạn code mẫu được xóa thành công."
 
-#: judge/views/problem.py:1584 judge/views/problem.py:1603
+#: judge/views/problem.py:1635 judge/views/problem.py:1654
 msgid "Language template not found."
 msgstr "Code mẫu không tìm thấy"
 
-#: judge/views/problem.py:1598
+#: judge/views/problem.py:1649
 msgid "Language template updated successfully."
 msgstr "Đoạn code mẫu được cập nhật thành công"
 
-#: judge/views/problem.py:1615
+#: judge/views/problem.py:1666
 msgid "Language template added successfully."
 msgstr "Code mẫu được thêm thành công"
 
-#: judge/views/problem.py:1649
+#: judge/views/problem.py:1700
 #, python-brace-format
 msgid "Edit Solutions - {0}"
 msgstr "Chỉnh sửa lời giải - {0}"
 
-#: judge/views/problem.py:1653
+#: judge/views/problem.py:1704
 #, python-format
 msgid "Editing solutions for %s"
 msgstr "Chỉnh sửa lời giải cho %s"
 
-#: judge/views/problem.py:1704
+#: judge/views/problem.py:1755
 msgid "Solution deleted successfully."
 msgstr "Lời giải đã xóa thành công"
 
-#: judge/views/problem.py:1706
+#: judge/views/problem.py:1757
 msgid "Solution not found."
 msgstr "Lời giải không tìm thấy"
 
-#: judge/views/problem.py:1715
+#: judge/views/problem.py:1766
 msgid "Solution updated successfully."
 msgstr "Lời giải cập nhật thành công"
 
-#: judge/views/problem.py:1720
+#: judge/views/problem.py:1771
 msgid "A solution already exists for this problem."
 msgstr "Lời giải đã tồn tại cho bài tập này."
 
-#: judge/views/problem.py:1728
+#: judge/views/problem.py:1779
 msgid "Solution added successfully."
 msgstr "Lời giải được thêm thành công"
 
-#: judge/views/problem.py:1770
+#: judge/views/problem.py:1821
 #, python-brace-format
 msgid "Edit Translations - {0}"
 msgstr "Chỉnh sửa bản dịch - {0}"
 
-#: judge/views/problem.py:1774
+#: judge/views/problem.py:1825
 #, python-format
 msgid "Editing translations for %s"
 msgstr "Chỉnh sửa bản dịch cho %s"
 
-#: judge/views/problem.py:1826
+#: judge/views/problem.py:1877
 msgid "Translation deleted successfully."
 msgstr "Bản dịch cập nhật thành công"
 
-#: judge/views/problem.py:1828 judge/views/problem.py:1883
+#: judge/views/problem.py:1879 judge/views/problem.py:1934
 msgid "Translation not found."
 msgstr "Bản dịch không tìm thấy"
 
-#: judge/views/problem.py:1847
+#: judge/views/problem.py:1898
 msgid "Translation updated successfully."
 msgstr "Bản dịch cập nhật thành công"
 
-#: judge/views/problem.py:1895
+#: judge/views/problem.py:1946
 msgid "A translation for this language already exists."
 msgstr "Bản dịch với ngôn ngữ này đã tồn tại"
 
-#: judge/views/problem.py:1904
+#: judge/views/problem.py:1955
 msgid "Translation added successfully."
 msgstr "Bản dịch được thêm thành công"
 
@@ -5525,7 +5525,7 @@ msgstr[0] "bình luận nữa"
 #: templates/organization/contest/edit.html:108
 #: templates/organization/course/add.html:63
 #: templates/organization/form.html:30 templates/pagedown.html:31
-#: templates/problem/data.html:842 templates/problem/edit.html:368
+#: templates/problem/data.html:842 templates/problem/edit.html:451
 #: templates/problem/language_templates.html:138
 #: templates/problem/translations.html:75
 #: templates/ticket/edit-assignees.html:22 templates/ticket/ticket.html:119
@@ -6102,7 +6102,7 @@ msgid "Time Limit"
 msgstr "Thời gian:"
 
 #: templates/contest/problemset.html:35 templates/problem/add.html:250
-#: templates/problem/edit.html:320 templates/problem/language_limits.html:57
+#: templates/problem/edit.html:403 templates/problem/language_limits.html:57
 #: templates/problem/language_limits.html:157
 msgid "Memory Limit"
 msgstr "Giới hạn bộ nhớ"
@@ -6585,7 +6585,7 @@ msgid ""
 msgstr "Xem xét và sửa đổi các đề xuất trước khi lưu."
 
 #: templates/internal/problem_queue.html:420 templates/problem/add.html:185
-#: templates/problem/edit.html:243
+#: templates/problem/edit.html:326
 msgid "Problem Types"
 msgstr "Dạng bài tập"
 
@@ -6602,12 +6602,12 @@ msgid "There has been an error with your problem data configuration."
 msgstr "Hiện đang có lỗi với bộ dữ liệu của bài tập của bạn"
 
 #: templates/judge/emails/problem_checker_error.html:19
-#: templates/problem/add.html:66 templates/problem/edit.html:123
+#: templates/problem/add.html:66 templates/problem/edit.html:186
 msgid "Problem Code"
 msgstr "Mã bài tập"
 
 #: templates/judge/emails/problem_checker_error.html:20
-#: templates/problem/add.html:78 templates/problem/edit.html:135
+#: templates/problem/add.html:78 templates/problem/edit.html:198
 msgid "Problem Name"
 msgstr "Tên bài tập"
 
@@ -7062,50 +7062,50 @@ msgstr "Từ web"
 msgid "From your computer"
 msgstr "Từ máy tính của bạn"
 
-#: templates/problem/add.html:58 templates/problem/edit.html:115
+#: templates/problem/add.html:58 templates/problem/edit.html:178
 msgid "Metadata"
 msgstr "Dữ liệu"
 
-#: templates/problem/add.html:107 templates/problem/edit.html:164
+#: templates/problem/add.html:107 templates/problem/edit.html:227
 msgid "Publication Date"
 msgstr "Ngày được tạo"
 
-#: templates/problem/add.html:131 templates/problem/edit.html:188
+#: templates/problem/add.html:131 templates/problem/edit.html:251
 msgid "Curators"
 msgstr "Người quản lý"
 
-#: templates/problem/add.html:143 templates/problem/edit.html:200
+#: templates/problem/add.html:143 templates/problem/edit.html:263
 msgid "Testers"
 msgstr "Người kiểm tra"
 
-#: templates/problem/add.html:155 templates/problem/edit.html:212
+#: templates/problem/add.html:155 templates/problem/edit.html:275
 msgid "Problem Description"
 msgstr "Đề bài"
 
-#: templates/problem/add.html:169 templates/problem/edit.html:226
+#: templates/problem/add.html:169 templates/problem/edit.html:309
 msgid "PDF Description"
 msgstr "Đề bài PDF"
 
-#: templates/problem/add.html:197 templates/problem/edit.html:255
+#: templates/problem/add.html:197 templates/problem/edit.html:338
 msgid "Problem Group"
 msgstr "Nhóm bài tập"
 
-#: templates/problem/add.html:237 templates/problem/edit.html:307
+#: templates/problem/add.html:237 templates/problem/edit.html:390
 #: templates/problem/language_limits.html:56
 #: templates/problem/language_limits.html:145
 msgid "Time Limit (s)"
 msgstr "Giới hạn thời gian (giây)"
 
-#: templates/problem/add.html:261 templates/problem/edit.html:332
+#: templates/problem/add.html:261 templates/problem/edit.html:415
 #: templates/problem/language_limits.html:169
 msgid "Memory Unit"
 msgstr "Đơn vị bộ nhớ"
 
-#: templates/problem/add.html:276 templates/problem/edit.html:347
+#: templates/problem/add.html:276 templates/problem/edit.html:430
 msgid "Allowed Languages"
 msgstr "Ngôn ngữ lập trình cho phép"
 
-#: templates/problem/add.html:280 templates/problem/edit.html:351
+#: templates/problem/add.html:280 templates/problem/edit.html:434
 msgid "Select All"
 msgstr "Chọn tất cả"
 
@@ -7222,31 +7222,67 @@ msgstr "Tham số sinh test"
 msgid "Add new case"
 msgstr "Thêm test mới"
 
-#: templates/problem/edit.html:19
+#: templates/problem/edit.html:19 templates/problem/edit.html:82
 msgid "Please enter a problem code first."
 msgstr "Vui lòng nhập tên bài"
 
 #: templates/problem/edit.html:25
-msgid "Analyzing problem..."
-msgstr "Phân tích bài tập..."
+msgid "Improving markdown..."
+msgstr "Đang cải thiện markdown..."
 
-#: templates/problem/edit.html:72
-msgid "Problem-tag analysis completed successfully!"
-msgstr "Gán nhãn bài thành công!"
+#: templates/problem/edit.html:41
+msgid "Markdown improved!"
+msgstr "Đã cải thiện markdown!"
 
-#: templates/problem/edit.html:75
-msgid "Problem format is incomplete - could not analyze"
-msgstr "Định dạng bài toán chưa hoàn chỉnh - không thể phân tích"
+#: templates/problem/edit.html:43
+msgid "No improvements needed"
+msgstr "Không cần cải thiện"
 
-#: templates/problem/edit.html:78
+#: templates/problem/edit.html:46 templates/problem/edit.html:141
 msgid "Error: "
 msgstr "Lỗi: "
 
-#: templates/problem/edit.html:82
+#: templates/problem/edit.html:50 templates/problem/edit.html:145
 msgid "Network error occurred"
 msgstr "Xảy ra lỗi mạng"
 
-#: templates/problem/edit.html:272
+#: templates/problem/edit.html:69
+msgid "Copied!"
+msgstr "Đã sao chép!"
+
+#: templates/problem/edit.html:71 templates/problem/edit.html:302
+msgid "Copy"
+msgstr "Sao chép"
+
+#: templates/problem/edit.html:88
+msgid "Analyzing problem..."
+msgstr "Phân tích bài tập..."
+
+#: templates/problem/edit.html:135
+msgid "Problem-tag analysis completed successfully!"
+msgstr "Gán nhãn bài thành công!"
+
+#: templates/problem/edit.html:138
+msgid "Problem format is incomplete - could not analyze"
+msgstr "Định dạng bài toán chưa hoàn chỉnh - không thể phân tích"
+
+#: templates/problem/edit.html:292
+msgid "Auto Improve Markdown"
+msgstr "Tự động cải thiện Markdown"
+
+#: templates/problem/edit.html:297
+msgid ""
+"Tip: Upload a PDF below and save first, then use this to convert PDF to "
+"markdown. Or use it to reformat existing markdown."
+msgstr ""
+"Mẹo: Tải PDF lên bên dưới và lưu trước, sau đó dùng tính năng này để chuyển "
+"PDF thành markdown. Hoặc dùng để định dạng lại markdown hiện có."
+
+#: templates/problem/edit.html:301
+msgid "Improved Markdown:"
+msgstr "Markdown đã cải thiện:"
+
+#: templates/problem/edit.html:355
 msgid "Auto-Generate Types & Points"
 msgstr "Tự động gán nhãn dạng bài & điểm"
 

@@ -1304,12 +1304,16 @@ class ProblemEdit(
         return self.render_to_response(self.get_context_data(form=form))
 
     def post(self, request, *args, **kwargs):
-        """Handle POST requests - either AI tagging or regular form submission"""
+        """Handle POST requests - either AI tagging, markdown improvement, or regular form submission"""
         self.object = self.get_object()
 
         # Check if this is an AI tagging request
         if request.POST.get("problem_tag") == "1":
             return self.handle_problem_tag(request)
+
+        # Check if this is a markdown improvement request
+        if request.POST.get("improve_markdown") == "1":
+            return self.handle_improve_markdown(request)
 
         # Otherwise, handle regular form submission
         return super().post(request, *args, **kwargs)
@@ -1370,6 +1374,53 @@ class ProblemEdit(
         except Exception as e:
             logger = logging.getLogger(__name__)
             logger.error(f"Error in AI tagging: {e}")
+            return JsonResponse(
+                {"success": False, "error": "An unexpected error occurred"}
+            )
+
+    def handle_improve_markdown(self, request):
+        """Handle markdown improvement request"""
+        try:
+            # Check if user is superuser (only superusers can use this feature)
+            if not request.user.is_superuser:
+                return JsonResponse({"success": False, "error": "Permission denied"})
+
+            problem_code = request.POST.get("problem_code")
+            if not problem_code:
+                return JsonResponse(
+                    {"success": False, "error": "Problem code is required"}
+                )
+
+            try:
+                problem = Problem.objects.get(code=problem_code)
+            except Problem.DoesNotExist:
+                return JsonResponse({"success": False, "error": "Problem not found"})
+
+            # Use the problem tag service for markdown improvement
+            tag_service = get_problem_tag_service()
+
+            # Call the service to improve the markdown
+            result = tag_service.improve_problem_markdown(problem)
+
+            if result["success"]:
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "improved_markdown": result.get("improved_markdown"),
+                        "problem_code": problem.code,
+                    }
+                )
+            else:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": result.get("error", "Unknown error occurred"),
+                    }
+                )
+
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in markdown improvement: {e}")
             return JsonResponse(
                 {"success": False, "error": "An unexpected error occurred"}
             )
