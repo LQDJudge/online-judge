@@ -5270,8 +5270,6 @@ msgid "This site works best with JavaScript enabled."
 msgstr "Trang web này hoạt động tốt nhất khi bật JavaScript."
 
 #: templates/blog/blog.html:53
-#, fuzzy
-#| msgid "Ticket"
 msgid "Tickets"
 msgstr "Báo cáo"
 
