@@ -20,6 +20,16 @@ class SolutionGenerator:
         self.llm_service = LLMService(api_key, bot_name, sleep_time)
         self.sleep_time = sleep_time
 
+    def _fix_unclosed_code_blocks(self, markdown: str) -> str:
+        """
+        Fix unclosed code blocks in markdown.
+        Counts ``` occurrences and adds closing ``` if odd.
+        """
+        code_block_count = markdown.count("```")
+        if code_block_count % 2 == 1:
+            markdown = markdown.rstrip() + "\n```"
+        return markdown
+
     def get_solution_template(self) -> str:
         """Return the target format template for solutions"""
         return """## Tóm tắt đề bài
@@ -288,6 +298,9 @@ OUTPUT: Provide ONLY the solution markdown in the format shown in the template. 
                     solution = solution[:-3]
 
                 solution = solution.strip()
+
+                # Fix unclosed code blocks
+                solution = self._fix_unclosed_code_blocks(solution)
 
                 if solution:
                     logger.info(f"Successfully generated solution for problem")
