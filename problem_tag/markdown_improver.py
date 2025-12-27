@@ -64,9 +64,9 @@ class MarkdownImprover:
         Với hai hình chữ nhật kích thước là $4\\cdot 5$ và $4\\cdot 5$ thì hình vuông nhỏ nhất chứa đủ phải có kích thước $8\\cdot 8$. Vậy cần đưa ra đáp số là $64$.
 
 #### Scoring
- + Subtask $1$ ($20\%$ số điểm): $n, k, x, |A_i|$ $\le 10^3$ , $mod = 10^9 + 7.$
- + Subtask $2$ ($20\%$ số điểm): $n$ và $k \le 2.10^5 , |A_i|$ và $x \le 10^9, mod = 10^9 + 7.$
- + Subtask $3$ ($60\%$ số điểm): không có ràng buộc gì thêm."""
+ + Subtask $1$ ($20\\%$ số điểm): $n, k, x, |A_i|$ $\\le 10^3$ , $mod = 10^9 + 7.$
+ + Subtask $2$ ($20\\%$ số điểm): $n$ và $k \\le 2.10^5 , |A_i|$ và $x \\le 10^9, mod = 10^9 + 7.$
+ + Subtask $3$ ($60\\%$ số điểm): không có ràng buộc gì thêm."""
 
     def _fix_unclosed_code_blocks(self, markdown: str) -> str:
         """
