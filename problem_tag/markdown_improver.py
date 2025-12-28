@@ -87,7 +87,7 @@ class MarkdownImprover:
         problem_statement: str,
         problem_name: str = None,
         problem_code: str = None,
-        max_retries: int = 3,
+        max_retries: int = 1,
     ) -> Dict[str, Any]:
         """
         Improve the markdown formatting of a problem statement.
@@ -96,7 +96,7 @@ class MarkdownImprover:
             problem_statement: The original problem statement (may include PDF reference)
             problem_name: Optional problem name for context
             problem_code: Optional problem code for context
-            max_retries: Maximum number of retries
+            max_retries: Maximum number of attempts
 
         Returns:
             Dict with 'success', 'improved_markdown', and optional 'error' fields

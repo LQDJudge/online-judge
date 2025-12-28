@@ -18,11 +18,16 @@ class LLMService:
     """General service for interacting with Poe API for various LLM tasks"""
 
     def __init__(
-        self, api_key: str, bot_name: str = "Claude-3.7-Sonnet", sleep_time: float = 2.5
+        self,
+        api_key: str,
+        bot_name: str = "Claude-3.7-Sonnet",
+        sleep_time: float = 2.5,
+        timeout: float = 120.0,
     ):
         self.api_key = api_key
         self.bot_name = bot_name
         self.sleep_time = sleep_time
+        self.timeout = timeout
 
         if not self.api_key:
             raise ValueError("API_KEY is required")
@@ -35,7 +40,10 @@ class LLMService:
             response = ""
 
             for partial in fp.get_bot_response_sync(
-                messages=messages, bot_name=self.bot_name, api_key=self.api_key
+                messages=messages,
+                bot_name=self.bot_name,
+                api_key=self.api_key,
+                read_timeout=self.timeout,
             ):
                 # Filter out intermediate "Thinking..." messages
                 if "Thinking" not in partial.text:

@@ -145,7 +145,7 @@ class ProblemTagger:
         problem_statement: str,
         available_tags: List[str],
         problem_obj=None,
-        max_retries: int = 5,
+        max_retries: int = 1,
     ) -> Dict[str, Any]:
         """
         Analyze problem format, predict difficulty and tags in one unified call.

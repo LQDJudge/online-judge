@@ -9,8 +9,8 @@ from typing import Optional
 # Default configuration values
 DEFAULT_BOT_NAME = "Claude-3.7-Sonnet"
 DEFAULT_SLEEP_TIME = 2.5
-DEFAULT_TIMEOUT = 30
-DEFAULT_MAX_RETRIES = 5
+DEFAULT_TIMEOUT = 120
+DEFAULT_MAX_RETRIES = 1
 
 
 class LLMConfig:

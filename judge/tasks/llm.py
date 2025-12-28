@@ -51,3 +51,43 @@ def generate_solution_task(self, problem_code, rough_ideas=""):
             "success": False,
             "error": str(e),
         }
+
+
+@shared_task(bind=True)
+def improve_markdown_task(self, problem_code):
+    """
+    Celery task to improve markdown formatting for a problem using LLM.
+
+    Args:
+        problem_code: The problem code
+
+    Returns:
+        Dict with improvement results (stored in Celery result backend)
+    """
+    try:
+        # Import here to avoid circular imports
+        from judge.models import Problem
+        from problem_tag.problem_tag_service import get_problem_tag_service
+
+        problem = Problem.objects.get(code=problem_code)
+        tag_service = get_problem_tag_service()
+        result = tag_service.improve_problem_markdown(problem)
+
+        return {
+            "success": result["success"],
+            "improved_markdown": result.get("improved_markdown"),
+            "error": result.get("error"),
+        }
+
+    except Problem.DoesNotExist:
+        return {
+            "success": False,
+            "error": f"Problem {problem_code} not found",
+        }
+
+    except Exception as e:
+        logger.error(f"Error in improve_markdown_task for {problem_code}: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+        }

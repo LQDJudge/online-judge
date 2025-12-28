@@ -173,7 +173,7 @@ int main() {
         problem_code: str = None,
         problem_obj=None,
         rough_ideas: str = "",
-        max_retries: int = 3,
+        max_retries: int = 1,
     ) -> Dict[str, Any]:
         """
         Generate a solution/editorial for a problem.
@@ -184,7 +184,7 @@ int main() {
             problem_code: Optional problem code for context
             problem_obj: Optional Problem model instance to get AC code
             rough_ideas: Optional user-provided rough ideas or draft solution
-            max_retries: Maximum number of retries
+            max_retries: Maximum number of attempts
 
         Returns:
             Dict with 'success', 'solution_content', and optional 'error' fields

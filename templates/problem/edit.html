@@ -9,6 +9,45 @@
     // Initialize shared problem form utilities
       initializeProblemForm();
 
+      // Poll for markdown improvement task result
+      function pollMarkdownTask(taskId, $btn, $status) {
+        var pollInterval = setInterval(function() {
+          $.ajax({
+            url: '{{ url('task_status_ajax') }}?id=' + taskId,
+            type: 'GET',
+            success: function(data) {
+              if (data.code === 'SUCCESS') {
+                clearInterval(pollInterval);
+                $btn.prop('disabled', false);
+
+                if (data.success && data.improved_markdown) {
+                  $('#improved-markdown-result').show();
+                  $('#improved-markdown-content').val(data.improved_markdown);
+                  $status.text('{{ _('Markdown improved!') }}').css('color', 'green');
+                } else if (data.error) {
+                  $status.text('{{ _('Error: ') }}' + data.error).css('color', 'red');
+                } else {
+                  $status.text('{{ _('No improvements needed') }}').css('color', 'orange');
+                }
+
+                setTimeout(function() {
+                  $status.text('').css('color', '#666');
+                }, 5000);
+              } else if (data.code === 'FAILURE') {
+                clearInterval(pollInterval);
+                $btn.prop('disabled', false);
+                $status.text('{{ _('Error: ') }}' + (data.error || 'Task failed')).css('color', 'red');
+              }
+            },
+            error: function() {
+              clearInterval(pollInterval);
+              $btn.prop('disabled', false);
+              $status.text('{{ _('Network error occurred') }}').css('color', 'red');
+            }
+          });
+        }, 2000);
+      }
+
       // Handle Auto Improve Markdown button click
       $('#improve-markdown-btn').click(function() {
         var $btn = $(this);
@@ -33,30 +72,17 @@
             'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
           },
           success: function(data) {
-            if (data.success) {
-              if (data.improved_markdown) {
-                // Show result below button
-                $('#improved-markdown-result').show();
-                $('#improved-markdown-content').val(data.improved_markdown);
-                $status.text('{{ _('Markdown improved!') }}').css('color', 'green');
-              } else {
-                $status.text('{{ _('No improvements needed') }}').css('color', 'orange');
-              }
-            } else {
+            if (data.success && data.task_id) {
+              $status.text('{{ _('Processing... please wait') }}').css('color', '#666');
+              pollMarkdownTask(data.task_id, $btn, $status);
+            } else if (data.error) {
               $status.text('{{ _('Error: ') }}' + data.error).css('color', 'red');
+              $btn.prop('disabled', false);
             }
           },
           error: function(xhr, status, error) {
             $status.text('{{ _('Network error occurred') }}').css('color', 'red');
-          },
-          complete: function() {
-            // Re-enable button
             $btn.prop('disabled', false);
-
-            // Clear status after 5 seconds
-            setTimeout(function() {
-              $status.text('').css('color', '#666');
-            }, 5000);
           }
         });
       });

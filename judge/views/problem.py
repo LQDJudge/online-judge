@@ -97,7 +97,7 @@ from judge.models.problem import (
 from judge.models.runtime import get_all_languages
 
 from judge.tasks import rescore_problem
-from judge.tasks.llm import generate_solution_task
+from judge.tasks.llm import generate_solution_task, improve_markdown_task
 
 from problem_tag import get_problem_tag_service
 
@@ -1382,7 +1382,7 @@ class ProblemEdit(
             )
 
     def handle_improve_markdown(self, request):
-        """Handle markdown improvement request"""
+        """Handle markdown improvement request - dispatches async Celery task"""
         try:
             # Check if user is superuser (only superusers can use this feature)
             if not request.user.is_superuser:
@@ -1399,27 +1399,17 @@ class ProblemEdit(
             except Problem.DoesNotExist:
                 return JsonResponse({"success": False, "error": "Problem not found"})
 
-            # Use the problem tag service for markdown improvement
-            tag_service = get_problem_tag_service()
+            # Dispatch async Celery task
+            task = improve_markdown_task.delay(problem_code)
 
-            # Call the service to improve the markdown
-            result = tag_service.improve_problem_markdown(problem)
-
-            if result["success"]:
-                return JsonResponse(
-                    {
-                        "success": True,
-                        "improved_markdown": result.get("improved_markdown"),
-                        "problem_code": problem.code,
-                    }
-                )
-            else:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": result.get("error", "Unknown error occurred"),
-                    }
-                )
+            return JsonResponse(
+                {
+                    "success": True,
+                    "task_id": task.id,
+                    "status": "processing",
+                    "problem_code": problem.code,
+                }
+            )
 
         except Exception as e:
             logger = logging.getLogger(__name__)
