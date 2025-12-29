@@ -40,7 +40,7 @@ def update_blogpost_organizations(sender, instance, action, **kwargs):
     if action in ["post_add", "post_remove", "post_clear"]:
         instance.is_organization_private = instance.organizations.exists()
         instance.save(update_fields=["is_organization_private"])
-        _get_blogpost_organization_ids.dirty((instance.id,))
+        _get_blogpost_organization_ids.dirty(instance.id)
 
 
 @receiver(m2m_changed, sender=BlogPost.authors.through)

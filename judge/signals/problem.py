@@ -20,7 +20,7 @@ def update_organization_problem(sender, instance, **kwargs):
 @receiver(m2m_changed, sender=Problem.allowed_languages.through)
 def update_allowed_languages(sender, instance, **kwargs):
     if kwargs["action"] in ["post_add", "post_remove", "post_clear"]:
-        _get_allowed_languages.dirty((instance.id,))
+        _get_allowed_languages.dirty(instance.id)
 
 
 @receiver(m2m_changed, sender=Problem.authors.through)
