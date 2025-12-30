@@ -20,6 +20,7 @@ from judge.models.choices import ACE_THEMES, TIMEZONE
 from judge.models.runtime import Language
 from judge.ratings import rating_class
 from judge.caching import cache_wrapper, CacheableModel
+from judge.utils.files import delete_old_image_files
 
 from typing import Optional
 
@@ -219,6 +220,30 @@ class Organization(CacheableModel):
 
     def is_member(self, profile):
         return profile in self
+
+    def save(self, *args, **kwargs):
+        # Delete old image files before saving new ones to avoid duplicates
+        if self.pk:
+            try:
+                old_instance = Organization.objects.get(pk=self.pk)
+                # Check if organization_image is being updated
+                if (
+                    self.organization_image
+                    and old_instance.organization_image != self.organization_image
+                ):
+                    delete_old_image_files(
+                        settings.DMOJ_ORGANIZATION_IMAGE_ROOT,
+                        f"organization_{self.id}",
+                    )
+                # Check if cover_image is being updated
+                if self.cover_image and old_instance.cover_image != self.cover_image:
+                    delete_old_image_files(
+                        settings.DMOJ_ORGANIZATION_IMAGE_ROOT,
+                        f"cover_organization_{self.id}",
+                    )
+            except Organization.DoesNotExist:
+                pass
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ["name"]
@@ -535,6 +560,30 @@ class Profile(CacheableModel):
         return org.is_admin(self) or self.user.is_superuser
 
     def save(self, *args, **kwargs):
+        # Delete old image files before saving new ones to avoid duplicates
+        if self.pk:
+            try:
+                old_instance = Profile.objects.get(pk=self.pk)
+                # Check if profile_image is being updated
+                if (
+                    self.profile_image
+                    and old_instance.profile_image != self.profile_image
+                ):
+                    delete_old_image_files(
+                        settings.DMOJ_PROFILE_IMAGE_ROOT,
+                        f"user_{self.id}",
+                    )
+                # Check if background_image is being updated
+                if (
+                    self.background_image
+                    and old_instance.background_image != self.background_image
+                ):
+                    delete_old_image_files(
+                        settings.DMOJ_PROFILE_IMAGE_ROOT,
+                        f"bg_user_{self.id}",
+                    )
+            except Profile.DoesNotExist:
+                pass
         super().save(*args, **kwargs)
         get_points_rank.dirty(self.id)
         get_rating_rank.dirty(self.id)

@@ -162,9 +162,9 @@ class ProfileForm(ModelForm):
     def clean_background_image(self):
         background_image = self.cleaned_data.get("background_image")
         if background_image:
-            if background_image.size > 10 * 1024 * 1024:
+            if background_image.size > 5 * 1024 * 1024:
                 raise ValidationError(
-                    _("File size exceeds the maximum allowed limit of 10MB.")
+                    _("File size exceeds the maximum allowed limit of 5MB.")
                 )
         return background_image
 
@@ -281,9 +281,9 @@ class EditOrganizationForm(ModelForm):
     def clean_cover_image(self):
         cover_image = self.cleaned_data.get("cover_image")
         if cover_image:
-            if cover_image.size > 10 * 1024 * 1024:
+            if cover_image.size > 5 * 1024 * 1024:
                 raise ValidationError(
-                    _("File size exceeds the maximum allowed limit of 10MB.")
+                    _("File size exceeds the maximum allowed limit of 5MB.")
                 )
         return cover_image
 

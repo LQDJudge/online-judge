@@ -9,6 +9,7 @@ from django.db.models import Q
 from judge.models import Problem, Contest
 from judge.models.profile import Organization, Profile
 from judge.caching import cache_wrapper
+from judge.utils.files import delete_old_image_files
 
 
 def course_image_path(course, filename):
@@ -207,6 +208,21 @@ class Course(models.Model):
             .filter(contest__is_visible=True)
             .order_by("order")
         )
+
+    def save(self, *args, **kwargs):
+        # Delete old image files before saving new ones to avoid duplicates
+        if self.pk:
+            try:
+                old_instance = Course.objects.get(pk=self.pk)
+                # Check if course_image is being updated
+                if self.course_image and old_instance.course_image != self.course_image:
+                    delete_old_image_files(
+                        settings.DMOJ_COURSE_IMAGE_ROOT,
+                        f"course_{self.id}",
+                    )
+            except Course.DoesNotExist:
+                pass
+        super().save(*args, **kwargs)
 
 
 class CourseRole(models.Model):
