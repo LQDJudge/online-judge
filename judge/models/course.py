@@ -9,12 +9,11 @@ from django.db.models import Q
 from judge.models import Problem, Contest
 from judge.models.profile import Organization, Profile
 from judge.caching import cache_wrapper
-from judge.utils.files import delete_old_image_files
+from judge.utils.files import delete_old_image_files, generate_image_filename
 
 
 def course_image_path(course, filename):
-    tail = filename.split(".")[-1]
-    new_filename = f"course_{course.id}.{tail}"
+    new_filename = generate_image_filename(f"course_{course.id}", filename)
     return os.path.join(settings.DMOJ_COURSE_IMAGE_ROOT, new_filename)
 
 

@@ -20,7 +20,7 @@ from judge.models.choices import ACE_THEMES, TIMEZONE
 from judge.models.runtime import Language
 from judge.ratings import rating_class
 from judge.caching import cache_wrapper, CacheableModel
-from judge.utils.files import delete_old_image_files
+from judge.utils.files import delete_old_image_files, generate_image_filename
 
 from typing import Optional
 
@@ -45,26 +45,24 @@ class EncryptedNullCharField(EncryptedCharField):
 
 
 def profile_image_path(profile, filename):
-    tail = filename.split(".")[-1]
-    new_filename = f"user_{profile.id}.{tail}"
+    new_filename = generate_image_filename(f"user_{profile.id}", filename)
     return os.path.join(settings.DMOJ_PROFILE_IMAGE_ROOT, new_filename)
 
 
 def profile_background_path(profile, filename):
-    tail = filename.split(".")[-1]
-    new_filename = f"bg_user_{profile.id}.{tail}"
+    new_filename = generate_image_filename(f"bg_user_{profile.id}", filename)
     return os.path.join(settings.DMOJ_PROFILE_IMAGE_ROOT, new_filename)
 
 
 def organization_image_path(organization, filename):
-    tail = filename.split(".")[-1]
-    new_filename = f"organization_{organization.id}.{tail}"
+    new_filename = generate_image_filename(f"organization_{organization.id}", filename)
     return os.path.join(settings.DMOJ_ORGANIZATION_IMAGE_ROOT, new_filename)
 
 
 def organization_cover_image_path(organization, filename):
-    tail = filename.split(".")[-1]
-    new_filename = f"cover_organization_{organization.id}.{tail}"
+    new_filename = generate_image_filename(
+        f"cover_organization_{organization.id}", filename
+    )
     return os.path.join(settings.DMOJ_ORGANIZATION_IMAGE_ROOT, new_filename)
 
 
