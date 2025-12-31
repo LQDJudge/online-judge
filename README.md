@@ -146,6 +146,37 @@ python3 manage.py runserver 0.0.0.0:8000
     1. After changing code, Django will automatically rebuild, you just need to press F5
     2. Some styles are in .scss files. You need to recompile CSS to see changes.
 
+## Testing
+
+### Setup Test Database
+Before running unit tests, create the test database in MariaDB/MySQL:
+
+```bash
+sudo mariadb
+```
+
+```sql
+CREATE DATABASE test_dmoj DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_general_ci;
+GRANT ALL PRIVILEGES ON test_dmoj.* TO 'dmoj'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+### Run Tests
+
+```bash
+# Run all tests
+python3 manage.py test
+
+# Run tests for a specific app
+python3 manage.py test judge
+
+# Run a specific test
+python3 manage.py test judge.tests.TestClass.test_method
+
+# Keep test database between runs (faster)
+python3 manage.py test --keepdb
+```
+
 ## Optional Components
 
 ### Useful Aliases
