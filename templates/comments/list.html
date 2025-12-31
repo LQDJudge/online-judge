@@ -170,5 +170,42 @@
 
       reloadCommentsWithSort();
     });
+
+    // Infinite scroll for comments - only on blog posts
+    var isBlogPost = window.location.pathname.startsWith('/post/');
+    if (isBlogPost) {
+      var isLoadingMore = false;
+      var infiniteScrollEnabled = true;
+
+      function checkShowMoreButton() {
+        if (!infiniteScrollEnabled || isLoadingMore) return;
+
+        var $showMoreButton = $('#comment-0 > .show_more_comment:visible');
+        if ($showMoreButton.length === 0) return;
+
+        // Check if button is visible in viewport
+        var buttonTop = $showMoreButton.offset().top;
+        var buttonBottom = buttonTop + $showMoreButton.outerHeight();
+        var viewportTop = $(window).scrollTop();
+        var viewportBottom = viewportTop + $(window).height();
+
+        // Trigger when button is within 200px of entering viewport
+        if (buttonTop - viewportBottom < 200) {
+          isLoadingMore = true;
+          $showMoreButton[0].click();
+
+          // Re-enable after a delay to allow new content to load
+          setTimeout(function() {
+            isLoadingMore = false;
+          }, 1000);
+        }
+      }
+
+      // Check on scroll
+      $(window).on('scroll', checkShowMoreButton);
+
+      // Check periodically in case button appears without scrolling
+      setInterval(checkShowMoreButton, 500);
+    }
   });
 </script>
