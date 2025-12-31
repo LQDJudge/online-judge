@@ -9,6 +9,7 @@ from django.forms import (
     ModelForm,
     modelformset_factory,
 )
+from django.core.files.uploadedfile import UploadedFile
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy, reverse
@@ -2040,7 +2041,7 @@ class CourseEditForm(forms.ModelForm):
 
     def clean_course_image(self):
         course_image = self.cleaned_data.get("course_image")
-        if course_image:
+        if course_image and isinstance(course_image, UploadedFile):
             if course_image.size > 5 * 1024 * 1024:  # 5MB limit
                 raise forms.ValidationError(
                     _("File size exceeds the maximum allowed limit of 5MB.")

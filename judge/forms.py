@@ -21,6 +21,7 @@ from django.forms import (
     BaseModelFormSet,
     FileField,
 )
+from django.core.files.uploadedfile import UploadedFile
 from django.utils.html import format_html
 from django.forms.utils import flatatt
 from django.urls import reverse_lazy, reverse
@@ -152,7 +153,7 @@ class ProfileForm(ModelForm):
 
     def clean_profile_image(self):
         profile_image = self.cleaned_data.get("profile_image")
-        if profile_image:
+        if profile_image and isinstance(profile_image, UploadedFile):
             if profile_image.size > 5 * 1024 * 1024:
                 raise ValidationError(
                     _("File size exceeds the maximum allowed limit of 5MB.")
@@ -161,7 +162,7 @@ class ProfileForm(ModelForm):
 
     def clean_background_image(self):
         background_image = self.cleaned_data.get("background_image")
-        if background_image:
+        if background_image and isinstance(background_image, UploadedFile):
             if background_image.size > 5 * 1024 * 1024:
                 raise ValidationError(
                     _("File size exceeds the maximum allowed limit of 5MB.")
@@ -271,7 +272,7 @@ class EditOrganizationForm(ModelForm):
 
     def clean_organization_image(self):
         organization_image = self.cleaned_data.get("organization_image")
-        if organization_image:
+        if organization_image and isinstance(organization_image, UploadedFile):
             if organization_image.size > 5 * 1024 * 1024:
                 raise ValidationError(
                     _("File size exceeds the maximum allowed limit of 5MB.")
@@ -280,7 +281,7 @@ class EditOrganizationForm(ModelForm):
 
     def clean_cover_image(self):
         cover_image = self.cleaned_data.get("cover_image")
-        if cover_image:
+        if cover_image and isinstance(cover_image, UploadedFile):
             if cover_image.size > 5 * 1024 * 1024:
                 raise ValidationError(
                     _("File size exceeds the maximum allowed limit of 5MB.")
