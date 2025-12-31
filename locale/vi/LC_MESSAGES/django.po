@@ -388,60 +388,44 @@ msgid "Username can only contain letters, digits, and underscores."
 msgstr "Tên đăng nhập phải chứa ký tự, chữ số, hoặc dấu gạch dưới"
 
 #: judge/admin/quiz.py:77 judge/admin/quiz.py:242
-#, fuzzy
-#| msgid "Information"
 msgid "Basic Information"
-msgstr "Thông tin"
+msgstr "Thông tin cơ bản"
 
 #: judge/admin/quiz.py:88
-#, fuzzy
-#| msgid "contest format configuration"
 msgid "Answer Configuration"
-msgstr "Tùy chỉnh format kỳ thi"
+msgstr "Cấu hình đáp án"
 
 #: judge/admin/quiz.py:98
-#, fuzzy
-#| msgid "Feedback"
 msgid "Points & Feedback"
-msgstr "Nhận xét"
+msgstr "Điểm và nhận xét"
 
 #: judge/admin/quiz.py:107
-#, fuzzy
-#| msgid "Can't edit organization"
 msgid "Categorization"
-msgstr "Không thể chỉnh sửa nhóm"
+msgstr "Phân loại"
 
 #: judge/admin/quiz.py:113 judge/admin/quiz.py:262
-#, fuzzy
-#| msgid "No permission"
 msgid "Permissions"
-msgstr "Không có quyền truy cập"
+msgstr "Quyền truy cập"
 
 #: judge/admin/quiz.py:252
-#, fuzzy
-#| msgid "Settings"
 msgid "Quiz Settings"
-msgstr "Cài đặt"
+msgstr "Cài đặt bài kiểm tra"
 
 #: judge/admin/quiz.py:435 judge/models/quiz.py:287
 msgid "Quiz"
-msgstr ""
+msgstr "Bài kiểm tra"
 
 #: judge/admin/quiz.py:485
 msgid "Attempt"
-msgstr ""
+msgstr "Lượt làm"
 
 #: judge/admin/quiz.py:491
-#, fuzzy
-#| msgid "Suggestion Tag"
 msgid "Question"
-msgstr "Đề xuất nhãn bài"
+msgstr "Câu hỏi"
 
 #: judge/admin/quiz.py:499 judge/models/quiz.py:675
-#, fuzzy
-#| msgid "Answer:"
 msgid "Answer"
-msgstr "Kết quả:"
+msgstr "Đáp án"
 
 #: judge/admin/runtime.py:19
 msgid "Disallowed problems"
@@ -558,10 +542,9 @@ msgid "AtCoder"
 msgstr "AtCoder"
 
 #: judge/contest_format/base.py:110
-#, fuzzy, python-format
-#| msgid "Problem code"
+#, python-format
 msgid "Problem %(order)s"
-msgstr "Mã bài"
+msgstr "Bài %(order)s"
 
 #: judge/contest_format/default.py:18
 msgid "Default"
@@ -1017,8 +1000,7 @@ msgstr "người kiểm tra"
 
 #: judge/models/contest.py:129
 msgid "These users will be able to view the contest, but not edit it."
-msgstr ""
-"Những người dùng này có thể thấy kỳ thi nhưng không có quyền chỉnh sửa."
+msgstr "Những người dùng này có thể thấy kỳ thi nhưng không có quyền chỉnh sửa."
 
 #: judge/models/contest.py:134 judge/models/runtime.py:215
 msgid "description"
@@ -1152,8 +1134,7 @@ msgstr "ẩn nhãn kỳ thi"
 
 #: judge/models/contest.py:229
 msgid "Whether problem tags should be hidden by default."
-msgstr ""
-"Quyết định việc nhãn bài tập (DP, Tham lam, ...) được ẩn trong kỳ thi không."
+msgstr "Quyết định việc nhãn bài tập (DP, Tham lam, ...) được ẩn trong kỳ thi không."
 
 #: judge/models/contest.py:233
 msgid "run pretests only"
@@ -1405,7 +1386,7 @@ msgstr "bài tập"
 
 #: judge/models/contest.py:877
 msgid "quiz"
-msgstr ""
+msgstr "bài kiểm tra"
 
 #: judge/models/contest.py:889 judge/models/contest.py:996
 #: judge/models/course.py:273 judge/models/course.py:322
@@ -1445,9 +1426,7 @@ msgstr "Tại sao lại bao gồm bài tập mà bạn không thể nộp bài?"
 
 #: judge/models/contest.py:908
 msgid "Separated by commas, e.g: 2, 3"
-msgstr ""
-"Phân cách bằng dấu phẩy, ví dụ: 2, 3Chỉ dùng với format IOI mới. Các sub "
-"cách nhau bởi dấu phẩy. Ví dụ: 2, 3"
+msgstr "Phân cách bằng dấu phẩy, ví dụ: 2, 3"
 
 #: judge/models/contest.py:909
 msgid "hidden subtasks"
@@ -1455,11 +1434,11 @@ msgstr "Đóng băng subtasks"
 
 #: judge/models/contest.py:918
 msgid "Either problem or quiz must be set"
-msgstr ""
+msgstr "Phải chọn bài tập hoặc bài kiểm tra"
 
 #: judge/models/contest.py:920
 msgid "Cannot set both problem and quiz"
-msgstr ""
+msgstr "Không thể chọn cả bài tập và bài kiểm tra"
 
 #: judge/models/contest.py:971
 msgid "contest problem"
@@ -1724,14 +1703,12 @@ msgid "If private, only these organizations may see the blog post."
 msgstr "Nếu riêng tư, chỉ những nhóm này thấy được bài đăng."
 
 #: judge/models/interface.py:100
-#, fuzzy
-#| msgid "Rejected"
 msgid "rejected"
-msgstr "Từ chối"
+msgstr "đã từ chối"
 
 #: judge/models/interface.py:102
 msgid "True if post was rejected by moderator"
-msgstr ""
+msgstr "True nếu bài đăng bị từ chối bởi người kiểm duyệt"
 
 #: judge/models/interface.py:163
 msgid "Edit all posts"
@@ -1802,10 +1779,8 @@ msgid "Edited a post"
 msgstr "Đã chỉnh sửa bài đăng"
 
 #: judge/models/notification.py:22
-#, fuzzy
-#| msgid "Mark contests as hidden"
 msgid "Your comment was hidden"
-msgstr "Ẩn các kỳ thi"
+msgstr "Bình luận của bạn đã bị ẩn"
 
 #: judge/models/notification.py:23
 msgid "Mentioned you"
@@ -2010,22 +1985,16 @@ msgstr "người tạo"
 
 #: judge/models/problem.py:151
 msgid "These users will be able to edit the problem, and be listed as authors."
-msgstr ""
-"Những người dùng này sẽ có thể chỉnh sửa bài tập, và nằm trong danh sách các "
-"tác giả"
+msgstr "Những người dùng này sẽ có thể chỉnh sửa bài tập, và nằm trong danh sách các tác giả"
 
 #: judge/models/problem.py:160
 msgid ""
 "These users will be able to edit the problem, but not be listed as authors."
-msgstr ""
-"Những người dùng này sẽ có thể chỉnh sửa bài tập, nhưng không nằm trong danh "
-"sách các tác giả"
+msgstr "Những người dùng này sẽ có thể chỉnh sửa bài tập, nhưng không nằm trong danh sách các tác giả"
 
 #: judge/models/problem.py:170
 msgid "These users will be able to view the private problem, but not edit it."
-msgstr ""
-"Những người dùng này sẽ thấy được bài tập này (dù riêng tư), nhưng không "
-"chỉnh sửa được"
+msgstr "Những người dùng này sẽ thấy được bài tập này (dù riêng tư), nhưng không chỉnh sửa được"
 
 #: judge/models/problem.py:176
 msgid "The type of problem, as shown on the problem's page."
@@ -2469,26 +2438,22 @@ msgid "Cover image"
 msgstr "Ảnh bìa"
 
 #: judge/models/profile.py:147
-#, fuzzy
-#| msgid "comment"
 msgid "community"
-msgstr "bình luận"
+msgstr "cộng đồng"
 
 #: judge/models/profile.py:149
 msgid ""
 "Communities are always open and focus on discussions rather than contests/"
 "problems"
-msgstr ""
+msgstr "Cộng đồng luôn mở và tập trung vào thảo luận hơn là kỳ thi/bài tập"
 
 #: judge/models/profile.py:154
-#, fuzzy
-#| msgid "curators"
 msgid "moderators"
-msgstr "quản lý"
+msgstr "người kiểm duyệt"
 
 #: judge/models/profile.py:157
 msgid "Moderators can approve/reject posts and manage comments"
-msgstr ""
+msgstr "Người kiểm duyệt có thể duyệt/từ chối bài đăng và quản lý bình luận"
 
 #: judge/models/profile.py:292 judge/models/profile.py:326
 #: judge/models/profile.py:714 judge/models/profile.py:778
@@ -2573,16 +2538,12 @@ msgid "Notes for administrators regarding this user."
 msgstr "Ghi chú riêng cho quản trị viên."
 
 #: judge/models/profile.py:386
-#, fuzzy
-#| msgid "Profile"
 msgid "Profile image"
-msgstr "Trang cá nhân"
+msgstr "Ảnh đại diện"
 
 #: judge/models/profile.py:392
-#, fuzzy
-#| msgid "Background Image"
 msgid "Background image"
-msgstr "Hình nền"
+msgstr "Ảnh nền"
 
 #: judge/models/profile.py:643
 msgid "user profiles"
@@ -2629,345 +2590,258 @@ msgid "last visit"
 msgstr "truy cập gần nhất"
 
 #: judge/models/profile.py:1046
-#, fuzzy
-#| msgid "Hide comments"
 msgid "Hide Comment"
 msgstr "Ẩn bình luận"
 
 #: judge/models/profile.py:1047
-#, fuzzy
-#| msgid "Unhide comments"
 msgid "Unhide Comment"
 msgstr "Hiện bình luận"
 
 #: judge/models/profile.py:1048
-#, fuzzy
-#| msgid "Comment"
 msgid "Keep Comment"
-msgstr "Bình luận"
+msgstr "Giữ bình luận"
 
 #: judge/models/profile.py:1049 templates/organization/blog/pending-js.html:27
-#, fuzzy
-#| msgid "Approved a post"
 msgid "Approve Post"
-msgstr "Đã chấp thuận bài đăng"
+msgstr "Chấp thuận bài đăng"
 
 #: judge/models/profile.py:1050 templates/organization/blog/pending-js.html:29
-#, fuzzy
-#| msgid "Rejected a post"
 msgid "Reject Post"
-msgstr "Đã từ chối bài đăng"
+msgstr "Từ chối bài đăng"
 
 #: judge/models/profile.py:1051 templates/organization/moderation_log.html:56
 msgid "Skipped"
-msgstr ""
+msgstr "Bỏ qua"
 
 #: judge/models/profile.py:1066
 msgid "moderator"
-msgstr ""
+msgstr "người kiểm duyệt"
 
 #: judge/models/profile.py:1067
 msgid "Null if action was automated by LLM"
-msgstr ""
+msgstr "Null nếu hành động được thực hiện bởi AI"
 
 #: judge/models/profile.py:1074
-#, fuzzy
-#| msgid "contest rated"
 msgid "content type"
-msgstr "kỳ thi được xếp hạng"
+msgstr "loại nội dung"
 
 #: judge/models/profile.py:1076
-#, fuzzy
-#| msgid "object"
 msgid "object ID"
-msgstr "đối tượng"
+msgstr "ID đối tượng"
 
 #: judge/models/profile.py:1082
-#, fuzzy
-#| msgid "Action"
 msgid "action"
-msgstr "Hành động"
+msgstr "hành động"
 
 #: judge/models/profile.py:1087
 msgid "LLM explanation or moderator note"
-msgstr ""
+msgstr "Ghi chú của AI hoặc người kiểm duyệt"
 
 #: judge/models/profile.py:1091
-#, fuzzy
-#| msgid "last rated"
 msgid "automated"
-msgstr "lần cuối được xếp hạng"
+msgstr "tự động"
 
 #: judge/models/profile.py:1092
 msgid "True if action was taken by LLM"
-msgstr ""
+msgstr "True nếu hành động được thực hiện bởi AI"
 
 #: judge/models/profile.py:1096
-#, fuzzy
-#| msgid "read at"
 msgid "created at"
-msgstr "đọc lúc"
+msgstr "tạo lúc"
 
 #: judge/models/profile.py:1105
-#, fuzzy
-#| msgid "organization slug"
 msgid "moderation log"
-msgstr "URL nhóm"
+msgstr "nhật ký kiểm duyệt"
 
 #: judge/models/profile.py:1106
-#, fuzzy
-#| msgid "organization slug"
 msgid "moderation logs"
-msgstr "URL nhóm"
+msgstr "nhật ký kiểm duyệt"
 
 #: judge/models/quiz.py:23
 msgid "Multiple Choice"
-msgstr ""
+msgstr "Trắc nghiệm một đáp án"
 
 #: judge/models/quiz.py:24
 msgid "Multiple Answer"
-msgstr ""
+msgstr "Trắc nghiệm nhiều đáp án"
 
 #: judge/models/quiz.py:25
-#, fuzzy
-#| msgid "Wrong Answer"
 msgid "Short Answer"
-msgstr "Wrong Answer"
+msgstr "Trả lời ngắn"
 
 #: judge/models/quiz.py:26
 msgid "Essay"
-msgstr ""
+msgstr "Tự luận"
 
 #: judge/models/quiz.py:27
 msgid "True/False"
-msgstr ""
+msgstr "Đúng/Sai"
 
 #: judge/models/quiz.py:32
-#, fuzzy
-#| msgid "Suggestion Tag"
 msgid "Question Type"
-msgstr "Đề xuất nhãn bài"
+msgstr "Loại câu hỏi"
 
 #: judge/models/quiz.py:37
-#, fuzzy
-#| msgid "Lesson Title"
 msgid "Question Title"
-msgstr "Tiêu đề bài học"
+msgstr "Tiêu đề câu hỏi"
 
 #: judge/models/quiz.py:38
 msgid "Brief title for question management"
-msgstr ""
+msgstr "Tiêu đề ngắn để quản lý câu hỏi"
 
 #: judge/models/quiz.py:42
-#, fuzzy
-#| msgid "lesson content"
 msgid "Question Content"
-msgstr "nội dung bài học"
+msgstr "Nội dung câu hỏi"
 
 #: judge/models/quiz.py:43
 msgid "The actual question text shown to students"
-msgstr ""
+msgstr "Nội dung câu hỏi hiển thị cho học sinh"
 
 #: judge/models/quiz.py:52
 msgid "Choices"
-msgstr ""
+msgstr "Các lựa chọn"
 
 #: judge/models/quiz.py:53
 msgid "Answer choices for MC/MA/TF questions"
-msgstr ""
+msgstr "Các đáp án cho câu hỏi trắc nghiệm"
 
 #: judge/models/quiz.py:65
 msgid "Correct Answers"
-msgstr ""
+msgstr "Đáp án đúng"
 
 #: judge/models/quiz.py:66
 msgid "Correct answer(s) for the question"
-msgstr ""
+msgstr "Đáp án đúng cho câu hỏi"
 
 #: judge/models/quiz.py:73
-#, fuzzy
-#| msgid "Default Limits"
 msgid "Default Points"
-msgstr "Giới hạn mặc định"
+msgstr "Điểm mặc định"
 
 #: judge/models/quiz.py:74
 msgid "Default point value when added to quizzes"
-msgstr ""
+msgstr "Điểm mặc định khi thêm vào bài kiểm tra"
 
 #: judge/models/quiz.py:80
-#, fuzzy
-#| msgid "Public"
 msgid "Is Public"
-msgstr "Nhóm mở"
+msgstr "Công khai"
 
 #: judge/models/quiz.py:81
-#, fuzzy
-#| msgid "Whether this solution should be publicly visible to all users."
 msgid "Whether this question is publicly visible"
-msgstr ""
-"Lời giải này có được hiển thị công khai cho tất cả người dùng hay không."
+msgstr "Câu hỏi này có hiển thị công khai hay không"
 
 #: judge/models/quiz.py:87
-#, fuzzy
-#| msgid "Exceptional"
 msgid "Explanation"
-msgstr "Đặc biệt"
+msgstr "Giải thích"
 
 #: judge/models/quiz.py:88
 msgid "Explanation shown to students after completion"
-msgstr ""
+msgstr "Giải thích hiển thị cho học sinh sau khi hoàn thành"
 
 #: judge/models/quiz.py:94
 msgid "Shuffle Choices"
-msgstr ""
+msgstr "Xáo trộn lựa chọn"
 
 #: judge/models/quiz.py:95
 msgid "Randomize choice order for this question"
-msgstr ""
+msgstr "Xáo trộn thứ tự các lựa chọn cho câu hỏi này"
 
 #: judge/models/quiz.py:102
 msgid "Tags"
-msgstr ""
+msgstr "Nhãn"
 
 #: judge/models/quiz.py:103
 msgid "Comma-separated tags for categorizing questions"
-msgstr ""
+msgstr "Các nhãn phân cách bằng dấu phẩy để phân loại câu hỏi"
 
 #: judge/models/quiz.py:112
-#, fuzzy
-#| msgid ""
-#| "These users will be able to edit the problem, and be listed as authors."
 msgid "These users will be able to edit the question and be listed as authors"
-msgstr ""
-"Những người dùng này sẽ có thể chỉnh sửa bài tập, và nằm trong danh sách các "
-"tác giả"
+msgstr "Những người dùng này có thể chỉnh sửa câu hỏi và được liệt kê là tác giả"
 
 #: judge/models/quiz.py:122
-#, fuzzy
-#| msgid ""
-#| "These users will be able to edit the problem, but not be listed as "
-#| "authors."
 msgid ""
 "These users will be able to edit the question, but not be listed as authors"
 msgstr ""
-"Những người dùng này sẽ có thể chỉnh sửa bài tập, nhưng không nằm trong danh "
-"sách các tác giả"
+"Những người dùng này có thể chỉnh sửa câu hỏi, nhưng không được liệt kê là tác giả"
 
 #: judge/models/quiz.py:126 judge/models/quiz.py:284
-#, fuzzy
-#| msgid "Created: "
 msgid "Created At"
-msgstr "Được tạo: "
+msgstr "Tạo lúc"
 
 #: judge/models/quiz.py:129
-#, fuzzy
-#| msgid "Quick Actions"
 msgid "Quiz Question"
-msgstr "Hành động nhanh"
+msgstr "Câu hỏi"
 
 #: judge/models/quiz.py:130
-#, fuzzy
-#| msgid "Quick Actions"
 msgid "Quiz Questions"
-msgstr "Hành động nhanh"
+msgstr "Các câu hỏi"
 
 #: judge/models/quiz.py:214
-#, fuzzy
-#| msgid "Problem code must be ^[a-z0-9]+$"
 msgid "Quiz code must be ^[a-z0-9]+$"
-msgstr "Mã bài phải có dạng ^[a-z0-9]+$"
+msgstr "Mã bài kiểm tra phải có dạng ^[a-z0-9]+$"
 
 #: judge/models/quiz.py:215
-#, fuzzy
-#| msgid "QR code"
 msgid "quiz code"
-msgstr "Mã QR"
+msgstr "mã bài kiểm tra"
 
 #: judge/models/quiz.py:216
-#, fuzzy
-#| msgid ""
-#| "A short, unique code for the problem, used in the url after /problem/"
 msgid "A short, unique code for the quiz, used in the URL after /quiz/"
-msgstr "Mã bài ngắn, độc nhất cho bài tập, được dùng trong url sau /problem/"
+msgstr "Mã ngắn, độc nhất cho bài kiểm tra, được dùng trong URL sau /quiz/"
 
 #: judge/models/quiz.py:221
-#, fuzzy
-#| msgid "Title"
 msgid "Quiz Title"
-msgstr "Tiêu đề"
+msgstr "Tiêu đề bài kiểm tra"
 
 #: judge/models/quiz.py:223
-#, fuzzy
-#| msgid "The full name of the problem, as shown in the problem list."
 msgid "The full title of the quiz, as shown in the quiz list"
-msgstr "Tên đầy đủ của bài, như được hiển thị trên danh sách bài tập"
+msgstr "Tiêu đề đầy đủ của bài kiểm tra, như được hiển thị trên danh sách"
 
 #: judge/models/quiz.py:229
 msgid "Instructions or description shown before starting"
-msgstr ""
+msgstr "Hướng dẫn hoặc mô tả hiển thị trước khi bắt đầu"
 
 #: judge/models/quiz.py:236 judge/models/quiz.py:556
-#, fuzzy
-#| msgid "Time Limit (s)"
 msgid "Time Limit (minutes)"
-msgstr "Giới hạn thời gian (giây)"
+msgstr "Giới hạn thời gian (phút)"
 
 #: judge/models/quiz.py:237
-#, fuzzy
-#| msgid "time limit"
 msgid "0 for no time limit"
-msgstr "giới hạn thời gian"
+msgstr "0 nếu không giới hạn thời gian"
 
 #: judge/models/quiz.py:243
 msgid "Shuffle Questions"
-msgstr ""
+msgstr "Xáo trộn câu hỏi"
 
 #: judge/models/quiz.py:244
 msgid "Randomize question order for each attempt"
-msgstr ""
+msgstr "Xáo trộn thứ tự câu hỏi cho mỗi lượt làm"
 
 #: judge/models/quiz.py:249
-#, fuzzy
-#| msgid "Wrong Answer"
 msgid "Show Answers"
-msgstr "Wrong Answer"
+msgstr "Hiển thị đáp án"
 
 #: judge/models/quiz.py:251
 msgid "Whether answers and explanations are shown to students after submission"
-msgstr ""
+msgstr "Đáp án và giải thích có được hiển thị sau khi nộp bài hay không"
 
 #: judge/models/quiz.py:260
-#, fuzzy
-#| msgid "solutions"
 msgid "Questions"
-msgstr "lời giải"
+msgstr "Các câu hỏi"
 
 #: judge/models/quiz.py:270
-#, fuzzy
-#| msgid ""
-#| "These users will be able to edit the problem, and be listed as authors."
 msgid "These users will be able to edit the quiz and be listed as authors"
-msgstr ""
-"Những người dùng này sẽ có thể chỉnh sửa bài tập, và nằm trong danh sách các "
-"tác giả"
+msgstr "Những người dùng này có thể chỉnh sửa bài kiểm tra và được liệt kê là tác giả"
 
 #: judge/models/quiz.py:280
-#, fuzzy
-#| msgid ""
-#| "These users will be able to edit the problem, but not be listed as "
-#| "authors."
 msgid "These users will be able to edit the quiz, but not be listed as authors"
-msgstr ""
-"Những người dùng này sẽ có thể chỉnh sửa bài tập, nhưng không nằm trong danh "
-"sách các tác giả"
+msgstr "Những người dùng này có thể chỉnh sửa bài kiểm tra, nhưng không được liệt kê là tác giả"
 
 #: judge/models/quiz.py:288
 msgid "Quizzes"
-msgstr ""
+msgstr "Các bài kiểm tra"
 
 #: judge/models/quiz.py:406
 msgid "Points for this question in this quiz"
-msgstr ""
+msgstr "Điểm cho câu hỏi này trong bài kiểm tra"
 
 #: judge/models/quiz.py:411 judge/models/quiz.py:452 judge/views/course.py:1198
 #: judge/views/course.py:1298 templates/course/contest_list.html:20
@@ -2977,77 +2851,63 @@ msgstr "thứ tự"
 
 #: judge/models/quiz.py:412
 msgid "Display order in quiz (if not shuffled)"
-msgstr ""
+msgstr "Thứ tự hiển thị trong bài kiểm tra (nếu không xáo trộn)"
 
 #: judge/models/quiz.py:416
 msgid "Quiz Question Assignment"
-msgstr ""
+msgstr "Gán câu hỏi vào bài kiểm tra"
 
 #: judge/models/quiz.py:417
 msgid "Quiz Question Assignments"
-msgstr ""
+msgstr "Các gán câu hỏi vào bài kiểm tra"
 
 #: judge/models/quiz.py:439
 msgid "Max Attempts"
-msgstr ""
+msgstr "Số lượt làm tối đa"
 
 #: judge/models/quiz.py:440
 msgid "0 for unlimited attempts"
-msgstr ""
+msgstr "0 nếu không giới hạn số lượt"
 
 #: judge/models/quiz.py:447
-#, fuzzy
-#| msgid "Lesson Title"
 msgid "Lesson Points"
-msgstr "Tiêu đề bài học"
+msgstr "Điểm bài học"
 
 #: judge/models/quiz.py:448
 msgid "Points awarded in lesson for completing quiz"
-msgstr ""
+msgstr "Điểm được cộng vào bài học khi hoàn thành bài kiểm tra"
 
 #: judge/models/quiz.py:452
-#, fuzzy
-#| msgid "Displayed on pages under this license"
 msgid "Display order in lesson"
-msgstr "Được hiển thị trên các trang theo giấy phép này"
+msgstr "Thứ tự hiển thị trong bài học"
 
 #: judge/models/quiz.py:458
-#, fuzzy
-#| msgid "Clone Lesson"
 msgid "Course Lesson Quiz"
-msgstr "Nhân bản bài học"
+msgstr "Bài kiểm tra trong bài học"
 
 #: judge/models/quiz.py:459
-#, fuzzy
-#| msgid "Clone Lesson"
 msgid "Course Lesson Quizzes"
-msgstr "Nhân bản bài học"
+msgstr "Các bài kiểm tra trong bài học"
 
 #: judge/models/quiz.py:543
 msgid "Attempt Number"
-msgstr ""
+msgstr "Lượt làm thứ"
 
 #: judge/models/quiz.py:545
-#, fuzzy
-#| msgid "start time"
 msgid "Start Time"
-msgstr "thời gian bắt đầu"
+msgstr "Thời gian bắt đầu"
 
 #: judge/models/quiz.py:550
-#, fuzzy
-#| msgid "Time"
 msgid "End Time"
-msgstr "Thời gian"
+msgstr "Thời gian kết thúc"
 
 #: judge/models/quiz.py:551
 msgid "When submitted or timed out"
-msgstr ""
+msgstr "Khi nộp bài hoặc hết thời gian"
 
 #: judge/models/quiz.py:559
-#, fuzzy
-#| msgid "Submit"
 msgid "Is Submitted"
-msgstr "Nộp bài"
+msgstr "Đã nộp"
 
 #: judge/models/quiz.py:563 templates/comments/inline-comments.html:22
 #: templates/comments/list.html:18 templates/comments/list.html:27
@@ -3057,44 +2917,40 @@ msgid "Score"
 msgstr "Điểm"
 
 #: judge/models/quiz.py:571
-#, fuzzy
-#| msgid "Score"
 msgid "Max Score"
-msgstr "Điểm"
+msgstr "Điểm tối đa"
 
 #: judge/models/quiz.py:575
 msgid "Quiz Attempt"
-msgstr ""
+msgstr "Lượt làm bài kiểm tra"
 
 #: judge/models/quiz.py:576
 msgid "Quiz Attempts"
-msgstr ""
+msgstr "Các lượt làm bài kiểm tra"
 
 #: judge/models/quiz.py:676
 msgid "Student's answer (format depends on question type)"
-msgstr ""
+msgstr "Câu trả lời của học sinh (định dạng tùy thuộc loại câu hỏi)"
 
 #: judge/models/quiz.py:684
-#, fuzzy
-#| msgid "Comments are disabled on this page."
 msgid "Points awarded for this answer"
-msgstr "Bình luận bị tắt trong trang này."
+msgstr "Điểm cho câu trả lời này"
 
 #: judge/models/quiz.py:690
 msgid "Is Correct"
-msgstr ""
+msgstr "Đúng"
 
 #: judge/models/quiz.py:691
 msgid "Auto-graded or manually graded result"
-msgstr ""
+msgstr "Kết quả chấm tự động hoặc thủ công"
 
 #: judge/models/quiz.py:700
 msgid "Partial Credit"
-msgstr ""
+msgstr "Điểm thành phần"
 
 #: judge/models/quiz.py:701
 msgid "0.0 to 1.0 for partial credit"
-msgstr ""
+msgstr "0.0 đến 1.0 cho điểm thành phần"
 
 #: judge/models/quiz.py:706
 msgid "Feedback"
@@ -3102,67 +2958,47 @@ msgstr "Nhận xét"
 
 #: judge/models/quiz.py:707
 msgid "Instructor feedback for this answer"
-msgstr ""
+msgstr "Nhận xét của giảng viên cho câu trả lời này"
 
 #: judge/models/quiz.py:711
-#, fuzzy
-#| msgid "Answer:"
 msgid "Answered At"
-msgstr "Kết quả:"
+msgstr "Trả lời lúc"
 
 #: judge/models/quiz.py:713
-#, fuzzy
-#| msgid "Grades"
 msgid "Graded At"
-msgstr "Điểm"
+msgstr "Chấm điểm lúc"
 
 #: judge/models/quiz.py:721
-#, fuzzy
-#| msgid "Grades"
 msgid "Graded By"
-msgstr "Điểm"
+msgstr "Chấm bởi"
 
 #: judge/models/quiz.py:725
-#, fuzzy
-#| msgid "Answer:"
 msgid "Quiz Answer"
-msgstr "Kết quả:"
+msgstr "Câu trả lời"
 
 #: judge/models/quiz.py:726
-#, fuzzy
-#| msgid "Answer:"
 msgid "Quiz Answers"
-msgstr "Kết quả:"
+msgstr "Các câu trả lời"
 
 #: judge/models/quiz.py:860
-#, fuzzy
-#| msgid "Files:"
 msgid "File"
-msgstr "Tệp:"
+msgstr "Tệp"
 
 #: judge/models/quiz.py:863
-#, fuzzy
-#| msgid "input file name"
 msgid "Original Filename"
-msgstr "tên file input"
+msgstr "Tên tệp gốc"
 
 #: judge/models/quiz.py:866
-#, fuzzy
-#| msgid "Upload"
 msgid "Uploaded At"
-msgstr "Tải lên"
+msgstr "Tải lên lúc"
 
 #: judge/models/quiz.py:869
-#, fuzzy
-#| msgid "User File"
 msgid "Quiz Answer File"
-msgstr "File người dùng"
+msgstr "Tệp câu trả lời"
 
 #: judge/models/quiz.py:870
-#, fuzzy
-#| msgid "User File"
 msgid "Quiz Answer Files"
-msgstr "File người dùng"
+msgstr "Các tệp câu trả lời"
 
 #: judge/models/runtime.py:22
 msgid "short identifier"
@@ -4124,9 +3960,7 @@ msgstr "Công khai"
 
 #: judge/views/course.py:1859
 msgid "Whether this course is visible to all users (read-only for assistants)."
-msgstr ""
-"Khóa học này có hiển thị cho tất cả người dùng hay không (chỉ đọc đối với "
-"trợ giảng)."
+msgstr "Khóa học này có hiển thị cho tất cả người dùng hay không (chỉ đọc đối với trợ giảng)."
 
 #: judge/views/course.py:1866 judge/views/course.py:1895
 msgid "Public Registration"
@@ -4134,9 +3968,7 @@ msgstr "Đăng ký công khai"
 
 #: judge/views/course.py:1867
 msgid "Whether users can join this course (read-only for assistants)."
-msgstr ""
-"Người dùng có thể tham gia khóa học này hay không (chỉ đọc đối với trợ "
-"giảng)."
+msgstr "Người dùng có thể tham gia khóa học này hay không (chỉ đọc đối với trợ giảng)."
 
 #: judge/views/course.py:1892
 msgid "Course Name"
@@ -4519,8 +4351,7 @@ msgstr "Bạn chưa chặn nhóm %s."
 #: judge/views/organization.py:942
 #, python-format
 msgid "An error occurred while unblocking %(org)s. Reason: %(reason)s"
-msgstr ""
-"Lỗi hệ thống xảy ra trong quá trình bỏ chặn %(org)s. Lý do: %(reason)s."
+msgstr "Lỗi hệ thống xảy ra trong quá trình bỏ chặn %(org)s. Lý do: %(reason)s."
 
 #: judge/views/organization.py:969
 msgid "Request to join group"
@@ -4681,16 +4512,12 @@ msgid "You are not allowed to delete this blog."
 msgstr "Bạn không được phép xóa bài đăng này."
 
 #: judge/views/organization.py:1610
-#, fuzzy
-#| msgid "Only organization admins can reject blog posts."
 msgid "Only organization admins and moderators can reject blog posts."
-msgstr "Chỉ quản trị viên tổ chức mới có thể từ chối bài đăng."
+msgstr "Chỉ quản trị viên và người kiểm duyệt của tổ chức mới có thể từ chối bài đăng."
 
 #: judge/views/organization.py:1638
-#, fuzzy
-#| msgid "Only organization admins can approve blog posts."
 msgid "Only organization admins and moderators can approve blog posts."
-msgstr "Chỉ quản trị viên tổ chức mới có thể phê duyệt bài viết blog."
+msgstr "Chỉ quản trị viên và người kiểm duyệt của tổ chức mới có thể phê duyệt bài đăng."
 
 #: judge/views/organization.py:1664
 #, python-format
@@ -4698,10 +4525,9 @@ msgid "Edit blog %s"
 msgstr "Chỉnh sửa %s"
 
 #: judge/views/organization.py:1754
-#, fuzzy, python-format
-#| msgid "Pending blogs in %s"
+#, python-format
 msgid "Rejected blogs in %s"
-msgstr "Bài đang đợi duyệt trong %s"
+msgstr "Bài bị từ chối trong %s"
 
 #: judge/views/organization.py:1755
 #, python-format
@@ -4709,10 +4535,8 @@ msgid "Pending blogs in %s"
 msgstr "Bài đang đợi duyệt trong %s"
 
 #: judge/views/organization.py:1804
-#, fuzzy
-#| msgid "You are not allowed to delete this blog."
 msgid "You are not allowed to view moderation logs."
-msgstr "Bạn không được phép xóa bài đăng này."
+msgstr "Bạn không được phép xem nhật ký kiểm duyệt."
 
 #: judge/views/organization.py:1816
 #, python-format
@@ -5320,10 +5144,8 @@ msgid "Loading comments..."
 msgstr "Tải bình luận..."
 
 #: templates/actionbar/media-js.html:176
-#, fuzzy
-#| msgid "Error loading comments."
 msgid "Failed to load comments"
-msgstr "Tải bình luận bị lỗi."
+msgstr "Tải bình luận thất bại"
 
 #: templates/admin/judge/contest/change_form.html:9
 msgid "Are you sure you want to rejudge ALL the submissions?"
@@ -6685,8 +6507,7 @@ msgstr "Gán nhãn bài không thành công: "
 #: templates/internal/problem_queue.html:161
 #: templates/internal/problem_queue.html:266
 msgid "Problem tagging failed: Network error occurred - please try again later"
-msgstr ""
-"Gán nhãn bài không thành công: Đã xảy ra lỗi mạng - vui lòng thử lại sau"
+msgstr "Gán nhãn bài không thành công: Đã xảy ra lỗi mạng - vui lòng thử lại sau"
 
 #: templates/internal/problem_queue.html:172
 #: templates/internal/problem_queue.html:401
@@ -6863,10 +6684,8 @@ msgid "Search user"
 msgstr "Tìm kiếm người dùng"
 
 #: templates/organization/blog/pending-js.html:31
-#, fuzzy
-#| msgid "Deleted a post"
 msgid "Delete Post"
-msgstr "Đã xóa bài đăng"
+msgstr "Xóa bài đăng"
 
 #: templates/organization/blog/pending-js.html:39
 msgid "Note (optional):"
@@ -7093,38 +6912,28 @@ msgid "members"
 msgstr "thành viên"
 
 #: templates/organization/home.html:66
-#, fuzzy
-#| msgid "Join"
 msgid "Joined"
-msgstr "Tham gia"
+msgstr "Đã tham gia"
 
 #: templates/organization/home.html:74
-#, fuzzy
-#| msgid "Joining group"
 msgid "Join Group"
 msgstr "Tham gia nhóm"
 
 #: templates/organization/home.html:80
-#, fuzzy
-#| msgid "Request to join %s"
 msgid "Request to Join"
-msgstr "Đăng ký tham gia %s"
+msgstr "Yêu cầu tham gia"
 
 #: templates/organization/home.html:87 templates/organization/list.html:98
 msgid "Unblock"
 msgstr "Bỏ chặn"
 
 #: templates/organization/home.html:94
-#, fuzzy
-#| msgid "Login to participate"
 msgid "Login to Join"
 msgstr "Đăng nhập để tham gia"
 
 #: templates/organization/list.html:39
-#, fuzzy
-#| msgid "Comments"
 msgid "Communities"
-msgstr "Bình luận"
+msgstr "Cộng đồng"
 
 #: templates/organization/list.html:41 templates/submission/list.html:370
 #: templates/submission/submission-list-tabs.html:6
@@ -7136,10 +6945,8 @@ msgid "Blocked"
 msgstr "Nhóm đã chặn"
 
 #: templates/organization/list.html:71
-#, fuzzy
-#| msgid "Comment"
 msgid "Community"
-msgstr "Bình luận"
+msgstr "Cộng đồng"
 
 #: templates/organization/list.html:78
 msgid "You are an admin of this organization"
@@ -7150,10 +6957,8 @@ msgid "Request membership"
 msgstr "Đăng ký thành viên"
 
 #: templates/organization/list.html:115
-#, fuzzy
-#| msgid "There are no comments at the moment."
 msgid "There are no communities yet."
-msgstr "Không có bình luận nào."
+msgstr "Chưa có cộng đồng nào."
 
 #: templates/organization/list.html:123
 msgid "You have not joined any group yet."
@@ -7173,7 +6978,7 @@ msgstr "Không có nhóm nào bị chặn"
 
 #: templates/organization/moderation_log.html:9
 msgid "Moderator"
-msgstr ""
+msgstr "Người kiểm duyệt"
 
 #: templates/organization/moderation_log.html:10
 #: templates/problem/manage_submission.html:186
@@ -7232,10 +7037,8 @@ msgid "Pending blogs"
 msgstr "Bài đăng đang chờ"
 
 #: templates/organization/org-right-sidebar.html:48
-#, fuzzy
-#| msgid "organization slug"
 msgid "Moderation log"
-msgstr "URL nhóm"
+msgstr "Nhật ký kiểm duyệt"
 
 #: templates/organization/org-right-sidebar.html:60
 msgid "Subdomain"
@@ -7906,8 +7709,7 @@ msgstr "Đã chèn vào trình soạn thảo!"
 
 #: templates/problem/solutions.html:187 templates/problem/solutions.html:295
 msgid "Whether this solution should be publicly visible to all users."
-msgstr ""
-"Lời giải này có được hiển thị công khai cho tất cả người dùng hay không."
+msgstr "Lời giải này có được hiển thị công khai cho tất cả người dùng hay không."
 
 #: templates/problem/solutions.html:200 templates/problem/solutions.html:308
 msgid "Date and time when this solution should become available."
@@ -8266,8 +8068,7 @@ msgstr "Nhập mã xác thực gồm 6 chữ số từ app bạn chọn"
 #: templates/registration/totp_auth.html:41
 #, python-format
 msgid "If you lost your authentication device, please contact us at %(email)s."
-msgstr ""
-"Nếu bạn mất thiết bị xác thực, vui lòng liên hệ chúng tôi tại %(email)s."
+msgstr "Nếu bạn mất thiết bị xác thực, vui lòng liên hệ chúng tôi tại %(email)s."
 
 #: templates/registration/totp_disable.html:38
 msgid ""
@@ -8515,11 +8316,7 @@ msgid "g:i a d/m/Y"
 msgstr "g:i a d/m/Y"
 
 #: templates/submission/user-ajax.html:56
-#, fuzzy, python-format
-#| msgid ""
-#| "\n"
-#| "              %(time)s\n"
-#| "            "
+#, python-format
 msgid ""
 "\n"
 "                %(time)s\n"
@@ -8659,25 +8456,19 @@ msgstr "Xem lịch sử"
 
 #: templates/top-users.html:3
 msgid "Top Contributors"
-msgstr ""
+msgstr "Người đóng góp hàng đầu"
 
 #: templates/top-users.html:11
-#, fuzzy
-#| msgid "Posts"
 msgid "posts"
-msgstr "Bài đăng"
+msgstr "bài đăng"
 
 #: templates/top-users.html:11
-#, fuzzy
-#| msgid "post title"
 msgid "post likes"
-msgstr "tiêu đề bài đăng"
+msgstr "lượt thích bài đăng"
 
 #: templates/top-users.html:11
-#, fuzzy
-#| msgid "comment votes"
 msgid "comment likes"
-msgstr "bình chọn bình luận"
+msgstr "lượt thích bình luận"
 
 #: templates/top-users.html:24
 msgid "Top Rating"
@@ -8887,16 +8678,12 @@ msgid "Contests written"
 msgstr "Số kỳ thi"
 
 #: templates/user/user-base.html:56
-#, fuzzy
-#| msgid "Min. rating:"
 msgid "Min. rating"
-msgstr "Min. rating:"
+msgstr "Điểm tối thiểu"
 
 #: templates/user/user-base.html:60
-#, fuzzy
-#| msgid "Max rating:"
 msgid "Max rating"
-msgstr "Max rating:"
+msgstr "Điểm tối đa"
 
 #: templates/user/user-bookmarks.html:22
 msgid "Editorials"
