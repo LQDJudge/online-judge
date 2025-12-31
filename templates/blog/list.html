@@ -23,6 +23,16 @@
   {% include "actionbar/media-js.html" %}
   {% include "feed/feed_js.html" %}
   <script type="text/javascript">
+    function setCookie(name, value, days) {
+      var expires = "";
+      if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+      }
+      document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
+    }
+
     $(document).ready(function () {
       $("#sort-selector").select2();
       $("#status-selector").select2();
@@ -40,7 +50,20 @@
         $('.right-sidebar').show();
       });
 
+      // Save feed preferences to cookies when tab is clicked
+      $('#home-feed-tabs ul a[data-feed-type]').click(function () {
+        var feedType = $(this).data('feed-type');
+        setCookie('feed_type', feedType, 365);
+      });
 
+      // Save sort preference to cookie when changed
+      $('#sort-selector').on('change', function () {
+        var url = new URL($(this).val(), window.location.origin);
+        var sortBy = url.searchParams.get('sort_by');
+        if (sortBy) {
+          setCookie('feed_sort_by', sortBy, 365);
+        }
+      });
     });
   </script>
 {% endblock %}
@@ -59,13 +82,13 @@
     <div class="tabs" id="home-feed-tabs">
       <ul>
         <li class="{{'active' if feed_type=='official'}}">
-          <a href="{{url('home')}}?feed_type=official{% if sort_by %}&sort_by={{sort_by}}{% endif %}">{{_('OFFICIAL')}}</a>
+          <a href="{{url('home')}}?feed_type=official{% if sort_by %}&sort_by={{sort_by}}{% endif %}" data-feed-type="official">{{_('OFFICIAL')}}</a>
         </li>
         <li class="{{'active' if feed_type=='group'}}">
-          <a href="{{url('home')}}?feed_type=group{% if sort_by %}&sort_by={{sort_by}}{% endif %}">{{_('GROUP')}}</a>
+          <a href="{{url('home')}}?feed_type=group{% if sort_by %}&sort_by={{sort_by}}{% endif %}" data-feed-type="group">{{_('GROUP')}}</a>
         </li>
-        <li class="{{'active' if feed_type=='open_group'}}">
-          <a href="{{url('home')}}?feed_type=open_group{% if sort_by %}&sort_by={{sort_by}}{% endif %}">{{_('PUBLIC')}}</a>
+        <li class="{{'active' if feed_type=='community'}}">
+          <a href="{{url('home')}}?feed_type=community{% if sort_by %}&sort_by={{sort_by}}{% endif %}" data-feed-type="community">{{_('COMMUNITY')}}</a>
         </li>
       </ul>
       <div class="sort-options" style="margin-left: auto; display: flex; align-items: center;" id="home-sort-options">

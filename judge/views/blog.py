@@ -29,8 +29,19 @@ class PostList(HomeFeedView):
     url_name = "blog_post_list"
 
     def get(self, request, *args, **kwargs):
-        self.feed_type = request.GET.get("feed_type", "official")
-        self.sort_by = request.GET.get("sort_by", "newest")
+        # Get from query params, or fall back to cookies, or use defaults
+        self.feed_type = request.GET.get(
+            "feed_type", request.COOKIES.get("feed_type", "official")
+        )
+        self.sort_by = request.GET.get(
+            "sort_by", request.COOKIES.get("feed_sort_by", "newest")
+        )
+        # Validate feed_type
+        if self.feed_type not in ("official", "group", "community"):
+            self.feed_type = "official"
+        # Validate sort_by
+        if self.sort_by not in ("newest", "latest_comment"):
+            self.sort_by = "newest"
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
@@ -55,11 +66,11 @@ class PostList(HomeFeedView):
                     queryset = queryset.order_by("-publish_on")
             else:
                 queryset = queryset.none()
-        elif self.feed_type == "open_group":
+        elif self.feed_type == "community":
             if not self.request.organization:
                 queryset = queryset.filter(
                     is_organization_private=True,
-                    organizations__is_open=True,
+                    organizations__is_community=True,
                 )
             if self.sort_by == "newest":
                 queryset = queryset.order_by("-publish_on")
