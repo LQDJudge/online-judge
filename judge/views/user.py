@@ -390,12 +390,6 @@ def edit_profile(request):
         if form_user.is_valid() and form.is_valid():
             with revisions.create_revision():
                 form_user.save()
-
-                if request.POST.get("remove_avatar"):
-                    if profile.profile_image:
-                        profile.profile_image.delete(save=False)
-                        profile.profile_image = None
-
                 form.save()
                 form_info.save()
                 revisions.set_user(request.user)

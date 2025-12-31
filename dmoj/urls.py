@@ -868,6 +868,11 @@ urlpatterns = [
                     name="organization_pending_blogs",
                 ),
                 re_path(
+                    r"^/moderation-log$",
+                    organization.OrganizationModerationLogView.as_view(),
+                    name="organization_moderation_log",
+                ),
+                re_path(
                     r"^/request$",
                     organization.RequestJoinOrganization.as_view(),
                     name="request_organization",

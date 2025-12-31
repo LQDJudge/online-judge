@@ -42,6 +42,12 @@
           {% endif %}
         </div>
       {% endif %}
+      {% if can_edit or is_moderator %}
+        <div class="link-row">
+          <a href="{{ url('organization_moderation_log', organization.id, organization.slug) }}">
+            <i class="fa fa-shield-alt"></i>{{ _('Moderation log') }}</a>
+        </div>
+      {% endif %}
       {% if can_edit %}
         <div class="link-row">
           <a href="{{ url('organization_contest_add', organization.id, organization.slug) }}">
@@ -79,7 +85,7 @@
   {% if (is_member or can_edit) %}
     {% include 'contests-countdown.html' %}
   {% endif %}
-  {% if can_edit or is_member %}
+  {% if can_edit or is_member or organization.is_open %}
     <div class="blog-sidebox sidebox">
       <h3><i class="fa fa-info-circle"></i>{{ _('About') }}</h3>
       <div class="sidebox-content">

@@ -37,7 +37,14 @@ from reversion import revisions
 from reversion.models import Revision, Version
 
 from judge.jinja2.reference import get_user_from_text
-from judge.models import Comment, CommentVote, Problem, Contest, BlogPost
+from judge.models import (
+    Comment,
+    CommentVote,
+    Problem,
+    Contest,
+    BlogPost,
+    OrganizationModerationLog,
+)
 from judge.models.problem import Solution
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.comment import (
@@ -383,7 +390,26 @@ class TopLevelCommentsView(CommentListView):
             context["object_id"] = self.params.object_id
             if hasattr(self.target_object, "get_absolute_url"):
                 context["page_url"] = self.target_object.get_absolute_url()
+            # Check if user can hide comments on this content
+            context["can_hide_comments"] = self._can_hide_comments()
         return context
+
+    def _can_hide_comments(self):
+        """Check if user can hide comments on this content."""
+        if not self.request.user.is_authenticated:
+            return False
+        if self.request.user.has_perm("judge.change_comment"):
+            return True
+        profile = self.request.profile
+        if not profile or not hasattr(self, "target_object"):
+            return False
+        obj = self.target_object
+        # Use cached method if available
+        if hasattr(obj, "get_author_ids"):
+            return profile.id in obj.get_author_ids()
+        elif hasattr(obj, "authors"):
+            return obj.authors.filter(id=profile.id).exists()
+        return False
 
     def post_process_comments(self, comments_list, total_comments):
         if (
@@ -546,21 +572,94 @@ class CommentVotesAjax(PermissionRequiredMixin, CommentMixin, DetailView):
         return context
 
 
+def _can_hide_comment(request, comment):
+    """
+    Check if user can hide this comment.
+    Returns True if user has permission or is author of the content.
+    """
+    # Global permission to hide any comment
+    if request.user.has_perm("judge.change_comment"):
+        return True
+
+    if not request.user.is_authenticated:
+        return False
+
+    profile = request.profile
+
+    # Check if user is author of the content the comment is on
+    content_type = comment.content_type
+    object_id = comment.object_id
+
+    # BlogPost authors
+    if content_type.model == "blogpost":
+        try:
+            blog = BlogPost.objects.get(id=object_id)
+            if blog.authors.filter(id=profile.id).exists():
+                return True
+        except BlogPost.DoesNotExist:
+            pass
+
+    # Problem authors
+    elif content_type.model == "problem":
+        try:
+            problem = Problem.objects.get(id=object_id)
+            if problem.authors.filter(id=profile.id).exists():
+                return True
+        except Problem.DoesNotExist:
+            pass
+
+    # Contest authors
+    elif content_type.model == "contest":
+        try:
+            contest = Contest.objects.get(id=object_id)
+            if contest.authors.filter(id=profile.id).exists():
+                return True
+        except Contest.DoesNotExist:
+            pass
+
+    # Solution authors
+    elif content_type.model == "solution":
+        try:
+            solution = Solution.objects.get(id=object_id)
+            if solution.authors.filter(id=profile.id).exists():
+                return True
+        except Solution.DoesNotExist:
+            pass
+
+    return False
+
+
 @require_POST
 def comment_hide(request):
-    if not request.user.has_perm("judge.change_comment"):
-        raise PermissionDenied()
-
     try:
         comment_id = int(request.POST["id"])
     except ValueError:
         return HttpResponseBadRequest()
 
     comment = get_object_or_404(Comment, id=comment_id)
+
+    if not _can_hide_comment(request, comment):
+        raise PermissionDenied()
     comment.get_descendants(include_self=True).update(hidden=True)
 
     get_visible_comment_count.dirty(comment.content_type, comment.object_id)
     get_visible_top_level_comment_count.dirty(comment.content_type, comment.object_id)
+
+    # Log moderation action if comment is on an organization blog post
+    blog_content_type = ContentType.objects.get_for_model(BlogPost)
+    if comment.content_type == blog_content_type:
+        try:
+            blog = BlogPost.objects.get(id=comment.object_id)
+            if blog.is_organization_private:
+                for org in blog.organizations.all():
+                    OrganizationModerationLog.log_action(
+                        organization=org,
+                        content_object=comment,
+                        action="hide_comment",
+                        moderator=request.profile,
+                    )
+        except BlogPost.DoesNotExist:
+            pass
 
     return HttpResponse("ok")
 

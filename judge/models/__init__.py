@@ -47,6 +47,7 @@ from judge.models.profile import (
     Friend,
     OrganizationProfile,
     ProfileInfo,
+    OrganizationModerationLog,
 )
 from judge.models.runtime import Judge, Language, RuntimeVersion
 from judge.models.submission import (

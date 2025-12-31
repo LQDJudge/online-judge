@@ -49,8 +49,11 @@ from judge.forms import (
 )
 from judge.models import (
     BlogPost,
+    Comment,
+    CommentVote,
     Organization,
     OrganizationRequest,
+    OrganizationModerationLog,
     Profile,
     Contest,
     ContestProblem,
@@ -58,6 +61,8 @@ from judge.models import (
     Block,
     Course,
     CourseRole,
+    PageVote,
+    PageVoteVoter,
 )
 from judge.models.course import RoleInCourse
 from judge.models.notification import Notification, NotificationCategory
@@ -79,6 +84,177 @@ from judge.views.course import CourseList
 from judge.views.submission import SubmissionsListBase
 from judge.views.feed import FeedView
 from judge.models.profile import get_top_rating_profile, get_top_score_profile
+from judge.caching import cache_wrapper
+from collections import defaultdict
+
+
+@cache_wrapper(prefix="Pgtcpi4", timeout=1800, expected_type=list)
+def _get_top_contributors_inner(organization_id):
+    """
+    Calculate contribution scores for users in a community.
+    All contributions are credited to authors (post authors get post votes, comment authors get comment votes).
+    Score = (posts * 3) + (post_votes_received * 3) + (comments * 1) + (comment_votes_received * 1)
+    """
+    scores = defaultdict(
+        lambda: {"posts": 0, "post_votes": 0, "comments": 0, "comment_votes": 0}
+    )
+
+    # Get blog posts in this organization with their authors
+    blog_posts = BlogPost.objects.filter(
+        organizations=organization_id, visible=True
+    ).values("id", "authors")
+
+    if not blog_posts:
+        return []
+
+    blog_post_ids = [p["id"] for p in blog_posts]
+    # Map post_id -> author_id
+    post_author_map = {p["id"]: p["authors"] for p in blog_posts if p["authors"]}
+
+    blog_content_type = ContentType.objects.get_for_model(BlogPost)
+
+    # Count blog posts per author (3 points each)
+    for author_id in post_author_map.values():
+        scores[author_id]["posts"] += 1
+
+    # Count post votes and credit to POST AUTHORS (3 points each)
+    pagevotes = PageVote.objects.filter(
+        content_type=blog_content_type,
+        object_id__in=blog_post_ids,
+    ).values("id", "object_id")
+
+    pagevote_to_post = {pv["id"]: pv["object_id"] for pv in pagevotes}
+    if pagevote_to_post:
+        vote_counts = (
+            PageVoteVoter.objects.filter(pagevote_id__in=pagevote_to_post.keys())
+            .values("pagevote_id")
+            .annotate(count=Count("id"))
+        )
+        for item in vote_counts:
+            post_id = pagevote_to_post[item["pagevote_id"]]
+            author_id = post_author_map.get(post_id)
+            if author_id:
+                scores[author_id]["post_votes"] += item["count"]
+
+    # Get all comments with authors (single query for both counting and vote mapping)
+    comments = list(
+        Comment.objects.filter(
+            content_type=blog_content_type,
+            object_id__in=blog_post_ids,
+        ).values("id", "author", "hidden")
+    )
+
+    # Count comments per author (1 point each) - only visible comments
+    for c in comments:
+        if c["author"] and not c["hidden"]:
+            scores[c["author"]]["comments"] += 1
+
+    # Build comment_id -> author map for vote attribution
+    comment_author_map = {c["id"]: c["author"] for c in comments if c["author"]}
+    if comment_author_map:
+        vote_counts = (
+            CommentVote.objects.filter(comment_id__in=comment_author_map.keys())
+            .values("comment_id")
+            .annotate(count=Count("id"))
+        )
+        for item in vote_counts:
+            author_id = comment_author_map.get(item["comment_id"])
+            if author_id:
+                scores[author_id]["comment_votes"] += item["count"]
+
+    # Calculate total scores: posts*3 + post_votes*3 + comments*1 + comment_votes*1
+    results = []
+    for profile_id, data in scores.items():
+        total = (
+            data["posts"] * 3
+            + data["post_votes"] * 3
+            + data["comments"] * 1
+            + data["comment_votes"] * 1
+        )
+        if total > 0:
+            results.append(
+                (
+                    profile_id,
+                    total,
+                    data["posts"],
+                    data["post_votes"],
+                    data["comments"],
+                    data["comment_votes"],
+                )
+            )
+
+    # Sort by total score descending
+    results.sort(key=lambda x: -x[1])
+    return results[:10]
+
+
+def get_top_contributors(organization_id):
+    """Get top contributors for a community organization"""
+    results = _get_top_contributors_inner(organization_id)
+    if not results:
+        return []
+
+    profile_ids = [r[0] for r in results]
+    score_data = {
+        r[0]: {
+            "score": r[1],
+            "posts": r[2],
+            "post_votes": r[3],
+            "comments": r[4],
+            "comment_votes": r[5],
+        }
+        for r in results
+    }
+
+    profiles = Profile.get_cached_instances(*profile_ids)
+    # Attach contribution data to each profile for template use
+    for profile in profiles:
+        data = score_data.get(profile.id, {})
+        profile.contribution_score = data.get("score", 0)
+        profile.post_count = data.get("posts", 0)
+        profile.post_vote_count = data.get("post_votes", 0)
+        profile.comment_count = data.get("comments", 0)
+        profile.comment_vote_count = data.get("comment_votes", 0)
+    return profiles
+
+
+def _attach_rejection_info(blogs, organization, model_class):
+    """
+    Attach rejection info from moderation logs to a list of blog posts.
+    Each blog will have a rejection_info attribute with moderator, reason, etc.
+    """
+    if not blogs:
+        return
+
+    content_type = ContentType.objects.get_for_model(model_class)
+    blog_ids = [blog.id for blog in blogs]
+
+    # Get the most recent reject_post action for each blog
+    rejection_logs = (
+        OrganizationModerationLog.objects.filter(
+            organization=organization,
+            content_type=content_type,
+            object_id__in=blog_ids,
+            action="reject_post",
+        )
+        .order_by("-created_at")
+        .select_related("moderator")
+    )
+
+    # Build a map of blog_id -> rejection info (most recent only)
+    rejection_info = {}
+    for log in rejection_logs:
+        if log.object_id not in rejection_info:
+            rejection_info[log.object_id] = {
+                "moderator": log.moderator,
+                "reason": log.reason,
+                "created_at": log.created_at,
+                "is_automated": log.is_automated,
+            }
+
+    # Attach to each blog
+    for blog in blogs:
+        blog.rejection_info = rejection_info.get(blog.id)
 
 
 __all__ = [
@@ -143,6 +319,10 @@ class OrganizationMixin(OrganizationBase):
         context = super().get_context_data(**kwargs)
         context["is_member"] = self.is_member(self.organization)
         context["is_admin"] = self.is_admin(self.organization)
+        context["is_moderator"] = (
+            self.request.profile
+            and self.organization.can_moderate(self.request.profile)
+        )
         context["is_blocked"] = self.is_blocked(self.organization)
         context["can_edit"] = self.can_edit_organization(self.organization)
         context["organization"] = self.organization
@@ -221,6 +401,28 @@ class MemberOrganizationMixin(OrganizationMixin):
         )
 
 
+class CommunityOrMemberMixin(OrganizationMixin):
+    """
+    Mixin that allows access if:
+    - The organization is a community (anyone can access), OR
+    - The user is a member/admin of the organization
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        res = super(CommunityOrMemberMixin, self).dispatch(request, *args, **kwargs)
+        if not hasattr(self, "organization"):
+            return res
+        # Allow access if it's a community or if user can access
+        if self.organization.is_community or self.can_access(self.organization):
+            return res
+        return generic_message(
+            request,
+            _("Can't access organization"),
+            _("You are not allowed to access this organization."),
+            status=403,
+        )
+
+
 class OrganizationHomeView(OrganizationMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -231,16 +433,21 @@ class OrganizationHomeView(OrganizationMixin):
                 state="P", organization=self.organization
             ).count()
             context["pending_blog_count"] = BlogPost.objects.filter(
-                visible=False, organizations=self.organization
+                visible=False, organizations=self.organization, is_rejected=False
             ).count()
         else:
             context["pending_blog_count"] = BlogPost.objects.filter(
                 visible=False,
                 organizations=self.organization,
                 authors=self.request.profile,
+                is_rejected=False,
             ).count()
-        context["top_rated"] = get_top_rating_profile(self.organization.id)
-        context["top_scorer"] = get_top_score_profile(self.organization.id)
+        # Communities show top contributors instead of top rated/scorer
+        if self.organization.is_community:
+            context["top_contributors"] = get_top_contributors(self.organization.id)
+        else:
+            context["top_rated"] = get_top_rating_profile(self.organization.id)
+            context["top_scorer"] = get_top_score_profile(self.organization.id)
 
         return context
 
@@ -263,9 +470,7 @@ class OrganizationList(
         return "-member_count"
 
     def get(self, request, *args, **kwargs):
-        default_tab = "mine"
-        if not self.request.user.is_authenticated:
-            default_tab = "public"
+        default_tab = "community"
         self.current_tab = self.request.GET.get("tab", default_tab)
         self.organization_query = request.GET.get("organization", "")
 
@@ -345,7 +550,11 @@ class OrganizationList(
                 id__in=profile.organizations.values("id")
             ).exclude(id__in=blocked_organization_ids)
 
-        if self.current_tab == "public":
+        if self.current_tab == "community":
+            queryset = organization_list.filter(is_community=True).exclude(
+                id__in=blocked_organization_ids
+            )
+        elif self.current_tab == "public":
             queryset = organization_list.exclude(
                 Q(id__in=my_organizations) | Q(id__in=blocked_organization_ids)
             ).filter(is_open=True)
@@ -356,10 +565,12 @@ class OrganizationList(
         elif self.current_tab == "blocked":
             queryset = organization_list.filter(id__in=blocked_organization_ids)
         else:
+            # "mine" tab - all joined groups including communities
             queryset = my_organizations
 
         if queryset:
-            queryset = queryset.order_by(self.order)
+            # Sort communities first, then apply the user's sort order
+            queryset = queryset.order_by("-is_community", self.order)
 
         return queryset
 
@@ -657,15 +868,21 @@ class JoinOrganization(OrganizationMembershipChange):
                 request, _("Joining group"), _("This group is not open.")
             )
 
-        max_orgs = settings.DMOJ_USER_MAX_ORGANIZATION_COUNT
-        if profile.organizations.filter(is_open=True).count() >= max_orgs:
-            return generic_message(
-                request,
-                _("Joining group"),
-                _("You may not be part of more than {count} public groups.").format(
-                    count=max_orgs
-                ),
-            )
+        # Communities don't count towards the join limit
+        if not org.is_community:
+            max_orgs = settings.DMOJ_USER_MAX_ORGANIZATION_COUNT
+            # Only count non-community open groups towards the limit
+            current_count = profile.organizations.filter(
+                is_open=True, is_community=False
+            ).count()
+            if current_count >= max_orgs:
+                return generic_message(
+                    request,
+                    _("Joining group"),
+                    _("You may not be part of more than {count} public groups.").format(
+                        count=max_orgs
+                    ),
+                )
 
         profile.organizations.add(org)
         profile.save()
@@ -1228,7 +1445,7 @@ class AddOrganizationBlog(
     LoginRequiredMixin,
     TitleMixin,
     OrganizationHomeView,
-    MemberOrganizationMixin,
+    CommunityOrMemberMixin,
     CreateView,
 ):
     template_name = "organization/blog/add.html"
@@ -1296,14 +1513,16 @@ class EditOrganizationBlog(
     LoginRequiredMixin,
     TitleMixin,
     OrganizationHomeView,
-    MemberOrganizationMixin,
+    CommunityOrMemberMixin,
     UpdateView,
 ):
     template_name = "organization/blog/edit.html"
     model = BlogPost
 
     def get_form_class(self):
-        if self.can_edit_organization(self.organization):
+        if self.can_edit_organization(
+            self.organization
+        ) or self.organization.can_moderate(self.request.profile):
             return OrganizationAdminBlogForm
         return OrganizationBlogForm
 
@@ -1317,14 +1536,15 @@ class EditOrganizationBlog(
             self.is_org_admin = self.request.profile.can_edit_organization(
                 self.organization
             )
+            self.is_org_moderator = self.organization.can_moderate(self.request.profile)
             self.is_blog_author = self.request.profile.id in self.blog.get_author_ids()
 
-            if not (self.is_org_admin or self.is_blog_author):
+            if not (self.is_org_admin or self.is_org_moderator or self.is_blog_author):
                 raise Exception(_("Not allowed to edit this blog"))
 
             # Prevent authors from accessing edit page after post is approved (visible=True)
-            # Only allow admins to edit approved posts
-            if self.blog.visible and not self.is_org_admin:
+            # Only allow admins and moderators to edit approved posts
+            if self.blog.visible and not (self.is_org_admin or self.is_org_moderator):
                 raise Exception(_("Cannot edit approved blog posts"))
 
         except BlogPost.DoesNotExist:
@@ -1344,7 +1564,11 @@ class EditOrganizationBlog(
 
     def publish_blog(self, request, *args, **kwargs):
         self.blog_id = kwargs["blog_pk"]
-        BlogPost.objects.filter(pk=self.blog_id).update(visible=True)
+        BlogPost.objects.filter(pk=self.blog_id).update(visible=True, is_rejected=False)
+
+    def reject_blog(self, request, *args, **kwargs):
+        self.blog_id = kwargs["blog_pk"]
+        BlogPost.objects.filter(pk=self.blog_id).update(is_rejected=True)
 
     def delete_blog(self, request, *args, **kwargs):
         self.blog_id = kwargs["blog_pk"]
@@ -1363,6 +1587,7 @@ class EditOrganizationBlog(
         action = request.POST.get("action")
 
         if action == "Delete":
+            # Only admin or author can delete posts (not moderators)
             if not (self.is_org_admin or self.is_blog_author):
                 return generic_message(
                     request,
@@ -1378,30 +1603,51 @@ class EditOrganizationBlog(
             )
             return HttpResponseRedirect(cur_url)
         elif action == "Reject":
-            if not self.is_org_admin:
+            if not (self.is_org_admin or self.is_org_moderator):
                 return generic_message(
                     request,
                     _("Permission denied"),
-                    _("Only organization admins can reject blog posts."),
+                    _("Only organization admins and moderators can reject blog posts."),
                     status=403,
                 )
 
-            self.create_notification("Reject blog")
-            self.delete_blog(request, *args, **kwargs)
-            cur_url = reverse(
-                "organization_pending_blogs",
-                args=(self.organization_id, self.organization.slug),
+            # Log the moderation action (also sends notification)
+            note = request.POST.get("note", "")
+            OrganizationModerationLog.log_action(
+                organization=self.organization,
+                content_object=self.blog,
+                action="reject_post",
+                moderator=request.profile,
+                reason=note,
+            )
+            self.reject_blog(request, *args, **kwargs)
+            cur_url = (
+                reverse(
+                    "organization_pending_blogs",
+                    args=(self.organization_id, self.organization.slug),
+                )
+                + "?tab=rejected"
             )
             return HttpResponseRedirect(cur_url)
         elif action == "Approve":
-            if not self.is_org_admin:
+            if not (self.is_org_admin or self.is_org_moderator):
                 return generic_message(
                     request,
                     _("Permission denied"),
-                    _("Only organization admins can approve blog posts."),
+                    _(
+                        "Only organization admins and moderators can approve blog posts."
+                    ),
                     status=403,
                 )
-            self.create_notification("Approve blog")
+            # Log the moderation action (also sends notification)
+            note = request.POST.get("note", "")
+            OrganizationModerationLog.log_action(
+                organization=self.organization,
+                content_object=self.blog,
+                action="approve_post",
+                moderator=request.profile,
+                reason=note,
+            )
             self.publish_blog(request, *args, **kwargs)
             cur_url = reverse(
                 "organization_pending_blogs",
@@ -1476,7 +1722,7 @@ class EditOrganizationBlog(
 class PendingBlogs(
     LoginRequiredMixin,
     TitleMixin,
-    MemberOrganizationMixin,
+    CommunityOrMemberMixin,
     OrganizationHomeView,
     ListView,
 ):
@@ -1484,20 +1730,94 @@ class PendingBlogs(
     template_name = "organization/blog/pending.html"
     context_object_name = "blogs"
 
+    def get(self, request, *args, **kwargs):
+        self.current_tab = request.GET.get("tab", "pending")
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
+        is_rejected = self.current_tab == "rejected"
         queryset = BlogPost.objects.filter(
-            organizations=self.organization, visible=False
+            organizations=self.organization,
+            visible=False,
+            is_rejected=is_rejected,
         )
-        if not self.can_edit_organization(self.organization):
+        # Admins and moderators can see all blogs
+        if not (
+            self.can_edit_organization(self.organization)
+            or self.organization.can_moderate(self.request.profile)
+        ):
             queryset = queryset.filter(authors=self.request.profile)
-        return queryset.order_by("publish_on")
+        return queryset.order_by("-publish_on" if is_rejected else "publish_on")
 
     def get_title(self):
+        if self.current_tab == "rejected":
+            return _("Rejected blogs in %s") % self.organization.name
         return _("Pending blogs in %s") % self.organization.name
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["org"] = self.organization
+        context["current_tab"] = self.current_tab
+        # Count for tab badges
+        base_query = BlogPost.objects.filter(
+            organizations=self.organization,
+            visible=False,
+        )
+        if not (
+            self.can_edit_organization(self.organization)
+            or self.organization.can_moderate(self.request.profile)
+        ):
+            base_query = base_query.filter(authors=self.request.profile)
+        context["pending_count"] = base_query.filter(is_rejected=False).count()
+        context["rejected_count"] = base_query.filter(is_rejected=True).count()
+
+        # For rejected tab, attach rejection info to each post
+        if self.current_tab == "rejected" and context.get("blogs"):
+            _attach_rejection_info(context["blogs"], self.organization, BlogPost)
+
+        return context
+
+
+class OrganizationModerationLogView(
+    LoginRequiredMixin,
+    TitleMixin,
+    OrganizationHomeView,
+    ListView,
+):
+    model = OrganizationModerationLog
+    template_name = "organization/moderation_log.html"
+    context_object_name = "logs"
+    paginate_by = 50
+
+    def dispatch(self, request, *args, **kwargs):
+        res = super().dispatch(request, *args, **kwargs)
+        if not hasattr(self, "organization"):
+            return res
+        # Allow admins and moderators
+        if self.can_edit_organization(
+            self.organization
+        ) or self.organization.can_moderate(request.profile):
+            return res
+        return generic_message(
+            request,
+            _("Permission denied"),
+            _("You are not allowed to view moderation logs."),
+            status=403,
+        )
+
+    def get_queryset(self):
+        return (
+            OrganizationModerationLog.objects.filter(organization=self.organization)
+            .select_related("moderator", "content_type")
+            .order_by("-created_at")
+        )
+
+    def get_title(self):
+        return _("Moderation Log - %s") % self.organization.name
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_type"] = "moderation_log"
         return context
 
 

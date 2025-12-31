@@ -21,40 +21,170 @@
       });
     }
 
+    function showNoteModal(actionType, callback) {
+      var title = '';
+      if (actionType === 'Approve') {
+        title = '{{ _("Approve Post") }}';
+      } else if (actionType === 'Reject') {
+        title = '{{ _("Reject Post") }}';
+      } else if (actionType === 'Delete') {
+        title = '{{ _("Delete Post") }}';
+      }
+
+      var modalHtml =
+        '<div id="moderation-modal" class="modal-overlay">' +
+      '<div class="modal-content">' +
+      '<h3>' + title + '</h3>' +
+      '<div class="form-group">' +
+      '<label for="moderation-note">{{ _("Note (optional):") }}</label>' +
+      '<textarea id="moderation-note" rows="3" placeholder="{{ _("Add a note explaining your decision...") }}"></textarea>' +
+      '</div>' +
+      '<div class="modal-actions">' +
+      '<button type="button" class="btn-cancel">{{ _("Cancel") }}</button>' +
+      '<button type="button" class="btn-confirm">{{ _("Confirm") }}</button>' +
+      '</div>' +
+      '</div>' +
+      '</div>';
+
+      $('body').append(modalHtml);
+
+      $('#moderation-modal .btn-cancel').on('click', function() {
+        $('#moderation-modal').remove();
+      });
+
+      $('#moderation-modal .btn-confirm').on('click', function() {
+        var note = $('#moderation-note').val();
+        $('#moderation-modal').remove();
+        callback(note);
+      });
+
+      // Close on overlay click
+      $('#moderation-modal').on('click', function(e) {
+        if (e.target === this) {
+          $(this).remove();
+        }
+      });
+    }
+
     window.approvePost = function (url, postId, e) {
       e.preventDefault();
-      const csrfToken = '{{ csrf_token }}';
-      ajax_post(url, {
-        id: postId,
-        action: 'Approve',
-        csrfmiddlewaretoken: csrfToken
-      }, function () {
-        removePost(postId);
+      showNoteModal('Approve', function(note) {
+        const csrfToken = '{{ csrf_token }}';
+        ajax_post(url, {
+          id: postId,
+          action: 'Approve',
+          note: note,
+          csrfmiddlewaretoken: csrfToken
+        }, function () {
+          removePost(postId);
+        });
       });
     }
 
     window.rejectPost = function (url, postId, e) {
       e.preventDefault();
-      const csrfToken = '{{ csrf_token }}';
-      ajax_post(url, {
-        id: postId,
-        action: 'Reject',
-        csrfmiddlewaretoken: csrfToken
-      }, function () {
-        removePost(postId);
+      showNoteModal('Reject', function(note) {
+        const csrfToken = '{{ csrf_token }}';
+        ajax_post(url, {
+          id: postId,
+          action: 'Reject',
+          note: note,
+          csrfmiddlewaretoken: csrfToken
+        }, function () {
+          removePost(postId);
+        });
       });
     }
 
     window.deletePost = function (url, postId, e) {
       e.preventDefault();
-      const csrfToken = '{{ csrf_token }}';
-      ajax_post(url, {
-        id: postId,
-        action: 'Delete',
-        csrfmiddlewaretoken: csrfToken
-      }, function () {
-        removePost(postId);
-      });
+      if (confirm('{{ _("Are you sure you want to delete this post?") }}')) {
+        const csrfToken = '{{ csrf_token }}';
+        ajax_post(url, {
+          id: postId,
+          action: 'Delete',
+          csrfmiddlewaretoken: csrfToken
+        }, function () {
+          removePost(postId);
+        });
+      }
     }
   });
 </script>
+
+<style>
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal-content {
+    background: var(--widget-background, #fff);
+    border-radius: 8px;
+    padding: 1.5em;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-content h3 {
+    margin: 0 0 1em 0;
+    color: var(--widget-color, #333);
+  }
+
+  .modal-content .form-group {
+    margin-bottom: 1em;
+  }
+
+  .modal-content label {
+    display: block;
+    margin-bottom: 0.5em;
+    color: var(--widget-color, #666);
+  }
+
+  .modal-content textarea {
+    width: 100%;
+    padding: 0.5em;
+    border: 1px solid var(--border-color, #ccc);
+    border-radius: 4px;
+    resize: vertical;
+    font-family: inherit;
+    background: var(--input-background, #fff);
+    color: var(--widget-color, #333);
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5em;
+  }
+
+  .modal-actions button {
+    padding: 0.5em 1em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .modal-actions .btn-cancel {
+    background: var(--background-gray, #e0e0e0);
+    color: var(--widget-color, #333);
+  }
+
+  .modal-actions .btn-confirm {
+    background: var(--theme-color, #007bff);
+    color: #fff;
+  }
+
+  .modal-actions button:hover {
+    opacity: 0.9;
+  }
+</style>

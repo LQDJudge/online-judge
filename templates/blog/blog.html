@@ -44,15 +44,23 @@
           </span>
         </div>
       </div>
-      {% if post.is_editable_by(request.user) %}
+      {% if post.is_editable_by(request.user) or editable_orgs %}
         <div class="post-actions">
-          <a href="{{ url('admin:judge_blogpost_change', post.id) }}" class="post-action-btn">
-            <i class="fa fa-edit"></i> {{ _('Edit') }}
-          </a>
-          <a href="{{ url('blog_post_ticket_list', post.id) }}" class="post-action-btn">
-            <i class="fa fa-clipboard-list"></i> {{ _('Tickets') }}
-            {% if num_open_tickets %}<span class="badge">{{ num_open_tickets }}</span>{% endif %}
-          </a>
+          {% if editable_orgs %}
+            <a href="{{ url('edit_organization_blog', editable_orgs[0].id, editable_orgs[0].slug, post.id) }}" class="post-action-btn">
+              <i class="fa fa-edit"></i> {{ _('Edit') }}
+            </a>
+          {% elif post.is_editable_by(request.user) %}
+            <a href="{{ url('admin:judge_blogpost_change', post.id) }}" class="post-action-btn">
+              <i class="fa fa-edit"></i> {{ _('Edit') }}
+            </a>
+          {% endif %}
+          {% if post.is_editable_by(request.user) %}
+            <a href="{{ url('blog_post_ticket_list', post.id) }}" class="post-action-btn">
+              <i class="fa fa-clipboard-list"></i> {{ _('Tickets') }}
+              {% if num_open_tickets %}<span class="badge">{{ num_open_tickets }}</span>{% endif %}
+            </a>
+          {% endif %}
         </div>
       {% endif %}
     </div>

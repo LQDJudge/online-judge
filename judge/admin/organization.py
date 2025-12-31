@@ -17,6 +17,7 @@ class OrganizationForm(ModelForm):
     class Meta:
         widgets = {
             "admins": AdminHeavySelect2MultipleWidget(data_view="profile_select2"),
+            "moderators": AdminHeavySelect2MultipleWidget(data_view="profile_select2"),
             "registrant": AdminHeavySelect2Widget(data_view="profile_select2"),
         }
         if HeavyPreviewAdminPageDownWidget is not None:
@@ -32,20 +33,24 @@ class OrganizationAdmin(VersionAdmin):
         "slug",
         "short_name",
         "is_open",
+        "is_community",
         "about",
         "slots",
         "registrant",
         "creation_date",
         "admins",
+        "moderators",
     )
     list_display = (
         "name",
         "short_name",
         "is_open",
+        "is_community",
         "creation_date",
         "registrant",
         "show_public",
     )
+    list_filter = ("is_open", "is_community")
     search_fields = ("name", "short_name", "registrant__user__username")
     prepopulated_fields = {"slug": ("name",)}
     actions_on_top = True

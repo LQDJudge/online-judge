@@ -6,6 +6,35 @@
 
 {% block middle_content %}
   {% include "messages.html" %}
+
+  <div class="tabs" id="pending-blog-tabs">
+    <ul>
+      <li class="{{'active' if current_tab == 'pending'}}">
+        <a href="?tab=pending">
+          <i class="fa fa-clock"></i> {{ _('Pending') }}
+          {% if pending_count > 0 %}
+            <span class="badge">{{ pending_count }}</span>
+          {% endif %}
+        </a>
+      </li>
+      <li class="{{'active' if current_tab == 'rejected'}}">
+        <a href="?tab=rejected">
+          <i class="fa fa-times-circle"></i> {{ _('Rejected') }}
+          {% if rejected_count > 0 %}
+            <span class="badge">{{ rejected_count }}</span>
+          {% endif %}
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  {% if not blogs %}
+    <div class="empty-message" style="text-align: center; padding: 2em; color: #888;">
+      <i class="fa {% if current_tab == 'rejected' %}fa-check-circle{% else %}fa-inbox{% endif %}" style="font-size: 3em;"></i>
+      <p>{% if current_tab == 'rejected' %}{{ _('No rejected posts.') }}{% else %}{{ _('No pending posts.') }}{% endif %}</p>
+    </div>
+  {% endif %}
+
   {% for post in blogs %}
     <section class="{% if post.sticky %}sticky {% endif %} blog-box" id="post-{{post.id}}">
       <div style="margin-bottom: 0.5em">
@@ -25,6 +54,29 @@
       <h2 class="title">
         <a href="{{ url('blog_post', post.id, post.slug) }}">{{ post.title }}</a>
       </h2>
+      {% if current_tab == 'rejected' and post.rejection_info %}
+        <div class="rejection-info" style="background: rgba(255, 0, 0, 0.05); border-left: 3px solid #dc3545; padding: 0.5em 1em; margin-bottom: 0.5em; font-size: 0.9em;">
+          <i class="fa fa-times-circle" style="color: #dc3545;"></i>
+          <strong>{{ _('Rejected') }}</strong>
+          {{ _('by') }}
+          {% if post.rejection_info.is_automated %}
+            <span class="badge background-blue white" style="padding: 2px 6px; border-radius: 3px;">
+              <i class="fa fa-robot"></i> {{ _('LLM') }}
+            </span>
+          {% elif post.rejection_info.moderator %}
+            {{ link_user(post.rejection_info.moderator) }}
+          {% else %}
+            <span class="gray">{{ _('Unknown') }}</span>
+          {% endif %}
+          &#8226;
+          {{ relative_time(post.rejection_info.created_at) }}
+          {% if post.rejection_info.reason %}
+            <div style="margin-top: 0.3em; color: #666;">
+              <i class="fa fa-comment"></i> {{ post.rejection_info.reason }}
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
       <div class="blog-description">
         <div class="summary content-description">
           {{ post.content|markdown(lazy_load=True)|reference|str|safe }}
@@ -33,37 +85,62 @@
       </div>
       <div class="actionbar-box">
         <div class="actionbar {{'hide_texts_on_mobile' if hide_texts_on_mobile}}">
-          {% if is_admin %}
-            <span class="actionbar-block">
-              <a class="actionbar-button white background-green" href="#"
-                 onclick="javascript:approvePost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
-                <i class="fa fa-check" style="font-size: large;"></i>
-                <span class="actionbar-text">{{_("Approve")}}</span>
-              </a>
-            </span>
-          {% endif %}
-          <span class="actionbar-block">
-            <a class="actionbar-button black" href="{{ url('edit_organization_blog', org.id , org.slug , post.id) }}">
-              <i class="fa fa-edit" style="font-size: large;"></i>
-              <span class="actionbar-text">{{_("Edit")}}</span>
-            </a>
-          </span>
-          {% if is_admin %}
-            <span class="actionbar-block">
-              <a class="actionbar-button white background-red" href="#"
-                 onclick="javascript:rejectPost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
-                <i class="fa fa-times" style="font-size: large;"></i>
-                <span class="actionbar-text">{{_("Reject")}}</span>
-              </a>
-            </span>
+          {% set is_author = request.profile and request.profile.id in post.get_author_ids() %}
+          {% if current_tab == 'rejected' %}
+            {# Rejected tab: Approve (admin/moderator) and Delete (admin/author) buttons #}
+            {% if is_admin or is_moderator %}
+              <span class="actionbar-block">
+                <a class="actionbar-button white background-green" href="#"
+                   onclick="javascript:approvePost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
+                  <i class="fa fa-check" style="font-size: large;"></i>
+                  <span class="actionbar-text">{{_("Approve")}}</span>
+                </a>
+              </span>
+            {% endif %}
+            {% if is_admin or is_author %}
+              <span class="actionbar-block">
+                <a class="actionbar-button white background-red" href="#"
+                   onclick="javascript:deletePost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
+                  <i class="fa fa-trash" style="font-size: large;"></i>
+                  <span class="actionbar-text">{{_("Delete")}}</span>
+                </a>
+              </span>
+            {% endif %}
           {% else %}
+            {# Pending tab: Approve/Reject (admin/moderator), Edit (all), Delete (admin/author) #}
+            {% if is_admin or is_moderator %}
+              <span class="actionbar-block">
+                <a class="actionbar-button white background-green" href="#"
+                   onclick="javascript:approvePost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
+                  <i class="fa fa-check" style="font-size: large;"></i>
+                  <span class="actionbar-text">{{_("Approve")}}</span>
+                </a>
+              </span>
+            {% endif %}
             <span class="actionbar-block">
-              <a class="actionbar-button white background-red" href="#"
-                 onclick="javascript:deletePost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
-                <i class="fa fa-trash" style="font-size: large;"></i>
-                <span class="actionbar-text">{{_("Delete")}}</span>
+              <a class="actionbar-button black" href="{{ url('edit_organization_blog', org.id , org.slug , post.id) }}">
+                <i class="fa fa-edit" style="font-size: large;"></i>
+                <span class="actionbar-text">{{_("Edit")}}</span>
               </a>
             </span>
+            {% if is_admin or is_moderator %}
+              <span class="actionbar-block">
+                <a class="actionbar-button white background-red" href="#"
+                   onclick="javascript:rejectPost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
+                  <i class="fa fa-times" style="font-size: large;"></i>
+                  <span class="actionbar-text">{{_("Reject")}}</span>
+                </a>
+              </span>
+            {% endif %}
+            {% if is_admin or is_author %}
+              <span class="actionbar-block">
+                <a class="actionbar-button white background-red" href="#"
+                   onclick="javascript:deletePost('{{ url('edit_organization_blog', org.id , org.slug , post.id) }}', {{ post.id }}, event)">
+                  <i class="fa fa-trash" style="font-size: large;"></i>
+                  <span class="actionbar-text">{{_("Delete")}}</span>
+                </a>
+              </span>
+            {% endif %}
           {% endif %}
         </div>
       </div>

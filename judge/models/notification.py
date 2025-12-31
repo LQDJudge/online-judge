@@ -19,6 +19,7 @@ class NotificationCategory(models.TextChoices):
     REJECT_BLOG = "reject_blog", _("Rejected a post")
     APPROVE_BLOG = "approve_blog", _("Approved a post")
     EDIT_BLOG = "edit_blog", _("Edited a post")
+    HIDE_COMMENT = "hide_comment", _("Your comment was hidden")
     MENTION = "mention", _("Mentioned you")
     ORGANIZATION = "organization", _("Organization")
     PROBLEM = "problem", _("Problem")

@@ -1,3 +1,24 @@
+{% if top_contributors %}
+  <div class="blog-sidebox sidebox">
+    <h3 class="bold-text colored-text"><i class="fa fa-pen"></i>{{ _('Top Contributors') }}</h3>
+    <div class="sidebox-content" style="padding: 0; border: 0">
+      <table class="table feed-table">
+        <tbody>
+          {% for user in top_contributors %}
+            <tr>
+              <td style="padding: 7px 2px"><b>{{loop.index}}</b></td>
+              <td style="line-break: anywhere">{{link_user(user)}}</td>
+              <td title="{{ user.post_count }} {{ _('posts') }}, {{ user.post_vote_count }} {{ _('post likes') }}, {{ user.comment_count }} {{ _('comments') }}, {{ user.comment_vote_count }} {{ _('comment likes') }}">
+                {{ user.contribution_score }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endif %}
+
 {% if top_rated %}
   <div class="blog-sidebox sidebox">
     <h3 class="bold-text colored-text"><i class="fa fa-trophy"></i>{{ _('Top Rating') }}</h3>

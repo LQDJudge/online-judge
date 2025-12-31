@@ -96,6 +96,11 @@ class BlogPost(models.Model, PageVotable, Bookmarkable):
     is_organization_private = models.BooleanField(
         verbose_name=_("private to organizations"), default=False
     )
+    is_rejected = models.BooleanField(
+        verbose_name=_("rejected"),
+        default=False,
+        help_text=_("True if post was rejected by moderator"),
+    )
     comments = GenericRelation("Comment")
     pagevote = GenericRelation("PageVote")
     bookmark = GenericRelation("BookMark")

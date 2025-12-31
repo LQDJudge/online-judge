@@ -74,7 +74,7 @@
               <i class="fa fa-pencil fa-fw"></i>{{_('Edit')}}
             </a>
           {% endif %}
-          {% if perms.judge.change_comment %}
+          {% if can_hide_comments %}
             <a href="javascript:hide_comment({{ item.id }})" title="{{ _('Hide') }}" data-id="{{ item.id }}" class="action-link">
               <i class="fa fa-trash fa-fw"></i>{{_('Hide')}}
             </a>

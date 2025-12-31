@@ -6,7 +6,9 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import Max, CASCADE
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Max, CASCADE, Count
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
@@ -25,7 +27,13 @@ from judge.utils.files import delete_old_image_files, generate_image_filename
 from typing import Optional
 
 
-__all__ = ["Organization", "Profile", "OrganizationRequest", "Friend"]
+__all__ = [
+    "Organization",
+    "Profile",
+    "OrganizationRequest",
+    "Friend",
+    "OrganizationModerationLog",
+]
 
 
 TSHIRT_SIZES = (
@@ -134,6 +142,20 @@ class Organization(CacheableModel):
         blank=True,
         verbose_name=_("Cover image"),
     )
+    is_community = models.BooleanField(
+        default=False,
+        verbose_name=_("community"),
+        help_text=_(
+            "Communities are always open and focus on discussions rather than contests/problems"
+        ),
+    )
+    moderators = models.ManyToManyField(
+        "Profile",
+        verbose_name=_("moderators"),
+        related_name="moderated_organizations",
+        blank=True,
+        help_text=_("Moderators can approve/reject posts and manage comments"),
+    )
 
     @classmethod
     def get_cached_dict(cls, org_id):
@@ -145,6 +167,7 @@ class Organization(CacheableModel):
         _get_organization.dirty_multi(id_list)
         Organization.get_member_ids.dirty_multi(id_list)
         Organization.get_admin_ids.dirty_multi(id_list)
+        Organization.get_moderator_ids.dirty_multi(id_list)
 
     def __contains__(self, item):
         if isinstance(item, int):
@@ -208,9 +231,22 @@ class Organization(CacheableModel):
     def is_admin(self, profile):
         return profile.id in self.get_admin_ids()
 
+    def is_moderator(self, profile):
+        return profile.id in self.get_moderator_ids()
+
+    def can_moderate(self, profile):
+        """Check if user can moderate (admin or moderator)"""
+        if not profile:
+            return False
+        return self.is_admin(profile) or self.is_moderator(profile)
+
     @cache_wrapper(prefix="Orgai", expected_type=list)
     def get_admin_ids(self):
         return list(self.admins.values_list("id", flat=True))
+
+    @cache_wrapper(prefix="Orgmi2", expected_type=list)
+    def get_moderator_ids(self):
+        return list(self.moderators.values_list("id", flat=True))
 
     @cache_wrapper(prefix="Orgmi", expected_type=list)
     def get_member_ids(self):
@@ -220,6 +256,10 @@ class Organization(CacheableModel):
         return profile in self
 
     def save(self, *args, **kwargs):
+        # Communities are always open
+        if self.is_community:
+            self.is_open = True
+
         # Delete old image files before saving new ones to avoid duplicates
         if self.pk:
             try:
@@ -339,7 +379,12 @@ class Profile(CacheableModel):
         blank=True,
         help_text=_("Notes for administrators regarding this user."),
     )
-    profile_image = models.ImageField(upload_to=profile_image_path, null=True)
+    profile_image = models.ImageField(
+        upload_to=profile_image_path,
+        null=True,
+        blank=True,
+        verbose_name=_("Profile image"),
+    )
     background_image = models.ImageField(
         upload_to=profile_background_path,
         null=True,
@@ -990,3 +1035,150 @@ def _get_following_ids(profile_id):
             "users__id", flat=True
         )
     )
+
+
+class OrganizationModerationLog(models.Model):
+    """
+    Logs all moderation actions for organizations - both automated (LLM) and human.
+    """
+
+    ACTIONS = (
+        ("hide_comment", _("Hide Comment")),
+        ("unhide_comment", _("Unhide Comment")),
+        ("keep_comment", _("Keep Comment")),
+        ("approve_post", _("Approve Post")),
+        ("reject_post", _("Reject Post")),
+        ("skip", _("Skipped")),
+    )
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=CASCADE,
+        related_name="moderation_logs",
+        verbose_name=_("organization"),
+    )
+    moderator = models.ForeignKey(
+        Profile,
+        on_delete=CASCADE,
+        null=True,
+        blank=True,
+        related_name="moderation_actions",
+        verbose_name=_("moderator"),
+        help_text=_("Null if action was automated by LLM"),
+    )
+
+    # Content reference using Django's ContentType framework
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=CASCADE,
+        verbose_name=_("content type"),
+    )
+    object_id = models.PositiveIntegerField(verbose_name=_("object ID"))
+    content_object = GenericForeignKey("content_type", "object_id")
+
+    action = models.CharField(
+        max_length=20,
+        choices=ACTIONS,
+        verbose_name=_("action"),
+    )
+    reason = models.TextField(
+        blank=True,
+        verbose_name=_("reason"),
+        help_text=_("LLM explanation or moderator note"),
+    )
+    is_automated = models.BooleanField(
+        default=False,
+        verbose_name=_("automated"),
+        help_text=_("True if action was taken by LLM"),
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("created at"),
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["organization", "created_at"]),
+            models.Index(fields=["content_type", "object_id"]),
+        ]
+        verbose_name = _("moderation log")
+        verbose_name_plural = _("moderation logs")
+
+    def __str__(self):
+        moderator_name = self.moderator.username if self.moderator else "LLM"
+        return f"{moderator_name} - {self.get_action_display()} - {self.created_at}"
+
+    @classmethod
+    def log_action(
+        cls,
+        organization,
+        content_object,
+        action,
+        moderator=None,
+        reason="",
+        is_automated=False,
+    ):
+        """Helper method to create a moderation log entry and send notifications."""
+        content_type = ContentType.objects.get_for_model(content_object)
+        log_entry = cls.objects.create(
+            organization=organization,
+            moderator=moderator,
+            content_type=content_type,
+            object_id=content_object.id,
+            action=action,
+            reason=reason,
+            is_automated=is_automated,
+        )
+
+        # Send notifications for moderation actions
+        cls._send_moderation_notification(
+            organization, content_object, action, moderator, is_automated
+        )
+
+        return log_entry
+
+    @classmethod
+    def _send_moderation_notification(
+        cls, organization, content_object, action, moderator, is_automated
+    ):
+        """Send notifications for moderation actions."""
+        # Import here to avoid circular imports
+        from judge.models.notification import Notification, NotificationCategory
+
+        # Determine who to notify and what category
+        notify_user_ids = []
+        category = None
+        html_link = ""
+
+        content_type_name = content_object.__class__.__name__.lower()
+
+        if action == "hide_comment" and content_type_name == "comment":
+            # Notify comment author
+            if content_object.author:
+                notify_user_ids = [content_object.author.id]
+                category = NotificationCategory.HIDE_COMMENT
+                html_link = f'<a href="{content_object.get_absolute_url()}">{organization.name}</a>'
+
+        elif action == "approve_post" and content_type_name == "blogpost":
+            # Notify post authors
+            notify_user_ids = list(content_object.authors.values_list("id", flat=True))
+            category = NotificationCategory.APPROVE_BLOG
+            html_link = f'<a href="{content_object.get_absolute_url()}">{content_object.title}</a>'
+
+        elif action == "reject_post" and content_type_name == "blogpost":
+            # Notify post authors
+            notify_user_ids = list(content_object.authors.values_list("id", flat=True))
+            category = NotificationCategory.REJECT_BLOG
+            # Post will be deleted, link to org instead
+            html_link = f'<a href="{organization.get_absolute_url()}">{content_object.title} - {organization.name}</a>'
+
+        if notify_user_ids and category:
+            # Don't notify the moderator themselves
+            author = moderator if not is_automated else None
+            Notification.objects.bulk_create_notifications(
+                user_ids=notify_user_ids,
+                category=category,
+                html_link=html_link,
+                author=author,
+            )

@@ -1,6 +1,6 @@
 <div class="left-sidebar">
   {{ make_tab_item('home', 'fa fa-home', organization.get_absolute_url(), _('Home')) }}
-  {% if is_member or can_edit %}
+  {% if (is_member or can_edit) and not organization.is_community %}
     {{ make_tab_item('problems', 'fa fa-puzzle-piece', organization.get_problems_url(), _('Problems')) }}
     {{ make_tab_item('contests', 'fa fa-ranking-star', organization.get_contests_url(), _('Contests')) }}
     {{ make_tab_item('courses', 'fa fa-graduation-cap', url('organization_courses', organization.id, organization.slug), _('Courses')) }}

@@ -132,13 +132,6 @@
           <td>{{ _('Avatar') }}: </td>
           <td>
             {{ form.profile_image }}
-            {% if request.profile.profile_image %}
-              <div style="margin-top: 10px;">
-                <label>
-                  <input type="checkbox" name="remove_avatar" value="1"> {{ _('Remove avatar') }}
-                </label>
-              </div>
-            {% endif %}
           </td>
         </tr>
         <tr>

@@ -47,7 +47,7 @@
             <div class="org-member-preview">
               {% for member in member_preview %}
                 <a href="{{ url('user_page', member.username) }}" title="{{ member.username }}">
-                  <img src="{{ gravatar(member.id, 32) }}" alt="{{ member.username }}">
+                  <img src="{{ gravatar(member.id, 32) }}" alt="">
                 </a>
               {% endfor %}
               {% if member_count > 5 %}
@@ -101,7 +101,7 @@
 
 {% block middle_content %}
   {% block before_posts %}{% endblock %}
-  {% if is_member or can_edit %}
+  {% if is_member or can_edit or organization.is_open %}
     {% include "blog/content.html" %}
   {% else %}
     <div class="blog-sidebox sidebox">

@@ -245,10 +245,12 @@ class EditOrganizationForm(ModelForm):
             "organization_image",
             "cover_image",
             "admins",
+            "moderators",
             "is_open",
         ]
         widgets = {
             "admins": HeavySelect2MultipleWidget(data_view="profile_select2"),
+            "moderators": HeavySelect2MultipleWidget(data_view="profile_select2"),
             "organization_image": ImageWidget,
             "cover_image": ImageWidget,
         }
@@ -262,9 +264,7 @@ class EditOrganizationForm(ModelForm):
         super(EditOrganizationForm, self).__init__(*args, **kwargs)
         self.fields["organization_image"].required = False
         self.fields["cover_image"].required = False
-        for field in [
-            "admins",
-        ]:
+        for field in ["admins", "moderators"]:
             self.fields[field].widget.data_url = (
                 self.fields[field].widget.get_url() + f"?org_id={self.org_id}"
             )

@@ -165,16 +165,10 @@ FLUSH PRIVILEGES;
 
 ```bash
 # Run all tests
-python3 manage.py test
-
-# Run tests for a specific app
-python3 manage.py test judge
+python3 manage.py test judge.tests --keepdb
 
 # Run a specific test
-python3 manage.py test judge.tests.TestClass.test_method
-
-# Keep test database between runs (faster)
-python3 manage.py test --keepdb
+python3 manage.py test judge.tests.TestClass.test_method --keepdb
 ```
 
 ## Optional Components

@@ -123,8 +123,16 @@ class PostView(
         context["organizations"] = self.object.get_organizations()
 
         if self.request.profile:
+            is_author = self.request.profile.id in self.object.get_author_ids()
             for org in context["organizations"]:
+                # Org admins can always edit
                 if self.request.profile.can_edit_organization(org):
+                    context["editable_orgs"].append(org)
+                # Org moderators can always edit
+                elif org.can_moderate(self.request.profile):
+                    context["editable_orgs"].append(org)
+                # Blog authors can edit only if post is not yet approved
+                elif is_author and not self.object.visible:
                     context["editable_orgs"].append(org)
 
         # Add ticket count for editors
