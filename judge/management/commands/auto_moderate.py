@@ -6,7 +6,6 @@ Usage: python manage.py auto_moderate [options]
 import sys
 import os
 import json
-import time
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -23,44 +22,39 @@ from judge.models import (
 )
 
 
-COMMENT_MODERATION_PROMPT = """You are a content moderator for a community.
+# Static system prompts for LLM caching
+COMMENT_SYSTEM_PROMPT = """You are a content moderator. Review comments and decide if each should be HIDDEN or KEPT.
 
-Community description:
-{about}
+Respond ONLY with valid JSON array: [{"id": <comment_id>, "action": "hide" or "keep"}]
 
-Review this comment and decide if it should be HIDDEN or KEPT.
+HIDE only if the comment is clearly harmful:
+- Spam or advertising
+- Hate speech, slurs, or severe harassment
+- Threats or illegal content
+- Personal attacks or doxxing
 
-Comment by {author}:
----
-{content}
----
+KEEP everything else, including off-topic, criticism, low-effort, or casual comments.
+When in doubt, KEEP the comment."""
 
-Respond ONLY with valid JSON: {{"action": "hide" or "keep", "confidence": 0.0 to 1.0}}
+POST_SYSTEM_PROMPT = """You are a content moderator. Review blog posts and decide if each should be APPROVED, REJECTED, or SKIPPED.
 
-HIDE: spam, offensive, harassment, off-topic.
-KEEP: on-topic, constructive, neutral.
-"""
+Respond ONLY with valid JSON array: [{"id": <post_id>, "action": "approve" or "reject" or "skip"}]
 
-POST_MODERATION_PROMPT = """You are a content moderator for a community.
-
-Community description:
-{about}
-
-Review this pending blog post and decide if it should be APPROVED, REJECTED, or SKIPPED.
-
-Title: {title}
-Author: {author}
-Content:
----
-{content}
----
-
-Respond ONLY with valid JSON: {{"action": "approve" or "reject" or "skip", "confidence": 0.0 to 1.0}}
-
-APPROVE: on-topic, appropriate, valuable.
-REJECT: spam, offensive, off-topic.
+APPROVE: on-topic, appropriate content.
+REJECT only if clearly harmful: spam, hate speech, harassment, threats.
 SKIP: uncertain, needs human review.
-"""
+When in doubt, SKIP for human review."""
+
+# User prompts with variable content
+COMMENT_USER_PROMPT = """Community: {about}
+
+Comments to review:
+{comments}"""
+
+POST_USER_PROMPT = """Community: {about}
+
+Posts to review:
+{posts}"""
 
 
 class Command(BaseCommand):
@@ -90,20 +84,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--batch-size",
             type=int,
-            default=10,
-            help="Number of items to process per batch (default: 10)",
-        )
-        parser.add_argument(
-            "--sleep",
-            type=float,
-            default=2.5,
-            help="Seconds to sleep between LLM calls (default: 2.5)",
-        )
-        parser.add_argument(
-            "--confidence-threshold",
-            type=float,
-            default=0.7,
-            help="Minimum confidence to take action (default: 0.7)",
+            default=50,
+            help="Number of items to process per batch (default: 50)",
         )
 
     def handle(self, *args, **options):
@@ -114,13 +96,11 @@ class Command(BaseCommand):
             return
 
         bot_name = getattr(settings, "POE_BOT_NAME", "Claude-3.7-Sonnet")
-        sleep_time = options["sleep"]
 
         try:
             self.llm_service = LLMService(
                 api_key=api_key,
                 bot_name=bot_name,
-                sleep_time=sleep_time,
             )
         except Exception as e:
             self.stderr.write(
@@ -129,9 +109,7 @@ class Command(BaseCommand):
             return
 
         self.dry_run = options["dry_run"]
-        self.confidence_threshold = options["confidence_threshold"]
         self.batch_size = options["batch_size"]
-        self.sleep_time = sleep_time
 
         # Get organizations
         if options["org_ids"]:
@@ -212,7 +190,7 @@ class Command(BaseCommand):
         return stats
 
     def moderate_comments(self, org, about):
-        """Moderate comments on organization blog posts"""
+        """Moderate comments on organization blog posts (batched)"""
         stats = {"comments_hidden": 0, "comments_kept": 0, "errors": 0}
 
         # Get visible blog posts in this organization
@@ -236,58 +214,73 @@ class Command(BaseCommand):
         ).values_list("object_id", flat=True)
 
         # Get unhidden comments on these posts, excluding already reviewed
-        comments = (
+        comments = list(
             Comment.objects.filter(
                 content_type=blog_content_type,
                 object_id__in=blog_post_ids,
                 hidden=False,
             )
             .exclude(id__in=already_reviewed)
-            .select_related("author")
+            .select_related("author")[: self.batch_size]
         )
 
-        self.stdout.write(f"  Found {comments.count()} unhidden comments to review")
+        if not comments:
+            self.stdout.write("  No comments to review")
+            return stats
 
-        for i, comment in enumerate(comments[: self.batch_size]):
-            try:
-                author_name = comment.author.username if comment.author else "Anonymous"
-                content = comment.body or ""
+        self.stdout.write(f"  Reviewing {len(comments)} comments in one batch...")
 
-                if not content.strip():
-                    continue
+        # Build batch prompt
+        comments_text = []
+        comments_map = {}
+        for comment in comments:
+            author_name = comment.author.username if comment.author else "Anonymous"
+            content = (comment.body or "").strip()
+            if not content:
+                continue
+            comments_map[comment.id] = comment
+            comments_text.append(
+                f"[Comment ID: {comment.id}] by {author_name}:\n{content[:500]}"
+            )
 
-                prompt = COMMENT_MODERATION_PROMPT.format(
-                    about=about[:1000],  # Limit about text
-                    author=author_name,
-                    content=content[:2000],  # Limit content
-                )
+        if not comments_text:
+            self.stdout.write("  No non-empty comments to review")
+            return stats
 
-                self.stdout.write(f"    [{i+1}] Reviewing comment by {author_name}...")
+        user_prompt = COMMENT_USER_PROMPT.format(
+            about=about[:1000],
+            comments="\n\n---\n\n".join(comments_text),
+        )
 
-                response = self.llm_service.call_llm(prompt)
-                if not response:
-                    self.stdout.write(
-                        self.style.WARNING("      LLM returned no response")
-                    )
-                    stats["errors"] += 1
-                    continue
+        try:
+            response = self.llm_service.call_llm(
+                user_prompt, system_prompt=COMMENT_SYSTEM_PROMPT
+            )
+            if not response:
+                self.stdout.write(self.style.WARNING("  LLM returned no response"))
+                stats["errors"] = len(comments_map)
+                return stats
 
-                result = self.parse_json_response(response)
-                if not result:
-                    self.stdout.write(
-                        self.style.WARNING(f"      Failed to parse: {response[:100]}")
-                    )
-                    stats["errors"] += 1
-                    continue
-
-                action = result.get("action", "").lower()
-                confidence = float(result.get("confidence", 0))
-
+            results = self.parse_json_response(response)
+            if not results or not isinstance(results, list):
                 self.stdout.write(
-                    f"      Action: {action}, Confidence: {confidence:.2f}"
+                    self.style.WARNING(f"  Failed to parse response: {response[:200]}")
                 )
+                stats["errors"] = len(comments_map)
+                return stats
 
-                if action == "hide" and confidence >= self.confidence_threshold:
+            # Process results
+            for result in results:
+                comment_id = result.get("id")
+                action = result.get("action", "").lower()
+
+                if comment_id not in comments_map:
+                    continue
+
+                comment = comments_map[comment_id]
+                author_name = comment.author.username if comment.author else "Anonymous"
+
+                if action == "hide":
                     if not self.dry_run:
                         comment.hidden = True
                         comment.save(update_fields=["hidden"])
@@ -298,7 +291,11 @@ class Command(BaseCommand):
                             is_automated=True,
                         )
                     stats["comments_hidden"] += 1
-                    self.stdout.write(self.style.WARNING("      -> HIDDEN"))
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"    HIDDEN: {author_name} - {comment.body[:50]}..."
+                        )
+                    )
                 else:
                     if not self.dry_run:
                         OrganizationModerationLog.log_action(
@@ -308,18 +305,21 @@ class Command(BaseCommand):
                             is_automated=True,
                         )
                     stats["comments_kept"] += 1
-                    self.stdout.write(self.style.SUCCESS("      -> KEPT"))
 
-                time.sleep(self.sleep_time)
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"  Batch complete: {stats['comments_kept']} kept, {stats['comments_hidden']} hidden"
+                )
+            )
 
-            except Exception as e:
-                self.stdout.write(self.style.ERROR(f"      Error: {e}"))
-                stats["errors"] += 1
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"  Error: {e}"))
+            stats["errors"] = len(comments_map)
 
         return stats
 
     def moderate_posts(self, org, about):
-        """Moderate pending blog posts in organization"""
+        """Moderate pending blog posts in organization (batched)"""
         stats = {
             "posts_approved": 0,
             "posts_rejected": 0,
@@ -328,105 +328,121 @@ class Command(BaseCommand):
         }
 
         # Get pending blog posts (visible=False, not rejected)
-        pending_posts = BlogPost.objects.filter(
-            organizations=org,
-            visible=False,
-            is_rejected=False,
-        ).prefetch_related("authors")
+        pending_posts = list(
+            BlogPost.objects.filter(
+                organizations=org,
+                visible=False,
+                is_rejected=False,
+            ).prefetch_related("authors")[: self.batch_size]
+        )
 
-        self.stdout.write(f"  Found {pending_posts.count()} pending posts")
+        if not pending_posts:
+            self.stdout.write("  No pending posts to review")
+            return stats
 
-        for i, post in enumerate(pending_posts[: self.batch_size]):
-            try:
-                authors = post.authors.all()
-                author_name = (
-                    ", ".join(a.username for a in authors) if authors else "Anonymous"
-                )
-                title = post.title or "Untitled"
-                content = post.content or ""
+        self.stdout.write(f"  Reviewing {len(pending_posts)} posts in one batch...")
 
-                if not content.strip():
-                    continue
+        # Build batch prompt
+        posts_text = []
+        posts_map = {}
+        for post in pending_posts:
+            authors = post.authors.all()
+            author_name = (
+                ", ".join(a.username for a in authors) if authors else "Anonymous"
+            )
+            title = post.title or "Untitled"
+            content = (post.content or "").strip()
+            if not content:
+                continue
+            posts_map[post.id] = post
+            posts_text.append(
+                f"[Post ID: {post.id}] Title: {title}\nAuthor: {author_name}\nContent:\n{content[:1000]}"
+            )
 
-                prompt = POST_MODERATION_PROMPT.format(
-                    about=about[:1000],
-                    title=title,
-                    author=author_name,
-                    content=content[:3000],  # Limit content
-                )
+        if not posts_text:
+            self.stdout.write("  No non-empty posts to review")
+            return stats
 
-                self.stdout.write(f"    [{i+1}] Reviewing post: {title[:40]}...")
+        user_prompt = POST_USER_PROMPT.format(
+            about=about[:1000],
+            posts="\n\n---\n\n".join(posts_text),
+        )
 
-                response = self.llm_service.call_llm(prompt)
-                if not response:
-                    self.stdout.write(
-                        self.style.WARNING("      LLM returned no response")
-                    )
-                    stats["errors"] += 1
-                    continue
+        try:
+            response = self.llm_service.call_llm(
+                user_prompt, system_prompt=POST_SYSTEM_PROMPT
+            )
+            if not response:
+                self.stdout.write(self.style.WARNING("  LLM returned no response"))
+                stats["errors"] = len(posts_map)
+                return stats
 
-                result = self.parse_json_response(response)
-                if not result:
-                    self.stdout.write(
-                        self.style.WARNING(f"      Failed to parse: {response[:100]}")
-                    )
-                    stats["errors"] += 1
-                    continue
-
-                action = result.get("action", "").lower()
-                confidence = float(result.get("confidence", 0))
-
+            results = self.parse_json_response(response)
+            if not results or not isinstance(results, list):
                 self.stdout.write(
-                    f"      Action: {action}, Confidence: {confidence:.2f}"
+                    self.style.WARNING(f"  Failed to parse response: {response[:200]}")
                 )
+                stats["errors"] = len(posts_map)
+                return stats
 
-                if confidence >= self.confidence_threshold:
-                    if action == "approve":
-                        if not self.dry_run:
-                            post.visible = True
-                            post.save(update_fields=["visible"])
-                            OrganizationModerationLog.log_action(
-                                organization=org,
-                                content_object=post,
-                                action="approve_post",
-                                is_automated=True,
-                            )
-                        stats["posts_approved"] += 1
-                        self.stdout.write(self.style.SUCCESS("      -> APPROVED"))
+            # Process results
+            for result in results:
+                post_id = result.get("id")
+                action = result.get("action", "").lower()
 
-                    elif action == "reject":
-                        if not self.dry_run:
-                            OrganizationModerationLog.log_action(
-                                organization=org,
-                                content_object=post,
-                                action="reject_post",
-                                is_automated=True,
-                            )
-                            post.is_rejected = True
-                            post.save(update_fields=["is_rejected"])
-                        stats["posts_rejected"] += 1
-                        self.stdout.write(self.style.ERROR("      -> REJECTED"))
+                if post_id not in posts_map:
+                    continue
 
-                    elif action == "skip":
-                        if not self.dry_run:
-                            OrganizationModerationLog.log_action(
-                                organization=org,
-                                content_object=post,
-                                action="skip",
-                                is_automated=True,
-                            )
-                        stats["posts_skipped"] += 1
-                        self.stdout.write(self.style.WARNING("      -> SKIPPED"))
-                else:
-                    # Low confidence - skip
+                post = posts_map[post_id]
+                title = post.title or "Untitled"
+
+                if action == "approve":
+                    if not self.dry_run:
+                        post.visible = True
+                        post.save(update_fields=["visible"])
+                        OrganizationModerationLog.log_action(
+                            organization=org,
+                            content_object=post,
+                            action="approve_post",
+                            is_automated=True,
+                        )
+                    stats["posts_approved"] += 1
+                    self.stdout.write(self.style.SUCCESS(f"    APPROVED: {title[:50]}"))
+
+                elif action == "reject":
+                    if not self.dry_run:
+                        post.is_rejected = True
+                        post.save(update_fields=["is_rejected"])
+                        OrganizationModerationLog.log_action(
+                            organization=org,
+                            content_object=post,
+                            action="reject_post",
+                            is_automated=True,
+                        )
+                    stats["posts_rejected"] += 1
+                    self.stdout.write(self.style.ERROR(f"    REJECTED: {title[:50]}"))
+
+                else:  # skip or unknown
+                    if not self.dry_run:
+                        OrganizationModerationLog.log_action(
+                            organization=org,
+                            content_object=post,
+                            action="skip",
+                            is_automated=True,
+                        )
                     stats["posts_skipped"] += 1
-                    self.stdout.write("      -> SKIPPED (low confidence)")
+                    self.stdout.write(self.style.WARNING(f"    SKIPPED: {title[:50]}"))
 
-                time.sleep(self.sleep_time)
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"  Batch complete: {stats['posts_approved']} approved, "
+                    f"{stats['posts_rejected']} rejected, {stats['posts_skipped']} skipped"
+                )
+            )
 
-            except Exception as e:
-                self.stdout.write(self.style.ERROR(f"      Error: {e}"))
-                stats["errors"] += 1
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"  Error: {e}"))
+            stats["errors"] = len(posts_map)
 
         return stats
 
