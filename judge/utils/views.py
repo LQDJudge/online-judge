@@ -123,7 +123,7 @@ class QueryStringSortMixin(object):
         )
 
         order = {key: "" for key in self.all_sorts}
-        order[current] = " \u25BE" if self.order.startswith("-") else " \u25B4"
+        order[current] = " \u25be" if self.order.startswith("-") else " \u25b4"
         return {"sort_links": links, "sort_order": order}
 
     def get_sort_paginate_context(self):

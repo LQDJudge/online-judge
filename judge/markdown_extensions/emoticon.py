@@ -5,86 +5,86 @@ import xml.etree.ElementTree as etree
 import re
 
 EMOTICON_EMOJI_MAP = {
-    ":D": "\U0001F603",  # Smiling Face with Open Mouth
-    ":)": "\U0001F642",  # Slightly Smiling Face
-    ":-)": "\U0001F642",  # Slightly Smiling Face with Nose
-    ":(": "\U0001F641",  # Slightly Frowning Face
-    ":-(": "\U0001F641",  # Slightly Frowning Face with Nose
-    ";)": "\U0001F609",  # Winking Face
-    ";-)": "\U0001F609",  # Winking Face with Nose
-    ":P": "\U0001F61B",  # Face with Tongue
-    ":-P": "\U0001F61B",  # Face with Tongue and Nose
-    ":p": "\U0001F61B",  # Face with Tongue
-    ":-p": "\U0001F61B",  # Face with Tongue and Nose
-    ";P": "\U0001F61C",  # Winking Face with Tongue
-    ";-P": "\U0001F61C",  # Winking Face with Tongue and Nose
-    ";p": "\U0001F61C",  # Winking Face with Tongue
-    ";-p": "\U0001F61C",  # Winking Face with Tongue and Nose
-    ":'(": "\U0001F622",  # Crying Face
-    ":o": "\U0001F62E",  # Face with Open Mouth
-    ":-o": "\U0001F62E",  # Face with Open Mouth and Nose
-    ":O": "\U0001F62E",  # Face with Open Mouth
-    ":-O": "\U0001F62E",  # Face with Open Mouth and Nose
-    ":-0": "\U0001F62E",  # Face with Open Mouth and Nose
-    ">:(": "\U0001F620",  # Angry Face
-    ">:-(": "\U0001F620",  # Angry Face with Nose
-    ">:)": "\U0001F608",  # Smiling Face with Horns
-    ">:-)": "\U0001F608",  # Smiling Face with Horns and Nose
-    "XD": "\U0001F606",  # Grinning Squinting Face
-    "xD": "\U0001F606",  # Grinning Squinting Face
-    "B)": "\U0001F60E",  # Smiling Face with Sunglasses
-    "B-)": "\U0001F60E",  # Smiling Face with Sunglasses and Nose
-    "O:)": "\U0001F607",  # Smiling Face with Halo
-    "O:-)": "\U0001F607",  # Smiling Face with Halo and Nose
-    "0:)": "\U0001F607",  # Smiling Face with Halo
-    "0:-)": "\U0001F607",  # Smiling Face with Halo and Nose
-    ">:P": "\U0001F92A",  # Zany Face (sticking out tongue and winking)
-    ">:-P": "\U0001F92A",  # Zany Face with Nose
-    ">:p": "\U0001F92A",  # Zany Face (sticking out tongue and winking)
-    ">:-p": "\U0001F92A",  # Zany Face with Nose
-    ":/": "\U0001F615",  # Confused Face
-    ":-/": "\U0001F615",  # Confused Face with Nose
-    ":\\": "\U0001F615",  # Confused Face
-    ":-\\": "\U0001F615",  # Confused Face with Nose
-    "3:)": "\U0001F608",  # Smiling Face with Horns
-    "3:-)": "\U0001F608",  # Smiling Face with Horns and Nose
-    "<3": "\u2764\uFE0F",  # Red Heart
-    "</3": "\U0001F494",  # Broken Heart
-    ":*": "\U0001F618",  # Face Blowing a Kiss
-    ":-*": "\U0001F618",  # Face Blowing a Kiss with Nose
-    ";P": "\U0001F61C",  # Winking Face with Tongue
-    ";-P": "\U0001F61C",
-    ">:P": "\U0001F61D",  # Face with Stuck-Out Tongue and Tightly-Closed Eyes
-    ":-/": "\U0001F615",  # Confused Face
-    ":/": "\U0001F615",
-    ":\\": "\U0001F615",
-    ":-\\": "\U0001F615",
-    ":|": "\U0001F610",  # Neutral Face
-    ":-|": "\U0001F610",
-    "8)": "\U0001F60E",  # Smiling Face with Sunglasses
-    "8-)": "\U0001F60E",
-    "O:)": "\U0001F607",  # Smiling Face with Halo
-    "O:-)": "\U0001F607",
-    ":3": "\U0001F60A",  # Smiling Face with Smiling Eyes
-    "^.^": "\U0001F60A",
-    "-_-": "\U0001F611",  # Expressionless Face
-    "T_T": "\U0001F62D",  # Loudly Crying Face
-    "T.T": "\U0001F62D",
-    ">.<": "\U0001F623",  # Persevering Face
-    "x_x": "\U0001F635",  # Dizzy Face
-    "X_X": "\U0001F635",
-    ":]": "\U0001F600",  # Grinning Face
-    ":[": "\U0001F641",  # Slightly Frowning Face
-    "=]": "\U0001F600",
-    "=[": "\U0001F641",
-    "D:<": "\U0001F621",  # Pouting Face
-    "D:": "\U0001F629",  # Weary Face
-    "D=": "\U0001F6AB",  # No Entry Sign (sometimes used to denote dismay or frustration)
-    ":'D": "\U0001F602",  # Face with Tears of Joy
-    "D':": "\U0001F625",  # Disappointed but Relieved Face
-    "D8": "\U0001F631",  # Face Screaming in Fear
-    "-.-": "\U0001F644",  # Face with Rolling Eyes
-    "-_-;": "\U0001F612",  # Unamused
+    ":D": "\U0001f603",  # Smiling Face with Open Mouth
+    ":)": "\U0001f642",  # Slightly Smiling Face
+    ":-)": "\U0001f642",  # Slightly Smiling Face with Nose
+    ":(": "\U0001f641",  # Slightly Frowning Face
+    ":-(": "\U0001f641",  # Slightly Frowning Face with Nose
+    ";)": "\U0001f609",  # Winking Face
+    ";-)": "\U0001f609",  # Winking Face with Nose
+    ":P": "\U0001f61b",  # Face with Tongue
+    ":-P": "\U0001f61b",  # Face with Tongue and Nose
+    ":p": "\U0001f61b",  # Face with Tongue
+    ":-p": "\U0001f61b",  # Face with Tongue and Nose
+    ";P": "\U0001f61c",  # Winking Face with Tongue
+    ";-P": "\U0001f61c",  # Winking Face with Tongue and Nose
+    ";p": "\U0001f61c",  # Winking Face with Tongue
+    ";-p": "\U0001f61c",  # Winking Face with Tongue and Nose
+    ":'(": "\U0001f622",  # Crying Face
+    ":o": "\U0001f62e",  # Face with Open Mouth
+    ":-o": "\U0001f62e",  # Face with Open Mouth and Nose
+    ":O": "\U0001f62e",  # Face with Open Mouth
+    ":-O": "\U0001f62e",  # Face with Open Mouth and Nose
+    ":-0": "\U0001f62e",  # Face with Open Mouth and Nose
+    ">:(": "\U0001f620",  # Angry Face
+    ">:-(": "\U0001f620",  # Angry Face with Nose
+    ">:)": "\U0001f608",  # Smiling Face with Horns
+    ">:-)": "\U0001f608",  # Smiling Face with Horns and Nose
+    "XD": "\U0001f606",  # Grinning Squinting Face
+    "xD": "\U0001f606",  # Grinning Squinting Face
+    "B)": "\U0001f60e",  # Smiling Face with Sunglasses
+    "B-)": "\U0001f60e",  # Smiling Face with Sunglasses and Nose
+    "O:)": "\U0001f607",  # Smiling Face with Halo
+    "O:-)": "\U0001f607",  # Smiling Face with Halo and Nose
+    "0:)": "\U0001f607",  # Smiling Face with Halo
+    "0:-)": "\U0001f607",  # Smiling Face with Halo and Nose
+    ">:P": "\U0001f92a",  # Zany Face (sticking out tongue and winking)
+    ">:-P": "\U0001f92a",  # Zany Face with Nose
+    ">:p": "\U0001f92a",  # Zany Face (sticking out tongue and winking)
+    ">:-p": "\U0001f92a",  # Zany Face with Nose
+    ":/": "\U0001f615",  # Confused Face
+    ":-/": "\U0001f615",  # Confused Face with Nose
+    ":\\": "\U0001f615",  # Confused Face
+    ":-\\": "\U0001f615",  # Confused Face with Nose
+    "3:)": "\U0001f608",  # Smiling Face with Horns
+    "3:-)": "\U0001f608",  # Smiling Face with Horns and Nose
+    "<3": "\u2764\ufe0f",  # Red Heart
+    "</3": "\U0001f494",  # Broken Heart
+    ":*": "\U0001f618",  # Face Blowing a Kiss
+    ":-*": "\U0001f618",  # Face Blowing a Kiss with Nose
+    ";P": "\U0001f61c",  # Winking Face with Tongue
+    ";-P": "\U0001f61c",
+    ">:P": "\U0001f61d",  # Face with Stuck-Out Tongue and Tightly-Closed Eyes
+    ":-/": "\U0001f615",  # Confused Face
+    ":/": "\U0001f615",
+    ":\\": "\U0001f615",
+    ":-\\": "\U0001f615",
+    ":|": "\U0001f610",  # Neutral Face
+    ":-|": "\U0001f610",
+    "8)": "\U0001f60e",  # Smiling Face with Sunglasses
+    "8-)": "\U0001f60e",
+    "O:)": "\U0001f607",  # Smiling Face with Halo
+    "O:-)": "\U0001f607",
+    ":3": "\U0001f60a",  # Smiling Face with Smiling Eyes
+    "^.^": "\U0001f60a",
+    "-_-": "\U0001f611",  # Expressionless Face
+    "T_T": "\U0001f62d",  # Loudly Crying Face
+    "T.T": "\U0001f62d",
+    ">.<": "\U0001f623",  # Persevering Face
+    "x_x": "\U0001f635",  # Dizzy Face
+    "X_X": "\U0001f635",
+    ":]": "\U0001f600",  # Grinning Face
+    ":[": "\U0001f641",  # Slightly Frowning Face
+    "=]": "\U0001f600",
+    "=[": "\U0001f641",
+    "D:<": "\U0001f621",  # Pouting Face
+    "D:": "\U0001f629",  # Weary Face
+    "D=": "\U0001f6ab",  # No Entry Sign (sometimes used to denote dismay or frustration)
+    ":'D": "\U0001f602",  # Face with Tears of Joy
+    "D':": "\U0001f625",  # Disappointed but Relieved Face
+    "D8": "\U0001f631",  # Face Screaming in Fear
+    "-.-": "\U0001f644",  # Face with Rolling Eyes
+    "-_-;": "\U0001f612",  # Unamused
 }
 
 
