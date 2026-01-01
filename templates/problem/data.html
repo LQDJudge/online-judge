@@ -26,6 +26,10 @@
         },
         validation: {
           allowedExtensions: ['zip'],
+          sizeLimit: {{ max_file_size }},
+        },
+        messages: {
+          sizeError: "{file}: {{ _('File size exceeds 50 MB limit. Contact admin for larger uploads.') }}",
         },
       }).on('complete', function (event, id, name, responseJSON) {
         if (!responseJSON.success) {

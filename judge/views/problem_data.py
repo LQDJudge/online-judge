@@ -63,6 +63,9 @@ from judge.logging import log_exception
 mimetypes.init()
 mimetypes.add_type("application/x-yaml", ".yml")
 
+# 50 MB limit for non-superusers uploading test data
+MAX_TESTDATA_FILE_SIZE = 50 * 1024 * 1024
+
 
 def checker_args_cleaner(self):
     data = self.cleaned_data["checker_args"]
@@ -327,6 +330,12 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
         context["all_case_forms"] = chain(
             context["cases_formset"], [context["cases_formset"].empty_form]
         )
+        # Pass file size limit to template (0 = unlimited for superusers)
+        if self.request.user.is_superuser:
+            context["max_file_size"] = 0
+        else:
+            context["max_file_size"] = MAX_TESTDATA_FILE_SIZE
+        context["max_file_size_mb"] = MAX_TESTDATA_FILE_SIZE // (1024 * 1024)
         return context
 
     def post(self, request, *args, **kwargs):
@@ -442,6 +451,24 @@ class ProblemZipUploadView(ProblemManagerMixin, View):
         form = FineUploadForm(request.POST, request.FILES)
 
         if form.is_valid():
+            # Server-side file size validation for non-superusers
+            # Check on every chunk request to reject early before saving any data
+            total_size = form.cleaned_data.get("qqtotalfilesize") or 0
+            if not request.user.is_superuser and total_size > MAX_TESTDATA_FILE_SIZE:
+                # Clean up any existing chunks for this upload
+                fileuid = form.cleaned_data["qquuid"]
+                chunks_dir = getattr(settings, "CHUNK_UPLOAD_DIR", gettempdir())
+                chunk_folder = os.path.join(chunks_dir, fileuid)
+                if os.path.exists(chunk_folder):
+                    shutil.rmtree(chunk_folder)
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": _(
+                            "File size exceeds 50 MB limit. Contact admin for larger uploads."
+                        ),
+                    }
+                )
             fileuid = form.cleaned_data["qquuid"]
             filename = form.cleaned_data["qqfilename"]
             dest = os.path.join(gettempdir(), fileuid)
@@ -449,6 +476,18 @@ class ProblemZipUploadView(ProblemManagerMixin, View):
             def post_upload():
                 zip_dest = os.path.join(dest, filename)
                 try:
+                    # Check actual file size (can't be faked like qqtotalfilesize)
+                    actual_size = os.path.getsize(zip_dest)
+                    if (
+                        not request.user.is_superuser
+                        and actual_size > MAX_TESTDATA_FILE_SIZE
+                    ):
+                        raise Exception(
+                            _(
+                                "File size exceeds 50 MB limit. Contact admin for larger uploads."
+                            )
+                        )
+
                     ZipFile(zip_dest).namelist()  # check if this file is valid
                     with open(zip_dest, "rb") as f:
                         problem_data.zipfile.delete()
