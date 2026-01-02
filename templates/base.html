@@ -154,6 +154,7 @@
                     {% if node.key == "contest" %} <i class="fa fa-ranking-star"></i> {% endif %}
                     {% if node.key == "group" %} <i class="fa fa-building-columns"></i> {% endif %}
                     {% if node.key == "courses" %} <i class="fa fa-graduation-cap"></i> {% endif %}
+                    {% if node.key == "quiz" %} <i class="fa fa-file-alt"></i> {% endif %}
                   </span>
                 </a>
                 {% with children=node.get_children() %}

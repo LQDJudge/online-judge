@@ -2,11 +2,16 @@
 
 {% block two_col_media %}
   <style>
+    .course-problem-list .quiz-attempts {
+      margin-left: 0.5em;
+    }
   </style>
 {% endblock %}
 
 {% block middle_content %}
-  <center><h2>{{title}} - {{profile.username}}</h2></center>
+  <center>
+    <h2>{{title}} - {{profile.username}}</h2>
+  </center>
   <h3 class="course-content-title">{{_("Content")}}</h3>
   <div>
     {{ lesson.content|markdown|reference|str|safe }}
@@ -28,7 +33,8 @@
           {% set pp = problem_points[problem.id] %}
           <span class="score">
             {% if pp and pp.case_total %}
-              {{(pp.case_points / pp.case_total * lesson_problem.score) |floatformat(1)}} / {{lesson_problem.score|floatformat(0)}}
+              {{(pp.case_points / pp.case_total * lesson_problem.score) |floatformat(1)}} /
+              {{lesson_problem.score|floatformat(0)}}
             {% else %}
               0 / {{lesson_problem.score|floatformat(0)}}
             {% endif %}
@@ -38,6 +44,41 @@
     {% endfor %}
     <br>
   </ul>
+  {% if lesson_quizzes %}
+    <h3 class="course-content-title">{{_("Quizzes")}}</h3>
+    <ul class="course-problem-list">
+      {% for quiz_item in lesson_quizzes %}
+        {% set quiz = quiz_item.quiz %}
+        <a href="{{url('quiz_detail', quiz.code)}}?lesson_quiz_id={{quiz_item.lesson_quiz.id}}" target="_blank">
+          <li>
+            {% if quiz_item.best_score is not none and quiz_item.max_score and quiz_item.best_score >= quiz_item.max_score %}
+              <i class="solved-problem-color fa fa-check-circle"></i>
+            {% elif quiz_item.best_score is not none %}
+              <i class="attempted-problem-color fa fa-minus-circle"></i>
+            {% else %}
+              <i class="unsolved-problem-color fa fa-minus-circle"></i>
+            {% endif %}
+            <span class="problem-name">{{quiz.title}}</span>
+            <span class="score">
+              {% if quiz_item.best_score is not none %}
+                {{quiz_item.best_score|floatformat(1)}} / {{quiz_item.max_score|floatformat(0)}}
+              {% else %}
+                0 / {{quiz_item.max_score|floatformat(0)}}
+              {% endif %}
+            </span>
+            <span class="quiz-attempts">
+              ({{ quiz_item.attempts_count }}{% if quiz_item.max_attempts > 0 %}/{{ quiz_item.max_attempts }}{% endif %} {{
+              _('attempts') }})
+            </span>
+            {% if not quiz_item.can_attempt %}
+              <span class="quiz-locked"><i class="fa fa-lock"></i></span>
+            {% endif %}
+          </li>
+        </a>
+      {% endfor %}
+      <br>
+    </ul>
+  {% endif %}
   {% if is_editable %}
     <div>
       <a href="{{ url('edit_course_lessons_new', course.slug, lesson.id) }}" class="action-btn" style="margin-right: 10px;">

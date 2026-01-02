@@ -553,6 +553,14 @@ class ContestDetail(
         context["editable_organizations"] = self.get_editable_organizations()
         context["is_clonable"] = is_contest_clonable(self.request, self.object)
 
+        # Get quizzes in this contest
+        contest_quizzes = (
+            ContestProblem.objects.filter(contest=self.object, quiz__isnull=False)
+            .select_related("quiz")
+            .order_by("order")
+        )
+        context["contest_quizzes"] = contest_quizzes
+
         if self.object.is_in_course:
             course = CourseContest.get_course_of_contest(self.object)
             context["course"] = course
@@ -1190,11 +1198,14 @@ def get_contest_ranking_list(
     show_final=False,
 ):
     problems = list(
-        contest.contest_problems.select_related("problem")
+        contest.contest_problems.select_related("problem", "quiz")
         .defer("problem__description")
         .order_by("order")
     )
-    Problem.get_cached_instances(*[problem.problem_id for problem in problems])
+    # Only prefetch cache for actual problems (not quiz-only entries)
+    problem_ids = [cp.problem_id for cp in problems if cp.problem_id is not None]
+    if problem_ids:
+        Problem.get_cached_instances(*problem_ids)
 
     if participation is None:
         participation = _get_current_virtual_participation(request, contest)
@@ -1756,10 +1767,11 @@ class ContestProblemset(ContestMixin, TitleMixin, DetailView):
         context = super().get_context_data(**kwargs)
 
         # Get all contest problems with their details
+        # Filter out quiz-only entries (where problem_id is None)
         contest_problems = list(
-            self.object.contest_problems.select_related(
-                "problem", "problem__data_files"
-            ).order_by("order")
+            self.object.contest_problems.filter(problem_id__isnull=False)
+            .select_related("problem", "problem__data_files")
+            .order_by("order")
         )
 
         # Get contest problem IDs for prefetching

@@ -77,6 +77,7 @@ class ContestProblemInlineForm(ModelForm):
     class Meta:
         widgets = {
             "problem": AdminHeavySelect2Widget(data_view="problem_select2"),
+            "quiz": AdminSelect2Widget,
             "hidden_subtasks": TextInput(attrs={"size": "3"}),
             "points": TextInput(attrs={"size": "1"}),
             "order": TextInput(attrs={"size": "1"}),
@@ -89,6 +90,7 @@ class ContestProblemInline(admin.TabularInline):
     verbose_name_plural = "Problems"
     fields = (
         "problem",
+        "quiz",
         "points",
         "partial",
         "is_pretested",

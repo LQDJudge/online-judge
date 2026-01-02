@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block media %}
+{# Styles are in resources/quiz.scss - .quiz-manage-page #}
+{% endblock %}
+
+{% block body %}
+  <div class="quiz-manage-page">
+    <div class="manage-header">
+      <div class="actions">
+        <a href="{{ url('quiz_detail', quiz.code) }}" class="btn btn-default">
+          <i class="fa fa-eye"></i> {{ _('View Quiz') }}
+        </a>
+        <a href="{{ url('quiz_statistics', quiz.code) }}" class="btn btn-default">
+          <i class="fa fa-bar-chart"></i> {{ _('Statistics') }}
+        </a>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">{{ total_attempts }}</div>
+        <div class="stat-label">{{ _('Total Attempts') }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ submitted_attempts }}</div>
+        <div class="stat-label">{{ _('Submitted') }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ avg_score|round(1) if avg_score else '-' }}</div>
+        <div class="stat-label">{{ _('Average Score') }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ max_score_achieved|round(1) if max_score_achieved else '-' }}</div>
+        <div class="stat-label">{{ _('Highest Score') }}</div>
+      </div>
+    </div>
+
+    <h2>{{ _('Questions') }} ({{ questions|length }})</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>{{ _('Title') }}</th>
+          <th>{{ _('Type') }}</th>
+          <th>{{ _('Points') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for assignment in questions %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ assignment.question.title }}</td>
+            <td>{{ assignment.question.get_question_type_display() }}</td>
+            <td>{{ assignment.points }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h2>{{ _('Recent Attempts') }}</h2>
+    {% if attempts %}
+      <table class="table attempts-table">
+        <thead>
+          <tr>
+            <th>{{ _('User') }}</th>
+            <th>{{ _('Attempt') }}</th>
+            <th>{{ _('Started') }}</th>
+            <th>{{ _('Submitted') }}</th>
+            <th>{{ _('Score') }}</th>
+            <th>{{ _('Status') }}</th>
+            <th>{{ _('Actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for attempt in attempts %}
+            <tr>
+              <td>
+                <a href="{{ url('user_page', attempt.user.user.username) }}">
+                  {{ attempt.user.user.username }}
+                </a>
+              </td>
+              <td>#{{ attempt.attempt_number }}</td>
+              <td>{{ attempt.start_time|date(_("M j, Y, g:i a")) }}</td>
+              <td>
+                {% if attempt.end_time %}
+                  {{ attempt.end_time|date(_("M j, Y, g:i a")) }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>
+                {% if attempt.is_submitted %}
+                  {{ attempt.score|round(1) if attempt.score else 0 }} / {{ attempt.max_score|round(1) if attempt.max_score else 0 }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>
+                {% if attempt.is_submitted %}
+                  <span class="badge badge-success">{{ _('Submitted') }}</span>
+                {% else %}
+                  <span class="badge badge-warning">{{ _('In Progress') }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if attempt.is_submitted %}
+                  <a href="{{ url('quiz_result', quiz.code, attempt.id) }}">{{ _('View') }}</a>
+                  |
+                  <a href="{{ url('attempt_grade', attempt.id) }}">{{ _('Grade') }}</a>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>{{ _('No attempts yet.') }}</p>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -59,6 +59,7 @@ from judge.views import (
     course,
     email,
     custom_file_upload,
+    quiz,
 )
 from judge.views.problem_data import (
     ProblemDataView,
@@ -81,6 +82,7 @@ from judge.views.select2 import (
     ProblemAuthorSearchSelect2View,
     QuizSelect2View,
     QuizQuestionSelect2View,
+    QuizUserSearchSelect2View,
     CourseLessonSelect2View,
 )
 
@@ -651,6 +653,160 @@ urlpatterns = [
             ]
         ),
     ),
+    # Question Bank URLs (Teachers/TAs only)
+    re_path(
+        r"^quiz/questions/$", quiz.QuestionBankList.as_view(), name="question_bank_list"
+    ),
+    re_path(
+        r"^quiz/questions/create/$",
+        quiz.QuestionBankCreate.as_view(),
+        name="question_bank_create",
+    ),
+    re_path(
+        r"^quiz/questions/(?P<pk>\d+)/$",
+        quiz.QuestionBankDetail.as_view(),
+        name="question_bank_detail",
+    ),
+    re_path(
+        r"^quiz/questions/(?P<pk>\d+)/edit/$",
+        quiz.QuestionBankEdit.as_view(),
+        name="question_bank_edit",
+    ),
+    re_path(
+        r"^quiz/questions/(?P<pk>\d+)/delete/$",
+        quiz.QuestionBankDelete.as_view(),
+        name="question_bank_delete",
+    ),
+    # Quiz Management URLs (Teachers/TAs only)
+    re_path(r"^quiz/$", quiz.QuizList.as_view(), name="quiz_list"),
+    re_path(r"^quiz/create/$", quiz.QuizCreate.as_view(), name="quiz_create"),
+    re_path(
+        r"^quiz/(?P<code>[^/]+)",
+        include(
+            [
+                # Student views
+                re_path(r"^$", quiz.QuizDetail.as_view(), name="quiz_detail"),
+                re_path(r"^/start/$", quiz.QuizStart.as_view(), name="quiz_start"),
+                re_path(
+                    r"^/take/(?P<attempt_id>\d+)/$",
+                    quiz.QuizTake.as_view(),
+                    name="quiz_take",
+                ),
+                re_path(
+                    r"^/take/(?P<attempt_id>\d+)/save/$",
+                    quiz.QuizSaveAnswer.as_view(),
+                    name="quiz_save_answer",
+                ),
+                re_path(
+                    r"^/take/(?P<attempt_id>\d+)/upload/$",
+                    quiz.QuizUploadFile.as_view(),
+                    name="quiz_upload_file",
+                ),
+                re_path(
+                    r"^/submit/(?P<attempt_id>\d+)/$",
+                    quiz.QuizSubmit.as_view(),
+                    name="quiz_submit",
+                ),
+                re_path(
+                    r"^/result/(?P<attempt_id>\d+)/$",
+                    quiz.QuizResult.as_view(),
+                    name="quiz_result",
+                ),
+                re_path(
+                    r"^/attempts/$",
+                    quiz.QuizAttemptList.as_view(),
+                    name="quiz_attempt_list",
+                ),
+                # Teacher views
+                re_path(r"^/edit/$", quiz.QuizEdit.as_view(), name="quiz_edit"),
+                re_path(
+                    r"^/regrade/$", quiz.QuizRegrade.as_view(), name="quiz_regrade"
+                ),
+                re_path(r"^/delete/$", quiz.QuizDelete.as_view(), name="quiz_delete"),
+                re_path(
+                    r"^/statistics/$",
+                    quiz.QuizStatistics.as_view(),
+                    name="quiz_statistics",
+                ),
+                re_path(
+                    r"^/grade/$", quiz.QuizGradingTab.as_view(), name="quiz_grade_tab"
+                ),
+                re_path(
+                    r"^/export-csv/$",
+                    quiz.QuizGradesExportCSV.as_view(),
+                    name="quiz_export_csv",
+                ),
+                re_path(
+                    r"^/question-analysis/$",
+                    quiz.QuizQuestionAnalysis.as_view(),
+                    name="quiz_question_analysis",
+                ),
+                re_path(
+                    r"^/add-question/$",
+                    quiz.QuizAddQuestion.as_view(),
+                    name="quiz_add_question",
+                ),
+                re_path(
+                    r"^/remove-question/$",
+                    quiz.QuizRemoveQuestion.as_view(),
+                    name="quiz_remove_question",
+                ),
+                re_path(
+                    r"^/reorder-questions/$",
+                    quiz.QuizReorderQuestions.as_view(),
+                    name="quiz_reorder_questions",
+                ),
+                re_path(
+                    r"^/update-points/$",
+                    quiz.QuizUpdatePoints.as_view(),
+                    name="quiz_update_points",
+                ),
+                re_path(
+                    r"^/search-questions/$",
+                    quiz.QuizSearchQuestions.as_view(),
+                    name="quiz_search_questions",
+                ),
+            ]
+        ),
+    ),
+    # Quiz file management
+    re_path(
+        r"^quiz/file/(?P<file_id>\d+)/delete/$",
+        quiz.QuizDeleteFile.as_view(),
+        name="quiz_delete_file",
+    ),
+    # Grading URLs (Teachers/TAs only)
+    re_path(
+        r"^grading/dashboard/$",
+        quiz.GradingDashboard.as_view(),
+        name="grading_dashboard",
+    ),
+    re_path(
+        r"^grading/attempt/(?P<attempt_id>\d+)/$",
+        quiz.AttemptGrade.as_view(),
+        name="attempt_grade",
+    ),
+    re_path(
+        r"^grading/answer/(?P<answer_id>\d+)/$",
+        quiz.AnswerGrade.as_view(),
+        name="answer_grade",
+    ),
+    # Course Lesson Quiz URLs
+    re_path(
+        r"^course/(?P<course_slug>[\w-]+)/lesson/(?P<lesson_id>\d+)/quiz/add/$",
+        quiz.CourseLessonQuizCreate.as_view(),
+        name="course_lesson_quiz_create",
+    ),
+    re_path(
+        r"^course/(?P<course_slug>[\w-]+)/lesson/(?P<lesson_id>\d+)/quiz/(?P<quiz_id>\d+)/edit/$",
+        quiz.CourseLessonQuizEdit.as_view(),
+        name="course_lesson_quiz_edit",
+    ),
+    re_path(
+        r"^course/(?P<course_slug>[\w-]+)/lesson/(?P<lesson_id>\d+)/quiz/(?P<quiz_id>\d+)/delete/$",
+        quiz.CourseLessonQuizDelete.as_view(),
+        name="course_lesson_quiz_delete",
+    ),
     re_path(
         r"^contests/(?P<year>\d+)/(?P<month>\d+)/$",
         contests.ContestCalendar.as_view(),
@@ -716,6 +872,11 @@ urlpatterns = [
                         submission.UserContestSubmissionsAjax,
                         "contest_user_submissions_ajax",
                     ),
+                ),
+                re_path(
+                    r"^/quiz-attempts/(?P<participation_id>\d+)/(?P<quiz_id>\d+)/ajax$",
+                    quiz.ContestQuizAttemptsAjax.as_view(),
+                    name="contest_quiz_attempts_ajax",
                 ),
                 re_path(
                     r"^/submissions",
@@ -1032,6 +1193,11 @@ urlpatterns = [
                                 r"^problem_authors$",
                                 ProblemAuthorSearchSelect2View.as_view(),
                                 name="problem_authors_select2_ajax",
+                            ),
+                            re_path(
+                                r"^quiz_users/(?P<quiz>[^/]+)$",
+                                QuizUserSearchSelect2View.as_view(),
+                                name="quiz_user_search_select2_ajax",
                             ),
                         ]
                     ),

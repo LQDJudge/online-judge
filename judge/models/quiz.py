@@ -66,14 +66,6 @@ class QuizQuestion(models.Model):
         help_text=_("Correct answer(s) for the question"),
     )
 
-    # Default point value for this question
-    default_points = models.FloatField(
-        default=1.0,
-        validators=[MinValueValidator(0)],
-        verbose_name=_("Default Points"),
-        help_text=_("Default point value when added to quizzes"),
-    )
-
     # Public visibility
     is_public = models.BooleanField(
         default=False,
@@ -93,6 +85,22 @@ class QuizQuestion(models.Model):
         default=False,
         verbose_name=_("Shuffle Choices"),
         help_text=_("Randomize choice order for this question"),
+    )
+
+    # Grading strategy for Multiple Answer questions
+    GRADING_STRATEGY_CHOICES = [
+        ("all_or_nothing", _("All or Nothing")),
+        ("partial_credit", _("Partial Credit (with penalty)")),
+        ("right_minus_wrong", _("Right Minus Wrong")),
+        ("correct_only", _("Correct Only (no penalty)")),
+    ]
+
+    grading_strategy = models.CharField(
+        max_length=20,
+        choices=GRADING_STRATEGY_CHOICES,
+        default="all_or_nothing",
+        verbose_name=_("Grading Strategy"),
+        help_text=_("How to calculate score for multiple answer questions"),
     )
 
     # Tags for categorization - stored as comma-separated string for simplicity and searchability
@@ -281,6 +289,22 @@ class Quiz(models.Model):
         ),
     )
 
+    testers = models.ManyToManyField(
+        Profile,
+        verbose_name=_("testers"),
+        blank=True,
+        related_name="tested_quizzes",
+        help_text=_(
+            "These users will be able to view and test the quiz, but not edit it"
+        ),
+    )
+
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name=_("publicly visible"),
+        help_text=_("Whether the quiz is publicly visible to all users"),
+    )
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
 
     class Meta:
@@ -295,7 +319,7 @@ class Quiz(models.Model):
         """Get the URL for this quiz"""
         from django.urls import reverse
 
-        return reverse("quiz:detail", args=[self.code])
+        return reverse("quiz_detail", args=[self.code])
 
     def is_editor(self, profile):
         """Check if profile is an editor (author or curator)"""
@@ -311,16 +335,26 @@ class Quiz(models.Model):
             return True
         return self.is_editor(user.profile)
 
+    def is_tester(self, profile):
+        """Check if profile is a tester"""
+        return self.testers.filter(id=profile.id).exists()
+
     def is_accessible_by(self, user):
         """
         Check if user can access this quiz.
 
         Returns True if:
+        - Quiz is public
         - User is superuser
         - User is an editor (author/curator)
+        - User is a tester
         - Quiz is associated with a course the user is enrolled in
         - Quiz is part of a contest the user can access
         """
+        # Public quizzes are accessible to everyone (even anonymous)
+        if self.is_public:
+            return True
+
         if not user or not user.is_authenticated:
             return False
 
@@ -328,6 +362,9 @@ class Quiz(models.Model):
             return True
 
         if self.is_editor(user.profile):
+            return True
+
+        if self.is_tester(user.profile):
             return True
 
         # Check if quiz is in a course lesson the user has access to
@@ -357,6 +394,50 @@ class Quiz(models.Model):
     def get_total_points(self):
         """Calculate total points for this quiz"""
         return self.quiz_questions.aggregate(total=models.Sum("points"))["total"] or 0
+
+    def get_question_count(self):
+        """Get the number of questions in this quiz"""
+        return self.quiz_questions.count()
+
+    def get_best_score(self, profile):
+        """Get the best score for a user on this quiz"""
+        best_attempt = (
+            QuizAttempt.objects.filter(user=profile, quiz=self, is_submitted=True)
+            .order_by("-score")
+            .first()
+        )
+        return best_attempt.score if best_attempt else None
+
+    def regrade_all_attempts(self):
+        """
+        Regrade all submitted attempts for this quiz.
+        Re-runs auto_grade on each answer and recalculates scores.
+        Also updates contest participation scores if attempts are linked to contests.
+        Returns the number of attempts regraded.
+        """
+        attempts = QuizAttempt.objects.filter(
+            quiz=self, is_submitted=True
+        ).select_related("contest_participation")
+        count = 0
+        participations_to_update = set()
+
+        for attempt in attempts:
+            # Re-grade each answer
+            for answer in attempt.answers.all():
+                answer.auto_grade()
+            # Recalculate the attempt score
+            attempt.calculate_score()
+            count += 1
+
+            # Track contest participations that need updating
+            if attempt.contest_participation:
+                participations_to_update.add(attempt.contest_participation)
+
+        # Update all affected contest participations
+        for participation in participations_to_update:
+            participation.recompute_results()
+
+        return count
 
     def show_answers(self, user):
         """
@@ -606,7 +687,7 @@ class QuizAttempt(models.Model):
 
         elapsed = (timezone.now() - self.start_time).total_seconds()
         remaining = (self.time_limit_minutes * 60) - elapsed
-        return max(0, remaining)
+        return int(max(0, remaining))
 
     def is_expired(self):
         """Check if attempt has exceeded time limit"""
@@ -629,6 +710,40 @@ class QuizAttempt(models.Model):
         self.save(update_fields=["score", "max_score"])
 
         return total_score, max_score
+
+    def get_questions(self):
+        """
+        Get the questions for this attempt.
+        Returns list of QuizQuestion objects, shuffled if quiz.shuffle_questions is True.
+        Uses attempt.id as seed for consistent ordering per attempt.
+        """
+        import random
+
+        assignments = list(
+            self.quiz.quiz_questions.select_related("question").order_by("order")
+        )
+
+        if self.quiz.shuffle_questions:
+            # Use attempt id as seed for consistent shuffling
+            random.Random(self.id).shuffle(assignments)
+
+        return [a.question for a in assignments]
+
+    def get_question_assignments(self):
+        """
+        Get question assignments with points for this attempt.
+        Returns list of QuizQuestionAssignment objects.
+        """
+        import random
+
+        assignments = list(
+            self.quiz.quiz_questions.select_related("question").order_by("order")
+        )
+
+        if self.quiz.shuffle_questions:
+            random.Random(self.id).shuffle(assignments)
+
+        return assignments
 
     def auto_submit(self):
         """
@@ -738,80 +853,9 @@ class QuizAnswer(models.Model):
             True if the answer was auto-graded (even if incorrect)
             False if the answer cannot be auto-graded (e.g., essay)
         """
-        if not self.question.correct_answers:
-            return False
+        from judge.utils.quiz_grading import auto_grade_answer
 
-        result = None
-        answer_text = self.answer
-
-        if self.question.question_type in ["MC", "TF"]:
-            # Single choice: Check if selected choice ID matches the correct one
-            correct_id = self.question.correct_answers.get("answers")
-            if correct_id:
-                result = answer_text == correct_id
-
-        elif self.question.question_type == "MA":
-            # Multiple Answer: Check if selected set matches correct set exactly
-            correct_ids = self.question.correct_answers.get("answers", [])
-            if isinstance(answer_text, str):
-                try:
-                    answer_text = json.loads(answer_text)
-                except:
-                    result = False
-            if (
-                result is None
-                and isinstance(correct_ids, list)
-                and isinstance(answer_text, list)
-            ):
-                result = set(answer_text) == set(correct_ids)
-
-        elif self.question.question_type == "SA":
-            import re
-
-            # Short Answer: Check against exact matches or regex patterns
-            ca_type = self.question.correct_answers.get("type", "exact")
-            answers = self.question.correct_answers.get("answers", [])
-            case_sensitive = self.question.correct_answers.get("case_sensitive", False)
-
-            if ca_type == "exact":
-                # Exact match checking
-                if case_sensitive:
-                    result = answer_text in answers
-                else:
-                    result = answer_text.lower() in [a.lower() for a in answers]
-            elif ca_type == "regex":
-                # Regex pattern matching
-                flags = 0 if case_sensitive else re.IGNORECASE
-                result = False
-                for pattern in answers:
-                    try:
-                        if re.match(pattern, answer_text, flags):
-                            result = True
-                            break
-                    except:
-                        continue
-
-        # Essay questions need manual grading
-        if result is not None:
-            self.is_correct = result
-            self.partial_credit = 1.0 if result else 0.0
-
-            # Calculate points based on assignment
-            try:
-                assignment = QuizQuestionAssignment.objects.get(
-                    quiz=self.attempt.quiz, question=self.question
-                )
-                self.points = assignment.points * float(self.partial_credit)
-            except QuizQuestionAssignment.DoesNotExist:
-                self.points = 0
-
-            self.graded_at = timezone.now()
-            self.save(
-                update_fields=["is_correct", "partial_credit", "points", "graded_at"]
-            )
-            return True
-
-        return False
+        return auto_grade_answer(self)
 
     def get_formatted_answer(self):
         """Get human-readable version of the answer"""
@@ -848,6 +892,16 @@ class QuizAnswer(models.Model):
                     pass
 
         return self.answer
+
+    def get_max_points(self):
+        """Get the maximum points for this answer based on quiz assignment"""
+        try:
+            assignment = QuizQuestionAssignment.objects.get(
+                quiz=self.attempt.quiz, question=self.question
+            )
+            return assignment.points
+        except QuizQuestionAssignment.DoesNotExist:
+            return 1.0  # Default fallback if no assignment found
 
 
 class QuizAnswerFile(models.Model):

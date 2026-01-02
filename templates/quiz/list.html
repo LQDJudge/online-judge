@@ -1,0 +1,113 @@
+{% extends "three-column-content.html" %}
+
+{% block three_col_media %}
+{# Styles are in resources/quiz.scss - .quiz-list-page #}
+{% endblock %}
+
+{% block js_media %}
+  <script>
+    $(function () {
+      var $form = $('form#filter-form');
+
+      function clean_submit() {
+        $form.submit();
+      }
+
+      $('#search-quiz').keypress(function (e) {
+        if (e.keyCode === 13) {
+          $('#go').click();
+        }
+      });
+
+      $('#go').click(clean_submit);
+    });
+  </script>
+{% endblock %}
+
+{% block left_sidebar %}
+  {% include "quiz/quiz-list-tabs.html" %}
+{% endblock %}
+
+{% block right_sidebar %}
+  <div class="right-sidebar">
+    {% include "quiz/search-form.html" %}
+  </div>
+{% endblock %}
+
+{% block middle_content %}
+  {% if show_contest_mode and in_contest %}
+    <div class="page-title" style="margin-bottom: 1em;">
+      <h2>
+        <i class="fa fa-question-circle"></i> {{ _('Contest Quizzes') }}
+      </h2>
+      <p class="text-muted">{{ _('Quizzes for') }} {{ current_contest.name }}</p>
+    </div>
+  {% endif %}
+
+  {% if quizzes %}
+    {% for quiz in quizzes %}
+      <div class="list-contest">
+        <div class="info-contest">
+          <div class="contest-title">{{ _('Quiz') }}</div>
+          <div class="contest-block">
+            <a href="{{ url('quiz_detail', quiz.code) }}" class="contest-list-title" style="margin-right: 5px;">{{ quiz.title
+              }}</a>
+          </div>
+        </div>
+        <div class="info-contest">
+          <div class="contest-title">{{ _('Info') }}</div>
+          <div class="contest-block">
+            <div><i class="fa fa-list"></i> {{ quiz.get_question_count() }} {{ _('questions') }}</div>
+            {% if quiz.time_limit %}
+              <div><i class="fa fa-clock"></i> {{ quiz.time_limit }} {{ _('mins') }}</div>
+            {% else %}
+              <div><i class="fa fa-clock"></i> {{ _('No limit') }}</div>
+            {% endif %}
+            {% if in_contest and quiz_points.get(quiz.id) %}
+              <div><i class="fa fa-star"></i> {{ quiz_points.get(quiz.id) }} {{ _('pts') }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="info-contest contest-format-user">
+          {% if request.user.is_authenticated %}
+            <div class="contest-title">{{ _('Progress') }}</div>
+            <div class="contest-block">
+              <div>
+                <strong>{{ _('Best') }}:</strong>
+                {% if best_scores.get(quiz.id) is not none %}
+                  {{ best_scores.get(quiz.id)|round(1) }}
+                {% else %}
+                  -
+                {% endif %}
+              </div>
+              <div>
+                <strong>{{ _('Attempts') }}:</strong> {{ attempt_counts.get(quiz.id, 0) }}
+              </div>
+            </div>
+          {% endif %}
+          <div class="participate-button">
+            <form method="post" action="{{ url('quiz_start', quiz.code) }}" style="display: inline;">
+              {% csrf_token %}
+              <input type="submit" class="action-btn" value="{{ _('Start') }}">
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+
+    {% if page_obj and page_obj.paginator.num_pages > 1 %}
+      <div style="margin-top: 10px;">
+        {% include "list-pages.html" %}
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="no-quizzes">
+      <h3>{{ _('No quizzes found') }}</h3>
+      {% if in_contest %}
+        <p>{{ _('There are no quizzes in this contest.') }}</p>
+      {% else %}
+        <p>{{ _('There are no quizzes available at this time.') }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endblock %}

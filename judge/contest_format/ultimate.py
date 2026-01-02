@@ -47,6 +47,10 @@ class UltimateContestFormat(IOIContestFormat):
             }
             score += points
 
+        # Calculate quiz scores using base class method
+        quiz_points = self.calculate_quiz_scores(participation, format_data)
+        score += quiz_points
+
         self.handle_frozen_state(participation, format_data)
         participation.cumtime = max(cumtime, 0)
         participation.score = round(score, self.contest.points_precision)

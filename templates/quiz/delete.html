@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block body %}
+  <div class="quiz-delete-page">
+    {% if attempt_count > 0 %}
+      <div class="alert alert-warning">
+        <i class="fa fa-exclamation-triangle"></i>
+        {{ _('Warning: This quiz has %(count)d attempt(s). Deleting will remove all student attempts and scores.', count=attempt_count) }}
+      </div>
+    {% endif %}
+
+    <p>{{ _('Are you sure you want to delete this quiz?') }}</p>
+    <p><strong>{{ object.code }} - {{ object.title }}</strong></p>
+
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="action-btn background-red">
+        <i class="fa fa-trash"></i> {{ _('Delete Quiz') }}
+      </button>
+      <a href="{{ url('quiz_edit', object.code) }}" class="btn btn-default">
+        {{ _('Cancel') }}
+      </a>
+    </form>
+  </div>
+{% endblock %}

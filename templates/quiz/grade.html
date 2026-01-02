@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block media %}
+  <style>
+    .quiz-grade-page {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .grade-header {
+      margin-bottom: 2rem;
+      background: white;
+      padding: 1.5rem;
+      border-radius: 4px;
+      border: 1px solid #eee;
+    }
+
+    .grade-header p {
+      margin: 0;
+      line-height: 2;
+    }
+
+    .answer-card {
+      background: white;
+      border-radius: 4px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid #eee;
+    }
+
+    .answer-card .question-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    .answer-content {
+      background: #f5f5f5;
+      padding: 1rem;
+      border-radius: 4px;
+      margin: 1rem 0;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    .grade-input {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #eee;
+      flex-wrap: wrap;
+    }
+
+    .grade-input input {
+      width: 100px;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .submit-section {
+      text-align: center;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+  /* Fix button text centering */
+    .submit-section .btn,
+    .submit-section .action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .no-essays {
+      text-align: center;
+      padding: 3rem;
+      background: white;
+      border-radius: 4px;
+      border: 1px solid #eee;
+    }
+
+    .no-essays p {
+      margin-bottom: 1.5rem;
+      color: #666;
+    }
+
+    .question-content {
+      margin-bottom: 1rem;
+      line-height: 1.6;
+    }
+
+    .answer-files {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #fafafa;
+      border-radius: 4px;
+    }
+
+    .answer-files ul {
+      margin: 0.5rem 0 0 1.5rem;
+      padding: 0;
+    }
+
+    .answer-files li {
+      margin: 0.3rem 0;
+    }
+  </style>
+{% endblock %}
+
+{% block body %}
+  <div class="quiz-grade-page">
+    <div class="grade-header">
+      <p>
+        <strong>{{ _('Quiz') }}:</strong> {{ quiz.title }}<br>
+        <strong>{{ _('Student') }}:</strong> {{ link_user(attempt.user) }}<br>
+        <strong>{{ _('Attempt') }}:</strong> #{{ attempt.attempt_number }}
+      </p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if answers %}
+        {% for answer in answers %}
+          <div class="answer-card">
+            <div class="question-header">
+              <strong>{{ _('Question') }}: {{ answer.question.title }}</strong>
+              <span class="badge">{{ _('Essay') }}</span>
+            </div>
+
+            <div class="question-content content-description">
+              {{ answer.question.content|markdown|reference|str|safe }}
+            </div>
+
+            <div class="answer-content">{{ answer.answer or _('No answer provided') }}</div>
+
+            {% if answer.files.exists() %}
+              <div class="answer-files">
+                <strong>{{ _('Attached files') }}:</strong>
+                <ul>
+                  {% for file in answer.files.all() %}
+                    <li>
+                      <a href="{{ file.file.url }}" target="_blank">{{ file.original_filename }}</a>
+                      ({{ file.get_file_size() }})
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+
+            <div class="grade-input">
+              <label for="points_{{ answer.id }}">{{ _('Points') }}:</label>
+              <input type="number" name="points_{{ answer.id }}" id="points_{{ answer.id }}"
+                     value="{{ answer.points|round(1) if answer.points else 0 }}" min="0" max="{{ answer.get_max_points() }}"
+                     step="any">
+              <span>/ {{ answer.get_max_points() }}</span>
+
+              {% if answer.graded_at %}
+                <span class="text-muted">
+                  ({{ _('Last graded') }}: {{ answer.graded_at|date(_("M j, Y, g:i a")) }})
+                </span>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+
+        <div class="submit-section">
+          <button type="submit" class="action-btn large">
+            <i class="fa fa-save"></i> {{ _('Save Grades') }}
+          </button>
+          <a href="{{ url('quiz_statistics', quiz.code) }}" class="btn btn-default btn-lg">
+            {{ _('Back to Dashboard') }}
+          </a>
+        </div>
+      {% else %}
+        <div class="no-essays">
+          <p>{{ _('No essay questions to grade for this attempt.') }}</p>
+          <a href="{{ url('quiz_statistics', quiz.code) }}" class="btn btn-default">
+            {{ _('Back to Dashboard') }}
+          </a>
+        </div>
+      {% endif %}
+    </form>
+  </div>
+{% endblock %}

@@ -103,6 +103,10 @@ class AtCoderContestFormat(DefaultContestFormat):
                 format_data[str(prob)] = {"time": dt, "points": score, "penalty": prev}
                 points += score
 
+        # Calculate quiz scores using base class method
+        quiz_points = self.calculate_quiz_scores(participation, format_data)
+        points += quiz_points
+
         self.handle_frozen_state(participation, format_data)
         participation.cumtime = cumtime + penalty
         participation.score = round(points, self.contest.points_precision)

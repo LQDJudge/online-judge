@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block media %}
+{# Styles moved to resources/quiz.scss #}
+{% endblock %}
+
+{% block body %}
+  <div class="quiz-result-page">
+    <div class="result-header">
+      <div
+        class="result-score {% if percentage >= 90 %}excellent{% elif percentage >= 70 %}good{% elif percentage >= 50 %}average{% else %}poor{% endif %}">
+        {{ attempt.score|round(1) if attempt.score else 0 }} / {{ attempt.max_score|round(1) if attempt.max_score else 0
+        }}
+      </div>
+      <div class="result-percentage">
+        {{ percentage }}%
+      </div>
+      <div class="result-meta">
+        <p>
+          {{ _('Started') }}: {{ attempt.start_time|date(_("M j, Y, g:i a")) }}
+          {% if attempt.end_time %}
+            | {{ _('Submitted') }}: {{ attempt.end_time|date(_("M j, Y, g:i a")) }}
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <a href="{{ url('quiz_detail', attempt.quiz.code) }}" class="btn btn-default">
+        <i class="fa fa-arrow-left"></i> {{ _('Back to Quiz') }}
+      </a>
+      {% if can_retake %}
+        <form method="post" action="{{ url('quiz_start', attempt.quiz.code) }}" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="action-btn">
+            <i class="fa fa-repeat"></i> {{ _('Retake Quiz') }}
+          </button>
+        </form>
+      {% endif %}
+      {% if can_edit %}
+        <a href="{{ url('attempt_grade', attempt.id) }}" class="btn btn-default">
+          <i class="fa fa-pencil"></i> {{ _('Grade') }}
+        </a>
+      {% endif %}
+    </div>
+
+    <h2>{{ _('Your Answers') }}</h2>
+
+    {% for answer in answers %}
+      {% set question = answer.question %}
+      <div
+        class="answer-card {% if answer.is_correct %}correct{% elif answer.graded_at %}incorrect{% else %}pending{% endif %}">
+        <div class="answer-header">
+          <div class="question-info">
+            <strong>{{ _('Question') }} {{ loop.index }}</strong>
+            <span class="badge">{{ question.get_question_type_display() }}</span>
+          </div>
+          <div class="answer-status">
+            {% if answer.is_correct %}
+              <i class="fa fa-check-circle correct"></i>
+              <span>{{ answer.points|round(1) }} / {{ answer.get_max_points()|round(1) }} {{ _('points') }}</span>
+            {% elif answer.graded_at %}
+              <i class="fa fa-times-circle incorrect"></i>
+              <span>{{ answer.points|round(1) }} / {{ answer.get_max_points()|round(1) }} {{ _('points') }}</span>
+            {% else %}
+              <i class="fa fa-clock-o pending"></i>
+              <span>{{ _('Pending grading') }}</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="question-content content-description">
+          {{ question.content|markdown|reference|str|safe }}
+        </div>
+
+        <div class="user-answer">
+          <strong>{{ _('Your answer') }}:</strong>
+          {% if question.question_type in ['MC', 'TF'] %}
+            {% for choice in question.choices %}
+              {% if choice.id == answer.answer %}
+                {{ choice.text }}
+              {% endif %}
+            {% endfor %}
+          {% elif question.question_type == 'MA' %}
+            {% set selected = answer.answer|default('[]') %}
+            <ul>
+              {% for choice in question.choices %}
+                {% if choice.id in selected %}
+                  <li>{{ choice.text }}</li>
+                {% endif %}
+              {% endfor %}
+            </ul>
+          {% else %}
+            {{ answer.answer or _('No answer provided') }}
+          {% endif %}
+        </div>
+
+        {% if question.question_type == 'ES' and answer.files.exists() %}
+          <div class="answer-files">
+            <h4><i class="fa fa-paperclip"></i> {{ _('Attached Files') }}</h4>
+            <ul>
+              {% for file in answer.files.all() %}
+                <li>
+                  <span class="file-icon"><i class="fa fa-file"></i></span>
+                  <a href="{{ file.file.url }}" target="_blank" class="file-name">{{ file.original_filename }}</a>
+                  <span class="file-size">({{ file.get_file_size() }})</span>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+        {% if show_answers and question.question_type in ['MC', 'MA', 'TF'] %}
+          <div class="correct-answer">
+            <strong>{{ _('Correct answer') }}:</strong>
+            {% set correct = question.correct_answers.get('answers', []) %}
+            {% if question.question_type in ['MC', 'TF'] %}
+              {% for choice in question.choices %}
+                {% if choice.id == correct %}
+                  {{ choice.text }}
+                {% endif %}
+              {% endfor %}
+            {% else %}
+              <ul>
+                {% for choice in question.choices %}
+                  {% if choice.id in correct %}
+                    <li>{{ choice.text }}</li>
+                  {% endif %}
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        {% if show_answers and question.explanation %}
+          <div class="explanation">
+            <strong>{{ _('Explanation') }}:</strong>
+            <div class="content-description">
+              {{ question.explanation|markdown|reference|str|safe }}
+            </div>
+          </div>
+        {% endif %}
+
+        {% if answer.feedback %}
+          <div class="teacher-feedback">
+            <strong>{{ _('Teacher Feedback') }}:</strong>
+            <div class="feedback-content">
+              {{ answer.feedback }}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    {% if can_retake %}
+      <div class="retake-section">
+        <form method="post" action="{{ url('quiz_start', attempt.quiz.code) }}">
+          {% csrf_token %}
+          <button type="submit" class="action-btn large">
+            <i class="fa fa-repeat"></i> {{ _('Retake Quiz') }}
+          </button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

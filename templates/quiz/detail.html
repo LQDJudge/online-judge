@@ -1,0 +1,122 @@
+{% extends "two-column-content.html" %}
+{% set page_type = 'detail' %}
+
+{% block left_sidebar %}
+  {% include "quiz/quiz-tabs.html" %}
+{% endblock %}
+
+{% block js_media %}
+{% endblock %}
+
+{% block two_col_media %}
+  <style>
+    .quiz-info-table {
+      width: 100%;
+      margin-bottom: 1em;
+    }
+    .quiz-info-table td {
+      padding: 0.5em 0;
+    }
+    .quiz-info-table td:first-child {
+      font-weight: bold;
+      width: 40%;
+    }
+    .quiz-questions-table {
+      margin-top: 1em;
+    }
+    .start-quiz-btn {
+      margin-top: 1em;
+    }
+    .in-progress-alert {
+      background: #fcf8e3;
+      border: 1px solid #faebcc;
+      padding: 1em;
+      border-radius: 4px;
+      margin-bottom: 1em;
+      display: flex;
+      align-items: center;
+      gap: 1em;
+    }
+    .in-progress-alert i {
+      color: #8a6d3b;
+    }
+  </style>
+{% endblock %}
+
+{% block middle_content %}
+  <h2 style="margin-bottom: 0.5em;">{{ quiz.title }}</h2>
+
+  {% if request.user.is_authenticated and in_progress_attempt %}
+    <form method="get" action="{{ url('quiz_take', quiz.code, in_progress_attempt.id) }}" class="contest-join-pseudotab">
+      <input type="submit" class="action-btn large" value="{{ _('Continue Attempt') }}">
+    </form>
+  {% elif request.user.is_authenticated %}
+    {% if submission_limit and submissions_left == 0 %}
+      <span class="contest-join-pseudotab red">
+        {{ _('No attempts remaining') }}
+      </span>
+    {% else %}
+      <form method="post" action="{{ url('quiz_start', quiz.code) }}" class="contest-join-pseudotab">
+        {% csrf_token %}
+        {% if lesson_quiz_id %}
+          <input type="hidden" name="lesson_quiz_id" value="{{ lesson_quiz_id }}">
+        {% endif %}
+        <input type="submit" class="action-btn large" value="{{ _('Start Quiz') }}">
+      </form>
+    {% endif %}
+  {% else %}
+    <form action="{{ url('auth_login') }}" method="get" class="contest-join-pseudotab">
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <input type="submit" class="action-btn large" value="{{ _('Login to participate') }}">
+    </form>
+  {% endif %}
+  <div style="clear: both"></div>
+
+  {% if submission_limit %}
+    <div style="margin-bottom: 0.5em;">
+      <i class="fa fa-repeat"></i>
+      {{ _('Attempts') }}: {{ submissions_left }} / {{ submission_limit }} {{ _('remaining') }}
+    </div>
+  {% endif %}
+
+  {% if quiz.description %}
+    <div class="content-description" style="padding: 0 1em;">
+      {{ quiz.description|markdown|reference|str|safe }}
+    </div>
+  {% endif %}
+
+  <hr>
+  <div class="quiz-questions">
+    <h3 style="margin-bottom: 0.2em;"><i class="fa fa-fw fa-question-circle"></i>{{ _('Questions') }}</h3>
+    <table class="table quiz-questions-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>{{ _('Question') }}</th>
+          <th>{{ _('Type') }}</th>
+          <th>{{ _('Points') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for assignment in quiz_questions %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ assignment.question.title }}</td>
+            <td>{{ assignment.question.get_question_type_display() }}</td>
+            <td>{{ assignment.points }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="4" style="text-align: center;">{{ _('No questions added yet.') }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="margin-top: 0.5em; font-weight: bold;">
+      {{ _('Total') }}: {{ question_count }} {{ _('questions') }}, {{ total_points }} {{ _('points') }}
+      {% if quiz.time_limit %}
+        | <i class="fa fa-clock-o"></i> {{ quiz.time_limit }} {{ _('minutes') }}
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

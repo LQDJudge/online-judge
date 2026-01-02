@@ -244,6 +244,18 @@ class ProblemAuthorSearchSelect2View(UserSearchSelect2View):
         }
 
 
+class QuizUserSearchSelect2View(UserSearchSelect2View):
+    def get_queryset(self):
+        quiz = get_object_or_404(Quiz, code=self.kwargs["quiz"])
+        # Check if user can edit this quiz
+        if not quiz.is_editable_by(self.request.user):
+            raise Http404()
+
+        return Profile.objects.filter(
+            quiz_attempts__quiz=quiz, user__username__icontains=self.term
+        ).distinct()
+
+
 class QuizSelect2View(Select2View):
     def get_queryset(self):
         queryset = Quiz.objects.filter(

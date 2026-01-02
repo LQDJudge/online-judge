@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block media %}
+{# Styles moved to resources/quiz.scss #}
+{% endblock %}
+
+{% block js_media %}
+  <script>
+    function updatePartialCredit(answerId, value) {
+      var percentage = parseInt(value);
+      document.getElementById('partial_value_' + answerId).textContent = percentage + '%';
+
+      // Update points based on partial credit
+      var pointsInput = document.getElementById('points_' + answerId);
+      var maxPoints = parseFloat(pointsInput.dataset.max) || 0;
+      var newPoints = (maxPoints * percentage / 100).toFixed(1);
+      pointsInput.value = newPoints;
+    }
+
+    function setPartialCredit(answerId, percentage) {
+      var slider = document.getElementById('partial_' + answerId);
+      slider.value = percentage;
+      updatePartialCredit(answerId, percentage);
+    }
+
+    // Sync points input with partial credit slider
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.points-input').forEach(function(input) {
+        input.addEventListener('input', function() {
+          var answerId = this.id.replace('points_', '');
+          var slider = document.getElementById('partial_' + answerId);
+          if (slider) {
+            var maxPoints = parseFloat(this.dataset.max) || 0;
+            var currentPoints = parseFloat(this.value) || 0;
+            var percentage = maxPoints > 0 ? Math.round((currentPoints / maxPoints) * 100) : 0;
+            slider.value = percentage;
+            document.getElementById('partial_value_' + answerId).textContent = percentage + '%';
+          }
+        });
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block body %}
+  <div class="grading-page">
+    <div class="attempt-info">
+      <p>
+        <strong>{{ _('Quiz') }}:</strong>
+        <a href="{{ url('quiz_detail', attempt.quiz.code) }}">{{ attempt.quiz.title }}</a>
+      </p>
+      <p>
+        <strong>{{ _('Student') }}:</strong>
+        {{ link_user(attempt.user) }}
+      </p>
+      <p>
+        <strong>{{ _('Attempt') }}:</strong> #{{ attempt.attempt_number }}
+      </p>
+      <p>
+        <strong>{{ _('Submitted') }}:</strong> {{ attempt.end_time|date(_("M j, Y, g:i a")) }}
+      </p>
+      <p>
+        <strong>{{ _('Current Score') }}:</strong>
+        {{ attempt.score|round(1) if attempt.score else 0 }} / {{ attempt.max_score|round(1) if attempt.max_score else 0 }}
+      </p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% for answer in answers %}
+        <div class="answer-card">
+          <div class="question-header">
+            <strong>{{ answer.question.title }}</strong>
+            <span class="badge">{{ answer.question.get_question_type_display() }}</span>
+            {% if answer.question.question_type in ['MC', 'MA', 'TF'] %}
+              <span class="auto-graded-badge">{{ _('Auto-graded') }}</span>
+            {% elif answer.question.question_type == 'ES' and not answer.graded_at %}
+              <span class="needs-grading-badge">{{ _('Needs Grading') }}</span>
+            {% endif %}
+          </div>
+
+          <div class="question-content content-description">
+            {{ answer.question.content|markdown|reference|str|safe }}
+          </div>
+
+          {% if answer.question.question_type in ['MC', 'TF'] and answer.question.choices %}
+            <div class="choices-display">
+              <strong>{{ _('Choices') }}:</strong>
+              <ul>
+                {% for choice in answer.question.choices %}
+                  <li {% if choice.id == answer.answer %}class="selected-answer"{% endif %}>
+                    {{ choice.id }}: {{ choice.text }}
+                    {% if answer.question.correct_answers and choice.id == answer.question.correct_answers.answers %}
+                      <span class="green">({{ _('Correct') }})</span>
+                    {% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
+          <div class="answer-content">
+            <strong>{{ _('Student Answer') }}:</strong><br>
+            {{ answer.answer or _('No answer provided') }}
+          </div>
+
+          {% if answer.files.exists() %}
+            <div class="file-attachments">
+              <strong><i class="fa fa-paperclip"></i> {{ _('Attached Files') }}:</strong>
+              <ul class="file-list">
+                {% for file in answer.files.all() %}
+                  <li>
+                    <a href="{{ file.file.url }}" target="_blank">
+                      <i class="fa fa-file"></i>
+                      {{ file.original_filename }}
+                      <span class="text-muted">({{ file.get_file_size() }})</span>
+                    </a>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
+          <div class="grade-input">
+            <label for="points_{{ answer.id }}">{{ _('Points') }}:</label>
+            <input type="number"
+                   name="points_{{ answer.id }}"
+                   id="points_{{ answer.id }}"
+                   class="points-input"
+                   data-max="{{ answer.get_max_points() }}"
+                   value="{{ answer.points|round(1) if answer.points else 0 }}"
+                   min="0"
+                   max="{{ answer.get_max_points() }}"
+                   step="any">
+            <span>/ {{ answer.get_max_points() }}</span>
+
+            {% if answer.graded_at %}
+              <span class="text-muted">
+                ({{ _('Graded') }}{% if answer.graded_by %} {{ _('by') }} {{ answer.graded_by.user.username }}{% endif %}: {{ answer.graded_at|date(_("M j, Y, g:i a")) }})
+              </span>
+            {% endif %}
+          </div>
+
+          {% if answer.question.question_type == 'ES' %}
+            <div class="partial-credit-section">
+              <label>{{ _('Partial Credit') }}:</label>
+              <div class="partial-credit-row">
+                <input type="range"
+                       name="partial_{{ answer.id }}"
+                       id="partial_{{ answer.id }}"
+                       class="partial-credit-slider"
+                       min="0"
+                       max="100"
+                       value="{{ (answer.partial_credit * 100)|int if answer.partial_credit else 0 }}"
+                       oninput="updatePartialCredit({{ answer.id }}, this.value)">
+                <span class="partial-credit-value" id="partial_value_{{ answer.id }}">
+                  {{ (answer.partial_credit * 100)|int if answer.partial_credit else 0 }}%
+                </span>
+                <div class="quick-grade-btns">
+                  <button type="button" onclick="setPartialCredit({{ answer.id }}, 0)">0%</button>
+                  <button type="button" onclick="setPartialCredit({{ answer.id }}, 50)">50%</button>
+                  <button type="button" onclick="setPartialCredit({{ answer.id }}, 75)">75%</button>
+                  <button type="button" onclick="setPartialCredit({{ answer.id }}, 100)">100%</button>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+
+          <div class="feedback-input">
+            <label for="feedback_{{ answer.id }}">{{ _('Feedback') }}:</label>
+            <textarea name="feedback_{{ answer.id }}"
+                      id="feedback_{{ answer.id }}"
+                      rows="3"
+                      placeholder="{{ _('Optional feedback for the student...') }}">{{ answer.feedback or '' }}</textarea>
+          </div>
+        </div>
+      {% endfor %}
+
+      <div class="form-actions">
+        <button type="submit" class="action-btn large">
+          <i class="fa fa-save"></i> {{ _('Save Grades') }}
+        </button>
+        <a href="{{ url('grading_dashboard') }}" class="btn btn-default btn-lg">
+          {{ _('Back to Dashboard') }}
+        </a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

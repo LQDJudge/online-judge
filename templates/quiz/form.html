@@ -1,0 +1,33 @@
+{# Reusable form template for quiz forms - matches organization form pattern #}
+{% if form.errors %}
+  <div class="alert alert-danger alert-dismissable">
+    <a href="#" class="close">x</a>
+    {{ _("Please fix below errors") }}
+    {% if form.non_field_errors %}
+      <ul>
+        {% for error in form.non_field_errors() %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% for field in form %}
+  {% if not field.is_hidden %}
+    <div class="quiz-field-row" style="margin-bottom: 1em;">
+      {{ field.errors }}
+      <label for="{{ field.id_for_label }}">
+        <b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b>
+      </label>
+      <div class="quiz-field-wrapper" id="quiz-field-wrapper-{{ field.html_name }}">
+        {{ field }}
+      </div>
+      {% if field.help_text %}
+        <small class="quiz-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
+      {% endif %}
+    </div>
+  {% else %}
+    {{ field }}
+  {% endif %}
+{% endfor %}

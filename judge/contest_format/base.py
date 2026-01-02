@@ -131,3 +131,64 @@ class BaseContestFormat(metaclass=ABCMeta):
                     format_data[problem]["frozen"] = True
             else:
                 format_data[problem] = {"time": 0, "points": 0, "frozen": True}
+
+    def calculate_quiz_scores(self, participation, format_data):
+        """
+        Calculate quiz scores for this participation and add to format_data.
+        This method can be called by any contest format to include quiz scores.
+
+        :param participation: The ContestParticipation object.
+        :param format_data: Dictionary to store quiz format data.
+        :return: Total quiz points earned.
+        """
+        # Import here to avoid circular imports
+        from judge.models import QuizAttempt, ContestProblem
+
+        quiz_points = 0
+
+        # Get all quiz ContestProblems in this contest
+        contest_quizzes = ContestProblem.objects.filter(
+            contest=self.contest, quiz__isnull=False
+        ).select_related("quiz")
+
+        for cp in contest_quizzes:
+            # Get best completed attempt for this quiz in this contest participation
+            best_attempt = (
+                QuizAttempt.objects.filter(
+                    quiz=cp.quiz,
+                    user=participation.user,
+                    contest_participation=participation,
+                    is_submitted=True,
+                )
+                .order_by("-score")
+                .first()
+            )
+
+            if best_attempt and best_attempt.score is not None:
+                # Calculate points based on contest problem points and quiz score ratio
+                if best_attempt.max_score and best_attempt.max_score > 0:
+                    earned_ratio = float(best_attempt.score) / float(
+                        best_attempt.max_score
+                    )
+                    earned_points = cp.points * earned_ratio
+                else:
+                    earned_points = 0
+
+                # Store in format_data with 'quiz_' prefix to distinguish from problems
+                quiz_key = f"quiz_{cp.id}"
+                dt = 0
+                if best_attempt.end_time:
+                    dt = (best_attempt.end_time - participation.start).total_seconds()
+
+                format_data[quiz_key] = {
+                    "time": dt,
+                    "points": earned_points,
+                    "quiz_score": float(best_attempt.score),
+                    "quiz_max_score": (
+                        float(best_attempt.max_score) if best_attempt.max_score else 0
+                    ),
+                    "is_quiz": True,
+                }
+                quiz_points += earned_points
+
+        return quiz_points

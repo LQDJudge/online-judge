@@ -1,0 +1,14 @@
+<div class="left-sidebar">
+  {{ make_tab_item('list', 'fa fa-list', url('quiz_list'), _('All')) }}
+  {{ make_tab_item('questions', 'fa fa-database', url('question_bank_list'), _('Question Bank')) }}
+  <a class="left-sidebar-item {% if page_type == 'grading' %}active{% endif %}" href="{{ url('grading_dashboard') }}" id="grading-tab">
+    <span class="sidebar-icon"><i class="fa fa-check-square"></i></span>
+    <span class="sidebar-text">{{ _('Grade') }}</span>
+    {% if pending_grading_count is defined and pending_grading_count > 0 %}
+      <span class="grading-badge">{{ pending_grading_count }}</span>
+    {% endif %}
+  </a>
+  {% if perms.judge.change_quiz %}
+    {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_quiz_changelist'), _('Admin'), force_new_page=True) }}
+  {% endif %}
+</div>

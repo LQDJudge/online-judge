@@ -148,6 +148,48 @@
       </tbody>
     </table>
 
+    {% if show_contest_mode and has_contest_quizzes %}
+      <h3 style="margin-top: 1.5em; margin-bottom: 0.5em;">
+        <i class="fa fa-question-circle"></i> {{ _('Quizzes') }}
+      </h3>
+      <table id="quiz-table" class="table striped">
+        <thead>
+          <tr>
+            <th class="quiz-name">{{ _('Quiz') }}</th>
+            <th class="quiz-points">{{ _('Points') }}</th>
+            <th class="quiz-questions">{{ _('Questions') }}</th>
+            <th class="quiz-time">{{ _('Time Limit') }}</th>
+            <th class="quiz-attempts">{{ _('Attempts') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for contest_quiz in contest_quizzes %}
+            <tr>
+              <td class="quiz-name">
+                <a href="{{ url('quiz_detail', contest_quiz.quiz.code) }}">{{ contest_quiz.quiz.title }}</a>
+              </td>
+              <td class="quiz-points">{{ contest_quiz.points }}</td>
+              <td class="quiz-questions">{{ contest_quiz.quiz.get_question_count() }}</td>
+              <td class="quiz-time">
+                {% if contest_quiz.quiz.time_limit %}
+                  {{ contest_quiz.quiz.time_limit }} {{ _('min') }}
+                {% else %}
+                  {{ _('No limit') }}
+                {% endif %}
+              </td>
+              <td class="quiz-attempts">
+                {% if contest_quiz.max_submissions > 0 %}
+                  {{ contest_quiz.max_submissions }}
+                {% else %}
+                  {{ _('Unlimited') }}
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
     {% if show_contest_mode %}
       <div style="margin-top: 1em; display: flex; justify-content: space-between; padding-right: 1em; font-size: 1.1em;">
         <a href="{{ url('contest_problemset', request.participation.contest.key) }}">

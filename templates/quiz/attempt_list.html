@@ -1,0 +1,96 @@
+{% extends "two-column-content.html" %}
+{% set page_type = 'attempts' %}
+
+{% block left_sidebar %}
+  {% include "quiz/quiz-tabs.html" %}
+{% endblock %}
+
+{% block two_col_media %}
+{# Styles are in resources/quiz.scss - .quiz-attempt-list-page #}
+{% endblock %}
+
+{% block middle_content %}
+  <div class="quiz-attempt-list-page">
+    <h2>
+      {% if viewing_other_user %}
+        {{ _("Attempts by") }} {{ target_profile.user.username }}
+      {% else %}
+        {{ _('My Attempts') }}
+      {% endif %}
+    </h2>
+
+    <div class="attempt-stats">
+      <div class="stat-item">
+        <span class="stat-label">{{ _('Total Attempts') }}</span>
+        <span class="stat-value">{{ attempts|length }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">{{ _('Best Score') }}</span>
+        <span class="stat-value">
+          {% if best_score is not none %}
+            {{ best_score|round(1) }} / {{ total_points }}
+          {% else %}
+            -
+          {% endif %}
+        </span>
+      </div>
+    </div>
+
+    {% if attempts %}
+      {% for attempt in attempts %}
+        {% set percentage = (attempt.score / attempt.max_score * 100) if attempt.max_score and attempt.score else 0 %}
+        <div class="attempt-row">
+          <div class="attempt-number">#{{ loop.revindex }}</div>
+          <div class="attempt-time">
+            <i class="fa fa-clock-o"></i>
+            {{ attempt.start_time|date(_("M j, Y, g:i a")) }}
+            {% if attempt.end_time %}
+              <span class="time-secondary">
+                &rarr; {{ attempt.end_time|date(_("g:i a")) }}
+              </span>
+            {% endif %}
+          </div>
+          <div class="attempt-score {% if percentage >= 90 %}perfect{% elif percentage >= 70 %}good{% elif percentage >= 50 %}average{% else %}poor{% endif %}">
+            {% if attempt.is_submitted %}
+              {{ attempt.score|round(1) if attempt.score else 0 }} / {{ attempt.max_score|round(1) if attempt.max_score else 0 }}
+            {% else %}
+              -
+            {% endif %}
+          </div>
+          <div class="attempt-status">
+            {% if attempt.is_submitted %}
+              <span class="badge badge-success">{{ _('Submitted') }}</span>
+            {% else %}
+              <span class="badge badge-warning">{{ _('In Progress') }}</span>
+            {% endif %}
+          </div>
+          <div class="attempt-actions">
+            {% if attempt.is_submitted %}
+              <a href="{{ url('quiz_result', quiz.code, attempt.id) }}" class="btn btn-sm btn-default">
+                <i class="fa fa-eye"></i> {{ _('View') }}
+              </a>
+            {% else %}
+              <a href="{{ url('quiz_take', quiz.code, attempt.id) }}" class="action-btn">
+                <i class="fa fa-play"></i> {{ _('Continue') }}
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+
+      {% if page_obj and page_obj.paginator.num_pages > 1 %}
+        <div class="pagination-wrapper">
+          {% include "list-pages.html" %}
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        <i class="fa fa-inbox fa-3x empty-icon"></i>
+        <p>{{ _('You have not attempted this quiz yet.') }}</p>
+        <a href="{{ url('quiz_detail', quiz.code) }}" class="action-btn">
+          <i class="fa fa-play"></i> {{ _('Start Quiz') }}
+        </a>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

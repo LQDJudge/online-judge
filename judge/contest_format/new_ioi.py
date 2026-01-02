@@ -159,6 +159,11 @@ class NewIOIContestFormat(IOIContestFormat):
 
         format_data = calculate_format_data(participation, False)
         score, cumtime = recalculate_results(format_data)
+
+        # Calculate quiz scores using base class method
+        quiz_points = self.calculate_quiz_scores(participation, format_data)
+        score += quiz_points
+
         self.handle_frozen_state(participation, format_data)
         participation.cumtime = max(cumtime, 0)
         participation.score = round(score, self.contest.points_precision)
@@ -167,6 +172,11 @@ class NewIOIContestFormat(IOIContestFormat):
 
         format_data_final = calculate_format_data(participation, True)
         score_final, cumtime_final = recalculate_results(format_data_final)
+
+        # Calculate quiz scores for final as well
+        quiz_points_final = self.calculate_quiz_scores(participation, format_data_final)
+        score_final += quiz_points_final
+
         participation.cumtime_final = max(cumtime_final, 0)
         participation.score_final = round(score_final, self.contest.points_precision)
         participation.format_data_final = format_data_final

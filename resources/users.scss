@@ -116,7 +116,8 @@ th.header.rank {
         }
     }
 
-    tbody tr:last-child td {
+    // Only remove bottom border when using no-border class (user ranking page)
+    &.no-border tbody tr:last-child td {
         border-bottom: none;
     }
 
