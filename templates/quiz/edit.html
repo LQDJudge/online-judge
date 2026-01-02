@@ -1,0 +1,416 @@
+{% extends "three-column-content.html" %}
+
+{% block three_col_media %}
+  {{ form.media }}
+{# Styles are in resources/quiz.scss - .quiz-edit-container #}
+{% endblock %}
+
+{% block js_media %}
+  <script src="{{ static('quiz.js') }}"></script>
+  <script src="{{ static('jquery-ui.min.js') }}"></script>
+  <script>
+    $(function () {
+    // Track pending changes
+      var pendingQuestionChanges = {
+        added: [],      // [{questionId, title, type, points}, ...]
+        removed: [],    // [assignmentId, ...]
+        updated: {},    // {assignmentId: {points, order}, ...}
+        order: []       // [assignmentId, ...] current order
+      };
+
+    // Initialize order from existing assignments
+      $('#assigned-questions-list .question-item').each(function () {
+        var assignmentId = $(this).data('assignment-id');
+        if (assignmentId) {
+          pendingQuestionChanges.order.push(assignmentId);
+        }
+      });
+
+      function markUnsaved() {
+        $('.unsaved-indicator').removeClass('hidden');
+      }
+
+      function updateQuestionNumbers() {
+        var visibleIndex = 0;
+        $('#assigned-questions-list .question-item').each(function () {
+          if (!$(this).hasClass('pending-remove')) {
+            visibleIndex++;
+            $(this).find('.question-order').text(visibleIndex + '.');
+          }
+        });
+      // Update question count - visibleIndex already includes pending-add items in DOM
+        $('#question-count').text(visibleIndex);
+        $('#sidebar-question-count').text(visibleIndex);
+      }
+
+    // Make assigned questions sortable
+      if ($('#assigned-questions-list').length && $.fn.sortable) {
+        $('#assigned-questions-list').sortable({
+          handle: '.drag-handle',
+          items: '.question-item:not(.pending-remove)',
+          update: function (event, ui) {
+          // Update order tracking
+            pendingQuestionChanges.order = [];
+            $('#assigned-questions-list .question-item').each(function () {
+              var assignmentId = $(this).data('assignment-id');
+              if (assignmentId && !$(this).hasClass('pending-remove')) {
+                pendingQuestionChanges.order.push(assignmentId);
+              }
+            });
+            updateQuestionNumbers();
+            markUnsaved();
+          }
+        });
+      }
+
+    // Update points (track change, don't save immediately)
+      $('.points-input').on('change', function () {
+        var assignmentId = $(this).data('assignment-id');
+        var points = parseFloat($(this).val()) || 0;
+
+        if (!pendingQuestionChanges.updated[assignmentId]) {
+          pendingQuestionChanges.updated[assignmentId] = {};
+        }
+        pendingQuestionChanges.updated[assignmentId].points = points;
+        markUnsaved();
+      });
+
+    // Initialize Select2 for question selection
+      var assignedQuestionIds = [{% for assignment in assigned_questions %}{{ assignment.question.pk }}{% if not loop.last %}, {% endif %} {% endfor %}];
+
+      $('#add-question-select').select2({
+        ajax: {
+          url: '{{ url("quiz_question_select2") }}',
+          dataType: 'json',
+          delay: 250,
+          data: function (params) {
+            return {
+              term: params.term || '',
+              page: params.page || 1
+            };
+          },
+          processResults: function (data, params) {
+        // Filter out already assigned and pending-add questions
+            var addedIds = pendingQuestionChanges.added.map(function (q) { return q.questionId; });
+            var filteredResults = data.results.filter(function (item) {
+              return assignedQuestionIds.indexOf(item.id) === -1 &&
+              addedIds.indexOf(item.id) === -1;
+            });
+            return {
+              results: filteredResults,
+              pagination: {
+                more: data.more
+              }
+            };
+          },
+          cache: true
+        },
+        placeholder: '{{ _("Type to search questions...") }}',
+        allowClear: true,
+        minimumInputLength: 0,
+        width: '100%'
+      });
+
+  // Add selected questions (to pending list, don't save immediately)
+      $('#add-questions-btn').on('click', function () {
+        var selectedData = $('#add-question-select').select2('data');
+        var points = parseFloat($('#add-question-points').val()) || 1;
+
+        if (!selectedData || selectedData.length === 0) {
+          alert('{{ _("Please select at least one question.") }}');
+          return;
+        }
+
+        selectedData.forEach(function (item) {
+      // Add to pending
+          pendingQuestionChanges.added.push({
+            questionId: item.id,
+            title: item.text,
+            type: item.type || '',
+            points: points
+          });
+          assignedQuestionIds.push(item.id);
+
+      // Add visual item
+          var newIndex = $('#assigned-questions-list .question-item').length + 1;
+          var html = '<div class="question-item pending-add" data-question-id="' + item.id + '">';
+          html += '<span class="drag-handle" title="{{ _("Drag to reorder") }}"><i class="fa fa-bars"></i></span>';
+          html += '<div class="question-info">';
+          html += '<span class="question-order">' + newIndex + '.</span>';
+          html += '<span>' + $('<div>').text(item.text).html() + '</span>';
+          if (item.type) {
+            html += '<span class="badge">' + item.type + '</span>';
+          }
+          html += '<span class="badge badge-success">{{ _("New") }}</span>';
+          html += '</div>';
+          html += '<input type="number" class="points-input pending-points" data-question-id="' + item.id + '" value="' + points + '" min="0" step="1" title="{{ _("Points") }}">';
+          html += '<span class="text-muted">{{ _("pts") }}</span>';
+          html += '<div class="question-actions">';
+          html += '<button type="button" class="btn btn-sm btn-danger remove-pending-btn" data-question-id="' + item.id + '" title="{{ _("Remove") }}">';
+          html += '<i class="fa fa-times"></i></button>';
+          html += '</div></div>';
+
+          $('#assigned-questions-list').append(html);
+        });
+
+    // Clear selection
+        $('#add-question-select').val(null).trigger('change');
+        updateQuestionNumbers();
+        markUnsaved();
+      });
+
+  // Update points for pending-add questions
+      $(document).on('change', '.pending-points', function () {
+        var questionId = $(this).data('question-id');
+        var points = parseFloat($(this).val()) || 0;
+
+        pendingQuestionChanges.added.forEach(function (q) {
+          if (q.questionId == questionId) {
+            q.points = points;
+          }
+        });
+        markUnsaved();
+      });
+
+  // Remove pending-add question
+      $(document).on('click', '.remove-pending-btn', function () {
+        var questionId = $(this).data('question-id');
+
+    // Remove from pending
+        pendingQuestionChanges.added = pendingQuestionChanges.added.filter(function (q) {
+          return q.questionId != questionId;
+        });
+
+    // Remove from assigned list
+        var idx = assignedQuestionIds.indexOf(questionId);
+        if (idx > -1) assignedQuestionIds.splice(idx, 1);
+
+    // Remove visual item
+        $(this).closest('.question-item').remove();
+        updateQuestionNumbers();
+        markUnsaved();
+      });
+
+  // Remove existing question from quiz (mark as pending remove)
+      $('.remove-question-btn').on('click', function () {
+        if (!confirm('{{ _("Remove this question from the quiz?") }}')) return;
+
+        var assignmentId = $(this).data('assignment-id');
+        var $item = $(this).closest('.question-item');
+
+    // Mark as pending remove
+        pendingQuestionChanges.removed.push(assignmentId);
+
+    // Visual feedback
+        $item.addClass('pending-remove');
+        $(this).prop('disabled', true);
+
+    // Add undo button
+        var $undoBtn = $('<button type="button" class="btn btn-sm btn-warning undo-remove-btn" data-assignment-id="' + assignmentId + '" title="{{ _("Undo") }}"><i class="fa fa-undo"></i></button>');
+        $(this).after($undoBtn);
+
+        updateQuestionNumbers();
+        markUnsaved();
+      });
+
+  // Undo remove
+      $(document).on('click', '.undo-remove-btn', function () {
+        var assignmentId = $(this).data('assignment-id');
+        var $item = $(this).closest('.question-item');
+
+    // Remove from pending
+        var idx = pendingQuestionChanges.removed.indexOf(assignmentId);
+        if (idx > -1) pendingQuestionChanges.removed.splice(idx, 1);
+
+    // Visual feedback
+        $item.removeClass('pending-remove');
+        $item.find('.remove-question-btn').prop('disabled', false);
+        $(this).remove();
+
+        updateQuestionNumbers();
+
+    // Check if still has changes
+        if (pendingQuestionChanges.added.length === 0 &&
+          pendingQuestionChanges.removed.length === 0 &&
+          Object.keys(pendingQuestionChanges.updated).length === 0) {
+            $('.unsaved-indicator').addClass('hidden');
+          }
+      });
+
+  // Before form submit, add question changes to hidden fields
+      $('form.quiz-form').on('submit', function (e) {
+    // Remove old hidden fields
+        $(this).find('.question-changes-field').remove();
+
+    // Add pending changes as hidden fields
+        $('<input>').attr({
+          type: 'hidden',
+          name: 'question_changes',
+          class: 'question-changes-field',
+          value: JSON.stringify(pendingQuestionChanges)
+        }).appendTo(this);
+      });
+
+    });
+
+    function confirmDeleteQuiz() {
+      if (confirm('{{ _("Are you sure you want to delete this quiz? This action cannot be undone.") }}')) {
+        document.getElementById('delete-quiz-form').submit();
+      }
+    }
+
+    function confirmRegradeQuiz() {
+      if (confirm('{{ _("Are you sure you want to regrade all attempts? This will recalculate scores for all submitted attempts.") }}')) {
+        document.getElementById('regrade-quiz-form').submit();
+      }
+    }
+  </script>
+{% endblock %}
+
+{% block left_sidebar %}
+  {% include "quiz/quiz-tabs.html" %}
+{% endblock %}
+
+{% block right_sidebar %}
+  <div class="right-sidebar">
+    <div id="control-panel" class="blog-sidebox sidebox no-dot-blog-sidebox">
+      <h3><i class="fa fa-cog"></i>{{ _('Controls') }}</h3>
+      <ul id="control-list" class="sidebox-content" style="margin: 0;">
+        {% if request.user.is_superuser %}
+          <div class="link-row">
+            <a href="{{ url('question_bank_create') }}">
+              <i class="fa fa-plus"></i>{{ _('Create Question') }}
+            </a>
+          </div>
+        {% endif %}
+        <div class="link-row">
+          <form method="post" action="{{ url('quiz_regrade', object.code) }}" style="display: inline;"
+                id="regrade-quiz-form">
+            {% csrf_token %}
+            <a href="#" onclick="confirmRegradeQuiz(); return false;">
+              <i class="fa fa-refresh"></i>{{ _('Regrade All Attempts') }}
+            </a>
+          </form>
+        </div>
+        <div class="link-row red">
+          <form method="post" action="{{ url('quiz_delete', object.code) }}" style="display: inline;"
+                id="delete-quiz-form">
+            {% csrf_token %}
+            <a href="#" onclick="confirmDeleteQuiz(); return false;">
+              <i class="fa fa-trash"></i>{{ _('Delete Quiz') }}
+            </a>
+          </form>
+        </div>
+      </ul>
+    </div>
+
+    <div class="sidebox">
+      <h3 class="colored-text"><i class="fa fa-info-circle"></i> {{ _('Quiz Info') }}</h3>
+      <div class="sidebox-content">
+        <div class="quiz-info-item">
+          <span class="quiz-info-label">{{ _('Questions') }}</span>
+          <span class="quiz-info-value" id="sidebar-question-count">{{ assigned_questions|length }}</span>
+        </div>
+        <div class="quiz-info-item">
+          <span class="quiz-info-label">{{ _('Total Points') }}</span>
+          <span class="quiz-info-value">{{ object.get_total_points() }}</span>
+        </div>
+        <div class="quiz-info-item">
+          <span class="quiz-info-label">{{ _('Time Limit') }}</span>
+          <span class="quiz-info-value">
+            {% if object.time_limit %}
+              {{ object.time_limit }} {{ _('min') }}
+            {% else %}
+              {{ _('No limit') }}
+            {% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block middle_content %}
+  <div class="quiz-edit-container">
+    <h2 style="margin-top: 0;">{{ _('Edit Quiz') }}: {{ object.title }}
+      <span class="unsaved-indicator hidden">
+        <i class="fa fa-exclamation-circle"></i> {{ _('Unsaved changes') }}
+      </span>
+    </h2>
+    <hr>
+
+    <form method="post" class="quiz-form">
+      {% csrf_token %}
+
+    <!-- Settings Section -->
+      <div class="edit-section">
+        {% include "quiz/form.html" %}
+      </div>
+
+    <!-- Questions Section -->
+      <div class="edit-section">
+        <div class="questions-header">
+          <h3><i class="fa fa-list"></i> <span>{{ _('Questions') }} (<span id="question-count">{{
+            assigned_questions|length }}</span>)</span></h3>
+        </div>
+
+        <p class="text-muted"><i class="fa fa-info-circle"></i> {{ _('Drag to reorder questions') }}</p>
+
+        <div id="assigned-questions-list">
+          {% for assignment in assigned_questions %}
+            <div class="question-item" data-assignment-id="{{ assignment.id }}">
+              <span class="drag-handle" title="{{ _('Drag to reorder') }}"><i class="fa fa-bars"></i></span>
+              <div class="question-info">
+                <span class="question-order">{{ loop.index }}.</span>
+                <a href="{{ url('question_bank_detail', assignment.question.pk) }}">
+                  {{ assignment.question.title }}
+                </a>
+                <span class="badge">{{ assignment.question.get_question_type_display() }}</span>
+              </div>
+              <input type="number" class="points-input" data-assignment-id="{{ assignment.id }}"
+                     value="{{ assignment.points }}" min="0" step="1" title="{{ _('Points') }}">
+              <span class="text-muted">{{ _('pts') }}</span>
+              <div class="question-actions">
+                <button type="button" class="btn btn-sm btn-danger remove-question-btn"
+                        data-assignment-id="{{ assignment.id }}" title="{{ _('Remove') }}">
+                  <i class="fa fa-times"></i>
+                </button>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        {% if not assigned_questions %}
+          <p class="text-muted" id="no-questions-msg">{{ _('No questions assigned yet.') }}</p>
+        {% endif %}
+
+      <!-- Add Question Search -->
+        <div class="add-question-section">
+          <h4><i class="fa fa-plus-circle"></i> {{ _('Add Question') }}</h4>
+          <div class="add-question-form">
+            <div class="question-select-wrapper" style="margin-bottom: 1em;">
+              <label for="add-question-select">{{ _('Select questions to add:') }}</label>
+              <select id="add-question-select" multiple style="width: 100%;"></select>
+            </div>
+            <div class="points-wrapper" style="display: flex; align-items: center; gap: 0.5em; margin-bottom: 1em;">
+              <label for="add-question-points">{{ _('Points per question:') }}</label>
+              <input type="number" id="add-question-points" value="1" min="0" step="1" style="width: 80px;">
+            </div>
+            <button type="button" id="add-questions-btn" class="btn btn-success">
+              <i class="fa fa-plus"></i> {{ _('Add Selected Questions') }}
+            </button>
+          </div>
+          <p class="text-muted" style="margin-top: 0.5em;">
+            <a href="{{ url('question_bank_create') }}">{{ _('Create new question') }}</a>
+          </p>
+        </div>
+      </div>
+
+    <!-- Save Button -->
+      <button type="submit" class="action-btn">{{ _('Save') }}</button>
+      <a href="{{ url('quiz_list') }}" class="btn btn-default">
+        {{ _('Cancel') }}
+      </a>
+    </form>
+  </div>
+{% endblock %}

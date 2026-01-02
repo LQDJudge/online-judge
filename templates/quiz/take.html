@@ -1,0 +1,417 @@
+{% extends "two-column-content.html" %}
+{% set page_type = 'take' %}
+
+{% block two_col_media %}
+  <link rel="stylesheet" href="{{ static('pagedown_widget.css') }}">
+  {# Styles moved to resources/quiz.scss #}
+{% endblock %}
+
+{% block js_media %}
+  <script src="{{ static('quiz.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Converter.js') }}"></script>
+  <script src="{{ static('pagedown-extra/pagedown/Markdown.Converter.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Sanitizer.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Editor.js') }}"></script>
+  <script src="{{ static('pagedown-extra/Markdown.Extra.js') }}"></script>
+  <script>
+    $(function() {
+      var attemptId = {{ attempt.id }};
+      var quizCode = '{{ attempt.quiz.code }}';
+      var hasTimeLimit = {{ 'true' if has_time_limit else 'false' }};
+      var timeRemaining = {{ time_remaining if time_remaining else 'null' }};
+      var questions = [
+        {% for assignment in questions %}
+          {id: {{ assignment.question.id }}, index: {{ loop.index0 }}}{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ];
+      var currentIndex = 0;
+
+      // Initialize quiz with timer and auto-save
+      var quizInstance = initQuiz({
+        timeLimit: timeRemaining,
+        saveUrl: '{{ url("quiz_save_answer", quiz.code, attempt.id) }}',
+        csrfToken: '{{ csrf_token }}',
+        resultUrl: '{{ url("quiz_result", quiz.code, attempt.id) }}',
+        leaveWarning: '{{ _("Your progress will be saved, but are you sure you want to leave?") }}',
+        savingText: '{{ _("Saving...") }}',
+        savedText: '{{ _("Saved") }}',
+        errorText: '{{ _("Error saving") }}',
+        expiredText: '{{ _("Time expired. Your quiz will be submitted.") }}',
+        timeUpText: '{{ _("Time is up!") }}',
+        useNavigation: false
+      });
+
+      // Initialize PageDown editors for essay questions
+      var converter = Markdown.getSanitizingConverter();
+      Markdown.Extra.init(converter, { extensions: 'all' });
+
+      $('.essay-editor-container').each(function() {
+        var $container = $(this);
+        var $textarea = $container.find('textarea');
+        var id = $textarea.attr('id');
+        if (id) {
+          var suffix = id.replace('wmd-input', '');
+          var editor = new Markdown.Editor(converter, suffix, {});
+          editor.run();
+        }
+      });
+
+      // Question indicator clicks
+      $('.question-indicator').on('click', function() {
+        var index = $(this).data('index');
+        var questionId = questions[index].id;
+        $('html, body').animate({
+          scrollTop: $('#question-' + questionId).offset().top - 80
+        }, 300);
+        updateCurrentIndicator(index);
+      });
+
+      function updateCurrentIndicator(index) {
+        $('.question-indicator').removeClass('current');
+        $('.question-indicator[data-index="' + index + '"]').addClass('current');
+        currentIndex = index;
+      }
+
+      // Track which questions are answered
+      function updateAnsweredIndicators() {
+        questions.forEach(function(q, i) {
+          var $card = $('#question-' + q.id);
+          var $indicator = $('.question-indicator[data-index="' + i + '"]');
+          var isAnswered = false;
+
+          if ($card.find('input[type="radio"]:checked').length) isAnswered = true;
+          if ($card.find('input[type="checkbox"]:checked').length) isAnswered = true;
+          var textVal = $card.find('input[type="text"].question-text').val();
+          if (textVal && textVal.trim()) isAnswered = true;
+          var taVal = $card.find('textarea.question-text').val();
+          if (taVal && taVal.trim()) isAnswered = true;
+          // Check for uploaded files (essay questions)
+          var $filesList = $('#files-list-' + q.id);
+          if ($filesList.length && $filesList.find('li:not(.uploading)').length > 0) isAnswered = true;
+
+          if (isAnswered) {
+            $indicator.addClass('answered');
+          } else {
+            $indicator.removeClass('answered');
+          }
+        });
+      }
+
+      $('.question-radio, .question-checkbox').on('change', updateAnsweredIndicators);
+      $('.question-text').on('input', updateAnsweredIndicators);
+
+      updateAnsweredIndicators();
+
+      // Scroll spy to update current indicator
+      $(window).on('scroll', function() {
+        var scrollTop = $(window).scrollTop();
+        for (var i = questions.length - 1; i >= 0; i--) {
+          var $card = $('#question-' + questions[i].id);
+          if ($card.length && $card.offset().top - 150 <= scrollTop) {
+            if (currentIndex !== i) {
+              updateCurrentIndicator(i);
+            }
+            break;
+          }
+        }
+      });
+
+      // =====================================================
+      // File Upload for Essay Questions
+      // =====================================================
+      var uploadUrl = '{{ url("quiz_upload_file", quiz.code, attempt.id) }}';
+      var deleteUrlBase = '/quiz/file/';
+      var csrfToken = '{{ csrf_token }}';
+      var maxFileSize = 10 * 1024 * 1024; // 10 MB
+
+      var uploadingText = '{{ _("Uploading...") }}';
+      var deleteConfirmText = '{{ _("Are you sure you want to delete this file?") }}';
+
+      // Click on upload zone to trigger file input
+      $('.file-upload-zone').on('click', function(e) {
+        if (e.target.tagName !== 'INPUT') {
+          $(this).find('.file-input').click();
+        }
+      });
+
+      // Handle file selection
+      $('.file-input').on('change', function() {
+        var questionId = $(this).closest('.essay-file-upload').data('question-id');
+        var files = this.files;
+        for (var i = 0; i < files.length; i++) {
+          uploadFile(questionId, files[i]);
+        }
+        // Clear input so same file can be uploaded again if needed
+        $(this).val('');
+      });
+
+      // Drag and drop
+      $('.file-upload-zone').on('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).addClass('dragover');
+      }).on('dragleave drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).removeClass('dragover');
+      }).on('drop', function(e) {
+        var questionId = $(this).closest('.essay-file-upload').data('question-id');
+        var files = e.originalEvent.dataTransfer.files;
+        for (var i = 0; i < files.length; i++) {
+          uploadFile(questionId, files[i]);
+        }
+      });
+
+      function uploadFile(questionId, file) {
+        // Validate file size
+        if (file.size > maxFileSize) {
+          alert('{{ _("File size exceeds 10 MB limit.") }}');
+          return;
+        }
+
+        var $list = $('#files-list-' + questionId);
+        var $tempItem = $('<li class="uploading"><span class="file-icon"><i class="fa fa-spinner fa-spin"></i></span><span class="file-name">' + escapeHtml(file.name) + '</span><span class="file-size">(' + uploadingText + ')</span></li>');
+        $list.append($tempItem);
+
+        var formData = new FormData();
+        formData.append('file', file);
+        formData.append('question_id', questionId);
+        formData.append('csrfmiddlewaretoken', csrfToken);
+
+        $.ajax({
+          url: uploadUrl,
+          type: 'POST',
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function(response) {
+            $tempItem.remove();
+            if (response.success) {
+              addFileToList(questionId, response.file_id, response.filename, response.size);
+            } else {
+              alert('{{ _("Upload failed:") }} ' + (response.error || '{{ _("Unknown error") }}'));
+            }
+          },
+          error: function(xhr) {
+            $tempItem.remove();
+            var msg = '{{ _("Upload failed") }}';
+            try {
+              var resp = JSON.parse(xhr.responseText);
+              if (resp.error) msg = resp.error;
+              if (resp.expired) {
+                // Quiz expired, redirect
+                window.location.href = '{{ url("quiz_result", quiz.code, attempt.id) }}';
+                return;
+              }
+            } catch(e) {}
+            alert(msg);
+          }
+        });
+      }
+
+      function addFileToList(questionId, fileId, filename, size) {
+        var $list = $('#files-list-' + questionId);
+        var $item = $('<li data-file-id="' + fileId + '">' +
+          '<span class="file-icon"><i class="fa fa-file"></i></span>' +
+          '<span class="file-name">' + escapeHtml(filename) + '</span>' +
+          '<span class="file-size">(' + escapeHtml(size) + ')</span>' +
+          '<button type="button" class="file-delete-btn" data-file-id="' + fileId + '" title="{{ _("Delete") }}">' +
+          '<i class="fa fa-times"></i></button></li>');
+        $list.append($item);
+        updateAnsweredIndicators();
+      }
+
+      // Delete file
+      $(document).on('click', '.file-delete-btn', function(e) {
+        e.preventDefault();
+        var $btn = $(this);
+        var fileId = $btn.data('file-id');
+        var $li = $btn.closest('li');
+
+        if (!confirm(deleteConfirmText)) return;
+
+        $.ajax({
+          url: deleteUrlBase + fileId + '/delete/',
+          type: 'POST',
+          data: { csrfmiddlewaretoken: csrfToken },
+          success: function(response) {
+            if (response.success) {
+              $li.fadeOut(200, function() {
+                $(this).remove();
+                updateAnsweredIndicators();
+              });
+            } else {
+              alert('{{ _("Delete failed:") }} ' + (response.error || '{{ _("Unknown error") }}'));
+            }
+          },
+          error: function(xhr) {
+            var msg = '{{ _("Delete failed") }}';
+            try {
+              var resp = JSON.parse(xhr.responseText);
+              if (resp.error) msg = resp.error;
+            } catch(e) {}
+            alert(msg);
+          }
+        });
+      });
+
+      function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    });
+  </script>
+{% endblock %}
+
+{% block left_sidebar %}
+  <div class="left-sidebar">
+  {# Timer Box #}
+    {% if has_time_limit %}
+      <div class="quiz-sidebar-box">
+        <h3><i class="fa fa-clock-o"></i> {{ _('Time') }}</h3>
+        <div class="sidebar-timer" id="timer-container">
+          <div class="timer-value" id="timer-display">--:--</div>
+          <div class="timer-label">{{ _('remaining') }}</div>
+        </div>
+      </div>
+    {% endif %}
+
+  {# Questions Navigation - Simple numbers #}
+    <div class="quiz-sidebar-box">
+      <h3><i class="fa fa-list"></i> {{ _('Questions') }}</h3>
+      <div class="progress-indicators">
+        {% for assignment in questions %}
+          <div class="question-indicator{% if loop.first %} current{% endif %}"
+               data-index="{{ loop.index0 }}"
+               title="{{ _('Question') }} {{ loop.index }}">
+            {{ loop.index }}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block middle_content %}
+  {# Quiz Header #}
+  <div class="quiz-header-bar">
+    <div>
+      <div class="quiz-title">{{ attempt.quiz.title }}</div>
+      <div class="quiz-meta">{{ question_count }} {{ _('questions') }}</div>
+    </div>
+  </div>
+
+  <form id="submit-form" method="post" action="{{ url('quiz_submit', attempt.quiz.code, attempt.id) }}">
+    {% csrf_token %}
+
+    {% for assignment in questions %}
+      {% set question = assignment.question %}
+      {% set answer = answers.get(question.id) %}
+      {% set saved_answer = answer.answer if answer else '' %}
+
+      <div class="question-card" id="question-{{ question.id }}">
+        <div class="question-header">
+          <div class="question-number">
+            <strong>{{ _('Question') }} {{ loop.index }}</strong>
+            <span class="question-type badge">{{ question.get_question_type_display() }}</span>
+          </div>
+          <div class="question-points">
+            {{ assignment.points }} {{ _('points') }}
+            <span id="save-status-{{ question.id }}" class="save-status"></span>
+          </div>
+        </div>
+
+        <div class="question-content content-description">
+          {{ question.content|markdown|reference|str|safe }}
+        </div>
+
+        <div class="question-answer">
+          {% if question.question_type == 'MC' or question.question_type == 'TF' %}
+            <div class="question-choices">
+              {% for choice in question.choices %}
+                <label>
+                  <input type="radio"
+                         class="question-radio"
+                         name="q_{{ question.id }}"
+                         value="{{ choice.id }}"
+                         data-question="{{ question.id }}"
+                         {% if saved_answer == choice.id %}checked{% endif %}>
+                  {{ choice.text }}
+                </label>
+              {% endfor %}
+            </div>
+
+          {% elif question.question_type == 'MA' %}
+            {% set checked_answers = saved_answer|default('[]')|safe %}
+            <div class="question-choices">
+              {% for choice in question.choices %}
+                <label>
+                  <input type="checkbox"
+                         class="question-checkbox"
+                         name="q_{{ question.id }}"
+                         value="{{ choice.id }}"
+                         data-question="{{ question.id }}"
+                         {% if choice.id in checked_answers %}checked{% endif %}>
+                  {{ choice.text }}
+                </label>
+              {% endfor %}
+            </div>
+
+          {% elif question.question_type == 'SA' %}
+            <input type="text"
+                   class="short-answer-input question-text"
+                   name="q_{{ question.id }}"
+                   value="{{ saved_answer }}"
+                   data-question="{{ question.id }}"
+                   placeholder="{{ _('Enter your answer...') }}">
+
+          {% elif question.question_type == 'ES' %}
+            <div class="essay-editor-container">
+              <div id="wmd-button-bar-essay-{{ question.id }}"></div>
+              <textarea class="wmd-input question-text"
+                        name="q_{{ question.id }}"
+                        id="wmd-input-essay-{{ question.id }}"
+                        data-question="{{ question.id }}"
+                        placeholder="{{ _('Enter your essay response...') }}">{{ saved_answer }}</textarea>
+            </div>
+
+            {# File upload section for essay questions #}
+            <div class="essay-file-upload" data-question-id="{{ question.id }}">
+              <div class="file-upload-zone" id="upload-zone-{{ question.id }}">
+                <i class="fa fa-cloud-upload"></i>
+                <span>{{ _('Drag files here or click to upload') }}</span>
+                <input type="file" class="file-input" id="file-input-{{ question.id }}" multiple
+                       accept=".pdf,.doc,.docx,.txt,.rtf,.odt,.jpg,.jpeg,.png,.gif,.bmp,.webp,.zip">
+              </div>
+              <div class="file-upload-info">
+                {{ _('Allowed: PDF, DOC, DOCX, TXT, RTF, ODT, images, ZIP. Max 10MB per file.') }}
+              </div>
+              <ul class="uploaded-files-list" id="files-list-{{ question.id }}">
+                {% set question_files = uploaded_files.get(question.id, []) %}
+                {% for file in question_files %}
+                  <li data-file-id="{{ file.id }}">
+                    <span class="file-icon"><i class="fa fa-file"></i></span>
+                    <a href="{{ file.url }}" target="_blank" class="file-name">{{ file.filename }}</a>
+                    <span class="file-size">({{ file.size }})</span>
+                    <button type="button" class="file-delete-btn" data-file-id="{{ file.id }}" title="{{ _('Delete') }}">
+                      <i class="fa fa-times"></i>
+                    </button>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+
+    {# Submit Section - centered at bottom #}
+    <div class="submit-section">
+      <p>{{ _('Make sure you have answered all questions before submitting.') }}</p>
+      <button type="submit" class="action-btn large">
+        <i class="fa fa-check"></i> {{ _('Submit Quiz') }}
+      </button>
+    </div>
+  </form>
+{% endblock %}

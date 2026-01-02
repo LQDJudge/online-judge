@@ -1,0 +1,75 @@
+{% extends "two-column-content.html" %}
+{% set page_type = 'analysis' %}
+
+{% block left_sidebar %}
+  {% include "quiz/quiz-tabs.html" %}
+{% endblock %}
+
+{% block two_col_media %}
+{# Styles are in resources/quiz.scss - .question-analysis-page #}
+{% endblock %}
+
+{% block middle_content %}
+  <div class="question-analysis-page">
+    <h2>{{ _('Question Analysis') }}</h2>
+
+    <div class="stats-summary">
+      <div class="stat-card">
+        <div class="value">{{ total_questions }}</div>
+        <div class="label">{{ _('Total Questions') }}</div>
+      </div>
+    </div>
+
+    {% for stat in question_stats %}
+      <div class="question-stat-card">
+        <div class="question-header">
+          <div>
+            <span class="question-title">Q{{ loop.index }}: {{ stat.question.title }}</span>
+            <span class="badge">{{ stat.question.get_question_type_display() }}</span>
+          </div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat">
+            <div class="stat-value">{{ stat.total_answers }}</div>
+            <div class="stat-label">{{ _('Responses') }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">{{ stat.correct_answers }}</div>
+            <div class="stat-label">{{ _('Correct') }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">{{ "%.1f"|format(stat.correct_rate) }}%</div>
+            <div class="stat-label">{{ _('Correct Rate') }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">{{ "%.1f"|format(stat.avg_points) }}</div>
+            <div class="stat-label">{{ _('Avg Points') }} / {{ stat.max_points }}</div>
+          </div>
+        </div>
+
+        {% if stat.choice_distribution %}
+          <div class="choice-distribution">
+            <strong>{{ _('Choice Distribution') }}:</strong>
+            {% for choice in stat.choice_distribution %}
+              <div class="choice-bar">
+                <span class="choice-label">
+                  {{ choice.id }}{% if choice.is_correct %} <i class="fa fa-check green"></i>{% endif %}
+                </span>
+                <div class="choice-bar-container">
+                  <div class="choice-bar-fill {% if choice.is_correct %}correct{% endif %}"
+                       style="width: {{ choice.percentage }}%"></div>
+                </div>
+                <span class="choice-percentage">
+                  {{ choice.count }} ({{ "%.0f"|format(choice.percentage) }}%)
+                </span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    {% else %}
+      <p class="empty-message">{{ _('No questions in this quiz yet.') }}</p>
+    {% endfor %}
+  </div>
+{% endblock %}

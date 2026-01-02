@@ -27,6 +27,7 @@ class NotificationCategory(models.TextChoices):
     TICKET = "ticket", _("Ticket")
     PROBLEM_PUBLIC = "problem_public", _("Problem visibility changed")
     PROBLEM_PRIVATE = "problem_private", _("Problem visibility changed")
+    QUIZ_NEEDS_GRADING = "quiz_needs_grading", _("Quiz answer needs grading")
 
 
 class NotificationManager(models.Manager):

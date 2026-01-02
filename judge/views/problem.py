@@ -63,6 +63,7 @@ from judge.models import (
     SubmissionSource,
     Profile,
     Contest,
+    Quiz,
 )
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
@@ -564,9 +565,14 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
         return self.request.profile
 
     def get_contest_queryset(self):
-        return self.profile.current_contest.contest.contest_problems.order_by(
-            "order"
-        ).values_list("problem_id", flat=True)
+        # Filter out quiz-only entries (where problem_id is None)
+        return (
+            self.profile.current_contest.contest.contest_problems.filter(
+                problem_id__isnull=False
+            )
+            .order_by("order")
+            .values_list("problem_id", flat=True)
+        )
 
     def get_org_query(self, query):
         if not self.profile:
@@ -696,6 +702,15 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             context["current_contest"] = participation.contest
             if participation.contest.is_editable_by(self.request.user):
                 context["can_edit_contest"] = True
+
+            # Get contest quizzes
+            contest_quiz_entries = (
+                participation.contest.contest_problems.filter(quiz__isnull=False)
+                .select_related("quiz")
+                .order_by("order")
+            )
+            context["contest_quizzes"] = contest_quiz_entries
+            context["has_contest_quizzes"] = contest_quiz_entries.exists()
 
         context["has_show_editorial_option"] = True
         context["show_contest_mode"] = self.request.in_contest_mode

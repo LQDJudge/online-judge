@@ -36,6 +36,8 @@ from judge.models import (
     ContestParticipation,
     CourseRole,
     Organization,
+    CourseLessonQuiz,
+    QuizAttempt,
 )
 from judge.models.course import RoleInCourse, EDITABLE_ROLES
 from judge.utils.contest import (
@@ -110,7 +112,7 @@ def bulk_max_case_points_per_problem(students, all_problems):
 def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
     """
     Calculate progress for all students and lessons using pre-fetched data.
-    No additional database queries needed.
+    Includes both problem scores and quiz scores.
 
     Args:
         students: List of Profile objects
@@ -130,6 +132,77 @@ def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
             for p in lesson.get_problems_and_scores()
         ]
 
+    # Pre-fetch all lesson quizzes data with quiz objects for get_total_points()
+    lesson_quizzes_data = {}
+    quiz_totals = {}  # Map quiz_id -> current total points
+    for lesson in lessons:
+        lesson_quiz_objects = list(
+            CourseLessonQuiz.objects.filter(
+                lesson=lesson, is_visible=True
+            ).select_related("quiz")
+        )
+        lesson_quizzes_data[lesson.id] = [
+            {"id": lq.id, "quiz_id": lq.quiz_id, "points": lq.points}
+            for lq in lesson_quiz_objects
+        ]
+        # Store current quiz totals
+        for lq in lesson_quiz_objects:
+            if lq.quiz_id not in quiz_totals:
+                quiz_totals[lq.quiz_id] = lq.quiz.get_total_points()
+
+    # Bulk fetch best quiz attempts for all students and lessons
+    # Build a dict of {(student_id, lesson_quiz_id): best_score_ratio}
+    # Include ALL attempts for a quiz (not just lesson-linked ones)
+    student_ids = [s.id for s in students]
+    lesson_quiz_ids = []
+    quiz_ids = set()
+    lesson_quiz_to_quiz = {}  # Map lesson_quiz_id -> quiz_id
+
+    for lesson_id, quizzes in lesson_quizzes_data.items():
+        for quiz_data in quizzes:
+            lesson_quiz_ids.append(quiz_data["id"])
+            quiz_ids.add(quiz_data["quiz_id"])
+            lesson_quiz_to_quiz[quiz_data["id"]] = quiz_data["quiz_id"]
+
+    # Get best attempts for all students and lesson quizzes
+    best_quiz_scores = {}
+    if quiz_ids and student_ids:
+        from django.db.models import Max
+
+        # Get best score for each (user, quiz) combination - include ALL attempts
+        # regardless of whether they came from a lesson or direct quiz access
+        best_attempts = (
+            QuizAttempt.objects.filter(
+                user_id__in=student_ids,
+                quiz_id__in=quiz_ids,
+                is_submitted=True,
+            )
+            .values("user_id", "quiz_id")
+            .annotate(
+                best_score=Max("score"),
+            )
+        )
+
+        # Build a dict of {(student_id, quiz_id): best_score_ratio}
+        # Use current quiz totals instead of max_score from attempts
+        quiz_best_scores = {}
+        for attempt in best_attempts:
+            quiz_id = attempt["quiz_id"]
+            quiz_max = quiz_totals.get(quiz_id, 0)
+            if quiz_max and quiz_max > 0:
+                ratio = float(attempt["best_score"] or 0) / float(quiz_max)
+            else:
+                ratio = 0
+            quiz_best_scores[(attempt["user_id"], quiz_id)] = ratio
+
+        # Map back to lesson_quiz_id for the grade calculation
+        for lesson_quiz_id, quiz_id in lesson_quiz_to_quiz.items():
+            for student_id in student_ids:
+                if (student_id, quiz_id) in quiz_best_scores:
+                    best_quiz_scores[(student_id, lesson_quiz_id)] = quiz_best_scores[
+                        (student_id, quiz_id)
+                    ]
+
     for student in students:
         student_results = {}
         total_achieved_points = total_lesson_points = 0
@@ -137,6 +210,7 @@ def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
         for lesson in lessons:
             achieved_points = total_points = 0
 
+            # Calculate problem points
             student_points = bulk_problem_points.get(student.id, {})
 
             for lp_data in lesson_problems_data[lesson.id]:
@@ -148,6 +222,15 @@ def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
                         * lp_data["score"]
                     )
                 total_points += lp_data["score"]
+
+            # Calculate quiz points
+            for quiz_data in lesson_quizzes_data[lesson.id]:
+                quiz_points = quiz_data["points"] or 0
+                total_points += quiz_points
+
+                # Get best score ratio for this student and lesson quiz
+                score_ratio = best_quiz_scores.get((student.id, quiz_data["id"]), 0)
+                achieved_points += score_ratio * quiz_points
 
             student_results[lesson.id] = {
                 "achieved_points": achieved_points,
@@ -686,6 +769,54 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
                 self.lesson.get_problems(), self.lesson.get_problems_and_scores()
             )
         ]
+
+        # Get quizzes for this lesson
+        lesson_quizzes = self.lesson.lesson_quizzes.filter(
+            is_visible=True
+        ).select_related("quiz")
+
+        # Get quiz data with user's best scores and attempt info
+        # Show best score from ALL attempts (not just lesson-linked)
+        quiz_data = []
+        for lesson_quiz in lesson_quizzes:
+            quiz = lesson_quiz.quiz
+
+            # Get best attempt from ALL quiz attempts (not just lesson-linked)
+            best_attempt = (
+                QuizAttempt.objects.filter(
+                    quiz=quiz,
+                    user=profile,
+                    is_submitted=True,
+                )
+                .order_by("-score")
+                .first()
+            )
+
+            # But count attempts only for lesson-linked attempts (for max_attempts enforcement)
+            attempts_count = QuizAttempt.objects.filter(
+                quiz=quiz,
+                user=profile,
+                lesson_quiz=lesson_quiz,
+                is_submitted=True,
+            ).count()
+
+            # Check if user can make more attempts
+            can_attempt = lesson_quiz.can_attempt(profile.user)
+
+            quiz_data.append(
+                {
+                    "lesson_quiz": lesson_quiz,
+                    "quiz": quiz,
+                    "best_score": best_attempt.score if best_attempt else None,
+                    "max_score": quiz.get_total_points(),
+                    "attempts_count": attempts_count,
+                    "max_attempts": lesson_quiz.max_attempts,
+                    "can_attempt": can_attempt,
+                    "points": lesson_quiz.points,
+                }
+            )
+
+        context["lesson_quizzes"] = quiz_data
         return context
 
 
@@ -719,6 +850,23 @@ class CourseLessonProblemForm(ModelForm):
 
 CourseLessonProblemFormSet = modelformset_factory(
     CourseLessonProblem, form=CourseLessonProblemForm, extra=5, can_delete=True
+)
+
+
+class CourseLessonQuizForm(ModelForm):
+    class Meta:
+        model = CourseLessonQuiz
+        fields = ["order", "quiz", "points", "max_attempts", "is_visible", "lesson"]
+        widgets = {
+            "quiz": HeavySelect2Widget(
+                data_view="quiz_select2", attrs={"style": "width: 100%"}
+            ),
+            "lesson": forms.HiddenInput(),
+        }
+
+
+CourseLessonQuizFormSet = modelformset_factory(
+    CourseLessonQuiz, form=CourseLessonQuizForm, extra=3, can_delete=True
 )
 
 
@@ -875,6 +1023,25 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
             form.fields["lesson"].initial = target_lesson
         return formset
 
+    def get_quiz_formset(self, post=False, lesson=None):
+        # Use the passed lesson parameter or fall back to self.lesson
+        target_lesson = lesson if lesson is not None else self.lesson
+
+        # Safety check
+        if not target_lesson:
+            raise ValueError("No lesson specified for quiz formset")
+
+        formset = CourseLessonQuizFormSet(
+            data=self.request.POST if post else None,
+            prefix=f"quizzes_{target_lesson.id}",
+            queryset=CourseLessonQuiz.objects.filter(lesson=target_lesson).order_by(
+                "order"
+            ),
+        )
+        for form in formset:
+            form.fields["lesson"].initial = target_lesson
+        return formset
+
     def get_context_data(self, **kwargs):
         context = super(EditCourseLessonsViewNewWindow, self).get_context_data(**kwargs)
 
@@ -886,6 +1053,10 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
             context["problem_formsets"] = {
                 self.lesson.id: self.get_problem_formset(post=False, lesson=self.lesson)
             }
+            # Create quiz formset for the current lesson
+            context["quiz_formset"] = self.get_quiz_formset(
+                post=False, lesson=self.lesson
+            )
 
         context["title"] = _("Edit lessons for %(course_name)s") % {
             "course_name": self.course.name
@@ -959,6 +1130,13 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
                     if problem_formsets.is_valid():
                         problem_formsets.save()
                         for obj in problem_formsets.deleted_objects:
+                            if obj.pk is not None:
+                                obj.delete()
+
+                    quiz_formsets = self.get_quiz_formset(post=True, lesson=self.lesson)
+                    if quiz_formsets.is_valid():
+                        quiz_formsets.save()
+                        for obj in quiz_formsets.deleted_objects:
                             if obj.pk is not None:
                                 obj.delete()
             return self.form_valid(form)
@@ -1123,6 +1301,11 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
                 raise Http404()
 
             self.problems = self.lesson.get_problems()
+            self.lesson_quizzes = list(
+                CourseLessonQuiz.objects.filter(lesson=self.lesson, is_visible=True)
+                .select_related("quiz")
+                .order_by("order")
+            )
             return self.lesson
         except ObjectDoesNotExist:
             raise Http404()
@@ -1132,12 +1315,45 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
 
         bulk_problem_points = bulk_max_case_points_per_problem(students, self.problems)
 
+        # Bulk fetch best quiz scores for all students and lesson quizzes
+        student_ids = [s.id for s in students]
+        quiz_ids = [lq.quiz_id for lq in self.lesson_quizzes]
+
+        # Pre-compute current quiz totals (use quiz.get_total_points() for current value)
+        quiz_totals = {
+            lq.quiz_id: lq.quiz.get_total_points() for lq in self.lesson_quizzes
+        }
+
+        # Get best score for each (user, quiz) combination
+        best_quiz_scores = {}
+        if quiz_ids and student_ids:
+            from django.db.models import Max
+
+            best_attempts = (
+                QuizAttempt.objects.filter(
+                    user_id__in=student_ids,
+                    quiz_id__in=quiz_ids,
+                    is_submitted=True,
+                )
+                .values("user_id", "quiz_id")
+                .annotate(
+                    best_score=Max("score"),
+                )
+            )
+
+            for attempt in best_attempts:
+                best_quiz_scores[(attempt["user_id"], attempt["quiz_id"])] = {
+                    "score": float(attempt["best_score"] or 0),
+                }
+
         grades = {}
         for student in students:
             student_points = bulk_problem_points.get(student.id, {})
             grades[student] = dict(student_points)
 
             achieved_points = total_points = 0
+
+            # Calculate problem points
             for ps in self.lesson.get_problems_and_scores():
                 problem_data = student_points.get(ps["problem_id"])
                 if problem_data and problem_data["case_total"]:
@@ -1147,6 +1363,30 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
                         * ps["score"]
                     )
                 total_points += ps["score"]
+
+            # Calculate quiz points
+            for lesson_quiz in self.lesson_quizzes:
+                quiz_points = lesson_quiz.points or 0
+                total_points += quiz_points
+
+                # Use current quiz total, not the one stored in attempts
+                quiz_max_score = quiz_totals.get(lesson_quiz.quiz_id, 0)
+                quiz_data = best_quiz_scores.get((student.id, lesson_quiz.quiz_id))
+
+                if quiz_data and quiz_max_score > 0:
+                    score_ratio = quiz_data["score"] / quiz_max_score
+                    achieved_points += score_ratio * quiz_points
+                    grades[student][f"quiz_{lesson_quiz.id}"] = {
+                        "score": quiz_data["score"],
+                        "max_score": quiz_max_score,
+                        "achieved": score_ratio * quiz_points,
+                    }
+                else:
+                    grades[student][f"quiz_{lesson_quiz.id}"] = {
+                        "score": 0,
+                        "max_score": quiz_max_score,
+                        "achieved": 0,
+                    }
 
             grades[student]["total"] = {
                 "achieved_points": achieved_points,
@@ -1192,6 +1432,7 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
             {"problem": p, "score": ps["score"]}
             for p, ps in zip(self.problems, self.lesson.get_problems_and_scores())
         ]
+        context["lesson_quizzes"] = self.lesson_quizzes
         return context
 
 

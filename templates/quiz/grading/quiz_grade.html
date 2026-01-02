@@ -1,0 +1,137 @@
+{% extends "two-column-content.html" %}
+
+{% block two_col_media %}
+{# Styles in resources/quiz.scss #}
+{% endblock %}
+
+{% block js_media %}
+  <script>
+    $(function () {
+      var $form = $('form#filter-form');
+
+      function clean_submit() {
+        $form.submit();
+      }
+
+      $('#search-user').select2({
+        placeholder: '{{ _('Search user...') }}',
+        allowClear: true,
+        ajax: {
+          url: '{{ url('quiz_user_search_select2_ajax', quiz.code) }}',
+          delay: 250,
+          cache: true,
+        }
+      });
+
+    // If there's a selected user, we need to add it as an option
+      {% if selected_user and selected_user_id %}
+        var $userSelect = $('#search-user');
+        var option = new Option('{{ selected_user }}', '{{ selected_user_id }}', true, true);
+        $userSelect.append(option).trigger('change');
+      {% endif %}
+
+      $('#search-user').change(clean_submit);
+
+      $('#search-status').select2({
+        placeholder: '{{ _('All Statuses') }}',
+        allowClear: true
+      }).change(clean_submit);
+    });
+  </script>
+{% endblock %}
+
+{% block left_sidebar %}
+  {% include "quiz/quiz-tabs.html" %}
+{% endblock %}
+
+{% block middle_content %}
+  <div class="quiz-grade-page">
+    <h2><i class="fa fa-check-square"></i> {{ _('Grade') }}: {{ quiz.title }}</h2>
+
+    <div class="grade-filters">
+      <form id="filter-form" method="GET" class="inline-form">
+        <div class="filter-group">
+          <label for="search-user">{{ _('User') }}</label>
+          <select id="search-user" name="user" style="width: 200px;">
+            <option value="">{{ _('All Users') }}</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="search-status">{{ _('Status') }}</label>
+          <select id="search-status" name="status" style="width: 150px;">
+            <option value="">{{ _('All') }}</option>
+            <option value="needs_grading" {% if selected_status == 'needs_grading' %}selected{% endif %}>
+              {{ _('Needs Grading') }}
+            </option>
+            <option value="graded" {% if selected_status == 'graded' %}selected{% endif %}>
+              {{ _('Graded') }}
+            </option>
+          </select>
+        </div>
+        {% if selected_user_id or selected_status %}
+          <a href="{{ url('quiz_grade_tab', quiz.code) }}" class="btn btn-default">{{ _('Clear') }}</a>
+        {% endif %}
+      </form>
+    </div>
+
+    {% if attempts %}
+      <div id="grading-list">
+        {% for attempt in attempts %}
+          {% set percentage = (attempt.score / attempt.max_score * 100) if attempt.max_score and attempt.score else 0 %}
+          {% set needs_grading = attempt.has_ungraded_essays is defined and attempt.has_ungraded_essays %}
+          <div class="grading-row">
+            <img class="user-img" loading="lazy" src="{{ gravatar(attempt.user) }}" alt="">
+            <div class="grading-details">
+              <div class="grading-info">
+                <div class="grading-user">
+                  {{ link_user(attempt.user) }}
+                </div>
+                <span class="attempt-number">#{{ attempt.attempt_number }}</span>
+              </div>
+              <div class="grading-result">
+                <div class="state {% if needs_grading %}pending{% else %}graded{% endif %}">
+                  {% if needs_grading %}
+                    {{ _('Pending') }}
+                  {% else %}
+                    {{ _('Graded') }}
+                  {% endif %}
+                </div>
+                <div
+                  class="score {% if percentage >= 90 %}perfect{% elif percentage >= 70 %}good{% elif percentage >= 50 %}average{% else %}poor{% endif %}">
+                  {{ attempt.score|round(1) if attempt.score else 0 }} / {{ attempt.max_score|round(1) if attempt.max_score else
+                  0 }}
+                </div>
+                <span class="time">{{ relative_time(attempt.end_time, format=_("d/m/Y")) if attempt.end_time else '-' }}</span>
+              </div>
+            </div>
+            <div class="grading-usage">
+              <div class="grading-prop">
+                <div>
+                  <a href="{{ url('quiz_result', quiz.code, attempt.id) }}">
+                    <i class="fa fa-eye fa-fw"></i><span class="label">{{ _('view') }}</span>
+                  </a>
+                  &middot;
+                  <a href="{{ url('attempt_grade', attempt.id) }}">
+                    <i class="fa fa-pencil fa-fw"></i><span class="label">{{ _('grade') }}</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if page_obj and page_obj.paginator.num_pages > 1 %}
+        <div style="margin-top: 10px;">
+          {% include "list-pages.html" %}
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="no-grading">
+        <i class="fa fa-check-circle fa-3x green"></i>
+        <h3>{{ _('No attempts to grade') }}</h3>
+        <p>{{ _('All essay questions have been graded, or no attempts match your filters.') }}</p>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

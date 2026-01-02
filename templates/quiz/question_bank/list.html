@@ -1,0 +1,146 @@
+{% extends "three-column-content.html" %}
+
+{% block three_col_media %}
+{# Styles are in resources/quiz.scss - .question-bank-list-page #}
+{% endblock %}
+
+{% block js_media %}
+  <script>
+    $(function () {
+      var $form = $('form#filter-form');
+
+      function clean_submit() {
+        $form.submit();
+      }
+
+      $('#search-question').keypress(function (e) {
+        if (e.keyCode === 13) {
+          $('#go').click();
+        }
+      });
+
+      $('#go').click(clean_submit);
+      $('#question-type').select2().change(clean_submit);
+      $('#question-public').select2().change(clean_submit);
+    });
+  </script>
+{% endblock %}
+
+{% block left_sidebar %}
+  {% include "quiz/quiz-list-tabs.html" %}
+{% endblock %}
+
+{% block right_sidebar %}
+  <div class="right-sidebar">
+    <div class="sidebox">
+      <h3 class="colored-text"><i class="fa fa-search"></i>{{ _('Question search') }}</h3>
+      <div class="sidebox-content">
+        <form id="filter-form" method="GET">
+          <div>
+            <input id="search-question" type="text" name="search" value="{{ search or '' }}"
+                   placeholder="{{ _('Search questions...') }}">
+          </div>
+          <div class="filter-form-group">
+            <label class="bold-text margin-label" for="question-type"><i class="non-italics">{{ _('Question Type') }}</i></label>
+            <select id="question-type" name="type" style="width: 100%;">
+              <option value="">{{ _('All') }}</option>
+              {% for value, label in question_types %}
+                <option value="{{ value }}" {% if selected_type == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-form-group">
+            <label class="bold-text margin-label" for="question-public"><i class="non-italics">{{ _('Visibility') }}</i></label>
+            <select id="question-public" name="public" style="width: 100%;">
+              <option value="">{{ _('All') }}</option>
+              <option value="true" {% if request.GET.get('public') == 'true' %}selected{% endif %}>{{ _('Public') }}</option>
+              <option value="false" {% if request.GET.get('public') == 'false' %}selected{% endif %}>{{ _('Private') }}</option>
+            </select>
+          </div>
+          <div class="form-submit-group">
+            <div id="go" class="action-btn">{{ _('Go') }}</div>
+            {% if request.user.is_superuser %}
+              <a href="{{ url('question_bank_create') }}" class="action-btn">
+                {{ _('Create') }}
+              </a>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block middle_content %}
+  <div class="question-bank-list-page">
+    {% if questions %}
+      <table id="question-table" class="table striped question-table">
+        <thead>
+          <tr>
+            <th class="question-visibility"></th>
+            <th class="question-title">{{ _('Question') }}</th>
+            <th class="question-type">{{ _('Question Type') }}</th>
+            <th class="question-tags">{{ _('Tags') }}</th>
+            <th class="question-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for question in questions %}
+            <tr>
+              <td class="question-visibility">
+                {% if question.is_public %}
+                  <i class="fa fa-globe solved-problem-color" title="{{ _('Public') }}"></i>
+                {% else %}
+                  <i class="fa fa-lock announcement_red" title="{{ _('Private') }}"></i>
+                {% endif %}
+              </td>
+              <td class="question-title">
+                <a href="{{ url('question_bank_detail', question.pk) }}">{{ question.title }}</a>
+              </td>
+              <td class="question-type">
+                <span class="badge">{{ question.get_question_type_display() }}</span>
+              </td>
+              <td class="question-tags">
+                {% for tag in question.get_tags_list()[:3] %}
+                  <span class="tag">{{ tag }}</span>
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endfor %}
+                {% if question.get_tags_list()|length > 3 %}
+                  <span class="text-muted">+{{ question.get_tags_list()|length - 3 }}</span>
+                {% endif %}
+              </td>
+              <td class="question-actions">
+                {% if question.is_editable_by(request.user) %}
+                  <a href="{{ url('question_bank_edit', question.pk) }}" class="btn btn-sm btn-default" title="{{ _('Edit') }}">
+                    <i class="fa fa-pencil"></i>
+                  </a>
+                {% endif %}
+                <a href="{{ url('question_bank_detail', question.pk) }}" class="btn btn-sm btn-default" title="{{ _('View') }}">
+                  <i class="fa fa-eye"></i>
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% if page_obj and page_obj.paginator.num_pages > 1 %}
+        <div class="pagination-wrapper">
+          {% include "list-pages.html" %}
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="no-questions">
+        <i class="fa fa-inbox fa-3x empty-icon"></i>
+        <h3>{{ _('No questions found') }}</h3>
+        <p>{{ _('There are no questions matching your search criteria.') }}</p>
+        {% if request.user.is_superuser %}
+          <a href="{{ url('question_bank_create') }}" class="action-btn">
+            {{ _('Create Question') }}
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

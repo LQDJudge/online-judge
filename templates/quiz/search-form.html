@@ -1,0 +1,17 @@
+<div class="sidebox">
+  <h3 class="colored-text"><i class="fa fa-search"></i>{{ _('Quiz search') }}</h3>
+  <div class="sidebox-content">
+    <form id="filter-form" method="GET">
+      <input id="search-quiz" type="text" name="search" value="{{ search or '' }}"
+             placeholder="{{ _('Search quizzes...') }}">
+      <div class="form-submit-group">
+        <a id="go" class="action-btn">{{ _('Go') }}</a>
+        {% if request.user.is_superuser %}
+          <a href="{{ url('quiz_create') }}" class="action-btn">
+            {{ _('Create Quiz') }}
+          </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>

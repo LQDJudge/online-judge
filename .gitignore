@@ -24,6 +24,7 @@ CLAUDE.md
 Roo.md
 AGENTS.md
 plan/
+.claude/
 
 # Playwright
 /test-results/

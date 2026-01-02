@@ -105,6 +105,10 @@ class ICPCContestFormat(DefaultContestFormat):
                 format_data[str(prob)] = {"time": dt, "points": points, "penalty": prev}
                 score += points
 
+        # Calculate quiz scores using base class method
+        quiz_points = self.calculate_quiz_scores(participation, format_data)
+        score += quiz_points
+
         self.handle_frozen_state(participation, format_data)
         participation.cumtime = max(0, cumtime + penalty)
         participation.score = round(score, self.contest.points_precision)

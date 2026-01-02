@@ -1,0 +1,12 @@
+<div class="left-sidebar">
+  {{ make_tab_item('detail', 'fa fa-info-circle', url('quiz_detail', quiz.code), _('Info')) }}
+  {% if request.user.is_authenticated %}
+    {{ make_tab_item('attempts', 'fa fa-history', url('quiz_attempt_list', quiz.code), _('My Attempts')) }}
+  {% endif %}
+  {% if can_edit %}
+    {{ make_tab_item('grade', 'fa fa-check-square', url('quiz_grade_tab', quiz.code), _('Grade')) }}
+    {{ make_tab_item('stats', 'fa fa-pie-chart', url('quiz_statistics', quiz.code), _('Statistics')) }}
+    {{ make_tab_item('analysis', 'fa fa-bar-chart', url('quiz_question_analysis', quiz.code), _('Analysis')) }}
+    {{ make_tab_item('edit', 'fa fa-edit', url('quiz_edit', quiz.code), _('Edit')) }}
+  {% endif %}
+</div>

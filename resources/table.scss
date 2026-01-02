@@ -27,7 +27,7 @@
     }
 
     tr:last-child td {
-        border-bottom-width: 1px;
+        border-bottom: 1px solid $border_gray;
     }
 
     thead th {

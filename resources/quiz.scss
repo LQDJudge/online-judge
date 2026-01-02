@@ -1,0 +1,2823 @@
+// Quiz System Styles
+@use "vars" as *;
+
+// Bootstrap-style color palette for quiz module
+$color-success: #5cb85c; // Green - correct, graded, completed
+$color-danger: #d9534f; // Red - incorrect, pending, error
+$color-warning: #f0ad4e; // Orange/Yellow - warning, needs attention
+$color-info: #5bc0de; // Cyan - informational
+$color-primary: #337ab7; // Blue - primary action, current state
+
+// Button styling for quiz pages - override Bootstrap's btn-default
+.btn.btn-default {
+  background-color: $background_light_gray !important;
+  border: 1px solid $border_gray !important;
+  color: $widget_black !important;
+  padding: 8px 16px;
+  border-radius: 5px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: darken($background_light_gray, 5%) !important;
+    text-decoration: none;
+  }
+}
+
+// Large button variant
+.btn.btn-default.btn-lg {
+  padding: 10px 20px;
+  font-size: 1rem;
+}
+
+// Quiz join button (positioned to the right like contest join)
+form.quiz-join-pseudotab {
+  display: inline;
+  line-height: 1.7em;
+  margin-left: auto;
+  float: right;
+}
+
+// Grading badge for sidebar (showing pending grading count)
+.grading-badge {
+  background: $color-danger;
+  color: white;
+  padding: 0.1em 0.5em;
+  border-radius: 10px;
+  font-size: 0.75em;
+  font-weight: bold;
+  margin-left: 0.3em;
+  min-width: 18px;
+  text-align: center;
+  display: inline-block;
+}
+
+// Quiz Form Styles (matching organization form pattern)
+.quiz-field-row {
+  margin-bottom: 1em;
+
+  label {
+    display: block;
+    margin-bottom: 0.3em;
+  }
+}
+
+.quiz-field-wrapper {
+  margin-top: 0.4em;
+
+  input[type="text"],
+  input[type="number"],
+  input[type="url"],
+  textarea {
+    width: 100%;
+    padding: 0.5em;
+    border: 1px solid $border_gray;
+    border-radius: 3px;
+    background: white;
+  }
+
+  textarea {
+    min-height: 100px;
+  }
+
+  select {
+    width: 100%;
+    padding: 0.5em;
+    border: 1px solid $border_gray;
+    border-radius: 3px;
+  }
+
+  .select2 {
+    width: 100% !important;
+  }
+}
+
+.quiz-field-wrapper:has(> input[type="checkbox"]) {
+  display: contents;
+}
+
+.quiz-help-text {
+  display: block;
+  color: gray;
+  font-size: 0.85em;
+  margin-top: 0.25em;
+}
+
+// Quiz Create Form
+.quiz-create-form {
+  background: white;
+  padding: 1.5em;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  h2 {
+    margin-top: 0;
+    margin-bottom: 1em;
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid $border_gray;
+  }
+}
+
+// Common Form Actions
+.form-actions {
+  margin-top: 1.5em;
+  padding-top: 1em;
+  border-top: 1px solid $border_gray;
+  display: flex;
+  gap: 0.5em;
+  flex-wrap: wrap;
+}
+
+// Help sidebar content
+.create-help {
+  h4 {
+    margin-bottom: 0.5em;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.5em;
+  }
+
+  li {
+    margin-bottom: 0.3em;
+  }
+}
+
+// Quiz List Page
+.quiz-list-page {
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    h1 {
+      margin: 0;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+  }
+
+  .quiz-table {
+    width: 100%;
+  }
+
+  .no-quizzes {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 4px;
+  }
+}
+
+// Quiz Detail Page
+.quiz-detail-page {
+  max-width: 900px;
+  margin: 0 auto;
+
+  .quiz-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    h1 {
+      margin: 0;
+    }
+  }
+
+  .quiz-info {
+    margin-bottom: 1.5rem;
+
+    .info-row {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      i {
+        opacity: 0.7;
+      }
+    }
+  }
+
+  .quiz-description {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+  }
+
+  .quiz-user-info {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 4px;
+
+    h3 {
+      margin-top: 0;
+    }
+
+    .user-stats {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+
+      .stat-item {
+        .stat-label {
+          opacity: 0.7;
+        }
+
+        .stat-value {
+          font-weight: bold;
+        }
+      }
+    }
+
+    .attempt-history {
+      margin: 1.5rem 0;
+
+      h4 {
+        margin-bottom: 0.5rem;
+      }
+    }
+
+    .start-quiz {
+      margin-top: 1.5rem;
+      text-align: center;
+    }
+  }
+
+  .login-prompt {
+    text-align: center;
+    padding: 2rem;
+    background: white;
+    border-radius: 4px;
+  }
+}
+
+// Quiz Taking Page
+.quiz-attempt-page {
+  max-width: 900px;
+  margin: 0 auto;
+
+  .quiz-timer {
+    position: sticky;
+    top: 0;
+    background: white;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    .quiz-title {
+      font-weight: 500;
+    }
+
+    .timer {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
+  }
+
+  .timer-warning {
+    color: $color-warning;
+  }
+
+  .timer-danger {
+    color: $color-danger;
+  }
+
+  .question-card {
+    background: white;
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+
+    .question-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid $border_gray;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+
+      .question-number {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        .question-type {
+          font-weight: normal;
+          font-size: 0.85rem;
+        }
+      }
+
+      .question-points {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        .save-status {
+          font-size: 0.875rem;
+
+          &.saving {
+            color: $color-warning;
+          }
+
+          &.saved {
+            color: $color-success;
+          }
+
+          &.error {
+            color: $color-danger;
+          }
+        }
+      }
+    }
+
+    .question-content {
+      margin-bottom: 1rem;
+    }
+
+    .question-choices {
+      label {
+        display: block;
+        padding: 0.75rem 1rem;
+        margin: 0.5rem 0;
+        border: 1px solid $border_gray;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+
+        &:hover {
+          background: darken($background_light_gray, 3%);
+        }
+
+        input[type="radio"],
+        input[type="checkbox"] {
+          margin-right: 0.5rem;
+        }
+      }
+    }
+
+    .question-textarea {
+      width: 100%;
+      min-height: 150px;
+      padding: 0.75rem;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+      font-family: inherit;
+      font-size: inherit;
+      background: white;
+
+      &:focus {
+        border-color: $theme_color;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+      }
+    }
+
+    .short-answer-input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: inherit;
+      background: white;
+
+      &:focus {
+        border-color: $theme_color;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+      }
+    }
+
+    // Essay wrapper with markdown toolbar
+    .essay-wrapper {
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      overflow: hidden;
+      background: white;
+
+      &:focus-within {
+        border-color: $theme_color;
+        box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+      }
+
+      .question-textarea {
+        border: none;
+        border-radius: 0;
+
+        &:focus {
+          box-shadow: none;
+        }
+      }
+    }
+
+    .markdown-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      padding: 0.5rem;
+      background: $background_light_gray;
+      border-bottom: 1px solid #ccc;
+
+      button {
+        padding: 0.4rem 0.6rem;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        border-radius: 3px;
+        color: $widget_black;
+        font-size: 0.9rem;
+
+        &:hover {
+          background: darken($background_light_gray, 3%);
+        }
+      }
+
+      .separator {
+        width: 1px;
+        background: #ccc;
+        margin: 0 0.25rem;
+      }
+    }
+  }
+
+  .submit-section {
+    text-align: center;
+    padding: 2rem;
+    background: white;
+    border-radius: 4px;
+
+    p {
+      margin-bottom: 1rem;
+      opacity: 0.8;
+    }
+  }
+}
+
+// Quiz Result Page
+.quiz-result-page {
+  max-width: 900px;
+  margin: 0 auto;
+
+  .result-header {
+    background: white;
+    padding: 2rem;
+    border-radius: 4px;
+    margin-bottom: 2rem;
+    text-align: center;
+
+    h1 {
+      margin: 0 0 1rem;
+    }
+
+    .result-score {
+      font-size: 3rem;
+      font-weight: bold;
+      margin: 1rem 0;
+
+      &.excellent {
+        color: $color-success;
+      }
+
+      &.good {
+        color: $color-info;
+      }
+
+      &.average {
+        color: $color-warning;
+      }
+
+      &.poor {
+        color: $color-danger;
+      }
+    }
+
+    .result-percentage {
+      font-size: 1.5rem;
+      opacity: 0.7;
+    }
+
+    .result-meta {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      opacity: 0.7;
+    }
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .answer-card {
+    background: white;
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid transparent;
+
+    &.correct {
+      border-left-color: $color-success;
+    }
+
+    &.incorrect {
+      border-left-color: $color-danger;
+    }
+
+    &.pending {
+      border-left-color: $color-warning;
+    }
+
+    .answer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .answer-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      i {
+        &.correct {
+          color: $color-success;
+        }
+
+        &.incorrect {
+          color: $color-danger;
+        }
+
+        &.pending {
+          color: $color-warning;
+        }
+      }
+    }
+
+    .user-answer,
+    .correct-answer {
+      padding: 0.75rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+    }
+
+    .user-answer {
+      background: $background_light_gray;
+    }
+
+    .correct-answer {
+      background: rgba(92, 184, 92, 0.1);
+      border: 1px solid $color-success;
+    }
+
+    .explanation {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(91, 192, 222, 0.1);
+      border-radius: 4px;
+      border-left: 3px solid $color-info;
+    }
+
+    .teacher-feedback {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(156, 39, 176, 0.1);
+      border-radius: 4px;
+      border-left: 3px solid #9c27b0;
+
+      .feedback-content {
+        margin-top: 0.5rem;
+      }
+    }
+  }
+
+  .retake-section {
+    text-align: center;
+    padding: 2rem;
+    margin-top: 2rem;
+    background: white;
+    border-radius: 4px;
+  }
+}
+
+// Quiz Edit Page
+.quiz-edit-page {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  .quiz-settings {
+    h2 {
+      margin-top: 0;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+  }
+
+  .quiz-questions {
+    h2 {
+      margin-top: 0;
+    }
+
+    .assigned-questions,
+    .available-questions {
+      margin-top: 1rem;
+
+      h3 {
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+      }
+    }
+
+    .question-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid $border_gray;
+      margin-bottom: 0.5rem;
+      border-radius: 4px;
+      background: white;
+
+      &:hover {
+        background: darken($background_light_gray, 3%);
+      }
+
+      .question-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+    }
+  }
+}
+
+// Question Bank Page
+.question-bank-page {
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    h1 {
+      margin: 0;
+    }
+  }
+
+  .filter-bar {
+    margin-bottom: 1rem;
+
+    .filter-form {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+
+      input[type="text"] {
+        padding: 0.5rem;
+        border: 1px solid $border_gray;
+        border-radius: 4px;
+        min-width: 200px;
+      }
+
+      select {
+        padding: 0.5rem;
+        border: 1px solid $border_gray;
+        border-radius: 4px;
+      }
+    }
+  }
+
+  .no-questions {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 4px;
+  }
+}
+
+// Question Detail Page
+.question-detail-page {
+  max-width: 800px;
+  margin: 0 auto;
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    h1 {
+      margin: 0;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+  }
+
+  .question-meta {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .question-content,
+  .question-choices,
+  .question-correct,
+  .question-explanation,
+  .question-tags,
+  .used-in-quizzes {
+    background: white;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+
+    h3 {
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+    }
+
+    pre {
+      background: $background_light_gray;
+      padding: 0.5rem;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+  }
+
+  .back-link {
+    margin-top: 1.5rem;
+  }
+}
+
+// Grading Dashboard
+.grading-dashboard-page {
+  .filter-bar {
+    margin-bottom: 1rem;
+
+    select {
+      padding: 0.5rem;
+      border: 1px solid $border_gray;
+      border-radius: 4px;
+      min-width: 200px;
+    }
+  }
+
+  .no-grading {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 4px;
+  }
+}
+
+// Grading Page
+.grading-page {
+  max-width: 900px;
+  margin: 0 auto;
+
+  .attempt-info {
+    background: white;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 2rem;
+
+    p {
+      margin: 0.25rem 0;
+    }
+  }
+
+  .answer-card {
+    background: white;
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+
+    .question-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .answer-content {
+      background: $background_light_gray;
+      padding: 1rem;
+      border-radius: 4px;
+      margin: 1rem 0;
+      white-space: pre-wrap;
+    }
+
+    .answer-files {
+      margin: 1rem 0;
+
+      ul {
+        margin: 0.5rem 0;
+        padding-left: 1.5rem;
+      }
+    }
+
+    .grade-input {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ccc;
+      flex-wrap: wrap;
+
+      input[type="number"] {
+        width: 100px;
+        padding: 0.5rem 0.75rem;
+        border: 2px solid #ccc;
+        border-radius: 4px;
+        font-size: inherit;
+        background: white;
+
+        &:focus {
+          border-color: $theme_color;
+          outline: none;
+          box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+        }
+      }
+    }
+
+    .feedback-input {
+      margin-top: 1rem;
+
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+      }
+
+      textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #ccc;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: inherit;
+        resize: vertical;
+        min-height: 80px;
+        background: white;
+        box-sizing: border-box;
+
+        &:focus {
+          border-color: $theme_color;
+          outline: none;
+          box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+        }
+
+        &::placeholder {
+          color: #999;
+        }
+      }
+    }
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+  }
+}
+
+// Statistics Page
+.quiz-stats-page {
+  max-width: 1000px;
+  margin: 0 auto;
+
+  .stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    h1 {
+      margin: 0;
+    }
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+
+    .stat-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 4px;
+      text-align: center;
+
+      .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+      }
+
+      .stat-label {
+        opacity: 0.7;
+        margin-top: 0.25rem;
+      }
+    }
+  }
+
+  .distribution-chart {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 4px;
+
+    .distribution-bar {
+      display: flex;
+      align-items: center;
+      margin: 0.5rem 0;
+
+      .distribution-label {
+        width: 80px;
+        text-align: right;
+        padding-right: 1rem;
+        font-size: 0.9rem;
+      }
+
+      .distribution-fill {
+        height: 24px;
+        background: $color-primary;
+        border-radius: 4px;
+        min-width: 2px;
+        transition: width 0.3s ease;
+      }
+
+      .distribution-count {
+        padding-left: 0.5rem;
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+// Quiz Create/Delete Pages
+.quiz-create-page,
+.quiz-delete-page {
+  max-width: 600px;
+  margin: 0 auto;
+
+  h1 {
+    margin-bottom: 1.5rem;
+  }
+
+  .quiz-form {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 4px;
+
+    .form-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+  }
+
+  .alert {
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+
+    &.alert-warning {
+      background: rgba(240, 173, 78, 0.1);
+      border: 1px solid $color-warning;
+    }
+  }
+}
+
+// Quiz Manage Page
+.quiz-manage-page {
+  max-width: 1200px;
+  margin: 0 auto;
+
+  .manage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    h1 {
+      margin: 0;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+
+    .stat-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 4px;
+      text-align: center;
+
+      .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+      }
+
+      .stat-label {
+        opacity: 0.7;
+      }
+    }
+  }
+
+  .attempts-table {
+    width: 100%;
+  }
+}
+
+// Common badge styles for quiz
+.quiz-list-page,
+.quiz-detail-page,
+.quiz-result-page,
+.question-bank-page {
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 3px;
+    background: #eee;
+    color: inherit;
+
+    &.badge-success {
+      background: $color-success;
+      color: white;
+    }
+
+    &.badge-warning {
+      background: $color-warning;
+      color: white;
+    }
+
+    &.badge-danger {
+      background: $color-danger;
+      color: white;
+    }
+  }
+}
+
+// =====================================================
+// Quiz Take Page - Sidebar and Question Navigation
+// =====================================================
+.quiz-sidebar-box {
+  background: white;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  margin-left: 10px;
+  padding: 0.75rem;
+  border: 1px solid $border_gray;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+
+  h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  @media (max-width: 799px) {
+    margin-left: 0;
+  }
+}
+
+.sidebar-timer {
+  text-align: center;
+  padding: 0.5rem;
+  background: $background_light_gray;
+  border-radius: 4px;
+
+  .timer-value {
+    font-size: 1.4rem;
+    font-weight: bold;
+    font-family: $monospace-fonts;
+  }
+
+  .timer-label {
+    font-size: 0.75rem;
+    color: #666;
+  }
+
+  &.timer-warning .timer-value {
+    color: $color-warning;
+  }
+
+  &.timer-danger .timer-value {
+    color: $color-danger;
+  }
+}
+
+.progress-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.question-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 4px;
+  background: $background_light_gray;
+  border: 1px solid $border_gray;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: darken($background_light_gray, 3%);
+  }
+
+  &.current {
+    background: $color-primary;
+    color: white;
+    border-color: $color-primary;
+  }
+
+  &.answered {
+    background: $color-success;
+    color: white;
+    border-color: $color-success;
+  }
+}
+
+.quiz-header-bar {
+  background: white;
+  padding: 1rem 1.5rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border: 1px solid $border_gray;
+
+  .quiz-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+
+  .quiz-meta {
+    color: #666;
+    font-size: 0.9rem;
+  }
+}
+
+// =====================================================
+// Quiz Take Page - Question Cards (root level for take.html)
+// =====================================================
+.question-card {
+  background: white;
+  border-radius: 4px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid $border_gray;
+
+  .question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid $border_gray;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    .question-number {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      .question-type {
+        font-weight: normal;
+        font-size: 0.85rem;
+      }
+    }
+
+    .question-points {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      .save-status {
+        font-size: 0.875rem;
+
+        &.saving {
+          color: $color-warning;
+        }
+
+        &.saved {
+          color: $color-success;
+        }
+
+        &.error {
+          color: $color-danger;
+        }
+      }
+    }
+  }
+
+  .question-content {
+    margin-bottom: 1rem;
+  }
+
+  .question-choices {
+    label {
+      display: block;
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      border: 1px solid $border_gray;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+
+      &:hover {
+        background: darken($background_light_gray, 3%);
+      }
+
+      input[type="radio"],
+      input[type="checkbox"] {
+        margin-right: 0.5rem;
+      }
+    }
+  }
+
+  .short-answer-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid $border_gray;
+    border-radius: 4px;
+    font-size: inherit;
+    background: white;
+    box-sizing: border-box;
+
+    &:focus {
+      border-color: $theme_color;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+    }
+  }
+}
+
+.submit-section {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: white;
+  border-radius: 4px;
+  margin-top: 1rem;
+  border: 1px solid $border_gray;
+
+  p {
+    margin-bottom: 1rem;
+    color: #666;
+  }
+}
+
+// =====================================================
+// Quiz Take Page - Essay Editor and File Upload
+// =====================================================
+.essay-editor-container {
+  border: 2px solid $border_gray;
+  border-radius: 4px;
+  overflow: hidden;
+  background: white;
+
+  &:focus-within {
+    border-color: $theme_color;
+    box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+  }
+
+  .wmd-button-bar {
+    background: $background_light_gray;
+    padding: 0.25rem;
+    border-bottom: 1px solid $border_gray;
+  }
+
+  .wmd-button-row {
+    margin: 5px;
+    padding: 0;
+  }
+
+  .wmd-button {
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .wmd-input {
+    border: none !important;
+    border-radius: 0;
+    height: 200px;
+    background: white !important;
+    color: inherit;
+
+    &:focus {
+      box-shadow: none;
+    }
+
+    &::placeholder {
+      color: #999;
+    }
+  }
+
+  .wmd-preview {
+    display: none !important;
+  }
+}
+
+// File upload for essay questions
+.essay-file-upload {
+  margin-top: 1rem;
+}
+
+.file-upload-zone {
+  border: 2px dashed $border_gray;
+  border-radius: 4px;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: $background_light_gray;
+  color: #666;
+
+  &:hover {
+    border-color: #999;
+    background: darken($background_light_gray, 3%);
+  }
+
+  &.dragover {
+    border-color: $color-primary;
+    background: rgba(51, 122, 183, 0.1);
+  }
+
+  i {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #999;
+  }
+
+  .file-input {
+    display: none;
+  }
+}
+
+.file-upload-info {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.uploaded-files-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: $background_light_gray;
+    border: 1px solid $border_gray;
+    border-radius: 4px;
+    margin-bottom: 0.4rem;
+    gap: 0.5rem;
+
+    &.uploading {
+      opacity: 0.7;
+    }
+  }
+
+  .file-icon {
+    color: #666;
+  }
+
+  .file-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: $color-primary;
+  }
+
+  a.file-name:hover {
+    text-decoration: underline;
+  }
+
+  .file-size {
+    color: #888;
+    font-size: 0.85rem;
+  }
+
+  .file-delete-btn {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+    transition: color 0.2s;
+
+    &:hover {
+      color: $color-danger;
+    }
+  }
+}
+
+// =====================================================
+// Grading Dashboard
+// =====================================================
+.grading-row {
+  display: flex;
+  transition: background-color linear 0.2s;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  align-items: center;
+  padding: 10px;
+  background: white;
+
+  .user-img {
+    width: 70px;
+    height: 70px;
+    margin-right: 15px;
+    border-radius: 50%;
+  }
+
+  .grading-details {
+    flex-grow: 1;
+    overflow: hidden;
+  }
+
+  .grading-info {
+    flex: 1;
+    display: flex;
+    gap: 5px;
+    font-size: 1.2em;
+    margin-bottom: 10px;
+
+    .grading-user {
+      overflow-wrap: break-word;
+    }
+
+    .grading-quiz {
+      font-weight: 700;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .grading-result {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    gap: 10px;
+
+    .state {
+      padding: 5px 10px;
+      border-radius: 15px;
+      color: white;
+      font-size: 0.9em;
+
+      &.graded {
+        background-color: $color-success;
+      }
+
+      &.pending {
+        background-color: $color-danger;
+      }
+    }
+
+    .score {
+      font-size: 1.2em;
+
+      &.perfect {
+        color: $color-success;
+      }
+
+      &.good {
+        color: $color-info;
+      }
+
+      &.average {
+        color: $color-warning;
+      }
+
+      &.poor {
+        color: $color-danger;
+      }
+    }
+  }
+
+  .grading-usage {
+    margin-left: auto;
+    white-space: nowrap;
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .time {
+      font-weight: bold;
+    }
+  }
+
+  .grading-prop {
+    a {
+      white-space: nowrap;
+    }
+
+    .label {
+      margin-left: 2px;
+    }
+  }
+
+  @media (max-width: 799px) {
+    .user-img {
+      display: none;
+    }
+
+    .grading-prop .label {
+      display: none;
+    }
+  }
+}
+
+
+// Selected answer highlighting (for grading page choices)
+.selected-answer {
+  font-weight: bold;
+  color: $color-primary;
+}
+
+// =====================================================
+// Grading Page - Answer Cards and Inputs
+// =====================================================
+.grading-page {
+  .attempt-info {
+    background: white;
+    padding: 1.25rem 1.5rem;
+    border-radius: 4px;
+    margin-bottom: 2rem;
+    border: 1px solid $border_gray;
+    line-height: 1.8;
+
+    p {
+      margin: 0.25rem 0;
+    }
+  }
+
+  .answer-card {
+    border: 1px solid $border_gray;
+
+    .question-header {
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid $border_gray;
+    }
+
+    .answer-content {
+      background: $background_light_gray;
+      padding: 1rem;
+      border-radius: 4px;
+      margin: 1rem 0;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+  }
+
+  .grade-input {
+    input[type="number"] {
+      width: 100px;
+      padding: 0.5rem 0.75rem;
+      border: 2px solid $border_gray;
+      border-radius: 4px;
+      font-size: inherit;
+      background: white;
+
+      &:focus {
+        border-color: $theme_color;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+      }
+    }
+  }
+
+  .partial-credit-section {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: $background_light_gray;
+    border-radius: 4px;
+  }
+
+  .partial-credit-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .partial-credit-slider {
+    flex: 1;
+    max-width: 200px;
+  }
+
+  .partial-credit-value {
+    font-weight: bold;
+    min-width: 50px;
+  }
+
+  .quick-grade-btns {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: auto;
+
+    button {
+      padding: 0.25rem 0.75rem;
+      border: 1px solid $border_gray;
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+
+      &:hover {
+        background: $theme_color;
+        color: white;
+      }
+    }
+  }
+
+  .feedback-input {
+    margin-top: 1rem;
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: 1.5;
+      resize: vertical;
+      min-height: 80px;
+      background: white;
+      box-sizing: border-box;
+
+      &:focus {
+        border-color: $theme_color;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+      }
+
+      &::placeholder {
+        color: #999;
+      }
+    }
+  }
+
+  .file-attachments {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: $background_light_gray;
+    border-radius: 4px;
+  }
+
+  .file-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0 0;
+
+    li {
+      padding: 0.25rem 0;
+    }
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+
+  .auto-graded-badge {
+    background: $color-success;
+    color: white;
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85em;
+    margin-left: 0.5rem;
+  }
+
+  .needs-grading-badge {
+    background: $color-warning;
+    color: white;
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85em;
+    margin-left: 0.5rem;
+  }
+}
+
+// =====================================================
+// Quiz Result Page - Answer Files
+// =====================================================
+.quiz-result-page {
+  .answer-files {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: $background_light_gray;
+    border-radius: 4px;
+
+    h4 {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.3rem 0;
+    }
+
+    .file-icon {
+      color: #666;
+    }
+
+    .file-name {
+      color: $color-primary;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    .file-size {
+      color: #888;
+      font-size: 0.85rem;
+    }
+  }
+}
+
+// =====================================================
+// Quiz Statistics Page
+// =====================================================
+.page-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.page-title-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 4px;
+  text-align: center;
+  border: 1px solid $border_gray;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.stat-label {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.distribution-chart {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 4px;
+  border: 1px solid $border_gray;
+
+  canvas {
+    max-height: 300px;
+  }
+}
+
+// =====================================================
+// Quiz Create/Edit Container - Shared Styles
+// =====================================================
+.quiz-create-container,
+.quiz-edit-container {
+  background: white;
+  padding: 1.5em 2em;
+  border-radius: 0.5em;
+
+  // Section styles
+  .edit-section {
+    margin-bottom: 2rem;
+
+    h3 {
+      margin: 0 0 1.25em 0;
+      padding-bottom: 0.75em;
+      border-bottom: 1px solid $border_gray;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+  }
+
+  // Questions header
+  .questions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1em;
+
+    h3 {
+      margin: 0;
+      border: none;
+      padding: 0;
+    }
+  }
+
+  // Form actions
+  .form-actions {
+    margin-top: 1.5em;
+    padding-top: 1em;
+    border-top: 1px solid $border_gray;
+    display: flex;
+    gap: 0.5em;
+    flex-wrap: wrap;
+  }
+}
+
+// =====================================================
+// Quiz Edit Page - Question Management
+// =====================================================
+.quiz-create-container,
+.quiz-edit-container {
+  .question-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border: 1px solid $border_gray;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    background: $background_light_gray;
+
+    &:hover {
+      background: darken($background_light_gray, 3%);
+    }
+
+    &.pending-add {
+      border-left: 3px solid $color-success;
+    }
+
+    &.pending-remove {
+      opacity: 0.5;
+      text-decoration: line-through;
+      border-left: 3px solid $color-danger;
+    }
+
+    .drag-handle {
+      cursor: move;
+      color: #666;
+      padding: 0.25rem 0.5rem;
+      margin-right: 0.5rem;
+    }
+
+    .question-info {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .question-order {
+      font-weight: bold;
+      min-width: 1.5rem;
+    }
+
+    .points-input {
+      width: 60px;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid $border_gray;
+      border-radius: 4px;
+      text-align: center;
+      background: white;
+      color: inherit;
+    }
+
+    .question-actions {
+      display: flex;
+      gap: 0.25rem;
+      margin-left: 0.75rem;
+    }
+  }
+
+  .add-question-section {
+    margin-top: 1.5em;
+    padding-top: 1em;
+    border-top: 1px solid $border_gray;
+
+    h4 {
+      margin: 0 0 0.75em 0;
+    }
+  }
+
+  .add-question-form {
+    background: $background_light_gray;
+    padding: 1em;
+    border-radius: 4px;
+    border: 1px solid $border_gray;
+
+    label {
+      font-weight: 500;
+      margin-bottom: 0.3em;
+      display: block;
+    }
+
+    #add-question-points {
+      background: white;
+      color: inherit;
+      border: 1px solid $border_gray;
+      border-radius: 4px;
+      padding: 0.25rem 0.5rem;
+    }
+  }
+
+  .sortable-ghost {
+    opacity: 0.4;
+    background: $color-primary;
+  }
+
+  .sortable-chosen {
+    background: darken($background_light_gray, 5%);
+  }
+
+  // Unsaved changes indicator
+  .unsaved-indicator {
+    color: $color-warning;
+    font-size: 0.85em;
+    margin-left: 1em;
+
+    &.hidden {
+      display: none;
+    }
+  }
+}
+
+// =====================================================
+// Quiz Info Sidebar Styles (used in right sidebar)
+// =====================================================
+.quiz-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5em 0.3em;
+  border-bottom: 1px solid $border_gray;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:first-child {
+    padding-top: 0.3em;
+  }
+}
+
+.quiz-info-label {
+  color: $widget_black;
+  opacity: 0.7;
+  font-size: 0.95em;
+}
+
+.quiz-info-value {
+  font-weight: 600;
+  color: $theme_color;
+  font-size: 1.05em;
+}
+
+// =====================================================
+// Question Bank - Create/Edit Question Container
+// =====================================================
+.question-create-container,
+.question-edit-container {
+  background: white;
+  padding: 1.5em 2em;
+  border-radius: 0.5em;
+
+  // Form section styles
+  .form-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid $border_gray;
+
+    &:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    h3 {
+      margin: 0 0 1.25em 0;
+      padding-bottom: 0.75em;
+      border-bottom: 1px solid $border_gray;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+  }
+
+  // Form actions
+  .form-actions {
+    margin-top: 1.5em;
+    padding-top: 1em;
+    border-top: 1px solid $border_gray;
+    display: flex;
+    gap: 0.5em;
+    flex-wrap: wrap;
+  }
+
+  // Choice editor section
+  .choice-editor-section {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+
+    h4 {
+      margin: 0 0 0.75rem 0;
+      font-weight: 500;
+    }
+  }
+
+  .add-choice-btn {
+    margin-top: 0.5rem;
+  }
+
+  // Short answer editor styles
+  .sa-editor {
+    h4 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+    }
+  }
+
+  .sa-field {
+    margin-bottom: 1rem;
+
+    >label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+  }
+
+  .sa-select {
+    min-width: 200px;
+  }
+
+  .sa-help {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.85em;
+    color: #666;
+  }
+
+  .sa-answer-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  #sa-add-answer {
+    margin-top: 0.5rem;
+  }
+
+  // Right sidebar help styles
+  .help-section {
+    margin-bottom: 1rem;
+
+    h4 {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.95rem;
+    }
+
+    p {
+      margin: 0.25rem 0;
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    ul {
+      margin: 0.5rem 0;
+      padding-left: 1.5rem;
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    li {
+      margin-bottom: 0.25rem;
+    }
+  }
+
+  // Choice editor
+  .choice-editor {
+    padding: 1rem;
+    background: $background_light_gray;
+    border-radius: 4px;
+    border: 1px solid $border_gray;
+  }
+
+  .choice-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid $border_gray;
+
+    .drag-handle {
+      cursor: move;
+      color: #666;
+      padding: 0.25rem;
+    }
+
+    // Style all text inputs in choice items
+    input[type="text"] {
+      padding: 0.5rem;
+      border: 1px solid $border_gray;
+      border-radius: 4px;
+      background: white !important;
+      color: $widget_black !important;
+
+      &::placeholder {
+        color: #999;
+      }
+    }
+
+    .choice-id {
+      width: 50px;
+      text-align: center;
+      margin-right: 5px;
+    }
+
+    .choice-text {
+      flex: 1;
+    }
+
+    .correct-checkbox {
+      width: 20px;
+      height: 20px;
+    }
+
+    .choice-label-badge {
+      background: $background_light_gray;
+      color: inherit;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+  }
+
+  .sa-editor {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: $background_light_gray;
+    border-radius: 4px;
+    border: 1px solid $border_gray;
+
+    .sa-select,
+    .sa-answer-input {
+      padding: 0.5rem;
+      border: 1px solid $border_gray;
+      border-radius: 4px;
+      background: white;
+      color: $widget_black;
+
+      &::placeholder {
+        color: #999;
+      }
+    }
+  }
+}
+
+// =====================================================
+// Quiz Manage Page
+// =====================================================
+.quiz-manage-page {
+  max-width: 1200px;
+  margin: 0 auto;
+
+  .manage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  .manage-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    a {
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      background: $background_light_gray;
+
+      &.active {
+        background: $theme_color;
+        color: white;
+      }
+    }
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 4px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+  }
+
+  .stat-label {
+    color: #666;
+  }
+
+  .attempts-table {
+    width: 100%;
+  }
+}
+
+// =====================================================
+// Quiz List Page
+// =====================================================
+
+// Search input for quiz and question bank pages (in sidebar)
+#search-quiz,
+#search-question {
+  width: 100%;
+  height: 2.3em;
+  box-sizing: border-box;
+}
+
+.no-quizzes {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 4px;
+}
+
+// Quiz list uses .list-contest from contest.scss
+.list-contest .participate-button {
+  text-align: right;
+  margin-top: 0.5em;
+}
+
+// =====================================================
+// Quiz Attempt List Page
+// =====================================================
+.quiz-attempt-list-page {
+  .attempt-stats {
+    display: flex;
+    gap: 2em;
+    margin-bottom: 1em;
+    padding: 1em;
+    background: white;
+    border-radius: 4px;
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    .stat-value {
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+  }
+
+  .attempt-row {
+    display: flex;
+    align-items: center;
+    padding: 0.8em 1em;
+    background: white;
+    border-radius: 4px;
+    margin-bottom: 0.5em;
+    gap: 1em;
+
+    &:hover {
+      background: darken(white, 3%);
+    }
+  }
+
+  .attempt-number {
+    font-weight: bold;
+    min-width: 50px;
+  }
+
+  .attempt-time {
+    flex: 1;
+    font-size: 0.9em;
+
+    .time-secondary {
+      color: #666;
+    }
+  }
+
+  .attempt-score {
+    font-weight: bold;
+    min-width: 100px;
+    text-align: right;
+
+    &.perfect {
+      color: $color-success;
+    }
+
+    &.good {
+      color: $color-info;
+    }
+
+    &.average {
+      color: $color-warning;
+    }
+
+    &.poor {
+      color: $color-danger;
+    }
+  }
+
+  .attempt-status {
+    min-width: 100px;
+  }
+
+  .attempt-actions {
+    min-width: 100px;
+    text-align: right;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 2em;
+
+    .empty-icon {
+      color: #666;
+    }
+  }
+}
+
+// =====================================================
+// Question Analysis Page
+// =====================================================
+.question-analysis-page {
+  .stats-summary {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+  }
+
+  .stat-card {
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    min-width: 150px;
+
+    .value {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .label {
+      color: #666;
+      font-size: 0.9rem;
+    }
+  }
+
+  .question-stat-card {
+    background: white;
+    border-radius: 4px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid $border_gray;
+  }
+
+  .question-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-right: 0.75rem;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 3rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+
+    .stat {
+      min-width: 100px;
+    }
+
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    .stat-label {
+      color: #666;
+      font-size: 0.85rem;
+      margin-top: 0.25rem;
+    }
+  }
+
+  .choice-distribution {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid $border_gray;
+
+    strong {
+      display: block;
+      margin-bottom: 1rem;
+    }
+  }
+
+  .choice-bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .choice-label {
+    width: 50px;
+    font-weight: bold;
+  }
+
+  .choice-bar-container {
+    flex: 1;
+    background: $background_light_gray;
+    height: 24px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0 1rem;
+  }
+
+  .choice-bar-fill {
+    height: 100%;
+    background: $theme_color;
+
+    &.correct {
+      background: $color-success;
+    }
+  }
+
+  .choice-percentage {
+    width: 80px;
+    text-align: right;
+    font-size: 0.9em;
+  }
+}
+
+// =====================================================
+// Question Bank List Page
+// =====================================================
+.question-bank-list-page {
+  #search-question {
+    width: 100%;
+    height: 2.3em;
+  }
+
+  .question-table {
+
+    td,
+    th {
+      vertical-align: middle;
+    }
+
+    th {
+      padding: 0;
+    }
+
+    .question-visibility {
+      width: 50px;
+      text-align: center;
+    }
+
+    .question-type {
+      width: 140px;
+    }
+
+    .question-tags {
+      max-width: 200px;
+    }
+
+    .question-actions {
+      width: 80px;
+      text-align: right;
+    }
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    background: $background_light_gray;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    margin: 0.1rem;
+  }
+
+  .no-questions {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 4px;
+
+    .empty-icon {
+      color: #666;
+    }
+  }
+}
+
+// =====================================================
+// Common utility styles for quiz pages
+// =====================================================
+.help-description {
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.pagination-wrapper {
+  margin-top: 10px;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 2em;
+}
+
+// =====================================================
+// Question Bank Detail Page
+// =====================================================
+.question-detail-page {
+  padding: 1em 0;
+
+  .question-meta {
+    display: flex;
+    gap: 0.75em;
+    margin-top: 0.75em;
+    margin-bottom: 1.5em;
+    flex-wrap: wrap;
+
+    .type-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.4em 0.8em;
+      border-radius: 4px;
+      font-size: 0.9em;
+      font-weight: 600;
+      background: #6c757d;
+      color: white;
+    }
+
+    .visibility-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.4em 0.8em;
+      border-radius: 4px;
+      font-size: 0.9em;
+      font-weight: 600;
+
+      &.public {
+        background: $color-success;
+        color: white;
+      }
+
+      &.private {
+        background: $color-warning;
+        color: white;
+      }
+    }
+  }
+
+  .question-section {
+    margin-bottom: 1.5em;
+
+    h3 {
+      color: $theme_color;
+      font-size: 1.1em;
+      font-weight: bold;
+      margin-bottom: 0.5em;
+      border-bottom: 1px solid $border_gray;
+      padding-bottom: 0.3em;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 1.5em;
+    }
+
+    li {
+      margin-bottom: 0.3em;
+    }
+  }
+
+  .sa-config-display p {
+    margin: 0.3em 0;
+  }
+
+  .question-actions {
+    margin-top: 2em;
+    padding-top: 1em;
+    border-top: 1px solid $border_gray;
+    display: flex;
+    gap: 0.5em;
+
+    .action-btn {
+      padding: 0.5em 1em;
+    }
+  }
+}
+
+// =====================================================
+// Quiz Grade Tab Page
+// =====================================================
+.quiz-grade-page {
+  h2 {
+    margin-top: 0;
+    margin-bottom: 1em;
+
+    i {
+      margin-right: 0.3em;
+    }
+  }
+
+  .grade-filters {
+    margin-bottom: 1.5em;
+    padding: 1em;
+    background: $background_light_gray;
+    border-radius: 8px;
+
+    .inline-form {
+      display: flex;
+      align-items: center;
+      gap: 1em;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+
+      label {
+        font-weight: 600;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .attempt-number {
+    color: $widget_black;
+    opacity: 0.6;
+    font-size: 0.9em;
+  }
+}

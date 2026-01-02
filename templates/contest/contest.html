@@ -154,6 +154,50 @@
       </a>
     </div>
   </div>
+
+  {% if contest_quizzes %}
+    <div class="contest-quizzes" style="margin-top: 1em;">
+      <h2 style="margin-bottom: 0.2em"><i class="fa fa-fw fa-list-alt"></i>{{ _('Quizzes') }}</h2>
+      <table id="contest-quizzes" class="table">
+        <thead>
+          <tr>
+            <th>{{ _('Quiz') }}</th>
+            <th>{{ _('Points') }}</th>
+            <th>{{ _('Questions') }}</th>
+            <th>{{ _('Time Limit') }}</th>
+            <th>{{ _('Attempts') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cp in contest_quizzes %}
+            <tr>
+              <td>
+                <i class="fa fa-list-alt"></i>
+                <a href="{{ url('quiz_detail', cp.quiz.code) }}">{{ cp.quiz.title }}</a>
+              </td>
+              <td>{{ cp.points }}</td>
+              <td>{{ cp.quiz.get_question_count() }}</td>
+              <td>
+                {% if cp.quiz.time_limit %}
+                  {{ cp.quiz.time_limit }} {{ _('min') }}
+                {% else %}
+                  {{ _('No limit') }}
+                {% endif %}
+              </td>
+              <td>
+                {% if cp.max_submissions > 0 %}
+                  {{ cp.max_submissions }}
+                {% else %}
+                  {{ _('Unlimited') }}
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+  <hr>
 {% endif %}
 <div style="clear: both"></div>
 {% include "actionbar/list.html" %}

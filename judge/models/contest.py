@@ -1174,10 +1174,10 @@ def get_contest_problem_ids(contest_id):
         contest_id: The ID of the contest
 
     Returns:
-        A list of problem IDs associated with the contest
+        A list of problem IDs associated with the contest (excludes quiz-only entries)
     """
     return list(
-        ContestProblem.objects.filter(contest_id=contest_id)
+        ContestProblem.objects.filter(contest_id=contest_id, problem_id__isnull=False)
         .order_by("order")
         .values_list("problem_id", flat=True)
     )

@@ -52,7 +52,6 @@ q_mc = QuizQuestion.objects.create(
         {"id": "d", "text": "6"},
     ],
     correct_answers={"answers": "b"},
-    default_points=1.0,
     tags="math, basic, arithmetic",
     explanation="2 + 2 = 4 is a basic arithmetic operation.",
 )
@@ -70,7 +69,6 @@ q_ma = QuizQuestion.objects.create(
         {"id": "d", "text": "5"},
     ],
     correct_answers={"answers": ["a", "b", "d"]},
-    default_points=2.0,
     tags="math, primes",
 )
 print(f"✓ Created MA question: {q_ma}")
@@ -82,7 +80,6 @@ q_tf = QuizQuestion.objects.create(
     content="The Earth is flat.",
     choices=[{"id": "true", "text": "True"}, {"id": "false", "text": "False"}],
     correct_answers={"answers": "false"},
-    default_points=1.0,
 )
 print(f"✓ Created TF question: {q_tf}")
 
@@ -96,7 +93,6 @@ q_sa = QuizQuestion.objects.create(
         "answers": ["Paris", "paris"],
         "case_sensitive": False,
     },
-    default_points=1.0,
 )
 print(f"✓ Created SA question: {q_sa}")
 
@@ -105,7 +101,6 @@ q_es = QuizQuestion.objects.create(
     question_type="ES",
     title="Essay on Programming",
     content="Write a short essay about why programming is important.",
-    default_points=5.0,
 )
 print(f"✓ Created ES question: {q_es}")
 

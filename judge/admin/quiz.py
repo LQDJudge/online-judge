@@ -95,12 +95,9 @@ class QuizQuestionAdmin(CompareVersionAdmin):
             },
         ),
         (
-            _("Points & Feedback"),
+            _("Feedback"),
             {
-                "fields": (
-                    "default_points",
-                    "explanation",
-                ),
+                "fields": ("explanation",),
             },
         ),
         (
@@ -205,6 +202,7 @@ class QuizForm(ModelForm):
         super(QuizForm, self).__init__(*args, **kwargs)
         self.fields["authors"].widget.can_add_related = False
         self.fields["curators"].widget.can_add_related = False
+        self.fields["testers"].widget.can_add_related = False
 
     class Meta:
         widgets = {
@@ -212,6 +210,9 @@ class QuizForm(ModelForm):
                 data_view="profile_select2", attrs={"style": "width: 100%"}
             ),
             "curators": AdminHeavySelect2MultipleWidget(
+                data_view="profile_select2", attrs={"style": "width: 100%"}
+            ),
+            "testers": AdminHeavySelect2MultipleWidget(
                 data_view="profile_select2", attrs={"style": "width: 100%"}
             ),
         }
@@ -262,8 +263,10 @@ class QuizAdmin(CompareVersionAdmin):
             _("Permissions"),
             {
                 "fields": (
+                    "is_public",
                     "authors",
                     "curators",
+                    "testers",
                 ),
             },
         ),
@@ -272,6 +275,7 @@ class QuizAdmin(CompareVersionAdmin):
         "code",
         "title",
         "show_authors",
+        "is_public",
         "time_limit",
         "shuffle_questions",
         "is_shown_answer",
@@ -285,7 +289,12 @@ class QuizAdmin(CompareVersionAdmin):
         "title",
         "authors__user__username",
     )
-    list_filter = ("shuffle_questions", "is_shown_answer", QuizCreatorListFilter)
+    list_filter = (
+        "is_public",
+        "shuffle_questions",
+        "is_shown_answer",
+        QuizCreatorListFilter,
+    )
     form = QuizForm
     date_hierarchy = "created_at"
     inlines = [QuizQuestionAssignmentInline]

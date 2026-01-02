@@ -62,12 +62,21 @@
 
 {% block after_point_head %}
   {% for problem in problems %}
-    <th class="points header problem-score-col" title="{{ problem.problem.name }}"><a
-      href="{{ url('problem_detail', problem.problem.code) }}">
-      {{- contest.get_label_for_problem(loop.index0) }}
-      <div class="point-denominator">{{ problem.points }}</div>
-      <div class="problem-code" style="display: none;">{{ problem.problem.code }}</div>
-    </a></th>
+    {% if problem.problem %}
+      <th class="points header problem-score-col" title="{{ problem.problem.name }}"><a
+        href="{{ url('problem_detail', problem.problem.code) }}">
+        {{- contest.get_label_for_problem(loop.index0) }}
+        <div class="point-denominator">{{ problem.points }}</div>
+        <div class="problem-code" style="display: none;">{{ problem.problem.code }}</div>
+      </a></th>
+    {% elif problem.quiz %}
+      <th class="points header problem-score-col quiz-col" title="{{ problem.quiz.title }}"><a
+        href="{{ url('quiz_detail', problem.quiz.code) }}">
+        {{- contest.get_label_for_problem(loop.index0) }}
+        <div class="point-denominator">{{ problem.points }}</div>
+        <div class="problem-code" style="display: none;">quiz_{{ problem.quiz.id }}</div>
+      </a></th>
+    {% endif %}
   {% endfor %}
 {% endblock %}
 

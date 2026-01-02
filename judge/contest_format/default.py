@@ -55,6 +55,10 @@ class DefaultContestFormat(BaseContestFormat):
             }
             points += result["points"]
 
+        # Calculate quiz scores using base class method
+        quiz_points = self.calculate_quiz_scores(participation, format_data)
+        points += quiz_points
+
         self.handle_frozen_state(participation, format_data)
         participation.cumtime = max(cumtime, 0)
         participation.score = round(points, self.contest.points_precision)
@@ -87,8 +91,14 @@ class DefaultContestFormat(BaseContestFormat):
 
     def get_submission_url(self, participation, contest_problem):
         """
-        Returns the URL for viewing user submissions for a problem.
+        Returns the URL for viewing user submissions for a problem or quiz results.
         """
+        if contest_problem.quiz_id:
+            # For quizzes, link to the quiz attempts AJAX popup
+            return reverse(
+                "contest_quiz_attempts_ajax",
+                args=[self.contest.key, participation.id, contest_problem.quiz_id],
+            )
         return reverse(
             "contest_user_submissions_ajax",
             args=[self.contest.key, participation.id, contest_problem.problem.code],
@@ -132,7 +142,13 @@ class DefaultContestFormat(BaseContestFormat):
         )
 
     def display_user_problem(self, participation, contest_problem, show_final=False):
-        format_data = (participation.format_data or {}).get(str(contest_problem.id))
+        # Check for quiz data first, then regular problem data
+        if contest_problem.quiz_id:
+            format_key = f"quiz_{contest_problem.id}"
+        else:
+            format_key = str(contest_problem.id)
+
+        format_data = (participation.format_data or {}).get(format_key)
         if format_data:
             return self.display_problem_cell(
                 participation,
@@ -170,10 +186,14 @@ class DefaultContestFormat(BaseContestFormat):
         )
 
     def get_problem_breakdown(self, participation, contest_problems):
-        return [
-            (participation.format_data or {}).get(str(contest_problem.id))
-            for contest_problem in contest_problems
-        ]
+        result = []
+        for contest_problem in contest_problems:
+            if contest_problem.quiz_id:
+                format_key = f"quiz_{contest_problem.id}"
+            else:
+                format_key = str(contest_problem.id)
+            result.append((participation.format_data or {}).get(format_key))
+        return result
 
     def get_contest_problem_label_script(self):
         return """

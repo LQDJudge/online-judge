@@ -1,0 +1,36 @@
+<h4>
+  {{ _('Quiz attempts of') }} {{ link_user(profile) }}
+</h4>
+<hr>
+{% if attempts %}
+  <table class="lightbox-submissions">
+    <tbody>
+      {% for attempt in attempts %}
+        <tr>
+          <td class="lightbox-submissions-time">
+            {% trans time=attempt.end_time|date(_("g:i a d/m/Y")) %}
+              {{ time }}
+            {% endtrans %}
+          </td>
+          <td class="case-{{ 'AC' if attempt.score == attempt.max_score else 'WA' }}">
+            {{ attempt.score|floatformat(1) }} / {{ attempt.max_score|floatformat(1) }}
+          </td>
+          <td>
+            ({{ ((attempt.score / attempt.max_score) * 100)|floatformat(0) if attempt.max_score else 0 }}%)
+          </td>
+          <td>
+            &rarr; <a href="{{ url('quiz_result', quiz.code, attempt.id) }}">{{ attempt.id }}</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if best_attempt %}
+    <hr>
+    <p>
+      <strong>{{ _('Best score') }}:</strong> {{ best_attempt.score|floatformat(1) }} / {{ best_attempt.max_score|floatformat(1) }}
+    </p>
+  {% endif %}
+{% else %}
+  <p>{{ _('No attempts yet.') }}</p>
+{% endif %}

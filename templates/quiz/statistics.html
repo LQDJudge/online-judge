@@ -1,0 +1,114 @@
+{% extends "two-column-content.html" %}
+{% set page_type = 'stats' %}
+
+{% block left_sidebar %}
+  {% include "quiz/quiz-tabs.html" %}
+{% endblock %}
+
+{% block two_col_media %}
+{# Styles moved to resources/quiz.scss #}
+{% endblock %}
+
+{% block js_media %}
+  <script src="{{ static('libs/chart.js/Chart.js') }}"></script>
+  <script>
+    $(function() {
+      {% if distribution %}
+        var ctx = document.getElementById('score-distribution-chart').getContext('2d');
+        var labels = [{% for item in distribution %}'{{ item.range }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+        var data = [{% for item in distribution %}{{ item.count }}{% if not loop.last %}, {% endif %}{% endfor %}];
+
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: '{{ _("Number of Attempts") }}',
+              data: data,
+              backgroundColor: 'rgba(192, 57, 43, 0.7)',
+              borderColor: 'rgba(192, 57, 43, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              yAxes: [{
+                ticks: {
+                  beginAtZero: true,
+                  stepSize: 1
+                },
+                scaleLabel: {
+                  display: true,
+                  labelString: '{{ _("Count") }}'
+                }
+              }],
+              xAxes: [{
+                scaleLabel: {
+                  display: true,
+                  labelString: '{{ _("Score Range") }}'
+                }
+              }]
+            },
+            legend: {
+              display: false
+            },
+            tooltips: {
+              callbacks: {
+                label: function(tooltipItem, data) {
+                  return tooltipItem.yLabel + ' {{ _("attempts") }}';
+                }
+              }
+            }
+          }
+        });
+      {% endif %}
+    });
+  </script>
+{% endblock %}
+
+{% block middle_content %}
+  <div class="page-title-row">
+    <h2>{{ _('Statistics') }}</h2>
+    <div class="page-title-actions">
+      <a href="{{ url('quiz_export_csv', quiz.code) }}" class="btn btn-default">
+        <i class="fa fa-download"></i> {{ _('Export Grades (CSV)') }}
+      </a>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value">{{ total_attempts }}</div>
+      <div class="stat-label">{{ _('Total Attempts') }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ unique_users }}</div>
+      <div class="stat-label">{{ _('Unique Users') }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ avg_score|round(1) if avg_score else '-' }}</div>
+      <div class="stat-label">{{ _('Average Score') }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ max_score|round(1) if max_score else '-' }}</div>
+      <div class="stat-label">{{ _('Highest Score') }}</div>
+    </div>
+    {% if std_score %}
+      <div class="stat-card">
+        <div class="stat-value">{{ std_score|round(1) }}</div>
+        <div class="stat-label">{{ _('Std Deviation') }}</div>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if distribution %}
+    <h3>{{ _('Score Distribution') }}</h3>
+    <div class="distribution-chart">
+      <canvas id="score-distribution-chart" height="300"></canvas>
+    </div>
+  {% else %}
+    <p style="text-align: center; padding: 2em;">{{ _('No data available for score distribution.') }}</p>
+  {% endif %}
+{% endblock %}

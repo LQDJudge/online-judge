@@ -1,0 +1,164 @@
+{% extends "three-column-content.html" %}
+
+{% block three_col_media %}
+{# Styles are in resources/quiz.scss - .question-detail-page #}
+{% endblock %}
+
+{% block js_media %}
+  <script>
+    function confirmDeleteQuestion() {
+      {% if used_in_quizzes %}
+        alert('{{ _("Cannot delete: This question is used in one or more quizzes. Remove it from those quizzes first.") }}');
+        return;
+      {% endif %}
+      if (confirm('{{ _("Are you sure you want to delete this question? This action cannot be undone.") }}')) {
+        document.getElementById('delete-question-form').submit();
+      }
+    }
+  </script>
+{% endblock %}
+
+{% block left_sidebar %}
+  {% include "quiz/quiz-list-tabs.html" %}
+{% endblock %}
+
+{% block middle_content %}
+  <div class="question-detail-page">
+    <h2 class="content-title">{{ question.title }}</h2>
+
+    <div class="question-meta">
+      <span class="type-tag">
+        <i class="fa fa-tag"></i>&nbsp;{{ question.get_question_type_display() }}
+      </span>
+      {% if question.is_public %}
+        <span class="visibility-tag public">
+          <i class="fa fa-globe"></i>&nbsp;{{ _('Public') }}
+        </span>
+      {% else %}
+        <span class="visibility-tag private">
+          <i class="fa fa-lock"></i>&nbsp;{{ _('Private') }}
+        </span>
+      {% endif %}
+    </div>
+
+    <div class="question-section content-description">
+      <h3><i class="fa fa-question-circle"></i> {{ _('Question') }}</h3>
+      {{ question.content|markdown|reference|str|safe }}
+    </div>
+
+    {% if question.choices %}
+      <div class="question-section">
+        <h3><i class="fa fa-list-ul"></i> {{ _('Choices') }}</h3>
+        <ul>
+          {% for choice in question.choices %}
+            <li>
+              <strong>{{ choice.id }}:</strong> {{ choice.text }}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {% if question.correct_answers %}
+      <div class="question-section">
+        <h3><i class="fa fa-check"></i> {{ _('Correct Answer(s)') }}</h3>
+        {% if question.question_type in ['MC', 'TF'] %}
+        {# Multiple Choice / True-False: single answer #}
+          {% set correct_id = question.correct_answers.answers %}
+          {% if question.choices %}
+            {% for choice in question.choices %}
+              {% if choice.id == correct_id %}
+                <p><strong>{{ choice.id }}:</strong> {{ choice.text }}</p>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <p>{{ correct_id }}</p>
+          {% endif %}
+        {% elif question.question_type == 'MA' %}
+        {# Multiple Answer: list of correct choices #}
+          {% set correct_ids = question.correct_answers.answers %}
+          {% if question.choices and correct_ids %}
+            <ul>
+              {% for choice in question.choices %}
+                {% if choice.id in correct_ids %}
+                  <li><strong>{{ choice.id }}:</strong> {{ choice.text }}</li>
+                {% endif %}
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>{{ correct_ids }}</p>
+          {% endif %}
+        {% elif question.question_type == 'SA' %}
+        {# Short Answer: show type, case sensitivity, and accepted answers #}
+          {% set sa_config = question.correct_answers %}
+          <div class="sa-config-display">
+            <p>
+              <strong>{{ _('Match Type') }}:</strong>
+              {% if sa_config.type == 'regex' %}
+                {{ _('Regular Expression') }}
+              {% else %}
+                {{ _('Exact Match') }}
+              {% endif %}
+            </p>
+            <p>
+              <strong>{{ _('Case Sensitive') }}:</strong>
+              {% if sa_config.case_sensitive %}
+                {{ _('Yes') }}
+              {% else %}
+                {{ _('No') }}
+              {% endif %}
+            </p>
+            <p><strong>{{ _('Accepted Answers') }}:</strong></p>
+            <ul>
+              {% for answer in sa_config.answers %}
+                <li>{{ answer }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% else %}
+        {# Fallback for other types #}
+        <pre>{{ question.correct_answers|tojson }}</pre>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {% if question.explanation %}
+      <div class="question-section content-description">
+        <h3><i class="fa fa-lightbulb"></i> {{ _('Explanation') }}</h3>
+        {{ question.explanation|markdown|reference|str|safe }}
+      </div>
+    {% endif %}
+
+    {% if question.tags %}
+      <div class="question-section">
+        <h3><i class="fa fa-tags"></i> {{ _('Tags') }}</h3>
+        <p>{{ question.tags }}</p>
+      </div>
+    {% endif %}
+
+    {% if used_in_quizzes %}
+      <div class="question-section">
+        <h3><i class="fa fa-file-alt"></i> {{ _('Used in Quizzes') }}</h3>
+        <ul>
+          {% for quiz in used_in_quizzes %}
+            <li><a href="{{ url('quiz_detail', quiz.code) }}">{{ quiz.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {% if can_edit %}
+      <div class="question-actions">
+        <a href="{{ url('question_bank_edit', question.pk) }}" class="action-btn">
+          <i class="fa fa-edit"></i> {{ _('Edit') }}
+        </a>
+        <form method="post" action="{{ url('question_bank_delete', question.pk) }}" style="display: inline;" id="delete-question-form">
+          {% csrf_token %}
+          <a href="#" class="action-btn background-red" onclick="confirmDeleteQuestion(); return false;">
+            <i class="fa fa-trash"></i> {{ _('Delete') }}
+          </a>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

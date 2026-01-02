@@ -70,6 +70,7 @@
 
       <!-- Problems Table -->
       {% if problem_formset %}
+        <h4>{{_("Problems")}}</h4>
         {{ problem_formset.management_form }}
         <table class="table">
           <thead>
@@ -96,6 +97,36 @@
           </tbody>
         </table>
       {% endif %}
+
+      <!-- Quizzes Table -->
+      {% if quiz_formset %}
+        <h4>{{_("Quizzes")}}</h4>
+        {{ quiz_formset.management_form }}
+        <table class="table">
+          <thead>
+            <tr>
+              {% for field in quiz_formset.forms.0 %}
+                {% if not field.is_hidden %}
+                  <th class="quizzes-{{field.name}}">
+                    {{field.label}}
+                  </th>
+                {% endif %}
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for form in quiz_formset %}
+              <tr>
+                {% for field in form %}
+                  <td class="quizzes-{{field.name}}" title="{{ field.help_text|safe if field.help_text }}" style="{{ 'display:none' if field.is_hidden }}">
+                    {{field}}<div class="red">{{field.errors}}</div>
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
       <hr/>
     </div>
     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -106,8 +137,8 @@
         </a>
       </div>
       {% if current_user_role == 'ADMIN' or current_user_role == 'TE' %}
-        <button type="submit" name="delete_lesson" class="action-btn" onclick="return confirm('{{_('Are you sure you want to delete this lesson?')}}')">
-          {{_('Delete Lesson')}}
+        <button type="submit" name="delete_lesson" class="btn btn-danger" style="padding: 0.5em 1em; border: none; border-radius: 4px; cursor: pointer; background-color: #d9534f; color: white;" onclick="return confirm('{{_('Are you sure you want to delete this lesson?')}}')">
+          <i class="fa fa-trash"></i> {{_('Delete Lesson')}}
         </button>
       {% endif %}
     </div>

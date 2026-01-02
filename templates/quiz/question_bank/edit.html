@@ -1,0 +1,330 @@
+{% extends "three-column-content.html" %}
+
+{% block three_col_media %}
+  {{ form.media }}
+{# Styles are in resources/quiz.scss - .question-edit-container #}
+{% endblock %}
+
+{% block js_media %}
+  <script src="{{ static('quiz.js') }}"></script>
+  <script src="{{ static('jquery-ui.min.js') }}"></script>
+  <script>
+    $(function () {
+      var choiceEditor = null;
+
+      function updateGradingStrategyVisibility() {
+        var type = $('#id_question_type').val();
+        var $gradingField = $('#id_grading_strategy').closest('.quiz-field-row');
+        if (type === 'MA') {
+          $gradingField.show();
+        } else {
+          $gradingField.hide();
+        }
+      }
+
+      function initChoiceEditor() {
+        var type = $('#id_question_type').val();
+        var $choicesField = $('#id_choices').closest('.quiz-field-row');
+        var $correctField = $('#id_correct_answers').closest('.quiz-field-row');
+
+      // Show/hide grading strategy field (only for MA questions)
+        updateGradingStrategyVisibility();
+
+      // Show/hide based on question type
+        if (type === 'MC' || type === 'MA' || type === 'TF') {
+        // Parse existing values
+          var choices = [];
+          var correctAnswers = [];
+
+          try {
+            var choicesVal = $('#id_choices').val();
+            if (choicesVal) choices = JSON.parse(choicesVal);
+          } catch (e) { }
+
+          try {
+            var correctVal = $('#id_correct_answers').val();
+            if (correctVal) {
+              var parsed = JSON.parse(correctVal);
+              if (parsed.answers) {
+                if (Array.isArray(parsed.answers)) {
+                  correctAnswers = parsed.answers;
+                } else {
+                  correctAnswers = [parsed.answers];
+                }
+              }
+            }
+          } catch (e) { }
+
+        // TF, MC, MA all work the same - user adds choices manually
+        // No auto-creation of choices for any type
+
+        // Hide raw JSON fields and SA editor
+          $choicesField.hide();
+          $correctField.hide();
+          $('#sa-editor-container').remove();
+
+        // Show choice editor with title
+          if (!$('#choice-editor-section').length) {
+            var sectionHtml = '<div id="choice-editor-section" class="choice-editor-section">';
+            sectionHtml += '<h4><i class="fa fa-list-ul"></i> {{ _("Answer Choices") }}</h4>';
+            sectionHtml += '<div id="choice-editor-container"></div>';
+            sectionHtml += '</div>';
+          // Insert after shuffle choices field for spacing
+            var $shuffleField = $('#id_shuffle_choices').closest('.quiz-field-row');
+            if ($shuffleField.length) {
+              $shuffleField.after(sectionHtml);
+            } else {
+              $choicesField.after(sectionHtml);
+            }
+          }
+
+          choiceEditor = new ChoiceEditor({
+            container: '#choice-editor-container',
+            inputField: '#id',
+            questionType: type,
+            choices: choices,
+            correctAnswers: correctAnswers
+          });
+
+        // Sync to hidden fields on change
+          $('#choice-editor-container').on('input change', function () {
+            syncChoiceEditor();
+          });
+
+        } else if (type === 'SA') {
+        // Short Answer - show user-friendly editor
+          $('#choice-editor-section').remove();
+          $choicesField.hide();
+          $correctField.hide();
+
+          initShortAnswerEditor();
+
+        } else {
+        // ES - hide all answer fields
+          $('#choice-editor-section').remove();
+          $('#sa-editor-container').remove();
+          $choicesField.hide();
+          $correctField.hide();
+        }
+      }
+
+      function initShortAnswerEditor() {
+      // Parse existing correct_answers
+        var saType = 'exact';
+        var saAnswers = [];
+        var saCaseSensitive = false;
+
+        try {
+          var correctVal = $('#id_correct_answers').val();
+          if (correctVal) {
+            var parsed = JSON.parse(correctVal);
+            saType = parsed.type || 'exact';
+            saAnswers = parsed.answers || [];
+            saCaseSensitive = parsed.case_sensitive || false;
+          }
+        } catch (e) { }
+
+      // Build the editor HTML
+        var html = '<div id="sa-editor-container" class="sa-editor">';
+        html += '<h4>{{ _("Correct Answers Configuration") }}</h4>';
+
+      // Match Type
+        html += '<div class="sa-field">';
+        html += '<label for="sa-type">{{ _("Match Type") }}:</label>';
+        html += '<select id="sa-type" class="sa-select">';
+        html += '<option value="exact"' + (saType === 'exact' ? ' selected' : '') + '>{{ _("Exact Match") }}</option>';
+        html += '<option value="regex"' + (saType === 'regex' ? ' selected' : '') + '>{{ _("Regular Expression") }}</option>';
+        html += '</select>';
+        html += '<span class="sa-help">{{ _("Exact: student answer must match one of the answers. Regex: use regular expression patterns.") }}</span>';
+        html += '</div>';
+
+      // Case Sensitive
+        html += '<div class="sa-field">';
+        html += '<label>';
+        html += '<input type="checkbox" id="sa-case-sensitive"' + (saCaseSensitive ? ' checked' : '') + '>';
+        html += ' {{ _("Case Sensitive") }}';
+        html += '</label>';
+        html += '</div>';
+
+      // Answers list
+        html += '<div class="sa-field">';
+        html += '<label>{{ _("Accepted Answers") }}:</label>';
+        html += '<div id="sa-answers-list">';
+        if (saAnswers.length === 0) {
+          html += renderSaAnswerRow('', 0);
+        } else {
+          for (var i = 0; i < saAnswers.length; i++) {
+            html += renderSaAnswerRow(saAnswers[i], i);
+          }
+        }
+        html += '</div>';
+        html += '<button type="button" class="btn btn-sm btn-success" id="sa-add-answer">';
+        html += '<i class="fa fa-plus"></i> {{ _("Add Answer") }}</button>';
+        html += '</div>';
+
+        html += '</div>';
+
+        var $correctField = $('#id_correct_answers').closest('.quiz-field-row');
+        if (!$('#sa-editor-container').length) {
+          $correctField.after(html);
+        } else {
+          $('#sa-editor-container').replaceWith(html);
+        }
+
+        bindSaEditorEvents();
+      }
+
+      function renderSaAnswerRow(value, index) {
+        var escapedValue = $('<div>').text(value).html();
+        var html = '<div class="sa-answer-row" data-index="' + index + '">';
+        html += '<input type="text" class="sa-answer-input" value="' + escapedValue + '" placeholder="{{ _("Enter an accepted answer...") }}">';
+        html += '<button type="button" class="btn btn-sm btn-danger sa-remove-answer"><i class="fa fa-times"></i></button>';
+        html += '</div>';
+        return html;
+      }
+
+      function bindSaEditorEvents() {
+        var $container = $('#sa-editor-container');
+
+      // Unbind first to prevent duplicates
+        $container.off('click', '#sa-add-answer');
+        $container.off('click', '.sa-remove-answer');
+        $container.off('input change', '#sa-type, #sa-case-sensitive, .sa-answer-input');
+
+      // Add answer
+        $container.on('click', '#sa-add-answer', function () {
+          var index = $('#sa-answers-list .sa-answer-row').length;
+          $('#sa-answers-list').append(renderSaAnswerRow('', index));
+          syncSaEditor();
+        });
+
+      // Remove answer
+        $container.on('click', '.sa-remove-answer', function () {
+          var $row = $(this).closest('.sa-answer-row');
+          if ($('#sa-answers-list .sa-answer-row').length > 1) {
+            $row.remove();
+          } else {
+            $row.find('.sa-answer-input').val('');
+          }
+          syncSaEditor();
+        });
+
+      // Sync on any change
+        $container.on('input change', '#sa-type, #sa-case-sensitive, .sa-answer-input', function () {
+          syncSaEditor();
+        });
+      }
+
+      function syncSaEditor() {
+        var type = $('#sa-type').val() || 'exact';
+        var caseSensitive = $('#sa-case-sensitive').is(':checked');
+        var answers = [];
+
+        $('#sa-answers-list .sa-answer-input').each(function () {
+          var val = $(this).val().trim();
+          if (val) {
+            answers.push(val);
+          }
+        });
+
+        var correctAnswers = {
+          type: type,
+          answers: answers,
+          case_sensitive: caseSensitive
+        };
+
+        $('#id_correct_answers').val(JSON.stringify(correctAnswers));
+      }
+
+      function syncChoiceEditor() {
+        if (!choiceEditor) return;
+
+        var choices = choiceEditor.choices;
+        var correct = choiceEditor.correctAnswers;
+        var type = $('#id_question_type').val();
+
+        $('#id_choices').val(JSON.stringify(choices));
+
+        if (type === 'MA') {
+          $('#id_correct_answers').val(JSON.stringify({ answers: correct }));
+        } else {
+          $('#id_correct_answers').val(JSON.stringify({ answers: correct[0] || '' }));
+        }
+      }
+
+    // Initialize on page load
+      initChoiceEditor();
+
+    // Re-initialize when question type changes
+      $('#id_question_type').on('change', function () {
+        initChoiceEditor();
+      });
+
+    // Sync before form submit
+      $('form.question-form').on('submit', function () {
+        var type = $('#id_question_type').val();
+        if (type === 'MC' || type === 'MA' || type === 'TF') {
+          syncChoiceEditor();
+        } else if (type === 'SA') {
+          syncSaEditor();
+        }
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block left_sidebar %}
+  {% include "quiz/quiz-list-tabs.html" %}
+{% endblock %}
+
+{% block right_sidebar %}
+  <div class="right-sidebar">
+    <div class="sidebox">
+      <h3 class="colored-text"><i class="fa fa-question-circle"></i> {{ _('Help') }}</h3>
+      <div class="sidebox-content">
+        <div class="help-section">
+          <h4><i class="fa fa-list"></i> {{ _('Question Types') }}</h4>
+          <ul>
+            <li><strong>{{ _('Multiple Choice') }}</strong>: {{ _('Single correct answer') }}</li>
+            <li><strong>{{ _('Multiple Answer') }}</strong>: {{ _('Multiple correct answers') }}</li>
+            <li><strong>{{ _('True/False') }}</strong>: {{ _('Binary choice') }}</li>
+            <li><strong>{{ _('Short Answer') }}</strong>: {{ _('Text-based answer') }}</li>
+            <li><strong>{{ _('Essay') }}</strong>: {{ _('Long-form, manually graded') }}</li>
+          </ul>
+        </div>
+
+        <div class="help-section">
+          <h4><i class="fa fa-calculator"></i> {{ _('Grading Strategies') }}</h4>
+          <p class="help-description">{{ _('For Multiple Answer questions:') }}</p>
+          <ul>
+            <li><strong>{{ _('All or Nothing') }}</strong>: {{ _('Full points only if all correct answers selected') }}</li>
+            <li><strong>{{ _('Partial Credit') }}</strong>: {{ _('Gains points for correct, loses for wrong') }}</li>
+            <li><strong>{{ _('Right Minus Wrong') }}</strong>: {{ _('Correct count minus wrong count') }}</li>
+            <li><strong>{{ _('Correct Only') }}</strong>: {{ _('Only gains points for correct selections') }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block middle_content %}
+  <div class="question-edit-container">
+    <h2 style="margin-top: 0;"><i class="fa fa-pencil"></i> {{ _('Edit Question') }}: {{ object.title }}</h2>
+    <hr>
+
+    <form method="post" class="question-form">
+      {% csrf_token %}
+      {% include "quiz/form.html" %}
+
+      <div class="form-actions">
+        <button type="submit" class="action-btn">
+          <i class="fa fa-save"></i> {{ _('Save Changes') }}
+        </button>
+        <a href="{{ url('question_bank_detail', object.pk) }}" class="btn btn-default">
+          {{ _('Cancel') }}
+        </a>
+      </div>
+    </form>
+  </div>
+{% endblock %}
