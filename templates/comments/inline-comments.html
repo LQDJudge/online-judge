@@ -242,7 +242,7 @@
           },
           success: function(response) {
             var $tempDiv = $('<div>').html(response);
-            var $newComments = $tempDiv.find('.compact-comment-list > li');
+            var $newComments = $tempDiv.find('.compact-comment-list').children();
             var $newLoadMore = $tempDiv.find('.inline-load-more');
 
           // Append new comments
