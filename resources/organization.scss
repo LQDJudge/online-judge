@@ -583,3 +583,79 @@
         }
     }
 }
+
+// Post Composer - Facebook-style post creation box
+.post-composer {
+    background: white;
+    border: 1px solid $border_gray;
+    border-radius: 8px;
+    padding: 0.75em;
+    margin-bottom: 1em;
+
+    .composer-trigger {
+        display: flex;
+        align-items: center;
+        gap: 0.75em;
+        text-decoration: none;
+        color: inherit;
+        padding: 0.5em;
+        border-radius: 8px;
+        background: $background_light_gray;
+        transition: background 0.2s;
+
+        &:hover {
+            background: color.adjust($background_light_gray, $lightness: -5%);
+        }
+    }
+
+    .composer-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .composer-placeholder {
+        color: #6b7280;
+        flex: 1;
+    }
+
+    .composer-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4em;
+        padding: 0.4em 0.8em;
+        background: $theme_color;
+        color: white;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.9em;
+        flex-shrink: 0;
+    }
+}
+
+// Mobile responsive for composer
+@media (max-width: 600px) {
+    .post-composer {
+        padding: 0.5em;
+
+        .composer-trigger {
+            padding: 0.4em;
+            flex-wrap: wrap;
+        }
+
+        .composer-avatar {
+            width: 32px;
+            height: 32px;
+        }
+
+        .composer-placeholder {
+            font-size: 0.85em;
+        }
+
+        .composer-btn {
+            font-size: 0.8em;
+            padding: 0.3em 0.6em;
+        }
+    }
+}

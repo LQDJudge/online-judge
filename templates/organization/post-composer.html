@@ -1,0 +1,17 @@
+{% if is_member %}
+  <div class="post-composer">
+    <a href="{{ url('add_organization_blog', organization.id, organization.slug) }}"
+       class="composer-trigger">
+      <img src="{{ gravatar(request.profile.id, 40) }}"
+           alt="{{ request.user.username }}"
+           class="composer-avatar">
+      <div class="composer-placeholder">
+        {{ _('What do you want to share?') }}
+      </div>
+      <span class="composer-btn">
+        <i class="fa fa-pencil"></i>
+        {{ _('Create Post') }}
+      </span>
+    </a>
+  </div>
+{% endif %}

@@ -100,7 +100,7 @@
 {% endblock %}
 
 {% block middle_content %}
-  {% block before_posts %}{% endblock %}
+  {% include "organization/post-composer.html" %}
   {% if is_member or can_edit or organization.is_open %}
     {% include "blog/content.html" %}
   {% else %}
@@ -113,5 +113,4 @@
       </div>
     </div>
   {% endif %}
-  {% block after_posts %}{% endblock %}
 {% endblock %}
