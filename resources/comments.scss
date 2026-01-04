@@ -1181,7 +1181,7 @@
     border: none;
 
     &:hover {
-        background-color: darken($theme_color, 8%);
+        background-color: color.adjust($theme_color, $lightness: -8%);
     }
 
     &:disabled {

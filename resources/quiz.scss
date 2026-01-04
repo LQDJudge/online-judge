@@ -1,5 +1,6 @@
 // Quiz System Styles
 @use "vars" as *;
+@use "sass:color";
 
 // Bootstrap-style color palette for quiz module
 $color-success: #5cb85c; // Green - correct, graded, completed
@@ -24,7 +25,7 @@ $color-primary: #337ab7; // Blue - primary action, current state
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: darken($background_light_gray, 5%) !important;
+    background-color: color.adjust($background_light_gray, $lightness: -5%) !important;
     text-decoration: none;
   }
 }
@@ -379,7 +380,7 @@ form.quiz-join-pseudotab {
         transition: background 0.2s, border-color 0.2s;
 
         &:hover {
-          background: darken($background_light_gray, 3%);
+          background: color.adjust($background_light_gray, $lightness: -3%);
         }
 
         input[type="radio"],
@@ -463,7 +464,7 @@ form.quiz-join-pseudotab {
         font-size: 0.9rem;
 
         &:hover {
-          background: darken($background_light_gray, 3%);
+          background: color.adjust($background_light_gray, $lightness: -3%);
         }
       }
 
@@ -688,7 +689,7 @@ form.quiz-join-pseudotab {
       background: white;
 
       &:hover {
-        background: darken($background_light_gray, 3%);
+        background: color.adjust($background_light_gray, $lightness: -3%);
       }
 
       .question-info {
@@ -1206,7 +1207,7 @@ form.quiz-join-pseudotab {
   transition: all 0.2s;
 
   &:hover {
-    background: darken($background_light_gray, 3%);
+    background: color.adjust($background_light_gray, $lightness: -3%);
   }
 
   &.current {
@@ -1314,7 +1315,7 @@ form.quiz-join-pseudotab {
       transition: background 0.2s, border-color 0.2s;
 
       &:hover {
-        background: darken($background_light_gray, 3%);
+        background: color.adjust($background_light_gray, $lightness: -3%);
       }
 
       input[type="radio"],
@@ -1427,7 +1428,7 @@ form.quiz-join-pseudotab {
 
   &:hover {
     border-color: #999;
-    background: darken($background_light_gray, 3%);
+    background: color.adjust($background_light_gray, $lightness: -3%);
   }
 
   &.dragover {
@@ -1978,7 +1979,7 @@ form.quiz-join-pseudotab {
     background: $background_light_gray;
 
     &:hover {
-      background: darken($background_light_gray, 3%);
+      background: color.adjust($background_light_gray, $lightness: -3%);
     }
 
     &.pending-add {
@@ -2065,7 +2066,7 @@ form.quiz-join-pseudotab {
   }
 
   .sortable-chosen {
-    background: darken($background_light_gray, 5%);
+    background: color.adjust($background_light_gray, $lightness: -5%);
   }
 
   // Unsaved changes indicator
@@ -2438,7 +2439,7 @@ form.quiz-join-pseudotab {
     gap: 1em;
 
     &:hover {
-      background: darken(white, 3%);
+      background: color.adjust(white, $lightness: -3%);
     }
   }
 

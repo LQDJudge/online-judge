@@ -2403,23 +2403,23 @@ msgstr "Ngôn ngữ"
 
 #: judge/models/profile.py:50
 msgid "Snowflakes"
-msgstr ""
+msgstr "Bông tuyết"
 
 #: judge/models/profile.py:51
 msgid "Snow"
-msgstr ""
+msgstr "Tuyết rơi"
 
 #: judge/models/profile.py:52
 msgid "Cherry Blossoms"
-msgstr ""
+msgstr "Hoa anh đào"
 
 #: judge/models/profile.py:53
 msgid "Rain"
-msgstr ""
+msgstr "Mưa"
 
 #: judge/models/profile.py:54
 msgid "Fireflies"
-msgstr ""
+msgstr "Đom đóm"
 
 #: judge/models/profile.py:88
 msgid "organization title"
@@ -2601,7 +2601,7 @@ msgstr "Ảnh nền"
 
 #: judge/models/profile.py:408
 msgid "Dynamic effect"
-msgstr ""
+msgstr "Hiệu ứng động"
 
 #: judge/models/profile.py:659
 msgid "user profiles"
@@ -4941,7 +4941,7 @@ msgstr[0] "Đã lên lịch chấm lại cho %d bài nộp."
 
 #: judge/views/quiz.py:73
 msgid "Only administrators can perform this action."
-msgstr ""
+msgstr "Chỉ quản trị viên mới có thể thực hiện thao tác này."
 
 #: judge/views/quiz.py:106
 msgid "You do not have permission to manage quizzes."
@@ -5179,10 +5179,9 @@ msgid "Question Analysis: %s"
 msgstr "Phân tích câu hỏi: %s"
 
 #: judge/views/quiz.py:2689
-#, fuzzy, python-format
-#| msgid "Grades"
+#, python-format
 msgid "Grade: %s"
-msgstr "Điểm"
+msgstr "Điểm: %s"
 
 #: judge/views/ranked_submission.py:28 judge/views/ranked_submission.py:32
 #, python-format
@@ -5353,10 +5352,8 @@ msgid "You don't have permission to access."
 msgstr "Bạn không có quyền truy cập."
 
 #: judge/views/theme.py:36
-#, fuzzy
-#| msgid "Settings"
 msgid "Theme Settings"
-msgstr "Cài đặt"
+msgstr "Cài đặt giao diện"
 
 #: judge/views/ticket.py:69 judge/views/ticket.py:75
 msgid "Ticket title"
@@ -5565,6 +5562,13 @@ msgid_plural ""
 "          Please correct the errors below.\n"
 "        "
 msgstr[0] ""
+"\n"
+"          Vui lòng sửa lỗi bên dưới.\n"
+"        "
+msgstr[1] ""
+"\n"
+"          Vui lòng sửa các lỗi bên dưới.\n"
+"        "
 
 #: templates/admin/judge/profile/change_form.html:14
 #: templates/admin/judge/profile/change_form.html:17
@@ -5609,7 +5613,7 @@ msgstr "Đã lưu"
 #: templates/base.html:256 templates/blog/list.html:77
 #: templates/user/theme-settings.html:15 templates/user/user-tabs.html:13
 msgid "Theme"
-msgstr ""
+msgstr "Giao diện"
 
 #: templates/base.html:260
 msgid "Stop impersonating"
@@ -9754,6 +9758,9 @@ msgid ""
 "      <b>%(weight)s%%</b>\n"
 "    "
 msgstr ""
+"\n"
+"      <b>%(weight)s%%</b>\n"
+"    "
 
 #: templates/user/pp-row.html:25
 #, python-format
@@ -9767,72 +9774,52 @@ msgstr "%(pp).0fpp"
 
 #: templates/user/theme-settings.html:22
 msgid "Appearance Mode"
-msgstr ""
+msgstr "Chế độ hiển thị"
 
 #: templates/user/theme-settings.html:26
 msgid "Light"
-msgstr ""
+msgstr "Sáng"
 
 #: templates/user/theme-settings.html:30
-#, fuzzy
-#| msgid "Dark Mode"
 msgid "Dark"
-msgstr "Chế độ tối"
+msgstr "Tối"
 
 #: templates/user/theme-settings.html:42
-#, fuzzy
-#| msgid "Custom background"
 msgid "Current Background"
-msgstr "Hình nền tự chọn"
+msgstr "Hình nền hiện tại"
 
 #: templates/user/theme-settings.html:54
-#, fuzzy
-#| msgid "Background"
 msgid "Clear Background"
-msgstr "Hình nền"
+msgstr "Xóa hình nền"
 
 #: templates/user/theme-settings.html:61
-#, fuzzy
-#| msgid "Background"
 msgid "Sample Backgrounds"
-msgstr "Hình nền"
+msgstr "Hình nền mẫu"
 
 #: templates/user/theme-settings.html:77
-#, fuzzy
-#| msgid "No lessons available"
 msgid "No sample backgrounds available."
-msgstr "Không có kì thi nào!"
+msgstr "Không có hình nền mẫu."
 
 #: templates/user/theme-settings.html:85
-#, fuzzy
-#| msgid "Download Sample"
 msgid "Add Sample"
-msgstr "Tải xuống ví dụ"
+msgstr "Thêm mẫu"
 
 #: templates/user/theme-settings.html:89 templates/user/theme-settings.html:246
-#, fuzzy
-#| msgid "Manage tickets"
 msgid "Manage"
-msgstr "Xử lý báo cáo"
+msgstr "Quản lý"
 
 #: templates/user/theme-settings.html:97
-#, fuzzy
-#| msgid "Remove background"
 msgid "Delete Sample Backgrounds"
-msgstr "Gỡ hình nền"
+msgstr "Xóa hình nền mẫu"
 
 #: templates/user/theme-settings.html:115
-#, fuzzy
-#| msgid "system load"
 msgid "Custom Upload"
-msgstr "lưu lượng xử lý"
+msgstr "Tải lên tùy chỉnh"
 
 #: templates/user/theme-settings.html:132
 #: templates/user/theme-settings.html:227
-#, fuzzy
-#| msgid "Email Change"
 msgid "Change"
-msgstr "Thay đổi Email"
+msgstr "Thay đổi"
 
 #: templates/user/theme-settings.html:139 templates/widgets/image.html:28
 msgid "Choose an image"
@@ -9840,25 +9827,21 @@ msgstr "Chọn ảnh"
 
 #: templates/user/theme-settings.html:144
 msgid "Max 5MB. Supported formats: JPG, PNG, WebP, GIF."
-msgstr ""
+msgstr "Tối đa 5MB. Định dạng hỗ trợ: JPG, PNG, WebP, GIF."
 
 #: templates/user/theme-settings.html:146
-#, fuzzy
-#| msgid "Background"
 msgid "Save Background"
-msgstr "Hình nền"
+msgstr "Lưu hình nền"
 
 #: templates/user/theme-settings.html:154
 msgid "Dynamic Effects"
-msgstr ""
+msgstr "Hiệu ứng động"
 
 #: templates/user/theme-settings.html:155
 msgid "Add animated effects to your page. Effects are visible on desktop only."
-msgstr ""
+msgstr "Thêm hiệu ứng động vào trang của bạn. Hiệu ứng chỉ hiển thị trên máy tính."
 
 #: templates/user/theme-settings.html:243
-#, fuzzy
-#| msgid "Closed"
 msgid "Close"
 msgstr "Đóng"
 

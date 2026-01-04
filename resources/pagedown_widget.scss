@@ -1,4 +1,5 @@
 @use "vars" as *;
+@use "sass:color";
 
 .wmd-panel {
     margin: 0;
@@ -331,7 +332,7 @@
             cursor: pointer;
 
             &:hover {
-                background: darken($theme_color, 10%);
+                background: color.adjust($theme_color, $lightness: -10%);
             }
         }
     }
@@ -436,7 +437,7 @@
         transition: all 0.2s ease;
 
         &:hover {
-            background: darken($theme_color, 10%);
+            background: color.adjust($theme_color, $lightness: -10%);
         }
 
         &:disabled {
