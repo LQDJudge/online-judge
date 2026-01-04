@@ -252,6 +252,9 @@
               <a href="{{ url('user_edit_profile') }}">
                 <div class="dropdown-item"><i class="fa fa-gear"></i> {{ _('Settings') }}</div>
               </a>
+              <a href="{{ url('theme_settings') }}">
+                <div class="dropdown-item"><i class="fa fa-palette"></i> {{ _('Theme') }}</div>
+              </a>
               {% if request.user.is_impersonate %}
                 <a href="{{ url('impersonate-stop') }}" data-force_new_page="1">
                   <div class="dropdown-item"><i class="fa fa-eye"></i> {{_('Stop impersonating')}}</div>
@@ -462,6 +465,11 @@
         </footer>
       {% endblock %}
     </div>
+    {% if request.profile and request.profile.dynamic_effect != 'none' %}
+      <div id="dynamic-effects-container"></div>
+      <script>window.DYNAMIC_EFFECT = '{{ request.profile.dynamic_effect }}';</script>
+      <script src="{{ static('dynamic-effects.js') }}"></script>
+    {% endif %}
   </body>
 
 </html>

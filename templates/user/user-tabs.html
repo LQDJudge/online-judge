@@ -10,6 +10,7 @@
   {% if user == request.profile %}
     {{ make_tab('bookmark', 'fa-bookmark', url('user_bookmark'), _('Bookmarks')) }}
     {{ make_tab('edit', 'fa-gear', url('user_edit_profile'), _('Settings')) }}
+    {{ make_tab('theme', 'fa-palette', url('theme_settings'), _('Theme')) }}
   {% else %}
     {% if perms.auth.change_user %}
       {{ make_tab('edit', 'fa-edit', url('admin:auth_user_change', user.user.id), _('Admin User'), force_new_page=True) }}

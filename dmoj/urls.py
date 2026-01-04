@@ -60,6 +60,7 @@ from judge.views import (
     email,
     custom_file_upload,
     quiz,
+    theme,
 )
 from judge.views.problem_data import (
     ProblemDataView,
@@ -460,6 +461,22 @@ urlpatterns = [
     ),
     re_path(r"^user$", user.UserAboutPage.as_view(), name="user_page"),
     re_path(r"^edit/profile/$", user.edit_profile, name="user_edit_profile"),
+    re_path(r"^theme/$", theme.ThemeSettingsView.as_view(), name="theme_settings"),
+    re_path(
+        r"^theme/toggle-darkmode/$",
+        theme.toggle_darkmode_ajax,
+        name="toggle_darkmode_ajax",
+    ),
+    re_path(
+        r"^theme/upload-sample/$",
+        theme.SampleBackgroundUploadView.as_view(),
+        name="upload_sample_background",
+    ),
+    re_path(
+        r"^theme/delete-sample/$",
+        theme.SampleBackgroundDeleteView.as_view(),
+        name="delete_sample_background",
+    ),
     re_path(r"^user/bookmarks", user.UserBookMarkPage.as_view(), name="user_bookmark"),
     re_path(
         r"^user/(?P<user>\w+)",

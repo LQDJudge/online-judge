@@ -1,0 +1,347 @@
+@import 'vars';
+
+.theme-settings-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.theme-section {
+    background: $background_light_gray;
+    border: 1px solid $border_gray;
+    border-radius: $widget_border_radius;
+    padding: 20px;
+    margin-bottom: 20px;
+
+    h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: $widget_black;
+        border-bottom: 1px solid $border_gray;
+        padding-bottom: 10px;
+
+        i {
+            margin-right: 8px;
+        }
+    }
+
+    .section-label {
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: $widget_black;
+    }
+
+    .section-description {
+        color: #666;
+        font-size: 0.9em;
+        margin-bottom: 15px;
+    }
+}
+
+// Mode toggle (Light/Dark)
+.mode-toggle {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+
+    .mode-option {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 40px;
+        border: 2px solid $border_gray;
+        border-radius: $widget_border_radius;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: white;
+
+        &:hover {
+            border-color: $theme_color;
+        }
+
+        &.active {
+            border-color: $theme_color;
+            background: lighten($theme_color, 45%);
+        }
+
+        i {
+            font-size: 2em;
+            margin-bottom: 10px;
+            color: $widget_black;
+        }
+
+        span {
+            color: $widget_black;
+        }
+
+        // Smaller variant for mode buttons
+        &.mode-option-small {
+            padding: 12px 25px;
+
+            i {
+                font-size: 1.4em;
+                margin-bottom: 6px;
+            }
+
+            span {
+                font-size: 0.9em;
+            }
+        }
+    }
+}
+
+// Current background preview
+.current-background-preview {
+    margin-bottom: 20px;
+
+    img {
+        max-width: 300px;
+        max-height: 150px;
+        border-radius: $widget_border_radius;
+        border: 1px solid $border_gray;
+        object-fit: cover;
+    }
+}
+
+// Background actions
+.background-actions {
+    margin-bottom: 20px;
+
+    .inline-form {
+        display: inline-block;
+    }
+
+    .action-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+// Sample backgrounds section
+.sample-backgrounds-section {
+    margin-bottom: 20px;
+
+    .no-samples-message {
+        color: #666;
+        font-style: italic;
+    }
+}
+
+// Background grid
+.background-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.background-card-form {
+    display: contents;
+}
+
+.background-card {
+    display: block;
+    width: 100%;
+    border: 2px solid $border_gray;
+    border-radius: $widget_border_radius;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+    padding: 0;
+    text-align: left;
+
+    &:hover {
+        border-color: $theme_color;
+        transform: scale(1.02);
+    }
+
+    img {
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .bg-name {
+        padding: 8px;
+        text-align: center;
+        background: $background_gray;
+        font-size: 0.85em;
+        color: $widget_black;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+// Admin inline upload (below sample backgrounds)
+.admin-upload-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed $border_gray;
+
+    input[type="file"] {
+        padding: 5px;
+        font-size: 0.9em;
+    }
+
+    .secondary-btn {
+        background: $background_gray;
+        color: $widget_black;
+
+        &:hover {
+            background: darken($background_gray, 5%);
+        }
+    }
+}
+
+// Admin samples manager (hidden by default)
+.admin-samples-manager {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px dashed #e6c300;
+    border-radius: $widget_border_radius;
+
+    .admin-bg-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+    }
+
+    .admin-bg-item {
+        position: relative;
+        border-radius: $widget_border_radius;
+        overflow: hidden;
+
+        img {
+            width: 100%;
+            height: 70px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .delete-bg-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: $announcement_red;
+            color: white;
+            border: none;
+            padding: 5px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+
+            &:hover {
+                background: darken($announcement_red, 10%);
+            }
+        }
+    }
+}
+
+// Custom upload section
+.custom-upload-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid $border_gray;
+
+    .custom-upload-form {
+        margin-top: 10px;
+    }
+
+    .upload-hint {
+        margin-top: 10px;
+        font-size: 0.85em;
+        color: #666;
+    }
+
+    .upload-submit-btn {
+        margin-top: 10px;
+    }
+}
+
+// Effects grid
+.effects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+}
+
+.effect-form {
+    display: contents;
+}
+
+.effect-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+    border: 2px solid $border_gray;
+    border-radius: $widget_border_radius;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+    width: 100%;
+
+    &:hover {
+        border-color: $theme_color;
+    }
+
+    &.selected {
+        border-color: $theme_color;
+        background: lighten($theme_color, 45%);
+    }
+
+    .effect-icon {
+        width: 40px;
+        height: 40px;
+        background: $background_gray;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
+
+        i {
+            font-size: 1.2em;
+            color: $widget_black;
+        }
+    }
+
+    span {
+        color: $widget_black;
+        font-size: 0.85em;
+        text-align: center;
+    }
+}
+
+// Responsive adjustments
+@media (max-width: 600px) {
+    .theme-settings-page {
+        padding: 10px;
+    }
+
+    .mode-toggle {
+        .mode-option.mode-option-small {
+            padding: 10px 20px;
+        }
+    }
+
+    .background-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+
+    .effects-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+
+    .admin-samples-manager .admin-bg-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+}
