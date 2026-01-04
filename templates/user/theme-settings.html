@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block js_media %}
+  <script src="{{ static('theme-settings.js') }}"></script>
+{% endblock %}
+
+{% block title_row %}
+  {% include "tabs-base.html" %}
+{% endblock %}
+
+{% block tabs %}
+  {{ make_tab('about', 'fa-info-circle', url('user_page', request.profile.user.username), _('About')) }}
+  {{ make_tab('bookmark', 'fa-bookmark', url('user_bookmark'), _('Bookmarks')) }}
+  {{ make_tab('edit', 'fa-gear', url('user_edit_profile'), _('Settings')) }}
+  {{ make_tab('theme', 'fa-palette', url('theme_settings'), _('Theme')) }}
+{% endblock %}
+
+{% block body %}
+  <div class="theme-settings-page">
+  <!-- Dark Mode Section -->
+    <section class="theme-section">
+      <h3><i class="fa fa-adjust"></i> {{ _('Appearance Mode') }}</h3>
+      <div class="mode-toggle">
+        <div class="mode-option mode-option-small {{ '' if use_darkmode else 'active' }}" data-mode="light">
+          <i class="fa fa-sun"></i>
+          <span>{{ _('Light') }}</span>
+        </div>
+        <div class="mode-option mode-option-small {{ 'active' if use_darkmode else '' }}" data-mode="dark">
+          <i class="fa fa-moon"></i>
+          <span>{{ _('Dark') }}</span>
+        </div>
+      </div>
+    </section>
+
+  <!-- Background Section -->
+    <section class="theme-section">
+      <h3><i class="fa fa-image"></i> {{ _('Background') }}</h3>
+
+    <!-- Current Background Preview -->
+      {% if current_background_url %}
+        <div class="current-background-preview">
+          <p class="section-label">{{ _('Current Background') }}:</p>
+          <img src="{{ current_background_url }}" alt="Current background">
+        </div>
+      {% endif %}
+
+      <div class="background-actions">
+      <!-- Clear Background -->
+        <form method="post" class="inline-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="clear_background">
+          <button type="submit" class="action-btn {% if not current_background_url %}disabled{% endif %}"
+                  {% if not current_background_url %}disabled{% endif %}>
+            <i class="fa fa-times"></i> {{ _('Clear Background') }}
+          </button>
+        </form>
+      </div>
+
+    <!-- Sample Backgrounds -->
+      <div class="sample-backgrounds-section">
+        <p class="section-label">{{ _('Sample Backgrounds') }}:</p>
+        {% if sample_backgrounds %}
+          <div class="background-grid">
+            {% for bg in sample_backgrounds %}
+              <form method="post" class="background-card-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="select_sample">
+                <input type="hidden" name="sample_filename" value="{{ bg.filename }}">
+                <button type="submit" class="background-card" title="{{ bg.name }}">
+                  <img src="{{ bg.url }}" alt="{{ bg.name }}">
+                  <div class="bg-name">{{ bg.name }}</div>
+                </button>
+              </form>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="no-samples-message">{{ _('No sample backgrounds available.') }}</p>
+        {% endif %}
+
+      <!-- Admin: Upload Sample Background (inline) -->
+        {% if is_superuser %}
+          <div class="admin-upload-inline">
+            <input type="file" id="sample-upload-file" accept="image/*">
+            <button type="button" id="upload-sample-btn" class="action-btn">
+              <i class="fa fa-plus"></i> {{ _('Add Sample') }}
+            </button>
+            {% if sample_backgrounds %}
+              <button type="button" id="manage-samples-btn" class="action-btn secondary-btn">
+                <i class="fa fa-cog"></i> {{ _('Manage') }}
+              </button>
+            {% endif %}
+          </div>
+
+        <!-- Admin: Delete samples modal/section (hidden by default) -->
+          {% if sample_backgrounds %}
+            <div id="admin-samples-manager" class="admin-samples-manager" style="display: none;">
+              <p class="section-label">{{ _('Delete Sample Backgrounds') }}:</p>
+              <div class="admin-bg-grid">
+                {% for bg in sample_backgrounds %}
+                  <div class="admin-bg-item" data-filename="{{ bg.filename }}">
+                    <img src="{{ bg.url }}" alt="{{ bg.name }}">
+                    <button type="button" class="delete-bg-btn" data-filename="{{ bg.filename }}" title="{{ _('Delete') }}">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+        {% endif %}
+      </div>
+
+    <!-- Custom Upload -->
+      <div class="custom-upload-section">
+        <p class="section-label">{{ _('Custom Upload') }}:</p>
+        <form method="post" enctype="multipart/form-data" class="custom-upload-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="upload_custom">
+          <div class="image-file-widget" data-widget-id="image-widget-custom-bg">
+            {% if current_background_url %}
+              <div class="current-image">
+                <a href="{{ current_background_url }}" data-featherlight="image" data-featherlight-variant="image-widget-lightbox">
+                  <img src="{{ current_background_url }}" style="max-width: 150px; max-height: 100px;" alt="Current background">
+                  <div class="image-overlay">
+                    <i class="fa fa-search-plus"></i>
+                  </div>
+                </a>
+              </div>
+              <div class="image-actions">
+                <label class="change-image">
+                  <i class="fa fa-upload"></i>
+                  <span>{{ _('Change') }}</span>
+                  <input type="file" name="custom_background" class="hidden-file-input" accept="image/*" data-widget-target="image-widget-custom-bg">
+                </label>
+              </div>
+            {% else %}
+              <label class="upload-area">
+                <i class="fa fa-cloud-upload"></i>
+                <span>{{ _('Choose an image') }}</span>
+                <input type="file" name="custom_background" class="hidden-file-input" accept="image/*" data-widget-target="image-widget-custom-bg">
+              </label>
+            {% endif %}
+          </div>
+          <p class="upload-hint">{{ _('Max 5MB. Supported formats: JPG, PNG, WebP, GIF.') }}</p>
+          <button type="submit" class="action-btn upload-submit-btn" style="display: none;">
+            <i class="fa fa-check"></i> {{ _('Save Background') }}
+          </button>
+        </form>
+      </div>
+    </section>
+
+  <!-- Dynamic Effects Section -->
+    <section class="theme-section">
+      <h3><i class="fa fa-sparkles"></i> {{ _('Dynamic Effects') }}</h3>
+      <p class="section-description">{{ _('Add animated effects to your page. Effects are visible on desktop only.') }}</p>
+
+      <div class="effects-grid">
+        {% for effect_key, effect_name in dynamic_effects %}
+          <form method="post" class="effect-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_effect">
+            <input type="hidden" name="dynamic_effect" value="{{ effect_key }}">
+            <button type="submit" class="effect-option {{ 'selected' if profile.dynamic_effect == effect_key else '' }}">
+              <div class="effect-icon">
+                {% if effect_key == 'none' %}
+                  <i class="fa fa-ban"></i>
+                {% elif effect_key == 'snowflakes' %}
+                  <i class="fa fa-snowflake"></i>
+                {% elif effect_key == 'snow' %}
+                  <i class="fa fa-cloud"></i>
+                {% elif effect_key == 'cherry_blossoms' %}
+                  <i class="fa fa-fan"></i>
+                {% elif effect_key == 'rain' %}
+                  <i class="fa fa-cloud-rain"></i>
+                {% elif effect_key == 'fireflies' %}
+                  <i class="fa fa-lightbulb"></i>
+                {% endif %}
+              </div>
+              <span>{{ effect_name }}</span>
+            </button>
+          </form>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
+  <input type="hidden" id="upload-url" value="{{ url('upload_sample_background') }}">
+  <input type="hidden" id="delete-url" value="{{ url('delete_sample_background') }}">
+  <input type="hidden" id="toggle-darkmode-url" value="{{ url('toggle_darkmode_ajax') }}">
+
+  <script>
+    (function() {
+  // Custom background upload preview
+      var customBgInput = document.querySelector('input[name="custom_background"]');
+      var submitBtn = document.querySelector('.upload-submit-btn');
+
+      if (customBgInput && submitBtn) {
+        customBgInput.addEventListener('change', function(e) {
+          var file = e.target.files[0];
+          if (file && file.type.startsWith('image/')) {
+            submitBtn.style.display = 'inline-block';
+
+        // Preview the image
+            var reader = new FileReader();
+            reader.onload = function(event) {
+              var widget = document.querySelector('[data-widget-id="image-widget-custom-bg"]');
+              var currentImage = widget.querySelector('.current-image');
+              var uploadArea = widget.querySelector('.upload-area');
+
+              if (currentImage) {
+                var img = currentImage.querySelector('img');
+                var link = currentImage.querySelector('a');
+                if (img) {
+                  img.src = event.target.result;
+                }
+                if (link) {
+                  link.href = event.target.result;
+                }
+              } else if (uploadArea) {
+                var preview = document.createElement('div');
+                preview.className = 'current-image';
+                preview.innerHTML = '<a href="' + event.target.result + '" data-featherlight="image">' +
+                '<img src="' + event.target.result + '" style="max-width: 150px; max-height: 100px;" alt="Selected image">' +
+                '<div class="image-overlay"><i class="fa fa-search-plus"></i></div></a>';
+                widget.insertBefore(preview, uploadArea);
+                uploadArea.querySelector('span').textContent = '{{ _("Change") }}';
+                uploadArea.querySelector('i').className = 'fa fa-upload';
+              }
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+
+  // Manage samples toggle
+      var manageBtn = document.getElementById('manage-samples-btn');
+      var managerSection = document.getElementById('admin-samples-manager');
+      if (manageBtn && managerSection) {
+        manageBtn.addEventListener('click', function() {
+          if (managerSection.style.display === 'none') {
+            managerSection.style.display = 'block';
+            manageBtn.innerHTML = '<i class="fa fa-times"></i> {{ _("Close") }}';
+          } else {
+            managerSection.style.display = 'none';
+            manageBtn.innerHTML = '<i class="fa fa-cog"></i> {{ _("Manage") }}';
+          }
+        });
+      }
+    })();
+  </script>
+{% endblock %}

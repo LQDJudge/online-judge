@@ -73,6 +73,9 @@
     {{ make_tab_item('blog', 'fa fa-rss', url('home'), _('News')) }}
     {{ make_tab_item('comment', 'fa fa-comments', url('comment_feed'), _('Comment')) }}
     {{ make_tab_item('ticket', 'fa fa-question-circle', url('ticket_feed'), _('Ticket')) }}
+    {% if request.user.is_authenticated %}
+      {{ make_tab_item('theme', 'fa fa-palette', url('theme_settings'), _('Theme')) }}
+    {% endif %}
     {{ make_tab_item('event', 'fa fa-calendar', '#', _('Events')) }}
   </div>
 {% endblock %}

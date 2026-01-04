@@ -33,6 +33,7 @@ __all__ = [
     "OrganizationRequest",
     "Friend",
     "OrganizationModerationLog",
+    "DYNAMIC_EFFECT_CHOICES",
 ]
 
 
@@ -42,6 +43,15 @@ TSHIRT_SIZES = (
     ("L", "Large (L)"),
     ("XL", "Extra Large (XL)"),
     ("XXL", "2 Extra Large (XXL)"),
+)
+
+DYNAMIC_EFFECT_CHOICES = (
+    ("none", _("None")),
+    ("snowflakes", _("Snowflakes")),
+    ("snow", _("Snow")),
+    ("cherry_blossoms", _("Cherry Blossoms")),
+    ("rain", _("Rain")),
+    ("fireflies", _("Fireflies")),
 )
 
 
@@ -390,6 +400,12 @@ class Profile(CacheableModel):
         null=True,
         blank=True,
         verbose_name=_("Background image"),
+    )
+    dynamic_effect = models.CharField(
+        max_length=30,
+        choices=DYNAMIC_EFFECT_CHOICES,
+        default="none",
+        verbose_name=_("Dynamic effect"),
     )
 
     @classmethod
