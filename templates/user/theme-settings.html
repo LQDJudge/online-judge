@@ -232,21 +232,6 @@
           }
         });
       }
-
-  // Manage samples toggle
-      var manageBtn = document.getElementById('manage-samples-btn');
-      var managerSection = document.getElementById('admin-samples-manager');
-      if (manageBtn && managerSection) {
-        manageBtn.addEventListener('click', function() {
-          if (managerSection.style.display === 'none') {
-            managerSection.style.display = 'block';
-            manageBtn.innerHTML = '<i class="fa fa-times"></i> {{ _("Close") }}';
-          } else {
-            managerSection.style.display = 'none';
-            manageBtn.innerHTML = '<i class="fa fa-cog"></i> {{ _("Manage") }}';
-          }
-        });
-      }
     })();
   </script>
 {% endblock %}

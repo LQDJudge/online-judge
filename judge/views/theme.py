@@ -1,9 +1,9 @@
 import os
-import shutil
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.files import File
 from django.core.files.storage import default_storage
 from django.http import (
     HttpResponseRedirect,
@@ -63,38 +63,30 @@ class ThemeSettingsView(LoginRequiredMixin, TemplateView):
             if sample_filename:
                 sample_path = os.path.join(SAMPLE_BACKGROUNDS_DIR, sample_filename)
                 if os.path.exists(sample_path):
-                    # Copy sample to user's background
-                    from judge.utils.files import (
-                        generate_image_filename,
-                        delete_old_image_files,
-                    )
+                    # Delete old background files BEFORE saving the new one
+                    from judge.utils.files import delete_old_image_files
 
-                    # Delete old background files
-                    delete_old_image_files(
-                        settings.DMOJ_PROFILE_IMAGE_ROOT, f"bg_user_{profile.id}"
-                    )
+                    if profile.background_image:
+                        # Delete the old file
+                        old_path = profile.background_image.path
+                        if os.path.exists(old_path):
+                            os.remove(old_path)
 
-                    # Generate new filename
-                    new_filename = generate_image_filename(
-                        f"bg_user_{profile.id}", sample_filename
-                    )
-                    new_path = os.path.join(
-                        settings.MEDIA_ROOT,
-                        settings.DMOJ_PROFILE_IMAGE_ROOT,
-                        new_filename,
-                    )
+                    # Copy sample to user's background using Django's File API
+                    # Django's upload_to function will handle the filename generation
+                    with open(sample_path, "rb") as f:
+                        # save=False to prevent triggering the model save
+                        profile.background_image.save(
+                            sample_filename, File(f), save=False
+                        )
 
-                    # Ensure directory exists
-                    os.makedirs(os.path.dirname(new_path), exist_ok=True)
+                    # Now save the profile WITHOUT triggering the delete logic
+                    # Use update() to bypass the save() method
+                    from judge.models import Profile
 
-                    # Copy file
-                    shutil.copy2(sample_path, new_path)
-
-                    # Update profile
-                    profile.background_image = os.path.join(
-                        settings.DMOJ_PROFILE_IMAGE_ROOT, new_filename
+                    Profile.objects.filter(pk=profile.pk).update(
+                        background_image=profile.background_image.name
                     )
-                    profile.save(update_fields=["background_image"])
 
         elif action == "update_effect":
             # Update dynamic effect
@@ -118,39 +110,27 @@ class ThemeSettingsView(LoginRequiredMixin, TemplateView):
                 if uploaded_file.size > 5 * 1024 * 1024:
                     return HttpResponseRedirect(reverse("theme_settings"))
 
-                from judge.utils.files import (
-                    generate_image_filename,
-                    delete_old_image_files,
+                # Delete old background files BEFORE saving the new one
+                if profile.background_image:
+                    # Delete the old file
+                    old_path = profile.background_image.path
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
+
+                # Save file using Django's File API
+                # Django's upload_to function will handle the filename generation
+                # save=False to prevent triggering the model save
+                profile.background_image.save(
+                    uploaded_file.name, uploaded_file, save=False
                 )
 
-                # Delete old background files
-                delete_old_image_files(
-                    settings.DMOJ_PROFILE_IMAGE_ROOT, f"bg_user_{profile.id}"
-                )
+                # Now save the profile WITHOUT triggering the delete logic
+                # Use update() to bypass the save() method
+                from judge.models import Profile
 
-                # Generate new filename
-                new_filename = generate_image_filename(
-                    f"bg_user_{profile.id}", uploaded_file.name
+                Profile.objects.filter(pk=profile.pk).update(
+                    background_image=profile.background_image.name
                 )
-                new_path = os.path.join(
-                    settings.MEDIA_ROOT,
-                    settings.DMOJ_PROFILE_IMAGE_ROOT,
-                    new_filename,
-                )
-
-                # Ensure directory exists
-                os.makedirs(os.path.dirname(new_path), exist_ok=True)
-
-                # Save file
-                with open(new_path, "wb+") as destination:
-                    for chunk in uploaded_file.chunks():
-                        destination.write(chunk)
-
-                # Update profile
-                profile.background_image = os.path.join(
-                    settings.DMOJ_PROFILE_IMAGE_ROOT, new_filename
-                )
-                profile.save(update_fields=["background_image"])
 
         return HttpResponseRedirect(reverse("theme_settings"))
 

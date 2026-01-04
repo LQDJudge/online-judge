@@ -13,20 +13,27 @@ def delete_old_image_files(directory, base_filename):
     Args:
         directory: The directory where images are stored (relative to MEDIA_ROOT)
         base_filename: The base filename prefix (e.g., 'user_1')
-                      Will match files like 'user_1_abc123.png'
+                      Will match files like 'user_1_abc123.png' and 'user_1.png'
     """
     if not directory or not base_filename:
         return
 
     full_path = os.path.join(settings.MEDIA_ROOT, directory)
-    # Match pattern like 'user_1_*.ext' to handle random suffix
-    pattern = os.path.join(full_path, f"{base_filename}_*.*")
 
-    for file_path in glob.glob(pattern):
-        try:
-            os.remove(file_path)
-        except OSError:
-            pass
+    # Match both patterns:
+    # 1. 'user_1.ext' (old files without suffix)
+    # 2. 'user_1_*.ext' (new files with random suffix)
+    patterns = [
+        os.path.join(full_path, f"{base_filename}.*"),
+        os.path.join(full_path, f"{base_filename}_*.*"),
+    ]
+
+    for pattern in patterns:
+        for file_path in glob.glob(pattern):
+            try:
+                os.remove(file_path)
+            except OSError:
+                pass
 
 
 def generate_image_filename(base_name, original_filename):

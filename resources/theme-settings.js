@@ -6,6 +6,19 @@ $(function() {
   var deleteUrl = $('#delete-url').val();
   var toggleDarkmodeUrl = $('#toggle-darkmode-url').val();
 
+  // Toggle manage samples section
+  $('#manage-samples-btn').on('click', function() {
+    $('#admin-samples-manager').slideToggle(300);
+    var icon = $(this).find('i');
+    if (icon.hasClass('fa-cog')) {
+      icon.removeClass('fa-cog').addClass('fa-times');
+      $(this).html('<i class="fa fa-times"></i> Close');
+    } else {
+      icon.removeClass('fa-times').addClass('fa-cog');
+      $(this).html('<i class="fa fa-cog"></i> Manage');
+    }
+  });
+
   // Dark mode toggle
   $('.mode-option').on('click', function() {
     var mode = $(this).data('mode');
@@ -103,6 +116,8 @@ $(function() {
     }
 
     var $item = $(this).closest('.admin-bg-item');
+    // Also find the corresponding card in the main sample backgrounds grid
+    var $card = $('.background-card-form input[name="sample_filename"][value="' + filename + '"]').closest('.background-card-form');
 
     $.ajax({
       url: deleteUrl,
@@ -113,8 +128,17 @@ $(function() {
       },
       success: function(response) {
         if (response.success) {
+          // Remove from admin management section
           $item.fadeOut(300, function() {
             $(this).remove();
+          });
+          // Remove from main sample backgrounds grid
+          $card.fadeOut(300, function() {
+            $(this).remove();
+            // If no more samples, show "no samples" message
+            if ($('.background-card-form').length === 0) {
+              $('.background-grid').replaceWith('<p class="no-samples-message">No sample backgrounds available.</p>');
+            }
           });
         } else {
           alert('Delete failed: ' + (response.error || 'Unknown error'));
