@@ -1480,7 +1480,8 @@ class AddOrganizationBlog(
                 f'<a href="{link}">{self.object.title} - {self.organization.name}</a>'
             )
             Notification.objects.bulk_create_notifications(
-                user_ids=self.organization.get_admin_ids(),
+                user_ids=self.organization.get_admin_ids()
+                + self.organization.get_moderator_ids(),
                 category=NotificationCategory.ADD_BLOG,
                 html_link=html,
                 author=self.request.profile,
