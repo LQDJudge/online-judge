@@ -68,36 +68,6 @@
         {% endif %}
       {% endfor %}
 
-      <!-- Problems Table -->
-      {% if problem_formset %}
-        <h4>{{_("Problems")}}</h4>
-        {{ problem_formset.management_form }}
-        <table class="table">
-          <thead>
-            <tr>
-              {% for field in problem_formset.forms.0 %}
-                {% if not field.is_hidden %}
-                  <th class="problems-{{field.name}}">
-                    {{field.label}}
-                  </th>
-                {% endif %}
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for form in problem_formset %}
-              <tr>
-                {% for field in form %}
-                  <td class="problems-{{field.name}}" title="{{ field.help_text|safe if field.help_text }}" style="{{ 'display:none' if field.is_hidden }}">
-                    {{field}}<div class="red">{{field.errors}}</div>
-                  </td>
-                {% endfor %}
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% endif %}
-
       <!-- Quizzes Table -->
       {% if quiz_formset %}
         <h4>{{_("Quizzes")}}</h4>
@@ -119,6 +89,36 @@
               <tr>
                 {% for field in form %}
                   <td class="quizzes-{{field.name}}" title="{{ field.help_text|safe if field.help_text }}" style="{{ 'display:none' if field.is_hidden }}">
+                    {{field}}<div class="red">{{field.errors}}</div>
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+
+      <!-- Problems Table -->
+      {% if problem_formset %}
+        <h4>{{_("Problems")}}</h4>
+        {{ problem_formset.management_form }}
+        <table class="table">
+          <thead>
+            <tr>
+              {% for field in problem_formset.forms.0 %}
+                {% if not field.is_hidden %}
+                  <th class="problems-{{field.name}}">
+                    {{field.label}}
+                  </th>
+                {% endif %}
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for form in problem_formset %}
+              <tr>
+                {% for field in form %}
+                  <td class="problems-{{field.name}}" title="{{ field.help_text|safe if field.help_text }}" style="{{ 'display:none' if field.is_hidden }}">
                     {{field}}<div class="red">{{field.errors}}</div>
                   </td>
                 {% endfor %}

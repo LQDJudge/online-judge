@@ -49,13 +49,12 @@
     {% if question.choices %}
       <div class="question-section">
         <h3><i class="fa fa-list-ul"></i> {{ _('Choices') }}</h3>
-        <ul>
-          {% for choice in question.choices %}
-            <li>
-              <strong>{{ choice.id }}:</strong> {{ choice.text }}
-            </li>
-          {% endfor %}
-        </ul>
+        {% for choice in question.choices %}
+          <div class="choice-display-item">
+            <span class="choice-display-id">{{ choice.id }}:</span>
+            <div class="choice-display-content content-description">{{ choice.text|markdown|reference|str|safe }}</div>
+          </div>
+        {% endfor %}
       </div>
     {% endif %}
 
@@ -68,7 +67,10 @@
           {% if question.choices %}
             {% for choice in question.choices %}
               {% if choice.id == correct_id %}
-                <p><strong>{{ choice.id }}:</strong> {{ choice.text }}</p>
+                <div class="choice-display-item">
+                  <span class="choice-display-id">{{ choice.id }}:</span>
+                  <div class="choice-display-content content-description">{{ choice.text|markdown|reference|str|safe }}</div>
+                </div>
               {% endif %}
             {% endfor %}
           {% else %}
@@ -78,13 +80,14 @@
         {# Multiple Answer: list of correct choices #}
           {% set correct_ids = question.correct_answers.answers %}
           {% if question.choices and correct_ids %}
-            <ul>
-              {% for choice in question.choices %}
-                {% if choice.id in correct_ids %}
-                  <li><strong>{{ choice.id }}:</strong> {{ choice.text }}</li>
-                {% endif %}
-              {% endfor %}
-            </ul>
+            {% for choice in question.choices %}
+              {% if choice.id in correct_ids %}
+                <div class="choice-display-item">
+                  <span class="choice-display-id">{{ choice.id }}:</span>
+                  <div class="choice-display-content content-description">{{ choice.text|markdown|reference|str|safe }}</div>
+                </div>
+              {% endif %}
+            {% endfor %}
           {% else %}
             <p>{{ correct_ids }}</p>
           {% endif %}
@@ -111,7 +114,7 @@
             <p><strong>{{ _('Accepted Answers') }}:</strong></p>
             <ul>
               {% for answer in sa_config.answers %}
-                <li>{{ answer }}</li>
+                <li><span class="multiline-text">{{ answer }}</span></li>
               {% endfor %}
             </ul>
           </div>

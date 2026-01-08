@@ -8,6 +8,11 @@
 {% block js_media %}
   <script src="{{ static('quiz.js') }}"></script>
   <script src="{{ static('jquery-ui.min.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Converter.js') }}"></script>
+  <script src="{{ static('pagedown-extra/pagedown/Markdown.Converter.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Sanitizer.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Editor.js') }}"></script>
+  <script src="{{ static('pagedown-extra/Markdown.Extra.js') }}"></script>
   <script>
     $(function () {
       var choiceEditor = null;
@@ -172,16 +177,33 @@
         }
 
         bindSaEditorEvents();
+        initSaAutoResize();
       }
 
       function renderSaAnswerRow(value, index) {
         var escapedValue = $('<div>').text(value).html();
         var html = '<div class="sa-answer-row" data-index="' + index + '">';
-        html += '<input type="text" class="sa-answer-input" value="' + escapedValue + '" placeholder="{{ _("Enter an accepted answer...") }}">';
+        html += '<div class="sa-row-controls">';
+        html += '<textarea class="sa-answer-input auto-resize-textarea" rows="1" placeholder="{{ _("Enter an accepted answer...") }}">' + escapedValue + '</textarea>';
+        html += '<button type="button" class="btn btn-sm expand-sa-btn" title="{{ _("Expand editor") }}"><i class="fa fa-expand"></i></button>';
         html += '<button type="button" class="btn btn-sm btn-danger sa-remove-answer"><i class="fa fa-times"></i></button>';
+        html += '</div>';
+        html += '<div class="sa-expanded-editor" style="display: none;"></div>';
         html += '</div>';
         return html;
       }
+
+      function initSaAutoResize() {
+        $('#sa-editor-container .auto-resize-textarea').each(function() {
+          var textarea = this;
+          autoResizeTextarea(textarea);
+          $(textarea).off('input.autoresize').on('input.autoresize', function() {
+            autoResizeTextarea(this);
+          });
+        });
+      }
+
+      var saExpandedEditors = {};
 
       function bindSaEditorEvents() {
         var $container = $('#sa-editor-container');
@@ -189,12 +211,15 @@
       // Unbind first to prevent duplicates
         $container.off('click', '#sa-add-answer');
         $container.off('click', '.sa-remove-answer');
+        $container.off('click', '.expand-sa-btn');
+        $container.off('click', '.collapse-sa-btn');
         $container.off('input change', '#sa-type, #sa-case-sensitive, .sa-answer-input');
 
       // Add answer
         $container.on('click', '#sa-add-answer', function () {
           var index = $('#sa-answers-list .sa-answer-row').length;
           $('#sa-answers-list').append(renderSaAnswerRow('', index));
+          initSaAutoResize();
           syncSaEditor();
         });
 
@@ -209,10 +234,100 @@
           syncSaEditor();
         });
 
+      // Expand answer editor with PageDown toolbar
+        $container.on('click', '.expand-sa-btn', function () {
+          var $row = $(this).closest('.sa-answer-row');
+          expandSaEditor($row);
+        });
+
+      // Collapse answer editor
+        $container.on('click', '.collapse-sa-btn', function () {
+          var $row = $(this).closest('.sa-answer-row');
+          collapseSaEditor($row);
+        });
+
       // Sync on any change
         $container.on('input change', '#sa-type, #sa-case-sensitive, .sa-answer-input', function () {
           syncSaEditor();
         });
+      }
+
+      function expandSaEditor($row) {
+        var $controls = $row.find('.sa-row-controls');
+        var $expandedContainer = $row.find('.sa-expanded-editor');
+        var $textarea = $controls.find('.sa-answer-input');
+        var $expandBtn = $controls.find('.expand-sa-btn');
+        var index = $row.data('index');
+
+        // Already expanded?
+        if ($expandedContainer.is(':visible')) return;
+
+        // Create the expanded editor with PageDown toolbar
+        var editorId = 'sa-editor-' + index + '-' + Date.now();
+        var currentValue = $textarea.val();
+        var escapedValue = $('<div>').text(currentValue).html();
+
+        var expandedHtml = '<div class="wmd-wrapper sa-wmd-wrapper">';
+        expandedHtml += '<div class="sa-expanded-header">';
+        expandedHtml += '<div id="wmd-button-bar-' + editorId + '" class="wmd-button-bar"></div>';
+        expandedHtml += '<button type="button" class="btn btn-sm collapse-sa-btn" title="{{ _("Collapse") }}"><i class="fa fa-compress"></i></button>';
+        expandedHtml += '</div>';
+        expandedHtml += '<textarea id="wmd-input-' + editorId + '" class="wmd-input sa-expanded-textarea">' + escapedValue + '</textarea>';
+        expandedHtml += '</div>';
+
+        $expandedContainer.html(expandedHtml);
+        $expandedContainer.show();
+
+        // Hide the minimal textarea but keep controls visible
+        $textarea.hide();
+        $expandBtn.hide();
+
+        // Initialize PageDown editor if available
+        if (typeof Markdown !== 'undefined') {
+          var converter = Markdown.getSanitizingConverter();
+          if (typeof Markdown.Extra !== 'undefined') {
+            Markdown.Extra.init(converter, { extensions: 'all' });
+          }
+          var editor = new Markdown.Editor(converter, '-' + editorId, {});
+          editor.run();
+          saExpandedEditors[index] = editor;
+        }
+
+        // Sync expanded textarea with the minimal one
+        var $expandedTextarea = $expandedContainer.find('.sa-expanded-textarea');
+        $expandedTextarea.on('input', function() {
+          $textarea.val($(this).val());
+          syncSaEditor();
+        });
+
+        // Focus the expanded textarea
+        $expandedTextarea.focus();
+      }
+
+      function collapseSaEditor($row) {
+        var $controls = $row.find('.sa-row-controls');
+        var $expandedContainer = $row.find('.sa-expanded-editor');
+        var $textarea = $controls.find('.sa-answer-input');
+        var $expandBtn = $controls.find('.expand-sa-btn');
+        var $expandedTextarea = $expandedContainer.find('.sa-expanded-textarea');
+        var index = $row.data('index');
+
+        // Sync value back
+        if ($expandedTextarea.length) {
+          $textarea.val($expandedTextarea.val());
+          syncSaEditor();
+        }
+
+        // Clear expanded editor
+        $expandedContainer.html('').hide();
+        delete saExpandedEditors[index];
+
+        // Show minimal textarea
+        $textarea.show();
+        $expandBtn.show();
+
+        // Resize the textarea
+        autoResizeTextarea($textarea[0]);
       }
 
       function syncSaEditor() {

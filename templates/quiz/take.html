@@ -2,7 +2,7 @@
 {% set page_type = 'take' %}
 
 {% block two_col_media %}
-  <link rel="stylesheet" href="{{ static('pagedown_widget.css') }}">
+  {# pagedown_widget.css is already included in style.css via style.scss #}
   {# Styles moved to resources/quiz.scss #}
 {% endblock %}
 
@@ -41,11 +41,23 @@
         useNavigation: false
       });
 
-      // Initialize PageDown editors for essay questions
+      // Initialize PageDown editors for essay and SA questions
       var converter = Markdown.getSanitizingConverter();
       Markdown.Extra.init(converter, { extensions: 'all' });
 
       $('.essay-editor-container').each(function() {
+        var $container = $(this);
+        var $textarea = $container.find('textarea');
+        var id = $textarea.attr('id');
+        if (id) {
+          var suffix = id.replace('wmd-input', '');
+          var editor = new Markdown.Editor(converter, suffix, {});
+          editor.run();
+        }
+      });
+
+      // Initialize PageDown editors for SA questions
+      $('.sa-editor-container').each(function() {
         var $container = $(this);
         var $textarea = $container.find('textarea');
         var id = $textarea.attr('id');
@@ -330,14 +342,14 @@
           {% if question.question_type == 'MC' or question.question_type == 'TF' %}
             <div class="question-choices">
               {% for choice in question.choices %}
-                <label>
+                <label class="choice-label">
                   <input type="radio"
                          class="question-radio"
                          name="q_{{ question.id }}"
                          value="{{ choice.id }}"
                          data-question="{{ question.id }}"
                          {% if saved_answer == choice.id %}checked{% endif %}>
-                  {{ choice.text }}
+                  <div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div>
                 </label>
               {% endfor %}
             </div>
@@ -346,25 +358,27 @@
             {% set checked_answers = saved_answer|default('[]')|safe %}
             <div class="question-choices">
               {% for choice in question.choices %}
-                <label>
+                <label class="choice-label">
                   <input type="checkbox"
                          class="question-checkbox"
                          name="q_{{ question.id }}"
                          value="{{ choice.id }}"
                          data-question="{{ question.id }}"
                          {% if choice.id in checked_answers %}checked{% endif %}>
-                  {{ choice.text }}
+                  <div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div>
                 </label>
               {% endfor %}
             </div>
 
           {% elif question.question_type == 'SA' %}
-            <input type="text"
-                   class="short-answer-input question-text"
-                   name="q_{{ question.id }}"
-                   value="{{ saved_answer }}"
-                   data-question="{{ question.id }}"
-                   placeholder="{{ _('Enter your answer...') }}">
+            <div class="sa-editor-container">
+              <div id="wmd-button-bar-sa-{{ question.id }}"></div>
+              <textarea class="wmd-input question-text short-answer-textarea"
+                        name="q_{{ question.id }}"
+                        id="wmd-input-sa-{{ question.id }}"
+                        data-question="{{ question.id }}"
+                        placeholder="{{ _('Enter your answer...') }}">{{ saved_answer }}</textarea>
+            </div>
 
           {% elif question.question_type == 'ES' %}
             <div class="essay-editor-container">
