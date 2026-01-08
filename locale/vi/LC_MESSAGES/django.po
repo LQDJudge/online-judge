@@ -425,7 +425,7 @@ msgstr "Cài đặt bài kiểm tra"
 #: templates/quiz/grade.html:125 templates/quiz/grading/dashboard.html:59
 #: templates/quiz/grading/grade.html:68 templates/quiz/list.html:51
 msgid "Quiz"
-msgstr "Bài kiểm tra"
+msgstr "Câu hỏi lý thuyết"
 
 #: judge/admin/quiz.py:494 templates/quiz/grade.html:127
 #: templates/quiz/grading/grade.html:76 templates/quiz/manage.html:67
@@ -2947,7 +2947,7 @@ msgstr ""
 #: templates/course/edit_lesson_new_window.html:73
 #: templates/course/lesson.html:20 templates/problem/list.html:153
 msgid "Quizzes"
-msgstr "Các bài kiểm tra"
+msgstr "Câu hỏi lý thuyết"
 
 #: judge/models/quiz.py:487
 msgid "Points for this question in this quiz"
