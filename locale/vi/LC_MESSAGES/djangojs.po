@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-20 23:30+0700\n"
+"POT-Creation-Date: 2026-01-08 16:10+0700\n"
 "PO-Revision-Date: 2021-07-20 03:45\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -18,13 +18,43 @@ msgstr ""
 "X-Crowdin-Project-ID: 466004\n"
 "X-Crowdin-File-ID: 7\n"
 
-#: resources/common.js:207
+#: resources/common.js:93
 msgctxt "time format with day"
 msgid "%d day %h:%m:%s"
 msgid_plural "%d days %h:%m:%s"
 msgstr[0] "%d ngày %h:%m:%s"
 
-#: resources/common.js:210
+#: resources/common.js:96
 msgctxt "time format without day"
 msgid "%h:%m:%s"
 msgstr "%h:%m:%s"
+
+#: resources/fine-uploader/fine-uploader.core.min.js:3
+#: resources/fine-uploader/fine-uploader.min.js:3
+#: resources/fine-uploader/jquery.fine-uploader.min.js:3
+msgid " request for "
+msgstr ""
+
+#: resources/fine-uploader/fine-uploader.core.min.js:3
+#: resources/fine-uploader/fine-uploader.min.js:3
+#: resources/fine-uploader/jquery.fine-uploader.min.js:3
+msgid "Sending "
+msgstr ""
+
+msgid "Enter your text here..."
+msgstr "Nhập nội dung tại đây..."
+
+msgid "Collapse"
+msgstr "Thu gọn"
+
+msgid "Add Choice"
+msgstr "Thêm lựa chọn"
+
+msgid "Choice ID (e.g., A, B, C)"
+msgstr "ID lựa chọn (vd: A, B, C)"
+
+msgid "Choice text"
+msgstr "Nội dung lựa chọn"
+
+msgid "Expand with toolbar"
+msgstr "Mở rộng với thanh công cụ"

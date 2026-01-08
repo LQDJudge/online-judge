@@ -1,10 +1,16 @@
 {% extends "base.html" %}
 
 {% block media %}
-{# Styles moved to resources/quiz.scss #}
+  {# pagedown_widget.css is already included in style.css via style.scss #}
+  {# Styles moved to resources/quiz.scss #}
 {% endblock %}
 
 {% block js_media %}
+  <script src="{{ static('pagedown/Markdown.Converter.js') }}"></script>
+  <script src="{{ static('pagedown-extra/pagedown/Markdown.Converter.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Sanitizer.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Editor.js') }}"></script>
+  <script src="{{ static('pagedown-extra/Markdown.Extra.js') }}"></script>
   <script>
     function updatePartialCredit(answerId, value) {
       var percentage = parseInt(value);
@@ -37,6 +43,19 @@
             document.getElementById('partial_value_' + answerId).textContent = percentage + '%';
           }
         });
+      });
+
+      // Initialize PageDown editors for feedback textareas
+      var converter = Markdown.getSanitizingConverter();
+      Markdown.Extra.init(converter, { extensions: 'all' });
+
+      document.querySelectorAll('.feedback-editor-container').forEach(function(container) {
+        var textarea = container.querySelector('textarea');
+        if (textarea && textarea.id) {
+          var suffix = textarea.id.replace('wmd-input', '');
+          var editor = new Markdown.Editor(converter, suffix, {});
+          editor.run();
+        }
       });
     });
   </script>
@@ -87,23 +106,80 @@
           {% if answer.question.question_type in ['MC', 'TF'] and answer.question.choices %}
             <div class="choices-display">
               <strong>{{ _('Choices') }}:</strong>
-              <ul>
-                {% for choice in answer.question.choices %}
-                  <li {% if choice.id == answer.answer %}class="selected-answer"{% endif %}>
-                    {{ choice.id }}: {{ choice.text }}
-                    {% if answer.question.correct_answers and choice.id == answer.question.correct_answers.answers %}
-                      <span class="green">({{ _('Correct') }})</span>
-                    {% endif %}
-                  </li>
-                {% endfor %}
-              </ul>
+              {% for choice in answer.question.choices %}
+                <div class="grading-choice-item {% if choice.id == answer.answer %}selected-answer{% endif %}">
+                  <span class="grading-choice-id">{{ choice.id }}:</span>
+                  <span class="grading-choice-text content-description">{{ choice.text|markdown|reference|str|safe }}</span>
+                  {% if answer.question.correct_answers and choice.id == answer.question.correct_answers.answers %}
+                    <span class="green">({{ _('Correct') }})</span>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% elif answer.question.question_type == 'MA' and answer.question.choices %}
+            {% set selected = answer.answer|default('[]') %}
+            {% set correct_ids = answer.question.correct_answers.answers|default([]) %}
+            <div class="choices-display">
+              <strong>{{ _('Choices') }}:</strong>
+              {% for choice in answer.question.choices %}
+                <div class="grading-choice-item {% if choice.id in selected %}selected-answer{% endif %}">
+                  <span class="grading-choice-id">{{ choice.id }}:</span>
+                  <span class="grading-choice-text content-description">{{ choice.text|markdown|reference|str|safe }}</span>
+                  {% if choice.id in correct_ids %}
+                    <span class="green">({{ _('Correct') }})</span>
+                  {% endif %}
+                </div>
+              {% endfor %}
             </div>
           {% endif %}
 
           <div class="answer-content">
-            <strong>{{ _('Student Answer') }}:</strong><br>
-            {{ answer.answer or _('No answer provided') }}
+            <strong>{{ _('Student Answer') }}:</strong>
+            <div class="student-answer-text content-description">
+              {% if answer.question.question_type in ['SA', 'ES'] %}
+                {{ answer.answer|markdown|reference|str|safe if answer.answer else _('No answer provided') }}
+              {% elif answer.question.question_type == 'MA' %}
+                {% if answer.answer %}
+                  {% set selected = answer.answer|json_loads if answer.answer is string else answer.answer %}
+                  {% if selected and selected|length > 0 %}
+                    {{ selected|join(', ') }}
+                  {% else %}
+                    {{ _('No answer provided') }}
+                  {% endif %}
+                {% else %}
+                  {{ _('No answer provided') }}
+                {% endif %}
+              {% elif answer.question.question_type in ['MC', 'TF'] %}
+                {{ answer.answer or _('No answer provided') }}
+              {% else %}
+                {{ answer.answer or _('No answer provided') }}
+              {% endif %}
+            </div>
           </div>
+
+          {% if answer.question.question_type == 'SA' and answer.question.correct_answers %}
+            {% set sa_config = answer.question.correct_answers %}
+            <div class="correct-answers-display">
+              <strong>{{ _('Accepted Answers') }}:</strong>
+              <div class="sa-answers-info">
+                <span class="sa-match-type">
+                  {% if sa_config.type == 'regex' %}
+                    <i class="fa fa-code"></i> {{ _('Regex') }}
+                  {% else %}
+                    <i class="fa fa-equals"></i> {{ _('Exact Match') }}
+                  {% endif %}
+                  {% if not sa_config.case_sensitive %}
+                    ({{ _('case insensitive') }})
+                  {% endif %}
+                </span>
+              </div>
+              <ul class="sa-accepted-list">
+                {% for ans in sa_config.answers %}
+                  <li><span class="sa-answer-text">{{ ans }}</span></li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
 
           {% if answer.files.exists() %}
             <div class="file-attachments">
@@ -168,11 +244,14 @@
           {% endif %}
 
           <div class="feedback-input">
-            <label for="feedback_{{ answer.id }}">{{ _('Feedback') }}:</label>
-            <textarea name="feedback_{{ answer.id }}"
-                      id="feedback_{{ answer.id }}"
-                      rows="3"
-                      placeholder="{{ _('Optional feedback for the student...') }}">{{ answer.feedback or '' }}</textarea>
+            <label for="wmd-input-feedback-{{ answer.id }}">{{ _('Feedback') }}:</label>
+            <div class="feedback-editor-container">
+              <div id="wmd-button-bar-feedback-{{ answer.id }}"></div>
+              <textarea name="feedback_{{ answer.id }}"
+                        id="wmd-input-feedback-{{ answer.id }}"
+                        class="wmd-input"
+                        placeholder="{{ _('Optional feedback for the student...') }}">{{ answer.feedback or '' }}</textarea>
+            </div>
           </div>
         </div>
       {% endfor %}
@@ -181,9 +260,6 @@
         <button type="submit" class="action-btn large">
           <i class="fa fa-save"></i> {{ _('Save Grades') }}
         </button>
-        <a href="{{ url('grading_dashboard') }}" class="btn btn-default btn-lg">
-          {{ _('Back to Dashboard') }}
-        </a>
       </div>
     </form>
   </div>

@@ -95,19 +95,19 @@
           <th class = "static">{{_('Student')}}</th>
           <th>{{_('Total')}}</th>
           {% if grades|length > 0 %}
-            {% for lesson_problem in problems %}
-              <th class="points">
-                <a href="{{ url('problem_detail', lesson_problem.problem.code) }}" target="_blank">
-                  P{{ loop.index }}
-                  <div class="point-denominator">{{ lesson_problem.score }}</div>
-                </a>
-              </th>
-            {% endfor %}
             {% for lesson_quiz in lesson_quizzes %}
               <th class="points quiz-col">
                 <a href="{{ url('quiz_detail', lesson_quiz.quiz.code) }}?lesson_quiz_id={{ lesson_quiz.id }}" target="_blank">
                   Q{{ loop.index }}
                   <div class="point-denominator">{{ lesson_quiz.points }}</div>
+                </a>
+              </th>
+            {% endfor %}
+            {% for lesson_problem in problems %}
+              <th class="points">
+                <a href="{{ url('problem_detail', lesson_problem.problem.code) }}" target="_blank">
+                  P{{ loop.index }}
+                  <div class="point-denominator">{{ lesson_problem.score }}</div>
                 </a>
               </th>
             {% endfor %}
@@ -128,24 +128,24 @@
             <td style="font-weight: bold">
               {{ grade['total']['percentage'] | floatformat(0) }}%
             </td>
-            {% for lesson_problem in problems %}
-              {% set val = grade.get(lesson_problem.problem.id) %}
-              <td class="partial-score">
-                <a href="{{url('user_submissions', lesson_problem.problem.code, student.username)}}" target="_blank">
-                  {% if val and val['case_total'] %}
-                    {{ (val['case_points'] / val['case_total'] * lesson_problem.score) | floatformat(0) }}
-                  {% else %}
-                    0
-                  {% endif %}
-                </a>
-              </td>
-            {% endfor %}
             {% for lesson_quiz in lesson_quizzes %}
               {% set quiz_grade = grade.get('quiz_' ~ lesson_quiz.id) %}
               <td class="partial-score quiz-score">
                 <a href="{{ url('quiz_attempt_list', lesson_quiz.quiz.code) }}?user={{ student.username }}" target="_blank">
                   {% if quiz_grade and quiz_grade['achieved'] %}
                     {{ quiz_grade['achieved'] | floatformat(1) }}
+                  {% else %}
+                    0
+                  {% endif %}
+                </a>
+              </td>
+            {% endfor %}
+            {% for lesson_problem in problems %}
+              {% set val = grade.get(lesson_problem.problem.id) %}
+              <td class="partial-score">
+                <a href="{{url('user_submissions', lesson_problem.problem.code, student.username)}}" target="_blank">
+                  {% if val and val['case_total'] %}
+                    {{ (val['case_points'] / val['case_total'] * lesson_problem.score) | floatformat(0) }}
                   {% else %}
                     0
                   {% endif %}

@@ -78,7 +78,7 @@
           {% if question.question_type in ['MC', 'TF'] %}
             {% for choice in question.choices %}
               {% if choice.id == answer.answer %}
-                {{ choice.text }}
+                <div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div>
               {% endif %}
             {% endfor %}
           {% elif question.question_type == 'MA' %}
@@ -86,12 +86,14 @@
             <ul>
               {% for choice in question.choices %}
                 {% if choice.id in selected %}
-                  <li>{{ choice.text }}</li>
+                  <li><div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div></li>
                 {% endif %}
               {% endfor %}
             </ul>
+          {% elif question.question_type in ['SA', 'ES'] %}
+            <div class="answer-text-content content-description">{{ answer.answer|markdown|reference|str|safe if answer.answer else _('No answer provided') }}</div>
           {% else %}
-            {{ answer.answer or _('No answer provided') }}
+            <div class="answer-text-content">{{ answer.answer or _('No answer provided') }}</div>
           {% endif %}
         </div>
 
@@ -117,14 +119,14 @@
             {% if question.question_type in ['MC', 'TF'] %}
               {% for choice in question.choices %}
                 {% if choice.id == correct %}
-                  {{ choice.text }}
+                  <div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div>
                 {% endif %}
               {% endfor %}
             {% else %}
               <ul>
                 {% for choice in question.choices %}
                   {% if choice.id in correct %}
-                    <li>{{ choice.text }}</li>
+                    <li><div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div></li>
                   {% endif %}
                 {% endfor %}
               </ul>

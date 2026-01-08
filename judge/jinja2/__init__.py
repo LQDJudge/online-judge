@@ -30,6 +30,7 @@ from . import registry
 registry.function("str", str)
 registry.filter("str", str)
 registry.filter("json", json.dumps)
+registry.filter("json_loads", json.loads)
 registry.filter("highlight", highlight_code)
 registry.filter("urlquote", quote)
 registry.filter("roundfloat", round)
