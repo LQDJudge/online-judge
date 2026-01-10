@@ -7836,34 +7836,24 @@ msgid "Auto-Generate Types & Points"
 msgstr "Tự động gán nhãn dạng bài & điểm"
 
 #: templates/problem/edit_base.html:13
-#, fuzzy
-#| msgid "Test Data Setup"
 msgid "Test Data"
-msgstr "Cách tạo Test Data"
+msgstr "Dữ liệu Test"
 
 #: templates/problem/edit_base.html:14
-#, fuzzy
-#| msgid "Language"
 msgid "Languages"
 msgstr "Ngôn ngữ"
 
 #: templates/problem/edit_base.html:15
-#, fuzzy
-#| msgid "Edit templates"
 msgid "Templates"
-msgstr "Chỉnh sửa code mẫu"
+msgstr "Code mẫu"
 
 #: templates/problem/edit_base.html:16
-#, fuzzy
-#| msgid "solutions"
 msgid "Solutions"
-msgstr "lời giải"
+msgstr "Lời giải"
 
 #: templates/problem/edit_base.html:17
-#, fuzzy
-#| msgid "translated name"
 msgid "Translate"
-msgstr "Tên bài được dịch"
+msgstr "Dịch"
 
 #: templates/problem/editorial.html:23
 msgid ""
