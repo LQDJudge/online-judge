@@ -511,7 +511,10 @@ class CourseLessonQuiz(models.Model):
     )
 
     quiz = models.ForeignKey(
-        Quiz, on_delete=models.CASCADE, related_name="course_lessons"
+        Quiz,
+        verbose_name=_("quiz"),
+        on_delete=models.CASCADE,
+        related_name="course_lessons",
     )
 
     max_attempts = models.IntegerField(

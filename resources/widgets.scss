@@ -1,4 +1,5 @@
 @use "vars" as *;
+@use "widgets/sortable_formset";
 
 .social i {
     display: inline;
@@ -1243,3 +1244,4 @@ button:hover, button:focus {
         }
     }
 }
+

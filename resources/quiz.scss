@@ -102,6 +102,34 @@ form.quiz-join-pseudotab {
   display: contents;
 }
 
+// Inline checkbox styling
+.quiz-field-row-checkbox {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
+
+  .quiz-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    cursor: pointer;
+    margin-bottom: 0;
+
+    input[type="checkbox"] {
+      margin: 0;
+      width: 1.1em;
+      height: 1.1em;
+      cursor: pointer;
+    }
+  }
+
+  .quiz-help-text {
+    flex-basis: 100%;
+    margin-top: 0;
+  }
+}
+
 .quiz-help-text {
   display: block;
   color: gray;
@@ -521,9 +549,8 @@ form.quiz-join-pseudotab {
 
   .result-header {
     background: white;
-    padding: 2rem;
+    padding: 1rem;
     border-radius: 4px;
-    margin-bottom: 2rem;
     text-align: center;
 
     h1 {

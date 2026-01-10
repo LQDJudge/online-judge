@@ -81,10 +81,10 @@
                 </a>
               </td>
               <td>#{{ attempt.attempt_number }}</td>
-              <td>{{ attempt.start_time|date(_("M j, Y, g:i a")) }}</td>
+              <td>{{ attempt.start_time|date(_("F j, Y, G:i")) }}</td>
               <td>
                 {% if attempt.end_time %}
-                  {{ attempt.end_time|date(_("M j, Y, g:i a")) }}
+                  {{ attempt.end_time|date(_("F j, Y, G:i")) }}
                 {% else %}
                   -
                 {% endif %}

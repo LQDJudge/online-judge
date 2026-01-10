@@ -76,7 +76,7 @@
         <strong>{{ _('Attempt') }}:</strong> #{{ attempt.attempt_number }}
       </p>
       <p>
-        <strong>{{ _('Submitted') }}:</strong> {{ attempt.end_time|date(_("M j, Y, g:i a")) }}
+        <strong>{{ _('Submitted') }}:</strong> {{ attempt.end_time|date(_("F j, Y, G:i")) }}
       </p>
       <p>
         <strong>{{ _('Current Score') }}:</strong>
@@ -213,7 +213,7 @@
 
             {% if answer.graded_at %}
               <span class="text-muted">
-                ({{ _('Graded') }}{% if answer.graded_by %} {{ _('by') }} {{ answer.graded_by.user.username }}{% endif %}: {{ answer.graded_at|date(_("M j, Y, g:i a")) }})
+                ({{ _('Graded') }}{% if answer.graded_by %} {{ _('by') }} {{ answer.graded_by.user.username }}{% endif %}: {{ answer.graded_at|date(_("F j, Y, G:i")) }})
               </span>
             {% endif %}
           </div>

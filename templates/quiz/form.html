@@ -15,16 +15,27 @@
 
 {% for field in form %}
   {% if not field.is_hidden %}
-    <div class="quiz-field-row" style="margin-bottom: 1em;">
+    {% set is_checkbox = field.field.widget.__class__.__name__ == 'CheckboxInput' %}
+    <div class="quiz-field-row{% if is_checkbox %} quiz-field-row-checkbox{% endif %}">
       {{ field.errors }}
-      <label for="{{ field.id_for_label }}">
-        <b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b>
-      </label>
-      <div class="quiz-field-wrapper" id="quiz-field-wrapper-{{ field.html_name }}">
-        {{ field }}
-      </div>
-      {% if field.help_text %}
-        <small class="quiz-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
+      {% if is_checkbox %}
+        <label for="{{ field.id_for_label }}" class="quiz-checkbox-label">
+          {{ field }}
+          <b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}</b>
+        </label>
+        {% if field.help_text %}
+          <small class="quiz-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
+        {% endif %}
+      {% else %}
+        <label for="{{ field.id_for_label }}">
+          <b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b>
+        </label>
+        <div class="quiz-field-wrapper" id="quiz-field-wrapper-{{ field.html_name }}">
+          {{ field }}
+        </div>
+        {% if field.help_text %}
+          <small class="quiz-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
+        {% endif %}
       {% endif %}
     </div>
   {% else %}

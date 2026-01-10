@@ -1,4 +1,5 @@
-{% extends "base.html" %}
+{% extends "problem/edit_base.html" %}
+{% set page_type = 'translations' %}
 
 {% block js_media %}
   {{ form.media.js }}
@@ -34,14 +35,14 @@
   </script>
 {% endblock %}
 
-{% block media %}
+{% block edit_media %}
   {{ form.media }}
   {% for item in translation_forms %}
     {{ item.form.media }}
   {% endfor %}
 {% endblock %}
 
-{% block body %}
+{% block edit_content %}
   <div class="problem-page-container translations-page">
     <!-- Success/Error Messages -->
     {% if messages %}

@@ -1,0 +1,168 @@
+@use "../vars" as *;
+@use "sass:color";
+
+/**
+ * Sortable Formset Widget Styles
+ */
+
+.sortable-formset {
+    margin-bottom: 1.5em;
+
+    .sortable-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: white;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+        th, td {
+            padding: 0.6em 0.75em;
+            vertical-align: middle;
+        }
+
+        thead th {
+            background-color: $theme_color;
+            color: white;
+            border-bottom: none;
+            font-weight: 600;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid $border_gray;
+            background-color: white;
+
+            &:hover {
+                background-color: rgba($theme_color, 0.05);
+            }
+
+            &:last-child {
+                border-bottom: none;
+            }
+        }
+    }
+
+    // Drag handle column
+    .sortable-drag-header,
+    .sortable-drag-cell {
+        width: 50px;
+        text-align: center;
+    }
+
+    .drag-handle {
+        cursor: grab;
+        color: #999;
+        padding: 0.25em 0.5em;
+        display: inline-block;
+
+        &:hover {
+            color: $widget_black;
+        }
+
+        &:active {
+            cursor: grabbing;
+        }
+    }
+
+    .row-number {
+        display: inline-block;
+        min-width: 1.5em;
+        color: #666;
+        font-weight: 500;
+    }
+
+    // Delete column
+    .sortable-delete-header,
+    .sortable-delete-cell {
+        width: 60px;
+        text-align: center;
+    }
+
+    .remove-row-btn {
+        background: none;
+        border: none;
+        padding: 0.25em 0.5em;
+        cursor: pointer;
+        opacity: 0.6;
+        transition: opacity 0.2s;
+
+        &:hover {
+            opacity: 1;
+        }
+
+        i {
+            font-size: 1.1em;
+        }
+    }
+
+    // Sorting placeholder
+    .sortable-placeholder {
+        height: 45px;
+        background-color: rgba($theme_color, 0.1);
+        border: 2px dashed $theme_color;
+    }
+
+    // Row being dragged
+    .ui-sortable-helper {
+        background-color: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-radius: 4px;
+
+        .drag-handle {
+            cursor: grabbing;
+            color: $theme_color;
+        }
+    }
+
+    // Hidden/deleted rows
+    .sortable-template,
+    .sortable-deleted {
+        display: none !important;
+    }
+
+    // Actions area
+    .sortable-actions {
+        margin-top: 1em;
+    }
+
+    .add-row-btn {
+        background-color: $theme_color;
+        color: white;
+        border: none;
+        padding: 0.5em 1.2em;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+        font-weight: 500;
+
+        &:hover {
+            background-color: color.adjust($theme_color, $lightness: -8%);
+            transform: translateY(-1px);
+        }
+
+        &:active {
+            transform: translateY(0);
+        }
+
+        i {
+            margin-right: 0.5em;
+        }
+    }
+
+    // Field errors
+    .field-error {
+        font-size: 0.85em;
+        margin-top: 0.25em;
+    }
+
+    // Input sizing
+    input[type="number"] {
+        width: 5em;
+    }
+
+    // Problem select column - constrained width
+    .sortable-col-problem {
+        min-width: 200px;
+        max-width: 350px;
+    }
+}

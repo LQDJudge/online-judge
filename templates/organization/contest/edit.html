@@ -1,7 +1,12 @@
 {% extends "organization/home-base.html" %}
+{% from "widgets/sortable_formset.html" import sortable_formset %}
 
 {% block js_media %}
   {{ form.media.js }}
+  {{ problems_form.media.js }}
+  {{ quizzes_form.media.js }}
+  <script src="{{ static('jquery-ui.min.js') }}"></script>
+  <script src="{{ static('widgets/sortable_formset.js') }}"></script>
 {% endblock %}
 
 {% block three_col_media %}
@@ -45,7 +50,7 @@
 {% block middle_content %}
   <form action="" method="post">
     {% csrf_token %}
-    {% if form.errors or problems_form.errors %}
+    {% if form.errors or problems_form.errors or quizzes_form.errors %}
       <div class="alert alert-danger alert-dismissable">
         <a href="#" class="close">x</a>
         {{_("Please fix below errors")}}
@@ -78,33 +83,26 @@
     {% endfor %}
 
     <hr><br>
-    {{ problems_form.management_form }}
-    <i>{{_('If you run out of rows, click Save')}}</i>
-    <table class="table">
-      <thead>
-        <tr>
-          {% for field in problems_form[0] %}
-            {% if not field.is_hidden %}
-              <th class="problems-{{field.name}}">
-                {{field.label}}
-              </th>
-            {% endif %}
-          {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for form in problems_form %}
-          <tr>
-            {% for field in form %}
-              <td class="problems-{{field.name}}" title="
-                                                         {{ field.help_text|safe if field.help_text }}"
-                  style="{{ 'display:none' if field.is_hidden }}"
-              >{{field}}<div class="red">{{field.errors}}</div></td>
-            {% endfor %}
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <h3>{{ _('Problems') }}</h3>
+    {{ sortable_formset(problems_form, {
+    'order_field': 'order',
+    'add_text': _('Add Problem'),
+    'empty_text': _('No problems added yet.')
+    }) }}
+
+    <hr><br>
+    <h3 style="display: flex; align-items: center; gap: 0.5em;">
+      {{ _('Quizzes') }}
+      <a href="{{ url('quiz_create') }}" target="_blank" style="font-size: 0.8em; font-weight: normal;">
+        <i class="fa fa-plus"></i> {{ _('Create Quiz') }}
+      </a>
+    </h3>
+    {{ sortable_formset(quizzes_form, {
+    'order_field': 'order',
+    'add_text': _('Add Quiz'),
+    'empty_text': _('No quizzes added yet.')
+    }) }}
+
     <button type="submit" class="action-btn">{{ _('Save') }}</button>
   </form>
 

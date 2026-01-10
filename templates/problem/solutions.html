@@ -1,4 +1,5 @@
-{% extends "base.html" %}
+{% extends "problem/edit_base.html" %}
+{% set page_type = 'solutions' %}
 
 {% block js_media %}
   <script type="text/javascript">
@@ -136,11 +137,11 @@
   </script>
 {% endblock %}
 
-{% block media %}
+{% block edit_media %}
   {{ form.media }}
 {% endblock %}
 
-{% block body %}
+{% block edit_content %}
   <div class="problem-page-container solutions-page">
     <!-- Success/Error Messages -->
     {% if messages %}

@@ -168,7 +168,7 @@
 
               {% if answer.graded_at %}
                 <span class="text-muted">
-                  ({{ _('Last graded') }}: {{ answer.graded_at|date(_("M j, Y, g:i a")) }})
+                  ({{ _('Last graded') }}: {{ answer.graded_at|date(_("F j, Y, G:i")) }})
                 </span>
               {% endif %}
             </div>

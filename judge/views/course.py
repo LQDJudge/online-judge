@@ -21,6 +21,7 @@ from reversion import revisions
 
 from judge.forms import (
     ContestProblemFormSet,
+    ContestQuizFormSet,
     LessonCloneForm,
     AddCourseForm,
 )
@@ -849,7 +850,7 @@ class CourseLessonProblemForm(ModelForm):
 
 
 CourseLessonProblemFormSet = modelformset_factory(
-    CourseLessonProblem, form=CourseLessonProblemForm, extra=5, can_delete=True
+    CourseLessonProblem, form=CourseLessonProblemForm, extra=0, can_delete=True
 )
 
 
@@ -866,7 +867,7 @@ class CourseLessonQuizForm(ModelForm):
 
 
 CourseLessonQuizFormSet = modelformset_factory(
-    CourseLessonQuiz, form=CourseLessonQuizForm, extra=3, can_delete=True
+    CourseLessonQuiz, form=CourseLessonQuizForm, extra=0, can_delete=True
 )
 
 
@@ -1021,6 +1022,8 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
         )
         for form in formset:
             form.fields["lesson"].initial = target_lesson
+        # Also set the lesson for the empty_form (used as template for new rows)
+        formset.empty_form.fields["lesson"].initial = target_lesson
         return formset
 
     def get_quiz_formset(self, post=False, lesson=None):
@@ -1040,6 +1043,8 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
         )
         for form in formset:
             form.fields["lesson"].initial = target_lesson
+        # Also set the lesson for the empty_form (used as template for new rows)
+        formset.empty_form.fields["lesson"].initial = target_lesson
         return formset
 
     def get_context_data(self, **kwargs):
@@ -1632,8 +1637,15 @@ class EditCourseContest(CourseEditableMixin, FormView):
 
     def post(self, request, *args, **kwargs):
         problem_formset = self.get_problem_formset(True)
-        if problem_formset.is_valid():
+        quiz_formset = self.get_quiz_formset(True)
+
+        problems_valid = problem_formset.is_valid()
+        quizzes_valid = quiz_formset.is_valid()
+
+        if problems_valid and quizzes_valid:
             self.problem_form_changes = False
+
+            # Process problem formset
             for problem_form in problem_formset:
                 if problem_form.has_changed():
                     self.problem_form_changes = True
@@ -1645,12 +1657,25 @@ class EditCourseContest(CourseEditableMixin, FormView):
                     problem_form.contest = self.contest
                     problem_form.save()
 
+            # Process quiz formset
+            for quiz_form in quiz_formset:
+                if quiz_form.has_changed():
+                    self.problem_form_changes = True
+                if quiz_form.cleaned_data.get("DELETE") and quiz_form.instance.pk:
+                    quiz_form.instance.delete()
+
+            for quiz_form in quiz_formset.save(commit=False):
+                if quiz_form:
+                    quiz_form.contest = self.contest
+                    quiz_form.save()
+
             return super().post(request, *args, **kwargs)
 
         self.object = self.contest
         return self.render_to_response(
             self.get_context_data(
                 problems_form=problem_formset,
+                quizzes_form=quiz_formset,
             )
         )
 
@@ -1673,9 +1698,18 @@ class EditCourseContest(CourseEditableMixin, FormView):
         return ContestProblemFormSet(
             data=self.request.POST if post else None,
             prefix="problems",
-            queryset=ContestProblem.objects.filter(contest=self.contest).order_by(
-                "order"
-            ),
+            queryset=ContestProblem.objects.filter(
+                contest=self.contest, problem__isnull=False
+            ).order_by("order"),
+        )
+
+    def get_quiz_formset(self, post=False):
+        return ContestQuizFormSet(
+            data=self.request.POST if post else None,
+            prefix="quizzes",
+            queryset=ContestProblem.objects.filter(
+                contest=self.contest, quiz__isnull=False
+            ).order_by("order"),
         )
 
     def get_context_data(self, **kwargs):
@@ -1690,6 +1724,8 @@ class EditCourseContest(CourseEditableMixin, FormView):
         )
         if "problems_form" not in context:
             context["problems_form"] = self.get_problem_formset()
+        if "quizzes_form" not in context:
+            context["quizzes_form"] = self.get_quiz_formset()
         return context
 
     def get_success_url(self):

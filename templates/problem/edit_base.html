@@ -1,0 +1,32 @@
+{% extends "two-column-content.html" %}
+
+{% macro make_edit_tab_item(name, fa, url, text) %}
+  <a class="left-sidebar-item {% if page_type == name %}active{% endif %}" href="{{ url }}">
+    <span class="sidebar-icon"><i class="{{ fa }}"></i></span>
+    <span class="sidebar-text">{{ text }}</span>
+  </a>
+{% endmacro %}
+
+{% block left_sidebar %}
+  <div class="left-sidebar">
+    {{ make_edit_tab_item('content', 'fa fa-file-alt', url('problem_edit', problem.code), _('Content')) }}
+    {{ make_edit_tab_item('data', 'fa fa-database', url('problem_data', problem.code), _('Test Data')) }}
+    {{ make_edit_tab_item('languages', 'fa fa-clock', url('problem_edit_language_limits', problem.code), _('Languages')) }}
+    {{ make_edit_tab_item('templates', 'fa fa-code', url('problem_edit_language_templates', problem.code), _('Templates')) }}
+    {{ make_edit_tab_item('solutions', 'fa fa-lightbulb', url('problem_edit_solutions', problem.code), _('Solutions')) }}
+    {{ make_edit_tab_item('translations', 'fa fa-language', url('problem_edit_translations', problem.code), _('Translate')) }}
+  </div>
+{% endblock %}
+
+{% block two_col_media %}
+  {% block edit_media %}{% endblock %}
+{% endblock %}
+
+{% block middle_title %}
+  <h2 class="content-title">{{ content_title or title }}</h2>
+  <hr>
+{% endblock %}
+
+{% block middle_content %}
+  {% block edit_content %}{% endblock %}
+{% endblock %}

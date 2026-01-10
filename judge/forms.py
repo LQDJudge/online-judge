@@ -760,7 +760,58 @@ class ContestProblemModelFormSet(BaseModelFormSet):
 
 class ContestProblemFormSet(
     formset_factory(
-        ContestProblemForm, formset=ContestProblemModelFormSet, extra=6, can_delete=True
+        ContestProblemForm, formset=ContestProblemModelFormSet, extra=0, can_delete=True
+    )
+):
+    model = ContestProblem
+
+
+class ContestQuizForm(ModelForm):
+    class Meta:
+        model = ContestProblem
+        fields = (
+            "order",
+            "quiz",
+            "points",
+        )
+        widgets = {
+            "quiz": HeavySelect2Widget(
+                data_view="quiz_select2", attrs={"style": "width: 100%"}
+            ),
+        }
+
+
+class ContestQuizModelFormSet(BaseModelFormSet):
+    def is_valid(self):
+        valid = super().is_valid()
+
+        if not valid:
+            return valid
+
+        quizzes = set()
+        duplicates = []
+
+        for form in self.forms:
+            if form.cleaned_data and not form.cleaned_data.get("DELETE", False):
+                quiz = form.cleaned_data.get("quiz")
+                if quiz in quizzes:
+                    duplicates.append(quiz)
+                else:
+                    quizzes.add(quiz)
+
+        if duplicates:
+            for form in self.forms:
+                quiz = form.cleaned_data.get("quiz")
+                if quiz in duplicates:
+                    form.add_error("quiz", _("This quiz is duplicated."))
+            return False
+
+        return True
+
+
+class ContestQuizFormSet(
+    formset_factory(
+        ContestQuizForm, formset=ContestQuizModelFormSet, extra=0, can_delete=True
     )
 ):
     model = ContestProblem

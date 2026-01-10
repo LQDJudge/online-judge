@@ -17,9 +17,9 @@
       </div>
       <div class="result-meta">
         <p>
-          {{ _('Started') }}: {{ attempt.start_time|date(_("M j, Y, g:i a")) }}
+          {{ _('Started') }}: {{ attempt.start_time|date(_("F j, Y, G:i")) }}
           {% if attempt.end_time %}
-            | {{ _('Submitted') }}: {{ attempt.end_time|date(_("M j, Y, g:i a")) }}
+            | {{ _('Submitted') }}: {{ attempt.end_time|date(_("F j, Y, G:i")) }}
           {% endif %}
         </p>
       </div>

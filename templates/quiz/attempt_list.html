@@ -43,10 +43,10 @@
           <div class="attempt-number">#{{ loop.revindex }}</div>
           <div class="attempt-time">
             <i class="fa fa-clock-o"></i>
-            {{ attempt.start_time|date(_("M j, Y, g:i a")) }}
+            {{ attempt.start_time|date(_("F j, Y, G:i")) }}
             {% if attempt.end_time %}
               <span class="time-secondary">
-                &rarr; {{ attempt.end_time|date(_("g:i a")) }}
+                &rarr; {{ attempt.end_time|date(_("G:i")) }}
               </span>
             {% endif %}
           </div>

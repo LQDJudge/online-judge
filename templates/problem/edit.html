@@ -1,4 +1,5 @@
-{% extends "base.html" %}
+{% extends "problem/edit_base.html" %}
+{% set page_type = 'content' %}
 
 {% block js_media %}
   {{ form.media.js }}
@@ -185,7 +186,7 @@
   </script>
 {% endblock %}
 
-{% block body %}
+{% block edit_content %}
   <div class="problem-edit-form">
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}

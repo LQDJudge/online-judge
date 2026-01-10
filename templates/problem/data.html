@@ -1,4 +1,5 @@
-{% extends "base.html" %}
+{% extends "problem/edit_base.html" %}
+{% set page_type = 'data' %}
 
 {% block js_media %}
   {{ data_form.media.js }}
@@ -774,20 +775,17 @@
   {% include 'fine_uploader/script.html' %}
 {% endblock %}
 
-{% block media %}
+{% block edit_media %}
   {{ data_form.media.css }}
   <link href="{{ static ('fine-uploader/fine-uploader.css') }}" rel="stylesheet">
 {% endblock %}
 
-{% block header %}
+{% block edit_content %}
   {% if data_form.instance.has_yml %}
-    <div class="title-line-action">
-      [<a href="{{ url('problem_data_init', problem.code) }}">{{ _('View YAML') }}</a>]
+    <div class="title-line-action" style="margin-bottom: 10px;">
+      <a href="{{ url('problem_data_init', problem.code) }}">{{ _('View YAML') }}</a>
     </div>
   {% endif %}
-{% endblock %}
-
-{% block body %}
   {% if data_form.instance.feedback %}
     <ul class="errorlist">
       <li>{{ data_form.instance.feedback }}</li>

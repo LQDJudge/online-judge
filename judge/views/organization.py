@@ -45,6 +45,7 @@ from judge.forms import (
     OrganizationAdminBlogForm,
     EditOrganizationContestForm,
     ContestProblemFormSet,
+    ContestQuizFormSet,
     AddOrganizationContestForm,
 )
 from judge.models import (
@@ -1359,7 +1360,13 @@ class EditOrganizationContest(
         if res:
             return res
         problem_formset = self.get_problem_formset(True)
-        if problem_formset.is_valid():
+        quiz_formset = self.get_quiz_formset(True)
+
+        problems_valid = problem_formset.is_valid()
+        quizzes_valid = quiz_formset.is_valid()
+
+        if problems_valid and quizzes_valid:
+            # Process problem formset
             for problem_form in problem_formset:
                 if problem_form.cleaned_data.get("DELETE") and problem_form.instance.pk:
                     problem_form.instance.delete()
@@ -1376,12 +1383,30 @@ class EditOrganizationContest(
                         ).delete()
                         contest_problem.save()
 
+            # Process quiz formset
+            for quiz_form in quiz_formset:
+                if quiz_form.cleaned_data.get("DELETE") and quiz_form.instance.pk:
+                    quiz_form.instance.delete()
+
+            for contest_quiz in quiz_formset.save(commit=False):
+                if contest_quiz:
+                    contest_quiz.contest = self.contest
+                    try:
+                        contest_quiz.save()
+                    except IntegrityError as e:
+                        quiz = contest_quiz.quiz
+                        ContestProblem.objects.filter(
+                            contest=self.contest, quiz=quiz
+                        ).delete()
+                        contest_quiz.save()
+
             return super().post(request, *args, **kwargs)
 
         self.object = self.contest
         return self.render_to_response(
             self.get_context_data(
                 problems_form=problem_formset,
+                quizzes_form=quiz_formset,
             )
         )
 
@@ -1422,15 +1447,26 @@ class EditOrganizationContest(
         return ContestProblemFormSet(
             data=self.request.POST if post else None,
             prefix="problems",
-            queryset=ContestProblem.objects.filter(contest=self.contest).order_by(
-                "order"
-            ),
+            queryset=ContestProblem.objects.filter(
+                contest=self.contest, problem__isnull=False
+            ).order_by("order"),
+        )
+
+    def get_quiz_formset(self, post=False):
+        return ContestQuizFormSet(
+            data=self.request.POST if post else None,
+            prefix="quizzes",
+            queryset=ContestProblem.objects.filter(
+                contest=self.contest, quiz__isnull=False
+            ).order_by("order"),
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if "problems_form" not in context:
             context["problems_form"] = self.get_problem_formset()
+        if "quizzes_form" not in context:
+            context["quizzes_form"] = self.get_quiz_formset()
         return context
 
     def get_success_url(self):

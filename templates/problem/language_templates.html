@@ -1,4 +1,5 @@
-{% extends "base.html" %}
+{% extends "problem/edit_base.html" %}
+{% set page_type = 'templates' %}
 
 {% block js_media %}
   <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
@@ -100,11 +101,11 @@
   </script>
 {% endblock %}
 
-{% block media %}
+{% block edit_media %}
   {{ form.media }}
 {% endblock %}
 
-{% block body %}
+{% block edit_content %}
   <div class="problem-page-container language-templates-page">
     <!-- Success/Error Messages -->
     {% if messages %}

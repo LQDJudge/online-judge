@@ -29,18 +29,18 @@
   </div>
   <div class="contest-time-info">
     {% if contest.time_limit %}
-      {% trans trimmed start_time=contest.start_time|date(_("F j, Y, G:i T")), end_time=contest.end_time|date(_("F j, Y, G:i T")), time_limit=contest.time_limit|timedelta('localized-no-seconds') %}
+      {% trans trimmed start_time=contest.start_time|date(_("F j, Y, G:i")), end_time=contest.end_time|date(_("F j, Y, G:i")), time_limit=contest.time_limit|timedelta('localized-no-seconds') %}
         {{ time_limit }} window between {{ start_time }} and {{ end_time }}
       {% endtrans %}
     {% else %}
-      {% trans trimmed length=contest.contest_window_length|timedelta("localized-no-seconds"), start_time=contest.start_time|date(_("F j, Y, G:i T")) %}
+      {% trans trimmed length=contest.contest_window_length|timedelta("localized-no-seconds"), start_time=contest.start_time|date(_("F j, Y, G:i")) %}
         {{ length }} long starting on {{ start_time }}
       {% endtrans %}
     {% endif %}
   </div>
   {% if contest.freeze_after and contest.freeze_after + contest.start_time < now %}
     <div class="contest-freeze-info">
-      {{_("Standing was frozen")}} {{_("at")}} {{ (contest.freeze_after + contest.start_time) | date(_("F j, Y, G:i T")) }}
+      {{_("Standing was frozen")}} {{_("at")}} {{ (contest.freeze_after + contest.start_time) | date(_("F j, Y, G:i")) }}
     </div>
   {% endif %}
 </div>

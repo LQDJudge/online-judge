@@ -1,4 +1,5 @@
 {% extends "course/base.html" %}
+{% from "widgets/sortable_formset.html" import sortable_formset %}
 
 {% block two_col_media %}
   {{ form.media.css }}
@@ -14,6 +15,10 @@
 
 {% block js_media %}
   {{ form.media.js }}
+  {% if problem_formset %}{{ problem_formset.media.js }}{% endif %}
+  {% if quiz_formset %}{{ quiz_formset.media.js }}{% endif %}
+  <script src="{{ static('jquery-ui.min.js') }}"></script>
+  <script src="{{ static('widgets/sortable_formset.js') }}"></script>
   <script>
     $(function() {
       $('select').each(function() {
@@ -68,64 +73,29 @@
         {% endif %}
       {% endfor %}
 
-      <!-- Quizzes Table -->
-      {% if quiz_formset %}
-        <h4>{{_("Quizzes")}}</h4>
-        {{ quiz_formset.management_form }}
-        <table class="table">
-          <thead>
-            <tr>
-              {% for field in quiz_formset.forms.0 %}
-                {% if not field.is_hidden %}
-                  <th class="quizzes-{{field.name}}">
-                    {{field.label}}
-                  </th>
-                {% endif %}
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for form in quiz_formset %}
-              <tr>
-                {% for field in form %}
-                  <td class="quizzes-{{field.name}}" title="{{ field.help_text|safe if field.help_text }}" style="{{ 'display:none' if field.is_hidden }}">
-                    {{field}}<div class="red">{{field.errors}}</div>
-                  </td>
-                {% endfor %}
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% endif %}
-
       <!-- Problems Table -->
       {% if problem_formset %}
         <h4>{{_("Problems")}}</h4>
-        {{ problem_formset.management_form }}
-        <table class="table">
-          <thead>
-            <tr>
-              {% for field in problem_formset.forms.0 %}
-                {% if not field.is_hidden %}
-                  <th class="problems-{{field.name}}">
-                    {{field.label}}
-                  </th>
-                {% endif %}
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for form in problem_formset %}
-              <tr>
-                {% for field in form %}
-                  <td class="problems-{{field.name}}" title="{{ field.help_text|safe if field.help_text }}" style="{{ 'display:none' if field.is_hidden }}">
-                    {{field}}<div class="red">{{field.errors}}</div>
-                  </td>
-                {% endfor %}
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        {{ sortable_formset(problem_formset, {
+        'order_field': 'order',
+        'add_text': _('Add Problem'),
+        'empty_text': _('No problems added yet.')
+        }) }}
+      {% endif %}
+
+      <!-- Quizzes Table -->
+      {% if quiz_formset %}
+        <h4 style="display: flex; align-items: center; gap: 0.5em;">
+          {{_("Quizzes")}}
+          <a href="{{ url('quiz_create') }}" target="_blank" style="font-size: 0.8em; font-weight: normal;">
+            <i class="fa fa-plus"></i> {{_("Create Quiz")}}
+          </a>
+        </h4>
+        {{ sortable_formset(quiz_formset, {
+        'order_field': 'order',
+        'add_text': _('Add Quiz'),
+        'empty_text': _('No quizzes added yet.')
+        }) }}
       {% endif %}
       <hr/>
     </div>

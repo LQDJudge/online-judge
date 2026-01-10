@@ -1,0 +1,132 @@
+{#
+  Sortable Formset Widget
+
+  A reusable Jinja2 macro for Django formsets with:
+  - Drag-drop reordering
+  - Dynamic add/remove rows
+  - Order field auto-update
+
+  Usage:
+    {% from "widgets/sortable_formset.html" import sortable_formset %}
+    {{ sortable_formset(problems_form, {
+        'order_field': 'order',
+        'add_text': _('Add Problem'),
+        'empty_text': _('No problems added yet.')
+    }) }}
+#}
+
+{% macro sortable_formset(formset, options={}) %}
+  {% set order_field = options.order_field or 'order' %}
+  {% set add_text = options.add_text or _('Add Row') %}
+  {% set empty_text = options.empty_text or _('No items yet.') %}
+  {% set show_order_column = options.show_order_column if options.show_order_column is defined else true %}
+  {% set empty_form = formset.empty_form %}
+  {% set has_forms = formset|length > 0 %}
+
+  <div class="sortable-formset" data-prefix="{{ formset.prefix }}" data-order-field="{{ order_field }}">
+    {{ formset.management_form }}
+
+    <table class="table sortable-table" {% if not has_forms %}style="display: none;"{% endif %}>
+      <thead>
+        <tr>
+          {% if show_order_column %}
+            <th class="sortable-drag-header"></th>
+          {% endif %}
+          {# Use empty_form for header labels since it's always available #}
+          {% for field in empty_form %}
+            {% if not field.is_hidden and field.name != order_field and field.name != 'DELETE' %}
+              <th class="sortable-col-{{ field.name }}">{{ field.label }}</th>
+            {% endif %}
+          {% endfor %}
+          {% if formset.can_delete %}
+            <th class="sortable-delete-header">{{ _('Delete') }}</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody class="sortable-body">
+        {# Render existing forms #}
+        {% for form in formset %}
+          <tr class="sortable-row" data-row-index="{{ loop.index0 }}">
+            {% if show_order_column %}
+              <td class="sortable-drag-cell">
+                <span class="drag-handle" title="{{ _('Drag to reorder') }}">
+                  <i class="fa fa-bars"></i>
+                </span>
+                <span class="row-number">{{ loop.index }}</span>
+              </td>
+            {% endif %}
+            {# Render hidden fields and order field in a hidden container #}
+            <td style="display: none;">
+              {% for field in form %}
+                {% if field.is_hidden or field.name == order_field %}
+                  {{ field }}
+                {% endif %}
+              {% endfor %}
+            </td>
+            {# Render visible fields (excluding order and DELETE) #}
+            {% for field in form %}
+              {% if not field.is_hidden and field.name != order_field and field.name != 'DELETE' %}
+                <td class="sortable-col-{{ field.name }}"
+                    title="{{ field.help_text|safe if field.help_text }}">
+                  {{ field }}
+                  {% if field.errors %}
+                    <div class="field-error red">{{ field.errors }}</div>
+                  {% endif %}
+                </td>
+              {% endif %}
+            {% endfor %}
+            {% if formset.can_delete %}
+              <td class="sortable-delete-cell">
+                <button type="button" class="btn btn-sm remove-row-btn" title="{{ _('Remove') }}">
+                  <i class="fa fa-times red"></i>
+                </button>
+                {# The DELETE checkbox is hidden but still submitted #}
+                <span style="display: none;">{{ form.DELETE }}</span>
+              </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+        {# Template row for adding new items (hidden, used by JavaScript) #}
+        <tr class="sortable-row sortable-template" style="display: none;" data-row-index="__prefix__">
+          {% if show_order_column %}
+            <td class="sortable-drag-cell">
+              <span class="drag-handle" title="{{ _('Drag to reorder') }}">
+                <i class="fa fa-bars"></i>
+              </span>
+              <span class="row-number"></span>
+            </td>
+          {% endif %}
+          <td style="display: none;">
+            {% for field in empty_form %}
+              {% if field.is_hidden or field.name == order_field %}
+                {{ field }}
+              {% endif %}
+            {% endfor %}
+          </td>
+          {% for field in empty_form %}
+            {% if not field.is_hidden and field.name != order_field and field.name != 'DELETE' %}
+              <td class="sortable-col-{{ field.name }}"
+                  title="{{ field.help_text|safe if field.help_text }}">
+                {{ field }}
+              </td>
+            {% endif %}
+          {% endfor %}
+          {% if formset.can_delete %}
+            <td class="sortable-delete-cell">
+              <button type="button" class="btn btn-sm remove-row-btn" title="{{ _('Remove') }}">
+                <i class="fa fa-times red"></i>
+              </button>
+              <span style="display: none;">{{ empty_form.DELETE }}</span>
+            </td>
+          {% endif %}
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="sortable-actions">
+      <button type="button" class="btn add-row-btn">
+        <i class="fa fa-plus"></i> {{ add_text }}
+      </button>
+    </div>
+  </div>
+{% endmacro %}
