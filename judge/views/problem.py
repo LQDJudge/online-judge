@@ -1337,7 +1337,7 @@ class ProblemEdit(
         ):
             transaction.on_commit(rescore_problem.s(problem.id).delay)
 
-        return HttpResponseRedirect(reverse("problem_detail", args=[problem.code]))
+        return self.render_to_response(self.get_context_data(form=form))
 
     def form_invalid(self, form):
         """Handle invalid form with formsets"""
@@ -1401,6 +1401,7 @@ class ProblemEdit(
                         "predicted_points": result.get("predicted_points"),
                         "predicted_types": predicted_types,
                         "problem_code": problem.code,
+                        "reason": result.get("reason"),  # Reason if is_valid is False
                     }
                 )
             else:

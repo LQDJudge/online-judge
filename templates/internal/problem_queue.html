@@ -149,7 +149,8 @@
               if (response.success && response.is_valid) {
                 showSuggestionModal(response);
               } else if (response.success && !response.is_valid) {
-                alert('{{_("Problem tagging failed: Problem format is incomplete")}}');
+                var reason = response.reason || '{{_("Problem format is incomplete")}}';
+                alert('{{_("Could not analyze: ")}}' + reason);
               } else {
                 alert('{{_("Problem tagging failed: ")}}' + (response.error || 'Unknown error occurred'));
               }

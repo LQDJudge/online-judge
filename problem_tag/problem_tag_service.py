@@ -141,6 +141,7 @@ class ProblemTagService:
                 "predicted_points": result["points"],  # points field in Problem model
                 "predicted_types": result["tags"],  # types field in Problem model
                 "statement_length": len(statement),
+                "reason": result.get("reason"),  # Reason if is_valid is False
             }
         except Exception as e:
             logger.error(f"Error tagging problem {problem.code}: {e}")

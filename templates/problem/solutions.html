@@ -122,15 +122,13 @@
       // Insert generated solution into editor
       $('#generated-solution-insert').click(function() {
         var content = $('#generated-solution-content').val();
-        var $textarea = $('#id_content');
+        // PageDown wraps the textarea with wmd-input-{id} format
+        var $textarea = $('#wmd-input-{{ form.content.id_for_label }}');
         if ($textarea.length) {
           $textarea.val(content);
-          // Trigger change event for any listeners
-          $textarea.trigger('change');
+          // Trigger input event to update PageDown preview
+          $textarea.trigger('input').trigger('change');
           $('#generate-solution-status').text('{{ _('Inserted into editor!') }}').css('color', 'green');
-          setTimeout(function() {
-            $('#generate-solution-status').text('').css('color', '#666');
-          }, 3000);
         }
       });
     });

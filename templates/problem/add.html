@@ -6,8 +6,11 @@
   <script src="{{ static('problem_form.js') }}"></script>
   <script type="text/javascript">
     $(document).ready(function() {
-    // Initialize shared problem form utilities
+      // Initialize shared problem form utilities
       initializeProblemForm();
+
+      // Setup Use Template button
+      setupUseTemplateButton('{{ form.description.id_for_label }}', '{{ _("This will replace the current description. Continue?") }}');
     });
   </script>
 {% endblock %}
@@ -31,6 +34,25 @@
       .middle-right-content {
         display: block;
       }
+    }
+
+    .small-action-btn {
+      padding: 4px 10px;
+      font-size: 0.85em;
+      font-weight: normal;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #f8f8f8;
+      transition: background 0.2s;
+    }
+
+    .small-action-btn:hover {
+      background: #e8e8e8;
+    }
+
+    .small-action-btn i {
+      margin-right: 4px;
     }
   </style>
 {% endblock %}
@@ -152,7 +174,12 @@
           </div>
 
           <div class="form-row">
-            <label for="{{ form.description.id_for_label }}"><b>{{ _('Problem Description') }}{% if form.description.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            <label for="{{ form.description.id_for_label }}">
+              <b>{{ _('Problem Description') }}{% if form.description.field.required %}<span class="red"> * </span>{% endif %}:</b>
+              <button type="button" id="use-template-btn" class="small-action-btn" style="margin-left: 10px;">
+                <i class="fa fa-file-alt"></i> {{ _('Use Template') }}
+              </button>
+            </label>
             <div style="width: 100%">
               {{ form.description }}
             </div>

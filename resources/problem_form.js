@@ -111,21 +111,74 @@ function setupFormValidation() {
 }
 
 /**
+ * Standard problem description template
+ */
+var PROBLEM_TEMPLATE = `[Problem statement goes here. Describe the problem clearly.]
+
+####Input
+- [Describe input format]
+- [Constraints]
+
+####Output
+- [Describe output format]
+
+####Example
+
+!!! question "Test 1"
+    ???+ "Input"
+        \`\`\`sample
+        [input here]
+        \`\`\`
+    ???+ success "Output"
+        \`\`\`sample
+        [output here]
+        \`\`\`
+    ??? warning "Note"
+        [Optional explanation]
+
+####Scoring
+- Subtask 1 (x points): $1 \\le n \\le 100$
+- Subtask 2 (y points): $1 \\le n \\le 10^5$
+`;
+
+/**
+ * Setup "Use Template" button functionality
+ * @param {string} descriptionFieldId - The id_for_label of the description field
+ * @param {string} confirmMessage - Translation for confirmation message
+ */
+function setupUseTemplateButton(descriptionFieldId, confirmMessage) {
+    $('#use-template-btn').click(function() {
+        // PageDown wraps the textarea with wmd-input-{id} format
+        var $description = $('#wmd-input-' + descriptionFieldId);
+        var currentValue = ($description.val() || '').trim();
+
+        if (currentValue && !confirm(confirmMessage)) {
+            return;
+        }
+
+        $description.val(PROBLEM_TEMPLATE);
+
+        // Trigger input event to update PageDown preview
+        $description.trigger('input').trigger('change');
+    });
+}
+
+/**
  * Initialize all problem form utilities
  * Call this function to setup all shared functionality
  */
 function initializeProblemForm() {
     // Initialize tab system
     initTabs();
-    
+
     // Setup form functionality
     setupMemoryUnitConversion();
     setupSelectAllLanguages();
     setupFormValidation();
-    
+
     // Setup error highlighting
     updateTabErrors();
-    
+
     // Dynamically check for errors when inputs change
     $('.tab-pane input, .tab-pane textarea, .tab-pane select').on('change', function() {
         setTimeout(updateTabErrors, 100);

@@ -236,6 +236,7 @@ def problem_tag(request):
                         "current_types": current_types,
                         "predicted_types": predicted_types,
                         "all_types": all_types,
+                        "reason": result.get("reason"),  # Reason if is_valid is False
                     }
                 )
             else:

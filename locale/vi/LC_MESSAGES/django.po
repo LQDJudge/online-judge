@@ -6936,8 +6936,14 @@ msgid "Analyzing..."
 msgstr "Đang phân tích..."
 
 #: templates/internal/problem_queue.html:152
-msgid "Problem tagging failed: Problem format is incomplete"
-msgstr "Gán nhãn bài không thành công: Định dạng bài tập chưa hoàn chỉnh"
+#: templates/problem/edit.html:167
+msgid "Could not analyze: "
+msgstr "Không thể phân tích: "
+
+#: templates/internal/problem_queue.html:152
+#: templates/problem/edit.html:166
+msgid "Problem format is incomplete"
+msgstr "Định dạng đề bài chưa hoàn chỉnh"
 
 #: templates/internal/problem_queue.html:154
 #: templates/internal/problem_queue.html:262
@@ -7618,6 +7624,14 @@ msgstr "Người kiểm tra"
 #: templates/problem/add.html:155 templates/problem/edit.html:302
 msgid "Problem Description"
 msgstr "Đề bài"
+
+#: templates/problem/add.html:213
+msgid "Use Template"
+msgstr "Dùng mẫu"
+
+#: templates/problem/add.html:52
+msgid "This will replace the current description. Continue?"
+msgstr "Thao tác này sẽ thay thế nội dung hiện tại. Tiếp tục?"
 
 #: templates/problem/add.html:169 templates/problem/edit.html:336
 msgid "PDF Description"

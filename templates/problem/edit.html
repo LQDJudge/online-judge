@@ -99,6 +99,22 @@
         }, 2000);
       });
 
+      // Insert improved markdown into editor
+      $('#improved-markdown-insert').click(function() {
+        var content = $('#improved-markdown-content').val();
+        // PageDown wraps the textarea with wmd-input-{id} format
+        var $description = $('#wmd-input-{{ form.description.id_for_label }}');
+        if ($description.length) {
+          $description.val(content);
+          // Trigger input event to update PageDown preview
+          $description.trigger('input').trigger('change');
+          $('#improve-markdown-status').text('{{ _('Inserted into editor!') }}').css('color', 'green');
+        }
+      });
+
+      // Setup Use Template button
+      setupUseTemplateButton('{{ form.description.id_for_label }}', '{{ _("This will replace the current description. Continue?") }}');
+
       // Handle AI tagging button click
       $('#tag-btn').click(function() {
         var $btn = $(this);
@@ -123,6 +139,7 @@
             'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
           },
           success: function(data) {
+            var shouldClear = false;
             if (data.success) {
               if (data.is_valid) {
                 // Update form fields with AI predictions
@@ -162,23 +179,22 @@
                   $status.text('{{ _('Problem-tag analysis completed successfully!') }}').css('color', 'green');
                 }
               } else {
-                $status.text('{{ _('Problem format is incomplete - could not analyze') }}').css('color', 'orange');
+                // Show the reason from AI if available
+                var reason = data.reason || '{{ _('Problem format is incomplete') }}';
+                $status.text('{{ _('Could not analyze: ') }}' + reason).css('color', 'orange');
               }
             } else {
               $status.text('{{ _('Error: ') }}' + data.error).css('color', 'red');
             }
+
+            // Re-enable button
+            $btn.prop('disabled', false);
           },
           error: function(xhr, status, error) {
             $status.text('{{ _('Network error occurred') }}').css('color', 'red');
-          },
-          complete: function() {
+
             // Re-enable button
             $btn.prop('disabled', false);
-
-            // Clear status after 5 seconds
-            setTimeout(function() {
-              $status.text('').css('color', '#666');
-            }, 5000);
           }
         });
       });
@@ -299,7 +315,12 @@
           </div>
 
           <div class="form-row">
-            <label for="{{ form.description.id_for_label }}"><b>{{ _('Problem Description') }}{% if form.description.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+            <label for="{{ form.description.id_for_label }}">
+              <b>{{ _('Problem Description') }}{% if form.description.field.required %}<span class="red"> * </span>{% endif %}:</b>
+              <button type="button" id="use-template-btn" class="action-btn small" style="margin-left: 10px;">
+                <i class="fa fa-file-alt"></i> {{ _('Use Template') }}
+              </button>
+            </label>
             <div style="width: 100%">
               {{ form.description }}
             </div>
@@ -326,7 +347,10 @@
             <div id="improved-markdown-result" class="form-row" style="display: none; flex-direction: column;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                 <label><b>{{ _('Improved Markdown:') }}</b></label>
-                <button type="button" id="improved-markdown-copy" class="action-btn small">{{ _('Copy') }}</button>
+                <div>
+                  <button type="button" id="improved-markdown-insert" class="action-btn small" style="margin-right: 5px;">{{ _('Insert') }}</button>
+                  <button type="button" id="improved-markdown-copy" class="action-btn small">{{ _('Copy') }}</button>
+                </div>
               </div>
               <textarea id="improved-markdown-content" readonly style="width: 100%; min-height: 200px; font-family: monospace; font-size: 13px; padding: 10px; border-radius: 4px; resize: vertical;"></textarea>
             </div>
