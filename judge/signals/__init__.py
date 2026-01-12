@@ -5,3 +5,4 @@ from . import contest
 from . import submission
 from . import interface
 from . import course
+from . import bookmark
