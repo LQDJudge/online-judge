@@ -1,6 +1,7 @@
 """
-Django management command to make all problems in an organization public and optionally auto-tag them.
-Usage: python manage.py publish_group_problems <org_slug> [options]
+Django management command to publish all problems in an organization.
+Tags them, saves points/types, and makes them public.
+Usage: python manage.py publish_group_problems <org_slug> [--dry-run]
 """
 
 import sys
@@ -14,7 +15,7 @@ from judge.models.profile import Organization
 
 
 class Command(BaseCommand):
-    help = "Make all organization-private problems public and optionally auto-tag them"
+    help = "Tag and publish all organization-private problems (save points/types, make public)"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -23,24 +24,9 @@ class Command(BaseCommand):
             help="The organization slug (e.g., springcamp2024)",
         )
         parser.add_argument(
-            "--auto-tag",
-            action="store_true",
-            help="Also run auto-tagging on the problems",
-        )
-        parser.add_argument(
-            "--update-db",
-            action="store_true",
-            help="Update database with tagging results (only applies with --auto-tag)",
-        )
-        parser.add_argument(
             "--dry-run",
             action="store_true",
             help="Show what would be done without making changes",
-        )
-        parser.add_argument(
-            "--skip-publish",
-            action="store_true",
-            help="Skip making problems public (only run auto-tag)",
         )
 
     def handle(self, *args, **options):
@@ -50,7 +36,6 @@ class Command(BaseCommand):
         try:
             org = Organization.objects.get(slug=org_slug)
         except Organization.DoesNotExist:
-            # Try finding by name as fallback
             orgs = Organization.objects.filter(name__icontains=org_slug)
             if orgs.count() == 1:
                 org = orgs.first()
@@ -77,19 +62,6 @@ class Command(BaseCommand):
                     f"No organization-private problems found for '{org.slug}'"
                 )
             )
-            # Show all problems linked to this org (even if already public)
-            all_org_problems = Problem.objects.filter(organizations=org).order_by(
-                "code"
-            )
-            if all_org_problems.exists():
-                self.stdout.write(
-                    f"\nAll problems linked to this organization ({all_org_problems.count()}):"
-                )
-                for p in all_org_problems[:20]:
-                    status = "private" if p.is_organization_private else "public"
-                    self.stdout.write(f"  {p.code}: {p.name} [{status}]")
-                if all_org_problems.count() > 20:
-                    self.stdout.write(f"  ... and {all_org_problems.count() - 20} more")
             return
 
         self.stdout.write(f"Found {problems.count()} organization-private problems")
@@ -100,47 +72,15 @@ class Command(BaseCommand):
                 self.stdout.write(f"  {problem.code}: {problem.name}")
             return
 
+        # Process each problem: tag, save, publish
         problems_list = list(problems)
+        self.process_problems(problems_list)
 
-        # If auto-tag is enabled, tag first and only publish valid ones
-        if options["auto_tag"]:
-            valid_problems = self.auto_tag_problems(problems_list, options)
-
-            # Only publish problems with valid tagging results
-            if not options["skip_publish"]:
-                if valid_problems:
-                    self.make_problems_public(valid_problems)
-                else:
-                    self.stdout.write(
-                        self.style.WARNING("No valid problems to publish")
-                    )
-        else:
-            # No tagging - just publish all
-            if not options["skip_publish"]:
-                self.make_problems_public(problems_list)
-
-    def make_problems_public(self, problems):
-        """Make all problems public (is_organization_private=False)"""
-        self.stdout.write("\nMaking problems public...")
-
-        updated_count = 0
-        with transaction.atomic():
-            for problem in problems:
-                if problem.is_organization_private:
-                    problem.is_organization_private = False
-                    problem.is_public = True
-                    problem.save(update_fields=["is_public", "is_organization_private"])
-                    updated_count += 1
-                    self.stdout.write(f"  Updated: {problem.code}")
-
-        self.stdout.write(self.style.SUCCESS(f"Made {updated_count} problems public"))
-
-    def auto_tag_problems(self, problems, options):
-        """Run auto-tagging on problems. Returns list of valid problems."""
-        self.stdout.write("\nRunning auto-tagging...")
+    def process_problems(self, problems):
+        """Tag, save, and publish each problem."""
+        self.stdout.write("\nInitializing tagging service...")
 
         try:
-            # Add llm_service to Python path
             sys.path.insert(
                 0, os.path.join(os.path.dirname(__file__), "../../..", "..")
             )
@@ -151,77 +91,75 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.ERROR(f"Failed to initialize tagging service: {e}")
             )
-            return []
+            return
 
         total = len(problems)
-        results = []
-        valid_problems = []
+        published_count = 0
+        failed_count = 0
 
         for i, problem in enumerate(problems, 1):
-            self.stdout.write(f"Tagging {i}/{total}: {problem.code}")
+            self.stdout.write(f"\n[{i}/{total}] {problem.code}: {problem.name}")
 
             try:
+                # Tag the problem
                 result = tag_service.tag_single_problem(problem)
-                result["problem"] = problem  # Store problem reference
-                results.append(result)
 
-                if result["success"]:
-                    is_valid = result.get("is_valid", False)
-                    points = result.get("predicted_points", "N/A")
-                    types = result.get("predicted_types", [])
-
-                    if is_valid:
-                        valid_problems.append(problem)
-                        self.stdout.write(
-                            self.style.SUCCESS(f"  Points: {points}, Types: {types}")
-                        )
-                    else:
-                        self.stdout.write(
-                            self.style.WARNING(f"  Invalid format - will not publish")
-                        )
-                else:
+                if not result["success"]:
                     self.stdout.write(
                         self.style.ERROR(
-                            f'  Failed: {result.get("error", "Unknown")} - will not publish'
+                            f"  Tagging failed: {result.get('error', 'Unknown')}"
                         )
                     )
+                    failed_count += 1
+                    continue
 
-                # Update database if requested
-                if (
-                    options["update_db"]
-                    and result["success"]
-                    and result.get("is_valid")
-                ):
-                    with transaction.atomic():
-                        success = tag_service.update_problem_with_tags(
-                            problem, result, update_points=True, update_types=True
-                        )
-                        if success:
-                            self.stdout.write(f"  Database updated")
+                is_valid = result.get("is_valid", False)
+                if not is_valid:
+                    self.stdout.write(
+                        self.style.WARNING(f"  Invalid tagging result - skipping")
+                    )
+                    failed_count += 1
+                    continue
+
+                points = result.get("predicted_points")
+                types = result.get("predicted_types", [])
+                self.stdout.write(f"  Tagged: points={points}, types={types}")
+
+                # Save and publish in one transaction
+                with transaction.atomic():
+                    # Save points
+                    if points:
+                        problem.points = float(points)
+
+                    # Save types
+                    tag_service.update_problem_with_tags(
+                        problem, result, update_points=False, update_types=True
+                    )
+
+                    # Make public
+                    had_orgs = problem.organizations.exists()
+                    problem.is_organization_private = False
+                    problem.is_public = True
+                    problem.save(
+                        update_fields=["points", "is_public", "is_organization_private"]
+                    )
+
+                    if had_orgs:
+                        problem.organizations.clear()
+
+                published_count += 1
+                self.stdout.write(self.style.SUCCESS(f"  Published!"))
 
                 # Sleep between requests
                 if i < total:
-                    sleep_time = tag_service.config.sleep_time
-                    time.sleep(sleep_time)
+                    time.sleep(tag_service.config.sleep_time)
 
             except Exception as e:
-                self.stdout.write(
-                    self.style.ERROR(f"  Exception: {e} - will not publish")
-                )
-                results.append(
-                    {
-                        "problem_code": problem.code,
-                        "problem": problem,
-                        "success": False,
-                        "error": str(e),
-                    }
-                )
+                self.stdout.write(self.style.ERROR(f"  Exception: {e}"))
+                failed_count += 1
 
         # Summary
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"\nTagging complete: {len(valid_problems)}/{total} valid"
-            )
-        )
-
-        return valid_problems
+        self.stdout.write(f"\n{'='*50}")
+        self.stdout.write(self.style.SUCCESS(f"Published: {published_count}/{total}"))
+        if failed_count:
+            self.stdout.write(self.style.WARNING(f"Failed: {failed_count}/{total}"))
