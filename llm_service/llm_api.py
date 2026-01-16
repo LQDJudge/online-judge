@@ -56,21 +56,24 @@ class LLMService:
         Thinking content appears as:
         - Blockquotes with > prefix
         - *Thinking...* markers
+        - Thinking... (Xs elapsed) markers
         """
         lines = text.split("\n")
         result_lines = []
 
         for line in lines:
             stripped = line.strip()
-            # Skip *Thinking...* markers
-            if stripped == "*Thinking...*" or stripped == "Thinking...":
+            # Skip various thinking markers
+            if stripped in ("*Thinking...*", "Thinking..."):
+                continue
+            # Skip "Thinking... (Xs elapsed)" pattern
+            if stripped.startswith("Thinking...") and "elapsed" in stripped:
                 continue
             # Skip thinking block lines (starting with >)
             if stripped.startswith(">"):
                 continue
-            # Skip empty lines that are between thinking blocks
+            # Skip empty lines at the beginning or consecutive empty lines
             if stripped == "":
-                # Only add if we already have non-empty content
                 if result_lines and result_lines[-1].strip() != "":
                     result_lines.append(line)
                 continue
@@ -118,6 +121,48 @@ class LLMService:
 
         return self._get_response(messages)
 
+    def _get_site_domain(self) -> Optional[str]:
+        """Get the site domain from Django's Site model."""
+        try:
+            from django.contrib.sites.models import Site
+
+            site = Site.objects.get_current()
+            return site.domain if site else None
+        except Exception:
+            return None
+
+    def _is_site_url(self, url: str, site_domain: str) -> bool:
+        """Check if URL belongs to site domain or its subdomains."""
+        if not site_domain:
+            return False
+        try:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(url)
+            url_domain = parsed.netloc.lower()
+            site_domain = site_domain.lower()
+
+            # Check if URL domain matches site domain or is a subdomain
+            # e.g., cdn.lqdoj.edu.vn is subdomain of lqdoj.edu.vn
+            return url_domain == site_domain or url_domain.endswith(f".{site_domain}")
+        except Exception:
+            return False
+
+    def _extract_local_path_from_url(self, url: str) -> Optional[str]:
+        """Extract local file path from a site URL."""
+        try:
+            from urllib.parse import urlparse, unquote
+
+            parsed = urlparse(url)
+            path = unquote(parsed.path)
+
+            # Return path starting with /
+            if path.startswith("/"):
+                return path
+            return f"/{path}"
+        except Exception:
+            return None
+
     def extract_and_upload_files(self, content: str) -> List[fp.Attachment]:
         """
         Extract file references from markdown content and upload them to Poe
@@ -129,6 +174,9 @@ class LLMService:
             List of uploaded Attachment objects
         """
         attachments = []
+
+        # Get site domain for checking local URLs
+        site_domain = self._get_site_domain()
 
         # Find markdown file references
         # 1. Images: ![alt](url)
@@ -157,7 +205,21 @@ class LLMService:
         for url in set(file_urls):  # Remove duplicates
             try:
                 if url.startswith(("http://", "https://")):
-                    # Handle public URLs (e.g., https://lqdoj.edu.vn/problem/code/data/file.pdf)
+                    # Check if this is a site URL (or subdomain like cdn.lqdoj.edu.vn)
+                    if self._is_site_url(url, site_domain):
+                        # Try to load from local files first
+                        local_path = self._extract_local_path_from_url(url)
+                        if local_path:
+                            logger.info(
+                                f"Site URL detected, trying local path: {local_path}"
+                            )
+                            attachment = self._upload_local_file(local_path)
+                            if attachment:
+                                attachments.append(attachment)
+                                continue
+                        # Fall through to URL upload if local fails
+
+                    # Handle public URLs
                     attachment = self._upload_file_from_url(url)
                     if attachment:
                         attachments.append(attachment)
@@ -167,7 +229,7 @@ class LLMService:
                     if not attachment:
                         # Try as public URL with domain prefix for PDFs
                         if url.startswith("/problem/") and "/data/" in url:
-                            public_url = f"https://lqdoj.edu.vn{url}"
+                            public_url = f"https://{site_domain or 'lqdoj.edu.vn'}{url}"
                             logger.info(
                                 f"Local PDF not found, trying public URL: {public_url}"
                             )
