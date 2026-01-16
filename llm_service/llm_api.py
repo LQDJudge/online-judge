@@ -39,16 +39,41 @@ class LLMService:
                 bot_name=self.bot_name,
                 api_key=self.api_key,
             ):
-                # Filter out intermediate "Thinking..." messages
-                if "Thinking" not in partial.text:
-                    response += partial.text
+                response += partial.text
                 logger.debug(f"LLM partial response: {partial.text}")
 
+            # Remove thinking content (blockquotes with > prefix)
+            response = self._remove_thinking_content(response)
             return response.strip()
 
         except Exception as e:
             logger.error(f"Error during LLM API call: {e}")
             return None
+
+    def _remove_thinking_content(self, text: str) -> str:
+        """
+        Remove extended thinking content from LLM response.
+        Thinking content appears as blockquotes with > prefix.
+        """
+        lines = text.split("\n")
+        result_lines = []
+        in_thinking = False
+
+        for line in lines:
+            stripped = line.strip()
+            # Detect thinking block (lines starting with >)
+            if stripped.startswith(">"):
+                in_thinking = True
+                continue
+            # Empty line after thinking block ends the thinking
+            if in_thinking and stripped == "":
+                in_thinking = False
+                continue
+            # Non-thinking content
+            if not in_thinking:
+                result_lines.append(line)
+
+        return "\n".join(result_lines)
 
     def call_llm(
         self,
