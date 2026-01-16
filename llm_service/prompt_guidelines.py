@@ -33,6 +33,10 @@ MARKDOWN INDENTATION AND LATEX RULES:
 3. For string literals, do NOT use LaTeX. Use `code` backticks or "raw" quotes instead:
    - WRONG: $"hello"$ or $\\text{"hello"}$
    - CORRECT: `hello` or "hello"
+
+4. Inline LaTeX MUST NOT have spaces after opening $ or before closing $:
+   - WRONG: $ f_i = $ or $f_i = $ (spaces cause rendering failure)
+   - CORRECT: $f_i =$ or $f_i$ =
 """.strip()
 
 LATEX_BASIC_RULES = """
@@ -62,4 +66,5 @@ def get_markdown_rules_for_prompt(start_number: int = 1) -> str:
     rules = rules.replace(
         "\n3. For string literals", f"\n{start_number + 2}. For string literals"
     )
+    rules = rules.replace("\n4. Inline LaTeX", f"\n{start_number + 3}. Inline LaTeX")
     return rules
