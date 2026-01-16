@@ -2,7 +2,7 @@ import markdown as _markdown
 import bleach
 from django.utils.html import escape
 from bs4 import BeautifulSoup
-from pymdownx import superfences
+from pymdownx import superfences, arithmatex
 from django.conf import settings
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
@@ -41,7 +41,12 @@ EXTENSION_CONFIGS = {
                 "name": "sample",
                 "class": "no-border",
                 "format": superfences.fence_code_format,
-            }
+            },
+            {
+                "name": "math",
+                "class": "arithmatex",
+                "format": arithmatex.arithmatex_fenced_format(which="generic"),
+            },
         ],
     },
     "pymdownx.highlight": {

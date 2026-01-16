@@ -7,6 +7,7 @@ import time
 from typing import Dict, Any
 import logging
 from llm_service.llm_api import LLMService
+from llm_service.prompt_guidelines import get_markdown_rules_for_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +103,7 @@ class MarkdownImprover:
             Dict with 'success', 'improved_markdown', and optional 'error' fields
         """
         template = self.get_format_template()
+        markdown_rules = get_markdown_rules_for_prompt(start_number=9)
 
         system_prompt = f"""You are an expert at formatting competitive programming problem statements.
 Your task is to convert problem statements to a specific LQDOJ markdown format.
@@ -120,22 +122,7 @@ IMPORTANT FORMATTING RULES:
 7. Use \\cdot for multiplication in math mode
 8. Format large numbers with scientific notation where appropriate (e.g., $10^9$)
 
-MARKDOWN INDENTATION AND LATEX RULES:
-9. Sublist items MUST have 4 spaces indentation more than their parent item (NOT 2 spaces)
-   Example:
-   - Parent item
-       - Child item (4 spaces before -)
-           - Grandchild item (8 spaces before -)
-10. Display LaTeX with $$...$$ MUST be a separate paragraph with a blank line above and below:
-    Example:
-    Some text here.
-
-    $$x = \\\\frac{{-b \\\\pm \\\\sqrt{{b^2 - 4ac}}}}{{2a}}$$
-
-    More text here.
-11. For string literals, do NOT use LaTeX. Use `code` backticks or "raw" quotes instead:
-    - WRONG: $"hello"$ or $\\\\text{{"hello"}}$
-    - CORRECT: `hello` or "hello"
+{markdown_rules}
 
 HERE IS THE TARGET FORMAT TEMPLATE:
 {template}

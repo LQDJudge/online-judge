@@ -7,6 +7,7 @@ import time
 from typing import Optional, Dict, Any
 import logging
 from llm_service.llm_api import LLMService
+from llm_service.prompt_guidelines import get_markdown_rules_for_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -193,6 +194,7 @@ int main() {
 
         # Get AC solution if problem object is provided
         ac_solution = self._get_ac_solution(problem_obj) if problem_obj else None
+        markdown_rules = get_markdown_rules_for_prompt(start_number=10)
 
         system_prompt = f"""You are an expert competitive programming coach writing solution editorials.
 Your task is to write clear, educational solution explanations for competitive programming problems.
@@ -214,22 +216,7 @@ IMPORTANT FORMATTING RULES:
 8. Use bullet points and numbered lists for clarity
 9. Include code with appropriate syntax highlighting (```cpp, ```python, etc.)
 
-MARKDOWN INDENTATION AND LATEX RULES:
-10. Sublist items MUST have 4 spaces indentation more than their parent item (NOT 2 spaces)
-    Example:
-    - Parent item
-        - Child item (4 spaces before -)
-            - Grandchild item (8 spaces before -)
-11. Display LaTeX with $$...$$ MUST be a separate paragraph with a blank line above and below:
-    Example:
-    Some text here.
-
-    $$x = \\\\frac{{-b \\\\pm \\\\sqrt{{b^2 - 4ac}}}}{{2a}}$$
-
-    More text here.
-12. For string literals, do NOT use LaTeX. Use `code` backticks or "raw" quotes instead:
-    - WRONG: $"hello"$ or $\\\\text{{"hello"}}$
-    - CORRECT: `hello` or "hello"
+{markdown_rules}
 
 HERE IS THE TARGET FORMAT TEMPLATE:
 {template}
