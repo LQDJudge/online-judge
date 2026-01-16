@@ -29,8 +29,18 @@ class ProblemTagger:
         Expected format: {"is_valid": true/false, "points": 1500, "tags": ["tag1", "tag2"], "reason": "explanation_if_invalid"}
         """
         try:
+            # Remove markdown code block wrappers if present
+            cleaned = response.strip()
+            if cleaned.startswith("```json"):
+                cleaned = cleaned[7:]
+            elif cleaned.startswith("```"):
+                cleaned = cleaned[3:]
+            if cleaned.endswith("```"):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+
             # Try to extract JSON from response
-            json_match = re.search(r"\{.*\}", response, re.DOTALL)
+            json_match = re.search(r"\{.*\}", cleaned, re.DOTALL)
             if json_match:
                 json_str = json_match.group(0)
 

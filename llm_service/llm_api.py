@@ -53,25 +53,29 @@ class LLMService:
     def _remove_thinking_content(self, text: str) -> str:
         """
         Remove extended thinking content from LLM response.
-        Thinking content appears as blockquotes with > prefix.
+        Thinking content appears as:
+        - Blockquotes with > prefix
+        - *Thinking...* markers
         """
         lines = text.split("\n")
         result_lines = []
-        in_thinking = False
 
         for line in lines:
             stripped = line.strip()
-            # Detect thinking block (lines starting with >)
+            # Skip *Thinking...* markers
+            if stripped == "*Thinking...*" or stripped == "Thinking...":
+                continue
+            # Skip thinking block lines (starting with >)
             if stripped.startswith(">"):
-                in_thinking = True
                 continue
-            # Empty line after thinking block ends the thinking
-            if in_thinking and stripped == "":
-                in_thinking = False
+            # Skip empty lines that are between thinking blocks
+            if stripped == "":
+                # Only add if we already have non-empty content
+                if result_lines and result_lines[-1].strip() != "":
+                    result_lines.append(line)
                 continue
-            # Non-thinking content
-            if not in_thinking:
-                result_lines.append(line)
+            # Non-thinking content - keep it
+            result_lines.append(line)
 
         return "\n".join(result_lines)
 
