@@ -127,25 +127,30 @@ class Command(BaseCommand):
 
                 # Save and publish in one transaction
                 with transaction.atomic():
-                    # Save points
+                    had_orgs = problem.organizations.exists()
+
+                    # Set all fields first
                     if points:
                         problem.points = float(points)
-
-                    # Save types
-                    tag_service.update_problem_with_tags(
-                        problem, result, update_points=False, update_types=True
-                    )
-
-                    # Make public
-                    had_orgs = problem.organizations.exists()
                     problem.is_organization_private = False
                     problem.is_public = True
+
+                    # Clear organizations first (before save)
+                    if had_orgs:
+                        problem.organizations.clear()
+
+                    # Save everything at once
                     problem.save(
                         update_fields=["points", "is_public", "is_organization_private"]
                     )
 
-                    if had_orgs:
-                        problem.organizations.clear()
+                    # Update types (this won't call save() if we pass the right params)
+                    if types:
+                        from judge.models import ProblemType
+
+                        type_objects = ProblemType.objects.filter(name__in=types)
+                        for type_obj in type_objects:
+                            problem.types.add(type_obj)
 
                 published_count += 1
                 self.stdout.write(self.style.SUCCESS(f"  Published!"))
