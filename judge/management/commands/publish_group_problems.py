@@ -9,8 +9,9 @@ import os
 import time
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import Q
 
-from judge.models import Problem
+from judge.models import Problem, Contest
 from judge.models.profile import Organization
 
 
@@ -51,20 +52,31 @@ class Command(BaseCommand):
 
         self.stdout.write(f"Found organization: {org.slug} ({org.name})")
 
-        # Get all problems that are private to this organization
+        # Get problems from contests belonging to this organization
+        # (same logic as OrganizationProblems view)
+        contest_problems = (
+            Contest.objects.filter(organizations=org)
+            .values_list("contest_problems__problem__id")
+            .distinct()
+        )
+
+        # Get all private problems:
+        # 1. Problems directly assigned to this organization (is_organization_private=True)
+        # 2. Problems in contests of this organization (may have is_public=False)
         problems = Problem.objects.filter(
-            organizations=org, is_organization_private=True
+            Q(organizations=org, is_organization_private=True)
+            | Q(id__in=contest_problems, is_public=False)
         ).order_by("code")
 
         if not problems.exists():
             self.stdout.write(
                 self.style.WARNING(
-                    f"No organization-private problems found for '{org.slug}'"
+                    f"No private problems found for '{org.slug}' (checked org problems and contest problems)"
                 )
             )
             return
 
-        self.stdout.write(f"Found {problems.count()} organization-private problems")
+        self.stdout.write(f"Found {problems.count()} private problems to publish")
 
         if options["dry_run"]:
             self.stdout.write(self.style.WARNING("\nDRY RUN - would process:"))
@@ -95,7 +107,7 @@ class Command(BaseCommand):
 
         total = len(problems)
         published_count = 0
-        failed_count = 0
+        failed_problems = []  # Track failed problems with reasons
 
         for i, problem in enumerate(problems, 1):
             self.stdout.write(f"\n[{i}/{total}] {problem.code}: {problem.name}")
@@ -105,20 +117,16 @@ class Command(BaseCommand):
                 result = tag_service.tag_single_problem(problem)
 
                 if not result["success"]:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"  Tagging failed: {result.get('error', 'Unknown')}"
-                        )
-                    )
-                    failed_count += 1
+                    reason = f"Tagging failed: {result.get('error', 'Unknown')}"
+                    self.stdout.write(self.style.ERROR(f"  {reason}"))
+                    failed_problems.append((problem, reason))
                     continue
 
                 is_valid = result.get("is_valid", False)
                 if not is_valid:
-                    self.stdout.write(
-                        self.style.WARNING(f"  Invalid tagging result - skipping")
-                    )
-                    failed_count += 1
+                    reason = "Invalid tagging result"
+                    self.stdout.write(self.style.WARNING(f"  {reason} - skipping"))
+                    failed_problems.append((problem, reason))
                     continue
 
                 points = result.get("predicted_points")
@@ -157,11 +165,17 @@ class Command(BaseCommand):
                     time.sleep(tag_service.config.sleep_time)
 
             except Exception as e:
-                self.stdout.write(self.style.ERROR(f"  Exception: {e}"))
-                failed_count += 1
+                reason = f"Exception: {e}"
+                self.stdout.write(self.style.ERROR(f"  {reason}"))
+                failed_problems.append((problem, reason))
 
         # Summary
         self.stdout.write(f"\n{'='*50}")
         self.stdout.write(self.style.SUCCESS(f"Published: {published_count}/{total}"))
-        if failed_count:
-            self.stdout.write(self.style.WARNING(f"Failed: {failed_count}/{total}"))
+        if failed_problems:
+            self.stdout.write(
+                self.style.WARNING(f"Failed: {len(failed_problems)}/{total}")
+            )
+            self.stdout.write(self.style.WARNING("\nFailed problems:"))
+            for problem, reason in failed_problems:
+                self.stdout.write(f"  - {problem.code}: {reason}")
