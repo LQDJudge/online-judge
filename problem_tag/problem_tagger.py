@@ -33,7 +33,39 @@ class ProblemTagger:
             json_match = re.search(r"\{.*\}", response, re.DOTALL)
             if json_match:
                 json_str = json_match.group(0)
-                parsed = json.loads(json_str)
+
+                # Try parsing as-is first
+                try:
+                    parsed = json.loads(json_str)
+                except json.JSONDecodeError:
+                    # Fix common issues: single quotes -> double quotes
+                    # Use Python's ast.literal_eval for Python-style dicts
+                    import ast
+
+                    try:
+                        # Try parsing as Python literal (handles single quotes, True/False, None)
+                        python_obj = ast.literal_eval(json_str)
+                        # Convert to proper JSON types
+                        parsed = json.loads(json.dumps(python_obj))
+                        logger.debug("Parsed using ast.literal_eval")
+                    except (ValueError, SyntaxError):
+                        # Fallback: manual regex fixes
+                        fixed_str = json_str
+                        # Replace single quotes with double quotes
+                        fixed_str = re.sub(
+                            r"'(\w+)'(\s*:)", r'"\1"\2', fixed_str
+                        )  # 'key': -> "key":
+                        fixed_str = re.sub(
+                            r":\s*'([^']*)'", r': "\1"', fixed_str
+                        )  # : 'value' -> : "value"
+                        fixed_str = re.sub(r"\[\s*'", r'["', fixed_str)  # [' -> ["
+                        fixed_str = re.sub(r"'\s*\]", r'"]', fixed_str)  # '] -> "]
+                        fixed_str = re.sub(
+                            r"'\s*,\s*'", r'", "', fixed_str
+                        )  # ', ' -> ", "
+
+                        logger.debug(f"Fixed JSON string: {fixed_str[:200]}...")
+                        parsed = json.loads(fixed_str)
 
                 # Validate required fields
                 if not isinstance(parsed, dict):
@@ -69,7 +101,10 @@ class ProblemTagger:
                 raise ValueError("No JSON found in response")
 
         except Exception as e:
+            # Log the raw response for debugging
+            response_preview = response[:500] if response else "(empty)"
             logger.error(f"Error parsing JSON response: {e}")
+            logger.error(f"Raw response preview: {response_preview}")
             return {
                 "is_valid": False,
                 "points": None,
