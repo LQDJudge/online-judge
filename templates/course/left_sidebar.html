@@ -1,7 +1,7 @@
 <div class="left-sidebar">
   {{ make_tab_item('home', 'fa fa-home', course.get_absolute_url(), _('Home')) }}
   {% if is_editable %}
-    {{ make_tab_item('edit_lesson', 'fa fa-edit', url('edit_course_lessons', course.slug), _('Edit lessons')) }}
+    {{ make_tab_item('edit_lesson', 'fa fa-edit', url('edit_course_lessons', course.slug), _('Lessons')) }}
     {{ make_tab_item('contests', 'fa fa-ranking-star', url('course_contest_list', course.slug), _('Contests')) }}
     {{ make_tab_item('grades', 'fa fa-check-square', url('course_grades', course.slug), _('Grades')) }}
     {{ make_tab_item('members', 'fa fa-users', url('course_members', course.slug), _('Members')) }}

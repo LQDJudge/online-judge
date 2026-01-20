@@ -2,7 +2,7 @@ from copy import deepcopy
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from django.db.models import Max, F, Sum, Q
 from django.forms import (
     inlineformset_factory,
@@ -10,7 +10,7 @@ from django.forms import (
     modelformset_factory,
 )
 from django.core.files.uploadedfile import UploadedFile
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy, reverse
 from django.utils.html import mark_safe
@@ -39,6 +39,8 @@ from judge.models import (
     Organization,
     CourseLessonQuiz,
     QuizAttempt,
+    BestSubmission,
+    BestQuizAttempt,
 )
 from judge.models.course import RoleInCourse, EDITABLE_ROLES
 from judge.utils.contest import (
@@ -63,49 +65,90 @@ from judge.utils.views import SingleObjectFormView, TitleMixin, DiggPaginatorMix
 
 def bulk_max_case_points_per_problem(students, all_problems):
     """
-    Fetch max case points for all students and problems in one query.
+    Fetch max case points for all students and problems using BestSubmission cache.
     Returns nested dict for O(1) lookups: {user_id: {problem_id: {case_points, case_total}}}
-    Gets the submission with the highest percentage (case_points/case_total) when case_total > 0.
+
+    This uses the BestSubmission table which caches the best submission per user/problem.
+    Falls back to querying Submission table if BestSubmission records don't exist.
     """
     if not students or not all_problems:
         return {}
 
-    # Get all submissions and find the best percentage for each user-problem pair
-    submissions = Submission.objects.filter(
-        user__in=students, problem__in=all_problems, case_total__gt=0
-    ).values("user", "problem", "case_points", "case_total")
-
-    # Build nested dict and keep only the best submission per user-problem
     result = {}
-    for sub in submissions:
-        user_id = sub["user"]
-        problem_id = sub["problem"]
 
-        percentage = (
-            sub["case_points"] / sub["case_total"] if sub["case_total"] > 0 else 0
-        )
+    # Try to use BestSubmission cache first
+    best_subs = BestSubmission.objects.filter(
+        user__in=students, problem__in=all_problems, case_total__gt=0
+    ).values("user_id", "problem_id", "points", "case_total")
+
+    # Track which user-problem pairs we found in cache
+    found_pairs = set()
+
+    for best_sub in best_subs:
+        user_id = best_sub["user_id"]
+        problem_id = best_sub["problem_id"]
 
         if user_id not in result:
             result[user_id] = {}
 
-        if problem_id in result[user_id]:
-            existing = result[user_id][problem_id]
-            existing_percentage = (
-                existing["case_points"] / existing["case_total"]
-                if existing["case_total"] > 0
-                else 0
-            )
+        result[user_id][problem_id] = {
+            "case_points": best_sub["points"],
+            "case_total": best_sub["case_total"],
+        }
+        found_pairs.add((user_id, problem_id))
 
-            if percentage > existing_percentage:
-                result[user_id][problem_id] = {
-                    "case_points": sub["case_points"],
-                    "case_total": sub["case_total"],
-                }
-        else:
-            result[user_id][problem_id] = {
-                "case_points": sub["case_points"],
-                "case_total": sub["case_total"],
-            }
+    # Check for missing pairs and fall back to Submission query
+    all_pairs = set()
+    student_ids = [s.id for s in students]
+    problem_ids = [p.id for p in all_problems]
+    for s_id in student_ids:
+        for p_id in problem_ids:
+            all_pairs.add((s_id, p_id))
+
+    missing_pairs = all_pairs - found_pairs
+
+    if missing_pairs:
+        # Fall back to submission query for missing pairs
+        # Group by user for more efficient querying
+        missing_by_user = {}
+        for user_id, problem_id in missing_pairs:
+            if user_id not in missing_by_user:
+                missing_by_user[user_id] = []
+            missing_by_user[user_id].append(problem_id)
+
+        for user_id, prob_ids in missing_by_user.items():
+            submissions = Submission.objects.filter(
+                user_id=user_id, problem_id__in=prob_ids, case_total__gt=0
+            ).values("problem", "case_points", "case_total")
+
+            for sub in submissions:
+                problem_id = sub["problem"]
+                percentage = (
+                    sub["case_points"] / sub["case_total"]
+                    if sub["case_total"] > 0
+                    else 0
+                )
+
+                if user_id not in result:
+                    result[user_id] = {}
+
+                if problem_id in result[user_id]:
+                    existing = result[user_id][problem_id]
+                    existing_percentage = (
+                        existing["case_points"] / existing["case_total"]
+                        if existing["case_total"] > 0
+                        else 0
+                    )
+                    if percentage > existing_percentage:
+                        result[user_id][problem_id] = {
+                            "case_points": sub["case_points"],
+                            "case_total": sub["case_total"],
+                        }
+                else:
+                    result[user_id][problem_id] = {
+                        "case_points": sub["case_points"],
+                        "case_total": sub["case_total"],
+                    }
 
     return result
 
@@ -153,7 +196,6 @@ def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
 
     # Bulk fetch best quiz attempts for all students and lessons
     # Build a dict of {(student_id, lesson_quiz_id): best_score_ratio}
-    # Include ALL attempts for a quiz (not just lesson-linked ones)
     student_ids = [s.id for s in students]
     lesson_quiz_ids = []
     quiz_ids = set()
@@ -167,42 +209,74 @@ def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
 
     # Get best attempts for all students and lesson quizzes
     best_quiz_scores = {}
-    if quiz_ids and student_ids:
-        from django.db.models import Max
+    if lesson_quiz_ids and student_ids:
+        # Try using BestQuizAttempt cache first
+        cached_best_attempts = BestQuizAttempt.objects.filter(
+            user_id__in=student_ids,
+            lesson_quiz_id__in=lesson_quiz_ids,
+        ).values("user_id", "lesson_quiz_id", "score", "max_score")
 
-        # Get best score for each (user, quiz) combination - include ALL attempts
-        # regardless of whether they came from a lesson or direct quiz access
-        best_attempts = (
-            QuizAttempt.objects.filter(
-                user_id__in=student_ids,
-                quiz_id__in=quiz_ids,
-                is_submitted=True,
-            )
-            .values("user_id", "quiz_id")
-            .annotate(
-                best_score=Max("score"),
-            )
-        )
-
-        # Build a dict of {(student_id, quiz_id): best_score_ratio}
-        # Use current quiz totals instead of max_score from attempts
-        quiz_best_scores = {}
-        for attempt in best_attempts:
-            quiz_id = attempt["quiz_id"]
+        found_pairs = set()
+        for attempt in cached_best_attempts:
+            lesson_quiz_id = attempt["lesson_quiz_id"]
+            quiz_id = lesson_quiz_to_quiz.get(lesson_quiz_id)
             quiz_max = quiz_totals.get(quiz_id, 0)
             if quiz_max and quiz_max > 0:
-                ratio = float(attempt["best_score"] or 0) / float(quiz_max)
+                ratio = float(attempt["score"] or 0) / float(quiz_max)
             else:
                 ratio = 0
-            quiz_best_scores[(attempt["user_id"], quiz_id)] = ratio
+            best_quiz_scores[(attempt["user_id"], lesson_quiz_id)] = ratio
+            found_pairs.add((attempt["user_id"], lesson_quiz_id))
 
-        # Map back to lesson_quiz_id for the grade calculation
-        for lesson_quiz_id, quiz_id in lesson_quiz_to_quiz.items():
-            for student_id in student_ids:
-                if (student_id, quiz_id) in quiz_best_scores:
-                    best_quiz_scores[(student_id, lesson_quiz_id)] = quiz_best_scores[
-                        (student_id, quiz_id)
-                    ]
+        # Check for missing pairs and fall back to QuizAttempt query
+        all_pairs = set()
+        for s_id in student_ids:
+            for lq_id in lesson_quiz_ids:
+                all_pairs.add((s_id, lq_id))
+
+        missing_pairs = all_pairs - found_pairs
+
+        if missing_pairs:
+            # Fall back to QuizAttempt for missing pairs
+            from django.db.models import Max
+
+            # Get best score for each (user, quiz) combination
+            missing_quiz_ids = set()
+            for user_id, lq_id in missing_pairs:
+                if lq_id in lesson_quiz_to_quiz:
+                    missing_quiz_ids.add(lesson_quiz_to_quiz[lq_id])
+
+            if missing_quiz_ids:
+                best_attempts = (
+                    QuizAttempt.objects.filter(
+                        user_id__in=student_ids,
+                        quiz_id__in=missing_quiz_ids,
+                        is_submitted=True,
+                    )
+                    .values("user_id", "quiz_id")
+                    .annotate(
+                        best_score=Max("score"),
+                    )
+                )
+
+                # Build a dict of {(student_id, quiz_id): best_score_ratio}
+                quiz_best_scores = {}
+                for attempt in best_attempts:
+                    quiz_id = attempt["quiz_id"]
+                    quiz_max = quiz_totals.get(quiz_id, 0)
+                    if quiz_max and quiz_max > 0:
+                        ratio = float(attempt["best_score"] or 0) / float(quiz_max)
+                    else:
+                        ratio = 0
+                    quiz_best_scores[(attempt["user_id"], quiz_id)] = ratio
+
+                # Map back to lesson_quiz_id for missing pairs only
+                for user_id, lesson_quiz_id in missing_pairs:
+                    quiz_id = lesson_quiz_to_quiz.get(lesson_quiz_id)
+                    if quiz_id and (user_id, quiz_id) in quiz_best_scores:
+                        best_quiz_scores[(user_id, lesson_quiz_id)] = quiz_best_scores[
+                            (user_id, quiz_id)
+                        ]
 
     for student in students:
         student_results = {}
@@ -687,6 +761,7 @@ class CourseDetail(CourseDetailMixin, DetailView):
 
         # Get user's role in the course
         user_role = None
+        course_role = None
         if self.request.user.is_authenticated:
             try:
                 course_role = CourseRole.objects.get(
@@ -694,7 +769,15 @@ class CourseDetail(CourseDetailMixin, DetailView):
                 )
                 user_role = course_role.role
             except CourseRole.DoesNotExist:
-                user_role = None
+                pass
+
+        # Lazy recalculation: if user needs progress recalculation, do it now
+        if course_role and course_role.needs_progress_recalculation:
+            from judge.utils.course_prerequisites import update_lesson_unlock_states
+
+            update_lesson_unlock_states(self.request.profile, self.course)
+            course_role.needs_progress_recalculation = False
+            course_role.save(update_fields=["needs_progress_recalculation"])
 
         context["title"] = self.course.name
         context["page_type"] = "home"
@@ -708,6 +791,34 @@ class CourseDetail(CourseDetailMixin, DetailView):
             context["lesson_progress"],
             context["contest_progress"],
         )
+
+        # Add lesson lock status for prerequisites feature
+        from judge.utils.course_prerequisites import (
+            get_lesson_lock_status,
+            get_lesson_prerequisites_info,
+            get_lessons_by_order,
+        )
+
+        # Teachers/Assistants bypass lock
+        if Course.is_editable_by(self.course, self.request.profile):
+            context["lesson_lock_status"] = {lesson.id: False for lesson in lessons}
+            context["lesson_prerequisites_info"] = {}
+        else:
+            context["lesson_lock_status"] = get_lesson_lock_status(
+                self.request.profile, self.course
+            )
+            # Get prerequisites info for displaying what's needed
+            prereq_info_by_order = get_lesson_prerequisites_info(self.course)
+            lessons_by_order = get_lessons_by_order(self.course)
+
+            # Convert to lesson_id based dict for template
+            lesson_prerequisites_info = {}
+            for lesson in lessons:
+                if lesson.order in prereq_info_by_order:
+                    lesson_prerequisites_info[lesson.id] = prereq_info_by_order[
+                        lesson.order
+                    ]
+            context["lesson_prerequisites_info"] = lesson_prerequisites_info
 
         return context
 
@@ -725,9 +836,27 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
             if not Course.is_accessible_by(self.course, self.request.profile):
                 raise Http404()
 
+            # Check if lesson is locked for this user (unless they're a teacher/assistant)
+            if not self.is_lesson_unlocked_for_user(self.lesson, self.request.profile):
+                raise PermissionDenied(
+                    _("This lesson is locked. Complete prerequisites first.")
+                )
+
             return self.lesson
         except ObjectDoesNotExist:
             raise Http404()
+
+    def is_lesson_unlocked_for_user(self, lesson, profile):
+        """Check if lesson is unlocked for the user."""
+        # Teachers/Assistants/Admins bypass lock
+        if Course.is_editable_by(self.course, profile):
+            return True
+
+        from judge.utils.course_prerequisites import get_lesson_lock_status
+
+        lock_status = get_lesson_lock_status(profile, self.course)
+        is_locked = lock_status.get(lesson.id, False)
+        return not is_locked
 
     def get_profile(self):
         username = self.request.GET.get("user")
@@ -824,7 +953,7 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
 class CourseLessonForm(forms.ModelForm):
     class Meta:
         model = CourseLesson
-        fields = ["order", "title", "is_visible", "points", "content"]
+        fields = ["title", "is_visible", "points", "content"]
         widgets = {
             "title": forms.TextInput(),
             "content": HeavyPreviewPageDownWidget(preview=reverse_lazy("blog_preview")),
@@ -1050,18 +1179,16 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
     def get_context_data(self, **kwargs):
         context = super(EditCourseLessonsViewNewWindow, self).get_context_data(**kwargs)
 
-        if self.request.method != "POST":
-            context["formset"] = self.form_class(
-                instance=self.course, queryset=self.course.lessons.order_by("order")
-            )
-            # Create problem formset only for the current lesson
-            context["problem_formsets"] = {
-                self.lesson.id: self.get_problem_formset(post=False, lesson=self.lesson)
-            }
-            # Create quiz formset for the current lesson
-            context["quiz_formset"] = self.get_quiz_formset(
-                post=False, lesson=self.lesson
-            )
+        # Always provide formset for the template (needed for both GET and form_invalid)
+        context["formset"] = self.form_class(
+            instance=self.course, queryset=self.course.lessons.order_by("order")
+        )
+        # Create problem formset only for the current lesson
+        context["problem_formsets"] = {
+            self.lesson.id: self.get_problem_formset(post=False, lesson=self.lesson)
+        }
+        # Create quiz formset for the current lesson
+        context["quiz_formset"] = self.get_quiz_formset(post=False, lesson=self.lesson)
 
         context["title"] = _("Edit lessons for %(course_name)s") % {
             "course_name": self.course.name
@@ -1074,7 +1201,13 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
             }
         )
         context["page_type"] = "edit_lesson_new"
-        context["lesson_field"] = CourseLessonForm(instance=self.lesson)
+
+        # Use form from kwargs if provided (for form_invalid), otherwise create new one
+        if "form" in kwargs:
+            context["lesson_field"] = kwargs["form"]
+        else:
+            context["lesson_field"] = CourseLessonForm(instance=self.lesson)
+
         context["lesson"] = self.lesson
         context["current_user_role"] = self.get_user_role_in_course()
 
@@ -1082,6 +1215,9 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
 
     def post(self, request, *args, **kwargs):
         form = self.get_form(form_class=CourseLessonForm)  # Get the CourseLessonForm
+        # Set course_id and pk BEFORE validation so clean() can check for duplicates
+        form.instance.course_id = self.course.id
+        form.instance.pk = self.lesson.id
         if form.is_valid():
             with revisions.create_revision():
                 if "delete_lesson" in request.POST:
@@ -1133,14 +1269,20 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
                         post=True, lesson=self.lesson
                     )
                     if problem_formsets.is_valid():
-                        problem_formsets.save()
+                        instances = problem_formsets.save(commit=False)
+                        for instance in instances:
+                            instance.lesson = self.lesson
+                            instance.save()
                         for obj in problem_formsets.deleted_objects:
                             if obj.pk is not None:
                                 obj.delete()
 
                     quiz_formsets = self.get_quiz_formset(post=True, lesson=self.lesson)
                     if quiz_formsets.is_valid():
-                        quiz_formsets.save()
+                        instances = quiz_formsets.save(commit=False)
+                        for instance in instances:
+                            instance.lesson = self.lesson
+                            instance.save()
                         for obj in quiz_formsets.deleted_objects:
                             if obj.pk is not None:
                                 obj.delete()
@@ -1155,7 +1297,11 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
             return super().form_valid(form)
 
     def form_invalid(self, form):
-        return self.render_to_response(self.get_context_data(form=form))
+        # Create a fresh form from the original instance with original values
+        # but carry over the errors from the invalid form
+        fresh_form = CourseLessonForm(instance=self.lesson)
+        fresh_form._errors = form._errors
+        return self.render_to_response(self.get_context_data(form=fresh_form))
 
     def get_success_url(self):
         return reverse(
@@ -1202,9 +1348,320 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
         )
         context["page_type"] = "edit_lesson"
 
+        # Handle tab parameter for Lessons/Prerequisites/Order tabs
+        tab = self.request.GET.get("tab", "lessons")
+        context["tab"] = tab
+
+        # Add prerequisites data for the prerequisites tab
+        if tab == "prerequisites":
+            from judge.models import CourseLessonPrerequisite
+
+            prerequisites = CourseLessonPrerequisite.objects.filter(
+                course=self.course
+            ).order_by("source_order", "target_order")
+            context["prerequisites"] = prerequisites
+
+            # Build a dictionary mapping order -> lesson for easy lookup in template
+            lessons_by_order = {lesson.order: lesson for lesson in lessons}
+            context["lessons_by_order"] = lessons_by_order
+
+        # Add contests data for the order tab
+        if tab == "order":
+            from judge.models import CourseContest
+
+            contests = (
+                CourseContest.objects.filter(course=self.course)
+                .order_by("order")
+                .select_related("contest")
+            )
+            context["contests"] = contests
+
         return context
 
     def post(self, request, *args, **kwargs):
+        from judge.models import CourseLessonPrerequisite
+
+        action = request.POST.get("action")
+
+        # Handle prerequisite AJAX actions
+        if action == "add_prereq":
+            source_order = request.POST.get("source_order")
+            target_order = request.POST.get("target_order")
+            required_percentage = request.POST.get("required_percentage", 0)
+
+            try:
+                source_order = int(source_order)
+                target_order = int(target_order)
+                required_percentage = float(required_percentage)
+
+                if source_order >= target_order:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": str(
+                                _(
+                                    "Source lesson order must be less than target lesson order."
+                                )
+                            ),
+                        }
+                    )
+
+                if required_percentage < 0 or required_percentage > 100:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": str(_("Percentage must be between 0 and 100.")),
+                        }
+                    )
+
+                prereq, created = CourseLessonPrerequisite.objects.get_or_create(
+                    course=self.course,
+                    source_order=source_order,
+                    target_order=target_order,
+                    defaults={"required_percentage": required_percentage},
+                )
+
+                if not created:
+                    prereq.required_percentage = required_percentage
+                    prereq.save()
+
+                # Mark course for lazy recalculation for all enrolled users
+                from judge.utils.course_prerequisites import (
+                    mark_course_for_recalculation,
+                )
+
+                mark_course_for_recalculation(self.course)
+
+                return JsonResponse(
+                    {"success": True, "id": prereq.id, "created": created}
+                )
+
+            except (ValueError, TypeError):
+                return JsonResponse(
+                    {"success": False, "error": str(_("Invalid input."))}
+                )
+
+        elif action == "update_prereq_percentage":
+            prereq_id = request.POST.get("prerequisite_id")
+            try:
+                prereq = CourseLessonPrerequisite.objects.get(
+                    id=prereq_id, course=self.course
+                )
+                new_percentage = float(request.POST.get("required_percentage", 0))
+
+                if new_percentage < 0 or new_percentage > 100:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": str(_("Percentage must be between 0 and 100.")),
+                        }
+                    )
+
+                prereq.required_percentage = new_percentage
+                prereq.save()
+
+                # Mark course for lazy recalculation for all enrolled users
+                from judge.utils.course_prerequisites import (
+                    mark_course_for_recalculation,
+                )
+
+                mark_course_for_recalculation(self.course)
+
+                return JsonResponse({"success": True})
+            except CourseLessonPrerequisite.DoesNotExist:
+                return JsonResponse(
+                    {"success": False, "error": str(_("Prerequisite not found."))}
+                )
+            except (ValueError, TypeError):
+                return JsonResponse(
+                    {"success": False, "error": str(_("Invalid percentage value."))}
+                )
+
+        elif action == "remove_prereq":
+            prereq_id = request.POST.get("prerequisite_id")
+            try:
+                prereq = CourseLessonPrerequisite.objects.get(
+                    id=prereq_id, course=self.course
+                )
+                prereq.delete()
+
+                # Mark course for lazy recalculation for all enrolled users
+                from judge.utils.course_prerequisites import (
+                    mark_course_for_recalculation,
+                )
+
+                mark_course_for_recalculation(self.course)
+
+                return JsonResponse({"success": True})
+            except CourseLessonPrerequisite.DoesNotExist:
+                return JsonResponse(
+                    {"success": False, "error": str(_("Prerequisite not found."))}
+                )
+
+        elif action == "bulk_update_prereqs":
+            import json
+
+            prerequisites_json = request.POST.get("prerequisites_json", "[]")
+            try:
+                prereqs_data = json.loads(prerequisites_json)
+                if not isinstance(prereqs_data, list):
+                    return JsonResponse(
+                        {"success": False, "error": str(_("Invalid JSON format."))}
+                    )
+
+                # Validate all entries first
+                validated_prereqs = []
+                for i, item in enumerate(prereqs_data):
+                    if not isinstance(item, list) or len(item) != 3:
+                        return JsonResponse(
+                            {
+                                "success": False,
+                                "error": str(
+                                    _("Invalid format in item %(num)s") % {"num": i + 1}
+                                ),
+                            }
+                        )
+
+                    source_order = int(item[0])
+                    target_order = int(item[1])
+                    required_percentage = float(item[2])
+
+                    if source_order >= target_order:
+                        return JsonResponse(
+                            {
+                                "success": False,
+                                "error": str(
+                                    _("Source must be less than target in item %(num)s")
+                                    % {"num": i + 1}
+                                ),
+                            }
+                        )
+
+                    if required_percentage < 0 or required_percentage > 100:
+                        return JsonResponse(
+                            {
+                                "success": False,
+                                "error": str(
+                                    _("Percentage must be 0-100 in item %(num)s")
+                                    % {"num": i + 1}
+                                ),
+                            }
+                        )
+
+                    # Check for duplicate pairs
+                    pair_key = (source_order, target_order)
+                    for j, (prev_source, prev_target, prev_pct) in enumerate(
+                        validated_prereqs
+                    ):
+                        if (prev_source, prev_target) == pair_key:
+                            return JsonResponse(
+                                {
+                                    "success": False,
+                                    "error": str(
+                                        _(
+                                            "Duplicate pair [%(source)s, %(target)s] found in items %(first)s and %(second)s"
+                                        )
+                                        % {
+                                            "source": source_order,
+                                            "target": target_order,
+                                            "first": j + 1,
+                                            "second": i + 1,
+                                        }
+                                    ),
+                                }
+                            )
+
+                    validated_prereqs.append(
+                        (source_order, target_order, required_percentage)
+                    )
+
+                # Delete all existing prerequisites for this course
+                CourseLessonPrerequisite.objects.filter(course=self.course).delete()
+
+                # Create new prerequisites
+                for (
+                    source_order,
+                    target_order,
+                    required_percentage,
+                ) in validated_prereqs:
+                    CourseLessonPrerequisite.objects.create(
+                        course=self.course,
+                        source_order=source_order,
+                        target_order=target_order,
+                        required_percentage=required_percentage,
+                    )
+
+                # Mark course for lazy recalculation for all enrolled users
+                from judge.utils.course_prerequisites import (
+                    mark_course_for_recalculation,
+                )
+
+                mark_course_for_recalculation(self.course)
+
+                return JsonResponse({"success": True, "count": len(validated_prereqs)})
+
+            except (ValueError, TypeError, json.JSONDecodeError) as e:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": str(_("Invalid JSON: %(error)s") % {"error": str(e)}),
+                    }
+                )
+
+        elif action == "reorder_lessons":
+            import json
+
+            try:
+                order_data = json.loads(request.POST.get("order_data", "[]"))
+                if not isinstance(order_data, list):
+                    return JsonResponse(
+                        {"success": False, "error": str(_("Invalid data format."))}
+                    )
+
+                # order_data is a list of lesson IDs in the new order
+                for new_order, lesson_id in enumerate(order_data, start=1):
+                    CourseLesson.objects.filter(
+                        id=lesson_id, course=self.course
+                    ).update(order=new_order)
+
+                return JsonResponse({"success": True})
+
+            except (ValueError, TypeError, json.JSONDecodeError) as e:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": str(_("Invalid data: %(error)s") % {"error": str(e)}),
+                    }
+                )
+
+        elif action == "reorder_contests":
+            import json
+            from judge.models import CourseContest
+
+            try:
+                order_data = json.loads(request.POST.get("order_data", "[]"))
+                if not isinstance(order_data, list):
+                    return JsonResponse(
+                        {"success": False, "error": str(_("Invalid data format."))}
+                    )
+
+                # order_data is a list of CourseContest IDs in the new order
+                for new_order, contest_id in enumerate(order_data, start=1):
+                    CourseContest.objects.filter(
+                        id=contest_id, course=self.course
+                    ).update(order=new_order)
+
+                return JsonResponse({"success": True})
+
+            except (ValueError, TypeError, json.JSONDecodeError) as e:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": str(_("Invalid data: %(error)s") % {"error": str(e)}),
+                    }
+                )
+
+        # Handle regular form submission for lessons
         formset = self.form_class(request.POST, instance=self.course)
         problem_formsets = [
             self.get_problem_formset(post=True, lesson=lesson.instance)
@@ -1442,13 +1899,11 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
 
 
 class AddCourseContestForm(forms.ModelForm):
-    order = forms.IntegerField(label=_("Order"))
     points = forms.IntegerField(label=_("Points"))
 
     class Meta:
         model = Contest
         fields = [
-            "order",
             "points",
             "key",
             "name",
@@ -1482,10 +1937,17 @@ class AddCourseContestForm(forms.ModelForm):
         contest.save()
         self.save_m2m()
 
+        # Auto-assign next order
+        max_order = (
+            CourseContest.objects.filter(course=course).aggregate(
+                max_order=models.Max("order")
+            )["max_order"]
+            or 0
+        )
         CourseContest.objects.create(
             course=course,
             contest=contest,
-            order=self.cleaned_data["order"],
+            order=max_order + 1,
             points=self.cleaned_data["points"],
         )
 
@@ -1535,20 +1997,48 @@ class CourseContestList(CourseEditableMixin, ListView):
             }
         )
         context["page_type"] = "contests"
+        context["tab"] = self.request.GET.get("tab", "contests")
         return context
 
     def get_queryset(self):
         return self.course.contests.select_related("contest").all().order_by("order")
 
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get("action")
+
+        if action == "reorder_contests":
+            import json
+
+            try:
+                order_data = json.loads(request.POST.get("order_data", "[]"))
+                if not isinstance(order_data, list):
+                    return JsonResponse(
+                        {"success": False, "error": str(_("Invalid data format."))}
+                    )
+
+                for new_order, cc_id in enumerate(order_data, start=1):
+                    CourseContest.objects.filter(id=cc_id, course=self.course).update(
+                        order=new_order
+                    )
+
+                return JsonResponse({"success": True})
+            except (ValueError, TypeError, json.JSONDecodeError) as e:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": str(_("Invalid data: %(error)s") % {"error": str(e)}),
+                    }
+                )
+
+        return JsonResponse({"success": False, "error": str(_("Unknown action."))})
+
 
 class EditCourseContestForm(ModelForm):
-    order = forms.IntegerField(label=_("Order"))
     points = forms.IntegerField(label=_("Points"))
 
     class Meta:
         model = Contest
         fields = (
-            "order",
             "points",
             "is_visible",
             "key",
@@ -1599,14 +2089,12 @@ class EditCourseContestForm(ModelForm):
         super().__init__(*args, **kwargs)
 
         if self.course_contest_instance:
-            self.fields["order"].initial = self.course_contest_instance.order
             self.fields["points"].initial = self.course_contest_instance.points
 
     def save(self, commit=True):
         contest = super().save(commit=commit)
 
         if self.course_contest_instance:
-            self.course_contest_instance.order = self.cleaned_data["order"]
             self.course_contest_instance.points = self.cleaned_data["points"]
             if commit:
                 self.course_contest_instance.save()
@@ -1755,7 +2243,6 @@ def is_lesson_clonable(request, lesson):
 
 class CourseSelect2View(View):
     def get(self, request, *args, **kwargs):
-        from django.http import JsonResponse
         from django.utils.encoding import smart_str
 
         term = request.GET.get("term", "")
@@ -2459,3 +2946,24 @@ class CourseLeave(LoginRequiredMixin, View):
     def get(self, request, slug):
         # Redirect GET requests to course detail
         return redirect("course_detail", slug=slug)
+
+
+class CourseRefreshProgress(CourseEditableMixin, View):
+    """
+    View for Teachers/TAs to trigger progress recalculation for all students.
+    Marks all enrolled students' needs_progress_recalculation flag to True.
+    """
+
+    def post(self, request, slug):
+        from judge.utils.course_prerequisites import mark_course_for_recalculation
+
+        mark_course_for_recalculation(self.course)
+        messages.success(
+            request,
+            _("Progress recalculation scheduled for all students in this course."),
+        )
+        return redirect("edit_course_lessons", slug=self.course.slug)
+
+    def get(self, request, slug):
+        # Redirect GET requests to lessons edit page
+        return redirect("edit_course_lessons", slug=slug)

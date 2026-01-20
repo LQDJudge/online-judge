@@ -1,28 +1,548 @@
 {% extends "course/base.html" %}
 
 {% block two_col_media %}
+  <link rel="stylesheet" href="{{ static('course.css') }}">
+{% endblock %}
+
+{% block js_media %}
+  {% if tab == 'order' %}
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+  {% endif %}
+  <script>
+    $(function() {
+      {% if tab == 'prerequisites' %}
+      // Lesson order to title mapping for JSON display
+        var lessonMap = {
+          {% for lesson in lessons %}
+            {{ lesson.order }}: "{{ lesson.title|escapejs }}"{% if not loop.last %},{% endif %}
+          {% endfor %}
+        };
+
+      // Current prerequisites data (from server)
+        var currentPrereqs = [
+          {% for prereq in prerequisites %}
+            {
+              "id": {{ prereq.id }},
+              "source": {{ prereq.source_order }},
+              "target": {{ prereq.target_order }},
+              "percentage": {{ prereq.required_percentage }}
+            }{% if not loop.last %},{% endif %}
+          {% endfor %}
+        ];
+
+      // Update JSON textarea from current data
+        function updateJsonTextarea() {
+          var jsonData = currentPrereqs.map(function(p) {
+            return [p.source, p.target, p.percentage];
+          });
+        // Format as compact single-line per item: [[0, 1, 70], [1, 2, 60]]
+          var formatted = '[\n' + jsonData.map(function(item) {
+            return '  ' + JSON.stringify(item);
+          }).join(',\n') + '\n]';
+          if (jsonData.length === 0) {
+            formatted = '[]';
+          }
+          $('#prereq-json').val(formatted);
+          validateJson();
+        }
+
+      // Parse JSON and validate
+        function validateJson() {
+          var jsonText = $('#prereq-json').val().trim();
+          var errorDiv = $('#json-error');
+          var applyBtn = $('#apply-json-btn');
+
+          if (!jsonText) {
+            errorDiv.hide();
+            applyBtn.prop('disabled', false);
+            return { valid: true, data: [] };
+          }
+
+          try {
+            var data = JSON.parse(jsonText);
+            if (!Array.isArray(data)) {
+              throw new Error('{{ _("Must be an array") }}');
+            }
+
+            for (var i = 0; i < data.length; i++) {
+              var item = data[i];
+              if (!Array.isArray(item) || item.length !== 3) {
+                throw new Error('{{ _("Each item must be [source, target, percentage]") }}');
+              }
+              var source = parseInt(item[0]);
+              var target = parseInt(item[1]);
+              var pct = parseFloat(item[2]);
+
+              if (isNaN(source) || isNaN(target) || isNaN(pct)) {
+                throw new Error('{{ _("Invalid numbers in item") }} ' + (i + 1));
+              }
+              if (source >= target) {
+                throw new Error('{{ _("Source must be less than target in item") }} ' + (i + 1));
+              }
+              if (pct < 0 || pct > 100) {
+                throw new Error('{{ _("Percentage must be 0-100 in item") }} ' + (i + 1));
+              }
+            }
+
+            errorDiv.hide();
+            applyBtn.prop('disabled', false);
+            return { valid: true, data: data };
+          } catch (e) {
+            errorDiv.text(e.message).show();
+            applyBtn.prop('disabled', true);
+            return { valid: false, data: null };
+          }
+        }
+
+      // Apply JSON changes to server
+        $('#apply-json-btn').on('click', function() {
+          var result = validateJson();
+          if (!result.valid) return;
+
+          var formData = {
+            'action': 'bulk_update_prereqs',
+            'prerequisites_json': JSON.stringify(result.data),
+            'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+          };
+
+          $(this).prop('disabled', true).text('{{ _("Applying...") }}');
+
+          $.post('', formData, function(response) {
+            if (response.success) {
+              location.reload();
+            } else {
+              alert(response.error);
+              $('#apply-json-btn').prop('disabled', false).html('<i class="fa fa-check"></i> {{ _("Apply") }}');
+            }
+          }).fail(function() {
+            alert('{{ _("An error occurred. Please try again.") }}');
+            $('#apply-json-btn').prop('disabled', false).html('<i class="fa fa-check"></i> {{ _("Apply") }}');
+          });
+        });
+
+      // Validate JSON on input
+        $('#prereq-json').on('input', validateJson);
+
+      // Initialize JSON textarea
+        updateJsonTextarea();
+
+      // Delete existing prerequisite
+        $(document).on('click', '.delete-prereq', function() {
+          if (!confirm('{{ _("Are you sure you want to delete this prerequisite?") }}')) {
+            return;
+          }
+
+          var prereqId = $(this).data('prereq-id');
+          var formData = {
+            'action': 'remove_prereq',
+            'prerequisite_id': prereqId,
+            'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+          };
+
+          $.post('', formData, function(response) {
+            if (response.success) {
+              location.reload();
+            } else {
+              alert(response.error);
+            }
+          }).fail(function() {
+            alert('{{ _("An error occurred. Please try again.") }}');
+          });
+        });
+
+      // Inline edit percentage
+        $(document).on('change', '.edit-percentage', function() {
+          var $input = $(this);
+          var prereqId = $input.data('prereq-id');
+          var originalValue = $input.data('original');
+          var newValue = parseFloat($input.val());
+
+        // Validate
+          if (isNaN(newValue) || newValue < 0 || newValue > 100) {
+            alert('{{ _("Percentage must be between 0 and 100.") }}');
+            $input.val(originalValue);
+            return;
+          }
+
+        // Skip if value hasn't changed
+          if (Math.abs(newValue - originalValue) < 0.01) {
+            return;
+          }
+
+          var formData = {
+            'action': 'update_prereq_percentage',
+            'prerequisite_id': prereqId,
+            'required_percentage': newValue,
+            'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+          };
+
+          $input.prop('disabled', true);
+
+          $.post('', formData, function(response) {
+            if (response.success) {
+              $input.data('original', newValue);
+              $input.addClass('edit-success');
+              setTimeout(function() {
+                $input.removeClass('edit-success');
+              }, 1000);
+            // Update currentPrereqs for JSON sync
+              for (var i = 0; i < currentPrereqs.length; i++) {
+                if (currentPrereqs[i].id === prereqId) {
+                  currentPrereqs[i].percentage = newValue;
+                  break;
+                }
+              }
+              updateJsonTextarea();
+            } else {
+              alert(response.error);
+              $input.val(originalValue);
+            }
+            $input.prop('disabled', false);
+          }).fail(function() {
+            alert('{{ _("An error occurred. Please try again.") }}');
+            $input.val(originalValue);
+            $input.prop('disabled', false);
+          });
+        });
+
+      // Add new row button
+        $('#add-row-btn').on('click', function() {
+          var template = document.getElementById('new-row-template');
+          var newRow = template.content.cloneNode(true);
+          $('#prereq-table tbody').append(newRow);
+          updateSaveButtonVisibility();
+          validateNewRows();
+        });
+
+      // Remove new row
+        $(document).on('click', '.remove-new-row', function() {
+          $(this).closest('tr').remove();
+          updateSaveButtonVisibility();
+          validateNewRows();
+        });
+
+      // Show/hide Save All button based on new rows
+        function updateSaveButtonVisibility() {
+          var hasNewRows = $('.new-prereq-row').length > 0;
+          $('#save-all-btn').toggle(hasNewRows);
+        }
+
+      // Validate all new rows
+        function validateNewRows() {
+          var hasError = false;
+          $('.new-prereq-row').each(function() {
+            var source = parseInt($(this).find('.new-source-order').val());
+            var target = parseInt($(this).find('.new-target-order').val());
+            if (source >= target) {
+              hasError = true;
+            }
+          });
+
+          if (hasError) {
+            $('#order-error').show();
+            $('#save-all-btn').prop('disabled', true);
+          } else {
+            $('#order-error').hide();
+            $('#save-all-btn').prop('disabled', false);
+          }
+        }
+
+      // Validate on select change
+        $(document).on('change', '.new-source-order, .new-target-order', validateNewRows);
+
+      // Save all new rows
+        $('#save-all-btn').on('click', function() {
+          var newPrereqs = [];
+          var hasError = false;
+
+          $('.new-prereq-row').each(function() {
+            var source = parseInt($(this).find('.new-source-order').val());
+            var target = parseInt($(this).find('.new-target-order').val());
+            var pct = parseFloat($(this).find('.new-percentage').val());
+
+            if (source >= target) {
+              hasError = true;
+              return;
+            }
+            newPrereqs.push([source, target, pct]);
+          });
+
+          if (hasError) {
+            alert('{{ _("Source lesson order must be less than target lesson order.") }}');
+            return;
+          }
+
+          if (newPrereqs.length === 0) {
+            return;
+          }
+
+        // Get existing prerequisites and merge with new ones
+          var allPrereqs = currentPrereqs.map(function(p) {
+            return [p.source, p.target, p.percentage];
+          }).concat(newPrereqs);
+
+          var formData = {
+            'action': 'bulk_update_prereqs',
+            'prerequisites_json': JSON.stringify(allPrereqs),
+            'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+          };
+
+          $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> {{ _("Saving...") }}');
+
+          $.post('', formData, function(response) {
+            if (response.success) {
+              location.reload();
+            } else {
+              alert(response.error);
+              $('#save-all-btn').prop('disabled', false).html('<i class="fa fa-save"></i> {{ _("Save All") }}');
+            }
+          }).fail(function() {
+            alert('{{ _("An error occurred. Please try again.") }}');
+            $('#save-all-btn').prop('disabled', false).html('<i class="fa fa-save"></i> {{ _("Save All") }}');
+          });
+        });
+      {% endif %}
+
+      // Order tab: Drag and drop sorting
+      {% if tab == 'order' %}
+        function initSortable(listId, action, statusId) {
+          var $list = $('#' + listId);
+          var $status = $('#' + statusId);
+
+          if ($list.length === 0) return;
+
+          $list.sortable({
+            handle: '.drag-handle',
+            update: function() {
+            // Update visual order numbers
+              $list.find('.sortable-item').each(function(index) {
+                $(this).find('.item-order').text((index + 1) + '.');
+              });
+
+            // Collect new order
+              var orderData = [];
+              $list.find('.sortable-item').each(function() {
+                orderData.push($(this).data('id'));
+              });
+
+            // Save to server
+              $status.html('<i class="fa fa-spinner fa-spin"></i> {{ _("Saving...") }}').removeClass('success error').show();
+
+              $.post('', {
+                'action': action,
+                'order_data': JSON.stringify(orderData),
+                'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+              }, function(response) {
+                if (response.success) {
+                  $status.html('<i class="fa fa-check"></i> {{ _("Saved") }}').addClass('success');
+                  setTimeout(function() {
+                    $status.fadeOut();
+                  }, 2000);
+                } else {
+                  $status.html('<i class="fa fa-exclamation-triangle"></i> ' + response.error).addClass('error');
+                }
+              }).fail(function() {
+                $status.html('<i class="fa fa-exclamation-triangle"></i> {{ _("Error saving") }}').addClass('error');
+              });
+            }
+          });
+        }
+
+        initSortable('sortable-lessons', 'reorder_lessons', 'lessons-save-status');
+      {% endif %}
+    });
+  </script>
 {% endblock %}
 
 {% block middle_content %}
   <center><h2>{{content_title}}</h2></center>
-  <div class="container">
-    <div class="add-button-container">
-      <a href="{{ url('course_lesson_create', course.slug) }}" class="action-btn background-green large">{{ _('Add') }}</a>
-    </div>
-    {% if lessons %}
-      {% for lesson in lessons %}
-        <div class="course-lesson-card">
-          <div>
-            <h5><a href="{{ url('course_lesson_detail', course.slug, lesson.id) }}">{{ loop.index }}. {{ lesson.title }}</a></h5>
-            <p><strong>{{_("Order")}}:</strong> {{ lesson.order }}</p>
-            <p><strong>{{_("Points")}}:</strong> {{ lesson.points }}</p>
-            <p><strong>{{_("Publicly Visible")}}:</strong> {% if lesson.is_visible %}{{_("Yes")}}{% else %}{{_("No")}}{% endif %}</p>
-          </div>
-          <a href="{{ url('edit_course_lessons_new', course.slug, lesson.id) }}" class="action-btn large">{{ _('Edit') }}</a>
-        </div>
-      {% endfor %}
-    {% else %}
-      <p style="text-align: center;">{{_("No lessons available")}}</p>
-    {% endif %}
+
+  <div class="tabs edit-lessons-tabs">
+    <ul>
+      <li class="{{'active' if tab == 'lessons' or (tab != 'prerequisites' and tab != 'order')}}">
+        <a href="{{url('edit_course_lessons', course.slug)}}">{{ _('LESSONS') }}</a>
+      </li>
+      <li class="{{'active' if tab == 'order'}}">
+        <a href="{{url('edit_course_lessons', course.slug)}}?tab=order">{{ _('ORDER') }}</a>
+      </li>
+      <li class="{{'active' if tab == 'prerequisites'}}">
+        <a href="{{url('edit_course_lessons', course.slug)}}?tab=prerequisites">{{ _('PREREQUISITES') }}</a>
+      </li>
+    </ul>
   </div>
+
+  {% if tab == 'order' %}
+    {# Order Tab #}
+    <div class="edit-lessons-page order-tab">
+      {% csrf_token %}
+      <p class="prereq-description">
+        {{ _("Drag and drop to reorder lessons. Changes are saved automatically.") }}
+      </p>
+
+      <h4 class="order-section-title">{{ _("Lessons") }}</h4>
+      {% if lessons %}
+        <ul id="sortable-lessons" class="sortable-list">
+          {% for lesson in lessons %}
+            <li class="sortable-item" data-id="{{ lesson.id }}">
+              <span class="drag-handle"><i class="fa fa-bars"></i></span>
+              <span class="item-order">{{ loop.index }}.</span>
+              <span class="item-title">{{ lesson.title }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+        <div id="lessons-save-status" class="save-status"></div>
+      {% else %}
+        <p class="gray">{{ _("No lessons yet.") }}</p>
+      {% endif %}
+    </div>
+
+  {% elif tab == 'prerequisites' %}
+    {# Prerequisites Tab #}
+    <div class="edit-lessons-page prerequisites-tab">
+      {% csrf_token %}
+      <p class="prereq-description">
+        {{ _("Define prerequisites for lessons. A student must achieve the required percentage in the source lesson before they can access the target lesson.") }}
+      </p>
+
+      {% if lessons %}
+        <table class="prereq-table" id="prereq-table">
+          <thead>
+            <tr>
+              <th>{{ _("Source Lesson") }}</th>
+              <th></th>
+              <th>{{ _("Target Lesson") }}</th>
+              <th>{{ _("Required %%") }}</th>
+              <th>{{ _("Actions") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for prereq in prerequisites %}
+              <tr>
+                <td>
+                  {% if prereq.source_order in lessons_by_order %}
+                    <strong>{{ prereq.source_order }}.</strong> {{ lessons_by_order[prereq.source_order].title }}
+                  {% else %}
+                    <em class="gray">{{ _("Order") }} {{ prereq.source_order }} ({{ _("not found") }})</em>
+                  {% endif %}
+                </td>
+                <td class="prereq-arrow"><i class="fa fa-arrow-right"></i></td>
+                <td>
+                  {% if prereq.target_order in lessons_by_order %}
+                    <strong>{{ prereq.target_order }}.</strong> {{ lessons_by_order[prereq.target_order].title }}
+                  {% else %}
+                    <em class="gray">{{ _("Order") }} {{ prereq.target_order }} ({{ _("not found") }})</em>
+                  {% endif %}
+                </td>
+                <td class="prereq-percentage-cell">
+                  <input type="number" class="edit-percentage" data-prereq-id="{{ prereq.id }}"
+                         data-original="{{ prereq.required_percentage|floatformat(0) }}"
+                         min="0" max="100" step="1" value="{{ prereq.required_percentage|floatformat(0) }}">%
+                </td>
+                <td>
+                  <button type="button" class="delete-btn delete-prereq" data-prereq-id="{{ prereq.id }}" title="{{ _('Delete') }}">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="prereq-add-section">
+          <button type="button" id="add-row-btn" class="action-btn">
+            <i class="fa fa-plus"></i> {{ _("Add Row") }}
+          </button>
+          <button type="button" id="save-all-btn" class="action-btn background-green" style="display: none;">
+            <i class="fa fa-save"></i> {{ _("Save All") }}
+          </button>
+        </div>
+
+        <div id="order-error" class="prereq-error" style="display: none;">
+          <i class="fa fa-exclamation-triangle"></i>
+          {{ _("Source lesson order must be less than target lesson order.") }}
+        </div>
+
+        {# Template for new row - hidden, used by JavaScript #}
+        <template id="new-row-template">
+          <tr class="new-prereq-row add-row">
+            <td>
+              <select class="new-source-order">
+                {% for lesson in lessons %}
+                  <option value="{{ lesson.order }}">{{ lesson.order }}. {{ lesson.title }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td class="prereq-arrow"><i class="fa fa-arrow-right"></i></td>
+            <td>
+              <select class="new-target-order">
+                {% for lesson in lessons %}
+                  <option value="{{ lesson.order }}" {% if loop.index > 1 %}selected{% endif %}>{{ lesson.order }}. {{ lesson.title }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>
+              <input type="number" class="new-percentage" min="0" max="100" step="1" value="70" style="width: 70px;">%
+            </td>
+            <td>
+              <button type="button" class="delete-btn remove-new-row" title="{{ _('Remove') }}">
+                <i class="fa fa-times"></i>
+              </button>
+            </td>
+          </tr>
+        </template>
+
+        <div class="prereq-json-section">
+          <h4>{{ _("Bulk Edit (JSON)") }}</h4>
+          <p class="prereq-description">
+            {{ _("Format: [[source_order, target_order, percentage], ...]. Example: [[0, 1, 70], [1, 2, 60]]") }}
+          </p>
+          <textarea id="prereq-json" class="prereq-json-textarea" rows="6" placeholder='[[0, 1, 70], [1, 2, 60]]'></textarea>
+          <div id="json-error" class="prereq-error" style="display: none;"></div>
+          <div class="prereq-json-actions">
+            <button type="button" id="apply-json-btn" class="action-btn">
+              <i class="fa fa-check"></i> {{ _("Apply") }}
+            </button>
+          </div>
+        </div>
+
+        <div class="prereq-refresh-section">
+          <form action="{{ url('course_refresh_progress', course.slug) }}" method="post" class="prereq-refresh-form"
+                onsubmit="return confirm('{{ _("This will recalculate unlock status for all enrolled students. Continue?") }}');">
+            {% csrf_token %}
+            <button type="submit" class="action-btn small" title="{{ _('Recalculate unlock status for all enrolled students') }}">
+              <i class="fa fa-refresh"></i> {{ _("Refresh Progress") }}
+            </button>
+          </form>
+          <span class="prereq-refresh-hint gray">{{ _("Only use if student unlock status appears incorrect") }}</span>
+        </div>
+      {% else %}
+        <div class="no-prereqs">
+          <i class="fa fa-book"></i>
+          {{ _("No lessons in this course yet. Create lessons first to set up prerequisites.") }}
+        </div>
+      {% endif %}
+    </div>
+
+  {% else %}
+    {# Lessons Tab #}
+    <div class="edit-lessons-page lessons-tab">
+      <div class="add-button-container">
+        <a href="{{ url('course_lesson_create', course.slug) }}" class="action-btn background-green large">{{ _('Add') }}</a>
+      </div>
+      {% if lessons %}
+        {% for lesson in lessons %}
+          <div class="course-lesson-card">
+            <div>
+              <h5><a href="{{ url('course_lesson_detail', course.slug, lesson.id) }}">{{ loop.index }}. {{ lesson.title }}</a></h5>
+              <p><strong>{{_("Points")}}:</strong> {{ lesson.points }}</p>
+              <p><strong>{{_("Publicly Visible")}}:</strong> {% if lesson.is_visible %}{{_("Yes")}}{% else %}{{_("No")}}{% endif %}</p>
+            </div>
+            <a href="{{ url('edit_course_lessons_new', course.slug, lesson.id) }}" class="action-btn large">{{ _('Edit') }}</a>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p style="text-align: center;">{{_("No lessons available")}}</p>
+      {% endif %}
+    </div>
+  {% endif %}
 {% endblock %}

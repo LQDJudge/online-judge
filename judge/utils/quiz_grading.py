@@ -348,6 +348,11 @@ def auto_grade_quiz_attempt(attempt) -> float:
         except Exception:
             pass
 
+    # Update best quiz attempt cache for course lesson grade tracking
+    from judge.models import BestQuizAttempt
+
+    BestQuizAttempt.update_from_attempt(attempt)
+
     return total_score
 
 

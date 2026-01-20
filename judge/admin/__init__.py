@@ -27,7 +27,11 @@ from judge.admin.taxon import (
     OfficialContestLocationAdmin,
 )
 from judge.admin.ticket import TicketAdmin
-from judge.admin.course import CourseAdmin
+from judge.admin.course import (
+    CourseAdmin,
+    CourseLessonPrerequisiteAdmin,
+    CourseLessonProgressAdmin,
+)
 from judge.admin.quiz import (
     QuizQuestionAdmin,
     QuizAdmin,
@@ -58,6 +62,8 @@ from judge.models import (
     Submission,
     Ticket,
     Course,
+    CourseLessonPrerequisite,
+    CourseLessonProgress,
     ContestsSummary,
     OfficialContestCategory,
     OfficialContestLocation,
@@ -92,6 +98,8 @@ admin.site.register(Profile, ProfileAdmin)
 admin.site.register(Submission, SubmissionAdmin)
 admin.site.register(Ticket, TicketAdmin)
 admin.site.register(Course, CourseAdmin)
+admin.site.register(CourseLessonPrerequisite, CourseLessonPrerequisiteAdmin)
+admin.site.register(CourseLessonProgress, CourseLessonProgressAdmin)
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(ContestsSummary, ContestsSummaryAdmin)

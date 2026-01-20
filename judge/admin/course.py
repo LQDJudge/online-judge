@@ -4,7 +4,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext, gettext_lazy as _, ngettext
 from django.forms import ModelForm
 
-from judge.models import CourseRole
+from judge.models import CourseRole, CourseLessonPrerequisite, CourseLessonProgress
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
     AdminHeavySelect2Widget,
@@ -49,3 +49,28 @@ class CourseAdmin(admin.ModelAdmin):
     list_display = ("name", "is_public", "is_open")
     search_fields = ("name",)
     form = CourseForm
+
+
+class CourseLessonPrerequisiteAdmin(admin.ModelAdmin):
+    list_display = (
+        "course",
+        "source_order",
+        "target_order",
+        "required_percentage",
+    )
+    list_filter = ("course",)
+    search_fields = ("course__name",)
+    ordering = ("course", "target_order", "source_order")
+
+
+class CourseLessonProgressAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "lesson",
+        "is_unlocked",
+        "percentage",
+    )
+    list_filter = ("is_unlocked", "lesson__course")
+    search_fields = ("user__user__username", "lesson__title")
+    ordering = ("lesson__course", "lesson__order", "user")
+    raw_id_fields = ("user", "lesson")
