@@ -68,6 +68,9 @@ from judge.models.course import (
     CourseLesson,
     CourseLessonProblem,
     CourseContest,
+    CourseLessonPrerequisite,
+    CourseLessonProgress,
+    BestSubmission,
 )
 from judge.models.quiz import (
     QuizQuestion,
@@ -78,6 +81,7 @@ from judge.models.quiz import (
     QuizAttempt,
     QuizAnswer,
     QuizAnswerFile,
+    BestQuizAttempt,
 )
 from judge.models.notification import Notification, NotificationProfile
 from judge.models.test_formatter import TestFormatterModel

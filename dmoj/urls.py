@@ -667,6 +667,11 @@ urlpatterns = [
                     course.CourseEdit.as_view(),
                     name="course_edit",
                 ),
+                re_path(
+                    r"^/refresh-progress$",
+                    course.CourseRefreshProgress.as_view(),
+                    name="course_refresh_progress",
+                ),
             ]
         ),
     ),

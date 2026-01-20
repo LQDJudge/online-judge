@@ -547,6 +547,21 @@ class CourseLessonQuiz(models.Model):
     def __str__(self):
         return f"{self.lesson.title} - {self.quiz.title}"
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Mark all users for recalculation when lesson content changes
+        from judge.utils.course_prerequisites import mark_course_for_recalculation
+
+        mark_course_for_recalculation(self.lesson.course)
+
+    def delete(self, *args, **kwargs):
+        course = self.lesson.course
+        super().delete(*args, **kwargs)
+        # Mark all users for recalculation when lesson content changes
+        from judge.utils.course_prerequisites import mark_course_for_recalculation
+
+        mark_course_for_recalculation(course)
+
     def get_attempts_count(self, user):
         """Count user's attempts for this quiz in this lesson"""
         if not user or not user.is_authenticated:
@@ -767,6 +782,9 @@ class QuizAttempt(models.Model):
         # Calculate the final score
         self.calculate_score()
 
+        # Update best quiz attempt cache for course lesson grade tracking
+        BestQuizAttempt.update_from_attempt(self)
+
 
 class QuizAnswer(models.Model):
     """
@@ -955,3 +973,125 @@ class QuizAnswerFile(models.Model):
             if len(parts) > 1:
                 return parts[1].lower()
         return ""
+
+
+class BestQuizAttempt(models.Model):
+    """
+    Caches the best quiz attempt for each user/lesson_quiz pair.
+    Updated when a quiz attempt is submitted and has a better score.
+    """
+
+    user = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="best_quiz_attempts",
+        verbose_name=_("user"),
+    )
+    lesson_quiz = models.ForeignKey(
+        CourseLessonQuiz,
+        on_delete=models.CASCADE,
+        related_name="best_attempts",
+        verbose_name=_("lesson quiz"),
+    )
+    attempt = models.ForeignKey(
+        QuizAttempt,
+        on_delete=models.CASCADE,
+        related_name="+",
+        verbose_name=_("best attempt"),
+    )
+    score = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=0,
+        verbose_name=_("score"),
+        help_text=_("Best score achieved"),
+    )
+    max_score = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=0,
+        verbose_name=_("max score"),
+        help_text=_("Maximum possible score"),
+    )
+
+    class Meta:
+        unique_together = ("user", "lesson_quiz")
+        verbose_name = _("Best Quiz Attempt")
+        verbose_name_plural = _("Best Quiz Attempts")
+        indexes = [
+            models.Index(fields=["user", "lesson_quiz"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.user.username} - {self.lesson_quiz.quiz.title}: {self.score}/{self.max_score}"
+
+    def save(self, *args, **kwargs):
+        # Track if score changed for triggering lesson grade updates
+        old_score = 0
+        if self.pk:
+            try:
+                old_instance = BestQuizAttempt.objects.get(pk=self.pk)
+                old_score = float(old_instance.score)
+            except BestQuizAttempt.DoesNotExist:
+                pass
+
+        super().save(*args, **kwargs)
+
+        # If score changed, trigger lesson grade update
+        if abs(float(self.score) - old_score) > 0.001:
+            self._update_lesson_grade()
+
+    def _update_lesson_grade(self):
+        """Update lesson grade for the lesson containing this quiz."""
+        from judge.utils.course_prerequisites import update_lesson_grade
+        from judge.models.course import CourseRole
+
+        lesson = self.lesson_quiz.lesson
+        course = lesson.course
+
+        # Check if user is enrolled in this course
+        if CourseRole.objects.filter(course=course, user=self.user).exists():
+            update_lesson_grade(self.user, lesson)
+
+    @classmethod
+    def update_from_attempt(cls, attempt):
+        """
+        Update best quiz attempt for a user/lesson_quiz if this attempt is better.
+        Called after a quiz attempt is submitted.
+
+        Args:
+            attempt: QuizAttempt object that was just submitted
+
+        Returns:
+            BestQuizAttempt object if updated/created, None otherwise
+        """
+        if not attempt.is_submitted or not attempt.lesson_quiz:
+            return None
+
+        user = attempt.user
+        lesson_quiz = attempt.lesson_quiz
+        new_score = attempt.score or 0
+        max_score = attempt.max_score or 0
+
+        # Get or create best attempt record
+        best_attempt, created = cls.objects.get_or_create(
+            user=user,
+            lesson_quiz=lesson_quiz,
+            defaults={
+                "attempt": attempt,
+                "score": new_score,
+                "max_score": max_score,
+            },
+        )
+
+        if not created:
+            # Check if this attempt is better
+            if new_score > best_attempt.score:
+                best_attempt.attempt = attempt
+                best_attempt.score = new_score
+                best_attempt.max_score = max_score
+                best_attempt.save()
+                return best_attempt
+            return None
+
+        return best_attempt

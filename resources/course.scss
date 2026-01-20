@@ -1,3 +1,4 @@
+@use "vars" as *;
 
 .container {
     max-width: 800px;
@@ -70,6 +71,49 @@
         border-radius: 5px;
         box-shadow: 0 2px 4px #ccc;
     }
+
+    // Locked lesson styles
+    li.lesson-locked {
+        opacity: 0.7;
+        background: $background_light_gray;
+        cursor: not-allowed;
+        padding-bottom: 10px;
+
+        &:hover {
+            box-shadow: 0 2px 4px #ccc;
+            background: $background_light_gray;
+        }
+
+        .lesson-lock-icon {
+            color: $announcement_red;
+            margin-right: 0.3em;
+        }
+
+        .locked-text {
+            color: $announcement_red;
+            font-weight: bold;
+        }
+
+        .prerequisite-info {
+            font-size: 0.85em;
+            color: $widget_black;
+            margin-left: 1em;
+            margin-right: 1em;
+            margin-top: 0.5em;
+            padding-top: 0.5em;
+            border-top: 1px dashed $border_gray;
+
+            i {
+                margin-right: 0.3em;
+                color: $border_gray;
+            }
+
+            .prereq-item {
+                font-style: italic;
+            }
+        }
+    }
+
     .lesson-title {
         font-size: 1.25em;
         margin-left: 1em;
@@ -345,9 +389,265 @@
         justify-content: flex-start;
         align-items: center;
     }
+
 }
 
-// Course list page styles  
+// Edit lessons page styles with tabs
+.edit-lessons-tabs {
+    margin-bottom: 1.5em;
+}
+
+.edit-lessons-page {
+    // Order tab styles (drag and drop reordering)
+    &.order-tab {
+        .prereq-description {
+            color: $widget_black;
+            font-size: 0.9em;
+            margin-bottom: 1em;
+        }
+
+        .order-section-title {
+            margin-bottom: 15px;
+        }
+
+        .sortable-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sortable-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            margin-bottom: 5px;
+            background: $background_light_gray;
+            border: 1px solid $border_gray;
+            border-radius: 4px;
+            cursor: move;
+
+            &:hover {
+                background: $background_gray;
+            }
+
+            &.ui-sortable-helper {
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            }
+        }
+
+        .drag-handle {
+            margin-right: 15px;
+            color: $border_gray;
+        }
+
+        .item-order {
+            min-width: 30px;
+            font-weight: bold;
+            color: $widget_black;
+        }
+
+        .item-title {
+            flex: 1;
+        }
+
+        .save-status {
+            display: none;
+            padding: 8px 12px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+
+            &.success {
+                background: #d4edda;
+                color: #155724;
+            }
+
+            &.error {
+                background: #f8d7da;
+                color: #721c24;
+            }
+        }
+    }
+
+    // Prerequisites tab styles
+    &.prerequisites-tab {
+        .prereq-description {
+            color: $widget_black;
+            font-size: 0.9em;
+            margin-bottom: 1em;
+        }
+
+        .prereq-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1em;
+
+            th, td {
+                padding: 10px;
+                border: 1px solid $border_gray;
+                text-align: left;
+            }
+
+            th {
+                background-color: $background_light_gray;
+                font-weight: bold;
+            }
+
+            tr:hover:not(.add-row) {
+                background-color: $background_light_gray;
+            }
+
+            .prereq-arrow {
+                text-align: center;
+                width: 40px;
+                color: $widget_black;
+            }
+
+            .add-row {
+                background-color: $background_light_gray;
+
+                select, input {
+                    padding: 6px 8px;
+                    border: 1px solid $border_gray;
+                    border-radius: 3px;
+                    background: white;
+                }
+
+                select {
+                    width: 100%;
+                    max-width: 200px;
+                }
+            }
+
+            .delete-btn {
+                color: $announcement_red;
+                cursor: pointer;
+                border: none;
+                background: none;
+                font-size: 1.1em;
+                padding: 5px 10px;
+
+                &:hover {
+                    opacity: 0.7;
+                }
+            }
+
+            .prereq-percentage-cell {
+                .edit-percentage {
+                    width: 60px;
+                    padding: 4px 6px;
+                    border: 1px solid $border_gray;
+                    border-radius: 3px;
+                    text-align: center;
+                    transition: background-color 0.3s ease, border-color 0.3s ease;
+
+                    &:focus {
+                        outline: none;
+                        border-color: $theme_color;
+                    }
+
+                    &:disabled {
+                        background-color: $background_light_gray;
+                        cursor: wait;
+                    }
+
+                    &.edit-success {
+                        background-color: #d4edda;
+                        border-color: #28a745;
+                    }
+                }
+            }
+        }
+
+        .prereq-error {
+            color: $announcement_red;
+            margin-top: 10px;
+            font-size: 0.9em;
+
+            i {
+                margin-right: 0.3em;
+            }
+        }
+
+        .no-prereqs {
+            text-align: center;
+            color: $widget_black;
+            padding: 30px;
+            background: $background_light_gray;
+            border-radius: 5px;
+            margin-top: 1em;
+
+            i {
+                font-size: 2em;
+                margin-bottom: 10px;
+                display: block;
+                opacity: 0.5;
+            }
+        }
+
+        .prereq-hint {
+            font-style: italic;
+            opacity: 0.8;
+
+            i {
+                margin-right: 0.3em;
+            }
+        }
+
+        .prereq-add-section {
+            margin-top: 1em;
+            display: flex;
+            gap: 0.5em;
+            align-items: center;
+        }
+
+        .prereq-json-section {
+            margin-top: 2em;
+            padding-top: 1.5em;
+            border-top: 1px dashed $border_gray;
+
+            h4 {
+                margin-top: 0;
+                margin-bottom: 0.5em;
+                color: $widget_black;
+            }
+
+            .prereq-json-textarea {
+                width: 100%;
+                font-family: monospace;
+                font-size: 0.9em;
+                padding: 10px;
+                border: 1px solid $border_gray;
+                border-radius: 4px;
+                resize: vertical;
+                min-height: 80px;
+            }
+
+            .prereq-json-actions {
+                margin-top: 0.5em;
+                display: flex;
+                gap: 0.5em;
+            }
+        }
+
+        .prereq-refresh-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid $border_gray;
+
+            .prereq-refresh-form {
+                display: inline;
+            }
+
+            .prereq-refresh-hint {
+                margin-left: 10px;
+                font-size: 0.9em;
+            }
+        }
+    }
+}
+
+// Course list page styles
 .course-list-page {
     .course-list {
         display: flex;

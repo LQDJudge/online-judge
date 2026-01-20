@@ -41,26 +41,53 @@
       <h3 class="course-content-title">{{_("Lessons")}}</h3>
       <ul class="lesson-list">
         {% for lesson in lessons %}
-          <a href="{{url('course_lesson_detail', course.slug, lesson.id)}}">
-            {% set progress = lesson_progress[lesson.id] %}
-            <li>
+          {% set is_locked = lesson_lock_status.get(lesson.id, false) %}
+          {% set progress = lesson_progress[lesson.id] %}
+          {% if is_locked %}
+            <li class="lesson-locked">
               <div class="lesson-title">
+                <i class="fa fa-lock lesson-lock-icon"></i>
                 {{ lesson.title }}
                 <div class="lesson-points">
-                  {% if progress['total_points'] %}
-                    {{(progress['achieved_points'] / progress['total_points'] * lesson.points) | floatformat(1)}} /
-                    {{lesson.points}}
-                  {% else %}
-                    0 / {{lesson.points}}
-                  {% endif %}
+                  <span class="locked-text">{{ _('Locked') }}</span>
                 </div>
               </div>
-              <div class="progress-container">
-                <div class="progress-bar" style="width: {{progress['percentage']}}%;">
-                  {{progress['percentage']|floatformat(0)}}%</div>
+              <div class="prerequisite-info">
+                <i class="fa fa-info-circle"></i>
+                {{ _('Prerequisites:') }}
+                {% set prereqs = lesson_prerequisites_info.get(lesson.id, []) %}
+                {% if prereqs %}
+                  {% for source_order, source_title, required_pct in prereqs %}
+                    <span class="prereq-item">
+                      {{ source_title }} ({{ required_pct|floatformat(0) }}%){% if not loop.last %}, {% endif %}
+                    </span>
+                  {% endfor %}
+                {% else %}
+                  {{ _('Complete prerequisites first') }}
+                {% endif %}
               </div>
             </li>
-          </a>
+          {% else %}
+            <a href="{{url('course_lesson_detail', course.slug, lesson.id)}}">
+              <li>
+                <div class="lesson-title">
+                  {{ lesson.title }}
+                  <div class="lesson-points">
+                    {% if progress['total_points'] %}
+                      {{(progress['achieved_points'] / progress['total_points'] * lesson.points) | floatformat(1)}} /
+                      {{lesson.points}}
+                    {% else %}
+                      0 / {{lesson.points}}
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="progress-container">
+                  <div class="progress-bar" style="width: {{progress['percentage']}}%;">
+                    {{progress['percentage']|floatformat(0)}}%</div>
+                </div>
+              </li>
+            </a>
+          {% endif %}
         {% endfor %}
       </ul>
     {% endif %}

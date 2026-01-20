@@ -275,6 +275,11 @@ def finished_submission(sub):
         keys += ["contest_attempted:%d" % participation.id]
     cache.delete_many(keys)
 
+    # Update best submission cache for course lesson grade tracking
+    from judge.models import BestSubmission
+
+    BestSubmission.update_from_submission(sub)
+
 
 class RecommendationType(Enum):
     HOT_PROBLEM = 1
