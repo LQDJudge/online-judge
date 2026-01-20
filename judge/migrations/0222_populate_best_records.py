@@ -1,6 +1,6 @@
 # Data migration to populate BestSubmission and BestQuizAttempt tables
 # with existing best scores from Submission and QuizAttempt tables.
-# Uses raw SQL for MySQL compatibility and bulk_create for performance.
+# Processes in batches by user to avoid query timeout on large databases.
 
 from django.db import migrations, connection
 import sys
@@ -15,164 +15,145 @@ def log(msg):
 def populate_best_submissions(apps, schema_editor):
     """
     Populate BestSubmission table with best submission per user/problem.
-    Uses raw SQL for MySQL compatibility.
+    Processes users in batches to avoid query timeout.
     """
     BestSubmission = apps.get_model("judge", "BestSubmission")
     Profile = apps.get_model("judge", "Profile")
 
     log("Starting BestSubmission population...")
 
-    # Get valid profile IDs to filter out orphan submissions
-    valid_profile_ids = set(Profile.objects.values_list("id", flat=True))
-    log(f"  Found {len(valid_profile_ids)} valid profiles")
+    # Get all valid profile IDs
+    profile_ids = list(Profile.objects.values_list("id", flat=True))
+    total_profiles = len(profile_ids)
+    log(f"  Found {total_profiles} profiles to process")
 
-    log("Step 1: Finding best submissions for each user/problem pair using raw SQL...")
-
-    # Use raw SQL to get the best submission for each user/problem pair
-    # This query finds the submission with max case_points, and for ties, the latest one (max id)
     cursor = connection.cursor()
-    cursor.execute(
-        """
-        SELECT s.id, s.user_id, s.problem_id, s.case_points, s.case_total
-        FROM judge_submission s
-        INNER JOIN (
-            SELECT user_id, problem_id, MAX(case_points) as max_points
-            FROM judge_submission
-            WHERE status = 'D' AND case_total > 0
-            GROUP BY user_id, problem_id
-        ) best ON s.user_id = best.user_id
-              AND s.problem_id = best.problem_id
-              AND s.case_points = best.max_points
-        INNER JOIN (
-            SELECT user_id, problem_id, case_points, MAX(id) as max_id
-            FROM judge_submission
-            WHERE status = 'D' AND case_total > 0
-            GROUP BY user_id, problem_id, case_points
-        ) latest ON s.id = latest.max_id
-        WHERE s.status = 'D' AND s.case_total > 0
-    """
-    )
+    batch_size = 500  # Process 500 users at a time
+    total_created = 0
 
-    rows = cursor.fetchall()
-    total_rows = len(rows)
-    log(f"Step 2: Found {total_rows} best submissions to insert")
+    for i in range(0, total_profiles, batch_size):
+        user_batch = profile_ids[i : i + batch_size]
+        user_ids_str = ",".join(str(uid) for uid in user_batch)
 
-    # Filter to only valid profiles and bulk create in batches
-    batch_size = 5000
-    created_count = 0
-    batch = []
-
-    for row in rows:
-        submission_id, user_id, problem_id, case_points, case_total = row
-
-        # Skip if user no longer exists
-        if user_id not in valid_profile_ids:
-            continue
-
-        batch.append(
-            BestSubmission(
-                user_id=user_id,
-                problem_id=problem_id,
-                submission_id=submission_id,
-                points=case_points or 0,
-                case_total=case_total or 0,
-            )
+        # Query best submissions for this batch of users
+        cursor.execute(
+            f"""
+            SELECT s.id, s.user_id, s.problem_id, s.case_points, s.case_total
+            FROM judge_submission s
+            INNER JOIN (
+                SELECT user_id, problem_id, MAX(case_points) as max_points
+                FROM judge_submission
+                WHERE status = 'D' AND case_total > 0 AND user_id IN ({user_ids_str})
+                GROUP BY user_id, problem_id
+            ) best ON s.user_id = best.user_id
+                  AND s.problem_id = best.problem_id
+                  AND s.case_points = best.max_points
+            INNER JOIN (
+                SELECT user_id, problem_id, case_points, MAX(id) as max_id
+                FROM judge_submission
+                WHERE status = 'D' AND case_total > 0 AND user_id IN ({user_ids_str})
+                GROUP BY user_id, problem_id, case_points
+            ) latest ON s.id = latest.max_id
+            WHERE s.status = 'D' AND s.case_total > 0 AND s.user_id IN ({user_ids_str})
+            """
         )
 
-        if len(batch) >= batch_size:
-            BestSubmission.objects.bulk_create(batch, ignore_conflicts=True)
-            created_count += len(batch)
-            log(f"  Progress: {created_count} records created...")
-            batch = []
+        rows = cursor.fetchall()
 
-    # Insert remaining
-    if batch:
-        BestSubmission.objects.bulk_create(batch, ignore_conflicts=True)
-        created_count += len(batch)
+        if rows:
+            records = [
+                BestSubmission(
+                    user_id=row[1],
+                    problem_id=row[2],
+                    submission_id=row[0],
+                    points=row[3] or 0,
+                    case_total=row[4] or 0,
+                )
+                for row in rows
+            ]
+            BestSubmission.objects.bulk_create(records, ignore_conflicts=True)
+            total_created += len(records)
 
-    log(f"Step 3: Created {created_count} BestSubmission records")
+        progress = min(i + batch_size, total_profiles)
+        log(
+            f"  Progress: {progress}/{total_profiles} users processed, {total_created} records created"
+        )
+
+    log(f"Completed: Created {total_created} BestSubmission records")
 
 
 def populate_best_quiz_attempts(apps, schema_editor):
     """
     Populate BestQuizAttempt table with best quiz attempt per user/lesson_quiz.
-    Uses raw SQL for MySQL compatibility.
+    Processes users in batches to avoid query timeout.
     """
     BestQuizAttempt = apps.get_model("judge", "BestQuizAttempt")
     Profile = apps.get_model("judge", "Profile")
 
     log("Starting BestQuizAttempt population...")
 
-    # Get valid profile IDs to filter out orphan attempts
-    valid_profile_ids = set(Profile.objects.values_list("id", flat=True))
-    log(f"  Found {len(valid_profile_ids)} valid profiles")
+    # Get all valid profile IDs
+    profile_ids = list(Profile.objects.values_list("id", flat=True))
+    total_profiles = len(profile_ids)
+    log(f"  Found {total_profiles} profiles to process")
 
-    log(
-        "Step 1: Finding best quiz attempts for each user/lesson_quiz pair using raw SQL..."
-    )
-
-    # Use raw SQL to get the best attempt for each user/lesson_quiz pair
     cursor = connection.cursor()
-    cursor.execute(
-        """
-        SELECT a.id, a.user_id, a.lesson_quiz_id, a.score, a.max_score
-        FROM judge_quizattempt a
-        INNER JOIN (
-            SELECT user_id, lesson_quiz_id, MAX(score) as max_score_val
-            FROM judge_quizattempt
-            WHERE is_submitted = 1 AND lesson_quiz_id IS NOT NULL AND score IS NOT NULL
-            GROUP BY user_id, lesson_quiz_id
-        ) best ON a.user_id = best.user_id
-              AND a.lesson_quiz_id = best.lesson_quiz_id
-              AND a.score = best.max_score_val
-        INNER JOIN (
-            SELECT user_id, lesson_quiz_id, score, MAX(id) as max_id
-            FROM judge_quizattempt
-            WHERE is_submitted = 1 AND lesson_quiz_id IS NOT NULL AND score IS NOT NULL
-            GROUP BY user_id, lesson_quiz_id, score
-        ) latest ON a.id = latest.max_id
-        WHERE a.is_submitted = 1 AND a.lesson_quiz_id IS NOT NULL AND a.score IS NOT NULL
-    """
-    )
+    batch_size = 1000  # Process 1000 users at a time (quiz attempts are fewer)
+    total_created = 0
 
-    rows = cursor.fetchall()
-    total_rows = len(rows)
-    log(f"Step 2: Found {total_rows} best quiz attempts to insert")
+    for i in range(0, total_profiles, batch_size):
+        user_batch = profile_ids[i : i + batch_size]
+        user_ids_str = ",".join(str(uid) for uid in user_batch)
 
-    # Filter to only valid profiles and bulk create in batches
-    batch_size = 1000
-    created_count = 0
-    batch = []
-
-    for row in rows:
-        attempt_id, user_id, lesson_quiz_id, score, max_score = row
-
-        # Skip if user no longer exists
-        if user_id not in valid_profile_ids:
-            continue
-
-        batch.append(
-            BestQuizAttempt(
-                user_id=user_id,
-                lesson_quiz_id=lesson_quiz_id,
-                attempt_id=attempt_id,
-                score=score or 0,
-                max_score=max_score or 0,
-            )
+        # Query best quiz attempts for this batch of users
+        cursor.execute(
+            f"""
+            SELECT a.id, a.user_id, a.lesson_quiz_id, a.score, a.max_score
+            FROM judge_quizattempt a
+            INNER JOIN (
+                SELECT user_id, lesson_quiz_id, MAX(score) as max_score_val
+                FROM judge_quizattempt
+                WHERE is_submitted = 1 AND lesson_quiz_id IS NOT NULL
+                      AND score IS NOT NULL AND user_id IN ({user_ids_str})
+                GROUP BY user_id, lesson_quiz_id
+            ) best ON a.user_id = best.user_id
+                  AND a.lesson_quiz_id = best.lesson_quiz_id
+                  AND a.score = best.max_score_val
+            INNER JOIN (
+                SELECT user_id, lesson_quiz_id, score, MAX(id) as max_id
+                FROM judge_quizattempt
+                WHERE is_submitted = 1 AND lesson_quiz_id IS NOT NULL
+                      AND score IS NOT NULL AND user_id IN ({user_ids_str})
+                GROUP BY user_id, lesson_quiz_id, score
+            ) latest ON a.id = latest.max_id
+            WHERE a.is_submitted = 1 AND a.lesson_quiz_id IS NOT NULL
+                  AND a.score IS NOT NULL AND a.user_id IN ({user_ids_str})
+            """
         )
 
-        if len(batch) >= batch_size:
-            BestQuizAttempt.objects.bulk_create(batch, ignore_conflicts=True)
-            created_count += len(batch)
-            log(f"  Progress: {created_count} records created...")
-            batch = []
+        rows = cursor.fetchall()
 
-    # Insert remaining
-    if batch:
-        BestQuizAttempt.objects.bulk_create(batch, ignore_conflicts=True)
-        created_count += len(batch)
+        if rows:
+            records = [
+                BestQuizAttempt(
+                    user_id=row[1],
+                    lesson_quiz_id=row[2],
+                    attempt_id=row[0],
+                    score=row[3] or 0,
+                    max_score=row[4] or 0,
+                )
+                for row in rows
+            ]
+            BestQuizAttempt.objects.bulk_create(records, ignore_conflicts=True)
+            total_created += len(records)
 
-    log(f"Step 3: Created {created_count} BestQuizAttempt records")
+        progress = min(i + batch_size, total_profiles)
+        if progress % 5000 == 0 or progress == total_profiles:
+            log(
+                f"  Progress: {progress}/{total_profiles} users processed, {total_created} records created"
+            )
+
+    log(f"Completed: Created {total_created} BestQuizAttempt records")
 
 
 def reverse_migrations(apps, schema_editor):
