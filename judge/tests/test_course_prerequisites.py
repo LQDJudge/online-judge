@@ -910,11 +910,13 @@ class BestQuizAttemptModelTest(TestCase):
         )
         result = BestQuizAttempt.update_from_attempt(attempt2)
 
-        self.assertIsNone(result)
+        # Now always returns BestQuizAttempt after recalculating (safer approach)
+        self.assertIsNotNone(result)
 
         best = BestQuizAttempt.objects.get(
             user=self.profile, lesson_quiz=self.lesson_quiz
         )
+        # Best score should still be 80 (the better attempt)
         self.assertEqual(best.score, Decimal("80.00"))
 
     def test_best_quiz_attempt_updates_for_higher_score(self):
@@ -1663,11 +1665,11 @@ class QuizIntegrationTest(TestCase):
             max_score=Decimal("100.00"),
         )
 
-        # Update best attempt - should NOT update
+        # Update best attempt - now always returns result after recalculating
         result = BestQuizAttempt.update_from_attempt(attempt3)
-        self.assertIsNone(result)
+        self.assertIsNotNone(result)
 
-        # Verify best is still 80
+        # Verify best is still 80 (the better attempt)
         best = BestQuizAttempt.objects.get(
             user=self.profile, lesson_quiz=self.lesson_quiz
         )
