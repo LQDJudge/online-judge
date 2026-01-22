@@ -483,8 +483,11 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
 
     @classmethod
     def get_cached_instances(cls, *ids):
-        _get_problem.batch([(id,) for id in ids])
-        return [cls(id=id) for id in ids]
+        # Prefetch cache data and filter out deleted problems
+        cached_results = _get_problem.batch([(id,) for id in ids])
+        return [
+            cls(id=id) for id, result in zip(ids, cached_results) if result is not None
+        ]
 
     @classmethod
     def prefetch_cache_i18n_name(cls, lang, *ids):
@@ -967,7 +970,8 @@ def _get_problem_batch(args_list):
         if problem_id in problem_dict:
             results.append(problem_dict[problem_id])
         else:
-            assert False, f"Invalid problem_id, {problem_id}"
+            # Problem was deleted, return None (filtered out by get_cached_instances)
+            results.append(None)
 
     return results
 

@@ -108,7 +108,9 @@ def cache_wrapper(prefix, timeout=None, expected_type=None, batch_fn=None):
                 cache.set_many(missing_values, timeout)
                 results.update(missing_values)
 
-            final_results = [results[k] for k in keys]
+            # Handle any keys still missing (e.g., batch_fn skipped deleted items)
+            # Return None for missing keys rather than crashing
+            final_results = [results.get(k, NONE_RESULT) for k in keys]
 
             return [None if r == NONE_RESULT else r for r in final_results]
 

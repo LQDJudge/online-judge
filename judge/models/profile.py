@@ -210,9 +210,16 @@ class Organization(CacheableModel):
             if course.organizations.count() == 1:
                 course.delete()
 
-        args_list = [(profile_id,) for profile_id in self.get_member_ids()]
-        _get_most_recent_organization_ids.dirty_multi(args_list)
-        Profile.get_organization_ids.dirty_multi(args_list)
+        member_args_list = [(profile_id,) for profile_id in self.get_member_ids()]
+        Profile.get_organization_ids.dirty_multi(member_args_list)
+
+        # Invalidate cache for all profiles that visited this organization
+        visited_profile_ids = OrganizationProfile.objects.filter(
+            organization=self
+        ).values_list("profile_id", flat=True)
+        visited_args_list = [(pid,) for pid in visited_profile_ids]
+        _get_most_recent_organization_ids.dirty_multi(visited_args_list)
+
         super().delete(*args, **kwargs)
 
     def __str__(self):
@@ -250,9 +257,11 @@ class Organization(CacheableModel):
 
     @classmethod
     def get_cached_instances(cls, *ids):
-        # Prefetch cache data
-        _get_organization.batch([(id,) for id in ids])
-        return [cls(id=id) for id in ids]
+        # Prefetch cache data and filter out deleted organizations
+        cached_results = _get_organization.batch([(id,) for id in ids])
+        return [
+            cls(id=id) for id, result in zip(ids, cached_results) if result is not None
+        ]
 
     def is_admin(self, profile):
         return profile.id in self.get_admin_ids()
@@ -430,9 +439,11 @@ class Profile(CacheableModel):
 
     @classmethod
     def get_cached_instances(cls, *ids):
-        # Prefetch cache data
-        _get_profile.batch([(id,) for id in ids])
-        return [cls(id=id) for id in ids]
+        # Prefetch cache data and filter out deleted profiles
+        cached_results = _get_profile.batch([(id,) for id in ids])
+        return [
+            cls(id=id) for id, result in zip(ids, cached_results) if result is not None
+        ]
 
     @classmethod
     def prefetch_cache_about(cls, *ids):
@@ -880,7 +891,8 @@ def _get_profile_batch(args_list):
         if profile_id in profile_dict:
             results.append(profile_dict[profile_id])
         else:
-            assert False, f"Invalid profile_id, {profile_id}"
+            # Profile was deleted, return None (filtered out by get_cached_instances)
+            results.append(None)
 
     return results
 
@@ -933,7 +945,8 @@ def _get_about_batch(args_list):
         if profile_id in abouts:
             results.append(abouts[profile_id])
         else:
-            assert False, f"Invalid profile_id, {profile_id}"
+            # Profile was deleted, return None
+            results.append(None)
 
     return results
 
@@ -1005,7 +1018,8 @@ def _get_organization_batch(args_list):
         if org_id in org_dict:
             results.append(org_dict[org_id])
         else:
-            assert False, f"Invalid organization_id, {org_id}"
+            # Organization was deleted, return None (filtered out by get_cached_instances)
+            results.append(None)
 
     return results
 
