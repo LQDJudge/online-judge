@@ -267,7 +267,7 @@ def get_related_problems(profile, problem, limit=8):
     return Problem.get_cached_instances(*results)
 
 
-def finished_submission(sub):
+def finished_submission(sub, is_delete=False):
     keys = ["user_complete:%d" % sub.user_id, "user_attempted:%s" % sub.user_id]
     if hasattr(sub, "contest"):
         participation = sub.contest.participation
@@ -278,7 +278,13 @@ def finished_submission(sub):
     # Update best submission cache for course lesson grade tracking
     from judge.models import BestSubmission
 
-    BestSubmission.update_from_submission(sub)
+    if is_delete:
+        # When deleting, recalculate best submission for this user/problem
+        # The CASCADE delete will remove BestSubmission if it pointed to this submission,
+        # so we need to find and set the new best submission from remaining ones
+        BestSubmission.recalculate_for_user_problem(sub.user_id, sub.problem_id)
+    else:
+        BestSubmission.update_from_submission(sub)
 
 
 class RecommendationType(Enum):

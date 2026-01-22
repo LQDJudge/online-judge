@@ -74,6 +74,7 @@
 
         $.each(rows, function(index, row) {
           $('#users-table tbody').append(row);
+          $(row).find('.rank').text(index + 1);
         });
       });
     });
@@ -92,6 +93,7 @@
     <table class="table striped" id="users-table">
       <thead>
         <tr>
+          <th>#</th>
           <th class = "static">{{_('Student')}}</th>
           <th>{{_('Total')}}</th>
           {% if grades|length > 0 %}
@@ -117,6 +119,7 @@
       <tbody>
         {% for student, grade in grades.items() %}
           <tr>
+            <td class="rank">{{ loop.index }}</td>
             <td class="user-name static">
               <div>
                 {{link_user(student)}}

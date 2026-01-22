@@ -5,9 +5,7 @@
 {% endblock %}
 
 {% block js_media %}
-  {% if tab == 'order' %}
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-  {% endif %}
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
   <script>
     $(function() {
       {% if tab == 'prerequisites' %}
@@ -303,53 +301,51 @@
         });
       {% endif %}
 
-      // Order tab: Drag and drop sorting
-      {% if tab == 'order' %}
-        function initSortable(listId, action, statusId) {
-          var $list = $('#' + listId);
-          var $status = $('#' + statusId);
+      // Drag and drop sorting for lessons
+      function initSortable(listId, action, statusId) {
+        var $list = $('#' + listId);
+        var $status = $('#' + statusId);
 
-          if ($list.length === 0) return;
+        if ($list.length === 0) return;
 
-          $list.sortable({
-            handle: '.drag-handle',
-            update: function() {
-            // Update visual order numbers
-              $list.find('.sortable-item').each(function(index) {
-                $(this).find('.item-order').text((index + 1) + '.');
-              });
+        $list.sortable({
+          handle: '.drag-handle',
+          update: function() {
+          // Update visual order numbers
+            $list.find('.sortable-item').each(function(index) {
+              $(this).find('.item-order').text((index + 1) + '.');
+            });
 
-            // Collect new order
-              var orderData = [];
-              $list.find('.sortable-item').each(function() {
-                orderData.push($(this).data('id'));
-              });
+          // Collect new order
+            var orderData = [];
+            $list.find('.sortable-item').each(function() {
+              orderData.push($(this).data('id'));
+            });
 
-            // Save to server
-              $status.html('<i class="fa fa-spinner fa-spin"></i> {{ _("Saving...") }}').removeClass('success error').show();
+          // Save to server
+            $status.html('<i class="fa fa-spinner fa-spin"></i> {{ _("Saving...") }}').removeClass('success error').show();
 
-              $.post('', {
-                'action': action,
-                'order_data': JSON.stringify(orderData),
-                'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
-              }, function(response) {
-                if (response.success) {
-                  $status.html('<i class="fa fa-check"></i> {{ _("Saved") }}').addClass('success');
-                  setTimeout(function() {
-                    $status.fadeOut();
-                  }, 2000);
-                } else {
-                  $status.html('<i class="fa fa-exclamation-triangle"></i> ' + response.error).addClass('error');
-                }
-              }).fail(function() {
-                $status.html('<i class="fa fa-exclamation-triangle"></i> {{ _("Error saving") }}').addClass('error');
-              });
-            }
-          });
-        }
+            $.post('', {
+              'action': 'reorder_lessons',
+              'order_data': JSON.stringify(orderData),
+              'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+            }, function(response) {
+              if (response.success) {
+                $status.html('<i class="fa fa-check"></i> {{ _("Saved") }}').addClass('success');
+                setTimeout(function() {
+                  $status.fadeOut();
+                }, 2000);
+              } else {
+                $status.html('<i class="fa fa-exclamation-triangle"></i> ' + response.error).addClass('error');
+              }
+            }).fail(function() {
+              $status.html('<i class="fa fa-exclamation-triangle"></i> {{ _("Error saving") }}').addClass('error');
+            });
+          }
+        });
+      }
 
-        initSortable('sortable-lessons', 'reorder_lessons', 'lessons-save-status');
-      {% endif %}
+      initSortable('sortable-lessons', 'reorder_lessons', 'lessons-save-status');
     });
   </script>
 {% endblock %}
@@ -359,11 +355,8 @@
 
   <div class="tabs edit-lessons-tabs">
     <ul>
-      <li class="{{'active' if tab == 'lessons' or (tab != 'prerequisites' and tab != 'order')}}">
+      <li class="{{'active' if tab != 'prerequisites'}}">
         <a href="{{url('edit_course_lessons', course.slug)}}">{{ _('LESSONS') }}</a>
-      </li>
-      <li class="{{'active' if tab == 'order'}}">
-        <a href="{{url('edit_course_lessons', course.slug)}}?tab=order">{{ _('ORDER') }}</a>
       </li>
       <li class="{{'active' if tab == 'prerequisites'}}">
         <a href="{{url('edit_course_lessons', course.slug)}}?tab=prerequisites">{{ _('PREREQUISITES') }}</a>
@@ -371,32 +364,7 @@
     </ul>
   </div>
 
-  {% if tab == 'order' %}
-    {# Order Tab #}
-    <div class="edit-lessons-page order-tab">
-      {% csrf_token %}
-      <p class="prereq-description">
-        {{ _("Drag and drop to reorder lessons. Changes are saved automatically.") }}
-      </p>
-
-      <h4 class="order-section-title">{{ _("Lessons") }}</h4>
-      {% if lessons %}
-        <ul id="sortable-lessons" class="sortable-list">
-          {% for lesson in lessons %}
-            <li class="sortable-item" data-id="{{ lesson.id }}">
-              <span class="drag-handle"><i class="fa fa-bars"></i></span>
-              <span class="item-order">{{ loop.index }}.</span>
-              <span class="item-title">{{ lesson.title }}</span>
-            </li>
-          {% endfor %}
-        </ul>
-        <div id="lessons-save-status" class="save-status"></div>
-      {% else %}
-        <p class="gray">{{ _("No lessons yet.") }}</p>
-      {% endif %}
-    </div>
-
-  {% elif tab == 'prerequisites' %}
+  {% if tab == 'prerequisites' %}
     {# Prerequisites Tab #}
     <div class="edit-lessons-page prerequisites-tab">
       {% csrf_token %}
@@ -525,21 +493,39 @@
 
   {% else %}
     {# Lessons Tab #}
-    <div class="edit-lessons-page lessons-tab">
-      <div class="add-button-container">
+    <div class="edit-lessons-page order-tab">
+      {% csrf_token %}
+      <div class="add-button-container" style="margin-bottom: 1em;">
         <a href="{{ url('course_lesson_create', course.slug) }}" class="action-btn background-green large">{{ _('Add') }}</a>
       </div>
       {% if lessons %}
-        {% for lesson in lessons %}
-          <div class="course-lesson-card">
-            <div>
-              <h5><a href="{{ url('course_lesson_detail', course.slug, lesson.id) }}">{{ loop.index }}. {{ lesson.title }}</a></h5>
-              <p><strong>{{_("Points")}}:</strong> {{ lesson.points }}</p>
-              <p><strong>{{_("Publicly Visible")}}:</strong> {% if lesson.is_visible %}{{_("Yes")}}{% else %}{{_("No")}}{% endif %}</p>
-            </div>
-            <a href="{{ url('edit_course_lessons_new', course.slug, lesson.id) }}" class="action-btn large">{{ _('Edit') }}</a>
-          </div>
-        {% endfor %}
+        <ul id="sortable-lessons" class="sortable-list">
+          {% for lesson in lessons %}
+            <li class="sortable-item" data-id="{{ lesson.id }}">
+              <span class="drag-handle"><i class="fa fa-bars"></i></span>
+              <span class="item-order">{{ loop.index }}.</span>
+              <span class="item-title">
+                <a href="{{ url('course_lesson_detail', course.slug, lesson.id) }}">{{ lesson.title }}</a>
+              </span>
+              <span class="item-meta">
+                <span class="item-points">{{ lesson.points }}{{ _('p') }}</span>
+                <span class="item-visibility {% if lesson.is_visible %}public{% else %}private{% endif %}" title="{% if lesson.is_visible %}{{ _('Public') }}{% else %}{{ _('Private') }}{% endif %}">
+                  {% if lesson.is_visible %}
+                    <i class="fa fa-globe"></i>
+                  {% else %}
+                    <i class="fa fa-lock"></i>
+                  {% endif %}
+                </span>
+              </span>
+              <span class="item-actions">
+                <a href="{{ url('edit_course_lessons_new', course.slug, lesson.id) }}" class="action-btn small" title="{{ _('Edit') }}">
+                  <i class="fa fa-pencil"></i> {{ _('Edit') }}
+                </a>
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+        <div id="lessons-save-status" class="save-status"></div>
       {% else %}
         <p style="text-align: center;">{{_("No lessons available")}}</p>
       {% endif %}
