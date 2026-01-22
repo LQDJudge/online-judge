@@ -1,7 +1,6 @@
 import itertools
 import json
 from datetime import datetime
-from operator import itemgetter
 from collections import defaultdict
 
 from django.core.cache import cache
@@ -46,6 +45,7 @@ from judge.models import (
     Problem,
     Contest,
     Solution,
+    BestSubmission,
 )
 from judge.models.contest import get_global_rating_range
 from judge.models.submission import (
@@ -259,37 +259,47 @@ class UserProblemsPage(UserPage):
     def get_context_data(self, **kwargs):
         context = super(UserProblemsPage, self).get_context_data(**kwargs)
 
-        queryset = list(
-            Submission.objects.filter(
-                user=self.object,
-                points__gt=0,
-                problem__is_public=True,
-                problem__is_organization_private=False,
-            )
-            .exclude(
-                problem__in=self.get_completed_problems() if self.hide_solved else []
-            )
-            .values(
-                "problem_id",
-            )
-            .distinct()
-            .annotate(points=Max("points"))
-        )
-        problems = Problem.get_cached_instances(*[p["problem_id"] for p in queryset])
+        # Get best submissions using the BestSubmission cache table
+        best_subs = BestSubmission.objects.filter(
+            user=self.object,
+            points__gt=0,
+            problem__is_public=True,
+            problem__is_organization_private=False,
+        ).select_related("problem", "submission")
+
+        if self.hide_solved:
+            completed_problems = self.get_completed_problems()
+            best_subs = best_subs.exclude(problem__in=completed_problems)
+
+        # Build a mapping of problem_id to best submission data
+        problem_ids = []
+        best_sub_map = {}
+        for bs in best_subs:
+            problem_ids.append(bs.problem_id)
+            best_sub_map[bs.problem_id] = {
+                "points": bs.submission.points if bs.submission else bs.points,
+                "total": bs.problem.points,
+            }
+
+        problems = Problem.get_cached_instances(*problem_ids)
 
         group_problems = defaultdict(list)
         group_points = defaultdict(float)
 
-        for item, problem in zip(queryset, problems):
-            points = item["points"]
+        for problem in problems:
+            if problem.id not in best_sub_map:
+                continue
+            sub_data = best_sub_map[problem.id]
             group_name = problem.get_group_name()
-            group_problems[group_name].append(problem)
-            group_points[group_name] += points
-
-        def process_group(group, problems_iter):
-            problems = list(problems_iter)
-            points = sum(map(itemgetter("points"), problems))
-            return {"name": group, "problems": problems, "points": points}
+            # Create a dict-like object that template can access
+            problem_entry = {
+                "code": problem.code,
+                "name": problem.name,
+                "points": sub_data["points"],
+                "total": sub_data["total"],
+            }
+            group_problems[group_name].append(problem_entry)
+            group_points[group_name] += sub_data["points"] or 0
 
         context["best_submissions"] = [
             {"name": name, "problems": problems, "points": group_points[name]}

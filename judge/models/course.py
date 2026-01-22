@@ -602,42 +602,57 @@ class BestSubmission(models.Model):
     @classmethod
     def update_from_submission(cls, submission):
         """
-        Update best submission for a user/problem if this submission is better.
-        Called after a submission is judged.
+        Recalculate best submission for a user/problem after a submission is judged.
 
         Args:
             submission: Submission object that was just judged
 
         Returns:
-            BestSubmission object if updated/created, None otherwise
+            BestSubmission object if updated/created, None if no valid submissions
         """
         if submission.status != "D":  # Only consider completed submissions
             return None
 
-        user = submission.user
-        problem = submission.problem
-        new_points = submission.case_points or 0
-        case_total = submission.case_total or 0
-
-        # Get or create best submission record
-        best_sub, created = cls.objects.get_or_create(
-            user=user,
-            problem=problem,
-            defaults={
-                "submission": submission,
-                "points": new_points,
-                "case_total": case_total,
-            },
+        return cls.recalculate_for_user_problem(
+            submission.user_id, submission.problem_id
         )
 
-        if not created:
-            # Check if this submission is better
-            if new_points > best_sub.points:
-                best_sub.submission = submission
-                best_sub.points = new_points
-                best_sub.case_total = case_total
-                best_sub.save()
-                return best_sub
-            return None
+    @classmethod
+    def recalculate_for_user_problem(cls, user_id, problem_id):
+        """
+        Recalculate best submission for a user/problem pair.
+        Called after a submission is deleted to find the new best submission.
 
-        return best_sub
+        Args:
+            user_id: Profile ID of the user
+            problem_id: Problem ID
+        """
+        from judge.models import Submission
+
+        # Find the best remaining submission for this user/problem
+        best_submission = (
+            Submission.objects.filter(
+                user_id=user_id,
+                problem_id=problem_id,
+                status="D",
+            )
+            .order_by("-case_points", "-date")
+            .first()
+        )
+
+        if best_submission:
+            # Update or create best submission record
+            best_sub, created = cls.objects.update_or_create(
+                user_id=user_id,
+                problem_id=problem_id,
+                defaults={
+                    "submission": best_submission,
+                    "points": best_submission.case_points or 0,
+                    "case_total": best_submission.case_total or 0,
+                },
+            )
+            return best_sub
+        else:
+            # No submissions left, delete the best submission record if it exists
+            cls.objects.filter(user_id=user_id, problem_id=problem_id).delete()
+            return None

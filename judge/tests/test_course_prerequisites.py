@@ -731,7 +731,7 @@ class BestSubmissionModelTest(TestCase):
         self.assertEqual(best_sub.case_total, 100)
 
     def test_best_submission_only_updates_for_better_score(self):
-        """Test that BestSubmission only updates when new submission is better"""
+        """Test that BestSubmission keeps highest score when lower score submission is added"""
         # First submission: 80%
         submission1 = Submission.objects.create(
             user=self.profile,
@@ -756,10 +756,14 @@ class BestSubmissionModelTest(TestCase):
         )
         result = BestSubmission.update_from_submission(submission2)
 
-        self.assertIsNone(result)  # Should not update
+        # Always returns BestSubmission after recalculating
+        self.assertIsNotNone(result)
 
         best_sub = BestSubmission.objects.get(user=self.profile, problem=self.problem)
         self.assertEqual(best_sub.points, 80)  # Still the first submission's score
+        self.assertEqual(
+            best_sub.submission_id, submission1.id
+        )  # Points to the better submission
 
     def test_best_submission_updates_for_higher_score(self):
         """Test that BestSubmission updates when new submission is better"""

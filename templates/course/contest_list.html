@@ -5,57 +5,53 @@
 {% endblock %}
 
 {% block js_media %}
-  {% if tab == 'order' %}
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-  {% endif %}
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
   <script>
     $(function() {
-      {% if tab == 'order' %}
-        function initSortable(listId, action, statusId) {
-          var $list = $('#' + listId);
-          var $status = $('#' + statusId);
+      function initSortable(listId, action, statusId) {
+        var $list = $('#' + listId);
+        var $status = $('#' + statusId);
 
-          if ($list.length === 0) return;
+        if ($list.length === 0) return;
 
-          $list.sortable({
-            handle: '.drag-handle',
-            update: function() {
-            // Update visual order numbers
-              $list.find('.sortable-item').each(function(index) {
-                $(this).find('.item-order').text((index + 1) + '.');
-              });
+        $list.sortable({
+          handle: '.drag-handle',
+          update: function() {
+          // Update visual order numbers
+            $list.find('.sortable-item').each(function(index) {
+              $(this).find('.item-order').text((index + 1) + '.');
+            });
 
-            // Collect new order
-              var orderData = [];
-              $list.find('.sortable-item').each(function() {
-                orderData.push($(this).data('id'));
-              });
+          // Collect new order
+            var orderData = [];
+            $list.find('.sortable-item').each(function() {
+              orderData.push($(this).data('id'));
+            });
 
-            // Save to server
-              $status.html('<i class="fa fa-spinner fa-spin"></i> {{ _("Saving...") }}').removeClass('success error').show();
+          // Save to server
+            $status.html('<i class="fa fa-spinner fa-spin"></i> {{ _("Saving...") }}').removeClass('success error').show();
 
-              $.post('', {
-                'action': 'reorder_contests',
-                'order_data': JSON.stringify(orderData),
-                'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
-              }, function(response) {
-                if (response.success) {
-                  $status.html('<i class="fa fa-check"></i> {{ _("Saved") }}').addClass('success');
-                  setTimeout(function() {
-                    $status.fadeOut();
-                  }, 2000);
-                } else {
-                  $status.html('<i class="fa fa-exclamation-triangle"></i> ' + response.error).addClass('error');
-                }
-              }).fail(function() {
-                $status.html('<i class="fa fa-exclamation-triangle"></i> {{ _("Error saving") }}').addClass('error');
-              });
-            }
-          });
-        }
+            $.post('', {
+              'action': 'reorder_contests',
+              'order_data': JSON.stringify(orderData),
+              'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+            }, function(response) {
+              if (response.success) {
+                $status.html('<i class="fa fa-check"></i> {{ _("Saved") }}').addClass('success');
+                setTimeout(function() {
+                  $status.fadeOut();
+                }, 2000);
+              } else {
+                $status.html('<i class="fa fa-exclamation-triangle"></i> ' + response.error).addClass('error');
+              }
+            }).fail(function() {
+              $status.html('<i class="fa fa-exclamation-triangle"></i> {{ _("Error saving") }}').addClass('error');
+            });
+          }
+        });
+      }
 
-        initSortable('sortable-contests', 'reorder_contests', 'contests-save-status');
-      {% endif %}
+      initSortable('sortable-contests', 'reorder_contests', 'contests-save-status');
     });
   </script>
 {% endblock %}
@@ -65,64 +61,34 @@
     <h2>{{content_title}}</h2>
   </center>
 
-  <div class="tabs edit-lessons-tabs">
-    <ul>
-      <li class="{{'active' if tab != 'order'}}">
-        <a href="{{url('course_contest_list', course.slug)}}">{{ _('CONTESTS') }}</a>
-      </li>
-      <li class="{{'active' if tab == 'order'}}">
-        <a href="{{url('course_contest_list', course.slug)}}?tab=order">{{ _('ORDER') }}</a>
-      </li>
-    </ul>
-  </div>
-
-  {% if tab == 'order' %}
-    {# Order Tab #}
-    <div class="edit-lessons-page order-tab">
-      {% csrf_token %}
-      <p class="prereq-description">
-        {{ _("Drag and drop to reorder contests. Changes are saved automatically.") }}
-      </p>
-
-      {% if course_contests %}
-        <ul id="sortable-contests" class="sortable-list">
-          {% for cc in course_contests %}
-            <li class="sortable-item" data-id="{{ cc.id }}">
-              <span class="drag-handle"><i class="fa fa-bars"></i></span>
-              <span class="item-order">{{ loop.index }}.</span>
-              <span class="item-title">{{ cc.contest.name }}</span>
-            </li>
-          {% endfor %}
-        </ul>
-        <div id="contests-save-status" class="save-status"></div>
-      {% else %}
-        <p class="gray">{{ _("No contests yet.") }}</p>
-      {% endif %}
+  <div class="edit-lessons-page order-tab">
+    {% csrf_token %}
+    <div class="add-button-container" style="margin-bottom: 1em;">
+      <a href="{{url('add_course_contest', course.slug)}}" class="action-btn background-green large">{{ _('Add') }}</a>
     </div>
-
-  {% else %}
-    {# Contests Tab #}
-    <div class="container">
-      <div class="add-button-container">
-        <a href="{{url('add_course_contest', course.slug)}}" class="action-btn background-green large">{{ _('Add') }}</a>
-      </div>
-      {% if course_contests %}
-        {% for course_contest in course_contests %}
-          <div class="course-contest-card">
-            <div>
-              <h5><a href="{{url('contest_view', course_contest.contest.key)}}" target="_blank">{{ loop.index }}. {{
-                course_contest.contest.name }}</a></h5>
-              <p><strong>{{_("Points")}}:</strong> {{ course_contest.points }}</p>
-              <p><strong>{{_("Start")}}:</strong> {{ course_contest.contest.start_time|date(_("H:i d/m/Y")) }}</p>
-              <p><strong>{{_("End")}}:</strong> {{ course_contest.contest.end_time|date(_("H:i d/m/Y")) }}</p>
-            </div>
-            <a href="{{url('edit_course_contest', course.slug, course_contest.contest.key)}}" class="action-btn large">{{
-              _('Edit') }}</a>
-          </div>
+    {% if course_contests %}
+      <ul id="sortable-contests" class="sortable-list">
+        {% for cc in course_contests %}
+          <li class="sortable-item" data-id="{{ cc.id }}">
+            <span class="drag-handle"><i class="fa fa-bars"></i></span>
+            <span class="item-order">{{ loop.index }}.</span>
+            <span class="item-title">
+              <a href="{{url('contest_view', cc.contest.key)}}" target="_blank">{{ cc.contest.name }}</a>
+            </span>
+            <span class="item-meta">
+              <span class="item-points">{{ cc.points }}{{ _('p') }}</span>
+            </span>
+            <span class="item-actions">
+              <a href="{{url('edit_course_contest', course.slug, cc.contest.key)}}" class="action-btn small" title="{{ _('Edit') }}">
+                <i class="fa fa-pencil"></i> {{ _('Edit') }}
+              </a>
+            </span>
+          </li>
         {% endfor %}
-      {% else %}
-        <p style="text-align: center;">{{_("No contests available")}}</p>
-      {% endif %}
-    </div>
-  {% endif %}
+      </ul>
+      <div id="contests-save-status" class="save-status"></div>
+    {% else %}
+      <p style="text-align: center;">{{_("No contests available")}}</p>
+    {% endif %}
+  </div>
 {% endblock %}

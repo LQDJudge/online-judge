@@ -70,6 +70,7 @@
 
         $.each(rows, function (index, row) {
           $('#users-table tbody').append(row);
+          $(row).find('.rank').text(index + 1);
         });
       });
     });
@@ -92,6 +93,7 @@
     <table class="table striped" id="users-table">
       <thead>
         <tr>
+          <th>#</th>
           <th>{{_('Student')}}</th>
           <th>{{_('Total')}}</th>
           {% for lesson in lessons %}
@@ -118,6 +120,7 @@
           {% set grade_contests_student = grade_contests.get(student) %}
           {% set grade_total_student = grade_total.get(student) %}
           <tr>
+            <td class="rank">{{ loop.index }}</td>
             <td class="user-name">
               <div>
                 {{link_user(student)}}

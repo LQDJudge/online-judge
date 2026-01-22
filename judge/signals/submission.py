@@ -7,7 +7,7 @@ from judge.utils.problems import finished_submission
 
 @receiver(post_delete, sender=Submission)
 def submission_delete(sender, instance, **kwargs):
-    finished_submission(instance)
+    finished_submission(instance, is_delete=True)
     instance.user.calculate_points()
 
 

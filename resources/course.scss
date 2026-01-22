@@ -448,6 +448,53 @@
 
         .item-title {
             flex: 1;
+
+            a {
+                color: $widget_black;
+                text-decoration: none;
+
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+        }
+
+        .item-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-right: 15px;
+            color: $border_gray;
+            font-size: 0.9em;
+
+            .item-points {
+                font-weight: 500;
+                color: $widget_black;
+            }
+
+            .item-visibility {
+                i {
+                    font-size: 1.1em;
+                }
+
+                &.public {
+                    color: green;
+                }
+
+                &.private {
+                    color: $announcement_red;
+                }
+            }
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 5px;
+
+            .action-btn.small {
+                padding: 4px 8px;
+                font-size: 0.85em;
+            }
         }
 
         .save-status {
