@@ -662,6 +662,7 @@ class ContestClone(ContestMixin, TitleMixin, SingleObjectFormView):
         elif target_type == "course":
             course = form.cleaned_data["course"]
             contest.is_in_course = True
+            contest.organizations.clear()
 
             # Create a CourseContest entry that links the cloned contest to the course
             CourseContest.objects.create(

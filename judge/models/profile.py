@@ -190,10 +190,26 @@ class Organization(CacheableModel):
             )
 
     def delete(self, *args, **kwargs):
-        contests = self.contest_set
-        for contest in contests.all():
+        # Delete contests that only belong to this organization
+        for contest in self.contest_set.all():
             if contest.organizations.count() == 1:
                 contest.delete()
+
+        # Delete problems that only belong to this organization
+        for problem in self.problem_set.all():
+            if problem.organizations.count() == 1:
+                problem.delete()
+
+        # Delete blog posts that only belong to this organization
+        for post in self.blogpost_set.all():
+            if post.organizations.count() == 1:
+                post.delete()
+
+        # Delete courses that only belong to this organization
+        for course in self.course_set.all():
+            if course.organizations.count() == 1:
+                course.delete()
+
         args_list = [(profile_id,) for profile_id in self.get_member_ids()]
         _get_most_recent_organization_ids.dirty_multi(args_list)
         Profile.get_organization_ids.dirty_multi(args_list)
