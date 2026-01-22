@@ -1056,8 +1056,8 @@ class BestQuizAttempt(models.Model):
     @classmethod
     def update_from_attempt(cls, attempt):
         """
-        Update best quiz attempt for a user/lesson_quiz if this attempt is better.
-        Called after a quiz attempt is submitted.
+        Recalculate best quiz attempt for a user/lesson_quiz after an attempt is submitted.
+        Always queries all attempts to find the true best score.
 
         Args:
             attempt: QuizAttempt object that was just submitted
@@ -1068,30 +1068,58 @@ class BestQuizAttempt(models.Model):
         if not attempt.is_submitted or not attempt.lesson_quiz:
             return None
 
-        user = attempt.user
-        lesson_quiz = attempt.lesson_quiz
-        new_score = attempt.score or 0
-        max_score = attempt.max_score or 0
+        return cls.recalculate_for_user_lesson_quiz(
+            attempt.user_id, attempt.lesson_quiz_id
+        )
 
-        # Get or create best attempt record
-        best_attempt, created = cls.objects.get_or_create(
-            user=user,
-            lesson_quiz=lesson_quiz,
+    @classmethod
+    def recalculate_for_user_lesson_quiz(cls, user_id, lesson_quiz_id):
+        """
+        Recalculate the best quiz attempt for a user/lesson_quiz pair.
+        Queries all submitted attempts to find the true best score.
+
+        Args:
+            user_id: Profile ID
+            lesson_quiz_id: CourseLessonQuiz ID
+
+        Returns:
+            BestQuizAttempt object, or None if no attempts exist
+        """
+        # Get the lesson_quiz to find the quiz_id
+        try:
+            lesson_quiz = CourseLessonQuiz.objects.select_related("quiz").get(
+                id=lesson_quiz_id
+            )
+        except CourseLessonQuiz.DoesNotExist:
+            return None
+
+        # Find the best submitted attempt for this user and quiz
+        best_attempt = (
+            QuizAttempt.objects.filter(
+                user_id=user_id,
+                quiz_id=lesson_quiz.quiz_id,
+                is_submitted=True,
+            )
+            .order_by("-score")
+            .first()
+        )
+
+        if not best_attempt:
+            # No attempts exist, delete any stale cache
+            cls.objects.filter(user_id=user_id, lesson_quiz_id=lesson_quiz_id).delete()
+            return None
+
+        max_score = lesson_quiz.quiz.get_total_points()
+
+        # Update or create the best attempt record
+        best_cache, created = cls.objects.update_or_create(
+            user_id=user_id,
+            lesson_quiz_id=lesson_quiz_id,
             defaults={
-                "attempt": attempt,
-                "score": new_score,
+                "attempt": best_attempt,
+                "score": best_attempt.score or 0,
                 "max_score": max_score,
             },
         )
 
-        if not created:
-            # Check if this attempt is better
-            if new_score > best_attempt.score:
-                best_attempt.attempt = attempt
-                best_attempt.score = new_score
-                best_attempt.max_score = max_score
-                best_attempt.save()
-                return best_attempt
-            return None
-
-        return best_attempt
+        return best_cache
