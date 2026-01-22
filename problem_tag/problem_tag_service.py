@@ -23,7 +23,7 @@ class ProblemTagService:
         self.config = get_config()
         self.tagger = ProblemTagger(
             api_key=self.config.api_key,
-            bot_name=self.config.bot_name,
+            bot_name=self.config.get_bot_name_for_tagging(),
             sleep_time=self.config.sleep_time,
         )
         self.llm_service = LLMService(
@@ -33,12 +33,12 @@ class ProblemTagService:
         )
         self.markdown_improver = MarkdownImprover(
             api_key=self.config.api_key,
-            bot_name=self.config.bot_name,
+            bot_name=self.config.get_bot_name_for_markdown(),
             sleep_time=self.config.sleep_time,
         )
         self.solution_generator = SolutionGenerator(
             api_key=self.config.api_key,
-            bot_name=self.config.bot_name,
+            bot_name=self.config.get_bot_name_for_solution(),
             sleep_time=self.config.sleep_time,
         )
 

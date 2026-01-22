@@ -16,6 +16,7 @@ from judge.models import Profile
 from judge.utils.diggpaginator import DiggPaginator
 from judge.models import Problem, ProblemType
 from judge.tasks import rescore_problem
+from judge.tasks.llm import tag_problem_task
 
 from problem_tag import get_problem_tag_service
 
@@ -190,7 +191,7 @@ def problem_tag(request):
         return HttpResponseForbidden()
 
     try:
-        # Handle GET request - show suggestions modal
+        # Handle GET request - dispatch async Celery task for AI tagging
         if request.method == "GET":
             problem_code = request.GET.get("problem_code")
             if not problem_code:
@@ -203,49 +204,25 @@ def problem_tag(request):
             except Problem.DoesNotExist:
                 return JsonResponse({"success": False, "error": "Problem not found"})
 
-            # Use the problem tag service
-            tag_service = get_problem_tag_service()
+            # Get current problem types and all types for the modal
+            current_types = list(problem.types.values("id", "name"))
+            all_types = list(ProblemType.objects.all().values("id", "name"))
 
-            # Call the AI service to analyze the problem
-            result = tag_service.tag_single_problem(problem)
+            # Dispatch async Celery task
+            task = tag_problem_task.delay(problem_code)
 
-            if result["success"]:
-                # Get current problem types for pre-selection
-                current_types = list(problem.types.values("id", "name"))
-
-                # Get all problem types for the select2 dropdown
-                all_types = list(ProblemType.objects.all().values("id", "name"))
-
-                # Convert predicted type names to type objects
-                predicted_types = []
-                if result.get("predicted_types"):
-                    predicted_types = list(
-                        ProblemType.objects.filter(
-                            name__in=result["predicted_types"]
-                        ).values("id", "name")
-                    )
-
-                return JsonResponse(
-                    {
-                        "success": True,
-                        "is_valid": result["is_valid"],
-                        "problem_code": problem.code,
-                        "problem_name": problem.name,
-                        "current_points": problem.points,
-                        "predicted_points": result.get("predicted_points"),
-                        "current_types": current_types,
-                        "predicted_types": predicted_types,
-                        "all_types": all_types,
-                        "reason": result.get("reason"),  # Reason if is_valid is False
-                    }
-                )
-            else:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": result.get("error", "Unknown error occurred"),
-                    }
-                )
+            return JsonResponse(
+                {
+                    "success": True,
+                    "task_id": task.id,
+                    "status": "processing",
+                    "problem_code": problem.code,
+                    "problem_name": problem.name,
+                    "current_points": problem.points,
+                    "current_types": current_types,
+                    "all_types": all_types,
+                }
+            )
 
         # Handle POST request - apply the changes
         elif request.method == "POST":

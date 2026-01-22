@@ -49,6 +49,66 @@
         }, 2000);
       }
 
+      // Poll for tagging task result
+      function pollTagTask(taskId, $btn, $status) {
+        var pollInterval = setInterval(function() {
+          $.ajax({
+            url: '{{ url('task_status_ajax') }}?id=' + taskId,
+            type: 'GET',
+            success: function(data) {
+              if (data.code === 'SUCCESS') {
+                clearInterval(pollInterval);
+                $btn.prop('disabled', false);
+
+                if (data.success && data.is_valid) {
+                  // Update form fields with AI predictions
+                  if (data.predicted_points) {
+                    $('#{{ form.points.id_for_label }}').val(data.predicted_points);
+                  }
+
+                  if (data.predicted_types && data.predicted_types.length > 0) {
+                    var $typesSelect = $('#{{ form.types.id_for_label }}');
+                    var currentValues = $typesSelect.val() || [];
+
+                    data.predicted_types.forEach(function(type) {
+                      // Handle both {id, name} objects and plain IDs
+                      var typeId = type.id !== undefined ? type.id : type;
+                      var typeIdStr = String(typeId);
+
+                      if (currentValues.indexOf(typeIdStr) === -1) {
+                        currentValues.push(typeIdStr);
+                      }
+                    });
+
+                    $typesSelect.val(currentValues).trigger('change');
+                  }
+
+                  $status.text('{{ _('Problem-tag analysis completed successfully!') }}').css('color', 'green');
+                } else if (data.success && !data.is_valid) {
+                  var reason = data.reason || '{{ _('Problem format is incomplete') }}';
+                  $status.text('{{ _('Could not analyze: ') }}' + reason).css('color', 'orange');
+                } else if (data.error) {
+                  $status.text('{{ _('Error: ') }}' + data.error).css('color', 'red');
+                }
+
+                setTimeout(function() {
+                  $status.text('').css('color', '#666');
+                }, 5000);
+              } else if (data.code === 'FAILURE') {
+                clearInterval(pollInterval);
+                $btn.prop('disabled', false);
+                $status.text('{{ _('Error: ') }}' + (data.error || 'Task failed')).css('color', 'red');
+              }
+            },
+            error: function() {
+              clearInterval(pollInterval);
+              $btn.prop('disabled', false);
+              $status.text('{{ _('Network error occurred') }}').css('color', 'red');
+            }
+          });
+        }, 2000);
+      }
+
       // Handle Auto Improve Markdown button click
       $('#improve-markdown-btn').click(function() {
         var $btn = $(this);
@@ -139,61 +199,16 @@
             'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
           },
           success: function(data) {
-            var shouldClear = false;
-            if (data.success) {
-              if (data.is_valid) {
-                // Update form fields with AI predictions
-                if (data.predicted_points) {
-                  $('#{{ form.points.id_for_label }}').val(data.predicted_points);
-                }
-
-                if (data.predicted_types && data.predicted_types.length > 0) {
-                  // Add new types to existing selection using Select2
-
-                  // Get the Select2 widget
-                  var $typesSelect = $('#{{ form.types.id_for_label }}');
-
-                  // Get currently selected values
-                  var currentValues = $typesSelect.val() || [];
-
-                  data.predicted_types.forEach(function(typeId) {
-                    // Convert typeId to string for comparison (jQuery val() returns strings)
-                    var typeIdStr = String(typeId);
-
-                    // Find the option with this type ID
-                    var $option = $typesSelect.find('option[value="' + typeId + '"]');
-
-                    if ($option.length > 0) {
-                      var typeName = $option.text().trim();
-
-                      if (currentValues.indexOf(typeIdStr) === -1) {
-                        // Not already selected, add it
-                        currentValues.push(typeIdStr);
-                      }
-                    }
-                  });
-
-                  // Update Select2 with new values
-                  $typesSelect.val(currentValues).trigger('change');
-
-                  $status.text('{{ _('Problem-tag analysis completed successfully!') }}').css('color', 'green');
-                }
-              } else {
-                // Show the reason from AI if available
-                var reason = data.reason || '{{ _('Problem format is incomplete') }}';
-                $status.text('{{ _('Could not analyze: ') }}' + reason).css('color', 'orange');
-              }
-            } else {
+            if (data.success && data.task_id) {
+              $status.text('{{ _('Processing... please wait') }}').css('color', '#666');
+              pollTagTask(data.task_id, $btn, $status);
+            } else if (data.error) {
               $status.text('{{ _('Error: ') }}' + data.error).css('color', 'red');
+              $btn.prop('disabled', false);
             }
-
-            // Re-enable button
-            $btn.prop('disabled', false);
           },
           error: function(xhr, status, error) {
             $status.text('{{ _('Network error occurred') }}').css('color', 'red');
-
-            // Re-enable button
             $btn.prop('disabled', false);
           }
         });

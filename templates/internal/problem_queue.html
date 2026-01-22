@@ -126,6 +126,45 @@
           });
         });
 
+    // Function to poll for tagging task result
+        function pollTagTask(taskId, button, originalText, initialData) {
+          var pollInterval = setInterval(function() {
+            $.ajax({
+              url: '{{ url('task_status_ajax') }}?id=' + taskId,
+              type: 'GET',
+              success: function(data) {
+                if (data.code === 'SUCCESS') {
+                  clearInterval(pollInterval);
+                  button.prop('disabled', false);
+                  button.html(originalText);
+
+                  if (data.success && data.is_valid) {
+                    // Merge task result with initial data (all_types, current_types, etc.)
+                    var fullResponse = $.extend({}, initialData, data);
+                    showSuggestionModal(fullResponse);
+                  } else if (data.success && !data.is_valid) {
+                    var reason = data.reason || '{{_("Problem format is incomplete")}}';
+                    alert('{{_("Could not analyze: ")}}' + reason);
+                  } else {
+                    alert('{{_("Problem tagging failed: ")}}' + (data.error || 'Unknown error occurred'));
+                  }
+                } else if (data.code === 'FAILURE') {
+                  clearInterval(pollInterval);
+                  button.prop('disabled', false);
+                  button.html(originalText);
+                  alert('{{_("Problem tagging failed: ")}}' + (data.error || 'Task failed'));
+                }
+              },
+              error: function() {
+                clearInterval(pollInterval);
+                button.prop('disabled', false);
+                button.html(originalText);
+                alert('{{_("Problem tagging failed: Network error occurred - please try again later")}}');
+              }
+            });
+          }, 2000);
+        }
+
     // Function to handle the "Problem Tag" button click
         $(".problem-tag-button").on("click", function () {
           const button = $(this);
@@ -143,16 +182,13 @@
               problem_code: problemCode
             },
             success: function (response) {
-              button.prop('disabled', false);
-              button.html(originalText);
-
-              if (response.success && response.is_valid) {
-                showSuggestionModal(response);
-              } else if (response.success && !response.is_valid) {
-                var reason = response.reason || '{{_("Problem format is incomplete")}}';
-                alert('{{_("Could not analyze: ")}}' + reason);
-              } else {
-                alert('{{_("Problem tagging failed: ")}}' + (response.error || 'Unknown error occurred'));
+              if (response.success && response.task_id) {
+                // Store initial data and poll for task result
+                pollTagTask(response.task_id, button, originalText, response);
+              } else if (response.error) {
+                button.prop('disabled', false);
+                button.html(originalText);
+                alert('{{_("Problem tagging failed: ")}}' + response.error);
               }
             },
             error: function () {

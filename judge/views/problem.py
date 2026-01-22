@@ -99,7 +99,11 @@ from judge.models.problem import (
 from judge.models.runtime import get_all_languages
 
 from judge.tasks import rescore_problem
-from judge.tasks.llm import generate_solution_task, improve_markdown_task
+from judge.tasks.llm import (
+    generate_solution_task,
+    improve_markdown_task,
+    tag_problem_task,
+)
 
 from problem_tag import get_problem_tag_service
 
@@ -1349,7 +1353,7 @@ class ProblemEdit(
         return super().post(request, *args, **kwargs)
 
     def handle_problem_tag(self, request):
-        """Handle AI tagging request"""
+        """Handle AI tagging request - dispatches async Celery task"""
         try:
             # Check if user is superuser (only superusers can use AI tagging)
             if not request.user.is_superuser:
@@ -1366,41 +1370,17 @@ class ProblemEdit(
             except Problem.DoesNotExist:
                 return JsonResponse({"success": False, "error": "Problem not found"})
 
-            # Use the problem tag service
-            tag_service = get_problem_tag_service()
+            # Dispatch async Celery task
+            task = tag_problem_task.delay(problem_code)
 
-            # Call the AI service to analyze the problem
-            result = tag_service.tag_single_problem(problem)
-
-            if result["success"]:
-                # Convert type names to type IDs for Select2 compatibility (for edit form)
-                predicted_types = []
-                if result.get("predicted_types"):
-                    # Get type IDs from ProblemType objects (Select2 uses IDs as values)
-                    type_ids = list(
-                        ProblemType.objects.filter(
-                            name__in=result["predicted_types"]
-                        ).values_list("id", flat=True)
-                    )
-                    predicted_types = type_ids
-
-                return JsonResponse(
-                    {
-                        "success": True,
-                        "is_valid": result["is_valid"],
-                        "predicted_points": result.get("predicted_points"),
-                        "predicted_types": predicted_types,
-                        "problem_code": problem.code,
-                        "reason": result.get("reason"),  # Reason if is_valid is False
-                    }
-                )
-            else:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": result.get("error", "Unknown error occurred"),
-                    }
-                )
+            return JsonResponse(
+                {
+                    "success": True,
+                    "task_id": task.id,
+                    "status": "processing",
+                    "problem_code": problem.code,
+                }
+            )
 
         except Exception as e:
             logger = logging.getLogger(__name__)
