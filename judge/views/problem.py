@@ -1331,7 +1331,8 @@ class ProblemEdit(
         ):
             transaction.on_commit(rescore_problem.s(problem.id).delay)
 
-        return self.render_to_response(self.get_context_data(form=form))
+        # Redirect to refresh the page with updated data (POST-REDIRECT-GET pattern)
+        return HttpResponseRedirect(self.request.path)
 
     def form_invalid(self, form):
         """Handle invalid form with formsets"""
