@@ -371,6 +371,29 @@ LOGGING = {
 # SOCIAL_AUTH_DROPBOX_OAUTH2_KEY = ''
 # SOCIAL_AUTH_DROPBOX_OAUTH2_SECRET = ''
 
+## ======== S3 Storage (optional) ========
+# Uncomment and configure to use S3 instead of local file storage.
+# This enables seamless migration of user uploads, submission files,
+# and other media to Amazon S3 or S3-compatible storage.
+#
+# Requires: pip install django-storages[boto3]
+#
+# AWS_ACCESS_KEY_ID = 'your-access-key'
+# AWS_SECRET_ACCESS_KEY = 'your-secret-key'
+# AWS_STORAGE_BUCKET_NAME = 'your-bucket-name'
+# AWS_S3_REGION_NAME = 'ap-southeast-1'
+# AWS_S3_CUSTOM_DOMAIN = 'cdn.example.com'  # Optional: CloudFront or custom domain
+# AWS_DEFAULT_ACL = 'public-read'
+# AWS_QUERYSTRING_AUTH = False  # Set True for private files with signed URLs
+# AWS_S3_FILE_OVERWRITE = False
+# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+#
+# Note: The codebase uses Django's default_storage abstraction.
+# No S3-specific code is in the main codebase - switching to S3 is
+# purely a settings change. All file operations (user uploads,
+# submission files, problem PDFs, etc.) will automatically use S3
+# when DEFAULT_FILE_STORAGE is configured.
+
 ## ======== Custom Configuration ========
 # You may add whatever django configuration you would like here.
 # Do try to keep it separate so you can quickly patch in new settings.

@@ -97,8 +97,9 @@
 
               // If in iframe, send message to parent
               if (window.parent !== window) {
-                var fileName = fileInput[0].files[0].name;
-                var fileUrl = '/media/user_uploads/' + '{{ request.user.username }}' + '/' + fileName;
+                // Use file URL from server response (works with S3 and local storage)
+                var fileUrl = response.file_url;
+                var fileName = response.file_name;
                 var isImage = /\.(jpg|jpeg|png|gif|bmp|svg)$/i.test(fileName);
 
                 window.parent.postMessage({

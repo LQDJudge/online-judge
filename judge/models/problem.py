@@ -4,6 +4,7 @@ import os
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.cache import cache
+from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import CASCADE, F, FilteredRelation, Q, SET_NULL, Exists, OuterRef
@@ -37,6 +38,11 @@ __all__ = [
 
 def problem_directory_file(data, filename):
     return problem_directory_file_helper(data.code, filename)
+
+
+def problem_pdf_upload_path(problem, filename):
+    """Upload path for problem PDF descriptions using default storage (S3 compatible)."""
+    return f"problem_pdfs/{problem.code}/{filename}"
 
 
 class ProblemType(models.Model):
@@ -292,10 +298,9 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
     )
     pdf_description = models.FileField(
         verbose_name=_("pdf statement"),
-        storage=problem_data_storage,
         null=True,
         blank=True,
-        upload_to=problem_directory_file,
+        upload_to=problem_pdf_upload_path,
     )
 
     def __init__(self, *args, **kwargs):
@@ -644,20 +649,31 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         if not has_data and not has_pdf:
             return
 
-        try:
-            problem_data_storage.rename(self.__original_code, self.code)
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
-
-        if has_pdf:
-            self.pdf_description.name = problem_directory_file_helper(
-                self.code, self.pdf_description.name
-            )
-            super().save(update_fields=["pdf_description"])
-
+        # Handle test data storage rename (stays local)
         if has_data:
+            try:
+                problem_data_storage.rename(self.__original_code, self.code)
+            except OSError as e:
+                if e.errno != errno.ENOENT:
+                    raise
             self.data_files._update_code(self.__original_code, self.code)
+
+        # Handle PDF description move using default_storage (S3 compatible)
+        if has_pdf:
+            old_path = self.pdf_description.name
+            filename = os.path.basename(old_path)
+            new_path = f"problem_pdfs/{self.code}/{filename}"
+
+            # Copy file to new location and delete old one
+            if default_storage.exists(old_path):
+                from django.core.files.base import ContentFile
+
+                with default_storage.open(old_path, "rb") as f:
+                    default_storage.save(new_path, ContentFile(f.read()))
+                default_storage.delete(old_path)
+
+            self.pdf_description.name = new_path
+            super().save(update_fields=["pdf_description"])
 
     def save(self, should_move_data=True, *args, **kwargs):
         code_changed = self.__original_code and self.code != self.__original_code

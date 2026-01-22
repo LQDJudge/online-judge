@@ -1,10 +1,9 @@
 import os
 import mimetypes
 from datetime import datetime
-from urllib.parse import urljoin
 
 from django.shortcuts import render, redirect
-from django.core.files.storage import FileSystemStorage
+from django.core.files.storage import default_storage
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, Http404, JsonResponse, HttpResponseForbidden
@@ -12,7 +11,17 @@ from django.conf import settings
 from django.utils.translation import gettext as _
 from django import forms
 from django.template.defaultfilters import filesizeformat
+
 from judge.models import Problem
+from judge.utils.storage_helpers import (
+    storage_listdir,
+    storage_file_exists,
+    storage_delete_file,
+    storage_get_file_size,
+    storage_get_modified_time,
+    storage_rename_file,
+    validate_path_prefix,
+)
 
 MEDIA_PATH = "user_uploads"
 
@@ -62,33 +71,32 @@ def get_user_limits(user):
         return NORMAL_MAX_FILE_SIZE, NORMAL_MAX_USER_STORAGE
 
 
-def get_user_folder(username):
-    """Get the user's upload folder path"""
-    return os.path.join(settings.MEDIA_ROOT, MEDIA_PATH, username)
+def get_user_storage_path(username):
+    """Get the user's upload folder path (relative to storage root)"""
+    return f"{MEDIA_PATH}/{username}"
 
 
 def get_user_files(username):
-    """Get all files for a user from filesystem"""
-    user_folder = get_user_folder(username)
+    """Get all files for a user from storage"""
+    user_prefix = get_user_storage_path(username)
     files = []
 
-    if os.path.exists(user_folder):
-        for filename in os.listdir(user_folder):
-            file_path = os.path.join(user_folder, filename)
-            if os.path.isfile(file_path):
-                stat = os.stat(file_path)
-                files.append(
-                    {
-                        "name": filename,
-                        "size": stat.st_size,
-                        "modified": datetime.fromtimestamp(stat.st_mtime),
-                        "url": urljoin(
-                            settings.MEDIA_URL, f"{MEDIA_PATH}/{username}/{filename}"
-                        ),
-                        "mime_type": mimetypes.guess_type(filename)[0]
-                        or "application/octet-stream",
-                    }
-                )
+    _, filenames = storage_listdir(default_storage, user_prefix)
+    for filename in filenames:
+        filepath = f"{user_prefix}/{filename}"
+        size = storage_get_file_size(default_storage, filepath)
+        modified = storage_get_modified_time(default_storage, filepath)
+
+        files.append(
+            {
+                "name": filename,
+                "size": size,
+                "modified": modified if modified else datetime.now(),
+                "url": default_storage.url(filepath),
+                "mime_type": mimetypes.guess_type(filename)[0]
+                or "application/octet-stream",
+            }
+        )
 
     # Sort by modified date, newest first
     files.sort(key=lambda x: x["modified"], reverse=True)
@@ -165,8 +173,8 @@ def file_upload(request):
                 messages.error(request, error_msg)
                 return redirect("custom_file_upload")
 
-            # Create user-specific folder
-            user_folder = f"{MEDIA_PATH}/{username}"
+            # User storage path prefix
+            user_prefix = get_user_storage_path(username)
 
             # Sanitize filename
             file_name, file_extension = os.path.splitext(file.name)
@@ -178,19 +186,22 @@ def file_upload(request):
 
             # Use original filename, add counter only if duplicate exists
             new_filename = f"{file_name}{file_extension}"
-            fs = FileSystemStorage(
-                location=os.path.join(settings.MEDIA_ROOT, user_folder)
-            )
+            new_filepath = f"{user_prefix}/{new_filename}"
 
             # Check if file exists and add counter if needed
-            if fs.exists(new_filename):
+            if storage_file_exists(default_storage, new_filepath):
                 counter = 1
-                while fs.exists(f"{file_name}_{counter}{file_extension}"):
+                while storage_file_exists(
+                    default_storage,
+                    f"{user_prefix}/{file_name}_{counter}{file_extension}",
+                ):
                     counter += 1
                 new_filename = f"{file_name}_{counter}{file_extension}"
+                new_filepath = f"{user_prefix}/{new_filename}"
 
-            # Save file
-            saved_filename = fs.save(new_filename, file)
+            # Save file using default_storage
+            saved_path = default_storage.save(new_filepath, file)
+            file_url = default_storage.url(saved_path)
 
             if is_ajax:
                 # Get updated storage info
@@ -199,6 +210,8 @@ def file_upload(request):
                     {
                         "success": True,
                         "message": _("File uploaded successfully!"),
+                        "file_url": file_url,
+                        "file_name": new_filename,
                         "storage": {
                             "used": updated_storage["used"],
                             "max": updated_storage["max"],
@@ -254,18 +267,18 @@ def user_file_delete(request, filename):
         )
 
     username = request.user.username
-    user_folder = get_user_folder(username)
-    file_path = os.path.join(user_folder, filename)
+    user_prefix = get_user_storage_path(username)
+    file_path = f"{user_prefix}/{filename}"
 
-    # Security check - ensure file is in user's folder
-    if not os.path.abspath(file_path).startswith(os.path.abspath(user_folder)):
+    # Security check - ensure file is in user's folder (prevents path traversal)
+    if not validate_path_prefix(file_path, user_prefix):
         raise Http404("File not found")
 
     if request.method == "POST":
         is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
-        if os.path.exists(file_path) and os.path.isfile(file_path):
-            os.remove(file_path)
+        if storage_file_exists(default_storage, file_path):
+            storage_delete_file(default_storage, file_path)
 
             if is_ajax:
                 # Get updated storage info
@@ -308,15 +321,15 @@ def user_file_download(request, filename):
         )
 
     username = request.user.username
-    user_folder = get_user_folder(username)
-    file_path = os.path.join(user_folder, filename)
+    user_prefix = get_user_storage_path(username)
+    file_path = f"{user_prefix}/{filename}"
 
-    # Security check - ensure file is in user's folder
-    if not os.path.abspath(file_path).startswith(os.path.abspath(user_folder)):
+    # Security check - ensure file is in user's folder (prevents path traversal)
+    if not validate_path_prefix(file_path, user_prefix):
         raise Http404("File not found")
 
-    if os.path.exists(file_path) and os.path.isfile(file_path):
-        with open(file_path, "rb") as f:
+    if storage_file_exists(default_storage, file_path):
+        with default_storage.open(file_path, "rb") as f:
             mime_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
             response = HttpResponse(f.read(), content_type=mime_type)
             response["Content-Disposition"] = f'attachment; filename="{filename}"'
@@ -339,11 +352,11 @@ def user_file_rename(request, filename):
         )
 
     username = request.user.username
-    user_folder = get_user_folder(username)
-    old_file_path = os.path.join(user_folder, filename)
+    user_prefix = get_user_storage_path(username)
+    old_file_path = f"{user_prefix}/{filename}"
 
-    # Security check - ensure file is in user's folder
-    if not os.path.abspath(old_file_path).startswith(os.path.abspath(user_folder)):
+    # Security check - ensure file is in user's folder (prevents path traversal)
+    if not validate_path_prefix(old_file_path, user_prefix):
         raise Http404("File not found")
 
     if request.method == "POST":
@@ -373,35 +386,38 @@ def user_file_rename(request, filename):
             new_name_base = "file"
 
         new_filename = f"{new_name_base}{new_ext}"
-        new_file_path = os.path.join(user_folder, new_filename)
+        new_file_path = f"{user_prefix}/{new_filename}"
 
         # Check if new filename already exists
-        if os.path.exists(new_file_path) and new_filename != filename:
+        if (
+            storage_file_exists(default_storage, new_file_path)
+            and new_filename != filename
+        ):
             error_msg = _("A file with this name already exists")
             if is_ajax:
                 return JsonResponse({"success": False, "error": error_msg}, status=400)
             messages.error(request, error_msg)
             return redirect("custom_file_upload")
 
-        # Rename the file
-        if os.path.exists(old_file_path) and os.path.isfile(old_file_path):
+        # Rename the file using copy+delete pattern (S3 compatible)
+        if storage_file_exists(default_storage, old_file_path):
             try:
-                os.rename(old_file_path, new_file_path)
+                if storage_rename_file(default_storage, old_file_path, new_file_path):
+                    new_url = default_storage.url(new_file_path)
 
-                if is_ajax:
-                    return JsonResponse(
-                        {
-                            "success": True,
-                            "message": _("File renamed successfully!"),
-                            "new_name": new_filename,
-                            "new_url": urljoin(
-                                settings.MEDIA_URL,
-                                f"{MEDIA_PATH}/{username}/{new_filename}",
-                            ),
-                        }
-                    )
+                    if is_ajax:
+                        return JsonResponse(
+                            {
+                                "success": True,
+                                "message": _("File renamed successfully!"),
+                                "new_name": new_filename,
+                                "new_url": new_url,
+                            }
+                        )
 
-                messages.success(request, _("File renamed successfully!"))
+                    messages.success(request, _("File renamed successfully!"))
+                else:
+                    raise Exception("Rename failed")
             except Exception as e:
                 error_msg = _("Failed to rename file")
                 if is_ajax:

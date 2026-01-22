@@ -1,31 +1,33 @@
-import os
-
 from django.conf import settings
+from django.core.files.storage import default_storage
 
 from judge.caching import cache_wrapper
+from judge.utils.storage_helpers import storage_listdir
 
 
-SAMPLE_BACKGROUNDS_DIR = os.path.join(settings.MEDIA_ROOT, "sample_backgrounds")
+SAMPLE_BACKGROUNDS_PREFIX = "sample_backgrounds"
 
 
 @cache_wrapper("sample_bgs", timeout=3600)
 def get_sample_backgrounds():
     """
-    Return list of sample background files from the folder.
+    Return list of sample background files from storage.
     Results are cached for 1 hour.
+    Works with both local filesystem and S3.
     """
     backgrounds = []
-    if os.path.exists(SAMPLE_BACKGROUNDS_DIR):
-        for filename in sorted(os.listdir(SAMPLE_BACKGROUNDS_DIR)):
-            if filename.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".gif")):
-                name = os.path.splitext(filename)[0].replace("_", " ").replace("-", " ")
-                backgrounds.append(
-                    {
-                        "name": name.title(),
-                        "filename": filename,
-                        "url": f"{settings.MEDIA_URL}sample_backgrounds/{filename}",
-                    }
-                )
+    _, filenames = storage_listdir(default_storage, SAMPLE_BACKGROUNDS_PREFIX)
+    for filename in sorted(filenames):
+        if filename.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".gif")):
+            name = filename.rsplit(".", 1)[0].replace("_", " ").replace("-", " ")
+            filepath = f"{SAMPLE_BACKGROUNDS_PREFIX}/{filename}"
+            backgrounds.append(
+                {
+                    "name": name.title(),
+                    "filename": filename,
+                    "url": default_storage.url(filepath),
+                }
+            )
     return backgrounds
 
 

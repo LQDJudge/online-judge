@@ -58,7 +58,6 @@ from judge.models.submission import (
     SubmissionTestCase,
 )
 
-from judge.models.test_formatter import TestFormatterModel
 from judge.models.ticket import Ticket, TicketMessage
 from judge.models.pagevote import PageVote, PageVoteVoter
 from judge.models.bookmark import BookMark
@@ -84,7 +83,6 @@ from judge.models.quiz import (
     BestQuizAttempt,
 )
 from judge.models.notification import Notification, NotificationProfile
-from judge.models.test_formatter import TestFormatterModel
 from judge.models.block import Block
 from judge.models.email_change import EmailChangeRequest
 

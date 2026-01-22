@@ -1,5 +1,13 @@
+import os
 from django.db import migrations, models
-import judge.models.test_formatter
+
+
+def test_formatter_path(test_formatter, filename):
+    """Path function for TestFormatterModel - inlined to avoid import issues."""
+    tail = filename.split(".")[-1]
+    head = filename.split(".")[0]
+    new_filename = f"{head}.{tail}"
+    return os.path.join("test_formatter", new_filename)
 
 
 class Migration(migrations.Migration):
@@ -26,7 +34,7 @@ class Migration(migrations.Migration):
                     models.FileField(
                         blank=True,
                         null=True,
-                        upload_to=judge.models.test_formatter.test_formatter_path,
+                        upload_to=test_formatter_path,
                         verbose_name="testcase file",
                     ),
                 ),

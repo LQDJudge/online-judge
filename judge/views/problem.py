@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 from operator import itemgetter
 from random import randrange
 from copy import deepcopy
@@ -10,6 +9,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.db import transaction
 from django.db.models import Prefetch, Q
 from django.db.utils import ProgrammingError
@@ -420,11 +421,10 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
         except ProblemTranslation.DoesNotExist:
             trans = None
 
-        cache = os.path.join(
-            settings.DMOJ_PDF_PROBLEM_CACHE, "%s.%s.pdf" % (problem.code, language)
-        )
+        # Use default_storage for PDF cache (works with S3 and local)
+        cache_path = "pdf_cache/%s.%s.pdf" % (problem.code, language)
 
-        if not os.path.exists(cache):
+        if not default_storage.exists(cache_path):
             self.logger.info("Rendering: %s.%s.pdf", problem.code, language)
             with DefaultPdfMaker() as maker, translation.override(language):
                 problem_name = problem.name if trans is None else trans.name
@@ -455,19 +455,13 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
                     return HttpResponse(
                         maker.log, status=500, content_type="text/plain"
                     )
-                shutil.move(maker.pdffile, cache)
+                # Save rendered PDF to storage
+                with open(maker.pdffile, "rb") as f:
+                    default_storage.save(cache_path, ContentFile(f.read()))
+
         response = HttpResponse()
-        if hasattr(settings, "DMOJ_PDF_PROBLEM_INTERNAL") and request.META.get(
-            "SERVER_SOFTWARE", ""
-        ).startswith("nginx/"):
-            response["X-Accel-Redirect"] = "%s/%s.%s.pdf" % (
-                settings.DMOJ_PDF_PROBLEM_INTERNAL,
-                problem.code,
-                language,
-            )
-        else:
-            with open(cache, "rb") as f:
-                response.content = f.read()
+        with default_storage.open(cache_path, "rb") as f:
+            response.content = f.read()
 
         response["Content-Type"] = "application/pdf"
         response["Content-Disposition"] = "inline; filename=%s.%s.pdf" % (
@@ -483,13 +477,9 @@ class ProblemPdfDescriptionView(ProblemMixin, SingleObjectMixin, View):
         if not problem.pdf_description:
             raise Http404()
         response = HttpResponse()
-        if request.META.get("SERVER_SOFTWARE", "").startswith("nginx/"):
-            response["X-Accel-Redirect"] = problem.pdf_description.path.encode(
-                "utf-8", "surrogateescape"
-            ).decode("latin1")
-        else:
-            with open(problem.pdf_description.path, "rb") as f:
-                response.content = f.read()
+        # Use FileField's storage-aware open() method (works with S3 and local)
+        with problem.pdf_description.open("rb") as f:
+            response.content = f.read()
 
         response["Content-Type"] = "application/pdf"
         response["Content-Disposition"] = "inline; filename=%s.pdf" % (problem.code,)

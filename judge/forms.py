@@ -1,4 +1,3 @@
-import os
 import secrets
 from operator import attrgetter
 import pyotp
@@ -10,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.files.storage import default_storage
 from django.core.validators import RegexValidator
 from django.db.models import Q
 from django.forms import (
@@ -34,7 +34,6 @@ from judge.models import (
     Language,
     LanguageLimit,
     LanguageTemplate,
-    TestFormatterModel,
     Organization,
     PrivateMessage,
     Problem,
@@ -45,7 +44,6 @@ from judge.models import (
     Submission,
     BlogPost,
     ContestProblem,
-    TestFormatterModel,
     ProfileInfo,
     Block,
     Course,
@@ -218,12 +216,9 @@ class ProblemSubmitForm(ModelForm):
                 self.source_file_name = (
                     timestamp + secrets.token_hex(5) + "." + filename.split(".")[-1]
                 )
-                filepath = os.path.join(
-                    settings.DMOJ_SUBMISSION_ROOT, self.source_file_name
-                )
-                with open(filepath, "wb+") as destination:
-                    for chunk in self.files["source_file"].chunks():
-                        destination.write(chunk)
+                # Save submission file using default_storage (works with S3 and local)
+                storage_path = f"submissions/{self.source_file_name}"
+                default_storage.save(storage_path, self.files["source_file"])
                 self.cleaned_data["source"] = self.request.build_absolute_uri(
                     reverse("submission_source_file", args=(self.source_file_name,))
                 )
@@ -815,12 +810,6 @@ class ContestQuizFormSet(
     )
 ):
     model = ContestProblem
-
-
-class TestFormatterForm(ModelForm):
-    class Meta:
-        model = TestFormatterModel
-        fields = ["file"]
 
 
 class LessonCloneForm(Form):

@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
+from django.core.files.storage import default_storage
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import PermissionDenied
 from django.db.models import Prefetch
@@ -1063,15 +1064,11 @@ class UserContestSubmissionsAjax(UserContestSubmissions):
 
 class SubmissionSourceFileView(View):
     def get(self, request, filename):
-        filepath = os.path.join(settings.DMOJ_SUBMISSION_ROOT, filename)
-        if not os.path.exists(filepath):
+        # Redirect to storage URL (works with both local media and S3)
+        storage_path = f"submissions/{filename}"
+        if not default_storage.exists(storage_path):
             raise Http404("File not found")
-        response = HttpResponse()
-        with open(filepath, "rb") as f:
-            response.content = f.read()
-        response["Content-Type"] = "application/octet-stream"
-        response["Content-Disposition"] = "attachment; filename=%s" % (filename,)
-        return response
+        return HttpResponseRedirect(default_storage.url(storage_path))
 
 
 @cache_wrapper(prefix="gsrd", timeout=3600, expected_type=dict)

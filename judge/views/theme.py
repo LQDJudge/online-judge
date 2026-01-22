@@ -1,6 +1,5 @@
 import os
 
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files import File
@@ -11,7 +10,6 @@ from django.http import (
     HttpResponseBadRequest,
     JsonResponse,
 )
-from django.shortcuts import render
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views import View
@@ -21,7 +19,12 @@ from judge.models import DYNAMIC_EFFECT_CHOICES
 from judge.utils.theme import (
     get_sample_backgrounds,
     invalidate_sample_backgrounds_cache,
-    SAMPLE_BACKGROUNDS_DIR,
+    SAMPLE_BACKGROUNDS_PREFIX,
+)
+from judge.utils.storage_helpers import (
+    storage_file_exists,
+    storage_delete_file,
+    validate_path_prefix,
 )
 
 
@@ -61,27 +64,19 @@ class ThemeSettingsView(LoginRequiredMixin, TemplateView):
             # Select a sample background
             sample_filename = request.POST.get("sample_filename")
             if sample_filename:
-                sample_path = os.path.join(SAMPLE_BACKGROUNDS_DIR, sample_filename)
-                if os.path.exists(sample_path):
+                sample_path = f"{SAMPLE_BACKGROUNDS_PREFIX}/{sample_filename}"
+                if storage_file_exists(default_storage, sample_path):
                     # Delete old background files BEFORE saving the new one
-                    from judge.utils.files import delete_old_image_files
-
                     if profile.background_image:
-                        # Delete the old file
-                        old_path = profile.background_image.path
-                        if os.path.exists(old_path):
-                            os.remove(old_path)
+                        profile.background_image.delete(save=False)
 
-                    # Copy sample to user's background using Django's File API
-                    # Django's upload_to function will handle the filename generation
-                    with open(sample_path, "rb") as f:
-                        # save=False to prevent triggering the model save
+                    # Copy sample to user's background using storage API
+                    with default_storage.open(sample_path, "rb") as f:
                         profile.background_image.save(
                             sample_filename, File(f), save=False
                         )
 
-                    # Now save the profile WITHOUT triggering the delete logic
-                    # Use update() to bypass the save() method
+                    # Save the profile using update() to bypass save() method
                     from judge.models import Profile
 
                     Profile.objects.filter(pk=profile.pk).update(
@@ -112,20 +107,14 @@ class ThemeSettingsView(LoginRequiredMixin, TemplateView):
 
                 # Delete old background files BEFORE saving the new one
                 if profile.background_image:
-                    # Delete the old file
-                    old_path = profile.background_image.path
-                    if os.path.exists(old_path):
-                        os.remove(old_path)
+                    profile.background_image.delete(save=False)
 
                 # Save file using Django's File API
-                # Django's upload_to function will handle the filename generation
-                # save=False to prevent triggering the model save
                 profile.background_image.save(
                     uploaded_file.name, uploaded_file, save=False
                 )
 
-                # Now save the profile WITHOUT triggering the delete logic
-                # Use update() to bypass the save() method
+                # Save the profile using update() to bypass save() method
                 from judge.models import Profile
 
                 Profile.objects.filter(pk=profile.pk).update(
@@ -181,24 +170,20 @@ class SampleBackgroundUploadView(LoginRequiredMixin, View):
                 {"success": False, "error": "File too large (max 10MB)"}, status=400
             )
 
-        # Ensure directory exists
-        os.makedirs(SAMPLE_BACKGROUNDS_DIR, exist_ok=True)
-
-        # Save file
+        # Sanitize filename
         filename = uploaded_file.name.replace(" ", "_")
-        filepath = os.path.join(SAMPLE_BACKGROUNDS_DIR, filename)
+        filepath = f"{SAMPLE_BACKGROUNDS_PREFIX}/{filename}"
 
         # Handle duplicate filenames
         base, ext = os.path.splitext(filename)
         counter = 1
-        while os.path.exists(filepath):
+        while storage_file_exists(default_storage, filepath):
             filename = f"{base}_{counter}{ext}"
-            filepath = os.path.join(SAMPLE_BACKGROUNDS_DIR, filename)
+            filepath = f"{SAMPLE_BACKGROUNDS_PREFIX}/{filename}"
             counter += 1
 
-        with open(filepath, "wb+") as destination:
-            for chunk in uploaded_file.chunks():
-                destination.write(chunk)
+        # Save file using default_storage
+        default_storage.save(filepath, uploaded_file)
 
         # Invalidate cache
         invalidate_sample_backgrounds_cache()
@@ -207,7 +192,7 @@ class SampleBackgroundUploadView(LoginRequiredMixin, View):
             {
                 "success": True,
                 "filename": filename,
-                "url": f"{settings.MEDIA_URL}sample_backgrounds/{filename}",
+                "url": default_storage.url(filepath),
             }
         )
 
@@ -225,15 +210,14 @@ class SampleBackgroundDeleteView(LoginRequiredMixin, View):
                 {"success": False, "error": "No filename provided"}, status=400
             )
 
-        filepath = os.path.join(SAMPLE_BACKGROUNDS_DIR, filename)
+        filepath = f"{SAMPLE_BACKGROUNDS_PREFIX}/{filename}"
 
         # Security: ensure the file is within the sample backgrounds directory
-        filepath = os.path.abspath(filepath)
-        if not filepath.startswith(os.path.abspath(SAMPLE_BACKGROUNDS_DIR)):
+        if not validate_path_prefix(filepath, SAMPLE_BACKGROUNDS_PREFIX):
             return HttpResponseForbidden()
 
-        if os.path.exists(filepath):
-            os.remove(filepath)
+        if storage_file_exists(default_storage, filepath):
+            storage_delete_file(default_storage, filepath)
             invalidate_sample_backgrounds_cache()
             return JsonResponse({"success": True})
         else:
