@@ -953,11 +953,12 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
 class CourseLessonForm(forms.ModelForm):
     class Meta:
         model = CourseLesson
-        fields = ["title", "is_visible", "points", "content"]
+        fields = ["title", "is_visible", "points", "content", "order"]
         widgets = {
             "title": forms.TextInput(),
             "content": HeavyPreviewPageDownWidget(preview=reverse_lazy("blog_preview")),
             "problems": HeavySelect2MultipleWidget(data_view="problem_select2"),
+            "order": forms.HiddenInput(),
         }
 
 
@@ -2035,11 +2036,13 @@ class CourseContestList(CourseEditableMixin, ListView):
 
 class EditCourseContestForm(ModelForm):
     points = forms.IntegerField(label=_("Points"))
+    order = forms.IntegerField(widget=forms.HiddenInput(), required=False)
 
     class Meta:
         model = Contest
         fields = (
             "points",
+            "order",
             "is_visible",
             "key",
             "name",
@@ -2090,12 +2093,15 @@ class EditCourseContestForm(ModelForm):
 
         if self.course_contest_instance:
             self.fields["points"].initial = self.course_contest_instance.points
+            self.fields["order"].initial = self.course_contest_instance.order
 
     def save(self, commit=True):
         contest = super().save(commit=commit)
 
         if self.course_contest_instance:
             self.course_contest_instance.points = self.cleaned_data["points"]
+            if self.cleaned_data.get("order") is not None:
+                self.course_contest_instance.order = self.cleaned_data["order"]
             if commit:
                 self.course_contest_instance.save()
 
