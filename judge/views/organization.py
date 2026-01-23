@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.utils.text import slugify
 from django.db import IntegrityError
 from django.db.models import Count, Q, Subquery, OuterRef
@@ -1376,7 +1376,7 @@ class EditOrganizationContest(
                     contest_problem.contest = self.contest
                     try:
                         contest_problem.save()
-                    except IntegrityError as e:
+                    except (IntegrityError, ValidationError) as e:
                         problem = contest_problem.problem
                         ContestProblem.objects.filter(
                             contest=self.contest, problem=problem
@@ -1393,7 +1393,7 @@ class EditOrganizationContest(
                     contest_quiz.contest = self.contest
                     try:
                         contest_quiz.save()
-                    except IntegrityError as e:
+                    except (IntegrityError, ValidationError) as e:
                         quiz = contest_quiz.quiz
                         ContestProblem.objects.filter(
                             contest=self.contest, quiz=quiz
