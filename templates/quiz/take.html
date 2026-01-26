@@ -99,7 +99,7 @@
           if (taVal && taVal.trim()) isAnswered = true;
           // Check for uploaded files (essay questions)
           var $filesList = $('#files-list-' + q.id);
-          if ($filesList.length && $filesList.find('li:not(.uploading)').length > 0) isAnswered = true;
+          if ($filesList.length && $filesList.find('.file-item-collapsible').length > 0) isAnswered = true;
 
           if (isAnswered) {
             $indicator.addClass('answered');
@@ -199,7 +199,7 @@
           success: function(response) {
             $tempItem.remove();
             if (response.success) {
-              addFileToList(questionId, response.file_id, response.filename, response.size);
+              addFileToList(questionId, response.file_id, response.filename, response.size, response.url, response.extension);
             } else {
               alert('{{ _("Upload failed:") }} ' + (response.error || '{{ _("Unknown error") }}'));
             }
@@ -221,14 +221,32 @@
         });
       }
 
-      function addFileToList(questionId, fileId, filename, size) {
+      function addFileToList(questionId, fileId, filename, size, url, extension) {
         var $list = $('#files-list-' + questionId);
-        var $item = $('<li data-file-id="' + fileId + '">' +
+        var previewHtml = '';
+        var toggleHtml = '';
+        var hasPreview = false;
+        var imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+        if (url && extension) {
+          var ext = extension.toLowerCase();
+          if (imageExtensions.indexOf(ext) !== -1) {
+            previewHtml = '<div class="file-preview-collapsible file-preview-image" style="display: none;"><img src="' + escapeHtml(url) + '" alt="' + escapeHtml(filename) + '" loading="lazy"></div>';
+            hasPreview = true;
+          } else if (ext === 'pdf') {
+            previewHtml = '<div class="file-preview-collapsible file-preview-pdf" style="display: none;"><iframe src="' + escapeHtml(url) + '" title="' + escapeHtml(filename) + '"></iframe></div>';
+            hasPreview = true;
+          }
+        }
+        if (hasPreview) {
+          toggleHtml = '<button type="button" class="file-preview-toggle" aria-expanded="false"><i class="fa fa-chevron-down"></i></button>';
+        }
+        var $item = $('<div class="file-item-collapsible' + (hasPreview ? ' has-preview' : '') + '" data-file-id="' + fileId + '">' +
+          '<div class="file-item-header">' +
           '<span class="file-icon"><i class="fa fa-file"></i></span>' +
           '<span class="file-name">' + escapeHtml(filename) + '</span>' +
           '<span class="file-size">(' + escapeHtml(size) + ')</span>' +
           '<button type="button" class="file-delete-btn" data-file-id="' + fileId + '" title="{{ _("Delete") }}">' +
-          '<i class="fa fa-times"></i></button></li>');
+          '<i class="fa fa-times"></i></button>' + toggleHtml + '</div>' + previewHtml + '</div>');
         $list.append($item);
         updateAnsweredIndicators();
       }
@@ -238,7 +256,7 @@
         e.preventDefault();
         var $btn = $(this);
         var fileId = $btn.data('file-id');
-        var $li = $btn.closest('li');
+        var $item = $btn.closest('.file-item-collapsible');
 
         if (!confirm(deleteConfirmText)) return;
 
@@ -248,7 +266,7 @@
           data: { csrfmiddlewaretoken: csrfToken },
           success: function(response) {
             if (response.success) {
-              $li.fadeOut(200, function() {
+              $item.fadeOut(200, function() {
                 $(this).remove();
                 updateAnsweredIndicators();
               });
@@ -265,6 +283,26 @@
             alert(msg);
           }
         });
+      });
+
+      // File preview toggle
+      $(document).on('click', '.file-preview-toggle', function(e) {
+        e.preventDefault();
+        var $btn = $(this);
+        var $container = $btn.closest('.file-item-collapsible');
+        var $preview = $container.find('.file-preview-collapsible');
+        var $icon = $btn.find('i');
+        var isExpanded = $btn.attr('aria-expanded') === 'true';
+
+        if (isExpanded) {
+          $preview.slideUp(200);
+          $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+          $btn.attr('aria-expanded', 'false');
+        } else {
+          $preview.slideDown(200);
+          $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+          $btn.attr('aria-expanded', 'true');
+        }
       });
 
       function escapeHtml(text) {
@@ -401,19 +439,36 @@
               <div class="file-upload-info">
                 {{ _('Allowed: PDF, DOC, DOCX, TXT, RTF, ODT, images, ZIP. Max 10MB per file.') }}
               </div>
-              <ul class="uploaded-files-list" id="files-list-{{ question.id }}">
+              <div class="uploaded-files-list" id="files-list-{{ question.id }}">
                 {% set question_files = uploaded_files.get(question.id, []) %}
                 {% for file in question_files %}
-                  <li data-file-id="{{ file.id }}">
-                    <span class="file-icon"><i class="fa fa-file"></i></span>
-                    <a href="{{ file.url }}" target="_blank" class="file-name">{{ file.filename }}</a>
-                    <span class="file-size">({{ file.size }})</span>
-                    <button type="button" class="file-delete-btn" data-file-id="{{ file.id }}" title="{{ _('Delete') }}">
-                      <i class="fa fa-times"></i>
-                    </button>
-                  </li>
+                  {% set has_preview = file.extension in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'pdf'] %}
+                  <div class="file-item-collapsible{% if has_preview %} has-preview{% endif %}" data-file-id="{{ file.id }}">
+                    <div class="file-item-header">
+                      <span class="file-icon"><i class="fa fa-file"></i></span>
+                      <a href="{{ file.url }}" target="_blank" class="file-name">{{ file.filename }}</a>
+                      <span class="file-size">({{ file.size }})</span>
+                      <button type="button" class="file-delete-btn" data-file-id="{{ file.id }}" title="{{ _('Delete') }}">
+                        <i class="fa fa-times"></i>
+                      </button>
+                      {% if has_preview %}
+                        <button type="button" class="file-preview-toggle" aria-expanded="false">
+                          <i class="fa fa-chevron-down"></i>
+                        </button>
+                      {% endif %}
+                    </div>
+                    {% if file.extension in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'] %}
+                      <div class="file-preview-collapsible file-preview-image" style="display: none;">
+                        <img src="{{ file.url }}" alt="{{ file.filename }}" loading="lazy">
+                      </div>
+                    {% elif file.extension == 'pdf' %}
+                      <div class="file-preview-collapsible file-preview-pdf" style="display: none;">
+                        <iframe src="{{ file.url }}" title="{{ file.filename }}"></iframe>
+                      </div>
+                    {% endif %}
+                  </div>
                 {% endfor %}
-              </ul>
+              </div>
             </div>
           {% endif %}
         </div>

@@ -1764,6 +1764,44 @@ class ContestProblemset(ContestMixin, TitleMixin, DetailView):
         contest_name = self.object.name or ""
         return _("{contest_name} Problemset").format(contest_name=contest_name)
 
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        contest = self.object
+
+        # Superusers, editors and testers can always see the problemset
+        if request.user.is_superuser or self.is_editor or self.is_tester:
+            return super().get(request, *args, **kwargs)
+
+        # If contest hasn't started yet (can_join is False when start_time > now), deny access
+        if not contest.can_join:
+            return generic_message(
+                request,
+                _("Problemset not available"),
+                _(
+                    "The contest has not started yet. Please wait until the contest begins."
+                ),
+            )
+
+        # If contest has ended, allow access to everyone
+        if contest.ended:
+            return super().get(request, *args, **kwargs)
+
+        # Contest is ongoing - check if user is currently in the contest with contest mode on
+        # This properly handles windowed contests and respects the "In contest"/"Out contest" toggle
+        is_in_this_contest = (
+            getattr(request, "in_contest_mode", False)
+            and getattr(request, "participation", None) is not None
+            and request.participation.contest == contest
+        )
+        if not is_in_this_contest:
+            return generic_message(
+                request,
+                _("Problemset not available"),
+                _("You must join the contest to view the problemset."),
+            )
+
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 

@@ -4,6 +4,34 @@
 {# Styles moved to resources/quiz.scss #}
 {% endblock %}
 
+{% block js_media %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.file-preview-toggle').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          var container = this.closest('.file-item-collapsible');
+          var preview = container.querySelector('.file-preview-collapsible');
+          var icon = this.querySelector('i');
+          var isExpanded = this.getAttribute('aria-expanded') === 'true';
+
+          if (isExpanded) {
+            preview.style.display = 'none';
+            icon.classList.remove('fa-chevron-up');
+            icon.classList.add('fa-chevron-down');
+            this.setAttribute('aria-expanded', 'false');
+          } else {
+            preview.style.display = 'block';
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-up');
+            this.setAttribute('aria-expanded', 'true');
+          }
+        });
+      });
+    });
+  </script>
+{% endblock %}
+
 {% block body %}
   <div class="quiz-result-page">
     <div class="result-header">
@@ -100,15 +128,31 @@
         {% if question.question_type == 'ES' and answer.files.exists() %}
           <div class="answer-files">
             <h4><i class="fa fa-paperclip"></i> {{ _('Attached Files') }}</h4>
-            <ul>
-              {% for file in answer.files.all() %}
-                <li>
+            {% for file in answer.files.all() %}
+              {% set ext = file.get_file_extension() %}
+              {% set has_preview = ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'pdf'] %}
+              <div class="file-item-collapsible{% if has_preview %} has-preview{% endif %}">
+                <div class="file-item-header">
                   <span class="file-icon"><i class="fa fa-file"></i></span>
                   <a href="{{ file.file.url }}" target="_blank" class="file-name">{{ file.original_filename }}</a>
                   <span class="file-size">({{ file.get_file_size() }})</span>
-                </li>
-              {% endfor %}
-            </ul>
+                  {% if has_preview %}
+                    <button type="button" class="file-preview-toggle" aria-expanded="false">
+                      <i class="fa fa-chevron-down"></i>
+                    </button>
+                  {% endif %}
+                </div>
+                {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'] %}
+                  <div class="file-preview-collapsible file-preview-image" style="display: none;">
+                    <img src="{{ file.file.url }}" alt="{{ file.original_filename }}" loading="lazy">
+                  </div>
+                {% elif ext == 'pdf' %}
+                  <div class="file-preview-collapsible file-preview-pdf" style="display: none;">
+                    <iframe src="{{ file.file.url }}" title="{{ file.original_filename }}"></iframe>
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
           </div>
         {% endif %}
 
