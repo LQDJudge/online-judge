@@ -1411,6 +1411,36 @@ class ContestParticipationDisqualify(ContestMixin, SingleObjectMixin, View):
         return HttpResponseRedirect(reverse("contest_ranking", args=(self.object.key,)))
 
 
+class ContestBulkDisqualify(ContestMixin, SingleObjectMixin, View):
+    def get_object(self, queryset=None):
+        contest = super().get_object(queryset)
+        if not contest.is_editable_by(self.request.user):
+            raise Http404()
+        return contest
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        usernames_raw = request.POST.get("usernames", "")
+        # Split by comma, space, or newline and remove empty strings
+        usernames = set()
+        for part in usernames_raw.replace(",", " ").replace("\n", " ").split():
+            username = part.strip()
+            if username:
+                usernames.add(username)
+
+        disqualified_count = 0
+        for username in usernames:
+            # Use filter() instead of get() because a user can have multiple participations
+            participations = self.object.users.filter(user__user__username=username)
+            for participation in participations:
+                if not participation.is_disqualified:
+                    participation.set_disqualified(True)
+                    disqualified_count += 1
+
+        return HttpResponseRedirect(reverse("contest_ranking", args=(self.object.key,)))
+
+
 class ContestMossMixin(ContestMixin, PermissionRequiredMixin):
     permission_required = "judge.moss_contest"
 

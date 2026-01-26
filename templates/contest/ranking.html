@@ -60,15 +60,15 @@
   {% endif %}
   {% if page_type == 'ranking' or page_type == 'final_ranking' %}
     <script type="text/javascript">
-      $.fn.ignore = function(sel) {
+      $.fn.ignore = function (sel) {
         return this.clone().find(sel || '>*').remove().end();
       };
 
       function download_ranking_as_csv() {
         function clean_text(text) {
-          // Remove new line and leading/trailing spaces
+      // Remove new line and leading/trailing spaces
           text = text.replace(/(\r\n|\n|\r)/gm, '').trim();
-          // Escape double-quote with double-double-quote
+      // Escape double-quote with double-double-quote
           text = text.replace(/"/g, '""');
 
           return '"' + text + '"';
@@ -125,10 +125,10 @@
   {% endif %}
   {% include "contest/media-js.html" %}
   <script type="text/javascript">
-    $(function() {
-      $('#ranking-search').on('input', function() {
+    $(function () {
+      $('#ranking-search').on('input', function () {
         var searchText = $(this).val().toLowerCase().trim();
-        $('#users-table tbody tr').each(function() {
+        $('#users-table tbody tr').each(function () {
           var row = $(this);
           var username = row.find('td.user-name, td.user').text().toLowerCase();
           if (searchText === '' || username.indexOf(searchText) !== -1) {
@@ -163,15 +163,21 @@
         <label class="filter-option"><input id="show-schools-checkbox" type="checkbox">{{ _('Schools') }}</label>
         <label class="filter-option"><input id="show-fullnames-checkbox" type="checkbox">{{ _('Full name') }}</label>
         {% if request.user.is_authenticated %}
-          <label class="filter-option"><input id="show-friends-checkbox" type="checkbox" {{"checked" if friend_only}}>{{ _('Friends only') }}</label>
+          <label class="filter-option"><input id="show-friends-checkbox" type="checkbox" {{"checked" if friend_only}}>{{
+            _('Friends only') }}</label>
         {% endif %}
         <label class="filter-option"><input id="show-total-score-checkbox" type="checkbox">{{ _('Score only') }}</label>
-        <label class="filter-option" id="show-virtual-label"><input id="show-virtual-checkbox" type="checkbox" {{"checked" if include_virtual}}>{{ _('Virtual') }}</label>
+        <label class="filter-option" id="show-virtual-label"><input id="show-virtual-checkbox" type="checkbox" {{"checked"
+                                                                    if include_virtual}}>{{ _('Virtual') }}</label>
         {% if can_edit %}
           <label class="filter-option"><input id="show-admin-checkbox" type="checkbox">{{ _('Admin') }}</label>
+          <button type="button" id="bulk-disqualify-btn" class="action-btn small admin-only-btn" style="display: none;">
+            <i class="fa fa-ban"></i> {{ _('Disqualify') }}
+          </button>
         {% endif %}
         <i class="fa fa-spinner fa-pulse" style="display: none" id="loading-gif"></i>
-        <a class="action-btn small" href="#" onclick="download_ranking_as_csv(); return false;"><i class="fa fa-download"></i> {{ _('CSV') }}</a>
+        <a class="action-btn small" href="#" onclick="download_ranking_as_csv(); return false;"><i
+          class="fa fa-download"></i> {{ _('CSV') }}</a>
         <input type="text" id="ranking-search" class="ranking-search-input" placeholder="{{ _('Search...') }}">
       </div>
     {% endif %}
@@ -184,6 +190,28 @@
 
     {% if page_obj and page_obj.num_pages > 1 %}
       <div style="margin-top:10px;">{% include "list-pages.html" %}</div>
+    {% endif %}
+
+    {% if can_edit %}
+      <div id="bulk-disqualify-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>{{ _('Bulk Disqualify') }}</h3>
+            <button type="button" class="modal-close" id="bulk-disqualify-close">&times;</button>
+          </div>
+          <form method="post" action="{{ url('contest_bulk_disqualify', contest.key) }}">
+            {% csrf_token %}
+            <div class="modal-body">
+              <p>{{ _('Enter usernames to disqualify, separated by spaces, commas, or newlines:') }}</p>
+              <textarea name="usernames" id="bulk-disqualify-usernames" rows="6"
+                        placeholder="{{ _('user1, user2, user3...') }}"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="action-btn">{{ _('Disqualify') }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
     {% endif %}
   </div>
 {% endblock %}

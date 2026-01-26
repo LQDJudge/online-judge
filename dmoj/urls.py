@@ -923,6 +923,11 @@ urlpatterns = [
                     name="contest_participation_disqualify",
                 ),
                 re_path(
+                    r"^/participation/bulk-disqualify$",
+                    contests.ContestBulkDisqualify.as_view(),
+                    name="contest_bulk_disqualify",
+                ),
+                re_path(
                     r"^/clarification$",
                     contests.NewContestClarificationView.as_view(),
                     name="new_contest_clarification",
