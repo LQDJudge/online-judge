@@ -2158,6 +2158,7 @@ form.quiz-join-pseudotab {
 
     li {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 0.5rem;
       padding: 0.3rem 0;
@@ -2180,6 +2181,106 @@ form.quiz-join-pseudotab {
       font-size: 0.85rem;
     }
   }
+}
+
+// =====================================================
+// Collapsible File Preview Styles (shared across quiz pages)
+// =====================================================
+.file-item-collapsible {
+  margin-bottom: 0.5rem;
+  border: 1px solid $border_gray;
+  border-radius: 4px;
+  overflow: hidden;
+  background: $background_light_gray;
+  width: 100%;
+
+  .file-item-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: $background_light_gray;
+
+    .file-icon {
+      color: #666;
+    }
+
+    .file-name {
+      color: $color-primary;
+      text-decoration: none;
+      flex: 1;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    .file-size {
+      color: #888;
+      font-size: 0.85rem;
+    }
+
+    .file-delete-btn {
+      background: none;
+      border: none;
+      color: #999;
+      cursor: pointer;
+      padding: 0.25rem;
+      margin-left: 0.5rem;
+
+      &:hover {
+        color: $announcement_red;
+      }
+    }
+
+    .file-preview-toggle {
+      background: none;
+      border: none;
+      color: $widget_black;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      margin-left: 0.5rem;
+      transition: transform 0.2s ease;
+
+      &:hover {
+        color: $color-primary;
+      }
+
+      i {
+        transition: transform 0.2s ease;
+      }
+    }
+  }
+}
+
+.file-preview-collapsible {
+  border-top: 1px solid $border_gray;
+  background: white;
+  width: 100%;
+
+  &.file-preview-image {
+    padding: 0;
+
+    img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+  }
+
+  &.file-preview-pdf {
+    iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+      display: block;
+    }
+  }
+}
+
+// Take quiz page uploaded files list
+.uploaded-files-list {
+  margin-top: 0.5rem;
 }
 
 // =====================================================

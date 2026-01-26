@@ -1526,6 +1526,7 @@ class QuizTake(LoginRequiredMixin, TitleMixin, DetailView):
                         "filename": f.original_filename,
                         "size": f.get_file_size(),
                         "url": f.file.url if f.file else None,
+                        "extension": f.get_file_extension(),
                     }
                     for f in answer.files.all()
                 ]
@@ -1842,6 +1843,8 @@ class QuizUploadFile(LoginRequiredMixin, View):
                 "file_id": file_obj.id,
                 "filename": file_obj.original_filename,
                 "size": file_obj.get_file_size(),
+                "url": file_obj.file.url if file_obj.file else None,
+                "extension": file_obj.get_file_extension(),
             }
         )
 
