@@ -286,7 +286,31 @@ def _get_room(room_id):
     return results[0]
 
 
-@cache_wrapper(prefix="Purl", expected_type=list)
+def _get_user_room_list_batch(args_list):
+    """Batch fetch room lists for multiple users in a single query."""
+    if not args_list:
+        return []
+
+    user_ids = [args[0] for args in args_list]
+
+    # Single query to get all rooms for all users
+    user_rooms = (
+        UserRoom.objects.filter(user_id__in=user_ids)
+        .select_related("room")
+        .exclude(room__isnull=True)
+        .order_by("-room__last_msg_id")
+        .values("user_id", "room_id")
+    )
+
+    # Group by user_id, maintaining order
+    user_to_rooms = {uid: [] for uid in user_ids}
+    for entry in user_rooms:
+        user_to_rooms[entry["user_id"]].append(entry["room_id"])
+
+    return [user_to_rooms.get(uid, []) for uid in user_ids]
+
+
+@cache_wrapper(prefix="Purl", expected_type=list, batch_fn=_get_user_room_list_batch)
 def get_user_room_list(profile_id):
     """Get sorted list of room IDs for a user, ordered by last_msg_id (descending)"""
     room_ids = list(
@@ -330,9 +354,13 @@ def _get_ignored_room_ids(user):
         return set()
 
     if len(ignored_user_ids) < 50:
+        # Use batch caching to fetch all ignored users' room lists at once
+        args_list = [(uid,) for uid in ignored_user_ids]
+        room_lists = get_user_room_list.batch(args_list)
         all_rooms = set()
-        for ignored_user in ignored_user_ids:
-            all_rooms |= set(get_user_room_list(ignored_user))
+        for room_list in room_lists:
+            if room_list:
+                all_rooms |= set(room_list)
         return all_rooms.intersection(user_rooms)
 
     ignored_room_ids = set()

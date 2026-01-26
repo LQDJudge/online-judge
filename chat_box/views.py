@@ -139,10 +139,27 @@ def delete_message(request):
     if not request.user.is_staff and request.profile != mess.author:
         return HttpResponseBadRequest()
 
+    room_id = mess.room_id
     mess.hidden = True
     mess.save()
 
-    get_first_msg_id.dirty(mess.room_id)
+    get_first_msg_id.dirty(room_id)
+
+    # If deleting the last message, update room's last_msg_id
+    if room_id:
+        room = Room.objects.get(id=room_id)
+        if room.last_msg_id == messid:
+            # Find the new last visible message
+            new_last_msg = (
+                Message.objects.filter(room_id=room_id, hidden=False)
+                .order_by("-id")
+                .first()
+            )
+            room.last_msg_id = new_last_msg.id if new_last_msg else None
+            room.save(update_fields=["last_msg_id"])
+
+        # Dirty the room cache to update last_message in sidebar
+        Room.dirty_cache(room_id)
 
     return JsonResponse(ret)
 
