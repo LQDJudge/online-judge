@@ -162,7 +162,26 @@
 
     $('#show-admin-checkbox').click(function() {
       $('.contest-ranking-page').toggleClass('admin-mode');
+      $('#bulk-disqualify-btn').toggle(this.checked);
     })
+
+    // Bulk disqualify modal handling
+    $('#bulk-disqualify-btn').click(function() {
+      $('#bulk-disqualify-modal').show();
+      $('#bulk-disqualify-usernames').focus();
+    });
+
+    $('#bulk-disqualify-close, #bulk-disqualify-cancel').click(function() {
+      $('#bulk-disqualify-modal').hide();
+      $('#bulk-disqualify-usernames').val('');
+    });
+
+    $('#bulk-disqualify-modal').click(function(e) {
+      if (e.target === this) {
+        $(this).hide();
+        $('#bulk-disqualify-usernames').val('');
+      }
+    });
 
     highlightFirstSolve();
     get_initial_rank();

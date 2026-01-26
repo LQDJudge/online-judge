@@ -825,3 +825,110 @@ form.contest-join-pseudotab {
         width: 95%;
     }
 }
+
+// Bulk disqualify modal
+#bulk-disqualify-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    &[style*="display: block"],
+    &[style*="display:block"] {
+        display: flex !important;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 8px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid $border_gray;
+        background: $background_light_gray;
+
+        h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: $widget_black;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            line-height: 1;
+            padding: 0;
+
+            &:hover {
+                color: $announcement_red;
+            }
+        }
+    }
+
+    .modal-body {
+        padding: 1.25rem;
+
+        p {
+            margin: 0 0 0.75rem 0;
+            font-size: 0.9rem;
+            color: $widget_black;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid $border_gray;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+            box-sizing: border-box;
+
+            &:focus {
+                outline: none;
+                border-color: $theme_color;
+            }
+        }
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        padding: 1rem 1.25rem;
+        border-top: 1px solid $border_gray;
+        background: $background_light_gray;
+
+        .btn-default {
+            padding: 0.5rem 1rem;
+            border: 1px solid $border_gray;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+
+            &:hover {
+                background: $background_gray;
+            }
+        }
+    }
+}

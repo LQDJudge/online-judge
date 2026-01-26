@@ -6826,6 +6826,18 @@ msgstr "Khôi phục kết quả"
 msgid "Disqualify"
 msgstr "Hủy kết quả"
 
+#: templates/contest/ranking.html
+msgid "Bulk Disqualify"
+msgstr "Hủy kết quả hàng loạt"
+
+#: templates/contest/ranking.html
+msgid "Enter usernames to disqualify, separated by spaces, commas, or newlines:"
+msgstr "Nhập tên người dùng cần hủy kết quả, phân cách bằng dấu cách, dấu phẩy hoặc xuống dòng:"
+
+#: templates/contest/ranking.html
+msgid "user1, user2, user3..."
+msgstr "user1, user2, user3..."
+
 #: templates/contest/ranking-table.html:59
 msgid "Fullname"
 msgstr "Tên đầy đủ"
