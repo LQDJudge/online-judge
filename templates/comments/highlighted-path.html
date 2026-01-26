@@ -1,0 +1,11 @@
+{# Recursively render a highlighted path of comments as nested replies #}
+{% if path %}
+  {% set item = path[0] %}
+  {% set remaining = path[1:] %}
+  {% include "comments/comment-item.html" %}
+  <ul id="comment-{{ item.id }}-children" class="ul-comments">
+    {% with path=remaining %}
+      {% include "comments/highlighted-path.html" %}
+    {% endwith %}
+  </ul>
+{% endif %}

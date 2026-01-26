@@ -32,18 +32,11 @@
     {% endif %}
   {% else %}
     <ul class="top-level-comments compact-comment-list" id="inline-comments-{{ content_type_id }}-{{ object_id }}">
-      {% for node in mptt_tree(comment_list) recursive %}
+      {% for node in comment_list %}
         {% with item=node %}
           {% include "comments/comment-item.html" %}
         {% endwith %}
-
-        {% with children=node.get_children() %}
-          {% if children %}
-            <ul id="comment-{{ node.id }}-children" class="ul-comments">{{ loop(children) }}</ul>
-          {% else %}
-            <ul id="comment-{{ node.id }}-children" class="ul-comments"></ul>
-          {% endif %}
-        {% endwith %}
+        <ul id="comment-{{ node.id }}-children" class="ul-comments"></ul>
       {% endfor %}
     </ul>
   {% endif %}

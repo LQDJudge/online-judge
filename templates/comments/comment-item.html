@@ -82,7 +82,8 @@
         {% endif %}
       </div>
       {% set count_replies=item.count_replies %}
-      {% if count_replies and not item.get_children() %}
+      {% set is_highlighted_ancestor = highlighted_ancestor_ids is defined and item.id in highlighted_ancestor_ids %}
+      {% if count_replies and not is_highlighted_ancestor %}
         <div>
           <a href="javascript:comment_get_replies({{ item.id }})" class="show_more_reply">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-arrow-forward" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">

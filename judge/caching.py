@@ -1,4 +1,5 @@
 from django.core.cache import cache
+from django.db.models import ForeignKey
 from django.db.models.query import QuerySet
 from django.core.handlers.wsgi import WSGIRequest
 from django.db import models
@@ -138,14 +139,20 @@ class CacheableModel(models.Model):
 
         cls = self.__class__
         if not hasattr(cls, "_field_names_cache"):
-            # Cache all field names
-            field_names = {field.name for field in cls._meta.fields}
-
             # Cache which fields have getter methods
             cls._fields_with_getters = {}
-            for field_name in field_names:
+            for field in cls._meta.fields:
+                field_name = field.name
                 getter_name = f"get_{field_name}"
                 cls._fields_with_getters[field_name] = hasattr(cls, getter_name)
+
+                # For ForeignKey fields, also check for get_{field}_id getter
+                if isinstance(field, ForeignKey):
+                    id_field_name = f"{field_name}_id"
+                    id_getter_name = f"get_{id_field_name}"
+                    cls._fields_with_getters[id_field_name] = hasattr(
+                        cls, id_getter_name
+                    )
 
     @classmethod
     def get_cached_dict(self, id):

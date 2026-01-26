@@ -8,7 +8,7 @@ from judge.models.comment import get_visible_comment_count
 @registry.function
 def comment_count(obj):
     content_type = ContentType.objects.get_for_model(obj)
-    return get_visible_comment_count(content_type, obj.pk)
+    return get_visible_comment_count(content_type.id, obj.pk)
 
 
 @registry.function

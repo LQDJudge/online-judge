@@ -1,15 +1,15 @@
-{% for node in mptt_tree(comment_list) recursive %}
+{% for node in comment_list %}
   {% with item=node %}
     {% include "comments/comment-item.html" %}
   {% endwith %}
-
-  {% with children=node.get_children() %}
-    {% if children %}
-      <ul id="comment-{{ node.id }}-children" class="ul-comments">{{ loop(children) }}</ul>
-    {% else %}
-      <ul id="comment-{{ node.id }}-children" class="ul-comments"></ul>
+  <ul id="comment-{{ node.id }}-children" class="ul-comments">
+    {# Render highlighted path nested under its root #}
+    {% if highlighted_path and node.id == highlighted_root_id %}
+      {% with path=highlighted_path %}
+        {% include "comments/highlighted-path.html" %}
+      {% endwith %}
     {% endif %}
-  {% endwith %}
+  </ul>
 {% endfor %}
 
 {% if comment_more > 0 %}
