@@ -15,7 +15,6 @@ from django.core.cache import cache
 from django.http import HttpRequest, HttpResponse
 from django.urls import resolve
 from django.utils.translation import gettext as _
-from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -287,8 +286,6 @@ def create_rate_limit_response(
             current_count = most_restrictive["current"]
             reset_time = most_restrictive["reset"]
 
-            # Create detailed message
-            violated_rate_strings = [info["rate_string"] for info in violated_rates]
             message = _("Rate limit exceeded")
         else:
             # This shouldn't happen, but handle gracefully

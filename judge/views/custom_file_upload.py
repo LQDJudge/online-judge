@@ -1,19 +1,21 @@
-import os
 import mimetypes
+import os
 from datetime import datetime
 
 from django.shortcuts import render, redirect
 from django.core.files.storage import default_storage
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponse, Http404, JsonResponse, HttpResponseForbidden
-from django.conf import settings
+from django.http import Http404, JsonResponse, HttpResponseForbidden
 from django.utils.translation import gettext as _
 from django import forms
 from django.template.defaultfilters import filesizeformat
 
 from judge.models import Problem
+
+from judge.utils.files import generate_secure_filename
 from judge.utils.storage_helpers import (
+    serve_file_with_nginx,
     storage_listdir,
     storage_file_exists,
     storage_delete_file,
@@ -176,28 +178,9 @@ def file_upload(request):
             # User storage path prefix
             user_prefix = get_user_storage_path(username)
 
-            # Sanitize filename
-            file_name, file_extension = os.path.splitext(file.name)
-            file_name = "".join(
-                c for c in file_name if c.isalnum() or c in (" ", "-", "_")
-            ).rstrip()
-            if not file_name:
-                file_name = "file"
-
-            # Use original filename, add counter only if duplicate exists
-            new_filename = f"{file_name}{file_extension}"
+            # Generate secure filename with random suffix
+            new_filename = generate_secure_filename(file.name)
             new_filepath = f"{user_prefix}/{new_filename}"
-
-            # Check if file exists and add counter if needed
-            if storage_file_exists(default_storage, new_filepath):
-                counter = 1
-                while storage_file_exists(
-                    default_storage,
-                    f"{user_prefix}/{file_name}_{counter}{file_extension}",
-                ):
-                    counter += 1
-                new_filename = f"{file_name}_{counter}{file_extension}"
-                new_filepath = f"{user_prefix}/{new_filename}"
 
             # Save file using default_storage
             saved_path = default_storage.save(new_filepath, file)
@@ -328,14 +311,17 @@ def user_file_download(request, filename):
     if not validate_path_prefix(file_path, user_prefix):
         raise Http404("File not found")
 
-    if storage_file_exists(default_storage, file_path):
-        with default_storage.open(file_path, "rb") as f:
-            mime_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
-            response = HttpResponse(f.read(), content_type=mime_type)
-            response["Content-Disposition"] = f'attachment; filename="{filename}"'
-            return response
-    else:
+    if not storage_file_exists(default_storage, file_path):
         raise Http404("File not found")
+
+    mime_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    return serve_file_with_nginx(
+        request,
+        default_storage,
+        file_path,
+        content_type=mime_type,
+        attachment_filename=filename,
+    )
 
 
 @login_required
@@ -418,7 +404,7 @@ def user_file_rename(request, filename):
                     messages.success(request, _("File renamed successfully!"))
                 else:
                     raise Exception("Rename failed")
-            except Exception as e:
+            except Exception:
                 error_msg = _("Failed to rename file")
                 if is_ajax:
                     return JsonResponse(

@@ -1,11 +1,9 @@
 from django.contrib.auth.decorators import login_required
 from django.http import (
-    Http404,
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseForbidden,
 )
-from django.utils.translation import gettext as _
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic import View

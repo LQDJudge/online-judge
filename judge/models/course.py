@@ -3,18 +3,17 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.db import models
-from django.utils.translation import gettext, gettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
-from django.db.models import Q
 
 from judge.models import Problem, Contest
 from judge.models.profile import Organization, Profile
 from judge.caching import cache_wrapper
-from judge.utils.files import delete_old_image_files, generate_image_filename
+from judge.utils.files import delete_old_image_files, generate_secure_filename
 
 
 def course_image_path(course, filename):
-    new_filename = generate_image_filename(f"course_{course.id}", filename)
+    new_filename = generate_secure_filename(filename, f"course_{course.id}")
     return os.path.join(settings.DMOJ_COURSE_IMAGE_ROOT, new_filename)
 
 
@@ -90,11 +89,9 @@ class Course(models.Model):
         if profile.user.is_superuser:
             return True
 
-        try:
-            course_role = CourseRole.objects.get(course=course, user=profile)
-            return True  # Any enrolled user can access the course
-        except CourseRole.DoesNotExist:
-            return False  # Only enrolled users can access courses
+        return CourseRole.objects.filter(
+            course=course, user=profile
+        ).exists()  # Only enrolled users can access courses
 
     @classmethod
     def is_joinable(cls, course, profile):

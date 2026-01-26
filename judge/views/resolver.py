@@ -14,7 +14,6 @@ class Resolver(TemplateView):
 
     def get_contest_json(self):
         problems = self.contest.contest_problems.values_list("order", "id")
-        order_to_id = {}
         id_to_order = {}
         for order, problem_id in problems:
             id_to_order[str(problem_id)] = order

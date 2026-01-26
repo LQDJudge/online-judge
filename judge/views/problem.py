@@ -32,13 +32,11 @@ from django.utils.translation import gettext as _, gettext_lazy
 from django.views.generic import ListView, View, CreateView
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
-from django.views.generic.edit import FormMixin
 
 from judge.views.comment import CommentableMixin
 from judge.forms import (
     ProblemCloneForm,
     ProblemSubmitForm,
-    ProblemPointsVoteForm,
     ProblemEditForm,
     ProblemAddForm,
     LanguageLimitEditForm,
@@ -55,16 +53,13 @@ from judge.models import (
     LanguageTemplate,
     Problem,
     ContestProblemClarification,
-    ProblemGroup,
     ProblemTranslation,
-    ProblemType,
     RuntimeVersion,
     Solution,
     Submission,
     SubmissionSource,
     Profile,
     Contest,
-    Quiz,
 )
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
@@ -72,13 +67,13 @@ from judge.utils.opengraph import generate_opengraph
 from judge.utils.problems import (
     contest_attempted_ids,
     contest_completed_ids,
-    hot_problems,
     user_attempted_ids,
     user_completed_ids,
     get_related_problems,
     get_user_recommended_problems,
     RecommendationType,
 )
+from judge.utils.storage_helpers import serve_file_inline
 from judge.utils.strings import safe_float_or_none, safe_int_or_none
 from judge.utils.tickets import own_ticket_filter
 from judge.utils.views import (
@@ -87,7 +82,6 @@ from judge.utils.views import (
     TitleMixin,
     generic_message,
 )
-from judge.ml.collab_filter import CollabFilter
 from judge.views.pagevote import PageVoteDetailView
 from judge.views.bookmark import BookMarkDetailView
 from judge.views.feed import FeedView
@@ -104,8 +98,6 @@ from judge.tasks.llm import (
     improve_markdown_task,
     tag_problem_task,
 )
-
-from problem_tag import get_problem_tag_service
 
 
 def get_contest_problem(problem, profile):
@@ -154,7 +146,7 @@ class ProblemMixin(object):
     def get(self, request, *args, **kwargs):
         try:
             return super(ProblemMixin, self).get(request, *args, **kwargs)
-        except Http404 as e:
+        except Http404:
             return self.no_such_problem()
 
 
@@ -463,16 +455,13 @@ class ProblemPdfView(ProblemMixin, SingleObjectMixin, View):
                 with open(maker.pdffile, "rb") as f:
                     default_storage.save(cache_path, ContentFile(f.read()))
 
-        response = HttpResponse()
-        with default_storage.open(cache_path, "rb") as f:
-            response.content = f.read()
-
-        response["Content-Type"] = "application/pdf"
-        response["Content-Disposition"] = "inline; filename=%s.%s.pdf" % (
-            problem.code,
-            language,
+        return serve_file_inline(
+            request,
+            default_storage,
+            cache_path,
+            content_type="application/pdf",
+            inline_filename="%s.%s.pdf" % (problem.code, language),
         )
-        return response
 
 
 class ProblemPdfDescriptionView(ProblemMixin, SingleObjectMixin, View):
@@ -480,14 +469,14 @@ class ProblemPdfDescriptionView(ProblemMixin, SingleObjectMixin, View):
         problem = self.get_object()
         if not problem.pdf_description:
             raise Http404()
-        response = HttpResponse()
-        # Use FileField's storage-aware open() method (works with S3 and local)
-        with problem.pdf_description.open("rb") as f:
-            response.content = f.read()
 
-        response["Content-Type"] = "application/pdf"
-        response["Content-Disposition"] = "inline; filename=%s.pdf" % (problem.code,)
-        return response
+        return serve_file_inline(
+            request,
+            problem.pdf_description.storage,
+            problem.pdf_description.name,
+            content_type="application/pdf",
+            inline_filename="%s.pdf" % problem.code,
+        )
 
 
 class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView):
@@ -1925,7 +1914,7 @@ class ProblemEditTranslations(
                 )
 
                 if form.is_valid():
-                    saved_translation = form.save()
+                    form.save()
                     messages.success(request, _("Translation updated successfully."))
                     return HttpResponseRedirect(
                         reverse("problem_edit_translations", args=[self.object.code])

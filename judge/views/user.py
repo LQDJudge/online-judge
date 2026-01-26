@@ -1,19 +1,13 @@
-import itertools
 import json
 from datetime import datetime
 from collections import defaultdict
 
 from django.core.cache import cache
-from django.core.files.storage import default_storage
 from django.conf import settings
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import Permission
 from django.contrib.auth.views import redirect_to_login
 from django.contrib.contenttypes.models import ContentType
-from django.db import transaction
-from django.db.models import Max
-from django.forms import Form
 from django.http import (
     Http404,
     HttpResponseRedirect,
@@ -29,7 +23,6 @@ from django.utils.formats import date_format
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _, gettext_lazy
-from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 from django.template.loader import render_to_string
 from reversion import revisions
@@ -37,8 +30,6 @@ from reversion import revisions
 from judge.forms import UserForm, ProfileForm, ProfileInfoForm
 from judge.models import (
     Profile,
-    Rating,
-    Submission,
     Friend,
     ProfileInfo,
     BlogPost,
@@ -52,7 +43,6 @@ from judge.models.submission import (
     get_user_submission_dates,
     get_user_min_submission_year,
 )
-from judge.models.profile import profile_background_path
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
 from judge.tasks import import_users
@@ -69,11 +59,9 @@ from judge.utils.views import (
     QueryStringSortMixin,
     TitleMixin,
     generic_message,
-    SingleObjectFormView,
     DiggPaginatorMixin,
 )
 from judge.utils.infinite_paginator import InfinitePaginationMixin
-from judge.views.problem import ProblemList
 from judge.utils.celery import redirect_to_task_status
 
 from .contests import ContestRanking

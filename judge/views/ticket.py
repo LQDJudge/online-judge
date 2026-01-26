@@ -37,7 +37,7 @@ from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.tickets import filter_visible_tickets, own_ticket_filter
 from judge.utils.views import SingleObjectFormView, TitleMixin, paginate_query_context
 from judge.views.problem import ProblemMixin
-from judge.views.feed import FeedView, HomeFeedView
+from judge.views.feed import HomeFeedView
 from judge.widgets import HeavyPreviewPageDownWidget, HeavySelect2MultipleWidget
 from judge.models.notification import Notification, NotificationCategory
 

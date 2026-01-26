@@ -16,6 +16,7 @@ import fnmatch
 import mimetypes
 
 from django.core.files.base import ContentFile
+from django.http import HttpResponse, Http404
 from django.utils import timezone
 
 
@@ -266,3 +267,131 @@ def validate_path_prefix(path, allowed_prefix):
         return False
 
     return normalized.startswith(prefix)
+
+
+def serve_file_with_nginx(
+    request,
+    storage,
+    file_path,
+    content_type="application/octet-stream",
+    attachment_filename=None,
+):
+    """
+    Serve a file with optimized delivery based on storage backend.
+
+    - S3/boto storage: Redirect to signed URL
+    - Local storage + Nginx: Use X-Accel-Redirect
+    - Local storage (dev): Read file through Django
+
+    Args:
+        request: Django HttpRequest object
+        storage: Django storage instance (e.g., default_storage)
+        file_path: Path to file in storage (relative to storage root)
+        content_type: MIME type for the response
+        attachment_filename: If set, adds Content-Disposition header for download
+
+    Returns:
+        HttpResponse with file content, X-Accel-Redirect, or redirect
+
+    Raises:
+        Http404: If file doesn't exist
+    """
+    from django.conf import settings
+    from django.http import HttpResponseRedirect
+
+    # Check if using S3/remote storage (has custom URL generation)
+    storage_url = storage.url(file_path)
+    is_remote_storage = storage_url.startswith(("http://", "https://"))
+
+    if is_remote_storage:
+        # S3/boto: redirect to signed URL
+        return HttpResponseRedirect(storage_url)
+
+    # Local storage
+    response = HttpResponse()
+
+    # Check if we're behind Nginx
+    use_nginx = request.META.get("SERVER_SOFTWARE", "").startswith("nginx/")
+
+    if use_nginx:
+        # Let Nginx serve the file directly using MEDIA_URL
+        media_url = getattr(settings, "MEDIA_URL", "/media/")
+        response["X-Accel-Redirect"] = f"{media_url}{file_path}"
+    else:
+        # Read file through Django (development)
+        try:
+            with storage.open(file_path, "rb") as f:
+                response.content = f.read()
+        except (IOError, FileNotFoundError):
+            raise Http404()
+
+    response["Content-Type"] = content_type
+
+    if attachment_filename:
+        response["Content-Disposition"] = (
+            f'attachment; filename="{attachment_filename}"'
+        )
+
+    return response
+
+
+def serve_file_inline(
+    request,
+    storage,
+    file_path,
+    content_type="application/octet-stream",
+    inline_filename=None,
+):
+    """
+    Serve a file inline (for viewing in browser) with optimized delivery.
+
+    - S3/boto storage: Redirect to signed URL
+    - Local storage + Nginx: Use X-Accel-Redirect
+    - Local storage (dev): Read file through Django
+
+    Args:
+        request: Django HttpRequest object
+        storage: Django storage instance
+        file_path: Path to file in storage
+        content_type: MIME type for the response
+        inline_filename: Filename for Content-Disposition header
+
+    Returns:
+        HttpResponse with file content, X-Accel-Redirect, or redirect
+
+    Raises:
+        Http404: If file doesn't exist
+    """
+    from django.conf import settings
+    from django.http import HttpResponseRedirect
+
+    # Check if using S3/remote storage
+    storage_url = storage.url(file_path)
+    is_remote_storage = storage_url.startswith(("http://", "https://"))
+
+    if is_remote_storage:
+        # S3/boto: redirect to signed URL
+        return HttpResponseRedirect(storage_url)
+
+    # Local storage
+    response = HttpResponse()
+
+    # Check if we're behind Nginx
+    use_nginx = request.META.get("SERVER_SOFTWARE", "").startswith("nginx/")
+
+    if use_nginx:
+        media_url = getattr(settings, "MEDIA_URL", "/media/")
+        response["X-Accel-Redirect"] = f"{media_url}{file_path}"
+    else:
+        try:
+            with storage.open(file_path, "rb") as f:
+                response.content = f.read()
+        except (IOError, FileNotFoundError):
+            raise Http404()
+
+    response["Content-Type"] = content_type
+
+    if inline_filename:
+        response["Content-Disposition"] = f"inline; filename={inline_filename}"
+
+    return response

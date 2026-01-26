@@ -4,7 +4,6 @@ from django.views.generic import FormView
 from django.views.generic.detail import SingleObjectMixin
 
 from judge.utils.diggpaginator import DiggPaginator
-from django.utils.html import mark_safe
 
 
 def class_view_decorator(function_decorator):

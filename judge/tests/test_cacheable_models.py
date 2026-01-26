@@ -13,9 +13,7 @@ from judge.models.profile import (
     OrganizationProfile,
     _get_most_recent_organization_ids,
     _get_organization,
-    _get_profile,
 )
-from judge.models.problem import _get_problem
 
 
 class CacheableModelTestCase(TestCase):

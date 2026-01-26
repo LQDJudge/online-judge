@@ -8,10 +8,9 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import RegexValidator
-from django.db.models import Q
 from django.forms import (
     CharField,
     ChoiceField,
@@ -144,7 +143,7 @@ class ProfileForm(ModelForm):
             )
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop("user", None)
+        kwargs.pop("user", None)
         super(ProfileForm, self).__init__(*args, **kwargs)
         self.fields["profile_image"].required = False
         self.fields["background_image"].required = False

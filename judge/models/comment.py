@@ -1,9 +1,6 @@
 import itertools
 
 from django.contrib.contenttypes.fields import GenericRelation
-from django.core.cache import cache
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import CASCADE
 from django.urls import reverse

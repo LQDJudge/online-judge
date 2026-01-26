@@ -6,8 +6,6 @@ import pandas as pd
 from django.conf import settings
 from django.db.models import Case, Count, FloatField, IntegerField, Value, When
 from django.db.models.expressions import CombinedExpression
-from django.http import JsonResponse
-from django.shortcuts import render
 from django.utils.translation import gettext as _
 from django.http import Http404
 from django.views.generic import TemplateView

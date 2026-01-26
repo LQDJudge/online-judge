@@ -7,8 +7,7 @@ from django.core.cache import cache
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
-from django.db.models import CASCADE, F, FilteredRelation, Q, SET_NULL, Exists, OuterRef
-from django.db.models.functions import Coalesce
+from django.db.models import CASCADE, Q, SET_NULL, Exists, OuterRef
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
@@ -19,12 +18,12 @@ from judge.models.pagevote import PageVotable
 from judge.models.bookmark import Bookmarkable
 from judge.models.profile import Organization, Profile
 from judge.models.runtime import Language
-from judge.user_translations import gettext as user_gettext
 from judge.models.problem_data import (
     problem_data_storage,
     problem_directory_file_helper,
 )
 from judge.caching import cache_wrapper, CacheableModel
+from judge.utils.files import generate_secure_filename
 
 __all__ = [
     "ProblemGroup",
@@ -42,7 +41,8 @@ def problem_directory_file(data, filename):
 
 def problem_pdf_upload_path(problem, filename):
     """Upload path for problem PDF descriptions using default storage (S3 compatible)."""
-    return f"problem_pdfs/{problem.code}/{filename}"
+    secure_filename = generate_secure_filename(filename, problem.code)
+    return f"problem_pdfs/{problem.code}/{secure_filename}"
 
 
 class ProblemType(models.Model):

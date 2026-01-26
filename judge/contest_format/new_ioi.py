@@ -1,5 +1,5 @@
 from django.db import connection
-from django.utils.translation import gettext as _, gettext_lazy
+from django.utils.translation import gettext_lazy
 
 from judge.contest_format.ioi import IOIContestFormat
 from judge.contest_format.registry import register_contest_format
@@ -25,7 +25,7 @@ class NewIOIContestFormat(IOIContestFormat):
                 for i in hidden_subtasks:
                     try:
                         subtasks.add(int(i))
-                    except Exception as e:
+                    except Exception:
                         pass
             res[str(problem_id)] = subtasks
         return res

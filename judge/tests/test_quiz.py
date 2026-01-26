@@ -17,7 +17,6 @@ from judge.models.quiz import (
     QuizQuestionAssignment,
     QuizAttempt,
     QuizAnswer,
-    CourseLessonQuiz,
 )
 from judge.utils.quiz_grading import (
     grade_multiple_choice,
@@ -25,7 +24,6 @@ from judge.utils.quiz_grading import (
     grade_short_answer,
     grade_essay,
     grade_answer,
-    auto_grade_answer,
     auto_grade_quiz_attempt,
     calculate_attempt_score,
 )

@@ -1,0 +1,13 @@
+[lint]
+select = ["F821", "F401", "F841"]
+
+[lint.per-file-ignores]
+# __init__.py files often re-export symbols for public API
+"__init__.py" = ["F401"]
+# Sample settings file extends base settings
+"dmoj/sample_local_settings.py" = ["F821"]
+# Migration files may have unused variables for clarity
+"*/migrations/*.py" = ["F841"]
+# Test files often capture responses for debugging
+"*/tests/*.py" = ["F841"]
+"**/test_*.py" = ["F841"]

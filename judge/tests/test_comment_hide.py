@@ -5,7 +5,6 @@ from django.urls import reverse
 from django.utils import timezone
 
 from judge.models import (
-    Organization,
     Profile,
     Language,
     BlogPost,

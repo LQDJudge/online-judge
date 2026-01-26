@@ -3,7 +3,6 @@ from judge.models import *
 import csv
 import os
 from django.conf import settings
-from django.db import connection
 from collections import defaultdict
 
 

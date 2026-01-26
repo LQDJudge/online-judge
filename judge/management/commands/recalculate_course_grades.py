@@ -4,7 +4,7 @@ Run this after migrations that populate BestSubmission/BestQuizAttempt tables.
 """
 
 from django.core.management.base import BaseCommand
-from judge.models import Course, CourseRole, CourseLesson, CourseLessonProgress
+from judge.models import Course, CourseRole
 from judge.utils.course_prerequisites import (
     update_lesson_grade,
     update_lesson_unlock_states,

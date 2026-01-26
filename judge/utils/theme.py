@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.core.files.storage import default_storage
 
 from judge.caching import cache_wrapper

@@ -1,12 +1,11 @@
 from django.contrib import admin
-from django.forms import ModelForm, CharField, TextInput
+from django.forms import ModelForm
 from django.utils.html import format_html
 from django.utils.translation import gettext, gettext_lazy as _, ngettext
 from django.contrib.auth.admin import UserAdmin as OldUserAdmin
 from django.core.exceptions import ValidationError
 from django.contrib.auth.forms import UserChangeForm
 
-from django_ace import AceWidget
 
 from judge.models import Profile, ProfileInfo
 from judge.widgets import AdminPagedownWidget, AdminSelect2Widget

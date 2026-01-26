@@ -2,7 +2,6 @@ from django.views.generic import ListView
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import gettext as _
 
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.models.profile import (
@@ -43,7 +42,7 @@ class FeedView(InfinitePaginationMixin, ListView):
         context["has_next_page"] = context["page_obj"].has_next()
         try:
             context["feed_content_url"] = reverse(self.url_name)
-        except Exception as e:
+        except Exception:
             context["feed_content_url"] = self.request.path
         return context
 

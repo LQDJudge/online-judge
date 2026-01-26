@@ -16,7 +16,7 @@ def is_valid_image_url(url):
         parsed_url = urlparse(url)
         _, ext = os.path.splitext(parsed_url.path)
         return ext.lower() in [".jpg", ".jpeg", ".png", ".gif", ".svg"]
-    except Exception as e:
+    except Exception:
         return False
 
 

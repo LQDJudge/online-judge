@@ -3,13 +3,13 @@ import json
 
 from django.conf import settings
 from django.views.generic import ListView
-from django.utils.translation import gettext as _, gettext_lazy, get_language
+from django.utils.translation import gettext as _, get_language
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseForbidden, JsonResponse
 from django.urls import reverse
 
-from judge.utils.strings import safe_float_or_none, safe_int_or_none
+from judge.utils.strings import safe_float_or_none
 from judge.models.problem import get_distinct_problem_points
 from judge.models import Profile
 
@@ -17,8 +17,6 @@ from judge.utils.diggpaginator import DiggPaginator
 from judge.models import Problem, ProblemType
 from judge.tasks import rescore_problem
 from judge.tasks.llm import tag_problem_task
-
-from problem_tag import get_problem_tag_service
 
 
 class InternalView(object):

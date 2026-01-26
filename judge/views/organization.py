@@ -32,7 +32,6 @@ from django.views.generic.detail import (
     SingleObjectMixin,
     SingleObjectTemplateResponseMixin,
 )
-from django.core.paginator import Paginator
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls.exceptions import NoReverseMatch
 from reversion import revisions
@@ -61,21 +60,18 @@ from judge.models import (
     OrganizationProfile,
     Block,
     Course,
-    CourseRole,
     PageVote,
     PageVoteVoter,
 )
 from judge.models.course import RoleInCourse
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.block import get_all_blocked_pairs
-from judge import event_poster as event
 from judge.utils.ranker import ranker
 from judge.utils.views import (
     TitleMixin,
     generic_message,
     QueryStringSortMixin,
     DiggPaginatorMixin,
-    SingleObjectFormView,
 )
 from judge.utils.problems import user_attempted_ids, user_completed_ids
 from judge.utils.contest import maybe_trigger_contest_rescore
@@ -1376,7 +1372,7 @@ class EditOrganizationContest(
                     contest_problem.contest = self.contest
                     try:
                         contest_problem.save()
-                    except (IntegrityError, ValidationError) as e:
+                    except (IntegrityError, ValidationError):
                         problem = contest_problem.problem
                         ContestProblem.objects.filter(
                             contest=self.contest, problem=problem
@@ -1393,7 +1389,7 @@ class EditOrganizationContest(
                     contest_quiz.contest = self.contest
                     try:
                         contest_quiz.save()
-                    except (IntegrityError, ValidationError) as e:
+                    except (IntegrityError, ValidationError):
                         quiz = contest_quiz.quiz
                         ContestProblem.objects.filter(
                             contest=self.contest, quiz=quiz

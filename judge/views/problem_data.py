@@ -6,11 +6,9 @@ import shutil
 from tempfile import gettempdir
 from zipfile import BadZipfile, ZipFile
 
-from django import forms
 from django.conf import settings
-from django.http import HttpResponse, HttpRequest
+from django.http import HttpResponse
 from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
 from django.conf import settings
@@ -25,9 +23,7 @@ from django.forms import (
     NumberInput,
     Select,
     formset_factory,
-    FileInput,
     TextInput,
-    Textarea,
     CheckboxInput,
     modelformset_factory,
 )
@@ -58,7 +54,6 @@ from judge.widgets.fine_uploader import (
 )
 from judge.widgets.file_edit import FileEditWidget
 from judge.views.problem import ProblemMixin
-from judge.logging import log_exception
 
 mimetypes.init()
 mimetypes.add_type("application/x-yaml", ".yml")
@@ -309,8 +304,7 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
                 return ZipFile(data.zipfile.path).namelist()
         except BadZipfile:
             return []
-        except FileNotFoundError as e:
-            log_exception(e)
+        except FileNotFoundError:
             return []
         return []
 
@@ -446,7 +440,7 @@ class ProblemZipUploadView(ProblemManagerMixin, View):
         return super(ProblemZipUploadView, self).dispatch(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        self.object = problem = self.get_object()
+        self.object = self.get_object()
         problem_data = get_object_or_404(ProblemData, problem=self.object)
         form = FineUploadForm(request.POST, request.FILES)
 

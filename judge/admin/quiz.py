@@ -1,20 +1,17 @@
 from operator import attrgetter
 
-from django import forms
 from django.contrib import admin
 from django.db.models import Q
 from django.forms import ModelForm
 from django.urls import reverse, reverse_lazy
 from django.utils.html import format_html
-from django.utils.translation import gettext, gettext_lazy as _, ngettext
+from django.utils.translation import gettext, gettext_lazy as _
 from reversion_compare.admin import CompareVersionAdmin
 
 from judge.models import (
     Quiz,
     QuizQuestion,
     QuizQuestionAssignment,
-    CourseLessonQuiz,
-    QuizAttempt,
     QuizAnswer,
     QuizAnswerFile,
     Profile,
@@ -22,7 +19,6 @@ from judge.models import (
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
     AdminHeavySelect2Widget,
-    AdminSelect2Widget,
     HeavyPreviewAdminPageDownWidget,
 )
 

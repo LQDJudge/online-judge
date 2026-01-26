@@ -261,7 +261,7 @@ def get_related_problems(profile, problem, limit=8):
         ) + cf_model.problem_neighbors(problem, problemset, CollabFilter.COSINE, limit)
 
     results = list(set([i[1] for i in results]))
-    seed = datetime.now().strftime("%d%m%Y")
+    random.seed(datetime.now().strftime("%d%m%Y"))
     random.shuffle(results)
     results = results[:limit]
     return Problem.get_cached_instances(*results)

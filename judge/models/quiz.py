@@ -1,14 +1,13 @@
 import os
 import uuid
 import json
-from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 from judge.models.profile import Profile
-from judge.models.contest import Contest, ContestParticipation
+from judge.models.contest import ContestParticipation
 from judge.models.course import CourseLesson, Course
 
 

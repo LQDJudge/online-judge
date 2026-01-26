@@ -5,4 +5,4 @@ class ChatBoxConfig(AppConfig):
     name = "chat_box"
 
     def ready(self):
-        from . import models
+        pass

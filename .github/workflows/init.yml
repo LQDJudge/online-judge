@@ -25,9 +25,12 @@ jobs:
           python-version: '3.12'
 
       - name: Install Python dependencies
-        run: pip install black
+        run: pip install black ruff
 
       - name: Run linters
         uses: wearerequired/lint-action@v2
         with:
           black: true
+
+      - name: Run ruff
+        run: ruff check .

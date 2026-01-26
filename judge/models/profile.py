@@ -8,12 +8,11 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Max, CASCADE, Count
+from django.db.models import Max, CASCADE
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
-from django.http import Http404
 
 from fernet_fields import EncryptedCharField
 from sortedm2m.fields import SortedManyToManyField
@@ -22,7 +21,7 @@ from judge.models.choices import ACE_THEMES, TIMEZONE
 from judge.models.runtime import Language
 from judge.ratings import rating_class
 from judge.caching import cache_wrapper, CacheableModel
-from judge.utils.files import delete_old_image_files, generate_image_filename
+from judge.utils.files import delete_old_image_files, generate_secure_filename
 
 from typing import Optional
 
@@ -63,23 +62,23 @@ class EncryptedNullCharField(EncryptedCharField):
 
 
 def profile_image_path(profile, filename):
-    new_filename = generate_image_filename(f"user_{profile.id}", filename)
+    new_filename = generate_secure_filename(filename, f"user_{profile.id}")
     return os.path.join(settings.DMOJ_PROFILE_IMAGE_ROOT, new_filename)
 
 
 def profile_background_path(profile, filename):
-    new_filename = generate_image_filename(f"bg_user_{profile.id}", filename)
+    new_filename = generate_secure_filename(filename, f"bg_user_{profile.id}")
     return os.path.join(settings.DMOJ_PROFILE_IMAGE_ROOT, new_filename)
 
 
 def organization_image_path(organization, filename):
-    new_filename = generate_image_filename(f"organization_{organization.id}", filename)
+    new_filename = generate_secure_filename(filename, f"organization_{organization.id}")
     return os.path.join(settings.DMOJ_ORGANIZATION_IMAGE_ROOT, new_filename)
 
 
 def organization_cover_image_path(organization, filename):
-    new_filename = generate_image_filename(
-        f"cover_organization_{organization.id}", filename
+    new_filename = generate_secure_filename(
+        filename, f"cover_organization_{organization.id}"
     )
     return os.path.join(settings.DMOJ_ORGANIZATION_IMAGE_ROOT, new_filename)
 

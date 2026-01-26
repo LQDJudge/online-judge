@@ -1,9 +1,7 @@
-import os.path
 from operator import attrgetter
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import default_storage
 from django.core.exceptions import ObjectDoesNotExist
@@ -447,7 +445,6 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super(SubmissionsListBase, self).get_context_data(**kwargs)
-        authenticated = self.request.user.is_authenticated
         context["dynamic_update"] = False
         context["show_problem"] = self.show_problem
         context["profile"] = self.request.profile

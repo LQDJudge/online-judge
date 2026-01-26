@@ -3,10 +3,8 @@ import hmac
 import hashlib
 
 from django.conf import settings
-from django.db.models import OuterRef, Count, Subquery, IntegerField, Q
-from django.db.models.functions import Coalesce
 
-from chat_box.models import Ignore, Message, UserRoom, Room
+from chat_box.models import Ignore, UserRoom
 
 from judge.caching import cache_wrapper
 
@@ -24,7 +22,7 @@ def decrypt_url(message_encrypted):
         dec_message = fernet.decrypt(message_encrypted.encode()).decode()
         creator_id, other_id = dec_message.split("_")
         return int(creator_id), int(other_id)
-    except Exception as e:
+    except Exception:
         return None, None
 
 

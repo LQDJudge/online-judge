@@ -3,9 +3,7 @@ from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 
-from judge.models import Language, Submission
 from judge.utils.problems import get_result_data
-from judge.utils.raw_sql import join_sql_subquery
 from judge.views.submission import ForceContestMixin, ProblemSubmissions
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 

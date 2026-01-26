@@ -37,17 +37,32 @@ def delete_old_image_files(directory, base_filename):
                 break
 
 
-def generate_image_filename(base_name, original_filename):
+def generate_secure_filename(original_filename, prefix=None):
     """
-    Generate a unique filename with a random suffix for CDN cache busting.
+    Generate a secure filename with a random suffix to prevent URL guessing.
 
     Args:
-        base_name: The base name for the file (e.g., 'user_1', 'organization_5')
-        original_filename: The original uploaded filename to extract extension
+        original_filename: The original uploaded filename
+        prefix: Optional prefix (e.g., 'user_1', 'problem_code')
 
     Returns:
-        A filename like 'user_1_a1b2c3.png'
+        A filename like 'myfile_a1b2c3d4.png' or 'user_1_myfile_a1b2c3d4.png'
     """
-    extension = original_filename.split(".")[-1].lower()
-    random_suffix = secrets.token_hex(4)  # 8 character hex string
-    return f"{base_name}_{random_suffix}.{extension}"
+    if "." in original_filename:
+        base_name, extension = original_filename.rsplit(".", 1)
+        extension = "." + extension.lower()
+    else:
+        base_name = original_filename
+        extension = ""
+
+    base_name = "".join(
+        c for c in base_name if c.isalnum() or c in (" ", "-", "_")
+    ).rstrip()
+    if not base_name:
+        base_name = "file"
+
+    random_suffix = secrets.token_hex(4)
+
+    if prefix:
+        return f"{prefix}_{random_suffix}{extension}"
+    return f"{base_name}_{random_suffix}{extension}"

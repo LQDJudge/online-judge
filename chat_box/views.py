@@ -345,7 +345,7 @@ def user_online_status_ajax(request):
         try:
             user_id = int(user_id)
             user = Profile.objects.get(id=user_id)
-        except Exception as e:
+        except Exception:
             return HttpResponseBadRequest()
 
         is_online = get_user_online_status(user)

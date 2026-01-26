@@ -4,9 +4,9 @@ import hmac
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
-from django.db.models import Count, Min
+from django.db.models import Count
 from django.db.models.fields import DateField
-from django.db.models.functions import Cast, ExtractYear
+from django.db.models.functions import Cast
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _

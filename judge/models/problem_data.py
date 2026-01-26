@@ -1,4 +1,3 @@
-import errno
 import os
 from zipfile import BadZipFile, ZipFile
 
@@ -6,7 +5,6 @@ from django.core.validators import FileExtensionValidator
 from django.core.cache import cache
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ValidationError
 
 from judge.utils.problem_data import ProblemDataStorage, get_file_cachekey
 

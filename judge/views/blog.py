@@ -1,10 +1,7 @@
-from django.db.models import Count, Max, Q, Case, When, Prefetch
+from django.db.models import Max
 from django.http import Http404
-from django.urls import reverse
 from django.utils import timezone
-from django.utils.functional import lazy
 from django.utils.translation import gettext as _
-from django.views.generic import ListView
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic import View
@@ -14,11 +11,9 @@ from judge.views.pagevote import PageVoteDetailView
 from judge.views.bookmark import BookMarkDetailView
 from judge.models import (
     BlogPost,
-    Comment,
 )
 from judge.utils.views import TitleMixin
-from judge.views.feed import FeedView, HomeFeedView
-from judge.models.comment import get_visible_comment_count
+from judge.views.feed import HomeFeedView
 
 
 class PostList(HomeFeedView):

@@ -17,8 +17,6 @@ from judge.models import (
     Submission,
     BestSubmission,
     Quiz,
-    QuizQuestion,
-    QuizQuestionAssignment,
     CourseLessonQuiz,
     QuizAttempt,
     BestQuizAttempt,
@@ -29,7 +27,6 @@ from judge.utils.course_prerequisites import (
     get_lessons_by_order,
     update_lesson_unlock_states,
     get_lesson_lock_status,
-    propagate_unlock_from_lesson,
     update_lesson_grade,
 )
 

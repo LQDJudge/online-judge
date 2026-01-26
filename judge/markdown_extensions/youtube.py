@@ -1,4 +1,3 @@
-import markdown
 from markdown.inlinepatterns import InlineProcessor
 from markdown.extensions import Extension
 import xml.etree.ElementTree as etree

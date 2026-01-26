@@ -441,7 +441,7 @@ class CacheHandler(BaseCache):
                 else:
                     l0_cache.stats.record_primary_miss(duration)
                     return default
-            except Exception as e:
+            except Exception:
                 l0_cache.stats.record_primary_error()
                 return default
         else:
@@ -467,7 +467,7 @@ class CacheHandler(BaseCache):
                 primary_cache.set(key, value, timeout, **kwargs)
                 duration = time.perf_counter() - start_time
                 l0_cache.stats.record_primary_set(duration)
-            except Exception as e:
+            except Exception:
                 l0_cache.stats.record_primary_error()
                 raise  # Re-raise since set operations should fail if primary cache fails
         else:
@@ -487,7 +487,7 @@ class CacheHandler(BaseCache):
             try:
                 primary_cache.delete(key, **kwargs)
                 l0_cache.stats.record_primary_delete()
-            except Exception as e:
+            except Exception:
                 l0_cache.stats.record_primary_error()
                 raise  # Re-raise since delete operations should fail if primary cache fails
         else:
@@ -511,7 +511,7 @@ class CacheHandler(BaseCache):
                 duration = time.perf_counter() - start_time
                 l0_cache.stats.record_primary_set(duration)
                 return result
-            except Exception as e:
+            except Exception:
                 l0_cache.stats.record_primary_error()
                 raise  # Re-raise since add operations should fail if primary cache fails
         else:
@@ -563,7 +563,7 @@ class CacheHandler(BaseCache):
                         l0_cache.set(key, value)
                 results.update(cache_results)
                 return results
-            except Exception as e:
+            except Exception:
                 l0_cache.stats.record_primary_error()
                 return results
         else:
@@ -593,7 +593,7 @@ class CacheHandler(BaseCache):
                 duration = time.perf_counter() - start_time
                 for _ in data:
                     l0_cache.stats.record_primary_set(duration / len(data))
-            except Exception as e:
+            except Exception:
                 l0_cache.stats.record_primary_error()
                 raise
         else:
@@ -613,7 +613,7 @@ class CacheHandler(BaseCache):
                 primary_cache.delete_many(keys, **kwargs)
                 for _ in keys:
                     l0_cache.stats.record_primary_delete()
-            except Exception as e:
+            except Exception:
                 l0_cache.stats.record_primary_error()
                 raise
         else:
@@ -631,7 +631,7 @@ class CacheHandler(BaseCache):
             try:
                 primary_cache.clear(**kwargs)
                 l0_cache.stats.record_primary_delete()
-            except Exception as e:
+            except Exception:
                 l0_cache.stats.record_primary_error()
                 raise
         else:
@@ -654,7 +654,7 @@ class CacheHandler(BaseCache):
                 )  # Treat incr as a set operation
                 l0_cache.set(key, result)
                 return result
-            except Exception as e:
+            except Exception:
                 l0_cache.stats.record_primary_error()
                 raise
         else:
@@ -679,7 +679,7 @@ class CacheHandler(BaseCache):
                 )  # Treat decr as a set operation
                 l0_cache.set(key, result)
                 return result
-            except Exception as e:
+            except Exception:
                 l0_cache.stats.record_primary_error()
                 raise
         else:

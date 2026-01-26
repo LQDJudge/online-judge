@@ -253,10 +253,6 @@ DMOJ_SSL = 0
 # Directory to cache the PDF.
 # PROBLEM_PDF_CACHE = '/path/to/pdfcache'
 
-# Path to use for nginx's X-Accel-Redirect feature.
-# Should be an internal location mapped to the above directory.
-# PROBLEM_PDF_INTERNAL = '/pdfcache'
-
 # Path to a PhantomJS executable.
 # PHANTOMJS = '/usr/local/bin/phantomjs'
 

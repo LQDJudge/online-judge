@@ -10,11 +10,9 @@ from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.contrib.auth.hashers import check_password
 from django.http import Http404
 from django.utils.encoding import force_bytes
 
-from urllib.parse import urlencode, urlunparse, urlparse
 
 from judge.models import Profile, EmailChangeRequest
 from judge.utils.email_render import render_email_message

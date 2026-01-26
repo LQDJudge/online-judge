@@ -1,4 +1,4 @@
-from django.utils.html import escape, mark_safe
+from django.utils.html import mark_safe
 from judge.markdown import markdown
 
 __all__ = ["highlight_code"]

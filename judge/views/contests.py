@@ -5,7 +5,6 @@ from calendar import Calendar, SUNDAY
 from collections import defaultdict, namedtuple
 from datetime import date, datetime, time, timedelta
 from functools import partial
-from itertools import chain
 from operator import attrgetter, itemgetter
 
 from django import forms
@@ -17,31 +16,26 @@ from django.db import IntegrityError
 from django.db.models import (
     Case,
     Count,
-    F,
     FloatField,
     IntegerField,
     Max,
     Min,
     Q,
-    Sum,
     Value,
     When,
 )
-from django.dispatch import receiver
 from django.db.models.expressions import CombinedExpression
 from django.http import (
     Http404,
     HttpResponse,
-    HttpResponseBadRequest,
     HttpResponseRedirect,
     JsonResponse,
     HttpResponseNotAllowed,
 )
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import date as date_filter
-from django.template.loader import get_template
 from django.urls import reverse, reverse_lazy
-from django.utils import timezone, translation
+from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.html import format_html, escape
 from django.utils.safestring import mark_safe
@@ -55,7 +49,6 @@ from django.views.generic.detail import (
     View,
 )
 
-from judge import event_poster as event
 from judge.views.comment import CommentableMixin
 from judge.forms import ContestCloneForm
 from judge.models import (
@@ -90,7 +83,6 @@ from judge.utils.views import (
     TitleMixin,
     generic_message,
 )
-from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.widgets import HeavyPreviewPageDownWidget
 from judge.views.pagevote import PageVoteDetailView
 from judge.views.bookmark import BookMarkDetailView

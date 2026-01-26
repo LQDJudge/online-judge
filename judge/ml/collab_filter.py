@@ -2,7 +2,6 @@ import numpy as np
 import os
 import hashlib
 
-from django.core.cache import cache
 from django.conf import settings
 
 from judge.caching import cache_wrapper

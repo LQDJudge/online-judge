@@ -2,7 +2,7 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
 
-from judge.models import Organization, Profile, Language, BlogPost, Notification
+from judge.models import Organization, Profile, Language, Notification
 
 
 class OrganizationBlogNotificationTestCase(TestCase):

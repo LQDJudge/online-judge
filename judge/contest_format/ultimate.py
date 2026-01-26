@@ -2,7 +2,7 @@ from django.utils.translation import gettext_lazy
 
 from judge.contest_format.ioi import IOIContestFormat
 from judge.contest_format.registry import register_contest_format
-from django.db.models import Min, OuterRef, Subquery
+from django.db.models import OuterRef, Subquery
 
 # This contest format only counts last submission for each problem.
 

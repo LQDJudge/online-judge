@@ -5,11 +5,10 @@ from django.http import (
     HttpResponseBadRequest,
     HttpResponseForbidden,
 )
-from django.utils.translation import gettext as _
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
-from django.views.generic import View, ListView
+from django.views.generic import View
 
 from judge.models.bookmark import BookMark
 

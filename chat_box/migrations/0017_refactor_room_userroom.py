@@ -1,7 +1,6 @@
 # Generated migration for refactoring Room model to use UserRoom
 
 from django.db import migrations, models
-import django.db.models.deletion
 
 
 def migrate_existing_rooms(apps, schema_editor):

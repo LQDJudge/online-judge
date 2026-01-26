@@ -18,7 +18,6 @@ from judge.utils.ratelimit import (
     check_multiple_rates_sliding_counter,
     create_rate_limit_response,
     ratelimit,
-    RateLimitExceeded,
 )
 
 

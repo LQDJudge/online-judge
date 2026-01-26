@@ -10,7 +10,6 @@ from typing import Tuple
 
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import gettext as _
 
 
 def grade_multiple_choice(answer) -> Tuple[float, bool]:

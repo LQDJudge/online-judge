@@ -3,7 +3,7 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
-from django.db.models import Max, F, Sum, Q
+from django.db.models import Max, Sum, Q
 from django.forms import (
     inlineformset_factory,
     ModelForm,
@@ -796,7 +796,6 @@ class CourseDetail(CourseDetailMixin, DetailView):
         from judge.utils.course_prerequisites import (
             get_lesson_lock_status,
             get_lesson_prerequisites_info,
-            get_lessons_by_order,
         )
 
         # Teachers/Assistants bypass lock
@@ -809,7 +808,6 @@ class CourseDetail(CourseDetailMixin, DetailView):
             )
             # Get prerequisites info for displaying what's needed
             prereq_info_by_order = get_lesson_prerequisites_info(self.course)
-            lessons_by_order = get_lessons_by_order(self.course)
 
             # Convert to lesson_id based dict for template
             lesson_prerequisites_info = {}
@@ -1941,7 +1939,7 @@ class AddCourseContestForm(forms.ModelForm):
         # Auto-assign next order
         max_order = (
             CourseContest.objects.filter(course=course).aggregate(
-                max_order=models.Max("order")
+                max_order=Max("order")
             )["max_order"]
             or 0
         )
@@ -2492,8 +2490,6 @@ class CourseRemoveMember(CourseAdminMixin, View):
 
         try:
             course_role = CourseRole.objects.get(id=member_id, course=self.course)
-
-            current_user_role = self.get_user_role_in_course()
             target_role = course_role.role
 
             # Check permissions for member removal
@@ -2538,8 +2534,6 @@ class CourseUpdateMemberRole(CourseAdminMixin, View):
 
         try:
             course_role = CourseRole.objects.get(id=member_id, course=self.course)
-
-            current_user_role = self.get_user_role_in_course()
             old_role = course_role.role
 
             # Check permissions for role changes
@@ -2687,7 +2681,6 @@ class CourseEditForm(forms.ModelForm):
 
         # Check if user is superuser to determine field visibility
         is_superuser = self.request and self.request.user.is_superuser
-        is_teacher = self.user_role == RoleInCourse.TEACHER or is_superuser
         is_assistant = self.user_role == RoleInCourse.ASSISTANT
 
         # Handle organizations field (superuser only)

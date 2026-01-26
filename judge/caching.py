@@ -2,7 +2,6 @@ from django.core.cache import cache
 from django.db.models.query import QuerySet
 from django.core.handlers.wsgi import WSGIRequest
 from django.db import models
-from django.db.models.query_utils import DeferredAttribute
 
 import xxhash
 from inspect import signature
@@ -216,7 +215,7 @@ class CacheableModel(models.Model):
                             getter_method = super().__getattribute__(getter_method_name)
                             if callable(getter_method):
                                 return getter_method()
-        except Exception as e:
+        except Exception:
             pass
 
         return super().__getattribute__(name)

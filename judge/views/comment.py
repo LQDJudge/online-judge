@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from itertools import chain
 import json
 from typing import Optional
 
@@ -11,7 +10,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError
-from django.db.models import Count, F, FilteredRelation, Q, Case, When, Max, Prefetch
+from django.db.models import Count, F, FilteredRelation, Q
 from django.db.models.expressions import Value
 from django.db.models.functions import Coalesce
 from django.forms import ModelForm
@@ -21,20 +20,16 @@ from django.http import (
     HttpResponseBadRequest,
     HttpResponseForbidden,
     HttpResponseNotFound,
-    HttpResponseRedirect,
 )
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
-from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django.utils.datastructures import MultiValueDictKeyError
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, UpdateView
-from django.views.generic.base import TemplateResponseMixin
-from django.views.generic.detail import SingleObjectMixin
 
 from reversion import revisions
-from reversion.models import Revision, Version
+from reversion.models import Version
 
 from judge.jinja2.reference import get_user_from_text
 from judge.models import (
@@ -54,7 +49,7 @@ from judge.models.comment import (
 from judge.utils.views import TitleMixin
 from judge.utils.ratelimit import ratelimit
 from judge.widgets import HeavyPreviewPageDownWidget
-from judge.views.feed import FeedView, HomeFeedView
+from judge.views.feed import HomeFeedView
 
 __all__ = [
     "upvote_comment",

@@ -6,7 +6,7 @@ from datetime import datetime
 from urllib.parse import quote
 
 from django.conf import settings
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect
 from django.urls import Resolver404, resolve, reverse
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist

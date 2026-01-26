@@ -3,22 +3,19 @@ import json
 
 from django import forms
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Q, Max, Count, Avg
+from django.db.models import Q, Max, Avg
 from django.http import (
     Http404,
     HttpResponse,
-    HttpResponseBadRequest,
     HttpResponseRedirect,
     JsonResponse,
 )
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _, gettext_lazy
 from django.views.generic import (
     ListView,
@@ -28,8 +25,6 @@ from django.views.generic import (
     UpdateView,
     DeleteView,
 )
-from django.views.generic.detail import SingleObjectMixin
-from django.views.generic.edit import FormView
 
 from judge.widgets import HeavySelect2MultipleWidget, HeavyPreviewPageDownWidget
 
@@ -49,7 +44,6 @@ from judge.models.quiz import QuizQuestionType
 from judge.models.course import CourseRole, RoleInCourse
 from judge.utils.views import (
     TitleMixin,
-    generic_message,
     DiggPaginatorMixin,
     paginate_query_context,
 )
@@ -2288,7 +2282,6 @@ class AnswerGrade(LoginRequiredMixin, QuizEditorMixin, View):
 
         try:
             points = float(data.get("points", 0))
-            feedback = data.get("feedback", "")
 
             answer.points = points
             answer.is_correct = points > 0
@@ -2417,7 +2410,6 @@ class QuizGradesExportCSV(LoginRequiredMixin, QuizObjectEditorMixin, View):
             "order", "id"
         )
         questions = [a.question for a in assignments]
-        question_points = {a.question_id: a.points for a in assignments}
 
         # Build header row
         header = [

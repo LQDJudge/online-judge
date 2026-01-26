@@ -1,9 +1,9 @@
 from django.urls import reverse
 from django.utils.formats import date_format
-from django.utils.translation import gettext as _, gettext_lazy
+from django.utils.translation import gettext as _
 
 from judge.caching import cache_wrapper
-from judge.models import Profile, Rating
+from judge.models import Rating
 
 
 @cache_wrapper(prefix="gcr2")

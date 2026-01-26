@@ -1,13 +1,8 @@
-from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, View
 from django.utils.translation import gettext as _
-from django.utils.timezone import now
-from django.http import Http404, JsonResponse, HttpResponseRedirect
-from django.urls import reverse
-from django.contrib import messages
-from django.db.models import Q
+from django.http import Http404, JsonResponse
 
-from judge.models import Notification, NotificationProfile, Profile
+from judge.models import Notification, Profile
 from judge.models.notification import unseen_notifications_count, NotificationCategory
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 

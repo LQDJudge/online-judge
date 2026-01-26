@@ -1,5 +1,4 @@
 from django import forms
-from django.templatetags.static import static
 from django.utils.html import format_html
 from django.forms.utils import flatatt
 from django.utils.dateparse import parse_datetime, parse_date
