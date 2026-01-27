@@ -38,7 +38,6 @@ from judge.utils.ratelimit import ratelimit
 from judge.views.comment.forms import CommentForm
 from judge.views.comment.mixins import is_comment_locked
 from judge.views.comment.utils import (
-    annotate_comments_for_display,
     get_html_link_notification,
     add_mention_notifications,
 )
@@ -321,9 +320,10 @@ def post_comment(request):
         comment.content_type_id, comment.object_id
     )
 
-    comment = annotate_comments_for_display(
-        Comment.objects.filter(id=comment.id), request.user
-    ).first()
+    # Refresh comment to get cached properties
+    comment = Comment(id=comment.id)
+    # Set vote_score for template (new comment has no votes yet)
+    comment.vote_score = 0
 
     return render(
         request,

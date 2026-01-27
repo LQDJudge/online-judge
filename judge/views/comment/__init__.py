@@ -30,7 +30,6 @@ from judge.views.comment.mixins import (
     is_comment_locked,
 )
 from judge.views.comment.utils import (
-    annotate_comments_for_display,
     add_mention_notifications,
     parse_sort_params,
     parse_comment_params,
@@ -71,7 +70,6 @@ __all__ = [
     "CommentableMixin",
     "is_comment_locked",
     # Utils
-    "annotate_comments_for_display",
     "parse_sort_params",
     "parse_comment_params",
     "apply_sorting",

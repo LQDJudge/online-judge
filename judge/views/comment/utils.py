@@ -1,9 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from django.db.models import Count, F, FilteredRelation, Q
-from django.db.models.expressions import Value
-from django.db.models.functions import Coalesce
 from django.http import HttpResponseBadRequest
 from django.utils.datastructures import MultiValueDictKeyError
 
@@ -14,23 +11,6 @@ from judge.jinja2.reference import get_user_from_text
 
 DEFAULT_COMMENT_LIMIT = 10
 COMPACT_COMMENT_LIMIT = 3
-
-
-def annotate_comments_for_display(queryset, user):
-    """
-    Apply standard display annotations to a comment queryset.
-    Adds: count_replies, vote_score (if authenticated)
-    """
-    queryset = queryset.annotate(
-        count_replies=Count("replies", distinct=True, filter=Q(replies__hidden=False)),
-    )
-    if user.is_authenticated:
-        queryset = queryset.annotate(
-            my_vote=FilteredRelation(
-                "votes", condition=Q(votes__voter_id=user.profile.id)
-            ),
-        ).annotate(vote_score=Coalesce(F("my_vote__score"), Value(0)))
-    return queryset
 
 
 def parse_sort_params(request, default_order="desc"):
