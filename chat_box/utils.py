@@ -37,7 +37,7 @@ def encrypt_channel(channel):
     )
 
 
-@cache_wrapper(prefix="gub")
+@cache_wrapper(prefix="gub2")
 def get_unread_boxes(profile):
     ignored_rooms = Ignore.get_ignored_room_ids(profile)
     unread_boxes = (

@@ -161,6 +161,15 @@ def delete_message(request):
         # Dirty the room cache to update last_message in sidebar
         Room.dirty_cache(room_id)
 
+        # Decrement unread_count for users who haven't seen this message yet
+        user_rooms = UserRoom.objects.filter(
+            room_id=room_id, last_seen__lt=mess.time, unread_count__gt=0
+        ).exclude(user=mess.author)
+        for user_room in user_rooms:
+            user_room.unread_count = max(0, user_room.unread_count - 1)
+            user_room.save(update_fields=["unread_count"])
+            get_unread_boxes.dirty(user_room.user)
+
     return JsonResponse(ret)
 
 
@@ -557,6 +566,7 @@ def toggle_ignore(request, **kwargs):
         return HttpResponseBadRequest()
 
     Ignore.toggle_ignore(request.profile, other_user)
+    get_unread_boxes.dirty(request.profile)
     next_url = request.GET.get("next", "/")
     return HttpResponseRedirect(next_url)
 
