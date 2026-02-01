@@ -107,9 +107,7 @@
             data.find("#" + id).removeClass("closed").addClass("open");
             data.find("#" + id + "-output").show();
           });
-          list.empty().html(data).find('.toggle').each(function () {
-            register_toggle($(this));
-          });
+          list.empty().html(data);
           setup_icons();
           setTimeout(function () {
             blocked = false;

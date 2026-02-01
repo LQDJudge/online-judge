@@ -71,9 +71,6 @@
       if (typeof renderKatex === 'function') {
         renderKatex();
       }
-      if (typeof populateCopyButton === 'function') {
-        populateCopyButton();
-      }
       this.mergeConsecutiveMessages();
     },
 
@@ -771,9 +768,6 @@
             return;
           }
           ChatElements.chatOnlineList.html(data);
-          ChatElements.chatOnlineList.find('.toggle').each(function() {
-            register_toggle($(this));
-          });
           ChatUI.highlightSelectedRoom();
         })
         .fail(function() {

@@ -29,26 +29,22 @@ if (!String.prototype.endsWith) {
 }
 
 
-function register_toggle(link) {
-    link.click(function () {
-        var toggled = link.next('.toggled');
+function register_all_toggles() {
+    if (window._toggleInitialized) return;
+    window._toggleInitialized = true;
+
+    $(document).on('click', '.toggle', function() {
+        var $link = $(this);
+        var toggled = $link.next('.toggled');
         if (toggled.is(':visible')) {
             toggled.hide(400);
-            link.removeClass('open');
-            link.addClass('closed');
+            $link.removeClass('open').addClass('closed');
         } else {
             toggled.show(400);
-            link.addClass('open');
-            link.removeClass('closed');
+            $link.addClass('open').removeClass('closed');
         }
     });
 }
-
-function register_all_toggles() {
-    $('.toggle').each(function () {
-        register_toggle($(this));
-    });
-};
 
 function featureTest(property, value, noPrefixes) {
     var prop = property + ':',
@@ -283,41 +279,47 @@ function registerPopper($trigger, $dropdown) {
 }
 
 function populateCopyButton() {
+    if (window._copyButtonInitialized) return;
+    window._copyButtonInitialized = true;
+
     // Copy functionality for filename headers (only on copy button click)
-    $('.highlight span.filename').off('click.copy').on('click.copy', function(e) {
+    $(document).on('click.copy', '.highlight span.filename', function(e) {
         var rect = this.getBoundingClientRect();
         var clickX = e.clientX - rect.left;
         var clickY = e.clientY - rect.top;
-        
+
         // Check if click is on the copy button area (right side of filename)
         var isCopyButtonArea = (clickX > rect.width - 60 && clickY > rect.height * 0.25 && clickY < rect.height * 0.75);
-        
+
         if (isCopyButtonArea) {
             var codeElement = $(this).next('pre').find('code');
             if (codeElement.length === 0) {
                 codeElement = $(this).next('pre');
             }
-            
+
             var textToCopy = codeElement.text();
             copyToClipboard(textToCopy, this);
         }
     });
-    
+
     // Copy functionality for code blocks without filename (click on copy button area)
-    $('.content-description pre').not('.highlight span.filename + pre').off('click.copy').on('click.copy', function(e) {
+    $(document).on('click.copy', '.content-description pre', function(e) {
+        // Skip if this pre follows a filename header (handled above)
+        if ($(this).prev('.filename').length > 0) return;
+
         var rect = this.getBoundingClientRect();
         var clickX = e.clientX - rect.left;
         var clickY = e.clientY - rect.top;
-        
+
         // Check if click is on the copy button (small area in top-right)
         var isButtonArea = (clickX > rect.width - 40 && clickY < 32);
-        
+
         if (isButtonArea) {
             var codeElement = $(this).find('code');
             if (codeElement.length === 0) {
                 codeElement = $(this);
             }
-            
+
             var textToCopy = codeElement.text();
             copyToClipboard(textToCopy, this);
         }
