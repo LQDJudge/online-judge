@@ -2112,6 +2112,8 @@ class EditCourseContest(CourseEditableMixin, FormView):
 
     def dispatch(self, request, *args, **kwargs):
         self.contest = get_object_or_404(Contest, key=self.kwargs["contest"])
+        # Store original key for URL generation in case form modifies the instance
+        self.original_contest_key = self.contest.key
         res = super().dispatch(request, *args, **kwargs)
         if not self.contest.is_in_course:
             raise Http404()
@@ -2207,11 +2209,13 @@ class EditCourseContest(CourseEditableMixin, FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = self.get_title()
+        # Use original key for URL in case form validation modified the instance
+        contest_url = reverse("contest_view", args=[self.original_contest_key])
         context["content_title"] = mark_safe(
             _("Edit <a href='%(url)s'>%(contest_name)s</a>")
             % {
                 "contest_name": self.contest.name,
-                "url": self.contest.get_absolute_url(),
+                "url": contest_url,
             }
         )
         if "problems_form" not in context:
