@@ -266,21 +266,29 @@ def post_message(request):
         # Dirty the user room list cache for all users in the room
         for user in room.get_users():
             get_user_room_list.dirty(user.id)
-            event.post(
-                encrypt_channel("chat_" + str(user.id)),
-                {
-                    "type": "private",
-                    "author_id": request.profile.id,
-                    "message": new_message.id,
-                    "room": room.id,
-                    "tmp_id": request.POST.get("tmp_id"),
-                },
-            )
+
+            event_data = {
+                "type": "private",
+                "author_id": request.profile.id,
+                "message": new_message.id,
+                "room": room.id,
+                "tmp_id": request.POST.get("tmp_id"),
+            }
+
             if user.id != request.profile.id:
+                # Update unread count first, then include in event
                 UserRoom.objects.filter(user=user, room=room).update(
                     unread_count=F("unread_count") + 1
                 )
                 get_unread_boxes.dirty(user)
+                # Get the new unread count for this room
+                user_room = UserRoom.objects.filter(user=user, room=room).first()
+                if user_room:
+                    event_data["unread_count"] = user_room.unread_count
+                    # Include other user's ID for badge update
+                    event_data["other_user_id"] = request.profile.id
+
+            event.post(encrypt_channel("chat_" + str(user.id)), event_data)
 
         if not get_first_msg_id(room.id):
             get_first_msg_id.dirty(room.id)
@@ -520,7 +528,7 @@ def get_or_create_room(request):
 
     if not other_user or not user:
         return HttpResponseBadRequest()
-    # TODO: each user can only create <= 300 rooms
+
     room = Room.get_or_create_room(other_user, user)
 
     room_url = reverse("chat", kwargs={"room_id": room.id})

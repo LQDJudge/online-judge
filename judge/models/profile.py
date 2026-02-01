@@ -451,13 +451,13 @@ class Profile(CacheableModel):
 
     @classmethod
     def prefetch_cache_last_access(cls, *ids):
-        _get_profile_last_access.batch([(id,) for id in ids])
+        get_profile_last_access.batch([(id,) for id in ids])
 
     @classmethod
     def dirty_cache(cls, *ids):
         id_list = [(id,) for id in ids]
         _get_profile.dirty_multi(id_list)
-        _get_profile_last_access.dirty_multi(id_list)
+        get_profile_last_access.dirty_multi(id_list)
         _get_about.dirty_multi(id_list)
 
     @cached_property
@@ -519,7 +519,7 @@ class Profile(CacheableModel):
         return self.get_cached_value("performance_points")
 
     def get_last_access(self):
-        return _get_profile_last_access(self.id)
+        return get_profile_last_access(self.id)
 
     def get_num_unseen_notifications(self):
         from judge.models.notification import unseen_notifications_count
@@ -926,7 +926,7 @@ def _get_profile_last_access_batch(args_list):
 @cache_wrapper(
     prefix="Pgla", expected_type=datetime, batch_fn=_get_profile_last_access_batch
 )
-def _get_profile_last_access(profile_id):
+def get_profile_last_access(profile_id):
     results = _get_profile_last_access_batch([(profile_id,)])
     return results[0]
 

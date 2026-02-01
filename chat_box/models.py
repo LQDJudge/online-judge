@@ -86,6 +86,8 @@ class Room(CacheableModel):
         """Prefetch room cache for multiple rooms"""
         cls.get_cached_instances(*room_ids)
 
+    MAX_ROOMS_PER_USER = 500
+
     @classmethod
     def get_or_create_room(cls, user_one, user_two):
         """Get or create a room between two users"""
@@ -93,6 +95,10 @@ class Room(CacheableModel):
 
         if room_id:
             return cls(id=room_id)
+
+        # Clean up old rooms BEFORE creating new one
+        # (new rooms have NULL last_msg_id which is treated as oldest)
+        cls.cleanup_old_rooms(user_one)
 
         # No existing room found, create new room
         room = cls.objects.create(last_msg_id=None)
@@ -109,6 +115,48 @@ class Room(CacheableModel):
         room.save()
 
         return room
+
+    @classmethod
+    def cleanup_old_rooms(cls, user):
+        """Delete oldest rooms if user has >= MAX_ROOMS_PER_USER (to make room for new one)"""
+        # Quick check using cached room list first
+        cached_room_ids = get_user_room_list(user.id)
+        if len(cached_room_ids) < cls.MAX_ROOMS_PER_USER:
+            return
+
+        # Fetch fresh from DB to ensure correct ordering (NULL last_msg_id = oldest)
+        room_ids = list(
+            UserRoom.objects.filter(user=user)
+            .exclude(room__isnull=True)
+            .select_related("room")
+            .order_by("-room__last_msg_id")
+            .values_list("room_id", flat=True)
+        )
+
+        if len(room_ids) < cls.MAX_ROOMS_PER_USER:
+            return
+
+        # Get rooms to delete (oldest ones, keep MAX - 1 to make room for new one)
+        rooms_to_delete = room_ids[cls.MAX_ROOMS_PER_USER - 1 :]
+
+        # Get other users in these rooms to dirty their caches
+        other_user_ids = set(
+            UserRoom.objects.filter(room_id__in=rooms_to_delete)
+            .exclude(user=user)
+            .values_list("user_id", flat=True)
+        )
+
+        # Delete the rooms (cascade will delete UserRoom and Message entries)
+        cls.objects.filter(id__in=rooms_to_delete).delete()
+
+        # Dirty caches
+        for room_id in rooms_to_delete:
+            cls.dirty_cache(room_id)
+
+        for user_id in other_user_ids:
+            get_user_room_list.dirty(user_id)
+
+        get_user_room_list.dirty(user.id)
 
 
 class Message(models.Model):

@@ -1,10 +1,9 @@
-<div class="has_next" style="display: none;" value="{{1 if has_next else 0}}"></div>
+<div class="has_next" data-value="{{1 if has_next else 0}}" value="{{1 if has_next else 0}}"></div>
 {% if object_list %}
-  <div style="display: none" id="num_pages">{{num_pages}}</div>
+  <div class="num-pages" id="num_pages">{{num_pages}}</div>
   {% for message in object_list | reverse%}
     {% include "chat/message.html" %}
   {% endfor %}
 {% else %}
-  <center id="empty_msg">{{_('You are connect now. Say something to start the conversation.')}}</center>
+  <div class="chat-empty-message" id="empty_msg">{{_('You are connected now. Say something to start the conversation.')}}</div>
 {% endif %}
-

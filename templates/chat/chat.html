@@ -3,65 +3,67 @@
 {% block title_row %}{% endblock %}
 {% block title_ruler %}{% endblock %}
 {% block title %} {{_('Chat Box')}} {% endblock %}
+
 {% block js_media %}
   {% include "event-load.html" %}
   <script type="module" src="https://unpkg.com/emoji-picker-element@1"></script>
-  {% compress js %}
-    {% include "chat/chat_js.html" %}
-  {% endcompress %}
 
   <script type="text/javascript">
-    window.limit_time = 24;
-    window.room_id = "{{room if room else ''}}";
-    window.unread_message = 0;
-    window.other_user_id = "{{other_user.id if other_user else ''}}";
-    window.lock = false;
-    window.lock_click_space = false;
-    window.pushed_messages = new Set();
-
-    window.load_dynamic_update = function (last_msg) {
-      var receiver = new EventReceiver(
-        "{{ EVENT_DAEMON_LOCATION }}",
-        ['{{chat_lobby_channel}}', '{{chat_channel}}'], last_msg, function (message) {
-          if (window.pushed_messages.has(message.message)) {
-            return;
-          }
-          window.pushed_messages.add(message.message);
-          var room = (message.type == 'lobby') ? '' : message.room;
-          if (message.author_id == {{request.profile.id}}) {
-            check_new_message(message.message, message.tmp_id, room);
-          }
-          else {
-            add_new_message(message.message, room, false);
-          }
-        }
-      );
-
-      return receiver;
-    }
-    function message_template() {
-      return`
-{% with message=message_template %}
-  {% include "chat/message.html" %}
-{% endwith %}  
-    `};
-    $(function() {
-      load_dynamic_update({{last_msg}});
-    });
+    // Chat Configuration - passed to static chat.js
+    window.ChatConfig = {
+      urls: {
+        chat: "{{ url('chat', '') }}",
+        postMessage: "{{ url('post_chat_message') }}",
+        deleteMessage: "{{ url('delete_chat_message') }}",
+        muteMessage: "{{ url('mute_chat_message') }}",
+        messageAjax: "{{ url('chat_message_ajax') }}",
+        onlineStatus: "{{ url('online_status_ajax') }}",
+        userOnlineStatus: "{{ url('user_online_status_ajax') }}",
+        getOrCreateRoom: "{{ url('get_or_create_room') }}",
+        updateLastSeen: "{{ url('update_last_seen') }}",
+        userSearch: "{{ url('chat_user_search_select2_ajax') }}"
+      },
+      user: {
+        id: {{ request.profile.id }},
+        isStaff: {{ request.user.is_staff|tojson }},
+        isMuted: {{ request.profile.mute|tojson }}
+      },
+      room: {
+        id: "{{ room if room else '' }}",
+        otherUserId: "{{ other_user.id if other_user else '' }}",
+        lastMsgId: {{ last_msg if last_msg else 'null' }}
+      },
+      event: {
+        daemonLocation: "{{ EVENT_DAEMON_LOCATION }}",
+        lobbyChannel: "{{ chat_lobby_channel }}",
+        chatChannel: "{{ chat_channel }}"
+      },
+      i18n: {
+        newMessages: "{{ _('New message(s)') }}",
+        newMessage: "{{ _('New message') }}",
+        chatBox: "{{ _('Chat Box') }}",
+        muteConfirm: "{{ _('Mute this user and delete all messages?') }}",
+        searchPlaceholder: "{{ _('Search by handle...') }}",
+        enterMessage: "{{ _('Enter your message') }}"
+      },
+      messageTemplate: `{% with message=message_template %}{% include "chat/message.html" %}{% endwith %}`
+    };
   </script>
 
+  {% compress js %}
+    <script type="text/javascript" src="{{ static('chat.js') }}"></script>
+  {% endcompress %}
 {% endblock js_media %}
 
 {% block media %}
-  {% include "chat/chat_css.html" %}
 {% endblock media %}
 
 {% block body %}
-  <div class="chat">
-    <div id="chat-container">
-      <div id="chat-online" class="chat-left-panel sidebox">
-        <div id="chat-online-content">
-          <div id="search-container">
+  <div class="chat chat-page">
+    <div id="chat-container" class="chat-container">
+      <div id="chat-online" class="chat-sidebar chat-left-panel sidebox">
+        <div id="chat-online-content" class="chat-sidebar-content">
+          <div id="search-container" class="chat-search-container">
             <form id="chat-search-form" name="form" action="{{ url('get_or_create_room') }}" method="post">
               {% csrf_token %}
               <input id="search-handle" type="text" name="search"
@@ -73,27 +75,28 @@
           </div>
         </div>
       </div>
-      <div id="chat-area" class="chat-right-panel">
-        <div id="chat-info">
+      <div id="chat-area" class="chat-area chat-right-panel">
+        <div id="chat-info" class="chat-header">
           {% include 'chat/user_online_status.html' %}
         </div>
-        <div id="chat-box">
-          <span id="loader" style="font-size: 2em; display: none;">
+        <div id="chat-box" class="chat-box">
+          <span id="loader" class="chat-loader">
             <i class="fa fa-spinner fa-pulse"></i>
           </span>
-          <ul id="chat-log">
+          <ul id="chat-log" class="chat-log">
             {% include 'chat/message_list.html' %}
           </ul>
         </div>
-        <div id="chat-input-container">
-          <textarea maxlength="{{5000 if room else 200}}" id="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
-          <div class="chat-input-icon" id="emoji-button" href="#" title="{{_('Emoji')}}"><i class="icofont-slightly-smile"></i>
+        <div id="chat-input-container" class="chat-input-area">
+          <textarea maxlength="{{5000 if room else 200}}" id="chat-input" class="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
+          <div class="chat-input-icon chat-emoji-btn" id="emoji-button" title="{{_('Emoji')}}">
+            <i class="icofont-slightly-smile"></i>
           </div>
-          <div class="chat-input-icon" id="chat-submit-button">
+          <div class="chat-input-icon chat-submit-btn" id="chat-submit-button">
             <i class="fa fa-arrow-right"></i>
           </div>
         </div>
-        <div class="tooltip" role="tooltip">
+        <div class="tooltip emoji-tooltip" role="tooltip">
           <emoji-picker></emoji-picker>
         </div>
       </div>

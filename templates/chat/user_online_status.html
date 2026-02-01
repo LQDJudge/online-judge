@@ -1,22 +1,22 @@
-<div onclick="hide_right_panel()" class="back-button">
+<div onclick="ChatApp.UI.hideRightPanel()" class="back-button">
   <i class="fa fa-arrow-left"></i>
 </div>
 {% if other_user %}
-  <div class="status-container" style="height: 3em; width: 3em;">
+  <div class="status-container chat-header-avatar">
     <img src="{{ gravatar(other_user.id, 135) }}" class="info-pic user-img">
-    <svg style="position:absolute; height:100%; width: 100%; transform: rotate(180deg);" >
-      <circle class="info-circle"
-              fill="{{'green' if other_online else 'red'}}"/>
-    </svg>
+    <span class="info-circle {{ 'online' if other_online else 'offline' }}"></span>
   </div>
 {% else %}
-  <div class="status-container" style="height: 3em;">
-    <img src="{{ static('icons/icon.svg') }}" class="info-pic" style="border-radius: 0px;">
+  <div class="status-container chat-header-avatar">
+    <img src="{{ static('icons/icon.svg') }}" class="info-pic lobby-icon">
   </div>
 {% endif %}
 <span class="info-name username">
   {% if other_user %}
     {{link_user(other_user)}}
+    {% if not other_online %}
+      <span class="active-span-mobile">{{ relative_time(other_user.last_access, abs=_('Online {time}'), rel=_('Online {time}'), format=_('d/m')) }}</span>
+    {% endif %}
   {% else%}
     {{ _('Lobby') }}
   {% endif %}
@@ -27,12 +27,12 @@
 {% endif %}
 
 {% if other_user %}
-  <div style="margin-right: 0.3em; position: relative;">
+  <div class="setting-wrapper">
     <div class="control-button small user-setting-button">
       <i class="fa fa-ellipsis-h"></i>
     </div>
     <div class="setting-content">
-      <a href="{{url('toggle_ignore', other_user.id)}}" class=" {{'green' if is_ignored else 'red'}}">
+      <a href="{{url('toggle_ignore', other_user.id)}}" class="{{'green' if is_ignored else 'red'}}">
         {% if is_ignored %}
           {{_('Unignore')}}
         {% else %}

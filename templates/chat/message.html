@@ -1,29 +1,26 @@
-<li class="message" id="message-{{ message.id }}" message-id="{{ message.id }}">
-  <img loading="lazy" src="{{ gravatar(message.author_id, 135) }}" class="profile-pic user-img">
-  <div class="body-message" author-id="{{ message.author_id }}">
-    <div class="user-time">
+<li class="message" id="message-{{ message.id }}" data-id="{{ message.id }}" data-author="{{ message.author_id }}">
+  <div class="message-avatar">
+    <img loading="lazy" src="{{ gravatar(message.author_id, 135) }}" class="profile-pic user-img">
+  </div>
+  <div class="message-content-wrapper">
+    <div class="message-header user-time">
       {{link_user(message.author_id)}}
-      <span class="time">
+      <span class="message-time time">
         {{ relative_time(message.time, abs=_('{time}'), rel=_('{time}'), format=_('g:i a d/m/Y')) }}
       </span>
     </div>
-    <span class="content-message">
-      <div class="body-block" id="body-block-{{ message.id }}" title="{{ message.time|date('g:i a') }}">
+    <div class="message-bubble-wrapper body-block message-block" id="message-block-{{ message.id }}" title="{{ message.time|date('g:i a') }}">
+      <div class="message-text message-bubble {% if request.profile.id != message.author_id %}message-text-other message-bubble-other{% else %}message-text-myself message-bubble-self{% endif %}" id="message-text-{{ message.id }}">
+        {{message.body|markdown(lazy_load=False)|reference|str|safe }}
+      </div>
+      <div class="message-actions">
         {% if request.user.is_staff or request.profile.id == message.author_id %}
-          <a class="red chatbtn_remove_mess chat_remove" value="{{message.id}}" style="cursor: pointer;">
-            {{_('Delete')}}
-          </a>
+          <a class="chat_remove" value="{{message.id}}">{{_('Delete')}}</a>
         {% endif %}
         {% if request.user.is_staff and request.profile.id != message.author_id and not message.room_id %}
-          <a class="red chatbtn_remove_mess chat_mute" value="{{message.id}}" style="cursor: pointer;">
-            {{_('Mute')}}
-          </a>
+          <a class="chat_mute" value="{{message.id}}">{{_('Mute')}}</a>
         {% endif %}
-        <div class="message-text {% if request.profile.id != message.author_id %} message-text-other{% else %}message-text-myself{% endif %}" id="message-text-{{ message.id }}">
-          {{message.body|markdown(lazy_load=False)|reference|str|safe }}
-        </div>
       </div>
-    </span>
+    </div>
   </div>
-  <div class="clear"></div>
 </li>

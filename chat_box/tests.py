@@ -2,8 +2,9 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.utils import timezone
+from unittest.mock import patch
 
-from chat_box.models import Room, Message, UserRoom
+from chat_box.models import Room, Message, UserRoom, get_user_room_list
 from chat_box.utils import get_unread_boxes
 from judge.models import Profile
 
@@ -292,3 +293,165 @@ class UnreadBoxesCacheTest(TestCase):
         # Cache should be invalidated, unread count should be 0
         new_count = get_unread_boxes(self.profile2)
         self.assertEqual(new_count, 0)
+
+
+class CleanupOldRoomsTest(TestCase):
+    """Test that old rooms are cleaned up when user exceeds limit."""
+
+    def setUp(self):
+        cache.clear()
+
+        # Create main user
+        self.user1 = User.objects.create_user(
+            username="mainuser", password="password123"
+        )
+        self.profile1, _ = Profile.objects.get_or_create(user=self.user1)
+
+    def tearDown(self):
+        cache.clear()
+
+    def _create_other_user(self, index):
+        """Helper to create another user."""
+        user = User.objects.create_user(
+            username=f"otheruser{index}", password="password123"
+        )
+        profile, _ = Profile.objects.get_or_create(user=user)
+        return profile
+
+    def _create_room_with_message(self, user1, user2, msg_id_offset=0):
+        """Helper to create a room with a message."""
+        room = Room.objects.create(last_msg_id=None)
+        UserRoom.objects.create(room=room, user=user1, last_seen=timezone.now())
+        UserRoom.objects.create(room=room, user=user2, last_seen=timezone.now())
+
+        # Create a message to set last_msg_id
+        msg = Message.objects.create(
+            room=room, author=user1, body=f"Message {msg_id_offset}"
+        )
+        room.last_msg_id = msg.id
+        room.save()
+
+        Room.dirty_cache(room.id)
+        get_user_room_list.dirty(user1.id)
+        get_user_room_list.dirty(user2.id)
+
+        return room
+
+    @patch.object(Room, "MAX_ROOMS_PER_USER", 5)
+    def test_cleanup_deletes_oldest_rooms(self):
+        """When user exceeds limit, oldest rooms (by last_msg_id) are deleted."""
+        # Create 5 rooms (at the limit)
+        other_users = [self._create_other_user(i) for i in range(6)]
+        rooms = []
+        for i, other in enumerate(other_users[:5]):
+            room = self._create_room_with_message(self.profile1, other, i)
+            rooms.append(room)
+
+        # Verify we have 5 rooms
+        self.assertEqual(
+            UserRoom.objects.filter(user=self.profile1)
+            .exclude(room__isnull=True)
+            .count(),
+            5,
+        )
+
+        # Create one more room (exceeds limit)
+        new_room = Room.get_or_create_room(self.profile1, other_users[5])
+
+        # Should now have 5 rooms (oldest deleted)
+        self.assertEqual(
+            UserRoom.objects.filter(user=self.profile1)
+            .exclude(room__isnull=True)
+            .count(),
+            5,
+        )
+
+        # The oldest room (rooms[0]) should be deleted
+        self.assertFalse(Room.objects.filter(id=rooms[0].id).exists())
+
+        # The new room should exist
+        self.assertTrue(Room.objects.filter(id=new_room.id).exists())
+
+    @patch.object(Room, "MAX_ROOMS_PER_USER", 5)
+    def test_cleanup_does_not_run_under_limit(self):
+        """When user is under limit, no rooms are deleted."""
+        # Create 3 rooms (under limit)
+        other_users = [self._create_other_user(i) for i in range(3)]
+        rooms = []
+        for i, other in enumerate(other_users):
+            room = self._create_room_with_message(self.profile1, other, i)
+            rooms.append(room)
+
+        # Run cleanup
+        Room.cleanup_old_rooms(self.profile1)
+
+        # All rooms should still exist
+        self.assertEqual(
+            UserRoom.objects.filter(user=self.profile1)
+            .exclude(room__isnull=True)
+            .count(),
+            3,
+        )
+        for room in rooms:
+            self.assertTrue(Room.objects.filter(id=room.id).exists())
+
+    @patch.object(Room, "MAX_ROOMS_PER_USER", 3)
+    def test_cleanup_invalidates_other_user_caches(self):
+        """When a room is deleted, caches for both users are invalidated."""
+        # Create 4 rooms (over limit of 3)
+        other_users = [self._create_other_user(i) for i in range(4)]
+        for i, other in enumerate(other_users):
+            self._create_room_with_message(self.profile1, other, i)
+
+        # Prime the cache for the first other user
+        other_rooms_before = get_user_room_list(other_users[0].id)
+        self.assertEqual(len(other_rooms_before), 1)
+
+        # Run cleanup (should delete oldest room)
+        Room.cleanup_old_rooms(self.profile1)
+
+        # Cache should be invalidated - other user should have 0 rooms
+        other_rooms_after = get_user_room_list(other_users[0].id)
+        self.assertEqual(len(other_rooms_after), 0)
+
+    @patch.object(Room, "MAX_ROOMS_PER_USER", 3)
+    def test_cleanup_deletes_messages_with_room(self):
+        """When a room is deleted, its messages are also deleted (cascade)."""
+        # Create 4 rooms
+        other_users = [self._create_other_user(i) for i in range(4)]
+        rooms = []
+        for i, other in enumerate(other_users):
+            room = self._create_room_with_message(self.profile1, other, i)
+            rooms.append(room)
+
+        # Get message count for first room
+        first_room_msg_count = Message.objects.filter(room=rooms[0]).count()
+        self.assertEqual(first_room_msg_count, 1)
+
+        # Run cleanup
+        Room.cleanup_old_rooms(self.profile1)
+
+        # Messages from deleted room should be gone
+        self.assertEqual(Message.objects.filter(room=rooms[0]).count(), 0)
+
+    @patch.object(Room, "MAX_ROOMS_PER_USER", 5)
+    def test_get_or_create_existing_room_does_not_trigger_cleanup(self):
+        """Getting an existing room should not trigger cleanup."""
+        # Create 5 rooms (at limit)
+        other_users = [self._create_other_user(i) for i in range(5)]
+        rooms = []
+        for i, other in enumerate(other_users):
+            room = self._create_room_with_message(self.profile1, other, i)
+            rooms.append(room)
+
+        # Get existing room (should not trigger cleanup)
+        existing_room = Room.get_or_create_room(self.profile1, other_users[2])
+
+        # All 5 rooms should still exist
+        self.assertEqual(
+            UserRoom.objects.filter(user=self.profile1)
+            .exclude(room__isnull=True)
+            .count(),
+            5,
+        )
+        self.assertEqual(existing_room.id, rooms[2].id)

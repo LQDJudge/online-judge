@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.cache import cache
 
 from judge.models import Profile
+from judge.models.profile import get_profile_last_access
 
 
 class LogUserAccessMiddleware(object):
@@ -23,6 +24,10 @@ class LogUserAccessMiddleware(object):
             if request.META.get(settings.META_REMOTE_ADDRESS_KEY):
                 updates["ip"] = request.META.get(settings.META_REMOTE_ADDRESS_KEY)
             Profile.objects.filter(user_id=request.user.pk).update(**updates)
+            # Invalidate cached last_access
+            profile = getattr(request, "profile", None)
+            if profile:
+                get_profile_last_access.dirty(profile.id)
             cache.set(f"user_log_update_{request.user.id}", True, 120)
 
         return response
