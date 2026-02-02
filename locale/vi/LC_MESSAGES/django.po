@@ -1848,6 +1848,9 @@ msgstr "Mưa"
 msgid "Fireflies"
 msgstr "Đom đóm"
 
+msgid "Lunar New Year"
+msgstr "Tết Nguyên Đán"
+
 msgid "organization title"
 msgstr "tiêu đề nhóm"
 

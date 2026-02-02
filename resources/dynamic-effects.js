@@ -216,6 +216,136 @@
     });
   }
 
+  // Lunar New Year (Tết) effect - combined festive elements
+  // Includes: red envelopes, yellow blossoms (Hoa Mai), lanterns, sparkles, gold coins
+  function initLunarNewYear() {
+    loadTsParticles(function() {
+      if (typeof tsParticles !== 'undefined') {
+        createContainer();
+        // Create multiple particle systems for different behaviors
+        // Main falling particles (envelopes, blossoms, coins)
+        tsParticles.load('dynamic-effects-container', {
+          particles: {
+            number: { value: 30, density: { enable: true, area: 800 } },
+            color: { value: ['#ff0000', '#ffd700', '#ffcc00', '#ff4500'] },
+            shape: {
+              type: 'char',
+              options: {
+                char: {
+                  // Vietnamese Tết: red envelopes 🧧, Hoa Mai blossoms ❀✿, firecrackers 🧨, fan 🪭
+                  value: ['🧧', '❀', '✿', '🧨', '🪭', '❀', '✿', '🧧', '❀', '🧧'],
+                  font: 'Segoe UI Emoji',
+                  weight: 400
+                }
+              }
+            },
+            opacity: { value: { min: 0.6, max: 1 } },
+            size: { value: { min: 8, max: 14 } },
+            move: {
+              enable: true,
+              speed: 0.25,
+              direction: 'bottom',
+              straight: false,
+              outModes: { default: 'out' }
+            },
+            rotate: {
+              value: { min: 0, max: 360 },
+              direction: 'random',
+              animation: { enable: true, speed: 1.5 }
+            },
+            wobble: {
+              enable: true,
+              distance: 8,
+              speed: 3
+            }
+          },
+          interactivity: { events: { onClick: { enable: false }, onHover: { enable: false } } },
+          background: { color: 'transparent' }
+        });
+
+        // Create second container for rising lanterns
+        var lanternContainer = document.getElementById('lantern-effects-container');
+        if (!lanternContainer) {
+          lanternContainer = document.createElement('div');
+          lanternContainer.id = 'lantern-effects-container';
+          lanternContainer.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9998;';
+          document.body.appendChild(lanternContainer);
+        }
+        tsParticles.load('lantern-effects-container', {
+          particles: {
+            number: { value: 5, density: { enable: true, area: 1000 } },
+            color: { value: ['#ff4500', '#ff6600', '#ff0000'] },
+            shape: {
+              type: 'char',
+              options: {
+                char: {
+                  value: ['🏮'],
+                  font: 'Segoe UI Emoji',
+                  weight: 400
+                }
+              }
+            },
+            opacity: { value: { min: 0.7, max: 1 } },
+            size: { value: { min: 18, max: 26 } },
+            move: {
+              enable: true,
+              speed: 0.2,
+              direction: 'top',
+              straight: false,
+              outModes: { default: 'out' },
+              random: true
+            },
+            rotate: {
+              value: { min: -5, max: 5 },
+              animation: { enable: true, speed: 0.3 }
+            }
+          },
+          interactivity: { events: { onClick: { enable: false }, onHover: { enable: false } } },
+          background: { color: 'transparent' }
+        });
+
+        // Create third container for twinkling sparkles
+        var sparkleContainer = document.getElementById('sparkle-effects-container');
+        if (!sparkleContainer) {
+          sparkleContainer = document.createElement('div');
+          sparkleContainer.id = 'sparkle-effects-container';
+          sparkleContainer.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9997;';
+          document.body.appendChild(sparkleContainer);
+        }
+        tsParticles.load('sparkle-effects-container', {
+          particles: {
+            number: { value: 20, density: { enable: true, area: 800 } },
+            color: { value: ['#ffd700', '#ffff00', '#fff68f', '#fffacd'] },
+            shape: {
+              type: 'char',
+              options: {
+                char: {
+                  value: ['✨', '⭐', '✦', '✧'],
+                  font: 'Segoe UI Emoji',
+                  weight: 400
+                }
+              }
+            },
+            opacity: {
+              value: { min: 0.2, max: 1 },
+              animation: { enable: true, speed: 1.5, minimumValue: 0.1, sync: false }
+            },
+            size: { value: { min: 6, max: 12 } },
+            move: {
+              enable: true,
+              speed: 0.15,
+              direction: 'none',
+              outModes: { default: 'bounce' },
+              random: true
+            }
+          },
+          interactivity: { events: { onClick: { enable: false }, onHover: { enable: false } } },
+          background: { color: 'transparent' }
+        });
+      }
+    });
+  }
+
   function init() {
     var effect = window.DYNAMIC_EFFECT;
 
@@ -234,6 +364,9 @@
         break;
       case 'fireflies':
         initFireflies();
+        break;
+      case 'lunar_new_year':
+        initLunarNewYear();
         break;
       default:
         console.warn('Unknown effect:', effect);
