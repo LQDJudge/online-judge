@@ -526,3 +526,12 @@ try:
         exec(f.read(), globals())
 except IOError:
     pass
+
+# Register local_settings.py for autoreload (only affects runserver, not production)
+from django.utils import autoreload
+
+autoreload.autoreload_started.connect(
+    lambda sender, **kwargs: sender.watch_file(
+        os.path.join(os.path.dirname(__file__), "local_settings.py")
+    )
+)
