@@ -216,11 +216,6 @@ class SampleBackgroundDeleteView(LoginRequiredMixin, View):
         if not validate_path_prefix(filepath, SAMPLE_BACKGROUNDS_PREFIX):
             return HttpResponseForbidden()
 
-        if storage_file_exists(default_storage, filepath):
-            storage_delete_file(default_storage, filepath)
-            invalidate_sample_backgrounds_cache()
-            return JsonResponse({"success": True})
-        else:
-            return JsonResponse(
-                {"success": False, "error": "File not found"}, status=404
-            )
+        storage_delete_file(default_storage, filepath)
+        invalidate_sample_backgrounds_cache()
+        return JsonResponse({"success": True})
