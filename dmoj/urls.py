@@ -61,6 +61,7 @@ from judge.views import (
     custom_file_upload,
     quiz,
     theme,
+    direct_upload,
 )
 from judge.views.problem_data import (
     ProblemDataView,
@@ -1601,6 +1602,27 @@ urlpatterns = [
         r"^upload/my-files/rename/(?P<filename>.+)/$",
         custom_file_upload.user_file_rename,
         name="user_file_rename",
+    ),
+    # Direct upload API endpoints (for presigned URL uploads)
+    re_path(
+        r"^api/upload/config/$",
+        direct_upload.get_upload_config,
+        name="direct_upload_config",
+    ),
+    re_path(
+        r"^api/upload/file/$",
+        direct_upload.local_upload,
+        name="direct_upload_local",
+    ),
+    re_path(
+        r"^api/upload/save/$",
+        direct_upload.save_to_model,
+        name="direct_upload_save",
+    ),
+    re_path(
+        r"^api/upload/delete/$",
+        direct_upload.delete_file,
+        name="direct_upload_delete",
     ),
 ] + url_static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

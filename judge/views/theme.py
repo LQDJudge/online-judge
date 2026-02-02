@@ -15,7 +15,8 @@ from django.utils.translation import gettext as _
 from django.views import View
 from django.views.generic import TemplateView
 
-from judge.models import DYNAMIC_EFFECT_CHOICES
+from judge.forms import ThemeBackgroundForm
+from judge.models import DYNAMIC_EFFECT_CHOICES, Profile
 from judge.utils.theme import (
     get_sample_backgrounds,
     invalidate_sample_backgrounds_cache,
@@ -34,10 +35,14 @@ class ThemeSettingsView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         profile = self.request.profile
+        background_form = ThemeBackgroundForm(
+            instance=profile, profile=self.request.profile
+        )
         context.update(
             {
                 "title": _("Theme Settings"),
                 "profile": profile,
+                "background_form": background_form,
                 "sample_backgrounds": get_sample_backgrounds(),
                 "dynamic_effects": DYNAMIC_EFFECT_CHOICES,
                 "use_darkmode": self.request.session.get("darkmode", False),
@@ -53,14 +58,7 @@ class ThemeSettingsView(LoginRequiredMixin, TemplateView):
         profile = request.profile
         action = request.POST.get("action")
 
-        if action == "clear_background":
-            # Clear background
-            if profile.background_image:
-                profile.background_image.delete(save=False)
-                profile.background_image = None
-            profile.save(update_fields=["background_image"])
-
-        elif action == "select_sample":
+        if action == "select_sample":
             # Select a sample background
             sample_filename = request.POST.get("sample_filename")
             if sample_filename:
@@ -77,8 +75,6 @@ class ThemeSettingsView(LoginRequiredMixin, TemplateView):
                         )
 
                     # Save the profile using update() to bypass save() method
-                    from judge.models import Profile
-
                     Profile.objects.filter(pk=profile.pk).update(
                         background_image=profile.background_image.name
                     )
@@ -90,36 +86,6 @@ class ThemeSettingsView(LoginRequiredMixin, TemplateView):
             if dynamic_effect in valid_effects:
                 profile.dynamic_effect = dynamic_effect
                 profile.save(update_fields=["dynamic_effect"])
-
-        elif action == "upload_custom":
-            # Upload custom background
-            uploaded_file = request.FILES.get("custom_background")
-            if uploaded_file:
-                # Validate file type
-                allowed_extensions = (".jpg", ".jpeg", ".png", ".webp", ".gif")
-                if not uploaded_file.name.lower().endswith(allowed_extensions):
-                    # Invalid file type - just redirect
-                    return HttpResponseRedirect(reverse("theme_settings"))
-
-                # Validate file size (5MB max)
-                if uploaded_file.size > 5 * 1024 * 1024:
-                    return HttpResponseRedirect(reverse("theme_settings"))
-
-                # Delete old background files BEFORE saving the new one
-                if profile.background_image:
-                    profile.background_image.delete(save=False)
-
-                # Save file using Django's File API
-                profile.background_image.save(
-                    uploaded_file.name, uploaded_file, save=False
-                )
-
-                # Save the profile using update() to bypass save() method
-                from judge.models import Profile
-
-                Profile.objects.filter(pk=profile.pk).update(
-                    background_image=profile.background_image.name
-                )
 
         return HttpResponseRedirect(reverse("theme_settings"))
 

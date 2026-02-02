@@ -58,9 +58,12 @@ from judge.widgets import (
     HeavySelect2Widget,
     Select2MultipleWidget,
     DateTimePickerWidget,
-    ImageWidget,
     DatePickerWidget,
-    PDFWidget,
+)
+from judge.widgets.direct_upload import (
+    DirectUploadImageWidget,
+    DirectUploadPDFWidget,
+    DirectUploadFormMixin,
 )
 
 
@@ -117,7 +120,7 @@ class ProfileInfoForm(ModelForm):
         }
 
 
-class ProfileForm(ModelForm):
+class ProfileForm(DirectUploadFormMixin, ModelForm):
     class Meta:
         model = Profile
         fields = [
@@ -132,8 +135,14 @@ class ProfileForm(ModelForm):
             "timezone": Select2Widget(attrs={"style": "width:200px"}),
             "language": Select2Widget(attrs={"style": "width:200px"}),
             "ace_theme": Select2Widget(attrs={"style": "width:200px"}),
-            "profile_image": ImageWidget,
-            "background_image": ImageWidget,
+            "profile_image": DirectUploadImageWidget(
+                upload_to="profile_images",
+                prefix="user",
+            ),
+            "background_image": DirectUploadImageWidget(
+                upload_to="background_images",
+                prefix="bg_user",
+            ),
         }
 
         if HeavyPreviewPageDownWidget is not None:
@@ -143,7 +152,6 @@ class ProfileForm(ModelForm):
             )
 
     def __init__(self, *args, **kwargs):
-        kwargs.pop("user", None)
         super(ProfileForm, self).__init__(*args, **kwargs)
         self.fields["profile_image"].required = False
         self.fields["background_image"].required = False
@@ -165,6 +173,24 @@ class ProfileForm(ModelForm):
                     _("File size exceeds the maximum allowed limit of 5MB.")
                 )
         return background_image
+
+
+class ThemeBackgroundForm(DirectUploadFormMixin, ModelForm):
+    """Simple form for theme settings page background upload."""
+
+    class Meta:
+        model = Profile
+        fields = ["background_image"]
+        widgets = {
+            "background_image": DirectUploadImageWidget(
+                upload_to="background_images",
+                prefix="bg_user",
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["background_image"].required = False
 
 
 def file_size_validator(file):
@@ -229,7 +255,7 @@ class ProblemSubmitForm(ModelForm):
         fields = ["language"]
 
 
-class EditOrganizationForm(ModelForm):
+class EditOrganizationForm(DirectUploadFormMixin, ModelForm):
     class Meta:
         model = Organization
         fields = [
@@ -246,8 +272,14 @@ class EditOrganizationForm(ModelForm):
         widgets = {
             "admins": HeavySelect2MultipleWidget(data_view="profile_select2"),
             "moderators": HeavySelect2MultipleWidget(data_view="profile_select2"),
-            "organization_image": ImageWidget,
-            "cover_image": ImageWidget,
+            "organization_image": DirectUploadImageWidget(
+                upload_to="organization_images",
+                prefix="organization",
+            ),
+            "cover_image": DirectUploadImageWidget(
+                upload_to="organization_covers",
+                prefix="cover_organization",
+            ),
         }
         if HeavyPreviewPageDownWidget is not None:
             widgets["about"] = HeavyPreviewPageDownWidget(
@@ -291,7 +323,6 @@ class AddOrganizationForm(ModelForm):
             "slug",
             "short_name",
             "about",
-            "organization_image",
             "is_open",
         ]
         widgets = {}
@@ -303,7 +334,6 @@ class AddOrganizationForm(ModelForm):
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop("request", None)
         super(AddOrganizationForm, self).__init__(*args, **kwargs)
-        self.fields["organization_image"].required = False
 
     def save(self, commit=True):
         res = super(AddOrganizationForm, self).save(commit=False)
@@ -917,12 +947,9 @@ class AddCourseForm(ModelForm):
             "about",
             "is_public",
             "is_open",
-            "course_image",
             "organizations",
         ]
-        widgets = {
-            "course_image": ImageWidget,
-        }
+        widgets = {}
         help_texts = {
             "name": _("Required. Maximum 128 characters."),
             "about": _("Optional. Detailed description of the course."),
@@ -931,9 +958,6 @@ class AddCourseForm(ModelForm):
             ),
             "is_public": _("Whether this course is visible to all users"),
             "is_open": _("If checked, users can join this course"),
-            "course_image": _(
-                "Optional. Upload an image for the course (maximum 5MB)."
-            ),
         }
         if HeavyPreviewPageDownWidget is not None:
             widgets["about"] = HeavyPreviewPageDownWidget(
@@ -945,7 +969,7 @@ class AddCourseForm(ModelForm):
 MEMORY_UNITS = (("KB", "KB"), ("MB", "MB"))
 
 
-class ProblemEditForm(ModelForm):
+class ProblemEditForm(DirectUploadFormMixin, ModelForm):
     change_message = forms.CharField(
         max_length=256, label="Edit reason", required=False
     )
@@ -953,7 +977,7 @@ class ProblemEditForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
-        super(ProblemEditForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields["authors"].widget.can_add_related = False
         self.fields["curators"].widget.can_add_related = False
         self.fields["testers"].widget.can_add_related = False
@@ -1100,7 +1124,10 @@ class ProblemEditForm(ModelForm):
             "points": forms.NumberInput(attrs={"step": "0.5"}),
             "allowed_languages": forms.CheckboxSelectMultiple(),
             "date": DateTimePickerWidget(),
-            "pdf_description": PDFWidget(),
+            "pdf_description": DirectUploadPDFWidget(
+                upload_to="problem_pdfs",
+                prefix="problem",
+            ),
         }
 
         if HeavyPreviewPageDownWidget is not None:

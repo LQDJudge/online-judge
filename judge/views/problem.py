@@ -1282,6 +1282,8 @@ class ProblemEdit(
 
         # Pass the user to the form for validation
         kwargs["user"] = self.request.user
+        # Pass profile for DirectUploadFormMixin
+        kwargs["profile"] = self.request.profile
 
         # Set initial memory unit based on current memory_limit
         if self.object and self.object.memory_limit:

@@ -1241,3 +1241,308 @@ button:hover, button:focus {
     }
 }
 
+// Direct upload widget styles (unified for all file types)
+.direct-upload-widget {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: $background_light_gray;
+    border: 1px solid $border_gray;
+    border-radius: 8px;
+    max-width: 300px;
+
+    // Unified preview container
+    .current-preview {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: white;
+        border: 1px solid $border_gray;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+        // Image preview specific
+        &:has(img) {
+            justify-content: center;
+
+            a {
+                display: block;
+                line-height: 0;
+                position: relative;
+                cursor: zoom-in;
+            }
+
+            img {
+                border-radius: 8px;
+                object-fit: cover;
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+
+            .image-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.4);
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                transition: opacity 0.2s;
+
+                i {
+                    color: white;
+                    font-size: 1.5em;
+                }
+            }
+
+            a:hover {
+                img {
+                    transform: scale(1.02);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                }
+
+                .image-overlay {
+                    opacity: 1;
+                }
+            }
+        }
+
+        // File/PDF preview specific
+        .pdf-icon {
+            color: #e74c3c;
+            font-size: 1.8em;
+            flex-shrink: 0;
+        }
+
+        a:not(:has(img)) {
+            text-decoration: none;
+            word-break: break-all;
+            font-weight: 500;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+
+    // Unified actions container
+    .preview-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    // Hidden file input
+    .hidden-file-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+    }
+
+    // Unified change button
+    .change-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid $border_gray;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+        margin: 0;
+
+        &:hover {
+            border-color: $theme_color;
+            background: #fef9f7;
+        }
+
+        i {
+            color: $theme_color;
+            font-size: 1.1em;
+        }
+
+        span {
+            font-weight: 500;
+            color: #333;
+        }
+    }
+
+    // Unified delete button
+    .delete-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid $border_gray;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+        font-size: inherit;
+        font-family: inherit;
+
+        &:hover {
+            background: #fff5f5;
+            border-color: #e74c3c;
+
+            i, span {
+                color: #e74c3c;
+            }
+        }
+
+        i {
+            color: #999;
+            transition: color 0.2s;
+        }
+
+        span {
+            font-weight: 500;
+            color: #666;
+            transition: color 0.2s;
+        }
+    }
+
+    // Unified upload area (empty state)
+    .upload-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 24px;
+        background: white;
+        border: 2px dashed $border_gray;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+        text-align: center;
+
+        &:hover {
+            border-color: $theme_color;
+            background: #fef9f7;
+        }
+
+        i {
+            font-size: 2em;
+            color: $theme_color;
+        }
+
+        span {
+            font-weight: 500;
+            color: #666;
+        }
+    }
+
+    .upload-progress {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+        background: white;
+        border: 1px solid $border_gray;
+        border-radius: 6px;
+        margin-top: 12px;
+
+        .progress-bar-container {
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: $theme_color;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.2s ease;
+        }
+
+        .progress-text {
+            font-size: 0.85em;
+            color: #666;
+            text-align: center;
+        }
+    }
+
+    .upload-error {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px;
+        background: #fff5f5;
+        border: 1px solid #e74c3c;
+        border-radius: 6px;
+        color: #e74c3c;
+        margin-top: 12px;
+
+        .error-message {
+            flex: 1;
+        }
+
+        .retry-btn {
+            padding: 4px 12px;
+            border: 1px solid #e74c3c;
+            border-radius: 4px;
+            background: white;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 0.85em;
+
+            &:hover {
+                background: #e74c3c;
+                color: white;
+            }
+        }
+    }
+
+    .upload-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 6px;
+        font-size: 0.9em;
+        margin-top: 12px;
+        animation: fadeIn 0.2s ease;
+
+        i {
+            font-size: 1.1em;
+        }
+
+        &.upload-status-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        &.upload-status-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+

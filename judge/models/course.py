@@ -9,7 +9,6 @@ from django.urls import reverse
 from judge.models import Problem, Contest
 from judge.models.profile import Organization, Profile
 from judge.caching import cache_wrapper
-from django.core.files.storage import default_storage
 
 from judge.utils.files import generate_secure_filename
 
@@ -207,20 +206,6 @@ class Course(models.Model):
             .filter(contest__is_visible=True)
             .order_by("order")
         )
-
-    def save(self, *args, **kwargs):
-        if self.pk:
-            try:
-                old_instance = Course.objects.get(pk=self.pk)
-                if self.course_image and old_instance.course_image != self.course_image:
-                    if old_instance.course_image:
-                        try:
-                            default_storage.delete(old_instance.course_image.name)
-                        except Exception:
-                            pass
-            except Course.DoesNotExist:
-                pass
-        super().save(*args, **kwargs)
 
 
 class CourseRole(models.Model):

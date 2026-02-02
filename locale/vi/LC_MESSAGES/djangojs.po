@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-08 16:10+0700\n"
+"POT-Creation-Date: 2026-02-03 00:42+0700\n"
 "PO-Revision-Date: 2021-07-20 03:45\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -18,16 +18,84 @@ msgstr ""
 "X-Crowdin-Project-ID: 466004\n"
 "X-Crowdin-File-ID: 7\n"
 
-#: resources/common.js:93
+#: resources/common.js:89
 msgctxt "time format with day"
 msgid "%d day %h:%m:%s"
 msgid_plural "%d days %h:%m:%s"
 msgstr[0] "%d ngày %h:%m:%s"
 
-#: resources/common.js:96
+#: resources/common.js:92
 msgctxt "time format without day"
 msgid "%h:%m:%s"
 msgstr "%h:%m:%s"
+
+#: resources/direct_upload.js:65
+msgid "Failed to get upload configuration"
+msgstr "Không thể lấy cấu hình tải lên"
+
+#: resources/direct_upload.js:85
+msgid "Upload failed: "
+msgstr "Tải lên thất bại: "
+
+#: resources/direct_upload.js:89
+msgid "Network error during upload"
+msgstr "Lỗi mạng khi tải lên"
+
+#: resources/direct_upload.js:90
+msgid "Upload timed out"
+msgstr "Hết thời gian tải lên"
+
+#: resources/direct_upload.js:123
+msgid "Failed to save file to model"
+msgstr "Không thể lưu file"
+
+#: resources/direct_upload.js:154
+msgid "Choose a file"
+msgstr "Chọn file"
+
+#: resources/direct_upload.js:155
+msgid "Change"
+msgstr "Thay đổi"
+
+#: resources/direct_upload.js:156
+msgid "Remove"
+msgstr "Xóa"
+
+#: resources/direct_upload.js:200
+msgid "Uploaded image"
+msgstr "Ảnh đã tải lên"
+
+#: resources/direct_upload.js:279
+msgid "File too large (max "
+msgstr "File quá lớn (tối đa "
+
+#: resources/direct_upload.js:284
+msgid "Invalid file type"
+msgstr "Loại file không hợp lệ"
+
+#: resources/direct_upload.js:310
+msgid "Uploaded successfully"
+msgstr "Tải lên thành công"
+
+#: resources/direct_upload.js:320
+msgid "Cannot delete: missing configuration"
+msgstr "Không thể xóa: thiếu cấu hình"
+
+#: resources/direct_upload.js:324
+msgid "Are you sure you want to delete this file?"
+msgstr "Bạn có chắc chắn muốn xóa file này không?"
+
+#: resources/direct_upload.js:340
+msgid "Failed to delete file"
+msgstr "Không thể xóa file"
+
+#: resources/direct_upload.js:346
+msgid "File deleted"
+msgstr "Đã xóa file"
+
+#: resources/direct_upload.js:523 resources/direct_upload.js:525
+msgid "Bytes"
+msgstr "Bytes"
 
 #: resources/fine-uploader/fine-uploader.core.min.js:3
 #: resources/fine-uploader/fine-uploader.min.js:3
@@ -41,20 +109,26 @@ msgstr ""
 msgid "Sending "
 msgstr ""
 
+#: resources/quiz.js:271
 msgid "Enter your text here..."
 msgstr "Nhập nội dung tại đây..."
 
+#: resources/quiz.js:278 resources/quiz.js:478
 msgid "Collapse"
 msgstr "Thu gọn"
 
+#: resources/quiz.js:365
 msgid "Add Choice"
 msgstr "Thêm lựa chọn"
 
+#: resources/quiz.js:387
 msgid "Choice ID (e.g., A, B, C)"
 msgstr "ID lựa chọn (vd: A, B, C)"
 
+#: resources/quiz.js:388
 msgid "Choice text"
 msgstr "Nội dung lựa chọn"
 
+#: resources/quiz.js:389
 msgid "Expand with toolbar"
 msgstr "Mở rộng với thanh công cụ"

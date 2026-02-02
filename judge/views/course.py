@@ -57,8 +57,8 @@ from judge.widgets import (
     DateTimePickerWidget,
     Select2MultipleWidget,
     Select2Widget,
-    ImageWidget,
 )
+from judge.widgets.direct_upload import DirectUploadImageWidget, DirectUploadFormMixin
 from judge.forms import HTMLDisplayWidget
 from judge.utils.views import SingleObjectFormView, TitleMixin, DiggPaginatorMixin
 
@@ -2591,7 +2591,7 @@ class CourseUpdateMemberRole(CourseAdminMixin, View):
         return HttpResponseRedirect(reverse("course_members", args=[self.course.slug]))
 
 
-class CourseEditForm(forms.ModelForm):
+class CourseEditForm(DirectUploadFormMixin, forms.ModelForm):
     organizations = forms.ModelMultipleChoiceField(
         queryset=Organization.objects.none(),
         required=False,
@@ -2655,7 +2655,10 @@ class CourseEditForm(forms.ModelForm):
             "name": forms.TextInput(attrs={"style": "width: 100%"}),
             "about": HeavyPreviewPageDownWidget(preview=reverse_lazy("blog_preview")),
             "slug": forms.TextInput(attrs={"style": "width: 100%"}),
-            "course_image": ImageWidget,
+            "course_image": DirectUploadImageWidget(
+                upload_to="course_images",
+                prefix="course",
+            ),
         }
         labels = {
             "name": _("Course Name"),
@@ -2830,6 +2833,7 @@ class CourseEdit(CourseEditableMixin, SingleObjectFormView):
         kwargs["instance"] = self.course
         kwargs["request"] = self.request
         kwargs["user_role"] = self.get_user_role_in_course()
+        kwargs["profile"] = self.request.profile
         return kwargs
 
     def get_context_data(self, **kwargs):

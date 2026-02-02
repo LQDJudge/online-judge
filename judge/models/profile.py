@@ -17,8 +17,6 @@ from django.utils.translation import gettext_lazy as _
 from fernet_fields import EncryptedCharField
 from sortedm2m.fields import SortedManyToManyField
 
-from django.core.files.storage import default_storage
-
 from judge.models.choices import ACE_THEMES, TIMEZONE
 from judge.models.runtime import Language
 from judge.ratings import rating_class
@@ -296,28 +294,6 @@ class Organization(CacheableModel):
         # Communities are always open
         if self.is_community:
             self.is_open = True
-
-        # Delete old image files before saving new ones to avoid duplicates
-        if self.pk:
-            try:
-                old_instance = Organization.objects.get(pk=self.pk)
-                if (
-                    self.organization_image
-                    and old_instance.organization_image != self.organization_image
-                ):
-                    if old_instance.organization_image:
-                        try:
-                            default_storage.delete(old_instance.organization_image.name)
-                        except Exception:
-                            pass
-                if self.cover_image and old_instance.cover_image != self.cover_image:
-                    if old_instance.cover_image:
-                        try:
-                            default_storage.delete(old_instance.cover_image.name)
-                        except Exception:
-                            pass
-            except Organization.DoesNotExist:
-                pass
         super().save(*args, **kwargs)
 
     class Meta:
@@ -648,29 +624,6 @@ class Profile(CacheableModel):
         return org.is_admin(self) or self.user.is_superuser
 
     def save(self, *args, **kwargs):
-        if self.pk:
-            try:
-                old_instance = Profile.objects.get(pk=self.pk)
-                if (
-                    self.profile_image
-                    and old_instance.profile_image != self.profile_image
-                ):
-                    if old_instance.profile_image:
-                        try:
-                            default_storage.delete(old_instance.profile_image.name)
-                        except Exception:
-                            pass
-                if (
-                    self.background_image
-                    and old_instance.background_image != self.background_image
-                ):
-                    if old_instance.background_image:
-                        try:
-                            default_storage.delete(old_instance.background_image.name)
-                        except Exception:
-                            pass
-            except Profile.DoesNotExist:
-                pass
         super().save(*args, **kwargs)
         get_points_rank.dirty(self.id)
         get_rating_rank.dirty(self.id)

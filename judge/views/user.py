@@ -397,7 +397,7 @@ def edit_profile(request):
     if request.method == "POST":
         form_user = UserForm(request.POST, instance=request.user)
         form = ProfileForm(
-            request.POST, request.FILES, instance=profile, user=request.user
+            request.POST, request.FILES, instance=profile, profile=request.profile
         )
         form_info = ProfileInfoForm(request.POST, instance=profile_info)
         if form_user.is_valid() and form.is_valid():
@@ -410,7 +410,7 @@ def edit_profile(request):
             return HttpResponseRedirect(request.path)
     else:
         form_user = UserForm(instance=request.user)
-        form = ProfileForm(instance=profile, user=request.user)
+        form = ProfileForm(instance=profile, profile=request.profile)
         form_info = ProfileInfoForm(instance=profile_info)
 
     tzmap = settings.TIMEZONE_MAP

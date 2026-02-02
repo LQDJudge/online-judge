@@ -1239,6 +1239,7 @@ class EditOrganization(
     def get_form_kwargs(self):
         kwargs = super(EditOrganization, self).get_form_kwargs()
         kwargs["org_id"] = self.organization.id
+        kwargs["profile"] = self.request.profile
         return kwargs
 
     def form_valid(self, form):

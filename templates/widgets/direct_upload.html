@@ -1,0 +1,70 @@
+{# Unified direct upload widget - works for images, PDFs, and files #}
+<div class="direct-upload-widget"
+     data-direct-upload
+     data-config-url="{{ widget.upload_config_url }}"
+     data-save-url="{{ widget.upload_save_url }}"
+     data-delete-url="{{ widget.upload_delete_url }}"
+     data-upload-to="{{ widget.upload_to }}"
+     data-prefix="{{ widget.prefix }}"
+     data-max-size="{{ widget.max_size }}"
+     data-accept="{{ widget.accept }}"
+     data-upload-token="{{ widget.upload_token }}"
+     data-widget-type="{{ widget.widget_type }}"
+     data-show-full-path="{{ widget.show_full_path }}"
+     data-choose-text="{{ widget.choose_text }}"
+     data-change-text="{{ widget.change_text }}"
+     data-remove-text="{{ widget.remove_text }}">
+
+  {% if widget.is_initial %}
+    {# Has existing file - show preview #}
+    <div class="current-preview">
+      {% if widget.widget_type == 'image' %}
+        <a href="{{ widget.value.url }}" data-featherlight="image" data-featherlight-variant="image-widget-lightbox">
+          <img src="{{ widget.value.url }}" width="{{ widget.width }}" height="{{ widget.height }}" alt="">
+          <div class="image-overlay"><i class="fa fa-search-plus"></i></div>
+        </a>
+      {% else %}
+        <i class="fa fa-file-pdf fa-lg pdf-icon"></i>
+        <a href="{{ widget.value.url }}" target="_blank">{{ widget.value.name }}</a>
+      {% endif %}
+    </div>
+    <div class="preview-actions">
+      <label class="change-btn">
+        <i class="fa fa-upload"></i>
+        <span>{{ widget.change_text }}</span>
+        <input type="file" class="hidden-file-input" accept="{{ widget.accept }}">
+      </label>
+      {% if not widget.required %}
+        <button type="button" class="delete-btn">
+          <i class="fa fa-trash"></i>
+          <span>{{ widget.remove_text }}</span>
+        </button>
+      {% endif %}
+    </div>
+  {% else %}
+    {# Empty state - show upload area #}
+    <label class="upload-area">
+      <i class="fa fa-cloud-upload"></i>
+      <span>{{ widget.choose_text }}</span>
+      <input type="file" class="hidden-file-input" accept="{{ widget.accept }}">
+    </label>
+  {% endif %}
+
+  {# Upload progress (hidden by default) #}
+  <div class="upload-progress" style="display:none;">
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill"></div>
+    </div>
+    <span class="progress-text">{{ _("Uploading...") }} <span class="progress-percent">0%</span></span>
+  </div>
+
+  {# Error display (hidden by default) #}
+  <div class="upload-error" style="display:none;">
+    <i class="fa fa-exclamation-triangle"></i>
+    <span class="error-message"></span>
+    <button type="button" class="retry-btn">{{ _("Retry") }}</button>
+  </div>
+
+  {# Hidden input to store the uploaded file key #}
+  <input type="hidden" name="{{ widget.name }}" class="file-key-input" value="{{ widget.value.name|default('') }}">
+</div>
