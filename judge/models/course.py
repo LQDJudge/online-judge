@@ -9,7 +9,9 @@ from django.urls import reverse
 from judge.models import Problem, Contest
 from judge.models.profile import Organization, Profile
 from judge.caching import cache_wrapper
-from judge.utils.files import delete_old_image_files, generate_secure_filename
+from django.core.files.storage import default_storage
+
+from judge.utils.files import generate_secure_filename
 
 
 def course_image_path(course, filename):
@@ -207,16 +209,15 @@ class Course(models.Model):
         )
 
     def save(self, *args, **kwargs):
-        # Delete old image files before saving new ones to avoid duplicates
         if self.pk:
             try:
                 old_instance = Course.objects.get(pk=self.pk)
-                # Check if course_image is being updated
                 if self.course_image and old_instance.course_image != self.course_image:
-                    delete_old_image_files(
-                        settings.DMOJ_COURSE_IMAGE_ROOT,
-                        f"course_{self.id}",
-                    )
+                    if old_instance.course_image:
+                        try:
+                            default_storage.delete(old_instance.course_image.name)
+                        except Exception:
+                            pass
             except Course.DoesNotExist:
                 pass
         super().save(*args, **kwargs)
