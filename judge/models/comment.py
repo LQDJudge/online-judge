@@ -195,6 +195,7 @@ class Comment(CacheableModel, MPTTModel):
         problem_access = CacheDict(lambda p: p.is_accessible_by(user))
         contest_access = CacheDict(lambda c: c.is_accessible_by(user))
         blog_access = CacheDict(lambda b: b.is_accessible_by(user))
+        solution_access = CacheDict(lambda s: s.is_accessible_by(user))
 
         if n == -1:
             n = len(queryset)
@@ -219,7 +220,7 @@ class Comment(CacheableModel, MPTTModel):
                     if blog_access[comment.linked_object]:
                         output.append(comment)
                 elif isinstance(comment.linked_object, Solution):
-                    if problem_access[comment.linked_object.problem]:
+                    if solution_access[comment.linked_object]:
                         output.append(comment)
                 if len(output) >= n:
                     return output

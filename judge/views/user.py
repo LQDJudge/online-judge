@@ -307,6 +307,7 @@ class UserBookMarkPage(DiggPaginatorMixin, ListView, UserPage):
 
     def get(self, request, *args, **kwargs):
         self.current_tab = self.request.GET.get("tab", "problems")
+        self.page = int(request.GET.get("page", 1))
         self.user = self.object = self.get_object()
         return super(UserBookMarkPage, self).get(request, *args, **kwargs)
 
@@ -325,13 +326,27 @@ class UserBookMarkPage(DiggPaginatorMixin, ListView, UserPage):
             content_type=ContentType.objects.get_for_model(model)
         ).values_list("object_id", flat=True)
 
-        res = model.objects.filter(id__in=object_ids)
+        queryset = model.objects.filter(id__in=object_ids)
         if self.current_tab == "contests":
-            res = res.prefetch_related("organizations", "tags")
+            queryset = queryset.prefetch_related("organizations", "tags")
         elif self.current_tab == "editorials":
-            res = res.select_related("problem")
+            queryset = queryset.select_related("problem")
 
-        return res
+        # Filter by accessibility with overfetching
+        user = self.request.user
+        needed_count = min(500, self.page * self.paginate_by * 2)
+        batch_size = needed_count * 2
+
+        result = []
+        for i in range(0, queryset.count(), batch_size):
+            batch = queryset[i : i + batch_size]
+            for obj in batch:
+                if obj.is_accessible_by(user):
+                    result.append(obj)
+                if len(result) >= needed_count:
+                    return result
+
+        return result
 
     def get_context_data(self, **kwargs):
         context = super(UserBookMarkPage, self).get_context_data(**kwargs)

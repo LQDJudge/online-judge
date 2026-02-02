@@ -869,6 +869,13 @@ class Solution(models.Model, PageVotable, Bookmarkable):
     def __str__(self):
         return _("Editorial for %s") % self.problem.name
 
+    def is_accessible_by(self, user):
+        if self.is_public and self.publish_on <= now():
+            return True
+        if user.has_perm("judge.see_private_solution"):
+            return True
+        return False
+
     class Meta:
         permissions = (("see_private_solution", "See hidden solutions"),)
         verbose_name = _("solution")
