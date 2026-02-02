@@ -81,6 +81,9 @@
         var $message = $(this);
         var authorId = $message.attr('data-author');
 
+        // Clear existing grouping classes first
+        $message.removeClass('grouped group-start');
+
         if (authorId === lastAuthorId) {
           // Same author as previous - add 'grouped' class to hide avatar/header
           $message.addClass('grouped');
@@ -545,6 +548,8 @@
             } else {
               $this.closest('li').remove();
             }
+            // Recalculate message grouping to fix avatar/name visibility
+            ChatUtils.mergeConsecutiveMessages();
           })
           .fail(function() {
             console.log('Failed to delete');
