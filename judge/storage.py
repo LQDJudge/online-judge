@@ -26,10 +26,10 @@ class IgnoreMissingManifestStaticFilesStorage(ManifestStaticFilesStorage):
             logger.warning(f"Missing file in hashed_name: {name}, {e}")
             return name
 
-    def url(self, name, force=False):
+    def url(self, name):
         try:
-            return super().url(name, force)
+            return super().url(name)
         except ValueError as e:
             logger.warning(f"Missing file in url: {name}, {e}")
-            # Fall back to the unhashed URL
-            return super(ManifestStaticFilesStorage, self).url(name, force)
+            # Fall back to the unhashed URL (skip hashing logic)
+            return super(ManifestStaticFilesStorage, self).url(name)
