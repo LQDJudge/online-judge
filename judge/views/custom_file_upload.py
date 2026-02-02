@@ -13,6 +13,7 @@ from django import forms
 from django.template.defaultfilters import filesizeformat
 
 from judge.models import Problem
+from judge.caching import cache_wrapper
 
 from judge.utils.files import generate_secure_filename
 from judge.utils.storage_helpers import (
@@ -72,6 +73,7 @@ def get_user_storage_path(username):
     return f"{MEDIA_PATH}/{username}"
 
 
+@cache_wrapper(prefix="guf")
 def get_user_files(username):
     """Get all files for a user from storage"""
     user_prefix = get_user_storage_path(username)
@@ -117,10 +119,9 @@ def get_user_files(username):
     return files
 
 
-def get_user_storage_usage(username, user, files=None):
+def get_user_storage_usage(username, user):
     """Calculate total storage used by user"""
-    if files is None:
-        files = get_user_files(username)
+    files = get_user_files(username)
     total_size = sum(f["size"] for f in files)
     _, max_storage = get_user_limits(user)
     return {
@@ -144,7 +145,7 @@ def file_upload(request):
     username = request.user.username
     max_file_size, max_user_storage = get_user_limits(request.user)
     files = get_user_files(username)
-    storage_info = get_user_storage_usage(username, request.user, files)
+    storage_info = get_user_storage_usage(username, request.user)
 
     if request.method == "POST":
         form = FileUploadForm(request.POST, request.FILES)
@@ -197,6 +198,9 @@ def file_upload(request):
             # Save file using default_storage
             saved_path = default_storage.save(new_filepath, file)
             file_url = default_storage.url(saved_path)
+
+            # Invalidate cache
+            get_user_files.dirty(username)
 
             if is_ajax:
                 # Get updated storage info
@@ -271,6 +275,9 @@ def user_file_delete(request, filename):
 
         if storage_file_exists(default_storage, file_path):
             storage_delete_file(default_storage, file_path)
+
+            # Invalidate cache
+            get_user_files.dirty(username)
 
             if is_ajax:
                 # Get updated storage info
@@ -399,6 +406,9 @@ def user_file_rename(request, filename):
             try:
                 if storage_rename_file(default_storage, old_file_path, new_file_path):
                     new_url = default_storage.url(new_file_path)
+
+                    # Invalidate cache
+                    get_user_files.dirty(username)
 
                     if is_ajax:
                         return JsonResponse(
