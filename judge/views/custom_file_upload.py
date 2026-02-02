@@ -2,6 +2,7 @@ import mimetypes
 import os
 from datetime import datetime
 
+from django.conf import settings
 from django.shortcuts import render, redirect
 from django.core.files.storage import default_storage
 from django.contrib.auth.decorators import login_required
@@ -26,13 +27,6 @@ from judge.utils.storage_helpers import (
 )
 
 MEDIA_PATH = "user_uploads"
-
-# Storage limits for different user types
-ADMIN_MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB per file for admins
-ADMIN_MAX_USER_STORAGE = 100 * 1024 * 1024  # 100MB total for admins
-NORMAL_MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB per file for normal users
-NORMAL_MAX_USER_STORAGE = 30 * 1024 * 1024  # 30MB total for normal users
-MAX_FILES_PER_USER = 100  # Maximum 100 files per user
 
 
 class FileUploadForm(forms.Form):
@@ -68,9 +62,9 @@ def check_upload_permission(user):
 def get_user_limits(user):
     """Get storage limits based on user type"""
     if user.is_superuser:
-        return ADMIN_MAX_FILE_SIZE, ADMIN_MAX_USER_STORAGE
+        return settings.DMOJ_ADMIN_MAX_FILE_SIZE, settings.DMOJ_ADMIN_MAX_STORAGE
     else:
-        return NORMAL_MAX_FILE_SIZE, NORMAL_MAX_USER_STORAGE
+        return settings.DMOJ_USER_MAX_FILE_SIZE, settings.DMOJ_USER_MAX_STORAGE
 
 
 def get_user_storage_path(username):
@@ -158,9 +152,9 @@ def file_upload(request):
             file = request.FILES["file"]
             is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
-            if len(files) >= MAX_FILES_PER_USER:
+            if len(files) >= settings.DMOJ_MAX_FILES_PER_USER:
                 error_msg = _(
-                    f"Maximum number of files reached ({MAX_FILES_PER_USER} files). Please delete some files."
+                    f"Maximum number of files reached ({settings.DMOJ_MAX_FILES_PER_USER} files). Please delete some files."
                 )
                 if is_ajax:
                     return JsonResponse(
@@ -234,7 +228,7 @@ def file_upload(request):
         "files": files,
         "title": _("My Files"),
         "max_file_size": max_file_size,
-        "max_files": MAX_FILES_PER_USER,
+        "max_files": settings.DMOJ_MAX_FILES_PER_USER,
         "is_admin": request.user.is_superuser,
     }
     return render(request, "user_upload/upload.html", context)

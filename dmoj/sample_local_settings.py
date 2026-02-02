@@ -390,6 +390,13 @@ LOGGING = {
 # submission files, problem PDFs, etc.) will automatically use S3
 # when DEFAULT_FILE_STORAGE is configured.
 
+## ======== User File Upload Limits ========
+# DMOJ_USER_MAX_FILE_SIZE = 5 * 1024 * 1024      # 5MB per file for normal users
+# DMOJ_USER_MAX_STORAGE = 30 * 1024 * 1024       # 30MB total for normal users
+# DMOJ_ADMIN_MAX_FILE_SIZE = 10 * 1024 * 1024    # 10MB per file for admins
+# DMOJ_ADMIN_MAX_STORAGE = 100 * 1024 * 1024     # 100MB total for admins
+# DMOJ_MAX_FILES_PER_USER = 100                  # Max files per user
+
 ## ======== Custom Configuration ========
 # You may add whatever django configuration you would like here.
 # Do try to keep it separate so you can quickly patch in new settings.
