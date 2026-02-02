@@ -191,7 +191,8 @@
 
       // Copy URL to clipboard
       $(document).on('click', '.copy-url-btn', function() {
-        var url = window.location.origin + $(this).data('url');
+        var dataUrl = $(this).data('url');
+        var url = dataUrl.startsWith('http') ? dataUrl : window.location.origin + dataUrl;
         var $btn = $(this);
 
         // Create temporary input element

@@ -65,13 +65,11 @@ def storage_delete_file(storage, path):
         path: Path to delete (relative to storage root)
 
     Returns:
-        Boolean indicating if deletion was successful
+        Boolean indicating success (True even if file didn't exist for S3)
     """
     try:
-        if storage.exists(path):
-            storage.delete(path)
-            return True
-        return False
+        storage.delete(path)
+        return True
     except Exception:
         return False
 
@@ -155,19 +153,10 @@ def storage_rename_file(storage, old_path, new_path):
         Boolean indicating if rename was successful
     """
     try:
-        if not storage.exists(old_path):
-            return False
-
-        # Read the file content
         with storage.open(old_path, "rb") as f:
             content = f.read()
-
-        # Save to new location
         storage.save(new_path, ContentFile(content))
-
-        # Delete old file
         storage.delete(old_path)
-
         return True
     except Exception:
         return False

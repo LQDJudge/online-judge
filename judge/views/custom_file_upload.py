@@ -83,31 +83,50 @@ def get_user_files(username):
     user_prefix = get_user_storage_path(username)
     files = []
 
-    _, filenames = storage_listdir(default_storage, user_prefix)
-    for filename in filenames:
-        filepath = f"{user_prefix}/{filename}"
-        size = storage_get_file_size(default_storage, filepath)
-        modified = storage_get_modified_time(default_storage, filepath)
+    if hasattr(default_storage, "bucket"):
+        prefix = f"{user_prefix}/"
+        if hasattr(default_storage, "location") and default_storage.location:
+            prefix = f"{default_storage.location}/{prefix}"
+        for obj in default_storage.bucket.objects.filter(Prefix=prefix):
+            filename = obj.key.split("/")[-1]
+            if not filename:
+                continue
+            filepath = f"{user_prefix}/{filename}"
+            files.append(
+                {
+                    "name": filename,
+                    "size": obj.size,
+                    "modified": obj.last_modified,
+                    "url": default_storage.url(filepath),
+                    "mime_type": mimetypes.guess_type(filename)[0]
+                    or "application/octet-stream",
+                }
+            )
+    else:
+        _, filenames = storage_listdir(default_storage, user_prefix)
+        for filename in filenames:
+            filepath = f"{user_prefix}/{filename}"
+            size = storage_get_file_size(default_storage, filepath)
+            modified = storage_get_modified_time(default_storage, filepath)
+            files.append(
+                {
+                    "name": filename,
+                    "size": size,
+                    "modified": modified if modified else datetime.now(),
+                    "url": default_storage.url(filepath),
+                    "mime_type": mimetypes.guess_type(filename)[0]
+                    or "application/octet-stream",
+                }
+            )
 
-        files.append(
-            {
-                "name": filename,
-                "size": size,
-                "modified": modified if modified else datetime.now(),
-                "url": default_storage.url(filepath),
-                "mime_type": mimetypes.guess_type(filename)[0]
-                or "application/octet-stream",
-            }
-        )
-
-    # Sort by modified date, newest first
     files.sort(key=lambda x: x["modified"], reverse=True)
     return files
 
 
-def get_user_storage_usage(username, user):
+def get_user_storage_usage(username, user, files=None):
     """Calculate total storage used by user"""
-    files = get_user_files(username)
+    if files is None:
+        files = get_user_files(username)
     total_size = sum(f["size"] for f in files)
     _, max_storage = get_user_limits(user)
     return {
@@ -130,7 +149,8 @@ def file_upload(request):
 
     username = request.user.username
     max_file_size, max_user_storage = get_user_limits(request.user)
-    storage_info = get_user_storage_usage(username, request.user)
+    files = get_user_files(username)
+    storage_info = get_user_storage_usage(username, request.user, files)
 
     if request.method == "POST":
         form = FileUploadForm(request.POST, request.FILES)
@@ -138,9 +158,7 @@ def file_upload(request):
             file = request.FILES["file"]
             is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
-            # Check number of files limit
-            current_files = get_user_files(username)
-            if len(current_files) >= MAX_FILES_PER_USER:
+            if len(files) >= MAX_FILES_PER_USER:
                 error_msg = _(
                     f"Maximum number of files reached ({MAX_FILES_PER_USER} files). Please delete some files."
                 )
@@ -209,9 +227,6 @@ def file_upload(request):
             return redirect("custom_file_upload")
     else:
         form = FileUploadForm()
-
-    # Get user files for display
-    files = get_user_files(username)
 
     context = {
         "form": form,
