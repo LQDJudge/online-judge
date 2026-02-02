@@ -58,6 +58,7 @@ body:has(.chat-page) {
 // ============================================
 
 .chat-page {
+
   // ============================================
   // Custom Scrollbar
   // ============================================
@@ -445,6 +446,7 @@ body:has(.chat-page) {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 16px;
+    padding-bottom: 40px;
   }
 
   .chat-log {
@@ -852,6 +854,7 @@ body:has(.chat-page) {
       opacity: 0;
       transform: translateY(10px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -862,6 +865,7 @@ body:has(.chat-page) {
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
@@ -1083,7 +1087,7 @@ body:has(.chat-page) {
     overflow-wrap: break-word;
     overflow-y: scroll;
     flex-grow: 1;
-    padding: 0 8px;
+    padding: 0 8px 14px;
   }
 
   #chat-info {
