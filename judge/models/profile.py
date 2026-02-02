@@ -53,6 +53,7 @@ DYNAMIC_EFFECT_CHOICES = (
     ("cherry_blossoms", _("Cherry Blossoms")),
     ("rain", _("Rain")),
     ("fireflies", _("Fireflies")),
+    ("lunar_new_year", _("Lunar New Year")),
 )
 
 
