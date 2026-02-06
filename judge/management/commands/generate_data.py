@@ -12,30 +12,30 @@ from judge.models import Problem, Profile
 def gen_submissions():
     print("Generating submissions")
 
-    # Use raw SQL for efficiency - single query with DISTINCT
-    # This avoids loading all submissions into memory and repeated queries
-    query = """
-        SELECT DISTINCT user_id, problem_id
-        FROM judge_submission
-        WHERE user_id IS NOT NULL
-    """
-
+    # Process per-problem to avoid long-running queries that timeout
+    # Each problem query is fast and uses the (problem_id, user_id) index
     with open(os.path.join(settings.ML_DATA_PATH, "submissions.csv"), "w") as csvfile:
         f = csv.writer(csvfile)
         f.writerow(["uid", "pid"])
 
-        # Use server-side cursor for memory efficiency
+        # Get all problem IDs first
         with connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute("SELECT id FROM judge_problem")
+            problem_ids = [row[0] for row in cursor.fetchall()]
 
-            # Fetch and write in batches to avoid memory issues
-            batch_size = 10000
-            while True:
-                rows = cursor.fetchmany(batch_size)
-                if not rows:
-                    break
-                for row in rows:
-                    f.writerow(row)
+        # For each problem, get distinct users who submitted
+        with connection.cursor() as cursor:
+            for problem_id in problem_ids:
+                cursor.execute(
+                    """
+                    SELECT DISTINCT user_id
+                    FROM judge_submission
+                    WHERE problem_id = %s AND user_id IS NOT NULL
+                    """,
+                    [problem_id],
+                )
+                for (user_id,) in cursor.fetchall():
+                    f.writerow([user_id, problem_id])
 
 
 def gen_users():
