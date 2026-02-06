@@ -1,54 +1,41 @@
-from django.core.management.base import BaseCommand
-from judge.models import *
 import csv
 import os
+import time
+
 from django.conf import settings
-from collections import defaultdict
+from django.core.management.base import BaseCommand
+from django.db import connection
+
+from judge.models import Problem, Profile
 
 
 def gen_submissions():
     print("Generating submissions")
-    batch_size = 10000  # Limit for each batch
-    last_id = None  # Track the last processed ID
-    submissions_dict = defaultdict(lambda: None)
 
-    while True:
-        # Fetch a batch of submissions ordered by descending ID
-        if last_id is None:
-            queryset = Submission.objects.order_by("-id").values(
-                "id", "user_id", "problem_id"
-            )[:batch_size]
-        else:
-            queryset = (
-                Submission.objects.filter(id__lt=last_id)
-                .order_by("-id")
-                .values("id", "user_id", "problem_id")[:batch_size]
-            )
+    # Use raw SQL for efficiency - single query with DISTINCT
+    # This avoids loading all submissions into memory and repeated queries
+    query = """
+        SELECT DISTINCT user_id, problem_id
+        FROM judge_submission
+        WHERE user_id IS NOT NULL
+    """
 
-        # Convert queryset to a list
-        submissions = list(queryset)
-        if not submissions:
-            break  # Exit the loop if no more submissions are left
-
-        # Process the batch
-        for submission in submissions:
-            key = (submission["user_id"], submission["problem_id"])
-            # Store the first (latest) submission for each user/problem pair
-            if key not in submissions_dict:
-                submissions_dict[key] = submission
-
-        # Update last_id for the next batch
-        last_id = submissions[-1]["id"]
-
-    # Write the results to a CSV file
     with open(os.path.join(settings.ML_DATA_PATH, "submissions.csv"), "w") as csvfile:
         f = csv.writer(csvfile)
-        # Write headers
         f.writerow(["uid", "pid"])
 
-        # Write rows from the dictionary
-        for (user_id, problem_id), submission in submissions_dict.items():
-            f.writerow([user_id, problem_id])
+        # Use server-side cursor for memory efficiency
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+
+            # Fetch and write in batches to avoid memory issues
+            batch_size = 10000
+            while True:
+                rows = cursor.fetchmany(batch_size)
+                if not rows:
+                    break
+                for row in rows:
+                    f.writerow(row)
 
 
 def gen_users():
@@ -58,8 +45,15 @@ def gen_users():
         f = csv.writer(csvfile)
         f.writerow(headers)
 
-        for u in Profile.objects.all().iterator():
-            f.writerow([u.id, u.username, u.rating, u.performance_points])
+        # Use values() to only fetch needed fields, with iterator for memory efficiency
+        queryset = Profile.objects.values(
+            "id", "user__username", "rating", "performance_points"
+        ).iterator(chunk_size=5000)
+
+        for u in queryset:
+            f.writerow(
+                [u["id"], u["user__username"], u["rating"], u["performance_points"]]
+            )
 
 
 def gen_problems():
@@ -68,9 +62,21 @@ def gen_problems():
     with open(os.path.join(settings.ML_DATA_PATH, "problems.csv"), "w") as csvfile:
         f = csv.writer(csvfile)
         f.writerow(headers)
-        for p in Problem.objects.all().iterator():
+
+        # Use values() to only fetch needed fields
+        queryset = Problem.objects.values("id", "code", "name", "points").iterator(
+            chunk_size=5000
+        )
+
+        for p in queryset:
             f.writerow(
-                [p.id, p.code, p.name, p.points, "lqdoj.edu.vn/problem/" + p.code]
+                [
+                    p["id"],
+                    p["code"],
+                    p["name"],
+                    p["points"],
+                    "lqdoj.edu.vn/problem/" + p["code"],
+                ]
             )
 
 
@@ -78,6 +84,20 @@ class Command(BaseCommand):
     help = "generate data for ML"
 
     def handle(self, *args, **options):
+        total_start = time.time()
+
+        start = time.time()
         gen_users()
+        self.stdout.write(f"  -> Completed in {time.time() - start:.2f}s")
+
+        start = time.time()
         gen_problems()
+        self.stdout.write(f"  -> Completed in {time.time() - start:.2f}s")
+
+        start = time.time()
         gen_submissions()
+        self.stdout.write(f"  -> Completed in {time.time() - start:.2f}s")
+
+        self.stdout.write(
+            self.style.SUCCESS(f"Total time: {time.time() - total_start:.2f}s")
+        )
