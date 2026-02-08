@@ -7,10 +7,20 @@ import os
 from typing import Optional
 
 # Default configuration values
-DEFAULT_BOT_NAME = "Claude-3.7-Sonnet"
+DEFAULT_BOT_NAME = "Claude-4.5-Sonnet"
 DEFAULT_SLEEP_TIME = 2.5
 DEFAULT_TIMEOUT = 120
 DEFAULT_MAX_RETRIES = 1
+
+# Supported models for chatbot (Poe bot names)
+CHATBOT_SUPPORTED_MODELS = [
+    {"id": "Gemini-3-Flash", "name": "Gemini 3 Flash", "default": True},
+    {"id": "Claude-4.5-Sonnet", "name": "Claude 4.5 Sonnet", "default": False},
+    {"id": "Claude-4.5-Opus", "name": "Claude 4.5 Opus", "default": False},
+    {"id": "GPT-5.2", "name": "GPT 5.2", "default": False},
+    {"id": "Gemini-3-Pro", "name": "Gemini 3 Pro", "default": False},
+    {"id": "GPT-5.2-Pro", "name": "GPT 5.2 Pro", "default": False},
+]
 
 
 class LLMConfig:
@@ -27,6 +37,7 @@ class LLMConfig:
         self.bot_name_tagging: Optional[str] = None
         self.bot_name_markdown: Optional[str] = None
         self.bot_name_solution: Optional[str] = None
+        self.bot_name_chatbot: Optional[str] = None
 
         # Try to load from Django settings first, then environment
         self._load_config()
@@ -48,6 +59,7 @@ class LLMConfig:
             self.bot_name_tagging = getattr(settings, "POE_BOT_NAME_TAGGING", None)
             self.bot_name_markdown = getattr(settings, "POE_BOT_NAME_MARKDOWN", None)
             self.bot_name_solution = getattr(settings, "POE_BOT_NAME_SOLUTION", None)
+            self.bot_name_chatbot = getattr(settings, "POE_BOT_NAME_CHATBOT", None)
         except ImportError:
             # Django not available, use environment variables
             pass
@@ -103,6 +115,25 @@ class LLMConfig:
         """Get bot name for solution generation tasks (falls back to default bot_name)"""
         return self.bot_name_solution or self.bot_name
 
+    def get_bot_name_for_chatbot(self) -> str:
+        """Get bot name for chatbot tasks (falls back to default bot_name)"""
+        return self.bot_name_chatbot or self.bot_name
+
+    def get_chatbot_supported_models(self) -> list:
+        """Get list of supported models for chatbot"""
+        return CHATBOT_SUPPORTED_MODELS
+
+    def get_chatbot_default_model(self) -> str:
+        """Get the default model ID for chatbot"""
+        for model in CHATBOT_SUPPORTED_MODELS:
+            if model.get("default"):
+                return model["id"]
+        return (
+            CHATBOT_SUPPORTED_MODELS[0]["id"]
+            if CHATBOT_SUPPORTED_MODELS
+            else DEFAULT_BOT_NAME
+        )
+
     def get_config_dict(self) -> dict:
         """Get configuration as dictionary"""
         return {
@@ -111,6 +142,7 @@ class LLMConfig:
             "bot_name_tagging": self.get_bot_name_for_tagging(),
             "bot_name_markdown": self.get_bot_name_for_markdown(),
             "bot_name_solution": self.get_bot_name_for_solution(),
+            "bot_name_chatbot": self.get_bot_name_for_chatbot(),
             "sleep_time": self.sleep_time,
             "timeout": self.timeout,
             "max_retries": self.max_retries,

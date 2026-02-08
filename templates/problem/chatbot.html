@@ -1,0 +1,125 @@
+{% extends "problem/edit_base.html" %}
+{% set page_type = 'chatbot' %}
+
+{% block edit_media %}
+  <style>
+  /* Chatbot page layout fixes to prevent scrolling */
+    footer {
+      display: none !important;
+    }
+    #content-body {
+      padding-bottom: 0 !important;
+    }
+    #page-container {
+      overflow: hidden;
+    }
+  </style>
+{% endblock %}
+
+{% block js_media %}
+  <script src="{{ static('katex_config.js') }}"></script>
+  {% include "katex-load.html" %}
+  <script src="{{ static('chatbot.js') }}"></script>
+  <script type="text/javascript">
+    window.CHATBOT_CONFIG = {
+      sendUrl: '{{ url("problem_chatbot_send", problem.code) }}',
+      clearUrl: '{{ url("problem_chatbot_clear", problem.code) }}',
+      historyUrl: '{{ url("problem_chatbot_history", problem.code) }}',
+      modelUrl: '{{ url("problem_chatbot_model", problem.code) }}',
+      taskStatusUrl: '{{ url("task_status_ajax") }}',
+      csrfToken: '{{ csrf_token }}',
+      userAvatar: '{{ gravatar(request.profile.id) }}',
+      currentModel: '{{ current_model }}',
+      supportedModels: {{ supported_models|tojson }},
+      translations: {
+        processing: '{{ _("Processing...") }}',
+        sending: '{{ _("Sending...") }}',
+        error: '{{ _("Error") }}',
+        networkError: '{{ _("Network error occurred") }}',
+        clearConfirm: '{{ _("Clear conversation history?") }}',
+        placeholder: '{{ _("Type your message... (Shift+Enter for new line)") }}',
+        modelChanged: '{{ _("Model changed to") }}'
+      }
+    };
+  </script>
+{% endblock %}
+
+{% block middle_title %}{% endblock %}
+
+{% block edit_content %}
+  <div class="chatbot-container">
+    <div class="chatbot-messages" id="chatbot-messages">
+      {% for msg in chat_messages %}
+        <div class="message {{ msg.role }}">
+          <div class="message-avatar">
+            {% if msg.role == 'user' %}
+              <img src="{{ gravatar(request.profile.id) }}" alt="">
+            {% else %}
+              <i class="fa fa-robot"></i>
+            {% endif %}
+          </div>
+          <div class="message-body">
+            <div class="message-content">{{ (msg.content_html if msg.content_html else msg.content|markdown(lazy_load=False))|safe }}</div>
+            {% if msg.tool_calls %}
+              <div class="tool-calls">
+                {% for tool in msg.tool_calls %}
+                  <span class="tool-badge" title="{{ tool.result_summary if tool.result_summary else '' }}">
+                    <i class="fa fa-wrench"></i> {{ tool.tool }}
+                  </span>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+
+      {% if not chat_messages %}
+        <div class="welcome-message" id="welcome-message">
+          <div class="welcome-icon"><i class="fa fa-robot"></i></div>
+          <h4>{{ _('AI Problem Author Assistant') }}</h4>
+          <p>{{ _('I can help you with:') }}</p>
+          <ul>
+            <li><i class="fa fa-check"></i> {{ _('Writing custom checkers (Python & C++)') }}</li>
+            <li><i class="fa fa-check"></i> {{ _('Creating test generators') }}</li>
+            <li><i class="fa fa-check"></i> {{ _('Writing solution editorials') }}</li>
+            <li><i class="fa fa-check"></i> {{ _('Understanding problem test data') }}</li>
+            <li><i class="fa fa-check"></i> {{ _('Reviewing problem statements') }}</li>
+          </ul>
+          <p class="welcome-hint">{{ _('Try asking: "How do I write a custom checker for this problem?"') }}</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="chatbot-input-area">
+      <div id="chat-status" class="chat-status"></div>
+      <div class="chatbot-input">
+        <div class="model-selector" id="model-selector">
+          <button type="button" id="model-btn" class="action-btn" title="{{ _('Switch model') }}">
+            <i class="fa fa-brain"></i>
+            <span class="model-name" id="current-model-name"></span>
+            <i class="fa fa-caret-down"></i>
+          </button>
+          <div class="model-dropdown" id="model-dropdown">
+            {% for model in supported_models %}
+              <div class="model-option{% if model.id == current_model %} active{% endif %}" data-model="{{ model.id }}">
+                <i class="fa fa-check"></i>
+                <span>{{ model.name }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        <textarea
+          id="chat-input"
+          placeholder="{{ _('Type your message... (Shift+Enter for new line)') }}"
+          rows="1"
+        ></textarea>
+        <button type="button" id="clear-chat-btn" class="action-btn" title="{{ _('Clear history') }}">
+          <i class="fa fa-trash"></i>
+        </button>
+        <button type="button" id="send-btn" class="action-btn" title="{{ _('Send message') }}">
+          <i class="fa fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+{% endblock %}

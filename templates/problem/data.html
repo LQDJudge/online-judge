@@ -430,7 +430,14 @@
         }
 
         if (hasGeneratorScript) {
-          scriptLines = generatorScriptField.val().trim().split('\n').filter(line => line.trim());
+          // Filter out empty lines and comment lines (starting with # or //)
+          scriptLines = generatorScriptField.val().trim().split('\n').filter(line => {
+            var trimmed = line.trim();
+            if (!trimmed) return false;  // Skip empty lines
+            if (trimmed.startsWith('#')) return false;  // Skip # comments
+            if (trimmed.startsWith('//')) return false;  // Skip // comments
+            return true;
+          });
           newGeneratorCount = scriptLines.length;
         }
 
