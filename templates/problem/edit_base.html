@@ -15,6 +15,9 @@
     {{ make_edit_tab_item('templates', 'fa fa-code', url('problem_edit_language_templates', problem.code), _('Templates')) }}
     {{ make_edit_tab_item('solutions', 'fa fa-lightbulb', url('problem_edit_solutions', problem.code), _('Solutions')) }}
     {{ make_edit_tab_item('translations', 'fa fa-language', url('problem_edit_translations', problem.code), _('Translate')) }}
+    {% if request.user.is_superuser %}
+      {{ make_edit_tab_item('chatbot', 'fa fa-robot', url('problem_chatbot', problem.code), _('AI Assistant')) }}
+    {% endif %}
   </div>
 {% endblock %}
 

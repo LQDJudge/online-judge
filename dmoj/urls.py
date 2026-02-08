@@ -30,6 +30,7 @@ from judge.views import (
     about,
     api,
     blog,
+    chatbot,
     comment,
     contests,
     docs,
@@ -302,6 +303,31 @@ urlpatterns = [
                     r"^/edit/translations$",
                     problem.ProblemEditTranslations.as_view(),
                     name="problem_edit_translations",
+                ),
+                re_path(
+                    r"^/chatbot$",
+                    chatbot.ProblemChatbotView.as_view(),
+                    name="problem_chatbot",
+                ),
+                re_path(
+                    r"^/chatbot/send$",
+                    chatbot.ChatbotSendMessage.as_view(),
+                    name="problem_chatbot_send",
+                ),
+                re_path(
+                    r"^/chatbot/clear$",
+                    chatbot.ChatbotClearHistory.as_view(),
+                    name="problem_chatbot_clear",
+                ),
+                re_path(
+                    r"^/chatbot/history$",
+                    chatbot.ChatbotGetHistory.as_view(),
+                    name="problem_chatbot_history",
+                ),
+                re_path(
+                    r"^/chatbot/model$",
+                    chatbot.ChatbotSetModel.as_view(),
+                    name="problem_chatbot_model",
                 ),
                 re_path(r"^/submit$", problem.problem_submit, name="problem_submit"),
                 re_path(
