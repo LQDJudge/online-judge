@@ -1,9 +1,81 @@
 {% extends "problem/edit_base.html" %}
 {% set page_type = 'data' %}
 
+{% block edit_media %}
+  <style>
+    .validator-editor-section {
+      margin-bottom: 1.5em;
+    }
+    .validator-editor-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .validator-editor-header select {
+      padding: 4px 8px;
+    }
+    #validator-editor {
+      width: 100%;
+      height: 300px;
+      border: 1px solid #ccc;
+    }
+    .validator-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+  </style>
+{% endblock %}
+
 {% block js_media %}
+  <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
   <script type="text/javascript">
     $(function () {
+      // Ace editor for validator code
+      var editor = ace.edit('validator-editor');
+      var langMode = $('#validator-language').val() === 'python' ? 'python' : 'c_cpp';
+      editor.getSession().setMode('ace/mode/' + langMode);
+      editor.getSession().setUseWrapMode(true);
+      editor.setFontSize(14);
+      editor.setShowPrintMargin(false);
+
+      $('#validator-language').change(function () {
+        var mode = $(this).val() === 'python' ? 'python' : 'c_cpp';
+        editor.getSession().setMode('ace/mode/' + mode);
+      });
+
+      // Save validator
+      $('#save-validator-btn').click(function () {
+        var $btn = $(this);
+        $btn.prop('disabled', true);
+        $.ajax({
+          url: '{{ url("problem_validator_save", problem.code) }}',
+          method: 'POST',
+          headers: {'X-CSRFToken': '{{ csrf_token }}'},
+          contentType: 'application/json',
+          data: JSON.stringify({
+            code: editor.getSession().getValue(),
+            language: $('#validator-language').val()
+          }),
+          dataType: 'json',
+          success: function () {
+            $('#validator-message').text('{{ _("Saved successfully.") }}').removeClass('red').addClass('green').show();
+            setTimeout(function () { $('#validator-message').fadeOut(); }, 4000);
+            $btn.prop('disabled', false);
+          },
+          error: function (xhr) {
+            var msg = '{{ _("Failed to save.") }}';
+            try { msg = JSON.parse(xhr.responseText).message; } catch (e) {}
+            $('#validator-message').text(msg).removeClass('green').addClass('red').show();
+            setTimeout(function () { $('#validator-message').fadeOut(); }, 4000);
+            $btn.prop('disabled', false);
+          }
+        });
+      });
+
+      // Validation polling
       var pollTimer = null;
       var $runBtn = $('#run-validation');
       var $status = $('#validation-status');
@@ -97,32 +169,54 @@
 
       $runBtn.click(function () {
         if ($runBtn.prop('disabled')) return;
-        setRunning(true);
-        $resultsBody.empty();
-        $summary.html('<i class="fa fa-spinner fa-spin"></i> {{ _("Starting validation...") }}');
-        $status.show();
 
+        // Save first, then run
+        $runBtn.prop('disabled', true);
         $.ajax({
-          url: '{{ url("problem_validate_testcases", problem.code) }}',
+          url: '{{ url("problem_validator_save", problem.code) }}',
           method: 'POST',
           headers: {'X-CSRFToken': '{{ csrf_token }}'},
+          contentType: 'application/json',
+          data: JSON.stringify({
+            code: editor.getSession().getValue(),
+            language: $('#validator-language').val()
+          }),
           dataType: 'json',
-          success: function (data) {
-            if (data.status === 'ok') {
-              pollTimer = setTimeout(pollStatus, 1000);
-            } else {
-              $summary.html('<span class="red"><i class="fa fa-times-circle"></i> ' + data.message + '</span>');
-              setRunning(false);
-            }
+          success: function () {
+            setRunning(true);
+            $resultsBody.empty();
+            $summary.html('<i class="fa fa-spinner fa-spin"></i> {{ _("Starting validation...") }}');
+            $status.show();
+
+            $.ajax({
+              url: '{{ url("problem_validate_testcases", problem.code) }}',
+              method: 'POST',
+              headers: {'X-CSRFToken': '{{ csrf_token }}'},
+              dataType: 'json',
+              success: function (data) {
+                if (data.status === 'ok') {
+                  pollTimer = setTimeout(pollStatus, 1000);
+                } else {
+                  $summary.html('<span class="red"><i class="fa fa-times-circle"></i> ' + data.message + '</span>');
+                  setRunning(false);
+                }
+              },
+              error: function (xhr) {
+                var msg = '{{ _("Failed to start validation.") }}';
+                try {
+                  var resp = JSON.parse(xhr.responseText);
+                  if (resp.message) msg = resp.message;
+                } catch (e) {}
+                $summary.html('<span class="red"><i class="fa fa-times-circle"></i> ' + msg + '</span>');
+                setRunning(false);
+              }
+            });
           },
           error: function (xhr) {
-            var msg = '{{ _("Failed to start validation.") }}';
-            try {
-              var resp = JSON.parse(xhr.responseText);
-              if (resp.message) msg = resp.message;
-            } catch (e) {}
-            $summary.html('<span class="red"><i class="fa fa-times-circle"></i> ' + msg + '</span>');
-            setRunning(false);
+            var msg = '{{ _("Failed to save.") }}';
+            try { msg = JSON.parse(xhr.responseText).message; } catch (e) {}
+            $('#validator-message').text(msg).removeClass('green').addClass('red').show();
+            $runBtn.prop('disabled', false);
           }
         });
       });
@@ -143,59 +237,68 @@
     </a>
   </div>
 
-  {% if not has_validator %}
-    <div class="alert alert-info">
-      <i class="fa fa-info-circle"></i>
-      {{ _('No testcase validator configured. Add a validator program in Test Data settings first.') }}
+  <div class="validator-editor-section">
+    <div class="validator-editor-header">
+      <h3 style="margin: 0;">{{ _('Validator Code') }}</h3>
+      <select id="validator-language">
+        <option value="cpp" {% if validator_language == 'cpp' %}selected{% endif %}>C/C++</option>
+        <option value="python" {% if validator_language == 'python' %}selected{% endif %}>Python</option>
+      </select>
     </div>
-  {% else %}
-    <div style="margin-bottom: 1.5em;">
-      <button id="run-validation" class="action-btn">
-        <i class="fa fa-play"></i> {{ _('Run Validation') }}
-      </button>
-    </div>
+    <div id="validator-editor">{{ validator_code }}</div>
+  </div>
 
-    <div id="validation-status" {% if not latest_validation %}style="display:none"{% endif %}>
-      <h3>{{ _('Validation Results') }}</h3>
-      <div id="validation-summary" style="margin-bottom: 1em;">
-        {% if latest_validation %}
-          {% if latest_validation.status == 'D' and latest_validation.passed %}
-            <span class="green"><i class="fa fa-check-circle"></i> {{ _('All test cases passed validation.') }}</span>
-          {% elif latest_validation.status == 'D' and not latest_validation.passed %}
-            <span class="red"><i class="fa fa-times-circle"></i>
-              {{ _('Validation failed.') }} {{ latest_validation.failed_count }} {{ _('case(s) failed.') }}
-            </span>
-          {% elif latest_validation.status == 'E' %}
-            <span class="red"><i class="fa fa-times-circle"></i> {{ _('Error') }}: {{ latest_validation.error }}</span>
-          {% elif latest_validation.status in ('P', 'V') %}
-            <span><i class="fa fa-spinner fa-spin"></i> {{ _('Validating...') }}</span>
-          {% endif %}
+  <div class="validator-actions">
+    <button id="save-validator-btn" class="action-btn" type="button">
+      <i class="fa fa-save"></i> {{ _('Save') }}
+    </button>
+    <button id="run-validation" class="action-btn" type="button">
+      <i class="fa fa-play"></i> {{ _('Run Validation') }}
+    </button>
+  </div>
+
+  <div id="validator-message" style="display:none; margin-bottom: 10px; font-weight: bold;"></div>
+
+  <div id="validation-status" {% if not latest_validation %}style="display:none"{% endif %}>
+    <h3>{{ _('Validation Results') }}</h3>
+    <div id="validation-summary" style="margin-bottom: 1em;">
+      {% if latest_validation %}
+        {% if latest_validation.status == 'D' and latest_validation.passed %}
+          <span class="green"><i class="fa fa-check-circle"></i> {{ _('All test cases passed validation.') }}</span>
+        {% elif latest_validation.status == 'D' and not latest_validation.passed %}
+          <span class="red"><i class="fa fa-times-circle"></i>
+            {{ _('Validation failed.') }} {{ latest_validation.failed_count }} {{ _('case(s) failed.') }}
+          </span>
+        {% elif latest_validation.status == 'E' %}
+          <span class="red"><i class="fa fa-times-circle"></i> {{ _('Error') }}: {{ latest_validation.error }}</span>
+        {% elif latest_validation.status in ('P', 'V') %}
+          <span><i class="fa fa-spinner fa-spin"></i> {{ _('Validating...') }}</span>
         {% endif %}
-      </div>
-
-      <table id="validation-results" class="table" {% if not validation_results %}style="display:none"{% endif %}>
-        <thead>
-          <tr>
-            <th>{{ _('Case') }}</th>
-            <th>{{ _('Batch') }}</th>
-            <th>{{ _('Status') }}</th>
-            <th>{{ _('Feedback') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in validation_results %}
-            <tr>
-              <td>{{ r.case }}</td>
-              <td>{{ r.batch if r.batch is not none else '-' }}</td>
-              <td class="{% if r.status == 'OK' %}green{% else %}red{% endif %}">
-                <i class="fa {% if r.status == 'OK' %}fa-check{% else %}fa-times{% endif %}"></i>
-                {{ r.status }}
-              </td>
-              <td>{{ r.feedback }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      {% endif %}
     </div>
-  {% endif %}
+
+    <table id="validation-results" class="table" {% if not validation_results %}style="display:none"{% endif %}>
+      <thead>
+        <tr>
+          <th>{{ _('Case') }}</th>
+          <th>{{ _('Batch') }}</th>
+          <th>{{ _('Status') }}</th>
+          <th>{{ _('Feedback') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in validation_results %}
+          <tr>
+            <td>{{ r.case }}</td>
+            <td>{{ r.batch if r.batch is not none else '-' }}</td>
+            <td class="{% if r.status == 'OK' %}green{% else %}red{% endif %}">
+              <i class="fa {% if r.status == 'OK' %}fa-check{% else %}fa-times{% endif %}"></i>
+              {{ r.status }}
+            </td>
+            <td>{{ r.feedback }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 {% endblock %}

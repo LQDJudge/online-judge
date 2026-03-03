@@ -73,6 +73,7 @@ from judge.views.problem_data import (
     ProblemZipUploadView,
     ValidateTestCasesView,
     ValidateTestCasesStatusView,
+    ProblemValidatorSaveView,
     ProblemSolutionCodesView,
     ProblemSolutionCodesSaveView,
     ProblemSolutionCodesRunView,
@@ -386,6 +387,11 @@ urlpatterns = [
                     r"^/test_data/validator$",
                     ProblemValidatorView.as_view(),
                     name="problem_validator",
+                ),
+                re_path(
+                    r"^/test_data/validator/save$",
+                    ProblemValidatorSaveView.as_view(),
+                    name="problem_validator_save",
                 ),
                 re_path(
                     r"^/test_data/validate$",

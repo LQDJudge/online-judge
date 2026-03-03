@@ -16,6 +16,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files import File
+from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 from django.forms import (
     BaseModelFormSet,
@@ -540,6 +541,21 @@ class ProblemValidatorView(TitleMixin, ProblemManagerMixin):
         data = ProblemData.objects.filter(problem=problem).first()
         context["has_validator"] = data and data.testcase_validator
 
+        # Validator code content for editing
+        validator_code = ""
+        validator_language = "cpp"
+        if data:
+            validator_language = data.testcase_validator_language or "cpp"
+            if data.testcase_validator:
+                try:
+                    with data.testcase_validator.open("r") as f:
+                        validator_code = f.read()
+                except Exception:
+                    validator_code = ""
+        context["validator_code"] = validator_code
+        context["validator_language"] = validator_language
+        context["ACE_URL"] = settings.ACE_URL
+
         # Get latest validation
         latest = (
             ProblemValidation.objects.filter(problem=problem).order_by("-date").first()
@@ -555,6 +571,49 @@ class ProblemValidatorView(TitleMixin, ProblemManagerMixin):
             context["validation_results"] = []
 
         return context
+
+
+class ProblemValidatorSaveView(ProblemManagerMixin, View):
+    def post(self, request, *args, **kwargs):
+        problem = self.get_object()
+        try:
+            body = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse(
+                {"status": "error", "message": _("Invalid JSON.")}, status=400
+            )
+
+        code = body.get("code", "")
+        language = body.get("language", "cpp")
+        if language not in ("cpp", "python"):
+            return JsonResponse(
+                {"status": "error", "message": _("Invalid language.")}, status=400
+            )
+
+        data, _ = ProblemData.objects.get_or_create(problem=problem)
+
+        ext = "cpp" if language == "cpp" else "py"
+        filename = "validator." + ext
+
+        # Save the validator file
+        if data.testcase_validator:
+            data.testcase_validator.delete(save=False)
+        data.testcase_validator.save(filename, ContentFile(code.encode("utf-8")))
+        data.testcase_validator_language = language
+        data.save()
+
+        # Regenerate init.yml
+        valid_files = []
+        try:
+            if data.zipfile:
+                valid_files = ZipFile(data.zipfile.path).namelist()
+        except (BadZipfile, FileNotFoundError):
+            pass
+        ProblemDataCompiler.generate(
+            problem, data, problem.cases.order_by("order"), valid_files
+        )
+
+        return JsonResponse({"status": "ok"})
 
 
 MAX_PENDING_VALIDATIONS_PER_USER = 3
