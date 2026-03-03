@@ -1,0 +1,462 @@
+{% extends "problem/edit_base.html" %}
+{% set page_type = 'solution_codes' %}
+
+{% block edit_media %}
+  <style>
+    .solution-code-entry {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .solution-code-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .solution-code-header label {
+      font-weight: bold;
+      margin: 0;
+      min-width: 25px;
+    }
+    .solution-code-header select {
+      padding: 4px 8px;
+    }
+    .solution-code-header .name-input {
+      padding: 4px 8px;
+      width: 150px;
+    }
+    .solution-code-header .delete-code-btn {
+      margin-left: auto;
+      cursor: pointer;
+      color: #c0392b;
+      background: none;
+      border: none;
+      font-size: 16px;
+    }
+    .solution-code-editor {
+      width: 100%;
+      height: 200px;
+      border: 1px solid #ccc;
+    }
+    .solution-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    #solution-results-section {
+      margin-bottom: 20px;
+    }
+    #solution-results-section table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    #solution-results-section th,
+    #solution-results-section td {
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    .result-match {
+      color: #27ae60;
+      font-weight: bold;
+    }
+    .result-mismatch {
+      color: #c0392b;
+      font-weight: bold;
+    }
+    .result-pending {
+      color: #f39c12;
+    }
+  </style>
+{% endblock %}
+
+{% block js_media %}
+  <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
+  <script type="text/javascript">
+    $(function () {
+      var MAX_CODES = {{ max_solution_codes }};
+      var languages = {{ languages | tojson }};
+      var expectedChoices = [
+        {% for code, label in expected_result_choices %}
+          {value: '{{ code }}', label: '{{ label }}'},
+        {% endfor %}
+      ];
+
+      // Initial data from server
+      var initialCodes = [
+        {% for sc in solution_codes %}
+          {
+            name: {{ sc.name | tojson }},
+            source_code: {{ sc.source_code | tojson }},
+            language_id: {{ sc.language_id }},
+            expected_result: '{{ sc.expected_result }}',
+            last_submission_id: {{ sc.last_submission_id or 'null' }}
+          },
+        {% endfor %}
+      ];
+
+      var entries = [];
+      var entryCounter = 0;
+
+      function makeLanguageSelect(selectedId) {
+        var $sel = $('<select class="lang-select"></select>');
+        for (var i = 0; i < languages.length; i++) {
+          var lang = languages[i];
+          var $opt = $('<option></option>')
+            .val(lang.id)
+            .text(lang.name)
+            .attr('data-ace', lang.ace || 'text');
+          if (lang.id === selectedId) $opt.prop('selected', true);
+          $sel.append($opt);
+        }
+        return $sel;
+      }
+
+      function makeExpectedSelect(selectedVal) {
+        var $sel = $('<select class="expected-select"></select>');
+        for (var i = 0; i < expectedChoices.length; i++) {
+          var ch = expectedChoices[i];
+          var $opt = $('<option></option>').val(ch.value).text(ch.label);
+          if (ch.value === selectedVal) $opt.prop('selected', true);
+          $sel.append($opt);
+        }
+        return $sel;
+      }
+
+      function addEntry(data) {
+        if (entries.length >= MAX_CODES) return;
+        var idx = entryCounter++;
+        var num = entries.length + 1;
+
+        var $entry = $('<div class="solution-code-entry" data-idx="' + idx + '"></div>');
+        var $header = $('<div class="solution-code-header"></div>');
+        $header.append($('<label>#' + num + '</label>'));
+
+        var $nameInput = $('<input type="text" class="name-input" placeholder="{{ _("Name") }}">')
+          .val(data.name || '');
+        $header.append($nameInput);
+
+        var $langSel = makeLanguageSelect(data.language_id || (languages.length > 0 ? languages[0].id : null));
+        $header.append($('<span></span>').append($langSel));
+
+        var $expSel = makeExpectedSelect(data.expected_result || 'AC');
+        $header.append($('<span></span>').append($expSel));
+
+        var $delBtn = $('<button type="button" class="delete-code-btn" title="{{ _("Delete") }}"><i class="fa fa-trash"></i></button>');
+        $header.append($delBtn);
+
+        $entry.append($header);
+
+        var editorId = 'ace-editor-' + idx;
+        var $editorDiv = $('<div class="solution-code-editor" id="' + editorId + '"></div>');
+        $entry.append($editorDiv);
+
+        $('#solution-codes-container').append($entry);
+
+        // Init Ace editor
+        var editor = ace.edit(editorId);
+        var aceMode = $langSel.find('option:selected').attr('data-ace') || 'text';
+        editor.getSession().setMode('ace/mode/' + aceMode);
+        editor.getSession().setUseWrapMode(true);
+        editor.setFontSize(14);
+        editor.setShowPrintMargin(false);
+        if (data.source_code) {
+          editor.getSession().setValue(data.source_code);
+        }
+
+        $langSel.change(function () {
+          var newMode = $(this).find('option:selected').attr('data-ace') || 'text';
+          editor.getSession().setMode('ace/mode/' + newMode);
+        });
+
+        var entryObj = {
+          idx: idx,
+          $el: $entry,
+          editor: editor,
+          $nameInput: $nameInput,
+          $langSel: $langSel,
+          $expSel: $expSel
+        };
+        entries.push(entryObj);
+
+        $delBtn.click(function () {
+          editor.destroy();
+          $entry.remove();
+          entries = entries.filter(function (e) { return e.idx !== idx; });
+          renumber();
+          updateAddBtn();
+        });
+
+        updateAddBtn();
+      }
+
+      function renumber() {
+        $('#solution-codes-container .solution-code-entry').each(function (i) {
+          $(this).find('.solution-code-header label').first().text('#' + (i + 1));
+        });
+      }
+
+      function updateAddBtn() {
+        $('#add-code-btn').prop('disabled', entries.length >= MAX_CODES);
+      }
+
+      function collectData() {
+        var data = [];
+        for (var i = 0; i < entries.length; i++) {
+          var e = entries[i];
+          data.push({
+            name: e.$nameInput.val(),
+            source_code: e.editor.getSession().getValue(),
+            language_id: parseInt(e.$langSel.val()),
+            expected_result: e.$expSel.val()
+          });
+        }
+        return data;
+      }
+
+      function showMessage(msg, isError) {
+        var $msg = $('#solution-message');
+        $msg.text(msg).removeClass('green red').addClass(isError ? 'red' : 'green').show();
+        setTimeout(function () { $msg.fadeOut(); }, 4000);
+      }
+
+      // Save
+      $('#save-codes-btn').click(function () {
+        var $btn = $(this);
+        $btn.prop('disabled', true);
+        $.ajax({
+          url: '{{ url("problem_solution_codes_save", problem.code) }}',
+          method: 'POST',
+          headers: {'X-CSRFToken': '{{ csrf_token }}'},
+          contentType: 'application/json',
+          data: JSON.stringify(collectData()),
+          dataType: 'json',
+          success: function (resp) {
+            showMessage('{{ _("Saved successfully.") }}', false);
+            $btn.prop('disabled', false);
+          },
+          error: function (xhr) {
+            var msg = '{{ _("Failed to save.") }}';
+            try { msg = JSON.parse(xhr.responseText).message; } catch (e) {}
+            showMessage(msg, true);
+            $btn.prop('disabled', false);
+          }
+        });
+      });
+
+      // Run All
+      var pollTimer = null;
+
+      function setRunning(running) {
+        $('#run-all-btn').prop('disabled', running);
+        if (running) {
+          $('#run-all-btn').html('<i class="fa fa-spinner fa-spin"></i> {{ _("Running...") }}');
+        } else {
+          $('#run-all-btn').html('<i class="fa fa-play"></i> {{ _("Run All") }}');
+        }
+      }
+
+      function renderResults(data) {
+        var $section = $('#solution-results-section');
+        var $tbody = $('#solution-results-tbody');
+        $tbody.empty();
+
+        if (!data.results || data.results.length === 0) return;
+        $section.show();
+
+        var allMatch = true;
+        for (var i = 0; i < data.results.length; i++) {
+          var r = data.results[i];
+          var resultText = r.result || r.status || '-';
+          var verdictHtml = '';
+          var timeStr = r.time != null ? r.time.toFixed(2) + 's' : '-';
+          var memStr = r.memory != null ? r.memory.toFixed(0) + ' KB' : '-';
+          var subLink = r.submission_id
+            ? '<a href="/submission/' + r.submission_id + '" target="_blank">#' + r.submission_id + '</a>'
+            : '-';
+          var nameStr = r.name ? $('<span>').text(r.name).html() : '-';
+
+          if (!r.is_graded) {
+            verdictHtml = '<span class="result-pending"><i class="fa fa-spinner fa-spin"></i> {{ _("Pending") }}</span>';
+            allMatch = false;
+          } else if (r.match === true) {
+            verdictHtml = '<span class="result-match"><i class="fa fa-check"></i> {{ _("Match") }}</span>';
+          } else if (r.match === false) {
+            verdictHtml = '<span class="result-mismatch"><i class="fa fa-times"></i> {{ _("Mismatch") }}</span>';
+            allMatch = false;
+          } else {
+            verdictHtml = '-';
+          }
+
+          var scoreStr = r.is_graded ? r.case_points + ' / ' + r.case_total : '-';
+
+          $tbody.append(
+            '<tr>' +
+            '<td>' + (i + 1) + '</td>' +
+            '<td>' + nameStr + '</td>' +
+            '<td>' + $('<span>').text(r.language).html() + '</td>' +
+            '<td>' + $('<span>').text(r.expected).html() + '</td>' +
+            '<td>' + $('<span>').text(resultText).html() + '</td>' +
+            '<td>' + scoreStr + '</td>' +
+            '<td>' + timeStr + '</td>' +
+            '<td>' + memStr + '</td>' +
+            '<td>' + verdictHtml + '</td>' +
+            '<td>' + subLink + '</td>' +
+            '</tr>'
+          );
+        }
+
+        // Summary
+        var $summary = $('#solution-results-summary');
+        if (data.all_graded) {
+          if (allMatch) {
+            $summary.html('<span class="green"><i class="fa fa-check-circle"></i> {{ _("All solution codes matched expected results.") }}</span>');
+          } else {
+            $summary.html('<span class="red"><i class="fa fa-times-circle"></i> {{ _("Some solution codes did not match expected results.") }}</span>');
+          }
+        } else {
+          $summary.html('<span class="result-pending"><i class="fa fa-spinner fa-spin"></i> {{ _("Grading in progress...") }}</span>');
+        }
+      }
+
+      function pollStatus() {
+        $.getJSON('{{ url("problem_solution_codes_status", problem.code) }}', function (data) {
+          renderResults(data);
+          if (!data.all_graded) {
+            pollTimer = setTimeout(pollStatus, 2000);
+          } else {
+            setRunning(false);
+            pollTimer = null;
+          }
+        }).fail(function () {
+          setRunning(false);
+          pollTimer = null;
+        });
+      }
+
+      $('#run-all-btn').click(function () {
+        if ($(this).prop('disabled')) return;
+
+        // Save first, then run
+        var $btn = $(this);
+        $btn.prop('disabled', true);
+        $('#solution-results-summary').html('');
+        $('#solution-results-tbody').empty();
+
+        $.ajax({
+          url: '{{ url("problem_solution_codes_save", problem.code) }}',
+          method: 'POST',
+          headers: {'X-CSRFToken': '{{ csrf_token }}'},
+          contentType: 'application/json',
+          data: JSON.stringify(collectData()),
+          dataType: 'json',
+          success: function () {
+            // Now run
+            setRunning(true);
+            $.ajax({
+              url: '{{ url("problem_solution_codes_run", problem.code) }}',
+              method: 'POST',
+              headers: {'X-CSRFToken': '{{ csrf_token }}'},
+              dataType: 'json',
+              success: function (data) {
+                if (data.status === 'ok') {
+                  pollTimer = setTimeout(pollStatus, 1000);
+                } else {
+                  showMessage(data.message, true);
+                  setRunning(false);
+                }
+              },
+              error: function (xhr) {
+                var msg = '{{ _("Failed to run.") }}';
+                try { msg = JSON.parse(xhr.responseText).message; } catch (e) {}
+                showMessage(msg, true);
+                setRunning(false);
+              }
+            });
+          },
+          error: function (xhr) {
+            var msg = '{{ _("Failed to save before running.") }}';
+            try { msg = JSON.parse(xhr.responseText).message; } catch (e) {}
+            showMessage(msg, true);
+            $btn.prop('disabled', false);
+          }
+        });
+      });
+
+      // Add Code button
+      $('#add-code-btn').click(function () {
+        addEntry({});
+      });
+
+      // Init entries from server data
+      for (var i = 0; i < initialCodes.length; i++) {
+        addEntry(initialCodes[i]);
+      }
+      updateAddBtn();
+
+      // If any submission is still in progress, start polling
+      var anyPending = false;
+      for (var i = 0; i < initialCodes.length; i++) {
+        if (initialCodes[i].last_submission_id) {
+          anyPending = true;
+          break;
+        }
+      }
+      if (anyPending) {
+        $('#solution-results-section').show();
+        setRunning(true);
+        pollStatus();
+      }
+    });
+  </script>
+{% endblock %}
+
+{% block edit_content %}
+  <div style="margin-bottom: 1em;">
+    <a href="{{ url('problem_data', problem.code) }}">
+      <i class="fa fa-arrow-left"></i> {{ _('Back to Test Data') }}
+    </a>
+  </div>
+
+  <div class="solution-actions">
+    <button id="add-code-btn" class="action-btn" type="button">
+      <i class="fa fa-plus"></i> {{ _('Add Code') }}
+    </button>
+    <button id="save-codes-btn" class="action-btn" type="button">
+      <i class="fa fa-save"></i> {{ _('Save') }}
+    </button>
+    <button id="run-all-btn" class="action-btn" type="button">
+      <i class="fa fa-play"></i> {{ _('Run All') }}
+    </button>
+  </div>
+
+  <div id="solution-message" style="display:none; margin-bottom: 10px; font-weight: bold;"></div>
+
+  <div id="solution-results-section" style="display:none;">
+    <h3>{{ _('Results') }}</h3>
+    <div id="solution-results-summary" style="margin-bottom: 10px;"></div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>{{ _('Name') }}</th>
+          <th>{{ _('Language') }}</th>
+          <th>{{ _('Expected') }}</th>
+          <th>{{ _('Actual') }}</th>
+          <th>{{ _('Score') }}</th>
+          <th>{{ _('Time') }}</th>
+          <th>{{ _('Memory') }}</th>
+          <th>{{ _('Verdict') }}</th>
+          <th>{{ _('Submission') }}</th>
+        </tr>
+      </thead>
+      <tbody id="solution-results-tbody"></tbody>
+    </table>
+  </div>
+
+  <div id="solution-codes-container"></div>
+{% endblock %}

@@ -2,6 +2,7 @@ from operator import attrgetter
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import default_storage
 from django.core.exceptions import ObjectDoesNotExist
@@ -178,16 +179,34 @@ def get_cases_data(submission):
             files.append(case.output_file)
     case_data = get_problem_case(submission.problem, files)
 
+    # Build case list and identify which need generator cache fallback
     problem_data = {}
+    cases_needing_cache = []
     count = 0
     for case in testcases:
         if case.type != "C":
             continue
         count += 1
-        problem_data[count] = {
-            "input": case_data.get(case.input_file, "") if case.input_file else "",
-            "answer": case_data.get(case.output_file, "") if case.output_file else "",
-        }
+        input_data = case_data.get(case.input_file, "") if case.input_file else ""
+        answer_data = case_data.get(case.output_file, "") if case.output_file else ""
+        problem_data[count] = {"input": input_data, "answer": answer_data}
+        if not input_data or not answer_data:
+            cases_needing_cache.append(count)
+
+    # Batch fetch cached preview data for generator-based cases
+    if cases_needing_cache:
+        cache_keys = [
+            "submission_testdata:%s:%s" % (submission.id, c)
+            for c in cases_needing_cache
+        ]
+        cached = cache.get_many(cache_keys)
+        for c in cases_needing_cache:
+            key = "submission_testdata:%s:%s" % (submission.id, c)
+            if key in cached:
+                if not problem_data[c]["input"]:
+                    problem_data[c]["input"] = cached[key].get("input", "")
+                if not problem_data[c]["answer"]:
+                    problem_data[c]["answer"] = cached[key].get("answer", "")
 
     return problem_data
 

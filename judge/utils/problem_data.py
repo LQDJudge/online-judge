@@ -275,6 +275,23 @@ class ProblemDataCompiler(object):
             init["file_io"]["output"] = self.data.fileio_output
         if self.data.output_only:
             init["output_only"] = True
+        if self.data.testcase_validator:
+            validator_path = split_path_first(self.data.testcase_validator.name)
+            if len(validator_path) != 2:
+                raise ProblemDataError(_("Invalid validator source path"))
+            filename = validator_path[1]
+            ext = os.path.splitext(filename)[1].lower()
+            if ext == ".cpp":
+                lang = _get_latest_cpp_key()
+            elif ext == ".py":
+                lang = "PY3"
+            else:
+                raise ProblemDataError(_("Unsupported validator extension: %s") % ext)
+            init["validator"] = {
+                "source": filename,
+                "language": lang,
+            }
+
         if self.data.use_ioi_signature:
             signature_graders = {}
             for grader in self.problem.signature_graders.all():

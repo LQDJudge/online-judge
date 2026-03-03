@@ -13,6 +13,7 @@ except ImportError:
 logger = logging.getLogger("judge.bridge")
 
 PriorityMarker = namedtuple("PriorityMarker", "priority")
+ValidateItem = namedtuple("ValidateItem", "validate_id problem_id")
 
 
 class JudgeList(object):
@@ -26,6 +27,7 @@ class JudgeList(object):
         self.judges = set()
         self.node_map = {}
         self.submission_map = {}
+        self.validate_map = {}
         self.lock = RLock()
 
     def _handle_free_judge(self, judge):
@@ -33,29 +35,53 @@ class JudgeList(object):
             node = self.queue.first
             while node:
                 if not isinstance(node.value, PriorityMarker):
-                    id, problem, language, source, judge_id = node.value
-                    if judge.can_judge(problem, language, judge_id):
-                        self.submission_map[id] = judge
-                        logger.info(
-                            "Dispatched queued submission %d: %s", id, judge.name
-                        )
-                        try:
-                            judge.submit(id, problem, language, source)
-                        except VanishedSubmission:
-                            pass
-                        except Exception:
-                            logger.exception(
-                                "Failed to dispatch %d (%s, %s) to %s",
-                                id,
-                                problem,
-                                language,
+                    if isinstance(node.value, ValidateItem):
+                        item = node.value
+                        if item.problem_id in judge.problems:
+                            self.validate_map[item.validate_id] = judge
+                            logger.info(
+                                "Dispatched queued validation %s: %s",
+                                item.validate_id,
                                 judge.name,
                             )
-                            self.judges.remove(judge)
-                            return
-                        self.queue.remove(node)
-                        del self.node_map[id]
-                        break
+                            try:
+                                judge.submit_validate(item.validate_id, item.problem_id)
+                            except Exception:
+                                logger.exception(
+                                    "Failed to dispatch validation %s (%s) to %s",
+                                    item.validate_id,
+                                    item.problem_id,
+                                    judge.name,
+                                )
+                                self.judges.remove(judge)
+                                return
+                            self.queue.remove(node)
+                            del self.node_map[item.validate_id]
+                            break
+                    else:
+                        id, problem, language, source, judge_id = node.value
+                        if judge.can_judge(problem, language, judge_id):
+                            self.submission_map[id] = judge
+                            logger.info(
+                                "Dispatched queued submission %d: %s", id, judge.name
+                            )
+                            try:
+                                judge.submit(id, problem, language, source)
+                            except VanishedSubmission:
+                                pass
+                            except Exception:
+                                logger.exception(
+                                    "Failed to dispatch %d (%s, %s) to %s",
+                                    id,
+                                    problem,
+                                    language,
+                                    judge.name,
+                                )
+                                self.judges.remove(judge)
+                                return
+                            self.queue.remove(node)
+                            del self.node_map[id]
+                            break
                 node = node.next
 
     def register(self, judge):
@@ -111,6 +137,51 @@ class JudgeList(object):
                     self.queue.remove(node)
                     del self.node_map[submission]
                 return False
+
+    def validate(self, validate_id, problem_id):
+        """Dispatch validation to an available judge or queue it."""
+        with self.lock:
+            if validate_id in self.validate_map or validate_id in self.node_map:
+                return True
+
+            candidates = [
+                judge
+                for judge in self.judges
+                if not judge.working and problem_id in judge.problems
+            ]
+            if candidates:
+                judge = min(candidates, key=attrgetter("load"))
+                logger.info("Dispatched validation %s to: %s", validate_id, judge.name)
+                self.validate_map[validate_id] = judge
+                try:
+                    judge.submit_validate(validate_id, problem_id)
+                except Exception:
+                    logger.exception(
+                        "Failed to dispatch validation %s (%s) to %s",
+                        validate_id,
+                        problem_id,
+                        judge.name,
+                    )
+                    self.judges.discard(judge)
+                    return self.validate(validate_id, problem_id)
+            else:
+                # Queue at lowest priority
+                self.node_map[validate_id] = self.queue.insert(
+                    ValidateItem(validate_id, problem_id),
+                    self.priority[self.priorities - 1],
+                )
+                logger.info("Queued validation: %s", validate_id)
+            return True
+
+    def on_judge_free_validation(self, judge, validate_id):
+        with self.lock:
+            logger.info(
+                "Judge available after validation %s: %s", validate_id, judge.name
+            )
+            self.validate_map.pop(validate_id, None)
+            judge._working = False
+            judge._working_data = {}
+            self._handle_free_judge(judge)
 
     def check_priority(self, priority):
         return 0 <= priority < self.priorities

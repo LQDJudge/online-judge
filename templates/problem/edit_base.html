@@ -11,6 +11,7 @@
   <div class="left-sidebar">
     {{ make_edit_tab_item('content', 'fa fa-file-alt', url('problem_edit', problem.code), _('Content')) }}
     {{ make_edit_tab_item('data', 'fa fa-database', url('problem_data', problem.code), _('Test Data')) }}
+    {{ make_edit_tab_item('solution_codes', 'fa fa-flask', url('problem_solution_codes', problem.code), _('Solution Codes')) }}
     {{ make_edit_tab_item('languages', 'fa fa-clock', url('problem_edit_language_limits', problem.code), _('Languages')) }}
     {{ make_edit_tab_item('templates', 'fa fa-code', url('problem_edit_language_templates', problem.code), _('Templates')) }}
     {{ make_edit_tab_item('solutions', 'fa fa-lightbulb', url('problem_edit_solutions', problem.code), _('Solutions')) }}

@@ -4,9 +4,9 @@
 
 Test Generator cho phép bạn sinh test bằng một chương trình generator viết bằng C++, thay vì upload file test như thông thường.
 
-### Generator File (File sinh test)
+### File sinh test
 
-Đầu tiên, bạn cần viết một generator file bằng C++ (có thể upload hoặc Edit trực tiếp) nhận argument là các số đại diện cho giới hạn của input và thêm một argument là seed dùng cho random. Chương trình sẽ random input từ giới hạn và seed được nhập từ argument.
+Đầu tiên, bạn cần viết một file sinh test bằng C++ (có thể upload hoặc chỉnh sửa trực tiếp) nhận tham số là các số đại diện cho giới hạn của input và thêm một tham số là seed dùng cho random. Chương trình sẽ random input từ giới hạn và seed được nhập từ tham số.
 
 Sau khi có input, bạn cần code lời giải bài toán trong file với input đó để tạo ra output. Cuối cùng, in input ra stdout (dùng cout) và in output ra stderr (dùng cerr).
 
@@ -64,9 +64,9 @@ int main(int args_length, char* args[]) {
 }
 ```
 
-### Generator Script (Script sinh test)
+### Script sinh test
 
-Generator Script sẽ hiện ra dưới mục Generator file sau khi bạn lưu file generator. Generator Script giúp bạn tạo ra bộ test nhanh chóng bằng cách nhập các argument (tham số), mỗi dòng tương ứng một test. Mỗi dòng argument được dùng trong generator file để sinh ra một test với input/output in ra từ file, từ đó tạo ra bộ test hoàn chỉnh.
+Script sinh test sẽ hiện ra dưới mục file sinh test sau khi bạn lưu file generator. Script sinh test giúp bạn tạo ra bộ test nhanh chóng bằng cách nhập các tham số, mỗi dòng tương ứng một test. Mỗi dòng tham số được dùng trong file sinh test để sinh ra một test với input/output in ra từ file, từ đó tạo ra bộ test hoàn chỉnh.
 
 Lấy ví dụ bài toán a + b. Bạn muốn tạo ra 10 test với giới hạn đa dạng để bao quát hết mọi trường hợp, một ví dụ về bộ test mạnh sẽ có 3 test với a, b nằm trong đoạn 1 đến 10, 3 test từ 100 đến 1000, và 4 test từ 10000 đến 100000. Với cách chia này, bộ test của bạn sẽ bao quát cho giá trị nhỏ lẫn giá trị lớn. 
 
@@ -87,22 +87,22 @@ Lấy ví dụ bài toán a + b. Bạn muốn tạo ra 10 test với giới hạ
 10000 100000 4753
 ```
 
-Sau khi có generator script, bạn hãy click nút "Fill testcases" (Điền tests) trong mục "Autofill testcases". Bảng testcases sẽ được thêm số lượng test bằng với số dòng trong script, mỗi test sẽ có argument (hiện trong Generator Args) từ dòng tương ứng trong script.
+Sau khi có script sinh test, bạn hãy bấm nút **"Điền test"** trong mục **"Tự động điền test"**. Bảng test sẽ được thêm số lượng test bằng với số dòng trong script, mỗi test sẽ có tham số (hiện trong mục **"Tham số sinh test"**) từ dòng tương ứng trong script.
 
-**Lưu ý**: Khi click "Fill testcases", nếu có file trong mục "Data zip file", testcases trong file cũng sẽ được thêm.
+**Lưu ý**: Khi bấm **"Điền test"**, nếu có file trong mục **"File zip chứa test"**, các test trong file cũng sẽ được thêm.
 
-### Generator Args (Tham số sinh test)
+### Tham số sinh test
 
-Argument của mỗi test sẽ hiện ở mục generator args và bạn có thể thay đổi argument của test ở đó. 
+Tham số của mỗi test sẽ hiện ở mục **"Tham số sinh test"** và bạn có thể thay đổi tham số của test ở đó.
 
-Bạn cũng có thể thêm từng testcase bằng cách "Add new case" (Thêm test mới) và nhập argument vào mục generator args của test đó.
+Bạn cũng có thể thêm từng test bằng cách bấm **"Thêm test mới"** và nhập tham số vào mục tham số sinh test của test đó.
 
 **Lưu ý quan trọng**
 Mỗi test case chỉ sử dụng **một trong hai cách**:
 - Hoặc lấy data từ file ZIP
 - Hoặc sinh data từ generator + argument
 
-Nhớ click **"Apply!"** ở cuối trang để lưu lại các thay đổi.
+Nhớ bấm **"Lưu"** ở cuối trang để lưu lại các thay đổi.
 
 ## 2. Custom Checker
 
@@ -333,7 +333,7 @@ int main() {
 }
 ```
 
-**Student submission:**
+**Bài nộp của thí sinh:**
 ```cpp
 int solve(int n) {
     return  n * 2;
@@ -341,7 +341,7 @@ int solve(int n) {
 ```
 
 ### Python
-Student submission sẽ được lưu vào file _submission.py.
+Bài nộp của thí sinh sẽ được lưu vào file _submission.py.
 
 **Handler (handler.py):**
 ```python
@@ -357,7 +357,7 @@ if __name__ == "__main__":
     main()
 ```
 
-**Student submission:**
+**Bài nộp của thí sinh:**
 ```python
 def solve(n):
     return n * 2
@@ -382,11 +382,89 @@ public class Handler {
 }
 ```
 
-**Student submission:**
+**Bài nộp của thí sinh:**
 ```java
 public class Solution {
     public static int solve(int n) {
         return n * 2;
     }
 }
+```
+
+## 5. Trình kiểm tra test
+
+Trình kiểm tra test cho phép bạn kiểm tra dữ liệu input của test có thỏa mãn ràng buộc của bài toán hay không. Chương trình kiểm tra đọc input từ stdin và trả về exit code 0 nếu input hợp lệ, hoặc exit code khác 0 nếu input không hợp lệ. Tính năng này giúp phát hiện lỗi trong dữ liệu test trước khi thí sinh gặp phải.
+
+Để sử dụng tính năng này, upload hoặc chỉnh sửa chương trình kiểm tra trong mục **Trình kiểm tra test**.
+
+### Cách hoạt động
+
+1. Trình kiểm tra nhận input của test qua **stdin**
+2. Kiểm tra xem input có thỏa mãn ràng buộc của bài toán không
+3. **Exit code 0** = input hợp lệ
+4. **Exit code khác 0** = input không hợp lệ
+5. Output ra **stderr** sẽ được ghi lại làm phản hồi (giải thích lý do kiểm tra thất bại)
+
+Sau khi lưu trình kiểm tra, bấm nút **"Chạy kiểm tra"** để chạy kiểm tra trên tất cả test case. Kết quả sẽ hiển thị test case nào hợp lệ hoặc không hợp lệ.
+
+### C++
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    int n;
+
+    // Kiểm tra đọc được đúng một số nguyên
+    if (!(cin >> n)) {
+        cerr << "Không đọc được số nguyên n" << endl;
+        return 1;
+    }
+
+    // Kiểm tra ràng buộc: 1 <= n <= 1000000
+    if (n < 1 || n > 1000000) {
+        cerr << "n = " << n << " nằm ngoài đoạn [1, 1000000]" << endl;
+        return 1;
+    }
+
+    // Kiểm tra không có dữ liệu thừa
+    string extra;
+    if (cin >> extra) {
+        cerr << "Dữ liệu thừa: " << extra << endl;
+        return 1;
+    }
+
+    return 0; // Hợp lệ
+}
+```
+
+### Python
+
+```python
+import sys
+
+def main():
+    data = sys.stdin.read().split()
+
+    # Kiểm tra có đúng một giá trị
+    if len(data) != 1:
+        print(f"Mong đợi 1 giá trị, nhận được {len(data)}", file=sys.stderr)
+        sys.exit(1)
+
+    # Kiểm tra đó là số nguyên
+    try:
+        n = int(data[0])
+    except ValueError:
+        print(f"'{data[0]}' không phải số nguyên", file=sys.stderr)
+        sys.exit(1)
+
+    # Kiểm tra ràng buộc: 1 <= n <= 1000000
+    if not (1 <= n <= 1000000):
+        print(f"n = {n} nằm ngoài đoạn [1, 1000000]", file=sys.stderr)
+        sys.exit(1)
+
+    sys.exit(0)  # Hợp lệ
+
+main()
 ```

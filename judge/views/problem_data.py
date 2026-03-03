@@ -1,6 +1,7 @@
 import json
 import mimetypes
 import os
+import uuid
 from itertools import chain
 import shutil
 from tempfile import gettempdir
@@ -40,9 +41,14 @@ from judge.models import (
     Problem,
     ProblemData,
     ProblemTestCase,
+    ProblemValidation,
+    ProblemValidationResult,
+    ProblemSolutionCode,
     Submission,
+    SubmissionSource,
     problem_data_storage,
     ProblemSignatureGrader,
+    Language,
 )
 from judge.utils.problem_data import ProblemDataCompiler
 from judge.utils.unicode import utf8text
@@ -97,6 +103,7 @@ class ProblemDataForm(ModelForm):
             "fileio_output",
             "output_only",
             "use_ioi_signature",
+            "testcase_validator",
         ]
         widgets = {
             "zipfile": FineUploadFileInput,
@@ -124,6 +131,9 @@ class ProblemDataForm(ModelForm):
         )
         self.fields["interactive_judge"].widget = FileEditWidget(
             default_file_name="interactive.cpp"
+        )
+        self.fields["testcase_validator"].widget = FileEditWidget(
+            default_file_name="validator.cpp"
         )
 
 
@@ -504,3 +514,404 @@ class ProblemZipUploadView(ProblemManagerMixin, View):
             return JsonResponse({"success": True})
         else:
             return HttpResponse(status_code=400)
+
+
+class ProblemValidatorView(TitleMixin, ProblemManagerMixin):
+    template_name = "problem/validator.html"
+
+    def get_title(self):
+        return _("Testcase Validator for {0}").format(self.object.name)
+
+    def get_content_title(self):
+        return mark_safe(
+            escape(_("Testcase Validator for %s"))
+            % (
+                format_html(
+                    '<a href="{1}">{0}</a>',
+                    self.object.name,
+                    reverse("problem_detail", args=[self.object.code]),
+                )
+            )
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        problem = self.object
+        data = ProblemData.objects.filter(problem=problem).first()
+        context["has_validator"] = data and data.testcase_validator
+
+        # Get latest validation
+        latest = (
+            ProblemValidation.objects.filter(problem=problem).order_by("-date").first()
+        )
+        context["latest_validation"] = latest
+        if latest:
+            context["validation_results"] = list(
+                ProblemValidationResult.objects.filter(validation=latest).order_by(
+                    "case"
+                )
+            )
+        else:
+            context["validation_results"] = []
+
+        return context
+
+
+MAX_PENDING_VALIDATIONS_PER_USER = 3
+
+
+class ValidateTestCasesView(ProblemManagerMixin, View):
+    def post(self, request, *args, **kwargs):
+        from judge.judgeapi import validate_testcases
+
+        problem = self.get_object()
+        profile = request.profile
+
+        # Check if validation already running for this problem
+        if ProblemValidation.objects.filter(
+            problem=problem, status__in=("P", "V")
+        ).exists():
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": _("Validation already in progress for this problem."),
+                },
+                status=409,
+            )
+
+        # Check per-user rate limit
+        pending_count = ProblemValidation.objects.filter(
+            user=profile, status__in=("P", "V")
+        ).count()
+        if pending_count >= MAX_PENDING_VALIDATIONS_PER_USER:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": _(
+                        "You have %(count)d validations running. "
+                        "Max %(max)d allowed."
+                    )
+                    % {
+                        "count": pending_count,
+                        "max": MAX_PENDING_VALIDATIONS_PER_USER,
+                    },
+                },
+                status=429,
+            )
+
+        validate_id = str(uuid.uuid4())
+        validation = ProblemValidation.objects.create(
+            problem=problem,
+            validate_id=validate_id,
+            user=profile,
+            status="P",
+        )
+
+        success = validate_testcases(problem.code, validate_id)
+        if not success:
+            validation.status = "E"
+            validation.error = "No judges available"
+            validation.save()
+            return JsonResponse(
+                {"status": "error", "message": _("No judges available.")},
+                status=503,
+            )
+
+        return JsonResponse({"status": "ok", "validate_id": validate_id})
+
+
+class ValidateTestCasesStatusView(ProblemManagerMixin, View):
+    def get(self, request, *args, **kwargs):
+        problem = self.get_object()
+        validation = (
+            ProblemValidation.objects.filter(problem=problem).order_by("-date").first()
+        )
+
+        if not validation:
+            return JsonResponse({"is_running": False, "status": None, "results": []})
+
+        is_running = validation.status in ("P", "V")
+        results = list(
+            ProblemValidationResult.objects.filter(validation=validation)
+            .order_by("case")
+            .values("case", "batch", "status", "feedback")
+        )
+
+        status_data = {
+            "status": validation.get_status_display(),
+            "total_cases": validation.total_cases,
+            "passed": validation.passed,
+            "failed_count": validation.failed_count,
+            "error": validation.error,
+        }
+
+        return JsonResponse(
+            {
+                "is_running": is_running,
+                "status": status_data,
+                "results": results,
+            }
+        )
+
+
+MAX_SOLUTION_CODES = 6
+MAX_PENDING_SOLUTION_RUNS = 3
+
+
+class ProblemSolutionCodesView(TitleMixin, ProblemManagerMixin):
+    template_name = "problem/solution_codes.html"
+
+    def get_title(self):
+        return _("Solution Codes for {0}").format(self.object.name)
+
+    def get_content_title(self):
+        return mark_safe(
+            escape(_("Solution Codes for %s"))
+            % (
+                format_html(
+                    '<a href="{1}">{0}</a>',
+                    self.object.name,
+                    reverse("problem_detail", args=[self.object.code]),
+                )
+            )
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        problem = self.object
+        context["solution_codes"] = (
+            ProblemSolutionCode.objects.filter(problem=problem)
+            .select_related("language", "last_submission")
+            .order_by("order")
+        )
+        context["max_solution_codes"] = MAX_SOLUTION_CODES
+        context["languages"] = list(
+            Language.objects.filter(judges__online=True)
+            .distinct()
+            .values("id", "name", "key", "ace")
+        )
+        context["expected_result_choices"] = ProblemSolutionCode.EXPECTED_RESULT_CHOICES
+        context["ACE_URL"] = settings.ACE_URL
+        return context
+
+
+class ProblemSolutionCodesSaveView(ProblemManagerMixin, View):
+    def post(self, request, *args, **kwargs):
+        problem = self.get_object()
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse(
+                {"status": "error", "message": _("Invalid JSON.")}, status=400
+            )
+
+        if not isinstance(data, list):
+            return JsonResponse(
+                {"status": "error", "message": _("Expected a list.")}, status=400
+            )
+
+        if len(data) > MAX_SOLUTION_CODES:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": _("Maximum %d solution codes allowed.")
+                    % MAX_SOLUTION_CODES,
+                },
+                status=400,
+            )
+
+        valid_expected = {c[0] for c in ProblemSolutionCode.EXPECTED_RESULT_CHOICES}
+        valid_language_ids = set(Language.objects.values_list("id", flat=True))
+
+        entries = []
+        for i, entry in enumerate(data):
+            name = entry.get("name", "").strip()[:128]
+            source_code = entry.get("source_code", "").strip()
+            language_id = entry.get("language_id")
+            expected_result = entry.get("expected_result", "")
+
+            if not source_code:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": _("Code #%d has empty source.") % (i + 1),
+                    },
+                    status=400,
+                )
+            if language_id not in valid_language_ids:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": _("Code #%d has invalid language.") % (i + 1),
+                    },
+                    status=400,
+                )
+            if expected_result not in valid_expected:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": _("Code #%d has invalid expected result.") % (i + 1),
+                    },
+                    status=400,
+                )
+            entries.append(
+                {
+                    "order": i,
+                    "name": name,
+                    "source_code": source_code,
+                    "language_id": language_id,
+                    "expected_result": expected_result,
+                }
+            )
+
+        # Update existing, create new, delete extras
+        existing = list(
+            ProblemSolutionCode.objects.filter(problem=problem).order_by("order")
+        )
+        for i, entry in enumerate(entries):
+            if i < len(existing):
+                sc = existing[i]
+                # Clear last_submission if source/language/expected changed
+                code_changed = (
+                    sc.source_code != entry["source_code"]
+                    or sc.language_id != entry["language_id"]
+                    or sc.expected_result != entry["expected_result"]
+                )
+                if code_changed:
+                    sc.last_submission = None
+                sc.order = entry["order"]
+                sc.name = entry["name"]
+                sc.source_code = entry["source_code"]
+                sc.language_id = entry["language_id"]
+                sc.expected_result = entry["expected_result"]
+                sc.save()
+            else:
+                ProblemSolutionCode.objects.create(problem=problem, **entry)
+        # Delete extras
+        for sc in existing[len(entries) :]:
+            sc.delete()
+
+        return JsonResponse({"status": "ok"})
+
+
+class ProblemSolutionCodesRunView(ProblemManagerMixin, View):
+    def post(self, request, *args, **kwargs):
+        problem = self.get_object()
+        codes = ProblemSolutionCode.objects.filter(problem=problem).order_by("order")
+
+        if not codes.exists():
+            return JsonResponse(
+                {"status": "error", "message": _("No solution codes to run.")},
+                status=400,
+            )
+
+        # Block concurrent: check if any last_submission is still in progress
+        in_progress_ids = (
+            codes.filter(last_submission__status__in=("QU", "P", "G"))
+            .exclude(last_submission=None)
+            .values_list("last_submission_id", flat=True)
+        )
+        if in_progress_ids:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": _("A run is already in progress."),
+                },
+                status=409,
+            )
+
+        # Per-user limit across all problems
+        pending_count = Submission.objects.filter(
+            user=request.profile,
+            status__in=("QU", "P", "G"),
+            id__in=ProblemSolutionCode.objects.exclude(
+                last_submission=None
+            ).values_list("last_submission_id", flat=True),
+        ).count()
+        if pending_count >= MAX_PENDING_SOLUTION_RUNS:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": _("Too many pending solution code runs."),
+                },
+                status=429,
+            )
+
+        submission_ids = []
+        for sc in codes:
+            sub = Submission.objects.create(
+                user=request.profile,
+                problem=problem,
+                language=sc.language,
+            )
+            SubmissionSource.objects.create(submission=sub, source=sc.source_code)
+            sc.last_submission = sub
+            sc.save(update_fields=["last_submission"])
+            sub.judge(rejudge=False, batch_rejudge=True)
+            submission_ids.append(sub.id)
+
+        return JsonResponse({"status": "ok", "submission_ids": submission_ids})
+
+
+class ProblemSolutionCodesStatusView(ProblemManagerMixin, View):
+    def get(self, request, *args, **kwargs):
+        problem = self.get_object()
+        codes = (
+            ProblemSolutionCode.objects.filter(problem=problem)
+            .select_related("last_submission", "language")
+            .order_by("order")
+        )
+
+        all_graded = True
+        results = []
+        for sc in codes:
+            sub = sc.last_submission
+            if sub is None:
+                results.append(
+                    {
+                        "order": sc.order,
+                        "name": sc.name,
+                        "expected": sc.expected_result,
+                        "language": sc.language.name,
+                        "status": None,
+                        "result": None,
+                        "is_graded": False,
+                        "match": None,
+                        "submission_id": None,
+                        "case_points": 0,
+                        "case_total": 0,
+                        "time": None,
+                        "memory": None,
+                    }
+                )
+                all_graded = False
+                continue
+
+            is_graded = sub.status == "D"
+            if not is_graded:
+                all_graded = False
+
+            # Determine match
+            match = None
+            if is_graded and sub.result:
+                match = sub.result == sc.expected_result
+
+            results.append(
+                {
+                    "order": sc.order,
+                    "name": sc.name,
+                    "expected": sc.expected_result,
+                    "language": sc.language.name,
+                    "status": sub.status,
+                    "result": sub.result,
+                    "is_graded": is_graded,
+                    "match": match,
+                    "submission_id": sub.id,
+                    "case_points": sub.case_points,
+                    "case_total": sub.case_total,
+                    "time": sub.time,
+                    "memory": sub.memory,
+                }
+            )
+
+        return JsonResponse({"all_graded": all_graded, "results": results})

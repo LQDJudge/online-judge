@@ -67,9 +67,16 @@ from judge.views import (
 from judge.views.problem_data import (
     ProblemDataView,
     ProblemSubmissionDiff,
+    ProblemValidatorView,
     problem_data_file,
     problem_init_view,
     ProblemZipUploadView,
+    ValidateTestCasesView,
+    ValidateTestCasesStatusView,
+    ProblemSolutionCodesView,
+    ProblemSolutionCodesSaveView,
+    ProblemSolutionCodesRunView,
+    ProblemSolutionCodesStatusView,
 )
 from judge.views.register import ActivationView, RegistrationView
 from judge.views.select2 import (
@@ -374,6 +381,41 @@ urlpatterns = [
                     r"^/test_data/upload$",
                     ProblemZipUploadView.as_view(),
                     name="problem_zip_upload",
+                ),
+                re_path(
+                    r"^/test_data/validator$",
+                    ProblemValidatorView.as_view(),
+                    name="problem_validator",
+                ),
+                re_path(
+                    r"^/test_data/validate$",
+                    ValidateTestCasesView.as_view(),
+                    name="problem_validate_testcases",
+                ),
+                re_path(
+                    r"^/test_data/validate/status$",
+                    ValidateTestCasesStatusView.as_view(),
+                    name="problem_validate_testcases_status",
+                ),
+                re_path(
+                    r"^/test_data/solution_codes$",
+                    ProblemSolutionCodesView.as_view(),
+                    name="problem_solution_codes",
+                ),
+                re_path(
+                    r"^/test_data/solution_codes/save$",
+                    ProblemSolutionCodesSaveView.as_view(),
+                    name="problem_solution_codes_save",
+                ),
+                re_path(
+                    r"^/test_data/solution_codes/run$",
+                    ProblemSolutionCodesRunView.as_view(),
+                    name="problem_solution_codes_run",
+                ),
+                re_path(
+                    r"^/test_data/solution_codes/status$",
+                    ProblemSolutionCodesStatusView.as_view(),
+                    name="problem_solution_codes_status",
                 ),
                 re_path(
                     r"^/data/(?P<path>.+)$", problem_data_file, name="problem_data_file"

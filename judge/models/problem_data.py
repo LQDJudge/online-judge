@@ -13,6 +13,10 @@ __all__ = [
     "problem_directory_file",
     "ProblemData",
     "ProblemTestCase",
+    "ProblemSignatureGrader",
+    "ProblemValidation",
+    "ProblemValidationResult",
+    "ProblemSolutionCode",
     "CHECKERS",
 ]
 
@@ -132,6 +136,23 @@ class ProblemData(models.Model):
         help_text=_("Use IOI Signature"),
         null=True,
     )
+    testcase_validator = models.FileField(
+        verbose_name=_("testcase validator"),
+        storage=problem_data_storage,
+        null=True,
+        blank=True,
+        upload_to=problem_directory_file,
+        validators=[FileExtensionValidator(allowed_extensions=["cpp", "py"])],
+    )
+    testcase_validator_language = models.CharField(
+        max_length=10,
+        verbose_name=_("validator language"),
+        choices=(
+            ("cpp", _("C/C++")),
+            ("python", _("Python")),
+        ),
+        blank=True,
+    )
     signature_handler = models.FileField(
         verbose_name=_("signature handler"),
         storage=problem_data_storage,
@@ -160,12 +181,13 @@ class ProblemData(models.Model):
         if self.__original_zipfile:
             try:
                 files = ZipFile(self.__original_zipfile.path).namelist()
-                for file in files:
-                    cache_key = "problem_archive:%s:%s" % (
-                        self.problem.code,
-                        get_file_cachekey(file),
-                    )
-                    cache.delete(cache_key)
+                cache_keys = [
+                    "problem_archive:%s:%s"
+                    % (self.problem.code, get_file_cachekey(file))
+                    for file in files
+                ]
+                if cache_keys:
+                    cache.delete_many(cache_keys)
             except (BadZipFile, FileNotFoundError):
                 pass
             if self.zipfile != self.__original_zipfile:
@@ -216,6 +238,11 @@ class ProblemData(models.Model):
                     new, grader.header.name
                 )
             grader.save()
+
+        if self.testcase_validator:
+            self.testcase_validator.name = problem_directory_file_helper(
+                new, self.testcase_validator.name
+            )
 
         self.save()
 
@@ -296,3 +323,92 @@ class ProblemSignatureGrader(models.Model):
         null=True,
         blank=True,
     )
+
+
+class ProblemValidation(models.Model):
+    problem = models.ForeignKey(
+        "Problem",
+        related_name="validations",
+        on_delete=models.CASCADE,
+    )
+    validate_id = models.CharField(max_length=36, unique=True, db_index=True)
+    user = models.ForeignKey(
+        "Profile",
+        on_delete=models.CASCADE,
+    )
+    status = models.CharField(
+        max_length=2,
+        default="P",
+        choices=(
+            ("P", _("Pending")),
+            ("V", _("Validating")),
+            ("D", _("Done")),
+            ("E", _("Error")),
+        ),
+    )
+    total_cases = models.IntegerField(default=0)
+    passed = models.BooleanField(null=True)
+    failed_count = models.IntegerField(default=0)
+    error = models.TextField(blank=True)
+    date = models.DateTimeField(auto_now_add=True)
+
+
+class ProblemValidationResult(models.Model):
+    validation = models.ForeignKey(
+        ProblemValidation,
+        related_name="results",
+        on_delete=models.CASCADE,
+    )
+    case = models.IntegerField()
+    batch = models.IntegerField(null=True)
+    status = models.CharField(max_length=10)
+    feedback = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ("validation", "case")
+
+
+class ProblemSolutionCode(models.Model):
+    EXPECTED_RESULT_CHOICES = (
+        ("AC", _("Accepted")),
+        ("WA", _("Wrong Answer")),
+        ("TLE", _("Time Limit Exceeded")),
+        ("MLE", _("Memory Limit Exceeded")),
+        ("RTE", _("Runtime Error")),
+        ("OLE", _("Output Limit Exceeded")),
+        ("IR", _("Invalid Return")),
+    )
+
+    problem = models.ForeignKey(
+        "Problem",
+        related_name="solution_codes",
+        on_delete=models.CASCADE,
+    )
+    order = models.IntegerField(verbose_name=_("display order"), default=0)
+    name = models.CharField(
+        max_length=128,
+        verbose_name=_("name"),
+        blank=True,
+        default="",
+    )
+    source_code = models.TextField(verbose_name=_("source code"), max_length=65536)
+    language = models.ForeignKey(
+        "Language",
+        verbose_name=_("language"),
+        on_delete=models.CASCADE,
+    )
+    expected_result = models.CharField(
+        max_length=3,
+        verbose_name=_("expected result"),
+        choices=EXPECTED_RESULT_CHOICES,
+    )
+    last_submission = models.ForeignKey(
+        "Submission",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["order"]

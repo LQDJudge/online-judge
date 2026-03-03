@@ -37,6 +37,9 @@ from judge.models.problem_data import (
     ProblemData,
     ProblemTestCase,
     ProblemSignatureGrader,
+    ProblemValidation,
+    ProblemValidationResult,
+    ProblemSolutionCode,
     problem_data_storage,
     problem_directory_file,
 )

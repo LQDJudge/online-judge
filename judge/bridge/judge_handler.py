@@ -8,6 +8,7 @@ from operator import itemgetter
 
 from django import db
 from django.conf import settings
+from django.core.cache import cache
 from django.utils import timezone
 from django.db.models import F
 
@@ -19,11 +20,14 @@ from judge.models import (
     Language,
     LanguageLimit,
     Problem,
+    ProblemValidation,
+    ProblemValidationResult,
     RuntimeVersion,
     Submission,
     SubmissionTestCase,
 )
 from judge.bridge.utils import VanishedSubmission
+
 from judge.caching import cache_wrapper
 from judge.utils.problem_data import notify_problem_authors
 
@@ -63,9 +67,15 @@ class JudgeHandler(ZlibPacketHandler):
             "ping-response": self.on_ping_response,
             "supported-problems": self.on_supported_problems,
             "handshake": self.on_handshake,
+            "validate-begin": self.on_validate_begin,
+            "validate-case": self.on_validate_case,
+            "validate-end": self.on_validate_end,
+            "validate-error": self.on_validate_error,
         }
         self._working = False
         self._working_data = {}
+        self._validating = None
+        self._validating_problem = None
         self._no_response_job = None
         self.executors = {}
         self.problems = set()
@@ -104,7 +114,19 @@ class JudgeHandler(ZlibPacketHandler):
         json_log.info(
             self._make_json_log(action="disconnect", info="judge disconnected")
         )
-        if self._working:
+        if self._validating:
+            logger.info("Judge disconnected during validation %s", self._validating)
+            try:
+                _ensure_connection()
+                ProblemValidation.objects.filter(validate_id=self._validating).update(
+                    status="E", error="Judge disconnected"
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to mark validation %s as error on disconnect",
+                    self._validating,
+                )
+        elif self._working:
             self.judges.judge(
                 self._working,
                 self._working_data["problem"],
@@ -379,6 +401,18 @@ class JudgeHandler(ZlibPacketHandler):
                     "attempt-no": data.attempt_no,
                     "user": data.user_id,
                 },
+            }
+        )
+
+    def submit_validate(self, validate_id, problem_id):
+        self._working = True
+        self._validating = validate_id
+        self._validating_problem = problem_id
+        self.send(
+            {
+                "name": "validate-request",
+                "validate-id": validate_id,
+                "problem-id": problem_id,
             }
         )
 
@@ -916,6 +950,102 @@ class JudgeHandler(ZlibPacketHandler):
             self._post_update_submission(id, state="test-case")
 
         SubmissionTestCase.objects.bulk_create(bulk_test_case_updates)
+
+        # Cache input/expected-output previews for generator-based problems
+        visible_len = getattr(settings, "TESTCASE_VISIBLE_LENGTH", 64)
+        for result in updates:
+            input_preview = result.get("input", "")
+            answer_preview = result.get("expected-output", "")
+            if input_preview or answer_preview:
+                if len(input_preview) > visible_len:
+                    input_preview = input_preview[:visible_len] + "..."
+                if len(answer_preview) > visible_len:
+                    answer_preview = answer_preview[:visible_len] + "..."
+                cache_key = "submission_testdata:%s:%s" % (id, result["position"])
+                cache.set(
+                    cache_key,
+                    {"input": input_preview, "answer": answer_preview},
+                    86400,
+                )
+
+    def on_validate_begin(self, packet):
+        _ensure_connection()
+        validate_id = packet["validate-id"]
+        ProblemValidation.objects.filter(validate_id=validate_id).update(
+            status="V", total_cases=packet["total-cases"]
+        )
+        event.post(
+            f"validate_{validate_id}",
+            {
+                "type": "validate-begin",
+                "total_cases": packet["total-cases"],
+            },
+        )
+
+    def on_validate_case(self, packet):
+        _ensure_connection()
+        validate_id = packet["validate-id"]
+        try:
+            validation = ProblemValidation.objects.get(validate_id=validate_id)
+            ProblemValidationResult.objects.create(
+                validation=validation,
+                case=packet["case"],
+                batch=packet["batch"],
+                status=packet["status"],
+                feedback=packet["feedback"],
+            )
+        except ProblemValidation.DoesNotExist:
+            logger.warning("Unknown validation: %s", validate_id)
+        event.post(
+            f"validate_{validate_id}",
+            {
+                "type": "validate-case",
+                "case": packet["case"],
+                "status": packet["status"],
+            },
+        )
+
+    def on_validate_end(self, packet):
+        _ensure_connection()
+        validate_id = packet["validate-id"]
+        ProblemValidation.objects.filter(validate_id=validate_id).update(
+            status="D",
+            passed=packet["passed"],
+            failed_count=packet["failed"],
+        )
+        event.post(
+            f"validate_{validate_id}",
+            {
+                "type": "validate-end",
+                "passed": packet["passed"],
+                "total": packet["total"],
+                "failed": packet["failed"],
+            },
+        )
+        self._free_self_validation()
+
+    def on_validate_error(self, packet):
+        _ensure_connection()
+        validate_id = packet["validate-id"]
+        ProblemValidation.objects.filter(validate_id=validate_id).update(
+            status="E", error=packet["error"]
+        )
+        event.post(
+            f"validate_{validate_id}",
+            {
+                "type": "validate-error",
+                "error": packet["error"],
+            },
+        )
+        self._free_self_validation()
+
+    def _free_self_validation(self):
+        """Release judge after validation completes."""
+        validate_id = self._validating
+        self._validating = None
+        self._validating_problem = None
+        self._working = False
+        self.judges.on_judge_free_validation(self, validate_id)
 
     def on_malformed(self, packet):
         logger.error("%s: Malformed packet: %s", self.name, packet)

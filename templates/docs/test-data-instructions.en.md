@@ -390,3 +390,81 @@ public class Solution {
     }
 }
 ```
+
+## 5. Testcase Validator
+
+Testcase Validator allows you to validate that your test input data satisfies the problem's constraints. The validator program reads the test input from stdin and returns exit code 0 if the input is valid, or a non-zero exit code if the input is invalid. This helps catch errors in test data before contestants encounter them.
+
+To use this feature, upload or edit a validator program in the **Testcase validator** field.
+
+### How It Works
+
+1. The validator receives the test input on **stdin**
+2. It checks whether the input satisfies the problem's constraints
+3. **Exit code 0** = input is valid
+4. **Non-zero exit code** = input is invalid
+5. Any output to **stderr** is captured as feedback (explains why validation failed)
+
+After saving the validator, click **"Run Validator"** to run the validator against all test cases. The results will show which test cases pass or fail validation.
+
+### C++
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    int n;
+
+    // Check that we can read exactly one integer
+    if (!(cin >> n)) {
+        cerr << "Cannot read integer n" << endl;
+        return 1;
+    }
+
+    // Check constraints: 1 <= n <= 1000000
+    if (n < 1 || n > 1000000) {
+        cerr << "n = " << n << " is out of range [1, 1000000]" << endl;
+        return 1;
+    }
+
+    // Check no extra data
+    string extra;
+    if (cin >> extra) {
+        cerr << "Unexpected extra data: " << extra << endl;
+        return 1;
+    }
+
+    return 0; // Valid
+}
+```
+
+### Python
+
+```python
+import sys
+
+def main():
+    data = sys.stdin.read().split()
+
+    # Check that we have exactly one token
+    if len(data) != 1:
+        print(f"Expected 1 value, got {len(data)}", file=sys.stderr)
+        sys.exit(1)
+
+    # Check that it's an integer
+    try:
+        n = int(data[0])
+    except ValueError:
+        print(f"'{data[0]}' is not an integer", file=sys.stderr)
+        sys.exit(1)
+
+    # Check constraints: 1 <= n <= 1000000
+    if not (1 <= n <= 1000000):
+        print(f"n = {n} is out of range [1, 1000000]", file=sys.stderr)
+        sys.exit(1)
+
+    sys.exit(0)  # Valid
+
+main()
+```

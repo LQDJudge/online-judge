@@ -134,6 +134,21 @@ def judge_submission(submission, rejudge=False, batch_rejudge=False, judge_id=No
     return success
 
 
+def validate_testcases(problem_code, validate_id):
+    try:
+        response = judge_request(
+            {
+                "name": "validate-request",
+                "validate-id": validate_id,
+                "problem-id": problem_code,
+            }
+        )
+    except BaseException:
+        logger.exception("Failed to send validate request to judge")
+        return False
+    return response.get("name") == "validate-received"
+
+
 def disconnect_judge(judge, force=False):
     judge_request(
         {"name": "disconnect-judge", "judge-id": judge.name, "force": force},

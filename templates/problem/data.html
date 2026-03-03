@@ -195,6 +195,15 @@
           $signature_table.toggle($ioi_signature.is(':checked'));
         }).change();
 
+        // Testcase validator link
+        var $validatorTd = $('#id_problem-data-testcase_validator').closest('td');
+        {% if data_form.testcase_validator.value() %}
+          $validatorTd.append(
+            ' <a href="{{ url("problem_validator", problem.code) }}" style="margin-left: 1em;">' +
+            '<i class="fa fa-play-circle"></i> {{ _("Run Validator") }}</a>'
+          );
+        {% endif %}
+
         // Generator toggle logic  
         function checkGeneratorToggle() {
           // Check FileEditWidget content for dynamic updates
