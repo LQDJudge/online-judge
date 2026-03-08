@@ -22,7 +22,7 @@ from judge.models import (
     Solution,
 )
 from judge.models.notification import Notification, NotificationCategory
-from judge.utils.problems import user_editable_ids, user_tester_ids
+
 from judge.widgets import (
     AdminHeavySelect2MultipleWidget,
     AdminSelect2MultipleWidget,
@@ -380,28 +380,12 @@ class ProblemAdmin(CompareVersionAdmin):
             self._rescore(request, obj.id)
 
     def save_related(self, request, form, formsets, change):
-        editors = set()
-        testers = set()
-        if "curators" in form.changed_data or "authors" in form.changed_data:
-            editors = set(form.instance.editor_ids)
-        if "testers" in form.changed_data:
-            testers = set(form.instance.tester_ids)
-
         super().save_related(request, form, formsets, change)
         obj = form.instance
         obj.curators.add(request.profile)
 
-        if "curators" in form.changed_data or "authors" in form.changed_data:
-            del obj.editor_ids
-            editors = editors.union(set(obj.editor_ids))
-        if "testers" in form.changed_data:
-            del obj.tester_ids
-            testers = testers.union(set(obj.tester_ids))
-
-        for editor in editors:
-            user_editable_ids.dirty(editor)
-        for tester in testers:
-            user_tester_ids.dirty(tester)
+        # Cache invalidation for user_editable_ids and user_tester_ids
+        # is handled by m2m_changed signals in judge/signals/problem.py
 
         # Create notification
         if "is_public" in form.changed_data or "organizations" in form.changed_data:

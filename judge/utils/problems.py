@@ -26,7 +26,7 @@ __all__ = [
 ]
 
 
-@cache_wrapper(prefix="user_tester")
+@cache_wrapper(prefix="user_tester_v2")
 def user_tester_ids(profile):
     return set(
         Problem.testers.through.objects.filter(profile=profile)
@@ -35,7 +35,7 @@ def user_tester_ids(profile):
     )
 
 
-@cache_wrapper(prefix="user_editable")
+@cache_wrapper(prefix="user_editable_v2")
 def user_editable_ids(profile):
     result = set(
         (
