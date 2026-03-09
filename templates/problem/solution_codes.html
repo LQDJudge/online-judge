@@ -283,7 +283,9 @@
             : '-';
           var nameStr = r.name ? $('<span>').text(r.name).html() : '-';
 
-          if (!r.is_graded) {
+          if (!r.is_graded && !r.submission_id) {
+            verdictHtml = '-';
+          } else if (!r.is_graded) {
             verdictHtml = '<span class="result-pending"><i class="fa fa-spinner fa-spin"></i> {{ _("Pending") }}</span>';
             allMatch = false;
           } else if (r.match === true) {
