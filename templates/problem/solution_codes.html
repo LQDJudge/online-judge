@@ -2,6 +2,7 @@
 {% set page_type = 'solution_codes' %}
 
 {% block edit_media %}
+  <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
   <style>
     .solution-code-entry {
       border: 1px solid #ddd;
@@ -75,7 +76,6 @@
 {% endblock %}
 
 {% block js_media %}
-  <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
   <script type="text/javascript">
     $(function () {
       var MAX_CODES = {{ max_solution_codes }};

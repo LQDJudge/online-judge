@@ -2,6 +2,7 @@
 {% set page_type = 'data' %}
 
 {% block edit_media %}
+  <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
   <style>
     .validator-editor-section {
       margin-bottom: 1.5em;
@@ -30,7 +31,6 @@
 {% endblock %}
 
 {% block js_media %}
-  <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
   <script type="text/javascript">
     $(function () {
       // Ace editor for validator code
