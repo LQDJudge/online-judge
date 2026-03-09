@@ -116,7 +116,7 @@
       {% endif %}
     {% endif %}
     <h2 class="title-row" style="display: inline-block">{{ title }}</h2>
-    {% if problem.is_organization_private %}
+    {% if problem.is_organization_private and not request.in_contest_mode %}
       <span class="organization-tags">
         {% for org in problem.get_organizations() %}
           {% include "organization/tag.html" %}

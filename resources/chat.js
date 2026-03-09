@@ -614,8 +614,8 @@
       if (encryptedUser) {
         ChatAPI.getOrCreateRoom(encryptedUser)
           .done(function(data) {
-            ChatState.roomId = data.room;
-            ChatState.otherUserId = data.other_user_id;
+            ChatState.roomId = String(data.room);
+            ChatState.otherUserId = String(data.other_user_id);
             ChatUI.highlightSelectedRoom();
             ChatElements.chatInput.attr('maxlength', 5000);
             onRoomReady();
