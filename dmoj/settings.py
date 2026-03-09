@@ -498,7 +498,7 @@ FILE_UPLOAD_PERMISSIONS = 0o644
 
 MESSAGES_TO_LOAD = 15
 
-ML_OUTPUT_PATH = None
+USE_ML = False
 
 # Use subdomain for organizations
 USE_SUBDOMAIN = False

@@ -384,7 +384,7 @@ class ProblemDetail(
         else:
             context["fileio_input"] = None
             context["fileio_output"] = None
-        if not self.in_contest and settings.ML_OUTPUT_PATH:
+        if not self.in_contest and getattr(settings, "USE_ML", False):
             context["related_problems"] = get_related_problems(
                 self.profile, self.object
             )
@@ -820,35 +820,12 @@ class ProblemFeed(ProblemList, FeedView):
     def get_recommended_problem_ids(self, problem_ids):
         user_id = self.request.profile.id
 
-        # Check if two-tower model is available
-        two_tower_available = False
-        try:
-            from ml.two_tower.serving import get_recommender
-
-            two_tower_available = get_recommender() is not None
-        except Exception:
-            pass
-
-        if two_tower_available:
-            # Use two-tower model as primary, with collab filter as fallback
-            rec_types = [
-                RecommendationType.TWO_TOWER,
-                RecommendationType.CF_DOT,
-                RecommendationType.CF_COSINE,
-                RecommendationType.HOT_PROBLEM,
-            ]
-            limits = [300, 50, 50, 20]
-        else:
-            # Fall back to original collab filter
-            rec_types = [
-                RecommendationType.CF_DOT,
-                RecommendationType.CF_COSINE,
-                RecommendationType.CF_TIME_DOT,
-                RecommendationType.CF_TIME_COSINE,
-                RecommendationType.HOT_PROBLEM,
-            ]
-            limits = [100, 100, 100, 100, 20]
-
+        rec_types = [
+            RecommendationType.CF,
+            RecommendationType.CF_TIME,
+            RecommendationType.HOT_PROBLEM,
+        ]
+        limits = [200, 200, 20]
         shuffle = True
 
         allow_debug_type = (
@@ -876,7 +853,7 @@ class ProblemFeed(ProblemList, FeedView):
         if "search" in self.request.GET:
             return queryset.values_list("id", flat=True)
 
-        if not settings.ML_OUTPUT_PATH or not self.request.profile:
+        if not getattr(settings, "USE_ML", False) or not self.request.profile:
             return queryset.order_by("?").values_list("id", flat=True)
 
         return self.get_recommended_problem_ids(queryset.values_list("id", flat=True))

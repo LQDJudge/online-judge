@@ -352,7 +352,7 @@ LOGGING = {
     },
 }
 
-# ML_OUTPUT_PATH = "/path/to/ml_output"
+# USE_ML = True  # Enable after: ./judge/ml/setup.sh && python manage.py train_embeddings --import-to-db
 
 ## ======== Integration Settings ========
 ## Python Social Auth

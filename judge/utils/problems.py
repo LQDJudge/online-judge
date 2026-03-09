@@ -13,7 +13,7 @@ from django.utils.translation import gettext as _, gettext_noop
 from django.http import Http404
 
 from judge.models import Problem, Submission
-from judge.ml.collab_filter import CollabFilter
+from judge.ml.vector_store import VectorStore
 from judge.caching import cache_wrapper
 
 
@@ -235,30 +235,14 @@ def hot_problems(duration, limit):
 
 @cache_wrapper(prefix="grp", timeout=14400)
 def get_related_problems(profile, problem, limit=8):
-    if not profile or not settings.ML_OUTPUT_PATH:
+    if not profile or not getattr(settings, "USE_ML", False):
         return None
     problemset = Problem.get_visible_problems(profile.user).values_list("id", flat=True)
     problemset = problemset.exclude(id__in=user_completed_ids(profile))
     problemset = problemset.exclude(id=problem.id)
 
-    results = []
-
-    # Try two-tower model first
-    try:
-        from ml.two_tower.serving import get_recommender
-
-        tt_model = get_recommender()
-        if tt_model:
-            results = tt_model.problem_neighbors(problem, list(problemset), limit * 2)
-    except Exception:
-        tt_model = None
-
-    # Fall back to collaborative filter if two-tower not available
-    if not results:
-        cf_model = CollabFilter("collab_filter")
-        results = cf_model.problem_neighbors(
-            problem, problemset, CollabFilter.DOT, limit
-        ) + cf_model.problem_neighbors(problem, problemset, CollabFilter.COSINE, limit)
+    cf_model = VectorStore("collab_filter")
+    results = cf_model.problem_neighbors(problem, problemset, limit * 2)
 
     results = list(set([i[1] for i in results]))
     random.seed(datetime.now().strftime("%d%m%Y"))
@@ -289,14 +273,15 @@ def finished_submission(sub, is_delete=False):
 
 class RecommendationType(Enum):
     HOT_PROBLEM = 1
-    CF_DOT = 2
-    CF_COSINE = 3
-    CF_TIME_DOT = 4
-    CF_TIME_COSINE = 5
-    TWO_TOWER = 6
+    CF = 2
+    CF_TIME = 4
 
 
-# Return a list of list. Each inner list correspond to each type in types
+@cache_wrapper(prefix="cf_rec", timeout=3600)
+def _cached_user_recommendations(model_name, user_id, problem_ids, limit):
+    return VectorStore(model_name).user_recommendations(user_id, problem_ids, limit)
+
+
 def get_user_recommended_problems(
     user_id,
     problem_ids,
@@ -304,23 +289,6 @@ def get_user_recommended_problems(
     limits,
     shuffle=False,
 ):
-    cf_model = CollabFilter("collab_filter")
-    cf_time_model = CollabFilter("collab_filter_time")
-
-    # Lazy load two-tower model to avoid import errors if not installed
-    two_tower_model = None
-
-    def get_two_tower_model():
-        nonlocal two_tower_model
-        if two_tower_model is None:
-            try:
-                from ml.two_tower.serving import get_recommender
-
-                two_tower_model = get_recommender()
-            except Exception:
-                two_tower_model = False  # Mark as unavailable
-        return two_tower_model if two_tower_model else None
-
     def get_problem_ids_from_type(rec_type, limit):
         if type(rec_type) == int:
             try:
@@ -333,27 +301,14 @@ def get_user_recommended_problems(
                 for problem in hot_problems(timedelta(days=7), limit)
                 if problem.id in set(problem_ids)
             ]
-        if rec_type == RecommendationType.CF_DOT:
-            return cf_model.user_recommendations(
-                user_id, problem_ids, cf_model.DOT, limit
+        if rec_type == RecommendationType.CF:
+            return _cached_user_recommendations(
+                "collab_filter", user_id, problem_ids, limit
             )
-        if rec_type == RecommendationType.CF_COSINE:
-            return cf_model.user_recommendations(
-                user_id, problem_ids, cf_model.COSINE, limit
+        if rec_type == RecommendationType.CF_TIME:
+            return _cached_user_recommendations(
+                "collab_filter_time", user_id, problem_ids, limit
             )
-        if rec_type == RecommendationType.CF_TIME_DOT:
-            return cf_time_model.user_recommendations(
-                user_id, problem_ids, cf_model.DOT, limit
-            )
-        if rec_type == RecommendationType.CF_TIME_COSINE:
-            return cf_time_model.user_recommendations(
-                user_id, problem_ids, cf_model.COSINE, limit
-            )
-        if rec_type == RecommendationType.TWO_TOWER:
-            tt_model = get_two_tower_model()
-            if tt_model:
-                return tt_model.user_recommendations(user_id, problem_ids, limit)
-            return []
         return []
 
     all_problems = []
