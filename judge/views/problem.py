@@ -1398,6 +1398,14 @@ class ProblemEdit(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["problem"] = self.object
+
+        from judge.models.public_request import PublicRequest
+
+        try:
+            context["public_request"] = self.object.public_request
+        except PublicRequest.DoesNotExist:
+            context["public_request"] = None
+
         return context
 
 

@@ -175,6 +175,39 @@
       // Setup Use Template button
       setupUseTemplateButton('{{ form.description.id_for_label }}', '{{ _("This will replace the current description. Continue?") }}');
 
+      // Handle Request Public button click
+      $('#request-public-btn').click(function() {
+        var $btn = $(this);
+        var $status = $('#request-public-status');
+
+        if (!confirm('{{ _("Are you sure you want to request this problem to be made public?") }}')) {
+          return;
+        }
+
+        $btn.prop('disabled', true);
+
+        $.ajax({
+          url: '{{ url("internal_request_public") }}',
+          type: 'POST',
+          data: {
+            'id': '{{ problem.id }}',
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+          },
+          success: function(data) {
+            if (data.success) {
+              location.reload();
+            } else {
+              $status.text(data.error || '{{ _("An error occurred.") }}').css('color', 'red');
+              $btn.prop('disabled', false);
+            }
+          },
+          error: function() {
+            $status.text('{{ _("Network error occurred") }}').css('color', 'red');
+            $btn.prop('disabled', false);
+          }
+        });
+      });
+
       // Handle AI tagging button click
       $('#tag-btn').click(function() {
         var $btn = $(this);
@@ -268,6 +301,39 @@
             <label for="{{ form.is_public.id_for_label }}"><b>{{ form.is_public.label }}{% if form.is_public.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
             {{ form.is_public }}
           </div>
+
+          {% if not problem.is_public or problem.is_organization_private %}
+            <div class="form-row" id="request-public-section">
+              {% if public_request and public_request.status == 'P' %}
+                <div class="alert alert-info" style="margin: 0;">
+                  <i class="fa fa-clock"></i> {{_("Public request is pending review.")}}
+                </div>
+              {% elif public_request and public_request.status == 'R' %}
+                <div class="alert alert-danger" style="margin: 0;">
+                  <i class="fa fa-times-circle"></i> {{_("Public request was rejected.")}}
+                  {% if public_request.feedback %}
+                    <div style="margin-top: 0.5em; padding-top: 0.5em;">
+                      <b>{{_("Feedback:")}}</b> {{ public_request.feedback }}
+                    </div>
+                  {% endif %}
+                  <div style="margin-top: 0.5em;">
+                    <button type="button" id="request-public-btn" class="action-btn small">
+                      <i class="fa fa-redo"></i> {{_("Re-request Public")}}
+                    </button>
+                    <span id="request-public-status" style="margin-left: 10px;"></span>
+                  </div>
+                </div>
+              {% else %}
+                <button type="button" id="request-public-btn" class="action-btn small">
+                  <i class="fa fa-globe"></i> {{_("Request Public")}}
+                </button>
+                <span id="request-public-status" style="margin-left: 10px;"></span>
+                <div style="margin-top: 0.3em;">
+                  <small class="gray">{{_("Request to publish this problem so it is visible to everyone. An admin will review and approve or reject your request.")}}</small>
+                </div>
+              {% endif %}
+            </div>
+          {% endif %}
 
           <div class="form-row">
             <label for="{{ form.organizations.id_for_label }}"><b>{{ _('Organizations') }}{% if form.organizations.field.required %}<span class="red"> * </span>{% endif %}:</b></label>

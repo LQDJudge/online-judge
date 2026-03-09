@@ -34,6 +34,74 @@
       max-width: 400px;
       margin-bottom: 20px;
     }
+
+    .queue-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 1.5em;
+      border-bottom: 2px solid var(--border_gray, #ddd);
+    }
+
+    .queue-tab {
+      padding: 0.5em 1.2em;
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      font-weight: 500;
+    }
+
+    .queue-tab.active {
+      border-bottom-color: var(--theme_color, #1a5276);
+      font-weight: 700;
+    }
+
+    .queue-tab .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      border-radius: 10px;
+      font-size: 0.8em;
+      font-weight: 600;
+      margin-left: 0.3em;
+      vertical-align: middle;
+    }
+
+    .status-filters {
+      display: flex;
+      gap: 0.5em;
+      margin-bottom: 1em;
+      flex-wrap: wrap;
+    }
+
+    .status-filter {
+      padding: 0.3em 0.8em;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 0.9em;
+    }
+
+    .status-filter.active {
+      font-weight: 700;
+    }
+
+    .request-info {
+      font-size: 0.85em;
+      margin-top: 0.3em;
+    }
+
+    .request-status {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      border-radius: 3px;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+
+    .feedback-box {
+      margin-top: 0.5em;
+      padding: 0.5em;
+      border-left: 3px solid;
+      font-size: 0.9em;
+    }
   </style>
 {% endblock %}
 {% block js_media %}
@@ -122,6 +190,78 @@
             },
             error: function () {
               console.log("An error occurred. Please try again.");
+            },
+          });
+        });
+
+    // Function to handle the "Publish" button click
+        $(".publish-button").on("click", function () {
+          const button = $(this);
+          const problemDiv = button.closest(".problem-container");
+          const problemId = button.data("problem-id");
+
+          if (!confirm('{{_("Are you sure you want to publish this problem? This will make it public and remove organization restrictions.")}}')) {
+            return;
+          }
+
+          button.prop('disabled', true);
+          $.ajax({
+            url: "{{url('internal_publish_problem')}}",
+            type: "POST",
+            data: { id: problemId },
+            success: function (response) {
+              if (response.success) {
+                problemDiv.hide();
+              } else {
+                alert(response.error || '{{_("An error occurred.")}}');
+                button.prop('disabled', false);
+              }
+            },
+            error: function () {
+              alert('{{_("An error occurred. Please try again.")}}');
+              button.prop('disabled', false);
+            },
+          });
+        });
+
+    // Function to handle the "Reject" button click - show modal
+        $(".reject-button").on("click", function () {
+          const problemId = $(this).data("problem-id");
+          const problemName = $(this).data("problem-name");
+          const modal = $('#reject-modal');
+          modal.data('problem-id', problemId);
+          $('#reject-modal-title').text('{{_("Reject")}} - ' + problemName);
+          $('#reject-feedback').val('');
+          $('body').css('overflow', 'hidden');
+          modal.addClass('show');
+        });
+
+    // Submit rejection
+        $('#submit-reject').on('click', function () {
+          const modal = $('#reject-modal');
+          const problemId = modal.data('problem-id');
+          const feedback = $('#reject-feedback').val();
+          const button = $(this);
+
+          button.prop('disabled', true);
+          $.ajax({
+            url: "{{url('internal_reject_problem')}}",
+            type: "POST",
+            data: { id: problemId, feedback: feedback },
+            success: function (response) {
+              if (response.success) {
+                $('body').css('overflow', 'auto');
+                modal.removeClass('show');
+                location.reload();
+              } else {
+                alert(response.error || '{{_("An error occurred.")}}');
+              }
+            },
+            error: function () {
+              alert('{{_("An error occurred. Please try again.")}}');
+            },
+            complete: function () {
+              button.prop('disabled', false);
             },
           });
         });
@@ -308,19 +448,167 @@
           });
         });
 
+    // Improve Markdown functionality
+        function pollMarkdownTask(taskId, button, originalText, problemCode) {
+          var pollCount = 0;
+          var maxPolls = 90; // 3 minutes at 2s intervals
+          var pollInterval = setInterval(function() {
+            pollCount++;
+            if (pollCount > maxPolls) {
+              clearInterval(pollInterval);
+              button.prop('disabled', false);
+              button.html(originalText);
+              alert('{{_("Task timed out. Please try again.")}}');
+              return;
+            }
+            $.ajax({
+              url: '{{ url('task_status_ajax') }}?id=' + taskId,
+              type: 'GET',
+              success: function(data) {
+                if (data.code === 'SUCCESS') {
+                  clearInterval(pollInterval);
+                  button.prop('disabled', false);
+                  button.html(originalText);
+
+                  if (data.success && data.improved_markdown) {
+                    showMarkdownModal(problemCode, data.improved_markdown);
+                  } else {
+                    alert(data.error || '{{_("No improvements needed")}}');
+                  }
+                } else if (data.code === 'FAILURE') {
+                  clearInterval(pollInterval);
+                  button.prop('disabled', false);
+                  button.html(originalText);
+                  alert('{{_("Markdown improvement failed")}}');
+                }
+              },
+              error: function() {
+                clearInterval(pollInterval);
+                button.prop('disabled', false);
+                button.html(originalText);
+                alert('{{_("Network error occurred")}}');
+              }
+            });
+          }, 2000);
+        }
+
+        $(".improve-markdown-button").on("click", function () {
+          const button = $(this);
+          const problemCode = button.data("problem-code");
+          const originalText = button.html();
+
+          button.prop('disabled', true);
+          button.html('<i class="fa fa-spinner fa-spin"></i> {{_("Improving...")}}');
+
+          $.ajax({
+            url: "{{url('internal_improve_markdown')}}",
+            type: "GET",
+            data: { problem_code: problemCode },
+            success: function (response) {
+              if (response.success && response.task_id) {
+                pollMarkdownTask(response.task_id, button, originalText, problemCode);
+              } else {
+                button.prop('disabled', false);
+                button.html(originalText);
+                alert(response.error || '{{_("An error occurred.")}}');
+              }
+            },
+            error: function () {
+              button.prop('disabled', false);
+              button.html(originalText);
+              alert('{{_("Network error occurred")}}');
+            }
+          });
+        });
+
+        function showMarkdownModal(problemCode, improvedMarkdown) {
+          const modal = $('#markdown-modal');
+          modal.data('problem-code', problemCode);
+          $('#markdown-preview-content').val(improvedMarkdown);
+          // Reset to source tab
+          $('#markdown-tab-source').addClass('active');
+          $('#markdown-tab-preview').removeClass('active');
+          $('#markdown-source-pane').show();
+          $('#markdown-rendered-pane').hide().html('');
+          $('body').css('overflow', 'hidden');
+          modal.addClass('show');
+        }
+
+    // Markdown modal tab switching
+        $('#markdown-tab-source').on('click', function () {
+          $(this).addClass('active');
+          $('#markdown-tab-preview').removeClass('active');
+          $('#markdown-source-pane').show();
+          $('#markdown-rendered-pane').hide();
+        });
+
+        $('#markdown-tab-preview').on('click', function () {
+          $(this).addClass('active');
+          $('#markdown-tab-source').removeClass('active');
+          $('#markdown-source-pane').hide();
+          var $rendered = $('#markdown-rendered-pane');
+          $rendered.show().html('<i class="fa fa-spinner fa-spin"></i> {{_("Loading preview...")}}');
+
+          $.post('{{ url("problem_preview") }}', {
+            preview: $('#markdown-preview-content').val(),
+            csrfmiddlewaretoken: $.cookie('csrftoken')
+          }, function (result) {
+            $rendered.html(result);
+            if (window.renderKatex) {
+              renderKatex($rendered[0]);
+            }
+          }).fail(function () {
+            $rendered.html('<span class="red">{{_("Failed to load preview")}}</span>');
+          });
+        });
+
+        $('#apply-markdown').on('click', function () {
+          const modal = $('#markdown-modal');
+          const problemCode = modal.data('problem-code');
+          const improvedMarkdown = $('#markdown-preview-content').val();
+          const button = $(this);
+
+          button.prop('disabled', true).text('{{_("Applying...")}}');
+          $.ajax({
+            url: "{{url('internal_improve_markdown')}}",
+            type: "POST",
+            data: {
+              problem_code: problemCode,
+              improved_markdown: improvedMarkdown,
+              csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function (response) {
+              if (response.success) {
+                $('body').css('overflow', 'auto');
+                modal.removeClass('show');
+                location.reload();
+              } else {
+                alert(response.error || '{{_("An error occurred.")}}');
+              }
+            },
+            error: function () {
+              alert('{{_("Network error occurred")}}');
+            },
+            complete: function () {
+              button.prop('disabled', false).text('{{_("Apply")}}');
+            },
+          });
+        });
+
     // Close modal functionality
-        $('.close, #cancel-suggestions').on('click', function () {
+        $('.close, .cancel-modal').on('click', function () {
           $('body').css('overflow', 'auto');
-          $('#suggestion-modal').removeClass('show');
+          $(this).closest('.suggestion-modal').removeClass('show');
         });
 
     // Close modal when clicking outside
         $(window).on('click', function (event) {
-          const modal = $('#suggestion-modal')[0];
-          if (event.target === modal) {
-            $('body').css('overflow', 'auto');
-            $('#suggestion-modal').removeClass('show');
-          }
+          $('.suggestion-modal.show').each(function () {
+            if (event.target === this) {
+              $('body').css('overflow', 'auto');
+              $(this).removeClass('show');
+            }
+          });
         });
       });
     </script>
@@ -334,11 +622,46 @@
 {% block middle_content %}
   {% csrf_token %}
 
+<!-- Queue Tabs -->
+  <div class="queue-tabs">
+    <a class="queue-tab {% if current_tab == 'public' %}active{% endif %}"
+       href="{{ url('internal_problem_queue') }}">
+      {{ _('Public Queue') }}
+    </a>
+    <a class="queue-tab {% if current_tab == 'request_public' %}active{% endif %}"
+       href="{{ url('internal_problem_queue') }}?tab=request_public">
+      {{ _('Request Public') }}
+      {% if pending_request_count %}
+        <span class="badge background-red white">{{ pending_request_count }}</span>
+      {% endif %}
+    </a>
+  </div>
+
+  {% if current_tab == 'request_public' %}
+<!-- Status Filters for Request Public tab -->
+    <div class="status-filters">
+      <a class="status-filter action-btn {% if not status_filter %}background-gray{% endif %}"
+         href="{{ url('internal_problem_queue') }}?tab=request_public">{{ _('All') }}</a>
+      <a class="status-filter action-btn {% if status_filter == 'P' %}background-gray{% endif %}"
+         href="{{ url('internal_problem_queue') }}?tab=request_public&status=P">{{ _('Pending') }}</a>
+      <a class="status-filter action-btn {% if status_filter == 'A' %}background-gray{% endif %}"
+         href="{{ url('internal_problem_queue') }}?tab=request_public&status=A">{{ _('Approved') }}</a>
+      <a class="status-filter action-btn {% if status_filter == 'R' %}background-gray{% endif %}"
+         href="{{ url('internal_problem_queue') }}?tab=request_public&status=R">{{ _('Rejected') }}</a>
+    </div>
+  {% endif %}
+
 <!-- Problem Filter Section -->
   <div class="sidebox compact-filter">
     <h3 class="colored-text"><i class="fa fa-search"></i>{{ _('Problem search') }}</h3>
     <div class="sidebox-content">
       <form id="filter-form" name="form" action="" method="get">
+        {% if current_tab == 'request_public' %}
+          <input type="hidden" name="tab" value="request_public">
+          {% if status_filter %}
+            <input type="hidden" name="status" value="{{ status_filter }}">
+          {% endif %}
+        {% endif %}
         <div>
           <input id="search" type="text" name="search" value="{{ search_query or '' }}"
                  placeholder="{{ _('Search problems...') }}">
@@ -371,7 +694,7 @@
   <div id="go" class="action-btn">{{ _('Go') }}</div>
   {% if search_query or author_query or (point_start and point_start != point_values.min) or (point_end and
   point_end != point_values.max) %}
-  <a href="{{ request.path }}" class="action-btn background-gray">{{ _('Clear') }}</a>
+  <a href="{{ request.path }}{% if current_tab == 'request_public' %}?tab=request_public{% endif %}" class="action-btn background-gray">{{ _('Clear') }}</a>
   {% endif %}
 </div>
 </form>
@@ -404,6 +727,28 @@
           <span class="type-tag">{{ type }}</span>{% if not loop.last %}, {% endif %}
         {% endfor %}, *{{problem.points | int}}
       </div>
+
+      {% if current_tab == 'request_public' %}
+        {% set pr = problem.public_request %}
+        {% if pr %}
+          <div class="request-info">
+            <span class="request-status {{ 'blue' if pr.status == 'P' else ('green' if pr.status == 'A' else 'red') }}">
+              {{ pr.get_status_display() }}
+            </span>
+            &middot; {{ _('Requested by') }} {{ link_user(pr.requested_by) }}
+            <span class="gray">{{ pr.created_at | date(_("N j, Y, g:i a")) }}</span>
+            {% if pr.reviewed_by %}
+              &middot; {{ _('Reviewed by') }} {{ link_user(pr.reviewed_by) }}
+            {% endif %}
+          </div>
+          {% if pr.feedback %}
+            <div class="feedback-box red">
+              <i class="fa fa-comment"></i> {{ pr.feedback }}
+            </div>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+
       <div class="blog-description">
         <div class='content-description'>
           {{ problem.description|markdown(lazy_load=True)|reference|str|safe }}
@@ -415,13 +760,36 @@
         <div class="show-more"> {{_("...More")}} </div>
       </div>
     </div>
-    <div style="display: flex; flex-direction: column; gap: 0.5em;">
-      <button class="mark-private-button action-btn" data-problem-id="{{ problem.id }}">
-        <i class="fa fa-eye-slash"></i> {{_("Mark private")}}
-      </button>
-      {% if request.user.is_superuser %}
+    <div style="display: flex; flex-direction: column; gap: 0.5em; min-width: fit-content;">
+      {% if current_tab == 'public' %}
+        <button class="mark-private-button action-btn" data-problem-id="{{ problem.id }}">
+          <i class="fa fa-eye-slash"></i> {{_("Mark private")}}
+        </button>
+        {% if request.user.is_superuser %}
+          <button class="problem-tag-button action-btn" data-problem-code="{{ problem.code }}">
+            <i class="fa fa-magic"></i> {{_("Problem Tag")}}
+          </button>
+          <button class="improve-markdown-button action-btn" data-problem-code="{{ problem.code }}">
+            <i class="fa fa-magic"></i> {{_("Improve Markdown")}}
+          </button>
+        {% endif %}
+      {% elif current_tab == 'request_public' %}
+        {% set pr = problem.public_request %}
+        {% if (not problem.is_public or problem.is_organization_private) and pr and pr.status != 'A' %}
+          <button class="publish-button action-btn" data-problem-id="{{ problem.id }}">
+            <i class="fa fa-globe"></i> {{_("Publish")}}
+          </button>
+        {% endif %}
+        {% if pr and pr.status == 'P' %}
+          <button class="reject-button action-btn background-red white" data-problem-id="{{ problem.id }}" data-problem-name="{{ problem.name }}">
+            <i class="fa fa-times"></i> {{_("Reject")}}
+          </button>
+        {% endif %}
+        <button class="improve-markdown-button action-btn" data-problem-code="{{ problem.code }}">
+          <i class="fa fa-magic"></i> {{_("Improve Markdown")}}
+        </button>
         <button class="problem-tag-button action-btn" data-problem-code="{{ problem.code }}">
-          <i class="fa fa-magic"></i> {{_("Problem Tag")}}
+          <i class="fa fa-tag"></i> {{_("Problem Tag")}}
         </button>
       {% endif %}
     </div>
@@ -431,7 +799,7 @@
   <div style="margin-top:10px;">{% include "list-pages.html" %}</div>
 {% endif %}
 
-<!-- Suggestion Modal -->
+<!-- Suggestion Modal (Problem Tag) -->
 <div id="suggestion-modal" class="suggestion-modal">
   <div class="suggestion-modal-content">
     <div class="suggestion-modal-header">
@@ -462,10 +830,62 @@
       </form>
     </div>
 
+    <div class="suggestion-actions">
+      <button type="button" class="action-btn background-gray cancel-modal">{{_("Cancel")}}</button>
+      <button type="button" class="action-btn" id="apply-suggestions">{{_("Apply Changes")}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="reject-modal" class="suggestion-modal">
+  <div class="suggestion-modal-content">
+    <div class="suggestion-modal-header">
+      <h3 id="reject-modal-title">{{_("Reject")}}</h3>
+      <span class="close">&times;</span>
+    </div>
+
+    <div style="padding: 1em;">
+      <div class="form-group">
+        <label for="reject-feedback"><b>{{_("Feedback for the author")}}</b></label>
+        <textarea id="reject-feedback" rows="4" style="width: 100%; margin-top: 0.5em; padding: 0.5em;"
+                  placeholder="{{_('Explain why this request is being rejected...')}}"></textarea>
+      </div>
+    </div>
 
     <div class="suggestion-actions">
-      <button type="button" class="action-btn background-gray" id="cancel-suggestions">{{_("Cancel")}}</button>
-      <button type="button" class="action-btn" id="apply-suggestions">{{_("Apply Changes")}}</button>
+      <button type="button" class="action-btn background-gray cancel-modal">{{_("Cancel")}}</button>
+      <button type="button" class="action-btn background-red white" id="submit-reject">{{_("Reject")}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Improve Markdown Preview Modal -->
+<div id="markdown-modal" class="suggestion-modal">
+  <div class="suggestion-modal-content" style="max-width: 800px;">
+    <div class="suggestion-modal-header">
+      <h3>{{_("Improved Markdown Preview")}}</h3>
+      <span class="close">&times;</span>
+    </div>
+
+    <div style="padding: 0 1em;">
+      <div class="queue-tabs" style="margin-bottom: 0;">
+        <a class="queue-tab active" id="markdown-tab-source" href="javascript:void(0)">{{_("Source")}}</a>
+        <a class="queue-tab" id="markdown-tab-preview" href="javascript:void(0)">{{_("Preview")}}</a>
+      </div>
+    </div>
+
+    <div style="padding: 0 1em 1em;">
+      <div id="markdown-source-pane">
+        <textarea id="markdown-preview-content" style="width: 100%; min-height: 400px; font-family: monospace; font-size: 13px; padding: 10px; resize: vertical;"></textarea>
+      </div>
+      <div id="markdown-rendered-pane" class="content-description" style="display: none; min-height: 400px; max-height: 600px; overflow-y: auto; padding: 10px;">
+      </div>
+    </div>
+
+    <div class="suggestion-actions">
+      <button type="button" class="action-btn background-gray cancel-modal">{{_("Cancel")}}</button>
+      <button type="button" class="action-btn" id="apply-markdown">{{_("Apply")}}</button>
     </div>
   </div>
 </div>

@@ -8,6 +8,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseForbidden, JsonResponse
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from judge.utils.strings import safe_float_or_none
 from judge.models.problem import get_distinct_problem_points
@@ -15,8 +16,10 @@ from judge.models import Profile
 
 from judge.utils.diggpaginator import DiggPaginator
 from judge.models import Problem, ProblemType
+from judge.models.public_request import PublicRequest
+from judge.models.notification import Notification, NotificationCategory
 from judge.tasks import rescore_problem
-from judge.tasks.llm import tag_problem_task
+from judge.tasks.llm import tag_problem_task, improve_markdown_task
 
 
 class InternalView(object):
@@ -52,6 +55,8 @@ class InternalProblemQueue(InternalView, ListView):
         self.author_query = []
         self.point_start = safe_float_or_none(request.GET.get("point_start"))
         self.point_end = safe_float_or_none(request.GET.get("point_end"))
+        self.current_tab = request.GET.get("tab", "public")
+        self.status_filter = request.GET.get("status", "")
 
         # Handle author filter
         if "authors" in request.GET:
@@ -65,10 +70,32 @@ class InternalProblemQueue(InternalView, ListView):
         # Setup filters
         self.setup_problem_filter(self.request)
 
-        # Base queryset - public problems only
-        queryset = Problem.objects.filter(is_public=True, is_organization_private=False)
+        if self.current_tab == "request_public":
+            return self._get_request_public_queryset()
+        return self._get_public_queue_queryset()
 
-        # Apply search filter (same logic as ProblemList)
+    def _get_public_queue_queryset(self):
+        """Original public queue: public, non-org-private problems."""
+        queryset = Problem.objects.filter(is_public=True, is_organization_private=False)
+        queryset = self._apply_search_filters(queryset)
+        return queryset.distinct().order_by("-id")
+
+    def _get_request_public_queryset(self):
+        """Request public queue: problems with PublicRequest records."""
+        queryset = Problem.objects.filter(public_request__isnull=False).select_related(
+            "public_request",
+            "public_request__requested_by",
+            "public_request__reviewed_by",
+        )
+
+        if self.status_filter:
+            queryset = queryset.filter(public_request__status=self.status_filter)
+
+        queryset = self._apply_search_filters(queryset)
+        return queryset.distinct().order_by("-public_request__created_at")
+
+    def _apply_search_filters(self, queryset):
+        """Apply common search/author/point filters."""
         if "search" in self.request.GET:
             self.search_query = query = " ".join(
                 self.request.GET.getlist("search")
@@ -92,17 +119,15 @@ class InternalProblemQueue(InternalView, ListView):
                 else:
                     queryset = substr_queryset
 
-        # Apply author filter
         if self.author_query:
             queryset = queryset.filter(authors__in=self.author_query)
 
-        # Apply point range filter
         if self.point_start is not None:
             queryset = queryset.filter(points__gte=self.point_start)
         if self.point_end is not None:
             queryset = queryset.filter(points__lte=self.point_end)
 
-        return queryset.distinct().order_by("-id")
+        return queryset
 
     def get_noui_slider_points(self):
         """Get point range data for slider (same logic as ProblemList)"""
@@ -139,6 +164,8 @@ class InternalProblemQueue(InternalView, ListView):
         context = super().get_context_data(**kwargs)
         context["page_type"] = "problem_queue"
         context["title"] = self.title
+        context["current_tab"] = self.current_tab
+        context["status_filter"] = self.status_filter
 
         # Add filter context data
         context["search_query"] = getattr(self, "search_query", None)
@@ -152,6 +179,11 @@ class InternalProblemQueue(InternalView, ListView):
             context["point_end"],
             context["point_values"],
         ) = self.get_noui_slider_points()
+
+        # Request counts for tab badges
+        context["pending_request_count"] = PublicRequest.objects.filter(
+            status=PublicRequest.PENDING
+        ).count()
 
         # Build pagination URLs that preserve filter parameters
         query_params = self.request.GET.copy()
@@ -169,6 +201,7 @@ class InternalProblemQueue(InternalView, ListView):
         return context
 
 
+@require_POST
 def mark_problem_private(request):
     if not request.user.is_superuser:
         return HttpResponseForbidden()
@@ -181,6 +214,209 @@ def mark_problem_private(request):
     problem.is_public = False
     problem.save()
     return JsonResponse({"success": True})
+
+
+@require_POST
+def publish_problem(request):
+    """Publish a problem: set is_public=True, clear orgs, mark request as approved."""
+    if not request.user.is_superuser:
+        return HttpResponseForbidden()
+    try:
+        problem_id = int(request.POST.get("id"))
+        problem = Problem.objects.get(id=problem_id)
+    except Exception:
+        return JsonResponse({"success": False, "error": "Problem not found"})
+
+    with transaction.atomic():
+        problem.is_public = True
+        problem.is_organization_private = False
+        problem._bypass_points_cap = True
+        problem.save(update_fields=["is_public", "is_organization_private"])
+        problem.organizations.clear()
+
+        # Update the public request status
+        try:
+            pr = problem.public_request
+            pr.status = PublicRequest.APPROVED
+            pr.reviewed_by = request.profile
+            pr.save(update_fields=["status", "reviewed_by", "updated_at"])
+        except PublicRequest.DoesNotExist:
+            pass
+
+        # Rescore after publish
+        transaction.on_commit(lambda: rescore_problem.delay(problem.id))
+
+    # Notify the author
+    _notify_request_author(problem, request.profile, PublicRequest.APPROVED)
+
+    return JsonResponse({"success": True})
+
+
+@require_POST
+def reject_problem(request):
+    """Reject a public request with feedback."""
+    if not request.user.is_superuser:
+        return HttpResponseForbidden()
+    try:
+        problem_id = int(request.POST.get("id"))
+        problem = Problem.objects.get(id=problem_id)
+    except Exception:
+        return JsonResponse({"success": False, "error": "Problem not found"})
+
+    feedback = request.POST.get("feedback", "").strip()
+
+    try:
+        pr = problem.public_request
+        pr.status = PublicRequest.REJECTED
+        pr.feedback = feedback
+        pr.reviewed_by = request.profile
+        pr.save(update_fields=["status", "feedback", "reviewed_by", "updated_at"])
+    except PublicRequest.DoesNotExist:
+        return JsonResponse({"success": False, "error": "No public request found"})
+
+    # Notify the author
+    _notify_request_author(problem, request.profile, PublicRequest.REJECTED)
+
+    return JsonResponse({"success": True})
+
+
+def improve_markdown_queue(request):
+    """Handle improve markdown from the queue page."""
+    if not request.user.is_superuser:
+        return HttpResponseForbidden()
+
+    if request.method == "GET":
+        problem_code = request.GET.get("problem_code")
+        if not problem_code:
+            return JsonResponse({"success": False, "error": "Problem code is required"})
+
+        try:
+            Problem.objects.get(code=problem_code)
+        except Problem.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Problem not found"})
+
+        task = improve_markdown_task.delay(problem_code)
+        return JsonResponse({"success": True, "task_id": task.id})
+
+    elif request.method == "POST":
+        problem_code = request.POST.get("problem_code")
+        improved_markdown = request.POST.get("improved_markdown", "")
+
+        if not problem_code or not improved_markdown:
+            return JsonResponse({"success": False, "error": "Missing required fields"})
+
+        try:
+            problem = Problem.objects.get(code=problem_code)
+        except Problem.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Problem not found"})
+
+        problem.description = improved_markdown
+        problem.save(update_fields=["description"])
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"success": False, "error": "Invalid method"})
+
+
+@require_POST
+def request_public(request):
+    """Author requests a problem to be made public."""
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
+    try:
+        problem_id = int(request.POST.get("id"))
+        problem = Problem.objects.get(id=problem_id)
+    except Exception:
+        return JsonResponse({"success": False, "error": "Problem not found"})
+
+    # Must be an editor of the problem
+    if not problem.is_editable_by(request.user):
+        return JsonResponse({"success": False, "error": "Permission denied"})
+
+    # Check if there's already a pending request
+    existing = PublicRequest.objects.filter(problem=problem).first()
+    if existing:
+        if existing.status == PublicRequest.PENDING:
+            return JsonResponse(
+                {"success": False, "error": _("A pending request already exists.")}
+            )
+        # Re-request after rejection: update existing record
+        existing.status = PublicRequest.PENDING
+        existing.requested_by = request.profile
+        existing.feedback = ""
+        existing.reviewed_by = None
+        existing.save(
+            update_fields=[
+                "status",
+                "requested_by",
+                "feedback",
+                "reviewed_by",
+                "updated_at",
+            ]
+        )
+    else:
+        PublicRequest.objects.create(
+            problem=problem,
+            requested_by=request.profile,
+        )
+
+    # Notify superusers
+    _notify_superusers_new_request(problem, request.profile)
+
+    return JsonResponse({"success": True})
+
+
+def _notify_superusers_new_request(problem, requester):
+    """Notify superusers about a new public request."""
+    superuser_profiles = Profile.objects.filter(user__is_superuser=True).exclude(
+        id=requester.id
+    )
+    queue_url = reverse("internal_problem_queue") + "?tab=request_public&status=P"
+    problem_url = reverse("problem_detail", args=[problem.code])
+    review_text = _("Review")
+    html_link = (
+        '<a href="%(problem_url)s">%(name)s</a>'
+        ' (<a href="%(queue_url)s">%(review)s</a>)'
+    ) % {
+        "problem_url": problem_url,
+        "name": problem.name,
+        "queue_url": queue_url,
+        "review": review_text,
+    }
+
+    for profile in superuser_profiles:
+        Notification.objects.create_notification(
+            owner=profile,
+            category=NotificationCategory.PUBLIC_REQUEST_NEW,
+            html_link=html_link,
+            author=requester,
+        )
+
+
+def _notify_request_author(problem, reviewer, status):
+    """Notify the request author about approval/rejection."""
+    try:
+        pr = problem.public_request
+    except PublicRequest.DoesNotExist:
+        return
+
+    if status == PublicRequest.APPROVED:
+        category = NotificationCategory.PUBLIC_REQUEST_APPROVED
+    else:
+        category = NotificationCategory.PUBLIC_REQUEST_REJECTED
+
+    edit_url = reverse("problem_edit", args=[problem.code])
+    html_link = '<a href="%(url)s">%(name)s</a>' % {
+        "url": edit_url,
+        "name": problem.name,
+    }
+
+    Notification.objects.create_notification(
+        owner=pr.requested_by,
+        category=category,
+        html_link=html_link,
+        author=reviewer,
+    )
 
 
 def problem_tag(request):
@@ -272,7 +508,8 @@ def problem_tag(request):
             except ValueError:
                 return JsonResponse({"success": False, "error": "Invalid type IDs"})
 
-            # Save the problem
+            # Save the problem, bypassing points cap for non-public problems
+            problem._bypass_points_cap = True
             problem.save()
 
             # Trigger rescoring if points changed

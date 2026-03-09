@@ -28,6 +28,9 @@ class NotificationCategory(models.TextChoices):
     PROBLEM_PUBLIC = "problem_public", _("Problem visibility changed")
     PROBLEM_PRIVATE = "problem_private", _("Problem visibility changed")
     QUIZ_NEEDS_GRADING = "quiz_needs_grading", _("Quiz answer needs grading")
+    PUBLIC_REQUEST_NEW = "public_request_new", _("New public request")
+    PUBLIC_REQUEST_APPROVED = "public_request_approved", _("Public request approved")
+    PUBLIC_REQUEST_REJECTED = "public_request_rejected", _("Public request rejected")
 
 
 class NotificationManager(models.Manager):

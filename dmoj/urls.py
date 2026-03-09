@@ -1593,6 +1593,26 @@ urlpatterns = [
                     name="internal_problem_tag",
                 ),
                 re_path(
+                    r"^publish_problem$",
+                    internal.publish_problem,
+                    name="internal_publish_problem",
+                ),
+                re_path(
+                    r"^reject_problem$",
+                    internal.reject_problem,
+                    name="internal_reject_problem",
+                ),
+                re_path(
+                    r"^improve_markdown$",
+                    internal.improve_markdown_queue,
+                    name="internal_improve_markdown",
+                ),
+                re_path(
+                    r"^request_public$",
+                    internal.request_public,
+                    name="internal_request_public",
+                ),
+                re_path(
                     r"^request_time$",
                     internal.InternalRequestTime.as_view(),
                     name="internal_request_time",

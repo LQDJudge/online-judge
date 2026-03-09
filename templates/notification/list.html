@@ -32,23 +32,12 @@
         }
       });
 
-    // Handle content click to mark as read and open link
-      $('.notification-content').on('click', function (e) {
-        e.preventDefault();
+    // Mark as read when clicking a link inside notification content
+      $('.notification-content').on('click', 'a', function () {
         var $row = $(this).closest('.notification-row');
         var notificationId = $row.data('notification-id');
-        var $link = $(this).find('a');
-
-        if ($link.length > 0) {
-          var href = $link.attr('href');
-
-        // Mark as read if unread
-          if (!$row.hasClass('read')) {
-            markAsRead([notificationId]);
-          }
-
-        // Open link in new tab
-          window.open(href, '_blank');
+        if (!$row.hasClass('read')) {
+          markAsRead([notificationId]);
         }
       });
 

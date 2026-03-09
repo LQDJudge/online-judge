@@ -88,6 +88,7 @@ from judge.models.quiz import (
 from judge.models.notification import Notification, NotificationProfile
 from judge.models.block import Block
 from judge.models.email_change import EmailChangeRequest
+from judge.models.public_request import PublicRequest
 
 revisions.register(Profile, exclude=["points", "last_access", "ip", "rating"])
 revisions.register(Problem, follow=["language_limits"])
