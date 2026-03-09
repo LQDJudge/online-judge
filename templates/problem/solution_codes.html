@@ -94,7 +94,8 @@
             source_code: {{ sc.source_code | tojson }},
             language_id: {{ sc.language_id }},
             expected_result: '{{ sc.expected_result }}',
-            last_submission_id: {{ sc.last_submission_id or 'null' }}
+            last_submission_id: {{ sc.last_submission_id or 'null' }},
+            last_submission_status: {{ sc.last_submission.status | tojson if sc.last_submission else 'null' }}
           },
         {% endfor %}
       ];
@@ -250,8 +251,10 @@
 
       // Run All
       var pollTimer = null;
+      var isRunning = false;
 
       function setRunning(running) {
+        isRunning = running;
         $('#run-all-btn').prop('disabled', running);
         if (running) {
           $('#run-all-btn').html('<i class="fa fa-spinner fa-spin"></i> {{ _("Running...") }}');
@@ -326,7 +329,7 @@
       function pollStatus() {
         $.getJSON('{{ url("problem_solution_codes_status", problem.code) }}', function (data) {
           renderResults(data);
-          if (!data.all_graded) {
+          if (isRunning && !data.all_graded) {
             pollTimer = setTimeout(pollStatus, 2000);
           } else {
             setRunning(false);
@@ -398,17 +401,22 @@
       }
       updateAddBtn();
 
-      // If any submission is still in progress, start polling
+      // Check if any code has a submission
+      var hasSubmissions = false;
       var anyPending = false;
       for (var i = 0; i < initialCodes.length; i++) {
         if (initialCodes[i].last_submission_id) {
-          anyPending = true;
-          break;
+          hasSubmissions = true;
+          if (initialCodes[i].last_submission_status !== 'D') {
+            anyPending = true;
+          }
         }
       }
-      if (anyPending) {
+      if (hasSubmissions) {
         $('#solution-results-section').show();
-        setRunning(true);
+        if (anyPending) {
+          setRunning(true);
+        }
         pollStatus();
       }
     });
