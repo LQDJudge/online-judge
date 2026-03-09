@@ -1057,6 +1057,7 @@ class BestQuizAttempt(models.Model):
         """
         Recalculate best quiz attempt for a user/lesson_quiz after an attempt is submitted.
         Always queries all attempts to find the true best score.
+        If attempt has no lesson_quiz, looks up all CourseLessonQuiz for the quiz.
 
         Args:
             attempt: QuizAttempt object that was just submitted
@@ -1064,12 +1065,22 @@ class BestQuizAttempt(models.Model):
         Returns:
             BestQuizAttempt object if updated/created, None otherwise
         """
-        if not attempt.is_submitted or not attempt.lesson_quiz:
+        if not attempt.is_submitted:
             return None
 
-        return cls.recalculate_for_user_lesson_quiz(
-            attempt.user_id, attempt.lesson_quiz_id
-        )
+        if attempt.lesson_quiz:
+            return cls.recalculate_for_user_lesson_quiz(
+                attempt.user_id, attempt.lesson_quiz_id
+            )
+
+        # Attempt has no lesson_quiz link — find all CourseLessonQuiz for this quiz
+        lesson_quiz_ids = CourseLessonQuiz.objects.filter(
+            quiz_id=attempt.quiz_id
+        ).values_list("id", flat=True)
+        result = None
+        for lq_id in lesson_quiz_ids:
+            result = cls.recalculate_for_user_lesson_quiz(attempt.user_id, lq_id)
+        return result
 
     @classmethod
     def recalculate_for_user_lesson_quiz(cls, user_id, lesson_quiz_id):

@@ -54,12 +54,15 @@
     </div>
 
     <div class="result-actions">
-      <a href="{{ url('quiz_detail', attempt.quiz.code) }}" class="btn btn-default">
+      <a href="{{ url('quiz_detail', attempt.quiz.code) }}{% if lesson_quiz_id %}?lesson_quiz_id={{ lesson_quiz_id }}{% endif %}" class="btn btn-default">
         <i class="fa fa-arrow-left"></i> {{ _('Back to Quiz') }}
       </a>
       {% if can_retake %}
         <form method="post" action="{{ url('quiz_start', attempt.quiz.code) }}" style="display: inline;">
           {% csrf_token %}
+          {% if lesson_quiz_id %}
+            <input type="hidden" name="lesson_quiz_id" value="{{ lesson_quiz_id }}">
+          {% endif %}
           <button type="submit" class="action-btn">
             <i class="fa fa-repeat"></i> {{ _('Retake Quiz') }}
           </button>
@@ -202,6 +205,9 @@
       <div class="retake-section">
         <form method="post" action="{{ url('quiz_start', attempt.quiz.code) }}">
           {% csrf_token %}
+          {% if lesson_quiz_id %}
+            <input type="hidden" name="lesson_quiz_id" value="{{ lesson_quiz_id }}">
+          {% endif %}
           <button type="submit" class="action-btn large">
             <i class="fa fa-repeat"></i> {{ _('Retake Quiz') }}
           </button>

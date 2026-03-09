@@ -1919,6 +1919,10 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
             ).exists()
         )
 
+        # Pass lesson_quiz_id so retake forms preserve course lesson context
+        if attempt.lesson_quiz_id:
+            context["lesson_quiz_id"] = attempt.lesson_quiz_id
+
         if attempt.max_score and attempt.max_score > 0:
             context["percentage"] = round(
                 (attempt.score or 0) / attempt.max_score * 100, 1
