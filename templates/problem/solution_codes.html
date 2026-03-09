@@ -2,7 +2,6 @@
 {% set page_type = 'solution_codes' %}
 
 {% block edit_media %}
-  <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
   <style>
     .solution-code-entry {
       border: 1px solid #ddd;
@@ -77,7 +76,19 @@
 
 {% block js_media %}
   <script type="text/javascript">
+    function loadAce(callback) {
+      if (typeof ace !== 'undefined') return callback();
+      var script = document.createElement('script');
+      script.src = '{{ ACE_URL }}/ace.js';
+      script.onload = callback;
+      document.head.appendChild(script);
+    }
+
     $(function () {
+      loadAce(initSolutionCodes);
+    });
+
+    function initSolutionCodes() {
       var MAX_CODES = {{ max_solution_codes }};
       var languages = {{ languages | tojson }};
       var expectedChoices = [
@@ -421,7 +432,7 @@
         }
         pollStatus();
       }
-    });
+    }
   </script>
 {% endblock %}
 

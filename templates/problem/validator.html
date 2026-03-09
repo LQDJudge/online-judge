@@ -2,7 +2,6 @@
 {% set page_type = 'data' %}
 
 {% block edit_media %}
-  <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
   <style>
     .validator-editor-section {
       margin-bottom: 1.5em;
@@ -32,7 +31,19 @@
 
 {% block js_media %}
   <script type="text/javascript">
+    function loadAce(callback) {
+      if (typeof ace !== 'undefined') return callback();
+      var script = document.createElement('script');
+      script.src = '{{ ACE_URL }}/ace.js';
+      script.onload = callback;
+      document.head.appendChild(script);
+    }
+
     $(function () {
+      loadAce(initValidator);
+    });
+
+    function initValidator() {
       // Ace editor for validator code
       var editor = ace.edit('validator-editor');
       var langMode = $('#validator-language').val() === 'python' ? 'python' : 'c_cpp';
@@ -226,7 +237,7 @@
         setRunning(true);
         pollStatus();
       {% endif %}
-    });
+    }
   </script>
 {% endblock %}
 
