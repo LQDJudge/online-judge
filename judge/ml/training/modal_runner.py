@@ -1,20 +1,6 @@
 """
-Modal cloud training runner.
-
-Usage:
-    # First generate data locally:
-    python manage.py generate_data --output /tmp/ml_data/
-
-    # Then train on Modal (uploads data automatically):
-    modal run judge/ml/training/modal_runner.py --data-path /tmp/ml_data/
-
-    # Download trained embeddings:
-    modal volume get lqdoj-ml-volume /collab_filter/embeddings.npz /tmp/collab_filter.npz
-    modal volume get lqdoj-ml-volume /collab_filter_time/embeddings.npz /tmp/collab_filter_time.npz
-
-    # Import to database:
-    python manage.py import_embeddings --model collab_filter --file /tmp/collab_filter.npz
-    python manage.py import_embeddings --model collab_filter_time --file /tmp/collab_filter_time.npz
+Modal cloud training runner. Must be run from the project root directory.
+See judge/ml/README.md for usage instructions.
 """
 
 import modal
