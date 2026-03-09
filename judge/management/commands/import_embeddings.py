@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import tempfile
+import time
 
 import numpy as np
 from django.core.management.base import BaseCommand, CommandError
@@ -25,6 +26,7 @@ def upsert_embeddings(table, id_col, embeddings, batch_size=5000):
     ~3x faster than INSERT ON DUPLICATE KEY UPDATE with live index,
     and zero downtime (only 10-20ms during the rename).
     """
+    t0 = time.time()
     items = [(int(k), json.dumps(v.tolist())) for k, v in embeddings.items()]
     total = len(items)
     staging = f"_staging_{table}"
@@ -33,7 +35,11 @@ def upsert_embeddings(table, id_col, embeddings, batch_size=5000):
     print(f"  Importing {total} rows into {table}...")
 
     with connection.cursor() as c:
+        # Disable statement timeout for long-running operations (e.g. index build)
+        c.execute("SET SESSION max_statement_time = 0")
+
         # 1. Create staging table without vector index
+        t1 = time.time()
         c.execute(f"DROP TABLE IF EXISTS {staging}")
         c.execute(f"DROP TABLE IF EXISTS {old}")
         c.execute(
@@ -43,8 +49,10 @@ def upsert_embeddings(table, id_col, embeddings, batch_size=5000):
             f"  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
             f") ENGINE=InnoDB"
         )
+        print(f"    [1] Create staging table: {time.time() - t1:.2f}s")
 
         # 2. Bulk insert (fast — no vector index overhead)
+        t2 = time.time()
         for i in range(0, total, batch_size):
             batch = items[i : i + batch_size]
             values_parts = []
@@ -57,19 +65,26 @@ def upsert_embeddings(table, id_col, embeddings, batch_size=5000):
                 f"VALUES {', '.join(values_parts)}",
                 params,
             )
+        print(f"    [2] Bulk insert {total} rows: {time.time() - t2:.2f}s")
 
         # 3. Build vector index
+        t3 = time.time()
         c.execute(
             f"ALTER TABLE {staging} ADD VECTOR INDEX vec_idx (embedding) DISTANCE=cosine"
         )
+        print(f"    [3] Build HNSW index: {time.time() - t3:.2f}s")
 
         # 4. Atomic swap
+        t4 = time.time()
         c.execute(f"RENAME TABLE {table} TO {old}, {staging} TO {table}")
+        print(f"    [4] Atomic swap: {time.time() - t4:.2f}s")
 
         # 5. Cleanup
+        t5 = time.time()
         c.execute(f"DROP TABLE IF EXISTS {old}")
+        print(f"    [5] Drop old table: {time.time() - t5:.2f}s")
 
-    print(f"    {total} rows imported.")
+    print(f"    Total: {time.time() - t0:.2f}s")
 
 
 class Command(BaseCommand):
