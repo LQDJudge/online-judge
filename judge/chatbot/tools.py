@@ -5,52 +5,99 @@ Each tool fetches specific information about a problem.
 
 import os
 import logging
+
+import fastapi_poe as fp
+from asgiref.sync import sync_to_async
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
+# Tool metadata: name -> description (used for both ToolDefinition and system prompt)
 CHATBOT_TOOLS = {
     "get_problem_info": {
-        "description": "Get basic problem metadata (name, code, points, time/memory limits, authors)"
+        "description": "Get basic problem metadata (name, code, points, time/memory limits, authors)",
     },
     "get_problem_statement": {
-        "description": "Get the problem description/statement text"
+        "description": "Get the problem description/statement text",
     },
     "get_test_data_docs": {
-        "description": "Get documentation for test data management (generators, checkers, interactive)"
+        "description": "Get documentation for test data management (generators, checkers, interactive)",
     },
     "get_checker_template": {
-        "description": "Get template code for writing custom checkers (Python and C++)"
+        "description": "Get template code for writing custom checkers (Python and C++)",
     },
     "get_generator_template": {
-        "description": "Get template code for writing test generators"
+        "description": "Get template code for writing test generators",
     },
-    "get_ac_submissions": {"description": "Get accepted submission code for reference"},
+    "get_ac_submissions": {
+        "description": "Get accepted submission code for reference",
+    },
     "get_existing_checker": {
-        "description": "Get the current checker code if one exists"
+        "description": "Get the current checker code if one exists",
     },
     "get_solution_template": {
-        "description": "Get the template format for writing problem solutions/editorials"
+        "description": "Get the template format for writing problem solutions/editorials",
     },
 }
+
+# Map tool names to their implementation functions
+_TOOL_FUNCTIONS = {
+    "get_problem_info": lambda problem: _get_problem_info(problem),
+    "get_problem_statement": lambda problem: _get_problem_statement(problem),
+    "get_test_data_docs": lambda problem: _get_test_data_docs(problem),
+    "get_checker_template": lambda problem: _get_checker_template(problem),
+    "get_generator_template": lambda problem: _get_generator_template(problem),
+    "get_ac_submissions": lambda problem: _get_ac_submissions(problem),
+    "get_existing_checker": lambda problem: _get_existing_checker(problem),
+    "get_solution_template": lambda problem: _get_solution_template(problem),
+}
+
+
+def get_tool_definitions():
+    """Build Poe ToolDefinition objects for all chatbot tools."""
+    definitions = []
+    for name, tool in CHATBOT_TOOLS.items():
+        definitions.append(
+            fp.ToolDefinition(
+                type="function",
+                function={
+                    "name": name,
+                    "description": tool["description"],
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": [],
+                    },
+                },
+            )
+        )
+    return definitions
+
+
+def get_tool_executables(problem):
+    """
+    Build async-safe executable functions bound to a specific problem.
+    Uses sync_to_async so Django ORM calls run in a thread pool,
+    avoiding async safety issues inside Poe's event loop.
+    Returns list of callables in the same order as get_tool_definitions().
+    """
+
+    def _make_executor(func, tool_name):
+        @sync_to_async
+        def executor():
+            return func(problem)
+
+        executor.__name__ = tool_name
+        return executor
+
+    return [_make_executor(_TOOL_FUNCTIONS[name], name) for name in CHATBOT_TOOLS]
 
 
 def execute_tool(tool_name, problem):
     """Execute a tool and return the result."""
-    tool_functions = {
-        "get_problem_info": _get_problem_info,
-        "get_problem_statement": _get_problem_statement,
-        "get_test_data_docs": _get_test_data_docs,
-        "get_checker_template": _get_checker_template,
-        "get_generator_template": _get_generator_template,
-        "get_ac_submissions": _get_ac_submissions,
-        "get_existing_checker": _get_existing_checker,
-        "get_solution_template": _get_solution_template,
-    }
-
-    if tool_name in tool_functions:
+    if tool_name in _TOOL_FUNCTIONS:
         try:
-            return tool_functions[tool_name](problem)
+            return _TOOL_FUNCTIONS[tool_name](problem)
         except Exception as e:
             logger.error(f"Error executing tool {tool_name}: {e}")
             return f"Error executing {tool_name}: {str(e)}"

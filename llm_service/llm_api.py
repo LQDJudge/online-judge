@@ -27,23 +27,35 @@ class LLMService:
         if not self.api_key:
             raise ValueError("API_KEY is required")
 
-    def _get_response(self, messages: List[fp.ProtocolMessage]) -> Optional[str]:
+    def _get_response(
+        self,
+        messages: List[fp.ProtocolMessage],
+        tools: Optional[List["fp.ToolDefinition"]] = None,
+        tool_executables: Optional[List] = None,
+        strip_thinking: bool = True,
+    ) -> Optional[str]:
         """
-        Get a response from the Poe API using the given messages
+        Get a text response from the Poe API using the given messages.
         """
         try:
             response = ""
 
-            for partial in fp.get_bot_response_sync(
-                messages=messages,
-                bot_name=self.bot_name,
-                api_key=self.api_key,
-            ):
+            kwargs = {
+                "messages": messages,
+                "bot_name": self.bot_name,
+                "api_key": self.api_key,
+            }
+            if tools:
+                kwargs["tools"] = tools
+            if tool_executables:
+                kwargs["tool_executables"] = tool_executables
+
+            for partial in fp.get_bot_response_sync(**kwargs):
                 response += partial.text
                 logger.debug(f"LLM partial response: {partial.text}")
 
-            # Remove thinking content (blockquotes with > prefix)
-            response = self._remove_thinking_content(response)
+            if strip_thinking:
+                response = self._remove_thinking_content(response)
             return response.strip()
 
         except Exception as e:
@@ -120,6 +132,79 @@ class LLMService:
         )
 
         return self._get_response(messages)
+
+    def _build_messages(
+        self,
+        conversation_messages: list,
+        current_prompt: str,
+        system_prompt: str = None,
+    ) -> List[fp.ProtocolMessage]:
+        """Build a ProtocolMessage list from conversation history."""
+        messages = []
+
+        if system_prompt:
+            messages.append(
+                fp.ProtocolMessage(
+                    role="system",
+                    content=system_prompt,
+                    timestamp=int(time.time()),
+                )
+            )
+
+        for msg in conversation_messages:
+            role = msg["role"]
+            if role not in ("user", "bot"):
+                role = "bot" if role == "assistant" else role
+            messages.append(
+                fp.ProtocolMessage(
+                    role=role,
+                    content=msg["content"],
+                    timestamp=msg.get("timestamp", int(time.time())),
+                )
+            )
+
+        messages.append(
+            fp.ProtocolMessage(
+                role="user",
+                content=current_prompt,
+                timestamp=int(time.time()),
+            )
+        )
+
+        return messages
+
+    def call_llm_with_history(
+        self,
+        conversation_messages: list,
+        current_prompt: str,
+        system_prompt: str = None,
+        tools: Optional[List["fp.ToolDefinition"]] = None,
+        tool_executables: Optional[List] = None,
+        strip_thinking: bool = True,
+    ) -> Optional[str]:
+        """
+        Call LLM with native message array for conversation history.
+
+        Args:
+            conversation_messages: List of dicts with 'role' and 'content' keys
+            current_prompt: The current user prompt
+            system_prompt: Optional system prompt
+            tools: Optional list of ToolDefinition for native tool calling
+            tool_executables: Optional list of callables for automatic tool execution
+            strip_thinking: Whether to remove thinking content from response
+
+        Returns:
+            LLM response as string, or None if failed
+        """
+        messages = self._build_messages(
+            conversation_messages, current_prompt, system_prompt
+        )
+        return self._get_response(
+            messages,
+            tools=tools,
+            tool_executables=tool_executables,
+            strip_thinking=strip_thinking,
+        )
 
     def _get_site_domain(self) -> Optional[str]:
         """Get the site domain from Django's Site model."""

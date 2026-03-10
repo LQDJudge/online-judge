@@ -1,33 +1,22 @@
 """
 Celery task for chatbot LLM processing.
-Handles conversation with tool use for problem author assistance.
+Handles conversation with native Poe tool calling for problem author assistance.
 """
 
-import json
 import logging
-import re
 import time
 
 from celery import shared_task
 
 from judge.chatbot.cache import get_conversation, save_conversation
-from judge.chatbot.tools import CHATBOT_TOOLS, execute_tool
+from judge.chatbot.tools import get_tool_definitions, get_tool_executables
 from judge.markdown import markdown as render_markdown
 
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """You are an AI assistant helping problem authors create and manage competitive programming problems on LQDOJ (Le Quy Don Online Judge).
 
-You have access to the following tools to help you answer questions:
-
-{tool_descriptions}
-
-TOOL USAGE:
-- When you need information about the problem, call the appropriate tool first
-- To call a tool, use this exact format:
-<tool_call>{{"tool": "tool_name"}}</tool_call>
-
-- After receiving tool results, provide your helpful response
+You have access to tools to fetch problem information, templates, and reference code. Use them when needed.
 
 GUIDELINES:
 1. Use tools when you need specific information (problem details, code templates, etc.)
@@ -73,154 +62,27 @@ When asked to write a test generator, you MUST:
 Generate COMPREHENSIVE test cases covering:
 - EDGE CASES: min/max values, boundaries (use exact values, not random)
 - PROBLEM-SPECIFIC: trees (line, star, binary), arrays (sorted, reverse), etc.
-- RANDOM CASES: various sizes within each subtask constraint"""
-
-
-def _build_tool_descriptions():
-    """Build formatted tool descriptions for system prompt."""
-    descriptions = []
-    for name, tool in CHATBOT_TOOLS.items():
-        descriptions.append(f"- {name}: {tool['description']}")
-    return "\n".join(descriptions)
-
-
-def _build_conversation_context(messages, max_messages=10):
-    """Build conversation history text for context."""
-    if not messages:
-        return ""
-
-    # Take last N messages
-    recent = messages[-max_messages:]
-    context_parts = []
-
-    for msg in recent:
-        role = "User" if msg["role"] == "user" else "Assistant"
-        content = msg["content"]
-        # Truncate long messages in history
-        if len(content) > 1000:
-            content = content[:1000] + "..."
-        context_parts.append(f"{role}: {content}")
-
-    return "\n\n".join(context_parts)
-
-
-def _extract_tool_calls(response):
-    """Extract tool calls from LLM response."""
-    pattern = r"<tool_call>\s*(\{.*?\})\s*</tool_call>"
-    matches = re.findall(pattern, response, re.DOTALL)
-
-    tool_calls = []
-    for match in matches:
-        try:
-            tool_data = json.loads(match)
-            tool_name = tool_data.get("tool")
-            if tool_name and tool_name in CHATBOT_TOOLS:
-                tool_calls.append(tool_name)
-        except json.JSONDecodeError:
-            continue
-
-    return tool_calls
-
-
-def _clean_response(response):
-    """Remove tool call markers from response."""
-    pattern = r"<tool_call>\s*\{.*?\}\s*</tool_call>"
-    cleaned = re.sub(pattern, "", response, flags=re.DOTALL)
-    # Clean up extra whitespace
-    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
-    return cleaned.strip()
-
-
-def _process_with_tools(
-    llm, problem, user_message, conversation_history, system_prompt
-):
-    """Process message with potential tool use."""
-    # Build initial prompt
-    history_text = _build_conversation_context(conversation_history)
-
-    user_prompt = f"""CONVERSATION HISTORY:
-{history_text}
-
-CURRENT USER MESSAGE:
-{user_message}
-
-Respond helpfully. If you need information from tools, use the tool_call format."""
-
-    # First LLM call
-    response = llm.call_llm(user_prompt, system_prompt)
-
-    if not response:
-        return {
-            "content": "Xin lỗi, tôi gặp lỗi khi xử lý. Vui lòng thử lại.",
-            "tool_calls": [],
-        }
-
-    # Check for tool calls
-    tool_names = _extract_tool_calls(response)
-
-    if not tool_names:
-        # No tools needed, return cleaned response
-        return {"content": _clean_response(response), "tool_calls": []}
-
-    # Execute tools and collect results
-    tool_results = []
-    tool_call_info = []
-
-    for tool_name in tool_names:
-        result = execute_tool(tool_name, problem)
-        tool_results.append(f"[{tool_name}]:\n{result}")
-        tool_call_info.append(
-            {
-                "tool": tool_name,
-                "result_summary": result[:200] + "..." if len(result) > 200 else result,
-            }
-        )
-
-    # Make follow-up call with tool results
-    # Add generator script reminder if generator template was requested
-    generator_reminder = ""
-    if "get_generator_template" in tool_names:
-        generator_reminder = """
-
-COMPREHENSIVE TEST GENERATION REMINDERS:
-Generate tests like a competitive programming problemsetter! Include:
-1. EDGE CASES: min values (n=1), max values (n=10^9), boundary cases - use EXACT values
-2. PROBLEM-SPECIFIC: For trees (line, star, binary), arrays (sorted, reverse), etc.
-3. RANDOM CASES: Various sizes per subtask
-
-Generator should support multiple MODES (e.g., "min", "max", "random", "line", "star").
-Match test count to subtask percentages.
+- RANDOM CASES: various sizes within each subtask constraint
 
 GENERATOR SCRIPT FORMAT:
 - Comment LINES (starting with # or //) are allowed for labeling sections
 - NEVER use inline comments (e.g., "random 100 1001 // test" will FAIL)
 - Each non-comment line = space-separated args passed directly to generator"""
 
-    followup_prompt = f"""CONVERSATION HISTORY:
-{history_text}
+MAX_HISTORY_MESSAGES = 10
 
-CURRENT USER MESSAGE:
-{user_message}
 
-TOOL RESULTS:
-{chr(10).join(tool_results)}{generator_reminder}
-
-Based on the tool results above, provide a complete and helpful response to the user's question. Do not use tool_call format again."""
-
-    final_response = llm.call_llm(followup_prompt, system_prompt)
-
-    if final_response:
-        final_response = _clean_response(final_response)
-    else:
-        final_response = "Xin lỗi, tôi gặp lỗi khi xử lý kết quả. Vui lòng thử lại."
-
-    return {"content": final_response, "tool_calls": tool_call_info}
+def _get_recent_messages(messages, max_messages=MAX_HISTORY_MESSAGES):
+    """Get recent conversation messages for LLM context."""
+    if not messages:
+        return []
+    return messages[-max_messages:]
 
 
 @shared_task(bind=True)
 def chatbot_respond_task(self, user_id, problem_code, user_message):
     """
-    Celery task to process chatbot message with tool use.
+    Celery task to process chatbot message with native Poe tool calling.
 
     Args:
         user_id: The user's ID
@@ -242,7 +104,7 @@ def chatbot_respond_task(self, user_id, problem_code, user_message):
         # Load conversation history
         conversation = get_conversation(user_id, problem_code)
 
-        # Add user message to history (markdown rendering done in view for immediate display)
+        # Add user message to history
         conversation["messages"].append(
             {
                 "role": "user",
@@ -253,7 +115,6 @@ def chatbot_respond_task(self, user_id, problem_code, user_message):
 
         # Initialize LLM service with selected model
         config = get_config()
-        # Use model from conversation cache, fallback to config default
         selected_model = conversation.get("model") or config.get_bot_name_for_chatbot()
         llm = LLMService(
             api_key=config.api_key,
@@ -261,42 +122,46 @@ def chatbot_respond_task(self, user_id, problem_code, user_message):
             sleep_time=config.sleep_time,
         )
 
-        # Build system prompt with tool descriptions
-        system_prompt = SYSTEM_PROMPT.format(
-            tool_descriptions=_build_tool_descriptions()
+        # Build tool definitions and executables bound to this problem
+        tool_definitions = get_tool_definitions()
+        tool_executables = get_tool_executables(problem)
+
+        # Get conversation history (excluding current message)
+        recent_messages = _get_recent_messages(conversation["messages"][:-1])
+
+        # Call LLM with native tool calling
+        response = llm.call_llm_with_history(
+            conversation_messages=recent_messages,
+            current_prompt=user_message,
+            system_prompt=SYSTEM_PROMPT,
+            tools=tool_definitions,
+            tool_executables=tool_executables,
+            strip_thinking=False,
         )
 
-        # Process message (potentially with tools)
-        result = _process_with_tools(
-            llm=llm,
-            problem=problem,
-            user_message=user_message,
-            conversation_history=conversation["messages"][:-1],  # Exclude current
-            system_prompt=system_prompt,
-        )
+        if not response:
+            response = "Xin lỗi, tôi gặp lỗi khi xử lý. Vui lòng thử lại."
 
         # Render markdown to HTML for display
         try:
-            content_html = render_markdown(result["content"])
+            content_html = render_markdown(response)
         except Exception as md_error:
             logger.warning(f"Markdown rendering failed: {md_error}")
-            # Fallback: escape HTML and convert newlines to <br>
             from django.utils.html import escape
 
             content_html = (
                 '<div class="md-typeset content-description">'
-                + escape(result["content"]).replace("\n", "<br>")
+                + escape(response).replace("\n", "<br>")
                 + "</div>"
             )
 
-        # Add assistant response to history (store raw content for context)
+        # Add assistant response to history
         conversation["messages"].append(
             {
                 "role": "assistant",
-                "content": result["content"],  # Raw markdown for conversation context
-                "content_html": content_html,  # Rendered HTML for display
+                "content": response,
+                "content_html": content_html,
                 "timestamp": int(time.time()),
-                "tool_calls": result.get("tool_calls", []),
             }
         )
 
@@ -305,8 +170,8 @@ def chatbot_respond_task(self, user_id, problem_code, user_message):
 
         return {
             "success": True,
-            "content": content_html,  # Return rendered assistant HTML
-            "tool_calls": result.get("tool_calls", []),
+            "content": content_html,
+            "tool_calls": [],
         }
 
     except Problem.DoesNotExist:
