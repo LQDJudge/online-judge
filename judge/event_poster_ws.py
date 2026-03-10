@@ -1,11 +1,14 @@
 import socket
 import threading
-import socketio
+import time
 
+import socketio
 from django.conf import settings
 
 __all__ = ["EventPostingError", "EventPoster", "post", "last"]
 _local = threading.local()
+_failed_at = threading.local()
+_RETRY_INTERVAL = 60
 
 
 class EventPostingError(RuntimeError):
@@ -24,7 +27,7 @@ class EventPoster(object):
 
     def _connect(self):
         # Create Socket.IO client
-        self._conn = socketio.Client(reconnection=False)
+        self._conn = socketio.Client(reconnection=False, request_timeout=0.5)
 
         # Define event handlers
         @self._conn.event
@@ -45,7 +48,7 @@ class EventPoster(object):
                 settings.EVENT_DAEMON_URL,
                 auth={"role": "sender", "token": settings.EVENT_DAEMON_KEY},
                 namespaces=["/"],
-                wait_timeout=5,
+                wait_timeout=0.5,
             )
         except Exception as e:
             raise EventPostingError(f"Failed to connect to WebSocket server: {e}")
@@ -129,25 +132,37 @@ class EventPoster(object):
 
 
 def _get_poster():
+    failed_time = getattr(_failed_at, "time", 0)
+    if failed_time and time.monotonic() - failed_time < _RETRY_INTERVAL:
+        return None
     if "poster" not in _local.__dict__:
-        _local.poster = EventPoster()
+        try:
+            _local.poster = EventPoster()
+            _failed_at.time = 0
+        except EventPostingError:
+            _failed_at.time = time.monotonic()
+            return None
     return _local.poster
 
 
 def post(channel, message):
     try:
-        return _get_poster().post(channel, message)
+        poster = _get_poster()
+        if poster is None:
+            return 0
+        return poster.post(channel, message)
     except Exception:
-        # Clean up connection on error
         _cleanup_poster()
     return 0
 
 
 def last():
     try:
-        return _get_poster().last()
+        poster = _get_poster()
+        if poster is None:
+            return 0
+        return poster.last()
     except Exception:
-        # Clean up connection on error
         _cleanup_poster()
     return 0
 
