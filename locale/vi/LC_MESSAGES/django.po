@@ -7195,6 +7195,14 @@ msgstr "Chỉ điểm"
 msgid "Virtual"
 msgstr "Ảo"
 
+#: templates/contest/ranking.html
+msgid "Favorites"
+msgstr "Yêu thích"
+
+#: templates/contest/ranking.html
+msgid "No animations"
+msgstr "Tắt hiệu ứng"
+
 #: templates/contest/ranking.html:180
 msgid "CSV"
 msgstr "CSV"

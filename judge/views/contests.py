@@ -49,6 +49,7 @@ from django.views.generic.detail import (
     View,
 )
 
+from judge import event_poster as event
 from judge.views.comment import CommentableMixin
 from judge.forms import ContestCloneForm
 from judge.models import (
@@ -1316,6 +1317,7 @@ class ContestRanking(ContestRankingBase):
         if not self.ajax_only:
             context["include_virtual"] = self.include_virtual
             context["friend_only"] = self.friend_only
+            context["last_msg"] = event.last()
         return context
 
 

@@ -19,9 +19,7 @@
 
         // get information
         let problem = linkElements[linkElements.length - 2];
-        let scoreText = $anchor.contents().filter(function() {
-          return this.nodeType === 3; // text nodes only
-        }).text().trim();
+        let scoreText = getCellScore($anchor);
         let score = parseFloat(scoreText.replace(',', '.'));
 
         // get time from data-time attribute (in seconds)
@@ -74,6 +72,181 @@
     });
   }
 
+  function getProblemLabelMap() {
+    var map = {};
+    $('#users-table thead th.problem-score-col').each(function () {
+      var code = $(this).find('.problem-code').text().trim();
+      var label = $(this).find('a').contents().filter(function () {
+        return this.nodeType === 3;
+      }).text().trim();
+      if (code && label) map[code] = label;
+    });
+    return map;
+  }
+
+  function getProblemMaxMap() {
+    var map = {};
+    $('#users-table thead th.problem-score-col').each(function () {
+      var code = $(this).find('.problem-code').text().trim();
+      var max = $(this).find('.point-denominator').text().trim();
+      if (code && max) map[code] = max;
+    });
+    return map;
+  }
+
+  function getCellScore($anchor) {
+    // Score is inside <span> child (e.g. <span>100</span> or <span>1<small> +2</small></span>)
+    var $span = $anchor.children('span').first();
+    if ($span.length) {
+      return $span.text().trim();
+    }
+    return $anchor.contents().filter(function () {
+      return this.nodeType === 3;
+    }).text().trim();
+  }
+
+  function getCellProblem($anchor) {
+    var link = $anchor.attr('data-featherlight') || '';
+    if (!link.includes('submissions')) return null;
+    var parts = link.split('/');
+    return parts[parts.length - 2];
+  }
+
+  function snapshot_ranking() {
+    var snap = {};
+    $('#users-table tbody tr').each(function () {
+      var $row = $(this);
+      var username = $row.find('.user-name .rating a').first().text();
+      if (!username) return;
+      var rank = $row.find('.rank-td').text().trim();
+      var totalScore = $row.find('td:nth-child(' + ($row.children('td').length > 2 ? 3 : 2) + ')').text().trim();
+      var scores = {};
+      $row.find('td a[data-featherlight]').each(function () {
+        var prob = getCellProblem($(this));
+        if (prob) scores[prob] = getCellScore($(this));
+      });
+      snap[username] = {rank: rank, scores: scores, totalScore: totalScore};
+    });
+    return snap;
+  }
+
+  function apply_ranking_animations(oldSnap) {
+    if ($('#disable-animations-checkbox').is(':checked')) return;
+    var activities = [];
+    var labelMap = getProblemLabelMap();
+    var maxMap = getProblemMaxMap();
+
+    $('#users-table tbody tr').each(function () {
+      var $row = $(this);
+      var username = $row.find('.user-name .rating a').first().text();
+      if (!username || !oldSnap[username]) return;
+
+      var oldData = oldSnap[username];
+      var oldRank = parseInt(oldData.rank) || 0;
+      var newRank = parseInt($row.find('.rank-td').text().trim()) || 0;
+      var rankDelta = oldRank - newRank; // positive = moved up
+
+      var rankUp = newRank && oldRank && newRank < oldRank;
+
+      var oldScores = oldData.scores;
+      $row.find('td a[data-featherlight]').each(function () {
+        var prob = getCellProblem($(this));
+        if (!prob) return;
+        var $td = $(this).closest('td');
+        var isFrozen = $td.hasClass('frozen');
+        var newScore = getCellScore($(this));
+        var oldScore = oldScores[prob];
+        if (oldScore === undefined || newScore !== oldScore) {
+          var label = labelMap[prob] || prob;
+          var oldNum = parseFloat(oldScore || '0');
+          var newNum = parseFloat(newScore) || 0;
+          activities.push({
+            username: username,
+            problem: label,
+            oldScore: isFrozen ? '-' : oldScore,
+            newScore: isFrozen ? '?' : newScore,
+            increased: !isFrozen && newNum > oldNum,
+            full: !isFrozen && maxMap[prob] && newNum === parseFloat(maxMap[prob]),
+            frozen: isFrozen,
+            rankDelta: rankDelta,
+            oldRank: oldRank,
+            newRank: newRank,
+            $row: rankUp ? $row : null,
+            $td: $td
+          });
+        }
+      });
+    });
+
+    if (activities.length > 0) {
+      pushActivities(activities);
+    }
+  }
+
+  function pushActivities(activities) {
+    var $container = $('#live-toasts');
+    if (!$container.length) {
+      $container = $('<div id="live-toasts"></div>').appendTo('body');
+    }
+
+    // Spread toasts evenly over ~8s (leaving 2s buffer before next refresh)
+    var spreadMs = Math.min(activities.length * 800, 8000);
+    var gap = activities.length > 1 ? spreadMs / (activities.length - 1) : 0;
+    var delay = 0;
+    activities.forEach(function (a, i) {
+      setTimeout(function () {
+        var cls;
+        if (a.frozen) {
+          cls = 'toast-frozen';
+        } else if (a.full) {
+          cls = 'toast-ac';
+        } else if (a.increased) {
+          cls = 'toast-partial';
+        } else {
+          cls = 'toast-down';
+        }
+
+        var scoreText = a.oldScore ? a.oldScore + ' \u2192 ' + a.newScore : a.newScore;
+        var rankInfo = '';
+        if (a.oldRank && a.newRank && a.oldRank !== a.newRank) {
+          var rankCls = a.newRank < a.oldRank ? 'toast-rank-up' : 'toast-rank-down';
+          rankInfo = '<span class="toast-rank ' + rankCls + '">#' + a.oldRank + ' \u2192 #' + a.newRank + '</span>';
+        } else if (a.newRank) {
+          rankInfo = '<span class="toast-rank">#' + a.newRank + '</span>';
+        }
+
+        var $toast = $('<div class="live-toast ' + cls + '">' +
+          '<div class="toast-problem">' + $('<span>').text(a.problem).html() + '</div>' +
+          '<div class="toast-body">' +
+          '<span class="toast-user">' + $('<span>').text(a.username).html() + '</span>' +
+          '<span class="toast-score">' + scoreText + '</span>' +
+          rankInfo +
+          '</div>' +
+          '</div>');
+
+        // Highlight table row/cell in sync with toast
+        // Remove first and force reflow to restart CSS animation
+        if (a.$row) { a.$row.removeClass('rank-up'); a.$row[0].offsetHeight; a.$row.addClass('rank-up'); }
+        if (a.$td) { a.$td.removeClass('new-solve'); a.$td[0].offsetHeight; a.$td.addClass('new-solve'); }
+        setTimeout(function () {
+          if (a.$row) a.$row.removeClass('rank-up');
+          if (a.$td) a.$td.removeClass('new-solve');
+        }, 3500);
+
+        $container.append($toast);
+        // Trigger reflow then add visible class for animation
+        $toast[0].offsetHeight;
+        $toast.addClass('toast-visible');
+
+        setTimeout(function () {
+          $toast.addClass('toast-exit');
+          setTimeout(function () { $toast.remove(); }, 500);
+        }, 4000);
+      }, delay);
+      delay += gap || 800;
+    });
+  }
+
   function update_ranking() {
     if (!$('#users-table').length) {
       return;
@@ -82,6 +255,8 @@
     var virtual = $('#show-virtual-checkbox').is(':checked');
     $('#loading-gif').show();
     var url = `?friend=${friend ? 1 : 0}&virtual=${virtual ? 1 : 0}&ajax=1`;
+
+    var oldSnap = snapshot_ranking();
 
     $.get({
       url: url,
@@ -95,6 +270,11 @@
         if (friend) {
           add_initial_friend_rank();
         }
+        if (Object.keys(oldSnap).length > 0) {
+          apply_ranking_animations(oldSnap);
+        }
+        if (typeof applyFavoriteStars === 'function') applyFavoriteStars();
+        if (typeof applyRowFilters === 'function') applyRowFilters();
       },
       fail: function() {
         console.log('Fail to update ranking');
@@ -190,7 +370,7 @@
       $('#show-virtual-checkbox').hide();
       $('#show-virtual-label').hide();
     {% else %}
-      {% if request.in_contest %}
+      {% if not contest.ended %}
         clearInterval(window.rankingInterval);
         window.rankingInterval = setInterval(update_ranking, 60 * 1000);
       {% endif %}

@@ -1,0 +1,179 @@
+// Live ranking animations and ICPC-style toasts
+
+// --- Ranking row/cell animations ---
+
+@keyframes rank-up-flash {
+    0% { background-color: rgba(76, 175, 80, 0.35); }
+    100% { background-color: transparent; }
+}
+
+@keyframes new-solve-pulse {
+    0% { background-color: rgba(255, 193, 7, 0.45); }
+    50% { background-color: rgba(255, 193, 7, 0.15); }
+    100% { background-color: transparent; }
+}
+
+#users-table tbody tr.rank-up {
+    animation: rank-up-flash 3s ease-out forwards;
+}
+
+#users-table tbody td.new-solve {
+    animation: new-solve-pulse 3s ease-out forwards;
+}
+
+// --- Favorite stars ---
+
+.fav-star {
+    cursor: pointer;
+    font-size: 1.1em;
+    margin-right: 4px;
+    vertical-align: middle;
+    opacity: 0.35;
+    transition: opacity 0.15s;
+
+    &:hover {
+        opacity: 0.7;
+    }
+
+    &.fav-active {
+        color: #f5a623;
+        opacity: 1;
+    }
+}
+
+#users-table tbody tr.fav-row {
+    background-color: rgba(245, 166, 35, 0.12);
+}
+
+// --- ICPC-style floating toasts ---
+
+#live-toasts {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 8px;
+    pointer-events: none;
+    max-height: 80vh;
+    overflow: hidden;
+}
+
+.live-toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: stretch;
+    min-width: 280px;
+    max-width: 380px;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 1px 4px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transform: translateX(100px);
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+    &.toast-visible {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    &.toast-exit {
+        opacity: 0;
+        transform: translateX(80px);
+        transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .toast-problem {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 14px;
+        font-size: 1.15em;
+        font-weight: 700;
+        color: #fff;
+        min-width: 44px;
+        letter-spacing: 0.5px;
+    }
+
+    .toast-body {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px 8px 12px;
+        flex: 1;
+        background: #fff;
+        font-size: 0.9em;
+    }
+
+    .toast-user {
+        font-weight: 600;
+        color: #333;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 140px;
+    }
+
+    .toast-score {
+        color: #555;
+        font-size: 0.95em;
+        margin-left: auto;
+        white-space: nowrap;
+        font-weight: 500;
+    }
+
+    .toast-rank {
+        font-size: 0.8em;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    // AC - green
+    &.toast-ac {
+        .toast-problem {
+            background: linear-gradient(135deg, #43a047, #2e7d32);
+        }
+        .toast-score {
+            color: #2e7d32;
+            font-weight: 600;
+        }
+    }
+
+    // Partial - orange/amber
+    &.toast-partial {
+        .toast-problem {
+            background: linear-gradient(135deg, #fb8c00, #ef6c00);
+        }
+        .toast-score {
+            color: #e65100;
+            font-weight: 600;
+        }
+    }
+
+    // Down - red
+    &.toast-down {
+        .toast-problem {
+            background: linear-gradient(135deg, #e53935, #c62828);
+        }
+        .toast-score {
+            color: #c62828;
+            font-weight: 600;
+        }
+    }
+
+    // Frozen - blue
+    &.toast-frozen {
+        .toast-problem {
+            background: linear-gradient(135deg, #42a5f5, #1976d2);
+        }
+        .toast-score {
+            color: #1565c0;
+            font-weight: 600;
+        }
+    }
+}
+
+.toast-rank-up { color: #2e7d32; }
+.toast-rank-down { color: #c62828; }

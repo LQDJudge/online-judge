@@ -16,6 +16,7 @@ from judge import event_poster as event
 from judge.bridge.base_handler import ZlibPacketHandler, proxy_list
 from judge.utils.problems import finished_submission
 from judge.models import (
+    Contest,
     Judge,
     Language,
     LanguageLimit,
@@ -635,6 +636,16 @@ class JudgeHandler(ZlibPacketHandler):
         update_user_points.delay(submission.user_id)
         update_problem_stats.delay(problem.id)
         submission.update_contest()
+
+        if (
+            submission.contest_object_id
+            and submission.contest_object.scoreboard_visibility
+            == Contest.SCOREBOARD_VISIBLE
+        ):
+            event.post(
+                "contest_%s" % submission.contest_object.key,
+                {"type": "ranking-update"},
+            )
 
         finished_submission(submission)
 

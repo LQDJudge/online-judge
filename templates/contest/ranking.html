@@ -6,6 +6,7 @@
 
 {% block users_media %}
   {% include "contest/ranking-css.html" %}
+  {% include "contest/ranking-animation-css.html" %}
 {% endblock %}
 
 {% block users_js_media %}
@@ -124,20 +125,119 @@
     </script>
   {% endif %}
   {% include "contest/media-js.html" %}
+  {% if last_msg and EVENT_DAEMON_LOCATION %}
+    {% include "event-load.html" %}
+    <script type="text/javascript">
+      $(function () {
+        var _updateTimer = null;
+        var _debounceMs = 10000;
+
+        function debounced_update() {
+          if (_updateTimer) return;
+          _updateTimer = setTimeout(function () {
+            _updateTimer = null;
+            update_ranking();
+          }, _debounceMs);
+        }
+
+        var receiver = new EventReceiver(
+          "{{ EVENT_DAEMON_LOCATION }}",
+          ["contest_{{ contest.key }}"],
+          {{ last_msg }},
+          function (message) {
+            if (message.type === "ranking-update") {
+              debounced_update();
+              // Reset the polling interval on push update
+              if (window.rankingInterval) {
+                clearInterval(window.rankingInterval);
+                window.rankingInterval = setInterval(update_ranking, 60 * 1000);
+              }
+            }
+          }
+        );
+      });
+    </script>
+  {% endif %}
   <script type="text/javascript">
     $(function () {
-      $('#ranking-search').on('input', function () {
-        var searchText = $(this).val().toLowerCase().trim();
+      var CONTEST_KEY = "{{ contest.key }}";
+      var STORAGE_KEY = "contest_favorites_" + CONTEST_KEY;
+
+      function getFavorites() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function saveFavorites(favs) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(favs));
+      }
+
+      function getUsername(row) {
+        return row.find('.user-name .rating a').first().text().trim();
+      }
+
+      window.applyFavoriteStars = function () {
+        var favs = getFavorites();
         $('#users-table tbody tr').each(function () {
-          var row = $(this);
-          var username = row.find('td.user-name, td.user').text().toLowerCase();
-          if (searchText === '' || username.indexOf(searchText) !== -1) {
-            row.show();
-          } else {
-            row.hide();
-          }
+          var $row = $(this);
+          var username = getUsername($row);
+          if (!username) return;
+
+          // Remove existing star to avoid duplicates after AJAX refresh
+          $row.find('.fav-star').remove();
+
+          var isFav = !!favs[username];
+          var $star = $('<span class="fav-star" title="Toggle favorite"></span>')
+            .text(isFav ? '\u2605' : '\u2606')
+            .toggleClass('fav-active', isFav);
+
+          $row.find('.user-name > div').first().prepend($star);
+          $row.toggleClass('fav-row', isFav);
         });
+      };
+
+      $(document).on('click', '.fav-star', function (e) {
+        e.stopPropagation();
+        var $star = $(this);
+        var $row = $star.closest('tr');
+        var username = getUsername($row);
+        if (!username) return;
+
+        var favs = getFavorites();
+        if (favs[username]) {
+          delete favs[username];
+          $star.text('\u2606').removeClass('fav-active');
+          $row.removeClass('fav-row');
+        } else {
+          favs[username] = true;
+          $star.text('\u2605').addClass('fav-active');
+          $row.addClass('fav-row');
+        }
+        saveFavorites(favs);
+        applyRowFilters();
       });
+
+      window.applyRowFilters = function () {
+        var searchText = $('#ranking-search').val().toLowerCase().trim();
+        var favOnly = $('#show-favorites-checkbox').is(':checked');
+        var favs = getFavorites();
+
+        $('#users-table tbody tr').each(function () {
+          var $row = $(this);
+          var username = getUsername($row);
+          var textMatch = !searchText || $row.find('td.user-name, td.user').text().toLowerCase().indexOf(searchText) !== -1;
+          var favMatch = !favOnly || !!favs[username];
+          $row.toggle(textMatch && favMatch);
+        });
+      };
+
+      $('#ranking-search').on('input', applyRowFilters);
+      $('#show-favorites-checkbox').on('change', applyRowFilters);
+
+      applyFavoriteStars();
     });
   </script>
 {% endblock %}
@@ -164,20 +264,22 @@
         <label class="filter-option"><input id="show-fullnames-checkbox" type="checkbox">{{ _('Full name') }}</label>
         {% if request.user.is_authenticated %}
           <label class="filter-option"><input id="show-friends-checkbox" type="checkbox" {{"checked" if friend_only}}>{{
-            _('Friends only') }}</label>
+            _('Friends') }}</label>
         {% endif %}
         <label class="filter-option"><input id="show-total-score-checkbox" type="checkbox">{{ _('Score only') }}</label>
         <label class="filter-option" id="show-virtual-label"><input id="show-virtual-checkbox" type="checkbox" {{"checked"
                                                                     if include_virtual}}>{{ _('Virtual') }}</label>
+        <label class="filter-option"><input id="show-favorites-checkbox" type="checkbox">{{ _('Favorites') }}</label>
         {% if can_edit %}
           <label class="filter-option"><input id="show-admin-checkbox" type="checkbox">{{ _('Admin') }}</label>
           <button type="button" id="bulk-disqualify-btn" class="action-btn small admin-only-btn" style="display: none;">
             <i class="fa fa-ban"></i> {{ _('Disqualify') }}
           </button>
         {% endif %}
-        <i class="fa fa-spinner fa-pulse" style="display: none" id="loading-gif"></i>
+        <label class="filter-option"><input id="disable-animations-checkbox" type="checkbox">{{ _('No animations') }}</label>
         <a class="action-btn small" href="#" onclick="download_ranking_as_csv(); return false;"><i
           class="fa fa-download"></i> {{ _('CSV') }}</a>
+        <i class="fa fa-spinner fa-pulse" style="display: none" id="loading-gif"></i>
         <input type="text" id="ranking-search" class="ranking-search-input" placeholder="{{ _('Search...') }}">
       </div>
     {% endif %}

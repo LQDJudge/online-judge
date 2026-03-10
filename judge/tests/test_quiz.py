@@ -10,7 +10,7 @@ from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal
 
-from judge.models import Profile
+from judge.models import Language, Profile
 from judge.models.quiz import (
     QuizQuestion,
     Quiz,
@@ -38,7 +38,10 @@ class QuizQuestionTestCase(TestCase):
         self.user = User.objects.create_user(
             username="testuser", email="test@test.com", password="testpass"
         )
-        self.profile, _ = Profile.objects.get_or_create(user=self.user)
+        self.profile, _ = Profile.objects.get_or_create(
+            user=self.user,
+            defaults={"language": Language.objects.first()},
+        )
 
     def test_create_multiple_choice_question(self):
         """Test creating a multiple choice question"""
@@ -134,7 +137,10 @@ class QuizTestCase(TestCase):
         self.user = User.objects.create_user(
             username="testuser", email="test@test.com", password="testpass"
         )
-        self.profile, _ = Profile.objects.get_or_create(user=self.user)
+        self.profile, _ = Profile.objects.get_or_create(
+            user=self.user,
+            defaults={"language": Language.objects.first()},
+        )
 
         # Create questions
         self.mc_question = QuizQuestion.objects.create(
@@ -214,7 +220,10 @@ class QuizGradingTestCase(TestCase):
         self.user = User.objects.create_user(
             username="testuser", email="test@test.com", password="testpass"
         )
-        self.profile, _ = Profile.objects.get_or_create(user=self.user)
+        self.profile, _ = Profile.objects.get_or_create(
+            user=self.user,
+            defaults={"language": Language.objects.first()},
+        )
 
         # Create MC question
         self.mc_question = QuizQuestion.objects.create(
@@ -498,7 +507,10 @@ class MultipleAnswerGradingStrategyTestCase(TestCase):
         self.user = User.objects.create_user(
             username="testuser", email="test@test.com", password="testpass"
         )
-        self.profile, _ = Profile.objects.get_or_create(user=self.user)
+        self.profile, _ = Profile.objects.get_or_create(
+            user=self.user,
+            defaults={"language": Language.objects.first()},
+        )
 
         # Create MA question with 4 choices: A, B correct; C, D wrong
         self.ma_question = QuizQuestion.objects.create(
@@ -793,7 +805,10 @@ class QuizAttemptTestCase(TestCase):
         self.user = User.objects.create_user(
             username="testuser", email="test@test.com", password="testpass"
         )
-        self.profile, _ = Profile.objects.get_or_create(user=self.user)
+        self.profile, _ = Profile.objects.get_or_create(
+            user=self.user,
+            defaults={"language": Language.objects.first()},
+        )
 
         # Create questions
         self.mc_question = QuizQuestion.objects.create(
@@ -934,13 +949,19 @@ class QuizIntegrationTestCase(TransactionTestCase):
         self.teacher = User.objects.create_user(
             username="teacher", email="teacher@test.com", password="teacherpass"
         )
-        self.teacher_profile, _ = Profile.objects.get_or_create(user=self.teacher)
+        self.teacher_profile, _ = Profile.objects.get_or_create(
+            user=self.teacher,
+            defaults={"language": Language.objects.first()},
+        )
 
         # Create student user
         self.student = User.objects.create_user(
             username="student", email="student@test.com", password="studentpass"
         )
-        self.student_profile, _ = Profile.objects.get_or_create(user=self.student)
+        self.student_profile, _ = Profile.objects.get_or_create(
+            user=self.student,
+            defaults={"language": Language.objects.first()},
+        )
 
     def test_complete_quiz_workflow(self):
         """Test complete workflow: create quiz, student takes it, gets graded"""
@@ -1109,7 +1130,10 @@ class QuizEdgeTestCase(TestCase):
         self.user = User.objects.create_user(
             username="testuser", email="test@test.com", password="testpass"
         )
-        self.profile, _ = Profile.objects.get_or_create(user=self.user)
+        self.profile, _ = Profile.objects.get_or_create(
+            user=self.user,
+            defaults={"language": Language.objects.first()},
+        )
 
     def test_empty_answer(self):
         """Test grading empty answers"""
