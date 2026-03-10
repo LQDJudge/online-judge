@@ -5,7 +5,29 @@ from django.utils.translation import gettext as _
 from judge.models import Problem, Profile, Submission
 from judge.utils.celery import Progress
 
-__all__ = ("apply_submission_filter", "rejudge_problem_filter", "rescore_problem")
+__all__ = (
+    "apply_submission_filter",
+    "rejudge_problem_filter",
+    "rescore_problem",
+    "update_user_points",
+    "update_problem_stats",
+)
+
+
+@shared_task
+def update_user_points(profile_id):
+    profile = Profile.objects.get(id=profile_id)
+    profile._updating_stats_only = True
+    profile.calculate_points()
+    cache.delete("user_complete:%d" % profile.id)
+    cache.delete("user_attempted:%d" % profile.id)
+
+
+@shared_task
+def update_problem_stats(problem_id):
+    problem = Problem.objects.get(id=problem_id)
+    problem._updating_stats_only = True
+    problem.update_stats()
 
 
 def apply_submission_filter(queryset, id_range, languages, results, contests):

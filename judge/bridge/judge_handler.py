@@ -29,6 +29,7 @@ from judge.models import (
 from judge.bridge.utils import VanishedSubmission
 
 from judge.caching import cache_wrapper
+from judge.tasks.submission import update_problem_stats, update_user_points
 from judge.utils.problem_data import notify_problem_authors
 
 logger = logging.getLogger("judge.bridge")
@@ -631,10 +632,8 @@ class JudgeHandler(ZlibPacketHandler):
             )
         )
 
-        submission.user._updating_stats_only = True
-        submission.user.calculate_points()
-        problem._updating_stats_only = True
-        problem.update_stats()
+        update_user_points.delay(submission.user_id)
+        update_problem_stats.delay(problem.id)
         submission.update_contest()
 
         finished_submission(submission)
