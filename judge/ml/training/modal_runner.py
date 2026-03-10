@@ -39,7 +39,11 @@ def train(model_name, trainer_module, iterations=2000, embedding_dim=50):
 
 
 @app.local_entrypoint()
-def main(data_path: str = "/tmp/ml_data", iterations: int = 2000):
+def main(
+    data_path: str = "/tmp/ml_data",
+    iterations: int = 2000,
+    model: str = "",
+):
     from judge.ml.training import MODELS
 
     print(f"Uploading data from {data_path} to Modal volume...")
@@ -47,11 +51,19 @@ def main(data_path: str = "/tmp/ml_data", iterations: int = 2000):
         batch.put_directory(data_path, "/ml_data")
     print("Data uploaded.")
 
-    for model_name, trainer_module in MODELS.items():
+    if model:
+        if model not in MODELS:
+            print(f"Unknown model: {model}. Available: {list(MODELS.keys())}")
+            return
+        models_to_train = {model: MODELS[model]}
+    else:
+        models_to_train = MODELS
+
+    for model_name, trainer_module in models_to_train.items():
         train.remote(model_name, trainer_module, iterations)
 
     print("Training complete. Download embeddings with:")
-    for model_name in MODELS:
+    for model_name in models_to_train:
         print(
             f"  modal volume get lqdoj-ml-volume /{model_name}/embeddings.npz /tmp/{model_name}.npz"
         )

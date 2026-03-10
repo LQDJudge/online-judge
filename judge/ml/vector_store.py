@@ -25,6 +25,10 @@ TABLE_MAP = {
         "problem": "ml_problem_embedding_cf_time",
         "user": "ml_user_embedding_cf_time",
     },
+    "two_tower": {
+        "problem": "ml_problem_embedding_tt",
+        "user": "ml_user_embedding_tt",
+    },
 }
 
 # Below this threshold, WHERE IN brute-force is faster than HNSW overfetch.

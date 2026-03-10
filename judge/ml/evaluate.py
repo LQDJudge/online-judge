@@ -56,6 +56,7 @@ def build_user_problem_sets():
     """Build {user_id: set of problem_ids} from submissions table."""
     with connection.cursor() as c:
         c.execute(
+            "SET STATEMENT max_statement_time=600 FOR "
             "SELECT user_id, problem_id FROM judge_submission "
             "GROUP BY user_id, problem_id"
         )
@@ -79,6 +80,7 @@ def get_popular_ranking(public_pids, limit=500):
     placeholders = ",".join(["%s"] * len(public_pids))
     with connection.cursor() as c:
         c.execute(
+            f"SET STATEMENT max_statement_time=600 FOR "
             f"SELECT problem_id, COUNT(DISTINCT user_id) as cnt "
             f"FROM judge_submission WHERE result = 'AC' AND problem_id IN ({placeholders}) "
             f"GROUP BY problem_id ORDER BY cnt DESC LIMIT %s",
@@ -162,6 +164,9 @@ def evaluate_model(
     uid_to_row = None
     has_embeddings = bool(user_embs and problem_embs)
     if has_embeddings:
+        # Filter to problems that have embeddings in this model
+        pid_list = [pid for pid in pid_list if pid in problem_embs]
+        pid_to_idx = {pid: i for i, pid in enumerate(pid_list)}
         eval_user_embs = {uid: user_embs[uid] for uid in eval_users if uid in user_embs}
         if not eval_user_embs:
             return None
@@ -226,13 +231,23 @@ def main():
         "--models",
         type=str,
         nargs="+",
-        default=["collab_filter", "collab_filter_time", "popular", "random"],
+        default=[
+            "collab_filter",
+            "collab_filter_time",
+            "two_tower",
+            "popular",
+            "random",
+        ],
     )
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
     rng = random.Random(args.seed)
     K_values = sorted(args.K)
+
+    # Set generous query timeout for heavy evaluation queries
+    with connection.cursor() as c:
+        c.execute("SET SESSION max_statement_time=600")
 
     print("Loading data...")
     t0 = time.time()

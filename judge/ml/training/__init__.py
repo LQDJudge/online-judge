@@ -13,6 +13,7 @@ import importlib
 MODELS = {
     "collab_filter": "collab_filter.trainer",
     "collab_filter_time": "collab_filter.trainer",
+    "two_tower": "two_tower.trainer",
 }
 
 

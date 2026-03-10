@@ -1,6 +1,6 @@
 # ML Recommendations
 
-Problem recommendation system using collaborative filtering with MariaDB vector search.
+Problem recommendation system using collaborative filtering and neural Two Tower models with MariaDB vector search.
 
 ## Requirements
 
@@ -97,7 +97,7 @@ python manage.py import_embeddings --all --dir /path/to/ml_output/
 Evaluate recommendation quality with standard IR metrics:
 ```bash
 python judge/ml/evaluate.py
-python judge/ml/evaluate.py --K 5 10 20 --sample-users 2000 --models collab_filter collab_filter_time popular random
+python judge/ml/evaluate.py --K 5 10 20 --sample-users 2000 --models collab_filter collab_filter_time two_tower popular random
 ```
 
 Options:
@@ -105,7 +105,7 @@ Options:
 - `--holdout N` — problems per user to hold out as ground truth (default: 5)
 - `--sample-users N` — number of users to sample (default: 1000)
 - `--min-submissions N` — minimum submissions to include user (default: 20)
-- `--models` — models to compare (default: collab_filter collab_filter_time popular random)
+- `--models` — models to compare (default: collab_filter collab_filter_time two_tower popular random)
 
 Metrics reported: Hit Rate, Precision@K, Recall@K, NDCG@K, MRR.
 
@@ -121,11 +121,12 @@ python manage.py import_embeddings --all --dir /tmp/ml_embeddings/
 
 ## How it works
 
-- **Training:** Matrix factorization learns 50-dimensional embeddings for users and problems from submission history. The loss function combines MSE on observed submissions, L2 regularization, and a gravity term.
+- **Training:** Models learn 50-dimensional embeddings for users and problems. Collaborative filtering uses matrix factorization on submission history. Two Tower uses neural networks with side features (problem types, difficulty, user skill, votes, bookmarks).
 - **Serving:** Embeddings are stored in MariaDB VECTOR columns with HNSW indexes. Recommendations use `VEC_DISTANCE_COSINE()` for O(log n) approximate nearest-neighbor search.
-- **Two models:**
-  - `collab_filter` — treats all submissions equally
-  - `collab_filter_time` — weights recent submissions higher (decay=0.994)
+- **Three models:**
+  - `collab_filter` — matrix factorization, treats all submissions equally
+  - `collab_filter_time` — matrix factorization, weights recent submissions higher (decay=0.994)
+  - `two_tower` — neural Two Tower model with side features (problem types, group, difficulty, user rating, solved-type profile, bookmarks, votes). Uses BCE loss with temperature-scaled cosine similarity. Significantly outperforms CF models.
 
 ## Adding a new model
 
@@ -149,12 +150,17 @@ judge/ml/
     ├── __init__.py             # Model registry (MODELS dict, get_trainer)
     ├── data_utils.py           # Shared data loading/preprocessing
     ├── modal_runner.py         # Modal cloud training
-    └── collab_filter/          # Collaborative filtering models
-        ├── model.py            # PyTorch CF model
-        └── trainer.py          # CF training pipeline
+    ├── collab_filter/          # Collaborative filtering models
+    │   ├── model.py            # PyTorch CF model
+    │   └── trainer.py          # CF training pipeline
+    └── two_tower/              # Neural Two Tower model
+        ├── model.py            # ProblemTower + UserTower + TwoTowerModel
+        ├── dataset.py          # Feature preprocessing + dataset materialization
+        └── trainer.py          # Two Tower training pipeline
 
 judge/sql/
-└── 001_ml_vector_tables.sql   # Vector table DDL (idempotent)
+├── 001_ml_vector_tables.sql   # CF vector table DDL
+└── 002_two_tower_tables.sql   # Two Tower vector table DDL
 
 judge/management/commands/
 ├── generate_data.py           # Export training data to CSV
