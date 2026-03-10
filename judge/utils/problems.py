@@ -241,8 +241,11 @@ def get_related_problems(profile, problem, limit=8):
     problemset = problemset.exclude(id__in=user_completed_ids(profile))
     problemset = problemset.exclude(id=problem.id)
 
-    cf_model = VectorStore("collab_filter")
-    results = cf_model.problem_neighbors(problem, problemset, limit * 2)
+    two_tower_model = VectorStore("two_tower")
+    results = two_tower_model.problem_neighbors(problem, problemset, limit * 2)
+    if not results:
+        cf_model = VectorStore("collab_filter")
+        results = cf_model.problem_neighbors(problem, problemset, limit * 2)
 
     results = list(set([i[1] for i in results]))
     random.seed(datetime.now().strftime("%d%m%Y"))
@@ -275,6 +278,7 @@ class RecommendationType(Enum):
     HOT_PROBLEM = 1
     CF = 2
     CF_TIME = 4
+    TWO_TOWER = 5
 
 
 @cache_wrapper(prefix="cf_rec", timeout=3600)
@@ -308,6 +312,10 @@ def get_user_recommended_problems(
         if rec_type == RecommendationType.CF_TIME:
             return _cached_user_recommendations(
                 "collab_filter_time", user_id, problem_ids, limit
+            )
+        if rec_type == RecommendationType.TWO_TOWER:
+            return _cached_user_recommendations(
+                "two_tower", user_id, problem_ids, limit
             )
         return []
 

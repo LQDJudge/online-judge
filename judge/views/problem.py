@@ -821,11 +821,12 @@ class ProblemFeed(ProblemList, FeedView):
         user_id = self.request.profile.id
 
         rec_types = [
+            RecommendationType.TWO_TOWER,
             RecommendationType.CF,
             RecommendationType.CF_TIME,
             RecommendationType.HOT_PROBLEM,
         ]
-        limits = [200, 200, 20]
+        limits = [200, 100, 100, 20]
         shuffle = True
 
         allow_debug_type = (
