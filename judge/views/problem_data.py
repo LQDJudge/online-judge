@@ -87,6 +87,13 @@ class ProblemDataForm(ModelForm):
             raise ValidationError(_("Your zip file is invalid!"))
         return self.cleaned_data["zipfile"]
 
+    def clean_generator(self):
+        generator = self.cleaned_data.get("generator")
+        if generator and hasattr(generator, "name"):
+            if not generator.name.endswith(".cpp"):
+                raise ValidationError(_("Generator file must be a .cpp file."))
+        return generator
+
     clean_checker_args = checker_args_cleaner
 
     class Meta:
@@ -123,7 +130,9 @@ class ProblemDataForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["generator"].widget = FileEditWidget(default_file_name="gen.cpp")
+        self.fields["generator"].widget = FileEditWidget(
+            default_file_name="gen.cpp", accept=".cpp"
+        )
         self.fields["custom_checker_cpp"].widget = FileEditWidget(
             default_file_name="checker.cpp"
         )

@@ -23,9 +23,11 @@ class FileEditWidget(ClearableFileInput):
         }
         return forms.Media(js=js, css=css)
 
-    def __init__(self, *args, default_file_name="new_file.txt", **kwargs):
+    def __init__(self, *args, default_file_name="new_file.txt", accept=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_file_name = default_file_name
+        if accept:
+            self.attrs["accept"] = accept
 
     def render(self, name, value, attrs=None, renderer=None):
         # Generate a unique element ID based on the field name
