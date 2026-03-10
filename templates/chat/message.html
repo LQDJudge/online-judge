@@ -1,4 +1,4 @@
-<li class="message" id="message-{{ message.id }}" data-id="{{ message.id }}" data-author="{{ message.author_id }}">
+<li class="message" id="message-{{ message.id }}" data-id="{{ message.id }}" data-author="{{ message.author_id }}" data-time="{{ message.time.timestamp()|int }}">
   <div class="message-avatar">
     <img loading="lazy" src="{{ gravatar(message.author_id, 135) }}" class="profile-pic user-img">
   </div>

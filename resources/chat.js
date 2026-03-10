@@ -76,22 +76,27 @@
 
     mergeConsecutiveMessages: function() {
       var lastAuthorId = null;
+      var lastTime = null;
+      var GROUP_THRESHOLD = 300; // 5 minutes in seconds
 
       $('#chat-log .message').each(function() {
         var $message = $(this);
         var authorId = $message.attr('data-author');
+        var time = parseInt($message.attr('data-time'), 10);
 
         // Clear existing grouping classes first
         $message.removeClass('grouped group-start');
 
-        if (authorId === lastAuthorId) {
-          // Same author as previous - add 'grouped' class to hide avatar/header
+        if (authorId === lastAuthorId && time - lastTime <= GROUP_THRESHOLD) {
+          // Same author and within time threshold - group together
           $message.addClass('grouped');
         } else {
-          // New author - add 'group-start' class for spacing
+          // Different author or too much time passed - start new group
           $message.addClass('group-start');
-          lastAuthorId = authorId;
         }
+
+        lastAuthorId = authorId;
+        lastTime = time;
       });
     },
 
