@@ -70,13 +70,47 @@ GENERATOR SCRIPT FORMAT:
 - Each non-comment line = space-separated args passed directly to generator"""
 
 MAX_HISTORY_MESSAGES = 10
+# Reserve tokens for system prompt, current message, tool outputs, and response.
+RESERVED_TOKENS = 50_000
+# Rough approximation: 1 token ≈ 4 characters.
+CHARS_PER_TOKEN = 4
 
 
-def _get_recent_messages(messages, max_messages=MAX_HISTORY_MESSAGES):
-    """Get recent conversation messages for LLM context."""
+def _max_history_chars(model_id):
+    """Compute the character budget for history based on the model's context window."""
+    from llm_service.config import get_config
+
+    config = get_config()
+    context_tokens = config.get_context_tokens(model_id)
+    available_tokens = context_tokens - RESERVED_TOKENS
+    return max(available_tokens, RESERVED_TOKENS) * CHARS_PER_TOKEN
+
+
+def _get_recent_messages(messages, model_id, max_messages=MAX_HISTORY_MESSAGES):
+    """Get recent conversation messages for LLM context.
+
+    Applies both a message-count limit and a model-aware character budget,
+    keeping the most recent messages that fit.
+    """
     if not messages:
         return []
-    return messages[-max_messages:]
+
+    max_chars = _max_history_chars(model_id)
+
+    # Start from the most recent, collect until budget is spent
+    candidates = messages[-max_messages:]
+    result = []
+    total_chars = 0
+
+    for msg in reversed(candidates):
+        content_len = len(msg.get("content", ""))
+        if total_chars + content_len > max_chars:
+            break
+        total_chars += content_len
+        result.append(msg)
+
+    result.reverse()
+    return result
 
 
 @shared_task(bind=True)
@@ -127,7 +161,9 @@ def chatbot_respond_task(self, user_id, problem_code, user_message):
         tool_executables = get_tool_executables(problem)
 
         # Get conversation history (excluding current message)
-        recent_messages = _get_recent_messages(conversation["messages"][:-1])
+        recent_messages = _get_recent_messages(
+            conversation["messages"][:-1], model_id=selected_model
+        )
 
         # Call LLM with native tool calling
         response = llm.call_llm_with_history(

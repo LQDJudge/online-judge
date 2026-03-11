@@ -8,6 +8,7 @@ from django.core.cache import cache
 
 CACHE_KEY_PREFIX = "chatbot"
 CACHE_TTL = 86400  # 1 day in seconds
+MAX_STORED_MESSAGES = 50
 
 
 def get_cache_key(user_id, problem_code):
@@ -62,6 +63,9 @@ def save_conversation(user_id, problem_code, conversation):
     """
     key = get_cache_key(user_id, problem_code)
     conversation["updated_at"] = int(time.time())
+    msgs = conversation.get("messages")
+    if msgs and len(msgs) > MAX_STORED_MESSAGES:
+        conversation["messages"] = msgs[-MAX_STORED_MESSAGES:]
     cache.set(key, conversation, timeout=CACHE_TTL)
 
 

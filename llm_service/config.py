@@ -13,14 +13,42 @@ DEFAULT_TIMEOUT = 120
 DEFAULT_MAX_RETRIES = 1
 
 # Supported models for chatbot (Poe bot names)
+# context_tokens: model's input context window size
 CHATBOT_SUPPORTED_MODELS = [
-    {"id": "Gemini-3-Flash", "name": "Gemini 3 Flash", "default": True},
-    {"id": "Claude-4.5-Sonnet", "name": "Claude 4.5 Sonnet", "default": False},
-    {"id": "Claude-4.5-Opus", "name": "Claude 4.5 Opus", "default": False},
-    {"id": "GPT-5.2", "name": "GPT 5.2", "default": False},
-    {"id": "Gemini-3-Pro", "name": "Gemini 3 Pro", "default": False},
-    {"id": "GPT-5.2-Pro", "name": "GPT 5.2 Pro", "default": False},
+    {
+        "id": "Gemini-3-Flash",
+        "name": "Gemini 3 Flash",
+        "default": True,
+        "context_tokens": 1_000_000,
+    },
+    {
+        "id": "Claude-4.5-Sonnet",
+        "name": "Claude 4.5 Sonnet",
+        "default": False,
+        "context_tokens": 200_000,
+    },
+    {
+        "id": "Claude-4.5-Opus",
+        "name": "Claude 4.5 Opus",
+        "default": False,
+        "context_tokens": 200_000,
+    },
+    {"id": "GPT-5.2", "name": "GPT 5.2", "default": False, "context_tokens": 400_000},
+    {
+        "id": "Gemini-3-Pro",
+        "name": "Gemini 3 Pro",
+        "default": False,
+        "context_tokens": 1_000_000,
+    },
+    {
+        "id": "GPT-5.2-Pro",
+        "name": "GPT 5.2 Pro",
+        "default": False,
+        "context_tokens": 400_000,
+    },
 ]
+
+DEFAULT_CONTEXT_TOKENS = 200_000
 
 
 class LLMConfig:
@@ -122,6 +150,13 @@ class LLMConfig:
     def get_chatbot_supported_models(self) -> list:
         """Get list of supported models for chatbot"""
         return CHATBOT_SUPPORTED_MODELS
+
+    def get_context_tokens(self, model_id: str) -> int:
+        """Get the context window size in tokens for a model."""
+        for model in CHATBOT_SUPPORTED_MODELS:
+            if model["id"] == model_id:
+                return model.get("context_tokens", DEFAULT_CONTEXT_TOKENS)
+        return DEFAULT_CONTEXT_TOKENS
 
     def get_chatbot_default_model(self) -> str:
         """Get the default model ID for chatbot"""
