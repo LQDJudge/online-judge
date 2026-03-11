@@ -23,7 +23,7 @@
       {% endif %}
     {% endif %}
   {% endif %}
-  {% if request.user.is_superuser and contest_has_hidden_subtasks %}
+  {% if can_edit and (contest_has_hidden_subtasks or contest.freeze_after) %}
     {{ make_tab_item('resolver', 'fa fa-check', url('resolver', contest.key), _('Resolver'), force_new_page=True) }}
   {% endif %}
   {% if show_final_ranking %}

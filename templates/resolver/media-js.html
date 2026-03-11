@@ -1,578 +1,464 @@
 {% compress js %}
+  <script src="{{ static('resolver.js') }}"></script>
   <script type="text/javascript">
-    const updateInterval = 2000;
-    let curop = -1;
-    const lintHeight = 140;
-    const bonusHeight = 35;
-    const speed = 700;
-    const isProcessing = false;
-    let autopress = false;
-    let is_first_click = false;
-    $(document).ready(function () {
-      window.isProcessing = false
-      window.data = {{ contest_json }};
-      console.log("OK");
-      const resolver = new Resolver(data.problem_sub, data.sub_frozen, data.problems, data.users);
-      window.resolver = resolver;
-      window.length_data = resolver.operations.length
-      resolver.calcOperations();
-      resolver.frozen_op = resolver.operations.length - 1;
-      resetCSS();
-      light_theme();
-      show_rank();
-    });
+    $(function () {
+      var data = {{ contest_json }};
+      var resolver = new ContestResolver(data);
+      var $table = $('#resolver-table');
+      var $tbody = $('#resolver-body');
+      var $overlay = $('#resolver-overlay');
+      var animationDuration = 400;
 
-    const $rank = $('.show-rank');
+  // ----------------------------------------------------------------
+  // Build table header
+  // ----------------------------------------------------------------
+      var $headerRow = $table.find('thead tr');
+      var $scoreHeader = $headerRow.find('.resolver-score-col');
+      var hasGroups = resolver.problems.some(function (p) { return p.group; });
 
-    function updateSelector(isAPress) {
-      $rank.css('opacity', '0');
-      $rank.css('z-index', '-1');
-      const operation = resolver.operations[curop];
-      const tmp = resolver.rank_frozen[operation.user_id];
-      if (operation.type !== 'delay') {
-        if (isAPress) {
-          window.scrollTo({
-            top: (resolver.rank_frozen[operation.user_id].rank_show - 4) * lintHeight,
-            left: 0,
-            behavior: 'smooth'
-          });
-        }
-        for (let i in resolver.rank_frozen) {
-          const $rank = $('#rank-' + i);
-          $rank.css({'background-color': ''});
-          if (resolver.rank_frozen[i].rank_show % 2 === 0) {
-            $rank.removeClass('background-secondary');
-            $rank.addClass('background-primary');
-          } else {
-            $rank.removeClass('background-primary');
-            $rank.addClass('background-secondary');
-          }
-        }
-        $('#rank-' + operation.user_id).css({"background-color": "#5382DF"});
-      }
-      if (operation.type === 'problem') {
-        const $1 = $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score');
-        $1.removeClass(resolver.status(tmp.problem[operation.problem_index]));
-        $1.addClass('selected');
-      } else if (operation.type === 'sub') {
-        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).removeClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
-        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .pro-content').removeClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
-        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).addClass('selected');
-        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .p-content').addClass('selected');
-        if (operation.frozen === 'ok') {
-          $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).removeClass('frozen');
-          $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .pro-content').removeClass('frozen');
-        }
-      }
+      if (hasGroups) {
+        $table.addClass('resolver-has-subtasks');
+        var $headerRow2 = $('<tr class="resolver-subtask-header"></tr>');
 
-    }
+        $headerRow.find('.resolver-rank-col').attr('rowspan', 2);
+        $headerRow.find('.resolver-user-col').attr('rowspan', 2);
+        $scoreHeader.attr('rowspan', 2);
 
-    let primary_color;
-    let secondary_color;
+        var currentGroup = null;
+        var groupCount = 0;
+        var $groupTh = null;
 
-    let partially;
-    let untouched;
-
-    let theme_background_color;
-
-    function getNewData(isAPress) {
-      let tmp;
-      const operation = resolver.operations[curop];
-      if (operation.type === 'problem') {
-        tmp = resolver.rank_frozen[operation.user_id];
-        for (let i in resolver.rank_frozen) {
-          if (resolver.rank_frozen[i].rank_show < operation.old_rank && resolver.rank_frozen[i].rank_show >= operation.new_rank) {
-            resolver.rank_frozen[i].rank_show++;
-          }
-        }
-        tmp.rank_show = operation.new_rank;
-        tmp.score += operation.new_point - operation.old_point;
-        tmp.problem[operation.problem_index].old_verdict = operation.new_verdict;
-        tmp.problem[operation.problem_index].new_verdict = 'NA';
-        tmp.problem[operation.problem_index].old_point = operation.new_point;
-        tmp.score = round2(tmp.score);
-        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').removeClass('selected');
-        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').addClass(resolver.status(tmp.problem[operation.problem_index]));
-        $('#rank-' + operation.user_id + ' .score').text(tmp.score);
-        if (operation.new_rank % 2 === 0) {
-          let per = round2(tmp.problem[operation.problem_index].old_point / resolver.total_points[operation.problem_index] * 100);
-          let linear = `linear-gradient(90deg, ${partially} ${per}%, ${theme_background_color} ${per}%)`;
-          $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score.partially').css("background", linear);
-        } else {
-          let per = round2(tmp.problem[operation.problem_index].old_point / resolver.total_points[operation.problem_index] * 100);
-          let linear = `linear-gradient(90deg, ${partially} ${per}%, ${untouched} ${per}%)`;
-          $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score.partially').css("background", linear);
-        }
-        for (let i in resolver.rank_frozen) {
-          const $rank = $("#rank-" + i);
-          $('#rank-' + i + ' .rank').text(resolver.rank_frozen[i].rank_show);
-          $rank.css('top', (resolver.rank_frozen[i].rank_show - 1) * lintHeight + bonusHeight);
-          if (resolver.rank_frozen[i].rank_show % 2 === 0) {
-            if (i !== operation.user_id) {
-              $rank.removeClass('background-secondary');
-              $rank.addClass('background-primary');
-            }
-                        // $("#rank-" + i + ' .prob-container').removeClass('background-primary');
-                        // $("#rank-" + i + ' .problems').removeClass('background-primary');
-                        // $("#rank-" + i + ' .prob-container').addClass('background-secondary');
-                        // $("#rank-" + i + ' .problems').addClass('background-secondary');
-            for (let problemid in resolver.rank_frozen[i].problem) {
-              let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
-              let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
-              $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
-            }
-          } else {
-            if (i !== operation.user_id) {
-              $rank.removeClass('background-primary');
-              $rank.addClass('background-secondary');
-            }
-                        // $("#rank-" + i + ' .prob-container').removeClass('background-secondary');
-                        // $("#rank-" + i + ' .problems').removeClass('background-secondary');
-                        // $("#rank-" + i + ' .prob-container').addClass('background-primary');
-                        // $("#rank-" + i + ' .problems').addClass('background-primary');
-            for (let problemid in resolver.rank_frozen[i].problem) {
-              let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
-              let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
-              $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
-            }
-          }
-        }
-        if (!isAPress) {
-                    // isProcessing = true
-          window.scrollTo({
-            top: (operation.new_rank - 4) * lintHeight,
-            left: 0,
-            behavior: 'smooth'
-          });
-        }
-
-      } else if (operation.type === 'sub') {
-        tmp = resolver.rank_frozen[operation.user_id];
-        tmp.problem[operation.problem_index][operation.problem_sub].old_verdict = operation.new_verdict;
-        tmp.problem[operation.problem_index][operation.problem_sub].new_verdict = 'NA';
-        tmp.problem[operation.problem_index].old_point += operation.new_point - operation.old_point;
-        tmp.problem[operation.problem_index].old_point = round2(tmp.problem[operation.problem_index].old_point);
-        tmp.problem[operation.problem_index][operation.problem_sub].old_point = operation.new_point;
-        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .pro-score').text(tmp.problem[operation.problem_index].old_point);
-        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + '.s-' + operation.problem_sub + ' .p-content').text(operation.new_point);
-        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).removeClass('selected');
-        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .p-content').removeClass('selected');
-        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub).addClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
-        $('#rank-' + operation.user_id + ' .p-' + operation.problem_index + ' .s-' + operation.problem_sub + ' .p-content').addClass(resolver.status(tmp.problem[operation.problem_index][operation.problem_sub]));
-      } else if (operation.type === 'show') {
-        $rank.css('opacity', '1');
-        $rank.css('z-index', '10000');
-        $('.show-rank .rank-show').text('Rank ' + resolver.rank_frozen[operation.user_id].rank_show);
-        $('.show-rank .name-show').text(resolver.users[operation.user_id].name);
-        $('.show-rank .school-show').text(resolver.users[operation.user_id].school);
-      }
-
-            // window.isProcessing = false
-      $('.ac').css("background", "");
-    }
-
-    function resetCSS() {
-      $('.navbar').css('border-radius', '0');
-      $(".hidden-board").css('height', (window.resolver.rank_frozen.length - 1) * lintHeight);
-    }
-
-    function show_rank() {
-      for (let i in window.resolver.rank_frozen) {
-        this.rank_id = document.createElement('div');
-        $(this.rank_id).css('position', 'absolute');
-        $(this.rank_id).css('top', (resolver.rank_frozen[i].rank_show - 1) * lintHeight + bonusHeight);
-        if (resolver.rank_frozen[i].rank_show % 2 === 0) {
-          $(this.rank_id).addClass('background-primary');
-        } else {
-          $(this.rank_id).addClass('background-secondary');
-        }
-
-        $(this.rank_id).attr('id', 'rank-' + i);
-        $(this.rank_id).addClass('rank-list-item');
-        $(".rank-list").append($(this.rank_id));
-
-        this.rank = document.createElement('div');
-        $(this.rank).addClass('rank');
-        $(this.rank).addClass('rank-id');
-        $(this.rank).text(resolver.rank_frozen[i].rank_show);
-        $(this.rank_id).append($(this.rank));
-
-        this.content = document.createElement('div');
-        $(this.content).addClass('content');
-        $(this.rank_id).append($(this.content));
-
-        this.info_div = document.createElement('div');
-        $(this.info_div).addClass('info-container');
-        $(this.content).append($(this.info_div));
-
-        this.name_div = document.createElement('div');
-        $(this.name_div).addClass('name');
-        $(this.name_div).text(window.resolver.users[i].name);
-        $(this.info_div).append($(this.name_div));
-
-        this.school_div = document.createElement('div');
-        $(this.school_div).addClass('school');
-        $(this.school_div).text("(" + window.resolver.users[i].school + ")");
-        $(this.info_div).append($(this.school_div));
-
-        this.problem_container = document.createElement('div');
-        $(this.problem_container).addClass('problem-container');
-
-        for (let problem_id in window.resolver.rank_frozen[i].problem) {
-          this.problems_con = document.createElement('div');
-          $(this.problems_con).addClass('p-' + problem_id);
-          $(this.problems_con).addClass('prob-container');
-          if (resolver.rank_frozen[i].rank_show % 2 === 1) {
-            $(this.problems_con).addClass('background-primary');
-          } else {
-            $(this.problems_con).addClass('background-secondary');
-          }
-          this.pro_score = document.createElement('div');
-          $(this.pro_score).addClass('pro-score');
-          $(this.pro_score).text(resolver.rank_frozen[i].problem[problem_id].old_point);
-          $(this.pro_score).addClass(window.resolver.status(window.resolver.rank_frozen[i].problem[problem_id]));
-
-          if (resolver.status(window.resolver.rank_frozen[i].problem[problem_id]) === 'partially') {
-            if (resolver.rank_frozen[i].rank_show % 2 === 1) {
-              let per = round2(resolver.rank_frozen[i].problem[problem_id].old_point / resolver.total_points[problem_id] * 100);
-              let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
-              $(this.pro_score).css("background", linear);
-            } else {
-              let per = round2(resolver.rank_frozen[i].problem[problem_id].old_point / resolver.total_points[problem_id] * 100);
-              let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
-              $(this.pro_score).css("background", linear);
-            }
-          }
-          $(this.problems_con).append($(this.pro_score));
-          this.problems = document.createElement('ul');
-          $(this.problems).addClass('p-' + problem_id);
-          $(this.problems).addClass('problems');
-
-          for (let j = 1; j <= resolver.problem_sub[problem_id - 1]; j++) {
-            this.problem = document.createElement('li');
-            $(this.problem).addClass('item');
-            $(this.problem).addClass(window.resolver.substatus(window.resolver.rank_frozen[i].problem[problem_id], j));
-            $(this.problem).addClass('p-' + problem_id);
-            $(this.problem).addClass('s-' + j);
-            $(this.problem).addClass('id-' + i);
-            $(this.problems).append($(this.problem));
-            this.p_content = document.createElement('div');
-            $(this.p_content).addClass(window.resolver.substatus(window.resolver.rank_frozen[i].problem[problem_id], j));
-            $(this.p_content).addClass('p-content');
-            if (j < resolver.sub_frozen[problem_id - 1]) {
-              $(this.p_content).text(window.resolver.rank_frozen[i].problem[problem_id][j].old_point);
-            } else {
-              $(this.p_content).text("?");
-            }
-            $(this.problem).append($(this.p_content));
-          }
-          $(this.problems_con).append($(this.problems));
-          $(this.problem_container).append($(this.problems_con));
-        }
-
-        $(this.content).append($(this.problem_container));
-
-        this.score = document.createElement('div');
-        $(this.score).addClass('score');
-        $(this.score).text(window.resolver.rank_frozen[i].score);
-        $(this.rank_id).append($(this.score));
-      }
-    }
-
-    function findNextValidSubmission(resolver, startRankId) {
-      let currentRankId = startRankId;
-
-      while (currentRankId >= 0) { // Keep trying with decreasing rank IDs until we hit 0
-        let currentProblemId = 1;
-        let currentSub = 1;
-
-        while (currentProblemId <= resolver.problem_sub.length) {
-          if (currentSub <= resolver.problem_sub[currentProblemId - 1]) {
-                        // Try to process this submission
-            const foundValid = resolver.operation(currentRankId, currentProblemId, currentSub);
-
-            if (foundValid) {
-              return {
-                found: true,
-                rankId: currentRankId,
-                problemId: currentProblemId,
-                sub: currentSub
-              };
-            }
-          }
-
-                    // Move to next sub/problem
-          if (currentSub >= resolver.problem_sub[currentProblemId - 1]) {
-            currentSub = 1;
-            currentProblemId++;
-          } else {
-            currentSub++;
-          }
-        }
-
-                // If we get here, we didn't find anything at this rank - move to previous rank
-        currentRankId--;
-      }
-
-            // If we get here, we didn't find anything at any rank
-      return {
-        found: false
-      };
-    }
-
-    let theme = 0;
-
-    $('body').keydown(function (e) {
-      if (e.keyCode === 77) {
-        console.log("Press M!");
-      }
-      if (e.keyCode === 13) {
-        console.log("Press Enter!");
-        if (curop === resolver.operations.length - 1) {
-          console.log("Do Enter Pressed!");
-          resolver.operations = [];
-          curop = -1;
-          resolver.next_operation();
-          if (window.resolver.operations.length === 0) {
-            $rank.css('visibility', 'hidden');
-            $rank.css('opacity', '0');
-            for (let i in resolver.rank_frozen) {
-              const $ranki = $("#rank-" + i);
-              if (resolver.rank_frozen[i].rank_show % 2 === 0) {
-                $ranki.removeClass('background-secondary');
-                $ranki.addClass('background-primary');
-              } else {
-                $ranki.removeClass('background-primary');
-                $ranki.addClass('background-secondary');
+        for (var pi = 0; pi < resolver.problems.length; pi++) {
+          var p = resolver.problems[pi];
+          if (p.group) {
+            if (p.group !== currentGroup) {
+              if ($groupTh) {
+                $groupTh.attr('colspan', groupCount);
+                $scoreHeader.before($groupTh);
               }
+              currentGroup = p.group;
+              groupCount = 1;
+              $groupTh = $('<th class="resolver-group-col"></th>').text(p.group)
+                .attr('title', p.code);
+            } else {
+              groupCount++;
             }
-          }
-          console.log(resolver.operations);
-          if (resolver.operations.length === 1) {
-            for (let x in window.resolver.operations) {
-              curop++;
-              updateSelector();
-              setTimeout(function () {
-                getNewData();
-              }, 500);
-
-            }
+            $headerRow2.append(
+              $('<th class="resolver-problem-col"></th>').text(p.sublabel)
+                .attr('title', p.code + ' subtask ' + p.sublabel + ' (' + p.max_points + ')')
+            );
           } else {
-            for (let x in window.resolver.operations) {
-              setTimeout(function () {
-                curop++;
-                updateSelector();
-              }, speed * x);
-              setTimeout(function () {
-                getNewData();
-              }, speed * x + speed / 2);
-
+            if ($groupTh) {
+              $groupTh.attr('colspan', groupCount);
+              $scoreHeader.before($groupTh);
+              $groupTh = null;
+              currentGroup = null;
             }
+            var $th = $('<th class="resolver-problem-col" rowspan="2"></th>').text(p.label)
+              .attr('title', p.code + ' (' + p.max_points + ')');
+            $scoreHeader.before($th);
           }
         }
+        if ($groupTh) {
+          $groupTh.attr('colspan', groupCount);
+          $scoreHeader.before($groupTh);
+        }
+        $headerRow.after($headerRow2);
+      } else {
+        for (var pi = 0; pi < resolver.problems.length; pi++) {
+          var p = resolver.problems[pi];
+          var $th = $('<th class="resolver-problem-col"></th>').text(p.label)
+            .attr('title', p.code + ' (' + p.max_points + ')');
+          $scoreHeader.before($th);
+        }
       }
-      let currentProblemId = 1;
-      let currentSub = 1;
-      if (e.keyCode === 32) {
-        console.log("Space pressed")
-        console.log("process", window.isProcessing)
-        is_first_click = true
-        console.log(curop)
-        if ((curop === resolver.operations.length - 1 || is_first_click)) {
-          is_first_click = true
-          if (!window.isProcessing) {
-                        // window.isProcessing = true
-                        // var classstr = resolver.operations[length_data].attr('class');
-                        // var index = classstr.indexOf('id-');
-            const useridstr = "";
-            const userid = parseInt(useridstr);
-            resolver.operations = [];
-            curop = -1;
-            console.log("Clicked!");
-            console.log("resolver", resolver)
-                        // Get current rankid
-            const currentRankId = resolver.rankarr[resolver.rankarr.length - 1].rank_show - 1;
 
-            const result = findNextValidSubmission(resolver, currentRankId);
+  // ----------------------------------------------------------------
+  // Build table rows
+  // ----------------------------------------------------------------
+      function buildRows() {
+        $tbody.empty();
+        var displayRanks = resolver.getDisplayRanks();
+        for (var ri = 0; ri < resolver.ranking.length; ri++) {
+          var user = resolver.users[resolver.ranking[ri]];
+          var $tr = $('<tr></tr>').attr('data-user-id', user.id);
 
+          $tr.append($('<td class="resolver-rank-cell"></td>').text(displayRanks[user.id]));
 
-            if (result.found) {
-                            // Handle animations
-              if (resolver.operations.length === 1) {
-                for (let x in window.resolver.operations) {
-                  curop++;
-                  updateSelector(true);
-                  setTimeout(function () {
-                    getNewData();
-                  }, 500);
-                  setTimeout(function () {
-                    window.isProcessing = false;
-                  }, 750);
-                }
-              } else {
-                for (let x in window.resolver.operations) {
-                  setTimeout(function () {
-                    window.isProcessing = true
-                    curop++;
-                    updateSelector(true);
-                  }, speed * x);
-                  setTimeout(function () {
-                    getNewData();
-                  }, speed * x + speed / 2);
-                  setTimeout(function () {
-                    window.isProcessing = false;
-                  }, speed * x + speed);
+          var $userCell = $('<td class="resolver-user-cell"></td>');
+          var $userLink = $('<span></span>').addClass(user.cssClass)
+            .append($('<a></a>').attr('href', '/user/' + user.username).text(user.username));
+          $userCell.append($userLink);
+          var $details = $('<div class="resolver-user-details"></div>');
+          if (user.displayName) {
+            $details.append($('<span class="resolver-real-name"></span>').text(user.displayName));
+          }
+          if (user.school) {
+            $details.append($('<span class="resolver-school"></span>').text(user.school));
+          }
+          $userCell.append($details);
+          $tr.append($userCell);
+
+          for (var pi = 0; pi < resolver.problems.length; pi++) {
+            var p = resolver.problems[pi];
+            var key = String(p.order);
+            var pd = user.problems[key];
+            var $td = $('<td class="resolver-cell"></td>')
+              .attr('data-problem', p.order)
+              .attr('data-user-id', user.id);
+
+            if (!pd || (pd.frozen === 0 && pd.final === 0)) {
+              $td.addClass('resolver-empty');
+              $td.text('-');
+            } else if (pd.revealed) {
+              var verdict = getVerdict(pd.final, p.max_points);
+              $td.addClass(verdict).text(formatScore(pd.final));
+            } else {
+              $td.addClass('frozen');
+              $td.html('<span class="frozen-score">' + formatScore(pd.frozen) + '</span> <span class="frozen-indicator">?</span>');
+            }
+        // Track merged sum/max/colspan on merged cells for subtask merging
+            if (p.mergedMaxTotal !== undefined) {
+              $td.attr('data-merged-sum', pd ? pd.final : 0);
+              $td.attr('data-merged-max', p.max_points);
+              $td.attr('colspan', 1);
+            }
+            $tr.append($td);
+          }
+
+          var $scoreCell = $('<td class="resolver-score-cell"></td>');
+          $scoreCell.append($('<span class="resolver-score-value"></span>').text(formatScore(user.currentTotal)));
+          if (resolver.showCumtime) {
+            $scoreCell.append($('<div class="resolver-solving-time"></div>').text(ContestResolver.formatCumtime(user.cumtime)));
+          }
+          $tr.append($scoreCell);
+
+          $tbody.append($tr);
+        }
+      }
+
+  // Problem lookup by order for merge logic
+      var problemByOrder = {};
+      for (var pi = 0; pi < resolver.problems.length; pi++) {
+        problemByOrder[resolver.problems[pi].order] = resolver.problems[pi];
+      }
+
+      function getVerdict(score, maxPoints) {
+        if (Math.abs(score - maxPoints) < 1e-9) return 'ac';
+        if (score > 1e-9) return 'partial';
+        return 'wrong';
+      }
+
+      function formatScore(score) {
+        if (score === Math.floor(score)) return String(Math.floor(score));
+        return score.toFixed(2).replace(/\.?0+$/, '');
+      }
+
+  // ----------------------------------------------------------------
+  // Apply a single operation to the DOM
+  // ----------------------------------------------------------------
+      function applyOp(op, callback) {
+        if (op.type === 'reveal') {
+          var $row = $tbody.find('tr[data-user-id="' + op.userId + '"]');
+          var $cell = $row.find('td[data-problem="' + op.problemOrder + '"]');
+
+          $row.addClass('resolver-row-active');
+          $cell.addClass('selected');
+          scrollToRow($row);
+
+          setTimeout(function () {
+            $cell.removeClass('frozen selected')
+              .addClass(op.verdict)
+              .addClass('cell-reveal-anim')
+              .html(formatScore(op.finalScore));
+
+            $row.find('.resolver-score-value').text(formatScore(op.newTotal));
+
+            setTimeout(function () {
+              $cell.removeClass('cell-reveal-anim');
+
+          // Merge into sum column if this is a hidden subtask with a merged column
+              var probInfo = problemByOrder[op.problemOrder];
+              if (probInfo && probInfo.mergedOrder !== undefined) {
+                var $mergedCell = $row.find('td[data-problem="' + probInfo.mergedOrder + '"]');
+                if ($mergedCell.length) {
+                  var curSum = parseFloat($mergedCell.attr('data-merged-sum')) || 0;
+                  var curMax = parseFloat($mergedCell.attr('data-merged-max')) || 0;
+                  var newSum = Math.round((curSum + op.finalScore) * 100) / 100;
+                  var newMax = Math.round((curMax + probInfo.max_points) * 100) / 100;
+                  $mergedCell.attr('data-merged-sum', newSum);
+                  $mergedCell.attr('data-merged-max', newMax);
+
+              // Grow merged cell and remove the eaten cell
+                  var curColspan = parseInt($mergedCell.attr('colspan')) || 1;
+                  $mergedCell.attr('colspan', curColspan + 1);
+                  $cell.remove();
+
+              // Update merged cell display
+                  $mergedCell.removeClass('ac partial wrong improved resolver-empty');
+                  $mergedCell.addClass(getVerdict(newSum, newMax))
+                    .text(formatScore(newSum))
+                    .addClass('cell-reveal-anim');
+                  setTimeout(function () { $mergedCell.removeClass('cell-reveal-anim'); }, animationDuration);
                 }
               }
-            } else {
-              console.log("No more submissions to reveal");
-                            // Optionally handle the case where there are no more submissions to reveal
+
+              reorderRows(op, function () {
+                $row.removeClass('resolver-row-active');
+                if (callback) callback();
+              });
+            }, animationDuration);
+          }, animationDuration);
+          return;
+        }
+
+        if (op.type === 'show-overlay') {
+          var $row = $tbody.find('tr[data-user-id="' + op.userId + '"]');
+          $tbody.find('tr').removeClass('resolver-row-active resolver-rank-up');
+          $row.addClass('resolver-row-active');
+          scrollToRow($row);
+
+          var topN = parseInt($('#resolver-top-n').val()) || 3;
+          if (op.rank <= topN) {
+            setTimeout(function () {
+              $row.removeClass('resolver-row-active');
+              showOverlay(op);
+              if (resolver.autoPlaying) {
+                setTimeout(function () {
+                  hideOverlay();
+                  if (callback) callback();
+                }, 2500 / autoSpeed);
+              } else {
+                pendingOverlayCallback = callback;
+              }
+            }, animationDuration);
+          } else {
+            setTimeout(function () {
+              $row.removeClass('resolver-row-active');
+              if (callback) callback();
+            }, animationDuration);
+          }
+          return;
+        }
+
+        if (callback) callback();
+      }
+
+      function reorderRows(op, callback) {
+        var allRows = $tbody.find('tr');
+        var oldPositions = {};
+        allRows.each(function () {
+          var uid = $(this).attr('data-user-id');
+          oldPositions[uid] = $(this).offset().top;
+        });
+
+        var rows = {};
+        allRows.each(function () {
+          rows[$(this).attr('data-user-id')] = $(this);
+        });
+
+        var displayRanks = resolver.getDisplayRanks();
+        for (var ri = 0; ri < resolver.ranking.length; ri++) {
+          var uid = resolver.ranking[ri];
+          var $r = rows[uid];
+          if ($r) {
+            $r.find('.resolver-rank-cell').text(displayRanks[uid]);
+            $tbody.append($r);
+          }
+        }
+
+        var moveDuration = 600;
+        if (op.newRank < op.oldRank) {
+          $tbody.find('tr').each(function () {
+            var uid = $(this).attr('data-user-id');
+            var oldTop = oldPositions[uid];
+            if (oldTop === undefined) return;
+            var newTop = $(this).offset().top;
+            var delta = oldTop - newTop;
+            if (Math.abs(delta) > 1) {
+              $(this).css('transform', 'translateY(' + delta + 'px)');
+              this.offsetHeight;
+              $(this).css({
+                'transition': 'transform ' + moveDuration + 'ms ease',
+                'transform': 'translateY(0)'
+              });
             }
-          }
-        }
-      }
-      if (e.keyCode === 65) {
-        console.log("A pressed!");
-        if (autopress === false) {
-          autopress = true;
-                    // for (let x in resolver.operations) {
-                    //     curop++;
-                    //     updateSelector();
-                    //     getNewData();
-                    // }
-          for (let x in window.resolver.operations) {
-            setTimeout(function () {
-              curop++;
-              updateSelector(true);
-            }, speed * x);
-            setTimeout(function () {
-              getNewData(true);
-            }, speed * x + speed / 2);
-          }
-        }
-      }
-      if (e.keyCode === 66) {
-        theme = 1 - theme;
-        if (theme) dark_theme();
-        else light_theme();
-      }
-    });
+          });
 
-    $('.rank-list').on('click', 'li', function () {
-      if (curop === resolver.operations.length - 1) {
-        const classstr = $(this).attr('class');
-        const index = classstr.indexOf('id-');
-        let useridstr = "";
-        for (let i = index + 3; i < classstr.length; i++) {
-          useridstr = useridstr + classstr[i];
-        }
-        const userid = parseInt(useridstr);
-        const problemid = classstr[classstr.indexOf('p-') + 2];
-        const sub = parseInt(classstr[classstr.indexOf('s-') + 2]);
-        const rankid = resolver.rank_frozen[userid].rank_show;
-        resolver.operations = [];
-        curop = -1;
-        console.log("Clicked!");
-        resolver.operation(rankid - 1, problemid, sub);
-        if (resolver.operations.length === 1) {
-          for (let x in window.resolver.operations) {
-            curop++;
-            updateSelector();
-            setTimeout(function () {
-              getNewData();
-            }, 500);
-          }
+          var $movedRow = $tbody.find('tr[data-user-id="' + op.userId + '"]');
+          $tbody.find('tr').removeClass('resolver-rank-up');
+          $movedRow.addClass('resolver-rank-up');
+          scrollToRow($movedRow);
+          setTimeout(function () {
+            $tbody.find('tr').css({ 'transition': '', 'transform': '' });
+            if (callback) callback();
+          }, moveDuration);
         } else {
-          for (let x in window.resolver.operations) {
-            setTimeout(function () {
-              curop++;
-              updateSelector();
-            }, speed * x);
-            setTimeout(function () {
-              getNewData();
-            }, speed * x + speed / 2);
-          }
+          if (callback) callback();
         }
       }
-    });
 
-    let wa, ac, selected, frozen;
-    let theme_text_color;
+      function scrollToRow($row) {
+        if ($row.length) {
+          var rowTop = $row.offset().top;
+          var windowHeight = $(window).height();
+          var scrollTarget = rowTop - windowHeight / 2 + $row.outerHeight() / 2;
+          $('html, body').animate({ scrollTop: Math.max(0, scrollTarget) }, 300);
+        }
+      }
 
-    function dark_theme() {
-      primary_color = "black";
-      secondary_color = '#3e3e3e';
-      frozen = "#34495e";
-      untouched = "#1f1f1f";
-      wa = "#B71C0C";
-      partially = "#A79D03";
-      ac = "#086d08";
-      selected = "rgb(206, 75, 199)";
-      theme_text_color = "white";
-      theme_background_color = "black";
-      set_theme();
-    }
+      function showOverlay(op) {
+        var user = resolver.users[op.userId];
+        var rank = op.rank || op.newRank;
+        $overlay.find('.resolver-overlay-rank').text('#' + rank);
+        $overlay.find('.resolver-overlay-username').text(user.username);
+        $overlay.find('.resolver-overlay-name').text(user.displayName);
+        $overlay.find('.resolver-overlay-school').text(user.school);
+        $overlay.removeAttr('hidden').addClass('resolver-overlay-visible');
+      }
 
-    function light_theme() {
-      primary_color = "#EFF5F5";
-      secondary_color = "#D6E4E5";
-      wa = "#EB6440";
-      partially = "#fff133";
-      ac = "#80ED99";
-            // ac = "green";
-      frozen = "#497174";
-      untouched = "#A7BBC7";
-      selected = "rgb(206, 75, 199)";
-      theme_text_color = "black";
-      theme_background_color = "white";
-      set_theme();
-    }
+      function hideOverlay() {
+        $overlay.removeClass('resolver-overlay-visible');
+        setTimeout(function () { $overlay.attr('hidden', ''); }, 300);
+      }
 
-    function set_theme() {
-      let root = document.querySelector(':root');
-      root.style.setProperty('--primary_color', primary_color);
-      root.style.setProperty('--secondary_color', secondary_color);
-      root.style.setProperty('--wa', wa);
-      root.style.setProperty('--partially', partially);
-      root.style.setProperty('--ac', ac);
-      root.style.setProperty('--selected', selected);
-      root.style.setProperty('--frozen', frozen);
-      root.style.setProperty('--untouched', untouched);
-      root.style.setProperty('--theme-text-color', theme_text_color);
-      root.style.setProperty('--theme-background-color', theme_background_color);
-      for (let i in resolver.rank_frozen) {
-        if (resolver.rank_frozen[i].rank_show % 2 === 0) {
-          for (let problemid in resolver.rank_frozen[i].problem) {
-            let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
-            let linear = `linear-gradient(90deg, ${partially} ${per}%, ${primary_color} ${per}%)`;
-            $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
-          }
+  // ----------------------------------------------------------------
+  // Controls
+  // ----------------------------------------------------------------
+      var isProcessing = false;
+      var pendingOverlayCallback = null;
+
+      function doNext() {
+        if (pendingOverlayCallback) {
+          var cb = pendingOverlayCallback;
+          pendingOverlayCallback = null;
+          hideOverlay();
+          cb();
+          return;
+        }
+        if (isProcessing) return;
+        if (!resolver.hasNext()) return;
+        isProcessing = true;
+        var op = resolver.next();
+        if (op) {
+          applyOp(op, function () { isProcessing = false; });
         } else {
-          for (let problemid in resolver.rank_frozen[i].problem) {
-            let per = round2(resolver.rank_frozen[i].problem[problemid].old_point / resolver.total_points[problemid] * 100);
-            let linear = `linear-gradient(90deg, ${partially} ${per}%, ${secondary_color} ${per}%)`;
-            $('#rank-' + i + ' .p-' + problemid + ' .pro-score.partially').css("background", linear);
-          }
+          isProcessing = false;
         }
       }
-    }
 
-    function findNextUnrevealed(resolver) {
-      const rankid = resolver.rankarr[resolver.rankarr.length - 1].rank_show - 1;
-      const userid = resolver.rankarr[rankid].user_id - 1;
+      $('#resolver-next').on('click', function () {
+        doNext();
+      });
 
-            // Loop through problems
-      for (let problemid = 1; problemid <= resolver.problem_sub.length; problemid++) {
-                // Loop through subproblems
-        for (let sub = 1; sub <= resolver.sub_frozen[problemid - 1]; sub++) {
-                    // Check if this submission is already revealed
-          if (resolver.check[userid][problemid - 1].indexOf(sub) === -1) {
-            return {problemid, sub};
+      var autoSpeed = 1;
+      $('#resolver-speed').on('input', function () {
+        autoSpeed = parseFloat($(this).val());
+        $('#resolver-speed-label').text(autoSpeed + 'x');
+        if (resolver.autoPlaying) {
+          resolver.stopAutoPlay();
+          startAuto();
+        }
+      });
+
+      function startAuto() {
+        $('#resolver-auto').find('i').removeClass('fa-play').addClass('fa-pause');
+
+        var step = function () {
+          if (!resolver.autoPlaying) return;
+          if (!resolver.hasNext()) {
+            stopAuto();
+            return;
           }
+          isProcessing = true;
+          var op = resolver.next();
+          if (op) {
+            applyOp(op, function () {
+              isProcessing = false;
+              if (resolver.autoPlaying) {
+                resolver.autoTimer = setTimeout(step, 1200 / autoSpeed);
+              }
+            });
+          }
+        };
+        resolver.autoPlaying = true;
+        step();
+      }
+
+      function stopAuto() {
+        resolver.stopAutoPlay();
+        $('#resolver-auto').find('i').removeClass('fa-pause').addClass('fa-play');
+      }
+
+      function toggleAuto() {
+        if (resolver.autoPlaying) {
+          stopAuto();
+        } else {
+          startAuto();
         }
       }
-      return null; // All revealed
-    }
 
+      $('#resolver-auto').on('click', toggleAuto);
+
+      $('#resolver-fullscreen').on('click', function () {
+        toggleFullscreen();
+      });
+
+      function toggleFullscreen() {
+        var el = document.querySelector('.resolver-page');
+        if (!document.fullscreenElement) {
+          if (el.requestFullscreen) el.requestFullscreen();
+        } else {
+          if (document.exitFullscreen) document.exitFullscreen();
+        }
+      }
+
+  // Cell click to reveal
+      $tbody.on('click', 'td.frozen', function () {
+        if (isProcessing || resolver.autoPlaying) return;
+        var userId = parseInt($(this).attr('data-user-id'));
+        var problemOrder = parseInt($(this).attr('data-problem'));
+        if (isNaN(userId) || isNaN(problemOrder)) return;
+
+        resolver.revealCell(userId, problemOrder);
+        doNext();
+      });
+
+  // Keyboard shortcuts
+      $(document).on('keydown', function (e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        if (e.key === ' ' || e.code === 'Space') {
+          e.preventDefault();
+          doNext();
+        } else if (e.key === 'a' || e.key === 'A') {
+          e.preventDefault();
+          toggleAuto();
+        } else if (e.key === 'f' || e.key === 'F') {
+          e.preventDefault();
+          toggleFullscreen();
+        }
+      });
+
+  // ----------------------------------------------------------------
+  // Real name / school toggle
+  // ----------------------------------------------------------------
+      function updateRealNameVisibility() {
+        var show = $('#resolver-show-real-name').is(':checked');
+        if (show) {
+          $tbody.find('.resolver-user-details').show();
+        } else {
+          $tbody.find('.resolver-user-details').hide();
+        }
+      }
+
+      $('#resolver-show-real-name').on('change', updateRealNameVisibility);
+
+  // ----------------------------------------------------------------
+  // Init
+  // ----------------------------------------------------------------
+      buildRows();
+      updateRealNameVisibility();
+    });
   </script>
 {% endcompress %}
