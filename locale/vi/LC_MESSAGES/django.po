@@ -9544,6 +9544,48 @@ msgid "Add Selected Questions"
 msgstr "Thêm các câu hỏi đã chọn"
 
 #: templates/quiz/create.html:229 templates/quiz/edit.html:404
+msgid "Batch add by IDs"
+msgstr "Thêm hàng loạt theo ID"
+
+msgid "Enter question IDs (comma, space, or newline separated; ranges like 5-10 supported):"
+msgstr "Nhập ID câu hỏi (cách nhau bằng dấu phẩy, dấu cách hoặc xuống dòng; hỗ trợ đoạn như 5-10):"
+
+msgid "e.g. 1, 2, 3 or 1-5 or one per line"
+msgstr "VD: 1, 2, 3 hoặc 1-5 hoặc mỗi dòng một ID"
+
+msgid "IDs not found:"
+msgstr "ID không tìm thấy:"
+
+msgid "Invalid input:"
+msgstr "Dữ liệu không hợp lệ:"
+
+msgid "Already in quiz:"
+msgstr "Đã có trong bài:"
+
+msgid "Please fix the issues above and try again."
+msgstr "Vui lòng sửa các lỗi ở trên và thử lại."
+
+msgid "Please select or enter at least one question."
+msgstr "Vui lòng chọn hoặc nhập ít nhất một câu hỏi."
+
+msgid "question(s) added successfully."
+msgstr "câu hỏi đã được thêm thành công."
+
+msgid "No valid IDs found in input."
+msgstr "Không tìm thấy ID hợp lệ trong dữ liệu nhập."
+
+msgid "Error validating questions. Please try again."
+msgstr "Lỗi khi kiểm tra câu hỏi. Vui lòng thử lại."
+
+msgid "No IDs provided."
+msgstr "Không có ID nào được cung cấp."
+
+msgid "No valid IDs provided."
+msgstr "Không có ID hợp lệ nào được cung cấp."
+
+msgid "Invalid request body."
+msgstr "Dữ liệu yêu cầu không hợp lệ."
+
 msgid "Create new question"
 msgstr "Tạo câu hỏi mới"
 

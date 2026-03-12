@@ -1075,6 +1075,63 @@ class QuizSearchQuestions(LoginRequiredMixin, QuizObjectEditorMixin, View):
         )
 
 
+class QuizValidateQuestions(LoginRequiredMixin, QuizEditorMixin, View):
+    """AJAX endpoint to validate question IDs for batch adding to a quiz.
+
+    Accepts POST with JSON body {"ids": [1, 2, 3, ...]}.
+    Returns JSON with valid questions and invalid IDs.
+    """
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            ids = data.get("ids", [])
+        except (json.JSONDecodeError, AttributeError):
+            return JsonResponse({"error": _("Invalid request body.")}, status=400)
+
+        if not isinstance(ids, list) or not ids:
+            return JsonResponse({"error": _("No IDs provided.")}, status=400)
+
+        # Sanitize: keep only valid integers
+        clean_ids = []
+        for item in ids:
+            try:
+                clean_ids.append(int(item))
+            except (ValueError, TypeError):
+                continue
+
+        if not clean_ids:
+            return JsonResponse({"error": _("No valid IDs provided.")}, status=400)
+
+        # Query accessible questions with the same permission pattern as Select2
+        queryset = QuizQuestion.objects.filter(pk__in=clean_ids)
+        if not request.user.is_superuser:
+            profile = request.user.profile
+            queryset = queryset.filter(
+                Q(is_public=True)
+                | Q(authors__id=profile.id)
+                | Q(curators__id=profile.id)
+            ).distinct()
+
+        valid_questions = [
+            {
+                "id": q.id,
+                "title": q.title,
+                "type": q.get_question_type_display(),
+            }
+            for q in queryset
+        ]
+        found_ids = {q["id"] for q in valid_questions}
+        invalid_ids = [i for i in clean_ids if i not in found_ids]
+
+        return JsonResponse(
+            {
+                "valid": valid_questions,
+                "invalid_ids": invalid_ids,
+            }
+        )
+
+
 # =============================================================================
 # Course Lesson Quiz Views
 # =============================================================================

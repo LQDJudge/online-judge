@@ -111,53 +111,157 @@
         width: '100%'
       });
 
-  // Add selected questions (to pending list, don't save immediately)
+  // Add question to DOM helper
+      function addQuestionToDOM(id, title, type, points) {
+        pendingQuestionChanges.added.push({
+          questionId: id, title: title, type: type || '', points: points
+        });
+        assignedQuestionIds.push(id);
+
+        var newIndex = $('#assigned-questions-list .question-item').length + 1;
+        var html = '<div class="question-item pending-add" data-question-id="' + id + '">';
+        html += '<span class="drag-handle" title="{{ _("Drag to reorder") }}"><i class="fa fa-bars"></i></span>';
+        html += '<div class="question-info">';
+        html += '<span class="question-order">' + newIndex + '.</span>';
+        html += '<a href="/quiz/questions/' + id + '/">' + $('<div>').text(title).html() + '</a>';
+        if (type) html += '<span class="badge">' + type + '</span>';
+        html += '<span class="badge badge-success">{{ _("New") }}</span>';
+        html += '</div>';
+        html += '<input type="number" class="points-input pending-points" data-question-id="' + id + '" value="' + points + '" min="0" step="1" title="{{ _("Points") }}">';
+        html += '<span class="text-muted">{{ _("pts") }}</span>';
+        html += '<div class="question-actions">';
+        html += '<button type="button" class="btn btn-sm btn-danger remove-pending-btn" data-question-id="' + id + '" title="{{ _("Remove") }}">';
+        html += '<i class="fa fa-times"></i></button>';
+        html += '</div></div>';
+        $('#assigned-questions-list').append(html);
+      }
+
+  // Unified add: Select2 + batch IDs combined
       $('#add-questions-btn').on('click', function () {
-        var selectedData = $('#add-question-select').select2('data');
+        var selectedData = $('#add-question-select').select2('data').filter(function (d) { return d.id; });
+        var batchText = $('#batch-ids-input').val().trim();
+        var batchParsed = batchText ? parseBatchIds(batchText) : { ids: [], badTokens: [] };
+        var batchIds = batchParsed.ids;
+        var badTokens = batchParsed.badTokens;
         var points = parseFloat($('#add-question-points').val()) || 1;
 
-        if (!selectedData || selectedData.length === 0) {
-          alert('{{ _("Please select at least one question.") }}');
+        $('#add-question-errors').hide();
+        $('#add-question-success').hide();
+
+        // Block if any bad tokens in batch input
+        if (badTokens.length > 0) {
+          showAddErrors([], badTokens);
           return;
         }
 
-        selectedData.forEach(function (item) {
-      // Add to pending
-          pendingQuestionChanges.added.push({
-            questionId: item.id,
-            title: item.text,
-            type: item.type || '',
-            points: points
+        // If batch textarea has content but no valid IDs parsed
+        if (batchText && batchIds.length === 0) {
+          showAddErrors([], [], '{{ _("No valid IDs found in input.") }}');
+          return;
+        }
+
+        if (selectedData.length === 0 && batchIds.length === 0) {
+          alert('{{ _("Please select or enter at least one question.") }}');
+          return;
+        }
+
+        // If no batch IDs, add Select2 picks directly (no AJAX, skip dupes)
+        if (batchIds.length === 0) {
+          var addedCount = 0;
+          var addedIds = pendingQuestionChanges.added.map(function (q) { return q.questionId; });
+          selectedData.forEach(function (item) {
+            if (assignedQuestionIds.indexOf(item.id) === -1 && addedIds.indexOf(item.id) === -1) {
+              addQuestionToDOM(item.id, item.text, item.type || '', points);
+              addedCount++;
+            }
           });
-          assignedQuestionIds.push(item.id);
-
-      // Add visual item
-          var newIndex = $('#assigned-questions-list .question-item').length + 1;
-          var html = '<div class="question-item pending-add" data-question-id="' + item.id + '">';
-          html += '<span class="drag-handle" title="{{ _("Drag to reorder") }}"><i class="fa fa-bars"></i></span>';
-          html += '<div class="question-info">';
-          html += '<span class="question-order">' + newIndex + '.</span>';
-          html += '<span>' + $('<div>').text(item.text).html() + '</span>';
-          if (item.type) {
-            html += '<span class="badge">' + item.type + '</span>';
+          $('#add-question-select').val(null).trigger('change');
+          if (addedCount > 0) {
+            updateQuestionNumbers();
+            markUnsaved();
           }
-          html += '<span class="badge badge-success">{{ _("New") }}</span>';
-          html += '</div>';
-          html += '<input type="number" class="points-input pending-points" data-question-id="' + item.id + '" value="' + points + '" min="0" step="1" title="{{ _("Points") }}">';
-          html += '<span class="text-muted">{{ _("pts") }}</span>';
-          html += '<div class="question-actions">';
-          html += '<button type="button" class="btn btn-sm btn-danger remove-pending-btn" data-question-id="' + item.id + '" title="{{ _("Remove") }}">';
-          html += '<i class="fa fa-times"></i></button>';
-          html += '</div></div>';
+          showAddSuccess(addedCount);
+          return;
+        }
 
-          $('#assigned-questions-list').append(html);
+        // Has batch IDs → validate via AJAX
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> {{ _("Validating...") }}');
+
+        $.ajax({
+          url: '{{ url("quiz_validate_questions") }}',
+          method: 'POST',
+          contentType: 'application/json',
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+          data: JSON.stringify({ ids: batchIds }),
+          success: function (data) {
+            $btn.prop('disabled', false).html('<i class="fa fa-plus"></i> {{ _("Add Selected Questions") }}');
+
+            // Block if any invalid IDs
+            if (data.invalid_ids.length > 0) {
+              showAddErrors(data.invalid_ids, []);
+              return;
+            }
+
+            // Add everything, silently skip duplicates
+            var addedCount = 0;
+            var addedIds = pendingQuestionChanges.added.map(function (q) { return q.questionId; });
+            selectedData.forEach(function (item) {
+              if (assignedQuestionIds.indexOf(item.id) === -1 && addedIds.indexOf(item.id) === -1) {
+                addQuestionToDOM(item.id, item.text, item.type || '', points);
+                addedIds.push(item.id);
+                addedCount++;
+              }
+            });
+            data.valid.forEach(function (q) {
+              if (assignedQuestionIds.indexOf(q.id) === -1 && addedIds.indexOf(q.id) === -1) {
+                addQuestionToDOM(q.id, q.title, q.type || '', points);
+                addedIds.push(q.id);
+                addedCount++;
+              }
+            });
+
+            // Reset inputs
+            $('#add-question-select').val(null).trigger('change');
+            $('#batch-ids-input').val('');
+            if (addedCount > 0) {
+              updateQuestionNumbers();
+              markUnsaved();
+            }
+            showAddSuccess(addedCount);
+          },
+          error: function () {
+            $btn.prop('disabled', false).html('<i class="fa fa-plus"></i> {{ _("Add Selected Questions") }}');
+            alert('{{ _("Error validating questions. Please try again.") }}');
+          }
         });
-
-    // Clear selection
-        $('#add-question-select').val(null).trigger('change');
-        updateQuestionNumbers();
-        markUnsaved();
       });
+
+      function showAddErrors(invalidIds, badTokens, message) {
+        $('#add-question-errors').show();
+        if (invalidIds.length > 0) {
+          $('#error-invalid-section').show();
+          $('#error-invalid-ids').text(invalidIds.join(', '));
+        } else {
+          $('#error-invalid-section').hide();
+        }
+        if (badTokens && badTokens.length > 0) {
+          $('#error-badtokens-section').show();
+          $('#error-badtokens').text(badTokens.join(', '));
+        } else {
+          $('#error-badtokens-section').hide();
+        }
+        if (message) {
+          $('#error-message-section').show().text(message);
+        } else {
+          $('#error-message-section').hide();
+        }
+      }
+
+      function showAddSuccess(count) {
+        $('#add-question-success').show()
+          .html('<i class="fa fa-check-circle"></i> ' + count + ' {{ _("question(s) added successfully.") }}');
+      }
 
   // Update points for pending-add questions
       $(document).on('change', '.pending-points', function () {
@@ -236,6 +340,38 @@
             $('.unsaved-indicator').addClass('hidden');
           }
       });
+
+  // --- Batch Add by IDs ---
+      $('#toggle-batch-add').on('click', function (e) {
+        e.preventDefault();
+        var $section = $('#batch-add-section');
+        var $icon = $('#batch-toggle-icon');
+        $section.toggle();
+        $icon.toggleClass('fa-caret-right fa-caret-down');
+      });
+
+      function parseBatchIds(text) {
+        // Split by comma, newline, space, or semicolon
+        var tokens = text.split(/[\s,;]+/).filter(function (t) { return t.length > 0; });
+        var ids = [];
+        var badTokens = [];
+        tokens.forEach(function (token) {
+          var rangeMatch = token.match(/^(\d+)-(\d+)$/);
+          if (rangeMatch) {
+            var start = parseInt(rangeMatch[1]), end = parseInt(rangeMatch[2]);
+            if (start > end) { var tmp = start; start = end; end = tmp; }
+            if (end - start > 1000) { badTokens.push(token); return; }
+            for (var i = start; i <= end; i++) ids.push(i);
+          } else if (/^\d+$/.test(token)) {
+            ids.push(parseInt(token));
+          } else {
+            badTokens.push(token);
+          }
+        });
+        // Deduplicate IDs
+        ids = ids.filter(function (v, i, a) { return a.indexOf(v) === i; });
+        return { ids: ids, badTokens: badTokens };
+      }
 
   // Before form submit, add question changes to hidden fields
       $('form.quiz-form').on('submit', function (e) {
@@ -384,13 +520,24 @@
           <p class="text-muted" id="no-questions-msg">{{ _('No questions assigned yet.') }}</p>
         {% endif %}
 
-      <!-- Add Question Search -->
+      <!-- Add Question -->
         <div class="add-question-section">
           <h4><i class="fa fa-plus-circle"></i> {{ _('Add Question') }}</h4>
           <div class="add-question-form">
             <div class="question-select-wrapper" style="margin-bottom: 1em;">
               <label for="add-question-select">{{ _('Select questions to add:') }}</label>
               <select id="add-question-select" multiple style="width: 100%;"></select>
+            </div>
+          <!-- Batch Add by IDs (collapsible) -->
+            <div style="margin-bottom: 1em;">
+              <a href="#" id="toggle-batch-add">
+                <i class="fa fa-caret-right" id="batch-toggle-icon"></i> {{ _('Batch add by IDs') }}
+              </a>
+              <div id="batch-add-section" style="display: none; margin-top: 0.5em;">
+                <label for="batch-ids-input">{{ _('Enter question IDs (comma, space, or newline separated; ranges like 5-10 supported):') }}</label>
+                <textarea id="batch-ids-input" rows="3" style="width: 100%; font-family: monospace;"
+                          placeholder="{{ _('e.g. 1, 2, 3 or 1-5 or one per line') }}"></textarea>
+              </div>
             </div>
             <div class="points-wrapper" style="display: flex; align-items: center; gap: 0.5em; margin-bottom: 1em;">
               <label for="add-question-points">{{ _('Points per question:') }}</label>
@@ -399,6 +546,17 @@
             <button type="button" id="add-questions-btn" class="btn btn-success">
               <i class="fa fa-plus"></i> {{ _('Add Selected Questions') }}
             </button>
+            <div id="add-question-success" class="green" style="display: none; margin-top: 1em; font-weight: bold;"></div>
+            <div id="add-question-errors" style="display: none; margin-top: 1em;">
+              <div id="error-invalid-section" style="display: none;">
+                <strong class="red"><i class="fa fa-times-circle"></i> {{ _('IDs not found:') }} <span id="error-invalid-ids"></span></strong>
+              </div>
+              <div id="error-badtokens-section" style="display: none;">
+                <strong class="red"><i class="fa fa-times-circle"></i> {{ _('Invalid input:') }} <span id="error-badtokens"></span></strong>
+              </div>
+              <div id="error-message-section" class="red" style="display: none; font-weight: bold;"></div>
+              <p class="text-muted" style="margin-top: 0.5em;">{{ _('Please fix the issues above and try again.') }}</p>
+            </div>
           </div>
           <p class="text-muted" style="margin-top: 0.5em;">
             <a href="{{ url('question_bank_create') }}">{{ _('Create new question') }}</a>
