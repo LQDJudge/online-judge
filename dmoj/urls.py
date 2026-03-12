@@ -778,6 +778,11 @@ urlpatterns = [
     re_path(r"^quiz/$", quiz.QuizList.as_view(), name="quiz_list"),
     re_path(r"^quiz/create/$", quiz.QuizCreate.as_view(), name="quiz_create"),
     re_path(
+        r"^quiz/validate-questions/$",
+        quiz.QuizValidateQuestions.as_view(),
+        name="quiz_validate_questions",
+    ),
+    re_path(
         r"^quiz/(?P<code>[^/]+)",
         include(
             [

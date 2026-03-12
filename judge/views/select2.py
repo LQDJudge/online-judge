@@ -296,6 +296,26 @@ class QuizQuestionSelect2View(Select2View):
 
         return queryset
 
+    def get(self, request, *args, **kwargs):
+        self.request = request
+        self.term = kwargs.get("term", request.GET.get("term", ""))
+        self.object_list = self.get_queryset()
+        context = self.get_context_data()
+
+        return JsonResponse(
+            {
+                "results": [
+                    {
+                        "text": smart_str(self.get_name(obj)),
+                        "id": obj.pk,
+                        "type": obj.get_question_type_display(),
+                    }
+                    for obj in context["object_list"]
+                ],
+                "more": context["page_obj"].has_next(),
+            }
+        )
+
     def get_name(self, obj):
         return f"Q{obj.pk}: {obj.title}"
 

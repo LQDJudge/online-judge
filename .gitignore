@@ -20,7 +20,9 @@ package.json
 websocket/config.js
 
 .DS_Store
+# AI tools
 CLAUDE.md
+**/CLAUDE.md
 Roo.md
 AGENTS.md
 plan/
