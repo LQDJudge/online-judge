@@ -32,8 +32,14 @@ def judge_daemon():
         settings.BRIDGED_DJANGO_ADDRESS, partial(DjangoHandler, judges=judges)
     )
 
-    threading.Thread(target=django_server.serve_forever).start()
-    threading.Thread(target=judge_server.serve_forever).start()
+    django_thread = threading.Thread(
+        target=django_server.serve_forever, name="django-server", daemon=True
+    )
+    judge_thread = threading.Thread(
+        target=judge_server.serve_forever, name="judge-server", daemon=True
+    )
+    django_thread.start()
+    judge_thread.start()
 
     stop = threading.Event()
 
@@ -50,3 +56,5 @@ def judge_daemon():
     finally:
         django_server.shutdown()
         judge_server.shutdown()
+        django_thread.join(timeout=10)
+        judge_thread.join(timeout=10)

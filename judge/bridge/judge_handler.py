@@ -88,6 +88,7 @@ class JudgeHandler(ZlibPacketHandler):
         self.batch_id = None
         self.in_batch = False
         self._stop_ping = threading.Event()
+        self._ping_thread_ref = None
         self._ping_average = deque(maxlen=6)  # 1 minute average, just like load
         self._time_delta = deque(maxlen=6)
 
@@ -106,6 +107,9 @@ class JudgeHandler(ZlibPacketHandler):
 
     def on_disconnect(self):
         self._stop_ping.set()
+        if self._no_response_job:
+            self._no_response_job.cancel()
+            self._no_response_job = None
         self.judges.remove(self)
         if self.name is not None:
             self._disconnected()
@@ -283,7 +287,8 @@ class JudgeHandler(ZlibPacketHandler):
         self.send({"name": "handshake-success"})
         logger.info("Judge authenticated: %s (%s)", self.client_address, packet["id"])
         self.judges.register(self)
-        threading.Thread(target=self._ping_thread).start()
+        self._ping_thread_ref = threading.Thread(target=self._ping_thread, daemon=True)
+        self._ping_thread_ref.start()
         self._connected()
 
     def can_judge(self, problem, executor, judge_id=None):
@@ -1132,6 +1137,15 @@ class JudgeHandler(ZlibPacketHandler):
             )
 
     def on_cleanup(self):
+        self._stop_ping.set()
+        if self._no_response_job:
+            self._no_response_job.cancel()
+            self._no_response_job = None
+        if self._ping_thread_ref:
+            self._ping_thread_ref.join(timeout=5)
+            if self._ping_thread_ref.is_alive():
+                logger.warning("Ping thread did not exit cleanly for %s", self.name)
+            self._ping_thread_ref = None
         db.connection.close()
 
 

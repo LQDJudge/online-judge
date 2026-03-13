@@ -4,6 +4,7 @@ from socketserver import TCPServer, ThreadingMixIn
 
 class ThreadingTCPListener(ThreadingMixIn, TCPServer):
     allow_reuse_address = True
+    daemon_threads = True
 
 
 class Server:
@@ -24,7 +25,7 @@ class Server:
             self.shutdown()
         finally:
             for thread in threads:
-                thread.join()
+                thread.join(timeout=10)
 
     def shutdown(self):
         for server in self.servers:
