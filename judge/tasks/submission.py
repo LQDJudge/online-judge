@@ -19,6 +19,7 @@ def update_user_points(profile_id):
     profile = Profile.objects.get(id=profile_id)
     profile._updating_stats_only = True
     profile.calculate_points()
+    Profile.dirty_cache(profile.id)
     cache.delete("user_complete:%d" % profile.id)
     cache.delete("user_attempted:%d" % profile.id)
 
@@ -97,6 +98,7 @@ def rescore_problem(self, problem_id):
         for profile in profiles.iterator():
             profile._updating_stats_only = True
             profile.calculate_points()
+            Profile.dirty_cache(profile.id)
             cache.delete("user_complete:%d" % profile.id)
             cache.delete("user_attempted:%d" % profile.id)
             users += 1
