@@ -1,7 +1,7 @@
+from datetime import datetime
 from itertools import chain, repeat
 from operator import itemgetter
 import json
-import pandas as pd
 
 from django.conf import settings
 from django.db.models import Case, Count, FloatField, IntegerField, Value, When
@@ -110,11 +110,33 @@ class StatLanguage(StatViewBase):
 
 
 def group_data_by_period(dates, data, period="1W"):
-    df = pd.DataFrame()
-    df["dates"] = pd.to_datetime(dates)
-    df["data"] = data
-    df = df.groupby([pd.Grouper(key="dates", freq=period)])["data"].mean().reset_index()
-    return list(df["dates"]), list(df["data"])
+    period_days = {"1D": 1, "1W": 7, "2W": 14, "1M": 30, "3M": 90, "1Y": 365}
+    days = period_days.get(period, 7)
+
+    if not dates:
+        return [], []
+
+    parsed = []
+    for d in dates:
+        if isinstance(d, str):
+            d = datetime.fromisoformat(d)
+        parsed.append(d)
+
+    buckets = {}
+    for dt, val in zip(parsed, data):
+        key = dt.toordinal() // days
+        if key not in buckets:
+            buckets[key] = (dt, [])
+        buckets[key][1].append(val)
+
+    result_dates = []
+    result_data = []
+    for key in sorted(buckets):
+        dt, vals = buckets[key]
+        result_dates.append(dt)
+        result_data.append(sum(vals) / len(vals))
+
+    return result_dates, result_data
 
 
 class StatSite(StatViewBase):

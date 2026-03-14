@@ -35,8 +35,6 @@ redis
 lupa
 websocket-client
 pymemcache
-numpy
-pandas
 markdown
 bleach
 pymdown-extensions
