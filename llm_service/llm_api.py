@@ -18,11 +18,16 @@ class LLMService:
     """General service for interacting with Poe API for various LLM tasks"""
 
     def __init__(
-        self, api_key: str, bot_name: str = "Claude-3.7-Sonnet", sleep_time: float = 2.5
+        self,
+        api_key: str,
+        bot_name: str = "Claude-Sonnet-4.6",
+        sleep_time: float = 2.5,
+        timeout: int = 120,
     ):
         self.api_key = api_key
         self.bot_name = bot_name
         self.sleep_time = sleep_time
+        self.timeout = timeout
 
         if not self.api_key:
             raise ValueError("API_KEY is required")
@@ -33,10 +38,24 @@ class LLMService:
         tools: Optional[List["fp.ToolDefinition"]] = None,
         tool_executables: Optional[List] = None,
         strip_thinking: bool = True,
+        timeout: Optional[int] = None,
     ) -> Optional[str]:
         """
         Get a text response from the Poe API using the given messages.
+
+        Args:
+            timeout: Maximum seconds to wait for the streaming response.
+                     If None, uses self.timeout (from config). Set 0 to disable.
         """
+        import signal
+
+        stream_timeout = (
+            timeout if timeout is not None else getattr(self, "timeout", 120)
+        )
+
+        def _timeout_handler(signum, frame):
+            raise TimeoutError(f"LLM streaming timed out after {stream_timeout}s")
+
         try:
             response = ""
 
@@ -50,14 +69,29 @@ class LLMService:
             if tool_executables:
                 kwargs["tool_executables"] = tool_executables
 
-            for partial in fp.get_bot_response_sync(**kwargs):
-                response += partial.text
-                logger.debug(f"LLM partial response: {partial.text}")
+            # Set a timeout to prevent indefinite hangs during streaming
+            old_handler = None
+            if stream_timeout > 0:
+                old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
+                signal.alarm(stream_timeout)
+
+            try:
+                for partial in fp.get_bot_response_sync(**kwargs):
+                    response += partial.text
+                    logger.debug(f"LLM partial response: {partial.text}")
+            finally:
+                if stream_timeout > 0:
+                    signal.alarm(0)
+                    if old_handler is not None:
+                        signal.signal(signal.SIGALRM, old_handler)
 
             if strip_thinking:
                 response = self._remove_thinking_content(response)
             return response.strip()
 
+        except TimeoutError as e:
+            logger.error(f"LLM streaming timeout: {e}")
+            return None
         except Exception as e:
             logger.error(f"Error during LLM API call: {e}")
             return None

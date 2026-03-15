@@ -84,7 +84,9 @@ def get_tool_executables(problem):
 
     def _make_executor(func, tool_name):
         @sync_to_async
-        def executor():
+        def executor(**kwargs):
+            # Accept and ignore any kwargs the LLM may pass —
+            # tools are pre-bound to the problem instance.
             return func(problem)
 
         executor.__name__ = tool_name
@@ -545,13 +547,13 @@ def _get_existing_checker(problem):
 
 
 def _get_solution_template(problem):
-    """Get the solution editorial template."""
+    """Get the solution editorial template for chatbot (problem authors)."""
     template = """## Tóm tắt đề bài
 [Mô tả ngắn gọn yêu cầu bài toán]
 
 ## Phân tích
 - **Ràng buộc:** [Nêu các ràng buộc quan trọng]
-- **Độ phức tạp mục tiêu:** O(...)
+- **Nhận xét chính:** [Các quan sát quan trọng]
 
 ## Hướng giải quyết
 
@@ -575,17 +577,10 @@ def _get_solution_template(problem):
 using namespace std;
 
 int main() {
-    ios_base::sync_with_stdio(false);
-    cin.tie(NULL);
-
-    // Your solution here
-
+    // Solution here
     return 0;
 }
 ```
-
-## Ghi chú thêm
-[Các lưu ý, cách tiếp cận khác, edge cases cần xử lý]
 """
 
     return f"""Solution/Editorial Template (Vietnamese):
@@ -595,6 +590,8 @@ int main() {
 
 Guidelines:
 - Keep explanations clear and concise
+- Use $...$ for inline math and $$...$$ for display math. NEVER use \\( \\) or \\[ \\] notation.
 - Include complexity analysis
-- Provide working reference code
-- Mention edge cases and common mistakes"""
+- Provide working reference code in C++
+- Mention edge cases and common mistakes
+- Use Vietnamese by default"""

@@ -7,7 +7,7 @@ import os
 from typing import Optional
 
 # Default configuration values
-DEFAULT_BOT_NAME = "Claude-4.5-Sonnet"
+DEFAULT_BOT_NAME = "Claude-Sonnet-4.6"
 DEFAULT_SLEEP_TIME = 2.5
 DEFAULT_TIMEOUT = 120
 DEFAULT_MAX_RETRIES = 1
@@ -22,33 +22,38 @@ CHATBOT_SUPPORTED_MODELS = [
         "context_tokens": 1_000_000,
     },
     {
-        "id": "Claude-4.5-Sonnet",
-        "name": "Claude 4.5 Sonnet",
-        "default": False,
-        "context_tokens": 200_000,
-    },
-    {
-        "id": "Claude-4.5-Opus",
-        "name": "Claude 4.5 Opus",
-        "default": False,
-        "context_tokens": 200_000,
-    },
-    {"id": "GPT-5.2", "name": "GPT 5.2", "default": False, "context_tokens": 400_000},
-    {
-        "id": "Gemini-3-Pro",
-        "name": "Gemini 3 Pro",
+        "id": "Claude-Sonnet-4.6",
+        "name": "Claude Sonnet 4.6",
         "default": False,
         "context_tokens": 1_000_000,
     },
     {
-        "id": "GPT-5.2-Pro",
-        "name": "GPT 5.2 Pro",
+        "id": "Claude-Opus-4.6",
+        "name": "Claude Opus 4.6",
         "default": False,
-        "context_tokens": 400_000,
+        "context_tokens": 1_000_000,
+    },
+    {
+        "id": "GPT-5.4",
+        "name": "GPT 5.4",
+        "default": False,
+        "context_tokens": 1_000_000,
+    },
+    {
+        "id": "Gemini-3.1-Pro",
+        "name": "Gemini 3.1 Pro",
+        "default": False,
+        "context_tokens": 1_000_000,
+    },
+    {
+        "id": "GPT-5.4-Pro",
+        "name": "GPT 5.4 Pro",
+        "default": False,
+        "context_tokens": 1_000_000,
     },
 ]
 
-DEFAULT_CONTEXT_TOKENS = 200_000
+DEFAULT_CONTEXT_TOKENS = 1_000_000
 
 
 class LLMConfig:

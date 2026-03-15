@@ -20,13 +20,14 @@ package.json
 websocket/config.js
 
 .DS_Store
-# AI tools
+# AI tools (synced from separate private repo via .claude-config/sync.sh)
 CLAUDE.md
 **/CLAUDE.md
 Roo.md
 AGENTS.md
 plan/
 .claude/
+.claude-config/
 
 # Playwright
 /test-results/

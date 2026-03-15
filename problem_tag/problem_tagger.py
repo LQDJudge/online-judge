@@ -18,7 +18,7 @@ class ProblemTagger:
     """Tagger for predicting problem difficulty and tags using LLM with format validation"""
 
     def __init__(
-        self, api_key: str, bot_name: str = "Claude-3.7-Sonnet", sleep_time: float = 2.5
+        self, api_key: str, bot_name: str = "Claude-Sonnet-4.6", sleep_time: float = 2.5
     ):
         self.llm_service = LLMService(api_key, bot_name, sleep_time)
         self.sleep_time = sleep_time

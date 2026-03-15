@@ -24,6 +24,13 @@ GUIDELINES:
 3. Include code examples when relevant
 4. Be concise but thorough
 5. For checker/generator questions, always provide the relevant template first
+
+CODE STYLE:
+- Use `cin >> n;` directly — NEVER write `if (!(cin >> n)) return 0;` or similar defensive input checks
+- Use `vector` or define arrays as global variables — NEVER define C-style arrays inside main() like `int arr[] = {...}`
+- NEVER use `typedef` (e.g., `typedef long long ll`) or `#define` macros — write full type names
+- Use clear, meaningful variable names that help students understand the code
+- Use `#include <bits/stdc++.h>` and `using namespace std;`
 6. If asked to write code, provide complete, working examples
 
 GENERATOR SCRIPT BEST PRACTICES:
@@ -113,6 +120,33 @@ def _get_recent_messages(messages, model_id, max_messages=MAX_HISTORY_MESSAGES):
     return result
 
 
+def _fix_latex(text):
+    """
+    Fix common LaTeX issues from LLM output before markdown rendering.
+    - Convert \\(...\\) to $...$ (markdown escapes backslash before arithmatex)
+    - Convert \\[...\\] to $$...$$
+    - Convert inline $$ to $ when used mid-paragraph
+    """
+    # 1. Convert \(...\) to $...$ and \[...\] to $$...$$
+    # Use simple string replace — regex breaks with nested parentheses in math
+    text = text.replace("\\(", "$").replace("\\)", "$")
+    text = text.replace("\\[", "$$").replace("\\]", "$$")
+
+    # 2. Fix inline $$: if $$ appears on a line with other text, convert to $
+    lines = text.split("\n")
+    result = []
+    for line in lines:
+        stripped = line.strip()
+        if "$$" in stripped:
+            if not stripped.startswith("$$") or not stripped.endswith("$$"):
+                if stripped != "$$":
+                    line = line.replace("$$", "$")
+        result.append(line)
+    text = "\n".join(result)
+
+    return text
+
+
 @shared_task(bind=True)
 def chatbot_respond_task(self, user_id, problem_code, user_message):
     """
@@ -165,18 +199,31 @@ def chatbot_respond_task(self, user_id, problem_code, user_message):
             conversation["messages"][:-1], model_id=selected_model
         )
 
+        # Build system prompt with current problem context
+        system_prompt = (
+            SYSTEM_PROMPT + f"\n\nCURRENT PROBLEM CONTEXT:\n"
+            f"- Problem code: {problem.code}\n"
+            f"- Problem name: {problem.name}\n"
+            f"You are assisting with this specific problem. "
+            f"Use the tools to fetch its details when needed — "
+            f"do NOT ask the user for the problem code."
+        )
+
         # Call LLM with native tool calling
         response = llm.call_llm_with_history(
             conversation_messages=recent_messages,
             current_prompt=user_message,
-            system_prompt=SYSTEM_PROMPT,
+            system_prompt=system_prompt,
             tools=tool_definitions,
             tool_executables=tool_executables,
-            strip_thinking=False,
+            strip_thinking=True,
         )
 
         if not response:
             response = "Xin lỗi, tôi gặp lỗi khi xử lý. Vui lòng thử lại."
+
+        # Fix LaTeX before markdown rendering
+        response = _fix_latex(response)
 
         # Render markdown to HTML for display
         try:

@@ -106,12 +106,14 @@ def tag_problem_task(self, problem_code):
 
 
 @shared_task(bind=True)
-def improve_markdown_task(self, problem_code):
+def improve_markdown_task(self, problem_code, description=""):
     """
     Celery task to improve markdown formatting for a problem using LLM.
 
     Args:
         problem_code: The problem code
+        description: Optional description text from the edit form.
+                     If provided, uses this instead of the DB description.
 
     Returns:
         Dict with improvement results (stored in Celery result backend)
@@ -123,7 +125,9 @@ def improve_markdown_task(self, problem_code):
 
         problem = Problem.objects.get(code=problem_code)
         tag_service = get_problem_tag_service()
-        result = tag_service.improve_problem_markdown(problem)
+        result = tag_service.improve_problem_markdown(
+            problem, description_override=description
+        )
 
         return {
             "success": result["success"],
