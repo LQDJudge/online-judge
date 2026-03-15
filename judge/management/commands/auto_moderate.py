@@ -95,7 +95,7 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR("POE_API_KEY not found in settings"))
             return
 
-        bot_name = getattr(settings, "POE_BOT_NAME", "Claude-3.7-Sonnet")
+        bot_name = getattr(settings, "POE_BOT_NAME", "Claude-Sonnet-4.6")
 
         try:
             self.llm_service = LLMService(

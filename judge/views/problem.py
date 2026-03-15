@@ -1381,8 +1381,11 @@ class ProblemEdit(
             except Problem.DoesNotExist:
                 return JsonResponse({"success": False, "error": "Problem not found"})
 
+            # Get description from form (current editor content) or fall back to DB
+            description = request.POST.get("description", "").strip()
+
             # Dispatch async Celery task
-            task = improve_markdown_task.delay(problem_code)
+            task = improve_markdown_task.delay(problem_code, description=description)
 
             return JsonResponse(
                 {

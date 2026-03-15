@@ -1,5 +1,5 @@
 window.renderKatex = (elem=document.body) => {
-  var maths = document.querySelectorAll('.arithmatex'),
+  var maths = elem.querySelectorAll('.arithmatex'),
           tex;
   for (var i = 0; i < maths.length; i++) {
     tex = maths[i].textContent || maths[i].innerText;

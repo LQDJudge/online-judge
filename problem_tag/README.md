@@ -28,7 +28,7 @@ pip install -r llm_service/requirements.txt
 ```python
 # Poe API Configuration
 POE_API_KEY = "your-poe-api-key"
-POE_BOT_NAME = "Claude-3.7-Sonnet"  # Optional, default: Claude-3.7-Sonnet
+POE_BOT_NAME = "Gemini-3-Flash"  # Optional, default: Claude-Sonnet-4.6
 POE_SLEEP_TIME = 2.5                # Optional, default: 2.5 seconds
 POE_TIMEOUT = 30                    # Optional, default: 30 seconds
 POE_MAX_RETRIES = 5                 # Optional, default: 5

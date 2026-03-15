@@ -16,10 +16,58 @@ class SolutionGenerator:
     """Generates problem solutions/editorials using LLM"""
 
     def __init__(
-        self, api_key: str, bot_name: str = "Claude-3.7-Sonnet", sleep_time: float = 2.5
+        self, api_key: str, bot_name: str = "Claude-Sonnet-4.6", sleep_time: float = 2.5
     ):
         self.llm_service = LLMService(api_key, bot_name, sleep_time)
         self.sleep_time = sleep_time
+
+    def _fix_latex(self, markdown: str) -> str:
+        """
+        Fix common LaTeX issues from LLM output.
+        - Convert \\(...\\) to $...$
+        - Convert \\[...\\] to $$...$$
+        - Convert inline $$ to $ when used mid-paragraph
+        """
+        # Convert \(...\) to $...$ and \[...\] to $$...$$
+        markdown = markdown.replace("\\(", "$").replace("\\)", "$")
+        markdown = markdown.replace("\\[", "$$").replace("\\]", "$$")
+
+        # Fix inline $$
+        lines = markdown.split("\n")
+        result = []
+        for line in lines:
+            stripped = line.strip()
+            if "$$" in stripped:
+                if not stripped.startswith("$$") or not stripped.endswith("$$"):
+                    if stripped != "$$":
+                        line = line.replace("$$", "$")
+            result.append(line)
+        return "\n".join(result)
+
+    def _wrap_code_in_collapsible(self, markdown: str) -> str:
+        """
+        Convert ### C++ / ### Python headers followed by code blocks
+        into collapsible ??? note sections for compact display.
+        """
+        import re
+
+        def _indent(text, spaces=4):
+            prefix = " " * spaces
+            return "\n".join(
+                prefix + line if line.strip() else line for line in text.split("\n")
+            )
+
+        # Match: ### C++ or ### Python (with optional whitespace) followed by a code block
+        pattern = r"###\s*(C\+\+|Python)\s*\n+```(\w+)\n(.*?)```"
+
+        def replacer(match):
+            lang_label = match.group(1)  # "C++" or "Python"
+            code_lang = match.group(2)  # "cpp" or "python"
+            code = match.group(3).rstrip("\n")
+            code_block = f"```{code_lang}\n{code}\n```"
+            return f'??? note "{lang_label}"\n{_indent(code_block)}'
+
+        return re.sub(pattern, replacer, markdown, flags=re.DOTALL)
 
     def _fix_unclosed_code_blocks(self, markdown: str) -> str:
         """
@@ -34,57 +82,102 @@ class SolutionGenerator:
     def get_solution_template(self) -> str:
         """Return the target format template for solutions"""
         return """## Tóm tắt đề bài
-Cho bốn số tự nhiên $a_1, b_1, a_2, b_2$ là kích thước của hai hình chữ nhật. Tìm diện tích hình vuông nhỏ nhất chứa được cả hai hình chữ nhật mà không xếp đè lên nhau.
+Cho mảng gồm $n$ số nguyên $a_1, a_2, \\dots, a_n$. Tìm đoạn con liên tiếp có tổng lớn nhất.
 
 ## Phân tích
-- **Điều kiện:** $0 < a_1, b_1, a_2, b_2 \\leq 10^6$
-- **Độ phức tạp mục tiêu:** $O(1)$
+- **Điều kiện:** $1 \\leq n \\leq 10^6$, $|a_i| \\leq 10^9$
+- **Nhận xét:** Cần xử lý cả số âm. Kết quả có thể là một phần tử duy nhất nếu toàn bộ mảng âm.
 
-## Hướng giải quyết
+## Cách làm đơn giản (Brute Force)
+
+### Ý tưởng
+Duyệt tất cả các đoạn con $(i, j)$, tính tổng mỗi đoạn và lấy giá trị lớn nhất.
+
+### Độ phức tạp
+- **Thời gian:** $O(n^2)$
+- **Đánh giá:** Phù hợp cho $n \\leq 5000$
+
+### Code Brute Force
+
+### C++
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+int main() {
+    int n; cin >> n;
+    vector<int> a(n);
+    for (auto& x : a) cin >> x;
+    long long ans = a[0];
+    for (int i = 0; i < n; i++) {
+        long long sum = 0;
+        for (int j = i; j < n; j++) {
+            sum += a[j];
+            ans = max(ans, sum);
+        }
+    }
+    cout << ans;
+}
+```
+
+### Python
+```python
+n = int(input())
+a = list(map(int, input().split()))
+ans = a[0]
+for i in range(n):
+    total = 0
+    for j in range(i, n):
+        total += a[j]
+        ans = max(ans, total)
+print(ans)
+```
+
+## Hướng giải quyết (Tối ưu)
 
 ### Nhận xét
-Để chứa hai hình chữ nhật trong một hình vuông, ta có thể sắp xếp chúng theo nhiều cách khác nhau. Vì mỗi hình có thể xoay 90 độ, ta cần xét tất cả các trường hợp có thể.
+Nếu tổng đoạn hiện tại trở thành âm, ta bắt đầu đoạn mới từ phần tử tiếp theo (thuật toán Kadane).
 
 ### Thuật toán
-1. Thử tất cả các cách xoay của hai hình chữ nhật (4 trường hợp)
-2. Với mỗi cách xoay, tính kích thước hình vuông tối thiểu khi xếp chúng:
-   - Xếp chồng theo chiều dọc: cạnh = max(chiều rộng) và chiều cao tổng
-   - Xếp cạnh nhau theo chiều ngang: chiều rộng tổng và max(chiều cao)
-3. Chọn cách xếp cho hình vuông nhỏ nhất
+1. Duy trì biến $cur$ là tổng đoạn con kết thúc tại vị trí hiện tại
+2. Nếu $cur < 0$, đặt lại $cur = 0$ (bắt đầu đoạn mới)
+3. Cập nhật kết quả $ans = \\max(ans, cur)$ sau mỗi bước
 
 ## Độ phức tạp
-- **Thời gian:** $O(1)$ - chỉ có một số lượng cố định các phép tính
+- **Thời gian:** $O(n)$
 - **Bộ nhớ:** $O(1)$
 
 ## Code tham khảo
 
+### C++
 ```cpp
 #include <bits/stdc++.h>
 using namespace std;
-
 int main() {
-    int a1, b1, a2, b2;
-    cin >> a1 >> b1 >> a2 >> b2;
-
-    int ans = INT_MAX;
-    // Thử tất cả các cách xoay
-    for (int r1 = 0; r1 < 2; r1++) {
-        for (int r2 = 0; r2 < 2; r2++) {
-            int w1 = r1 ? b1 : a1, h1 = r1 ? a1 : b1;
-            int w2 = r2 ? b2 : a2, h2 = r2 ? a2 : b2;
-
-            // Xếp theo chiều dọc
-            int side1 = max(max(w1, w2), h1 + h2);
-            // Xếp theo chiều ngang
-            int side2 = max(w1 + w2, max(h1, h2));
-
-            ans = min(ans, min(side1 * side1, side2 * side2));
-        }
+    int n; cin >> n;
+    vector<int> a(n);
+    for (auto& x : a) cin >> x;
+    long long ans = a[0], cur = 0;
+    for (int i = 0; i < n; i++) {
+        cur += a[i];
+        ans = max(ans, cur);
+        if (cur < 0) cur = 0;
     }
-
-    cout << ans << endl;
-    return 0;
+    cout << ans;
 }
+```
+
+### Python
+```python
+n = int(input())
+a = list(map(int, input().split()))
+ans = a[0]
+cur = 0
+for x in a:
+    cur += x
+    ans = max(ans, cur)
+    if cur < 0:
+        cur = 0
+print(ans)
 ```"""
 
     def _get_ac_solution(self, problem_obj) -> Optional[Dict[str, Any]]:
@@ -196,25 +289,51 @@ int main() {
         ac_solution = self._get_ac_solution(problem_obj) if problem_obj else None
         markdown_rules = get_markdown_rules_for_prompt(start_number=10)
 
-        system_prompt = f"""You are an expert competitive programming coach writing solution editorials.
+        system_prompt = f"""You are an expert competitive programming coach writing solution editorials for LQDOJ, a platform used by many beginners and students.
 Your task is to write clear, educational solution explanations for competitive programming problems.
 
 IMPORTANT FORMATTING RULES:
 1. Use Vietnamese language for the solution (unless the problem is in English)
-2. Use LaTeX math notation with $ for inline math (e.g., $n$, $a_i$, $10^9$)
+2. Use LaTeX math notation: single $ for inline math (e.g., $n$, $a_i$, $f(i) = f(i-1) + f(i-2)$). Use $$ ONLY for standalone equations on their own line. NEVER use $$ inside a paragraph — always use single $ for inline formulas, even long ones. NEVER use \\( \\) or \\[ \\] notation.
 3. Use ## for main section headers
 4. Use ### for subsections
-5. Structure the solution with these sections:
+5. Structure the solution with these sections IN ORDER:
    - **Tóm tắt đề bài** (Problem Summary): Brief summary of what the problem asks
    - **Phân tích** (Analysis): Key constraints and observations
-   - **Hướng giải quyết** (Approach): Step-by-step solution approach
-   - **Độ phức tạp** (Complexity): Time and space complexity analysis
-   - **Code tham khảo** (Reference Code): Clean, well-commented code
+   - **Cách làm đơn giản (Brute Force)** (ONLY if the problem is non-trivial): The simplest, most naive approach. Include: idea, complexity, and working code.
+   - **Hướng giải quyết** (Approach / Optimal Approach): The efficient solution with step-by-step explanation. If there is a brute force section, label this "Hướng giải quyết (Tối ưu)".
+   - **Độ phức tạp** (Complexity): Time and space complexity
+   - **Code tham khảo** (Reference Code): Provide BOTH C++ and Python code
 
 6. Keep explanations clear and educational
 7. Explain the intuition behind the algorithm, not just the steps
 8. Use bullet points and numbered lists for clarity
-9. Include code with appropriate syntax highlighting (```cpp, ```python, etc.)
+9. For ALL code sections (brute force and reference code), provide BOTH C++ and Python versions. Use this format:
+   ### C++
+   ```cpp
+   // code here
+   ```
+   ### Python
+   ```python
+   # code here
+   ```
+
+CODE STYLE:
+- Use `cin >> n;` directly — NEVER write `if (!(cin >> n)) return 0;` or similar defensive input checks
+- Use `vector` or define arrays as global variables — NEVER define C-style arrays inside main() like `int arr[] = {...}`
+- NEVER use `typedef` (e.g., `typedef long long ll`) or `#define` macros — write full type names so all readers can understand
+- Use clear, meaningful variable names that help students understand the code
+- Use `#include <bits/stdc++.h>` and `using namespace std;`
+
+BRUTE FORCE SECTION GUIDELINES:
+- SKIP this section ONLY for truly trivial problems where the solution is just a simple loop, if/else, or basic I/O with no algorithmic thinking needed (e.g., "print the sum of two numbers", "check if N is even").
+- INCLUDE this section for ALL other problems, even if the optimal solution uses a formula or O(1) math. When the optimal solution requires a clever insight, pattern recognition, or mathematical formula, a brute force loop helps beginners VERIFY and UNDERSTAND what the formula computes. For example, if the answer is a formula, show the simple loop that iterates and counts/checks — this helps beginners see WHY the formula works.
+- The brute force should be the MOST TRIVIAL approach: the first thing a beginner would think of (usually a simple for loop that simulates the problem directly)
+- It should be simple enough for anyone who understands the problem to code
+- Always include working brute force code (not pseudocode)
+- Analyze its complexity and explain why it's too slow for full constraints
+- Mention what partial score it could achieve (e.g., "Phù hợp cho $n \\leq 10^6$")
+- This section bridges understanding the problem and understanding the optimal solution
 
 {markdown_rules}
 
@@ -223,9 +342,11 @@ HERE IS THE TARGET FORMAT TEMPLATE:
 
 CRITICAL INSTRUCTIONS:
 - If an AC (Accepted) solution code is provided, analyze it and explain how it works
-- Make the explanation accessible to intermediate competitive programmers
+- If you include a brute force section, the brute force code must be DIFFERENT from the AC code - simpler and less efficient
+- Make the explanation accessible to beginners and intermediate competitive programmers
 - Highlight key insights and common pitfalls
-- If the problem has multiple approaches, mention the main one used in the code
+- The editorial should flow: understand problem → simple approach (brute force) → optimize
+- ONLY skip brute force for truly trivial problems (simple I/O, basic if/else)
 - Output ONLY the solution markdown, no additional commentary"""
 
         problem_info = ""
@@ -288,6 +409,12 @@ OUTPUT: Provide ONLY the solution markdown in the format shown in the template. 
 
                 # Fix unclosed code blocks
                 solution = self._fix_unclosed_code_blocks(solution)
+
+                # Fix LaTeX notation issues
+                solution = self._fix_latex(solution)
+
+                # Convert "### C++" / "### Python" code sections to collapsible
+                solution = self._wrap_code_in_collapsible(solution)
 
                 if solution:
                     logger.info(f"Successfully generated solution for problem")

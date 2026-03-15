@@ -152,17 +152,24 @@ class ProblemTagService:
                 "error": str(e),
             }
 
-    def improve_problem_markdown(self, problem) -> Dict[str, any]:
+    def improve_problem_markdown(
+        self, problem, description_override: str = ""
+    ) -> Dict[str, any]:
         """
         Improve the markdown formatting of a problem's description using LLM
 
         Args:
             problem: Django Problem model instance
+            description_override: If provided, use this text instead of the DB description.
+                                  Allows improving unsaved editor content.
 
         Returns:
             Dict with improvement results including 'success' and 'improved_markdown'
         """
-        statement = self.get_problem_statement(problem)
+        if description_override:
+            statement = description_override
+        else:
+            statement = self.get_problem_statement(problem)
         if not statement:
             return {
                 "problem_code": problem.code,

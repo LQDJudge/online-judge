@@ -22,7 +22,7 @@ pip install -r llm_service/requirements.txt
 ```python
 # Poe API Configuration
 POE_API_KEY = "your-poe-api-key"
-POE_BOT_NAME = "Claude-3.7-Sonnet"  # Optional, default: Claude-3.7-Sonnet
+POE_BOT_NAME = "Gemini-3-Flash"  # Optional, default: Claude-Sonnet-4.6
 POE_SLEEP_TIME = 2.5                # Optional, default: 2.5 seconds
 POE_TIMEOUT = 30                    # Optional, default: 30 seconds
 POE_MAX_RETRIES = 5                 # Optional, default: 5
@@ -39,7 +39,7 @@ DMOJ_PROBLEM_DATA_ROOT = '/path/to/your/problem/data' # For problem PDFs
 ```python
 from llm_service.llm_api import LLMService
 
-llm_service = LLMService(api_key="your-api-key", bot_name="Claude-3.7-Sonnet")
+llm_service = LLMService(api_key="your-api-key", bot_name="Gemini-3-Flash")
 
 # Simple prompt-response
 response = llm_service.call_llm("What is 2+2?")
@@ -84,14 +84,14 @@ The service uses configuration from Django settings first, then falls back to en
 **Django settings** (recommended):
 ```python
 POE_API_KEY = "your-api-key"
-POE_BOT_NAME = "Claude-3.7-Sonnet"
+POE_BOT_NAME = "Gemini-3-Flash"
 POE_SLEEP_TIME = 2.5
 ```
 
 **Environment variables** (fallback):
 ```bash
 export POE_API_KEY="your-api-key"
-export POE_BOT_NAME="Claude-3.7-Sonnet"
+export POE_BOT_NAME="Gemini-3-Flash"
 export POE_SLEEP_TIME="2.5"
 ```
 

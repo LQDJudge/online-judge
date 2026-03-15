@@ -124,12 +124,16 @@
         $btn.prop('disabled', true);
         $status.text('{{ _('Improving markdown...') }}');
 
+        // Get current description from editor (not from DB)
+        var currentDescription = $('#wmd-input-{{ form.description.id_for_label }}').val() || '';
+
         $.ajax({
           url: '{{ url("problem_edit", problem=problem.code) }}',
           type: 'POST',
           data: {
             'improve_markdown': '1',
             'problem_code': problemCode,
+            'description': currentDescription,
             'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
           },
           success: function(data) {
