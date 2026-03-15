@@ -155,6 +155,27 @@ def save_to_model(request):
     except model_class.DoesNotExist:
         return JsonResponse({"error": _("Object not found")}, status=404)
 
+    # Verify actual file size on storage (defense against spoofed file_size)
+    max_size = token_data.get("max_size")
+    if max_size:
+        try:
+            actual_size = default_storage.size(file_key)
+            if actual_size > max_size:
+                try:
+                    default_storage.delete(file_key)
+                except Exception:
+                    pass
+                return JsonResponse(
+                    {
+                        "error": _(
+                            "File size exceeds maximum allowed. File has been removed."
+                        )
+                    },
+                    status=400,
+                )
+        except Exception:
+            pass
+
     try:
         field_name = token_data["field_name"]
         old_file = getattr(obj, field_name, None)

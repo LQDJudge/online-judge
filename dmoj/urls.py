@@ -1706,6 +1706,17 @@ urlpatterns = [
         custom_file_upload.user_file_rename,
         name="user_file_rename",
     ),
+    # User file direct upload API endpoints
+    re_path(
+        r"^upload/api/config/$",
+        custom_file_upload.user_file_upload_config,
+        name="user_file_upload_config",
+    ),
+    re_path(
+        r"^upload/api/confirm/$",
+        custom_file_upload.user_file_upload_confirm,
+        name="user_file_upload_confirm",
+    ),
     # Direct upload API endpoints (for presigned URL uploads)
     re_path(
         r"^api/upload/config/$",

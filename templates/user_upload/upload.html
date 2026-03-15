@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block js_media %}
+  <script src="{{ static('direct_upload.js') }}"></script>
   <script type="text/javascript">
     $(document).ready(function() {
       // Search functionality
@@ -69,35 +70,91 @@
         $('#files-container').removeClass('view-grid view-list').addClass('view-' + view);
       });
 
-      // AJAX Upload
+      // Direct Upload
+      var configUrl = '{{ upload_config_url }}';
+      var confirmUrl = '{{ upload_confirm_url }}';
+      var maxFileSize = {{ max_file_size }};
+
+      function getCsrfToken() {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+          var parts = cookies[i].trim().split('=');
+          if (parts[0] === 'csrftoken') return parts[1];
+        }
+        return '';
+      }
+
       $('#upload-form').on('submit', function(e) {
         e.preventDefault();
 
-        var formData = new FormData(this);
+        var fileInput = $('#file-input')[0];
+        var file = fileInput.files[0];
+        if (!file) return;
+
         var uploadBtn = $('#upload-btn');
         var statusDiv = $('#upload-status');
-        var fileInput = $('#file-input');
+        var progressContainer = $('#upload-progress');
+        var progressFill = $('#upload-progress-fill');
+        var progressText = $('#upload-progress-text');
 
-        // Disable button during upload
+        // Client-side size check
+        if (maxFileSize && file.size > maxFileSize) {
+          statusDiv.removeClass('success').addClass('error')
+            .text('{{ _("File too large")|escapejs }}').show();
+          return;
+        }
+
+        // Disable button, show progress
         uploadBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> {{ _("Uploading...")|escapejs }}');
         statusDiv.removeClass('success error').hide();
+        progressContainer.show();
+        progressFill.css('width', '0%');
+        progressText.text('0%');
 
+        // Step 1: Get upload config from our endpoint
         $.ajax({
-          url: '{{ url("custom_file_upload") }}',
+          url: configUrl,
           type: 'POST',
-          data: formData,
-          processData: false,
-          contentType: false,
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-          },
-          success: function(response) {
-            if (response.success) {
-              statusDiv.addClass('success').text(response.message).show();
+          contentType: 'application/json',
+          headers: { 'X-CSRFToken': getCsrfToken() },
+          data: JSON.stringify({
+            filename: file.name,
+            content_type: file.type || 'application/octet-stream',
+            file_size: file.size
+          }),
+          success: function(config) {
+            // Step 2: Upload file directly to storage
+            var uploader = new DirectUploader({
+              configUrl: configUrl,
+              onProgress: function(pct) {
+                var percent = Math.round(pct * 100);
+                progressFill.css('width', percent + '%');
+                progressText.text(percent + '%');
+              },
+              onError: function(err) {
+                progressContainer.hide();
+                statusDiv.removeClass('success').addClass('error')
+                  .text(err.message || '{{ _("Upload failed")|escapejs }}').show();
+                uploadBtn.prop('disabled', false).html('<i class="fa fa-upload"></i> {{ _("Upload")|escapejs }}');
+              }
+            });
+
+            uploader.uploadFile(file, config).then(function() {
+              // Step 3: Confirm upload
+              return $.ajax({
+                url: confirmUrl,
+                type: 'POST',
+                contentType: 'application/json',
+                headers: { 'X-CSRFToken': getCsrfToken() },
+                data: JSON.stringify({ file_key: config.file_key })
+              });
+            }).then(function(response) {
+              progressContainer.hide();
+              statusDiv.removeClass('error').addClass('success')
+                .text('{{ _("File uploaded successfully!")|escapejs }}').show();
 
               // If in iframe, send message to parent
               if (window.parent !== window) {
-                // Use file URL from server response (works with S3 and local storage)
                 var fileUrl = response.file_url;
                 var fileName = response.file_name;
                 var isImage = /\.(jpg|jpeg|png|gif|bmp|svg)$/i.test(fileName);
@@ -110,24 +167,31 @@
                 }, window.location.origin);
               }
 
-              fileInput.val('');
+              fileInput.value = '';
 
               // Reload the page to show new file
               setTimeout(function() {
                 location.reload();
               }, 1000);
-            } else {
-              statusDiv.addClass('error').text(response.error || '{{ _("Upload failed")|escapejs }}').show();
-            }
+            }).catch(function(err) {
+              progressContainer.hide();
+              var errorMsg = '{{ _("Upload failed")|escapejs }}';
+              if (err.responseJSON && err.responseJSON.error) {
+                errorMsg = err.responseJSON.error;
+              } else if (err.message) {
+                errorMsg = err.message;
+              }
+              statusDiv.removeClass('success').addClass('error').text(errorMsg).show();
+              uploadBtn.prop('disabled', false).html('<i class="fa fa-upload"></i> {{ _("Upload")|escapejs }}');
+            });
           },
           error: function(xhr) {
+            progressContainer.hide();
             var errorMsg = '{{ _("Upload failed")|escapejs }}';
             if (xhr.responseJSON && xhr.responseJSON.error) {
               errorMsg = xhr.responseJSON.error;
             }
-            statusDiv.addClass('error').text(errorMsg).show();
-          },
-          complete: function() {
+            statusDiv.removeClass('success').addClass('error').text(errorMsg).show();
             uploadBtn.prop('disabled', false).html('<i class="fa fa-upload"></i> {{ _("Upload")|escapejs }}');
           }
         });
@@ -256,11 +320,8 @@
                 $card.find('.delete-btn').attr('data-filename', response.new_name);
                 $card.find('.copy-url-btn').attr('data-url', response.new_url);
 
-                // Update download link
-                var newDownloadUrl = '{{ url("user_file_download", "__FILENAME__") }}'.replace('__FILENAME__', response.new_name);
-                $card.find('a[href*="download"]').attr('href', newDownloadUrl);
-
-                // Update view link
+                // Update download and view links to new URL
+                $card.find('.download-btn').attr('href', response.new_download_url);
                 $card.find('a[target="_blank"]').attr('href', response.new_url);
 
                 // Show success message
@@ -352,6 +413,12 @@
             </div>
             <small>{{ _("Max: ") }}{{ max_file_size|filesizeformat }} {{ _("per file, ") }}{{ max_files }} {{ _("files total") }}</small>
           </form>
+          <div id="upload-progress" class="upload-progress-bar" style="display: none;">
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" id="upload-progress-fill"></div>
+            </div>
+            <span class="progress-percent" id="upload-progress-text">0%</span>
+          </div>
           <div id="upload-status"></div>
         </div>
       </div>
@@ -411,7 +478,7 @@
                   <a href="{{ file.url }}" target="_blank" class="btn-action" title="{{ _('View') }}">
                     <i class="fa fa-eye"></i>
                   </a>
-                  <a href="{{ url('user_file_download', file.name) }}" class="btn-action" title="{{ _('Download') }}">
+                  <a href="{{ file.download_url }}" class="btn-action download-btn" title="{{ _('Download') }}">
                     <i class="fa fa-download"></i>
                   </a>
                   <button class="btn-action copy-url-btn" data-url="{{ file.url }}" title="{{ _('Copy URL') }}">

@@ -68,7 +68,7 @@ class UploadHandler:
         elif prefix:
             full_prefix = prefix
         else:
-            full_prefix = f"profile_{profile.id}"
+            full_prefix = None
         secure_filename = generate_secure_filename(filename, prefix=full_prefix)
         file_key = f"{upload_to}/{secure_filename}"
 
@@ -96,11 +96,7 @@ class UploadHandler:
 
     @classmethod
     def _get_s3_config(cls, profile, file_key, content_type, file_size, max_size):
-        """
-        Generate presigned PUT URL for S3/R2 direct upload.
-        Uses PUT instead of POST for better compatibility with R2 custom domains.
-        """
-        # Get the S3 client from the storage backend
+        """Generate presigned PUT URL for S3/R2 direct upload."""
         client = default_storage.connection.meta.client
         bucket_name = default_storage.bucket_name
 
@@ -109,7 +105,6 @@ class UploadHandler:
         if hasattr(default_storage, "location") and default_storage.location:
             full_key = f"{default_storage.location}/{file_key}"
 
-        # Generate presigned PUT URL (uses S3 API domain, not custom domain)
         presigned_url = client.generate_presigned_url(
             "put_object",
             Params={
@@ -120,13 +115,12 @@ class UploadHandler:
             ExpiresIn=cls.TOKEN_EXPIRY,
         )
 
-        # Get the final URL for the uploaded file
         file_url = default_storage.url(file_key)
 
         return {
             "upload_url": presigned_url,
             "method": "PUT",
-            "fields": {},  # No fields needed for PUT
+            "fields": {},
             "file_key": file_key,
             "file_url": file_url,
             "content_type": content_type,

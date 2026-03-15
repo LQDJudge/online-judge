@@ -1,3 +1,4 @@
+import json
 import mimetypes
 import os
 from datetime import datetime
@@ -8,14 +9,15 @@ from django.core.files.storage import default_storage
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import Http404, JsonResponse, HttpResponseForbidden
+from django.urls import reverse
 from django.utils.translation import gettext as _
-from django import forms
 from django.template.defaultfilters import filesizeformat
+from django.views.decorators.http import require_POST
 
 from judge.models import Problem
 from judge.caching import cache_wrapper
 
-from judge.utils.files import generate_secure_filename
+from judge.utils.upload_handler import UploadHandler
 from judge.utils.storage_helpers import (
     serve_file_with_nginx,
     storage_listdir,
@@ -26,12 +28,9 @@ from judge.utils.storage_helpers import (
     storage_rename_file,
     validate_path_prefix,
 )
+from judge.widgets.direct_upload import generate_upload_token
 
 MEDIA_PATH = "user_uploads"
-
-
-class FileUploadForm(forms.Form):
-    file = forms.FileField()
 
 
 def check_upload_permission(user):
@@ -131,6 +130,30 @@ def get_user_storage_usage(username, user):
     }
 
 
+def _is_s3_storage():
+    return hasattr(default_storage, "bucket")
+
+
+def _get_download_url(file_path, filename):
+    """Generate a download URL with Content-Disposition: attachment."""
+    if _is_s3_storage():
+        client = default_storage.connection.meta.client
+        bucket_name = default_storage.bucket_name
+        full_key = file_path
+        if hasattr(default_storage, "location") and default_storage.location:
+            full_key = f"{default_storage.location}/{file_path}"
+        return client.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": bucket_name,
+                "Key": full_key,
+                "ResponseContentDisposition": f'attachment; filename="{filename}"',
+            },
+            ExpiresIn=3600,
+        )
+    return reverse("user_file_download", args=[filename])
+
+
 @login_required
 def file_upload(request):
     """Handle file uploads for all users - single page with upload and file list"""
@@ -147,93 +170,32 @@ def file_upload(request):
     files = get_user_files(username)
     storage_info = get_user_storage_usage(username, request.user)
 
-    if request.method == "POST":
-        form = FileUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            file = request.FILES["file"]
-            is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    # Add download URLs (presigned for S3, direct for local)
+    user_prefix = get_user_storage_path(username)
+    for f in files:
+        f["download_url"] = _get_download_url(f"{user_prefix}/{f['name']}", f["name"])
 
-            if len(files) >= settings.DMOJ_MAX_FILES_PER_USER:
-                error_msg = _(
-                    f"Maximum number of files reached ({settings.DMOJ_MAX_FILES_PER_USER} files). Please delete some files."
-                )
-                if is_ajax:
-                    return JsonResponse(
-                        {"success": False, "error": error_msg}, status=400
-                    )
-                messages.error(request, error_msg)
-                return redirect("custom_file_upload")
-
-            # Check file size
-            if file.size > max_file_size:
-                error_msg = _(
-                    f"File size cannot exceed {filesizeformat(max_file_size)}"
-                )
-                if is_ajax:
-                    return JsonResponse(
-                        {"success": False, "error": error_msg}, status=400
-                    )
-                messages.error(request, error_msg)
-                return redirect("custom_file_upload")
-
-            # Check storage quota
-            if storage_info["used"] + file.size > max_user_storage:
-                error_msg = _(
-                    f"Storage quota exceeded ({filesizeformat(max_user_storage)} limit). Please delete some files."
-                )
-                if is_ajax:
-                    return JsonResponse(
-                        {"success": False, "error": error_msg}, status=400
-                    )
-                messages.error(request, error_msg)
-                return redirect("custom_file_upload")
-
-            # User storage path prefix
-            user_prefix = get_user_storage_path(username)
-
-            # Generate secure filename with random suffix
-            new_filename = generate_secure_filename(file.name)
-            new_filepath = f"{user_prefix}/{new_filename}"
-
-            # Save file using default_storage
-            saved_path = default_storage.save(new_filepath, file)
-            file_url = default_storage.url(saved_path)
-
-            # Invalidate cache
-            get_user_files.dirty(username)
-
-            if is_ajax:
-                # Get updated storage info
-                updated_storage = get_user_storage_usage(username, request.user)
-                return JsonResponse(
-                    {
-                        "success": True,
-                        "message": _("File uploaded successfully!"),
-                        "file_url": file_url,
-                        "file_name": new_filename,
-                        "storage": {
-                            "used": updated_storage["used"],
-                            "max": updated_storage["max"],
-                            "percentage": updated_storage["percentage"],
-                            "used_formatted": filesizeformat(updated_storage["used"]),
-                            "max_formatted": filesizeformat(updated_storage["max"]),
-                        },
-                    }
-                )
-
-            messages.success(request, _("File uploaded successfully!"))
-            return redirect("custom_file_upload")
-    else:
-        form = FileUploadForm()
+    # Generate upload token for direct upload
+    upload_token = generate_upload_token(
+        profile_id=request.profile.id,
+        model_name="",
+        object_id=None,
+        field_name="",
+        max_size=max_file_size,
+        upload_to=get_user_storage_path(username),
+        prefix="upload",
+    )
 
     context = {
-        "form": form,
         "storage": storage_info,
         "files": files,
         "title": _("My Files"),
         "max_file_size": max_file_size,
         "max_files": settings.DMOJ_MAX_FILES_PER_USER,
         "is_admin": request.user.is_superuser,
+        "upload_token": upload_token,
+        "upload_config_url": reverse("user_file_upload_config"),
+        "upload_confirm_url": reverse("user_file_upload_confirm"),
     }
     return render(request, "user_upload/upload.html", context)
 
@@ -312,8 +274,7 @@ def user_file_delete(request, filename):
 
 @login_required
 def user_file_download(request, filename):
-    """Download a user's file"""
-    # Check permission
+    """Download a user's file with Content-Disposition: attachment (local storage only)."""
     if not check_upload_permission(request.user):
         return HttpResponseForbidden(
             _("You don't have permission to use the upload feature.")
@@ -323,7 +284,6 @@ def user_file_download(request, filename):
     user_prefix = get_user_storage_path(username)
     file_path = f"{user_prefix}/{filename}"
 
-    # Security check - ensure file is in user's folder (prevents path traversal)
     if not validate_path_prefix(file_path, user_prefix):
         raise Http404("File not found")
 
@@ -406,6 +366,7 @@ def user_file_rename(request, filename):
             try:
                 if storage_rename_file(default_storage, old_file_path, new_file_path):
                     new_url = default_storage.url(new_file_path)
+                    new_download_url = _get_download_url(new_file_path, new_filename)
 
                     # Invalidate cache
                     get_user_files.dirty(username)
@@ -417,6 +378,7 @@ def user_file_rename(request, filename):
                                 "message": _("File renamed successfully!"),
                                 "new_name": new_filename,
                                 "new_url": new_url,
+                                "new_download_url": new_download_url,
                             }
                         )
 
@@ -441,3 +403,167 @@ def user_file_rename(request, filename):
 
     # For GET request, just redirect to file list
     return redirect("custom_file_upload")
+
+
+@login_required
+@require_POST
+def user_file_upload_config(request):
+    """
+    Get presigned URL or local upload config for user file upload.
+    Validates permissions, file count limit, and storage quota.
+    """
+    if not check_upload_permission(request.user):
+        return JsonResponse({"error": _("Permission denied")}, status=403)
+
+    try:
+        if request.content_type == "application/json":
+            data = json.loads(request.body)
+        else:
+            data = request.POST
+
+        filename = data.get("filename", "").strip()
+        content_type = data.get("content_type", "application/octet-stream")
+        file_size = int(data.get("file_size", 0))
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": _("Invalid request data")}, status=400)
+
+    if not filename:
+        return JsonResponse({"error": _("Filename is required")}, status=400)
+    if file_size <= 0:
+        return JsonResponse({"error": _("Invalid file size")}, status=400)
+
+    username = request.user.username
+    max_file_size, max_user_storage = get_user_limits(request.user)
+
+    # Check file size limit
+    if file_size > max_file_size:
+        return JsonResponse(
+            {"error": _("File size cannot exceed %s" % filesizeformat(max_file_size))},
+            status=400,
+        )
+
+    # Check file count limit
+    files = get_user_files(username)
+    if len(files) >= settings.DMOJ_MAX_FILES_PER_USER:
+        return JsonResponse(
+            {
+                "error": _(
+                    "Maximum number of files reached (%d files). Please delete some files."
+                    % settings.DMOJ_MAX_FILES_PER_USER
+                )
+            },
+            status=400,
+        )
+
+    # Check storage quota
+    total_used = sum(f["size"] for f in files)
+    if total_used + file_size > max_user_storage:
+        return JsonResponse(
+            {
+                "error": _(
+                    "Storage quota exceeded (%s limit). Please delete some files."
+                    % filesizeformat(max_user_storage)
+                )
+            },
+            status=400,
+        )
+
+    try:
+        config = UploadHandler.get_upload_config(
+            profile=request.profile,
+            upload_to=get_user_storage_path(username),
+            filename=filename,
+            content_type=content_type,
+            file_size=file_size,
+            max_size=max_file_size,
+        )
+        return JsonResponse(config)
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    except Exception:
+        return JsonResponse(
+            {"error": _("Failed to generate upload configuration")}, status=500
+        )
+
+
+@login_required
+@require_POST
+def user_file_upload_confirm(request):
+    """
+    Confirm a direct upload completed. Invalidates cache and returns updated storage info.
+    """
+    if not check_upload_permission(request.user):
+        return JsonResponse({"error": _("Permission denied")}, status=403)
+
+    try:
+        if request.content_type == "application/json":
+            data = json.loads(request.body)
+        else:
+            data = request.POST
+
+        file_key = data.get("file_key", "").strip()
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": _("Invalid request data")}, status=400)
+
+    if not file_key:
+        return JsonResponse({"error": _("Missing file_key")}, status=400)
+
+    username = request.user.username
+    user_prefix = get_user_storage_path(username)
+
+    # Path traversal check: file_key must be within user's storage path
+    if not validate_path_prefix(file_key, user_prefix):
+        return JsonResponse({"error": _("Invalid file path")}, status=400)
+
+    # Verify actual file size on storage (defense against spoofed file_size)
+    max_file_size, max_user_storage = get_user_limits(request.user)
+    try:
+        actual_size = storage_get_file_size(default_storage, file_key)
+    except Exception:
+        return JsonResponse({"error": _("File not found on storage")}, status=400)
+
+    if actual_size > max_file_size:
+        # Delete the oversized file
+        try:
+            storage_delete_file(default_storage, file_key)
+        except Exception:
+            pass
+        return JsonResponse(
+            {"error": _("File size exceeds maximum allowed. File has been removed.")},
+            status=400,
+        )
+
+    # Check total storage quota with actual size
+    get_user_files.dirty(username)
+    files = get_user_files(username)
+    total_used = sum(f["size"] for f in files)
+    if total_used > max_user_storage:
+        try:
+            storage_delete_file(default_storage, file_key)
+        except Exception:
+            pass
+        get_user_files.dirty(username)
+        return JsonResponse(
+            {"error": _("Storage quota exceeded. File has been removed.")},
+            status=400,
+        )
+
+    # Get updated storage info
+    updated_storage = get_user_storage_usage(username, request.user)
+    file_url = default_storage.url(file_key)
+    file_name = os.path.basename(file_key)
+
+    return JsonResponse(
+        {
+            "success": True,
+            "file_url": file_url,
+            "file_name": file_name,
+            "storage": {
+                "used": updated_storage["used"],
+                "max": updated_storage["max"],
+                "percentage": updated_storage["percentage"],
+                "used_formatted": filesizeformat(updated_storage["used"]),
+                "max_formatted": filesizeformat(updated_storage["max"]),
+            },
+        }
+    )

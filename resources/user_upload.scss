@@ -96,6 +96,36 @@
         background: white;
     }
 
+    .upload-progress-bar {
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .progress-bar-track {
+            flex: 1;
+            height: 8px;
+            background: $background_gray;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, $theme_color, color.adjust($theme_color, $lightness: 8%));
+            border-radius: 4px;
+            transition: width 0.2s ease;
+            width: 0%;
+        }
+
+        .progress-percent {
+            font-size: 12px;
+            color: $widget_black;
+            min-width: 35px;
+            text-align: right;
+        }
+    }
+
     #upload-status {
         margin-top: 10px;
         padding: 10px;
