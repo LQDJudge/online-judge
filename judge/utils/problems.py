@@ -13,6 +13,7 @@ from django.utils.translation import gettext as _, gettext_noop
 from django.http import Http404
 
 from judge.models import Problem, Submission
+from judge.models.course import BestSubmission
 from judge.ml.vector_store import VectorStore
 from judge.caching import cache_wrapper
 
@@ -63,11 +64,9 @@ def contest_completed_ids(participation):
 @cache_wrapper(prefix="user_complete")
 def user_completed_ids(profile):
     result = set(
-        Submission.objects.filter(
-            user=profile, result="AC", points=F("problem__points")
-        )
-        .values_list("problem_id", flat=True)
-        .distinct()
+        BestSubmission.objects.filter(
+            user=profile, points__gte=F("case_total"), case_total__gt=0
+        ).values_list("problem_id", flat=True)
     )
     return result
 
@@ -90,20 +89,22 @@ def contest_attempted_ids(participation):
 @cache_wrapper(prefix="user_attempted")
 def user_attempted_ids(profile):
     result = {
-        id: {
-            "achieved_points": points,
-            "max_points": max_points,
-            "last_submission": last_submission,
-            "code": problem_code,
-            "name": problem_name,
+        bs["problem_id"]: {
+            "achieved_points": bs["points"],
+            "max_points": bs["case_total"],
+            "last_submission": bs["submission_id"],
+            "code": bs["problem__code"],
+            "name": bs["problem__name"],
         }
-        for id, max_points, problem_code, problem_name, points, last_submission in (
-            Submission.objects.filter(user=profile)
-            .values_list(
-                "problem__id", "problem__points", "problem__code", "problem__name"
-            )
-            .annotate(points=Max("points"), last_submission=Max("id"))
-            .filter(points__lt=F("problem__points"))
+        for bs in BestSubmission.objects.filter(user=profile)
+        .exclude(points__gte=F("case_total"), case_total__gt=0)
+        .values(
+            "problem_id",
+            "problem__code",
+            "problem__name",
+            "points",
+            "case_total",
+            "submission_id",
         )
     }
     return result
@@ -262,9 +263,17 @@ def finished_submission(sub, is_delete=False):
         keys += ["contest_attempted:%d" % participation.id]
     cache.delete_many(keys)
 
-    # Update best submission cache for course lesson grade tracking
-    from judge.models import BestSubmission
+    if sub.result == "AC":
+        # Avoid circular import: contest_recommendation imports user_completed_ids from here
+        from judge.utils.contest_recommendation import (
+            get_recommended_contests,
+            _get_user_skill,
+        )
 
+        get_recommended_contests.dirty(sub.user)  # sub.user is the Profile object
+        _get_user_skill.dirty(sub.user)
+
+    # Update best submission cache for course lesson grade tracking
     if is_delete:
         # When deleting, recalculate best submission for this user/problem
         # The CASCADE delete will remove BestSubmission if it pointed to this submission,
@@ -322,18 +331,36 @@ def get_user_recommended_problems(
     all_problems = []
     for rec_type, limit in zip(recommendation_types, limits):
         all_problems += get_problem_ids_from_type(rec_type, limit)
-    if shuffle:
-        seed = datetime.now().strftime("%d%m%Y")
-        random.Random(seed).shuffle(all_problems)
 
-    # deduplicate problems
-    res = []
-    used_pid = set()
-
+    # deduplicate, preserving scores where available
+    seen = set()
+    deduped = []
     for obj in all_problems:
         if type(obj) == tuple:
-            obj = obj[1]
-        if obj not in used_pid:
-            res.append(obj)
-            used_pid.add(obj)
-    return res
+            score, pid = obj
+        else:
+            score, pid = 0.0, obj
+        if pid not in seen:
+            deduped.append((score, pid))
+            seen.add(pid)
+
+    if shuffle and deduped:
+        # Weighted shuffle: higher-scored items more likely near top
+        seed = datetime.now().strftime("%d%m%Y")
+        rng = random.Random(seed)
+        result = []
+        remaining = list(deduped)
+        while remaining:
+            weights = [max(s, 0.01) ** 3 for s, _ in remaining]
+            total = sum(weights)
+            r = rng.random() * total
+            cumulative = 0
+            for i, (s, pid) in enumerate(remaining):
+                cumulative += weights[i]
+                if cumulative >= r:
+                    result.append(pid)
+                    remaining.pop(i)
+                    break
+        return result
+
+    return [pid for _, pid in deduped]

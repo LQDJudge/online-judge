@@ -107,6 +107,7 @@ __all__ = [
     "ContestClarificationView",
     "update_contest_mode",
     "OfficialContestList",
+    "RecommendedContestList",
     "ContestProblemset",
 ]
 
@@ -240,7 +241,7 @@ class ContestList(
         if not self.org_query and self.request.organization:
             self.org_query = [self.request.organization.id]
         if self.hide_organization_contests:
-            queryset = queryset.filter(organizations=None)
+            queryset = queryset.filter(organizations=None, is_in_course=False)
         if self.show_only_rated_contests:
             queryset = queryset.filter(is_rated=True)
         if self.org_query:
@@ -254,6 +255,25 @@ class ContestList(
             .filter(end_time__lt=self._now)
             .order_by(self.order, "key")
         )
+
+    @cached_property
+    def _recommended_contests_queryset(self):
+        """Get recommended contests for the current user. Computed once per request."""
+        from judge.utils.contest_recommendation import (
+            get_recommended_contests,
+            get_recommended_contests_for_anonymous,
+        )
+
+        if self.request.user.is_authenticated and self.request.profile:
+            scored = get_recommended_contests(self.request.profile, limit=100)
+            if scored:
+                contest_ids = [cid for cid, _ in scored]
+                preserved = Case(
+                    *[When(pk=pk, then=pos) for pos, pk in enumerate(contest_ids)]
+                )
+                return Contest.objects.filter(id__in=contest_ids).order_by(preserved)
+        contest_ids = get_recommended_contests_for_anonymous(limit=100)
+        return Contest.objects.filter(id__in=contest_ids).order_by("-user_count")
 
     def _active_participations(self):
         return ContestParticipation.objects.filter(
@@ -334,7 +354,6 @@ class ContestList(
         context["current_count"] = self._get_current_contests_queryset().count()
         context["future_count"] = self._get_future_contests_queryset().count()
         context["active_count"] = len(self._get_active_participations_queryset())
-
         context["now"] = self._now
         context["first_page_href"] = "."
         context["contest_query"] = self.contest_query
@@ -1778,6 +1797,58 @@ class OfficialContestList(ContestList):
         context["year_from"] = self.year_from
         context["year_to"] = self.year_to
 
+        return context
+
+
+class RecommendedContestList(ContestList):
+    title = gettext_lazy("For you")
+    template_name = "contest/recommended_list.html"
+
+    def setup_contest_list(self, request):
+        self.contest_query = request.GET.get("contest", "")
+        self.org_query = []
+        self.hide_organization_contests = False
+
+        self.show_only_rated_contests = 0
+        if self.GET_with_session(request, "show_only_rated_contests"):
+            self.show_only_rated_contests = 1
+
+    def get(self, request, *args, **kwargs):
+        self.current_tab = "recommended"
+        self.setup_contest_list(request)
+        return super(ContestList, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        key = "show_only_rated_contests"
+        if key in request.GET:
+            request.session[key] = request.GET.get(key) == "1"
+        else:
+            request.session[key] = False
+        return HttpResponseRedirect(request.get_full_path())
+
+    def get_queryset(self):
+        queryset = self._recommended_contests_queryset
+        if self.contest_query:
+            queryset = queryset.filter(
+                Q(key__icontains=self.contest_query)
+                | Q(name__icontains=self.contest_query)
+            )
+        if self.show_only_rated_contests:
+            queryset = queryset.filter(is_rated=True)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super(ContestList, self).get_context_data(**kwargs)
+        context["page_type"] = "for_you"
+        context["now"] = self._now
+        context["first_page_href"] = "."
+        context["contest_query"] = self.contest_query
+        context["show_only_rated_contests"] = int(self.show_only_rated_contests)
+        context.update(self.get_sort_context())
+        context.update(self.get_sort_paginate_context())
+        Contest.prefetch_organization_ids(
+            *[contest.id for contest in context["contests"]]
+        )
         return context
 
 

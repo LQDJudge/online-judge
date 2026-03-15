@@ -73,6 +73,7 @@ from judge.utils.problems import (
     get_user_recommended_problems,
     RecommendationType,
 )
+from judge.utils.contest_recommendation import get_contests_for_problem
 from judge.utils.storage_helpers import serve_file_inline
 from judge.utils.strings import safe_float_or_none, safe_int_or_none
 from judge.utils.tickets import own_ticket_filter
@@ -388,6 +389,9 @@ class ProblemDetail(
             context["related_problems"] = get_related_problems(
                 self.profile, self.object
             )
+
+        if not self.in_contest:
+            context["contest_list"] = get_contests_for_problem(self.object.id)
 
         # Add comment context
         context = self.get_comment_context(context)

@@ -655,6 +655,10 @@ urlpatterns = [
         r"^contests/official",
         paged_list_view(contests.OfficialContestList, "official_contest_list"),
     ),
+    re_path(
+        r"^contests/recommended",
+        paged_list_view(contests.RecommendedContestList, "recommended_contest_list"),
+    ),
     re_path(r"^courses/", paged_list_view(course.CourseList, "course_list")),
     re_path(r"^courses/add/$", course.CourseAdd.as_view(), name="course_add"),
     re_path(

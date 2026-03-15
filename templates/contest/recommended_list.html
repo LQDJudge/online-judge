@@ -1,0 +1,90 @@
+{% extends "contest/list.html" %}
+
+{% block js_media %}
+  <script type="text/javascript">
+    $(document).ready(function () {
+      var $form = $('form#filter-form');
+
+      $('#show_only_rated_contests').click(function () {
+        submitFormWithParams($form, "POST");
+      });
+      $('#go').click(function() {
+        submitFormWithParams($form, "GET");
+      });
+      $('.join-warning').click(function () {
+        let q = '{{ _('Are you sure you want to join?') }}\n' +
+        '{{ _('Joining a contest for the first time starts your timer, after which it becomes unstoppable.') }}';
+        {% if request.in_contest %}
+          q += " {{ _('By joining in this contest, you will automatically leave contest') }} \"{{ request.participation.contest.name }}\". ";
+        {% endif %}
+        return confirm(q);
+      });
+      $('.time-remaining').each(function () {
+        count_down($(this));
+      });
+      $form.on('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+        }
+      });
+      $('#search-contest').keypress(function (e) {
+        if (e.keyCode === 13) {
+          $('#go').click();
+        }
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block right_sidebar %}
+  <div class="right-sidebar">
+    <div class="sidebox">
+      <h3 class="colored-text"><i class="fa fa-filter"></i>{{ _('Filter') }}</h3>
+      <div class="sidebox-content">
+        <form id="filter-form" method="GET">
+          <input id="search-contest" type="text" name="contest" value="{{ contest_query or '' }}"
+                 placeholder="{{ _('Search contests...') }}">
+          <div style="margin-bottom: 1em;">
+            <input id="show_only_rated_contests" type="checkbox" name="show_only_rated_contests" value="1" {% if show_only_rated_contests %}checked{% endif %}>
+            <label for="show_only_rated_contests">{{ _('Show only rated contests') }}</label>
+          </div>
+          <div class="form-submit-group">
+            <a id="go" class="action-btn">{{ _('Go') }}</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block middle_content %}
+  {% if contests %}
+    {% for contest in contests %}
+      <div class="list-contest">
+        <div class="info-contest">
+          <div class="contest-title"> {{ _('Contests') }} </div>
+          {{ contest_head(contest, organization) }}
+        </div>
+        <div class="info-contest">
+          <div class="contest-title"> {{ _('Time') }} </div>
+          <div class="contest-block">
+            {{ time_left(contest) }}
+          </div>
+        </div>
+        <div class="info-contest contest-format-user">
+          {{ contest_format_user(contest, request, is_official=is_official) }}
+          <div class="participate-button">
+            {{ contest_join(contest, request, is_past=True) }}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+    {% if page_obj and page_obj.num_pages > 1 %}
+      <div style="margin-top: 10px;">
+        {% include "list-pages.html" %}
+      </div>
+    {% endif %}
+  {% else %}
+    <i>{{ _('No recommended contests available.') }}</i>
+  {% endif %}
+{% endblock %}

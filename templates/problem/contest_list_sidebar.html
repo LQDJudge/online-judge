@@ -1,0 +1,34 @@
+{% if contest_list %}
+  <div class="content-description">
+    <h4>{{ _('Contests') }}:</h4>
+    <ul style="list-style-type: none; margin: 0.3em;">
+      {% for contest in contest_list[:5] %}
+        <li>
+          <i class="fa fa-trophy"></i>
+          <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
+          <span class="gray" style="font-size: 0.85em;">
+            ({{ contest.start_time|date(_("j N, Y")) }})
+          </span>
+        </li>
+      {% endfor %}
+      {% if contest_list|length > 5 %}
+        <li>
+          <a href="#" onclick="document.getElementById('more-contests').style.display='block'; this.style.display='none'; return false;">
+            {{ _('Show %(count)d more...') % {'count': contest_list|length - 5} }}
+          </a>
+          <ul id="more-contests" style="display: none; list-style-type: none; margin: 0;">
+            {% for contest in contest_list[5:] %}
+              <li>
+                <i class="fa fa-trophy"></i>
+                <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
+                <span class="gray" style="font-size: 0.85em;">
+                  ({{ contest.start_time|date(_("j N, Y")) }})
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        </li>
+      {% endif %}
+    </ul>
+  </div>
+{% endif %}
