@@ -94,8 +94,10 @@ def vote_comment(request, delta):
             )
         vote.delete()
         Comment.objects.filter(id=comment_id).update(score=F("score") - vote.score)
+        _update_contribution_for_comment_vote(comment_id, -vote.score)
     else:
         Comment.objects.filter(id=comment_id).update(score=F("score") + delta)
+        _update_contribution_for_comment_vote(comment_id, delta)
 
     # Dirty comment cache since we updated score via QuerySet.update()
     Comment.dirty_cache(comment_id)
@@ -335,3 +337,25 @@ def post_comment(request):
             "perms": PermWrapper(request.user),
         },
     )
+
+
+def _update_contribution_for_comment_vote(comment_id, delta):
+    """Update contribution_points for the comment author based on vote delta."""
+    from judge.utils.contribution import is_content_public
+    from judge.models.profile import Profile
+
+    try:
+        comment = Comment.objects.get(id=comment_id)
+    except Comment.DoesNotExist:
+        return
+
+    if not comment.author_id:
+        return
+
+    if not is_content_public(comment.content_type, comment.object_id):
+        return
+
+    Profile.objects.filter(id=comment.author_id).update(
+        contribution_points=F("contribution_points") + delta
+    )
+    Profile.dirty_cache(comment.author_id)

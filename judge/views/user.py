@@ -49,7 +49,7 @@ from judge.tasks import import_users
 from judge.utils.problems import contest_completed_ids, user_completed_ids
 from judge.utils.ranker import ranker
 from judge.utils.unicode import utf8text
-from judge.models.profile import get_rating_rank, get_points_rank
+from judge.models.profile import get_rating_rank, get_points_rank, get_contribution_rank
 from judge.utils.users import (
     get_awards,
     get_contest_ratings,
@@ -154,6 +154,9 @@ class UserPage(TitleMixin, UserMixin, DetailView):
 
         if self.object.rating:
             context["rating_rank"] = get_rating_rank(self.object)
+
+        if self.object.contribution_points:
+            context["contribution_rank"] = get_contribution_rank(self.object)
 
         user_rating_stats = get_user_rating_stats(self.object.id)
         if user_rating_stats["min_rating"] is not None:

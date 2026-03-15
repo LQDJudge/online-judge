@@ -328,6 +328,7 @@ class Profile(CacheableModel):
     )
     points = models.FloatField(default=0, db_index=True)
     performance_points = models.FloatField(default=0, db_index=True)
+    contribution_points = models.IntegerField(default=0, db_index=True)
     problem_count = models.IntegerField(default=0, db_index=True)
     ace_theme = models.CharField(max_length=30, choices=ACE_THEMES, default="github")
     last_access = models.DateTimeField(
@@ -627,6 +628,7 @@ class Profile(CacheableModel):
         super().save(*args, **kwargs)
         get_points_rank.dirty(self.id)
         get_rating_rank.dirty(self.id)
+        get_contribution_rank.dirty(self.id)
 
     class Meta:
         indexes = [
@@ -664,6 +666,21 @@ def get_points_rank(profile):
         Profile.objects.filter(
             is_unlisted=False,
             performance_points__gt=profile.performance_points,
+        ).count()
+        + 1
+    )
+
+
+@cache_wrapper(prefix="gcr")
+def get_contribution_rank(profile):
+    if profile.is_unlisted:
+        return None
+    if not profile.contribution_points:
+        return None
+    return (
+        Profile.objects.filter(
+            is_unlisted=False,
+            contribution_points__gt=profile.contribution_points,
         ).count()
         + 1
     )
@@ -943,6 +960,28 @@ def _get_top_score_profile_inner(organization_id=None):
 def get_top_score_profile(organization_id=None):
     profile_ids = _get_top_score_profile_inner(organization_id)
     return Profile.get_cached_instances(*profile_ids)
+
+
+@cache_wrapper(prefix="Pgtcpi2", timeout=1800, expected_type=list)
+def _get_top_contribution_profile_inner(organization_id=None):
+    qs = Profile.objects.filter(is_unlisted=False, contribution_points__gt=0).order_by(
+        "-contribution_points"
+    )
+    if organization_id is not None:
+        qs = qs.filter(organizations=organization_id)
+    return list(qs.values_list("id", "contribution_points")[:10])
+
+
+def get_top_contribution_profile(organization_id=None):
+    results = _get_top_contribution_profile_inner(organization_id)
+    if not results:
+        return []
+    profile_ids = [r[0] for r in results]
+    scores = {r[0]: r[1] for r in results}
+    profiles = Profile.get_cached_instances(*profile_ids)
+    for profile in profiles:
+        profile.contribution_points = scores.get(profile.id, 0)
+    return profiles
 
 
 def _get_organization_batch(args_list):

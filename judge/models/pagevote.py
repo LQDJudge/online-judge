@@ -116,6 +116,11 @@ class VoteService:
         # Invalidate cache
         dirty_pagevote(pagevote)
 
+        # Update contribution points for content authors
+        delta = (value if value != 0 else 0) - old_value
+        if delta != 0:
+            _update_contribution_for_pagevote(pagevote, delta)
+
         # Return updated score
         return PageVote.objects.get(id=pagevote.id).score
 
@@ -127,3 +132,23 @@ class VoteService:
 
         pagevote = obj.get_or_create_pagevote()
         return pagevote.vote_score(user.profile)
+
+
+def _update_contribution_for_pagevote(pagevote, delta):
+    """Update contribution_points for authors of the voted content."""
+    from judge.utils.contribution import (
+        is_content_public,
+        get_content_author_profile_ids,
+    )
+
+    if not is_content_public(pagevote.content_type, pagevote.object_id):
+        return
+
+    author_ids = get_content_author_profile_ids(
+        pagevote.content_type, pagevote.object_id
+    )
+    if author_ids:
+        Profile.objects.filter(id__in=author_ids).update(
+            contribution_points=F("contribution_points") + delta
+        )
+        Profile.dirty_cache(*author_ids)

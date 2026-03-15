@@ -46,6 +46,13 @@
           <div class="stat-label" title="{{_('Rank by points')}}">{{_('Points Rank')}}</div>
         </div>
       </div>
+      <div class="user-stat-card">
+        <div class="stat-icon green"><i class="fa fa-pen"></i></div>
+        <div class="stat-content">
+          <div class="stat-value" title="{{_('Contribution Points')}}">{{ user.contribution_points if user.contribution_points else 0 }}</div>
+          <div class="stat-label">{{_('Contribution')}}</div>
+        </div>
+      </div>
     </div>
     {% if user.first_name %}
       <div class="user-fullname">

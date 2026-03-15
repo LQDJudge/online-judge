@@ -439,12 +439,9 @@ class OrganizationHomeView(OrganizationMixin):
                 authors=self.request.profile,
                 is_rejected=False,
             ).count()
-        # Communities show top contributors instead of top rated/scorer
-        if self.organization.is_community:
-            context["top_contributors"] = get_top_contributors(self.organization.id)
-        else:
-            context["top_rated"] = get_top_rating_profile(self.organization.id)
-            context["top_scorer"] = get_top_score_profile(self.organization.id)
+        context["top_contributors"] = get_top_contributors(self.organization.id)
+        context["top_rated"] = get_top_rating_profile(self.organization.id)
+        context["top_scorer"] = get_top_score_profile(self.organization.id)
 
         return context
 

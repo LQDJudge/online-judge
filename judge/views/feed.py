@@ -8,6 +8,7 @@ from judge.models.profile import (
     OrganizationProfile,
     get_top_rating_profile,
     get_top_score_profile,
+    get_top_contribution_profile,
     get_rating_rank,
     get_points_rank,
 )
@@ -87,12 +88,10 @@ class HomeFeedView(FeedView):
             OrganizationProfile.get_most_recent_organizations(self.request.profile)
         )
 
-        context["top_rated"] = get_top_rating_profile(
-            self.request.organization.id if self.request.organization else None
-        )
-        context["top_scorer"] = get_top_score_profile(
-            self.request.organization.id if self.request.organization else None
-        )
+        org_id = self.request.organization.id if self.request.organization else None
+        context["top_rated"] = get_top_rating_profile(org_id)
+        context["top_scorer"] = get_top_score_profile(org_id)
+        context["top_contributors"] = get_top_contribution_profile(org_id)
 
         if self.request.user.is_authenticated:
             context["rating_rank"] = get_rating_rank(self.request.profile)
