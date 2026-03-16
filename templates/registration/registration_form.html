@@ -23,8 +23,6 @@
   </script>
   {% if form.captcha and use_recaptcha %}
     {{ recaptcha_init(LANGUAGE_CODE) }}
-  {% elif form.captcha %}
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
   {% endif %}
 {% endblock %}
 

@@ -1,9 +1,7 @@
 {% extends "base.html" %}
 
 {% block js_media %}
-  {% if 'captcha' in form.fields %}
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
-  {% endif %}
+  {{ form.media.js }}
 {% endblock %}
 
 {% block body %}
