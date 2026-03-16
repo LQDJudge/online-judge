@@ -18,13 +18,16 @@ def is_turnstile_configured():
 class TurnstileWidget(forms.Widget):
     def render(self, name, value, attrs=None, renderer=None):
         site_key = settings.TURNSTILE_SITE_KEY
-        return mark_safe(f'<div class="cf-turnstile" data-sitekey="{site_key}"></div>')
+        return mark_safe(
+            f'<div id="turnstile-container"></div>'
+            f"<script>"
+            f"function onloadTurnstileCallback(){{turnstile.render('#turnstile-container',{{sitekey:'{site_key}'}});}}"
+            f"</script>"
+            f'<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadTurnstileCallback" async defer></script>'
+        )
 
     def value_from_datadict(self, data, files, name):
         return data.get("cf-turnstile-response", "")
-
-    class Media:
-        js = ("https://challenges.cloudflare.com/turnstile/v0/api.js",)
 
 
 class TurnstileField(forms.Field):
