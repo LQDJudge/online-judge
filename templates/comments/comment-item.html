@@ -40,7 +40,15 @@
       </div>
       <div class="action-bar">
         <div class="vote">
-          {% if profile %}
+          {% if profile and item.author_id == profile.id %}
+            <span class="upvote-link disabled" title="{{ _('You cannot vote on your own comment') }}">
+              <i class="icofont-arrow-up"></i>
+            </span>
+            <span class="comment-score">{{ item.score }}</span>
+            <span class="downvote-link disabled" title="{{ _('You cannot vote on your own comment') }}">
+              <i class="icofont-arrow-down"></i>
+            </span>
+          {% elif profile %}
             <a href="javascript:comment_upvote({{ item.id }})"
                class="upvote-link {% if item.vote_score == 1 %} voted{% endif %}">
               <i class="icofont-arrow-up"></i>

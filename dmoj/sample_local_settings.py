@@ -182,6 +182,11 @@ BRIDGED_DJANGO_ADDRESS = [("localhost", 9998)]
 # Set of email providers to ban when a user registers, e.g., {'throwawaymail.com'}.
 BAD_MAIL_PROVIDERS = set()
 
+## Cloudflare Turnstile (captcha for login and registration).
+## Get keys from https://dash.cloudflare.com/turnstile
+# TURNSTILE_SITE_KEY = 'your-site-key'
+# TURNSTILE_SECRET_KEY = 'your-secret-key'
+
 # The number of submissions that a staff user can rejudge at once without
 # requiring the permission 'Rejudge a lot of submissions'.
 # Uncomment to change the submission limit.

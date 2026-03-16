@@ -38,7 +38,7 @@ class CommentVotingTestCase(TransactionTestCase):
             },
         )
 
-        # Create user (staff to bypass voting requirement)
+        # Create voter user (staff to bypass voting requirement)
         self.user = User.objects.create_user(
             username="test_user", password="password123", is_staff=True
         )
@@ -46,7 +46,15 @@ class CommentVotingTestCase(TransactionTestCase):
             user=self.user, defaults={"language": self.language}
         )
 
-        # Create blog and comment
+        # Create comment author (different from voter)
+        self.author_user = User.objects.create_user(
+            username="comment_author", password="password123", is_staff=True
+        )
+        self.author_profile, _ = Profile.objects.get_or_create(
+            user=self.author_user, defaults={"language": self.language}
+        )
+
+        # Create blog and comment (authored by author, not voter)
         self.blog = BlogPost.objects.create(
             title="Test Blog",
             slug="test-blog",
@@ -58,7 +66,7 @@ class CommentVotingTestCase(TransactionTestCase):
         self.comment = Comment.objects.create(
             content_type=content_type,
             object_id=self.blog.id,
-            author=self.profile,
+            author=self.author_profile,
             body="Test comment",
         )
 
@@ -151,6 +159,20 @@ class CommentVotingTestCase(TransactionTestCase):
                 comment=self.comment, voter=self.profile
             ).exists()
         )
+
+    def test_self_vote_prevented(self):
+        """Test that users cannot vote on their own comments."""
+        # Login as the comment author
+        self.client.login(username="comment_author", password="password123")
+
+        response = self.client.post(
+            reverse("comment_upvote"),
+            {"id": self.comment.id},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.comment.refresh_from_db()
+        self.assertEqual(self.comment.score, 0)
 
     def test_vote_nonexistent_comment(self):
         """Test voting on a nonexistent comment returns 404."""

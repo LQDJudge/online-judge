@@ -40,6 +40,7 @@
       {% set actionbar_object_id = post.id %}
       {% set include_hr = False %}
       {% set share_url = request.build_absolute_uri(post.get_absolute_url()) %}
+      {% set is_own_content = request.user.is_authenticated and post.authors.filter(id=request.profile.id).exists() %}
       {% include "actionbar/list.html" %}
     </div>
     <div class="inline-comments-container" data-content-type-id="{{ get_content_type_id(post) }}" data-object-id="{{ post.id }}" style="display: none;"></div>

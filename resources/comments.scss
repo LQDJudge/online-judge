@@ -152,6 +152,13 @@
         }
     }
 
+    .action-bar .upvote-link.disabled,
+    .action-bar .downvote-link.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
     .action-bar .upvote-link.voted {
         color: #ff4500;
         opacity: 1;

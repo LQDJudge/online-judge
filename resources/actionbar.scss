@@ -95,6 +95,12 @@
         &:hover {
             background: rgba(0, 0, 0, 0.06);
         }
+
+        &.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
     }
 
     // Bookmark button styles

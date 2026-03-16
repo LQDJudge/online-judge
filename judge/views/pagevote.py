@@ -13,6 +13,7 @@ from django.conf import settings
 from django.http import JsonResponse
 
 from judge.utils.ratelimit import ratelimit
+from judge.utils.contribution import get_content_author_profile_ids
 from judge.models.pagevote import (
     PageVote,
     VoteService,
@@ -76,6 +77,16 @@ def vote_page(request):
     # Get the linked object
     linked_object = pagevote.linked_object
 
+    # Prevent self-voting
+    author_ids = get_content_author_profile_ids(
+        pagevote.content_type, pagevote.object_id
+    )
+    if request.profile.id in author_ids:
+        return HttpResponseBadRequest(
+            _("You cannot vote on your own content."),
+            content_type="text/plain",
+        )
+
     # Use the VoteService to handle the vote logic
     current_score = VoteService.vote(linked_object, request.user, delta)
 
@@ -94,4 +105,10 @@ class PageVoteDetailView(TemplateResponseMixin, SingleObjectMixin, View):
     def get_context_data(self, **kwargs):
         context = super(PageVoteDetailView, self).get_context_data(**kwargs)
         context["pagevote"] = self.object.get_or_create_pagevote()
+        if self.request.user.is_authenticated and hasattr(self.object, "authors"):
+            context["is_own_content"] = self.object.authors.filter(
+                id=self.request.profile.id
+            ).exists()
+        else:
+            context["is_own_content"] = False
         return context

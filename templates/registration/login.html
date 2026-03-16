@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block js_media %}
+  {% if 'captcha' in form.fields %}
+    {{ form.media.js }}
+  {% endif %}
+{% endblock %}
+
 {% block body %}
   <div id="login-panel">
     <form action="" method="post" class="form-area">
@@ -23,6 +29,12 @@
           </td>
         </tr>
       </table>
+      {% if 'captcha' in form.fields %}
+        <div style="margin-top: 0.5em">{{ form['captcha'] }}</div>
+        {% if form['captcha'].errors %}
+          <div class="form-field-error">{{ form['captcha'].errors }}</div>
+        {% endif %}
+      {% endif %}
       <hr>
       <button style="float:right;" type="submit" class="action-btn">{{ _('Login!') }}</button>
       <input type="hidden" name="next" value="{{ next }}">

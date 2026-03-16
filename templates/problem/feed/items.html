@@ -46,6 +46,7 @@
       {% set actionbar_object_id = problem.id %}
       {% set include_hr = False %}
       {% set share_url = request.build_absolute_uri(problem.get_absolute_url()) %}
+      {% set is_own_content = request.user.is_authenticated and problem.authors.filter(id=request.profile.id).exists() %}
       {% include "actionbar/list.html" %}
     </div>
     <div class="inline-comments-container" data-content-type-id="{{ get_content_type_id(problem) }}" data-object-id="{{ problem.id }}" style="display: none;"></div>

@@ -18,6 +18,7 @@ from registration.forms import RegistrationForm
 
 from judge.models import Language, Profile, TIMEZONE
 from judge.utils.recaptcha import ReCaptchaField, ReCaptchaWidget
+from judge.utils.turnstile import TurnstileField, is_turnstile_configured
 from judge.widgets import Select2Widget
 
 valid_id = re.compile(r"^\w+$")
@@ -45,7 +46,9 @@ class CustomRegistrationForm(RegistrationForm):
         widget=Select2Widget(attrs={"style": "width:100%"}),
     )
 
-    if ReCaptchaField is not None:
+    if is_turnstile_configured():
+        captcha = TurnstileField()
+    elif ReCaptchaField is not None:
         captcha = ReCaptchaField(widget=ReCaptchaWidget())
 
     def clean_email(self):
@@ -87,6 +90,9 @@ class RegistrationView(OldRegistrationView):
         kwargs["TIMEZONE_BG"] = settings.TIMEZONE_BG if tzmap else "#4E7CAD"
         kwargs["password_validators"] = get_default_password_validators()
         kwargs["tos_url"] = settings.TERMS_OF_SERVICE_URL
+        kwargs["use_recaptcha"] = (
+            ReCaptchaField is not None and not is_turnstile_configured()
+        )
         return super(RegistrationView, self).get_context_data(**kwargs)
 
     def register(self, form):

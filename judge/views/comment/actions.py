@@ -73,8 +73,17 @@ def vote_comment(request, delta):
     except ValueError:
         return HttpResponseBadRequest()
     else:
-        if not Comment.objects.filter(id=comment_id).exists():
+        try:
+            comment = Comment.objects.get(id=comment_id)
+        except Comment.DoesNotExist:
             raise Http404()
+
+    # Prevent self-voting
+    if comment.author_id == request.profile.id:
+        return HttpResponseBadRequest(
+            _("You cannot vote on your own comment."),
+            content_type="text/plain",
+        )
 
     vote = CommentVote()
     vote.comment_id = comment_id

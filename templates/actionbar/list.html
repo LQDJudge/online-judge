@@ -7,18 +7,29 @@
   {% endif %}
   <div class="page-vote actionbar {{'hide_texts_on_mobile' if hide_texts_on_mobile}} ">
     <span class="actionbar-block" style="justify-content: flex-start;">
-      <span id="like-button-{{pagevote.id}}"
-            class="like-button actionbar-button {% if pagevote.vote_score(request.profile) == 1 %}voted{% endif %}"
-            onclick="javascript:pagevote_upvote({{ pagevote.id }}, event)">
-        <span class="pagevote-score" id="pagevote-score-{{pagevote.id}}">{{ pagevote.score }}</span>
-        <i class="far fa-thumbs-up" style="font-size: large;"></i>
-        <span class="actionbar-text">{{_("Like")}}</span>
-      </span>
-      <span id="dislike-button-{{pagevote.id}}"
-            class="dislike-button actionbar-button {% if pagevote.vote_score(request.profile) == -1 %}voted{% endif %}"
-            onclick="javascript:pagevote_downvote({{ pagevote.id }}, event)">
-        <i class="far fa-thumbs-down" style="font-size: large;"></i>
-      </span>
+      {% if is_own_content %}
+        <span class="like-button actionbar-button disabled" title="{{ _('You cannot vote on your own content') }}">
+          <span class="pagevote-score" id="pagevote-score-{{pagevote.id}}">{{ pagevote.score }}</span>
+          <i class="far fa-thumbs-up" style="font-size: large;"></i>
+          <span class="actionbar-text">{{_("Like")}}</span>
+        </span>
+        <span class="dislike-button actionbar-button disabled" title="{{ _('You cannot vote on your own content') }}">
+          <i class="far fa-thumbs-down" style="font-size: large;"></i>
+        </span>
+      {% else %}
+        <span id="like-button-{{pagevote.id}}"
+              class="like-button actionbar-button {% if pagevote.vote_score(request.profile) == 1 %}voted{% endif %}"
+              onclick="javascript:pagevote_upvote({{ pagevote.id }}, event)">
+          <span class="pagevote-score" id="pagevote-score-{{pagevote.id}}">{{ pagevote.score }}</span>
+          <i class="far fa-thumbs-up" style="font-size: large;"></i>
+          <span class="actionbar-text">{{_("Like")}}</span>
+        </span>
+        <span id="dislike-button-{{pagevote.id}}"
+              class="dislike-button actionbar-button {% if pagevote.vote_score(request.profile) == -1 %}voted{% endif %}"
+              onclick="javascript:pagevote_downvote({{ pagevote.id }}, event)">
+          <i class="far fa-thumbs-down" style="font-size: large;"></i>
+        </span>
+      {% endif %}
     </span>
     {% if not hide_actionbar_comment %}
       <span class="actionbar-block">

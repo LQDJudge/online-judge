@@ -21,7 +21,7 @@
       });
     });
   </script>
-  {% if form.captcha %}
+  {% if form.captcha and use_recaptcha %}
     {{ recaptcha_init(LANGUAGE_CODE) }}
   {% endif %}
 {% endblock %}
