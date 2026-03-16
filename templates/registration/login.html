@@ -2,7 +2,7 @@
 
 {% block js_media %}
   {% if 'captcha' in form.fields %}
-    {{ form.media.js }}
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
   {% endif %}
 {% endblock %}
 
