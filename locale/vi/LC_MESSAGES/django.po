@@ -3913,13 +3913,11 @@ msgstr "%h:%m"
 
 #: judge/utils/turnstile.py:42
 msgid "Please complete the captcha."
-msgstr ""
+msgstr "Vui lòng hoàn thành captcha."
 
 #: judge/utils/turnstile.py:56 judge/utils/turnstile.py:61
-#, fuzzy
-#| msgid "An error occurred. Please try again."
 msgid "Captcha verification failed. Please try again."
-msgstr "Đã xảy ra lỗi. Vui lòng thử lại."
+msgstr "Xác minh captcha thất bại. Vui lòng thử lại."
 
 #: judge/utils/users.py:44
 msgid "M j, Y"
@@ -3961,10 +3959,8 @@ msgid "You must solve at least one problem before you can vote."
 msgstr "Bạn phải giải ít nhất 1 bài trước khi được vote."
 
 #: judge/views/comment/actions.py:84
-#, fuzzy
-#| msgid "You have a new comment"
 msgid "You cannot vote on your own comment."
-msgstr "Bạn có bình luận mới"
+msgstr "Bạn không thể vote bình luận của chính mình."
 
 #: judge/views/comment/actions.py:102
 msgid "You already voted."
@@ -5181,7 +5177,7 @@ msgstr "PageVote được chỉ định không tồn tại."
 
 #: judge/views/pagevote.py:86
 msgid "You cannot vote on your own content."
-msgstr ""
+msgstr "Bạn không thể vote bài viết của chính mình."
 
 #: judge/views/problem.py:142
 msgid "No such problem"
@@ -6117,7 +6113,7 @@ msgstr "Chọn file PDF"
 
 #: templates/actionbar/list.html:11 templates/actionbar/list.html:16
 msgid "You cannot vote on your own content"
-msgstr ""
+msgstr "Bạn không thể vote bài viết của chính mình"
 
 #: templates/actionbar/list.html:14 templates/actionbar/list.html:25
 msgid "Like"
@@ -6511,9 +6507,8 @@ msgstr ""
 #: templates/comments/comment-item.html:44
 #: templates/comments/comment-item.html:48
 #, fuzzy
-#| msgid "You have a new comment"
 msgid "You cannot vote on your own comment"
-msgstr "Bạn có bình luận mới"
+msgstr "Bạn không thể vote bình luận của chính mình"
 
 #: templates/comments/comment-item.html:62
 #: templates/comments/comment-item.html:63
