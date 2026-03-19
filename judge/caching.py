@@ -138,21 +138,21 @@ class CacheableModel(models.Model):
         super().__init__(*args, **kwargs)
 
         cls = self.__class__
-        if not hasattr(cls, "_field_names_cache"):
+        if not hasattr(cls, "_fields_with_getters"):
             # Cache which fields have getter methods
-            cls._fields_with_getters = {}
+            # Build in local variable first for thread safety
+            fields_with_getters = {}
             for field in cls._meta.fields:
                 field_name = field.name
                 getter_name = f"get_{field_name}"
-                cls._fields_with_getters[field_name] = hasattr(cls, getter_name)
+                fields_with_getters[field_name] = hasattr(cls, getter_name)
 
                 # For ForeignKey fields, also check for get_{field}_id getter
                 if isinstance(field, ForeignKey):
                     id_field_name = f"{field_name}_id"
                     id_getter_name = f"get_{id_field_name}"
-                    cls._fields_with_getters[id_field_name] = hasattr(
-                        cls, id_getter_name
-                    )
+                    fields_with_getters[id_field_name] = hasattr(cls, id_getter_name)
+            cls._fields_with_getters = fields_with_getters
 
     @classmethod
     def get_cached_dict(self, id):

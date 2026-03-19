@@ -196,7 +196,7 @@
             var $list = $container.find('.compact-comment-list');
             if (!$list.length) {
               $container.find('.inline-comments-empty').remove();
-              $container.find('.inline-new-comment-container').after('<ul class="top-level-comments compact-comment-list" id="inline-comments-' + config.contentTypeId + '-' + config.objectId + '"></ul>');
+              $container.find('.inline-comments-header').after('<ul class="top-level-comments compact-comment-list" id="inline-comments-' + config.contentTypeId + '-' + config.objectId + '"></ul>');
               $list = $container.find('.compact-comment-list');
             }
             $list.prepend(response);
