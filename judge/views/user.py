@@ -440,7 +440,15 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
     context_object_name = "users"
     template_name = "user/list.html"
     paginate_by = 20
-    all_sorts = frozenset(("points", "problem_count", "rating", "performance_points"))
+    all_sorts = frozenset(
+        (
+            "points",
+            "problem_count",
+            "rating",
+            "performance_points",
+            "contribution_points",
+        )
+    )
     default_desc = all_sorts
     default_sort = "-performance_points"
     filter_friend = False

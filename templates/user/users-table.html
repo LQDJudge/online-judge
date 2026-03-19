@@ -20,6 +20,11 @@
     {{ _('Problems') }}
     {%- if sort_links %}{{ sort_order.problem_count }}</a>{% endif %}
   </th>
+  <th class="contribution">
+    {% if sort_links %}<a href="{{ sort_links.contribution_points }}">{% endif %}
+    {{ _('Contribution') }}
+    {%- if sort_links %}{{ sort_order.contribution_points }}</a>{% endif %}
+  </th>
   <th class="about-column">{{ _('About') }}</th>
 {% endblock %}
 
@@ -38,6 +43,7 @@
 
 {% block after_point %}
   <td class="user-problem-count">{{ user.problem_count }}</td>
+  <td class="user-contribution">{{ user.contribution_points }}</td>
   <td>
     <div class="about-td">
       {{ user.about|markdown(lazy_load=True)|reference|str|safe }}

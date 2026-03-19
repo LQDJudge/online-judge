@@ -633,6 +633,10 @@ class Profile(CacheableModel):
     class Meta:
         indexes = [
             models.Index(fields=["is_unlisted", "performance_points"]),
+            models.Index(fields=["is_unlisted", "problem_count"]),
+            models.Index(fields=["is_unlisted", "rating"]),
+            models.Index(fields=["is_unlisted", "contribution_points"]),
+            models.Index(fields=["is_unlisted", "points"]),
         ]
         permissions = (
             ("test_site", "Shows in-progress development stuff"),
