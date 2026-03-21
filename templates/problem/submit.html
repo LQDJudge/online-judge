@@ -2,6 +2,9 @@
 
 {% block js_media %}
   <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
+  {% if output_only %}
+    <script type="text/javascript" src="{{ static('jszip/jszip.min.js') }}"></script>
+  {% endif %}
   {{ form.media.js }}
   <script type="text/javascript">
     function update_submit_area(code) {
@@ -10,10 +13,17 @@
       window.ace_source.getSession().setValue(code);
     }
 
+    function isOutputLanguage() {
+      return $('#id_language').find('option:selected').attr('data-name') === 'Output';
+    }
+
     function update_language_template() {
-      {% if output_only %}
+      if (isOutputLanguage()) {
         window.ace_source.env.editor.setReadOnly(true);
-      {% else %}
+        $('#id_source_file').attr('multiple', true);
+      } else {
+        window.ace_source.env.editor.setReadOnly(false);
+        $('#id_source_file').removeAttr('multiple');
         var source = $('textarea#id_source');
         if (source.val() == window.previous_template.replace(/\r/g, '') || source.val() == '') {
           var lang_id = $('#id_language').val();
@@ -32,7 +42,7 @@
             });
           }
         }
-      {% endif %}
+      }
     }
 
     {% if request.in_contest and next_valid_submit_time and not (submission_limit and submissions_left <= 0) %}
@@ -151,6 +161,29 @@
             event.preventDefault();
             return;
           }
+          if (isOutputLanguage()) {
+            var fileInput = $('#id_source_file')[0];
+            if (fileInput && fileInput.files.length > 0) {
+              var files = fileInput.files;
+              var needsZip = files.length > 1 || !files[0].name.endsWith('.zip');
+              if (needsZip) {
+                event.preventDefault();
+                var zip = new JSZip();
+                for (var i = 0; i < files.length; i++) {
+                  zip.file(files[i].name, files[i]);
+                }
+                zip.generateAsync({type: 'blob'}).then(function (blob) {
+                  var zippedFile = new File([blob], 'output.zip', {type: 'application/zip'});
+                  var dataTransfer = new DataTransfer();
+                  dataTransfer.items.add(zippedFile);
+                  fileInput.files = dataTransfer.files;
+                  $('#submit-button').prop('disabled', true).val("{{ _('Submitting...') }}");
+                  $('#problem_submit')[0].submit();
+                });
+                return;
+              }
+            }
+          }
           $('#submit-button').prop('disabled', true).val("{{ _('Submitting...') }}");
         });
 
@@ -167,16 +200,22 @@
         }
 
         $('#id_source_file').on('click change', function(e) {
-          var file = $(this)[0].files[0];
-          if (file) {
-            if (file.name.endsWith('zip')) {
-              update_submit_area(file.name);
-            }
-            else if (file.name.endsWith('sb3')) {
-              update_submit_area(file.name);
-            }
-            else {
-              get_source_default(file);
+          var files = $(this)[0].files;
+          if (files.length > 0) {
+            if (isOutputLanguage()) {
+              var names = [];
+              for (var i = 0; i < files.length; i++) {
+                names.push(files[i].name);
+              }
+              update_submit_area(names.join('\n'));
+            } else {
+              var file = files[0];
+              if (file.name.endsWith('zip') || file.name.endsWith('sb3')) {
+                update_submit_area(file.name);
+              }
+              else {
+                get_source_default(file);
+              }
             }
           }
         })
