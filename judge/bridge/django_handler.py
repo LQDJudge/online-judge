@@ -19,6 +19,7 @@ class DjangoHandler(ZlibPacketHandler):
             "terminate-submission": self.on_termination,
             "disconnect-judge": self.on_disconnect_request,
             "validate-request": self.on_validate_request,
+            "update-problems": self.on_update_problems,
         }
         self.judges = judges
 
@@ -63,6 +64,10 @@ class DjangoHandler(ZlibPacketHandler):
             "name": "validate-received" if success else "validate-failed",
             "validate-id": validate_id,
         }
+
+    def on_update_problems(self, data):
+        self.judges.broadcast_update_problems()
+        return {"name": "update-problems-received"}
 
     def on_disconnect_request(self, data):
         judge_id = data["judge-id"]

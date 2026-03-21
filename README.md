@@ -283,6 +283,10 @@ $ dmoj -c judge.yml localhost
 
 - Note: Each time you want to run judges later, open 1 tab for bridge and n tabs for judges. Each judge needs a different yml file (containing different authentication)
 
+### Distributed Judges (JuiceFS)
+
+For running judges on multiple servers, you can use [JuiceFS](https://juicefs.com/) to share problem data across machines via a POSIX-compatible distributed filesystem backed by S3/R2. See [docs/juicefs-setup.md](docs/juicefs-setup.md) for the full setup guide.
+
 ## Common Installation Issues
 
 1. **Missing `local_settings.py`**: You need to copy the `local_settings.py` in order to pass the check.

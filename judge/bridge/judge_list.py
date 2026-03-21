@@ -101,6 +101,15 @@ class JudgeList(object):
         with self.lock:
             self._handle_free_judge(judge)
 
+    def broadcast_update_problems(self):
+        """Tell all connected judges to rescan their problem list."""
+        with self.lock:
+            for judge in self.judges:
+                try:
+                    judge.send({"name": "update-problems"})
+                except Exception:
+                    logger.exception("Failed to send update-problems to %s", judge.name)
+
     def remove(self, judge):
         with self.lock:
             sub = judge.get_current_submission()

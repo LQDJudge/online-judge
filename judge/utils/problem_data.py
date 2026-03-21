@@ -330,6 +330,22 @@ class ProblemDataCompiler(object):
             self.data.feedback = ""
             self.data.save()
             problem_data_storage.save(yml_file, ContentFile(init))
+            self._notify_judges()
+
+    def _notify_judges(self):
+        """Notify connected judges that problem data has changed.
+
+        Gated behind DMOJ_PROBLEM_DATA_PUSH_UPDATE setting (default True).
+        Set to False if you want to rely entirely on watchdog monitoring.
+        """
+        if not getattr(settings, "DMOJ_PROBLEM_DATA_PUSH_UPDATE", True):
+            return
+        from judge.judgeapi import notify_problem_update
+
+        try:
+            notify_problem_update()
+        except Exception:
+            pass  # Non-critical: logged in notify_problem_update
 
     @classmethod
     def generate(cls, *args, **kwargs):

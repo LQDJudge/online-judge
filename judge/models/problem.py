@@ -690,6 +690,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         super(Problem, self).save(*args, **kwargs)
         if code_changed and should_move_data:
             self.handle_code_change()
+            self._notify_judges_update()
 
         if not hasattr(self, "_updating_stats_only"):
             self._invalidate_pdf_cache()
@@ -715,6 +716,17 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
     def delete(self, *args, **kwargs):
         super().delete(*args, **kwargs)
         problem_data_storage.delete_directory(self.code)
+        self._notify_judges_update()
+
+    def _notify_judges_update(self):
+        if not getattr(settings, "DMOJ_PROBLEM_DATA_PUSH_UPDATE", True):
+            return
+        from judge.judgeapi import notify_problem_update
+
+        try:
+            notify_problem_update()
+        except Exception:
+            pass
 
     save.alters_data = True
     delete.alters_data = True

@@ -149,6 +149,19 @@ def validate_testcases(problem_code, validate_id):
     return response.get("name") == "validate-received"
 
 
+def notify_problem_update():
+    """Notify all connected judges to rescan their problem list.
+
+    Called after problem data changes (init.yml regenerated).
+    Non-critical: if the bridge is unreachable, judges will pick up
+    changes on next restart or manual trigger.
+    """
+    try:
+        judge_request({"name": "update-problems"})
+    except Exception:
+        logger.exception("Failed to send problem update notification to bridge")
+
+
 def disconnect_judge(judge, force=False):
     judge_request(
         {"name": "disconnect-judge", "judge-id": judge.name, "force": force},

@@ -56,6 +56,9 @@ DMOJ_CAMO_KEY = None
 DMOJ_CAMO_HTTPS = False
 DMOJ_CAMO_EXCLUDE = ()
 DMOJ_PROBLEM_DATA_ROOT = None
+# Push problem data updates to judges via bridge (default: True).
+# Set to False to rely entirely on watchdog filesystem monitoring.
+DMOJ_PROBLEM_DATA_PUSH_UPDATE = True
 DMOJ_PROBLEM_MIN_TIME_LIMIT = 0  # seconds
 DMOJ_PROBLEM_MAX_TIME_LIMIT = 60  # seconds
 DMOJ_PROBLEM_MIN_MEMORY_LIMIT = 0  # kilobytes
