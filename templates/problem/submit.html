@@ -19,6 +19,7 @@
 
     function update_language_template() {
       if (isOutputLanguage()) {
+        update_submit_area("{{ _('Upload a .zip file or select multiple output files.') }}");
         window.ace_source.env.editor.setReadOnly(true);
         $('#id_source_file').attr('multiple', true);
       } else {
