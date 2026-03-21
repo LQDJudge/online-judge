@@ -317,6 +317,20 @@
         <div class="info-box">
           <div class="info-title">{{ _('Actions') }}</div>
           <div class="info-data">
+            {% if ticket.content_type.model == 'problem' %}
+              <a href="{{ url('problem_ticket_list', ticket.linked_item.code) }}" class="ticket-history-link">
+                <i class="fa fa-arrow-left"></i> {{ _('Ticket list') }}
+              </a>
+            {% elif ticket.content_type.model == 'blogpost' %}
+              <a href="{{ url('blog_post_ticket_list', ticket.linked_item.id) }}" class="ticket-history-link">
+                <i class="fa fa-arrow-left"></i> {{ _('Ticket list') }}
+              </a>
+            {% else %}
+              <a href="{{ url('ticket_list') }}" class="ticket-history-link">
+                <i class="fa fa-arrow-left"></i> {{ _('Ticket list') }}
+              </a>
+            {% endif %}
+            <br>
             <a href="{{ url('ticket_logs', ticket.id) }}" class="ticket-history-link">
               <i class="fa fa-history"></i> {{ _('View history') }}
             </a>

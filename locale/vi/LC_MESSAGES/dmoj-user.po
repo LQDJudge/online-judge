@@ -43,7 +43,7 @@ msgid "Bug Report"
 msgstr "Báo cáo lỗi"
 
 msgid "Status"
-msgstr "Máy chấm"
+msgstr "Trạng thái"
 
 msgid "2sat"
 msgstr "2-SAT"

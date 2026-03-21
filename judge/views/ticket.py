@@ -417,6 +417,65 @@ class TicketAssigneeEditView(LoginRequiredMixin, TicketMixin, SingleObjectFormVi
         )
 
 
+class TicketBulkAssignView(LoginRequiredMixin, View):
+    def post(self, request):
+        if not request.user.has_perm("judge.change_ticket"):
+            return JsonResponse(
+                {"success": False, "error": _("Permission denied.")}, status=403
+            )
+
+        ticket_ids = request.POST.getlist("ticket_ids[]")
+        assignee_usernames = request.POST.getlist("assignees[]")
+        action = request.POST.get("action", "add")
+
+        if not ticket_ids:
+            return JsonResponse(
+                {"success": False, "error": _("No tickets selected.")}, status=400
+            )
+
+        assignees = Profile.objects.filter(user__username__in=assignee_usernames)
+        assignee_ids = set(assignees.values_list("id", flat=True))
+        tickets = Ticket.objects.filter(id__in=ticket_ids)
+        updated = 0
+
+        for ticket in tickets:
+            with revisions.create_revision():
+                old_ids = set(ticket.assignees.values_list("id", flat=True))
+
+                if action == "remove":
+                    to_remove = assignee_ids & old_ids
+                    if to_remove:
+                        ticket.assignees.remove(*to_remove)
+                        ticket.get_assignee_ids.dirty(ticket)
+                        names = list(
+                            Profile.objects.filter(id__in=to_remove).values_list(
+                                "user__username", flat=True
+                            )
+                        )
+                        comment = f"Bulk removed assignees: {', '.join(names)}"
+                    else:
+                        comment = "Bulk assignees update (no changes)"
+                else:
+                    to_add = assignee_ids - old_ids
+                    if to_add:
+                        ticket.assignees.add(*to_add)
+                        ticket.get_assignee_ids.dirty(ticket)
+                        names = list(
+                            Profile.objects.filter(id__in=to_add).values_list(
+                                "user__username", flat=True
+                            )
+                        )
+                        comment = f"Bulk added assignees: {', '.join(names)}"
+                    else:
+                        comment = "Bulk assignees update (no changes)"
+
+                revisions.set_user(request.user)
+                revisions.set_comment(comment)
+                updated += 1
+
+        return JsonResponse({"success": True, "updated": updated})
+
+
 class TicketList(LoginRequiredMixin, ListView):
     model = Ticket
     template_name = "ticket/list.html"
@@ -444,6 +503,10 @@ class TicketList(LoginRequiredMixin, ListView):
     def filter_assignees(self):
         return self.request.GET.getlist("assignee")
 
+    @cached_property
+    def filter_status(self):
+        return self.request.GET.get("status", "open")
+
     def GET_with_session(self, key):
         if not self.request.GET:
             return self.request.session.get(key, False)
@@ -462,6 +525,10 @@ class TicketList(LoginRequiredMixin, ListView):
             queryset = queryset.filter(own_ticket_filter(self.profile.id))
         elif not self.can_edit_all:
             queryset = filter_visible_tickets(queryset, self.user, self.profile)
+        if self.filter_status == "open":
+            queryset = queryset.filter(is_open=True)
+        elif self.filter_status == "closed":
+            queryset = queryset.filter(is_open=False)
         if self.filter_assignees:
             queryset = queryset.filter(
                 assignees__user__username__in=self.filter_assignees
@@ -481,6 +548,7 @@ class TicketList(LoginRequiredMixin, ListView):
         context["can_edit_all"] = self.can_edit_all
         context["filter_status"] = {
             "own": self.GET_with_session("own"),
+            "status": self.filter_status,
             "user": self.filter_users,
             "assignee": self.filter_assignees,
             "user_id": json.dumps(

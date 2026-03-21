@@ -5857,7 +5857,7 @@ msgstr "Thống kê"
 #: templates/quiz/grading/quiz_grade.html:60 templates/quiz/manage.html:71
 #: templates/submission/list.html:324
 msgid "Status"
-msgstr "Kết quả chấm"
+msgstr "Trạng thái"
 
 #: judge/views/status.py:131
 msgid "Version matrix"
@@ -11566,6 +11566,24 @@ msgstr "Chưa có mục nào."
 
 #~ msgid "%s in %s"
 #~ msgstr "%s trong %s"
+
+msgid "selected"
+msgstr "đã chọn"
+
+msgid "Search users..."
+msgstr "Tìm kiếm người dùng..."
+
+msgid "Assign"
+msgstr "Phân công"
+
+msgid "Ticket list"
+msgstr "Danh sách báo cáo"
+
+msgid "Error updating assignees."
+msgstr "Lỗi khi cập nhật người phụ trách."
+
+msgid "No tickets selected."
+msgstr "Chưa chọn báo cáo nào."
 
 #~ msgid "Page %s of %s"
 #~ msgstr "Trang %s/%s"

@@ -1403,6 +1403,11 @@ urlpatterns = [
                 re_path(
                     r"^ajax$", ticket.TicketListDataAjax.as_view(), name="ticket_ajax"
                 ),
+                re_path(
+                    r"^bulk-assign$",
+                    ticket.TicketBulkAssignView.as_view(),
+                    name="ticket_bulk_assign",
+                ),
             ]
         ),
     ),

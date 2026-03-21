@@ -1,4 +1,7 @@
 <tr id="ticket-{{ ticket.id }}">
+  {% if can_edit_all %}
+    <td><input type="checkbox" class="ticket-select" data-ticket-id="{{ ticket.id }}"></td>
+  {% endif %}
   <td><i class="fa {% if ticket.is_open %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i></td>
   <td>{{ ticket.id }}</td>
   <td><a href="{{ url('ticket', ticket.id) }}">{{ ticket.title }}</a></td>

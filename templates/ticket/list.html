@@ -63,6 +63,29 @@
     a.user-redirect:hover {
       text-shadow: 0 0 2px blue;
     }
+
+
+    #bulk-action-bar {
+      display: none;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    #bulk-action-bar.active {
+      display: flex;
+    }
+
+    #bulk-action-bar .selected-count {
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    #bulk-action-bar .select2-container {
+      min-width: 300px;
+    }
   </style>
 {% endblock %}
 
@@ -202,6 +225,63 @@
         {ajax: {url: '{{ url('ticket_user_select2_ajax') }}'}}));
       $('#filter-assignee').select2($.extend(true, {}, user_select2,
         {ajax: {url: '{{ url('ticket_assignee_select2_ajax') }}'}}));
+
+      {% if can_edit_all %}
+        // Bulk assign
+        var $bar = $('#bulk-action-bar');
+        var $count = $bar.find('.selected-count');
+
+        function updateBulkBar() {
+          var n = $('.ticket-select:checked').length;
+          if (n > 0) {
+            $bar.addClass('active');
+            $count.text(n + ' {{ _('selected') }}');
+          } else {
+            $bar.removeClass('active');
+          }
+        }
+
+        $tbody.on('change', '.ticket-select', updateBulkBar);
+
+        $('#select-all').change(function () {
+          $('.ticket-select').prop('checked', $(this).is(':checked'));
+          updateBulkBar();
+        });
+
+        $('#bulk-assignee-select').select2($.extend(true, {}, user_select2, {
+          ajax: {url: '{{ url('ticket_assignee_select2_ajax') }}'},
+          placeholder: '{{ _('Search users...') }}',
+          allowClear: true
+        }));
+
+        $('#bulk-assign-btn').click(function () {
+          var ticketIds = $('.ticket-select:checked').map(function () {
+            return $(this).data('ticket-id');
+          }).get();
+          var assignees = $('#bulk-assignee-select').val() || [];
+
+          if (!ticketIds.length) return;
+
+          $.ajax({
+            url: '{{ url('ticket_bulk_assign') }}',
+            method: 'POST',
+            data: {
+              'ticket_ids[]': ticketIds,
+              'assignees[]': assignees,
+              'action': $('#bulk-action-type').val(),
+              csrfmiddlewaretoken: $.cookie('csrftoken')
+            },
+            success: function (data) {
+              window.location.reload();
+            },
+            error: function (xhr) {
+              var msg = '{{ _('Error updating assignees.') }}';
+              try { msg = JSON.parse(xhr.responseText).error; } catch(e) {}
+              alert(msg);
+            }
+          });
+        });
+      {% endif %}
     });
   </script>
 
@@ -224,6 +304,15 @@
         </div>
 
         <form id="filter-form" name="form" action="" method="get">
+          <div id="status-box" class="filter-select2" style="padding-bottom: 1em;">
+            <label>{{ _('Status') }}</label>
+            <select id="filter-status" style="width: 100%" name="status">
+              <option value="open"{% if filter_status.status == 'open' %} selected{% endif %}>{{ _('Open') }}</option>
+              <option value="closed"{% if filter_status.status == 'closed' %} selected{% endif %}>{{ _('Closed') }}</option>
+              <option value="all"{% if filter_status.status == 'all' %} selected{% endif %}>{{ _('All') }}</option>
+            </select>
+          </div>
+
           <div id="own-box" class="filter-check" style="padding-bottom: 1em;">
             <input id="own" type="checkbox" name="own"{% if filter_status.own %} checked{% endif %} value="1">
             <label for="own">{{ _('Show my tickets only') }}</label>
@@ -239,7 +328,7 @@
           </div>
 
           <div id="assignee-box" class="filter-select2" style="padding-bottom: 1em;">
-            <label for="filter-user">{{ _('Assignee') }}</label>
+            <label for="filter-assignee">{{ _('Assignee') }}</label>
             <select id="filter-assignee" style="width: 100%" multiple name="assignee">
               {% for username in filter_status.assignee %}
                 <option value="{{ username }}" selected>{{ username }}</option>
@@ -256,9 +345,23 @@
       {% if page_obj.num_pages > 1 %}
         <div style="margin-bottom:6px; margin-top:3px">{% include "list-pages.html" %}</div>
       {% endif %}
+      {% if can_edit_all %}
+        <div id="bulk-action-bar">
+          <span class="selected-count"></span>
+          <select id="bulk-action-type">
+            <option value="add">{{ _('Add') }}</option>
+            <option value="remove">{{ _('Remove') }}</option>
+          </select>
+          <select id="bulk-assignee-select" multiple></select>
+          <button id="bulk-assign-btn" class="action-btn">{{ _('Apply') }}</button>
+        </div>
+      {% endif %}
       <table id="ticket-list" class="table h-scrollable-table">
         <thead>
           <tr>
+            {% if can_edit_all %}
+              <th><input type="checkbox" id="select-all"></th>
+            {% endif %}
             <th></th>
             <th>{{ _('ID') }}</th>
             <th>{{ _('Title') }}</th>
