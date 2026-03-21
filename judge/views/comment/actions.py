@@ -315,6 +315,9 @@ def post_comment(request):
     # Notify page authors if applicable
     if hasattr(target_object, "authors"):
         page_authors = list(target_object.authors.values_list("id", flat=True))
+        # Exclude parent comment author to avoid duplicate notification
+        if comment.parent and comment.parent.author_id in page_authors:
+            page_authors.remove(comment.parent.author_id)
         Notification.objects.bulk_create_notifications(
             user_ids=page_authors,
             category=NotificationCategory.COMMENT,

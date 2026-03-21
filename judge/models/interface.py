@@ -135,10 +135,7 @@ class BlogPost(models.Model, PageVotable, Bookmarkable):
             return False
         if user.has_perm("judge.edit_all_post"):
             return True
-        return (
-            user.has_perm("judge.change_blogpost")
-            and self.authors.filter(id=user.profile.id).exists()
-        )
+        return user.profile.id in self.get_author_ids()
 
     @cache_wrapper(prefix="BPgai", expected_type=list)
     def get_author_ids(self):
