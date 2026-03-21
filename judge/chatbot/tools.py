@@ -85,6 +85,12 @@ def get_tool_executables(problem):
     def _make_executor(func, tool_name):
         @sync_to_async
         def executor(**kwargs):
+            # Close stale DB connections before ORM queries.
+            # Celery workers hold long-lived connections that MySQL
+            # may drop during idle periods between chat messages.
+            from django.db import close_old_connections
+
+            close_old_connections()
             # Accept and ignore any kwargs the LLM may pass —
             # tools are pre-bound to the problem instance.
             return func(problem)
