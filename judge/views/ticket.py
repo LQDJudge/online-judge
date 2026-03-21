@@ -376,6 +376,7 @@ class TicketAssigneeEditView(LoginRequiredMixin, TicketMixin, SingleObjectFormVi
 
             with revisions.create_revision():
                 ticket.assignees.set(form.cleaned_data["assignees"])
+                ticket.get_assignee_ids.dirty(ticket)
 
                 # Create descriptive comment about the change
                 if old_assignees != new_assignees:
