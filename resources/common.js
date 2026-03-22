@@ -304,8 +304,9 @@ function populateCopyButton() {
 
     // Copy functionality for code blocks without filename (click on copy button area)
     $(document).on('click.copy', '.content-description pre', function(e) {
-        // Skip if this pre follows a filename header (handled above)
-        if ($(this).prev('.filename').length > 0) return;
+        // Skip if this pre follows a visible filename header (handled above)
+        var $filename = $(this).prev('.filename');
+        if ($filename.length > 0 && $filename.is(':visible')) return;
 
         var rect = this.getBoundingClientRect();
         var clickX = e.clientX - rect.left;
@@ -324,6 +325,58 @@ function populateCopyButton() {
             copyToClipboard(textToCopy, this);
         }
     });
+}
+
+function initTabbedSets() {
+    // Initialize any uninitialized tabbed sets
+    $('.content-description .tabbed-set').not('[data-tabbed-init]').each(function() {
+        var $set = $(this);
+        $set.attr('data-tabbed-init', '1');
+        var $labels = $set.find('.tabbed-labels label');
+        var $blocks = $set.find('.tabbed-content .tabbed-block');
+
+        // Activate first tab by default
+        $labels.first().addClass('tabbed-label--active');
+        $blocks.first().addClass('tabbed-block--active');
+    });
+
+    // Delegated click handler (set up once)
+    if (!window._tabbedClickBound) {
+        window._tabbedClickBound = true;
+
+        $(document).on('click', '.tabbed-set .tabbed-labels label', function() {
+            var $label = $(this);
+            var $set = $label.closest('.tabbed-set');
+            var $labels = $set.find('.tabbed-labels label');
+            var $blocks = $set.find('.tabbed-content .tabbed-block');
+            var $inputs = $set.find('> input[type="radio"]');
+            var index = $labels.index($label);
+
+            $labels.removeClass('tabbed-label--active');
+            $blocks.removeClass('tabbed-block--active');
+            $label.addClass('tabbed-label--active');
+            $blocks.eq(index).addClass('tabbed-block--active');
+            $inputs.eq(index).prop('checked', true);
+        });
+    }
+}
+
+// Observe DOM for dynamically added content (e.g., AJAX preview)
+// Shared observer for all features that need re-init on dynamic content
+function initDynamicContentObserver() {
+    if (window._dynamicObserverBound) return;
+    window._dynamicObserverBound = true;
+
+    if (window.MutationObserver) {
+        var _debounce = null;
+        new MutationObserver(function() {
+            if (_debounce) return;
+            _debounce = setTimeout(function() {
+                _debounce = null;
+                initTabbedSets();
+            }, 100);
+        }).observe(document.body, { childList: true, subtree: true });
+    }
 }
 
 function copyToClipboard(text, target) {
@@ -792,7 +845,9 @@ function onWindowReady() {
     $('#logout').on('click', () => $('#logout-form').submit());
 
     populateCopyButton();
-    
+    initTabbedSets();
+    initDynamicContentObserver();
+
     $('a').click(function() {
         var href = $(this).attr('href');
         var target = $(this).attr('target');

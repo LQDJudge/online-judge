@@ -796,6 +796,115 @@ html .md-typeset .admonition-title:last-child,html .md-typeset summary:last-chil
   color: var(--md-code-hl-generic-color);
 }
 
+/* Tabbed Code Blocks (alternate style) */
+.content-description .tabbed-set {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  margin: 1.5em 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.content-description .tabbed-set > input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.content-description .tabbed-set .tabbed-labels {
+  display: flex;
+  width: 100%;
+  overflow-x: auto;
+  background: var(--md-filename-bg-color);
+  scrollbar-width: none;
+}
+
+.content-description .tabbed-set .tabbed-labels::-webkit-scrollbar {
+  display: none;
+}
+
+.content-description .tabbed-set .tabbed-labels label {
+  width: auto;
+  padding: 0.7em 1.2em;
+  font-weight: 600;
+  font-size: 0.85em;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  color: var(--md-filename-fg-color);
+  opacity: 0.6;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.content-description .tabbed-set .tabbed-labels label:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.content-description .tabbed-set .tabbed-labels label.tabbed-label--active {
+  opacity: 1;
+  color: var(--primary-light);
+  border-bottom-color: var(--primary-light);
+  background: var(--md-code-bg-color);
+}
+
+.content-description .tabbed-set .tabbed-content {
+  width: 100%;
+}
+
+.content-description .tabbed-set .tabbed-block {
+  display: none;
+}
+
+.content-description .tabbed-set .tabbed-block.tabbed-block--active {
+  display: block;
+}
+
+/* Remove extra margin/border-radius on code blocks inside tabs */
+.content-description .tabbed-set .tabbed-block pre {
+  margin: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  box-shadow: none;
+}
+
+.content-description .tabbed-set .tabbed-block .highlight span.filename {
+  display: none;
+}
+
+/* Restore pre copy button inside tabs (filename is hidden so its copy button is gone) */
+.content-description .tabbed-set .tabbed-block .highlight span.filename + pre::after {
+  display: block;
+}
+
+/* Non-code content inside tabs */
+.content-description .tabbed-set .tabbed-block > :first-child {
+  margin-top: 0;
+}
+
+.content-description .tabbed-set .tabbed-block > :last-child {
+  margin-bottom: 0;
+}
+
+@media print {
+  .content-description .tabbed-set .tabbed-block {
+    display: block;
+  }
+  .content-description .tabbed-set .tabbed-labels label {
+    background: white !important;
+    color: black !important;
+  }
+  .content-description .tabbed-set .tabbed-labels label.tabbed-label--active {
+    border-bottom-color: black !important;
+    font-weight: 800;
+  }
+}
+
 /* Copy feedback tooltip styling */
 .copy-feedback {
   font-size: 12px !important;

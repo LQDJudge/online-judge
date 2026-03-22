@@ -16,6 +16,7 @@ EXTENSIONS = [
     "pymdownx.details",
     "pymdownx.emoji",
     "pymdownx.inlinehilite",
+    "pymdownx.tabbed",
     "pymdownx.superfences",
     "pymdownx.highlight",
     "pymdownx.tasklist",
@@ -34,6 +35,9 @@ EXTENSIONS = [
 EXTENSION_CONFIGS = {
     "pymdownx.arithmatex": {
         "generic": True,
+    },
+    "pymdownx.tabbed": {
+        "alternate_style": True,
     },
     "pymdownx.superfences": {
         "custom_fences": [
@@ -89,6 +93,8 @@ ALLOWED_TAGS = list(bleach.sanitizer.ALLOWED_TAGS) + [
     "summary",
     "video",
     "source",
+    "input",
+    "label",
 ]
 
 ALLOWED_ATTRS = [
@@ -105,6 +111,11 @@ ALLOWED_ATTRS = [
     "allowfullscreen",
     "loading",
     "controls",
+    "type",
+    "name",
+    "checked",
+    "for",
+    "data-tabs",
 ]
 
 
