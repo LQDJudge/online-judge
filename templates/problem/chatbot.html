@@ -63,6 +63,7 @@
             {% endif %}
           </div>
           <div class="message-body">
+            <button class="message-delete-btn" title="Delete"><i class="fa fa-times"></i></button>
             <div class="message-content">{{ (msg.content_html if msg.content_html else msg.content|markdown(lazy_load=False))|safe }}</div>
             {% if msg.tool_calls %}
               <div class="tool-calls">
