@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-21 13:57+0700\n"
+"POT-Creation-Date: 2026-03-25 03:42+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -72,11 +72,11 @@ msgstr "Gần đây"
 msgid "Admin"
 msgstr "Admin"
 
-#: dmoj/settings.py:391
+#: dmoj/settings.py:394
 msgid "Vietnamese"
 msgstr "Tiếng Việt"
 
-#: dmoj/settings.py:392
+#: dmoj/settings.py:395
 msgid "English"
 msgstr "English"
 
@@ -364,7 +364,7 @@ msgstr "múi giờ"
 #: templates/organization/requests/pending.html:19
 #: templates/quiz/grading/dashboard.html:70
 #: templates/quiz/grading/quiz_grade.html:54 templates/quiz/manage.html:66
-#: templates/resolver/resolver.html:49 templates/ticket/list.html:265
+#: templates/resolver/resolver.html:49 templates/ticket/list.html:368
 msgid "User"
 msgstr "Thành viên"
 
@@ -468,7 +468,7 @@ msgstr "Khả năng"
 
 #: judge/admin/submission.py:31 judge/admin/submission.py:53
 #: judge/admin/submission.py:340 judge/models/profile.py:48
-#: judge/views/ticket.py:688
+#: judge/views/ticket.py:757
 msgid "None"
 msgstr "None"
 
@@ -594,12 +594,8 @@ msgstr "Ultimate"
 
 #: judge/custom_translations.py:8
 #, python-format
-msgid ""
-"This password is too short. It must contain at least %(min_length)d "
-"character."
-msgid_plural ""
-"This password is too short. It must contain at least %(min_length)d "
-"characters."
+msgid "This password is too short. It must contain at least %(min_length)d character."
+msgid_plural "This password is too short. It must contain at least %(min_length)d characters."
 msgstr[0] "Mật khẩu phải chứa ít nhất %(min_length)d ký tự."
 
 #: judge/custom_translations.py:13
@@ -783,11 +779,8 @@ msgid "Optional. Detailed description of the course."
 msgstr "Tùy chọn. Mô tả chi tiết về khóa học."
 
 #: judge/forms.py:961 judge/views/course.py:2675
-msgid ""
-"Required. Course name shown in URL. Only alphanumeric characters and hyphens."
-msgstr ""
-"Bắt buộc. Tên khóa học hiển thị trong URL. Chỉ chấp nhận ký tự chữ và số, "
-"dấu gạch ngang."
+msgid "Required. Course name shown in URL. Only alphanumeric characters and hyphens."
+msgstr "Bắt buộc. Tên khóa học hiển thị trong URL. Chỉ chấp nhận ký tự chữ và số, dấu gạch ngang."
 
 #: judge/forms.py:963 judge/views/course.py:2677
 msgid "Whether this course is visible to all users"
@@ -798,8 +791,7 @@ msgid "If checked, users can join this course"
 msgstr "Nếu được chọn, người dùng có thể tham gia khóa học này"
 
 #: judge/forms.py:1036
-msgid ""
-"You cannot publish this problem without selecting at least one organization."
+msgid "You cannot publish this problem without selecting at least one organization."
 msgstr "Bạn không thể công khai bài tập này mà không chọn ít nhất một tổ chức."
 
 #: judge/forms.py:1085 judge/forms.py:1222
@@ -827,9 +819,7 @@ msgid "Search and select problem group"
 msgstr "Tìm kiếm nhóm bài"
 
 #: judge/forms.py:1183
-msgid ""
-"You cannot create a public problem without selecting at least one "
-"organization."
+msgid "You cannot create a public problem without selecting at least one organization."
 msgstr "Bạn không thể tạo bài tập công khai mà không chọn ít nhất một tổ chức."
 
 #: judge/forms.py:1319
@@ -895,7 +885,7 @@ msgid "blocks"
 msgstr "chặn"
 
 #: judge/models/bookmark.py:13 judge/models/comment.py:57
-#: judge/models/pagevote.py:14 judge/models/problem.py:909
+#: judge/models/pagevote.py:14 judge/models/problem.py:921
 msgid "votes"
 msgstr "bình chọn"
 
@@ -996,7 +986,7 @@ msgid "contest name"
 msgstr "tên kỳ thi"
 
 #: judge/models/contest.py:111 judge/models/interface.py:79
-#: judge/models/problem.py:844 judge/models/quiz.py:115
+#: judge/models/problem.py:856 judge/models/quiz.py:115
 #: judge/models/quiz.py:273
 msgid "authors"
 msgstr "tác giả"
@@ -1011,9 +1001,7 @@ msgid "curators"
 msgstr "quản lý"
 
 #: judge/models/contest.py:119
-msgid ""
-"These users will be able to edit the contest, but will not be listed as "
-"authors."
+msgid "These users will be able to edit the contest, but will not be listed as authors."
 msgstr "Những người dùng này là tác giả và có quyền chỉnh sửa kỳ thi."
 
 #: judge/models/contest.py:127 judge/models/problem.py:172
@@ -1023,14 +1011,13 @@ msgstr "người kiểm tra"
 
 #: judge/models/contest.py:129
 msgid "These users will be able to view the contest, but not edit it."
-msgstr ""
-"Những người dùng này có thể thấy kỳ thi nhưng không có quyền chỉnh sửa."
+msgstr "Những người dùng này có thể thấy kỳ thi nhưng không có quyền chỉnh sửa."
 
 #: judge/models/contest.py:134 judge/models/runtime.py:215
 msgid "description"
 msgstr "mô tả"
 
-#: judge/models/contest.py:136 judge/models/problem.py:735
+#: judge/models/contest.py:136 judge/models/problem.py:747
 #: judge/models/runtime.py:220
 msgid "problems"
 msgstr "bài tập"
@@ -1044,28 +1031,21 @@ msgid "end time"
 msgstr "thời gian kết thúc"
 
 #: judge/models/contest.py:141 judge/models/problem.py:191
-#: judge/models/problem.py:782
+#: judge/models/problem.py:794
 msgid "time limit"
 msgstr "giới hạn thời gian"
 
 #: judge/models/contest.py:145
-msgid ""
-"Format hh:mm:ss. For example, if you want a 2-hour contest, enter 02:00:00"
-msgstr ""
-"Định dạng hh:mm:ss (giờ:phút:giây). Ví dụ, nếu muốn tạo kỳ thi dài 2h, hãy "
-"nhập 02:00:00"
+msgid "Format hh:mm:ss. For example, if you want a 2-hour contest, enter 02:00:00"
+msgstr "Định dạng hh:mm:ss (giờ:phút:giây). Ví dụ, nếu muốn tạo kỳ thi dài 2h, hãy nhập 02:00:00"
 
 #: judge/models/contest.py:149
 msgid "freeze after"
 msgstr "đóng băng sau"
 
 #: judge/models/contest.py:153
-msgid ""
-"Format hh:mm:ss. For example, if you want to freeze contest after 2 hours, "
-"enter 02:00:00"
-msgstr ""
-"Định dạng hh:mm:ss (giờ:phút:giây). Ví dụ, nếu muốn đóng băng kỳ thi sau 2h, "
-"hãy nhập 02:00:00"
+msgid "Format hh:mm:ss. For example, if you want to freeze contest after 2 hours, enter 02:00:00"
+msgstr "Định dạng hh:mm:ss (giờ:phút:giây). Ví dụ, nếu muốn đóng băng kỳ thi sau 2h, hãy nhập 02:00:00"
 
 #: judge/models/contest.py:157 judge/models/course.py:37
 #: judge/models/course.py:268 judge/models/problem.py:237
@@ -1074,12 +1054,8 @@ msgid "publicly visible"
 msgstr "công khai"
 
 #: judge/models/contest.py:160
-msgid ""
-"Should be set even for organization-private contests, where it determines "
-"whether the contest is visible to members of the specified organizations."
-msgstr ""
-"Đánh dấu ngay cả với các kỳ thi riêng tư của nhóm, quyết định việc kỳ thi có "
-"được hiển thị với các thành viên hay không."
+msgid "Should be set even for organization-private contests, where it determines whether the contest is visible to members of the specified organizations."
+msgstr "Đánh dấu ngay cả với các kỳ thi riêng tư của nhóm, quyết định việc kỳ thi có được hiển thị với các thành viên hay không."
 
 #: judge/models/contest.py:166
 msgid "contest rated"
@@ -1159,21 +1135,15 @@ msgstr "ẩn nhãn kỳ thi"
 
 #: judge/models/contest.py:229
 msgid "Whether problem tags should be hidden by default."
-msgstr ""
-"Quyết định việc nhãn bài tập (DP, Tham lam, ...) được ẩn trong kỳ thi không."
+msgstr "Quyết định việc nhãn bài tập (DP, Tham lam, ...) được ẩn trong kỳ thi không."
 
 #: judge/models/contest.py:233
 msgid "run pretests only"
 msgstr "chỉ chạy pretests"
 
 #: judge/models/contest.py:235
-msgid ""
-"Whether judges should grade pretests only, versus all testcases. Commonly "
-"set during a contest, then unset prior to rejudging user submissions when "
-"the contest ends."
-msgstr ""
-"Quyết định việc các máy chấm chỉ chấm pretests thay vì tất cả các test. Sau "
-"kỳ thi, hãy bỏ đánh dấu ô này và chấm lại tất cả các bài."
+msgid "Whether judges should grade pretests only, versus all testcases. Commonly set during a contest, then unset prior to rejudging user submissions when the contest ends."
+msgstr "Quyết định việc các máy chấm chỉ chấm pretests thay vì tất cả các test. Sau kỳ thi, hãy bỏ đánh dấu ô này và chấm lại tất cả các bài."
 
 #: judge/models/contest.py:242 judge/models/interface.py:96
 #: judge/models/problem.py:297
@@ -1203,8 +1173,7 @@ msgid "Logo override image"
 msgstr "Hình ảnh ghi đè logo"
 
 #: judge/models/contest.py:263
-msgid ""
-"This image will replace the default site logo for users inside the contest."
+msgid "This image will replace the default site logo for users inside the contest."
 msgstr "Ảnh này sẽ thay thế cho logo mặc định trong kỳ thi."
 
 #: judge/models/contest.py:271
@@ -1224,12 +1193,8 @@ msgid "access code"
 msgstr "mật khẩu truy cập"
 
 #: judge/models/contest.py:286
-msgid ""
-"An optional code to prompt contestants before they are allowed to join the "
-"contest. Leave it blank to disable."
-msgstr ""
-"Mật khẩu truy cập cho các thí sinh muốn tham gia kỳ thi. Để trống nếu không "
-"dùng."
+msgid "An optional code to prompt contestants before they are allowed to join the contest. Leave it blank to disable."
+msgstr "Mật khẩu truy cập cho các thí sinh muốn tham gia kỳ thi. Để trống nếu không dùng."
 
 #: judge/models/contest.py:292 judge/models/problem.py:256
 msgid "personae non gratae"
@@ -1252,13 +1217,8 @@ msgid "contest format configuration"
 msgstr "Tùy chỉnh format kỳ thi"
 
 #: judge/models/contest.py:308
-msgid ""
-"A JSON object to serve as the configuration for the chosen contest format "
-"module. Leave empty to use None. Exact format depends on the contest format "
-"selected."
-msgstr ""
-"Đối tượng JSON để cấu hình cho module định dạng kỳ thi đã chọn. Để trống để "
-"sử dụng None. Định dạng chính xác phụ thuộc vào định dạng kỳ thi được chọn."
+msgid "A JSON object to serve as the configuration for the chosen contest format module. Leave empty to use None. Exact format depends on the contest format selected."
+msgstr "Đối tượng JSON để cấu hình cho module định dạng kỳ thi đã chọn. Để trống để sử dụng None. Định dạng chính xác phụ thuộc vào định dạng kỳ thi được chọn."
 
 #: judge/models/contest.py:321
 msgid "precision points"
@@ -1273,9 +1233,7 @@ msgid "rate limit"
 msgstr "giới hạn bài nộp"
 
 #: judge/models/contest.py:332
-msgid ""
-"Maximum number of submissions per minute. Leave empty if you don't want rate "
-"limit."
+msgid "Maximum number of submissions per minute. Leave empty if you don't want rate limit."
 msgstr "Số bài nộp tối đa mỗi phút. Để trống nếu không muốn giới hạn."
 
 #: judge/models/contest.py:363
@@ -1406,9 +1364,9 @@ msgstr "lần tham gia kỳ thi"
 
 #: judge/models/contest.py:868 judge/models/contest.py:984
 #: judge/models/contest.py:1061 judge/models/course.py:359
-#: judge/models/course.py:522 judge/models/problem.py:734
-#: judge/models/problem.py:741 judge/models/problem.py:774
-#: judge/models/problem.py:818 judge/models/problem_data.py:54
+#: judge/models/course.py:522 judge/models/problem.py:746
+#: judge/models/problem.py:753 judge/models/problem.py:786
+#: judge/models/problem.py:830 judge/models/problem_data.py:54
 #: judge/models/public_request.py:19
 msgid "problem"
 msgstr "bài tập"
@@ -1648,11 +1606,8 @@ msgid "needs progress recalculation"
 msgstr "cần tính lại tiến độ"
 
 #: judge/models/course.py:235
-msgid ""
-"Whether the user's lesson progress and unlock states need to be recalculated"
-msgstr ""
-"Tiến độ bài học và trạng thái mở khóa của người dùng có cần được tính lại "
-"không"
+msgid "Whether the user's lesson progress and unlock states need to be recalculated"
+msgstr "Tiến độ bài học và trạng thái mở khóa của người dùng có cần được tính lại không"
 
 #: judge/models/course.py:264
 msgid "lesson title"
@@ -1812,7 +1767,7 @@ msgstr "tiêu đề bài đăng"
 msgid "slug"
 msgstr "slug"
 
-#: judge/models/interface.py:81 judge/models/problem.py:842
+#: judge/models/interface.py:81 judge/models/problem.py:854
 msgid "public visibility"
 msgstr "khả năng hiển thị công khai"
 
@@ -1848,15 +1803,15 @@ msgstr "đã từ chối"
 msgid "True if post was rejected by moderator"
 msgstr "True nếu bài đăng bị từ chối bởi người kiểm duyệt"
 
-#: judge/models/interface.py:162
+#: judge/models/interface.py:159
 msgid "Edit all posts"
 msgstr "Chỉnh sửa tất cả bài đăng"
 
-#: judge/models/interface.py:163
+#: judge/models/interface.py:160
 msgid "blog post"
 msgstr "bài đăng"
 
-#: judge/models/interface.py:164
+#: judge/models/interface.py:161
 msgid "blog posts"
 msgstr "bài đăng"
 
@@ -2139,22 +2094,15 @@ msgstr "người tạo"
 
 #: judge/models/problem.py:157
 msgid "These users will be able to edit the problem, and be listed as authors."
-msgstr ""
-"Những người dùng này sẽ có thể chỉnh sửa bài tập, và nằm trong danh sách các "
-"tác giả"
+msgstr "Những người dùng này sẽ có thể chỉnh sửa bài tập, và nằm trong danh sách các tác giả"
 
 #: judge/models/problem.py:166
-msgid ""
-"These users will be able to edit the problem, but not be listed as authors."
-msgstr ""
-"Những người dùng này sẽ có thể chỉnh sửa bài tập, nhưng không nằm trong danh "
-"sách các tác giả"
+msgid "These users will be able to edit the problem, but not be listed as authors."
+msgstr "Những người dùng này sẽ có thể chỉnh sửa bài tập, nhưng không nằm trong danh sách các tác giả"
 
 #: judge/models/problem.py:176
 msgid "These users will be able to view the private problem, but not edit it."
-msgstr ""
-"Những người dùng này sẽ thấy được bài tập này (dù riêng tư), nhưng không "
-"chỉnh sửa được"
+msgstr "Những người dùng này sẽ thấy được bài tập này (dù riêng tư), nhưng không chỉnh sửa được"
 
 #: judge/models/problem.py:182
 msgid "The type of problem, as shown on the problem's page."
@@ -2165,44 +2113,28 @@ msgid "The group of problem, shown under Category in the problem list."
 msgstr "Nhóm bài, hiện ở mục Nhóm bài trong danh sách bài tập"
 
 #: judge/models/problem.py:193
-msgid ""
-"The time limit for this problem, in seconds. Fractional seconds (e.g. 1.5) "
-"are supported."
-msgstr ""
-"Giới hạn thời gian cho bài tập này, theo đơn vị giây. Có thể nhập số thực "
-"(ví dụ 1.5)"
+msgid "The time limit for this problem, in seconds. Fractional seconds (e.g. 1.5) are supported."
+msgstr "Giới hạn thời gian cho bài tập này, theo đơn vị giây. Có thể nhập số thực (ví dụ 1.5)"
 
-#: judge/models/problem.py:202 judge/models/problem.py:789
+#: judge/models/problem.py:202 judge/models/problem.py:801
 msgid "memory limit"
 msgstr "Giới hạn bộ nhớ"
 
 #: judge/models/problem.py:204
-msgid ""
-"The memory limit for this problem, in kilobytes (e.g. 256mb = 262144 "
-"kilobytes)."
-msgstr ""
-"Giới hạn bộ nhớ cho bài này, theo đơn vị kilobytes (ví dụ 256mb = 262144 "
-"kilobytes)"
+msgid "The memory limit for this problem, in kilobytes (e.g. 256mb = 262144 kilobytes)."
+msgstr "Giới hạn bộ nhớ cho bài này, theo đơn vị kilobytes (ví dụ 256mb = 262144 kilobytes)"
 
 #: judge/models/problem.py:214
 msgid "stop on first fail"
 msgstr "dừng chấm khi có test sai"
 
 #: judge/models/problem.py:216
-msgid ""
-"Stop judging when the first test case fails (ICPC-style). If disabled, all "
-"test cases will be judged."
-msgstr ""
-"Dừng chấm khi test đầu tiên sai (format ICPC). Nếu tắt, tất cả test sẽ được "
-"chấm."
+msgid "Stop judging when the first test case fails (ICPC-style). If disabled, all test cases will be judged."
+msgstr "Dừng chấm khi test đầu tiên sai (format ICPC). Nếu tắt, tất cả test sẽ được chấm."
 
 #: judge/models/problem.py:223
-msgid ""
-"Points awarded for problem completion. Points are displayed with a 'p' "
-"suffix if partial."
-msgstr ""
-"Điểm thưởng khi hoàn thành bài tập. Điểm có thêm chữ 'p' ở sau cùng nếu như "
-"chấp nhận cho điểm thành phần (có điểm ngay khi không đúng toàn bộ test)"
+msgid "Points awarded for problem completion. Points are displayed with a 'p' suffix if partial."
+msgstr "Điểm thưởng khi hoàn thành bài tập. Điểm có thêm chữ 'p' ở sau cùng nếu như chấp nhận cho điểm thành phần (có điểm ngay khi không đúng toàn bộ test)"
 
 #: judge/models/problem.py:229
 msgid "allows partial points"
@@ -2229,8 +2161,7 @@ msgid "date of publishing"
 msgstr "Ngày công bố"
 
 #: judge/models/problem.py:251
-msgid ""
-"Doesn't have magic ability to auto-publish due to backward compatibility"
+msgid "Doesn't have magic ability to auto-publish due to backward compatibility"
 msgstr "Không có khả năng tự động công khai vì lý do tương thích ngược"
 
 #: judge/models/problem.py:258
@@ -2265,87 +2196,87 @@ msgstr "Nếu bài riêng tư, chỉ những nhóm này thấy được"
 msgid "pdf statement"
 msgstr "Đề bài bằng file pdf"
 
-#: judge/models/problem.py:746 judge/models/problem.py:779
-#: judge/models/problem.py:823 judge/models/problem_data.py:397
+#: judge/models/problem.py:758 judge/models/problem.py:791
+#: judge/models/problem.py:835 judge/models/problem_data.py:397
 #: judge/models/runtime.py:155
 msgid "language"
 msgstr "Ngôn ngữ"
 
-#: judge/models/problem.py:749
+#: judge/models/problem.py:761
 msgid "translated name"
 msgstr "Tên bài được dịch"
 
-#: judge/models/problem.py:751
+#: judge/models/problem.py:763
 msgid "translated description"
 msgstr "Đề bài được dịch"
 
-#: judge/models/problem.py:767
+#: judge/models/problem.py:779
 msgid "problem translation"
 msgstr "bản dịch bài tập"
 
-#: judge/models/problem.py:768
+#: judge/models/problem.py:780
 msgid "problem translations"
 msgstr "bản dịch bài tập"
 
-#: judge/models/problem.py:811
+#: judge/models/problem.py:823
 msgid "language-specific resource limit"
 msgstr "giới hạn tài nguyên theo ngôn ngữ"
 
-#: judge/models/problem.py:812
+#: judge/models/problem.py:824
 msgid "language-specific resource limits"
 msgstr "giới hạn tài nguyên theo ngôn ngữ"
 
-#: judge/models/problem.py:825 judge/models/problem_data.py:394
+#: judge/models/problem.py:837 judge/models/problem_data.py:394
 #: judge/models/submission.py:324
 msgid "source code"
 msgstr "mã nguồn"
 
-#: judge/models/problem.py:829
+#: judge/models/problem.py:841
 msgid "language-specific template"
 msgstr "template theo ngôn ngữ"
 
-#: judge/models/problem.py:830
+#: judge/models/problem.py:842
 msgid "language-specific templates"
 msgstr "template theo ngôn ngữ"
 
-#: judge/models/problem.py:837
+#: judge/models/problem.py:849
 msgid "associated problem"
 msgstr "bài tập liên quan"
 
-#: judge/models/problem.py:843
+#: judge/models/problem.py:855
 msgid "publish date"
 msgstr "ngày xuất bản"
 
-#: judge/models/problem.py:845
+#: judge/models/problem.py:857
 msgid "editorial content"
 msgstr "nội dung lời giải"
 
-#: judge/models/problem.py:870
+#: judge/models/problem.py:882
 #, python-format
 msgid "Editorial for %s"
 msgstr "Lời giải cho %s"
 
-#: judge/models/problem.py:881
+#: judge/models/problem.py:893
 msgid "solution"
 msgstr "lời giải"
 
-#: judge/models/problem.py:882
+#: judge/models/problem.py:894
 msgid "solutions"
 msgstr "lời giải"
 
-#: judge/models/problem.py:887
+#: judge/models/problem.py:899
 msgid "proposed point value"
 msgstr "điểm"
 
-#: judge/models/problem.py:888
+#: judge/models/problem.py:900
 msgid "The amount of points you think this problem deserves."
 msgstr "Bạn nghĩ bài này đáng bao nhiêu điểm?"
 
-#: judge/models/problem.py:902
+#: judge/models/problem.py:914
 msgid "The time this vote was cast"
 msgstr "Thời gian bỏ phiếu"
 
-#: judge/models/problem.py:908
+#: judge/models/problem.py:920
 msgid "vote"
 msgstr "bình chọn"
 
@@ -2564,7 +2495,7 @@ msgid "Done"
 msgstr ""
 
 #: judge/models/problem_data.py:346 judge/utils/problems.py:136
-#: templates/problem/chatbot.html:37 templates/problem/validator.html:125
+#: templates/problem/chatbot.html:40 templates/problem/validator.html:125
 #: templates/problem/validator.html:284
 msgid "Error"
 msgstr "Lỗi"
@@ -2693,9 +2624,7 @@ msgid "maximum size"
 msgstr "số lượng thành viên tối đa"
 
 #: judge/models/profile.py:132
-msgid ""
-"Maximum amount of users in this organization, only applicable to private "
-"organizations"
+msgid "Maximum amount of users in this organization, only applicable to private organizations"
 msgstr "Số người tối đa trong nhóm, chỉ áp dụng với nhóm riêng tư"
 
 #: judge/models/profile.py:138
@@ -2715,9 +2644,7 @@ msgid "community"
 msgstr "cộng đồng"
 
 #: judge/models/profile.py:159
-msgid ""
-"Communities are always open and focus on discussions rather than contests/"
-"problems"
+msgid "Communities are always open and focus on discussions rather than contests/problems"
 msgstr "Cộng đồng luôn mở và tập trung vào thảo luận hơn là kỳ thi/bài tập"
 
 #: judge/models/profile.py:164
@@ -3101,15 +3028,11 @@ msgstr "Các nhãn phân cách bằng dấu phẩy để phân loại câu hỏi
 
 #: judge/models/quiz.py:119
 msgid "These users will be able to edit the question and be listed as authors"
-msgstr ""
-"Những người dùng này có thể chỉnh sửa câu hỏi và được liệt kê là tác giả"
+msgstr "Những người dùng này có thể chỉnh sửa câu hỏi và được liệt kê là tác giả"
 
 #: judge/models/quiz.py:129
-msgid ""
-"These users will be able to edit the question, but not be listed as authors"
-msgstr ""
-"Những người dùng này có thể chỉnh sửa câu hỏi, nhưng không được liệt kê là "
-"tác giả"
+msgid "These users will be able to edit the question, but not be listed as authors"
+msgstr "Những người dùng này có thể chỉnh sửa câu hỏi, nhưng không được liệt kê là tác giả"
 
 #: judge/models/quiz.py:133 judge/models/quiz.py:307
 msgid "Created At"
@@ -3133,8 +3056,7 @@ msgstr "mã câu hỏi lý thuyết"
 
 #: judge/models/quiz.py:223
 msgid "A short, unique code for the quiz, used in the URL after /quiz/"
-msgstr ""
-"Mã ngắn, độc nhất cho câu hỏi lý thuyết, được dùng trong URL sau /quiz/"
+msgstr "Mã ngắn, độc nhất cho câu hỏi lý thuyết, được dùng trong URL sau /quiz/"
 
 #: judge/models/quiz.py:228
 msgid "Quiz Title"
@@ -3182,27 +3104,19 @@ msgstr "Các câu hỏi"
 
 #: judge/models/quiz.py:277
 msgid "These users will be able to edit the quiz and be listed as authors"
-msgstr ""
-"Những người dùng này có thể chỉnh sửa câu hỏi lý thuyết và được liệt kê là "
-"tác giả"
+msgstr "Những người dùng này có thể chỉnh sửa câu hỏi lý thuyết và được liệt kê là tác giả"
 
 #: judge/models/quiz.py:287
 msgid "These users will be able to edit the quiz, but not be listed as authors"
-msgstr ""
-"Những người dùng này có thể chỉnh sửa câu hỏi lý thuyết, nhưng không được "
-"liệt kê là tác giả"
+msgstr "Những người dùng này có thể chỉnh sửa câu hỏi lý thuyết, nhưng không được liệt kê là tác giả"
 
 #: judge/models/quiz.py:297
 msgid "These users will be able to view and test the quiz, but not edit it"
-msgstr ""
-"Những người dùng này có thể xem và làm thử câu hỏi lý thuyết, nhưng không có "
-"quyền chỉnh sửa"
+msgstr "Những người dùng này có thể xem và làm thử câu hỏi lý thuyết, nhưng không có quyền chỉnh sửa"
 
 #: judge/models/quiz.py:304
 msgid "Whether the quiz is publicly visible to all users"
-msgstr ""
-"Câu hỏi lý thuyết này có được hiển thị công khai cho tất cả người dùng hay "
-"không"
+msgstr "Câu hỏi lý thuyết này có được hiển thị công khai cho tất cả người dùng hay không"
 
 #: judge/models/quiz.py:311 judge/views/quiz.py:515
 #: templates/contest/contest.html:160 templates/course/edit_contest.html:76
@@ -3405,8 +3319,7 @@ msgid "short identifier"
 msgstr "tên ngắn"
 
 #: judge/models/runtime.py:24
-msgid ""
-"The identifier for this language; the same as its executor id for judges."
+msgid "The identifier for this language; the same as its executor id for judges."
 msgstr "Định danh cho ngôn ngữ này; giống với executor id cho máy chấm."
 
 #: judge/models/runtime.py:30
@@ -3418,36 +3331,24 @@ msgid "Longer name for the language, e.g. \"Python 2\" or \"C++11\"."
 msgstr "Tên dài, ví dụ \"Python 2\" or \"C++11\"."
 
 #: judge/models/runtime.py:37
-msgid ""
-"More readable, but short, name to display publicly; e.g. \"PY2\" or \"C+"
-"+11\". If left blank, it will default to the short identifier."
-msgstr ""
-"Tên ngắn gọn, dễ đọc để hiển thị công khai; ví dụ \"PY2\" hoặc \"C++11\". "
-"Nếu để trống, sẽ mặc định sử dụng định danh ngắn."
+msgid "More readable, but short, name to display publicly; e.g. \"PY2\" or \"C++11\". If left blank, it will default to the short identifier."
+msgstr "Tên ngắn gọn, dễ đọc để hiển thị công khai; ví dụ \"PY2\" hoặc \"C++11\". Nếu để trống, sẽ mặc định sử dụng định danh ngắn."
 
 #: judge/models/runtime.py:46
 msgid "common name"
 msgstr "tên thông dụng"
 
 #: judge/models/runtime.py:48
-msgid ""
-"Common name for the language. For example, the common name for C++03, C++11, "
-"and C++14 would be \"C++\""
-msgstr ""
-"Tên chung của ngôn ngữ. Ví dụ, tên chung cho C++03, C++11, và C++14 là \"C++"
-"\""
+msgid "Common name for the language. For example, the common name for C++03, C++11, and C++14 would be \"C++\""
+msgstr "Tên chung của ngôn ngữ. Ví dụ, tên chung cho C++03, C++11, và C++14 là \"C++\""
 
 #: judge/models/runtime.py:54
 msgid "ace mode name"
 msgstr "tên chế độ ace"
 
 #: judge/models/runtime.py:56
-msgid ""
-"Language ID for Ace.js editor highlighting, appended to \"mode-\" to "
-"determine the Ace JavaScript file to use, e.g., \"python\"."
-msgstr ""
-"ID ngôn ngữ cho Ace.js editor highlighting, được nối vào \"mode-\" để xác "
-"định file JavaScript Ace cần sử dụng, ví dụ \"python\"."
+msgid "Language ID for Ace.js editor highlighting, appended to \"mode-\" to determine the Ace JavaScript file to use, e.g., \"python\"."
+msgstr "ID ngôn ngữ cho Ace.js editor highlighting, được nối vào \"mode-\" để xác định file JavaScript Ace cần sử dụng, ví dụ \"python\"."
 
 #: judge/models/runtime.py:62
 msgid "pygments name"
@@ -3470,24 +3371,16 @@ msgid "runtime info override"
 msgstr "ghi đè thông tin runtime"
 
 #: judge/models/runtime.py:75
-msgid ""
-"Do not set this unless you know what you're doing! It will override the "
-"usually more specific, judge-provided runtime info!"
-msgstr ""
-"Không nên đặt trường này trừ khi bạn biết mình đang làm gì! Nó sẽ ghi đè "
-"thông tin runtime từ máy chấm, vốn thường cụ thể hơn!"
+msgid "Do not set this unless you know what you're doing! It will override the usually more specific, judge-provided runtime info!"
+msgstr "Không nên đặt trường này trừ khi bạn biết mình đang làm gì! Nó sẽ ghi đè thông tin runtime từ máy chấm, vốn thường cụ thể hơn!"
 
 #: judge/models/runtime.py:80
 msgid "language description"
 msgstr "mô tả ngôn ngữ"
 
 #: judge/models/runtime.py:82
-msgid ""
-"Use this field to inform users of quirks with your environment, additional "
-"restrictions, etc."
-msgstr ""
-"Sử dụng trường này để thông báo cho người dùng về các đặc điểm riêng của môi "
-"trường, các hạn chế bổ sung, v.v."
+msgid "Use this field to inform users of quirks with your environment, additional restrictions, etc."
+msgstr "Sử dụng trường này để thông báo cho người dùng về các đặc điểm riêng của môi trường, các hạn chế bổ sung, v.v."
 
 #: judge/models/runtime.py:89
 msgid "extension"
@@ -3542,9 +3435,7 @@ msgid "block judge"
 msgstr "chặn máy chấm"
 
 #: judge/models/runtime.py:203
-msgid ""
-"Whether this judge should be blocked from connecting, even if its key is "
-"correct."
+msgid "Whether this judge should be blocked from connecting, even if its key is correct."
 msgstr "Quyết định có chặn máy chấm, ngay cả khi mã xác thực đúng."
 
 #: judge/models/runtime.py:207
@@ -3940,12 +3831,12 @@ msgstr "Hướng dẫn thể thức kỳ thi"
 msgid "Page %d of Posts"
 msgstr "Trang %d"
 
-#: judge/views/chatbot.py:38
+#: judge/views/chatbot.py:42
 #, python-brace-format
 msgid "AI Assistant - {0}"
 msgstr "Trợ lý AI - {0}"
 
-#: judge/views/chatbot.py:42
+#: judge/views/chatbot.py:46
 #, python-format
 msgid "AI Assistant for %s"
 msgstr "Trợ lý AI cho %s"
@@ -3992,8 +3883,7 @@ msgid "Your part is silent, little toad."
 msgstr "Bạn không được phép bình luận."
 
 #: judge/views/comment/forms.py:59 templates/comments/media-js.html:20
-msgid ""
-"You need to have solved at least one problem before your voice can be heard."
+msgid "You need to have solved at least one problem before your voice can be heard."
 msgstr "Bạn phải giải ít nhất một bài trước khi được phép bình luận."
 
 #: judge/views/contests.py:125 judge/views/contests.py:508
@@ -4069,9 +3959,7 @@ msgid "Banned from joining"
 msgstr "Bị cấm tham gia"
 
 #: judge/views/contests.py:753
-msgid ""
-"You have been declared persona non grata for this contest. You are "
-"permanently barred from joining this contest."
+msgid "You have been declared persona non grata for this contest. You are permanently barred from joining this contest."
 msgstr "Bạn không được phép tham gia kỳ thi này."
 
 #: judge/views/contests.py:843
@@ -4256,12 +4144,8 @@ msgstr "Phần trăm phải từ 0-100 trong mục %(num)s"
 
 #: judge/views/course.py:1561
 #, python-format
-msgid ""
-"Duplicate pair [%(source)s, %(target)s] found in items %(first)s and "
-"%(second)s"
-msgstr ""
-"Cặp trùng lặp [%(source)s, %(target)s] được tìm thấy trong mục %(first)s và "
-"%(second)s"
+msgid "Duplicate pair [%(source)s, %(target)s] found in items %(first)s and %(second)s"
+msgstr "Cặp trùng lặp [%(source)s, %(target)s] được tìm thấy trong mục %(first)s và %(second)s"
 
 #: judge/views/course.py:1606
 #, python-format
@@ -4296,12 +4180,8 @@ msgstr "Điểm của %(lesson_name)s trong %(course_name)s"
 
 #: judge/views/course.py:1881
 #, python-format
-msgid ""
-"Grades of <a href='%(url_lesson)s'>%(lesson_name)s</a> in <a "
-"href='%(url_course)s'>%(course_name)s</a>"
-msgstr ""
-"Điểm của <a href='%(url_lesson)s'>%(lesson_name)s</a> trong <a "
-"href='%(url_course)s'>%(course_name)s</a>"
+msgid "Grades of <a href='%(url_lesson)s'>%(lesson_name)s</a> in <a href='%(url_course)s'>%(course_name)s</a>"
+msgstr "Điểm của <a href='%(url_lesson)s'>%(lesson_name)s</a> trong <a href='%(url_course)s'>%(course_name)s</a>"
 
 #: judge/views/course.py:1961 judge/views/organization.py:1292
 #: templates/organization/org-right-sidebar.html:54
@@ -4435,9 +4315,7 @@ msgstr "Công khai"
 
 #: judge/views/course.py:2628
 msgid "Whether this course is visible to all users (read-only for assistants)."
-msgstr ""
-"Khóa học này có hiển thị cho tất cả người dùng hay không (chỉ đọc đối với "
-"trợ giảng)."
+msgstr "Khóa học này có hiển thị cho tất cả người dùng hay không (chỉ đọc đối với trợ giảng)."
 
 #: judge/views/course.py:2635 judge/views/course.py:2667
 msgid "Public Registration"
@@ -4445,9 +4323,7 @@ msgstr "Đăng ký công khai"
 
 #: judge/views/course.py:2636
 msgid "Whether users can join this course (read-only for assistants)."
-msgstr ""
-"Người dùng có thể tham gia khóa học này hay không (chỉ đọc đối với trợ "
-"giảng)."
+msgstr "Người dùng có thể tham gia khóa học này hay không (chỉ đọc đối với trợ giảng)."
 
 #: judge/views/course.py:2664
 msgid "Course Name"
@@ -4539,12 +4415,8 @@ msgid "You are not enrolled in this course."
 msgstr "Bạn chưa đăng ký khóa học này."
 
 #: judge/views/course.py:2928
-msgid ""
-"Teachers and assistants cannot leave the course. Please contact an "
-"administrator."
-msgstr ""
-"Giáo viên và trợ giảng không thể rời khóa học. Vui lòng liên hệ quản trị "
-"viên."
+msgid "Teachers and assistants cannot leave the course. Please contact an administrator."
+msgstr "Giáo viên và trợ giảng không thể rời khóa học. Vui lòng liên hệ quản trị viên."
 
 #: judge/views/course.py:2937
 msgid "User '{}' left course '{}'"
@@ -4563,12 +4435,8 @@ msgid "Progress recalculation scheduled for all students in this course."
 msgstr "Đã lên lịch tính lại tiến độ cho tất cả học sinh trong khóa học này."
 
 #: judge/views/custom_file_upload.py:164
-msgid ""
-"You don't have permission to use the upload feature. Only users who can edit "
-"problems are allowed."
-msgstr ""
-"Bạn không có quyền sử dụng tính năng tải lên. Chỉ người dùng có thể chỉnh "
-"sửa bài tập mới được phép."
+msgid "You don't have permission to use the upload feature. Only users who can edit problems are allowed."
+msgstr "Bạn không có quyền sử dụng tính năng tải lên. Chỉ người dùng có thể chỉnh sửa bài tập mới được phép."
 
 #: judge/views/custom_file_upload.py:192 templates/base.html:249
 #: templates/user_upload/file_list.html:6
@@ -4641,23 +4509,15 @@ msgstr "Kích thước tệp không được vượt quá {filesizeformat(max_fi
 
 #: judge/views/custom_file_upload.py:451
 #, fuzzy, python-format
-#| msgid ""
-#| "Maximum number of files reached ({settings.DMOJ_MAX_FILES_PER_USER} "
-#| "files). Please delete some files."
+#| msgid "Maximum number of files reached ({settings.DMOJ_MAX_FILES_PER_USER} files). Please delete some files."
 msgid "Maximum number of files reached (%d files). Please delete some files."
-msgstr ""
-"Đã đạt số lượng tệp tối đa ({settings.DMOJ_MAX_FILES_PER_USER} tệp). Vui "
-"lòng xóa một số tệp."
+msgstr "Đã đạt số lượng tệp tối đa ({settings.DMOJ_MAX_FILES_PER_USER} tệp). Vui lòng xóa một số tệp."
 
 #: judge/views/custom_file_upload.py:464
 #, fuzzy, python-format
-#| msgid ""
-#| "Storage quota exceeded ({filesizeformat(max_user_storage)} limit). Please "
-#| "delete some files."
+#| msgid "Storage quota exceeded ({filesizeformat(max_user_storage)} limit). Please delete some files."
 msgid "Storage quota exceeded (%s limit). Please delete some files."
-msgstr ""
-"Vượt quá hạn mức lưu trữ (giới hạn {filesizeformat(max_user_storage)}). Vui "
-"lòng xóa một số tệp."
+msgstr "Vượt quá hạn mức lưu trữ (giới hạn {filesizeformat(max_user_storage)}). Vui lòng xóa một số tệp."
 
 #: judge/views/custom_file_upload.py:485 judge/views/direct_upload.py:69
 msgid "Failed to generate upload configuration"
@@ -4762,12 +4622,8 @@ msgid "Email Change Request"
 msgstr "Thay đổi Email"
 
 #: judge/views/email.py:69
-msgid ""
-"We have received a request to change your email to this email. Click the "
-"button below to change your email:"
-msgstr ""
-"Chúng tôi đã nhận được yêu cầu thay đổi địa chỉ email của bạn thành địa chỉ "
-"email này. Vui lòng nhấp vào nút bên dưới để thay đổi địa chỉ email của bạn:"
+msgid "We have received a request to change your email to this email. Click the button below to change your email:"
+msgstr "Chúng tôi đã nhận được yêu cầu thay đổi địa chỉ email của bạn thành địa chỉ email này. Vui lòng nhấp vào nút bên dưới để thay đổi địa chỉ email của bạn:"
 
 #: judge/views/email.py:71
 msgid "Email Change"
@@ -4960,8 +4816,7 @@ msgstr "Bạn chưa chặn nhóm %s."
 #: judge/views/organization.py:936
 #, python-format
 msgid "An error occurred while unblocking %(org)s. Reason: %(reason)s"
-msgstr ""
-"Lỗi hệ thống xảy ra trong quá trình bỏ chặn %(org)s. Lý do: %(reason)s."
+msgstr "Lỗi hệ thống xảy ra trong quá trình bỏ chặn %(org)s. Lý do: %(reason)s."
 
 #: judge/views/organization.py:963
 msgid "Request to join group"
@@ -4992,12 +4847,8 @@ msgstr "Quản lý đơn đăng ký cho %s"
 
 #: judge/views/organization.py:1082
 #, python-format
-msgid ""
-"Your organization can only receive %(can_add)d more members. You cannot "
-"approve %(to_approve)d users."
-msgstr ""
-"Nhóm chỉ có thể chứa thêm %(can_add)d thành viên. Bạn không thể chấp thuận "
-"%(to_approve)d người."
+msgid "Your organization can only receive %(can_add)d more members. You cannot approve %(to_approve)d users."
+msgstr "Nhóm chỉ có thể chứa thêm %(can_add)d thành viên. Bạn không thể chấp thuận %(to_approve)d người."
 
 #: judge/views/organization.py:1100
 #, python-format
@@ -5093,9 +4944,7 @@ msgid "Add blog for %s"
 msgstr "Thêm bài đăng cho %s"
 
 #: judge/views/organization.py:1522
-msgid ""
-"Your blog post has been submitted successfully and is waiting for admin "
-"approval."
+msgid "Your blog post has been submitted successfully and is waiting for admin approval."
 msgstr "Bài đăng của bạn đã được gửi thành công và đang chờ admin phê duyệt."
 
 #: judge/views/organization.py:1565
@@ -5120,15 +4969,11 @@ msgstr "Bạn không được phép xóa bài đăng này."
 
 #: judge/views/organization.py:1641
 msgid "Only organization admins and moderators can reject blog posts."
-msgstr ""
-"Chỉ quản trị viên và người kiểm duyệt của tổ chức mới có thể từ chối bài "
-"đăng."
+msgstr "Chỉ quản trị viên và người kiểm duyệt của tổ chức mới có thể từ chối bài đăng."
 
 #: judge/views/organization.py:1669
 msgid "Only organization admins and moderators can approve blog posts."
-msgstr ""
-"Chỉ quản trị viên và người kiểm duyệt của tổ chức mới có thể phê duyệt bài "
-"đăng."
+msgstr "Chỉ quản trị viên và người kiểm duyệt của tổ chức mới có thể phê duyệt bài đăng."
 
 #: judge/views/organization.py:1695
 #, python-format
@@ -5221,9 +5066,7 @@ msgid "Banned from submitting"
 msgstr "Bị cấm nộp bài"
 
 #: judge/views/problem.py:1030
-msgid ""
-"You have been declared persona non grata for this problem. You are "
-"permanently barred from submitting this problem."
+msgid "You have been declared persona non grata for this problem. You are permanently barred from submitting this problem."
 msgstr "Bạn đã bị cấm nộp bài này."
 
 #: judge/views/problem.py:1068
@@ -5410,9 +5253,7 @@ msgstr "File init.yml cho %s"
 #: judge/views/problem_data.py:482 judge/views/problem_data.py:501
 #: templates/problem/data.html:33
 msgid "File size exceeds 50 MB limit. Contact admin for larger uploads."
-msgstr ""
-"Kích thước file vượt quá giới hạn 50 MB. Liên hệ admin để tải lên file lớn "
-"hơn."
+msgstr "Kích thước file vượt quá giới hạn 50 MB. Liên hệ admin để tải lên file lớn hơn."
 
 #: judge/views/problem_data.py:533
 #, python-brace-format
@@ -5560,9 +5401,7 @@ msgstr "Xóa câu hỏi: %s"
 #: judge/views/quiz.py:486
 #, python-format
 msgid "Cannot delete question. It is used in %d quiz(es)."
-msgstr ""
-"Không thể xóa câu hỏi. Câu hỏi này đang được sử dụng trong %d câu hỏi lý "
-"thuyết."
+msgstr "Không thể xóa câu hỏi. Câu hỏi này đang được sử dụng trong %d câu hỏi lý thuyết."
 
 #: judge/views/quiz.py:490
 msgid "Question deleted successfully."
@@ -5689,29 +5528,20 @@ msgid "Contest has ended. Your quiz has been submitted automatically."
 msgstr "Kỳ thi đã kết thúc. Câu hỏi lý thuyết của bạn đã được nộp tự động."
 
 #: judge/views/quiz.py:1520
-msgid ""
-"Your contest time has ended. Your quiz has been submitted automatically."
-msgstr ""
-"Thời gian thi của bạn đã hết. Câu hỏi lý thuyết của bạn đã được nộp tự động."
+msgid "Your contest time has ended. Your quiz has been submitted automatically."
+msgstr "Thời gian thi của bạn đã hết. Câu hỏi lý thuyết của bạn đã được nộp tự động."
 
 #: judge/views/quiz.py:1544
-msgid ""
-"Warning: You may have this quiz open in another tab. Only one tab should be "
-"active."
-msgstr ""
-"Cảnh báo: Có thể bạn đang mở câu hỏi lý thuyết này ở tab khác. Chỉ nên sử "
-"dụng một tab."
+msgid "Warning: You may have this quiz open in another tab. Only one tab should be active."
+msgstr "Cảnh báo: Có thể bạn đang mở câu hỏi lý thuyết này ở tab khác. Chỉ nên sử dụng một tab."
 
 #: judge/views/quiz.py:1675
 msgid "This attempt was already submitted."
 msgstr "Lượt làm bài này đã được nộp."
 
 #: judge/views/quiz.py:1754
-msgid ""
-"Time had expired. Your answers were saved and the quiz has been submitted."
-msgstr ""
-"Đã hết thời gian. Câu trả lời của bạn đã được lưu và câu hỏi lý thuyết đã "
-"được nộp."
+msgid "Time had expired. Your answers were saved and the quiz has been submitted."
+msgstr "Đã hết thời gian. Câu trả lời của bạn đã được lưu và câu hỏi lý thuyết đã được nộp."
 
 #: judge/views/quiz.py:1758
 msgid "Quiz submitted successfully!"
@@ -5800,19 +5630,12 @@ msgstr "Ngôn ngữ ưa thích"
 
 #: judge/views/register.py:58
 #, python-format
-msgid ""
-"The email address \"%s\" is already taken. Only one registration is allowed "
-"per address."
-msgstr ""
-"Email \"%s\" đã được sử dụng. Mỗi email chỉ có thể đăng ký một tài khoản."
+msgid "The email address \"%s\" is already taken. Only one registration is allowed per address."
+msgstr "Email \"%s\" đã được sử dụng. Mỗi email chỉ có thể đăng ký một tài khoản."
 
 #: judge/views/register.py:70
-msgid ""
-"Your email provider is not allowed due to history of abuse. Please use a "
-"reputable email provider."
-msgstr ""
-"Your email provider is not allowed due to history of abuse. Please use a "
-"reputable email provider."
+msgid "Your email provider is not allowed due to history of abuse. Please use a reputable email provider."
+msgstr "Your email provider is not allowed due to history of abuse. Please use a reputable email provider."
 
 #: judge/views/register.py:78 judge/views/register.py:129
 msgid "Registration"
@@ -5855,7 +5678,7 @@ msgstr "Thống kê"
 #: templates/problem/validator.html:296
 #: templates/quiz/grading/dashboard.html:76
 #: templates/quiz/grading/quiz_grade.html:60 templates/quiz/manage.html:71
-#: templates/submission/list.html:324
+#: templates/submission/list.html:324 templates/ticket/list.html:308
 msgid "Status"
 msgstr "Trạng thái"
 
@@ -5921,21 +5744,13 @@ msgstr "Bài nộp trong <a href=\"{0}\">{1}</a>"
 
 #: judge/views/submission.py:921
 #, python-brace-format
-msgid ""
-"<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a "
-"href=\"{5}\">{4}</a>"
-msgstr ""
-"Các bài nộp của <a href=\"{1}\">{0}</a> cho <a href=\"{3}\">{2}</a> trong <a "
-"href=\"{5}\">{4}</a>"
+msgid "<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a href=\"{5}\">{4}</a>"
+msgstr "Các bài nộp của <a href=\"{1}\">{0}</a> cho <a href=\"{3}\">{2}</a> trong <a href=\"{5}\">{4}</a>"
 
 #: judge/views/submission.py:933
 #, python-brace-format
-msgid ""
-"<a href=\"{1}\">{0}</a>'s submissions for problem {2} in <a href=\"{4}\">{3}"
-"</a>"
-msgstr ""
-"Các bài nộp của <a href=\"{1}\">{0}</a> cho bài {2} trong <a href=\"{4}\">{3}"
-"</a>"
+msgid "<a href=\"{1}\">{0}</a>'s submissions for problem {2} in <a href=\"{4}\">{3}</a>"
+msgstr "Các bài nộp của <a href=\"{1}\">{0}</a> cho bài {2} trong <a href=\"{4}\">{3}</a>"
 
 #: judge/views/submission.py:1078
 msgid "You don't have permission to access."
@@ -5950,7 +5765,7 @@ msgid "Ticket title"
 msgstr "Tiêu đề báo cáo"
 
 #: judge/views/ticket.py:137 judge/views/ticket.py:141
-#: judge/views/ticket.py:609 judge/views/ticket.py:613
+#: judge/views/ticket.py:678 judge/views/ticket.py:682
 #, python-format
 msgid "New ticket for %s"
 msgstr "Báo cáo mới cho %s"
@@ -5964,7 +5779,7 @@ msgstr "%(title)s - Báo cáo %(id)d"
 msgid "Search for users to assign..."
 msgstr "Tìm kiếm người dùng..."
 
-#: judge/views/ticket.py:298 templates/ticket/list.html:266
+#: judge/views/ticket.py:298 templates/ticket/list.html:369
 #: templates/ticket/ticket.html:285
 msgid "Assignees"
 msgstr "Người được ủy thác"
@@ -5973,49 +5788,59 @@ msgstr "Người được ủy thác"
 msgid "You don't have permission to edit assignees for this ticket."
 msgstr "Bạn không có quyền trong báo cáo này."
 
-#: judge/views/ticket.py:413
+#: judge/views/ticket.py:414
 msgid "Invalid form data"
 msgstr "Nội dung không hợp lệ."
 
-#: judge/views/ticket.py:476
+#: judge/views/ticket.py:424
+#, fuzzy
+#| msgid "Permission denied"
+msgid "Permission denied."
+msgstr "Truy cập bị từ chối"
+
+#: judge/views/ticket.py:433
+msgid "No tickets selected."
+msgstr "Chưa chọn báo cáo nào."
+
+#: judge/views/ticket.py:544
 #, python-format
 msgid "Tickets - Page %(number)d of %(total)d"
 msgstr "Báo cáo - Trang %(number)d trên %(total)d"
 
-#: judge/views/ticket.py:542
+#: judge/views/ticket.py:611
 #, python-format
 msgid "New Ticket: %s"
 msgstr "Báo cáo mới: %s"
 
-#: judge/views/ticket.py:545
+#: judge/views/ticket.py:614
 #, python-format
 msgid "#%(id)d, assigned to: %(users)s"
 msgstr "#%(id)d, được phân cho: %(users)s"
 
-#: judge/views/ticket.py:549
+#: judge/views/ticket.py:618
 msgid ", "
 msgstr ", "
 
-#: judge/views/ticket.py:554
+#: judge/views/ticket.py:623
 msgid "no one"
 msgstr "không người nào"
 
-#: judge/views/ticket.py:581
+#: judge/views/ticket.py:650
 #, python-format
 msgid "New Ticket Message For: %s"
 msgstr "Tin nhắn báo cáo mới cho: %s"
 
-#: judge/views/ticket.py:645
+#: judge/views/ticket.py:714
 #, python-format
 msgid "Tickets for %s"
 msgstr "Báo cáo cho %s"
 
-#: judge/views/ticket.py:704
+#: judge/views/ticket.py:773
 #, python-format
 msgid "History for Ticket #%(id)d: %(title)s"
 msgstr "Lịch sử báo cáo của #%(id)d: %(title)s"
 
-#: judge/views/ticket.py:762
+#: judge/views/ticket.py:831
 msgid "Ticket feed"
 msgstr "Báo cáo"
 
@@ -6098,7 +5923,8 @@ msgstr "Thay đổi"
 
 #: judge/widgets/direct_upload.py:101 templates/course/edit_lesson.html:455
 #: templates/quiz/create.html:85 templates/quiz/edit.html:133
-#: templates/quiz/edit.html:511 templates/widgets/sortable_formset.html:80
+#: templates/quiz/edit.html:511 templates/ticket/list.html:353
+#: templates/widgets/sortable_formset.html:80
 #: templates/widgets/sortable_formset.html:116
 msgid "Remove"
 msgstr "Xóa"
@@ -6344,16 +6170,19 @@ msgstr "Tất cả"
 #: templates/quiz/question_bank/list.html:55
 #: templates/quiz/quiz-list-tabs.html:2 templates/submission/list.html:368
 #: templates/submission/submission-list-tabs.html:4
+#: templates/ticket/list.html:312
 msgid "All"
 msgstr "Tất cả"
 
 #: templates/blog/list.html:122 templates/course/list.html:78
 #: templates/organization/course_list.html:121 templates/ticket/feed.html:5
+#: templates/ticket/list.html:310
 msgid "Open"
 msgstr "Mở"
 
 #: templates/blog/list.html:123 templates/course/list.html:80
 #: templates/organization/course_list.html:123 templates/ticket/feed.html:5
+#: templates/ticket/list.html:311
 msgid "Closed"
 msgstr "Đóng"
 
@@ -6391,7 +6220,7 @@ msgstr "Thông báo"
 #: templates/course/list_left_sidebar.html:12
 #: templates/organization/courses_left_sidebar.html:12
 #: templates/problem/left-sidebar.html:13
-#: templates/problem/problem-list-tabs.html:6
+#: templates/problem/problem-list-tabs.html:6 templates/ticket/list.html:352
 msgid "Add"
 msgstr "Thêm mới"
 
@@ -6498,11 +6327,8 @@ msgstr "đã chỉnh sửa"
 #, python-format
 msgid ""
 "This comment is hidden due to too much negative feedback. Click <a\n"
-"                  href=\"javascript:comment_show_content(%(id)s)\">here</a> "
-"to view it."
-msgstr ""
-"Bình luận bị ẩn vì nhiều phản hồi tiêu cực. Nhấp vào <a href=\"javascript:"
-"comment_show_content(%(id)s)\">đây</a> để mở."
+"                  href=\"javascript:comment_show_content(%(id)s)\">here</a> to view it."
+msgstr "Bình luận bị ẩn vì nhiều phản hồi tiêu cực. Nhấp vào <a href=\"javascript:comment_show_content(%(id)s)\">đây</a> để mở."
 
 #: templates/comments/comment-item.html:44
 #: templates/comments/comment-item.html:48
@@ -6961,12 +6787,8 @@ msgid "Are you sure you want to join?"
 msgstr "Bạn có chắc tham gia?"
 
 #: templates/contest/list.html:62 templates/contest/recommended_list.html:16
-msgid ""
-"Joining a contest for the first time starts your timer, after which it "
-"becomes unstoppable."
-msgstr ""
-"Tham gia kỳ thi lần đầu sẽ kích hoạt thời gian đếm ngược, không thể dừng lại "
-"sau đó."
+msgid "Joining a contest for the first time starts your timer, after which it becomes unstoppable."
+msgstr "Tham gia kỳ thi lần đầu sẽ kích hoạt thời gian đếm ngược, không thể dừng lại sau đó."
 
 #: templates/contest/list.html:64 templates/contest/media-js.html:295
 #: templates/contest/recommended_list.html:18
@@ -7084,16 +6906,11 @@ msgid "Are you sure you want to leave?"
 msgstr "Bạn có chắc muốn rời?"
 
 #: templates/contest/media-js.html:288
-msgid ""
-"You cannot come back to a virtual participation. You will have to start a "
-"new one."
-msgstr ""
-"Bạn không thể quay lại lần tham gia ảo này. Bạn sẽ phải tham gia ảo lại từ "
-"đầu."
+msgid "You cannot come back to a virtual participation. You will have to start a new one."
+msgstr "Bạn không thể quay lại lần tham gia ảo này. Bạn sẽ phải tham gia ảo lại từ đầu."
 
 #: templates/contest/media-js.html:293
-msgid ""
-"Joining a contest starts your timer, after which it becomes unstoppable."
+msgid "Joining a contest starts your timer, after which it becomes unstoppable."
 msgstr "Tham gia kỳ thi sẽ khởi động đồng hồ đếm ngược, và không thể dừng lại."
 
 #: templates/contest/moss.html:25
@@ -7142,7 +6959,7 @@ msgstr "Đến"
 #: templates/organization/search-form.html:19
 #: templates/problem/search-form.html:86
 #: templates/quiz/question_bank/list.html:61 templates/quiz/search-form.html:8
-#: templates/submission/list.html:342 templates/ticket/list.html:250
+#: templates/submission/list.html:342 templates/ticket/list.html:339
 msgid "Go"
 msgstr "Lọc"
 
@@ -7274,11 +7091,8 @@ msgid "Bulk Disqualify"
 msgstr "Hủy kết quả hàng loạt"
 
 #: templates/contest/ranking.html:306
-msgid ""
-"Enter usernames to disqualify, separated by spaces, commas, or newlines:"
-msgstr ""
-"Nhập tên người dùng cần hủy kết quả, phân cách bằng dấu cách, dấu phẩy hoặc "
-"xuống dòng:"
+msgid "Enter usernames to disqualify, separated by spaces, commas, or newlines:"
+msgstr "Nhập tên người dùng cần hủy kết quả, phân cách bằng dấu cách, dấu phẩy hoặc xuống dòng:"
 
 #: templates/contest/ranking.html:308
 msgid "user1, user2, user3..."
@@ -7440,7 +7254,7 @@ msgstr "Đang lưu..."
 #: templates/course/edit_lesson.html:113 templates/course/edit_lesson.html:117
 #: templates/course/edit_lesson.html:471
 #: templates/internal/problem_queue.html:593
-#: templates/internal/problem_queue.html:888
+#: templates/internal/problem_queue.html:888 templates/ticket/list.html:356
 msgid "Apply"
 msgstr "Áp dụng"
 
@@ -7469,12 +7283,8 @@ msgid "PREREQUISITES"
 msgstr "ĐIỀU KIỆN"
 
 #: templates/course/edit_lesson.html:372
-msgid ""
-"Define prerequisites for lessons. A student must achieve the required "
-"percentage in the source lesson before they can access the target lesson."
-msgstr ""
-"Xác định điều kiện tiên quyết cho bài học. Học sinh phải đạt phần trăm yêu "
-"cầu trong bài học yêu cầu trước khi có thể truy cập bài học mở khóa."
+msgid "Define prerequisites for lessons. A student must achieve the required percentage in the source lesson before they can access the target lesson."
+msgstr "Xác định điều kiện tiên quyết cho bài học. Học sinh phải đạt phần trăm yêu cầu trong bài học yêu cầu trước khi có thể truy cập bài học mở khóa."
 
 #: templates/course/edit_lesson.html:379
 msgid "Source Lesson"
@@ -7509,19 +7319,12 @@ msgid "Bulk Edit (JSON)"
 msgstr "Chỉnh sửa hàng loạt (JSON)"
 
 #: templates/course/edit_lesson.html:465
-msgid ""
-"Format: [[source_order, target_order, percentage], ...]. Example: [[0, 1, "
-"70], [1, 2, 60]]"
-msgstr ""
-"Định dạng: [[thứ_tự_nguồn, thứ_tự_đích, phần_trăm], ...]. Ví dụ: [[0, 1, "
-"70], [1, 2, 60]]"
+msgid "Format: [[source_order, target_order, percentage], ...]. Example: [[0, 1, 70], [1, 2, 60]]"
+msgstr "Định dạng: [[thứ_tự_nguồn, thứ_tự_đích, phần_trăm], ...]. Ví dụ: [[0, 1, 70], [1, 2, 60]]"
 
 #: templates/course/edit_lesson.html:478
-msgid ""
-"This will recalculate unlock status for all enrolled students. Continue?"
-msgstr ""
-"Thao tác này sẽ tính lại trạng thái mở khóa cho tất cả học sinh đã đăng ký. "
-"Tiếp tục?"
+msgid "This will recalculate unlock status for all enrolled students. Continue?"
+msgstr "Thao tác này sẽ tính lại trạng thái mở khóa cho tất cả học sinh đã đăng ký. Tiếp tục?"
 
 #: templates/course/edit_lesson.html:480
 msgid "Recalculate unlock status for all enrolled students"
@@ -7536,11 +7339,8 @@ msgid "Only use if student unlock status appears incorrect"
 msgstr "Chỉ sử dụng nếu trạng thái mở khóa của học sinh không chính xác"
 
 #: templates/course/edit_lesson.html:489
-msgid ""
-"No lessons in this course yet. Create lessons first to set up prerequisites."
-msgstr ""
-"Khóa học này chưa có bài học nào. Tạo bài học trước để thiết lập điều kiện "
-"tiên quyết."
+msgid "No lessons in this course yet. Create lessons first to set up prerequisites."
+msgstr "Khóa học này chưa có bài học nào. Tạo bài học trước để thiết lập điều kiện tiên quyết."
 
 #: templates/course/edit_lesson.html:512 templates/organization/home.html:35
 #: templates/organization/list.html:43
@@ -7587,12 +7387,8 @@ msgid "Join Course"
 msgstr "Tham gia khóa học"
 
 #: templates/course/enrollment_required.html:29
-msgid ""
-"This course is not open for public enrollment. Please contact the course "
-"instructor for access."
-msgstr ""
-"Khóa học này không mở đăng ký. Vui lòng liên hệ giảng viên để được cấp quyền "
-"truy cập."
+msgid "This course is not open for public enrollment. Please contact the course instructor for access."
+msgstr "Khóa học này không mở đăng ký. Vui lòng liên hệ giảng viên để được cấp quyền truy cập."
 
 #: templates/course/enrollment_required.html:32
 msgid "Please log in to enroll in this course."
@@ -7632,9 +7428,7 @@ msgid "No courses enrolled"
 msgstr "Chưa đăng ký khóa học nào"
 
 #: templates/course/list.html:131
-msgid ""
-"You are not enrolled in any courses yet. Browse available courses and join "
-"to start learning!"
+msgid "You are not enrolled in any courses yet. Browse available courses and join to start learning!"
 msgstr "Chào mừng bạn đến với khóa học! Hãy bắt đầu học tập!"
 
 #: templates/course/list.html:133
@@ -7765,12 +7559,8 @@ msgid "Slow requests"
 msgstr "Requests chậm"
 
 #: templates/internal/problem_queue.html:203
-msgid ""
-"Are you sure you want to publish this problem? This will make it public and "
-"remove organization restrictions."
-msgstr ""
-"Bạn có chắc muốn công khai bài tập này? Bài tập sẽ được hiển thị cho mọi "
-"người và bỏ giới hạn tổ chức."
+msgid "Are you sure you want to publish this problem? This will make it public and remove organization restrictions."
+msgstr "Bạn có chắc muốn công khai bài tập này? Bài tập sẽ được hiển thị cho mọi người và bỏ giới hạn tổ chức."
 
 #: templates/internal/problem_queue.html:216
 #: templates/internal/problem_queue.html:257
@@ -7807,8 +7597,7 @@ msgstr "Gán nhãn bài không thành công: "
 #: templates/internal/problem_queue.html:338
 #: templates/internal/problem_queue.html:443
 msgid "Problem tagging failed: Network error occurred - please try again later"
-msgstr ""
-"Gán nhãn bài không thành công: Đã xảy ra lỗi mạng - vui lòng thử lại sau"
+msgstr "Gán nhãn bài không thành công: Đã xảy ra lỗi mạng - vui lòng thử lại sau"
 
 #: templates/internal/problem_queue.html:316
 msgid "Analyzing..."
@@ -7842,7 +7631,7 @@ msgstr "Cải thiện markdown thất bại"
 
 #: templates/internal/problem_queue.html:489
 #: templates/internal/problem_queue.html:519
-#: templates/internal/problem_queue.html:590 templates/problem/chatbot.html:38
+#: templates/internal/problem_queue.html:590 templates/problem/chatbot.html:41
 #: templates/problem/edit.html:46 templates/problem/edit.html:106
 #: templates/problem/edit.html:149 templates/problem/edit.html:209
 #: templates/problem/edit.html:248 templates/problem/solutions.html:67
@@ -7929,8 +7718,7 @@ msgid "AI Analysis Results"
 msgstr "Kết quả phân tính"
 
 #: templates/internal/problem_queue.html:814
-msgid ""
-"Review and modify the AI suggestions before applying them to the problem."
+msgid "Review and modify the AI suggestions before applying them to the problem."
 msgstr "Xem xét và sửa đổi các đề xuất trước khi lưu."
 
 #: templates/internal/problem_queue.html:825 templates/problem/add.html:212
@@ -8133,10 +7921,8 @@ msgid "Add Course to "
 msgstr "Thêm khóa học vào "
 
 #: templates/organization/course/edit.html:23
-msgid ""
-"Are you sure you want to delete this course? This action cannot be undone."
-msgstr ""
-"Bạn có chắc chắn muốn xóa khóa học này? Hành động này không thể hoàn tác."
+msgid "Are you sure you want to delete this course? This action cannot be undone."
+msgstr "Bạn có chắc chắn muốn xóa khóa học này? Hành động này không thể hoàn tác."
 
 #: templates/organization/course/edit.html:38
 msgid "Edit Course: "
@@ -8202,9 +7988,7 @@ msgid "No courses available to join in %(org)s"
 msgstr "Không có khóa học nào có thể tham gia trong %(org)s"
 
 #: templates/organization/course_list.html:172
-msgid ""
-"There are no open courses available for you to join in this organization at "
-"this time."
+msgid "There are no open courses available for you to join in this organization at this time."
 msgstr "Hiện tại không có khóa học mở nào để bạn tham gia trong tổ chức này."
 
 #: templates/organization/courses.html:82
@@ -8555,67 +8339,71 @@ msgstr "Chọn tất cả"
 msgid "Create Problem"
 msgstr "Tạo bài tập"
 
-#: templates/problem/chatbot.html:35
+#: templates/problem/chatbot.html:38
 msgid "Processing..."
 msgstr "Đang xử lý..."
 
-#: templates/problem/chatbot.html:36
+#: templates/problem/chatbot.html:39
 msgid "Sending..."
 msgstr "Đang gửi..."
 
-#: templates/problem/chatbot.html:39
+#: templates/problem/chatbot.html:42
 msgid "Clear conversation history?"
 msgstr "Xóa lịch sử cuộc trò chuyện?"
 
-#: templates/problem/chatbot.html:40 templates/problem/chatbot.html:113
+#: templates/problem/chatbot.html:43
+msgid "Delete this message?"
+msgstr "Xóa tin nhắn này?"
+
+#: templates/problem/chatbot.html:44 templates/problem/chatbot.html:117
 msgid "Type your message... (Shift+Enter for new line)"
 msgstr "Nhập tin nhắn... (Shift+Enter để xuống dòng)"
 
-#: templates/problem/chatbot.html:41
+#: templates/problem/chatbot.html:45
 msgid "Model changed to"
 msgstr "Đã đổi mô hình sang"
 
-#: templates/problem/chatbot.html:79
+#: templates/problem/chatbot.html:83
 msgid "AI Problem Author Assistant"
 msgstr "Trợ lý AI cho tác giả đề"
 
-#: templates/problem/chatbot.html:80
+#: templates/problem/chatbot.html:84
 msgid "I can help you with:"
 msgstr "Tôi có thể giúp bạn với:"
 
-#: templates/problem/chatbot.html:82
+#: templates/problem/chatbot.html:86
 msgid "Writing custom checkers (Python & C++)"
 msgstr "Viết trình chấm tùy chỉnh (Python & C++)"
 
-#: templates/problem/chatbot.html:83
+#: templates/problem/chatbot.html:87
 msgid "Creating test generators"
 msgstr "Tạo trình sinh test"
 
-#: templates/problem/chatbot.html:84
+#: templates/problem/chatbot.html:88
 msgid "Writing solution editorials"
 msgstr "Viết lời giải cho bài tập"
 
-#: templates/problem/chatbot.html:85
+#: templates/problem/chatbot.html:89
 msgid "Understanding problem test data"
 msgstr "Hướng dẫn về dữ liệu test"
 
-#: templates/problem/chatbot.html:86
+#: templates/problem/chatbot.html:90
 msgid "Reviewing problem statements"
 msgstr "Đánh giá đề bài"
 
-#: templates/problem/chatbot.html:88
+#: templates/problem/chatbot.html:92
 msgid "Try asking: \"How do I write a custom checker for this problem?\""
 msgstr "Hãy thử hỏi: \"Làm sao để viết trình chấm tùy chỉnh cho bài này?\""
 
-#: templates/problem/chatbot.html:97
+#: templates/problem/chatbot.html:101
 msgid "Switch model"
 msgstr "Đổi mô hình"
 
-#: templates/problem/chatbot.html:116
+#: templates/problem/chatbot.html:120
 msgid "Clear history"
 msgstr "Xóa lịch sử"
 
-#: templates/problem/chatbot.html:119
+#: templates/problem/chatbot.html:123
 msgid "Send message"
 msgstr "Gửi tin nhắn"
 
@@ -8674,24 +8462,16 @@ msgid "Batch start positions"
 msgstr "Vị trí bắt đầu nhóm"
 
 #: templates/problem/data.html:844
-msgid ""
-"Leave empty if not use batch. If you want to divide to three batches [1, 4], "
-"[5, 8], [9, 10], enter: 1, 5, 9"
-msgstr ""
-"Để trống nếu không dùng nhóm. Nếu muốn chia test thành các nhóm [1, 4], [5, "
-"8], [9, 10], nhập: 1, 5, 9"
+msgid "Leave empty if not use batch. If you want to divide to three batches [1, 4], [5, 8], [9, 10], enter: 1, 5, 9"
+msgstr "Để trống nếu không dùng nhóm. Nếu muốn chia test thành các nhóm [1, 4], [5, 8], [9, 10], nhập: 1, 5, 9"
 
 #: templates/problem/data.html:852
 msgid "Generator Script"
 msgstr "Script sinh test"
 
 #: templates/problem/data.html:853
-msgid ""
-"Enter generator arguments for test cases. Each line represents arguments for "
-"one test case."
-msgstr ""
-"Nhập các tham số cho script sinh test. Mỗi dòng đại diện cho tham số của một "
-"test."
+msgid "Enter generator arguments for test cases. Each line represents arguments for one test case."
+msgstr "Nhập các tham số cho script sinh test. Mỗi dòng đại diện cho tham số của một test."
 
 #: templates/problem/data.html:867
 msgid "IOI Signature Graders"
@@ -8806,24 +8586,16 @@ msgid "Re-request Public"
 msgstr "Yêu cầu lại"
 
 #: templates/problem/edit.html:336
-msgid ""
-"Request to publish this problem so it is visible to everyone. An admin will "
-"review and approve or reject your request."
-msgstr ""
-"Yêu cầu công khai bài tập này để mọi người đều có thể xem. Quản trị viên sẽ "
-"xem xét và chấp nhận hoặc từ chối yêu cầu của bạn."
+msgid "Request to publish this problem so it is visible to everyone. An admin will review and approve or reject your request."
+msgstr "Yêu cầu công khai bài tập này để mọi người đều có thể xem. Quản trị viên sẽ xem xét và chấp nhận hoặc từ chối yêu cầu của bạn."
 
 #: templates/problem/edit.html:425
 msgid "Auto Improve Markdown"
 msgstr "Tự động cải thiện Markdown"
 
 #: templates/problem/edit.html:430
-msgid ""
-"Tip: Upload a PDF below and save first, then use this to convert PDF to "
-"markdown. Or use it to reformat existing markdown."
-msgstr ""
-"Mẹo: Tải PDF lên bên dưới và lưu trước, sau đó dùng tính năng này để chuyển "
-"PDF thành markdown. Hoặc dùng để định dạng lại markdown hiện có."
+msgid "Tip: Upload a PDF below and save first, then use this to convert PDF to markdown. Or use it to reformat existing markdown."
+msgstr "Mẹo: Tải PDF lên bên dưới và lưu trước, sau đó dùng tính năng này để chuyển PDF thành markdown. Hoặc dùng để định dạng lại markdown hiện có."
 
 #: templates/problem/edit.html:434
 msgid "Improved Markdown:"
@@ -8867,15 +8639,8 @@ msgid "AI Assistant"
 msgstr "Trợ lý AI"
 
 #: templates/problem/editorial.html:23
-msgid ""
-"Remember to use this editorial <b>only</b> when stuck, and <b>not to copy-"
-"paste code from it</b>. Please be respectful to the problem author and "
-"editorialist. <br><br> <b>Submitting an official solution before solving the "
-"problem yourself is a bannable offence.</b>"
-msgstr ""
-"Chỉ sử dụng khi thực sự cần thiết như một cách tôn trọng tác giả và người "
-"viết hướng dẫn này. <br><br> <b>Chép code từ bài hướng dẫn để nộp bài là "
-"hành vi có thể dẫn đến khóa tài khoản.</b>"
+msgid "Remember to use this editorial <b>only</b> when stuck, and <b>not to copy-paste code from it</b>. Please be respectful to the problem author and editorialist. <br><br> <b>Submitting an official solution before solving the problem yourself is a bannable offence.</b>"
+msgstr "Chỉ sử dụng khi thực sự cần thiết như một cách tôn trọng tác giả và người viết hướng dẫn này. <br><br> <b>Chép code từ bài hướng dẫn để nộp bài là hành vi có thể dẫn đến khóa tài khoản.</b>"
 
 #: templates/problem/feed.html:13
 msgid "FOR YOU"
@@ -8919,11 +8684,8 @@ msgid "Are you sure you want to delete this language template?"
 msgstr "Bạn có chắc muốn xóa code mẫu này?"
 
 #: templates/problem/language_templates.html:168
-msgid ""
-"No language templates have been added. Templates provide starter code for "
-"specific languages."
-msgstr ""
-"Chưa có template nào được thêm. Template cung cấp code mẫu cho từng ngôn ngữ."
+msgid "No language templates have been added. Templates provide starter code for specific languages."
+msgstr "Chưa có template nào được thêm. Template cung cấp code mẫu cho từng ngôn ngữ."
 
 #: templates/problem/language_templates.html:178
 #: templates/problem/language_templates.html:226
@@ -8935,10 +8697,8 @@ msgid "Template Source Code"
 msgstr "Code mẫu"
 
 #: templates/problem/language_templates.html:221
-msgid ""
-"Provide starter code that will be pre-filled when users select this language."
-msgstr ""
-"Cung cấp mã nguồn mẫu sẽ được điền sẵn khi người dùng chọn ngôn ngữ này."
+msgid "Provide starter code that will be pre-filled when users select this language."
+msgstr "Cung cấp mã nguồn mẫu sẽ được điền sẵn khi người dùng chọn ngôn ngữ này."
 
 #: templates/problem/left-sidebar.html:10
 msgid "Feed"
@@ -8992,16 +8752,12 @@ msgstr "ID kết thúc phải lớn hơn hoặc bằng ID khởi đầu."
 
 #: templates/problem/manage_submission.html:110
 #, python-brace-format
-msgid ""
-"You are about to {action} {count} submissions. Are you sure you want to do "
-"this?"
+msgid "You are about to {action} {count} submissions. Are you sure you want to do this?"
 msgstr "Bạn chuẩn bị {action} {count} bài nộp. Tiếp tục?"
 
 #: templates/problem/manage_submission.html:117
 #, python-brace-format
-msgid ""
-"You are about to {action} a few submissions. Are you sure you want to do "
-"this?"
+msgid "You are about to {action} a few submissions. Are you sure you want to do this?"
 msgstr "Bạn chuẩn bị {action} vài bài nộp. Tiếp tục?"
 
 #: templates/problem/manage_submission.html:141
@@ -9276,8 +9032,7 @@ msgstr "Đang tạo lời giải..."
 
 #: templates/problem/solutions.html:186 templates/problem/solutions.html:294
 msgid "Whether this solution should be publicly visible to all users."
-msgstr ""
-"Lời giải này có được hiển thị công khai cho tất cả người dùng hay không."
+msgstr "Lời giải này có được hiển thị công khai cho tất cả người dùng hay không."
 
 #: templates/problem/solutions.html:199 templates/problem/solutions.html:307
 msgid "Date and time when this solution should become available."
@@ -9292,24 +9047,16 @@ msgid "Auto Generate Solution"
 msgstr "Tự động tạo lời giải"
 
 #: templates/problem/solutions.html:224 templates/problem/solutions.html:332
-msgid ""
-"Tip: Uses AI to generate a solution based on the problem statement and AC "
-"submissions. You can optionally provide your rough ideas."
-msgstr ""
-"Mẹo: Sử dụng AI để tạo lời giải dựa trên đề bài và các bài nộp AC. Bạn có "
-"thể nhập ý tưởng sơ bộ của mình."
+msgid "Tip: Uses AI to generate a solution based on the problem statement and AC submissions. You can optionally provide your rough ideas."
+msgstr "Mẹo: Sử dụng AI để tạo lời giải dựa trên đề bài và các bài nộp AC. Bạn có thể nhập ý tưởng sơ bộ của mình."
 
 #: templates/problem/solutions.html:228 templates/problem/solutions.html:336
 msgid "Your rough ideas (optional):"
 msgstr "Ý tưởng sơ bộ của bạn (tùy chọn):"
 
 #: templates/problem/solutions.html:229 templates/problem/solutions.html:337
-msgid ""
-"Enter your solution approach, main ideas, or rough draft here. Leave empty "
-"to generate from scratch..."
-msgstr ""
-"Nhập cách tiếp cận, ý tưởng chính hoặc bản nháp của bạn ở đây. Để trống nếu "
-"muốn tạo từ đầu..."
+msgid "Enter your solution approach, main ideas, or rough draft here. Leave empty to generate from scratch..."
+msgstr "Nhập cách tiếp cận, ý tưởng chính hoặc bản nháp của bạn ở đây. Để trống nếu muốn tạo từ đầu..."
 
 #: templates/problem/solutions.html:232 templates/problem/solutions.html:340
 msgid "Generate Solution"
@@ -9349,12 +9096,8 @@ msgstr "Đang nộp..."
 
 #: templates/problem/submit.html:238
 #, python-format
-msgid ""
-"<b>Warning!</b> Your default language, <b>%(default_language)s</b>, is "
-"unavailable for this problem and has been deselected."
-msgstr ""
-"<b>Cẩn thận!</b> Ngôn ngữ ưa thích của bạn, <b>%(default_language)s</b>, "
-"không được sử dụng trong bài này."
+msgid "<b>Warning!</b> Your default language, <b>%(default_language)s</b>, is unavailable for this problem and has been deselected."
+msgstr "<b>Cẩn thận!</b> Ngôn ngữ ưa thích của bạn, <b>%(default_language)s</b>, không được sử dụng trong bài này."
 
 #: templates/problem/submit.html:249
 #, python-format
@@ -9613,12 +9356,8 @@ msgid "Batch add by IDs"
 msgstr "Thêm hàng loạt theo ID"
 
 #: templates/quiz/create.html:353 templates/quiz/edit.html:537
-msgid ""
-"Enter question IDs (comma, space, or newline separated; ranges like 5-10 "
-"supported):"
-msgstr ""
-"Nhập ID câu hỏi (cách nhau bằng dấu phẩy, dấu cách hoặc xuống dòng; hỗ trợ "
-"đoạn như 5-10):"
+msgid "Enter question IDs (comma, space, or newline separated; ranges like 5-10 supported):"
+msgstr "Nhập ID câu hỏi (cách nhau bằng dấu phẩy, dấu cách hoặc xuống dòng; hỗ trợ đoạn như 5-10):"
 
 #: templates/quiz/create.html:355 templates/quiz/edit.html:539
 msgid "e.g. 1, 2, 3 or 1-5 or one per line"
@@ -9646,12 +9385,8 @@ msgstr "Tạo câu hỏi mới"
 
 #: templates/quiz/delete.html:8
 #, python-format
-msgid ""
-"Warning: This quiz has %(count)d attempt(s). Deleting will remove all "
-"student attempts and scores."
-msgstr ""
-"Cảnh báo: Câu hỏi lý thuyết này có %(count)d lượt làm bài. Xóa sẽ xóa tất cả "
-"các lượt làm bài và điểm của học sinh."
+msgid "Warning: This quiz has %(count)d attempt(s). Deleting will remove all student attempts and scores."
+msgstr "Cảnh báo: Câu hỏi lý thuyết này có %(count)d lượt làm bài. Xóa sẽ xóa tất cả các lượt làm bài và điểm của học sinh."
 
 #: templates/quiz/delete.html:12
 msgid "Are you sure you want to delete this quiz?"
@@ -9699,19 +9434,12 @@ msgid "Undo"
 msgstr "Hoàn tác"
 
 #: templates/quiz/edit.html:393
-msgid ""
-"Are you sure you want to delete this quiz? This action cannot be undone."
-msgstr ""
-"Bạn có chắc chắn muốn xóa câu hỏi lý thuyết này? Hành động này không thể "
-"hoàn tác."
+msgid "Are you sure you want to delete this quiz? This action cannot be undone."
+msgstr "Bạn có chắc chắn muốn xóa câu hỏi lý thuyết này? Hành động này không thể hoàn tác."
 
 #: templates/quiz/edit.html:399
-msgid ""
-"Are you sure you want to regrade all attempts? This will recalculate scores "
-"for all submitted attempts."
-msgstr ""
-"Bạn có chắc chắn muốn chấm lại tất cả lượt làm bài? Điều này sẽ tính lại "
-"điểm cho tất cả các lượt làm bài đã nộp."
+msgid "Are you sure you want to regrade all attempts? This will recalculate scores for all submitted attempts."
+msgstr "Bạn có chắc chắn muốn chấm lại tất cả lượt làm bài? Điều này sẽ tính lại điểm cho tất cả các lượt làm bài đã nộp."
 
 #: templates/quiz/edit.html:427
 msgid "Regrade All Attempts"
@@ -9815,11 +9543,8 @@ msgstr "Không có lượt làm bài cần chấm"
 
 #: templates/quiz/grading/dashboard.html:158
 #: templates/quiz/grading/quiz_grade.html:133
-msgid ""
-"All essay questions have been graded, or no attempts match your filters."
-msgstr ""
-"Tất cả câu hỏi tự luận đã được chấm, hoặc không có lượt làm bài nào phù hợp "
-"với bộ lọc của bạn."
+msgid "All essay questions have been graded, or no attempts match your filters."
+msgstr "Tất cả câu hỏi tự luận đã được chấm, hoặc không có lượt làm bài nào phù hợp với bộ lọc của bạn."
 
 #: templates/quiz/grading/grade.html:105
 msgid "Current Score"
@@ -9919,7 +9644,7 @@ msgstr "Điểm trung bình"
 msgid "Highest Score"
 msgstr "Điểm cao nhất"
 
-#: templates/quiz/manage.html:44 templates/ticket/list.html:264
+#: templates/quiz/manage.html:44 templates/ticket/list.html:367
 msgid "Title"
 msgstr "Tiêu đề"
 
@@ -9983,12 +9708,8 @@ msgstr "Biểu thức chính quy"
 
 #: templates/quiz/question_bank/create.html:144
 #: templates/quiz/question_bank/edit.html:143
-msgid ""
-"Exact: student answer must match one of the answers. Regex: use regular "
-"expression patterns."
-msgstr ""
-"Khớp chính xác: câu trả lời phải khớp với một trong các đáp án. Regex: sử "
-"dụng biểu thức chính quy."
+msgid "Exact: student answer must match one of the answers. Regex: use regular expression patterns."
+msgstr "Khớp chính xác: câu trả lời phải khớp với một trong các đáp án. Regex: sử dụng biểu thức chính quy."
 
 #: templates/quiz/question_bank/create.html:151
 #: templates/quiz/question_bank/detail.html:107
@@ -10083,8 +9804,7 @@ msgstr "Chỉ cộng điểm cho các lựa chọn đúng"
 
 #: templates/quiz/question_bank/delete.html:8
 msgid "Warning: This question is used in the following quizzes:"
-msgstr ""
-"Cảnh báo: Câu hỏi này đang được sử dụng trong các câu hỏi lý thuyết sau:"
+msgstr "Cảnh báo: Câu hỏi này đang được sử dụng trong các câu hỏi lý thuyết sau:"
 
 #: templates/quiz/question_bank/delete.html:14
 msgid "You must remove it from these quizzes before deleting."
@@ -10099,18 +9819,12 @@ msgid "Delete Question"
 msgstr "Xóa câu hỏi"
 
 #: templates/quiz/question_bank/detail.html:11
-msgid ""
-"Cannot delete: This question is used in one or more quizzes. Remove it from "
-"those quizzes first."
-msgstr ""
-"Không thể xóa: Câu hỏi này đang được sử dụng trong một hoặc nhiều bài kiểm "
-"tra. Hãy xóa câu hỏi khỏi các câu hỏi lý thuyết đó trước."
+msgid "Cannot delete: This question is used in one or more quizzes. Remove it from those quizzes first."
+msgstr "Không thể xóa: Câu hỏi này đang được sử dụng trong một hoặc nhiều bài kiểm tra. Hãy xóa câu hỏi khỏi các câu hỏi lý thuyết đó trước."
 
 #: templates/quiz/question_bank/detail.html:14
-msgid ""
-"Are you sure you want to delete this question? This action cannot be undone."
-msgstr ""
-"Bạn có chắc chắn muốn xóa câu hỏi này? Hành động này không thể hoàn tác."
+msgid "Are you sure you want to delete this question? This action cannot be undone."
+msgstr "Bạn có chắc chắn muốn xóa câu hỏi này? Hành động này không thể hoàn tác."
 
 #: templates/quiz/question_bank/detail.html:63
 msgid "Correct Answer(s)"
@@ -10281,8 +9995,7 @@ msgstr "Kéo file vào đây hoặc nhấp để tải lên"
 
 #: templates/quiz/take.html:440
 msgid "Allowed: PDF, DOC, DOCX, TXT, RTF, ODT, images, ZIP. Max 10MB per file."
-msgstr ""
-"Cho phép: PDF, DOC, DOCX, TXT, RTF, ODT, ảnh, ZIP. Tối đa 10MB mỗi file."
+msgstr "Cho phép: PDF, DOC, DOCX, TXT, RTF, ODT, ảnh, ZIP. Tối đa 10MB mỗi file."
 
 #: templates/quiz/take.html:480
 msgid "Make sure you have answered all questions before submitting."
@@ -10311,26 +10024,16 @@ msgstr "Kích hoạt tài khoản"
 
 #: templates/registration/activation_email.html:3
 #, python-format
-msgid ""
-"Thanks for registering! We're glad to have you. The last step is activating "
-"your account. Please activate your account in the next %(expiration_days)d "
-"days."
-msgstr ""
-"Cảm ơn bạn đã đăng ký! Chúng tôi rất vui được chào đón bạn. Bước cuối cùng "
-"là kích hoạt tài khoản của bạn. Vui lòng kích hoạt tài khoản trong vòng "
-"%(expiration_days)d ngày."
+msgid "Thanks for registering! We're glad to have you. The last step is activating your account. Please activate your account in the next %(expiration_days)d days."
+msgstr "Cảm ơn bạn đã đăng ký! Chúng tôi rất vui được chào đón bạn. Bước cuối cùng là kích hoạt tài khoản của bạn. Vui lòng kích hoạt tài khoản trong vòng %(expiration_days)d ngày."
 
 #: templates/registration/activation_email.html:5
 msgid "Activate"
 msgstr "Kích hoạt"
 
 #: templates/registration/activation_email.html:10
-msgid ""
-"Alternatively, you can reply to this message to activate your account. Your "
-"reply must keep the following text intact for this to work:"
-msgstr ""
-"Hoặc bạn có thể trả lời tin nhắn này để kích hoạt tài khoản của bạn. Email "
-"trả lời của bạn phải giữ nguyên đoạn văn sau đây:"
+msgid "Alternatively, you can reply to this message to activate your account. Your reply must keep the following text intact for this to work:"
+msgstr "Hoặc bạn có thể trả lời tin nhắn này để kích hoạt tài khoản của bạn. Email trả lời của bạn phải giữ nguyên đoạn văn sau đây:"
 
 #: templates/registration/activation_email.html:16
 msgid "See you soon!"
@@ -10384,15 +10087,11 @@ msgid "Reset Password"
 msgstr "Reset mật khẩu"
 
 #: templates/registration/password_reset_done.html:4
-msgid ""
-"We've emailed you instructions for setting your password. You should be "
-"receiving them shortly."
+msgid "We've emailed you instructions for setting your password. You should be receiving them shortly."
 msgstr "Chúng tôi đã gửi email cho bạn để đặt lại mật khẩu."
 
 #: templates/registration/password_reset_done.html:5
-msgid ""
-"If you don't receive an email, please make sure you've entered the address "
-"you registered with, and check your spam folder."
+msgid "If you don't receive an email, please make sure you've entered the address you registered with, and check your spam folder."
 msgstr "Nếu bạn không nhận được email, hãy kiểm tra hộp thư rác (spam)."
 
 #: templates/registration/password_reset_email.html:2
@@ -10400,20 +10099,13 @@ msgid "Password Reset"
 msgstr "Đặt lại mật khẩu"
 
 #: templates/registration/password_reset_email.html:3
-msgid ""
-"We have received a request to reset your password. Click the button below to "
-"reset your password:"
-msgstr ""
-"Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu của bạn. Nhấn vào nút bên "
-"dưới để đặt lại mật khẩu của bạn:"
+msgid "We have received a request to reset your password. Click the button below to reset your password:"
+msgstr "Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu của bạn. Nhấn vào nút bên dưới để đặt lại mật khẩu của bạn:"
 
 #: templates/registration/password_reset_email.txt:1
 #, python-format
-msgid ""
-"You're receiving this email because you requested a password reset for your "
-"user account at %(site_name)s."
-msgstr ""
-"Bạn nhận được email này vì bạn đã yêu cầu đặt lại mật khẩu tại %(site_name)s."
+msgid "You're receiving this email because you requested a password reset for your user account at %(site_name)s."
+msgstr "Bạn nhận được email này vì bạn đã yêu cầu đặt lại mật khẩu tại %(site_name)s."
 
 #: templates/registration/password_reset_email.txt:3
 msgid "Please go to the following page and choose a new password:"
@@ -10447,13 +10139,8 @@ msgid "Registration is currently closed. Please contact an administrator."
 msgstr "Đăng ký hiện tại đã bị dừng. Hãy liên hệ admin."
 
 #: templates/registration/registration_complete.html:3
-msgid ""
-"You have successfully been registered. An email has been sent to the email "
-"address you provided to confirm your registration. If you don't see it, "
-"kindly check your spam folder as well."
-msgstr ""
-"Bạn đã đăng ký thành công. Kiểm tra email để hoàn thành việc xác thực. Nếu "
-"bạn không tìm thấy nó, vui lòng kiểm tra thư mục spam của bạn."
+msgid "You have successfully been registered. An email has been sent to the email address you provided to confirm your registration. If you don't see it, kindly check your spam folder as well."
+msgstr "Bạn đã đăng ký thành công. Kiểm tra email để hoàn thành việc xác thực. Nếu bạn không tìm thấy nó, vui lòng kiểm tra thư mục spam của bạn."
 
 #: templates/registration/registration_form.html:61
 msgid "(again, for confirmation)"
@@ -10488,13 +10175,10 @@ msgstr "Nhập mã xác thực gồm 6 chữ số từ app bạn chọn"
 #: templates/registration/totp_auth.html:41
 #, python-format
 msgid "If you lost your authentication device, please contact us at %(email)s."
-msgstr ""
-"Nếu bạn mất thiết bị xác thực, vui lòng liên hệ chúng tôi tại %(email)s."
+msgstr "Nếu bạn mất thiết bị xác thực, vui lòng liên hệ chúng tôi tại %(email)s."
 
 #: templates/registration/totp_disable.html:38
-msgid ""
-"To protect your account, you must first authenticate before you can disable "
-"Two Factor Authentication."
+msgid "To protect your account, you must first authenticate before you can disable Two Factor Authentication."
 msgstr "Xác thực hai yếu tố."
 
 #: templates/registration/totp_enable.html:71
@@ -10564,7 +10248,7 @@ msgstr "N/A"
 msgid "There are no judges available at this time."
 msgstr "Không có máy chấm nào hoạt động."
 
-#: templates/status/language-list.html:33 templates/ticket/list.html:263
+#: templates/status/language-list.html:33 templates/ticket/list.html:366
 #: templates/user/import/table_csv.html:3
 msgid "ID"
 msgstr "ID"
@@ -10583,13 +10267,8 @@ msgstr "Phiên bản"
 
 #: templates/submission/internal-error-message.html:3
 #, python-format
-msgid ""
-"An internal error occurred while grading, and the %(SITE_NAME)s "
-"administrators have been notified.<br> In the meantime, try resubmitting in "
-"a few seconds."
-msgstr ""
-"Lỗi hệ thống đã xảy ra trong lúc chấm bài và các admin %(SITE_NAME)s đã được "
-"thông báo.<br> Hãy thử nộp lại bài sau vài giây."
+msgid "An internal error occurred while grading, and the %(SITE_NAME)s administrators have been notified.<br> In the meantime, try resubmitting in a few seconds."
+msgstr "Lỗi hệ thống đã xảy ra trong lúc chấm bài và các admin %(SITE_NAME)s đã được thông báo.<br> Hãy thử nộp lại bài sau vài giây."
 
 #: templates/submission/internal-error-message.html:8
 msgid "An internal error occurred while grading."
@@ -10760,27 +10439,39 @@ msgstr "Chỉnh sửa người được chỉ định"
 msgid "Select users to assign to this ticket. Start typing to search."
 msgstr "Chọn người dùng để chỉ định cho báo cáo. Bắt đầu nhập để tìm kiếm."
 
-#: templates/ticket/list.html:135 templates/ticket/ticket.html:185
+#: templates/ticket/list.html:158 templates/ticket/ticket.html:185
 msgid "Reopened: "
 msgstr "Mở lại: "
 
-#: templates/ticket/list.html:138 templates/ticket/ticket.html:186
+#: templates/ticket/list.html:161 templates/ticket/ticket.html:186
 msgid "Closed: "
 msgstr "Đóng: "
 
-#: templates/ticket/list.html:223
+#: templates/ticket/list.html:238
+msgid "selected"
+msgstr "đã chọn"
+
+#: templates/ticket/list.html:253
+msgid "Search users..."
+msgstr "Tìm kiếm người dùng..."
+
+#: templates/ticket/list.html:278
+msgid "Error updating assignees."
+msgstr "Lỗi khi cập nhật người phụ trách."
+
+#: templates/ticket/list.html:303
 msgid "Use desktop notification"
 msgstr "Sử dụng thông báo từ desktop"
 
-#: templates/ticket/list.html:229
+#: templates/ticket/list.html:318
 msgid "Show my tickets only"
 msgstr "Chỉ hiển thị các báo cáo dành cho tôi"
 
-#: templates/ticket/list.html:233
+#: templates/ticket/list.html:322
 msgid "Filing user"
 msgstr "Người báo cáo"
 
-#: templates/ticket/list.html:242
+#: templates/ticket/list.html:331
 msgid "Assignee"
 msgstr "Người định uỷ thác"
 
@@ -10811,22 +10502,12 @@ msgid "Thanks for opening a ticket!"
 msgstr "Cảm ơn bạn đã báo cáo!"
 
 #: templates/ticket/new_post.html:8
-msgid ""
-"Please keep in mind that this form is for reporting issues with a blog post, "
-"and not for general discussion. If you want to discuss the content, please "
-"use the comments section instead."
-msgstr ""
-"Lưu ý rằng đây là đơn báo cáo các vấn đề trong đề bài, không phải nơi để hỏi "
-"bài hay nộp bài."
+msgid "Please keep in mind that this form is for reporting issues with a blog post, and not for general discussion. If you want to discuss the content, please use the comments section instead."
+msgstr "Lưu ý rằng đây là đơn báo cáo các vấn đề trong đề bài, không phải nơi để hỏi bài hay nộp bài."
 
 #: templates/ticket/new_problem.html:9
-msgid ""
-"Please keep in mind that this form is for reporting issues with a problem "
-"statement, and not for asking for help. If you require assistance on solving "
-"a problem, ask in the comments instead."
-msgstr ""
-"Lưu ý rằng đây là đơn báo cáo các vấn đề trong đề bài, không phải nơi để hỏi "
-"bài hay nộp bài."
+msgid "Please keep in mind that this form is for reporting issues with a problem statement, and not for asking for help. If you require assistance on solving a problem, ask in the comments instead."
+msgstr "Lưu ý rằng đây là đơn báo cáo các vấn đề trong đề bài, không phải nơi để hỏi bài hay nộp bài."
 
 #: templates/ticket/ticket.html:90
 msgid "Could not update notes"
@@ -10864,7 +10545,12 @@ msgstr "Lưu ý cho người ủy thác"
 msgid "Nothing here."
 msgstr "Không có gì."
 
-#: templates/ticket/ticket.html:321
+#: templates/ticket/ticket.html:322 templates/ticket/ticket.html:326
+#: templates/ticket/ticket.html:330
+msgid "Ticket list"
+msgstr "Danh sách báo cáo"
+
+#: templates/ticket/ticket.html:335
 msgid "View history"
 msgstr "Xem lịch sử"
 
@@ -11039,8 +10725,7 @@ msgstr "Hiệu ứng động"
 
 #: templates/user/theme-settings.html:105
 msgid "Add animated effects to your page. Effects are visible on desktop only."
-msgstr ""
-"Thêm hiệu ứng động vào trang của bạn. Hiệu ứng chỉ hiển thị trên máy tính."
+msgstr "Thêm hiệu ứng động vào trang của bạn. Hiệu ứng chỉ hiển thị trên máy tính."
 
 #: templates/user/user-about.html:25
 msgid "Problems Solved"
@@ -11360,12 +11045,8 @@ msgstr "Chưa có mục nào."
 #~ msgid "Public request was approved."
 #~ msgstr "Yêu cầu công khai đã được chấp nhận."
 
-#~ msgid ""
-#~ "No testcase validator configured. Add a validator program in Test Data "
-#~ "settings first."
-#~ msgstr ""
-#~ "Chưa cấu hình trình kiểm tra test. Hãy thêm chương trình validator trong "
-#~ "phần Dữ liệu Test trước."
+#~ msgid "No testcase validator configured. Add a validator program in Test Data settings first."
+#~ msgstr "Chưa cấu hình trình kiểm tra test. Hãy thêm chương trình validator trong phần Dữ liệu Test trước."
 
 #~ msgid "upload_to is required"
 #~ msgstr "Thiếu đường dẫn tải lên"
@@ -11542,12 +11223,8 @@ msgstr "Chưa có mục nào."
 #~ msgid "Download as CSV"
 #~ msgstr "Tải file CSV"
 
-#~ msgid ""
-#~ "You are not enrolled in any courses in this organization yet. Browse "
-#~ "available courses and join to start learning!"
-#~ msgstr ""
-#~ "Bạn chưa đăng ký khóa học nào trong tổ chức này. Hãy khám phá các khóa "
-#~ "học có sẵn và tham gia để bắt đầu học tập!"
+#~ msgid "You are not enrolled in any courses in this organization yet. Browse available courses and join to start learning!"
+#~ msgstr "Bạn chưa đăng ký khóa học nào trong tổ chức này. Hãy khám phá các khóa học có sẵn và tham gia để bắt đầu học tập!"
 
 #~ msgid "Activity"
 #~ msgstr "Hoạt động"
@@ -11567,23 +11244,8 @@ msgstr "Chưa có mục nào."
 #~ msgid "%s in %s"
 #~ msgstr "%s trong %s"
 
-msgid "selected"
-msgstr "đã chọn"
-
-msgid "Search users..."
-msgstr "Tìm kiếm người dùng..."
-
-msgid "Assign"
-msgstr "Phân công"
-
-msgid "Ticket list"
-msgstr "Danh sách báo cáo"
-
-msgid "Error updating assignees."
-msgstr "Lỗi khi cập nhật người phụ trách."
-
-msgid "No tickets selected."
-msgstr "Chưa chọn báo cáo nào."
+#~ msgid "Assign"
+#~ msgstr "Phân công"
 
 #~ msgid "Page %s of %s"
 #~ msgstr "Trang %s/%s"
