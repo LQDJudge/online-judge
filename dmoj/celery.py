@@ -2,7 +2,7 @@ import logging
 import socket
 
 from celery import Celery
-from celery.signals import task_failure
+from celery.signals import task_failure, task_prerun
 
 app = Celery("dmoj")
 
@@ -18,8 +18,15 @@ if hasattr(settings, "CELERY_RESULT_BACKEND_SECRET"):
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
 
+from judge.cache_handler import clear_request_l0_cache  # noqa: E402
+
 # Logger to enable errors be reported.
 logger = logging.getLogger("judge.celery")
+
+
+@task_prerun.connect()
+def celery_clear_l0_cache(sender, **kwargs):
+    clear_request_l0_cache()
 
 
 @task_failure.connect()

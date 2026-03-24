@@ -274,6 +274,10 @@ def chatbot_respond_task(self, user_id, problem_code, user_message):
             }
         )
 
+        # Preserve model changes made during the LLM call (user may have switched)
+        current_conv = get_conversation(user_id, problem_code)
+        conversation["model"] = current_conv.get("model", conversation.get("model"))
+
         # Save updated conversation
         save_conversation(user_id, problem_code, conversation)
 
