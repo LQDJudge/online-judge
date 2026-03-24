@@ -76,7 +76,6 @@ GENERATOR SCRIPT FORMAT:
 - NEVER use inline comments (e.g., "random 100 1001 // test" will FAIL)
 - Each non-comment line = space-separated args passed directly to generator"""
 
-MAX_HISTORY_MESSAGES = 10
 # Reserve tokens for system prompt, current message, tool outputs, and response.
 RESERVED_TOKENS = 50_000
 # Rough approximation: 1 token ≈ 4 characters.
@@ -93,23 +92,21 @@ def _max_history_chars(model_id):
     return max(available_tokens, RESERVED_TOKENS) * CHARS_PER_TOKEN
 
 
-def _get_recent_messages(messages, model_id, max_messages=MAX_HISTORY_MESSAGES):
+def _get_recent_messages(messages, model_id):
     """Get recent conversation messages for LLM context.
 
-    Applies both a message-count limit and a model-aware character budget,
-    keeping the most recent messages that fit.
+    Applies a model-aware character budget, keeping the most recent messages
+    that fit. The cache already caps stored messages (MAX_STORED_MESSAGES).
     """
     if not messages:
         return []
 
     max_chars = _max_history_chars(model_id)
 
-    # Start from the most recent, collect until budget is spent
-    candidates = messages[-max_messages:]
     result = []
     total_chars = 0
 
-    for msg in reversed(candidates):
+    for msg in reversed(messages):
         content_len = len(msg.get("content", ""))
         if total_chars + content_len > max_chars:
             break
