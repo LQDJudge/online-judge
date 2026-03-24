@@ -127,6 +127,36 @@ def get_model(user_id, problem_code):
     return conversation.get("model")
 
 
+def delete_message(user_id, problem_code, message_index):
+    """
+    Delete a message from conversation history.
+    If deleting a user message, also deletes the following assistant response.
+
+    Returns:
+        True if deletion succeeded, False otherwise
+    """
+    conversation = get_conversation(user_id, problem_code)
+    messages = conversation.get("messages", [])
+
+    if message_index < 0 or message_index >= len(messages):
+        return False
+
+    target = messages[message_index]
+
+    if target["role"] == "user":
+        # Delete user message and the following assistant response if exists
+        next_idx = message_index + 1
+        if next_idx < len(messages) and messages[next_idx]["role"] == "assistant":
+            del messages[next_idx]
+        del messages[message_index]
+    else:
+        del messages[message_index]
+
+    conversation["messages"] = messages
+    save_conversation(user_id, problem_code, conversation)
+    return True
+
+
 def set_model(user_id, problem_code, model_id):
     """
     Set the model for a conversation.

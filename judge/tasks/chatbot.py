@@ -7,6 +7,7 @@ import logging
 import time
 
 from celery import shared_task
+from django.core.cache import cache
 
 from judge.chatbot.cache import get_conversation, save_conversation
 from judge.chatbot.tools import get_tool_definitions, get_tool_executables
@@ -75,6 +76,9 @@ GENERATOR SCRIPT FORMAT:
 - Comment LINES (starting with # or //) are allowed for labeling sections
 - NEVER use inline comments (e.g., "random 100 1001 // test" will FAIL)
 - Each non-comment line = space-separated args passed directly to generator"""
+
+STREAM_CACHE_PREFIX = "chatbot_stream"
+STREAM_CACHE_TTL = 300  # seconds
 
 # Reserve tokens for system prompt, current message, tool outputs, and response.
 RESERVED_TOKENS = 50_000
@@ -206,6 +210,23 @@ def chatbot_respond_task(self, user_id, problem_code, user_message):
             f"do NOT ask the user for the problem code."
         )
 
+        # Set up streaming partial cache writes
+        task_id = self.request.id
+        stream_key = f"{STREAM_CACHE_PREFIX}:{task_id}"
+        _last_write = [0, 0]  # [time, length]
+
+        def on_partial(text_so_far):
+            now = time.time()
+            text_len = len(text_so_far)
+            if (now - _last_write[0] >= 0.3) or (text_len - _last_write[1] >= 100):
+                cache.set(
+                    stream_key,
+                    {"text": text_so_far, "done": False},
+                    timeout=STREAM_CACHE_TTL,
+                )
+                _last_write[0] = now
+                _last_write[1] = text_len
+
         # Call LLM with native tool calling
         response = llm.call_llm_with_history(
             conversation_messages=recent_messages,
@@ -214,6 +235,14 @@ def chatbot_respond_task(self, user_id, problem_code, user_message):
             tools=tool_definitions,
             tool_executables=tool_executables,
             strip_thinking=True,
+            on_partial=on_partial,
+        )
+
+        # Mark stream as done
+        cache.set(
+            stream_key,
+            {"text": response or "", "done": True},
+            timeout=STREAM_CACHE_TTL,
         )
 
         if not response:

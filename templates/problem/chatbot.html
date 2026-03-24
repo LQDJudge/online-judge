@@ -19,6 +19,7 @@
 {% block js_media %}
   <script src="{{ static('katex_config.js') }}"></script>
   {% include "katex-load.html" %}
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="{{ static('chatbot.js') }}"></script>
   <script type="text/javascript">
     window.CHATBOT_CONFIG = {
@@ -26,7 +27,9 @@
       clearUrl: '{{ url("problem_chatbot_clear", problem.code) }}',
       historyUrl: '{{ url("problem_chatbot_history", problem.code) }}',
       modelUrl: '{{ url("problem_chatbot_model", problem.code) }}',
+      deleteUrl: '{{ url("problem_chatbot_delete", problem.code) }}',
       taskStatusUrl: '{{ url("task_status_ajax") }}',
+      streamUrl: '{{ url("chatbot_stream_ajax") }}',
       csrfToken: '{{ csrf_token }}',
       userAvatar: '{{ gravatar(request.profile.id) }}',
       currentModel: '{{ current_model }}',
@@ -37,6 +40,7 @@
         error: '{{ _("Error") }}',
         networkError: '{{ _("Network error occurred") }}',
         clearConfirm: '{{ _("Clear conversation history?") }}',
+        deleteConfirm: '{{ _("Delete this message?") }}',
         placeholder: '{{ _("Type your message... (Shift+Enter for new line)") }}',
         modelChanged: '{{ _("Model changed to") }}'
       }
@@ -50,7 +54,7 @@
   <div class="chatbot-container">
     <div class="chatbot-messages" id="chatbot-messages">
       {% for msg in chat_messages %}
-        <div class="message {{ msg.role }}">
+        <div class="message {{ msg.role }}" data-index="{{ loop.index0 }}">
           <div class="message-avatar">
             {% if msg.role == 'user' %}
               <img src="{{ gravatar(request.profile.id) }}" alt="">

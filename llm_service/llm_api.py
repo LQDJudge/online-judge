@@ -39,6 +39,7 @@ class LLMService:
         tool_executables: Optional[List] = None,
         strip_thinking: bool = True,
         timeout: Optional[int] = None,
+        on_partial: Optional[callable] = None,
     ) -> Optional[str]:
         """
         Get a text response from the Poe API using the given messages.
@@ -79,6 +80,8 @@ class LLMService:
                 for partial in fp.get_bot_response_sync(**kwargs):
                     response += partial.text
                     logger.debug(f"LLM partial response: {partial.text}")
+                    if on_partial:
+                        on_partial(response)
             finally:
                 if stream_timeout > 0:
                     signal.alarm(0)
@@ -215,6 +218,7 @@ class LLMService:
         tools: Optional[List["fp.ToolDefinition"]] = None,
         tool_executables: Optional[List] = None,
         strip_thinking: bool = True,
+        on_partial: Optional[callable] = None,
     ) -> Optional[str]:
         """
         Call LLM with native message array for conversation history.
@@ -226,6 +230,7 @@ class LLMService:
             tools: Optional list of ToolDefinition for native tool calling
             tool_executables: Optional list of callables for automatic tool execution
             strip_thinking: Whether to remove thinking content from response
+            on_partial: Optional callback called with accumulated text during streaming
 
         Returns:
             LLM response as string, or None if failed
@@ -238,6 +243,7 @@ class LLMService:
             tools=tools,
             tool_executables=tool_executables,
             strip_thinking=strip_thinking,
+            on_partial=on_partial,
         )
 
     def _get_site_domain(self) -> Optional[str]:

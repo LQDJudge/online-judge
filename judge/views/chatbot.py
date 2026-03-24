@@ -13,13 +13,17 @@ from django.views.generic import View
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
+from django.core.cache import cache
+
 from judge.models import Problem
 from judge.views.problem import ProblemMixin, TitleMixin
 from judge.chatbot.cache import (
     get_conversation,
     clear_conversation,
+    delete_message,
     set_model,
 )
+from judge.utils.views import short_circuit_middleware
 from llm_service.config import get_config
 
 
@@ -228,3 +232,48 @@ class ChatbotSetModel(View):
             )
         else:
             return JsonResponse({"error": "Invalid model"}, status=400)
+
+
+class ChatbotDeleteMessage(View):
+    """API endpoint to delete a message from conversation history."""
+
+    def post(self, request, problem):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Not authenticated"}, status=401)
+        if not request.user.is_superuser:
+            return JsonResponse({"error": "Permission denied"}, status=403)
+
+        problem_obj = get_object_or_404(Problem, code=problem)
+
+        try:
+            message_index = int(request.POST.get("message_index", -1))
+        except (ValueError, TypeError):
+            return JsonResponse({"error": "Invalid message index"}, status=400)
+
+        if delete_message(request.user.id, problem_obj.code, message_index):
+            return JsonResponse({"success": True})
+        else:
+            return JsonResponse({"error": "Invalid message index"}, status=400)
+
+
+@short_circuit_middleware
+def chatbot_stream_ajax(request):
+    """Return partial streaming content for a running chatbot task."""
+    task_id = request.GET.get("id")
+    if not task_id:
+        return JsonResponse({"partial": None, "done": False})
+
+    from judge.tasks.chatbot import STREAM_CACHE_PREFIX
+
+    stream_key = f"{STREAM_CACHE_PREFIX}:{task_id}"
+    data = cache.get(stream_key)
+
+    if data is None:
+        return JsonResponse({"partial": None, "done": False})
+
+    return JsonResponse(
+        {
+            "partial": data.get("text", ""),
+            "done": data.get("done", False),
+        }
+    )

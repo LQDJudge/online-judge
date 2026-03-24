@@ -337,6 +337,11 @@ urlpatterns = [
                     chatbot.ChatbotSetModel.as_view(),
                     name="problem_chatbot_model",
                 ),
+                re_path(
+                    r"^/chatbot/delete$",
+                    chatbot.ChatbotDeleteMessage.as_view(),
+                    name="problem_chatbot_delete",
+                ),
                 re_path(r"^/submit$", problem.problem_submit, name="problem_submit"),
                 re_path(
                     r"^/resubmit/(?P<submission>\d+)$",
@@ -1521,6 +1526,11 @@ urlpatterns = [
                 ),
                 re_path(
                     r"^ajax_status$", tasks.task_status_ajax, name="task_status_ajax"
+                ),
+                re_path(
+                    r"^chatbot_stream$",
+                    chatbot.chatbot_stream_ajax,
+                    name="chatbot_stream_ajax",
                 ),
                 re_path(r"^success$", tasks.demo_success),
                 re_path(r"^failure$", tasks.demo_failure),

@@ -111,6 +111,51 @@
         flex-direction: column;
         gap: 6px;
         min-width: 0;
+        position: relative;
+
+        .message-delete-btn {
+            display: none;
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid $border_gray;
+            background: $background_light_gray;
+            color: $widget_black;
+            cursor: pointer;
+            padding: 0;
+            font-size: 10px;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            opacity: 0.6;
+            transition: opacity 0.15s, color 0.15s;
+
+            &:hover {
+                opacity: 1;
+                color: $announcement_red;
+                border-color: $announcement_red;
+            }
+        }
+    }
+
+    .message:hover .message-delete-btn {
+        display: flex;
+    }
+
+    // For user messages, position delete button on the left side
+    .message.user .message-body .message-delete-btn {
+        right: auto;
+        left: -8px;
+    }
+
+    // Streaming cursor animation
+    .message.streaming .message-content::after {
+        content: '\25CD';
+        animation: blink-cursor 0.8s infinite;
+        opacity: 0.7;
     }
 
     .message-content {
@@ -181,6 +226,15 @@
     }
     30% {
         opacity: 1;
+    }
+}
+
+@keyframes blink-cursor {
+    0%, 100% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 0.7;
     }
 }
 

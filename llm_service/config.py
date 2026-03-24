@@ -9,7 +9,7 @@ from typing import Optional
 # Default configuration values
 DEFAULT_BOT_NAME = "Claude-Sonnet-4.6"
 DEFAULT_SLEEP_TIME = 2.5
-DEFAULT_TIMEOUT = 120
+DEFAULT_TIMEOUT = 300
 DEFAULT_MAX_RETRIES = 1
 
 # Supported models for chatbot (Poe bot names)

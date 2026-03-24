@@ -24,6 +24,23 @@ $(document).ready(function() {
   }
 
   /**
+   * Check if user is near the bottom of the chat (within 100px)
+   */
+  function isNearBottom() {
+    var el = $messages[0];
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+  }
+
+  /**
+   * Scroll to bottom only if user hasn't scrolled up
+   */
+  function scrollToBottomIfNear() {
+    if (isNearBottom()) {
+      scrollToBottom();
+    }
+  }
+
+  /**
    * Auto-resize textarea based on content
    */
   function autoResizeTextarea() {
@@ -57,6 +74,21 @@ $(document).ready(function() {
   }
 
   /**
+   * Render markdown on the client side (used during streaming)
+   */
+  function renderMarkdownClient(text) {
+    if (typeof marked !== 'undefined') {
+      try {
+        var html = marked.parse(text);
+        return '<div class="md-typeset content-description">' + html + '</div>';
+      } catch (e) {
+        // Fallback to plain text
+      }
+    }
+    return formatContent(text, false);
+  }
+
+  /**
    * Post-process messages (render KaTeX math)
    * Uses the global renderKatex function from katex_config.js
    */
@@ -64,6 +96,15 @@ $(document).ready(function() {
     if (typeof renderKatex === 'function') {
       renderKatex($element[0]);
     }
+  }
+
+  /**
+   * Reindex data-index attributes on all messages after a deletion
+   */
+  function reindexMessages() {
+    $messages.children('.message').each(function(i) {
+      $(this).attr('data-index', i);
+    });
   }
 
   /**
@@ -77,7 +118,10 @@ $(document).ready(function() {
   function addMessage(role, content, toolCalls, isHtml) {
     if (typeof isHtml === 'undefined') isHtml = true;
 
+    var index = $messages.children('.message').length;
     var $msg = $('<div class="message ' + role + '"></div>');
+    $msg.attr('data-index', index);
+
     var $avatar = $('<div class="message-avatar"></div>');
 
     // Use user's avatar image or robot icon for assistant
@@ -89,6 +133,10 @@ $(document).ready(function() {
 
     var $body = $('<div class="message-body"></div>');
     var $content = $('<div class="message-content"></div>').html(formatContent(content, isHtml));
+
+    // Add delete button
+    var $deleteBtn = $('<button class="message-delete-btn" title="Delete"><i class="fa fa-times"></i></button>');
+    $body.append($deleteBtn);
 
     $body.append($content);
 
@@ -153,44 +201,106 @@ $(document).ready(function() {
 
     if (processing) {
       $status.text(statusText || config.translations.processing).show();
-      addTypingIndicator();
     } else {
       $status.hide();
-      removeTypingIndicator();
     }
   }
 
   /**
-   * Poll task status until complete
+   * Poll task status with streaming partial updates
    * @param taskId - the Celery task ID
    */
   function pollTaskStatus(taskId) {
-    var pollInterval = setInterval(function() {
+    var $assistantMsg = null;
+    var $contentEl = null;
+    var lastPartialLen = 0;
+
+    // Show typing indicator until first partial arrives
+    addTypingIndicator();
+
+    // Poll for streaming partial content (fast: every 500ms)
+    var streamInterval = setInterval(function() {
+      $.ajax({
+        url: config.streamUrl + '?id=' + taskId,
+        type: 'GET',
+        success: function(data) {
+          if (data.partial && data.partial.length > lastPartialLen) {
+            // First partial: replace typing indicator with message bubble
+            if (!$assistantMsg) {
+              removeTypingIndicator();
+              $assistantMsg = addMessage('assistant', '', null, true);
+              $assistantMsg.addClass('streaming');
+              $contentEl = $assistantMsg.find('.message-content');
+            }
+            $contentEl.html(renderMarkdownClient(data.partial));
+            lastPartialLen = data.partial.length;
+            scrollToBottomIfNear();
+          }
+        }
+      });
+    }, 500);
+
+    // Poll for task completion (every 2s)
+    var taskInterval = setInterval(function() {
       $.ajax({
         url: config.taskStatusUrl + '?id=' + taskId,
         type: 'GET',
         success: function(data) {
           if (data.code === 'SUCCESS') {
-            clearInterval(pollInterval);
+            clearInterval(taskInterval);
+            clearInterval(streamInterval);
             setProcessing(false);
 
             if (data.success) {
-              // Add assistant response
-              addMessage('assistant', data.content || 'No response', data.tool_calls, true);
+              if ($assistantMsg) {
+                // Replace partial with final rendered HTML
+                $assistantMsg.removeClass('streaming');
+                $contentEl.html(formatContent(data.content || 'No response', true));
+                postProcessMessage($contentEl);
+              } else {
+                // No partials were received; add message directly
+                removeTypingIndicator();
+                addMessage('assistant', data.content || 'No response', data.tool_calls, true);
+              }
             } else {
-              addMessage('assistant', config.translations.error + ': ' + (data.error || 'Unknown error'), null, false);
+              removeTypingIndicator();
+              if ($assistantMsg) {
+                $assistantMsg.removeClass('streaming');
+                $contentEl.html(formatContent(
+                  config.translations.error + ': ' + (data.error || 'Unknown error'), false
+                ));
+              } else {
+                addMessage('assistant', config.translations.error + ': ' + (data.error || 'Unknown error'), null, false);
+              }
             }
+            scrollToBottom();
           } else if (data.code === 'FAILURE') {
-            clearInterval(pollInterval);
+            clearInterval(taskInterval);
+            clearInterval(streamInterval);
             setProcessing(false);
-            addMessage('assistant', config.translations.error + ': ' + (data.error || 'Task failed'), null, false);
+            removeTypingIndicator();
+            if ($assistantMsg) {
+              $assistantMsg.removeClass('streaming');
+              $contentEl.html(formatContent(
+                config.translations.error + ': ' + (data.error || 'Task failed'), false
+              ));
+            } else {
+              addMessage('assistant', config.translations.error + ': ' + (data.error || 'Task failed'), null, false);
+            }
           }
           // Continue polling for PROGRESS/WORKING states
         },
         error: function() {
-          clearInterval(pollInterval);
+          clearInterval(taskInterval);
+          clearInterval(streamInterval);
           setProcessing(false);
-          addMessage('assistant', config.translations.networkError, null, false);
+          removeTypingIndicator();
+          if ($assistantMsg) {
+            $assistantMsg.removeClass('streaming');
+            $contentEl.html(formatContent(config.translations.networkError, false));
+          } else {
+            addMessage('assistant', config.translations.networkError, null, false);
+          }
         }
       });
     }, 2000); // Poll every 2 seconds
@@ -236,6 +346,45 @@ $(document).ready(function() {
       error: function() {
         setProcessing(false);
         addMessage('assistant', config.translations.networkError);
+      }
+    });
+  }
+
+  /**
+   * Delete a message
+   */
+  function deleteMessage($msg) {
+    if (isProcessing) return;
+    if (!confirm(config.translations.deleteConfirm)) return;
+
+    var index = parseInt($msg.attr('data-index'));
+
+    $.ajax({
+      url: config.deleteUrl,
+      type: 'POST',
+      data: {
+        message_index: index,
+        csrfmiddlewaretoken: config.csrfToken
+      },
+      success: function(data) {
+        if (data.success) {
+          var isUser = $msg.hasClass('user');
+          if (isUser) {
+            // Also remove the next assistant message (pair deletion)
+            var $next = $msg.next('.message.assistant');
+            if ($next.length) $next.remove();
+          }
+          $msg.remove();
+          reindexMessages();
+
+          // Show welcome message if no messages left
+          if ($messages.children('.message').length === 0) {
+            window.location.reload();
+          }
+        }
+      },
+      error: function() {
+        alert(config.translations.networkError);
       }
     });
   }
@@ -345,6 +494,12 @@ $(document).ready(function() {
 
   // Clear history button
   $clearBtn.click(clearHistory);
+
+  // Delete message (delegated)
+  $messages.on('click', '.message-delete-btn', function(e) {
+    e.stopPropagation();
+    deleteMessage($(this).closest('.message'));
+  });
 
   // Model selector button
   $modelBtn.click(function(e) {
