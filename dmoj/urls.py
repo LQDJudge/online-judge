@@ -64,6 +64,7 @@ from judge.views import (
     theme,
     direct_upload,
 )
+from judge.views import package_import
 from judge.views.problem_data import (
     ProblemDataView,
     ProblemSubmissionDiff,
@@ -341,6 +342,26 @@ urlpatterns = [
                     r"^/chatbot/delete$",
                     chatbot.ChatbotDeleteMessage.as_view(),
                     name="problem_chatbot_delete",
+                ),
+                re_path(
+                    r"^/import$",
+                    package_import.PackageImportView.as_view(),
+                    name="problem_package_import",
+                ),
+                re_path(
+                    r"^/import/upload$",
+                    package_import.PackageImportUploadView.as_view(),
+                    name="problem_package_import_upload",
+                ),
+                re_path(
+                    r"^/import/apply$",
+                    package_import.PackageImportApplyView.as_view(),
+                    name="problem_package_import_apply",
+                ),
+                re_path(
+                    r"^/import/file$",
+                    package_import.PackageImportFileView.as_view(),
+                    name="problem_package_import_file",
                 ),
                 re_path(r"^/submit$", problem.problem_submit, name="problem_submit"),
                 re_path(

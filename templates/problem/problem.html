@@ -210,6 +210,11 @@
   {% if can_edit_problem %}
     <hr>
     <div class="link-row">
+      <a href="{{ url('problem_edit', problem.code) }}">
+        <i class="fa fa-edit"></i><span> {{ _('Edit problem') }}</span>
+      </a>
+    </div>
+    <div class="link-row">
       <a href="{{ url('problem_ticket_list', problem.code) }}">
         <i class="fa fa-clipboard-list"></i><span> {{ _('Manage tickets') }}
           {% if num_open_tickets %}<span class="badge">{{ num_open_tickets }}</span>{% endif %}
@@ -245,42 +250,6 @@
     <div class="link-row">
       <a href="{{ url('admin:judge_problem_change', problem.id) }}">
         <i class="fa fa-user-shield"></i><span> {{ _('Admin') }}</span>
-      </a>
-    </div>
-  {% endif %}
-
-  {% if can_edit_problem %}
-    <hr>
-    <div class="link-row">
-      <a href="{{ url('problem_edit', problem.code) }}">
-        <i class="fa fa-edit"></i><span> {{ _('Edit problem') }}</span>
-      </a>
-    </div>
-    {% if not problem.is_manually_managed %}
-      <div class="link-row">
-        <a href="{{ url('problem_data', problem.code) }}">
-          <i class="fa fa-database"></i><span> {{ _('Edit test data') }}</span>
-        </a>
-      </div>
-    {% endif %}
-    <div class="link-row">
-      <a href="{{ url('problem_edit_language_limits', problem.code) }}">
-        <i class="fa fa-stopwatch"></i><span> {{ _('Edit language limits') }}</span>
-      </a>
-    </div>
-    <div class="link-row">
-      <a href="{{ url('problem_edit_language_templates', problem.code) }}">
-        <i class="fa fa-code"></i><span> {{ _('Edit templates') }}</span>
-      </a>
-    </div>
-    <div class="link-row">
-      <a href="{{ url('problem_edit_solutions', problem.code) }}">
-        <i class="fa fa-lightbulb"></i><span> {{ _('Edit solutions') }}</span>
-      </a>
-    </div>
-    <div class="link-row">
-      <a href="{{ url('problem_edit_translations', problem.code) }}">
-        <i class="fa fa-language"></i><span> {{ _('Edit translations') }}</span>
       </a>
     </div>
   {% endif %}

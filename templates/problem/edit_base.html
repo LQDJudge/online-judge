@@ -18,6 +18,7 @@
     {{ make_edit_tab_item('translations', 'fa fa-language', url('problem_edit_translations', problem.code), _('Translate')) }}
     {% if request.user.is_superuser %}
       {{ make_edit_tab_item('chatbot', 'fa fa-robot', url('problem_chatbot', problem.code), _('AI Assistant')) }}
+      {{ make_edit_tab_item('import', 'fa fa-upload', url('problem_package_import', problem.code), _('Import')) }}
     {% endif %}
   </div>
 {% endblock %}

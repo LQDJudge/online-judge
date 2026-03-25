@@ -1,0 +1,80 @@
+{% extends "problem/edit_base.html" %}
+{% set page_type = 'import' %}
+
+{% block js_media %}
+  <script type="text/javascript">
+    window.IMPORT_CONFIG = {
+      uploadUrl: '{{ url("problem_package_import_upload", problem.code) }}',
+      applyUrl: '{{ url("problem_package_import_apply", problem.code) }}',
+      taskStatusUrl: '{{ url("task_status_ajax") }}',
+      filePreviewUrl: '{{ url("problem_package_import_file", problem.code) }}',
+      csrfToken: '{{ csrf_token }}',
+      problemCode: '{{ problem.code }}',
+      maxUploadSize: {{ max_upload_size }},
+      lastTaskId: '{{ last_task_id }}',
+      i18n: {
+        uploading: '{{ _("Uploading zip...") }}',
+        processing: '{{ _("AI is processing the package... This may take several minutes.") }}',
+        loading: '{{ _("Loading previous import results...") }}',
+        complete: '{{ _("Processing complete!") }}',
+        failed: '{{ _("Processing failed") }}',
+        retryHint: '{{ _("AI processed the package but failed to send the files back. This is intermittent — please try uploading again.") }}',
+        taskFailed: '{{ _("Task failed") }}',
+        lostConnection: '{{ _("Lost connection to server") }}',
+        uploadFailed: '{{ _("Upload failed") }}',
+        fileTooLarge: '{{ _("File too large") }}',
+        format: '{{ _("Format") }}',
+        problem: '{{ _("Problem") }}',
+        tests: '{{ _("Tests") }}',
+        samples: '{{ _("samples") }}',
+        solutions: '{{ _("Solutions") }}',
+        found: '{{ _("found") }}',
+        description: '{{ _("Description") }}',
+        images: '{{ _("images") }}',
+        image: '{{ _("image") }}',
+        imagesIncluded: '{{ _("Images included") }}',
+        timeLimit: '{{ _("Time Limit") }}',
+        memoryLimit: '{{ _("Memory Limit") }}',
+        testData: '{{ _("Test Data") }}',
+        checker: '{{ _("Checker") }}',
+        generator: '{{ _("Generator") }}',
+        generatorScript: '{{ _("Generator Script") }}',
+        interactive: '{{ _("Interactive Judge") }}',
+        cappedFrom: '{{ _("capped from") }}',
+      },
+    };
+  </script>
+  <script type="text/javascript" src="{{ static('package_import.js') }}"></script>
+{% endblock %}
+
+{% block edit_media %}
+{% endblock %}
+
+{% block edit_content %}
+  <div class="package-import-page">
+    <div id="import-upload-section">
+      <div class="import-upload-area">
+        <p>{{ _("Upload a problem package (zip) to import test data, checker, description, and more.") }}</p>
+        <p class="import-field-meta">
+          {{ _("Supports: Polygon, Kattis/ICPC, USACO, and other formats. Max 50 MB.") }}
+        </p>
+        <input type="file" id="import-file-input" accept=".zip" style="margin: 5px;">
+        <button type="button" class="action-btn" id="import-upload-btn" disabled>
+          <i class="fa fa-magic"></i> {{ _("Upload") }}
+        </button>
+      </div>
+    </div>
+
+    <p class="import-field-meta" style="margin-top: 5px;">
+      <i class="fa fa-info-circle"></i>
+      {{ _("AI-generated results may be incomplete or inaccurate. Please review each field carefully before applying.") }}
+    </p>
+
+    <div id="import-status" class="import-status"></div>
+
+    <div id="import-results" class="import-results">
+      <div id="import-summary" style="margin-bottom: 15px;"></div>
+      <div id="import-fields"></div>
+    </div>
+  </div>
+{% endblock %}
