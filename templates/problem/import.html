@@ -48,142 +48,33 @@
 {% endblock %}
 
 {% block edit_media %}
-  <style>
-    .import-upload-area {
-      border: 2px dashed var(--border-gray, #ccc);
-      border-radius: 8px;
-      padding: 20px;
-      text-align: center;
-      margin: 10px 0;
-      transition: border-color 0.2s;
-    }
-    .import-upload-area:hover {
-      border-color: var(--theme-color, #4a90d9);
-    }
-    .import-status {
-      margin: 15px 0;
-      padding: 12px 15px;
-      border-radius: 6px;
-      display: none;
-      border: 1px solid var(--border-gray, #ddd);
-    }
-    .import-status.show { display: block; }
-    .import-status.analyzing { border-left: 4px solid #4a90d9; }
-    .import-status.done { border-left: 4px solid #27ae60; }
-    .import-status.error { border-left: 4px solid #c0392b; }
-    .import-field {
-      border: 1px solid var(--border-gray, #ddd);
-      border-radius: 6px;
-      margin: 10px 0;
-      overflow: hidden;
-    }
-    .import-field-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 15px;
-      gap: 10px;
-    }
-    .import-field-title-area {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex: 1;
-      cursor: pointer;
-      padding: 2px 0;
-    }
-    .import-field-title-area:hover {
-      opacity: 0.8;
-    }
-    .import-field-title {
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .import-field-title i {
-      width: 20px;
-      text-align: center;
-    }
-    .import-field-meta {
-      font-size: 0.85em;
-      opacity: 0.7;
-    }
-    .import-summary-box {
-      border: 1px solid var(--border-gray, #ddd);
-      border-radius: 6px;
-      padding: 15px;
-      margin-bottom: 15px;
-    }
-    .import-summary-row {
-      padding: 4px 0;
-    }
-    .import-summary-label {
-      font-weight: bold;
-      display: inline-block;
-      min-width: 80px;
-    }
-    .import-summary-notes {
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid var(--border-gray, #eee);
-      font-size: 0.9em;
-      opacity: 0.8;
-      font-style: italic;
-    }
-    .import-field-body {
-      display: none;
-      padding: 0 15px 15px;
-      border-top: 1px solid var(--border-gray, #eee);
-    }
-    .import-field-body.show { display: block; }
-    .import-field-preview {
-      max-height: 300px;
-      overflow-y: auto;
-      font-family: monospace;
-      font-size: 12px;
-      white-space: pre-wrap;
-      padding: 10px;
-      border-radius: 4px;
-      margin: 10px 0;
-      border: 1px solid var(--border-gray, #ddd);
-    }
-    .import-results { display: none; }
-    .import-results.show { display: block; }
-    .import-applied {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 3px;
-      font-size: 0.8em;
-      color: #27ae60;
-      font-weight: bold;
-    }
-  </style>
 {% endblock %}
 
 {% block edit_content %}
-  <div id="import-upload-section">
-    <div class="import-upload-area">
-      <p>{{ _("Upload a problem package (zip) to import test data, checker, description, and more.") }}</p>
-      <p class="import-field-meta">
-        {{ _("Supports: Polygon, Kattis/ICPC, USACO, and other formats. Max 50 MB.") }}
-      </p>
-      <input type="file" id="import-file-input" accept=".zip" style="margin: 5px;">
-      <button type="button" class="action-btn" id="import-upload-btn" disabled>
-        <i class="fa fa-magic"></i> {{ _("Upload") }}
-      </button>
+  <div class="package-import-page">
+    <div id="import-upload-section">
+      <div class="import-upload-area">
+        <p>{{ _("Upload a problem package (zip) to import test data, checker, description, and more.") }}</p>
+        <p class="import-field-meta">
+          {{ _("Supports: Polygon, Kattis/ICPC, USACO, and other formats. Max 50 MB.") }}
+        </p>
+        <input type="file" id="import-file-input" accept=".zip" style="margin: 5px;">
+        <button type="button" class="action-btn" id="import-upload-btn" disabled>
+          <i class="fa fa-magic"></i> {{ _("Upload") }}
+        </button>
+      </div>
     </div>
-  </div>
 
-  <p class="import-field-meta" style="margin-top: 5px;">
-    <i class="fa fa-info-circle"></i>
-    {{ _("AI-generated results may be incomplete or inaccurate. Please review each field carefully before applying.") }}
-  </p>
+    <p class="import-field-meta" style="margin-top: 5px;">
+      <i class="fa fa-info-circle"></i>
+      {{ _("AI-generated results may be incomplete or inaccurate. Please review each field carefully before applying.") }}
+    </p>
 
-  <div id="import-status" class="import-status"></div>
+    <div id="import-status" class="import-status"></div>
 
-  <div id="import-results" class="import-results">
-    <div id="import-summary" style="margin-bottom: 15px;"></div>
-    <div id="import-fields"></div>
+    <div id="import-results" class="import-results">
+      <div id="import-summary" style="margin-bottom: 15px;"></div>
+      <div id="import-fields"></div>
+    </div>
   </div>
 {% endblock %}
