@@ -117,7 +117,9 @@ IMPORTANT FORMATTING RULES:
    - ???+ "Input" with ```sample code block for input
    - ???+ success "Output" with ```sample code block for output
    - ??? warning "Note" for optional explanations (note: ??? without + means collapsed by default)
-5. Keep all images as markdown links: ![description](url)
+5. For images: analyze whether it is purely text (tables, sample tests, notes, constraints, explanations) or a visual diagram/illustration
+   - If the image contains only text content: extract and convert it to proper markdown — do NOT keep the image link
+   - If the image is a visual diagram, graph, or illustration: keep it as ![description](url)
 6. Preserve the original language (Vietnamese or English)
 7. Use \\cdot for multiplication in math mode
 8. Format large numbers with scientific notation where appropriate (e.g., $10^9$)
@@ -128,8 +130,9 @@ HERE IS THE TARGET FORMAT TEMPLATE:
 {template}
 
 CRITICAL INSTRUCTIONS:
-- Analyze any PDF attachments carefully - they often contain the complete problem statement
+- Analyze any PDF attachments and images carefully - they often contain the complete problem statement
 - Extract ALL information: problem description, constraints, input/output format, examples, and notes
+- For text-only images (sample test tables, notes, constraints): extract the text content into proper markdown, remove the image link
 - Maintain the EXACT same content/meaning, just reformat to match the template style
 - If there are multiple test cases, create separate !!! question blocks for each
 - Do NOT add or remove any information, only reformat
