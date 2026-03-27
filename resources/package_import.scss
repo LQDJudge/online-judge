@@ -1,0 +1,150 @@
+@import "vars";
+
+.package-import-page {
+    .import-upload-area {
+        border: 2px dashed $border_gray;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        margin: 10px 0;
+        transition: border-color 0.2s;
+
+        &:hover {
+            border-color: $theme_color;
+        }
+    }
+
+    .import-status {
+        margin: 15px 0;
+        padding: 12px 15px;
+        border-radius: 6px;
+        display: none;
+        border: 1px solid $border_gray;
+
+        &.show {
+            display: block;
+        }
+
+        &.analyzing {
+            border-left: 4px solid $theme_color;
+        }
+
+        &.done {
+            border-left: 4px solid green;
+        }
+
+        &.error {
+            border-left: 4px solid $announcement_red;
+        }
+    }
+
+    .import-field {
+        border: 1px solid $border_gray;
+        border-radius: 6px;
+        margin: 10px 0;
+        overflow: hidden;
+    }
+
+    .import-field-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 15px;
+        gap: 10px;
+    }
+
+    .import-field-title-area {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex: 1;
+        cursor: pointer;
+        padding: 2px 0;
+
+        &:hover {
+            opacity: 0.8;
+        }
+    }
+
+    .import-field-title {
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        i {
+            width: 20px;
+            text-align: center;
+        }
+    }
+
+    .import-field-meta {
+        font-size: 0.85em;
+        opacity: 0.7;
+    }
+
+    .import-summary-box {
+        border: 1px solid $border_gray;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .import-summary-row {
+        padding: 4px 0;
+    }
+
+    .import-summary-label {
+        font-weight: bold;
+        display: inline-block;
+        min-width: 80px;
+    }
+
+    .import-summary-notes {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid $border_gray;
+        font-size: 0.9em;
+        opacity: 0.8;
+        font-style: italic;
+    }
+
+    .import-field-body {
+        display: none;
+        padding: 0 15px 15px;
+        border-top: 1px solid $border_gray;
+
+        &.show {
+            display: block;
+        }
+    }
+
+    .import-field-preview {
+        max-height: 300px;
+        overflow-y: auto;
+        font-family: monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+        border: 1px solid $border_gray;
+    }
+
+    .import-results {
+        display: none;
+
+        &.show {
+            display: block;
+        }
+    }
+
+    .import-applied {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 0.8em;
+        color: green;
+        font-weight: bold;
+    }
+}

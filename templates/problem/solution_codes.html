@@ -1,79 +1,6 @@
 {% extends "problem/edit_base.html" %}
 {% set page_type = 'solution_codes' %}
 
-{% block edit_media %}
-  <style>
-    .solution-code-entry {
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 12px;
-      margin-bottom: 12px;
-    }
-    .solution-code-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
-    }
-    .solution-code-header label {
-      font-weight: bold;
-      margin: 0;
-      min-width: 25px;
-    }
-    .solution-code-header select {
-      padding: 4px 8px;
-    }
-    .solution-code-header .name-input {
-      padding: 4px 8px;
-      width: 150px;
-    }
-    .solution-code-header .delete-code-btn {
-      margin-left: auto;
-      cursor: pointer;
-      color: #c0392b;
-      background: none;
-      border: none;
-      font-size: 16px;
-    }
-    .solution-code-editor {
-      width: 100%;
-      height: 200px;
-      border: 1px solid #ccc;
-    }
-    .solution-actions {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 15px;
-      flex-wrap: wrap;
-    }
-    #solution-results-section {
-      margin-bottom: 20px;
-    }
-    #solution-results-section table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    #solution-results-section th,
-    #solution-results-section td {
-      padding: 6px 10px;
-      border: 1px solid #ddd;
-      text-align: left;
-    }
-    .result-match {
-      color: #27ae60;
-      font-weight: bold;
-    }
-    .result-mismatch {
-      color: #c0392b;
-      font-weight: bold;
-    }
-    .result-pending {
-      color: #f39c12;
-    }
-  </style>
-{% endblock %}
-
 {% block js_media %}
   <script type="text/javascript">
     function loadAce(callback) {
@@ -89,6 +16,7 @@
     });
 
     function initSolutionCodes() {
+      var ACE_THEME = {{ 'true' if use_darkmode else 'false' }} ? 'ace/theme/monokai' : 'ace/theme/github';
       var MAX_CODES = {{ max_solution_codes }};
       var languages = {{ languages | tojson }};
       var expectedChoices = [
@@ -143,9 +71,12 @@
         if (entries.length >= MAX_CODES) return;
         var idx = entryCounter++;
         var num = entries.length + 1;
+        var isNew = !data.source_code;
 
         var $entry = $('<div class="solution-code-entry" data-idx="' + idx + '"></div>');
         var $header = $('<div class="solution-code-header"></div>');
+        var $toggleIcon = $('<i class="fa fa-chevron-right toggle-icon"></i>');
+        $header.append($toggleIcon);
         $header.append($('<label>#' + num + '</label>'));
 
         var $nameInput = $('<input type="text" class="name-input" placeholder="{{ _("Name") }}">')
@@ -164,13 +95,16 @@
         $entry.append($header);
 
         var editorId = 'ace-editor-' + idx;
+        var $body = $('<div class="solution-code-body"></div>');
         var $editorDiv = $('<div class="solution-code-editor" id="' + editorId + '"></div>');
-        $entry.append($editorDiv);
+        $body.append($editorDiv);
+        $entry.append($body);
 
         $('#solution-codes-container').append($entry);
 
         // Init Ace editor
         var editor = ace.edit(editorId);
+        editor.setTheme(ACE_THEME);
         var aceMode = $langSel.find('option:selected').attr('data-ace') || 'text';
         editor.getSession().setMode('ace/mode/' + aceMode);
         editor.getSession().setUseWrapMode(true);
@@ -185,6 +119,26 @@
           editor.getSession().setMode('ace/mode/' + newMode);
         });
 
+        // Prevent clicks on form controls from toggling
+        $header.find('input, select, button').click(function (e) {
+          e.stopPropagation();
+        });
+
+        // Toggle collapse on header click
+        $header.click(function (e) {
+          $body.toggleClass('open');
+          $toggleIcon.toggleClass('open');
+          if ($body.hasClass('open')) {
+            editor.resize();
+          }
+        });
+
+        // Start expanded if new entry, collapsed if existing
+        if (isNew) {
+          $body.addClass('open');
+          $toggleIcon.addClass('open');
+        }
+
         var entryObj = {
           idx: idx,
           $el: $entry,
@@ -195,7 +149,8 @@
         };
         entries.push(entryObj);
 
-        $delBtn.click(function () {
+        $delBtn.click(function (e) {
+          e.stopPropagation();
           editor.destroy();
           $entry.remove();
           entries = entries.filter(function (e) { return e.idx !== idx; });
@@ -437,47 +392,49 @@
 {% endblock %}
 
 {% block edit_content %}
-  <div style="margin-bottom: 1em;">
-    <a href="{{ url('problem_data', problem.code) }}">
-      <i class="fa fa-arrow-left"></i> {{ _('Back to Test Data') }}
-    </a>
+  <div class="solution-codes-page">
+    <div style="margin-bottom: 1em;">
+      <a href="{{ url('problem_data', problem.code) }}">
+        <i class="fa fa-arrow-left"></i> {{ _('Back to Test Data') }}
+      </a>
+    </div>
+
+    <div class="solution-actions">
+      <button id="add-code-btn" class="action-btn" type="button">
+        <i class="fa fa-plus"></i> {{ _('Add Code') }}
+      </button>
+      <button id="save-codes-btn" class="action-btn" type="button">
+        <i class="fa fa-save"></i> {{ _('Save') }}
+      </button>
+      <button id="run-all-btn" class="action-btn" type="button">
+        <i class="fa fa-play"></i> {{ _('Run All') }}
+      </button>
+    </div>
+
+    <div id="solution-message" class="solution-message" style="display:none;"></div>
+
+    <div id="solution-results-section" style="display:none;">
+      <h3>{{ _('Results') }}</h3>
+      <div id="solution-results-summary"></div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>{{ _('Name') }}</th>
+            <th>{{ _('Language') }}</th>
+            <th>{{ _('Expected') }}</th>
+            <th>{{ _('Actual') }}</th>
+            <th>{{ _('Score') }}</th>
+            <th>{{ _('Time') }}</th>
+            <th>{{ _('Memory') }}</th>
+            <th>{{ _('Verdict') }}</th>
+            <th>{{ _('Submission') }}</th>
+          </tr>
+        </thead>
+        <tbody id="solution-results-tbody"></tbody>
+      </table>
+    </div>
+
+    <div id="solution-codes-container"></div>
   </div>
-
-  <div class="solution-actions">
-    <button id="add-code-btn" class="action-btn" type="button">
-      <i class="fa fa-plus"></i> {{ _('Add Code') }}
-    </button>
-    <button id="save-codes-btn" class="action-btn" type="button">
-      <i class="fa fa-save"></i> {{ _('Save') }}
-    </button>
-    <button id="run-all-btn" class="action-btn" type="button">
-      <i class="fa fa-play"></i> {{ _('Run All') }}
-    </button>
-  </div>
-
-  <div id="solution-message" style="display:none; margin-bottom: 10px; font-weight: bold;"></div>
-
-  <div id="solution-results-section" style="display:none;">
-    <h3>{{ _('Results') }}</h3>
-    <div id="solution-results-summary" style="margin-bottom: 10px;"></div>
-    <table class="table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>{{ _('Name') }}</th>
-          <th>{{ _('Language') }}</th>
-          <th>{{ _('Expected') }}</th>
-          <th>{{ _('Actual') }}</th>
-          <th>{{ _('Score') }}</th>
-          <th>{{ _('Time') }}</th>
-          <th>{{ _('Memory') }}</th>
-          <th>{{ _('Verdict') }}</th>
-          <th>{{ _('Submission') }}</th>
-        </tr>
-      </thead>
-      <tbody id="solution-results-tbody"></tbody>
-    </table>
-  </div>
-
-  <div id="solution-codes-container"></div>
 {% endblock %}

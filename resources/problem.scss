@@ -1621,3 +1621,121 @@ body:not(.problem-raw) {
         }
     }
 }
+
+// Solution codes page styles
+.solution-codes-page {
+    .solution-code-entry {
+        border: 1px solid $border_gray;
+        border-radius: 4px;
+        margin-bottom: 12px;
+        overflow: hidden;
+    }
+
+    .solution-code-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        flex-wrap: wrap;
+        cursor: pointer;
+
+        &:hover {
+            background: rgba($widget_black, 0.04);
+        }
+
+        .toggle-icon {
+            transition: transform 0.2s;
+            font-size: 12px;
+            color: $border_gray;
+
+            &.open {
+                transform: rotate(90deg);
+            }
+        }
+
+        label {
+            font-weight: bold;
+            margin: 0;
+            min-width: 25px;
+        }
+
+        select {
+            padding: 4px 8px;
+        }
+
+        .name-input {
+            padding: 4px 8px;
+            width: 150px;
+        }
+
+        .delete-code-btn {
+            margin-left: auto;
+            cursor: pointer;
+            color: $announcement_red;
+            background: none;
+            border: none;
+            font-size: 16px;
+        }
+    }
+
+    .solution-code-body {
+        display: none;
+        padding: 0 12px 12px;
+
+        &.open {
+            display: block;
+        }
+    }
+
+    .solution-code-editor {
+        width: 100%;
+        height: 200px;
+        border: 1px solid $border_gray;
+    }
+
+    .solution-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+
+    .solution-message {
+        margin-bottom: 10px;
+        font-weight: bold;
+    }
+
+    #solution-results-section {
+        margin-bottom: 20px;
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 6px 10px;
+            border: 1px solid $border_gray;
+            text-align: left;
+        }
+    }
+
+    #solution-results-summary {
+        margin-bottom: 10px;
+    }
+
+    .result-match {
+        color: green;
+        font-weight: bold;
+    }
+
+    .result-mismatch {
+        color: $announcement_red;
+        font-weight: bold;
+    }
+
+    .result-pending {
+        color: darkorange;
+    }
+}

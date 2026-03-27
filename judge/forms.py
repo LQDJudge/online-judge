@@ -990,6 +990,8 @@ class ProblemEditForm(DirectUploadFormMixin, ModelForm):
                 "placeholder": _("Describe the changes you made (optional)"),
             }
         )
+        self.fields["types"].required = False
+        self.fields["group"].required = False
 
     def clean_code(self):
         code = self.cleaned_data.get("code")
@@ -1141,7 +1143,7 @@ class ProblemEditForm(DirectUploadFormMixin, ModelForm):
 
 
 class ProblemAddForm(ModelForm):
-    memory_unit = forms.ChoiceField(choices=MEMORY_UNITS, initial="KB")
+    memory_unit = forms.ChoiceField(choices=MEMORY_UNITS, initial="MB")
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
@@ -1153,6 +1155,20 @@ class ProblemAddForm(ModelForm):
         # Set current user as default author
         if self.user and self.user.is_authenticated:
             self.fields["authors"].initial = [self.user.profile]
+
+        # Defaults so users only need code + name to create a problem
+        self.fields["points"].initial = 1.0
+        self.fields["time_limit"].initial = 1.0
+        self.fields["memory_limit"].initial = 256  # 256 MB (converted to KB in clean())
+        self.fields["types"].required = False
+        self.fields["group"].required = False
+
+        # Default: all languages selected
+        from judge.models import Language
+
+        self.fields["allowed_languages"].initial = Language.objects.values_list(
+            "pk", flat=True
+        )
 
     def clean_code(self):
         code = self.cleaned_data.get("code")

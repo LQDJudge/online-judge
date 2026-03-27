@@ -185,6 +185,8 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         ProblemGroup,
         verbose_name=_("problem group"),
         on_delete=CASCADE,
+        null=True,
+        blank=True,
         help_text=_("The group of problem, shown under Category in the problem list."),
     )
     time_limit = models.FloatField(
