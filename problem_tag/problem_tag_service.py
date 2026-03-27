@@ -55,16 +55,16 @@ class ProblemTagService:
         try:
             statement_parts = []
 
-            # Add text description if available
-            if problem.description:
-                statement_parts.append(problem.description)
-
-            # Add PDF reference if available
+            # Add PDF first so LLM treats it as primary content
             if problem.pdf_description and problem.pdf_description.name:
                 pdf_url = problem.pdf_description.url
                 pdf_name = os.path.basename(problem.pdf_description.name)
                 pdf_markdown = f"[PDF Statement: {pdf_name}]({pdf_url})"
                 statement_parts.append(pdf_markdown)
+
+            # Add text description (may be supplementary when PDF exists)
+            if problem.description:
+                statement_parts.append(problem.description)
 
             if statement_parts:
                 return "\n\n".join(statement_parts)
@@ -97,17 +97,33 @@ class ProblemTagService:
         """
         return self.llm_service.call_llm(prompt, system_prompt)
 
-    def tag_single_problem(self, problem) -> Dict[str, any]:
+    def tag_single_problem(
+        self, problem, description_override: str = ""
+    ) -> Dict[str, any]:
         """
         Tag a single problem using LLM (format validation + difficulty + tags in one call)
 
         Args:
             problem: Django Problem model instance
+            description_override: If provided, use this text instead of the DB description.
+                                  Allows tagging unsaved editor content.
 
         Returns:
             Dict with tagging results
         """
-        statement = self.get_problem_statement(problem)
+        if description_override:
+            statement = description_override
+        else:
+            statement = self.get_problem_statement(problem)
+
+        if (
+            description_override
+            and problem.pdf_description
+            and problem.pdf_description.name
+        ):
+            pdf_url = problem.pdf_description.url
+            pdf_name = os.path.basename(problem.pdf_description.name)
+            statement = f"[PDF Statement: {pdf_name}]({pdf_url})\n\n{statement}"
         if not statement:
             return {
                 "problem_code": problem.code,
@@ -170,6 +186,16 @@ class ProblemTagService:
             statement = description_override
         else:
             statement = self.get_problem_statement(problem)
+
+        # Always append PDF if it exists — PDF takes priority as primary content
+        if (
+            description_override
+            and problem.pdf_description
+            and problem.pdf_description.name
+        ):
+            pdf_url = problem.pdf_description.url
+            pdf_name = os.path.basename(problem.pdf_description.name)
+            statement = f"[PDF Statement: {pdf_name}]({pdf_url})\n\n{statement}"
         if not statement:
             return {
                 "problem_code": problem.code,

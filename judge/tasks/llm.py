@@ -54,12 +54,14 @@ def generate_solution_task(self, problem_code, rough_ideas=""):
 
 
 @shared_task(bind=True)
-def tag_problem_task(self, problem_code):
+def tag_problem_task(self, problem_code, description=""):
     """
     Celery task to tag a problem (difficulty + types) using LLM.
 
     Args:
         problem_code: The problem code
+        description: Optional description text from the edit form.
+                     If provided, uses this instead of the DB description.
 
     Returns:
         Dict with tagging results (stored in Celery result backend)
@@ -71,7 +73,9 @@ def tag_problem_task(self, problem_code):
 
         problem = Problem.objects.get(code=problem_code)
         tag_service = get_problem_tag_service()
-        result = tag_service.tag_single_problem(problem)
+        result = tag_service.tag_single_problem(
+            problem, description_override=description
+        )
 
         # Convert type names to type objects for compatibility with both views
         predicted_types = []

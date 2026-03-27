@@ -399,31 +399,22 @@ class LLMService:
                 logger.warning(f"Unsupported file extension: {file_ext} for URL: {url}")
                 return None
 
-            # Upload file from URL
-            logger.info(f"Uploading file from URL: {url}")
-            attachment = fp.upload_file_sync(file_url=url, api_key=self.api_key)
+            # Download and upload as bytes (more reliable than passing URL directly)
+            logger.info(f"Downloading file from URL: {url}")
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+
+            file_name = url.split("/")[-1] if "/" in url else f"file{file_ext}"
+            attachment = fp.upload_file_sync(
+                file=response.content, file_name=file_name, api_key=self.api_key
+            )
 
             logger.info(f"Successfully uploaded file: {url}")
             return attachment
 
         except Exception as e:
             logger.error(f"Error uploading file from {url}: {e}")
-            # Fallback: try to download and upload as bytes
-            try:
-                response = requests.get(url, timeout=30)
-                response.raise_for_status()
-
-                file_name = url.split("/")[-1] if "/" in url else f"file{file_ext}"
-                attachment = fp.upload_file_sync(
-                    file=response.content, file_name=file_name, api_key=self.api_key
-                )
-
-                logger.info(f"Successfully uploaded file via download: {url}")
-                return attachment
-
-            except Exception as e2:
-                logger.error(f"Fallback upload also failed for {url}: {e2}")
-                return None
+            return None
 
     def _upload_local_file(self, file_path: str) -> Optional[fp.Attachment]:
         """

@@ -1345,7 +1345,8 @@ class ProblemEdit(
                 return JsonResponse({"success": False, "error": "Problem not found"})
 
             # Dispatch async Celery task
-            task = tag_problem_task.delay(problem_code)
+            description = request.POST.get("description", "").strip()
+            task = tag_problem_task.delay(problem_code, description=description)
 
             return JsonResponse(
                 {
