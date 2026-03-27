@@ -78,7 +78,10 @@ class LLMService:
 
             try:
                 for partial in fp.get_bot_response_sync(**kwargs):
-                    response += partial.text
+                    if partial.is_replace_response:
+                        response = partial.text
+                    else:
+                        response += partial.text
                     logger.debug(f"LLM partial response: {partial.text}")
                     if on_partial:
                         on_partial(response)
