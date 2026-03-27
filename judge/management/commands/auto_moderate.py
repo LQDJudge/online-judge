@@ -6,6 +6,7 @@ Usage: python manage.py auto_moderate [options]
 import sys
 import os
 import json
+import re
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -189,6 +190,27 @@ class Command(BaseCommand):
 
         return stats
 
+    def _embed_images(self, content, counter):
+        """Replace markdown images with [imageN] labels and upload to Poe.
+
+        counter is a mutable list [n] shared across items in a batch so labels
+        are unique within the full prompt.
+        Returns (labeled_content, attachments).
+        """
+        attachments = []
+
+        def replace(match):
+            url = match.group(1)
+            counter[0] += 1
+            label = f"[image{counter[0]}]"
+            attachment = self.llm_service.upload_file(url)
+            if attachment:
+                attachments.append(attachment)
+            return label
+
+        labeled = re.sub(r"!\[[^\]]*\]\(([^)]+)\)", replace, content)
+        return labeled, attachments
+
     def moderate_comments(self, org, about):
         """Moderate comments on organization blog posts (batched)"""
         stats = {"comments_hidden": 0, "comments_kept": 0, "errors": 0}
@@ -233,19 +255,26 @@ class Command(BaseCommand):
         # Build batch prompt
         comments_text = []
         comments_map = {}
+        attachments = []
+        image_counter = [0]
         for comment in comments:
             author_name = comment.author.username if comment.author else "Anonymous"
             content = (comment.body or "").strip()
             if not content:
                 continue
             comments_map[comment.id] = comment
+            labeled, imgs = self._embed_images(content[:500], image_counter)
+            attachments.extend(imgs)
             comments_text.append(
-                f"[Comment ID: {comment.id}] by {author_name}:\n{content[:500]}"
+                f"[Comment ID: {comment.id}] by {author_name}:\n{labeled}"
             )
 
         if not comments_text:
             self.stdout.write("  No non-empty comments to review")
             return stats
+
+        if attachments:
+            self.stdout.write(f"  Uploaded {len(attachments)} image(s) to Poe")
 
         user_prompt = COMMENT_USER_PROMPT.format(
             about=about[:1000],
@@ -254,7 +283,9 @@ class Command(BaseCommand):
 
         try:
             response = self.llm_service.call_llm(
-                user_prompt, system_prompt=COMMENT_SYSTEM_PROMPT
+                user_prompt,
+                system_prompt=COMMENT_SYSTEM_PROMPT,
+                attachments=attachments,
             )
             if not response:
                 self.stdout.write(self.style.WARNING("  LLM returned no response"))
@@ -327,13 +358,22 @@ class Command(BaseCommand):
             "errors": 0,
         }
 
-        # Get pending blog posts (visible=False, not rejected)
+        # Get post IDs already reviewed (in moderation log) to avoid re-evaluating skipped posts
+        blog_post_content_type = ContentType.objects.get_for_model(BlogPost)
+        already_reviewed = OrganizationModerationLog.objects.filter(
+            organization=org,
+            content_type=blog_post_content_type,
+        ).values_list("object_id", flat=True)
+
+        # Get pending blog posts (visible=False, not rejected), excluding already reviewed
         pending_posts = list(
             BlogPost.objects.filter(
                 organizations=org,
                 visible=False,
                 is_rejected=False,
-            ).prefetch_related("authors")[: self.batch_size]
+            )
+            .exclude(id__in=already_reviewed)
+            .prefetch_related("authors")[: self.batch_size]
         )
 
         if not pending_posts:
@@ -345,6 +385,8 @@ class Command(BaseCommand):
         # Build batch prompt
         posts_text = []
         posts_map = {}
+        attachments = []
+        image_counter = [0]
         for post in pending_posts:
             authors = post.authors.all()
             author_name = (
@@ -355,13 +397,18 @@ class Command(BaseCommand):
             if not content:
                 continue
             posts_map[post.id] = post
+            labeled, imgs = self._embed_images(content[:1000], image_counter)
+            attachments.extend(imgs)
             posts_text.append(
-                f"[Post ID: {post.id}] Title: {title}\nAuthor: {author_name}\nContent:\n{content[:1000]}"
+                f"[Post ID: {post.id}] Title: {title}\nAuthor: {author_name}\nContent:\n{labeled}"
             )
 
         if not posts_text:
             self.stdout.write("  No non-empty posts to review")
             return stats
+
+        if attachments:
+            self.stdout.write(f"  Uploaded {len(attachments)} image(s) to Poe")
 
         user_prompt = POST_USER_PROMPT.format(
             about=about[:1000],
@@ -370,7 +417,7 @@ class Command(BaseCommand):
 
         try:
             response = self.llm_service.call_llm(
-                user_prompt, system_prompt=POST_SYSTEM_PROMPT
+                user_prompt, system_prompt=POST_SYSTEM_PROMPT, attachments=attachments
             )
             if not response:
                 self.stdout.write(self.style.WARNING("  LLM returned no response"))
@@ -452,8 +499,6 @@ class Command(BaseCommand):
             # Try to extract JSON from markdown code block
             if "```" in response:
                 # Find JSON between code blocks
-                import re
-
                 match = re.search(r"```(?:json)?\s*(.*?)\s*```", response, re.DOTALL)
                 if match:
                     response = match.group(1)

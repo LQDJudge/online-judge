@@ -314,9 +314,6 @@ class LLMService:
         """
         attachments = []
 
-        # Get site domain for checking local URLs
-        site_domain = self._get_site_domain()
-
         # Find markdown file references
         # 1. Images: ![alt](url)
         image_pattern = r"!\[[^\]]*\]\(([^)]+)\)"
@@ -342,47 +339,36 @@ class LLMService:
 
         # Upload files to Poe
         for url in set(file_urls):  # Remove duplicates
-            try:
-                if url.startswith(("http://", "https://")):
-                    # Check if this is a site URL (or subdomain like cdn.lqdoj.edu.vn)
-                    if self._is_site_url(url, site_domain):
-                        # Try to load from local files first
-                        local_path = self._extract_local_path_from_url(url)
-                        if local_path:
-                            logger.info(
-                                f"Site URL detected, trying local path: {local_path}"
-                            )
-                            attachment = self._upload_local_file(local_path)
-                            if attachment:
-                                attachments.append(attachment)
-                                continue
-                        # Fall through to URL upload if local fails
-
-                    # Handle public URLs
-                    attachment = self._upload_file_from_url(url)
-                    if attachment:
-                        attachments.append(attachment)
-                elif url.startswith("/"):
-                    # Handle local file paths - try local first, then public URL fallback
-                    attachment = self._upload_local_file(url)
-                    if not attachment:
-                        # Try as public URL with domain prefix for PDFs
-                        if url.startswith("/problem/") and "/data/" in url:
-                            public_url = f"https://{site_domain or 'lqdoj.edu.vn'}{url}"
-                            logger.info(
-                                f"Local PDF not found, trying public URL: {public_url}"
-                            )
-                            attachment = self._upload_file_from_url(public_url)
-
-                    if attachment:
-                        attachments.append(attachment)
-                else:
-                    logger.warning(f"Unsupported URL format: {url}")
-
-            except Exception as e:
-                logger.error(f"Error uploading file from {url}: {e}")
+            attachment = self.upload_file(url)
+            if attachment:
+                attachments.append(attachment)
 
         return attachments
+
+    def upload_file(self, url: str) -> Optional[fp.Attachment]:
+        """Upload a single file to Poe. Handles public URLs and local paths."""
+        try:
+            site_domain = self._get_site_domain()
+            if url.startswith(("http://", "https://")):
+                if self._is_site_url(url, site_domain):
+                    local_path = self._extract_local_path_from_url(url)
+                    if local_path:
+                        attachment = self._upload_local_file(local_path)
+                        if attachment:
+                            return attachment
+                return self._upload_file_from_url(url)
+            elif url.startswith("/"):
+                attachment = self._upload_local_file(url)
+                if not attachment and url.startswith("/problem/") and "/data/" in url:
+                    public_url = f"https://{site_domain or 'lqdoj.edu.vn'}{url}"
+                    attachment = self._upload_file_from_url(public_url)
+                return attachment
+            else:
+                logger.warning(f"Unsupported URL format: {url}")
+                return None
+        except Exception as e:
+            logger.error(f"Error uploading file {url}: {e}")
+            return None
 
     def _upload_file_from_url(self, url: str) -> Optional[fp.Attachment]:
         """
