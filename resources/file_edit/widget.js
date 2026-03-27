@@ -51,7 +51,9 @@ $(document).ready(function () {
   };
 
   // Event handler for the "Edit" button
-  $(document).on('click', '.edit-file-btn', function () {
+  // Use namespaced events + off() to prevent duplicate handlers on AJAX navigation
+  $(document).off('click.fileEditWidget', '.edit-file-btn');
+  $(document).on('click.fileEditWidget', '.edit-file-btn', function () {
     const elementId = $(this).data('element-id');
     const fileInput = $(`#${elementId}`);
     const fileContent = $(`#file-editor-container-${elementId}`).data('file-content') || '';
@@ -70,7 +72,8 @@ $(document).ready(function () {
   });
 
   // Event handler for the "Save" button
-  $(document).on('click', '.save-file-btn', function () {
+  $(document).off('click.fileEditWidget', '.save-file-btn');
+  $(document).on('click.fileEditWidget', '.save-file-btn', function () {
     const elementId = $(this).data('element-id');
     const fileInput = $(`#${elementId}`);
     const $modal = $(`#file-editor-modal-${elementId}`);

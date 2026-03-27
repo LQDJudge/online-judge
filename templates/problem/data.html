@@ -229,7 +229,8 @@
         }
 
         // Check when content in FileEditWidget changes
-        $(document).on('change keyup input', '#id_problem-data-generator-content', checkGeneratorToggle);
+        $(document).off('change.dataPage keyup.dataPage input.dataPage', '#id_problem-data-generator-content');
+        $(document).on('change.dataPage keyup.dataPage input.dataPage', '#id_problem-data-generator-content', checkGeneratorToggle);
 
         // Initial check
         setTimeout(checkGeneratorToggle, 100);
