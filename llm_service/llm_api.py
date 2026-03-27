@@ -106,30 +106,41 @@ class LLMService:
         - Blockquotes with > prefix
         - *Thinking...* markers
         - Thinking... (Xs elapsed) markers
+
+        Some models (e.g. Gemini) emit the full response twice:
+          *Thinking...* > [thinking] answer *Thinking...* > [thinking] answer
+        Splitting on *Thinking...* and taking the last clean segment handles this.
         """
-        lines = text.split("\n")
-        result_lines = []
 
-        for line in lines:
-            stripped = line.strip()
-            # Skip various thinking markers
-            if stripped in ("*Thinking...*", "Thinking..."):
-                continue
-            # Skip "Thinking... (Xs elapsed)" pattern
-            if stripped.startswith("Thinking...") and "elapsed" in stripped:
-                continue
-            # Skip thinking block lines (starting with >)
-            if stripped.startswith(">"):
-                continue
-            # Skip empty lines at the beginning or consecutive empty lines
-            if stripped == "":
-                if result_lines and result_lines[-1].strip() != "":
-                    result_lines.append(line)
-                continue
-            # Non-thinking content - keep it
-            result_lines.append(line)
+        def _strip_thinking_lines(segment: str) -> str:
+            result_lines = []
+            for line in segment.split("\n"):
+                stripped = line.strip()
+                if stripped in ("*Thinking...*", "Thinking..."):
+                    continue
+                if stripped.startswith("Thinking...") and "elapsed" in stripped:
+                    continue
+                if stripped.startswith(">"):
+                    continue
+                if stripped == "":
+                    if result_lines and result_lines[-1].strip() != "":
+                        result_lines.append(line)
+                    continue
+                result_lines.append(line)
+            return "\n".join(result_lines).strip()
 
-        return "\n".join(result_lines)
+        # Split on *Thinking...* markers — models like Gemini wrap the whole
+        # response in repeated thinking+answer blocks; take the last clean segment
+        import re
+
+        segments = re.split(r"\*Thinking\.\.\.\*", text)
+        clean_segments = [_strip_thinking_lines(s) for s in segments]
+        non_empty = [s for s in clean_segments if s]
+
+        if not non_empty:
+            return ""
+
+        return non_empty[-1]
 
     def call_llm(
         self,

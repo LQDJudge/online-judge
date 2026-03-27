@@ -134,7 +134,7 @@ CRITICAL INSTRUCTIONS:
 - Extract ALL information: problem description, constraints, input/output format, examples, and notes
 - For text-only images (sample test tables, notes, constraints): extract the text content into proper markdown, remove the image link
 - Maintain the EXACT same content/meaning, just reformat to match the template style
-- If there are multiple test cases, create separate !!! question blocks for each
+- If there are multiple test cases, create separate !!! question blocks for each — carefully count ALL test cases regardless of layout (stacked, side-by-side columns, grids, etc.)
 - Do NOT add or remove any information, only reformat
 - Output ONLY the improved markdown, no explanations or commentary"""
 
