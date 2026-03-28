@@ -73,6 +73,14 @@ Recommendation:
 4. Navbar mode preference
 5. Problem creation form redesign
 
+## Implementation Status
+
+1. Dropdown standardization: In progress (global unified layer added in [resources/dropdown-unified.scss](../resources/dropdown-unified.scss) and imported via [resources/style.scss](../resources/style.scss)).
+2. Remaining work for dropdown track:
+	- Validate visual compatibility on high-traffic pages.
+	- Migrate page-specific dropdown overrides that conflict with the new baseline.
+	- Normalize Select2 initialization sizing patterns in templates.
+
 ## Tracking
 
 Use this file as product intent baseline for upcoming implementation tasks and PR breakdowns.
