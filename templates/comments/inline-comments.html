@@ -66,6 +66,7 @@
       contentTypeId: {{ content_type_id }},
       objectId: {{ object_id }},
       postUrl: '{{ url("comment_post") }}',
+      previewUrl: '{{ url("comment_preview") }}',
       getCommentsUrl: '{{ url("get_comments") }}',
       isNewUser: {{ 'true' if is_new_user else 'false' }},
       offset: {{ offset }},
@@ -124,7 +125,7 @@
       });
     }
 
-  // Initialize simple comment form
+  // Initialize comment form using MarkdownEditor (with expand/toolbar/image upload)
     function initInlineCommentForm() {
       var $formContainer = $container.find('.inline-new-comment-container');
       if (!$formContainer.length) return;
@@ -134,48 +135,42 @@
         return;
       }
 
+      if (typeof MarkdownEditor === 'undefined') {
+        // Fallback: simple textarea if editor libs not loaded
+        $formContainer.html('<div class="inline-simple-form">' +
+          '<textarea class="inline-comment-input" placeholder="{{ _("Write a comment...") }}" rows="1"></textarea>' +
+          '<div class="inline-form-actions" style="display:none;">' +
+          '<button type="button" class="inline-submit-btn">{{ _("Post") }}</button>' +
+          '</div></div>');
+        return;
+      }
+
       var uniqueId = 'inline-' + config.contentTypeId + '-' + config.objectId;
-      var formHtml = '<div class="inline-simple-form">' +
-      '<textarea id="' + uniqueId + '-input" class="inline-comment-input" placeholder="{{ _("Write a comment...") }}" rows="1"></textarea>' +
-      '<div class="inline-form-actions" style="display:none;">' +
-      '<button type="button" class="inline-submit-btn">{{ _("Post") }}</button>' +
-      '</div></div>';
-      $formContainer.html(formHtml);
+      var editorContainerId = uniqueId + '-editor-container';
+      $formContainer.html('<div id="' + editorContainerId + '"></div>');
 
-      var $textarea = $formContainer.find('.inline-comment-input');
-      var $actions = $formContainer.find('.inline-form-actions');
-      var $submitBtn = $formContainer.find('.inline-submit-btn');
-
-    // Auto-grow textarea
-      $textarea.on('input', function() {
-        this.style.height = 'auto';
-        this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+      var inlineEditor = new MarkdownEditor(document.getElementById(editorContainerId), {
+        id: uniqueId + '-editor',
+        previewUrl: config.previewUrl,
+        imageUploadUrl: '/pagedown/image-upload/',
+        enableImageUpload: true,
+        mode: 'minimal',
+        placeholder: '{{ _("Write a comment...") }}',
+        submitLabel: '{{ _("Post") }}',
+        cancelLabel: '{{ _("Cancel") }}',
+        expandLabel: '{{ _("Expand editor") }}',
+        collapseLabel: '{{ _("Collapse editor") }}',
+        onSubmit: function() {
+          submitInlineComment();
+        }
       });
 
-      $textarea.on('focus', function() {
-        this.rows = 3;
-        this.style.height = 'auto';
-        this.style.height = Math.min(this.scrollHeight, 150) + 'px';
-        $actions.show();
-      });
-
-      $textarea.on('blur', function() {
-        var self = this;
-      // Delay to allow button clicks
-        setTimeout(function() {
-          if (!$formContainer.find(':focus').length && !self.value.trim()) {
-            self.rows = 1;
-            self.style.height = 'auto';
-            $actions.hide();
-          }
-        }, 150);
-      });
-
-      $submitBtn.on('click', function() {
-        var body = $textarea.val();
+      function submitInlineComment() {
+        var body = inlineEditor.getValue();
         if (!body.trim()) return;
 
-        $submitBtn.prop('disabled', true).text('{{ _("Posting...") }}');
+        var $submitBtn = $formContainer.find('.minimal-submit-btn, .full-submit-btn');
+        $submitBtn.prop('disabled', true);
 
         $.ajax({
           url: config.postUrl,
@@ -188,10 +183,7 @@
             object_id: config.objectId
           },
           success: function(response) {
-            $textarea.val('').css('height', 'auto');
-            $textarea[0].rows = 1;
-            $actions.hide();
-            $submitBtn.prop('disabled', false).text('{{ _("Post") }}');
+            inlineEditor.reset();
 
             var $list = $container.find('.compact-comment-list');
             if (!$list.length) {
@@ -202,13 +194,14 @@
             $list.prepend(response);
             if (typeof renderKatex === 'function') renderKatex($container[0]);
             if (typeof register_time === 'function') register_time($container.find('.time-with-rel'));
+            $submitBtn.prop('disabled', false);
           },
           error: function(xhr) {
             alert(xhr.responseText || '{{ _("Error posting comment") }}');
-            $submitBtn.prop('disabled', false).text('{{ _("Post") }}');
+            $submitBtn.prop('disabled', false);
           }
         });
-      });
+      }
     }
 
   // Load more comments
@@ -332,45 +325,92 @@
     if (typeof window.reply_comment === 'undefined') {
       window.reply_comment = function(parentId) {
         var $replyContainer = $('#comment-' + parentId + '-reply');
-        if ($replyContainer.find('.inline-reply-form').length) {
+        var formId = 'inline-reply-form-' + parentId;
+
+        if ($replyContainer.find('#' + formId).length) {
           $replyContainer.removeAttr('hidden').show();
-          $replyContainer.find('textarea').focus();
           return;
         }
-        var formHtml = '<div class="inline-reply-form inline-simple-form">' +
-        '<textarea class="inline-comment-input" placeholder="{{ _("Write a reply...") }}" rows="2"></textarea>' +
-        '<div class="inline-reply-actions"><button type="button" class="inline-cancel-btn">{{ _("Cancel") }}</button>' +
-        '<button type="button" class="inline-submit-btn">{{ _("Reply") }}</button></div></div>';
-        $replyContainer.html(formHtml).removeAttr('hidden').show();
-        var $textarea = $replyContainer.find('textarea');
-        var $submitBtn = $replyContainer.find('.inline-submit-btn');
-        var $cancelBtn = $replyContainer.find('.inline-cancel-btn');
-        $textarea.focus();
-        $cancelBtn.on('click', function() { $replyContainer.hide(); });
-        $submitBtn.on('click', function() {
-          var body = $textarea.val();
-          if (!body.trim()) return;
-          $submitBtn.prop('disabled', true).text('{{ _("Posting...") }}');
-          $.ajax({
-            url: config.postUrl,
-            type: 'POST',
-            data: {
-              csrfmiddlewaretoken: $.cookie('csrftoken'),
-              parent: parentId,
-              body: body,
-              content_type_id: config.contentTypeId,
-              object_id: config.objectId
-            },
-            success: function() {
-              $replyContainer.hide().html('');
-              comment_get_replies(parentId);
-            },
-            error: function(xhr) {
-              alert(xhr.responseText || 'Error posting reply');
-              $submitBtn.prop('disabled', false).text('{{ _("Reply") }}');
-            }
+
+        // Look up the actual container for this comment to get correct context IDs.
+        // This is critical for pages with multiple comment sections (e.g. home feed),
+        // where reply_comment is only defined once but must work for any feed item.
+        var $parentComment = $('#comment-' + parentId);
+        var $commentContainer = $parentComment.closest('.compact-comments');
+        var replyContentTypeId = $commentContainer.length ?
+        $commentContainer.data('content-type-id') : config.contentTypeId;
+        var replyObjectId = $commentContainer.length ?
+        $commentContainer.data('object-id') : config.objectId;
+
+        if (typeof MarkdownEditor === 'undefined') {
+          // Fallback to simple textarea
+          var formHtml = '<div id="' + formId + '" class="inline-simple-form">' +
+          '<textarea class="inline-comment-input" placeholder="{{ _("Write a reply...") }}" rows="2"></textarea>' +
+          '<div class="inline-reply-actions">' +
+          '<button type="button" class="inline-cancel-btn">{{ _("Cancel") }}</button>' +
+          '<button type="button" class="inline-submit-btn">{{ _("Reply") }}</button>' +
+          '</div></div>';
+          $replyContainer.html(formHtml).removeAttr('hidden').show();
+          $replyContainer.find('textarea').focus();
+          $replyContainer.find('.inline-cancel-btn').on('click', function() { $replyContainer.hide(); });
+          $replyContainer.find('.inline-submit-btn').on('click', function() {
+            var body = $replyContainer.find('textarea').val();
+            if (!body.trim()) return;
+            $(this).prop('disabled', true);
+            $.ajax({
+              url: config.postUrl, type: 'POST',
+              data: { csrfmiddlewaretoken: $.cookie('csrftoken'), parent: parentId, body: body,
+                content_type_id: replyContentTypeId, object_id: replyObjectId },
+              success: function() { $replyContainer.hide().html(''); comment_get_replies(parentId); },
+              error: function(xhr) { alert(xhr.responseText || 'Error posting reply'); }
+            });
           });
+          return;
+        }
+
+        var editorContainerId = 'inline-reply-editor-' + parentId + '-container';
+        $replyContainer.html('<div id="' + formId + '"><div id="' + editorContainerId + '"></div></div>')
+          .removeAttr('hidden').show();
+
+        var editor = new MarkdownEditor(document.getElementById(editorContainerId), {
+          id: 'inline-reply-editor-' + parentId,
+          previewUrl: config.previewUrl,
+          imageUploadUrl: '/pagedown/image-upload/',
+          enableImageUpload: true,
+          mode: 'minimal',
+          placeholder: '{{ _("Write a reply...") }}',
+          submitLabel: '{{ _("Reply") }}',
+          cancelLabel: '{{ _("Cancel") }}',
+          expandLabel: '{{ _("Expand editor") }}',
+          collapseLabel: '{{ _("Collapse editor") }}',
+          onSubmit: function() {
+            var body = editor.getValue();
+            if (!body.trim()) return;
+            var $submitBtn = $replyContainer.find('.minimal-submit-btn, .full-submit-btn');
+            $submitBtn.prop('disabled', true);
+            $.ajax({
+              url: config.postUrl, type: 'POST',
+              data: { csrfmiddlewaretoken: $.cookie('csrftoken'), parent: parentId, body: body,
+                content_type_id: replyContentTypeId, object_id: replyObjectId },
+              success: function() {
+                editor.destroy();
+                $replyContainer.hide().html('');
+                comment_get_replies(parentId);
+              },
+              error: function(xhr) {
+                alert(xhr.responseText || '{{ _("Error posting reply") }}');
+                $submitBtn.prop('disabled', false);
+              }
+            });
+          },
+          onCancel: function() {
+            editor.destroy();
+            $replyContainer.hide().html('');
+          }
         });
+
+        editor.elements.wrapper.classList.add('has-focus');
+        editor.focus();
       };
     }
 
@@ -407,7 +447,6 @@
       };
     }
 
-  // Simple edit comment for inline comments (uses textarea instead of MarkdownEditor)
     if (typeof window.edit_comment === 'undefined') {
       window.edit_comment = function(commentId) {
         var $comment = $('#comment-' + commentId);
@@ -423,64 +462,98 @@
         $commentBody.hide();
         $body.find('.bad-comment-body').hide();
 
-        var $editorContainer = $('<div class="inline-edit-container inline-simple-form">' +
-          '<textarea class="inline-comment-input" rows="3">' + rawBody.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>' +
-          '<div class="inline-reply-actions">' +
-          '<button type="button" class="inline-cancel-btn">{{ _("Cancel") }}</button>' +
-          '<button type="button" class="inline-submit-btn">{{ _("Save") }}</button>' +
-          '</div></div>');
-        $body.append($editorContainer);
+        var $outerContainer = $('<div class="inline-edit-container"></div>');
+        $body.append($outerContainer);
 
-        var $textarea = $editorContainer.find('textarea');
-        var $saveBtn = $editorContainer.find('.inline-submit-btn');
-        var $cancelBtn = $editorContainer.find('.inline-cancel-btn');
-
-      // Decode HTML entities for editing
-        $textarea.val($('<div>').html(rawBody).text());
-        $textarea.focus();
-
-        $cancelBtn.on('click', function() {
-          $editorContainer.remove();
-          $commentBody.show();
-          $body.find('.bad-comment-body').show();
-        });
-
-        $saveBtn.on('click', function() {
-          var newBody = $textarea.val();
-          if (!newBody.trim()) return;
-
-          $saveBtn.prop('disabled', true).text('{{ _("Saving...") }}');
-
-          $.ajax({
-            url: editUrl,
-            type: 'POST',
-            data: {
-              csrfmiddlewaretoken: $.cookie('csrftoken'),
-              body: newBody
-            },
-            success: function(response) {
-            // Reload the comment content
-              $.ajax({
-                url: '{{ url("comment_content", 0) }}'.replace('0', commentId),
-                success: function(data) {
-                  var $newComment = $(data);
-                  $comment.find('.comment-wrapper').first().replaceWith($newComment.find('.comment-wrapper').first());
-                  if (typeof renderKatex === 'function') renderKatex($comment[0]);
-                  if (typeof register_time === 'function') register_time($comment.find('.time-with-rel'));
-                },
-                error: function() {
-                  $editorContainer.remove();
-                  $commentBody.show();
-                  location.reload();
-                }
-              });
-            },
-            error: function(xhr) {
-              alert(xhr.responseText || 'Error saving comment');
-              $saveBtn.prop('disabled', false).text('{{ _("Save") }}');
-            }
+        if (typeof MarkdownEditor === 'undefined') {
+          // Fallback to simple textarea
+          $outerContainer.addClass('inline-simple-form').html(
+            '<textarea class="inline-comment-input" rows="3"></textarea>' +
+            '<div class="inline-reply-actions">' +
+            '<button type="button" class="inline-cancel-btn">{{ _("Cancel") }}</button>' +
+            '<button type="button" class="inline-submit-btn">{{ _("Save") }}</button>' +
+            '</div>');
+          var $textarea = $outerContainer.find('textarea');
+          $textarea.val($('<div>').html(rawBody).text()).focus();
+          $outerContainer.find('.inline-cancel-btn').on('click', function() {
+            $outerContainer.remove(); $commentBody.show(); $body.find('.bad-comment-body').show();
           });
+          $outerContainer.find('.inline-submit-btn').on('click', function() {
+            var newBody = $textarea.val();
+            if (!newBody.trim()) return;
+            $(this).prop('disabled', true);
+            $.ajax({
+              url: editUrl, type: 'POST',
+              data: { csrfmiddlewaretoken: $.cookie('csrftoken'), body: newBody },
+              success: function() {
+                $.ajax({ url: '{{ url("comment_content", 0) }}'.replace('0', commentId),
+                  success: function(data) {
+                    var $newComment = $(data);
+                    $comment.find('.comment-wrapper').first().replaceWith($newComment.find('.comment-wrapper').first());
+                    if (typeof renderKatex === 'function') renderKatex($comment[0]);
+                    if (typeof register_time === 'function') register_time($comment.find('.time-with-rel'));
+                  },
+                  error: function() { $outerContainer.remove(); $commentBody.show(); location.reload(); }
+                });
+              },
+              error: function(xhr) { alert(xhr.responseText || 'Error saving comment'); }
+            });
+          });
+          return;
+        }
+
+        var editorContainerId = 'inline-edit-editor-' + commentId + '-inner';
+        $outerContainer.html('<div id="' + editorContainerId + '"></div>');
+
+        var editor = new MarkdownEditor(document.getElementById(editorContainerId), {
+          id: 'inline-edit-editor-' + commentId,
+          previewUrl: config.previewUrl,
+          imageUploadUrl: '/pagedown/image-upload/',
+          enableImageUpload: true,
+          mode: 'minimal',
+          initialValue: rawBody,
+          placeholder: '{{ _("Edit your comment...") }}',
+          submitLabel: '{{ _("Save") }}',
+          cancelLabel: '{{ _("Cancel") }}',
+          expandLabel: '{{ _("Expand editor") }}',
+          collapseLabel: '{{ _("Collapse editor") }}',
+          onSubmit: function() {
+            var body = editor.getValue();
+            if (!body.trim()) return;
+            var $submitBtn = $outerContainer.find('.minimal-submit-btn, .full-submit-btn');
+            $submitBtn.prop('disabled', true);
+            $.ajax({
+              url: editUrl, type: 'POST',
+              data: { csrfmiddlewaretoken: $.cookie('csrftoken'), body: body },
+              success: function() {
+                $.ajax({
+                  url: '{{ url("comment_content", 0) }}'.replace('0', commentId),
+                  success: function(data) {
+                    editor.destroy();
+                    var $newComment = $(data);
+                    $comment.find('.comment-wrapper').first().replaceWith($newComment.find('.comment-wrapper').first());
+                    if (typeof renderKatex === 'function') renderKatex($comment[0]);
+                    if (typeof register_time === 'function') register_time($comment.find('.time-with-rel'));
+                  },
+                  error: function() { editor.destroy(); $commentBody.show(); location.reload(); }
+                });
+              },
+              error: function(xhr) {
+                alert(xhr.responseText || '{{ _("Error saving comment") }}');
+                $submitBtn.prop('disabled', false);
+              }
+            });
+          },
+          onCancel: function() {
+            editor.destroy();
+            $outerContainer.remove();
+            $commentBody.show();
+            $body.find('.bad-comment-body').show();
+          }
         });
+
+        editor.elements.wrapper.classList.add('has-focus', 'has-content');
+        editor.focus();
       };
     }
 
