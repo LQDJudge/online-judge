@@ -171,6 +171,22 @@ python3 manage.py test judge.tests --keepdb
 python3 manage.py test judge.tests.TestClass.test_method --keepdb
 ```
 
+## UI Governance
+
+To keep GUI work consistent and manageable, use these project docs and checks:
+
+1. Audit report: [docs/ui-audit-report-2026-03-28.md](docs/ui-audit-report-2026-03-28.md)
+2. Current status and stabilization progress: [docs/ui-system-status.md](docs/ui-system-status.md)
+3. Guardrail script: `./scripts/ui_guardrails.sh`
+
+```bash
+# UI consistency report (non-blocking)
+./scripts/ui_guardrails.sh
+
+# Strict mode (fails when hardcoded style debt exists)
+./scripts/ui_guardrails.sh --strict
+```
+
 ## Optional Components
 
 ### Useful Aliases
