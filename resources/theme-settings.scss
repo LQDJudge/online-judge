@@ -33,7 +33,7 @@
     }
 
     .section-description {
-        color: #666;
+        color: $text-muted;
         font-size: 0.9em;
         margin-bottom: 15px;
     }
@@ -54,7 +54,7 @@
         border-radius: $widget_border_radius;
         cursor: pointer;
         transition: all 0.2s ease;
-        background: white;
+        background: $surface-primary;
 
         &:hover {
             border-color: $theme_color;
@@ -123,7 +123,7 @@
     margin-bottom: 20px;
 
     .no-samples-message {
-        color: #666;
+        color: $text-muted;
         font-style: italic;
     }
 }
@@ -148,7 +148,7 @@
     overflow: hidden;
     cursor: pointer;
     transition: all 0.2s ease;
-    background: white;
+    background: $surface-primary;
     padding: 0;
     text-align: left;
 
@@ -205,8 +205,8 @@
 .admin-samples-manager {
     margin-top: 15px;
     padding: 15px;
-    background: rgba(255, 215, 0, 0.1);
-    border: 1px dashed #e6c300;
+    background: rgba($color-warning, 0.1);
+    border: 1px dashed $color-warning-border;
     border-radius: $widget_border_radius;
 
     .admin-bg-grid {
@@ -232,7 +232,7 @@
             top: 5px;
             right: 5px;
             background: $announcement_red;
-            color: white;
+            color: $text-on-primary;
             border: none;
             padding: 5px 8px;
             border-radius: 4px;
@@ -259,7 +259,7 @@
     .upload-hint {
         margin-top: 10px;
         font-size: 0.85em;
-        color: #666;
+        color: $text-muted;
     }
 
     .upload-submit-btn {
@@ -287,7 +287,7 @@
     border-radius: $widget_border_radius;
     cursor: pointer;
     transition: all 0.2s ease;
-    background: white;
+    background: $surface-primary;
     width: 100%;
 
     &:hover {

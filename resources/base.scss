@@ -125,16 +125,16 @@ img {
 
 // Background color variants
 .action-btn.background-green {
-    background: linear-gradient(135deg, #28a745 0%, color.adjust(#28a745, $lightness: 8%) 100%);
-    box-shadow: 0 3px 10px rgba(40, 167, 69, 0.25);
+    background: linear-gradient(135deg, $color-success 0%, color.adjust($color-success, $lightness: 8%) 100%);
+    box-shadow: 0 3px 10px rgba($color-success, 0.25);
 
     &:hover {
-        background: linear-gradient(135deg, color.adjust(#28a745, $lightness: 5%) 0%, color.adjust(#28a745, $lightness: 12%) 100%);
-        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.35);
+        background: linear-gradient(135deg, color.adjust($color-success, $lightness: 5%) 0%, color.adjust($color-success, $lightness: 12%) 100%);
+        box-shadow: 0 5px 15px rgba($color-success, 0.35);
     }
 
     &:active {
-        box-shadow: 0 3px 8px rgba(40, 167, 69, 0.3);
+        box-shadow: 0 3px 8px rgba($color-success, 0.3);
     }
 }
 
@@ -242,6 +242,31 @@ img {
     }
 }
 
+// Outlined variant — secondary actions
+.action-btn.outlined {
+    background: transparent;
+    border: 2px solid $theme_color;
+    color: $theme_color;
+    box-shadow: none;
+
+    &::before {
+        display: none;
+    }
+
+    &:hover {
+        background: rgba($theme_color, 0.08);
+        box-shadow: none;
+        transform: none;
+        color: $theme_color;
+    }
+
+    &:active {
+        background: rgba($theme_color, 0.15);
+        transform: scale(0.98);
+        box-shadow: none;
+    }
+}
+
 // Mobile optimizations
 @media (max-width: 799px) {
     .action-btn {
@@ -276,8 +301,8 @@ input[type="submit"].submit-btn {
     // Inherit from the existing .btn styles for the special submit button design
     // This preserves the original rounded submit button with icon design
     // Override action-btn styles when both classes are present
-    background: #28a745 !important;
-    border: 1px solid #28a745 !important;
+    background: $color-success !important;
+    border: 1px solid $color-success !important;
     color: white !important;
     border-radius: 40px !important;
     padding: 12px 18px !important;
@@ -316,7 +341,7 @@ input[type="submit"].submit-btn {
 
         i {
             font-size: 21px !important;
-            color: #28a745 !important;
+            color: $color-success !important;
         }
 
         &.icon-round {
@@ -328,8 +353,8 @@ input[type="submit"].submit-btn {
     &:active,
     &:focus {
         outline: none !important;
-        background: #218838 !important;
-        border-color: #218838 !important;
+        background: $color-success-hover !important;
+        border-color: $color-success-hover !important;
         color: white !important;
         text-decoration: none !important;
         transform: none !important;
@@ -362,7 +387,7 @@ input[type="submit"].submit-btn {
 
 table.sortable thead {
     background-color: $background_gray;
-    color: #666;
+    color: $text-muted;
     font-weight: bold;
     cursor: default;
 }
@@ -1033,7 +1058,7 @@ noscript #noscript {
 }
 
 .background-green {
-    background-color: #28a745 !important;
+    background-color: $color-success !important;
 }
 
 .background-red {

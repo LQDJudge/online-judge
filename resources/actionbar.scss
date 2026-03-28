@@ -22,13 +22,13 @@
         gap: 0.4rem;
         cursor: pointer;
         padding: 0.5rem 1rem;
-        border-radius: 6px;
+        border-radius: $radius-md;
         font-weight: 500;
         font-size: 0.875rem;
-        color: darkslategray;
+        color: $text-primary;
         background: transparent;
         border: none;
-        transition: all 0.15s ease;
+        transition: $transition-fast;
 
         i {
             font-size: 1.1rem;
@@ -37,7 +37,7 @@
 
         &:hover {
             background: rgba(0, 0, 0, 0.05);
-            color: #374151;
+            color: $text-secondary;
 
             i {
                 transform: scale(1.1);
@@ -52,7 +52,7 @@
     // Like button styles
     .like-button {
         padding-right: 0.6rem;
-        border-radius: 6px 0 0 6px;
+        border-radius: $radius-md 0 0 $radius-md;
 
         &.voted {
             color: $theme_color;
@@ -72,19 +72,19 @@
     // Dislike button styles
     .dislike-button {
         padding-left: 0.6rem;
-        border-radius: 0 6px 6px 0;
+        border-radius: 0 $radius-md $radius-md 0;
 
         &.voted {
-            color: #ef4444;
-            background: rgba(239, 68, 68, 0.1);
+            color: $color-danger;
+            background: rgba($color-danger, 0.1);
 
             i {
                 font-weight: 900;
             }
 
             &:hover {
-                background: rgba(239, 68, 68, 0.15);
-                color: #ef4444;
+                background: rgba($color-danger, 0.15);
+                color: $color-danger;
             }
         }
     }
@@ -106,16 +106,16 @@
     // Bookmark button styles
     .bookmark-button {
         &.bookmarked {
-            color: #f59e0b;
-            background: rgba(245, 158, 11, 0.1);
+            color: $color-bookmark;
+            background: rgba($color-bookmark, 0.1);
 
             i {
                 font-weight: 900;
             }
 
             &:hover {
-                background: rgba(245, 158, 11, 0.15);
-                color: #f59e0b;
+                background: rgba($color-bookmark, 0.15);
+                color: $color-bookmark;
             }
         }
     }
@@ -123,8 +123,8 @@
     // Share button hover effect
     .actionbar-share {
         &:hover {
-            color: #3b82f6;
-            background: rgba(59, 130, 246, 0.08);
+            color: $color-share;
+            background: rgba($color-share, 0.08);
         }
     }
 
