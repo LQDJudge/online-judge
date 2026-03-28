@@ -325,7 +325,7 @@ class MarkdownEditor {
             <button type="button" class="minimal-expand-btn" title="${this.options.expandLabel}">
               <i class="fa fa-expand"></i>
             </button>
-            <button type="button" class="minimal-cancel-btn">${this.options.cancelLabel}</button>
+            ${this.options.cancelLabel ? `<button type="button" class="minimal-cancel-btn">${this.options.cancelLabel}</button>` : ''}
             <button type="button" class="minimal-submit-btn">${this.options.submitLabel}</button>
           </div>
         </div>
@@ -472,7 +472,7 @@ class MarkdownEditor {
 
         ${this.options.onSubmit ? `
         <div class="full-editor-actions">
-          <button type="button" class="full-cancel-btn">${this.options.cancelLabel}</button>
+          ${this.options.cancelLabel ? `<button type="button" class="full-cancel-btn">${this.options.cancelLabel}</button>` : ''}
           <button type="button" class="full-submit-btn">${this.options.submitLabel}</button>
         </div>
         ` : ''}

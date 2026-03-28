@@ -236,9 +236,12 @@ def rate_contest(contest):
             )
         )
 
-    Profile.dirty_cache(*user_ids)
-    get_contest_ratings.dirty_multi([(uid,) for uid in user_ids])
-    get_rating_rank.dirty_multi([(uid,) for uid in user_ids])
+        def _dirty_caches():
+            Profile.dirty_cache(*user_ids)
+            get_contest_ratings.dirty_multi([(uid,) for uid in user_ids])
+            get_rating_rank.dirty_multi([(uid,) for uid in user_ids])
+
+        transaction.on_commit(_dirty_caches)
 
 
 RATING_LEVELS = [
