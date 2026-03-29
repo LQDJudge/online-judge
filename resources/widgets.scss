@@ -11,15 +11,15 @@
 }
 
 .tweet-this i {
-    color: #55ACEE;
+    color: $color-brand-twitter;
 }
 
 .facebook-this it {
-    color: #133783;
+    color: $color-brand-facebook;
 }
 
 .gplus-this i {
-    color: #DD4B38;
+    color: $color-brand-google;
 }
 
 .social {
@@ -39,7 +39,7 @@
     border-radius: .25rem;
     box-shadow: rgba(0, 0, 0, 0.02) 0 1px 3px 0;
     box-sizing: border-box;
-    color: #fff !important;
+    color: $text-on-primary !important;
     cursor: pointer;
     display: block;
     font-family: system-ui,-apple-system,system-ui,"Helvetica Neue",Helvetica,Arial,sans-serif;
@@ -52,17 +52,16 @@
     padding: calc(.875rem - 1px) calc(1.5rem - 1px);
     position: relative;
     text-decoration: none;
-    transition: all 250ms;
+    transition: $transition-medium;
     user-select: none;
     -webkit-user-select: none;
     touch-action: manipulation;
-    vertical-align: middle;
     text-align: center;
     width: auto;
 
     &.disabled, &[disabled] {
-        background: linear-gradient(to bottom, darkgray 0, gray 100%) repeat-x !important;
-        border-color: grey !important;
+        background: linear-gradient(to bottom, $surface-disabled 0, $surface-disabled-alt 100%) repeat-x !important;
+        border-color: $surface-disabled-alt !important;
         cursor: not-allowed;
     }
 
@@ -72,36 +71,36 @@
     }
 
     &.btn-gray {
-        background: gray;
+        background: $text-muted;
     }
 
     &.btn-hovergray {
         &:hover {
-            background: lightgray;
+            background: $background_gray;
         }
     }
 
     &.btn-green {
-        background: #28a745;
+        background: $color-success;
 
         &:hover {
-            background: green;
+            background: $color-success-hover;
         }
     }
 
     &.btn-darkred {
-        background: darkred;
+        background: $color-darkred;
 
         &:hover {
-            background: brown;
+            background: $color-darkred-hover;
         }
     }
 
     &.btn-midnightblue {
-        background: midnightblue;
+        background: $color-midnight;
 
         &:hover {
-            background: darkblue;
+            background: $color-midnight-hover;
         }
     }
 
@@ -114,10 +113,6 @@
     &.unselectable.button.full.small {
         margin: 0 auto
     }
-}
-
-.button.full, input[type=submit].full, button.full {
-
 }
 
 .button:hover {
@@ -140,14 +135,14 @@
 .inline-button {
     display: inline;
     vertical-align: top;
-    padding: 3px 6px;
+    padding: $space-micro $space-compact;
 }
 
 input {
     &[type=text], &[type=password], &[type=email], &[type=number], &[type=datetime-local], &[type=date] {
-        padding: 4px 8px;
-        color: #555;
-        background: #FFF none;
+        padding: $space-xs $space-sm;
+        color: $text-secondary;
+        background: $surface-primary none;
         border: 1px solid $border_gray;
         border-radius: $widget_border_radius;
         box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
@@ -160,13 +155,13 @@ input {
     }
 
     &[type=number] {
-        padding: 2px 0 2px 5px;
+        padding: $space-nano 0 $space-nano $space-tight;
     }
 }
 
 textarea {
-    padding: 8px;
-    background: #FFF none;
+    padding: $space-sm;
+    background: $surface-primary none;
     border: 1px solid $border_gray;
     border-radius: $widget_border_radius;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
@@ -175,7 +170,7 @@ textarea {
 }
 
 textarea:hover {
-    border-color: black;
+    border-color: $text-primary;
 }
 
 input {
@@ -186,7 +181,7 @@ input {
 }
 
 textarea:focus {
-    border-color: black;
+    border-color: $text-primary;
     border-width: unset;
     outline: 0;
 }
@@ -207,13 +202,13 @@ input {
     font-size: 12px;
     cursor: pointer;
     position: absolute;
-    padding: 5px 8px;
+    padding: $space-tight $space-sm;
     font-family: system-ui, "Noto Sans";
 
     &:hover {
         border-radius: $widget_border_radius;
-        border: 1px solid #E1E1E8;
-        background-color: #FFF;
+        border: 1px solid $border-light;
+        background-color: $surface-primary;
     }
 }
 
@@ -242,7 +237,7 @@ input {
     .tab {
         .tab-icon {
             padding-right: 0.3em;
-            color: gray;
+            color: $text-muted;
         }
 
         a, span {
@@ -255,13 +250,13 @@ input {
             }
 
             .tab-icon {
-                color: black;
+                color: $text-primary;
             }
         }
     }
 
     h2 {
-        color: #393630;
+        color: $text-primary;
     }
 
     > ul {
@@ -302,14 +297,14 @@ input {
                 line-height: 1.42857;
                 position: relative;
                 display: block;
-                padding: 5px 5px;
-                color: #555;
+                padding: $space-tight;
+                color: $text-secondary;
                 text-decoration: none;
                 white-space: nowrap;
                 font-weight: bold;
 
                 &:hover {
-                    border-bottom: 3px solid green;
+                    border-bottom: 3px solid $color-tab-hover;
                 }
             }
         }
@@ -318,8 +313,8 @@ input {
 
 // Bootstrap-y pagination
 ul.pagination a:hover {
-    color: #FFF;
-    background: #cc4e17;
+    color: $text-on-primary;
+    background: $color-pagination-hover-bg;
 }
 
 ul.pagination {
@@ -338,37 +333,37 @@ ul.pagination {
                 a, span {
                     position: relative;
                     float: left;
-                    padding: 4px 12px;
+                    padding: $space-xs $space-md;
                     margin-right: 5px;
                     font-weight: bold;
                     line-height: 1.42857;
                     text-decoration: none;
                     color: $theme_color;
-                    background-color: white;
+                    background-color: $surface-primary;
                     border: 2px solid $theme_color;
-                    border-radius: 10px;
+                    border-radius: $radius-lg;
                 }
             }
         }
 
         .disabled-page > {
             a {
-                color: #f1efef;
-                background-color: #ab6247;
-                border-color: #6a240b;
+                color: $color-pagination-disabled-text;
+                background-color: $color-pagination-disabled-bg;
+                border-color: $color-pagination-disabled-border;
             }
 
             span {
-                color: #f1efef;
-                background-color: #ab6247;
-                border-color: #6a240b;
+                color: $color-pagination-disabled-text;
+                background-color: $color-pagination-disabled-bg;
+                border-color: $color-pagination-disabled-border;
             }
         }
 
         .active-page > {
             a {
                 z-index: 2;
-                color: white;
+                color: $text-on-primary;
                 background-color: $theme_color;
                 border-color: transparent;
                 cursor: default;
@@ -376,7 +371,7 @@ ul.pagination {
 
             span {
                 z-index: 2;
-                color: #FFF;
+                color: $text-on-primary;
                 background-color: $highlight_blue;
                 border-color: transparent;
                 cursor: default;
@@ -386,28 +381,28 @@ ul.pagination {
 }
 
 .alert {
-    padding: 15px;
+    padding: $space-relaxed;
     margin-bottom: 20px;
     border: 1px solid transparent;
     border-radius: $widget_border_radius;
 }
 
 .alert-info {
-    color: #31708f;
-    background-color: #d9edf7;
-    border-color: #bce8f1;
+    color: $color-alert-info-text;
+    background-color: $color-alert-info-bg;
+    border-color: $color-alert-info-border;
 }
 
 .alert-warning {
-    color: #8a6d3b;
-    background-color: #fcf8e3;
-    border-color: #faebcc;
+    color: $color-alert-warning-text;
+    background-color: $color-alert-warning-bg;
+    border-color: $color-alert-warning-border;
 }
 
 .alert-danger {
-    color: #a94442;
-    background-color: #f2dede;
-    border-color: #ebccd1;
+    color: $color-alert-danger-text;
+    background-color: $color-alert-danger-bg;
+    border-color: $color-alert-danger-border;
 }
 
 .alert-dismissable, .alert-dismissible {
@@ -426,8 +421,8 @@ ul.pagination {
     font-size: 21px;
     font-weight: 700;
     line-height: 1;
-    color: #000;
-    text-shadow: 0 1px 0 #fff;
+    color: $text-primary;
+    text-shadow: 0 1px 0 $text-on-primary;
     filter: alpha(opacity=20);
     opacity: 0.2;
 }
@@ -438,13 +433,13 @@ a.close {
     line-height: 1;
 
     &:hover {
-        color: black !important;
+        color: $text-primary !important;
     }
 }
 
 .close {
     &:focus, &:hover {
-        color: #000;
+        color: $text-primary;
         text-decoration: none;
         cursor: pointer;
         filter: alpha(opacity=50);
@@ -458,17 +453,17 @@ a.close {
     font-size: 12px;
     font-weight: 700;
     line-height: 1;
-    color: #fff;
+    color: $text-on-primary;
     text-align: center;
     white-space: nowrap;
     vertical-align: middle;
-    background-color: #e84848;
-    border-radius: 10px;
+    background-color: $color-badge-danger-bg;
+    border-radius: $radius-lg;
     box-sizing: border-box;
 }
 
 .form-submit-group {
-    border-top: 1px solid #EEE;
+    border-top: 1px solid $border-light-2;
     margin-top: 0.8em;
     padding-top: 0.5em;
     text-align: right;
@@ -485,23 +480,23 @@ ul.select2-selection__rendered {
     padding-left: 7px;
     font-size: 1.3em;
     font-weight: bold;
-    background: white;
+    background: $surface-primary;
     display: flex;
 
     .fa {
         background: $theme_color;
-        color: white;
-        padding: 4px;
+        color: $text-on-primary;
+        padding: $space-xs;
         margin-right: 8px;
-        border-radius: 5px;
+        border-radius: $radius-base;
         font-size: smaller;
     }
 }
 
 .sidebox-content {
     border-top: none;
-    padding: 1px 0.5em 3px;
-    background: white;
+    padding: $space-hairline 0.5em $space-micro;
+    background: $surface-primary;
     border-radius: 0 0 $widget_border_radius $widget_border_radius;
 
     &.sidebox-table {
@@ -525,15 +520,15 @@ ul.select2-selection__rendered {
     position: sticky;
     top: 42px;
     background: $announcement_red;
-    border-radius: 5px 5px 0 0;
+    border-radius: $radius-base $radius-base 0 0;
     display: none;
 }
 
 .ws-closed a {
     display: block;
-    padding: 7px 0;
+    padding: $space-snug 0;
     text-align: center;
-    color: white;
+    color: $text-on-primary;
     font-weight: 600;
 }
 
@@ -549,46 +544,46 @@ ul.select2-selection__rendered {
         padding: 1em 1.5em;
         margin-bottom: 1em;
         border: 1px solid transparent;
-        border-radius: 5px;
+        border-radius: $radius-base;
 
         &.debug {
-            color: #383d41;
-            background-color: #e2e3e5;
-            border-color: #d6d8db;
+            color: $color-message-debug-text;
+            background-color: $color-message-debug-bg;
+            border-color: $color-message-debug-border;
         }
 
         &.info {
-            color: #0c5460;
-            background-color: #d1ecf1;
-            border-color: #bee5eb;
+            color: $color-message-info-text;
+            background-color: $color-message-info-bg;
+            border-color: $color-message-info-border;
         }
 
         &.success {
-            color: #155724;
-            background-color: #d4edda;
-            border-color: #c3e6cb;
+            color: $color-message-success-text;
+            background-color: $color-message-success-bg;
+            border-color: $color-message-success-border;
         }
 
         &.warning {
-            color: #856404;
-            background-color: #fff3cd;
-            border-color: #ffeeba;
+            color: $color-message-warning-text;
+            background-color: $color-message-warning-bg;
+            border-color: $color-message-warning-border;
         }
 
         &.error {
-            color: #721c24;
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
+            color: $color-message-error-text;
+            background-color: $color-message-error-bg;
+            border-color: $color-message-error-border;
         }
     }
 }
 
 .spoiler-text {
-    border: 1px solid black;
+    border: 1px solid $text-primary;
     padding: 0.5em;
     margin-top: 0.5em;
-    border-radius: 5px;
-    background: #def;
+    border-radius: $radius-base;
+    background: $color-spoiler-bg;
 }
 
 .spoiler-summary {
@@ -597,16 +592,16 @@ ul.select2-selection__rendered {
 }
 
 .control-button {
-    color: black !important;
+    color: $text-primary !important;
     border: 0;
 }
 
 ul.errorlist {
-    margin: 0px;
+    margin: 0;
     text-align: right;
     list-style: none;
-    padding: 0px;
-    color: red;
+    padding: 0;
+    color: $color-error;
     margin-bottom: 3px;
 }
 
@@ -643,12 +638,12 @@ ul.errorlist {
     .inline-header {
         float: left;
         font-size: 1.1em;
-        padding: 4px 8px;
+        padding: $space-xs $space-sm;
         padding-left: 0;
     }
 
     .block-header {
-        color: #555;
+        color: $text-secondary;
         font-size: 1.1em;
         font-weight: 600;
         padding-bottom: 0.2em;
@@ -667,11 +662,11 @@ ul.errorlist {
 
     .fullwidth-error input {
         width: 100%;
-        border-color: red;
+        border-color: $color-error;
     }
 
     .form-field-error {
-        color: red;
+        color: $color-error;
     }
 
     small {
@@ -725,15 +720,15 @@ ul.errorlist {
     }
 
     .google-icon i {
-        color: #DD4B38;
+        color: $color-brand-google;
     }
 
     .facebook-icon i {
-        color: #133783;
+        color: $color-brand-facebook;
     }
 
     .github-icon i {
-        color: black;
+        color: $text-primary;
     }
 }
 
@@ -746,7 +741,7 @@ ul.errorlist {
 }
 
 .btn:hover {
-    color: #212529;
+    color: $text-strong;
     text-decoration: none;
 }
 
@@ -791,7 +786,7 @@ ul.errorlist {
 .link-row {
     display: flex;
     align-items: center;
-    padding: 6px;
+    padding: $space-compact;
     font-weight: normal;
     cursor: pointer;
     transition: background-color 0.3s;
@@ -814,7 +809,7 @@ ul.errorlist {
 
     &:hover {
         color: $theme_color;
-        background-color: #f8f8f2;
+        background-color: $color-interactive-hover-bg;
     }
 }
 
@@ -832,30 +827,30 @@ button:hover, button:focus {
 }
 
 .btn {
-    padding: 8px 12px;
+    padding: $space-sm $space-md;
     cursor: pointer;
     border-width: 1px;
-    border-radius: 5px;
+    border-radius: $radius-base;
     font-size: 14px;
     font-weight: 500;
-    -webkit-box-shadow: 0px 10px 20px -6px rgba(0, 0, 0, 0.12);
-    -moz-box-shadow: 0px 10px 20px -6px rgba(0, 0, 0, 0.12);
-    box-shadow: 0px 10px 20px -6px rgba(0, 0, 0, 0.12);
+    -webkit-box-shadow: $shadow-lg-soft;
+    -moz-box-shadow: $shadow-lg-soft;
+    box-shadow: $shadow-lg-soft;
     overflow: hidden;
     position: relative;
-    -moz-transition: all 0.3s ease;
-    -o-transition: all 0.3s ease;
-    -webkit-transition: all 0.3s ease;
-    -ms-transition: all 0.3s ease;
-    transition: all 0.3s ease;
+    -moz-transition: $transition-normal;
+    -o-transition: $transition-normal;
+    -webkit-transition: $transition-normal;
+    -ms-transition: $transition-normal;
+    transition: $transition-normal;
     span {
         font-size: 15px;
         margin-left: -20px;
-        -moz-transition: all 0.3s ease;
-        -o-transition: all 0.3s ease;
-        -webkit-transition: all 0.3s ease;
-        -ms-transition: all 0.3s ease;
-        transition: all 0.3s ease;
+        -moz-transition: $transition-normal;
+        -o-transition: $transition-normal;
+        -webkit-transition: $transition-normal;
+        -ms-transition: $transition-normal;
+        transition: $transition-normal;
     }
     .icon {
         position: absolute;
@@ -863,7 +858,7 @@ button:hover, button:focus {
         right: 0;
         width: 45px;
         bottom: 0;
-        background: #fff;
+        background: $surface-primary;
         i {
             font-size: 20px;
         }
@@ -872,7 +867,7 @@ button:hover, button:focus {
         border-radius: 50%;
     }
     &.btn-round {
-        border-radius: 40px;
+        border-radius: $radius-pill;
     }
     &:hover, &:active, &:focus {
         outline: none;
@@ -881,15 +876,15 @@ button:hover, button:focus {
         }
     }
     &.btn-primary {
-        color: #fff;
+        color: $surface-primary;
         .icon i {
-            color: #28a745;
+            color: $color-success;
         }
     }
     &.btn-disabled {
-        color: #fff;
-        background: gray;
-        border-color: gray;
+        color: $surface-primary;
+        background: $text-muted;
+        border-color: $text-muted;
     }
 }
 
@@ -944,14 +939,14 @@ button:hover, button:focus {
             width: auto;
             height: auto;
             object-fit: contain;
-            border-radius: 8px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border-radius: $radius-xl;
+            box-shadow: $shadow-modal;
         }
     }
 
     .featherlight-close-icon {
         background: rgba(0, 0, 0, 0.6);
-        color: white;
+        color: $text-on-primary;
         border-radius: 50%;
         width: 32px;
         height: 32px;
@@ -966,21 +961,21 @@ button:hover, button:focus {
 .image-file-widget {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 16px;
+    gap: $space-md;
+    padding: $space-lg;
     background: $background_light_gray;
     border: 1px solid $border_gray;
-    border-radius: 8px;
+    border-radius: $radius-xl;
     max-width: 300px;
 
     .current-image {
         display: flex;
         justify-content: center;
-        padding: 12px;
-        background: white;
+        padding: $space-md;
+        background: $surface-primary;
         border: 1px solid $border_gray;
-        border-radius: 6px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border-radius: $radius-md;
+        box-shadow: $shadow-sm;
 
         a {
             display: block;
@@ -990,7 +985,7 @@ button:hover, button:focus {
         }
 
         img {
-            border-radius: 8px;
+            border-radius: $radius-xl;
             object-fit: cover;
             transition: transform 0.2s, box-shadow 0.2s;
         }
@@ -1002,7 +997,7 @@ button:hover, button:focus {
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.4);
-            border-radius: 8px;
+            border-radius: $radius-xl;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1010,7 +1005,7 @@ button:hover, button:focus {
             transition: opacity 0.2s;
 
             i {
-                color: white;
+                color: $text-on-primary;
                 font-size: 1.5em;
             }
         }
@@ -1018,7 +1013,7 @@ button:hover, button:focus {
         a:hover {
             img {
                 transform: scale(1.02);
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                box-shadow: $shadow-hover;
             }
 
             .image-overlay {
@@ -1029,7 +1024,7 @@ button:hover, button:focus {
 
     .image-actions {
         display: flex;
-        gap: 12px;
+        gap: $space-md;
         align-items: center;
         flex-wrap: wrap;
     }
@@ -1048,18 +1043,18 @@ button:hover, button:focus {
     .change-image {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: white;
+        gap: $space-sm;
+        padding: $space-sm $space-md;
+        background: $surface-primary;
         border: 1px solid $border_gray;
-        border-radius: 6px;
+        border-radius: $radius-md;
         cursor: pointer;
         transition: border-color 0.2s, background 0.2s;
         margin: 0;
 
         &:hover {
             border-color: $theme_color;
-            background: #fef9f7;
+            background: $color-soft-accent-bg;
         }
 
         i {
@@ -1069,28 +1064,28 @@ button:hover, button:focus {
 
         span {
             font-weight: 500;
-            color: #666;
+            color: $text-muted;
         }
     }
 
     .clear-image {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: white;
+        gap: $space-sm;
+        padding: $space-sm $space-md;
+        background: $surface-primary;
         border: 1px solid $border_gray;
-        border-radius: 6px;
+        border-radius: $radius-md;
         cursor: pointer;
         transition: background 0.2s, border-color 0.2s;
         margin: 0;
 
         &:hover {
-            background: #fff5f5;
-            border-color: #e74c3c;
+            background: $color-soft-danger-bg;
+            border-color: $color-danger;
 
             i {
-                color: #e74c3c;
+                color: $color-danger;
             }
         }
 
@@ -1102,13 +1097,13 @@ button:hover, button:focus {
         }
 
         i {
-            color: #999;
+            color: $text-lighter;
             transition: color 0.2s;
         }
 
         span {
             font-weight: 500;
-            color: #666;
+            color: $text-muted;
         }
     }
 
@@ -1116,17 +1111,17 @@ button:hover, button:focus {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 12px;
-        padding: 24px;
-        background: white;
+        gap: $space-md;
+        padding: $space-xl;
+        background: $surface-primary;
         border: 2px dashed $border_gray;
-        border-radius: 8px;
+        border-radius: $radius-xl;
         cursor: pointer;
         transition: border-color 0.2s, background 0.2s;
 
         &:hover {
             border-color: $theme_color;
-            background: #fef9f7;
+            background: $color-soft-accent-bg;
 
             i {
                 color: $theme_color;
@@ -1135,13 +1130,13 @@ button:hover, button:focus {
 
         i {
             font-size: 2.5em;
-            color: #999;
+            color: $text-lighter;
             transition: color 0.2s;
         }
 
         span {
             font-weight: 500;
-            color: #666;
+            color: $text-muted;
         }
     }
 }
@@ -1150,24 +1145,24 @@ button:hover, button:focus {
 .pdf-file-widget {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 16px;
+    gap: $space-md;
+    padding: $space-lg;
     background: $background_light_gray;
     border: 1px solid $border_gray;
-    border-radius: 8px;
+    border-radius: $radius-xl;
 
     .current-file {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        background: white;
+        gap: $space-md;
+        padding: $space-md $space-lg;
+        background: $surface-primary;
         border: 1px solid $border_gray;
-        border-radius: 6px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border-radius: $radius-md;
+        box-shadow: $shadow-sm;
 
         .pdf-icon {
-            color: #e74c3c;
+            color: $color-danger;
             font-size: 1.8em;
             flex-shrink: 0;
         }
@@ -1185,7 +1180,7 @@ button:hover, button:focus {
 
     .file-actions {
         display: flex;
-        gap: 16px;
+        gap: $space-lg;
         align-items: center;
         flex-wrap: wrap;
     }
@@ -1193,17 +1188,17 @@ button:hover, button:focus {
     .clear-file {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: white;
+        gap: $space-sm;
+        padding: $space-sm $space-md;
+        background: $surface-primary;
         border: 1px solid $border_gray;
-        border-radius: 6px;
+        border-radius: $radius-md;
         cursor: pointer;
         transition: background 0.2s;
 
         &:hover {
-            background: #fff5f5;
-            border-color: #e74c3c;
+            background: $color-soft-danger-bg;
+            border-color: $color-danger;
         }
 
         input[type="checkbox"] {
@@ -1216,7 +1211,7 @@ button:hover, button:focus {
         label {
             margin: 0;
             font-weight: 500;
-            color: #666;
+            color: $text-muted;
             cursor: pointer;
         }
     }
@@ -1224,15 +1219,15 @@ button:hover, button:focus {
     .change-file {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 8px 12px;
-        background: white;
+        gap: $space-cozy;
+        padding: $space-sm $space-md;
+        background: $surface-primary;
         border: 1px solid $border_gray;
-        border-radius: 6px;
+        border-radius: $radius-md;
 
         span {
             font-weight: 500;
-            color: #666;
+            color: $text-muted;
         }
 
         input[type="file"] {
@@ -1245,23 +1240,23 @@ button:hover, button:focus {
 .direct-upload-widget {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 16px;
+    gap: $space-md;
+    padding: $space-lg;
     background: $background_light_gray;
     border: 1px solid $border_gray;
-    border-radius: 8px;
+    border-radius: $radius-xl;
     max-width: 300px;
 
     // Unified preview container
     .current-preview {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 12px;
-        background: white;
+        gap: $space-md;
+        padding: $space-md;
+        background: $surface-primary;
         border: 1px solid $border_gray;
-        border-radius: 6px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border-radius: $radius-md;
+        box-shadow: $shadow-sm;
 
         // Image preview specific
         &:has(img) {
@@ -1275,7 +1270,7 @@ button:hover, button:focus {
             }
 
             img {
-                border-radius: 8px;
+                border-radius: $radius-xl;
                 object-fit: cover;
                 transition: transform 0.2s, box-shadow 0.2s;
             }
@@ -1287,7 +1282,7 @@ button:hover, button:focus {
                 right: 0;
                 bottom: 0;
                 background: rgba(0, 0, 0, 0.4);
-                border-radius: 8px;
+                border-radius: $radius-xl;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -1295,7 +1290,7 @@ button:hover, button:focus {
                 transition: opacity 0.2s;
 
                 i {
-                    color: white;
+                    color: $text-on-primary;
                     font-size: 1.5em;
                 }
             }
@@ -1303,7 +1298,7 @@ button:hover, button:focus {
             a:hover {
                 img {
                     transform: scale(1.02);
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    box-shadow: $shadow-hover;
                 }
 
                 .image-overlay {
@@ -1314,7 +1309,7 @@ button:hover, button:focus {
 
         // File/PDF preview specific
         .pdf-icon {
-            color: #e74c3c;
+            color: $color-danger;
             font-size: 1.8em;
             flex-shrink: 0;
         }
@@ -1333,7 +1328,7 @@ button:hover, button:focus {
     // Unified actions container
     .preview-actions {
         display: flex;
-        gap: 12px;
+        gap: $space-md;
         align-items: center;
         flex-wrap: wrap;
     }
@@ -1354,18 +1349,18 @@ button:hover, button:focus {
     .change-btn {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: white;
+        gap: $space-sm;
+        padding: $space-sm $space-md;
+        background: $surface-primary;
         border: 1px solid $border_gray;
-        border-radius: 6px;
+        border-radius: $radius-md;
         cursor: pointer;
         transition: border-color 0.2s, background 0.2s;
         margin: 0;
 
         &:hover {
             border-color: $theme_color;
-            background: #fef9f7;
+            background: $color-soft-accent-bg;
         }
 
         i {
@@ -1375,7 +1370,7 @@ button:hover, button:focus {
 
         span {
             font-weight: 500;
-            color: #333;
+            color: $text-primary;
         }
     }
 
@@ -1383,33 +1378,33 @@ button:hover, button:focus {
     .delete-btn {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: white;
+        gap: $space-sm;
+        padding: $space-sm $space-md;
+        background: $surface-primary;
         border: 1px solid $border_gray;
-        border-radius: 6px;
+        border-radius: $radius-md;
         cursor: pointer;
         transition: background 0.2s, border-color 0.2s;
         font-size: inherit;
         font-family: inherit;
 
         &:hover {
-            background: #fff5f5;
-            border-color: #e74c3c;
+            background: $color-soft-danger-bg;
+            border-color: $color-danger;
 
             i, span {
-                color: #e74c3c;
+                color: $color-danger;
             }
         }
 
         i {
-            color: #999;
+            color: $text-lighter;
             transition: color 0.2s;
         }
 
         span {
             font-weight: 500;
-            color: #666;
+            color: $text-muted;
             transition: color 0.2s;
         }
     }
@@ -1419,18 +1414,18 @@ button:hover, button:focus {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 8px;
-        padding: 24px;
-        background: white;
+        gap: $space-sm;
+        padding: $space-xl;
+        background: $surface-primary;
         border: 2px dashed $border_gray;
-        border-radius: 8px;
+        border-radius: $radius-xl;
         cursor: pointer;
         transition: border-color 0.2s, background 0.2s;
         text-align: center;
 
         &:hover {
             border-color: $theme_color;
-            background: #fef9f7;
+            background: $color-soft-accent-bg;
         }
 
         i {
@@ -1440,38 +1435,38 @@ button:hover, button:focus {
 
         span {
             font-weight: 500;
-            color: #666;
+            color: $text-muted;
         }
     }
 
     .upload-progress {
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        padding: 12px;
-        background: white;
+        gap: $space-sm;
+        padding: $space-md;
+        background: $surface-primary;
         border: 1px solid $border_gray;
-        border-radius: 6px;
+        border-radius: $radius-md;
         margin-top: 12px;
 
         .progress-bar-container {
             height: 8px;
-            background: #eee;
-            border-radius: 4px;
+            background: $border-light-2;
+            border-radius: $radius-sm;
             overflow: hidden;
         }
 
         .progress-bar-fill {
             height: 100%;
             background: $theme_color;
-            border-radius: 4px;
+            border-radius: $radius-sm;
             width: 0%;
             transition: width 0.2s ease;
         }
 
         .progress-text {
             font-size: 0.85em;
-            color: #666;
+            color: $text-muted;
             text-align: center;
         }
     }
@@ -1479,12 +1474,12 @@ button:hover, button:focus {
     .upload-error {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 12px;
-        background: #fff5f5;
-        border: 1px solid #e74c3c;
-        border-radius: 6px;
-        color: #e74c3c;
+        gap: $space-sm;
+        padding: $space-md;
+        background: $color-soft-danger-bg;
+        border: 1px solid $color-danger;
+        border-radius: $radius-md;
+        color: $color-danger;
         margin-top: 12px;
 
         .error-message {
@@ -1492,17 +1487,17 @@ button:hover, button:focus {
         }
 
         .retry-btn {
-            padding: 4px 12px;
-            border: 1px solid #e74c3c;
-            border-radius: 4px;
-            background: white;
-            color: #e74c3c;
+            padding: $space-xs $space-md;
+            border: 1px solid $color-danger;
+            border-radius: $radius-sm;
+            background: $surface-primary;
+            color: $color-danger;
             cursor: pointer;
             font-size: 0.85em;
 
             &:hover {
-                background: #e74c3c;
-                color: white;
+                background: $color-danger;
+                color: $text-on-primary;
             }
         }
     }
@@ -1510,9 +1505,9 @@ button:hover, button:focus {
     .upload-status {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 10px 14px;
-        border-radius: 6px;
+        gap: $space-sm;
+        padding: $space-sm 14px;
+        border-radius: $radius-md;
         font-size: 0.9em;
         margin-top: 12px;
         animation: fadeIn 0.2s ease;
@@ -1522,15 +1517,15 @@ button:hover, button:focus {
         }
 
         &.upload-status-success {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
+            background: $color-message-success-bg;
+            border: 1px solid $color-message-success-border;
+            color: $color-message-success-text;
         }
 
         &.upload-status-error {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
+            background: $color-message-error-bg;
+            border: 1px solid $color-message-error-border;
+            color: $color-message-error-text;
         }
     }
 

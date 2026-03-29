@@ -9,11 +9,11 @@
     background: rgba(0, 0, 0, 0.01);
 
     &.striped tr:nth-child(even) {
-        background: #f7f7f7;
+        background: $background_light_gray;
     }
 
     &.striped tr:nth-child(odd) {
-        background: white;
+        background: $surface-primary;
     }
 
     &.no-border {
@@ -36,9 +36,9 @@
 
     th {
         height: 2em;
-        color: black;
-        background-color: #DAA520;
-        border-color: #cccccc;
+        color: $text-on-primary;
+        background-color: $theme_color;
+        border-color: $border_gray;
         border-width: 1px 1px 0 0;
         border-style: solid;
         padding: 4px 10px;
@@ -59,7 +59,7 @@
 }
 
 #users-table th a {
-    color: white;
+    color: $text-on-primary;
 }
 
 .feed-table {
