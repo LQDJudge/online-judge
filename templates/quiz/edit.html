@@ -412,7 +412,7 @@
     <div id="control-panel" class="blog-sidebox sidebox no-dot-blog-sidebox">
       <h3><i class="fa fa-cog"></i>{{ _('Controls') }}</h3>
       <ul id="control-list" class="sidebox-content" style="margin: 0;">
-        {% if request.user.is_superuser %}
+        {% if request.user.is_authenticated %}
           <div class="link-row">
             <a href="{{ url('question_bank_create') }}">
               <i class="fa fa-plus"></i>{{ _('Create Question') }}

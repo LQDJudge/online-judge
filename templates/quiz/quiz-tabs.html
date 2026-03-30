@@ -1,7 +1,7 @@
 <div class="left-sidebar">
-  {{ make_tab_item('detail', 'fa fa-info-circle', url('quiz_detail', quiz.code), _('Info')) }}
+  {{ make_tab_item('detail', 'fa fa-info-circle', detail_url if detail_url else url('quiz_detail', quiz.code), _('Info')) }}
   {% if request.user.is_authenticated %}
-    {{ make_tab_item('attempts', 'fa fa-history', url('quiz_attempt_list', quiz.code), _('My Attempts')) }}
+    {{ make_tab_item('attempts', 'fa fa-history', attempts_url if attempts_url else url('quiz_attempt_list', quiz.code), _('My Attempts')) }}
   {% endif %}
   {% if can_edit %}
     {{ make_tab_item('grade', 'fa fa-check-square', url('quiz_grade_tab', quiz.code), _('Grade')) }}

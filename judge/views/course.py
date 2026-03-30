@@ -238,45 +238,34 @@ def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
 
         if missing_pairs:
             # Fall back to QuizAttempt for missing pairs
+            # Only count attempts made within the specific lesson context
             from django.db.models import Max
 
-            # Get best score for each (user, quiz) combination
-            missing_quiz_ids = set()
-            for user_id, lq_id in missing_pairs:
-                if lq_id in lesson_quiz_to_quiz:
-                    missing_quiz_ids.add(lesson_quiz_to_quiz[lq_id])
+            missing_lq_ids = set(lq_id for _, lq_id in missing_pairs)
+            missing_user_ids = set(uid for uid, _ in missing_pairs)
 
-            if missing_quiz_ids:
+            if missing_lq_ids:
                 best_attempts = (
                     QuizAttempt.objects.filter(
-                        user_id__in=student_ids,
-                        quiz_id__in=missing_quiz_ids,
+                        user_id__in=missing_user_ids,
+                        lesson_quiz_id__in=missing_lq_ids,
                         is_submitted=True,
                     )
-                    .values("user_id", "quiz_id")
+                    .values("user_id", "lesson_quiz_id")
                     .annotate(
                         best_score=Max("score"),
                     )
                 )
 
-                # Build a dict of {(student_id, quiz_id): best_score_ratio}
-                quiz_best_scores = {}
                 for attempt in best_attempts:
-                    quiz_id = attempt["quiz_id"]
+                    lq_id = attempt["lesson_quiz_id"]
+                    quiz_id = lesson_quiz_to_quiz.get(lq_id)
                     quiz_max = quiz_totals.get(quiz_id, 0)
                     if quiz_max and quiz_max > 0:
                         ratio = float(attempt["best_score"] or 0) / float(quiz_max)
                     else:
                         ratio = 0
-                    quiz_best_scores[(attempt["user_id"], quiz_id)] = ratio
-
-                # Map back to lesson_quiz_id for missing pairs only
-                for user_id, lesson_quiz_id in missing_pairs:
-                    quiz_id = lesson_quiz_to_quiz.get(lesson_quiz_id)
-                    if quiz_id and (user_id, quiz_id) in quiz_best_scores:
-                        best_quiz_scores[(user_id, lesson_quiz_id)] = quiz_best_scores[
-                            (user_id, quiz_id)
-                        ]
+                    best_quiz_scores[(attempt["user_id"], lq_id)] = ratio
 
     for student in students:
         student_results = {}
@@ -909,18 +898,19 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
         for lesson_quiz in lesson_quizzes:
             quiz = lesson_quiz.quiz
 
-            # Get best attempt from ALL quiz attempts (not just lesson-linked)
+            # Get best attempt from lesson-scoped attempts only
             best_attempt = (
                 QuizAttempt.objects.filter(
                     quiz=quiz,
                     user=profile,
+                    lesson_quiz=lesson_quiz,
                     is_submitted=True,
                 )
                 .order_by("-score")
                 .first()
             )
 
-            # But count attempts only for lesson-linked attempts (for max_attempts enforcement)
+            # Count lesson-linked attempts (for max_attempts enforcement)
             attempts_count = QuizAttempt.objects.filter(
                 quiz=quiz,
                 user=profile,

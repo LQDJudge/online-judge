@@ -263,7 +263,9 @@ class QuizSelect2View(Select2View):
         if self.request.user.is_authenticated and not self.request.user.is_superuser:
             profile = self.request.user.profile
             queryset = queryset.filter(
-                Q(authors__id=profile.id) | Q(curators__id=profile.id)
+                Q(is_public=True)
+                | Q(authors__id=profile.id)
+                | Q(curators__id=profile.id)
             ).distinct()
         elif not self.request.user.is_authenticated:
             queryset = queryset.none()

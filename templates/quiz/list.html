@@ -52,6 +52,13 @@
           <div class="contest-block">
             <a href="{{ url('quiz_detail', quiz.code) }}" class="contest-list-title" style="margin-right: 5px;">{{ quiz.title
               }}</a>
+            <div class="contest-tags">
+              {% if not quiz.is_public %}
+                <span class="contest-tag contest-tag-hidden">
+                  <i class="fa fa-eye-slash"></i> {{ _('hidden') }}
+                </span>
+              {% endif %}
+            </div>
           </div>
         </div>
         <div class="info-contest">

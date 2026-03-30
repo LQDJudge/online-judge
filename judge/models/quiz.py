@@ -338,19 +338,20 @@ class Quiz(models.Model):
         """Check if profile is a tester"""
         return self.testers.filter(id=profile.id).exists()
 
-    def is_accessible_by(self, user):
+    def is_accessible_by(self, user, in_contest_mode=True):
         """
-        Check if user can access this quiz.
+        Check if user can access this quiz at /quiz/<code>/.
 
         Returns True if:
         - Quiz is public
         - User is superuser
         - User is an editor (author/curator)
         - User is a tester
-        - Quiz is associated with a course the user is enrolled in
-        - Quiz is part of a contest the user can access
+        - User is actively participating in a contest containing this quiz
+          (only when in_contest_mode is True, respects the "Out Contest" toggle)
+
+        Course/lesson access is handled by LessonQuizMixin (lesson-scoped URLs).
         """
-        # Public quizzes are accessible to everyone (even anonymous)
         if self.is_public:
             return True
 
@@ -366,22 +367,17 @@ class Quiz(models.Model):
         if self.is_tester(user.profile):
             return True
 
-        # Check if quiz is in a course lesson the user has access to
-        from judge.models.course import Course
+        # Allow access if user is in contest mode and the contest contains this quiz
+        # (mirrors Problem.is_accessible_by behavior)
+        current = user.profile.current_contest_id
+        if not in_contest_mode or current is None:
+            return False
 
-        lesson_quizzes = CourseLessonQuiz.objects.filter(quiz=self, is_visible=True)
-        for lesson_quiz in lesson_quizzes:
-            course = lesson_quiz.lesson.course
-            if Course.is_accessible_by(course, user.profile):
-                return True
+        from judge.models.contest import ContestProblem
 
-        # Check if quiz is in a contest the user can access
-        if hasattr(self, "contest_quizzes") and self.contest_quizzes.exists():
-            for contest_quiz in self.contest_quizzes.all():
-                if contest_quiz.contest.is_accessible_by(user):
-                    return True
-
-        return False
+        return ContestProblem.objects.filter(
+            quiz=self, contest__users__id=current
+        ).exists()
 
     def get_questions(self):
         """
@@ -1056,8 +1052,8 @@ class BestQuizAttempt(models.Model):
     def update_from_attempt(cls, attempt):
         """
         Recalculate best quiz attempt for a user/lesson_quiz after an attempt is submitted.
-        Always queries all attempts to find the true best score.
-        If attempt has no lesson_quiz, looks up all CourseLessonQuiz for the quiz.
+        Only updates lesson progress for attempts made within a lesson context.
+        Standalone and contest attempts do not propagate to lesson progress.
 
         Args:
             attempt: QuizAttempt object that was just submitted
@@ -1068,25 +1064,19 @@ class BestQuizAttempt(models.Model):
         if not attempt.is_submitted:
             return None
 
-        if attempt.lesson_quiz:
-            return cls.recalculate_for_user_lesson_quiz(
-                attempt.user_id, attempt.lesson_quiz_id
-            )
+        if not attempt.lesson_quiz:
+            # Standalone or contest attempt — do not propagate to any lesson context
+            return None
 
-        # Attempt has no lesson_quiz link — find all CourseLessonQuiz for this quiz
-        lesson_quiz_ids = CourseLessonQuiz.objects.filter(
-            quiz_id=attempt.quiz_id
-        ).values_list("id", flat=True)
-        result = None
-        for lq_id in lesson_quiz_ids:
-            result = cls.recalculate_for_user_lesson_quiz(attempt.user_id, lq_id)
-        return result
+        return cls.recalculate_for_user_lesson_quiz(
+            attempt.user_id, attempt.lesson_quiz_id
+        )
 
     @classmethod
     def recalculate_for_user_lesson_quiz(cls, user_id, lesson_quiz_id):
         """
         Recalculate the best quiz attempt for a user/lesson_quiz pair.
-        Queries all submitted attempts to find the true best score.
+        Only counts attempts made within this specific lesson context.
 
         Args:
             user_id: Profile ID
@@ -1103,11 +1093,12 @@ class BestQuizAttempt(models.Model):
         except CourseLessonQuiz.DoesNotExist:
             return None
 
-        # Find the best submitted attempt for this user and quiz
+        # Find the best submitted attempt for this user in this lesson context only
         best_attempt = (
             QuizAttempt.objects.filter(
                 user_id=user_id,
                 quiz_id=lesson_quiz.quiz_id,
+                lesson_quiz=lesson_quiz,
                 is_submitted=True,
             )
             .order_by("-score")

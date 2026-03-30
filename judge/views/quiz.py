@@ -41,7 +41,7 @@ from judge.models import (
     ContestProblem,
 )
 from judge.models.quiz import QuizQuestionType
-from judge.models.course import CourseRole, RoleInCourse
+from judge.models.course import Course
 from judge.utils.views import (
     TitleMixin,
     DiggPaginatorMixin,
@@ -54,47 +54,15 @@ from judge.utils.views import (
 # =============================================================================
 
 
-class SuperuserRequiredMixin(UserPassesTestMixin):
-    """Mixin that checks if user is a superuser.
-
-    Used for creating quizzes and questions - only superusers can create.
-    """
-
-    def test_func(self):
-        return self.request.user.is_authenticated and self.request.user.is_superuser
-
-    def handle_no_permission(self):
-        raise PermissionDenied(_("Only administrators can perform this action."))
-
-
 class QuizEditorMixin(UserPassesTestMixin):
-    """Mixin that checks if user can edit quizzes (teacher/TA/admin).
+    """Mixin that checks if user can create/manage quizzes.
 
-    Permission is granted if:
-    - User is superuser
-    - User has judge.edit_own_problem permission
-    - User is a teacher or assistant in any course
+    Permission is granted to any authenticated user.
+    Object-level editing is protected by QuizObjectEditorMixin.
     """
 
     def test_func(self):
-        if not self.request.user.is_authenticated:
-            return False
-        # Superusers can always edit
-        if self.request.user.is_superuser:
-            return True
-        # Check if user has problem edit permission (reuse existing permission)
-        if self.request.user.has_perm("judge.edit_own_problem"):
-            return True
-        # Check if user is a teacher or assistant in any course
-        profile = getattr(self.request, "profile", None)
-        if (
-            profile
-            and CourseRole.objects.filter(
-                user=profile, role__in=[RoleInCourse.TEACHER, RoleInCourse.ASSISTANT]
-            ).exists()
-        ):
-            return True
-        return False
+        return self.request.user.is_authenticated
 
     def handle_no_permission(self):
         raise PermissionDenied(_("You do not have permission to manage quizzes."))
@@ -329,8 +297,8 @@ class QuestionBankList(
         return context
 
     def _can_create_questions(self):
-        """Check if user can create new questions (superusers only)"""
-        return self.request.user.is_superuser
+        """Check if user can create new questions (any authenticated user)"""
+        return self.request.user.is_authenticated
 
 
 class QuizQuestionForm(forms.ModelForm):
@@ -364,17 +332,23 @@ class QuizQuestionForm(forms.ModelForm):
 
 class QuestionBankCreate(
     LoginRequiredMixin,
-    SuperuserRequiredMixin,
+    QuizEditorMixin,
     PendingGradingCountMixin,
     TitleMixin,
     CreateView,
 ):
-    """Create new question + choices. Only superusers can create questions."""
+    """Create new question + choices. Any authenticated user can create questions."""
 
     model = QuizQuestion
     template_name = "quiz/question_bank/create.html"
     title = gettext_lazy("Create Question")
     form_class = QuizQuestionForm
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if not self.request.user.is_superuser:
+            form.fields["is_public"].disabled = True
+        return form
 
     def get_success_url(self):
         return reverse("question_bank_detail", args=[self.object.pk])
@@ -386,7 +360,11 @@ class QuestionBankCreate(
 
     def form_valid(self, form):
         with transaction.atomic():
-            self.object = form.save()
+            self.object = form.save(commit=False)
+            if not self.request.user.is_superuser:
+                self.object.is_public = False
+            self.object.save()
+            form.save_m2m()
             # Add creator as author
             self.object.authors.add(self.request.profile)
         messages.success(self.request, _("Question created successfully."))
@@ -406,6 +384,20 @@ class QuestionBankEdit(
     template_name = "quiz/question_bank/edit.html"
     form_class = QuizQuestionForm
 
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        self._original_is_public = obj.is_public
+        return obj
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if not self.request.user.is_superuser:
+            # If currently private, disable (can't set public without admin)
+            # If currently public, allow unchecking (public -> private is ok)
+            if not self._original_is_public:
+                form.fields["is_public"].disabled = True
+        return form
+
     def get_title(self):
         return _("Edit Question: %s") % self.object.title
 
@@ -418,6 +410,10 @@ class QuestionBankEdit(
         return context
 
     def form_valid(self, form):
+        if not self.request.user.is_superuser:
+            # Non-superusers cannot set private -> public
+            if not self._original_is_public:
+                form.instance.is_public = False
         messages.success(self.request, _("Question updated successfully."))
         return super().form_valid(form)
 
@@ -589,10 +585,21 @@ class QuizList(
             quiz_points = {}
 
             for quiz_id in quiz_ids:
+                # Filter attempts by context
+                attempt_filter = {
+                    "user": profile,
+                    "quiz_id": quiz_id,
+                    "is_submitted": True,
+                }
+                if self.in_contest:
+                    attempt_filter["contest_participation"] = profile.current_contest
+                else:
+                    # Standalone: only standalone attempts
+                    attempt_filter["lesson_quiz__isnull"] = True
+                    attempt_filter["contest_participation__isnull"] = True
+
                 best_attempt = (
-                    QuizAttempt.objects.filter(
-                        user=profile, quiz_id=quiz_id, is_submitted=True
-                    )
+                    QuizAttempt.objects.filter(**attempt_filter)
                     .order_by("-score")
                     .first()
                 )
@@ -600,7 +607,7 @@ class QuizList(
                     best_scores[quiz_id] = float(best_attempt.score)
 
                 attempt_counts[quiz_id] = QuizAttempt.objects.filter(
-                    user=profile, quiz_id=quiz_id, is_submitted=True
+                    **attempt_filter
                 ).count()
 
             # Get quiz points from contest if in contest mode
@@ -664,17 +671,23 @@ class QuizCreateForm(forms.ModelForm):
 
 class QuizCreate(
     LoginRequiredMixin,
-    SuperuserRequiredMixin,
+    QuizEditorMixin,
     PendingGradingCountMixin,
     TitleMixin,
     CreateView,
 ):
-    """Create quiz (similar to contest create UI). Only superusers can create quizzes."""
+    """Create quiz (similar to contest create UI). Any authenticated user can create quizzes."""
 
     model = Quiz
     template_name = "quiz/create.html"
     title = gettext_lazy("Create Quiz")
     form_class = QuizCreateForm
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if not self.request.user.is_superuser:
+            form.fields["is_public"].disabled = True
+        return form
 
     def get_success_url(self):
         return reverse("quiz_edit", args=[self.object.code])
@@ -686,7 +699,11 @@ class QuizCreate(
 
     def form_valid(self, form):
         with transaction.atomic():
-            self.object = form.save()
+            self.object = form.save(commit=False)
+            if not self.request.user.is_superuser:
+                self.object.is_public = False
+            self.object.save()
+            form.save_m2m()
             # Add creator as author
             self.object.authors.add(self.request.profile)
 
@@ -700,7 +717,15 @@ class QuizCreate(
                         points = q_data.get("points", 1)
                         if question_id:
                             try:
-                                question = QuizQuestion.objects.get(pk=question_id)
+                                qs = QuizQuestion.objects.filter(pk=question_id)
+                                if not self.request.user.is_superuser:
+                                    profile = self.request.profile
+                                    qs = qs.filter(
+                                        Q(is_public=True)
+                                        | Q(authors=profile)
+                                        | Q(curators=profile)
+                                    )
+                                question = qs.get()
                                 QuizQuestionAssignment.objects.create(
                                     quiz=self.object,
                                     question=question,
@@ -772,6 +797,20 @@ class QuizEdit(
     slug_url_kwarg = "code"
     form_class = QuizEditForm
 
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        self._original_is_public = obj.is_public
+        return obj
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if not self.request.user.is_superuser:
+            # If currently private, disable (can't set public without admin)
+            # If currently public, allow unchecking (public -> private is ok)
+            if not self._original_is_public:
+                form.fields["is_public"].disabled = True
+        return form
+
     def get_title(self):
         return _("Edit Quiz: %s") % self.object.title
 
@@ -806,6 +845,10 @@ class QuizEdit(
         return context
 
     def form_valid(self, form):
+        if not self.request.user.is_superuser:
+            # Non-superusers cannot set private -> public
+            if not self._original_is_public:
+                form.instance.is_public = False
         response = super().form_valid(form)
 
         # Process question changes from the form
@@ -860,7 +903,13 @@ class QuizEdit(
             points = new_question.get("points", 1)
             if question_id:
                 try:
-                    question = QuizQuestion.objects.get(pk=question_id)
+                    qs = QuizQuestion.objects.filter(pk=question_id)
+                    if not self.request.user.is_superuser:
+                        profile = self.request.profile
+                        qs = qs.filter(
+                            Q(is_public=True) | Q(authors=profile) | Q(curators=profile)
+                        )
+                    question = qs.get()
                     QuizQuestionAssignment.objects.get_or_create(
                         quiz=quiz,
                         question=question,
@@ -932,7 +981,13 @@ class QuizAddQuestion(LoginRequiredMixin, QuizObjectEditorMixin, View):
         points = request.POST.get("points", 1)
 
         try:
-            question = QuizQuestion.objects.get(pk=question_id)
+            qs = QuizQuestion.objects.filter(pk=question_id)
+            if not request.user.is_superuser:
+                profile = request.profile
+                qs = qs.filter(
+                    Q(is_public=True) | Q(authors=profile) | Q(curators=profile)
+                )
+            question = qs.get()
         except QuizQuestion.DoesNotExist:
             return JsonResponse({"error": "Question not found"}, status=404)
 
@@ -1147,13 +1202,28 @@ class CourseLessonQuizCreate(
     title = gettext_lazy("Add Quiz to Lesson")
     fields = ["quiz", "max_attempts", "points", "order", "is_visible"]
 
+    def dispatch(self, request, *args, **kwargs):
+        self.lesson = self.get_lesson()
+        course = self.lesson.course
+        if not Course.is_editable_by(course, request.profile):
+            raise PermissionDenied(_("You do not have permission to edit this course."))
+        return super().dispatch(request, *args, **kwargs)
+
     def get_lesson(self):
-        return get_object_or_404(CourseLesson, pk=self.kwargs["lesson_id"])
+        if not hasattr(self, "lesson"):
+            self.lesson = get_object_or_404(CourseLesson, pk=self.kwargs["lesson_id"])
+        return self.lesson
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["lesson"] = self.get_lesson()
-        context["available_quizzes"] = Quiz.objects.all()[:100]
+        if self.request.user.is_superuser:
+            context["available_quizzes"] = Quiz.objects.all()[:100]
+        else:
+            profile = self.request.profile
+            context["available_quizzes"] = Quiz.objects.filter(
+                Q(is_public=True) | Q(authors=profile) | Q(curators=profile)
+            ).distinct()[:100]
         return context
 
     def form_valid(self, form):
@@ -1173,6 +1243,12 @@ class CourseLessonQuizEdit(LoginRequiredMixin, QuizEditorMixin, TitleMixin, Upda
     template_name = "quiz/course_lesson/edit.html"
     pk_url_kwarg = "quiz_id"
     fields = ["max_attempts", "points", "order", "is_visible"]
+
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if not Course.is_editable_by(obj.lesson.course, request.profile):
+            raise PermissionDenied(_("You do not have permission to edit this course."))
+        return super().dispatch(request, *args, **kwargs)
 
     def get_title(self):
         return _("Edit Lesson Quiz Settings")
@@ -1196,6 +1272,12 @@ class CourseLessonQuizDelete(
     model = CourseLessonQuiz
     template_name = "quiz/course_lesson/delete.html"
     pk_url_kwarg = "quiz_id"
+
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if not Course.is_editable_by(obj.lesson.course, request.profile):
+            raise PermissionDenied(_("You do not have permission to edit this course."))
+        return super().dispatch(request, *args, **kwargs)
 
     def get_title(self):
         return _("Remove Quiz from Lesson")
@@ -1227,7 +1309,8 @@ class QuizDetail(TitleMixin, DetailView):
 
     def get_object(self, queryset=None):
         quiz = super().get_object(queryset)
-        if not quiz.is_accessible_by(self.request.user):
+        in_contest_mode = getattr(self.request, "in_contest_mode", False)
+        if not quiz.is_accessible_by(self.request.user, in_contest_mode):
             raise Http404(_("Quiz not found."))
         return quiz
 
@@ -1245,10 +1328,9 @@ class QuizDetail(TitleMixin, DetailView):
         # Get quiz questions for the table display
         context["quiz_questions"] = quiz.get_questions()
 
-        # Pass lesson_quiz_id if present in query params (for course integration)
-        lesson_quiz_id = self.request.GET.get("lesson_quiz_id")
-        if lesson_quiz_id:
-            context["lesson_quiz_id"] = lesson_quiz_id
+        # Provide standalone URLs for templates
+        context["start_url"] = reverse("quiz_start", kwargs={"code": quiz.code})
+        context["detail_url"] = reverse("quiz_detail", kwargs={"code": quiz.code})
 
         if self.request.user.is_authenticated:
             profile = self.request.profile
@@ -1284,25 +1366,7 @@ class QuizDetail(TitleMixin, DetailView):
                         contest_quiz.max_submissions - contest_attempt_count, 0
                     )
 
-            # Check if accessing from course lesson and show max attempts info
-            if lesson_quiz_id:
-                try:
-                    lesson_quiz = CourseLessonQuiz.objects.get(
-                        pk=lesson_quiz_id, quiz=quiz
-                    )
-                    if lesson_quiz.max_attempts > 0:
-                        lesson_attempt_count = QuizAttempt.objects.filter(
-                            user=profile,
-                            quiz=quiz,
-                            lesson_quiz=lesson_quiz,
-                            is_submitted=True,
-                        ).count()
-                        context["submission_limit"] = lesson_quiz.max_attempts
-                        context["submissions_left"] = max(
-                            lesson_quiz.max_attempts - lesson_attempt_count, 0
-                        )
-                except CourseLessonQuiz.DoesNotExist:
-                    pass
+            # Lesson-specific max_attempts is now handled by LessonQuizDetail
 
         return context
 
@@ -1320,15 +1384,14 @@ class QuizStart(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         quiz = get_object_or_404(Quiz, code=kwargs["code"])
 
-        if not quiz.is_accessible_by(request.user):
+        in_contest_mode = getattr(request, "in_contest_mode", False)
+        if not quiz.is_accessible_by(request.user, in_contest_mode):
             raise Http404(_("Quiz not found."))
 
         profile = request.profile
 
         # Check if user is in a contest and this quiz is part of it
         contest_participation = None
-        lesson_quiz = None
-        lesson_quiz_id = request.POST.get("lesson_quiz_id")
 
         # Respect the "Out contest" toggle - only apply contest rules if in_contest_mode is True
         in_contest_mode = getattr(request, "in_contest_mode", False)
@@ -1376,27 +1439,7 @@ class QuizStart(LoginRequiredMixin, View):
                         )
                         return redirect("quiz_detail", code=quiz.code)
 
-        # Check lesson quiz context and attempt limits
-        if lesson_quiz_id:
-            try:
-                lesson_quiz = CourseLessonQuiz.objects.get(pk=lesson_quiz_id, quiz=quiz)
-                if not lesson_quiz.can_attempt(request.user):
-                    # Check specific reason for failure
-                    if lesson_quiz.max_attempts > 0:
-                        current_attempts = lesson_quiz.get_attempts_count(request.user)
-                        if current_attempts >= lesson_quiz.max_attempts:
-                            messages.error(
-                                request,
-                                _(
-                                    "You have reached the maximum number of attempts (%d) for this quiz."
-                                )
-                                % lesson_quiz.max_attempts,
-                            )
-                            return redirect("quiz_detail", code=quiz.code)
-                    messages.error(request, _("You cannot attempt this quiz."))
-                    return redirect("quiz_detail", code=quiz.code)
-            except CourseLessonQuiz.DoesNotExist:
-                lesson_quiz = None
+        # Lesson quiz context is now handled by LessonQuizStart view
 
         # Check for in-progress attempt (for this specific context)
         existing_filter = {
@@ -1410,11 +1453,8 @@ class QuizStart(LoginRequiredMixin, View):
         else:
             existing_filter["contest_participation__isnull"] = True
 
-        # If lesson quiz, only look for attempts in this lesson
-        if lesson_quiz:
-            existing_filter["lesson_quiz"] = lesson_quiz
-        else:
-            existing_filter["lesson_quiz__isnull"] = True
+        # Standalone: only look for attempts without lesson context
+        existing_filter["lesson_quiz__isnull"] = True
 
         existing = QuizAttempt.objects.filter(**existing_filter).first()
         if existing:
@@ -1436,7 +1476,7 @@ class QuizStart(LoginRequiredMixin, View):
                 else:
                     time_limit = contest_minutes_remaining
 
-        # Create new attempt
+        # Create new standalone/contest attempt (no lesson context)
         attempt = QuizAttempt.objects.create(
             user=profile,
             quiz=quiz,
@@ -1444,7 +1484,6 @@ class QuizStart(LoginRequiredMixin, View):
             + 1,
             time_limit_minutes=time_limit,
             contest_participation=contest_participation,
-            lesson_quiz=lesson_quiz,
         )
 
         # Multiple tab prevention: store attempt ID in session
@@ -1566,6 +1605,24 @@ class QuizTake(LoginRequiredMixin, TitleMixin, DetailView):
         context["answers"] = {a.question_id: a for a in answers}
         context["time_remaining"] = attempt.time_remaining()
         context["has_time_limit"] = quiz.time_limit is not None and quiz.time_limit > 0
+
+        # Provide standalone URLs for templates
+        context["save_url"] = reverse(
+            "quiz_save_answer",
+            kwargs={"code": quiz.code, "attempt_id": attempt.id},
+        )
+        context["upload_url"] = reverse(
+            "quiz_upload_file",
+            kwargs={"code": quiz.code, "attempt_id": attempt.id},
+        )
+        context["submit_url"] = reverse(
+            "quiz_submit",
+            kwargs={"code": quiz.code, "attempt_id": attempt.id},
+        )
+        context["result_url"] = reverse(
+            "quiz_result",
+            kwargs={"code": quiz.code, "attempt_id": attempt.id},
+        )
 
         # Build uploaded files dict for essay questions: {question_id: [file_info, ...]}
         uploaded_files = {}
@@ -1700,6 +1757,11 @@ class QuizSubmit(LoginRequiredMixin, View):
                     try:
                         question_id = int(key[2:])  # Remove "q_" prefix
                         question = QuizQuestion.objects.get(pk=question_id)
+                        # Verify question belongs to this quiz
+                        if not QuizQuestionAssignment.objects.filter(
+                            quiz=attempt.quiz, question=question
+                        ).exists():
+                            continue
                         answered_question_ids.add(question_id)
 
                         # For checkboxes (multiple answer), collect all values
@@ -1946,6 +2008,11 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
             QuizAttempt, pk=self.kwargs["attempt_id"], quiz__code=self.kwargs["code"]
         )
 
+        # Check quiz accessibility (respects contest mode toggle)
+        in_contest_mode = getattr(self.request, "in_contest_mode", False)
+        if not attempt.quiz.is_accessible_by(self.request.user, in_contest_mode):
+            raise Http404(_("Quiz not found."))
+
         is_owner = attempt.user == self.request.profile
         is_editor = attempt.quiz.is_editable_by(self.request.user)
         if not (is_owner or is_editor):
@@ -1976,9 +2043,9 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
             ).exists()
         )
 
-        # Pass lesson_quiz_id so retake forms preserve course lesson context
-        if attempt.lesson_quiz_id:
-            context["lesson_quiz_id"] = attempt.lesson_quiz_id
+        # Provide standalone URLs for templates
+        context["detail_url"] = reverse("quiz_detail", kwargs={"code": quiz.code})
+        context["start_url"] = reverse("quiz_start", kwargs={"code": quiz.code})
 
         if attempt.max_score and attempt.max_score > 0:
             context["percentage"] = round(
@@ -2002,6 +2069,13 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
         if not hasattr(self, "_quiz"):
             self._quiz = get_object_or_404(Quiz, code=self.kwargs["code"])
         return self._quiz
+
+    def dispatch(self, request, *args, **kwargs):
+        quiz = self.get_quiz()
+        in_contest_mode = getattr(request, "in_contest_mode", False)
+        if not quiz.is_accessible_by(request.user, in_contest_mode):
+            raise Http404(_("Quiz not found."))
+        return super().dispatch(request, *args, **kwargs)
 
     def get_target_profile(self):
         """Get the profile whose attempts to show. Editors can view other users' attempts."""
@@ -2039,11 +2113,11 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
         profile = self.get_target_profile()
         queryset = QuizAttempt.objects.filter(quiz=quiz, user=profile)
 
-        # Filter by context: contest participation or lesson
-        # Only filter by contest if user is in contest mode (respects "Out contest" toggle)
+        # Each context shows only its own attempts:
+        # - Contest mode: contest attempts only
+        # - Standalone: standalone attempts only (no lesson, no contest)
         in_contest_mode = getattr(self.request, "in_contest_mode", False)
         if in_contest_mode and profile.current_contest:
-            # Check if this quiz is part of the current contest
             contest_quiz = ContestProblem.objects.filter(
                 contest=profile.current_contest.contest, quiz=quiz
             ).first()
@@ -2051,11 +2125,12 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
                 queryset = queryset.filter(
                     contest_participation=profile.current_contest
                 )
-        elif not in_contest_mode:
-            # Check for lesson_quiz_id in query params
-            lesson_quiz_id = self.request.GET.get("lesson_quiz_id")
-            if lesson_quiz_id:
-                queryset = queryset.filter(lesson_quiz_id=lesson_quiz_id)
+        else:
+            # Standalone: only attempts without lesson or contest context
+            queryset = queryset.filter(
+                lesson_quiz__isnull=True,
+                contest_participation__isnull=True,
+            )
 
         return queryset.order_by("-start_time")
 
@@ -2070,7 +2145,7 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
         context["viewing_other_user"] = target_profile != self.request.profile
 
         # Calculate best score based on filtered attempts
-        attempts = self.get_queryset().filter(is_submitted=True)
+        attempts = self.object_list.filter(is_submitted=True)
         best_attempt = attempts.order_by("-score").first()
         context["best_score"] = best_attempt.score if best_attempt else None
 
@@ -2823,4 +2898,586 @@ class QuizGradingTab(
         # Add pagination context for query parameter pagination
         context.update(paginate_query_context(self.request))
 
+        return context
+
+
+# =============================================================================
+# Lesson-Scoped Quiz Views
+# =============================================================================
+
+
+class LessonQuizMixin:
+    """Mixin for lesson-scoped quiz views.
+
+    Resolves course, lesson, and lesson_quiz from URL kwargs.
+    Validates user enrollment in the course.
+    Provides lesson context to templates and URL helpers.
+    """
+
+    def get_course(self):
+        if not hasattr(self, "_course"):
+            self._course = get_object_or_404(Course, slug=self.kwargs["slug"])
+        return self._course
+
+    def get_lesson(self):
+        if not hasattr(self, "_lesson"):
+            self._lesson = get_object_or_404(
+                CourseLesson,
+                id=self.kwargs["lesson_id"],
+                course=self.get_course(),
+            )
+        return self._lesson
+
+    def get_lesson_quiz(self):
+        if not hasattr(self, "_lesson_quiz"):
+            self._lesson_quiz = get_object_or_404(
+                CourseLessonQuiz,
+                lesson=self.get_lesson(),
+                quiz__code=self.kwargs["code"],
+                is_visible=True,
+            )
+        return self._lesson_quiz
+
+    def check_enrollment(self, user):
+        if not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        return Course.is_accessible_by(self.get_course(), user.profile)
+
+    def dispatch(self, request, *args, **kwargs):
+        if not self.check_enrollment(request.user):
+            raise Http404()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_lesson_url_kwargs(self, **extra):
+        return {
+            "slug": self.get_course().slug,
+            "lesson_id": self.get_lesson().id,
+            "code": self.get_lesson_quiz().quiz.code,
+            **extra,
+        }
+
+    def get_lesson_quiz_urls(self, attempt_id=None):
+        """Build URL dict for templates to use in both standalone and lesson contexts."""
+        kw = self.get_lesson_url_kwargs()
+        urls = {
+            "detail_url": reverse("lesson_quiz_detail", kwargs=kw),
+            "start_url": reverse("lesson_quiz_start", kwargs=kw),
+            "attempts_url": reverse("lesson_quiz_attempt_list", kwargs=kw),
+            "back_url": reverse(
+                "course_lesson_detail",
+                args=(self.get_course().slug, self.get_lesson().id),
+            ),
+        }
+        if attempt_id:
+            akw = {**kw, "attempt_id": attempt_id}
+            urls.update(
+                {
+                    "take_url": reverse("lesson_quiz_take", kwargs=akw),
+                    "save_url": reverse("lesson_quiz_save_answer", kwargs=akw),
+                    "upload_url": reverse("lesson_quiz_upload_file", kwargs=akw),
+                    "submit_url": reverse("lesson_quiz_submit", kwargs=akw),
+                    "result_url": reverse("lesson_quiz_result", kwargs=akw),
+                }
+            )
+        return urls
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["course"] = self.get_course()
+        context["lesson"] = self.get_lesson()
+        context["lesson_quiz"] = self.get_lesson_quiz()
+        context["in_lesson_context"] = True
+        return context
+
+    def validate_attempt_context(self, attempt):
+        """Validate that the attempt belongs to this lesson context."""
+        lesson_quiz = self.get_lesson_quiz()
+        if attempt.lesson_quiz_id != lesson_quiz.id:
+            raise Http404(_("This attempt does not belong to this lesson."))
+
+
+class LessonQuizDetail(LessonQuizMixin, TitleMixin, DetailView):
+    """Quiz detail page in lesson context."""
+
+    model = Quiz
+    template_name = "quiz/detail.html"
+    slug_field = "code"
+    slug_url_kwarg = "code"
+    context_object_name = "quiz"
+
+    def get_object(self, queryset=None):
+        return self.get_lesson_quiz().quiz
+
+    def get_title(self):
+        return self.object.title
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        quiz = self.object
+        lesson_quiz = self.get_lesson_quiz()
+
+        context["can_edit"] = quiz.is_editable_by(self.request.user)
+        context["question_count"] = quiz.get_question_count()
+        context["total_points"] = quiz.get_total_points()
+        context["quiz_questions"] = quiz.get_questions()
+        context.update(self.get_lesson_quiz_urls())
+
+        if self.request.user.is_authenticated:
+            profile = self.request.profile
+
+            # Only show lesson-scoped attempts
+            context["user_attempts"] = QuizAttempt.objects.filter(
+                user=profile, quiz=quiz, lesson_quiz=lesson_quiz
+            ).order_by("-start_time")[:10]
+
+            best_attempt = (
+                QuizAttempt.objects.filter(
+                    user=profile,
+                    quiz=quiz,
+                    lesson_quiz=lesson_quiz,
+                    is_submitted=True,
+                )
+                .order_by("-score")
+                .first()
+            )
+            context["best_score"] = best_attempt.score if best_attempt else None
+
+            lesson_attempt_count = QuizAttempt.objects.filter(
+                user=profile,
+                quiz=quiz,
+                lesson_quiz=lesson_quiz,
+                is_submitted=True,
+            ).count()
+            context["attempts_count"] = lesson_attempt_count
+
+            in_progress = QuizAttempt.objects.filter(
+                user=profile,
+                quiz=quiz,
+                lesson_quiz=lesson_quiz,
+                is_submitted=False,
+            ).first()
+            context["in_progress_attempt"] = in_progress
+            if in_progress:
+                context["continue_url"] = reverse(
+                    "lesson_quiz_take",
+                    kwargs=self.get_lesson_url_kwargs(attempt_id=in_progress.id),
+                )
+
+            if lesson_quiz.max_attempts > 0:
+                context["submission_limit"] = lesson_quiz.max_attempts
+                context["submissions_left"] = max(
+                    lesson_quiz.max_attempts - lesson_attempt_count, 0
+                )
+
+        return context
+
+
+class LessonQuizStart(LessonQuizMixin, LoginRequiredMixin, View):
+    """Start a new quiz attempt in lesson context."""
+
+    def post(self, request, *args, **kwargs):
+        lesson_quiz = self.get_lesson_quiz()
+        quiz = lesson_quiz.quiz
+        profile = request.profile
+
+        # Check max_attempts
+        if not lesson_quiz.can_attempt(request.user):
+            if lesson_quiz.max_attempts > 0:
+                current_attempts = lesson_quiz.get_attempts_count(request.user)
+                if current_attempts >= lesson_quiz.max_attempts:
+                    messages.error(
+                        request,
+                        _(
+                            "You have reached the maximum number of attempts (%d) for this quiz."
+                        )
+                        % lesson_quiz.max_attempts,
+                    )
+                    return redirect(
+                        "lesson_quiz_detail",
+                        **self.get_lesson_url_kwargs(),
+                    )
+            messages.error(request, _("You cannot attempt this quiz."))
+            return redirect(
+                "lesson_quiz_detail",
+                **self.get_lesson_url_kwargs(),
+            )
+
+        # Check for in-progress attempt in this lesson context
+        existing = QuizAttempt.objects.filter(
+            user=profile,
+            quiz=quiz,
+            lesson_quiz=lesson_quiz,
+            is_submitted=False,
+        ).first()
+        if existing:
+            request.session[f"quiz_attempt_{quiz.code}"] = existing.id
+            return redirect(
+                "lesson_quiz_take",
+                **self.get_lesson_url_kwargs(attempt_id=existing.id),
+            )
+
+        # Create new attempt with lesson context
+        attempt = QuizAttempt.objects.create(
+            user=profile,
+            quiz=quiz,
+            attempt_number=QuizAttempt.objects.filter(
+                user=profile, quiz=quiz, lesson_quiz=lesson_quiz
+            ).count()
+            + 1,
+            time_limit_minutes=quiz.time_limit,
+            lesson_quiz=lesson_quiz,
+        )
+
+        request.session[f"quiz_attempt_{quiz.code}"] = attempt.id
+        return redirect(
+            "lesson_quiz_take",
+            **self.get_lesson_url_kwargs(attempt_id=attempt.id),
+        )
+
+    def get(self, request, *args, **kwargs):
+        return redirect(
+            "lesson_quiz_detail",
+            **self.get_lesson_url_kwargs(),
+        )
+
+
+class LessonQuizTake(LessonQuizMixin, LoginRequiredMixin, TitleMixin, DetailView):
+    """Take quiz in lesson context."""
+
+    model = QuizAttempt
+    template_name = "quiz/take.html"
+    context_object_name = "attempt"
+    pk_url_kwarg = "attempt_id"
+
+    def get_title(self):
+        return _("Taking: %s") % self.object.quiz.title
+
+    def get_object(self, queryset=None):
+        attempt = get_object_or_404(
+            QuizAttempt,
+            pk=self.kwargs["attempt_id"],
+            quiz__code=self.kwargs["code"],
+        )
+
+        if attempt.user != self.request.profile:
+            raise PermissionDenied(_("This is not your attempt."))
+
+        self.validate_attempt_context(attempt)
+
+        if attempt.is_submitted:
+            return redirect(
+                "lesson_quiz_result",
+                **self.get_lesson_url_kwargs(attempt_id=attempt.id),
+            )
+
+        if attempt.is_expired():
+            attempt.auto_submit()
+            messages.info(
+                self.request,
+                _("Time has expired. Your quiz has been submitted automatically."),
+            )
+            return redirect(
+                "lesson_quiz_result",
+                **self.get_lesson_url_kwargs(attempt_id=attempt.id),
+            )
+
+        return attempt
+
+    def get(self, request, *args, **kwargs):
+        result = self.get_object()
+        if isinstance(result, HttpResponseRedirect):
+            return result
+        self.object = result
+
+        session_attempt_id = request.session.get(
+            f"quiz_attempt_{self.object.quiz.code}"
+        )
+        if session_attempt_id and session_attempt_id != self.object.id:
+            messages.warning(
+                request, _("You already have another attempt in progress.")
+            )
+
+        request.session[f"quiz_attempt_{self.object.quiz.code}"] = self.object.id
+        return self.render_to_response(self.get_context_data())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        attempt = self.object
+        quiz = attempt.quiz
+
+        context["quiz"] = quiz
+        context.update(self.get_lesson_quiz_urls(attempt_id=attempt.id))
+
+        assignments = attempt.get_question_assignments()
+        context["questions"] = assignments
+        context["question_count"] = len(assignments)
+        answers = QuizAnswer.objects.filter(attempt=attempt).prefetch_related("files")
+        context["answers"] = {a.question_id: a for a in answers}
+        context["time_remaining"] = attempt.time_remaining()
+        context["has_time_limit"] = quiz.time_limit is not None and quiz.time_limit > 0
+
+        uploaded_files = {}
+        for answer in answers:
+            if answer.files.exists():
+                uploaded_files[answer.question_id] = [
+                    {
+                        "id": f.id,
+                        "filename": f.original_filename,
+                        "size": f.get_file_size(),
+                        "url": f.file.url if f.file else None,
+                        "extension": f.get_file_extension(),
+                    }
+                    for f in answer.files.all()
+                ]
+        context["uploaded_files"] = uploaded_files
+
+        return context
+
+
+class LessonQuizSaveAnswer(LessonQuizMixin, LoginRequiredMixin, View):
+    """AJAX save answer in lesson context."""
+
+    def post(self, request, *args, **kwargs):
+        # Validate the attempt belongs to this lesson
+        try:
+            attempt = QuizAttempt.objects.get(
+                id=kwargs["attempt_id"],
+                user=request.profile,
+                is_submitted=False,
+            )
+        except QuizAttempt.DoesNotExist:
+            return JsonResponse({"error": "Attempt not found"}, status=404)
+
+        self.validate_attempt_context(attempt)
+
+        # Delegate to the original save logic
+        view = QuizSaveAnswer()
+        view.request = request
+        view.args = args
+        view.kwargs = kwargs
+        return view.post(request, *args, **kwargs)
+
+
+class LessonQuizUploadFile(LessonQuizMixin, LoginRequiredMixin, View):
+    """AJAX file upload in lesson context."""
+
+    def post(self, request, *args, **kwargs):
+        try:
+            attempt = QuizAttempt.objects.get(
+                id=kwargs["attempt_id"],
+                user=request.profile,
+                is_submitted=False,
+            )
+        except QuizAttempt.DoesNotExist:
+            return JsonResponse({"error": "Attempt not found"}, status=404)
+
+        self.validate_attempt_context(attempt)
+
+        view = QuizUploadFile()
+        view.request = request
+        view.args = args
+        view.kwargs = kwargs
+        return view.post(request, *args, **kwargs)
+
+
+class LessonQuizSubmit(LessonQuizMixin, LoginRequiredMixin, View):
+    """Submit quiz in lesson context."""
+
+    def post(self, request, *args, **kwargs):
+        attempt = get_object_or_404(
+            QuizAttempt.objects.select_related("contest_participation"),
+            pk=kwargs["attempt_id"],
+            quiz__code=kwargs["code"],
+            user=request.profile,
+        )
+
+        self.validate_attempt_context(attempt)
+
+        if attempt.is_submitted:
+            messages.warning(request, _("This attempt was already submitted."))
+            return redirect(
+                "lesson_quiz_result",
+                **self.get_lesson_url_kwargs(attempt_id=attempt.id),
+            )
+
+        # Reuse the core submission logic from QuizSubmit
+        time_expired = attempt.is_expired()
+
+        with transaction.atomic():
+            quiz_questions = attempt.quiz.quiz_questions.select_related("question")
+            answered_question_ids = set()
+
+            for key, value in request.POST.items():
+                if key.startswith("q_"):
+                    try:
+                        question_id = int(key[2:])
+                        question = QuizQuestion.objects.get(pk=question_id)
+                        answered_question_ids.add(question_id)
+
+                        if question.question_type == "MA":
+                            values = request.POST.getlist(key)
+                            answer_text = json.dumps(values)
+                        else:
+                            answer_text = value
+
+                        QuizAnswer.objects.update_or_create(
+                            attempt=attempt,
+                            question=question,
+                            defaults={"answer": answer_text},
+                        )
+                    except (ValueError, QuizQuestion.DoesNotExist):
+                        continue
+
+            for assignment in quiz_questions:
+                if assignment.question_id not in answered_question_ids:
+                    QuizAnswer.objects.get_or_create(
+                        attempt=attempt,
+                        question=assignment.question,
+                        defaults={"answer": ""},
+                    )
+
+            attempt.end_time = timezone.now()
+            attempt.is_submitted = True
+            attempt.save(update_fields=["end_time", "is_submitted"])
+
+            from judge.utils.quiz_grading import (
+                auto_grade_quiz_attempt,
+                notify_graders_for_essay,
+            )
+
+            auto_grade_quiz_attempt(attempt)
+            notify_graders_for_essay(attempt)
+
+        session_key = f"quiz_attempt_{attempt.quiz.code}"
+        if session_key in request.session:
+            del request.session[session_key]
+
+        if time_expired:
+            messages.info(
+                request,
+                _(
+                    "Time had expired. Your answers were saved and the quiz has been submitted."
+                ),
+            )
+        else:
+            messages.success(request, _("Quiz submitted successfully!"))
+
+        return redirect(
+            "lesson_quiz_result",
+            **self.get_lesson_url_kwargs(attempt_id=attempt.id),
+        )
+
+    def get(self, request, *args, **kwargs):
+        return redirect(
+            "lesson_quiz_take",
+            **self.get_lesson_url_kwargs(attempt_id=kwargs["attempt_id"]),
+        )
+
+
+class LessonQuizResult(LessonQuizMixin, LoginRequiredMixin, TitleMixin, DetailView):
+    """View quiz results in lesson context."""
+
+    model = QuizAttempt
+    template_name = "quiz/result.html"
+    context_object_name = "attempt"
+    pk_url_kwarg = "attempt_id"
+
+    def get_title(self):
+        return _("Results: %s") % self.object.quiz.title
+
+    def get_object(self, queryset=None):
+        attempt = get_object_or_404(
+            QuizAttempt,
+            pk=self.kwargs["attempt_id"],
+            quiz__code=self.kwargs["code"],
+        )
+
+        is_owner = attempt.user == self.request.profile
+        is_editor = attempt.quiz.is_editable_by(self.request.user)
+        if not (is_owner or is_editor):
+            raise PermissionDenied(_("You cannot view this result."))
+
+        self.validate_attempt_context(attempt)
+        return attempt
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        attempt = self.object
+        quiz = attempt.quiz
+
+        context.update(self.get_lesson_quiz_urls(attempt_id=attempt.id))
+
+        context["answers"] = (
+            QuizAnswer.objects.filter(attempt=attempt)
+            .select_related("question")
+            .prefetch_related("files")
+            .order_by("question__id")
+        )
+        context["show_answers"] = quiz.is_shown_answer
+        context["can_edit"] = quiz.is_editable_by(self.request.user)
+
+        # Check if user can retake in this lesson context
+        lesson_quiz = self.get_lesson_quiz()
+        can_retake = (
+            attempt.user == self.request.profile
+            and lesson_quiz.can_attempt(self.request.user)
+            and not QuizAttempt.objects.filter(
+                quiz=quiz,
+                user=self.request.profile,
+                lesson_quiz=lesson_quiz,
+                is_submitted=False,
+            ).exists()
+        )
+        context["can_retake"] = can_retake
+
+        if attempt.max_score and attempt.max_score > 0:
+            context["percentage"] = round(
+                (attempt.score or 0) / attempt.max_score * 100, 1
+            )
+        else:
+            context["percentage"] = 0
+
+        return context
+
+
+class LessonQuizAttemptList(LessonQuizMixin, LoginRequiredMixin, TitleMixin, ListView):
+    """View attempts for a quiz in lesson context (only lesson-scoped attempts)."""
+
+    model = QuizAttempt
+    template_name = "quiz/attempt_list.html"
+    context_object_name = "attempts"
+    paginate_by = 20
+
+    def get_title(self):
+        return _("My Attempts: %s") % self.get_lesson_quiz().quiz.title
+
+    def get_queryset(self):
+        lesson_quiz = self.get_lesson_quiz()
+        return QuizAttempt.objects.filter(
+            quiz=lesson_quiz.quiz,
+            user=self.request.profile,
+            lesson_quiz=lesson_quiz,
+        ).order_by("-start_time")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        lesson_quiz = self.get_lesson_quiz()
+        quiz = lesson_quiz.quiz
+
+        context["quiz"] = quiz
+        context["can_edit"] = quiz.is_editable_by(self.request.user)
+        context["total_points"] = quiz.get_total_points()
+        context["target_profile"] = self.request.profile
+        context["viewing_other_user"] = False
+        context.update(self.get_lesson_quiz_urls())
+
+        # Best score from lesson-scoped attempts only
+        best_attempt = (
+            self.get_queryset().filter(is_submitted=True).order_by("-score").first()
+        )
+        context["best_score"] = best_attempt.score if best_attempt else None
+
+        context.update(paginate_query_context(self.request))
         return context
