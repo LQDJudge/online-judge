@@ -41,7 +41,7 @@ from judge.models import (
     ContestProblem,
 )
 from judge.models.quiz import QuizQuestionType
-from judge.models.course import Course, CourseRole, RoleInCourse
+from judge.models.course import Course
 from judge.utils.views import (
     TitleMixin,
     DiggPaginatorMixin,
@@ -54,42 +54,15 @@ from judge.utils.views import (
 # =============================================================================
 
 
-class SuperuserRequiredMixin(UserPassesTestMixin):
-    """Mixin that checks if user is a superuser.
-
-    Used for creating quizzes and questions - only superusers can create.
-    """
-
-    def test_func(self):
-        return self.request.user.is_authenticated and self.request.user.is_superuser
-
-    def handle_no_permission(self):
-        raise PermissionDenied(_("Only administrators can perform this action."))
-
-
 class QuizEditorMixin(UserPassesTestMixin):
-    """Mixin that checks if user can edit quizzes (teacher/TA/admin).
+    """Mixin that checks if user can create/manage quizzes.
 
-    Permission is granted if:
-    - User is superuser
-    - User is a teacher or assistant in any course
+    Permission is granted to any authenticated user.
+    Object-level editing is protected by QuizObjectEditorMixin.
     """
 
     def test_func(self):
-        if not self.request.user.is_authenticated:
-            return False
-        if self.request.user.is_superuser:
-            return True
-        # Check if user is a teacher or assistant in any course
-        profile = getattr(self.request, "profile", None)
-        if (
-            profile
-            and CourseRole.objects.filter(
-                user=profile, role__in=[RoleInCourse.TEACHER, RoleInCourse.ASSISTANT]
-            ).exists()
-        ):
-            return True
-        return False
+        return self.request.user.is_authenticated
 
     def handle_no_permission(self):
         raise PermissionDenied(_("You do not have permission to manage quizzes."))
@@ -324,8 +297,8 @@ class QuestionBankList(
         return context
 
     def _can_create_questions(self):
-        """Check if user can create new questions (superusers only)"""
-        return self.request.user.is_superuser
+        """Check if user can create new questions (any authenticated user)"""
+        return self.request.user.is_authenticated
 
 
 class QuizQuestionForm(forms.ModelForm):
@@ -359,17 +332,23 @@ class QuizQuestionForm(forms.ModelForm):
 
 class QuestionBankCreate(
     LoginRequiredMixin,
-    SuperuserRequiredMixin,
+    QuizEditorMixin,
     PendingGradingCountMixin,
     TitleMixin,
     CreateView,
 ):
-    """Create new question + choices. Only superusers can create questions."""
+    """Create new question + choices. Any authenticated user can create questions."""
 
     model = QuizQuestion
     template_name = "quiz/question_bank/create.html"
     title = gettext_lazy("Create Question")
     form_class = QuizQuestionForm
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if not self.request.user.is_superuser:
+            form.fields["is_public"].disabled = True
+        return form
 
     def get_success_url(self):
         return reverse("question_bank_detail", args=[self.object.pk])
@@ -381,7 +360,11 @@ class QuestionBankCreate(
 
     def form_valid(self, form):
         with transaction.atomic():
-            self.object = form.save()
+            self.object = form.save(commit=False)
+            if not self.request.user.is_superuser:
+                self.object.is_public = False
+            self.object.save()
+            form.save_m2m()
             # Add creator as author
             self.object.authors.add(self.request.profile)
         messages.success(self.request, _("Question created successfully."))
@@ -401,6 +384,20 @@ class QuestionBankEdit(
     template_name = "quiz/question_bank/edit.html"
     form_class = QuizQuestionForm
 
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        self._original_is_public = obj.is_public
+        return obj
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if not self.request.user.is_superuser:
+            # If currently private, disable (can't set public without admin)
+            # If currently public, allow unchecking (public -> private is ok)
+            if not self._original_is_public:
+                form.fields["is_public"].disabled = True
+        return form
+
     def get_title(self):
         return _("Edit Question: %s") % self.object.title
 
@@ -413,6 +410,10 @@ class QuestionBankEdit(
         return context
 
     def form_valid(self, form):
+        if not self.request.user.is_superuser:
+            # Non-superusers cannot set private -> public
+            if not self._original_is_public:
+                form.instance.is_public = False
         messages.success(self.request, _("Question updated successfully."))
         return super().form_valid(form)
 
@@ -670,17 +671,23 @@ class QuizCreateForm(forms.ModelForm):
 
 class QuizCreate(
     LoginRequiredMixin,
-    SuperuserRequiredMixin,
+    QuizEditorMixin,
     PendingGradingCountMixin,
     TitleMixin,
     CreateView,
 ):
-    """Create quiz (similar to contest create UI). Only superusers can create quizzes."""
+    """Create quiz (similar to contest create UI). Any authenticated user can create quizzes."""
 
     model = Quiz
     template_name = "quiz/create.html"
     title = gettext_lazy("Create Quiz")
     form_class = QuizCreateForm
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if not self.request.user.is_superuser:
+            form.fields["is_public"].disabled = True
+        return form
 
     def get_success_url(self):
         return reverse("quiz_edit", args=[self.object.code])
@@ -692,7 +699,11 @@ class QuizCreate(
 
     def form_valid(self, form):
         with transaction.atomic():
-            self.object = form.save()
+            self.object = form.save(commit=False)
+            if not self.request.user.is_superuser:
+                self.object.is_public = False
+            self.object.save()
+            form.save_m2m()
             # Add creator as author
             self.object.authors.add(self.request.profile)
 
@@ -706,7 +717,15 @@ class QuizCreate(
                         points = q_data.get("points", 1)
                         if question_id:
                             try:
-                                question = QuizQuestion.objects.get(pk=question_id)
+                                qs = QuizQuestion.objects.filter(pk=question_id)
+                                if not self.request.user.is_superuser:
+                                    profile = self.request.profile
+                                    qs = qs.filter(
+                                        Q(is_public=True)
+                                        | Q(authors=profile)
+                                        | Q(curators=profile)
+                                    )
+                                question = qs.get()
                                 QuizQuestionAssignment.objects.create(
                                     quiz=self.object,
                                     question=question,
@@ -778,6 +797,20 @@ class QuizEdit(
     slug_url_kwarg = "code"
     form_class = QuizEditForm
 
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        self._original_is_public = obj.is_public
+        return obj
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if not self.request.user.is_superuser:
+            # If currently private, disable (can't set public without admin)
+            # If currently public, allow unchecking (public -> private is ok)
+            if not self._original_is_public:
+                form.fields["is_public"].disabled = True
+        return form
+
     def get_title(self):
         return _("Edit Quiz: %s") % self.object.title
 
@@ -812,6 +845,10 @@ class QuizEdit(
         return context
 
     def form_valid(self, form):
+        if not self.request.user.is_superuser:
+            # Non-superusers cannot set private -> public
+            if not self._original_is_public:
+                form.instance.is_public = False
         response = super().form_valid(form)
 
         # Process question changes from the form
@@ -866,7 +903,13 @@ class QuizEdit(
             points = new_question.get("points", 1)
             if question_id:
                 try:
-                    question = QuizQuestion.objects.get(pk=question_id)
+                    qs = QuizQuestion.objects.filter(pk=question_id)
+                    if not self.request.user.is_superuser:
+                        profile = self.request.profile
+                        qs = qs.filter(
+                            Q(is_public=True) | Q(authors=profile) | Q(curators=profile)
+                        )
+                    question = qs.get()
                     QuizQuestionAssignment.objects.get_or_create(
                         quiz=quiz,
                         question=question,
@@ -1153,8 +1196,17 @@ class CourseLessonQuizCreate(
     title = gettext_lazy("Add Quiz to Lesson")
     fields = ["quiz", "max_attempts", "points", "order", "is_visible"]
 
+    def dispatch(self, request, *args, **kwargs):
+        self.lesson = self.get_lesson()
+        course = self.lesson.course
+        if not Course.is_editable_by(course, request.profile):
+            raise PermissionDenied(_("You do not have permission to edit this course."))
+        return super().dispatch(request, *args, **kwargs)
+
     def get_lesson(self):
-        return get_object_or_404(CourseLesson, pk=self.kwargs["lesson_id"])
+        if not hasattr(self, "lesson"):
+            self.lesson = get_object_or_404(CourseLesson, pk=self.kwargs["lesson_id"])
+        return self.lesson
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1180,6 +1232,12 @@ class CourseLessonQuizEdit(LoginRequiredMixin, QuizEditorMixin, TitleMixin, Upda
     pk_url_kwarg = "quiz_id"
     fields = ["max_attempts", "points", "order", "is_visible"]
 
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if not Course.is_editable_by(obj.lesson.course, request.profile):
+            raise PermissionDenied(_("You do not have permission to edit this course."))
+        return super().dispatch(request, *args, **kwargs)
+
     def get_title(self):
         return _("Edit Lesson Quiz Settings")
 
@@ -1202,6 +1260,12 @@ class CourseLessonQuizDelete(
     model = CourseLessonQuiz
     template_name = "quiz/course_lesson/delete.html"
     pk_url_kwarg = "quiz_id"
+
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if not Course.is_editable_by(obj.lesson.course, request.profile):
+            raise PermissionDenied(_("You do not have permission to edit this course."))
+        return super().dispatch(request, *args, **kwargs)
 
     def get_title(self):
         return _("Remove Quiz from Lesson")

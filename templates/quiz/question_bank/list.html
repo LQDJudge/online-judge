@@ -59,7 +59,7 @@
           </div>
           <div class="form-submit-group">
             <div id="go" class="action-btn">{{ _('Go') }}</div>
-            {% if request.user.is_superuser %}
+            {% if can_create %}
               <a href="{{ url('question_bank_create') }}" class="action-btn">
                 {{ _('Create') }}
               </a>
@@ -135,7 +135,7 @@
         <i class="fa fa-inbox fa-3x empty-icon"></i>
         <h3>{{ _('No questions found') }}</h3>
         <p>{{ _('There are no questions matching your search criteria.') }}</p>
-        {% if request.user.is_superuser %}
+        {% if can_create %}
           <a href="{{ url('question_bank_create') }}" class="action-btn">
             {{ _('Create Question') }}
           </a>

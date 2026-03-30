@@ -374,7 +374,7 @@
               <p class="text-muted" style="margin-top: 0.5em;">{{ _('Please fix the issues above and try again.') }}</p>
             </div>
           </div>
-          {% if request.user.is_superuser %}
+          {% if request.user.is_authenticated %}
             <p class="text-muted" style="margin-top: 0.5em;">
               <a href="{{ url('question_bank_create') }}">{{ _('Create new question') }}</a>
             </p>
