@@ -981,7 +981,13 @@ class QuizAddQuestion(LoginRequiredMixin, QuizObjectEditorMixin, View):
         points = request.POST.get("points", 1)
 
         try:
-            question = QuizQuestion.objects.get(pk=question_id)
+            qs = QuizQuestion.objects.filter(pk=question_id)
+            if not request.user.is_superuser:
+                profile = request.profile
+                qs = qs.filter(
+                    Q(is_public=True) | Q(authors=profile) | Q(curators=profile)
+                )
+            question = qs.get()
         except QuizQuestion.DoesNotExist:
             return JsonResponse({"error": "Question not found"}, status=404)
 
@@ -1211,7 +1217,13 @@ class CourseLessonQuizCreate(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["lesson"] = self.get_lesson()
-        context["available_quizzes"] = Quiz.objects.all()[:100]
+        if self.request.user.is_superuser:
+            context["available_quizzes"] = Quiz.objects.all()[:100]
+        else:
+            profile = self.request.profile
+            context["available_quizzes"] = Quiz.objects.filter(
+                Q(is_public=True) | Q(authors=profile) | Q(curators=profile)
+            ).distinct()[:100]
         return context
 
     def form_valid(self, form):
@@ -1745,6 +1757,11 @@ class QuizSubmit(LoginRequiredMixin, View):
                     try:
                         question_id = int(key[2:])  # Remove "q_" prefix
                         question = QuizQuestion.objects.get(pk=question_id)
+                        # Verify question belongs to this quiz
+                        if not QuizQuestionAssignment.objects.filter(
+                            quiz=attempt.quiz, question=question
+                        ).exists():
+                            continue
                         answered_question_ids.add(question_id)
 
                         # For checkboxes (multiple answer), collect all values
@@ -2128,7 +2145,7 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
         context["viewing_other_user"] = target_profile != self.request.profile
 
         # Calculate best score based on filtered attempts
-        attempts = self.get_queryset().filter(is_submitted=True)
+        attempts = self.object_list.filter(is_submitted=True)
         best_attempt = attempts.order_by("-score").first()
         context["best_score"] = best_attempt.score if best_attempt else None
 
