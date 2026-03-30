@@ -47,7 +47,7 @@
   <h2 style="margin-bottom: 0.5em;">{{ quiz.title }}</h2>
 
   {% if request.user.is_authenticated and in_progress_attempt %}
-    <form method="get" action="{{ url('quiz_take', quiz.code, in_progress_attempt.id) }}" class="contest-join-pseudotab">
+    <form method="get" action="{{ continue_url if continue_url else url('quiz_take', quiz.code, in_progress_attempt.id) }}" class="contest-join-pseudotab">
       <input type="submit" class="action-btn large" value="{{ _('Continue Attempt') }}">
     </form>
   {% elif request.user.is_authenticated %}
@@ -56,11 +56,8 @@
         {{ _('No attempts remaining') }}
       </span>
     {% else %}
-      <form method="post" action="{{ url('quiz_start', quiz.code) }}" class="contest-join-pseudotab">
+      <form method="post" action="{{ start_url }}" class="contest-join-pseudotab">
         {% csrf_token %}
-        {% if lesson_quiz_id %}
-          <input type="hidden" name="lesson_quiz_id" value="{{ lesson_quiz_id }}">
-        {% endif %}
         <input type="submit" class="action-btn large" value="{{ _('Start Quiz') }}">
       </form>
     {% endif %}

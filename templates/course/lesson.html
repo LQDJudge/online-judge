@@ -21,7 +21,7 @@
     <ul class="course-problem-list">
       {% for quiz_item in lesson_quizzes %}
         {% set quiz = quiz_item.quiz %}
-        <a href="{{url('quiz_detail', quiz.code)}}?lesson_quiz_id={{quiz_item.lesson_quiz.id}}" target="_blank">
+        <a href="{{url('lesson_quiz_detail', course.slug, lesson.id, quiz.code)}}" target="_blank">
           <li>
             {% if quiz_item.best_score is not none and quiz_item.max_score and quiz_item.best_score >= quiz_item.max_score %}
               <i class="solved-problem-color fa fa-check-circle"></i>

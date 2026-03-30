@@ -752,6 +752,47 @@ urlpatterns = [
                     course.LessonClone.as_view(),
                     name="clone_course_lesson",
                 ),
+                # Lesson-scoped quiz student views
+                re_path(
+                    r"^/lesson/(?P<lesson_id>\d+)/quiz/(?P<code>[^/]+)$",
+                    quiz.LessonQuizDetail.as_view(),
+                    name="lesson_quiz_detail",
+                ),
+                re_path(
+                    r"^/lesson/(?P<lesson_id>\d+)/quiz/(?P<code>[^/]+)/start/$",
+                    quiz.LessonQuizStart.as_view(),
+                    name="lesson_quiz_start",
+                ),
+                re_path(
+                    r"^/lesson/(?P<lesson_id>\d+)/quiz/(?P<code>[^/]+)/take/(?P<attempt_id>\d+)/$",
+                    quiz.LessonQuizTake.as_view(),
+                    name="lesson_quiz_take",
+                ),
+                re_path(
+                    r"^/lesson/(?P<lesson_id>\d+)/quiz/(?P<code>[^/]+)/take/(?P<attempt_id>\d+)/save/$",
+                    quiz.LessonQuizSaveAnswer.as_view(),
+                    name="lesson_quiz_save_answer",
+                ),
+                re_path(
+                    r"^/lesson/(?P<lesson_id>\d+)/quiz/(?P<code>[^/]+)/take/(?P<attempt_id>\d+)/upload/$",
+                    quiz.LessonQuizUploadFile.as_view(),
+                    name="lesson_quiz_upload_file",
+                ),
+                re_path(
+                    r"^/lesson/(?P<lesson_id>\d+)/quiz/(?P<code>[^/]+)/submit/(?P<attempt_id>\d+)/$",
+                    quiz.LessonQuizSubmit.as_view(),
+                    name="lesson_quiz_submit",
+                ),
+                re_path(
+                    r"^/lesson/(?P<lesson_id>\d+)/quiz/(?P<code>[^/]+)/result/(?P<attempt_id>\d+)/$",
+                    quiz.LessonQuizResult.as_view(),
+                    name="lesson_quiz_result",
+                ),
+                re_path(
+                    r"^/lesson/(?P<lesson_id>\d+)/quiz/(?P<code>[^/]+)/attempts/$",
+                    quiz.LessonQuizAttemptList.as_view(),
+                    name="lesson_quiz_attempt_list",
+                ),
                 re_path(
                     r"^/add_contest$",
                     course.AddCourseContest.as_view(),

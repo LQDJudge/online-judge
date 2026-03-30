@@ -66,12 +66,20 @@
           </div>
           <div class="attempt-actions">
             {% if attempt.is_submitted %}
-              <a href="{{ url('quiz_result', quiz.code, attempt.id) }}" class="btn btn-sm btn-default">
-                <i class="fa fa-eye"></i> {{ _('View') }}
+              {% if in_lesson_context %}
+                <a href="{{ url('lesson_quiz_result', course.slug, lesson.id, quiz.code, attempt.id) }}" class="btn btn-sm btn-default">
+              {% else %}
+                <a href="{{ url('quiz_result', quiz.code, attempt.id) }}" class="btn btn-sm btn-default">
+              {% endif %}
+              <i class="fa fa-eye"></i> {{ _('View') }}
               </a>
             {% else %}
-              <a href="{{ url('quiz_take', quiz.code, attempt.id) }}" class="action-btn">
-                <i class="fa fa-play"></i> {{ _('Continue') }}
+              {% if in_lesson_context %}
+                <a href="{{ url('lesson_quiz_take', course.slug, lesson.id, quiz.code, attempt.id) }}" class="action-btn">
+              {% else %}
+                <a href="{{ url('quiz_take', quiz.code, attempt.id) }}" class="action-btn">
+              {% endif %}
+              <i class="fa fa-play"></i> {{ _('Continue') }}
               </a>
             {% endif %}
           </div>
@@ -87,7 +95,7 @@
       <div class="empty-state">
         <i class="fa fa-inbox fa-3x empty-icon"></i>
         <p>{{ _('You have not attempted this quiz yet.') }}</p>
-        <a href="{{ url('quiz_detail', quiz.code) }}" class="action-btn">
+        <a href="{{ detail_url if detail_url else url('quiz_detail', quiz.code) }}" class="action-btn">
           <i class="fa fa-play"></i> {{ _('Start Quiz') }}
         </a>
       </div>

@@ -29,9 +29,9 @@
       // Initialize quiz with timer and auto-save
       var quizInstance = initQuiz({
         timeLimit: timeRemaining,
-        saveUrl: '{{ url("quiz_save_answer", quiz.code, attempt.id) }}',
+        saveUrl: '{{ save_url }}',
         csrfToken: '{{ csrf_token }}',
-        resultUrl: '{{ url("quiz_result", quiz.code, attempt.id) }}',
+        resultUrl: '{{ result_url }}',
         leaveWarning: '{{ _("Your progress will be saved, but are you sure you want to leave?") }}',
         savingText: '{{ _("Saving...") }}',
         savedText: '{{ _("Saved") }}',
@@ -131,7 +131,7 @@
       // =====================================================
       // File Upload for Essay Questions
       // =====================================================
-      var uploadUrl = '{{ url("quiz_upload_file", quiz.code, attempt.id) }}';
+      var uploadUrl = '{{ upload_url }}';
       var deleteUrlBase = '/quiz/file/';
       var csrfToken = '{{ csrf_token }}';
       var maxFileSize = 10 * 1024 * 1024; // 10 MB
@@ -212,7 +212,7 @@
               if (resp.error) msg = resp.error;
               if (resp.expired) {
                 // Quiz expired, redirect
-                window.location.href = '{{ url("quiz_result", quiz.code, attempt.id) }}';
+                window.location.href = '{{ result_url }}';
                 return;
               }
             } catch(e) {}
@@ -352,7 +352,7 @@
     </div>
   </div>
 
-  <form id="submit-form" method="post" action="{{ url('quiz_submit', attempt.quiz.code, attempt.id) }}">
+  <form id="submit-form" method="post" action="{{ submit_url }}">
     {% csrf_token %}
 
     {% for assignment in questions %}
