@@ -7,23 +7,12 @@
 
 {% block middle_content %}
   <div id="content-left" class="problems">
-    <table id="problem-table" class="table striped">
-      <thead>
-        <tr>
-          {% if show_contest_mode %}
-            {% if request.user.is_authenticated and not has_hidden_subtasks %}
-              <th class="solved"><i class="fa fa-check"></i></th>
-            {% endif %}
-            <th class="problem">{{ _('Problem') }}</th>
-            <th class="pcode">{{ _('Problem code') }}</th>
-            {% if show_types %}
-              <th>{{ _('Types') }}</th>
-            {% endif %}
-            <th class="points">{{ _('Points') }}</th>
-            {% if not has_hidden_subtasks %}
-              <th class="users">{{ _('Users') }}</th>
-            {% endif %}
-          {% else %}
+    {% if show_contest_mode %}
+      {% include "contest/contest-problem-table.html" %}
+    {% else %}
+      <table id="problem-table" class="table striped">
+        <thead>
+          <tr>
             {% if request.user.is_authenticated %}
               <th class="solved">
                 <a href="{{ sort_links.solved }}"><i class="fa fa-check"></i>{{ sort_order.solved }}
@@ -58,136 +47,82 @@
                 {{_('Editorial')}}
               </th>
             {% endif %}
-          {% endif %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for problem in problems %}
-          <tr>
-            {% if request.user.is_authenticated and not has_hidden_subtasks %}
-              {% if problem.id in completed_problem_ids %}
-                <td solved="1">
-                  <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-                    {% if problem.is_public or show_contest_mode %}
-                      <i class="solved-problem-color fa fa-check-circle"></i>
+          </tr>
+        </thead>
+        <tbody>
+          {% for problem in problems %}
+            <tr>
+              {% if request.user.is_authenticated %}
+                {% if problem.id in completed_problem_ids %}
+                  <td solved="1">
+                    <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
+                      {% if problem.is_public %}
+                        <i class="solved-problem-color fa fa-check-circle"></i>
+                      {% else %}
+                        <i class="solved-problem-color fa fa-lock"></i>
+                      {% endif %}
+                    </a>
+                  </td>
+                {% elif problem.id in attempted_problems %}
+                  <td solved="0">
+                    <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
+                      {% if problem.is_public %}
+                        <i class="attempted-problem-color fa fa-minus-circle"></i>
+                      {% else %}
+                        <i class="attempted-problem-color fa fa-lock"></i>
+                      {% endif %}
+                    </a>
+                  </td>
+                {% else %}
+                  <td solved="-1">
+                    {% if problem.is_public %}
+                      <i class="unsolved-problem-color fa fa-minus-circle"></i>
                     {% else %}
-                      <i class="solved-problem-color fa fa-lock"></i>
+                      <i class="unsolved-problem-color fa fa-lock"></i>
                     {% endif %}
-                  </a>
+                  </td>
+                {% endif %}
+              {% endif %}
+              <td class="problem">
+                <a href="{{ url('problem_detail', problem.code) }}">{{ problem.translated_name(LANGUAGE_CODE)
+                  }}</a>
+              </td>
+              <td class="pcode">
+                <a class="pcodecell" href="{{ url('problem_detail', problem.code) }}">{{ problem.code }}</a>
+              </td>
+              <td class="category">{{ problem.get_group_name() }}</td>
+              {% if show_types %}
+                <td class="types">
+                  {% for type in problem.get_types_name() %}
+                    <span class="type-tag">{{ type }}</span>{% if not loop.last %}, {% endif %}
+                  {% endfor %}
                 </td>
-              {% elif problem.id in attempted_problems %}
-                <td solved="0">
-                  <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-                    {% if problem.is_public or show_contest_mode %}
-                      <i class="attempted-problem-color fa fa-minus-circle"></i>
-                    {% else %}
-                      <i class="attempted-problem-color fa fa-lock"></i>
-                    {% endif %}
-                  </a>
-                </td>
-              {% else %}
-                <td solved="-1">
-                  {% if problem.is_public or show_contest_mode %}
-                    <i class="unsolved-problem-color fa fa-minus-circle"></i>
-                  {% else %}
-                    <i class="unsolved-problem-color fa fa-lock"></i>
+              {% endif %}
+              <td class="p">{{ problem.points|floatformat }}{% if problem.get_partial() %}p{% endif %}</td>
+              <td class="ac-rate">{{ problem.get_ac_rate()|floatformat(0) }}%</td>
+              <td class="users">
+                <a href="{{ url('ranked_submissions', problem.code) }}">
+                  {{ problem.user_count }}
+                </a>
+              </td>
+              {% if show_editorial %}
+                <td class="editorial">
+                  {% if problem.has_public_editorial() %}
+                    <a href="{{ url('problem_editorial', problem.code) }}">{{ _('Editorial') }}</a>
                   {% endif %}
                 </td>
               {% endif %}
-            {% endif %}
-            <td class="problem">
-              <a href="{{ url('problem_detail', problem.code) }}">{{ problem.translated_name(LANGUAGE_CODE)
-                }}</a>
-            </td>
-            <td class="pcode">
-              <a class="pcodecell" href="{{ url('problem_detail', problem.code) }}">{{ problem.code }}</a>
-            </td>
-            {% if not show_contest_mode %}
-              <td class="category">{{ problem.get_group_name() }}</td>
-            {% endif %}
-            {% if show_types %}
-              <td class="types">
-                {% for type in problem.get_types_name() %}
-                  <span class="type-tag">{{ type }}</span>{% if not loop.last %}, {% endif %}
-                {% endfor %}
-              </td>
-            {% endif %}
-            {% if current_contest %}
-              <td class="p">{{ problem.get_contest_points(current_contest.id)|floatformat }}</td>
-            {% else %}
-              <td class="p">{{ problem.points|floatformat }}{% if problem.get_partial() %}p{% endif %}</td>
-            {% endif %}
-            {% if not show_contest_mode %}
-              <td class="ac-rate">{{ problem.get_ac_rate()|floatformat(0) }}%</td>
-            {% endif %}
-            {% if not has_hidden_subtasks %}
-              <td class="users">
-                <a href="{{ url('ranked_submissions', problem.code) }}">
-                  {% if not show_contest_mode or not hide_contest_scoreboard %}
-                    {% if current_contest %}
-                      {{ problem.get_contest_user_count(current_contest.id) }}
-                    {% else %}
-                      {{ problem.user_count }}
-                    {% endif %}
-                  {% else %}
-                    ???
-                  {% endif %}
-                </a>
-              </td>
-            {% endif %}
-
-            {% if show_editorial%}
-              <td class="editorial">
-                {% if problem.has_public_editorial() %}
-                  <a href="{{ url('problem_editorial', problem.code) }}">{{ _('Editorial') }}</a>
-                {% endif %}
-              </td>
-            {% endif %}
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
 
     {% if show_contest_mode and has_contest_quizzes %}
       <h3 style="margin-top: 1.5em; margin-bottom: 0.5em;">
         <i class="fa fa-question-circle"></i> {{ _('Quizzes') }}
       </h3>
-      <table id="quiz-table" class="table striped">
-        <thead>
-          <tr>
-            <th class="quiz-name">{{ _('Quiz') }}</th>
-            <th class="quiz-points">{{ _('Points') }}</th>
-            <th class="quiz-questions">{{ _('Questions') }}</th>
-            <th class="quiz-time">{{ _('Time Limit') }}</th>
-            <th class="quiz-attempts">{{ _('Attempts') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for contest_quiz in contest_quizzes %}
-            <tr>
-              <td class="quiz-name">
-                <a href="{{ url('quiz_detail', contest_quiz.quiz.code) }}">{{ contest_quiz.quiz.title }}</a>
-              </td>
-              <td class="quiz-points">{{ contest_quiz.points }}</td>
-              <td class="quiz-questions">{{ contest_quiz.quiz.get_question_count() }}</td>
-              <td class="quiz-time">
-                {% if contest_quiz.quiz.time_limit %}
-                  {{ contest_quiz.quiz.time_limit }} {{ _('min') }}
-                {% else %}
-                  {{ _('No limit') }}
-                {% endif %}
-              </td>
-              <td class="quiz-attempts">
-                {% if contest_quiz.max_submissions > 0 %}
-                  {{ contest_quiz.max_submissions }}
-                {% else %}
-                  {{ _('Unlimited') }}
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      {% include "contest/contest-quiz-table.html" %}
     {% endif %}
 
     {% if show_contest_mode %}

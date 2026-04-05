@@ -75,6 +75,7 @@ from judge.tasks import run_moss
 from judge.utils.celery import redirect_to_task_status
 from judge.utils.opengraph import generate_opengraph
 from judge.utils.problems import _get_result_data
+from judge.views.problem import SolvedProblemMixin
 from judge.utils.ranker import ranker
 from judge.utils.stats import get_bar_chart, get_pie_chart, get_histogram
 from judge.utils.views import (
@@ -527,6 +528,7 @@ class ContestMixin(object):
 class ContestDetail(
     ContestMixin,
     TitleMixin,
+    SolvedProblemMixin,
     CommentableMixin,
     DetailView,
     PageVoteDetailView,
@@ -536,6 +538,16 @@ class ContestDetail(
 
     def get_title(self):
         return self.object.name
+
+    @cached_property
+    def profile(self):
+        if not self.request.user.is_authenticated:
+            return None
+        return self.request.profile
+
+    @cached_property
+    def in_contest(self):
+        return self.request.in_contest_mode
 
     def _is_editable_organization(self, organization):
         if self.request.profile.can_edit_organization(organization):
@@ -562,6 +574,7 @@ class ContestDetail(
             self.request.LANGUAGE_CODE, *contest_problem_ids
         )
         context["contest_problems"] = Problem.get_cached_instances(*contest_problem_ids)
+        context["problems"] = context["contest_problems"]
         context["editable_organizations"] = self.get_editable_organizations()
         context["is_clonable"] = is_contest_clonable(self.request, self.object)
 
@@ -580,10 +593,28 @@ class ContestDetail(
                 course, self.request.profile
             )
 
-        if self.request.in_contest:
-            context["current_contest"] = self.request.participation.contest
-        else:
-            context["current_contest"] = None
+        is_in_viewed_contest = (
+            self.request.in_contest
+            and self.request.participation.contest_id == self.object.id
+        )
+        context["current_contest"] = (
+            self.request.participation.contest if is_in_viewed_contest else None
+        )
+
+        context["has_hidden_subtasks"] = self.object.format.has_hidden_subtasks
+        context["hide_contest_scoreboard"] = self.object.scoreboard_visibility in (
+            self.object.SCOREBOARD_AFTER_CONTEST,
+            self.object.SCOREBOARD_AFTER_PARTICIPATION,
+        )
+        if self.profile:
+            if is_in_viewed_contest:
+                context["completed_problem_ids"] = self.get_completed_problems()
+                context["attempted_problems"] = self.get_attempted_problems()
+            else:
+                from judge.utils.problems import user_attempted_ids, user_completed_ids
+
+                context["completed_problem_ids"] = user_completed_ids(self.profile)
+                context["attempted_problems"] = user_attempted_ids(self.profile)
 
         context = self.get_comment_context(context)
 

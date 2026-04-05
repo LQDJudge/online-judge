@@ -1,0 +1,69 @@
+{% set has_hidden_subtasks = has_hidden_subtasks is defined and has_hidden_subtasks %}
+<table id="contest-problems" class="table striped">
+  <thead>
+    <tr>
+      {% if request.user.is_authenticated and not has_hidden_subtasks %}
+        <th class="solved"><i class="fa fa-check"></i></th>
+      {% endif %}
+      <th class="problem">{{ _('Problem') }}</th>
+      <th class="pcode">{{ _('Problem code') }}</th>
+      <th class="points">{{ _('Points') }}</th>
+      {% if not has_hidden_subtasks %}
+        <th class="users">{{ _('Users') }}</th>
+      {% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for problem in problems %}
+      <tr>
+        {% if request.user.is_authenticated and not has_hidden_subtasks %}
+          {% if problem.id in completed_problem_ids %}
+            <td solved="1">
+              <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
+                <i class="solved-problem-color fa fa-check-circle"></i>
+              </a>
+            </td>
+          {% elif problem.id in attempted_problems %}
+            <td solved="0">
+              <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
+                <i class="attempted-problem-color fa fa-minus-circle"></i>
+              </a>
+            </td>
+          {% else %}
+            <td solved="-1">
+              <i class="unsolved-problem-color fa fa-minus-circle"></i>
+            </td>
+          {% endif %}
+        {% endif %}
+        <td class="problem">
+          <a href="{{ url('problem_detail', problem.code) }}">{{ problem.translated_name(LANGUAGE_CODE) }}</a>
+        </td>
+        <td class="pcode">
+          <a class="pcodecell" href="{{ url('problem_detail', problem.code) }}">{{ problem.code }}</a>
+        </td>
+        <td class="p">
+          {% if current_contest %}
+            {{ problem.get_contest_points(current_contest.id)|floatformat }}
+          {% else %}
+            {{ problem.points|floatformat }}{% if problem.get_partial() %}p{% endif %}
+          {% endif %}
+        </td>
+        {% if not has_hidden_subtasks %}
+          <td class="users">
+            <a href="{{ url('ranked_submissions', problem.code) }}">
+              {% if not hide_contest_scoreboard %}
+                {% if current_contest %}
+                  {{ problem.get_contest_user_count(current_contest.id) }}
+                {% else %}
+                  {{ problem.user_count }}
+                {% endif %}
+              {% else %}
+                ???
+              {% endif %}
+            </a>
+          </td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
