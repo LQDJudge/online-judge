@@ -302,6 +302,14 @@
       };
     }
 
+    if (typeof window.comment_show_content === 'undefined') {
+      window.comment_show_content = function(commentId) {
+        var $comment = $('#comment-' + commentId);
+        $comment.find('.comment-body').show();
+        $comment.find('.bad-comment-body').hide();
+      };
+    }
+
     if (typeof window.comment_get_replies === 'undefined') {
       window.comment_get_replies = function(commentId) {
         var $showBtn = $('#comment-' + commentId + ' .show_more_reply');

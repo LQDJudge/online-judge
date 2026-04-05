@@ -44,6 +44,18 @@ class CommentListView(ListView):
         except ValueError:
             self.offset = 0
 
+    def _can_hide_comments(self, content_type_id, object_id):
+        """Check if user can hide comments on this content."""
+        if not self.request.user.is_authenticated:
+            return False
+        if self.request.user.has_perm("judge.change_comment"):
+            return True
+        profile = self.request.profile
+        if not profile:
+            return False
+        author_ids = get_content_author_ids(content_type_id, object_id)
+        return profile.id in author_ids
+
     def get(self, request, *args, **kwargs):
         self.object_list = self.get_queryset()
         if self.error_response:
@@ -201,7 +213,9 @@ class TopLevelCommentsView(CommentListView):
         if hasattr(self, "params"):
             context["content_type_id"] = self.params.content_type_id
             context["object_id"] = self.params.object_id
-            context["can_hide_comments"] = self._can_hide_comments()
+            context["can_hide_comments"] = self._can_hide_comments(
+                self.params.content_type_id, self.params.object_id
+            )
 
         # Pass highlighted path for nested rendering (excluding root which is in comment_list)
         highlighted_path = getattr(self, "highlighted_path", [])
@@ -215,21 +229,6 @@ class TopLevelCommentsView(CommentListView):
             context["highlighted_root_id"] = None
             context["highlighted_ancestor_ids"] = set()
         return context
-
-    def _can_hide_comments(self):
-        """Check if user can hide comments on this content."""
-        if not self.request.user.is_authenticated:
-            return False
-        if self.request.user.has_perm("judge.change_comment"):
-            return True
-        profile = self.request.profile
-        if not profile or not hasattr(self, "params"):
-            return False
-        # Use cached author IDs
-        author_ids = get_content_author_ids(
-            self.params.content_type_id, self.params.object_id
-        )
-        return profile.id in author_ids
 
     def post_process_comments(self, comments_list, total_comments):
         self.highlighted_path = []
@@ -277,6 +276,8 @@ class RepliesView(CommentListView):
             self.error_response = HttpResponseNotFound()
             return []
 
+        self.parent_comment = parent_instances[0]
+
         # Get cached reply IDs
         cached_ids = get_reply_ids(self.comment_id, self.sort_order)
         self.total_comments = len(cached_ids)
@@ -305,6 +306,17 @@ class RepliesView(CommentListView):
         comments_list = sorted(comments_list, key=lambda c: id_to_order.get(c.id, 0))
 
         return comments_list
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if hasattr(self, "parent_comment"):
+            content_type_id = self.parent_comment.get_content_type_id()
+            object_id = self.parent_comment.get_object_id()
+            if content_type_id and object_id:
+                context["can_hide_comments"] = self._can_hide_comments(
+                    content_type_id, object_id
+                )
+        return context
 
     def get_comment_root_id(self):
         return getattr(self, "comment_id", 0)
