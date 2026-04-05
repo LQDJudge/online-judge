@@ -88,12 +88,14 @@
           </ul>
         </div>
         <div id="chat-input-container" class="chat-input-area">
-          <textarea maxlength="{{5000 if room else 200}}" id="chat-input" class="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
-          <div class="chat-input-icon chat-emoji-btn" id="emoji-button" title="{{_('Emoji')}}">
-            <i class="icofont-slightly-smile"></i>
+          <div class="chat-input-wrapper">
+            <textarea rows="1" maxlength="{{5000 if room else 200}}" id="chat-input" class="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
+            <div class="chat-input-icon chat-emoji-btn" id="emoji-button" title="{{_('Emoji')}}">
+              <i class="icofont-slightly-smile"></i>
+            </div>
           </div>
           <div class="chat-input-icon chat-submit-btn" id="chat-submit-button">
-            <i class="fa fa-arrow-right"></i>
+            <i class="fa fa-paper-plane"></i>
           </div>
         </div>
         <div class="tooltip emoji-tooltip" role="tooltip">

@@ -177,12 +177,42 @@
   // UI Updates
   // ============================================
   var ChatUI = {
+    newMessageCount: 0,
+
     scrollToBottom: function() {
       ChatElements.chatBox.scrollTop(ChatElements.chatBox[0].scrollHeight);
+      this.hideNewMessagesBubble();
+    },
+
+    isNearBottom: function(threshold) {
+      if (!threshold) threshold = 150;
+      var box = ChatElements.chatBox[0];
+      return box.scrollHeight - box.scrollTop - box.clientHeight < threshold;
     },
 
     getScrollTopOfBottom: function() {
       return ChatElements.chatBox[0].scrollHeight - ChatElements.chatBox.innerHeight();
+    },
+
+    showNewMessagesBubble: function(count) {
+      this.newMessageCount = count;
+      var $bubble = $('#new-messages-bubble');
+      if (!$bubble.length) {
+        $bubble = $('<div id="new-messages-bubble"></div>');
+        ChatElements.chatBox.append($bubble);
+        $bubble.on('click', function() {
+          ChatUI.scrollToBottom();
+        });
+      }
+      var text = count === 1
+        ? '1 ' + ChatConfig.i18n.newMessage.toLowerCase()
+        : count + ' ' + ChatConfig.i18n.newMessages.toLowerCase();
+      $bubble.text('\u2193 ' + text).show();
+    },
+
+    hideNewMessagesBubble: function() {
+      this.newMessageCount = 0;
+      $('#new-messages-bubble').hide();
     },
 
     showLoader: function() {
@@ -219,10 +249,16 @@
       $('#room-' + ChatState.otherUserId).addClass('selected');
     },
 
-    addMessage: function(html) {
+    addMessage: function(html, forceScroll) {
+      var wasNearBottom = this.isNearBottom();
       ChatElements.chatLog.append(html);
-      this.scrollToBottom();
       ChatUtils.postProcessMessages();
+      if (forceScroll || wasNearBottom) {
+        this.scrollToBottom();
+      } else {
+        this.newMessageCount++;
+        this.showNewMessagesBubble(this.newMessageCount);
+      }
     },
 
     prependMessages: function(html) {
@@ -318,7 +354,7 @@
       html = html.replace(/\$body/g, body).replace(/\$id/g, tmpId);
       var $html = $(html);
       $html.find('.time-with-rel').attr('data-iso', (new Date()).toISOString());
-      ChatUI.addMessage($html[0].outerHTML);
+      ChatUI.addMessage($html[0].outerHTML, true);
     },
 
     submit: function() {
@@ -366,6 +402,10 @@
             ChatElements.chatLog.append(data);
             ChatUtils.postProcessMessages();
             ChatUI.scrollToBottom();
+            // Scroll again after images load
+            ChatElements.chatLog.find('img').on('load', function() {
+              ChatUI.scrollToBottom();
+            });
           } else {
             // Prepend older messages
             ChatElements.chatLog.prepend(data);
@@ -394,6 +434,12 @@
         ChatUI.setUserOnline(wsMessage.author_id);
       }
 
+      // Update tab title for any new message from others when tab is hidden
+      if (document.hidden && !isSelfAuthor) {
+        ChatState.unreadCount++;
+        document.title = '(' + ChatState.unreadCount + ') ' + ChatConfig.i18n.newMessages;
+      }
+
       if (isCurrentRoom) {
         // Message is for the room we're viewing - display it live
         ChatAPI.getMessage(messageId)
@@ -403,7 +449,10 @@
               if (!document.hidden) {
                 ChatAPI.updateLastSeen(ChatState.roomId);
               }
-              // Update last message preview in sidebar with actual text
+              // Update sidebar: last message preview + move to top
+              var updateUserId = wsMessage && wsMessage.other_user_id
+                ? wsMessage.other_user_id
+                : ChatState.otherUserId;
               if (wsMessage && wsMessage.room) {
                 var $msg = $(data);
                 var msgText = $msg.find('.message-text').text().trim();
@@ -412,6 +461,9 @@
                 }
                 ChatUI.setLastMessagePreview(wsMessage.room, msgText || ChatConfig.i18n.newMessage);
               }
+              if (updateUserId) {
+                ChatUI.moveConversationToTop(updateUserId);
+              }
             }
           })
           .fail(function() {
@@ -419,19 +471,14 @@
           });
       } else {
         // Message is for a different room - update sidebar
-        if (!document.hidden) {
-          if (wsMessage && wsMessage.other_user_id) {
-            if (wsMessage.unread_count !== undefined) {
-              ChatUI.setUnreadBadge(wsMessage.other_user_id, wsMessage.unread_count);
-            }
-            if (wsMessage.room) {
-              ChatUI.setLastMessagePreview(wsMessage.room, ChatConfig.i18n.newMessage);
-            }
-            ChatUI.moveConversationToTop(wsMessage.other_user_id);
+        if (wsMessage && wsMessage.other_user_id) {
+          if (wsMessage.unread_count !== undefined) {
+            ChatUI.setUnreadBadge(wsMessage.other_user_id, wsMessage.unread_count);
           }
-        } else if (!isSelfAuthor) {
-          ChatState.unreadCount++;
-          document.title = '(' + ChatState.unreadCount + ') ' + ChatConfig.i18n.newMessages;
+          if (wsMessage.room) {
+            ChatUI.setLastMessagePreview(wsMessage.room, ChatConfig.i18n.newMessage);
+          }
+          ChatUI.moveConversationToTop(wsMessage.other_user_id);
         }
       }
     },
@@ -487,6 +534,7 @@
         if (e.keyCode === 13) {
           if (e.ctrlKey || e.shiftKey) {
             ChatUtils.insertAtCursor(this, '\n');
+            $(this).trigger('input');
           } else {
             e.preventDefault();
             ChatMessages.submit();
@@ -509,21 +557,18 @@
 
     bindInputAutoResize: function() {
       ChatElements.chatInput.on('input', function() {
-        if (this.scrollHeight > this.clientHeight) {
-          this.style.height = this.scrollHeight + 'px';
-          $(this).css('border-radius', '30px');
-        } else {
-          $(this).css('height', '');
-        }
-      });
-
-      ChatElements.chatInput.on('keyup', function() {
-        $(this).scrollTop(this.scrollHeight);
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
       });
     },
 
     bindScrollLoad: function() {
       ChatElements.chatBox.on('scroll', function() {
+        // Hide new messages bubble when scrolled to bottom
+        if (ChatUI.isNearBottom()) {
+          ChatUI.hideNewMessagesBubble();
+        }
+
         // Trigger load when at top
         if (ChatElements.chatBox.scrollTop() === 0 &&
             !ChatState.isLocked &&
@@ -608,6 +653,7 @@
 
       var onRoomReady = function() {
         history.replaceState(null, '', ChatConfig.urls.chat + ChatState.roomId);
+        ChatUI.hideNewMessagesBubble();
         ChatMessages.loadNextPage(null, true);
         ChatAPI.updateLastSeen(ChatState.roomId);
         ChatEvents.refreshStatus(true);
@@ -682,22 +728,13 @@
     },
 
     bindVisibilityChange: function() {
-      if (typeof MutationObserver === 'undefined') return;
-
-      var observer = new MutationObserver(function() {
+      document.addEventListener('visibilitychange', function() {
         if (!document.hidden && ChatState.unreadCount > 0) {
           ChatAPI.updateLastSeen(ChatState.roomId);
           ChatEvents.refreshStatus();
           ChatState.unreadCount = 0;
           document.title = ChatConfig.i18n.chatBox;
         }
-      });
-
-      observer.observe(document.body, {
-        attributes: true,
-        attributeFilter: ['class'],
-        childList: false,
-        characterData: false
       });
     },
 
@@ -853,7 +890,6 @@
     ChatElements.init();
 
     ChatUI.hideLoader();
-    ChatUI.scrollToBottom();
     ChatUI.highlightSelectedRoom();
     ChatUtils.postProcessMessages();
 
@@ -877,8 +913,13 @@
 
     ChatElements.chatInput.focus();
 
-    // Show chat log
+    // Show chat log then scroll to bottom
     ChatElements.chatLog.show();
+    ChatUI.scrollToBottom();
+    // Scroll again after images load
+    $('#chat-log img').on('load', function() {
+      ChatUI.scrollToBottom();
+    });
   }
 
   // Export for global access if needed

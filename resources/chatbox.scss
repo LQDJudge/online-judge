@@ -673,33 +673,53 @@ body:has(.chat-page) {
   // ============================================
   // Input Area
   // ============================================
-  .chat-input-area {
+  // Input area: outer container
+  .chat-input-area,
+  #chat-input-container {
     display: flex;
     align-items: flex-end;
     gap: 8px;
-    padding: 12px 16px;
-    border-top: 1px solid #e4e6eb;
-    background: #ffffff;
+    padding: 8px 12px;
+    border-top: 1px solid $border_gray;
   }
 
-  .chat-input {
+  // Input wrapper: textarea + emoji button together
+  .chat-input-wrapper {
     flex: 1;
-    padding: 10px 16px;
+    display: flex;
+    align-items: flex-end;
+    border: 1px solid $border_gray;
+    border-radius: 22px;
+    background: $background_light_gray;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    min-width: 0;
+
+    &:focus-within {
+      border-color: #0084ff;
+      box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.1);
+    }
+  }
+
+  // Textarea: no border since wrapper handles it
+  .chat-input,
+  #chat-input {
+    flex: 1;
+    padding: 7px 4px 7px 14px;
     font-size: 0.95rem;
-    border: 1px solid #e4e6eb;
-    border-radius: 20px;
-    background: #f0f2f5;
+    border: none;
+    border-radius: 22px 0 0 22px;
+    background: transparent;
+    color: inherit;
     resize: none;
     max-height: 150px;
     overflow-y: auto;
     font-family: inherit;
     line-height: 1.4;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    min-width: 0;
 
     &:focus {
       outline: none;
-      border-color: #0084ff;
-      box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.1);
+      box-shadow: none;
     }
 
     &::placeholder {
@@ -707,95 +727,46 @@ body:has(.chat-page) {
     }
   }
 
-  .chat-input-btn {
-    width: 36px;
-    height: 36px;
+  // Emoji button: inside the input wrapper
+  .chat-emoji-btn,
+  #emoji-button {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background-color 0.15s ease, transform 0.1s ease;
     border: none;
     flex-shrink: 0;
-
-    &:hover {
-      transform: scale(1.05);
-    }
-
-    &:active {
-      transform: scale(0.95);
-    }
-  }
-
-  .chat-emoji-btn {
     background: transparent;
-    color: #0084ff;
-    font-size: 1.25rem;
+    color: #65676b;
+    font-size: 1.2rem;
+    margin: 2px 4px 2px 0;
+    transition: color 0.15s ease;
 
     &:hover {
-      background: #f0f2f5;
+      color: #0084ff;
     }
   }
 
+  // Send button: outside the wrapper
   .chat-submit-btn {
-    background: #0084ff;
-    color: #ffffff;
-    font-size: 1rem;
-
-    &:hover {
-      background: #0073e6;
-    }
-  }
-
-  // Legacy input styles
-  #chat-input-container {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    padding: 12px 16px;
-  }
-
-  #chat-input {
-    flex: 1;
-    padding: 10px 16px;
-    font-size: 0.95rem;
-    border: 1px solid #e4e6eb;
-    border-radius: 20px;
-    background: #f0f2f5;
-    color: #050505;
-    resize: none;
-    max-height: 150px;
-    overflow-y: auto;
-    font-family: "Noto Sans", Arial, "Lucida Grande", sans-serif;
-    line-height: 1.4;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-
-    &:focus {
-      outline: none;
-      border-color: #0084ff;
-      box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.1);
-    }
-
-    &::placeholder {
-      color: #65676b;
-    }
-  }
-
-  .chat-input-icon {
     width: 36px;
     height: 36px;
+    min-width: 36px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: background-color 0.15s ease, transform 0.1s ease;
-    font-size: 1rem;
     border: none;
     flex-shrink: 0;
     background: #0084ff;
     color: #ffffff;
+    font-size: 0.9rem;
 
     &:hover {
       background: #0073e6;
@@ -805,16 +776,13 @@ body:has(.chat-page) {
     &:active {
       transform: scale(0.95);
     }
+  }
 
-    &#emoji-button {
-      background: transparent;
-      color: #0084ff;
-      font-size: 1.25rem;
-
-      &:hover {
-        background: #f0f2f5;
-      }
-    }
+  // Generic icon class (for backwards compat)
+  .chat-input-icon {
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
   }
 
   // ============================================
@@ -844,6 +812,33 @@ body:has(.chat-page) {
     --emoji-size: 1.25rem;
     --border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  // ============================================
+  // New Messages Bubble
+  // ============================================
+  #new-messages-bubble {
+    position: sticky;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: $theme_color;
+    color: #ffffff;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 50;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    width: fit-content;
+    margin: 0 auto;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+      opacity: 0.9;
+    }
   }
 
   // ============================================
@@ -981,11 +976,72 @@ body:has(.chat-page) {
       display: none !important;
     }
 
-    // Show compact last online status on mobile
+    // Sidebar: ensure usernames and messages are not overly truncated
+    .status-row {
+      padding: 10px 8px;
+      margin: 0 4px;
+      gap: 8px;
+    }
+
+    .status-pic {
+      height: 36px;
+      width: 36px;
+    }
+
+    .status-user {
+      min-width: 0;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .status-username {
+      font-size: 0.9rem;
+    }
+
+    .status-last-message,
+    .status_last_message {
+      font-size: 0.8rem;
+    }
+
+    // Hide settings button on mobile to save space (show on selected row only)
+    .setting-wrapper {
+      display: none;
+    }
+
+    .status-row.selected .setting-wrapper {
+      display: block;
+    }
+
+    // Chat header: compact layout
+    .chat-header {
+      padding: 6px 8px;
+      gap: 4px;
+    }
+
+    .chat-header-avatar {
+      height: 32px;
+      width: 32px;
+    }
+
+    .chat-header-user {
+      gap: 8px;
+      overflow: hidden;
+    }
+
     .info-name {
       display: flex;
       flex-direction: column;
       gap: 0;
+      margin-left: 8px;
+      font-size: 0.95rem;
+      min-width: 0;
+      overflow: hidden;
+
+      a {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
     }
 
     .active-span-mobile {
@@ -993,6 +1049,9 @@ body:has(.chat-page) {
       font-size: 0.7rem;
       color: #65676b;
       font-weight: normal;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .active-span {
@@ -1003,30 +1062,83 @@ body:has(.chat-page) {
       display: flex;
       align-items: center;
       justify-content: center;
+      margin-right: 4px;
+      padding: 6px;
+      font-size: 1.1rem;
+      flex-shrink: 0;
     }
 
-    // Improve touch targets on mobile
-    .status-row {
-      padding: 12px;
-      margin: 0 4px;
+    // Settings button in header - compact
+    .user-setting-button {
+      flex-shrink: 0;
     }
 
-    .chat-input-area {
-      padding: 8px 12px;
-      padding-bottom: max(8px, env(safe-area-inset-bottom));
+    // Messages: appropriate sizing
+    .message {
+      gap: 6px;
     }
 
-    .chat-input {
-      font-size: 16px; // Prevent iOS zoom on focus
-    }
+    .message-avatar {
+      width: 28px;
 
-    .chat-header {
-      padding: 8px 12px;
+      img {
+        width: 28px;
+        height: 28px;
+      }
     }
 
     .message-bubble,
     .message-text {
-      max-width: 85%;
+      max-width: 80%;
+      padding: 6px 10px;
+      font-size: 0.9rem;
+    }
+
+    .message-header a {
+      font-size: 0.85rem;
+    }
+
+    // Input area: compact
+    .chat-input-area,
+    #chat-input-container {
+      padding: 6px 8px;
+      padding-bottom: max(6px, env(safe-area-inset-bottom));
+      gap: 6px;
+    }
+
+    .chat-input,
+    #chat-input {
+      font-size: 16px; // Prevent iOS zoom on focus
+      padding: 7px 4px 7px 14px;
+      line-height: 1.2;
+      max-height: 100px;
+      height: auto;
+    }
+
+    .chat-input-wrapper {
+      border-radius: 20px;
+    }
+
+    .chat-emoji-btn,
+    #emoji-button {
+      width: 30px;
+      height: 30px;
+      min-width: 30px;
+      font-size: 1.1rem;
+    }
+
+    .chat-submit-btn {
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      font-size: 0.85rem;
+    }
+
+    // Chat box padding
+    .chat-box,
+    #chat-box {
+      padding: 8px;
+      padding-bottom: 30px;
     }
 
     // Legacy support
@@ -1037,6 +1149,16 @@ body:has(.chat-page) {
 
     #chat-online {
       height: 100%;
+    }
+
+    // Info pic in header
+    .info-pic {
+      width: 32px;
+      height: 32px;
+    }
+
+    #chat-info {
+      padding: 6px 8px;
     }
   }
 
