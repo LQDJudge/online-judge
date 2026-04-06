@@ -1,0 +1,157 @@
+{% extends "three-column-content.html" %}
+{% set page_type = 'import' %}
+
+{% block js_media %}
+  <script src="{{ static('quiz.js') }}"></script>
+  <script src="{{ static('jquery-ui.min.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Converter.js') }}"></script>
+  <script src="{{ static('pagedown-extra/pagedown/Markdown.Converter.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Sanitizer.js') }}"></script>
+  <script src="{{ static('pagedown/Markdown.Editor.js') }}"></script>
+  <script src="{{ static('pagedown-extra/Markdown.Extra.js') }}"></script>
+  <script src="{{ static('dmmd-preview.js') }}"></script>
+  <script type="text/javascript">
+    window.QUIZ_IMPORT_CONFIG = {
+      uploadUrl: '{{ url("quiz_import_upload") }}',
+      createQuestionUrl: '{{ url("quiz_import_create_question") }}',
+      createQuizUrl: '{{ url("quiz_import_create_quiz") }}',
+      taskStatusUrl: '{{ url("task_status_ajax") }}',
+      csrfToken: '{{ csrf_token }}',
+      previewUrl: '{{ url("blog_preview") }}',
+      maxUploadSize: {{ max_upload_size }},
+      lastTaskId: '{{ last_task_id }}',
+      questionTypes: {
+        MC: '{{ _("Multiple Choice") }}',
+        MA: '{{ _("Multiple Answer") }}',
+        TF: '{{ _("True/False") }}',
+        SA: '{{ _("Short Answer") }}',
+        ES: '{{ _("Essay") }}'
+      },
+      i18n: {
+        uploading: '{{ _("Uploading...") }}',
+        analyzing: '{{ _("AI is analyzing the document... This may take a few minutes.") }}',
+        loading: '{{ _("Loading previous import results...") }}',
+        complete: '{{ _("Analysis complete!") }}',
+        failed: '{{ _("Analysis failed") }}',
+        taskFailed: '{{ _("Task failed") }}',
+        lostConnection: '{{ _("Lost connection to server") }}',
+        uploadFailed: '{{ _("Upload failed") }}',
+        fileTooLarge: '{{ _("File too large") }}',
+        creating: '{{ _("Creating...") }}',
+        created: '{{ _("Created") }}',
+        createFailed: '{{ _("Failed to create") }}',
+        questions: '{{ _("questions") }}',
+        withAnswers: '{{ _("with answers") }}',
+        noQuestions: '{{ _("No questions were extracted from the document.") }}',
+        createAll: '{{ _("Create All Questions") }}',
+        creatingAll: '{{ _("Creating questions...") }}',
+        quizCreated: '{{ _("Quiz created! Redirecting...") }}',
+        required: '{{ _("This field is required") }}',
+        codeExists: '{{ _("This code already exists") }}',
+        questionType: '{{ _("Question Type") }}',
+        questionContent: '{{ _("Question Content") }}',
+        answerChoices: '{{ _("Answer Choices") }}',
+        acceptedAnswers: '{{ _("Accepted Answers") }}',
+        create: '{{ _("Create") }}',
+        noAnswersHint: '{{ _("No correct answers detected") }}',
+        addAnswerHint: '{{ _("Add") }}',
+        updatePreview: '{{ _("Update Preview") }}'
+      }
+    };
+  </script>
+  <script type="text/javascript" src="{{ static('quiz_import.js') }}"></script>
+{% endblock %}
+
+{% block left_sidebar %}
+  {% include "quiz/quiz-list-tabs.html" %}
+{% endblock %}
+
+{% block middle_content %}
+  <div class="quiz-import-page">
+    <h2 class="content-title">
+      <i class="fa fa-upload"></i> {{ _("Import Questions from File") }}
+    </h2>
+
+    <div id="import-upload-section">
+      <div class="import-upload-area">
+        <p>{{ _("Upload a document (PDF, image, or Word) to extract quiz questions using AI.") }}</p>
+        <p class="import-field-meta">
+          {{ _("Supports: PDF, PNG, JPG, DOC, DOCX. Max 50 MB.") }}
+        </p>
+        <input type="file" id="import-file-input" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">
+        <button type="button" class="action-btn" id="import-upload-btn" disabled>
+          <i class="fa fa-magic"></i> {{ _("Upload") }}
+        </button>
+      </div>
+    </div>
+
+    <p class="import-field-meta import-disclaimer">
+      <i class="fa fa-info-circle"></i>
+      {{ _("AI-generated results may be incomplete or inaccurate. Please review each field carefully before applying.") }}
+    </p>
+
+    <div id="import-status" class="import-status"></div>
+
+    <div id="import-results" class="import-results">
+      <div id="import-summary"></div>
+
+      <div id="import-shared-settings" class="import-shared-settings">
+        <label class="import-checkbox-label">
+          <input type="checkbox" id="import-shuffle-choices">
+          {{ _("Shuffle Choices") }}
+        </label>
+        <label class="import-checkbox-label">
+          <input type="checkbox" id="import-is-public">
+          {{ _("Public") }}
+        </label>
+        <button type="button" class="action-btn" id="import-create-all-btn">
+          <i class="fa fa-plus-circle"></i> <span>{{ _("Create All Questions") }}</span>
+        </button>
+      </div>
+
+      <div id="import-questions"></div>
+
+      <div id="import-quiz-section" class="import-quiz-section">
+        <div class="import-quiz-header" id="import-quiz-toggle">
+          <i class="fa fa-chevron-right"></i>
+          <strong>{{ _("Create Quiz from Imported Questions") }}</strong>
+        </div>
+        <div class="import-quiz-body" id="import-quiz-body">
+          <div class="import-form-row-inline">
+            <div class="import-form-row">
+              <label>{{ _("Quiz Code") }} <span class="required">*</span></label>
+              <input type="text" id="quiz-code" placeholder="examfinal2024" pattern="[a-z0-9]+"
+                     title="{{ _('Only lowercase letters and digits') }}">
+            </div>
+            <div class="import-form-row" style="flex: 1;">
+              <label>{{ _("Title") }} <span class="required">*</span></label>
+              <input type="text" id="quiz-title" placeholder="{{ _('Final Exam 2024') }}">
+            </div>
+            <div class="import-form-row">
+              <label>{{ _("Time Limit (minutes)") }}</label>
+              <input type="number" id="quiz-time-limit" value="0" min="0" placeholder="0">
+            </div>
+          </div>
+          <div class="import-form-row-inline">
+            <label class="import-checkbox-label">
+              <input type="checkbox" id="quiz-shuffle-questions">
+              {{ _("Shuffle Questions") }}
+            </label>
+            <label class="import-checkbox-label">
+              <input type="checkbox" id="quiz-show-answers">
+              {{ _("Show Answers") }}
+            </label>
+            <label class="import-checkbox-label">
+              <input type="checkbox" id="quiz-is-public">
+              {{ _("Publicly Visible") }}
+            </label>
+            <button type="button" class="action-btn" id="import-create-quiz-btn" style="margin-left: auto;">
+              <i class="fa fa-plus"></i> {{ _("Create Quiz") }}
+            </button>
+          </div>
+          <div id="quiz-create-status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

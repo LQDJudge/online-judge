@@ -129,12 +129,16 @@
           {% if answer.question.question_type in ['MC', 'TF'] and answer.question.choices %}
             <div class="choices-display">
               <strong>{{ _('Choices') }}:</strong>
+              {% set correct_id = answer.question.correct_answers.answers if answer.question.correct_answers else '' %}
               {% for choice in answer.question.choices %}
-                <div class="grading-choice-item {% if choice.id == answer.answer %}selected-answer{% endif %}">
+                <div class="grading-choice-item {% if choice.id == correct_id %}correct-choice{% endif %} {% if choice.id == answer.answer %}student-choice{% endif %}">
                   <span class="grading-choice-id">{{ choice.id }}:</span>
                   <span class="grading-choice-text content-description">{{ choice.text|markdown|reference|str|safe }}</span>
-                  {% if answer.question.correct_answers and choice.id == answer.question.correct_answers.answers %}
+                  {% if choice.id == correct_id %}
                     <span class="green">({{ _('Correct') }})</span>
+                  {% endif %}
+                  {% if choice.id == answer.answer and choice.id != correct_id %}
+                    <span class="blue">({{ _('Student') }})</span>
                   {% endif %}
                 </div>
               {% endfor %}
@@ -145,11 +149,14 @@
             <div class="choices-display">
               <strong>{{ _('Choices') }}:</strong>
               {% for choice in answer.question.choices %}
-                <div class="grading-choice-item {% if choice.id in selected %}selected-answer{% endif %}">
+                <div class="grading-choice-item {% if choice.id in correct_ids %}correct-choice{% endif %} {% if choice.id in selected %}student-choice{% endif %}">
                   <span class="grading-choice-id">{{ choice.id }}:</span>
                   <span class="grading-choice-text content-description">{{ choice.text|markdown|reference|str|safe }}</span>
                   {% if choice.id in correct_ids %}
                     <span class="green">({{ _('Correct') }})</span>
+                  {% endif %}
+                  {% if choice.id in selected and choice.id not in correct_ids %}
+                    <span class="blue">({{ _('Student') }})</span>
                   {% endif %}
                 </div>
               {% endfor %}

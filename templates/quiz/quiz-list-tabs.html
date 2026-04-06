@@ -1,6 +1,9 @@
 <div class="left-sidebar">
   {{ make_tab_item('list', 'fa fa-list', url('quiz_list'), _('Quiz')) }}
   {{ make_tab_item('questions', 'fa fa-database', url('question_bank_list'), _('Question Bank')) }}
+  {% if request.user.is_superuser %}
+    {{ make_tab_item('import', 'fa fa-upload', url('quiz_import'), _('Import')) }}
+  {% endif %}
   {% if request.user.is_superuser or pending_grading_count is defined and pending_grading_count > 0 %}
     <a class="left-sidebar-item {% if page_type == 'grading' %}active{% endif %}" href="{{ url('grading_dashboard') }}" id="grading-tab">
       <span class="sidebar-icon"><i class="fa fa-check-square"></i></span>

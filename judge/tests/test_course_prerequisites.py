@@ -961,9 +961,9 @@ class BestQuizAttemptModelTest(TestCase):
 
         self.assertIsNone(result)
 
-    def test_best_quiz_attempt_without_lesson_quiz_link(self):
-        """Test that attempts without lesson_quiz still update BestQuizAttempt
-        by looking up CourseLessonQuiz for the quiz"""
+    def test_best_quiz_attempt_without_lesson_quiz_ignored(self):
+        """Test that standalone attempts (without lesson_quiz) do not
+        propagate to lesson progress — they return None"""
         # Attempt without lesson_quiz (e.g. taken via direct quiz URL)
         attempt = QuizAttempt.objects.create(
             user=self.profile,
@@ -975,14 +975,15 @@ class BestQuizAttemptModelTest(TestCase):
         )
         result = BestQuizAttempt.update_from_attempt(attempt)
 
-        self.assertIsNotNone(result)
-        best = BestQuizAttempt.objects.get(
-            user=self.profile, lesson_quiz=self.lesson_quiz
+        self.assertIsNone(result)
+        self.assertFalse(
+            BestQuizAttempt.objects.filter(
+                user=self.profile, lesson_quiz=self.lesson_quiz
+            ).exists()
         )
-        self.assertEqual(best.score, Decimal("90.00"))
 
-    def test_best_quiz_attempt_without_lesson_quiz_picks_best(self):
-        """Test that an orphaned attempt updates BestQuizAttempt only if it's the best"""
+    def test_best_quiz_attempt_without_lesson_quiz_does_not_update(self):
+        """Test that standalone attempts do not overwrite lesson-linked best attempts"""
         # First attempt with lesson_quiz link
         attempt1 = QuizAttempt.objects.create(
             user=self.profile,
@@ -994,24 +995,8 @@ class BestQuizAttemptModelTest(TestCase):
         )
         BestQuizAttempt.update_from_attempt(attempt1)
 
-        # Second attempt without lesson_quiz but worse score
+        # Second attempt without lesson_quiz but better score — should be ignored
         attempt2 = QuizAttempt.objects.create(
-            user=self.profile,
-            quiz=self.quiz,
-            lesson_quiz=None,
-            is_submitted=True,
-            score=Decimal("50.00"),
-            max_score=Decimal("100.00"),
-        )
-        BestQuizAttempt.update_from_attempt(attempt2)
-
-        best = BestQuizAttempt.objects.get(
-            user=self.profile, lesson_quiz=self.lesson_quiz
-        )
-        self.assertEqual(best.score, Decimal("80.00"))
-
-        # Third attempt without lesson_quiz but better score
-        attempt3 = QuizAttempt.objects.create(
             user=self.profile,
             quiz=self.quiz,
             lesson_quiz=None,
@@ -1019,10 +1004,14 @@ class BestQuizAttemptModelTest(TestCase):
             score=Decimal("95.00"),
             max_score=Decimal("100.00"),
         )
-        BestQuizAttempt.update_from_attempt(attempt3)
+        result = BestQuizAttempt.update_from_attempt(attempt2)
 
-        best.refresh_from_db()
-        self.assertEqual(best.score, Decimal("95.00"))
+        self.assertIsNone(result)
+        best = BestQuizAttempt.objects.get(
+            user=self.profile, lesson_quiz=self.lesson_quiz
+        )
+        # Score should remain 80, not updated to 95
+        self.assertEqual(best.score, Decimal("80.00"))
 
 
 class GradeChangeAndUnlockTriggerTest(TestCase):

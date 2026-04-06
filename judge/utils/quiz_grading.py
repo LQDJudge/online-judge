@@ -312,10 +312,9 @@ def auto_grade_quiz_attempt(attempt) -> float:
             answer.points = points
             answer.is_correct = is_correct
             answer.partial_credit = 1.0 if is_correct else 0.0
-            # Always mark as graded if correct_answers are configured
-            # Wrong answers get 0 points - teacher can manually adjust if needed
-            if answer.question.correct_answers:
-                answer.graded_at = timezone.now()
+            # Always mark as graded — wrong answers get 0 points,
+            # teacher can manually adjust via grading dashboard if needed
+            answer.graded_at = timezone.now()
 
         elif qtype == "ES":
             # Essay always needs manual grading

@@ -156,7 +156,7 @@
           </div>
         {% endif %}
 
-        {% if show_answers and question.question_type in ['MC', 'MA', 'TF'] %}
+        {% if show_answers and question.correct_answers %}
           <div class="correct-answer">
             <strong>{{ _('Correct answer') }}:</strong>
             {% set correct = question.correct_answers.get('answers', []) %}
@@ -166,7 +166,7 @@
                   <div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div>
                 {% endif %}
               {% endfor %}
-            {% else %}
+            {% elif question.question_type == 'MA' %}
               <ul>
                 {% for choice in question.choices %}
                   {% if choice.id in correct %}
@@ -174,6 +174,15 @@
                   {% endif %}
                 {% endfor %}
               </ul>
+            {% elif question.question_type == 'SA' %}
+              {% if correct is string %}
+                <span class="sa-correct-answer">{{ correct }}</span>
+              {% else %}
+                {% for ans in correct %}
+                  <span class="sa-correct-answer">{{ ans }}</span>
+                  {% if not loop.last %}, {% endif %}
+                {% endfor %}
+              {% endif %}
             {% endif %}
           </div>
         {% endif %}

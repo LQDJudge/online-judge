@@ -96,7 +96,7 @@ class Command(BaseCommand):
             sys.path.insert(
                 0, os.path.join(os.path.dirname(__file__), "../../..", "..")
             )
-            from problem_tag import get_problem_tag_service
+            from ai_features import get_problem_tag_service
 
             tag_service = get_problem_tag_service()
         except Exception as e:
