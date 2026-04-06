@@ -1,7 +1,9 @@
+from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 
 from judge.models import Problem
+from judge.models.comment import get_content_author_ids
 from judge.models.problem import (
     _get_allowed_languages,
     _get_problem_organization_ids,
@@ -30,10 +32,14 @@ def update_problem_authors(sender, instance, action, pk_set, **kwargs):
         instance._pre_clear_author_ids = set(instance.get_author_ids())
     elif action in ("post_add", "post_remove"):
         Problem.get_author_ids.dirty(instance)
+        ct = ContentType.objects.get_for_model(Problem)
+        get_content_author_ids.dirty(ct.id, instance.id)
         for profile_id in pk_set:
             user_editable_ids.dirty(profile_id)
     elif action == "post_clear":
         Problem.get_author_ids.dirty(instance)
+        ct = ContentType.objects.get_for_model(Problem)
+        get_content_author_ids.dirty(ct.id, instance.id)
         for profile_id in getattr(instance, "_pre_clear_author_ids", ()):
             user_editable_ids.dirty(profile_id)
 
