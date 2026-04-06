@@ -1,7 +1,9 @@
+from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_delete, post_save, m2m_changed
 from django.dispatch import receiver
 
 from judge.models import Contest, ContestParticipation, ContestProblem, Submission
+from judge.models.comment import get_content_author_ids
 from judge.models.contest import _get_contest_organization_ids
 from judge.utils.contest_recommendation import (
     get_contests_for_problem,
@@ -30,6 +32,13 @@ def on_contest_organization_change(sender, instance, action, **kwargs):
     if action in ["post_add", "post_remove", "post_clear"]:
         if isinstance(instance, Contest):
             _get_contest_organization_ids.dirty(instance.id)
+
+
+@receiver(m2m_changed, sender=Contest.authors.through)
+def update_contest_authors(sender, instance, action, **kwargs):
+    if action in ["post_add", "post_remove", "post_clear"]:
+        ct = ContentType.objects.get_for_model(Contest)
+        get_content_author_ids.dirty(ct.id, instance.id)
 
 
 @receiver(post_delete, sender=ContestProblem)

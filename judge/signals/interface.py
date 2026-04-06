@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
@@ -7,6 +8,7 @@ from django.dispatch import receiver
 
 from judge import template_context
 from judge.models import BlogPost, MiscConfig, NavigationBar, Solution
+from judge.models.comment import get_content_author_ids
 from judge.models.interface import _get_blogpost_organization_ids
 
 
@@ -47,3 +49,5 @@ def update_blogpost_organizations(sender, instance, action, **kwargs):
 def update_blogpost_authors(sender, instance, action, **kwargs):
     if action in ["post_add", "post_remove", "post_clear"]:
         BlogPost.get_author_ids.dirty(instance)
+        ct = ContentType.objects.get_for_model(BlogPost)
+        get_content_author_ids.dirty(ct.id, instance.id)
