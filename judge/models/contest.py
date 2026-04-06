@@ -504,6 +504,9 @@ class Contest(models.Model, PageVotable, Bookmarkable):
             )
         )
 
+    def get_author_ids(self):
+        return list(self._author_ids())
+
     @cache_wrapper(prefix="Coci")
     def _curator_ids(self):
         return set(

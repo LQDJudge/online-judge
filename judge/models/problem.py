@@ -869,6 +869,14 @@ class Solution(models.Model, PageVotable, Bookmarkable):
 
     save.alters_data = True
 
+    @cache_wrapper(prefix="Sgai", expected_type=list)
+    def get_author_ids(self):
+        return list(
+            Solution.authors.through.objects.filter(solution=self.id).values_list(
+                "profile_id", flat=True
+            )
+        )
+
     def get_absolute_url(self):
         problem = self.problem
         if problem is None:
