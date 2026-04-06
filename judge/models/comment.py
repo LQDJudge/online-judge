@@ -575,24 +575,32 @@ def _get_comment(comment_id):
     return results[0]
 
 
-@cache_wrapper(prefix="ctaids")
 def get_content_author_ids(content_type_id, object_id):
     """
-    Get cached author IDs for a content object (BlogPost, Problem, etc.).
+    Get author IDs for a content object (BlogPost, Problem, etc.).
     Returns a set of profile IDs who are authors.
+
+    Zero DB calls when get_author_ids cache is warm:
+    - ContentType.objects.get() is cached by Django
+    - get_author_ids() is cached via cache_wrapper
+    - We create a bare instance (id only) to avoid a DB fetch
+
+    All commentable models (Problem, BlogPost, Contest, Solution)
+    must have get_author_ids(). This is enforced by assertion.
     """
     from django.contrib.contenttypes.models import ContentType
 
     try:
         content_type = ContentType.objects.get(id=content_type_id)
         model_class = content_type.model_class()
-        obj = model_class.objects.get(id=object_id)
+        assert hasattr(
+            model_class, "get_author_ids"
+        ), f"{model_class.__name__} must implement get_author_ids()"
 
-        # Use cached method if available
-        if hasattr(obj, "get_author_ids"):
-            return set(obj.get_author_ids())
-        elif hasattr(obj, "authors"):
-            return set(obj.authors.values_list("id", flat=True))
-        return set()
-    except (ContentType.DoesNotExist, model_class.DoesNotExist):
+        # Create bare instance with just id — avoids DB query.
+        # cache_wrapper uses arg.id for cache keys, so this
+        # hits the same cache as a real instance.
+        obj = model_class(id=object_id)
+        return set(obj.get_author_ids())
+    except ContentType.DoesNotExist:
         return set()
