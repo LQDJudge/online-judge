@@ -1,5 +1,6 @@
 import csv
 import json
+import logging
 
 from django import forms
 from django.contrib import messages
@@ -24,6 +25,11 @@ from django.views.generic import (
     CreateView,
     UpdateView,
     DeleteView,
+)
+
+from judge.tasks.llm import (
+    improve_question_markdown_task,
+    generate_question_explanation_task,
 )
 
 from judge.widgets import HeavySelect2MultipleWidget, HeavyPreviewPageDownWidget
@@ -312,11 +318,11 @@ class QuizQuestionForm(forms.ModelForm):
             "content",
             "choices",
             "correct_answers",
-            "shuffle_choices",
             "grading_strategy",
-            "explanation",
+            "shuffle_choices",
             "tags",
             "is_public",
+            "explanation",
         ]
         widgets = {
             "content": HeavyPreviewPageDownWidget(
@@ -330,9 +336,87 @@ class QuizQuestionForm(forms.ModelForm):
         }
 
 
+logger = logging.getLogger(__name__)
+
+
+class QuizAIMixin:
+    """Mixin that adds AI features (markdown improvement, explanation generation) to quiz views.
+    Superuser-only. Intercepts AJAX POSTs before normal form processing."""
+
+    def handle_improve_question_markdown(self, request):
+        """Handle AI markdown improvement request — dispatches async Celery task"""
+        try:
+            if not request.user.is_superuser:
+                return JsonResponse({"success": False, "error": "Permission denied"})
+
+            content = request.POST.get("content", "").strip()
+            if not content:
+                return JsonResponse({"success": False, "error": "No content provided"})
+
+            choices_json = request.POST.get("choices", "").strip()
+
+            task = improve_question_markdown_task.delay(content, choices_json)
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "task_id": task.id,
+                    "status": "processing",
+                }
+            )
+
+        except Exception as e:
+            logger.error(f"Error in quiz AI markdown improvement: {e}")
+            return JsonResponse(
+                {"success": False, "error": "An unexpected error occurred"}
+            )
+
+    def handle_generate_explanation(self, request):
+        """Handle AI explanation generation/improvement — dispatches async Celery task"""
+        try:
+            if not request.user.is_superuser:
+                return JsonResponse({"success": False, "error": "Permission denied"})
+
+            question_content = request.POST.get("content", "").strip()
+            if not question_content:
+                return JsonResponse(
+                    {"success": False, "error": "No question content provided"}
+                )
+
+            question_type = request.POST.get("question_type", "MC")
+            choices_json = request.POST.get("choices", "")
+            correct_answers_json = request.POST.get("correct_answers", "")
+            existing_explanation = request.POST.get("explanation", "").strip()
+            rough_ideas = request.POST.get("rough_ideas", "").strip()
+
+            task = generate_question_explanation_task.delay(
+                question_content=question_content,
+                question_type=question_type,
+                choices_json=choices_json,
+                correct_answers_json=correct_answers_json,
+                existing_explanation=existing_explanation,
+                rough_ideas=rough_ideas,
+            )
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "task_id": task.id,
+                    "status": "processing",
+                }
+            )
+
+        except Exception as e:
+            logger.error(f"Error in quiz AI explanation generation: {e}")
+            return JsonResponse(
+                {"success": False, "error": "An unexpected error occurred"}
+            )
+
+
 class QuestionBankCreate(
     LoginRequiredMixin,
     QuizEditorMixin,
+    QuizAIMixin,
     PendingGradingCountMixin,
     TitleMixin,
     CreateView,
@@ -358,6 +442,13 @@ class QuestionBankCreate(
         context["page_type"] = "questions"
         return context
 
+    def post(self, request, *args, **kwargs):
+        if request.POST.get("improve_question_markdown") == "1":
+            return self.handle_improve_question_markdown(request)
+        if request.POST.get("generate_explanation") == "1":
+            return self.handle_generate_explanation(request)
+        return super().post(request, *args, **kwargs)
+
     def form_valid(self, form):
         with transaction.atomic():
             self.object = form.save(commit=False)
@@ -374,6 +465,7 @@ class QuestionBankCreate(
 class QuestionBankEdit(
     LoginRequiredMixin,
     QuestionEditorMixin,
+    QuizAIMixin,
     PendingGradingCountMixin,
     TitleMixin,
     UpdateView,
@@ -408,6 +500,14 @@ class QuestionBankEdit(
         context = super().get_context_data(**kwargs)
         context["page_type"] = "questions"
         return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if request.POST.get("improve_question_markdown") == "1":
+            return self.handle_improve_question_markdown(request)
+        if request.POST.get("generate_explanation") == "1":
+            return self.handle_generate_explanation(request)
+        return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
         if not self.request.user.is_superuser:
@@ -2031,7 +2131,7 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
             .prefetch_related("files")
             .order_by("question__id")
         )
-        context["show_answers"] = quiz.is_shown_answer
+        context["show_answers"] = quiz.show_answers(self.request.user)
         context["can_edit"] = quiz.is_editable_by(self.request.user)
 
         # Check if user can retake the quiz
@@ -3415,7 +3515,7 @@ class LessonQuizResult(LessonQuizMixin, LoginRequiredMixin, TitleMixin, DetailVi
             .prefetch_related("files")
             .order_by("question__id")
         )
-        context["show_answers"] = quiz.is_shown_answer
+        context["show_answers"] = quiz.show_answers(self.request.user)
         context["can_edit"] = quiz.is_editable_by(self.request.user)
 
         # Check if user can retake in this lesson context

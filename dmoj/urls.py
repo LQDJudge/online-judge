@@ -65,6 +65,7 @@ from judge.views import (
     direct_upload,
 )
 from judge.views import package_import
+from judge.views import quiz_import
 from judge.views.problem_data import (
     ProblemDataView,
     ProblemSubmissionDiff,
@@ -852,6 +853,27 @@ urlpatterns = [
         r"^quiz/validate-questions/$",
         quiz.QuizValidateQuestions.as_view(),
         name="quiz_validate_questions",
+    ),
+    # Quiz Import (superuser only) — must be before quiz/<code> catch-all
+    re_path(
+        r"^quiz/import/$",
+        quiz_import.QuizImportView.as_view(),
+        name="quiz_import",
+    ),
+    re_path(
+        r"^quiz/import/upload/$",
+        quiz_import.QuizImportUploadView.as_view(),
+        name="quiz_import_upload",
+    ),
+    re_path(
+        r"^quiz/import/create-question/$",
+        quiz_import.QuizImportCreateQuestionView.as_view(),
+        name="quiz_import_create_question",
+    ),
+    re_path(
+        r"^quiz/import/create-quiz/$",
+        quiz_import.QuizImportCreateQuizView.as_view(),
+        name="quiz_import_create_quiz",
     ),
     re_path(
         r"^quiz/(?P<code>[^/]+)",

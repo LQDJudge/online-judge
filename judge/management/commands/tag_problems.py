@@ -12,7 +12,7 @@ from django.db import transaction
 # Add llm_service to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../..", ".."))
 
-from problem_tag import get_problem_tag_service
+from ai_features import get_problem_tag_service
 from judge.models import Problem
 
 

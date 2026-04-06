@@ -343,6 +343,8 @@ class ChoiceEditor {
         this.choices = config.choices || [];
         this.correctAnswers = config.correctAnswers || [];
         this.expandedEditors = {}; // Track expanded state by index
+        this.radioName = 'correct_choice_' + (ChoiceEditor._nextId = (ChoiceEditor._nextId || 0) + 1);
+        this.previewUrl = config.previewUrl || '/widgets/preview/blog';
 
         this.init();
     }
@@ -381,7 +383,7 @@ class ChoiceEditor {
         // Row 1: Controls and minimal textarea
         html += '<div class="choice-row-controls">';
         html += '<span class="drag-handle"><i class="fa fa-bars"></i></span>';
-        html += '<input type="' + inputType + '" name="correct_choice" value="' + choice.id + '"';
+        html += '<input type="' + inputType + '" name="' + this.radioName + '" value="' + choice.id + '"';
         if (isCorrect) html += ' checked';
         html += ' class="correct-checkbox">';
         html += '<input type="text" class="choice-id" value="' + this.escapeHtml(choice.id) + '" title="' + gettext('Choice ID (e.g., A, B, C)') + '">';
@@ -468,8 +470,9 @@ class ChoiceEditor {
         // Already expanded?
         if ($expandedContainer.is(':visible')) return;
 
-        // Create the expanded editor with PageDown toolbar
+        // Create the expanded editor with PageDown toolbar + preview
         var editorId = 'choice-editor-' + index + '-' + Date.now();
+        var previewId = editorId + '-preview';
         var currentValue = $textarea.val();
 
         var expandedHtml = '<div class="wmd-wrapper choice-wmd-wrapper">';
@@ -478,6 +481,11 @@ class ChoiceEditor {
         expandedHtml += '<button type="button" class="btn btn-sm collapse-choice-btn" title="' + gettext('Collapse') + '"><i class="fa fa-compress"></i></button>';
         expandedHtml += '</div>';
         expandedHtml += '<textarea id="wmd-input-' + editorId + '" class="wmd-input choice-expanded-textarea">' + this.escapeHtml(currentValue) + '</textarea>';
+        expandedHtml += '</div>';
+        // Preview panel
+        expandedHtml += '<div id="' + previewId + '" class="dmmd-preview choice-preview" data-preview-url="' + this.previewUrl + '" data-textarea-id="wmd-input-' + editorId + '">';
+        expandedHtml += '<div class="dmmd-preview-update"><i class="fa fa-refresh"></i> ' + gettext('Update Preview') + '</div>';
+        expandedHtml += '<div class="dmmd-preview-content content-description"></div>';
         expandedHtml += '</div>';
 
         $expandedContainer.html(expandedHtml);
@@ -499,12 +507,21 @@ class ChoiceEditor {
             this.expandedEditors[index] = editor;
         }
 
+        // Register preview panel
+        var $preview = $('#' + previewId);
+        if ($preview.length && typeof register_dmmd_preview === 'function') {
+            register_dmmd_preview($preview);
+        }
+
         // Sync expanded textarea with the minimal one
         var $expandedTextarea = $expandedContainer.find('.choice-expanded-textarea');
         $expandedTextarea.on('input', function() {
             $textarea.val($(this).val());
             self.updateFromUI();
         });
+
+        // Enable clipboard image paste
+        this.registerImagePaste($expandedTextarea[0]);
 
         // Focus the expanded textarea
         $expandedTextarea.focus();
@@ -619,6 +636,53 @@ class ChoiceEditor {
 
         // If all letters used, fallback to numbered format
         return 'A' + (this.choices.length + 1);
+    }
+
+    registerImagePaste(element) {
+        element.addEventListener('paste', function(event) {
+            var clipboardData = event.clipboardData || window.clipboardData;
+            if (!clipboardData || !clipboardData.items) return;
+
+            for (var i = 0; i < clipboardData.items.length; i++) {
+                var item = clipboardData.items[i];
+                if (item.kind === 'file' && item.type.indexOf('image/') === 0) {
+                    event.preventDefault();
+                    var blob = item.getAsFile();
+                    var formData = new FormData();
+                    formData.append('image', blob);
+
+                    element.disabled = true;
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/pagedown/image-upload/', true);
+                    xhr.onload = function() {
+                        element.disabled = false;
+                        element.focus();
+                        if (xhr.status === 200) {
+                            try {
+                                var response = JSON.parse(xhr.responseText);
+                                var markdownImg = '![](' + response.url + ')';
+                                var start = element.selectionStart;
+                                var end = element.selectionEnd;
+                                var before = element.value.slice(0, start);
+                                var after = element.value.slice(end);
+                                if (before) before += '\n';
+                                if (after) markdownImg += '\n';
+                                element.value = before + markdownImg + after;
+                                var pos = before.length + markdownImg.length;
+                                element.setSelectionRange(pos, pos);
+                                $(element).trigger('input');
+                            } catch (e) {}
+                        }
+                    };
+                    xhr.onerror = function() {
+                        element.disabled = false;
+                        element.focus();
+                    };
+                    xhr.send(formData);
+                    break;
+                }
+            }
+        });
     }
 
     escapeHtml(text) {

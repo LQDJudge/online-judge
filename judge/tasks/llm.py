@@ -25,7 +25,7 @@ def generate_solution_task(self, problem_code, rough_ideas=""):
     try:
         # Import here to avoid circular imports
         from judge.models import Problem
-        from problem_tag.problem_tag_service import get_problem_tag_service
+        from ai_features.problem_tag_service import get_problem_tag_service
 
         problem = Problem.objects.get(code=problem_code)
         tag_service = get_problem_tag_service()
@@ -69,7 +69,7 @@ def tag_problem_task(self, problem_code, description=""):
     try:
         # Import here to avoid circular imports
         from judge.models import Problem, ProblemType
-        from problem_tag.problem_tag_service import get_problem_tag_service
+        from ai_features.problem_tag_service import get_problem_tag_service
 
         problem = Problem.objects.get(code=problem_code)
         tag_service = get_problem_tag_service()
@@ -125,7 +125,7 @@ def improve_markdown_task(self, problem_code, description=""):
     try:
         # Import here to avoid circular imports
         from judge.models import Problem
-        from problem_tag.problem_tag_service import get_problem_tag_service
+        from ai_features.problem_tag_service import get_problem_tag_service
 
         problem = Problem.objects.get(code=problem_code)
         tag_service = get_problem_tag_service()
@@ -147,6 +147,93 @@ def improve_markdown_task(self, problem_code, description=""):
 
     except Exception as e:
         logger.error(f"Error in improve_markdown_task for {problem_code}: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+        }
+
+
+@shared_task(bind=True)
+def improve_question_markdown_task(self, content, choices_json=""):
+    """
+    Celery task to improve markdown formatting for a quiz question.
+
+    Args:
+        content: The raw question content text (not a model PK — works for both
+                 edit and create pages since the object may not be saved yet)
+        choices_json: Optional JSON string of answer choices to also improve
+
+    Returns:
+        Dict with improvement results (stored in Celery result backend)
+    """
+    try:
+        from ai_features.quiz_ai_service import get_quiz_ai_service
+
+        service = get_quiz_ai_service()
+        result = service.improve_question_markdown(content, choices_json)
+
+        response = {
+            "success": result["success"],
+            "improved_markdown": result.get("improved_markdown"),
+            "error": result.get("error"),
+        }
+        if result.get("improved_choices") is not None:
+            response["improved_choices"] = result["improved_choices"]
+        return response
+
+    except Exception as e:
+        logger.error(f"Error in improve_question_markdown_task: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+        }
+
+
+@shared_task(bind=True)
+def generate_question_explanation_task(
+    self,
+    question_content,
+    question_type,
+    choices_json,
+    correct_answers_json,
+    existing_explanation,
+    rough_ideas="",
+):
+    """
+    Celery task to generate or improve an explanation for a quiz question.
+
+    Args:
+        question_content: The question text
+        question_type: Question type code (MC, MA, TF, SA, ES)
+        choices_json: JSON string of choices list
+        correct_answers_json: JSON string of correct answers
+        existing_explanation: Existing explanation text (empty = generate new)
+
+    Returns:
+        Dict with generation results (stored in Celery result backend)
+    """
+    try:
+        from ai_features.quiz_ai_service import get_quiz_ai_service
+
+        service = get_quiz_ai_service()
+        result = service.generate_or_improve_explanation(
+            question_content=question_content,
+            question_type=question_type,
+            choices_json=choices_json,
+            correct_answers_json=correct_answers_json,
+            existing_explanation=existing_explanation,
+            rough_ideas=rough_ideas,
+        )
+
+        return {
+            "success": result["success"],
+            "explanation_content": result.get("explanation_content"),
+            "mode": result.get("mode"),
+            "error": result.get("error"),
+        }
+
+    except Exception as e:
+        logger.error(f"Error in generate_question_explanation_task: {e}")
         return {
             "success": False,
             "error": str(e),

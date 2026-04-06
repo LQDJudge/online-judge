@@ -102,7 +102,7 @@
         {% set percentage = (attempt.score / attempt.max_score * 100) if attempt.max_score and attempt.score else 0 %}
         {% set needs_grading = attempt.has_ungraded_essays is defined and attempt.has_ungraded_essays %}
         <div class="grading-row">
-          <img class="user-img" loading="lazy" src="{{ gravatar(attempt.user) }}" alt="">
+          <img class="user-img" loading="lazy" src="{{ gravatar(attempt.user_id) }}" alt="">
           <div class="grading-details">
             <div class="grading-info">
               <div class="grading-user">
