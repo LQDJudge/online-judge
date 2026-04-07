@@ -8,7 +8,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django.db.models import Count, Q
+from django.db.models import BooleanField, Case, Count, Q, Value, When
 from django.utils import timezone
 
 from judge.models import BlogPost, Contest, Problem
@@ -123,10 +123,23 @@ class PostPool(CachedPool):
             )
 
             all_ids = official | group | community
-            posts = list(
-                base.filter(id__in=all_ids).order_by("-sticky", "-publish_on")[
-                    : self.BATCH_SIZE
+            if self.organization:
+                # Org context: all sticky posts on top
+                ordering = ["-sticky", "-publish_on"]
+            else:
+                # Homepage: only official (non-org-private) sticky on top
+                ordering = [
+                    Case(
+                        When(
+                            sticky=True, is_organization_private=False, then=Value(True)
+                        ),
+                        default=Value(False),
+                        output_field=BooleanField(),
+                    ).desc(),
+                    "-publish_on",
                 ]
+            posts = list(
+                base.filter(id__in=all_ids).order_by(*ordering)[: self.BATCH_SIZE]
             )
 
         BlogPost.prefetch_organization_ids(*[p.id for p in posts])
