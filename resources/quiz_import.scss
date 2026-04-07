@@ -1,6 +1,10 @@
 @use "vars" as *;
 
 .quiz-import-page {
+    background: white;
+    padding: 1.5em 2em;
+    border-radius: 0.5em;
+
     .content-title {
         margin-bottom: 15px;
     }
