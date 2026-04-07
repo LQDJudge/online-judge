@@ -7,6 +7,14 @@
         <span class="post-authors">{{ link_users(authors) }}</span>
       {%- endif -%}
     {% endwith %}
+    {% if post.is_organization_private %}
+      &#8226;
+      <div style="display: flex; margin-left: 0.2em;">
+        {% for org in post.get_organizations() %}
+          {% include "organization/tag.html" %}
+        {% endfor %}
+      </div>
+    {% endif %}
     &#8226;
     {{ relative_time(post.publish_on) }}
     {%- if post.sticky %} &#8226;
