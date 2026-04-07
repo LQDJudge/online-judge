@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
-from django.db.models.signals import post_save, m2m_changed
+from django.db.models.signals import post_delete, post_save, m2m_changed
 from django.dispatch import receiver
 
 from judge import template_context
@@ -26,6 +26,7 @@ def misc_config_update(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=NavigationBar)
+@receiver(post_delete, sender=NavigationBar)
 def navbar_update(sender, instance, **kwargs):
     template_context._nav_bar.dirty()
 
