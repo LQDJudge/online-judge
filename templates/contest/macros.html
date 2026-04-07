@@ -26,6 +26,12 @@
           {% include "organization/tag.html" %}
         {% endfor %}
       {% endif %}
+      {% if contest.is_in_course %}
+        {% for cc in contest.course.all() %}
+          {% set course = cc.course %}
+          {% include "course/tag.html" %}
+        {% endfor %}
+      {% endif %}
     {% endif %}
     {% if contest.is_rated %}
       <span class="contest-tag contest-tag-rated">

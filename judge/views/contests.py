@@ -20,6 +20,7 @@ from django.db.models import (
     IntegerField,
     Max,
     Min,
+    Prefetch,
     Q,
     Value,
     When,
@@ -225,7 +226,17 @@ class ContestList(
         return queryset
 
     def _get_queryset(self):
-        queryset = super(ContestList, self).get_queryset().prefetch_related("tags")
+        queryset = (
+            super(ContestList, self)
+            .get_queryset()
+            .prefetch_related(
+                "tags",
+                Prefetch(
+                    "course",
+                    queryset=CourseContest.objects.select_related("course"),
+                ),
+            )
+        )
 
         if self.contest_query:
             substr_queryset = queryset.filter(

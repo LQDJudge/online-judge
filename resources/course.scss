@@ -1000,6 +1000,11 @@
     }
 }
 
+// Course tag - override organization-tag gradient for course contexts
+.course-tag {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
 // Organization course edit page styles
 .org-course-edit-page {
     .course-info {
