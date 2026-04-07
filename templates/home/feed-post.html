@@ -1,0 +1,5 @@
+{# Blog post in the mixed feed — reuses shared post inner component #}
+{% set post = item.data %}
+<section class="{% if post.sticky %}sticky {% endif %}blog-box">
+  {% include "home/feed-post-inner.html" %}
+</section>

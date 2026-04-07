@@ -102,7 +102,11 @@
 {% block middle_content %}
   {% include "organization/post-composer.html" %}
   {% if is_member or can_edit or organization.is_open %}
-    {% include "blog/content.html" %}
+    {% if feed_items %}
+      {% include "home/feed-content.html" %}
+    {% else %}
+      {% include "blog/content.html" %}
+    {% endif %}
   {% else %}
     <div class="blog-sidebox sidebox">
       <h3><i class="fa fa-info-circle"></i>{{ _('About') }}</h3>

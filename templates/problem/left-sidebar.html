@@ -1,19 +1,18 @@
-{% if not show_contest_mode %}
-  {% set query_string = request.GET.urlencode() %}
-  {% set problem_feed_url = url('problem_feed') %}
-  {% set problem_list_url = url('problem_list') %}
-  {% if search_query %}
-    {% set problem_feed_url = problem_feed_url + '?' + query_string %}
-    {% set problem_list_url = problem_list_url + '?' + query_string %}
-  {% endif %}
-  <div class="left-sidebar">
-    {{ make_tab_item('feed', 'far fa-lightbulb', problem_feed_url, _('Feed')) }}
-    {{ make_tab_item('list', 'fa fa-list', problem_list_url, _('List')) }}
-    {% if request.user.is_superuser or perms.judge.add_problem %}
-      {{ make_tab_item('add', 'fa fa-plus', url('problem_add'), _('Add')) }}
-    {% endif %}
-    {% if request.user.is_superuser %}
-      {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_problem_changelist'), _('Admin'), force_new_page=True) }}
-    {% endif %}
-  </div>
+{% set query_string = request.GET.urlencode() %}
+{% set problem_feed_url = url('problem_feed') %}
+{% set problem_list_url = url('problem_list') %}
+{% if search_query %}
+  {% set problem_feed_url = problem_feed_url + '?' + query_string %}
+  {% set problem_list_url = problem_list_url + '?' + query_string %}
 {% endif %}
+<div class="left-sidebar">
+  {{ make_tab_item('feed', 'far fa-lightbulb', problem_feed_url, _('Feed')) }}
+  {{ make_tab_item('list', 'fa fa-list', problem_list_url, _('List')) }}
+  {{ make_tab_item('all_submissions_list', 'fa fa-code', url('all_submissions'), _('Submissions')) }}
+  {% if request.user.is_superuser or perms.judge.add_problem %}
+    {{ make_tab_item('add', 'fa fa-plus', url('problem_add'), _('Add')) }}
+  {% endif %}
+  {% if request.user.is_superuser %}
+    {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_problem_changelist'), _('Admin'), force_new_page=True) }}
+  {% endif %}
+</div>

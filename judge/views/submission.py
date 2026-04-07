@@ -328,15 +328,13 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         pass
 
     def hide_contest_in_row(self):
-        return self.request.in_contest_mode
+        return self.in_contest
 
     @cached_property
     def in_contest(self):
-        return (
-            self.request.user.is_authenticated
-            and self.request.profile.current_contest is not None
-            and self.request.in_contest_mode
-        )
+        # Only True for contest-specific views (e.g. ContestSubmissions)
+        # General submission views should not filter by contest
+        return False
 
     @cached_property
     def contest(self):
@@ -668,7 +666,7 @@ class ProblemSubmissionsBase(SubmissionsListBase):
         else:
             is_own = hasattr(self, "is_own") and self.is_own
             if not is_own and not self.problem.is_accessible_by(
-                request.user, request.in_contest_mode
+                request.user, request.in_contest
             ):
                 raise Http404()
 
@@ -769,7 +767,7 @@ def single_submission(request, submission_id, show_problem=True):
     )
 
     is_in_editable_contest = False
-    if authenticated and request.in_contest_mode:
+    if authenticated and request.in_contest:
         contest = request.profile.current_contest.contest
         is_in_editable_contest = contest.is_editable_by(request.user)
 
@@ -808,6 +806,19 @@ class AllSubmissions(InfinitePaginationMixin, GeneralSubmissions):
     def use_infinite_pagination(self):
         return not self.in_contest
 
+    @cached_property
+    def user_filter(self):
+        return self.request.GET.get("user_filter", "all")
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.user_filter == "me" and self.request.user.is_authenticated:
+            queryset = queryset.filter(user=self.request.profile)
+        elif self.user_filter == "friends" and self.request.user.is_authenticated:
+            friend_ids = self.request.profile.get_following_ids(True)
+            queryset = queryset.filter(user_id__in=friend_ids)
+        return queryset
+
     def get_context_data(self, **kwargs):
         context = super(AllSubmissions, self).get_context_data(**kwargs)
         context["dynamic_update"] = (
@@ -815,6 +826,8 @@ class AllSubmissions(InfinitePaginationMixin, GeneralSubmissions):
         ) and not self.request.organization
         context["last_msg"] = event.last()
         context["stats_update_interval"] = self.stats_update_interval
+        context["user_filter"] = self.user_filter
+        context["user_filter_base_url"] = self.request.path
         return context
 
     def _get_result_data(self):
@@ -885,11 +898,26 @@ class ContestSubmissions(
             self.contest.name,
         )
 
+    @cached_property
+    def user_filter(self):
+        return self.request.GET.get("user_filter", "me")
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.user_filter == "me":
+            queryset = queryset.filter(user=self.request.profile)
+        elif self.user_filter == "friends":
+            friend_ids = self.request.profile.get_following_ids(True)
+            queryset = queryset.filter(user_id__in=friend_ids)
+        # "all" shows everything (subject to existing contest visibility rules)
+        return queryset
+
     def get_context_data(self, **kwargs):
         self.object = self.contest
         context = super(ContestSubmissions, self).get_context_data(**kwargs)
         context["contest"] = self.contest
         context["page_type"] = "submissions"
+        context["user_filter"] = self.user_filter
         return context
 
 

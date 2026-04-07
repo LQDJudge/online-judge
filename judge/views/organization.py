@@ -602,9 +602,41 @@ class OrganizationHome(OrganizationHomeView, FeedView):
     template_name = "organization/home.html"
     paginate_by = 4
     context_object_name = "posts"
-    feed_content_template_name = "blog/content.html"
+    feed_content_template_name = "home/feed-content.html"
+
+    def get(self, request, *args, **kwargs):
+        if not hasattr(self, "organization"):
+            self.object = self.get_object()
+            self.organization = self.object
+
+        if request.user.is_authenticated:
+            from judge.utils.feed import build_home_feed
+
+            only_content = request.GET.get("only_content")
+            cursor_str = request.GET.get("cursor")
+
+            feed_result = build_home_feed(
+                request, cursor_str=cursor_str, organization=self.organization
+            )
+
+            if only_content and self.feed_content_template_name:
+                from django.shortcuts import render
+
+                context = {
+                    "feed_items": feed_result["items"],
+                    "has_next_page": feed_result["has_next_page"],
+                    "next_cursor": feed_result["next_cursor"],
+                }
+                return render(request, self.feed_content_template_name, context)
+
+            self.feed_result = feed_result
+        else:
+            self.feed_result = None
+
+        return super(FeedView, self).get(request, *args, **kwargs)
 
     def get_queryset(self):
+        """Fallback queryset for logged-out users."""
         return BlogPost.objects.filter(
             visible=True,
             publish_on__lte=timezone.now(),
@@ -628,8 +660,8 @@ class OrganizationHome(OrganizationHomeView, FeedView):
         )
         context["current_contests"] = visible_contests.filter(
             start_time__lte=now, end_time__gt=now
-        )
-        context["future_contests"] = visible_contests.filter(start_time__gt=now)
+        )[:5]
+        context["future_contests"] = visible_contests.filter(start_time__gt=now)[:5]
         context["page_type"] = "home"
 
         # Stats for header (using cached member IDs)
@@ -639,6 +671,16 @@ class OrganizationHome(OrganizationHomeView, FeedView):
         # Member avatars for preview (up to 5, using cached instances)
         preview_ids = member_ids[:5]
         context["member_preview"] = Profile.get_cached_instances(*preview_ids)
+
+        # Mixed feed
+        if hasattr(self, "feed_result") and self.feed_result:
+            context["feed_items"] = self.feed_result["items"]
+            context["has_next_page"] = self.feed_result["has_next_page"]
+            context["next_cursor"] = self.feed_result["next_cursor"]
+        else:
+            BlogPost.prefetch_organization_ids(
+                *[post.id for post in context.get("posts", [])]
+            )
 
         return context
 

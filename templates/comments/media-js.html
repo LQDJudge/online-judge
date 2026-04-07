@@ -658,6 +658,7 @@
         $comment.find('.bad-comment-body').hide();
       };
 
+
       window.comment_share = function (element, commentId) {
         var url = window.location.origin + window.location.pathname + '?target_comment=' + commentId + '#comment-' + commentId;
         navigator.clipboard.writeText(url).then(function() {

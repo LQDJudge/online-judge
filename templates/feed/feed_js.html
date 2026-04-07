@@ -1,5 +1,11 @@
 <script>
-  window.page = {{page_obj.number}};
+  {% if next_cursor is defined and next_cursor %}
+    window.next_cursor = "{{ next_cursor }}";
+  {% else %}
+    window.next_cursor = null;
+  {% endif %}
+  window.feed_token = Math.random().toString(36).substring(2, 10);
+  window.page = {{ page_obj.number if page_obj is defined else 1 }};
   window.has_next_page = {{1 if has_next_page else 0}};
   window.loading_page = false;
   $(function() {
@@ -11,7 +17,7 @@
         var pair = vars[i].split("=");
         var key = decodeURIComponent(pair[0]);
         if (!key) continue;
-        var value = decodeURIComponent(pair[1].replace(/\+/g, ' '));
+        var value = decodeURIComponent((pair[1] || '').replace(/\+/g, ' '));
         queryParams[key] = value;
       }
       return queryParams;
@@ -21,18 +27,31 @@
       window.loading_page = true;
       var params = {
         "only_content": 1,
-        "page": window.page + 1,
       };
+
+      if (window.next_cursor) {
+        params["cursor"] = window.next_cursor;
+        params["ft"] = window.feed_token;
+      } else {
+        params["page"] = window.page + 1;
+      }
 
       params = Object.assign({}, getQueryParams(), params);
 
       $.get("{{feed_content_url}}", params)
         .done(function(data) {
           $(".has_next").remove();
+          $(".next-cursor").remove();
           $(".middle-content").append(data);
           window.loading_page = false;
           window.has_next_page = parseInt($(".has_next").attr("value"));
-          window.page++;
+          var newCursor = $(".next-cursor").attr("value");
+          if (newCursor) {
+            window.next_cursor = newCursor;
+          } else {
+            window.next_cursor = null;
+            window.page++;
+          }
           renderKatex($('.middle-content')[0]);
           onWindowReady();
         })

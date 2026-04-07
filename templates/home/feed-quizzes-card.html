@@ -1,0 +1,16 @@
+{# Quizzes card in the mixed feed #}
+<section class="blog-box feed-inline-card">
+  <div class="feed-inline-header">
+    <i class="fa fa-pen-to-square"></i>
+    <span>{{ _('Quizzes') }}</span>
+    <a href="{{ url('quiz_list') }}">{{ _('View all') }} &rarr;</a>
+  </div>
+  <div class="feed-inline-items">
+    {% for quiz in item.data %}
+      <a class="feed-inline-item" href="{{ url('quiz_detail', quiz.code) }}">
+        <span class="feed-inline-item-name">{{ quiz.title }}</span>
+        <span class="feed-inline-item-meta">{{ quiz.question_count }} {{ _('questions') }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>

@@ -2,8 +2,9 @@ import itertools
 
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
-from django.db.models import CASCADE
+from django.db.models import CASCADE, Q
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -16,8 +17,86 @@ from judge.models.contest import Contest
 from judge.models.interface import BlogPost
 from judge.models.problem import Problem, Solution
 from judge.models.profile import Profile
-from judge.utils.cachedict import CacheDict
 from judge.caching import cache_wrapper, CacheableModel
+
+
+def _batch_accessible_problem_ids(problem_ids, profile):
+    """Return subset of problem_ids that profile can access. Single query."""
+    if not problem_ids:
+        return set()
+    qs = Problem.objects.filter(id__in=problem_ids)
+    if not profile:
+        return set(
+            qs.filter(is_public=True, is_organization_private=False).values_list(
+                "id", flat=True
+            )
+        )
+    user_org_ids = profile.get_organization_ids()
+    return set(
+        qs.filter(
+            Q(is_public=True, is_organization_private=False)
+            | Q(is_public=True, organizations__in=user_org_ids)
+            | Q(authors=profile)
+            | Q(curators=profile)
+            | Q(testers=profile)
+        )
+        .distinct()
+        .values_list("id", flat=True)
+    )
+
+
+def _batch_accessible_contest_ids(contest_ids, profile):
+    """Return subset of contest_ids that profile can access. Single query."""
+    if not contest_ids:
+        return set()
+    qs = Contest.objects.filter(id__in=contest_ids)
+    if not profile:
+        return set(
+            qs.filter(
+                is_visible=True, is_private=False, is_organization_private=False
+            ).values_list("id", flat=True)
+        )
+    user_org_ids = profile.get_organization_ids()
+    return set(
+        qs.filter(
+            Q(is_visible=True, is_private=False, is_organization_private=False)
+            | Q(
+                is_visible=True,
+                is_organization_private=True,
+                organizations__in=user_org_ids,
+            )
+            | Q(authors=profile)
+            | Q(curators=profile)
+            | Q(testers=profile)
+        )
+        .distinct()
+        .values_list("id", flat=True)
+    )
+
+
+def _batch_accessible_blog_ids(blog_ids, profile):
+    """Return subset of blog_ids that profile can access. Single query."""
+    if not blog_ids:
+        return set()
+    now = timezone.now()
+    qs = BlogPost.objects.filter(id__in=blog_ids, visible=True, publish_on__lte=now)
+    if not profile:
+        return set(
+            qs.filter(Q(is_organization_private=False) | Q(organizations__is_open=True))
+            .distinct()
+            .values_list("id", flat=True)
+        )
+    user_org_ids = profile.get_organization_ids()
+    return set(
+        qs.filter(
+            Q(is_organization_private=False)
+            | Q(organizations__is_open=True)
+            | Q(organizations__in=user_org_ids)
+            | Q(authors=profile)
+        )
+        .distinct()
+        .values_list("id", flat=True)
+    )
 
 
 __all__ = [
@@ -182,106 +261,97 @@ class Comment(CacheableModel, MPTTModel):
     def filter_accessible(cls, queryset, user, n=None, batch=None):
         """
         Filter a queryset of comments to only include those with accessible linked objects.
-
-        Args:
-            queryset: Base queryset of comments to filter
-            user: User to check accessibility for
-            n: Maximum number of comments to return (-1 for all)
-            batch: Batch size for processing (defaults to 2*n)
-
-        Returns:
-            List of accessible comments
+        Uses batch queries per content type instead of per-object checks.
         """
-        problem_access = CacheDict(lambda p: p.is_accessible_by(user))
-        contest_access = CacheDict(lambda c: c.is_accessible_by(user))
-        blog_access = CacheDict(lambda b: b.is_accessible_by(user))
-        solution_access = CacheDict(lambda s: s.is_accessible_by(user))
-
-        if n == -1:
-            n = len(queryset)
+        if n is None or n == -1:
+            n = queryset.count()
         if user.is_superuser:
             return list(queryset[:n])
         if batch is None:
             batch = 2 * n
 
+        problem_ct = ContentType.objects.get_for_model(Problem)
+        contest_ct = ContentType.objects.get_for_model(Contest)
+        blog_ct = ContentType.objects.get_for_model(BlogPost)
+        solution_ct = ContentType.objects.get_for_model(Solution)
+
         output = []
         for i in itertools.count(0):
-            slice = queryset[i * batch : i * batch + batch]
-            if not slice:
+            chunk = list(queryset[i * batch : i * batch + batch])
+            if not chunk:
                 break
-            for comment in slice:
-                if isinstance(comment.linked_object, Problem):
-                    if problem_access[comment.linked_object]:
-                        output.append(comment)
-                elif isinstance(comment.linked_object, Contest):
-                    if contest_access[comment.linked_object]:
-                        output.append(comment)
-                elif isinstance(comment.linked_object, BlogPost):
-                    if blog_access[comment.linked_object]:
-                        output.append(comment)
-                elif isinstance(comment.linked_object, Solution):
-                    if solution_access[comment.linked_object]:
-                        output.append(comment)
+
+            # Collect object IDs per content type
+            ids_by_ct = {}
+            for comment in chunk:
+                ids_by_ct.setdefault(comment.content_type_id, set()).add(
+                    comment.object_id
+                )
+
+            # Batch check accessibility per content type
+            accessible = set()
+
+            profile = user.profile if user.is_authenticated else None
+
+            if problem_ct.id in ids_by_ct:
+                pids = ids_by_ct[problem_ct.id]
+                for pid in _batch_accessible_problem_ids(pids, profile):
+                    accessible.add((problem_ct.id, pid))
+
+            if contest_ct.id in ids_by_ct:
+                cids = ids_by_ct[contest_ct.id]
+                for cid in _batch_accessible_contest_ids(cids, profile):
+                    accessible.add((contest_ct.id, cid))
+
+            if blog_ct.id in ids_by_ct:
+                bids = ids_by_ct[blog_ct.id]
+                for bid in _batch_accessible_blog_ids(bids, profile):
+                    accessible.add((blog_ct.id, bid))
+
+            # Solutions: public + published
+            if solution_ct.id in ids_by_ct:
+                sids = ids_by_ct[solution_ct.id]
+                accessible_solutions = set(
+                    Solution.objects.filter(
+                        id__in=sids,
+                        is_public=True,
+                        publish_on__lte=timezone.now(),
+                    ).values_list("id", flat=True)
+                )
+                for sid in accessible_solutions:
+                    accessible.add((solution_ct.id, sid))
+
+            for comment in chunk:
+                key = (comment.content_type_id, comment.object_id)
+                if key in accessible:
+                    output.append(comment)
                 if len(output) >= n:
                     return output
+
         return output
 
     @classmethod
-    def most_recent(
-        cls, user, view_type="all", content_filter="all", organization=None, n=None
-    ):
+    def most_recent(cls, user, organization=None, n=None):
         """
-        Get accessible comments with optional filtering.
-
-        Args:
-            user: User to check accessibility for
-            view_type: 'own' or 'all'
-            content_filter: 'all', 'problem', 'contest', 'blog', 'other'
-            organization: Organization to filter by
-            n: Number of comments to return (None for QuerySet, number for filtered list)
-
-        Returns:
-            QuerySet if n is None, filtered list if n is provided
+        Get most recent accessible comments.
+        Uses batch accessibility checks (one query per content type per batch).
+        Does NOT prefetch linked_object — caller should do that if needed.
         """
-        if view_type == "own" and user.is_authenticated:
-            queryset = (
-                cls.objects.filter(author=user.profile, hidden=False)
-                .order_by("-time")
-                .select_related("content_type")
-            )
-        else:
-            queryset = (
+        if user.is_authenticated and user.is_superuser:
+            return list(
                 cls.objects.filter(hidden=False)
                 .order_by("-time")
-                .select_related("content_type")
+                .select_related("content_type")[:n]
             )
 
-            if organization:
-                queryset = queryset.filter(author__in=organization.members.all())
+        queryset = (
+            cls.objects.filter(hidden=False)
+            .order_by("-time")
+            .select_related("content_type")
+        )
 
-        # Apply content type filter
-        if content_filter != "all":
-            if content_filter == "problem":
-                problem_ct = ContentType.objects.get_for_model(Problem)
-                queryset = queryset.filter(content_type=problem_ct)
-            elif content_filter == "contest":
-                contest_ct = ContentType.objects.get_for_model(Contest)
-                queryset = queryset.filter(content_type=contest_ct)
-            elif content_filter == "blog":
-                blog_ct = ContentType.objects.get_for_model(BlogPost)
-                queryset = queryset.filter(content_type=blog_ct)
-            elif content_filter == "other":
-                problem_ct = ContentType.objects.get_for_model(Problem)
-                contest_ct = ContentType.objects.get_for_model(Contest)
-                blog_ct = ContentType.objects.get_for_model(BlogPost)
-                queryset = queryset.exclude(
-                    content_type__in=[problem_ct, contest_ct, blog_ct]
-                )
-
-        queryset = queryset.prefetch_related("linked_object")
-
-        if view_type == "own" and user.is_authenticated:
-            return queryset[:n]
+        if organization:
+            queryset = queryset.filter(author__in=organization.members.all())
 
         return cls.filter_accessible(queryset, user, n=n)
 

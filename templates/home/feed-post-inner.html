@@ -1,0 +1,37 @@
+{# Blog post card inner content — reusable component. Expects `post` variable. #}
+<div style="margin-bottom: 0.5em">
+  <span class="post-content-header time">
+    {% with authors=post.get_authors() %}
+      {%- if authors -%}
+        <img class="user-img" style="width: 1.5em; height: 1.5em" src="{{gravatar(authors[0].id)}}" loading="lazy">
+        <span class="post-authors">{{ link_users(authors) }}</span>
+      {%- endif -%}
+    {% endwith %}
+    &#8226;
+    {{ relative_time(post.publish_on) }}
+    {%- if post.sticky %} &#8226;
+      <i title="Sticky" class="fa fa-star fa-fw"></i>{% endif -%}
+  </span>
+</div>
+<h2 class="title">
+  <a href="{{ url('blog_post', post.id, post.slug) }}">{{ post.title }}</a>
+</h2>
+<div class="blog-description">
+  <div class="summary content-description">
+    {{ post.content|markdown(lazy_load=True)|reference|str|safe }}
+  </div>
+  <div class="show-more"> {{_("...More")}} </div>
+</div>
+<div class="actionbar-box">
+  {% set pagevote = post.get_or_create_pagevote() %}
+  {% set bookmark = post.get_or_create_bookmark() %}
+  {% set hide_actionbar_comment = False %}
+  {% set all_comment_count = comment_count(post) %}
+  {% set actionbar_content_type_id = get_content_type_id(post) %}
+  {% set actionbar_object_id = post.id %}
+  {% set include_hr = False %}
+  {% set share_url = request.build_absolute_uri(post.get_absolute_url()) %}
+  {% set is_own_content = request.user.is_authenticated and request.profile.id in post.get_author_ids() %}
+  {% include "actionbar/list.html" %}
+</div>
+<div class="inline-comments-container" data-content-type-id="{{ get_content_type_id(post) }}" data-object-id="{{ post.id }}" style="display: none;"></div>

@@ -338,7 +338,7 @@ class Quiz(models.Model):
         """Check if profile is a tester"""
         return self.testers.filter(id=profile.id).exists()
 
-    def is_accessible_by(self, user, in_contest_mode=True):
+    def is_accessible_by(self, user, in_contest=True):
         """
         Check if user can access this quiz at /quiz/<code>/.
 
@@ -348,7 +348,7 @@ class Quiz(models.Model):
         - User is an editor (author/curator)
         - User is a tester
         - User is actively participating in a contest containing this quiz
-          (only when in_contest_mode is True, respects the "Out Contest" toggle)
+          (only when in_contest is True, respects the "Out Contest" toggle)
 
         Course/lesson access is handled by LessonQuizMixin (lesson-scoped URLs).
         """
@@ -370,7 +370,7 @@ class Quiz(models.Model):
         # Allow access if user is in contest mode and the contest contains this quiz
         # (mirrors Problem.is_accessible_by behavior)
         current = user.profile.current_contest_id
-        if not in_contest_mode or current is None:
+        if not in_contest or current is None:
             return False
 
         from judge.models.contest import ContestProblem

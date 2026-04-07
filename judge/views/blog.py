@@ -1,5 +1,5 @@
-from django.db.models import Max
 from django.http import Http404
+from django.shortcuts import render
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.generic.base import TemplateResponseMixin
@@ -9,10 +9,9 @@ from django.views.generic import View
 from judge.views.comment import CommentableMixin
 from judge.views.pagevote import PageVoteDetailView
 from judge.views.bookmark import BookMarkDetailView
-from judge.models import (
-    BlogPost,
-)
+from judge.models import BlogPost
 from judge.utils.views import TitleMixin
+from judge.utils.feed import build_home_feed
 from judge.views.feed import HomeFeedView
 
 
@@ -20,76 +19,62 @@ class PostList(HomeFeedView):
     model = BlogPost
     paginate_by = 4
     context_object_name = "posts"
-    feed_content_template_name = "blog/content.html"
+    feed_content_template_name = "home/feed-content.html"
     url_name = "blog_post_list"
 
     def get(self, request, *args, **kwargs):
-        # Get from query params, or fall back to cookies, or use defaults
-        self.feed_type = request.GET.get(
-            "feed_type", request.COOKIES.get("feed_type", "official")
-        )
-        self.sort_by = request.GET.get(
-            "sort_by", request.COOKIES.get("feed_sort_by", "newest")
-        )
-        # Validate feed_type
-        if self.feed_type not in ("official", "group", "community"):
-            self.feed_type = "official"
-        # Validate sort_by
-        if self.sort_by not in ("newest", "latest_comment"):
-            self.sort_by = "newest"
+        # For logged-in users: cursor-based mixed feed
+        if request.user.is_authenticated:
+            only_content = request.GET.get("only_content")
+            cursor_str = request.GET.get("cursor")
+
+            feed_result = build_home_feed(request, cursor_str=cursor_str)
+
+            if only_content and self.feed_content_template_name:
+                # AJAX infinite scroll
+                context = {
+                    "feed_items": feed_result["items"],
+                    "has_next_page": feed_result["has_next_page"],
+                    "next_cursor": feed_result["next_cursor"],
+                }
+                return render(request, self.feed_content_template_name, context)
+
+            # Full page load — need sidebar context from HomeFeedView
+            self.feed_result = feed_result
+            self.page = 1
+            return super(HomeFeedView, self).get(request, *args, **kwargs)
+
+        # For logged-out users: simple post pagination (old behavior)
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        queryset = BlogPost.objects.filter(visible=True, publish_on__lte=timezone.now())
-
-        if self.request.organization:
-            queryset = queryset.filter(organizations=self.request.organization)
-
-        if self.feed_type == "official":
-            if not self.request.organization:
-                queryset = queryset.filter(is_organization_private=False)
-            if self.sort_by == "newest":
-                queryset = queryset.order_by("-sticky", "-publish_on")
-        elif self.feed_type == "group":
-            if self.request.user.is_authenticated:
-                if not self.request.organization:
-                    queryset = queryset.filter(
-                        is_organization_private=True,
-                        organizations__in=self.request.profile.get_organization_ids(),
-                    )
-                if self.sort_by == "newest":
-                    queryset = queryset.order_by("-publish_on")
-            else:
-                queryset = queryset.none()
-        elif self.feed_type == "community":
-            if not self.request.organization:
-                queryset = queryset.filter(
-                    is_organization_private=True,
-                    organizations__is_community=True,
-                )
-            if self.sort_by == "newest":
-                queryset = queryset.order_by("-publish_on")
-
-        if self.sort_by == "latest_comment":
-            queryset = queryset.annotate(latest_comment=Max("comments__time")).order_by(
-                "-latest_comment", "-publish_on"
-            )
-
-        return queryset
+        """Queryset for logged-out users (simple post pagination)."""
+        queryset = BlogPost.objects.filter(
+            visible=True,
+            publish_on__lte=timezone.now(),
+            is_organization_private=False,
+        )
+        return queryset.order_by("-sticky", "-publish_on")
 
     def get_context_data(self, **kwargs):
         context = super(PostList, self).get_context_data(**kwargs)
-        context["title"] = (
-            self.title or _("Page %d of Posts") % context["page_obj"].number
-        )
+        context["title"] = self.title or _("Home")
         context["page_type"] = "blog"
-        context["feed_type"] = self.feed_type
-        context["sort_by"] = self.sort_by
         context["show_organization_private_icon"] = True
-        BlogPost.prefetch_organization_ids(*[post.id for post in context["posts"]])
+
+        # For logged-in users: use pre-built feed result
+        if hasattr(self, "feed_result") and self.feed_result:
+            context["feed_items"] = self.feed_result["items"]
+            context["has_next_page"] = self.feed_result["has_next_page"]
+            context["next_cursor"] = self.feed_result["next_cursor"]
+        else:
+            # Logged-out: prefetch for blog/content.html
+            BlogPost.prefetch_organization_ids(*[post.id for post in context["posts"]])
+
         return context
 
     def get_feed_context(self, object_list):
+        """For logged-out AJAX pagination only."""
         context = {}
         context["show_organization_private_icon"] = True
         BlogPost.prefetch_organization_ids(*[post.id for post in object_list])
@@ -131,23 +116,18 @@ class PostView(
         if self.request.profile:
             is_author = self.request.profile.id in self.object.get_author_ids()
             for org in context["organizations"]:
-                # Org admins can always edit
                 if self.request.profile.can_edit_organization(org):
                     context["editable_orgs"].append(org)
-                # Org moderators can always edit
                 elif org.can_moderate(self.request.profile):
                     context["editable_orgs"].append(org)
-                # Blog authors can edit only if post is not yet approved
                 elif is_author and not self.object.visible:
                     context["editable_orgs"].append(org)
 
-        # Add ticket count for editors
         if self.object.is_editable_by(self.request.user):
             context["num_open_tickets"] = self.object.tickets.filter(
                 is_open=True
             ).count()
 
-        # Add comment context
         context = self.get_comment_context(context)
 
         return context

@@ -923,16 +923,11 @@
         }
     }
 
+    .comment-body.comment-truncated,
     .inline-comment-body {
         font-size: 0.9rem;
         line-height: 1.4;
         word-wrap: break-word;
-
-        // Limit to 3 lines for compactness
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
 
         p {
             margin: 0;
@@ -1055,10 +1050,11 @@
         gap: 4px;
     }
 
-    // Smaller comment body
+    // Smaller comment body, always truncated in compact mode
     .body .comment-body {
         font-size: 0.85rem;
         line-height: 1.4;
+
     }
 
     // Smaller action bar

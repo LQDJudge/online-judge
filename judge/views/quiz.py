@@ -142,7 +142,7 @@ class PendingGradingCountMixin:
         return (
             self.request.user.is_authenticated
             and self.request.profile.current_contest is not None
-            and self.request.in_contest_mode
+            and self.request.in_contest
         )
 
     def get_pending_grading_count(self):
@@ -223,7 +223,7 @@ class QuestionBankList(
         return (
             self.request.user.is_authenticated
             and self.request.profile.current_contest is not None
-            and self.request.in_contest_mode
+            and self.request.in_contest
         )
 
     def get_queryset(self):
@@ -617,7 +617,7 @@ class QuizList(
         return (
             self.request.user.is_authenticated
             and self.request.profile.current_contest is not None
-            and self.request.in_contest_mode
+            and self.request.in_contest
         )
 
     def test_func(self):
@@ -671,7 +671,6 @@ class QuizList(
         context = super().get_context_data(**kwargs)
         context["search"] = self.request.GET.get("search", "")
         context["in_contest"] = self.in_contest
-        context["show_contest_mode"] = self.request.in_contest_mode
 
         # Add best scores and attempt counts for authenticated users
         if self.request.user.is_authenticated:
@@ -1409,8 +1408,8 @@ class QuizDetail(TitleMixin, DetailView):
 
     def get_object(self, queryset=None):
         quiz = super().get_object(queryset)
-        in_contest_mode = getattr(self.request, "in_contest_mode", False)
-        if not quiz.is_accessible_by(self.request.user, in_contest_mode):
+        in_contest = getattr(self.request, "in_contest", False)
+        if not quiz.is_accessible_by(self.request.user, in_contest):
             raise Http404(_("Quiz not found."))
         return quiz
 
@@ -1446,11 +1445,8 @@ class QuizDetail(TitleMixin, DetailView):
             ).first()
 
             # Check if in contest mode and show max submissions info
-            # Use request.in_contest_mode to respect the "Out contest" toggle
-            if (
-                getattr(self.request, "in_contest_mode", False)
-                and profile.current_contest
-            ):
+            # Use request.in_contest to respect the "Out contest" toggle
+            if getattr(self.request, "in_contest", False) and profile.current_contest:
                 contest_quiz = ContestProblem.objects.filter(
                     contest=profile.current_contest.contest, quiz=quiz
                 ).first()
@@ -1484,8 +1480,8 @@ class QuizStart(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         quiz = get_object_or_404(Quiz, code=kwargs["code"])
 
-        in_contest_mode = getattr(request, "in_contest_mode", False)
-        if not quiz.is_accessible_by(request.user, in_contest_mode):
+        in_contest = getattr(request, "in_contest", False)
+        if not quiz.is_accessible_by(request.user, in_contest):
             raise Http404(_("Quiz not found."))
 
         profile = request.profile
@@ -1493,9 +1489,9 @@ class QuizStart(LoginRequiredMixin, View):
         # Check if user is in a contest and this quiz is part of it
         contest_participation = None
 
-        # Respect the "Out contest" toggle - only apply contest rules if in_contest_mode is True
-        in_contest_mode = getattr(request, "in_contest_mode", False)
-        if in_contest_mode and profile.current_contest:
+        # Respect the "Out contest" toggle - only apply contest rules if in_contest is True
+        in_contest = getattr(request, "in_contest", False)
+        if in_contest and profile.current_contest:
             # Check if this quiz is in the current contest
             contest_quiz = ContestProblem.objects.filter(
                 contest=profile.current_contest.contest, quiz=quiz
@@ -2109,8 +2105,8 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
         )
 
         # Check quiz accessibility (respects contest mode toggle)
-        in_contest_mode = getattr(self.request, "in_contest_mode", False)
-        if not attempt.quiz.is_accessible_by(self.request.user, in_contest_mode):
+        in_contest = getattr(self.request, "in_contest", False)
+        if not attempt.quiz.is_accessible_by(self.request.user, in_contest):
             raise Http404(_("Quiz not found."))
 
         is_owner = attempt.user == self.request.profile
@@ -2172,8 +2168,8 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
 
     def dispatch(self, request, *args, **kwargs):
         quiz = self.get_quiz()
-        in_contest_mode = getattr(request, "in_contest_mode", False)
-        if not quiz.is_accessible_by(request.user, in_contest_mode):
+        in_contest = getattr(request, "in_contest", False)
+        if not quiz.is_accessible_by(request.user, in_contest):
             raise Http404(_("Quiz not found."))
         return super().dispatch(request, *args, **kwargs)
 
@@ -2216,8 +2212,8 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
         # Each context shows only its own attempts:
         # - Contest mode: contest attempts only
         # - Standalone: standalone attempts only (no lesson, no contest)
-        in_contest_mode = getattr(self.request, "in_contest_mode", False)
-        if in_contest_mode and profile.current_contest:
+        in_contest = getattr(self.request, "in_contest", False)
+        if in_contest and profile.current_contest:
             contest_quiz = ContestProblem.objects.filter(
                 contest=profile.current_contest.contest, quiz=quiz
             ).first()
@@ -2250,8 +2246,8 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
         context["best_score"] = best_attempt.score if best_attempt else None
 
         # Show context info (respect "Out contest" toggle)
-        in_contest_mode = getattr(self.request, "in_contest_mode", False)
-        if in_contest_mode and self.request.profile.current_contest:
+        in_contest = getattr(self.request, "in_contest", False)
+        if in_contest and self.request.profile.current_contest:
             contest_quiz = ContestProblem.objects.filter(
                 contest=self.request.profile.current_contest.contest, quiz=quiz
             ).first()
@@ -2290,7 +2286,7 @@ class GradingDashboard(
         return (
             self.request.user.is_authenticated
             and self.request.profile.current_contest is not None
-            and self.request.in_contest_mode
+            and self.request.in_contest
         )
 
     def get_queryset(self):

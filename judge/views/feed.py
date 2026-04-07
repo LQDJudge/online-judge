@@ -81,23 +81,26 @@ class HomeFeedView(FeedView):
             )
         context["current_contests"] = visible_contests.filter(
             start_time__lte=now, end_time__gt=now
-        )
-        context["future_contests"] = visible_contests.filter(start_time__gt=now)
+        )[:5]
+        context["future_contests"] = visible_contests.filter(start_time__gt=now)[:5]
 
         context["recent_organizations"] = (
             OrganizationProfile.get_most_recent_organizations(self.request.profile)
         )
 
-        org_id = self.request.organization.id if self.request.organization else None
-        context["top_rated"] = get_top_rating_profile(org_id)
-        context["top_scorer"] = get_top_score_profile(org_id)
-        context["top_contributors"] = get_top_contribution_profile(org_id)
+        if self.request.user.is_authenticated:
+            recent_ids = {org.pk for org in context["recent_organizations"]}
+            my_orgs = self.request.profile.get_organizations()
+            context["my_organizations"] = [
+                org for org in my_orgs if org.pk not in recent_ids
+            ][:5]
 
         if self.request.user.is_authenticated:
-            context["rating_rank"] = get_rating_rank(self.request.profile)
-            context["points_rank"] = get_points_rank(self.request.profile)
+            profile = self.request.profile
+            context["rating_rank"] = get_rating_rank(profile)
+            context["points_rank"] = get_points_rank(profile)
 
-            medals_list = get_awards(self.request.profile)
+            medals_list = get_awards(profile)
             context["awards"] = {
                 "medals": medals_list,
                 "gold_count": 0,
@@ -111,5 +114,11 @@ class HomeFeedView(FeedView):
                     context["awards"]["silver_count"] += 1
                 elif medal["ranking"] == 3:
                     context["awards"]["bronze_count"] += 1
+
+        # Sidebar: leaderboards
+        org_id = self.request.organization.id if self.request.organization else None
+        context["top_rated"] = get_top_rating_profile(org_id)
+        context["top_scorer"] = get_top_score_profile(org_id)
+        context["top_contributors"] = get_top_contribution_profile(org_id)
 
         return context

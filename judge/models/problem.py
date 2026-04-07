@@ -327,7 +327,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
             return True
         return self.is_editor(user.profile)
 
-    def is_accessible_by(self, user, in_contest_mode=True):
+    def is_accessible_by(self, user, in_contest=True):
         # Problem is public.
         if self.is_public:
             # Problem is not private to an organization.
@@ -356,7 +356,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
 
         # If user is currently in a contest containing that problem.
         current = user.profile.current_contest_id
-        if not in_contest_mode or current is None:
+        if not in_contest or current is None:
             return False
 
         from judge.models.contest import ContestProblem

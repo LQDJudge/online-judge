@@ -1,6 +1,6 @@
 {% extends "common-content.html" %}
 
-{% set has_hidden_subtasks = request.in_contest_mode and request.participation.contest.format.has_hidden_subtasks %}
+{% set has_hidden_subtasks = request.in_contest and request.participation.contest.format.has_hidden_subtasks %}
 
 {% block content_media %}
   {% include "comments/media-css.html" %}
@@ -50,7 +50,7 @@
 {% block content_js_media %}
   {% include "comments/media-js.html" %}
   {% include "actionbar/media-js.html" %}
-  {% if request.in_contest_mode %}
+  {% if request.in_contest %}
     <script type="text/javascript">
       window.register_contest_notification("{{url('contest_clarification_ajax', request.participation.contest.key)}}");
     </script>
@@ -99,7 +99,7 @@
     {% if request.user.is_authenticated and not has_hidden_subtasks %}
       {% if problem.id in completed_problem_ids %}
         <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-          {% if problem.is_public or request.in_contest_mode %}
+          {% if problem.is_public or request.in_contest %}
             <i class="solved-problem-color title-state fa fa-check-circle"></i>
           {% else %}
             <i class="solved-problem-color title-state fa fa-lock"></i>
@@ -107,7 +107,7 @@
         </a>
       {% elif problem.id in attempted_problems %}
         <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-          {% if problem.is_public or request.in_contest_mode %}
+          {% if problem.is_public or request.in_contest %}
             <i class="attempted-problem-color title-state fa fa-minus-circle"></i>
           {% else %}
             <i class="attempted-problem-color title-state fa fa-lock"></i>
@@ -116,7 +116,7 @@
       {% endif %}
     {% endif %}
     <h2 class="title-row" style="display: inline-block">{{ title }}</h2>
-    {% if problem.is_organization_private and not request.in_contest_mode %}
+    {% if problem.is_organization_private and not request.in_contest %}
       <span class="organization-tags">
         {% for org in problem.get_organizations() %}
           {% include "organization/tag.html" %}
@@ -142,7 +142,7 @@
 
 
 {% block info_float %}
-  {% if request.user.is_authenticated and request.in_contest_mode and submission_limit %}
+  {% if request.user.is_authenticated and request.in_contest and submission_limit %}
     {% if submissions_left > 0 %}
       <a href="{{ url('problem_submit', problem.code) }}">
         <button class="submit-btn btn-green btn btn-primary btn-block btn-round">
@@ -198,7 +198,7 @@
       <i class="fa fa-list-check"></i><span> {{ _('Best submissions') }}</span>
     </a>
   </div>
-  {% if problem.has_public_editorial() and not request.in_contest_mode %}
+  {% if problem.has_public_editorial() and not request.in_contest %}
     <hr>
     <div class="link-row">
       <a href="{{ url('problem_editorial', problem.code) }}">

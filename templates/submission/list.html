@@ -1,12 +1,12 @@
 {% extends "three-column-content.html" %}
 
-{% set has_hidden_subtasks = request.in_contest_mode and request.participation.contest.format.has_hidden_subtasks %}
+{% set has_hidden_subtasks = contest is defined and contest and contest.format.has_hidden_subtasks %}
 
 {% block js_media %}
   <script type="text/javascript">
     {% if dynamic_update and last_msg %}
-      {% if request.in_contest_mode %}
-        window.current_contest = '{{request.participation.contest.key}}';
+      {% if contest is defined and contest %}
+        window.current_contest = '{{contest.key}}';
       {% else %}
         window.current_contest = null;
       {% endif %}
@@ -112,6 +112,10 @@
           multiple: 1,
           placeholder: '{{ _('Filter by language...') }}',
           matcher: idAndTextMatcher,
+        }).css({'visibility': 'visible'});
+
+        $('#user-filter').select2({
+          minimumResultsForSearch: Infinity,
         }).css({'visibility': 'visible'});
       });
 
@@ -247,6 +251,7 @@
       });
     </script>
   {% endif %}
+  {% block submission_extra_js %}{% endblock %}
 {% endblock %}
 
 {% block title_ruler %}{% endblock %}
@@ -320,6 +325,17 @@
         <h3 class="colored-text"><i class="fa fa-search"></i>{{ _('Filter submissions') }}</h3>
         <div class="sidebox-content">
           <form id="filter-form" name="form" action="" method="get">
+            {% block submission_user_filter %}
+              {% if request.user.is_authenticated %}
+                <div class="filter-form-group">
+                  <select id="user-filter" name="user_filter" style="width: 100%;">
+                    <option value="all" {% if user_filter == 'all' or not user_filter %}selected{% endif %}>{{ _('All submissions') }}</option>
+                    <option value="me" {% if user_filter == 'me' %}selected{% endif %}>{{ _('My submissions') }}</option>
+                    <option value="friends" {% if user_filter == 'friends' %}selected{% endif %}>{{ _('Friend submissions') }}</option>
+                  </select>
+                </div>
+              {% endif %}
+            {% endblock %}
             <div class="filter-form-group">
               <label class="bold-text margin-label" for="status"><i class="non-italics" >{{ _('Status') }}</i></label>
               <select id="status" name="status" multiple>
@@ -364,22 +380,5 @@
 {% endblock %}
 
 {% block left_sidebar %}
-  <div class="left-sidebar">
-    {{ make_tab_item('all_submissions_list', 'fa fa-list', all_submissions_link, _('All')) }}
-    {% if my_submissions_link or tab == 'my_submissions_tab' %}
-      {{ make_tab_item('my_submissions_tab', 'fa fa-user', my_submissions_link, _('Mine')) }}
-    {% endif %}
-    {% if best_submissions_link %}
-      {{ make_tab_item('best_submissions_list', 'fa fa-bar-chart', best_submissions_link, _('Best')) }}
-    {% endif %}
-    {% if page_type == 'user_submissions_tab' %}
-      {{ make_tab_item('user_submissions_tab', 'fa fa-user', None, _("%(user)s", user=tab_username)) }}
-    {% endif %}
-    {% if friend_submissions_link %}
-      {{ make_tab_item('friend_tab', 'fa fa-users', friend_submissions_link, _('Friends')) }}
-    {% endif %}
-    {% if perms.judge.change_submission %}
-      {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_submission_changelist'), _('Admin'), force_new_page=True) }}
-    {% endif %}
-  </div>
+  {% include "problem/left-sidebar.html" %}
 {% endblock %}

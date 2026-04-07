@@ -25,9 +25,26 @@
           {% endif %}
         </div>
         <div class="body">
-          <div class="comment-body" {% if item.score <= vote_hide_threshold %} style="display:none" {% endif %}>
-            {{ item.body|markdown(lazy_load=True)|reference|str|safe }}
-          </div>
+          {% set lines = item.body.split('\n') %}
+          {% set needs_truncation = item.body|length > 300 or lines|length > 3 %}
+          {% if needs_truncation %}
+            {% set truncated_body = lines[:3]|join('\n') %}
+            {% if truncated_body|length > 300 %}
+              {% set truncated_body = truncated_body[:300] + '...' %}
+            {% else %}
+              {% set truncated_body = truncated_body + '...' %}
+            {% endif %}
+            <div class="comment-body comment-truncated" {% if item.score <= vote_hide_threshold %} style="display:none" {% endif %}>
+              {{ truncated_body|markdown(lazy_load=True)|reference|str|safe }} <a href="javascript:void(0)" class="comment-show-more" onclick="var p=this.closest('.body'),t=p.querySelector('.comment-truncated'),f=p.querySelector('.comment-full');t.style.display='none';f.style.display='';">{{ _('Show more') }}</a>
+            </div>
+            <div class="comment-body comment-full" style="display:none">
+              {{ item.body|markdown(lazy_load=True)|reference|str|safe }}
+            </div>
+          {% else %}
+            <div class="comment-body" {% if item.score <= vote_hide_threshold %} style="display:none" {% endif %}>
+              {{ item.body|markdown(lazy_load=True)|reference|str|safe }}
+            </div>
+          {% endif %}
           {% if item.score <= vote_hide_threshold %}
             <div class="comment-body bad-comment-body">
               <p>

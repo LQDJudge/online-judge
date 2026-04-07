@@ -1,0 +1,63 @@
+{# Single contest feed card — reusable component. Expects `contest` variable. #}
+{% with authors=contest.authors.all() %}
+  <div style="margin-bottom: 0.5em">
+    <span class="post-content-header time">
+      {% if authors %}
+        <img class="user-img" style="width: 1.5em; height: 1.5em" src="{{gravatar(authors[0].id)}}" loading="lazy">
+        <span class="post-authors">{{ link_users(authors) }}</span>
+      {% endif %}
+      {% if contest.start_time %}
+        {% if authors %}&#8226;{% endif %}
+        {{ contest.start_time|date("d/m/Y") }}
+      {% endif %}
+    </span>
+  </div>
+{% endwith %}
+<h2 class="title">
+  <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
+</h2>
+{% if contest.description %}
+  <div class="blog-description">
+    <div class="content-description">
+      {{ contest.description|markdown(lazy_load=True)|reference|str|safe }}
+    </div>
+    <div class="show-more"> {{_("...More")}} </div>
+  </div>
+{% endif %}
+{% with contest_problems=contest.contest_problems.select_related('problem').order_by('order') %}
+  {% if contest_problems %}
+    <table class="table striped feed-problem-table">
+      <thead>
+        <tr>
+          <th>{{ _('Problem') }}</th>
+          <th>{{ _('Points') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cp in contest_problems %}
+          {% if cp.problem %}
+            <tr>
+              <td>
+                <a href="{{ url('problem_detail', cp.problem.code) }}">{{ cp.problem.translated_name(LANGUAGE_CODE) }}</a>
+              </td>
+              <td>{{ cp.points|floatformat }}</td>
+            </tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+{% endwith %}
+<div class="actionbar-box">
+  {% set pagevote = contest.get_or_create_pagevote() %}
+  {% set bookmark = contest.get_or_create_bookmark() %}
+  {% set hide_actionbar_comment = False %}
+  {% set all_comment_count = comment_count(contest) %}
+  {% set actionbar_content_type_id = get_content_type_id(contest) %}
+  {% set actionbar_object_id = contest.id %}
+  {% set include_hr = False %}
+  {% set share_url = request.build_absolute_uri(contest.get_absolute_url()) %}
+  {% set is_own_content = False %}
+  {% include "actionbar/list.html" %}
+</div>
+<div class="inline-comments-container" data-content-type-id="{{ get_content_type_id(contest) }}" data-object-id="{{ contest.id }}" style="display: none;"></div>

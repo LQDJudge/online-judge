@@ -1,55 +1,6 @@
 {% for problem in problems %}
   <div class="blog-box">
-    <h3 class="problem-feed-name">
-      <a href="{{ url('problem_detail', problem.code) }}">
-        {{ problem.translated_name(LANGUAGE_CODE) }}
-      </a>
-      {% if problem.id in completed_problem_ids %}
-        <i class="solved-problem-color fa fa-check-circle"></i>
-      {% elif problem.id in attempted_problems %}
-        <i class="attempted-problem-color fa fa-minus-circle"></i>
-      {% else %}
-        <i class="unsolved-problem-color fa fa-minus-circle"></i>
-      {% endif %}
-    </h3>
-    {% with authors=problem.get_authors() %}
-      {% if authors %}
-        <div class="problem-feed-info-entry">
-          <i class="far fa-pen-to-square"></i>
-          <span class="pi-value">{{ link_users(authors) }}</span>
-        </div>
-      {% endif %}
-    {% endwith %}
-    {% if show_types %}
-      <div class="problem-feed-types">
-        <i class="fa fa-tag"></i>
-        {% for type in problem.get_types_name() %}
-          <span class="type-tag">{{ type }}</span>{% if not loop.last %}, {% endif %}
-        {% endfor %} • {{problem.points | int}}
-      </div>
-    {% endif %}
-    <div class="blog-description">
-      <div class='content-description'>
-        {{ problem.translated_description(LANGUAGE_CODE)|markdown(lazy_load=True)|reference|str|safe }}
-        {% if problem.get_pdf_description() %}
-          <embed src="{{url('problem_pdf_description', problem.code)}}" width="100%" height="500" type="application/pdf">
-        {% endif %}
-      </div>
-      <div class="show-more"> {{_("...More")}} </div>
-    </div>
-    <div class="actionbar-box">
-      {% set pagevote = problem.get_or_create_pagevote() %}
-      {% set bookmark = problem.get_or_create_bookmark() %}
-      {% set hide_actionbar_comment = False %}
-      {% set all_comment_count = comment_count(problem) %}
-      {% set actionbar_content_type_id = get_content_type_id(problem) %}
-      {% set actionbar_object_id = problem.id %}
-      {% set include_hr = False %}
-      {% set share_url = request.build_absolute_uri(problem.get_absolute_url()) %}
-      {% set is_own_content = request.user.is_authenticated and problem.authors.filter(id=request.profile.id).exists() %}
-      {% include "actionbar/list.html" %}
-    </div>
-    <div class="inline-comments-container" data-content-type-id="{{ get_content_type_id(problem) }}" data-object-id="{{ problem.id }}" style="display: none;"></div>
+    {% include "problem/feed/item.html" %}
   </div>
 {% endfor %}
 {% include "feed/has_next.html" %}

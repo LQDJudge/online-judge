@@ -1,0 +1,20 @@
+{# Recommended groups card in the mixed feed — styled like Recent groups #}
+<section class="blog-box feed-inline-card">
+  <div class="feed-inline-header">
+    <i class="fa fa-users"></i>
+    <span>{{ _('Groups to join') }}</span>
+    <a href="{{ url('organization_list') }}">{{ _('Browse all') }} &rarr;</a>
+  </div>
+  <div class="feed-list-items">
+    {% for org in item.data %}
+      <a href="{{ url('organization_home', org.pk, org.slug) }}" class="feed-list-row">
+        {% if org.get_organization_image_url() %}
+          <img class="feed-list-logo user-img" loading="lazy" src="{{ org.get_organization_image_url() }}">
+        {% else %}
+          <img class="feed-list-logo" loading="lazy" src="{{ static('icons/icon.svg') }}">
+        {% endif %}
+        <span class="feed-list-name">{{ org.name }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>

@@ -13,6 +13,9 @@
           {% endfor %}
         </tbody>
       </table>
+      <div style="text-align: center; padding: 0.4em;">
+        <a href="{{ url('user_list') }}?order=-rating" style="font-size: 0.85em;">{{ _('View all') }} &rarr;</a>
+      </div>
     </div>
   </div>
 {% endif %}
@@ -32,6 +35,9 @@
           {% endfor %}
         </tbody>
       </table>
+      <div style="text-align: center; padding: 0.4em;">
+        <a href="{{ url('user_list') }}?order=-performance_points" style="font-size: 0.85em;">{{ _('View all') }} &rarr;</a>
+      </div>
     </div>
   </div>
 {% endif %}
@@ -53,6 +59,9 @@
           {% endfor %}
         </tbody>
       </table>
+      <div style="text-align: center; padding: 0.4em;">
+        <a href="{{ url('user_list') }}?order=-contribution_points" style="font-size: 0.85em;">{{ _('View all') }} &rarr;</a>
+      </div>
     </div>
   </div>
 {% endif %}

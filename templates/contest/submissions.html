@@ -2,3 +2,23 @@
 {% block left_sidebar %}
   {% include "contest/contest-tabs.html" %}
 {% endblock %}
+
+{% block submission_extra_js %}
+  {% if contest.use_clarifications %}
+    <script type="text/javascript">
+      $(function () {
+        window.register_contest_notification("{{url('contest_clarification_ajax', contest.key)}}");
+      });
+    </script>
+  {% endif %}
+{% endblock %}
+
+{% block submission_user_filter %}
+  <div class="filter-form-group">
+    <select id="user-filter" name="user_filter" style="width: 100%;">
+      <option value="me" {% if user_filter == 'me' %}selected{% endif %}>{{ _('My submissions') }}</option>
+      <option value="all" {% if user_filter == 'all' %}selected{% endif %}>{{ _('All submissions') }}</option>
+      <option value="friends" {% if user_filter == 'friends' %}selected{% endif %}>{{ _('Friend submissions') }}</option>
+    </select>
+  </div>
+{% endblock %}

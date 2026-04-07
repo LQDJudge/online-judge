@@ -1,0 +1,20 @@
+{# Courses card in the mixed feed — styled like Recent groups #}
+<section class="blog-box feed-inline-card">
+  <div class="feed-inline-header">
+    <i class="fa fa-book"></i>
+    <span>{{ _('Courses') }}</span>
+    <a href="{{ url('course_list') }}">{{ _('View all') }} &rarr;</a>
+  </div>
+  <div class="feed-list-items">
+    {% for course in item.data %}
+      <a href="{{ url('course_detail', course.slug) }}" class="feed-list-row">
+        {% if course.course_image %}
+          <img class="feed-list-logo user-img" loading="lazy" src="{{ course.course_image.url }}">
+        {% else %}
+          <img class="feed-list-logo" loading="lazy" src="{{ static('icons/icon.svg') }}">
+        {% endif %}
+        <span class="feed-list-name">{{ course.name }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>

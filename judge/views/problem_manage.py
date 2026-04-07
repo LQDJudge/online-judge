@@ -80,7 +80,7 @@ class ManageProblemSubmissionView(TitleMixin, ManageProblemSubmissionMixin, Deta
         context["results"] = sorted(map(itemgetter(0), Submission.RESULT))
         context["current_contest"] = None
         if (
-            self.request.in_contest_mode
+            self.request.in_contest
             and self.object in self.request.participation.contest.problems.all()
         ):
             context["current_contest"] = self.request.participation.contest

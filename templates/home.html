@@ -4,6 +4,72 @@
     {{ render_django(i18n_config.home_page_top, request=request, user_count=user_count, problem_count=problem_count, submission_count=submission_count, language_count=language_count, perms=perms) }}
   {% endif %}
 {% endblock %}
+
+{% block left_sidebar %}
+  <div class="left-sidebar {% if request.user.is_authenticated %}home-sidebar-loggedin{% endif %}">
+    {% if request.user.is_authenticated %}
+      {% if recent_organizations %}
+        <div class="left-sidebar-header">{{ _('Recent groups') }}</div>
+        {% for org in recent_organizations %}
+          <a class="left-sidebar-item" href="{{ url('organization_home', org.pk, org.slug) }}">
+            {% if org.get_organization_image_url() %}
+              <img class="org-logo user-img" loading="lazy" src="{{ org.get_organization_image_url() }}">
+            {% else %}
+              <img class="org-logo" loading="lazy" src="{{ static('icons/icon.svg') }}">
+            {% endif %}
+            <span class="sidebar-text">{{ org.name }}</span>
+          </a>
+        {% endfor %}
+      {% endif %}
+      {% if my_organizations %}
+        <div class="left-sidebar-header">{{ _('My groups') }}</div>
+        {% for org in my_organizations %}
+          <a class="left-sidebar-item" href="{{ url('organization_home', org.pk, org.slug) }}">
+            {% if org.get_organization_image_url() %}
+              <img class="org-logo user-img" loading="lazy" src="{{ org.get_organization_image_url() }}">
+            {% else %}
+              <img class="org-logo" loading="lazy" src="{{ static('icons/icon.svg') }}">
+            {% endif %}
+            <span class="sidebar-text">{{ org.name }}</span>
+          </a>
+        {% endfor %}
+      {% endif %}
+      <a class="left-sidebar-item" href="{{ url('organization_list') }}">
+        <span class="sidebar-icon"><i class="fa fa-compass"></i></span>
+        <span class="sidebar-text">{{ _('Explore groups') }}</span>
+      </a>
+    {% else %}
+      {{ make_tab_item('about', 'fa fa-info-circle', url('about'), _('About')) }}
+      {{ make_tab_item('problems', 'fa fa-puzzle-piece', url('problem_list'), _('Problems')) }}
+      {{ make_tab_item('contests', 'fa fa-trophy', url('contest_list'), _('Contests')) }}
+      {{ make_tab_item('courses', 'fa fa-book', url('course_list'), _('Courses')) }}
+      {{ make_tab_item('groups', 'fa fa-building-columns', url('organization_list'), _('Groups')) }}
+    {% endif %}
+  </div>
+{% endblock %}
+
+{# Simplified homepage: no tabs, no sort dropdown, just the feed #}
+{% block js_media %}
+  {% include "comments/editor-libs-js.html" %}
+  {% include "actionbar/media-js.html" %}
+  {% include "feed/feed_js.html" %}
+  <script type="text/javascript">
+    $(document).ready(function () {
+      $('.time-remaining').each(function () {
+        count_down($(this));
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block middle_content %}
+  {% if feed_items %}
+    {% include "home/feed-content.html" %}
+  {% else %}
+    {% include "blog/content.html" %}
+  {% endif %}
+{% endblock %}
+
 {% block meta %}
   {% if i18n_config.meta_description %}
     <meta name="description" content="{{ i18n_config['meta_description'] }}">

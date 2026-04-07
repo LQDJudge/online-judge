@@ -1,4 +1,7 @@
 <div class="has_next" style="display: none;" value="{{1 if has_next_page else 0}}"></div>
+{% if next_cursor is defined and next_cursor %}
+  <div class="next-cursor" style="display: none;" value="{{ next_cursor }}"></div>
+{% endif %}
 {% if has_next_page %}
   <button class="view-next-page action-btn">{{_('View more')}}</button>
 {% endif %}

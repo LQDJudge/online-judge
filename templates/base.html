@@ -302,14 +302,6 @@
             {% endif %}
           </a>
         </div>
-        <div id="contest-info-toggle"
-             class="{{'contest-info-toggle-mode-on' if request.contest_mode else 'contest-info-toggle-mode-off'}}">
-          {% if request.contest_mode %}
-            <i class="fa fa-toggle-on white"></i> {{_('In contest')}}
-          {% else %}
-            <i class="fa fa-toggle-off white"></i> {{_('Out contest')}}
-          {% endif %}
-        </div>
       </div>
     {% endif %}
     <div id="page-container">
@@ -389,11 +381,6 @@
 
           $("#contest-info").show();
 
-          $("#contest-info-toggle").on('click', function () {
-            $.post("{{url('contest_mode_ajax')}}", function () {
-              window.location.reload();
-            })
-          });
 
           $(document).mousemove(function (e) {
             x_pos = e.screenX;

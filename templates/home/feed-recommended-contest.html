@@ -1,0 +1,8 @@
+{# Recommended contest — reuses shared contest card with reason line #}
+{% set contest = item.data %}
+<section class="blog-box">
+  <div class="feed-comment-reason">
+    {{ _('Recommended for you') }}
+  </div>
+  {% include "contest/feed/item.html" %}
+</section>

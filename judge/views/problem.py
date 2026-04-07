@@ -178,11 +178,8 @@ class SolvedProblemMixin(object):
 
     @cached_property
     def in_contest(self):
-        return (
-            self.profile is not None
-            and self.profile.current_contest is not None
-            and self.request.in_contest_mode
-        )
+        # General problem views are not contest-scoped
+        return False
 
     @cached_property
     def contest(self):
@@ -700,7 +697,6 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
             context["has_contest_quizzes"] = contest_quiz_entries.exists()
 
         context["has_show_editorial_option"] = True
-        context["show_contest_mode"] = self.request.in_contest_mode
 
         Problem.prefetch_cache_has_public_editorial(*context["problems"])
         if context["show_types"]:
@@ -886,8 +882,6 @@ class ProblemFeed(ProblemList, FeedView):
         return context
 
     def get(self, request, *args, **kwargs):
-        if request.in_contest_mode:
-            return HttpResponseRedirect(reverse("problem_list"))
         return super(ProblemFeed, self).get(request, *args, **kwargs)
 
 

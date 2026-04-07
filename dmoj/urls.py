@@ -240,17 +240,6 @@ urlpatterns = [
     re_path(r"^i18n/", include("django.conf.urls.i18n")),
     re_path(r"^accounts/", include(register_patterns)),
     re_path(r"^", include("social_django.urls")),
-    re_path(
-        r"^feed/",
-        include(
-            [
-                re_path(r"^tickets/$", ticket.TicketFeed.as_view(), name="ticket_feed"),
-                re_path(
-                    r"^comments/$", comment.CommentFeed.as_view(), name="comment_feed"
-                ),
-            ]
-        ),
-    ),
     re_path(r"^problems/", paged_list_view(problem.ProblemList, "problem_list")),
     re_path(r"^problems/add/$", problem.ProblemAdd.as_view(), name="problem_add"),
     re_path(
@@ -1026,6 +1015,11 @@ urlpatterns = [
             [
                 re_path(r"^$", contests.ContestDetail.as_view(), name="contest_view"),
                 re_path(
+                    r"^/problems$",
+                    contests.ContestProblems.as_view(),
+                    name="contest_problems",
+                ),
+                re_path(
                     r"^/moss$", contests.ContestMossView.as_view(), name="contest_moss"
                 ),
                 re_path(
@@ -1331,11 +1325,6 @@ urlpatterns = [
         r"^widgets/",
         include(
             [
-                re_path(
-                    r"^contest_mode$",
-                    contests.update_contest_mode,
-                    name="contest_mode_ajax",
-                ),
                 re_path(
                     r"^rejudge$", widgets.rejudge_submission, name="submission_rejudge"
                 ),

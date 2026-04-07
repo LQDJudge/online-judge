@@ -1070,10 +1070,8 @@ noscript #noscript {
 }
 
 .view-next-page {
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 1em;
-    margin-bottom: 1em;
+    display: block;
+    margin: 1em auto;
 }
 
 #loading-bar {
@@ -1187,39 +1185,76 @@ input::placeholder {
 .left-sidebar-item {
     display: flex;
     align-items: center;
-    border-radius: .5em;
-    color: black;
+    gap: 0.5em;
+    border-radius: $radius-md;
+    color: $text-primary;
+    text-decoration: none;
+    transition: $transition-fast;
 
     .sidebar-icon {
-        font-size: large;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 1.6em;
+        height: 1.6em;
+        font-size: 0.85em;
+        color: $text-secondary;
 
         i {
-            width: 1.4em;
+            width: auto;
         }
+    }
+
+    .sidebar-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        line-height: 1.3;
+        font-size: 0.9em;
+    }
+
+    .org-logo {
+        height: 1.6em;
+        width: 1.6em;
+        border-radius: $radius-sm;
+        flex-shrink: 0;
+        object-fit: cover;
     }
 }
 
 .left-sidebar-item:hover {
-    background-color: #e3e3e3;
+    background-color: $color-interactive-hover-bg;
     cursor: pointer;
-    color: black;
+    color: $text-primary;
+}
+
+.left-sidebar-item.active {
+    background-color: $theme_color;
+    color: $text-on-primary;
+
+    .sidebar-icon {
+        color: $text-on-primary;
+        background: rgba(255, 255, 255, 0.15);
+    }
 }
 
 .left-sidebar-item.active:hover {
     background-color: $theme_color;
-    color: white;
+    color: $text-on-primary;
 }
 
 .sidebar-icon {
-    color: black;
+    color: $text-secondary;
 }
 
 .left-sidebar-header {
-    text-align: center;
-    padding-bottom: 1em;
-    border-bottom: 1px solid black;
-    color: black;
+    padding: 0.6em 0.75em 0.3em;
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: $text-muted;
     border-radius: 0;
 }
 
@@ -1504,22 +1539,18 @@ input::placeholder {
         background: inherit;
         gap: 0.3em;
         overflow-x: auto;
+
+        &.home-sidebar-loggedin {
+            display: none;
+        }
     }
 }
 
 @media(min-width: 800px) {
     .left-sidebar-item {
-        margin-bottom: 10px;
-        margin-left: 10px;
-        border: 1px solid lightgray;
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-        background-color: white;
-        padding: 0.8em 0.2em 0.8em 0.8em;
-    }
-
-    .sidebar-text {
-        overflow: hidden;
-        text-overflow: ellipsis;
+        margin-bottom: 0.25em;
+        padding: 0.4em 0.5em;
+        background-color: $background_light_gray;
     }
 
     .middle-content,
@@ -1553,10 +1584,11 @@ input::placeholder {
     }
 
     .left-sidebar {
-        width: 11%;
-        max-width: 11%;
-        min-width: 11%;
+        width: 13%;
+        max-width: 13%;
+        min-width: 13%;
         position: fixed;
+        top: calc($navbar_height + 10px);
         height: calc(100vh - $navbar_height - 20px);
         overflow-y: auto;
         scrollbar-color: auto;
@@ -1764,7 +1796,7 @@ input::placeholder {
     }
 
     #page-container {
-        background: #f1f2f2;
+        background: $background_light_gray;
     }
 
     #event-tab {

@@ -1,0 +1,19 @@
+{# Homepage mixed feed — dispatches rendering by item type #}
+{% for item in feed_items %}
+  {% if item.item_type == 'post' %}
+    {% include "home/feed-post.html" %}
+  {% elif item.item_type == 'comment' %}
+    {% include "home/feed-comment.html" %}
+  {% elif item.item_type == 'problem' %}
+    {% include "home/feed-recommended-problem.html" %}
+  {% elif item.item_type == 'contest' %}
+    {% include "home/feed-recommended-contest.html" %}
+  {% elif item.item_type == 'courses' %}
+    {% include "home/feed-courses-card.html" %}
+  {% elif item.item_type == 'quizzes' %}
+    {% include "home/feed-quizzes-card.html" %}
+  {% elif item.item_type == 'groups' %}
+    {% include "home/feed-groups-card.html" %}
+  {% endif %}
+{% endfor %}
+{% include "feed/has_next.html" %}

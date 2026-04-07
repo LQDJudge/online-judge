@@ -534,7 +534,10 @@ function register_copy_clipboard($elements, callback) {
 }
 
 function activateBlogBoxOnClick() {
-    $('.blog-box').on('click', function () {
+    $('.blog-box').on('click', function (e) {
+        if ($(e.target).closest('.actionbar-box, .inline-comments-container, .comment-area, a, button, select, input').length) {
+            return;
+        }
         var $description = $(this).children('.blog-description');
         var max_height = $description.css('max-height');
         if (max_height !== 'fit-content') {

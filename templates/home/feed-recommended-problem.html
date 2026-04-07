@@ -1,0 +1,8 @@
+{# Recommended problem — reuses shared problem card with reason line #}
+{% set problem = item.data %}
+<section class="blog-box">
+  <div class="feed-comment-reason">
+    {{ _('Recommended for you') }}
+  </div>
+  {% include "problem/feed/item.html" %}
+</section>

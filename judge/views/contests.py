@@ -31,7 +31,6 @@ from django.http import (
     HttpResponse,
     HttpResponseRedirect,
     JsonResponse,
-    HttpResponseNotAllowed,
 )
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import date as date_filter
@@ -94,6 +93,7 @@ from judge.views.bookmark import BookMarkDetailView
 __all__ = [
     "ContestList",
     "ContestDetail",
+    "ContestProblems",
     "ContestRanking",
     "ContestJoin",
     "ContestLeave",
@@ -107,7 +107,6 @@ __all__ = [
     "get_contest_ranking_list",
     "base_contest_ranking_list",
     "ContestClarificationView",
-    "update_contest_mode",
     "OfficialContestList",
     "RecommendedContestList",
     "ContestProblemset",
@@ -469,6 +468,7 @@ class ContestMixin(object):
         )
         context["logo_override_image"] = self.object.logo_override_image
         context["organizations"] = self.object.get_organizations()
+        context["is_clonable"] = is_contest_clonable(self.request, self.object)
 
         if not context["logo_override_image"] and len(context["organizations"]) > 0:
             org_image = context["organizations"][0].get_organization_image_url()
@@ -558,7 +558,7 @@ class ContestDetail(
 
     @cached_property
     def in_contest(self):
-        return self.request.in_contest_mode
+        return self.request.in_contest
 
     def _is_editable_organization(self, organization):
         if self.request.profile.can_edit_organization(organization):
@@ -587,7 +587,6 @@ class ContestDetail(
         context["contest_problems"] = Problem.get_cached_instances(*contest_problem_ids)
         context["problems"] = context["contest_problems"]
         context["editable_organizations"] = self.get_editable_organizations()
-        context["is_clonable"] = is_contest_clonable(self.request, self.object)
 
         # Get quizzes in this contest
         contest_quizzes = (
@@ -627,7 +626,84 @@ class ContestDetail(
                 context["completed_problem_ids"] = user_completed_ids(self.profile)
                 context["attempted_problems"] = user_attempted_ids(self.profile)
 
+        # Clarifications
+        if self.object.use_clarifications:
+            context["clarifications"] = (
+                ContestProblemClarification.objects.filter(problem__contest=self.object)
+                .select_related("problem__problem")
+                .order_by("-date")
+            )
+
         context = self.get_comment_context(context)
+
+        return context
+
+
+class ContestProblems(ContestMixin, SolvedProblemMixin, TitleMixin, DetailView):
+    template_name = "contest/problems.html"
+
+    def get_title(self):
+        return _("Problems in %s") % self.object.name
+
+    @cached_property
+    def profile(self):
+        if not self.request.user.is_authenticated:
+            return None
+        return self.request.profile
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        contest = self.object
+        contest_problem_ids = get_contest_problem_ids(contest.id)
+        Problem.prefetch_cache_i18n_name(
+            self.request.LANGUAGE_CODE, *contest_problem_ids
+        )
+        context["contest_problems"] = Problem.get_cached_instances(*contest_problem_ids)
+        context["problems"] = context["contest_problems"]
+
+        # Quizzes
+        contest_quizzes = (
+            ContestProblem.objects.filter(contest=contest, quiz__isnull=False)
+            .select_related("quiz")
+            .order_by("order")
+        )
+        context["contest_quizzes"] = contest_quizzes
+
+        # Determine if user is actively in this contest (live or virtual)
+        is_in_contest = contest.is_in_contest(self.request.user)
+        context["is_in_contest"] = is_in_contest
+        context["current_contest"] = (
+            self.request.participation.contest
+            if (
+                self.request.in_contest
+                and self.request.participation.contest_id == contest.id
+            )
+            else None
+        )
+
+        context["has_hidden_subtasks"] = contest.format.has_hidden_subtasks
+        context["hide_contest_scoreboard"] = contest.scoreboard_visibility in (
+            contest.SCOREBOARD_AFTER_CONTEST,
+            contest.SCOREBOARD_AFTER_PARTICIPATION,
+        )
+
+        if self.profile:
+            if is_in_contest:
+                context["completed_problem_ids"] = self.get_completed_problems()
+                context["attempted_problems"] = self.get_attempted_problems()
+            else:
+                from judge.utils.problems import user_attempted_ids, user_completed_ids
+
+                context["completed_problem_ids"] = user_completed_ids(self.profile)
+                context["attempted_problems"] = user_attempted_ids(self.profile)
+
+        # Clarifications
+        if contest.use_clarifications:
+            context["clarifications"] = (
+                ContestProblemClarification.objects.filter(problem__contest=contest)
+                .select_related("problem__problem")
+                .order_by("-date")
+            )
 
         return context
 
@@ -861,8 +937,7 @@ class ContestJoin(LoginRequiredMixin, ContestMixin, BaseDetailView):
         profile.save()
         contest._updating_stats_only = True
         contest.update_user_count()
-        request.session["contest_mode"] = True
-        return HttpResponseRedirect(reverse("problem_list"))
+        return HttpResponseRedirect(reverse("contest_view", args=(contest.key,)))
 
     def ask_for_access_code(self, form=None):
         contest = self.object
@@ -904,7 +979,6 @@ class ContestLeave(LoginRequiredMixin, ContestMixin, BaseDetailView):
             )
 
         profile.remove_contest()
-        request.session["contest_mode"] = True  # reset contest_mode
         return HttpResponseRedirect(reverse("contest_view", args=(contest.key,)))
 
 
@@ -1624,7 +1698,9 @@ class NewContestClarificationView(ContestMixin, TitleMixin, SingleObjectFormView
         )
         clarification.save()
 
-        return HttpResponseRedirect(reverse("problem_list"))
+        return HttpResponseRedirect(
+            reverse("contest_view", args=(self.get_object().key,))
+        )
 
     def get_title(self):
         return "New clarification for %s" % self.object.name
@@ -1677,15 +1753,6 @@ class ContestClarificationAjax(ContestMixin, DetailView):
             res.append(value)
 
         return JsonResponse(res, safe=False, json_dumps_params={"ensure_ascii": False})
-
-
-def update_contest_mode(request):
-    if not request.method == "POST":
-        return HttpResponseNotAllowed(["POST"])
-
-    old_mode = request.session.get("contest_mode", True)
-    request.session["contest_mode"] = not old_mode
-    return HttpResponse()
 
 
 ContestsSummaryData = namedtuple(
@@ -1926,7 +1993,7 @@ class ContestProblemset(ContestMixin, TitleMixin, DetailView):
         # Contest is ongoing - check if user is currently in the contest with contest mode on
         # This properly handles windowed contests and respects the "In contest"/"Out contest" toggle
         is_in_this_contest = (
-            getattr(request, "in_contest_mode", False)
+            getattr(request, "in_contest", False)
             and getattr(request, "participation", None) is not None
             and request.participation.contest == contest
         )
