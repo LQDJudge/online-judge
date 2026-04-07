@@ -669,7 +669,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
             )
             or show_own_contests_only
         ):
-            q = Q(is_visible=True, is_in_course=False)
+            q = Q(is_visible=True)
             q &= (
                 Q(view_contest_scoreboard=user.profile)
                 | Q(is_organization_private=False, is_private=False)
