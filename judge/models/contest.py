@@ -672,7 +672,11 @@ class Contest(models.Model, PageVotable, Bookmarkable):
             q = Q(is_visible=True)
             q &= (
                 Q(view_contest_scoreboard=user.profile)
-                | Q(is_organization_private=False, is_private=False)
+                | Q(
+                    is_organization_private=False,
+                    is_private=False,
+                    is_in_course=False,
+                )
                 | Q(
                     is_organization_private=False,
                     is_private=True,
@@ -688,6 +692,10 @@ class Contest(models.Model, PageVotable, Bookmarkable):
                     is_private=True,
                     organizations__in=user.profile.organizations.all(),
                     private_contestants=user.profile,
+                )
+                | Q(
+                    is_in_course=True,
+                    course__course__courserole__user=user.profile,
                 )
             )
 
