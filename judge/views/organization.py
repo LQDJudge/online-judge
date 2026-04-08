@@ -13,7 +13,7 @@ from django.http import (
     HttpResponsePermanentRedirect,
     HttpResponseRedirect,
 )
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -79,6 +79,7 @@ from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
 from judge.views.course import CourseList
 from judge.views.submission import SubmissionsListBase
+from judge.utils.feed import build_home_feed
 from judge.views.feed import FeedView
 from judge.models.profile import get_top_rating_profile, get_top_score_profile
 from judge.caching import cache_wrapper
@@ -610,18 +611,15 @@ class OrganizationHome(OrganizationHomeView, FeedView):
             self.organization = self.object
 
         if request.user.is_authenticated:
-            from judge.utils.feed import build_home_feed
-
             only_content = request.GET.get("only_content")
             cursor_str = request.GET.get("cursor")
 
+            self.ensure_feed_token(request)
             feed_result = build_home_feed(
                 request, cursor_str=cursor_str, organization=self.organization
             )
 
             if only_content and self.feed_content_template_name:
-                from django.shortcuts import render
-
                 context = {
                     "feed_items": feed_result["items"],
                     "has_next_page": feed_result["has_next_page"],

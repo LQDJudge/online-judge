@@ -4,7 +4,7 @@
   {% else %}
     window.next_cursor = null;
   {% endif %}
-  window.feed_token = Math.random().toString(36).substring(2, 10);
+  window.feed_token = "{{ feed_token or '' }}";
   window.page = {{ page_obj.number if page_obj is defined else 1 }};
   window.has_next_page = {{1 if has_next_page else 0}};
   window.loading_page = false;

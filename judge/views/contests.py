@@ -937,7 +937,7 @@ class ContestJoin(LoginRequiredMixin, ContestMixin, BaseDetailView):
         profile.save()
         contest._updating_stats_only = True
         contest.update_user_count()
-        return HttpResponseRedirect(reverse("contest_view", args=(contest.key,)))
+        return HttpResponseRedirect(reverse("contest_problems", args=(contest.key,)))
 
     def ask_for_access_code(self, form=None):
         contest = self.object

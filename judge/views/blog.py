@@ -28,6 +28,7 @@ class PostList(HomeFeedView):
             only_content = request.GET.get("only_content")
             cursor_str = request.GET.get("cursor")
 
+            self.ensure_feed_token(request)
             feed_result = build_home_feed(request, cursor_str=cursor_str)
 
             if only_content and self.feed_content_template_name:

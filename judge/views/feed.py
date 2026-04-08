@@ -1,3 +1,5 @@
+import secrets
+
 from django.views.generic import ListView
 from django.shortcuts import render
 from django.urls import reverse
@@ -20,6 +22,16 @@ class FeedView(InfinitePaginationMixin, ListView):
     def get_feed_context(self, object_list):
         return {}
 
+    def ensure_feed_token(self, request):
+        """Generate a feed token for cache scoping. Reuse if already in request."""
+        if not request.GET.get("ft"):
+            self._feed_token = secrets.token_urlsafe(6)
+            mutable_get = request.GET.copy()
+            mutable_get["ft"] = self._feed_token
+            request.GET = mutable_get
+        else:
+            self._feed_token = request.GET["ft"]
+
     def get(self, request, *args, **kwargs):
         only_content = request.GET.get("only_content", None)
         if only_content and self.feed_content_template_name:
@@ -41,6 +53,8 @@ class FeedView(InfinitePaginationMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["has_next_page"] = context["page_obj"].has_next()
+        if hasattr(self, "_feed_token"):
+            context["feed_token"] = self._feed_token
         try:
             context["feed_content_url"] = reverse(self.url_name)
         except Exception:
