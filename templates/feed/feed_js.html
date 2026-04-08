@@ -57,12 +57,21 @@
         })
     }
 
+    var firstScroll = true;
     $(window).on("scroll", function() {
       if (window.loading_page || !window.has_next_page) return;
-      var distanceFromBottom = $(document).height() - ($(window).scrollTop() + $(window).height());
       var isDesktop = window.matchMedia('(min-width: 800px)').matches;
+      if (!isDesktop) return;
 
-      if (isDesktop && distanceFromBottom < 500) {
+      // Load page 2 immediately on first scroll
+      if (firstScroll) {
+        firstScroll = false;
+        loadNextPage();
+        return;
+      }
+
+      var distanceFromBottom = $(document).height() - ($(window).scrollTop() + $(window).height());
+      if (distanceFromBottom < 500) {
         loadNextPage();
       }
     });
