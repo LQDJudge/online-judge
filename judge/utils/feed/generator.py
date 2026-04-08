@@ -18,12 +18,17 @@ GROUP_CARD = "group_card"
 # The repeating slot pattern
 SLOT_TEMPLATE = [
     POST,
-    COMMENT,
-    PROBLEM,
+    POST,
     POST,
     COMMENT,
+    PROBLEM,
+    COMMENT,
+    POST,
     CONTEST,
+    COMMENT,
+    PROBLEM,
     GROUP_CARD,
+    COMMENT,
 ]
 
 TEMPLATE_LEN = len(SLOT_TEMPLATE)
