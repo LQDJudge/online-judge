@@ -96,7 +96,7 @@ class PostPool(CachedPool):
                 )[: self.BATCH_SIZE]
             )
         else:
-            # Combine official + group + community, dedup
+            # Combine official + user's group posts
             official = set(
                 base.filter(is_organization_private=False)
                 .order_by("-sticky", "-publish_on")
@@ -113,16 +113,7 @@ class PostPool(CachedPool):
                 .values_list("id", flat=True)[: self.BATCH_SIZE]
             )
 
-            community = set(
-                base.filter(
-                    is_organization_private=True,
-                    organizations__is_community=True,
-                )
-                .order_by("-publish_on")
-                .values_list("id", flat=True)[: self.BATCH_SIZE]
-            )
-
-            all_ids = official | group | community
+            all_ids = official | group
             if self.organization:
                 # Org context: all sticky posts on top
                 ordering = ["-sticky", "-publish_on"]
