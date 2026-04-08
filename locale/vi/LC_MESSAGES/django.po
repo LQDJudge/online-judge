@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-08 05:20+0700\n"
+"POT-Creation-Date: 2026-04-08 10:00+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -100,7 +100,7 @@ msgstr "Đăng ký không thành công"
 msgid "Login"
 msgstr "Đăng nhập"
 
-#: dmoj/urls.py:233 judge/views/blog.py:61 templates/base.html:124
+#: dmoj/urls.py:233 judge/views/blog.py:62 templates/base.html:124
 #: templates/course/left_sidebar.html:2
 #: templates/organization/org-left-sidebar.html:2
 msgid "Home"
@@ -3937,7 +3937,7 @@ msgstr "j M, Y"
 
 #: judge/views/about.py:12 templates/course/course.html:35
 #: templates/home.html:42 templates/organization/home.html:112
-#: templates/organization/org-right-sidebar.html:90
+#: templates/organization/org-right-sidebar.html:117
 #: templates/user/theme-settings.html:13 templates/user/user-tabs.html:4
 #: templates/user/users-table.html:28
 msgid "About"
@@ -3977,8 +3977,8 @@ msgstr "Bạn đã vote."
 msgid "Posted comment"
 msgstr "Bình luận đã đăng"
 
-#: judge/views/comment/edit_views.py:25 judge/views/organization.py:1286
-#: judge/views/organization.py:1471 judge/views/organization.py:1776
+#: judge/views/comment/edit_views.py:25 judge/views/organization.py:1365
+#: judge/views/organization.py:1550 judge/views/organization.py:1855
 msgid "Edited from site"
 msgstr "Chỉnh sửa từ web"
 
@@ -4032,11 +4032,11 @@ msgstr "Thời gian bắt đầu (tăng)"
 msgid "Start time (desc.)"
 msgstr "Thời gian bắt đầu (giảm)"
 
-#: judge/views/contests.py:381 judge/views/organization.py:581
+#: judge/views/contests.py:381 judge/views/organization.py:586
 msgid "Name (asc.)"
 msgstr "Tên (tăng)"
 
-#: judge/views/contests.py:382 judge/views/organization.py:582
+#: judge/views/contests.py:382 judge/views/organization.py:587
 msgid "Name (desc.)"
 msgstr "Tên (giảm)"
 
@@ -4314,8 +4314,8 @@ msgstr ""
 "Điểm của <a href='%(url_lesson)s'>%(lesson_name)s</a> trong <a "
 "href='%(url_course)s'>%(course_name)s</a>"
 
-#: judge/views/course.py:1951 judge/views/organization.py:1334
-#: templates/organization/org-right-sidebar.html:54
+#: judge/views/course.py:1951 judge/views/organization.py:1413
+#: templates/organization/org-right-sidebar.html:81
 msgid "Add contest"
 msgstr "Thêm kỳ thi"
 
@@ -4336,7 +4336,7 @@ msgstr "Chỉnh sửa kỳ thi cho <a href='%(url)s'>%(course_name)s</a>"
 msgid "Unknown action."
 msgstr "Hành động không xác định."
 
-#: judge/views/course.py:2167 judge/views/organization.py:1464
+#: judge/views/course.py:2167 judge/views/organization.py:1543
 msgid "Edit contest"
 msgstr "Chỉnh sửa kỳ thi"
 
@@ -4620,10 +4620,10 @@ msgstr "Tên file"
 
 #: judge/views/custom_file_upload.py:416 judge/views/custom_file_upload.py:496
 #: judge/views/direct_upload.py:145 judge/views/direct_upload.py:234
-#: judge/views/organization.py:1377 judge/views/organization.py:1626
-#: judge/views/organization.py:1633 judge/views/organization.py:1667
-#: judge/views/organization.py:1682 judge/views/organization.py:1709
-#: judge/views/organization.py:1876 judge/views/quiz_import.py:68
+#: judge/views/organization.py:1456 judge/views/organization.py:1705
+#: judge/views/organization.py:1712 judge/views/organization.py:1746
+#: judge/views/organization.py:1761 judge/views/organization.py:1788
+#: judge/views/organization.py:1955 judge/views/quiz_import.py:68
 #: judge/views/quiz_import.py:130 judge/views/quiz_import.py:181
 msgid "Permission denied"
 msgstr "Truy cập bị từ chối"
@@ -4832,156 +4832,174 @@ msgstr "Trình soạn thảo Markdown"
 msgid "Notifications (%d unseen)"
 msgstr "Thông báo (%d chưa xem)"
 
-#: judge/views/organization.py:350 judge/views/organization.py:357
+#: judge/views/organization.py:355 judge/views/organization.py:362
 msgid "No such organization"
 msgstr "Không có nhóm như vậy"
 
-#: judge/views/organization.py:351
+#: judge/views/organization.py:356
 #, python-format
 msgid "Could not find an organization with the key %s."
 msgstr "Không tìm thấy nhóm với mã \"%s\"."
 
-#: judge/views/organization.py:358
+#: judge/views/organization.py:363
 msgid "Could not find such organization."
 msgstr "Không tìm thấy nhóm này"
 
-#: judge/views/organization.py:382
+#: judge/views/organization.py:387
 msgid "Can't edit organization"
 msgstr "Không thể chỉnh sửa nhóm"
 
-#: judge/views/organization.py:383
+#: judge/views/organization.py:388
 msgid "You are not allowed to edit this organization."
 msgstr "Bạn không được phép chỉnh sửa nhóm này."
 
-#: judge/views/organization.py:395 judge/views/organization.py:417
-#: judge/views/organization.py:721
+#: judge/views/organization.py:400 judge/views/organization.py:422
+#: judge/views/organization.py:723
 msgid "Can't access organization"
 msgstr "Không thể truy cập nhóm"
 
-#: judge/views/organization.py:396 judge/views/organization.py:418
-#: judge/views/organization.py:722
+#: judge/views/organization.py:401 judge/views/organization.py:423
+#: judge/views/organization.py:724
 msgid "You are not allowed to access this organization."
 msgstr "Bạn không được phép chỉnh sửa nhóm này."
 
-#: judge/views/organization.py:455 judge/views/stats.py:204
+#: judge/views/organization.py:460 judge/views/stats.py:204
 #: templates/contest/list.html:81 templates/home.html:46
 #: templates/problem/list-base.html:87 templates/stats/site.html:33
 #: templates/user/user-list-tabs.html:6
 msgid "Groups"
 msgstr "Nhóm"
 
-#: judge/views/organization.py:583
+#: judge/views/organization.py:588
 msgid "Member count (asc.)"
 msgstr "Số lượng thành viên (tăng)"
 
-#: judge/views/organization.py:584
+#: judge/views/organization.py:589
 msgid "Member count (desc.)"
 msgstr "Số lượng thành viên (giảm)"
 
-#: judge/views/organization.py:591
+#: judge/views/organization.py:596
 msgid "Last visit"
 msgstr "Truy cập gần nhất"
 
-#: judge/views/organization.py:728
+#: judge/views/organization.py:730
 #, python-format
 msgid "%s Members"
 msgstr "%s Thành viên"
 
-#: judge/views/organization.py:857
+#: judge/views/organization.py:859
 #, python-brace-format
 msgid "All submissions in <a href=\"{1}\">{0}</a>"
 msgstr "Bài nộp trong <a href=\"{1}\">{0}</a>"
 
-#: judge/views/organization.py:865 judge/views/submission.py:892
+#: judge/views/organization.py:867 judge/views/submission.py:892
 msgid "Submissions in"
 msgstr "Bài nộp trong"
 
-#: judge/views/organization.py:890 judge/views/organization.py:897
-#: judge/views/organization.py:904 judge/views/organization.py:917
+#: judge/views/organization.py:896 judge/views/organization.py:903
+#: judge/views/organization.py:914 judge/views/organization.py:926
+#: judge/views/organization.py:943
 msgid "Joining group"
 msgstr "Tham gia nhóm"
 
-#: judge/views/organization.py:891
+#: judge/views/organization.py:897
 msgid "You are already in the group."
 msgstr "Bạn đã ở trong nhóm."
 
-#: judge/views/organization.py:898
+#: judge/views/organization.py:904
 #, python-format
 msgid "You cannot join since you have already blocked %s."
 msgstr "Bạn không thể tham gia vì bạn đã chặn nhóm %s."
 
-#: judge/views/organization.py:904
+#: judge/views/organization.py:914
 msgid "This group is not open."
 msgstr "Nhóm này là nhóm kín."
 
-#: judge/views/organization.py:918
+#: judge/views/organization.py:927
 #, python-brace-format
 msgid "You may not be part of more than {count} public groups."
 msgstr "Bạn không thể tham gia nhiều hơn {count} nhóm công khai."
 
-#: judge/views/organization.py:932
+#: judge/views/organization.py:944
+msgid "This invite link is invalid or has been revoked."
+msgstr "Link mời không hợp lệ hoặc đã bị thu hồi."
+
+#: judge/views/organization.py:957
+#, python-format
+msgid "Join %s"
+msgstr "Tham gia %s"
+
+#: judge/views/organization.py:980
 msgid "Leaving group"
 msgstr "Rời nhóm"
 
-#: judge/views/organization.py:933
+#: judge/views/organization.py:981
 #, python-format
 msgid "You are not in %s."
 msgstr "Bạn không ở trong \"%s\"."
 
-#: judge/views/organization.py:943 judge/views/organization.py:952
-#: judge/views/organization.py:968 judge/views/organization.py:977
+#: judge/views/organization.py:991 judge/views/organization.py:1000
+#: judge/views/organization.py:1016 judge/views/organization.py:1025
 msgid "Blocking group"
 msgstr "Chặn nhóm"
 
-#: judge/views/organization.py:944
+#: judge/views/organization.py:992
 #, python-format
 msgid "You have already blocked %s."
 msgstr "Bạn đã chặn nhóm %s."
 
-#: judge/views/organization.py:953
+#: judge/views/organization.py:1001
 #, python-format
 msgid "An error occurred while blocking %(org)s. Reason: %(reason)s"
 msgstr "Lỗi hệ thống xảy ra trong quá trình chặn %(org)s. Lý do: %(reason)s."
 
-#: judge/views/organization.py:969
+#: judge/views/organization.py:1017
 #, python-format
 msgid "You have not blocked %s."
 msgstr "Bạn chưa chặn nhóm %s."
 
-#: judge/views/organization.py:978
+#: judge/views/organization.py:1026
 #, python-format
 msgid "An error occurred while unblocking %(org)s. Reason: %(reason)s"
 msgstr ""
 "Lỗi hệ thống xảy ra trong quá trình bỏ chặn %(org)s. Lý do: %(reason)s."
 
-#: judge/views/organization.py:1005
+#: judge/views/organization.py:1045
+msgid "Invite link generated successfully."
+msgstr "Đã tạo link mời thành công."
+
+#: judge/views/organization.py:1060
+msgid "Invite link revoked."
+msgstr "Đã thu hồi link mời."
+
+#: judge/views/organization.py:1084
 msgid "Request to join group"
 msgstr "Đăng ký tham gia %s"
 
-#: judge/views/organization.py:1006
+#: judge/views/organization.py:1085
 #, python-format
 msgid "You cannot request since you have already blocked %s."
 msgstr "Bạn không thể đăng ký vì bạn đã chặn nhóm %s."
 
-#: judge/views/organization.py:1016
+#: judge/views/organization.py:1095
 #, python-format
 msgid "Request to join %s"
 msgstr "Đăng ký tham gia %s"
 
-#: judge/views/organization.py:1046
+#: judge/views/organization.py:1125
 msgid "Join request detail"
 msgstr "Chi tiết đơn đăng ký"
 
-#: judge/views/organization.py:1080
+#: judge/views/organization.py:1159
 msgid "Manage join requests"
 msgstr "Quản lý đơn đăng ký"
 
-#: judge/views/organization.py:1084
+#: judge/views/organization.py:1163
 #, python-format
 msgid "Managing join requests for %s"
 msgstr "Quản lý đơn đăng ký cho %s"
 
-#: judge/views/organization.py:1124
+#: judge/views/organization.py:1203
 #, python-format
 msgid ""
 "Your organization can only receive %(can_add)d more members. You cannot "
@@ -4990,77 +5008,77 @@ msgstr ""
 "Nhóm chỉ có thể chứa thêm %(can_add)d thành viên. Bạn không thể chấp thuận "
 "%(to_approve)d người."
 
-#: judge/views/organization.py:1142
+#: judge/views/organization.py:1221
 #, python-format
 msgid "Approved %d user."
 msgid_plural "Approved %d users."
 msgstr[0] "Đã chấp thuận %d người."
 
-#: judge/views/organization.py:1144
+#: judge/views/organization.py:1223
 #, python-format
 msgid "Rejected %d user."
 msgid_plural "Rejected %d users."
 msgstr[0] "Đã từ chối %d người."
 
-#: judge/views/organization.py:1181
+#: judge/views/organization.py:1260
 #, python-format
 msgid "Add member for %s"
 msgstr "Thêm thành viên cho %s"
 
-#: judge/views/organization.py:1207
+#: judge/views/organization.py:1286
 msgid "Added members from site"
 msgstr "Thêm thành viên từ web"
 
-#: judge/views/organization.py:1227 judge/views/organization.py:1235
-#: judge/views/organization.py:1244
+#: judge/views/organization.py:1306 judge/views/organization.py:1314
+#: judge/views/organization.py:1323
 msgid "Can't kick user"
 msgstr "Không thể đuổi"
 
-#: judge/views/organization.py:1228
+#: judge/views/organization.py:1307
 msgid "The user you are trying to kick does not exist!"
 msgstr "Người dùng bạn đang cố gắng đuổi không tồn tại"
 
-#: judge/views/organization.py:1236
+#: judge/views/organization.py:1315
 #, python-format
 msgid "The user you are trying to kick is not in group: %s."
 msgstr "Người dùng bạn đang cố gắng đuổi không có trong nhóm %s"
 
-#: judge/views/organization.py:1245
+#: judge/views/organization.py:1324
 msgid "The user you are trying to kick is a group admin."
 msgstr "Người dùng bạn đang cố gắng đuổi là trưởng nhóm."
 
-#: judge/views/organization.py:1250
+#: judge/views/organization.py:1329
 msgid "Kicked member"
 msgstr "Đuổi thành viên"
 
-#: judge/views/organization.py:1270 judge/views/organization.py:1450
+#: judge/views/organization.py:1349 judge/views/organization.py:1529
 #, python-format
 msgid "Edit %s"
 msgstr "Chỉnh sửa %s"
 
-#: judge/views/organization.py:1297 templates/organization/search-form.html:18
+#: judge/views/organization.py:1376 templates/organization/search-form.html:18
 msgid "Create group"
 msgstr "Tạo nhóm"
 
-#: judge/views/organization.py:1312
+#: judge/views/organization.py:1391
 msgid "Exceeded limit"
 msgstr "Quá giới hạn"
 
-#: judge/views/organization.py:1313
+#: judge/views/organization.py:1392
 #, python-format
 msgid "You created too many groups. You can only create at most %d groups"
 msgstr "Bạn tạo quá nhiều nhóm. Bạn chỉ có thể tạo tối đa %d nhóm"
 
-#: judge/views/organization.py:1318 judge/views/organization.py:1343
-#: judge/views/organization.py:1544
+#: judge/views/organization.py:1397 judge/views/organization.py:1422
+#: judge/views/organization.py:1623
 msgid "Added from site"
 msgstr "Thêm từ web"
 
-#: judge/views/organization.py:1378
+#: judge/views/organization.py:1457
 msgid "You are not allowed to edit this contest"
 msgstr "Bạn không được phép chỉnh sửa kỳ thi này."
 
-#: judge/views/organization.py:1455 judge/views/organization.py:1461
+#: judge/views/organization.py:1534 judge/views/organization.py:1540
 #: templates/blog/blog.html:51 templates/blog/blog.html:55
 #: templates/comments/comment-item.html:95
 #: templates/comments/comment-item.html:99
@@ -5078,74 +5096,74 @@ msgstr "Bạn không được phép chỉnh sửa kỳ thi này."
 msgid "Edit"
 msgstr "Chỉnh sửa"
 
-#: judge/views/organization.py:1533
+#: judge/views/organization.py:1612
 #, python-format
 msgid "Add blog for %s"
 msgstr "Thêm bài đăng cho %s"
 
-#: judge/views/organization.py:1564
+#: judge/views/organization.py:1643
 msgid ""
 "Your blog post has been submitted successfully and is waiting for admin "
 "approval."
 msgstr "Bài đăng của bạn đã được gửi thành công và đang chờ admin phê duyệt."
 
-#: judge/views/organization.py:1607
+#: judge/views/organization.py:1686
 msgid "This blog does not belong to this group"
 msgstr "Blog này không thuộc về nhóm này"
 
-#: judge/views/organization.py:1616
+#: judge/views/organization.py:1695
 msgid "Not allowed to edit this blog"
 msgstr "Bạn không được phép chỉnh sửa bài đăng này."
 
-#: judge/views/organization.py:1621
+#: judge/views/organization.py:1700
 msgid "Cannot edit approved blog posts"
 msgstr "Không thể chỉnh sửa bài đăng đã được phê duyệt"
 
-#: judge/views/organization.py:1627
+#: judge/views/organization.py:1706
 msgid "Blog post not found"
 msgstr "Bài đăng không tìm thấy"
 
-#: judge/views/organization.py:1668
+#: judge/views/organization.py:1747
 msgid "You are not allowed to delete this blog."
 msgstr "Bạn không được phép xóa bài đăng này."
 
-#: judge/views/organization.py:1683
+#: judge/views/organization.py:1762
 msgid "Only organization admins and moderators can reject blog posts."
 msgstr ""
 "Chỉ quản trị viên và người kiểm duyệt của tổ chức mới có thể từ chối bài "
 "đăng."
 
-#: judge/views/organization.py:1711
+#: judge/views/organization.py:1790
 msgid "Only organization admins and moderators can approve blog posts."
 msgstr ""
 "Chỉ quản trị viên và người kiểm duyệt của tổ chức mới có thể phê duyệt bài "
 "đăng."
 
-#: judge/views/organization.py:1737
+#: judge/views/organization.py:1816
 #, python-format
 msgid "Edit blog %s"
 msgstr "Chỉnh sửa %s"
 
-#: judge/views/organization.py:1827
+#: judge/views/organization.py:1906
 #, python-format
 msgid "Rejected blogs in %s"
 msgstr "Bài bị từ chối trong %s"
 
-#: judge/views/organization.py:1828
+#: judge/views/organization.py:1907
 #, python-format
 msgid "Pending blogs in %s"
 msgstr "Bài đang đợi duyệt trong %s"
 
-#: judge/views/organization.py:1877
+#: judge/views/organization.py:1956
 msgid "You are not allowed to view moderation logs."
 msgstr "Bạn không được phép xem nhật ký kiểm duyệt."
 
-#: judge/views/organization.py:1889
+#: judge/views/organization.py:1968
 #, python-format
 msgid "Moderation Log - %s"
 msgstr "Nhật ký kiểm duyệt - %s"
 
-#: judge/views/organization.py:1958
+#: judge/views/organization.py:2037
 #, python-format
 msgid "Courses in %s"
 msgstr "Khóa học trong %s"
@@ -6346,7 +6364,7 @@ msgid "Tickets"
 msgstr "Báo cáo"
 
 #: templates/blog/content.html:32 templates/contest/feed/item.html:24
-#: templates/home/feed-post-inner.html:23
+#: templates/home/feed-post-inner.html:31
 #: templates/internal/problem_queue.html:760
 #: templates/organization/blog/pending.html:84
 #: templates/problem/feed/item.html:37 templates/user/user-bookmarks.html:59
@@ -6543,7 +6561,8 @@ msgstr "Lưu"
 #: templates/internal/problem_queue.html:857
 #: templates/internal/problem_queue.html:887
 #: templates/organization/blog/pending-js.html:43
-#: templates/organization/course/edit.html:89 templates/pagedown.html:32
+#: templates/organization/course/edit.html:89
+#: templates/organization/invite_join.html:30 templates/pagedown.html:32
 #: templates/problem/data.html:860 templates/quiz/create.html:390
 #: templates/quiz/delete.html:21 templates/quiz/edit.html:570
 #: templates/quiz/question_bank/create.html:797
@@ -8378,7 +8397,23 @@ msgstr "Bạn sẽ phải bỏ chặn để tham gia nhóm này."
 msgid "Are you sure you want to unblock this group?"
 msgstr "Bạn có chắc muốn bỏ chặn nhóm?"
 
-#: templates/organization/home.html:43 templates/organization/list.html:76
+#: templates/organization/home-js.html:49 templates/problem/edit.html:160
+#: templates/problem/solutions.html:116
+#: templates/quiz/question_bank/create.html:626
+#: templates/quiz/question_bank/create.html:736
+#: templates/quiz/question_bank/edit.html:625
+#: templates/quiz/question_bank/edit.html:735
+msgid "Copied!"
+msgstr "Đã sao chép!"
+
+#: templates/organization/home-js.html:52
+#: templates/organization/home-js.html:55
+msgid "Copy this invite link:"
+msgstr "Sao chép link mời:"
+
+#: templates/organization/home.html:43
+#: templates/organization/invite_join.html:18
+#: templates/organization/list.html:76
 msgid "members"
 msgstr "thành viên"
 
@@ -8387,6 +8422,7 @@ msgid "Joined"
 msgstr "Đã tham gia"
 
 #: templates/organization/home.html:74
+#: templates/organization/invite_join.html:26
 msgid "Join Group"
 msgstr "Tham gia nhóm"
 
@@ -8401,6 +8437,10 @@ msgstr "Bỏ chặn"
 #: templates/organization/home.html:94
 msgid "Login to Join"
 msgstr "Đăng nhập để tham gia"
+
+#: templates/organization/invite_join.html:20
+msgid "You have been invited to join this group."
+msgstr "Bạn được mời tham gia nhóm này."
 
 #: templates/organization/list.html:39
 msgid "Communities"
@@ -8494,27 +8534,39 @@ msgstr "Đơn đăng ký"
 msgid "Add members"
 msgstr "Thêm thành viên"
 
-#: templates/organization/org-right-sidebar.html:31
+#: templates/organization/org-right-sidebar.html:32
+msgid "Copy Invite Link"
+msgstr "Sao chép link mời"
+
+#: templates/organization/org-right-sidebar.html:39
+msgid "Generate Invite Link"
+msgstr "Tạo link mời"
+
+#: templates/organization/org-right-sidebar.html:49
+msgid "Revoke Invite Link"
+msgstr "Thu hồi link mời"
+
+#: templates/organization/org-right-sidebar.html:58
 msgid "Add blog"
 msgstr "Thêm bài đăng"
 
-#: templates/organization/org-right-sidebar.html:37
+#: templates/organization/org-right-sidebar.html:64
 msgid "Pending blogs"
 msgstr "Bài đăng đang chờ"
 
-#: templates/organization/org-right-sidebar.html:48
+#: templates/organization/org-right-sidebar.html:75
 msgid "Moderation log"
 msgstr "Nhật ký kiểm duyệt"
 
-#: templates/organization/org-right-sidebar.html:60
+#: templates/organization/org-right-sidebar.html:87
 msgid "Subdomain"
 msgstr "Site riêng cho nhóm"
 
-#: templates/organization/org-right-sidebar.html:69
+#: templates/organization/org-right-sidebar.html:96
 msgid "Leave group"
 msgstr "Rời nhóm"
 
-#: templates/organization/org-right-sidebar.html:78
+#: templates/organization/org-right-sidebar.html:105
 msgid "Block group"
 msgstr "Chặn nhóm"
 
@@ -8898,14 +8950,6 @@ msgstr "Đang cải thiện markdown..."
 #: templates/quiz/question_bank/edit.html:689
 msgid "Processing... please wait"
 msgstr "Đang xử lý... vui lòng chờ"
-
-#: templates/problem/edit.html:160 templates/problem/solutions.html:116
-#: templates/quiz/question_bank/create.html:626
-#: templates/quiz/question_bank/create.html:736
-#: templates/quiz/question_bank/edit.html:625
-#: templates/quiz/question_bank/edit.html:735
-msgid "Copied!"
-msgstr "Đã sao chép!"
 
 #: templates/problem/edit.html:162 templates/problem/edit.html:437
 #: templates/problem/solutions.html:118 templates/problem/solutions.html:241

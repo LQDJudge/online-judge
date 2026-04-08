@@ -39,6 +39,23 @@
     });
   });
 
+  function copyInviteLink(e) {
+    e.preventDefault();
+    var link = document.getElementById('invite-link').value;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(link).then(function () {
+        var text = document.getElementById('copy-invite-text');
+        var original = text.textContent;
+        text.textContent = '{{ _("Copied!") }}';
+        setTimeout(function () { text.textContent = original; }, 2000);
+      }).catch(function () {
+        prompt('{{ _("Copy this invite link:") }}', link);
+      });
+    } else {
+      prompt('{{ _("Copy this invite link:") }}', link);
+    }
+  }
+
   $(document).ready(function () {
     $('.block-organization').on('click', function () {
       confirmBlockOrganization(this);

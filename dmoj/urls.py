@@ -1208,6 +1208,16 @@ urlpatterns = [
                     name="add_organization_member",
                 ),
                 re_path(
+                    r"^/generate_invite$",
+                    organization.GenerateInviteLink.as_view(),
+                    name="organization_generate_invite",
+                ),
+                re_path(
+                    r"^/revoke_invite$",
+                    organization.RevokeInviteLink.as_view(),
+                    name="organization_revoke_invite",
+                ),
+                re_path(
                     r"^/blog/add$",
                     organization.AddOrganizationBlog.as_view(),
                     name="add_organization_blog",

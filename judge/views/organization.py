@@ -1,3 +1,7 @@
+import hmac
+import secrets
+import string
+
 from django import forms
 from django.conf import settings
 from django.contrib import messages
@@ -880,8 +884,12 @@ class OrganizationMembershipChange(
         raise NotImplementedError()
 
 
-class JoinOrganization(OrganizationMembershipChange):
-    def handle(self, request, org, profile):
+class JoinOrganization(LoginRequiredMixin, OrganizationMixin, SingleObjectMixin, View):
+    model = Organization
+    context_object_name = "organization"
+
+    def _validate_join(self, request, org, profile, code=None):
+        """Common validation for joining. Returns error response or None if OK."""
         if profile.organizations.filter(id=org.id).exists():
             return generic_message(
                 request,
@@ -897,7 +905,11 @@ class JoinOrganization(OrganizationMembershipChange):
                 % org.short_name,
             )
 
-        if not org.is_open:
+        has_valid_code = (
+            code and org.access_code and hmac.compare_digest(code, org.access_code)
+        )
+
+        if not org.is_open and not has_valid_code:
             return generic_message(
                 request, _("Joining group"), _("This group is not open.")
             )
@@ -905,7 +917,6 @@ class JoinOrganization(OrganizationMembershipChange):
         # Communities don't count towards the join limit
         if not org.is_community:
             max_orgs = settings.DMOJ_USER_MAX_ORGANIZATION_COUNT
-            # Only count non-community open groups towards the limit
             current_count = profile.organizations.filter(
                 is_open=True, is_community=False
             ).count()
@@ -918,8 +929,47 @@ class JoinOrganization(OrganizationMembershipChange):
                     ),
                 )
 
+        return None
+
+    def get(self, request, *args, **kwargs):
+        org = self.get_object()
+        code = request.GET.get("code")
+        if not code:
+            return HttpResponseRedirect(org.get_absolute_url())
+
+        if not org.access_code or not hmac.compare_digest(code, org.access_code):
+            return generic_message(
+                request,
+                _("Joining group"),
+                _("This invite link is invalid or has been revoked."),
+            )
+
+        error = self._validate_join(request, org, request.profile, code)
+        if error is not None:
+            return error
+
+        return render(
+            request,
+            "organization/invite_join.html",
+            {
+                "organization": org,
+                "code": code,
+                "title": _("Join %s") % org.name,
+            },
+        )
+
+    def post(self, request, *args, **kwargs):
+        org = self.get_object()
+        profile = request.profile
+        code = request.POST.get("code")
+
+        error = self._validate_join(request, org, profile, code)
+        if error is not None:
+            return error
+
         profile.organizations.add(org)
         profile.save()
+        return HttpResponseRedirect(org.get_absolute_url())
 
 
 class LeaveOrganization(OrganizationMembershipChange):
@@ -978,6 +1028,39 @@ class UnblockOrganization(OrganizationMembershipChange):
             )
 
         return HttpResponseRedirect(reverse("organization_list") + "?tab=blocked")
+
+
+class GenerateInviteLink(
+    LoginRequiredMixin, AdminOrganizationMixin, SingleObjectMixin, View
+):
+    model = Organization
+
+    def post(self, request, *args, **kwargs):
+        org = self.get_object()
+        if not self.can_edit_organization(org):
+            raise PermissionDenied()
+        code = "".join(
+            secrets.choice(string.ascii_letters + string.digits) for _ in range(7)
+        )
+        org.access_code = code
+        org.save(update_fields=["access_code"])
+        messages.success(request, _("Invite link generated successfully."))
+        return HttpResponseRedirect(org.get_absolute_url())
+
+
+class RevokeInviteLink(
+    LoginRequiredMixin, AdminOrganizationMixin, SingleObjectMixin, View
+):
+    model = Organization
+
+    def post(self, request, *args, **kwargs):
+        org = self.get_object()
+        if not self.can_edit_organization(org):
+            raise PermissionDenied()
+        org.access_code = None
+        org.save(update_fields=["access_code"])
+        messages.success(request, _("Invite link revoked."))
+        return HttpResponseRedirect(org.get_absolute_url())
 
 
 class OrganizationRequestForm(Form):
@@ -1180,7 +1263,7 @@ class AddOrganizationMember(
 
     def get_object(self, queryset=None):
         object = super(AddOrganizationMember, self).get_object()
-        if not self.can_edit_organization(object):
+        if not self.request.user.is_superuser:
             raise PermissionDenied()
         return object
 

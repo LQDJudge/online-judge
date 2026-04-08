@@ -19,11 +19,38 @@
           {% endif %}
         </div>
       {% endif %}
-      {% if can_edit %}
+      {% if request.user.is_superuser %}
         <div class="link-row">
           <a href="{{ url('add_organization_member', organization.id, organization.slug) }}">
             <i class="fa fa-user-plus"></i>{{ _('Add members') }}</a>
         </div>
+      {% endif %}
+      {% if can_edit %}
+        <div class="link-row">
+          {% if organization.access_code %}
+            <a href="#" onclick="copyInviteLink(event)">
+              <i class="fa fa-link"></i><span id="copy-invite-text">{{ _('Copy Invite Link') }}</span>
+            </a>
+            <input type="hidden" id="invite-link" value="{{ request.build_absolute_uri(url('join_organization', organization.id, organization.slug)) }}?code={{ organization.access_code }}">
+          {% else %}
+            <form method="post" action="{{ url('organization_generate_invite', organization.id, organization.slug) }}">
+              {% csrf_token %}
+              <a href="#" onclick="this.closest('form').submit(); return false;">
+                <i class="fa fa-link"></i>{{ _('Generate Invite Link') }}
+              </a>
+            </form>
+          {% endif %}
+        </div>
+        {% if organization.access_code %}
+          <div class="link-row red">
+            <form method="post" action="{{ url('organization_revoke_invite', organization.id, organization.slug) }}">
+              {% csrf_token %}
+              <a href="#" onclick="this.closest('form').submit(); return false;">
+                <i class="fa fa-times"></i>{{ _('Revoke Invite Link') }}
+              </a>
+            </form>
+          </div>
+        {% endif %}
       {% endif %}
       {% if is_member %}
         <div class="link-row">

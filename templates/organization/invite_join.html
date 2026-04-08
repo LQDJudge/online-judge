@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block body %}
+  <div class="org-invite-join">
+    {% if organization.organization_image %}
+      <img
+        src="{{ organization.organization_image.url }}"
+        alt="{{ organization.name }}"
+        class="org-invite-image"
+      >
+    {% else %}
+      <div class="org-invite-placeholder">
+        <i class="fa fa-users"></i>
+      </div>
+    {% endif %}
+    <h2>{{ organization.name }}</h2>
+    <p class="gray">
+      <i class="fa fa-users"></i> {{ organization.members.count() }} {{ _('members') }}
+    </p>
+    <p>{{ _('You have been invited to join this group.') }}</p>
+    <div class="org-invite-actions">
+      <form method="post" action="{{ url('join_organization', organization.id, organization.slug) }}">
+        {% csrf_token %}
+        <input type="hidden" name="code" value="{{ code }}">
+        <button type="submit" class="org-join-btn">
+          <i class="fa fa-plus"></i> {{ _('Join Group') }}
+        </button>
+      </form>
+      <a href="{{ organization.get_absolute_url() }}" class="org-join-btn org-cancel-btn">
+        {{ _('Cancel') }}
+      </a>
+    </div>
+  </div>
+{% endblock %}
