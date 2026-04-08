@@ -283,6 +283,7 @@ urlpatterns = [
                     r"^/clone", problem.ProblemClone.as_view(), name="problem_clone"
                 ),
                 re_path(r"^/edit$", problem.ProblemEdit.as_view(), name="problem_edit"),
+                re_path(r"^/log$", problem.ProblemLog.as_view(), name="problem_log"),
                 re_path(
                     r"^/edit/language_limits$",
                     problem.ProblemEditLanguageLimits.as_view(),

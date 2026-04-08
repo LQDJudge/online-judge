@@ -974,9 +974,6 @@ MEMORY_UNITS = (("KB", "KB"), ("MB", "MB"))
 
 
 class ProblemEditForm(DirectUploadFormMixin, ModelForm):
-    change_message = forms.CharField(
-        max_length=256, label="Edit reason", required=False
-    )
     memory_unit = forms.ChoiceField(choices=MEMORY_UNITS)
 
     def __init__(self, *args, **kwargs):
@@ -985,11 +982,6 @@ class ProblemEditForm(DirectUploadFormMixin, ModelForm):
         self.fields["authors"].widget.can_add_related = False
         self.fields["curators"].widget.can_add_related = False
         self.fields["testers"].widget.can_add_related = False
-        self.fields["change_message"].widget.attrs.update(
-            {
-                "placeholder": _("Describe the changes you made (optional)"),
-            }
-        )
         self.fields["types"].required = False
         self.fields["group"].required = False
 

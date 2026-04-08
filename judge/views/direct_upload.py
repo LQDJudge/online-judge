@@ -4,6 +4,7 @@ API endpoints for direct file uploads (S3/R2 and local storage).
 
 import json
 
+import reversion
 from django.apps import apps
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
@@ -181,8 +182,15 @@ def save_to_model(request):
         old_file = getattr(obj, field_name, None)
         old_file_name = old_file.name if old_file else None
 
-        setattr(obj, field_name, file_key)
-        obj.save(update_fields=[field_name])
+        if reversion.is_registered(type(obj)):
+            with reversion.create_revision():
+                setattr(obj, field_name, file_key)
+                obj.save(update_fields=[field_name])
+                reversion.set_user(request.user)
+                reversion.set_comment(_("Updated %(field)s.") % {"field": field_name})
+        else:
+            setattr(obj, field_name, file_key)
+            obj.save(update_fields=[field_name])
 
         if old_file_name and old_file_name != file_key:
             try:
@@ -252,8 +260,17 @@ def delete_file(request):
                 default_storage.delete(old_file.name)
             except Exception:
                 pass
-            setattr(obj, field_name, None)
-            obj.save(update_fields=[field_name])
+            if reversion.is_registered(type(obj)):
+                with reversion.create_revision():
+                    setattr(obj, field_name, None)
+                    obj.save(update_fields=[field_name])
+                    reversion.set_user(request.user)
+                    reversion.set_comment(
+                        _("Removed %(field)s.") % {"field": field_name}
+                    )
+            else:
+                setattr(obj, field_name, None)
+                obj.save(update_fields=[field_name])
 
         return JsonResponse(
             {

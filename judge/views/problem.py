@@ -1,8 +1,10 @@
+import difflib
+import json
 import logging
 import os
+from copy import deepcopy
 from operator import itemgetter
 from random import randrange
-from copy import deepcopy
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -92,6 +94,10 @@ from judge.models.problem import (
     get_all_problem_groups,
 )
 from judge.models.runtime import get_all_languages
+
+import reversion
+from django.apps import apps
+from reversion.models import Version
 
 from judge.tasks import rescore_problem
 from judge.tasks.llm import (
@@ -1274,19 +1280,22 @@ class ProblemEdit(
         return kwargs
 
     def form_valid(self, form):
-        # Save the main form
-        problem = form.save(commit=False)
+        with reversion.create_revision():
+            # Save the main form
+            problem = form.save(commit=False)
 
-        # Handle memory unit conversion (already done in clean method)
-        (
-            form.changed_data.remove("memory_unit")
-            if "memory_unit" in form.changed_data
-            else None
-        )
+            # Handle memory unit conversion (already done in clean method)
+            (
+                form.changed_data.remove("memory_unit")
+                if "memory_unit" in form.changed_data
+                else None
+            )
 
-        problem._bypass_points_cap = self.request.user.is_superuser
-        problem.save()
-        form.save_m2m()
+            problem._bypass_points_cap = self.request.user.is_superuser
+            problem.save()
+            form.save_m2m()
+
+            reversion.set_user(self.request.user)
 
         # Add the current user as a curator if they're not already an author/curator
         if not problem.is_editor(self.request.profile):
@@ -1409,6 +1418,233 @@ class ProblemEdit(
         except PublicRequest.DoesNotExist:
             context["public_request"] = None
 
+        return context
+
+
+class ProblemLog(TitleMixin, ListView):
+    template_name = "problem/log.html"
+    context_object_name = "versions"
+    paginate_by = 50
+
+    def get_title(self):
+        return _("Edit history for %s") % self.problem.name
+
+    def get_content_title(self):
+        return mark_safe(
+            escape(_("Edit history for %s"))
+            % format_html(
+                '<a href="{1}">{0}</a>',
+                self.problem.name,
+                reverse("problem_detail", args=[self.problem.code]),
+            )
+        )
+
+    def get(self, request, *args, **kwargs):
+        self.problem = get_object_or_404(Problem, code=self.kwargs["problem"])
+        if not self.problem.is_editable_by(request.user):
+            raise Http404()
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        # Problem versions
+        problem_versions = list(
+            Version.objects.get_for_object(self.problem)
+            .select_related("revision__user__profile")
+            .order_by("-revision__date_created")
+        )
+
+        # Solution versions
+        solutions = Solution.objects.filter(problem=self.problem)
+        solution_versions = []
+        for sol in solutions:
+            solution_versions.extend(
+                Version.objects.get_for_object(sol)
+                .select_related("revision__user__profile")
+                .order_by("-revision__date_created")
+            )
+
+        # Use raw serialized_data instead of field_dict, because field_dict
+        # deserializes through the live model and can mask actual changes
+        # Process problem versions
+        raw_fields = [self._get_raw_fields(v) for v in problem_versions]
+        self._name_cache = self._build_name_cache(raw_fields)
+
+        for i, version in enumerate(problem_versions):
+            version.object_type = "problem"
+            if i < len(problem_versions) - 1:
+                version.changes = self._compute_changes(
+                    raw_fields[i + 1], raw_fields[i]
+                )
+            else:
+                version.changes = []
+
+        # Process solution versions
+        sol_raw = [self._get_raw_fields(v) for v in solution_versions]
+        for i, version in enumerate(solution_versions):
+            version.object_type = "solution"
+            # Find previous version of the same solution object
+            prev_raw = None
+            for j in range(i + 1, len(solution_versions)):
+                if solution_versions[j].object_id == version.object_id:
+                    prev_raw = sol_raw[j]
+                    break
+            if prev_raw is not None:
+                version.changes = self._compute_changes(
+                    prev_raw, sol_raw[i], model=Solution
+                )
+            else:
+                version.changes = []
+
+        # Merge and sort by date
+        all_versions = problem_versions + solution_versions
+        all_versions.sort(key=lambda v: v.revision.date_created, reverse=True)
+
+        return all_versions
+
+    @staticmethod
+    def _get_raw_fields(version):
+        try:
+            data = json.loads(version.serialized_data)
+            if data:
+                return data[0].get("fields", {})
+        except (json.JSONDecodeError, IndexError, KeyError):
+            pass
+        return {}
+
+    _TEXT_DIFF_FIELDS = {"description", "summary", "content"}
+
+    def _compute_changes(self, old_dict, new_dict, model=None):
+        if model is None:
+            model = Problem
+
+        changes = []
+        all_keys = set(old_dict.keys()) | set(new_dict.keys())
+        skip_fields = {"id", "ac_rate", "user_count"}
+
+        for key in sorted(all_keys):
+            if key in skip_fields:
+                continue
+            old_val = old_dict.get(key)
+            new_val = new_dict.get(key)
+            if old_val != new_val:
+                try:
+                    field = model._meta.get_field(key)
+                    label = str(field.verbose_name)
+                except Exception:
+                    label = key
+
+                change = {
+                    "field": label,
+                    "old": self._format_value(key, old_val),
+                    "new": self._format_value(key, new_val),
+                }
+
+                if key in self._TEXT_DIFF_FIELDS:
+                    old_text = str(old_val) if old_val else ""
+                    new_text = str(new_val) if new_val else ""
+                    change["old"] = old_text
+                    change["new"] = new_text
+                    old_lines = old_text.splitlines()
+                    new_lines = new_text.splitlines()
+                    diff_lines = list(
+                        difflib.unified_diff(old_lines, new_lines, lineterm="", n=2)
+                    )
+                    # Skip the --- / +++ / @@ headers
+                    change["diff_lines"] = [
+                        l
+                        for l in diff_lines
+                        if not l.startswith("---") and not l.startswith("+++")
+                    ]
+
+                changes.append(change)
+        return changes
+
+    # Map of field name -> (Model, display_field) for resolving IDs to names
+    _ID_FIELDS = {
+        "authors": ("judge.Profile", "user__username"),
+        "curators": ("judge.Profile", "user__username"),
+        "testers": ("judge.Profile", "user__username"),
+        "banned_users": ("judge.Profile", "user__username"),
+        "types": ("judge.ProblemType", "name"),
+        "allowed_languages": ("judge.Language", "name"),
+        "organizations": ("judge.Organization", "name"),
+        "group": ("judge.ProblemGroup", "name"),
+        "license": ("judge.License", "name"),
+    }
+
+    _PROFILE_FIELDS = {"authors", "curators", "testers", "banned_users"}
+
+    def _build_name_cache(self, raw_fields_list):
+        """Collect all IDs per field across all versions and resolve in bulk."""
+        # Collect all IDs per resolver key
+        ids_by_key = {}
+        for fields in raw_fields_list:
+            for key in self._ID_FIELDS:
+                val = fields.get(key)
+                if val is None:
+                    continue
+                if key not in ids_by_key:
+                    ids_by_key[key] = set()
+                if isinstance(val, list):
+                    ids_by_key[key].update(val)
+                else:
+                    ids_by_key[key].add(val)
+
+        # Resolve profile fields via cache (0 DB queries)
+        all_profile_ids = set()
+        for key in self._PROFILE_FIELDS:
+            all_profile_ids.update(ids_by_key.get(key, set()))
+
+        profile_name_map = {}
+        if all_profile_ids:
+            profiles = Profile.get_cached_instances(*all_profile_ids)
+            profile_name_map = {p.id: p.username for p in profiles}
+
+        cache = {}
+        for key, ids in ids_by_key.items():
+            if not ids:
+                continue
+            if key in self._PROFILE_FIELDS:
+                cache[key] = profile_name_map
+            else:
+                model_path, display_field = self._ID_FIELDS[key]
+                app, model_name = model_path.split(".")
+                Model = apps.get_model(app, model_name)
+                cache[key] = dict(
+                    Model.objects.filter(id__in=ids).values_list("id", display_field)
+                )
+        return cache
+
+    def _format_value(self, key, val):
+        if val is None:
+            return ""
+
+        name_map = self._name_cache.get(key)
+
+        if isinstance(val, list):
+            if name_map:
+                return ", ".join(name_map.get(i, str(i)) for i in val)
+            return ", ".join(str(v) for v in val)
+
+        if name_map and val:
+            return name_map.get(val, str(val))
+
+        if key == "memory_limit" and val:
+            val = int(val)
+            if val % 1024 == 0:
+                return "%d MB" % (val // 1024)
+            return "%d KB" % val
+
+        val_str = str(val)
+        if len(val_str) > 300:
+            return val_str[:300] + "..."
+        return val_str
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["problem"] = self.problem
+        context["page_prefix"] = "?page="
+        context["first_page_href"] = reverse("problem_log", args=[self.problem.code])
         return context
 
 
@@ -1765,11 +2001,13 @@ class ProblemEditSolutions(
             success_message = _("Solution added successfully.")
 
         if form.is_valid():
-            solution = form.save(commit=False)
-            if not existing_solution:
-                solution.problem = self.object
-            solution.save()
-            form.save_m2m()  # Save many-to-many relationships
+            with reversion.create_revision():
+                solution = form.save(commit=False)
+                if not existing_solution:
+                    solution.problem = self.object
+                solution.save()
+                form.save_m2m()
+                reversion.set_user(request.user)
 
             messages.success(request, success_message)
             return HttpResponseRedirect(

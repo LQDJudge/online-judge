@@ -1,0 +1,290 @@
+{% extends "problem/edit_base.html" %}
+{% set page_type = 'log' %}
+
+{% block edit_content %}
+  <div class="problem-log">
+    {% if versions %}
+      <div class="log-entries">
+        {% for version in versions %}
+          <div class="log-entry">
+            <div class="log-header" {% if version.changes %}onclick="toggleChanges(this)"{% endif %}>
+              <div class="log-info">
+                <div class="log-user">
+                  {% if version.revision.user %}
+                    <img src="{{ gravatar(version.revision.user.profile.id, 32) }}"
+                         class="gravatar" width="24" height="24" loading="lazy">
+                    <a href="{{ url('user_page', version.revision.user.username) }}"
+                       class="{{ version.revision.user.profile.css_class }}">
+                      {{ version.revision.user.username }}
+                    </a>
+                  {% else %}
+                    <span class="gray">{{ _('System') }}</span>
+                  {% endif %}
+                </div>
+                <div class="log-comment">
+                  {% if version.revision.comment %}
+                    {{ version.revision.comment }}
+                  {% endif %}
+                </div>
+              </div>
+              <div class="log-meta">
+                <span class="log-time">{{ relative_time(version.revision.date_created) }}</span>
+                {% if version.changes %}
+                  <i class="fa fa-chevron-down toggle-icon"></i>
+                {% endif %}
+              </div>
+            </div>
+            {% if version.changes %}
+              <div class="log-changes" style="display: none;">
+                <table class="changes-table">
+                  <thead>
+                    <tr>
+                      <th>{{ _('Field') }}</th>
+                      <th>{{ _('Old value') }}</th>
+                      <th>{{ _('New value') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for change in version.changes %}
+                      {% if change.diff_lines is defined and change.diff_lines %}
+                        {% set uid = 'diff-' ~ version.id ~ '-' ~ loop.index %}
+                        <tr>
+                          <td class="change-field">{{ change.field }}</td>
+                          <td class="change-diff" colspan="2">
+                            <div class="diff-tabs">
+                              <button class="diff-tab active" onclick="switchDiffTab(this, '{{ uid }}', 'diff')">{{ _('Diff') }}</button>
+                              <button class="diff-tab" onclick="switchDiffTab(this, '{{ uid }}', 'old')">{{ _('Old') }}</button>
+                              <button class="diff-tab" onclick="switchDiffTab(this, '{{ uid }}', 'new')">{{ _('New') }}</button>
+                            </div>
+                            <pre class="diff-block" id="{{ uid }}-diff">{% for line in change.diff_lines %}<span class="{% if line.startswith('@@') %}diff-hunk{% elif line.startswith('+') %}diff-add{% elif line.startswith('-') %}diff-del{% else %}diff-ctx{% endif %}">{{ line }}</span>
+{% endfor %}</pre>
+                            <pre class="diff-block" id="{{ uid }}-old" style="display:none">{{ change.old or '—' }}</pre>
+                            <pre class="diff-block" id="{{ uid }}-new" style="display:none">{{ change.new or '—' }}</pre>
+                          </td>
+                        </tr>
+                      {% else %}
+                        <tr>
+                          <td class="change-field">{{ change.field }}</td>
+                          <td class="change-old">{{ change.old or '—' }}</td>
+                          <td class="change-new">{{ change.new or '—' }}</td>
+                        </tr>
+                      {% endif %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if page_obj.has_other_pages and page_obj.paginator.num_pages > 1 %}
+        {% include "list-pages.html" %}
+      {% endif %}
+    {% else %}
+      <div class="no-logs">
+        <p>{{ _('No edit history available for this problem.') }}</p>
+      </div>
+    {% endif %}
+  </div>
+  <script type="text/javascript">
+    function switchDiffTab(btn, uid, mode) {
+      var tabs = btn.parentElement.querySelectorAll('.diff-tab');
+      for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+      btn.classList.add('active');
+      document.getElementById(uid + '-diff').style.display = mode === 'diff' ? '' : 'none';
+      document.getElementById(uid + '-old').style.display = mode === 'old' ? '' : 'none';
+      document.getElementById(uid + '-new').style.display = mode === 'new' ? '' : 'none';
+    }
+
+    function toggleChanges(header) {
+      var changes = header.nextElementSibling;
+      var icon = header.querySelector('.toggle-icon');
+      if (changes.style.display === 'none') {
+        changes.style.display = 'block';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+      } else {
+        changes.style.display = 'none';
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+      }
+    }
+  </script>
+{% endblock %}
+
+{% block edit_media %}
+  <style>
+    .problem-log {
+      max-width: 900px;
+    }
+
+    .log-entries {
+      border: 1px solid var(--border_gray, #dee2e6);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .log-entry {
+      border-bottom: 1px solid var(--border_gray, #dee2e6);
+    }
+
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px 15px;
+      cursor: pointer;
+    }
+
+    .log-header:hover {
+      background: var(--background_light_gray, #f8f9fa);
+    }
+
+    .log-info {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .log-user {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .log-user .gravatar {
+      border-radius: 50%;
+    }
+
+    .log-comment {
+      color: var(--widget_black, #333);
+      font-size: 0.9em;
+    }
+
+
+
+    .log-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .log-time {
+      color: var(--gray, #6c757d);
+      font-size: 0.85em;
+    }
+
+    .toggle-icon {
+      color: var(--gray, #6c757d);
+      font-size: 0.8em;
+      transition: transform 0.2s;
+    }
+
+    .log-changes {
+      padding: 0 15px 15px;
+    }
+
+    .changes-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9em;
+    }
+
+    .changes-table th {
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 2px solid var(--border_gray, #dee2e6);
+      font-weight: 600;
+    }
+
+    .changes-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border_gray, #eee);
+      vertical-align: top;
+      word-break: break-word;
+      max-width: 300px;
+    }
+
+    .change-field {
+      font-weight: 500;
+      white-space: nowrap;
+      width: 120px;
+    }
+
+    .change-diff {
+      max-width: 600px;
+    }
+
+    .diff-tabs {
+      margin-bottom: 4px;
+    }
+
+    .diff-tab {
+      padding: 2px 10px;
+      border: 1px solid var(--border_gray, #dee2e6);
+      background: none;
+      cursor: pointer;
+      font-size: 0.8em;
+      border-radius: 3px;
+      margin-right: 2px;
+      color: var(--widget_black, #333);
+    }
+
+    .diff-tab.active {
+      background: var(--theme_color, #c0392b);
+      color: white;
+      border-color: var(--theme_color, #c0392b);
+    }
+
+    .diff-block {
+      margin: 0;
+      font-size: 0.85em;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .diff-add {
+      background: var(--diff_add_bg, rgba(40, 167, 69, 0.15));
+      color: var(--green, #27ae60);
+    }
+
+    .diff-del {
+      background: var(--diff_del_bg, rgba(220, 53, 69, 0.15));
+      color: var(--announcement_red, #c0392b);
+    }
+
+    .diff-hunk {
+      color: var(--gray, #6c757d);
+    }
+
+    .diff-ctx {
+      color: var(--widget_black, #333);
+    }
+
+    .change-old {
+      color: var(--announcement_red, #c0392b);
+    }
+
+    .change-new {
+      color: var(--green, #27ae60);
+    }
+
+    .no-logs {
+      text-align: center;
+      padding: 40px;
+      color: var(--gray, #6c757d);
+      font-style: italic;
+    }
+  </style>
+{% endblock %}
