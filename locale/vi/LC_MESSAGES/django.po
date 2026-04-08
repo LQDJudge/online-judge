@@ -11430,14 +11430,12 @@ msgid "Download Sample"
 msgstr "Tải xuống ví dụ"
 
 #: templates/user/import/index.html:96
-#, fuzzy
-#| msgid "Import Users"
 msgid "Mute imported users"
-msgstr "Nhập người dùng"
+msgstr "Tắt tiếng người dùng được nhập"
 
 #: templates/user/import/index.html:97
 msgid "(used for official contests to disallow users from communicating)"
-msgstr ""
+msgstr "(dùng cho kỳ thi chính thức để không cho phép thí sinh giao tiếp)"
 
 #: templates/user/import/index.html:106
 msgid "Previous Import Results:"

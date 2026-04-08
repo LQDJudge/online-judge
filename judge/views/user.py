@@ -569,10 +569,15 @@ def import_users_submit(request):
         if "user_data" in request.POST:
             users_data = json.loads(request.POST["user_data"])
             users = users_data.get("users", [])
+            muted = users_data.get("muted", True)
         else:
-            users = json.loads(request.body)["users"]
+            body = json.loads(request.body)
+            users = body["users"]
+            muted = body.get("muted", True)
 
-        status = import_users.import_users.delay(users, profile_id=request.profile.id)
+        status = import_users.import_users.delay(
+            users, profile_id=request.profile.id, muted=muted
+        )
         cache.delete(f"import_users_log_{request.profile.id}")
 
         return redirect_to_task_status(

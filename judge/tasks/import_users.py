@@ -51,7 +51,7 @@ def is_valid_username(username):
 
 
 @shared_task(bind=True)
-def import_users(self, users, profile_id=None):
+def import_users(self, users, profile_id=None, muted=True):
     log = ""
     processed_count = 0
 
@@ -77,6 +77,7 @@ def import_users(self, users, profile_id=None):
                 defaults={
                     "language": Language.get_python3(),
                     "timezone": settings.DEFAULT_USER_TIME_ZONE,
+                    "mute": muted,
                 },
             )
 
@@ -84,6 +85,7 @@ def import_users(self, users, profile_id=None):
                 cur_log += "Create new - "
             else:
                 cur_log += "Edit - "
+                profile.mute = muted
 
             if pwd:
                 user.set_password(pwd)

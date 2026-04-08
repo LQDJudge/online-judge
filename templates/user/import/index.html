@@ -55,7 +55,8 @@
         $('#table_csv').html('');
         $('#log').html('<p>{{ _("Submitting import task...") }}</p>');
 
-        var userData = JSON.stringify({ 'users': window.import_users });
+        var muted = $('#muted').is(':checked');
+        var userData = JSON.stringify({ 'users': window.import_users, 'muted': muted });
 
         // Add the user data to the form
         $('#user_data').val(userData);
@@ -89,6 +90,13 @@
     <form id="submit-form" method="post" action="{{ url('import_users_submit') }}" style="display: none;">
       {% csrf_token %}
       <input type="hidden" id="user_data" name="user_data">
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="muted" name="muted" checked>
+          {{ _('Mute imported users') }}
+          <span class="note">{{ _('(used for official contests to disallow users from communicating)') }}</span>
+        </label>
+      </div>
       <button type="submit" id="confirm_button" class="btn">{{ _('Import Users') }}</button>
     </form>
 
