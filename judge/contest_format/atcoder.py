@@ -115,7 +115,11 @@ class AtCoderContestFormat(DefaultContestFormat):
         participation.save()
 
     def display_user_problem(self, participation, contest_problem, show_final=False):
-        format_data = (participation.format_data or {}).get(str(contest_problem.id))
+        if contest_problem.quiz_id:
+            format_key = f"quiz_{contest_problem.id}"
+        else:
+            format_key = str(contest_problem.id)
+        format_data = (participation.format_data or {}).get(format_key)
         if format_data:
             penalty = (
                 format_html(

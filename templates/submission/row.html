@@ -1,4 +1,6 @@
 {% set can_view = submission.is_accessible_by(profile, check_contest=False) or is_in_editable_contest %}
+{% set _is_result_hidden = submission._is_result_hidden is defined and submission._is_result_hidden %}
+{% set is_hidden = in_hidden_subtasks_contest or _is_result_hidden %}
 <img class="sub-user-img user-img" loading="lazy" src="{{gravatar(submission.user_id)}}">
 <div class="sub-details">
   <div class="sub-info{% if submission.status == 'G' %} sub-info-grading{% endif %}">
@@ -11,22 +13,26 @@
     {% endif %}
   </div>
   <div class="sub-result">
-    <div class="state {{ submission._result_class if in_hidden_subtasks_contest else submission.result_class }}">
-      {% if in_hidden_subtasks_contest and submission.is_graded %}
-        <span>
-          {% set ns = namespace(is_first=False) %}
-          {% for batch in submission.batches %}
-            {% if batch.id %}
-              {{ '+' if ns.is_first else '' }}
-              {% set ns.is_first = True %}
-              <span class={{'green' if batch.AC else 'red' }}>
-                {{ batch.points|floatformat(0) }}
-              </span>
-            {% endif %}
-          {% endfor %}
-        </span>
+    <div class="state {{ submission._result_class if is_hidden else submission.result_class }}">
+      {% if is_hidden and submission.is_graded %}
+        {% if _is_result_hidden %}
+          <span class="status">{{ _('Hidden') }}</span>
+        {% elif in_hidden_subtasks_contest %}
+          <span>
+            {% set ns = namespace(is_first=False) %}
+            {% for batch in submission.batches %}
+              {% if batch.id %}
+                {{ '+' if ns.is_first else '' }}
+                {% set ns.is_first = True %}
+                <span class={{'green' if batch.AC else 'red' }}>
+                  {{ batch.points|floatformat(0) }}
+                </span>
+              {% endif %}
+            {% endfor %}
+          </span>
+        {% endif %}
       {% else %}
-        {% if not in_hidden_subtasks_contest or submission.status in ('IE', 'CE', 'AB') %}
+        {% if not is_hidden or submission.status in ('IE', 'CE', 'AB') %}
           <span title="{{ submission.long_status }}" class="status">{{ submission.short_status }}</span>
         {% endif %}
       {% endif %}
@@ -35,12 +41,14 @@
       {%- if submission.is_graded -%}
         {%- if submission.status in ('IE', 'CE', 'AB') -%}
           ---
+        {%- elif _is_result_hidden -%}
+          ?
         {%- else -%}
           {{ submission.case_points|floatformat(0) }} / {{ submission.case_total|floatformat(0) }}
         {%- endif -%}
       {%- else -%}
         <i class="fa fa-spinner fa-pulse"></i>
-        {% if submission.status == 'G' and not in_hidden_subtasks_contest %}
+        {% if submission.status == 'G' and not is_hidden %}
           <span class="sub-testcase">
             {%- if submission.current_testcase > 0 -%}
               {{ _('%(point)s / #%(case)s', point=submission.points|floatformat(1), case=submission.current_testcase-1) }}
@@ -62,7 +70,7 @@
 </div>
 
 <div class="sub-usage">
-  {% if submission.status in ('QU', 'P', 'G', 'CE', 'IE', 'AB') or in_hidden_subtasks_contest %}
+  {% if submission.status in ('QU', 'P', 'G', 'CE', 'IE', 'AB') or is_hidden %}
     <div class="time">---</div>
     <div class="memory">---</div>
   {% else %}

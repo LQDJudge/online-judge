@@ -2130,6 +2130,20 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
         context["show_answers"] = quiz.show_answers(self.request.user)
         context["can_edit"] = quiz.is_editable_by(self.request.user)
 
+        # Check if results should be hidden in contest context
+        is_result_hidden = False
+        if attempt.contest_participation_id:
+            from judge.models.contest import ContestProblem
+
+            cp = ContestProblem.objects.filter(
+                contest=attempt.contest_participation.contest, quiz=quiz
+            ).first()
+            if cp:
+                is_result_hidden = quiz.should_hide_result(
+                    self.request.user, contest_problem=cp
+                )
+        context["is_result_hidden"] = is_result_hidden
+
         # Check if user can retake the quiz
         # Currently allow unlimited retakes - can add max_attempts check later
         context["can_retake"] = (
@@ -2246,6 +2260,7 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
         context["best_score"] = best_attempt.score if best_attempt else None
 
         # Show context info (respect "Out contest" toggle)
+        contest_quiz = None
         in_contest = getattr(self.request, "in_contest", False)
         if in_contest and self.request.profile.current_contest:
             contest_quiz = ContestProblem.objects.filter(
@@ -2254,6 +2269,14 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
             if contest_quiz:
                 context["in_contest"] = True
                 context["contest"] = self.request.profile.current_contest.contest
+
+        # Check if results should be hidden
+        is_result_hidden = False
+        if contest_quiz:
+            is_result_hidden = quiz.should_hide_result(
+                self.request.user, contest_problem=contest_quiz
+            )
+        context["is_result_hidden"] = is_result_hidden
 
         # Add pagination context for query parameter pagination
         context.update(paginate_query_context(self.request))
@@ -2874,6 +2897,12 @@ class ContestQuizAttemptsAjax(View):
         # Calculate best score
         best_attempt = attempts.order_by("-score").first()
 
+        # Check if results should be hidden
+        cp = ContestProblem.objects.filter(contest=contest_obj, quiz=quiz).first()
+        is_result_hidden = False
+        if cp and cp.is_result_hidden:
+            is_result_hidden = not contest_obj.is_editable_by(request.user)
+
         return render(
             request,
             "quiz/contest-attempts-ajax.html",
@@ -2884,6 +2913,7 @@ class ContestQuizAttemptsAjax(View):
                 "quiz": quiz,
                 "attempts": attempts,
                 "best_attempt": best_attempt,
+                "is_result_hidden": is_result_hidden,
             },
         )
 
@@ -3514,8 +3544,13 @@ class LessonQuizResult(LessonQuizMixin, LoginRequiredMixin, TitleMixin, DetailVi
         context["show_answers"] = quiz.show_answers(self.request.user)
         context["can_edit"] = quiz.is_editable_by(self.request.user)
 
-        # Check if user can retake in this lesson context
+        # Check if results should be hidden in lesson context
         lesson_quiz = self.get_lesson_quiz()
+        context["is_result_hidden"] = quiz.should_hide_result(
+            self.request.user, lesson_quiz=lesson_quiz
+        )
+
+        # Check if user can retake in this lesson context
         can_retake = (
             attempt.user == self.request.profile
             and lesson_quiz.can_attempt(self.request.user)
@@ -3574,6 +3609,11 @@ class LessonQuizAttemptList(LessonQuizMixin, LoginRequiredMixin, TitleMixin, Lis
             self.get_queryset().filter(is_submitted=True).order_by("-score").first()
         )
         context["best_score"] = best_attempt.score if best_attempt else None
+
+        # Check if results should be hidden in lesson context
+        context["is_result_hidden"] = quiz.should_hide_result(
+            self.request.user, lesson_quiz=lesson_quiz
+        )
 
         context.update(paginate_query_context(self.request))
         return context

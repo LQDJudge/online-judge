@@ -86,12 +86,14 @@ class IOIContestFormat(DefaultContestFormat):
         participation.save()
 
     def display_user_problem(self, participation, contest_problem, show_final=False):
-        if show_final:
-            format_data = (participation.format_data_final or {}).get(
-                str(contest_problem.id)
-            )
+        if contest_problem.quiz_id:
+            format_key = f"quiz_{contest_problem.id}"
         else:
-            format_data = (participation.format_data or {}).get(str(contest_problem.id))
+            format_key = str(contest_problem.id)
+        if show_final:
+            format_data = (participation.format_data_final or {}).get(format_key)
+        else:
+            format_data = (participation.format_data or {}).get(format_key)
         if format_data:
             time_seconds = int(format_data["time"]) if self.config["cumtime"] else None
             time_display = (

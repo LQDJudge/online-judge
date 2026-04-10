@@ -362,9 +362,17 @@ class CourseLessonQuizForm(ModelForm):
 
 
 class CourseLessonQuizAdmin(CompareVersionAdmin):
-    list_display = ["lesson", "quiz", "max_attempts", "points", "order", "is_visible"]
+    list_display = [
+        "lesson",
+        "quiz",
+        "max_attempts",
+        "points",
+        "order",
+        "is_visible",
+        "is_result_hidden",
+    ]
     list_display_links = ["lesson", "quiz"]
-    list_filter = ("is_visible",)
+    list_filter = ("is_visible", "is_result_hidden")
     search_fields = ("lesson__title", "quiz__title", "quiz__code")
     form = CourseLessonQuizForm
     ordering = ["lesson", "order"]

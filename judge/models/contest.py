@@ -922,6 +922,14 @@ class ContestProblem(models.Model):
         blank=True,
         max_length=20,
     )
+    is_result_hidden = models.BooleanField(
+        default=False,
+        verbose_name=_("hide results"),
+        help_text=_(
+            "Hide all results for this problem/quiz from non-editors. "
+            "Shows ? instead of scores."
+        ),
+    )
 
     def clean(self):
         # Ensure exactly one of problem or quiz is set

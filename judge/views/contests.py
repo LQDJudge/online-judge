@@ -616,6 +616,17 @@ class ContestDetail(
             self.object.SCOREBOARD_AFTER_CONTEST,
             self.object.SCOREBOARD_AFTER_PARTICIPATION,
         )
+
+        # Per-problem result hiding
+        if not self.object.is_editable_by(self.request.user):
+            context["result_hidden_problem_ids"] = set(
+                self.object.contest_problems.filter(
+                    is_result_hidden=True, problem__isnull=False
+                ).values_list("problem_id", flat=True)
+            )
+        else:
+            context["result_hidden_problem_ids"] = set()
+
         if self.profile:
             if is_in_viewed_contest:
                 context["completed_problem_ids"] = self.get_completed_problems()
@@ -686,6 +697,16 @@ class ContestProblems(ContestMixin, SolvedProblemMixin, TitleMixin, DetailView):
             contest.SCOREBOARD_AFTER_CONTEST,
             contest.SCOREBOARD_AFTER_PARTICIPATION,
         )
+
+        # Per-problem result hiding
+        if not contest.is_editable_by(self.request.user):
+            context["result_hidden_problem_ids"] = set(
+                contest.contest_problems.filter(
+                    is_result_hidden=True, problem__isnull=False
+                ).values_list("problem_id", flat=True)
+            )
+        else:
+            context["result_hidden_problem_ids"] = set()
 
         if self.profile:
             if is_in_contest:
@@ -1237,7 +1258,11 @@ BestSolutionData = namedtuple("BestSolutionData", "code points time state is_pre
 
 
 def make_contest_ranking_profile(
-    contest, participation, contest_problems, show_final=False
+    contest,
+    participation,
+    contest_problems,
+    show_final=False,
+    result_hidden_ids=None,
 ):
     if not show_final:
         points = participation.score
@@ -1246,7 +1271,28 @@ def make_contest_ranking_profile(
         points = participation.score_final
         cumtime = participation.cumtime_final
 
+    # Adjust displayed points/cumtime to exclude hidden problems
+    if result_hidden_ids:
+        hp, hc = contest.format._compute_hidden_adjustment(
+            participation, result_hidden_ids
+        )
+        points = round(max(points - hp, 0), contest.points_precision)
+        cumtime = max(cumtime - hc, 0)
+
     user = participation.user
+
+    problem_cells = []
+    for contest_problem in contest_problems:
+        if result_hidden_ids and contest_problem.id in result_hidden_ids:
+            cell = format_html(
+                '<td class="problem-score-col frozen"><span>?</span></td>'
+            )
+        else:
+            cell = contest.format.display_user_problem(
+                participation, contest_problem, show_final
+            )
+        problem_cells.append(cell)
+
     return ContestRankingProfile(
         id=user.id,
         user=user,
@@ -1256,21 +1302,21 @@ def make_contest_ranking_profile(
         participation_rating=(
             participation.rating.rating if hasattr(participation, "rating") else None
         ),
-        problem_cells=[
-            contest.format.display_user_problem(
-                participation, contest_problem, show_final
-            )
-            for contest_problem in contest_problems
-        ],
+        problem_cells=problem_cells,
         result_cell=contest.format.display_participation_result(
-            participation, show_final
+            participation, show_final, result_hidden_ids
         ),
         participation=participation,
     )
 
 
 def base_contest_ranking_list(
-    contest, problems, queryset, show_final=False, extra_participation=None
+    contest,
+    problems,
+    queryset,
+    show_final=False,
+    extra_participation=None,
+    result_hidden_ids=None,
 ):
     participation_fields = [
         field.name
@@ -1283,7 +1329,9 @@ def base_contest_ranking_list(
     ]
 
     res = [
-        make_contest_ranking_profile(contest, participation, problems, show_final)
+        make_contest_ranking_profile(
+            contest, participation, problems, show_final, result_hidden_ids
+        )
         for participation in queryset.select_related("user", "rating").only(
             *fields_to_fetch
         )
@@ -1293,7 +1341,12 @@ def base_contest_ranking_list(
 
 
 def contest_ranking_list(
-    contest, problems, queryset=None, show_final=False, extra_participation=None
+    contest,
+    problems,
+    queryset=None,
+    show_final=False,
+    extra_participation=None,
+    result_hidden_ids=None,
 ):
     if queryset is None:
         queryset = contest.users.filter(virtual=0)
@@ -1315,6 +1368,7 @@ def contest_ranking_list(
         problems,
         queryset,
         show_final,
+        result_hidden_ids=result_hidden_ids,
     )
 
 
@@ -1339,8 +1393,21 @@ def get_contest_ranking_list(
     if participation is None:
         participation = _get_current_virtual_participation(request, contest)
 
+    # Compute result_hidden_ids for non-editors
+    result_hidden_ids = set()
+    if not contest.is_editable_by(request.user):
+        result_hidden_ids = set(
+            contest.contest_problems.filter(is_result_hidden=True).values_list(
+                "id", flat=True
+            )
+        )
+
     ranking_list_result = ranking_list(
-        contest, problems, show_final=show_final, extra_participation=participation
+        contest,
+        problems,
+        show_final=show_final,
+        extra_participation=participation,
+        result_hidden_ids=result_hidden_ids,
     )
 
     users = ranker(
