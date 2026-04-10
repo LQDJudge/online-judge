@@ -1383,6 +1383,13 @@ class AddOrganization(LoginRequiredMixin, TitleMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
+        if self.request.profile.mute:
+            return generic_message(
+                self.request,
+                _("Muted"),
+                _("Muted users are not allowed to create groups."),
+                status=403,
+            )
         if (
             not self.request.user.is_staff
             and Organization.objects.filter(registrant=self.request.profile).count()
@@ -1614,6 +1621,13 @@ class AddOrganizationBlog(
         return _("Add blog for %s") % self.organization.name
 
     def form_valid(self, form):
+        if self.request.profile.mute:
+            return generic_message(
+                self.request,
+                _("Muted"),
+                _("Muted users are not allowed to create blog posts."),
+                status=403,
+            )
         with revisions.create_revision():
             res = super(AddOrganizationBlog, self).form_valid(form)
             self.object.is_organization_private = True
@@ -1695,6 +1709,13 @@ class EditOrganizationBlog(
 
             if not (self.is_org_admin or self.is_org_moderator or self.is_blog_author):
                 raise Exception(_("Not allowed to edit this blog"))
+
+            if (
+                self.request.profile.mute
+                and not self.is_org_admin
+                and not self.is_org_moderator
+            ):
+                raise Exception(_("Muted users are not allowed to edit blog posts."))
 
             # Prevent authors from accessing edit page after post is approved (visible=True)
             # Only allow admins and moderators to edit approved posts
