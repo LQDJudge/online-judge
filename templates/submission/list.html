@@ -114,9 +114,56 @@
           matcher: idAndTextMatcher,
         }).css({'visibility': 'visible'});
 
-        $('#user-filter').select2({
-          minimumResultsForSearch: Infinity,
-        }).css({'visibility': 'visible'});
+        var userSubmissionsUrlTemplate = '{{ user_submissions_url_template }}';
+        function buildFilterUrl(baseUrl) {
+          var params = new URLSearchParams();
+          $('#status').val().forEach(function (v) { params.append('status', v); });
+          $('#language').val().forEach(function (v) { params.append('language', v); });
+          var qs = params.toString();
+          return qs ? baseUrl + '?' + qs : baseUrl;
+        }
+        var $userFilter = $('#user-filter');
+        var localOptions = [];
+        $userFilter.find('option').each(function () {
+          localOptions.push({id: $(this).val(), text: $(this).text().trim()});
+        });
+        var userSearchUrl = '{{ url("user_search_select2_ajax") }}';
+        $userFilter.select2({
+          ajax: {
+            transport: function (params, success, failure) {
+              var term = (params.data.term || '').trim();
+              if (!term) {
+                success({results: localOptions, more: false});
+                return {abort: function () {}};
+              }
+              return $.ajax({
+                url: userSearchUrl,
+                data: {term: term},
+                dataType: 'json',
+                success: success,
+                error: failure,
+              });
+            },
+            delay: 250,
+          },
+          escapeMarkup: function (m) { return m; },
+          templateResult: function (data) {
+            if (data.loading || !data.gravatar_url) return data.text;
+            return $('<span>')
+              .append($('<img>', {'class': 'user-search-image', src: data.gravatar_url, width: 24, height: 24}))
+              .append($('<span>', {'class': data.display_rank + ' user-search-name'}).text(data.text));
+          },
+          templateSelection: function (data) { return data.text; },
+        }).css({'visibility': 'visible'}).on('select2:select', function (e) {
+          var data = e.params.data;
+          var url;
+          if (data.gravatar_url) {
+            url = userSubmissionsUrlTemplate.replace('__username__', data.text);
+          } else {
+            url = data.id;
+          }
+          navigateTo(buildFilterUrl(url));
+        });
       });
 
       // Draw the statistics graph.
@@ -328,10 +375,20 @@
             {% block submission_user_filter %}
               {% if request.user.is_authenticated %}
                 <div class="filter-form-group">
-                  <select id="user-filter" name="user_filter" style="width: 100%;">
-                    <option value="all" {% if user_filter == 'all' or not user_filter %}selected{% endif %}>{{ _('All submissions') }}</option>
-                    <option value="me" {% if user_filter == 'me' %}selected{% endif %}>{{ _('My submissions') }}</option>
-                    <option value="friends" {% if user_filter == 'friends' %}selected{% endif %}>{{ _('Friend submissions') }}</option>
+                  <select id="user-filter" style="width: 100%;">
+                    <option value="{{ all_submissions_link }}" {% if page_type == 'all_submissions_list' %}selected{% endif %}>{{ _('All submissions') }}</option>
+                    {% if my_submissions_link %}
+                      <option value="{{ my_submissions_link }}" {% if page_type == 'my_submissions_tab' %}selected{% endif %}>{{ _('My submissions') }}</option>
+                    {% endif %}
+                    {% if page_type == 'user_submissions_tab' %}
+                      <option value="{{ user_submissions_url_template.replace('__username__', tab_username) }}" selected>{{ tab_username }}</option>
+                    {% endif %}
+                    {% if best_submissions_link %}
+                      <option value="{{ best_submissions_link }}" {% if page_type == 'best_submissions_list' %}selected{% endif %}>{{ _('Best submissions') }}</option>
+                    {% endif %}
+                    {% if friend_submissions_link %}
+                      <option value="{{ friend_submissions_link }}" {% if page_type == 'friend_tab' %}selected{% endif %}>{{ _('Friend submissions') }}</option>
+                    {% endif %}
                   </select>
                 </div>
               {% endif %}
@@ -380,5 +437,9 @@
 {% endblock %}
 
 {% block left_sidebar %}
-  {% include "problem/left-sidebar.html" %}
+  {% if problem is defined and problem %}
+    {% include "submission/problem-submissions-left-sidebar.html" %}
+  {% else %}
+    {% include "problem/left-sidebar.html" %}
+  {% endif %}
 {% endblock %}

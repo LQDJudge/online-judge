@@ -1,0 +1,8 @@
+<div class="left-sidebar">
+  {{ make_tab_item('problem_detail', 'fa fa-arrow-left', url('problem_detail', problem.code), problem.translated_name(LANGUAGE_CODE)) }}
+  {{ make_tab_item('all_submissions_list', 'fa fa-list', url('chronological_submissions', problem.code), _('All')) }}
+  {% if request.user.is_authenticated %}
+    {{ make_tab_item('my_submissions_tab', 'fa fa-user', url('user_submissions', problem.code, request.user.username), _('Mine')) }}
+  {% endif %}
+  {{ make_tab_item('best_submissions_list', 'fa fa-bar-chart', url('ranked_submissions', problem.code), _('Best')) }}
+</div>
