@@ -42,6 +42,7 @@ from judge.models import (
     Profile,
     Submission,
 )
+from judge.models.contest import get_contest_problem_ids
 from judge.utils.problems import get_result_data
 from judge.utils.problem_data import get_problem_case
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
@@ -900,14 +901,23 @@ class ContestSubmissions(
     def user_filter(self):
         return self.request.GET.get("user_filter", "me")
 
+    @cached_property
+    def selected_problem(self):
+        problem_code = self.request.GET.get("problem")
+        if problem_code:
+            try:
+                cp = self.contest.contest_problems.get(problem__code=problem_code)
+                return cp.problem
+            except self.contest.contest_problems.model.DoesNotExist:
+                pass
+        return None
+
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.user_filter == "me":
             queryset = queryset.filter(user=self.request.profile)
-        elif self.user_filter == "friends":
-            friend_ids = self.request.profile.get_following_ids(True)
-            queryset = queryset.filter(user_id__in=friend_ids)
-        # "all" shows everything (subject to existing contest visibility rules)
+        if self.selected_problem:
+            queryset = queryset.filter(problem=self.selected_problem)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -916,11 +926,20 @@ class ContestSubmissions(
         context["contest"] = self.contest
         context["page_type"] = "submissions"
         context["user_filter"] = self.user_filter
+        contest_problem_ids = get_contest_problem_ids(self.contest.id)
+        Problem.prefetch_cache_i18n_name(
+            self.request.LANGUAGE_CODE, *contest_problem_ids
+        )
+        context["contest_problems"] = Problem.get_cached_instances(*contest_problem_ids)
+        context["selected_problem"] = (
+            self.selected_problem.code if self.selected_problem else ""
+        )
         return context
 
 
 class UserContestSubmissions(ForceContestMixin, UserProblemSubmissions):
     check_contest_in_access_check = True
+    template_name = "contest/submissions.html"
 
     def get_title(self):
         if self.problem.is_accessible_by(self.request.user):
@@ -965,6 +984,22 @@ class UserContestSubmissions(ForceContestMixin, UserProblemSubmissions):
             self.contest.name,
             reverse("contest_view", args=[self.contest.key]),
         )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["contest"] = self.contest
+        context["page_type"] = "submissions"
+        context["can_edit"] = self.contest.is_editable_by(self.request.user)
+        context["can_access"] = self.contest.is_accessible_by(self.request.user)
+        context["now"] = timezone.now()
+        context["user_filter"] = "me"
+        contest_problem_ids = get_contest_problem_ids(self.contest.id)
+        Problem.prefetch_cache_i18n_name(
+            self.request.LANGUAGE_CODE, *contest_problem_ids
+        )
+        context["contest_problems"] = Problem.get_cached_instances(*contest_problem_ids)
+        context["selected_problem"] = self.problem.code
+        return context
 
 
 class UserContestSubmissionsAjax(UserContestSubmissions):

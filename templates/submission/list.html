@@ -114,56 +114,58 @@
           matcher: idAndTextMatcher,
         }).css({'visibility': 'visible'});
 
-        var userSubmissionsUrlTemplate = '{{ user_submissions_url_template }}';
-        function buildFilterUrl(baseUrl) {
-          var params = new URLSearchParams();
-          $('#status').val().forEach(function (v) { params.append('status', v); });
-          $('#language').val().forEach(function (v) { params.append('language', v); });
-          var qs = params.toString();
-          return qs ? baseUrl + '?' + qs : baseUrl;
-        }
-        var $userFilter = $('#user-filter');
-        var localOptions = [];
-        $userFilter.find('option').each(function () {
-          localOptions.push({id: $(this).val(), text: $(this).text().trim()});
-        });
-        var userSearchUrl = '{{ url("user_search_select2_ajax") }}';
-        $userFilter.select2({
-          ajax: {
-            transport: function (params, success, failure) {
-              var term = (params.data.term || '').trim();
-              if (!term) {
-                success({results: localOptions, more: false});
-                return {abort: function () {}};
-              }
-              return $.ajax({
-                url: userSearchUrl,
-                data: {term: term},
-                dataType: 'json',
-                success: success,
-                error: failure,
-              });
-            },
-            delay: 250,
-          },
-          escapeMarkup: function (m) { return m; },
-          templateResult: function (data) {
-            if (data.loading || !data.gravatar_url) return data.text;
-            return $('<span>')
-              .append($('<img>', {'class': 'user-search-image', src: data.gravatar_url, width: 24, height: 24}))
-              .append($('<span>', {'class': data.display_rank + ' user-search-name'}).text(data.text));
-          },
-          templateSelection: function (data) { return data.text; },
-        }).css({'visibility': 'visible'}).on('select2:select', function (e) {
-          var data = e.params.data;
-          var url;
-          if (data.gravatar_url) {
-            url = userSubmissionsUrlTemplate.replace('__username__', data.text);
-          } else {
-            url = data.id;
+        {% block user_filter_js %}
+          var userSubmissionsUrlTemplate = '{{ user_submissions_url_template }}';
+          function buildFilterUrl(baseUrl) {
+            var params = new URLSearchParams();
+            $('#status').val().forEach(function (v) { params.append('status', v); });
+            $('#language').val().forEach(function (v) { params.append('language', v); });
+            var qs = params.toString();
+            return qs ? baseUrl + '?' + qs : baseUrl;
           }
-          navigateTo(buildFilterUrl(url));
-        });
+          var $userFilter = $('#user-filter');
+          var localOptions = [];
+          $userFilter.find('option').each(function () {
+            localOptions.push({id: $(this).val(), text: $(this).text().trim()});
+          });
+          var userSearchUrl = '{{ url("user_search_select2_ajax") }}';
+          $userFilter.select2({
+            ajax: {
+              transport: function (params, success, failure) {
+                var term = (params.data.term || '').trim();
+                if (!term) {
+                  success({results: localOptions, more: false});
+                  return {abort: function () {}};
+                }
+                return $.ajax({
+                  url: userSearchUrl,
+                  data: {term: term},
+                  dataType: 'json',
+                  success: success,
+                  error: failure,
+                });
+              },
+              delay: 250,
+            },
+            escapeMarkup: function (m) { return m; },
+            templateResult: function (data) {
+              if (data.loading || !data.gravatar_url) return data.text;
+              return $('<span>')
+                .append($('<img>', {'class': 'user-search-image', src: data.gravatar_url, width: 24, height: 24}))
+                .append($('<span>', {'class': data.display_rank + ' user-search-name'}).text(data.text));
+            },
+            templateSelection: function (data) { return $('<span>').text(data.text).html(); },
+          }).css({'visibility': 'visible'}).on('select2:select', function (e) {
+            var data = e.params.data;
+            var url;
+            if (data.gravatar_url) {
+              url = userSubmissionsUrlTemplate.replace('__username__', data.text);
+            } else {
+              url = data.id;
+            }
+            navigateTo(buildFilterUrl(url));
+          });
+        {% endblock %}
       });
 
       // Draw the statistics graph.

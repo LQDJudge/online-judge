@@ -13,12 +13,51 @@
   {% endif %}
 {% endblock %}
 
+{% block user_filter_js %}
+  var contestSubmissionsUrl = '{{ url("contest_submissions", contest.key) }}';
+  function buildContestFilterUrl() {
+  var params = new URLSearchParams();
+  var userFilter = $('#user-filter').val();
+  if (userFilter && userFilter !== 'me') {
+  params.append('user_filter', userFilter);
+  }
+  var problem = $('#problem-filter').val();
+  if (problem) {
+  params.append('problem', problem);
+  }
+  $('#status').val().forEach(function (v) { params.append('status', v); });
+  $('#language').val().forEach(function (v) { params.append('language', v); });
+  var qs = params.toString();
+  return qs ? contestSubmissionsUrl + '?' + qs : contestSubmissionsUrl;
+  }
+  $('#user-filter').select2({
+  minimumResultsForSearch: Infinity,
+  }).css({'visibility': 'visible'}).on('change', function () {
+  navigateTo(buildContestFilterUrl());
+  });
+  $('#problem-filter').select2({
+  minimumResultsForSearch: Infinity,
+  }).css({'visibility': 'visible'}).on('change', function () {
+  navigateTo(buildContestFilterUrl());
+  });
+{% endblock %}
+
 {% block submission_user_filter %}
   <div class="filter-form-group">
-    <select id="user-filter" name="user_filter" style="width: 100%;">
+    <select id="user-filter" style="width: 100%;">
       <option value="me" {% if user_filter == 'me' %}selected{% endif %}>{{ _('My submissions') }}</option>
       <option value="all" {% if user_filter == 'all' %}selected{% endif %}>{{ _('All submissions') }}</option>
-      <option value="friends" {% if user_filter == 'friends' %}selected{% endif %}>{{ _('Friend submissions') }}</option>
     </select>
   </div>
+  {% if contest_problems is defined and contest_problems %}
+    <div class="filter-form-group">
+      <label class="bold-text margin-label" for="problem-filter"><i class="non-italics">{{ _('Problem') }}</i></label>
+      <select id="problem-filter" style="width: 100%;">
+        <option value="">{{ _('All') }}</option>
+        {% for p in contest_problems %}
+          <option value="{{ p.code }}" {% if selected_problem == p.code %}selected{% endif %}>{{ p.translated_name(LANGUAGE_CODE) }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  {% endif %}
 {% endblock %}
