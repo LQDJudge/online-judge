@@ -126,6 +126,18 @@ def get_hidden_subtasks(request, submission):
     contest = submission.contest_object
     if contest and contest.is_editable_by(request.user):
         return set()
+    # Per-problem is_result_hidden: hide ALL batches
+    if contest:
+        try:
+            cp = submission.contest.problem
+            if cp.is_result_hidden:
+                all_batches = set(
+                    submission.test_cases.values_list("batch", flat=True).distinct()
+                )
+                all_batches.discard(None)
+                return all_batches if all_batches else {-1}
+        except Exception:
+            pass
     if contest and contest.format.has_hidden_subtasks:
         try:
             return contest.format.get_hidden_subtasks().get(
@@ -245,6 +257,11 @@ class SubmissionStatus(SubmissionDetailBase):
         submission = self.object
 
         context["hidden_subtasks"] = get_hidden_subtasks(self.request, self.object)
+        context["is_result_hidden"] = False
+        contest_sub = submission.contest_or_none
+        if contest_sub and contest_sub.problem.is_result_hidden:
+            if not submission.contest_object.is_editable_by(self.request.user):
+                context["is_result_hidden"] = True
         context["last_msg"] = event.last()
         context["batches"] = group_test_cases(
             submission, context["hidden_subtasks"], True
@@ -487,6 +504,23 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         if context["in_hidden_subtasks_contest"]:
             for submission in context["submissions"]:
                 self.modify_attrs(submission)
+        # Per-submission is_result_hidden
+        if self.in_contest and not self.contest.is_editable_by(self.request.user):
+            result_hidden_cp_ids = set(
+                self.contest.contest_problems.filter(
+                    is_result_hidden=True, problem__isnull=False
+                ).values_list("problem_id", flat=True)
+            )
+            if result_hidden_cp_ids:
+                for submission in context["submissions"]:
+                    if submission.problem_id in result_hidden_cp_ids:
+                        setattr(submission, "_is_result_hidden", True)
+                        if submission.status in ("IE", "CE", "AB"):
+                            setattr(
+                                submission, "_result_class", submission.result_class
+                            )
+                        else:
+                            setattr(submission, "_result_class", "TLE")
         context["is_in_editable_contest"] = (
             self.in_contest and self.contest.is_editable_by(self.request.user)
         )

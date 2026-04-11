@@ -460,6 +460,20 @@ class Quiz(models.Model):
 
         return False
 
+    def should_hide_result(self, user, contest_problem=None, lesson_quiz=None):
+        """Check if results should be hidden from this user in the given context."""
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return False
+        if hasattr(user, "profile") and self.is_editor(user.profile):
+            return False
+        if contest_problem and contest_problem.is_result_hidden:
+            return not contest_problem.contest.is_editable_by(user)
+        if lesson_quiz and lesson_quiz.is_result_hidden:
+            return not Course.is_editable_by(lesson_quiz.lesson.course, user.profile)
+        return False
+
 
 class QuizQuestionAssignment(models.Model):
     """
@@ -532,6 +546,11 @@ class CourseLessonQuiz(models.Model):
     )
 
     is_visible = models.BooleanField(default=True, verbose_name=_("Visible"))
+    is_result_hidden = models.BooleanField(
+        default=False,
+        verbose_name=_("Hide Results"),
+        help_text=_("Hide quiz results from students after submission"),
+    )
 
     class Meta:
         verbose_name = _("Course Lesson Quiz")

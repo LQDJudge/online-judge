@@ -1,4 +1,5 @@
 {% set has_hidden_subtasks = has_hidden_subtasks is defined and has_hidden_subtasks %}
+{% set _result_hidden_problem_ids = result_hidden_problem_ids if result_hidden_problem_ids is defined else set() %}
 <table id="contest-problems" class="table striped">
   <thead>
     <tr>
@@ -17,7 +18,11 @@
     {% for problem in problems %}
       <tr>
         {% if request.user.is_authenticated and not has_hidden_subtasks %}
-          {% if problem.id in completed_problem_ids %}
+          {% if problem.id in _result_hidden_problem_ids %}
+            <td>
+              <i class="fa fa-eye-slash gray" title="{{ _('Hidden') }}"></i>
+            </td>
+          {% elif problem.id in completed_problem_ids %}
             <td solved="1">
               <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
                 <i class="solved-problem-color fa fa-check-circle"></i>

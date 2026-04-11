@@ -95,6 +95,7 @@ class ContestProblemInline(admin.TabularInline):
         "is_pretested",
         "max_submissions",
         "hidden_subtasks",
+        "is_result_hidden",
         "show_testcases",
         "order",
         "rejudge_column",
