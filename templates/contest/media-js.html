@@ -274,6 +274,8 @@
         }
         if (typeof applyFavoriteStars === 'function') applyFavoriteStars();
         if (typeof applyRowFilters === 'function') applyRowFilters();
+        if (!$('#show-schools-checkbox').is(':checked')) $('.school').hide();
+        if (!$('#show-fullnames-checkbox').is(':checked')) $('.fullname').hide();
       },
       fail: function() {
         console.log('Fail to update ranking');
