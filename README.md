@@ -17,8 +17,8 @@ Based on [DMOJ](https://dmoj.ca/).
 - Assembly (x64)
 - AWK
 - C
-- C++03 / C++11 / C++14 / C++17 / C++20
-- Java 11
+- C++03 / C++11 / C++14 / C++17 / C++20 / C++23
+- Java
 - Pascal
 - Perl
 - Python 2 / Python 3
@@ -171,22 +171,6 @@ python3 manage.py test judge.tests --keepdb
 python3 manage.py test judge.tests.TestClass.test_method --keepdb
 ```
 
-## UI Governance
-
-To keep GUI work consistent and manageable, use these project docs and checks:
-
-1. Audit report: [docs/ui-audit-report-2026-03-28.md](docs/ui-audit-report-2026-03-28.md)
-2. Current status and stabilization progress: [docs/ui-system-status.md](docs/ui-system-status.md)
-3. Guardrail script: `./scripts/ui_guardrails.sh`
-
-```bash
-# UI consistency report (non-blocking)
-./scripts/ui_guardrails.sh
-
-# Strict mode (fails when hardcoded style debt exists)
-./scripts/ui_guardrails.sh --strict
-```
-
 ## Optional Components
 
 ### Useful Aliases
@@ -308,7 +292,7 @@ For running judges on multiple servers, you can use [JuiceFS](https://juicefs.co
 1. **Missing `local_settings.py`**: You need to copy the `local_settings.py` in order to pass the check.
 2. **Missing problem folder in `local_settings.py`**: You need to create a folder to contain all problem packages and configure in `local_settings.py`.
 3. **Missing static folder in `local_settings.py`**: Similar to problem folder, make sure to configure `STATIC_FILES` inside `local_settings.py`.
-4. **Missing configure file for judges**: Each judge must have a separate configure file. To create this file, you can run `python dmojauto-conf`. Check out all sample files here: https://github.com/DMOJ/docs/blob/master/sample_files.
+4. **Missing configure file for judges**: Each judge must have a separate configure file. To create this file, you can run `dmoj-autoconf`. Check out all sample files here: https://github.com/DMOJ/docs/blob/master/sample_files.
 5. **Missing timezone data for SQL**: If you're using Ubuntu and following DMOJ's installation guide for the server, and you get the error mentioned in https://github.com/LQDJudge/online-judge/issues/45, then you can follow this method to fix:
 
     ```bash
@@ -389,33 +373,276 @@ Most steps are similar to standard Django tutorials. Here are two common operati
 - `./make_style.sh && python3 manage.py collectstatic`
 - Sometimes you need to press `Ctrl + F5` to see the new user interface in browser
 
-# Screenshots
+# Production Deployment
 
-## Leaderboard
+This section covers deploying LQDOJ to a production server. The setup uses **Nginx** as a reverse proxy, **uWSGI** as the application server, **Supervisor** to manage processes, and **Docker** for the bridge and judges.
 
-Leaderboard with information about contest rating, performance points and real name of all users.
+It is assumed you have completed the [Installation](#installation) steps (database, virtualenv, code, migrations, static files) on your production server, and that services like Memcached, Redis, Celery, and WebSocket are configured as described in [Optional Components](#optional-components).
 
-![](https://raw.githubusercontent.com/emladevops/LQDOJ-image/main/brave_SK67WA26FA.png#gh-light-mode-only)
-![](https://raw.githubusercontent.com/emladevops/LQDOJ-image/main/brave_cmqqCnwaFc.png#gh-dark-mode-only)
+## Pre-deployment Configuration
 
-## Admin Dashboard
+Edit `local_settings.py` for production:
 
-Admin dashboard helps you easily manage problems, users, contests and blog posts.
+```python
+# SECURITY: disable debug mode
+DEBUG = False
 
-![](https://i.imgur.com/iccr3mh.png)
+# Generate a strong secret key:
+# python3 -c 'from django.core.management.utils import get_random_secret_key;print(get_random_secret_key())'
+SECRET_KEY = '<your generated secret key>'
 
-## Statement Editor
+# Optional: SSL settings (uncomment if using HTTPS)
+# DMOJ_SSL = 2
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# SECURE_SSL_REDIRECT = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
 
-You can write problems' statements in Markdown with LaTeX figures and formulas supported.
+# Database - use 127.0.0.1 (not localhost) to force TCP connection.
+# This is required for the Docker bridge to connect to the database.
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'dmoj',
+        'USER': 'dmoj',
+        'PASSWORD': '<your password>',
+        'HOST': '127.0.0.1',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'sql_mode': 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION',
+        },
+    },
+}
 
-![](https://i.imgur.com/CQVC754.png)
+# Bridge - bind to 0.0.0.0 so Docker judges can connect
+BRIDGED_JUDGE_ADDRESS = [('0.0.0.0', 9999)]
+BRIDGED_DJANGO_ADDRESS = [('localhost', 9998)]
+```
 
-## Chat
+Make sure the required services are installed and running:
 
-Users can communicate with each other and can see who's online.
+```bash
+sudo apt install memcached redis-server
+sudo systemctl enable memcached redis-server
+sudo systemctl start memcached redis-server
+```
 
-![](https://raw.githubusercontent.com/emladevops/LQDOJ-image/main/brave_kPsC5bJluc.png#gh-light-mode-only)
-![](https://raw.githubusercontent.com/emladevops/LQDOJ-image/main/brave_AtrEzXzEAx.png#gh-dark-mode-only)
+## uWSGI
+
+Install uWSGI inside the virtualenv:
+
+```bash
+(dmojsite) $ pip3 install uwsgi
+```
+
+Copy [`sample_conf/uwsgi.ini`](sample_conf/uwsgi.ini) to the site root directory and adjust the paths. Test with:
+
+```bash
+(dmojsite) $ uwsgi --ini uwsgi.ini
+```
+
+## Supervisor
+
+Install Supervisor:
+
+```bash
+sudo apt install supervisor
+```
+
+Copy the sample configs from [`sample_conf/supervisor/`](sample_conf/supervisor/) to `/etc/supervisor/conf.d/` and adjust the paths:
+
+- **`site.conf`** — Django application server (uWSGI)
+- **`celery.conf`** — Background task worker
+- **`wsevent.conf`** — WebSocket event server
+
+Then load and start all services:
+
+```bash
+sudo supervisorctl update
+sudo supervisorctl status
+```
+
+## Nginx
+
+Install Nginx:
+
+```bash
+sudo apt install nginx
+```
+
+Copy [`sample_conf/nginx/nginx.conf`](sample_conf/nginx/nginx.conf) to `/etc/nginx/conf.d/` and adjust the paths. Then test and reload:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+If you get 403 errors on static files, nginx (running as `www-data`) likely can't traverse your home directory. Fix with:
+
+```bash
+chmod o+x /home/<user> /path/to/static /path/to/media
+```
+
+### SSL with Let's Encrypt (Optional)
+
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d <your domain>
+```
+
+Certbot will automatically modify the Nginx config to add SSL. If you enable SSL, uncomment the SSL settings in `local_settings.py` (see [Pre-deployment Configuration](#pre-deployment-configuration)).
+
+## Bridge (Docker)
+
+LQDOJ runs the bridge in Docker (instead of Supervisor as in standard DMOJ). The Docker files are in [`.docker/bridge/`](.docker/bridge/).
+
+Build the bridge image (run from the parent of the `online-judge` directory):
+
+```bash
+.docker/bridge/build.sh
+```
+
+Start the bridge:
+
+```bash
+.docker/bridge/run.sh
+```
+
+The bridge uses `--network=host` so it can connect to the host's database on `127.0.0.1` and be reachable by judges on port 9999.
+
+Verify the bridge is running:
+
+```bash
+docker logs bridge
+```
+
+## Judge Setup (Docker)
+
+LQDOJ uses Docker-based judges built from the [DMOJ judge-server](https://github.com/DMOJ/judge-server). Scripts are in [`.docker/judge/`](.docker/judge/).
+
+### Build the Judge Image
+
+Clone the judge-server repo alongside the online-judge directory (if not already done):
+
+```bash
+git clone https://github.com/LQDJudge/judge-server.git
+```
+
+Then build the Docker image:
+
+```bash
+.docker/judge/build_image.sh
+```
+
+By default the script looks for `judge-server/` next to `online-judge/`. Set `JUDGE_SERVER_DIR` to override.
+
+> **Tip:** The full `tierlqdoj` image includes all runtimes and takes a long time to build. For a quick start, you can build `tier1` instead (Python 2/3, C/C++, Java 8, Pascal):
+> ```bash
+> cd judge-server/.docker && make judge-tier1
+> ```
+> Then set `JUDGE_IMAGE=vnoj/judge-tier1:latest` when running judges.
+
+### Register Judges
+
+Register judges in the site database (run from the `online-judge` directory with virtualenv activated):
+
+```bash
+.docker/judge/register_judges.sh 1 10 '<authentication key>'
+```
+
+This registers `judge1` through `judge10` with the given key. You can also add judges via the admin panel: **Admin** -> **Judges** -> **Add Judge**.
+
+### Judge Configuration
+
+Create a config file in your problems directory (e.g., `/mnt/problems/__conf__/general.yml`). A full sample is at [`sample_conf/judge.yml`](sample_conf/judge.yml). The judge name is passed via the command line, so the config only needs the key and paths:
+
+```yaml
+key: '<authentication key>'
+problem_storage_globs:
+  - /problems/**/
+# All configuration for language executors.
+# If you're unsure of what values a language needs, consult the source of the executor:
+# <https://github.com/DMOJ/judge/tree/master/dmoj/executors>
+runtime:
+  g++: /usr/bin/g++
+  gcc: /usr/bin/gcc
+  fpc: /usr/bin/fpc
+  java: /usr/lib/jvm/java-25-openjdk-amd64/bin/java
+  javac: /usr/lib/jvm/java-25-openjdk-amd64/bin/javac
+  python3: /usr/bin/python3
+  pypy3: /opt/pypy3/bin/pypy3
+  # ... add more runtimes as needed
+```
+
+Note: the `problem_storage_globs` uses `/problems/` because that's the mount point inside the Docker container.
+
+### Start Judges
+
+Set `PROBLEMS_DIR` to your problems directory before running judges:
+
+```bash
+export PROBLEMS_DIR=/path/to/problems
+```
+
+Start a single judge:
+
+```bash
+.docker/judge/start_judge.sh judge1
+```
+
+Start multiple judges at once:
+
+```bash
+.docker/judge/start_judges.sh 1 5
+```
+
+This starts `judge1` through `judge5`. Each judge runs in its own Docker container with `--network=host`.
+
+Verify judges are connected in **Admin** -> **Judges** — they should appear as online.
+
+### Judges on Separate Servers
+
+Make sure port 9999 is open on the site server's firewall. For sharing problem data across multiple servers, see [Distributed Judges (JuiceFS)](#distributed-judges-juicefs).
+
+## Optional: S3 Storage for Media
+
+By default, media files (user uploads, profile images, etc.) are stored on the local filesystem. To use Amazon S3 or S3-compatible storage (e.g., Cloudflare R2) instead:
+
+```bash
+pip install django-storages[boto3]
+```
+
+Then uncomment and configure the S3 section in `local_settings.py` (see `sample_local_settings.py` for all options):
+
+```python
+AWS_ACCESS_KEY_ID = 'your-access-key'
+AWS_SECRET_ACCESS_KEY = 'your-secret-key'
+AWS_STORAGE_BUCKET_NAME = 'your-bucket-name'
+AWS_S3_REGION_NAME = 'ap-southeast-1'
+AWS_S3_CUSTOM_DOMAIN = 'cdn.example.com'  # Optional: CloudFront or custom domain
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+```
+
+No code changes are needed — the codebase uses Django's `default_storage` abstraction, so all file operations automatically use S3 when configured.
+
+## Optional: ML Recommendations (Vector Search)
+
+LQDOJ includes a problem recommendation system using collaborative filtering and neural Two Tower models with MariaDB vector search. Requires MariaDB 11.7+.
+
+See [`judge/ml/README.md`](judge/ml/README.md) for the full setup guide.
+
+## Crontab
+
+Recommended cron jobs for production. Edit with `crontab -e` and replace `<venv>` and `<site>` with your actual paths:
+
+```crontab
+0 4 * * * <venv>/bin/python3 <site>/manage.py cleanup_inactive --users --orgs
+4 4 * * * <venv>/bin/python3 <site>/manage.py batch_clearsessions
+7 4 * * * <venv>/bin/python3 <site>/manage.py recompute_comment_scores
+10 4 * * * <venv>/bin/python3 <site>/manage.py delete_old_notifications
+11 4 * * * <venv>/bin/python3 <site>/manage.py recompute_contributions
+15 4 * * * <venv>/bin/python3 <site>/manage.py fix_organization_private
+```
 
 ---
 
@@ -435,8 +662,8 @@ Dựa trên [DMOJ](https://dmoj.ca/).
 - Assembly (x64)
 - AWK
 - C
-- C++03 / C++11 / C++14 / C++17 / C++20
-- Java 11
+- C++03 / C++11 / C++14 / C++17 / C++20 / C++23
+- Java
 - Pascal
 - Perl
 - Python 2 / Python 3
@@ -564,6 +791,31 @@ python3 manage.py runserver 0.0.0.0:8000
     1. Sau khi thay đổi code thì Django tự build lại, các bạn chỉ cần F5
     2. Một số style nằm trong các file .scss. Các bạn cần recompile CSS thì mới thấy được thay đổi.
 
+## Kiểm thử
+
+### Tạo database test
+Trước khi chạy unit test, tạo database test trong MariaDB/MySQL:
+
+```bash
+sudo mariadb
+```
+
+```sql
+CREATE DATABASE test_dmoj DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_general_ci;
+GRANT ALL PRIVILEGES ON test_dmoj.* TO 'dmoj'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+### Chạy test
+
+```bash
+# Chạy tất cả test
+python3 manage.py test judge.tests --keepdb
+
+# Chạy một test cụ thể
+python3 manage.py test judge.tests.TestClass.test_method --keepdb
+```
+
 ## Các thành phần tùy chọn
 
 ### Alias hữu ích
@@ -667,5 +919,357 @@ $ dmoj -c judge.yml localhost
 ```
 
 - Lưu ý: Mỗi lần sau này muốn chạy judge thì mở 1 tab cho bridge và n tab cho judge. Mỗi judge cần 1 file yml khác nhau (chứa authentication khác nhau)
+
+### Judge phân tán (JuiceFS)
+
+Để chạy judge trên nhiều server, bạn có thể dùng [JuiceFS](https://juicefs.com/) để chia sẻ dữ liệu bài tập qua hệ thống file phân tán tương thích POSIX, backed bởi S3/R2. Xem [docs/juicefs-setup.md](docs/juicefs-setup.md) để biết chi tiết.
+
+## Các lỗi cài đặt thường gặp
+
+1. **Thiếu `local_settings.py`**: Bạn cần tạo file `local_settings.py` để pass được bước check.
+2. **Thiếu thư mục problem trong `local_settings.py`**: Bạn cần tạo thư mục chứa các gói bài tập và cấu hình trong `local_settings.py`.
+3. **Thiếu thư mục static trong `local_settings.py`**: Tương tự thư mục problem, đảm bảo cấu hình `STATIC_FILES` trong `local_settings.py`.
+4. **Thiếu file cấu hình cho judge**: Mỗi judge cần một file cấu hình riêng. Để tạo file này, bạn có thể chạy `dmoj-autoconf`. Xem tất cả file mẫu tại: https://github.com/DMOJ/docs/blob/master/sample_files.
+5. **Thiếu dữ liệu timezone cho SQL**: Nếu bạn dùng Ubuntu và làm theo hướng dẫn cài đặt của DMOJ, gặp lỗi như trong https://github.com/LQDJudge/online-judge/issues/45, có thể sửa bằng cách:
+
+    ```bash
+    # Có thể cần đặt mật khẩu root cho MySQL, thay mypass bằng mật khẩu của bạn
+    # SET PASSWORD FOR 'root'@'localhost' = PASSWORD('mypass');
+    # FLUSH PRIVILEGES;
+    mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -D mysql -u root -p
+    mysql -u root -p -e "flush tables;" mysql
+    ```
+
+6. **Thiếu chat secret key**: Bạn cần tạo Fernet key và gán biến trong `local_settings.py`:
+
+    ```python
+    CHAT_SECRET_KEY = "81HqDtbqAywKSOumSxxxxxxxxxxxxxxxxx="
+    ```
+
+## Sử dụng
+
+Sau khi hoàn thành cài đặt, mỗi lần muốn chạy server local, làm theo các bước sau:
+
+1. **Activate virtual environment:**
+
+    ```bash
+    source dmojsite/bin/activate
+    ```
+
+2. **Chạy server:**
+
+    ```bash
+    python3 manage.py runserver 0.0.0.0:8000
+    ```
+
+3. **Chạy bridge** (mở terminal khác nếu cùng máy)
+
+    ```bash
+    python3 manage.py runbridged
+    ```
+
+4. **Chạy judge** (terminal khác)
+
+    ```bash
+    dmoj 0.0.0.0 -p 9999 -c <đường dẫn đến file yml>
+    ```
+
+   Ở đây giả sử bạn dùng port mặc định `9999` cho bridge trong `settings.py`. Bạn có thể tạo nhiều judge, mỗi judge chạy trong một terminal riêng.
+
+### Dịch vụ tùy chọn
+
+1. **Chạy celery worker** (hàng đợi tác vụ, cần thiết cho một số chức năng)
+
+    ```bash
+    celery -A dmoj_celery worker
+    ```
+
+2. **Chạy live event server** (cho cập nhật real-time)
+
+    ```bash
+    node websocket/daemon.js
+    ```
+
+3. **Sử dụng subdomain cho tổ chức**: Vào trang admin → navigation bar → sites, thêm tên miền (ví dụ `localhost:8000`). Sau đó thêm `USE_SUBDOMAIN = True` vào `local_settings.py`.
+
+## Phát triển
+
+Hầu hết các bước tương tự Django tutorials chuẩn. Dưới đây là hai thao tác thường dùng:
+
+### 1. Cập nhật bản dịch
+
+- Nếu bạn thêm chuỗi mới trong code: `python3 manage.py makemessages`
+- Vào `locale/vi`
+- Sửa file `.po`
+- `python3 manage.py compilemessages`
+- `python3 manage.py compilejsi18n`
+
+### 2. Cập nhật giao diện (SASS)
+
+- Thay đổi file `.css/.scss` trong thư mục `resources`
+- `./make_style.sh && python3 manage.py collectstatic`
+- Đôi khi cần nhấn `Ctrl + F5` để thấy giao diện mới trong trình duyệt
+
+## Triển khai Production
+
+Phần này hướng dẫn triển khai LQDOJ lên server production. Hệ thống sử dụng **Nginx** làm reverse proxy, **uWSGI** làm application server, **Supervisor** để quản lý tiến trình, và **Docker** cho bridge và judge.
+
+Giả sử bạn đã hoàn thành các bước [Cài đặt](#cài-đặt) (database, virtualenv, code, migration, static files) trên server production, và các dịch vụ như Memcached, Redis, Celery, WebSocket đã được cấu hình như mô tả trong [Các thành phần tùy chọn](#các-thành-phần-tùy-chọn).
+
+### Cấu hình trước triển khai
+
+Chỉnh sửa `local_settings.py` cho production:
+
+```python
+# BẢO MẬT: tắt chế độ debug
+DEBUG = False
+
+# Tạo secret key mạnh:
+# python3 -c 'from django.core.management.utils import get_random_secret_key;print(get_random_secret_key())'
+SECRET_KEY = '<secret key của bạn>'
+
+# Tùy chọn: cài đặt SSL (bỏ comment nếu dùng HTTPS)
+# DMOJ_SSL = 2
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# SECURE_SSL_REDIRECT = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+
+# Database - dùng 127.0.0.1 (không dùng localhost) để buộc kết nối TCP.
+# Cần thiết để Docker bridge kết nối được đến database.
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'dmoj',
+        'USER': 'dmoj',
+        'PASSWORD': '<mật khẩu>',
+        'HOST': '127.0.0.1',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'sql_mode': 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION',
+        },
+    },
+}
+
+# Bridge - bind 0.0.0.0 để Docker judge có thể kết nối
+BRIDGED_JUDGE_ADDRESS = [('0.0.0.0', 9999)]
+BRIDGED_DJANGO_ADDRESS = [('localhost', 9998)]
+```
+
+Đảm bảo các dịch vụ cần thiết đã được cài và chạy:
+
+```bash
+sudo apt install memcached redis-server
+sudo systemctl enable memcached redis-server
+sudo systemctl start memcached redis-server
+```
+
+### uWSGI
+
+Cài uWSGI trong virtualenv:
+
+```bash
+(dmojsite) $ pip3 install uwsgi
+```
+
+Copy [`sample_conf/uwsgi.ini`](sample_conf/uwsgi.ini) vào thư mục gốc của site và chỉnh sửa đường dẫn. Test bằng:
+
+```bash
+(dmojsite) $ uwsgi --ini uwsgi.ini
+```
+
+### Supervisor
+
+Cài Supervisor:
+
+```bash
+sudo apt install supervisor
+```
+
+Copy các file cấu hình mẫu từ [`sample_conf/supervisor/`](sample_conf/supervisor/) vào `/etc/supervisor/conf.d/` và chỉnh sửa đường dẫn:
+
+- **`site.conf`** — Django application server (uWSGI)
+- **`celery.conf`** — Worker xử lý tác vụ nền
+- **`wsevent.conf`** — WebSocket event server
+
+Sau đó load và khởi động:
+
+```bash
+sudo supervisorctl update
+sudo supervisorctl status
+```
+
+### Nginx
+
+Cài Nginx:
+
+```bash
+sudo apt install nginx
+```
+
+Copy [`sample_conf/nginx/nginx.conf`](sample_conf/nginx/nginx.conf) vào `/etc/nginx/conf.d/` và chỉnh sửa đường dẫn. Sau đó test và reload:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Nếu gặp lỗi 403 với static files, nginx (chạy dưới user `www-data`) có thể không đọc được thư mục home. Sửa bằng:
+
+```bash
+chmod o+x /home/<user> /path/to/static /path/to/media
+```
+
+#### SSL với Let's Encrypt (Tùy chọn)
+
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d <domain của bạn>
+```
+
+Certbot sẽ tự động chỉnh sửa cấu hình Nginx để thêm SSL. Nếu bật SSL, bỏ comment các cài đặt SSL trong `local_settings.py`.
+
+### Bridge (Docker)
+
+LQDOJ chạy bridge trong Docker (thay vì Supervisor như DMOJ chuẩn). Các file Docker nằm trong [`.docker/bridge/`](.docker/bridge/).
+
+Build image:
+
+```bash
+.docker/bridge/build.sh
+```
+
+Khởi động bridge:
+
+```bash
+.docker/bridge/run.sh
+```
+
+Bridge sử dụng `--network=host` để kết nối đến database trên host (127.0.0.1) và để judge kết nối được qua port 9999.
+
+Kiểm tra bridge đang chạy:
+
+```bash
+docker logs bridge
+```
+
+### Cài đặt Judge (Docker)
+
+LQDOJ sử dụng judge chạy trên Docker từ [DMOJ judge-server](https://github.com/DMOJ/judge-server). Các script nằm trong [`.docker/judge/`](.docker/judge/).
+
+#### Build Judge Image
+
+Clone repo judge-server cạnh thư mục online-judge (nếu chưa có):
+
+```bash
+git clone https://github.com/LQDJudge/judge-server.git
+```
+
+Build Docker image:
+
+```bash
+.docker/judge/build_image.sh
+```
+
+Mặc định script tìm `judge-server/` cạnh `online-judge/`. Đặt `JUDGE_SERVER_DIR` để thay đổi.
+
+> **Mẹo:** Image `tierlqdoj` đầy đủ chứa tất cả runtime và build rất lâu. Để test nhanh, có thể build `tier1` (Python 2/3, C/C++, Java 8, Pascal):
+> ```bash
+> cd judge-server/.docker && make judge-tier1
+> ```
+> Sau đó đặt `JUDGE_IMAGE=vnoj/judge-tier1:latest` khi chạy judge.
+
+#### Đăng ký Judge
+
+Đăng ký judge vào database (chạy từ thư mục `online-judge` với virtualenv đã activate):
+
+```bash
+.docker/judge/register_judges.sh 1 10 '<authentication key>'
+```
+
+Lệnh trên đăng ký `judge1` đến `judge10`. Bạn cũng có thể thêm qua admin: **Admin** -> **Judges** -> **Add Judge**.
+
+#### Cấu hình Judge
+
+Tạo file cấu hình trong thư mục problems (ví dụ: `/mnt/problems/__conf__/general.yml`). File mẫu đầy đủ tại [`sample_conf/judge.yml`](sample_conf/judge.yml). Tên judge được truyền qua command line, nên file cấu hình chỉ cần key và đường dẫn:
+
+```yaml
+key: '<authentication key>'
+problem_storage_globs:
+  - /problems/**/
+runtime:
+  g++: /usr/bin/g++
+  gcc: /usr/bin/gcc
+  python3: /usr/bin/python3
+  # ... thêm runtime khác theo nhu cầu
+```
+
+Lưu ý: `problem_storage_globs` dùng `/problems/` vì đó là mount point bên trong Docker container.
+
+#### Khởi động Judge
+
+Đặt `PROBLEMS_DIR` trỏ đến thư mục problems trước khi chạy:
+
+```bash
+export PROBLEMS_DIR=/path/to/problems
+```
+
+Khởi động một judge:
+
+```bash
+.docker/judge/start_judge.sh judge1
+```
+
+Khởi động nhiều judge cùng lúc:
+
+```bash
+.docker/judge/start_judges.sh 1 5
+```
+
+Kiểm tra judge đã kết nối trong **Admin** -> **Judges** — judge sẽ hiển thị trạng thái online.
+
+#### Judge trên server riêng
+
+Đảm bảo port 9999 mở trên firewall của server site. Để chia sẻ dữ liệu bài tập giữa nhiều server, xem [Distributed Judges (JuiceFS)](#distributed-judges-juicefs).
+
+### Tùy chọn: S3 Storage cho Media
+
+Mặc định, media files được lưu trên filesystem local. Để dùng Amazon S3 hoặc storage tương thích S3 (ví dụ Cloudflare R2):
+
+```bash
+pip install django-storages[boto3]
+```
+
+Bỏ comment và cấu hình phần S3 trong `local_settings.py` (xem `sample_local_settings.py` để biết tất cả tùy chọn):
+
+```python
+AWS_ACCESS_KEY_ID = 'your-access-key'
+AWS_SECRET_ACCESS_KEY = 'your-secret-key'
+AWS_STORAGE_BUCKET_NAME = 'your-bucket-name'
+AWS_S3_REGION_NAME = 'ap-southeast-1'
+AWS_S3_CUSTOM_DOMAIN = 'cdn.example.com'
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+```
+
+Không cần thay đổi code — codebase sử dụng `default_storage` của Django nên mọi thao tác file tự động dùng S3 khi được cấu hình.
+
+### Tùy chọn: Gợi ý bài tập bằng ML (Vector Search)
+
+LQDOJ có hệ thống gợi ý bài tập sử dụng collaborative filtering và mô hình Two Tower với MariaDB vector search. Yêu cầu MariaDB 11.7+.
+
+Xem [`judge/ml/README.md`](judge/ml/README.md) để biết hướng dẫn chi tiết.
+
+### Crontab
+
+Các cron job khuyến nghị cho production. Chỉnh sửa bằng `crontab -e`, thay `<venv>` và `<site>` bằng đường dẫn thực tế:
+
+```crontab
+0 4 * * * <venv>/bin/python3 <site>/manage.py cleanup_inactive --users --orgs
+4 4 * * * <venv>/bin/python3 <site>/manage.py batch_clearsessions
+7 4 * * * <venv>/bin/python3 <site>/manage.py recompute_comment_scores
+10 4 * * * <venv>/bin/python3 <site>/manage.py delete_old_notifications
+11 4 * * * <venv>/bin/python3 <site>/manage.py recompute_contributions
+15 4 * * * <venv>/bin/python3 <site>/manage.py fix_organization_private
+```
 
 </details>

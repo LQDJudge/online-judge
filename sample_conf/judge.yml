@@ -1,0 +1,124 @@
+key: "<authentication key>"
+# /problems/ is the mount point inside the Docker container.
+# The actual host path is set via PROBLEMS_DIR when running the judge.
+problem_storage_globs:
+  - /problems/**/
+# All configuration for language executors
+# If you're unsure of what values a language needs, your best bet is to consult the source of the executor:
+# <https://github.com/DMOJ/judge/tree/master/dmoj/executors>
+runtime:
+  a68g: /usr/bin/a68g
+  as_x64: /usr/bin/x86_64-linux-gnu-as
+  as_x86: /usr/bin/as
+  awk: /usr/bin/mawk
+  cargo: /home/judge/.cargo/bin/cargo
+  cat: /usr/bin/cat
+  chicken-csc: /usr/bin/chicken-csc
+  clang: /usr/bin/clang
+  clang++: /usr/bin/clang++
+  cobc: /usr/bin/cobc
+  dart: /opt/dart-sdk/bin/dart
+  dmd: /opt/dlang/linux/bin64/dmd
+  fpc: /usr/bin/fpc
+  fpc-themis: /usr/bin/fpc
+  fsharpc: /usr/bin/fsharpc
+  g++: /usr/bin/g++
+  g++-themis: /usr/bin/g++
+  g++11: /usr/bin/g++
+  g++14: /usr/bin/g++
+  g++17: /usr/bin/g++
+  g++20: /usr/bin/g++
+  g++23: /usr/bin/g++
+  gcc: /usr/bin/gcc
+  gcc11: /usr/bin/gcc
+  gcc23: /usr/bin/gcc
+  gforth: /usr/bin/gforth
+  gfortran: /usr/bin/gfortran
+  ghc: /usr/bin/ghc
+  gnatmake: /usr/bin/gnatmake
+  go: /usr/bin/go
+  groovy_classpath: /opt/groovy/lib/groovy-5.0.4.jar
+  groovy_vm: /usr/lib/jvm/java-25-openjdk-amd64/bin/java
+  groovyc: /opt/groovy/bin/groovyc
+  java: /usr/lib/jvm/java-25-openjdk-amd64/bin/java
+  java8: /usr/lib/jvm/java-8-openjdk-amd64/bin/java
+  javac: /usr/lib/jvm/java-25-openjdk-amd64/bin/javac
+  javac8: /usr/lib/jvm/java-8-openjdk-amd64/bin/javac
+  kotlin_vm: /usr/lib/jvm/java-25-openjdk-amd64/bin/java
+  kotlinc: /opt/kotlin/bin/kotlinc
+  ld_x64: /usr/bin/x86_64-linux-gnu-ld
+  ld_x86: /usr/bin/ld
+  lean: /opt/lean/bin/lean
+  llc: /usr/bin/llc
+  lua: /usr/bin/lua
+  mono: /usr/bin/mono
+  mono-csc: /usr/bin/mono-csc
+  mono-vbnc: /usr/bin/vbnc
+  nasm: /usr/bin/nasm
+  node: /usr/bin/node
+  objc_flags:
+  - -MMD
+  - -MP
+  - -DGNUSTEP
+  - -DGNUSTEP_BASE_LIBRARY=1
+  - -DGNU_GUI_LIBRARY=1
+  - -DGNU_RUNTIME=1
+  - -DGNUSTEP_BASE_LIBRARY=1
+  - -fno-strict-aliasing
+  - -fexceptions
+  - -fobjc-exceptions
+  - -D_NATIVE_OBJC_EXCEPTIONS
+  - -pthread
+  - -fPIC
+  - -Wall
+  - -DGSWARN
+  - -DGSDIAGNOSE
+  - -Wno-import
+  - -g
+  - -O2
+  - -fconstant-string-class=NSConstantString
+  - -I.
+  - -I/home/judge/GNUstep/Library/Headers
+  - -I/usr/local/include/GNUstep
+  - -I/usr/include/x86_64-linux-gnu/GNUstep
+  - -I/usr/include
+  objc_ldflags:
+  - -shared-libgcc
+  - -pthread
+  - -fexceptions
+  - -rdynamic
+  - -L/home/judge/GNUstep/Library/Libraries
+  - -L/usr/local/lib
+  - -L/usr/lib/x86_64-linux-gnu
+  - -L/usr/lib
+  - -lgnustep-base
+  - -lobjc
+  - -lm
+  ocamlfind: /home/judge/.opam/dmoj/bin/ocamlfind
+  opt: /usr/bin/opt
+  perl: /usr/bin/perl
+  php: /usr/bin/php
+  pike: /usr/bin/pike
+  pypy: /opt/pypy2/bin/pypy
+  pypy3: /opt/pypy3/bin/pypy3
+  python: /usr/bin/python2.7
+  python3: /usr/bin/python3
+  racket: /usr/bin/racket
+  raco: /usr/bin/raco
+  ruby: /usr/bin/ruby
+  sbcl: /usr/bin/sbcl
+  scala_classpath: /opt/scala/lib/scala.jar:/opt/scala/lib/with_compiler.jar
+  scala_vm: /usr/lib/jvm/java-25-openjdk-amd64/bin/java
+  scalac: /opt/scala/bin/scalac
+  sed: /usr/bin/sed
+  swipl: /usr/bin/swipl
+  tclsh: /usr/bin/tclsh
+  tprolog: /opt/tprolog/tprolog
+  tprologc: /opt/tprolog/tprologc
+  v8dmoj: /usr/bin/v8dmoj
+  zig: /opt/zig/zig
+  scratch: /ScratchCLI/scratch
+  scat_home: /ScratchCLI
+  crt_x86_in_lib32: true
+
+isolate: false

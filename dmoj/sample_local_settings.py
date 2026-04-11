@@ -49,7 +49,7 @@ DATABASES = {
         "NAME": "your_db_name",
         "USER": "your_db_user",
         "PASSWORD": "your_db_password",
-        "HOST": "your_db_host",
+        "HOST": "127.0.0.1",
         "OPTIONS": {
             "charset": "utf8mb4",
             "sql_mode": "STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION",
