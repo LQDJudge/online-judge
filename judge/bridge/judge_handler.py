@@ -110,7 +110,10 @@ class JudgeHandler(ZlibPacketHandler):
         if self._no_response_job:
             self._no_response_job.cancel()
             self._no_response_job = None
-        self.judges.remove(self)
+
+        # remove() atomically cleans submission_map/validate_map and returns orphaned work
+        sub, working_data = self.judges.remove(self)
+
         if self.name is not None:
             self._disconnected()
         logger.info(
@@ -132,12 +135,15 @@ class JudgeHandler(ZlibPacketHandler):
                     "Failed to mark validation %s as error on disconnect",
                     self._validating,
                 )
-        elif self._working:
+        if sub is not None and working_data:
+            logger.info(
+                "Requeueing submission %d from disconnected judge %s", sub, self.name
+            )
             self.judges.judge(
-                self._working,
-                self._working_data["problem"],
-                self._working_data["language"],
-                self._working_data["source"],
+                sub,
+                working_data["problem"],
+                working_data["language"],
+                working_data["source"],
                 None,
                 0,
             )
@@ -392,6 +398,7 @@ class JudgeHandler(ZlibPacketHandler):
             "source": source,
         }
         self._no_response_job = threading.Timer(20, self._kill_if_no_response)
+        self._no_response_job.start()
         self.send(
             {
                 "name": "submission-request",

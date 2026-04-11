@@ -68,7 +68,7 @@ class JudgeList(object):
                             try:
                                 judge.submit(id, problem, language, source)
                             except VanishedSubmission:
-                                pass
+                                del self.submission_map[id]
                             except Exception:
                                 logger.exception(
                                     "Failed to dispatch %d (%s, %s) to %s",
@@ -77,7 +77,8 @@ class JudgeList(object):
                                     language,
                                     judge.name,
                                 )
-                                self.judges.remove(judge)
+                                del self.submission_map[id]
+                                self.judges.discard(judge)
                                 return
                             self.queue.remove(node)
                             del self.node_map[id]
@@ -113,12 +114,20 @@ class JudgeList(object):
     def remove(self, judge):
         with self.lock:
             sub = judge.get_current_submission()
+            working_data = {}
             if sub is not None:
                 try:
                     del self.submission_map[sub]
                 except KeyError:
                     pass
+                working_data = judge._working_data.copy()
+
+            validate_id = judge._validating
+            if validate_id is not None:
+                self.validate_map.pop(validate_id, None)
+
             self.judges.discard(judge)
+            return sub, working_data
 
     def __iter__(self):
         return iter(self.judges)
@@ -230,6 +239,7 @@ class JudgeList(object):
                         language,
                         judge.name,
                     )
+                    del self.submission_map[id]
                     self.judges.discard(judge)
                     return self.judge(id, problem, language, source, judge_id, priority)
             else:
