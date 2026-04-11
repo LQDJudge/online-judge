@@ -251,6 +251,7 @@ class QuizAdmin(CompareVersionAdmin):
                 "fields": (
                     "time_limit",
                     "shuffle_questions",
+                    "is_shown_correctness",
                     "is_shown_answer",
                 ),
             },
@@ -274,6 +275,7 @@ class QuizAdmin(CompareVersionAdmin):
         "is_public",
         "time_limit",
         "shuffle_questions",
+        "is_shown_correctness",
         "is_shown_answer",
         "created_at",
         "show_public",
@@ -288,6 +290,7 @@ class QuizAdmin(CompareVersionAdmin):
     list_filter = (
         "is_public",
         "shuffle_questions",
+        "is_shown_correctness",
         "is_shown_answer",
         QuizCreatorListFilter,
     )

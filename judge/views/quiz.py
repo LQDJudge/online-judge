@@ -745,6 +745,7 @@ class QuizCreateForm(forms.ModelForm):
             "description",
             "time_limit",
             "shuffle_questions",
+            "is_shown_correctness",
             "is_shown_answer",
             "is_public",
             "authors",
@@ -858,6 +859,7 @@ class QuizEditForm(forms.ModelForm):
             "description",
             "time_limit",
             "shuffle_questions",
+            "is_shown_correctness",
             "is_shown_answer",
             "is_public",
             "authors",
@@ -2138,6 +2140,7 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
             .order_by("question__id")
         )
         context["show_answers"] = quiz.show_answers(self.request.user)
+        context["show_correctness"] = quiz.show_correctness(self.request.user)
         context["can_edit"] = quiz.is_editable_by(self.request.user)
 
         # Check if results should be hidden in contest context
@@ -3556,6 +3559,7 @@ class LessonQuizResult(LessonQuizMixin, LoginRequiredMixin, TitleMixin, DetailVi
             .order_by("question__id")
         )
         context["show_answers"] = quiz.show_answers(self.request.user)
+        context["show_correctness"] = quiz.show_correctness(self.request.user)
         context["can_edit"] = quiz.is_editable_by(self.request.user)
 
         # Check if results should be hidden in lesson context

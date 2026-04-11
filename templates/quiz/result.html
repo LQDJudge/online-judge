@@ -84,27 +84,30 @@
     {% if not _is_result_hidden %}
       <h2>{{ _('Your Answers') }}</h2>
 
+      {% set _show_correctness = show_correctness is defined and show_correctness %}
       {% for answer in answers %}
         {% set question = answer.question %}
         <div
-          class="answer-card {% if answer.is_correct %}correct{% elif answer.graded_at %}incorrect{% else %}pending{% endif %}">
+          class="answer-card {% if _show_correctness %}{% if answer.is_correct %}correct{% elif answer.graded_at %}incorrect{% else %}pending{% endif %}{% endif %}">
           <div class="answer-header">
             <div class="question-info">
               <strong>{{ _('Question') }} {{ loop.index }}</strong>
               <span class="badge">{{ question.get_question_type_display() }}</span>
             </div>
-            <div class="answer-status">
-              {% if answer.is_correct %}
-                <i class="fa fa-check-circle correct"></i>
-                <span>{{ answer.points|round(1) }} / {{ answer.get_max_points()|round(1) }} {{ _('points') }}</span>
-              {% elif answer.graded_at %}
-                <i class="fa fa-times-circle incorrect"></i>
-                <span>{{ answer.points|round(1) }} / {{ answer.get_max_points()|round(1) }} {{ _('points') }}</span>
-              {% else %}
-                <i class="fa fa-clock-o pending"></i>
-                <span>{{ _('Pending grading') }}</span>
-              {% endif %}
-            </div>
+            {% if _show_correctness %}
+              <div class="answer-status">
+                {% if answer.is_correct %}
+                  <i class="fa fa-check-circle correct"></i>
+                  <span>{{ answer.points|round(1) }} / {{ answer.get_max_points()|round(1) }} {{ _('points') }}</span>
+                {% elif answer.graded_at %}
+                  <i class="fa fa-times-circle incorrect"></i>
+                  <span>{{ answer.points|round(1) }} / {{ answer.get_max_points()|round(1) }} {{ _('points') }}</span>
+                {% else %}
+                  <i class="fa fa-clock-o pending"></i>
+                  <span>{{ _('Pending grading') }}</span>
+                {% endif %}
+              </div>
+            {% endif %}
           </div>
 
           <div class="question-content content-description">
