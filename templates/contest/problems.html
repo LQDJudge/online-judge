@@ -37,8 +37,8 @@
               {% if contest.ended %}
                 <th>{{ _('AC Rate') }}</th>
                 <th>{{ _('Users') }}</th>
+                <th></th>
               {% endif %}
-              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -62,11 +62,13 @@
                     {% endif %}
                   </td>
                 {% endif %}
-                <td>
-                  {% if problem.is_public and problem.has_public_editorial() %}
-                    <a href="{{ url('problem_editorial', problem.code) }}">{{ _('Editorial') }}</a>
-                  {% endif %}
-                </td>
+                {% if contest.ended %}
+                  <td>
+                    {% if problem.is_public and problem.has_public_editorial() %}
+                      <a href="{{ url('problem_editorial', problem.code) }}">{{ _('Editorial') }}</a>
+                    {% endif %}
+                  </td>
+                {% endif %}
               </tr>
             {% endfor %}
           </tbody>

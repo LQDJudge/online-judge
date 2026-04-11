@@ -251,11 +251,20 @@ class Quiz(models.Model):
         help_text=_("Randomize question order for each attempt"),
     )
 
+    is_shown_correctness = models.BooleanField(
+        default=True,
+        verbose_name=_("Show Correctness"),
+        help_text=_(
+            "Whether per-question correctness (right/wrong) is shown after submission. "
+            "Score is always shown."
+        ),
+    )
+
     is_shown_answer = models.BooleanField(
         default=False,
         verbose_name=_("Show Answers"),
         help_text=_(
-            "Whether answers and explanations are shown to students after submission"
+            "Whether correct answers and explanations are shown to students after submission"
         ),
     )
 
@@ -459,6 +468,26 @@ class Quiz(models.Model):
             ).exists()
 
         return False
+
+    def show_correctness(self, user):
+        """
+        Check if per-question correctness (right/wrong) should be shown.
+
+        Returns True if:
+        - User is superuser
+        - User is an editor of this quiz
+        - is_shown_correctness is True
+        """
+        if not user or not user.is_authenticated:
+            return False
+
+        if user.is_superuser:
+            return True
+
+        if hasattr(user, "profile") and self.is_editor(user.profile):
+            return True
+
+        return self.is_shown_correctness
 
     def should_hide_result(self, user, contest_problem=None, lesson_quiz=None):
         """Check if results should be hidden from this user in the given context."""
