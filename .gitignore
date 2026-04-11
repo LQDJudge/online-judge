@@ -29,7 +29,7 @@ plan/
 .claude/
 .claude-config/
 
-# Playwright
+# Playwright & temporary files
 /test-results/
 /playwright-report/
 /blob-report/
@@ -37,3 +37,4 @@ plan/
 /playwright/.auth/
 .playwright-mcp/
 playwright.config.ts
+tmp/

@@ -10,6 +10,7 @@
 {% endblock %}
 
 {% block middle_content %}
+  {% set _is_result_hidden = is_result_hidden is defined and is_result_hidden %}
   <div class="quiz-attempt-list-page">
     <h2>
       {% if viewing_other_user %}
@@ -27,7 +28,9 @@
       <div class="stat-item">
         <span class="stat-label">{{ _('Best Score') }}</span>
         <span class="stat-value">
-          {% if best_score is not none %}
+          {% if _is_result_hidden %}
+            ?
+          {% elif best_score is not none %}
             {{ best_score|round(1) }} / {{ total_points }}
           {% else %}
             -
@@ -50,8 +53,10 @@
               </span>
             {% endif %}
           </div>
-          <div class="attempt-score {% if percentage >= 90 %}perfect{% elif percentage >= 70 %}good{% elif percentage >= 50 %}average{% else %}poor{% endif %}">
-            {% if attempt.is_submitted %}
+          <div class="attempt-score {% if not _is_result_hidden %}{% if percentage >= 90 %}perfect{% elif percentage >= 70 %}good{% elif percentage >= 50 %}average{% else %}poor{% endif %}{% endif %}">
+            {% if _is_result_hidden %}
+              ?
+            {% elif attempt.is_submitted %}
               {{ attempt.score|round(1) if attempt.score else 0 }} / {{ attempt.max_score|round(1) if attempt.max_score else 0 }}
             {% else %}
               -

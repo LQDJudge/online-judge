@@ -33,16 +33,25 @@
 {% endblock %}
 
 {% block body %}
+  {% set _is_result_hidden = is_result_hidden is defined and is_result_hidden %}
   <div class="quiz-result-page">
     <div class="result-header">
-      <div
-        class="result-score {% if percentage >= 90 %}excellent{% elif percentage >= 70 %}good{% elif percentage >= 50 %}average{% else %}poor{% endif %}">
-        {{ attempt.score|round(1) if attempt.score else 0 }} / {{ attempt.max_score|round(1) if attempt.max_score else 0
-        }}
-      </div>
-      <div class="result-percentage">
-        {{ percentage }}%
-      </div>
+      {% if not _is_result_hidden %}
+        <div
+          class="result-score {% if percentage >= 90 %}excellent{% elif percentage >= 70 %}good{% elif percentage >= 50 %}average{% else %}poor{% endif %}">
+          {{ attempt.score|round(1) if attempt.score else 0 }} / {{ attempt.max_score|round(1) if attempt.max_score else 0
+          }}
+        </div>
+        <div class="result-percentage">
+          {{ percentage }}%
+        </div>
+      {% else %}
+        <div class="result-score">
+          <i class="fa fa-check-circle"></i>
+        </div>
+        <div class="result-percentage">{{ _('Submitted Successfully') }}</div>
+        <p>{{ _('Results for this quiz are hidden.') }}</p>
+      {% endif %}
       <div class="result-meta">
         <p>
           {{ _('Started') }}: {{ attempt.start_time|date(_("F j, Y, G:i")) }}
@@ -72,140 +81,146 @@
       {% endif %}
     </div>
 
-    <h2>{{ _('Your Answers') }}</h2>
+    {% if not _is_result_hidden %}
+      <h2>{{ _('Your Answers') }}</h2>
 
-    {% for answer in answers %}
-      {% set question = answer.question %}
-      <div
-        class="answer-card {% if answer.is_correct %}correct{% elif answer.graded_at %}incorrect{% else %}pending{% endif %}">
-        <div class="answer-header">
-          <div class="question-info">
-            <strong>{{ _('Question') }} {{ loop.index }}</strong>
-            <span class="badge">{{ question.get_question_type_display() }}</span>
-          </div>
-          <div class="answer-status">
-            {% if answer.is_correct %}
-              <i class="fa fa-check-circle correct"></i>
-              <span>{{ answer.points|round(1) }} / {{ answer.get_max_points()|round(1) }} {{ _('points') }}</span>
-            {% elif answer.graded_at %}
-              <i class="fa fa-times-circle incorrect"></i>
-              <span>{{ answer.points|round(1) }} / {{ answer.get_max_points()|round(1) }} {{ _('points') }}</span>
-            {% else %}
-              <i class="fa fa-clock-o pending"></i>
-              <span>{{ _('Pending grading') }}</span>
-            {% endif %}
-          </div>
-        </div>
-
-        <div class="question-content content-description">
-          {{ question.content|markdown|reference|str|safe }}
-        </div>
-
-        <div class="user-answer">
-          <strong>{{ _('Your answer') }}:</strong>
-          {% if question.question_type in ['MC', 'TF'] %}
-            {% for choice in question.choices %}
-              {% if choice.id == answer.answer %}
-                <div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div>
-              {% endif %}
-            {% endfor %}
-          {% elif question.question_type == 'MA' %}
-            {% set selected = answer.answer|default('[]') %}
-            <ul>
-              {% for choice in question.choices %}
-                {% if choice.id in selected %}
-                  <li><div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div></li>
-                {% endif %}
-              {% endfor %}
-            </ul>
-          {% elif question.question_type in ['SA', 'ES'] %}
-            <div class="answer-text-content content-description">{{ answer.answer|markdown|reference|str|safe if answer.answer else _('No answer provided') }}</div>
-          {% else %}
-            <div class="answer-text-content">{{ answer.answer or _('No answer provided') }}</div>
-          {% endif %}
-        </div>
-
-        {% if question.question_type == 'ES' and answer.files.exists() %}
-          <div class="answer-files">
-            <h4><i class="fa fa-paperclip"></i> {{ _('Attached Files') }}</h4>
-            {% for file in answer.files.all() %}
-              {% set ext = file.get_file_extension() %}
-              {% set has_preview = ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'pdf'] %}
-              <div class="file-item-collapsible{% if has_preview %} has-preview{% endif %}">
-                <div class="file-item-header">
-                  <span class="file-icon"><i class="fa fa-file"></i></span>
-                  <a href="{{ file.file.url }}" target="_blank" class="file-name">{{ file.original_filename }}</a>
-                  <span class="file-size">({{ file.get_file_size() }})</span>
-                  {% if has_preview %}
-                    <button type="button" class="file-preview-toggle" aria-expanded="false">
-                      <i class="fa fa-chevron-down"></i>
-                    </button>
-                  {% endif %}
-                </div>
-                {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'] %}
-                  <div class="file-preview-collapsible file-preview-image" style="display: none;">
-                    <img src="{{ file.file.url }}" alt="{{ file.original_filename }}" loading="lazy">
-                  </div>
-                {% elif ext == 'pdf' %}
-                  <div class="file-preview-collapsible file-preview-pdf" style="display: none;">
-                    <iframe src="{{ file.file.url }}" title="{{ file.original_filename }}"></iframe>
-                  </div>
+      {% set _show_correctness = show_correctness is defined and show_correctness %}
+      {% for answer in answers %}
+        {% set question = answer.question %}
+        <div
+          class="answer-card {% if _show_correctness %}{% if answer.is_correct %}correct{% elif answer.graded_at %}incorrect{% else %}pending{% endif %}{% endif %}">
+          <div class="answer-header">
+            <div class="question-info">
+              <strong>{{ _('Question') }} {{ loop.index }}</strong>
+              <span class="badge">{{ question.get_question_type_display() }}</span>
+            </div>
+            {% if _show_correctness %}
+              <div class="answer-status">
+                {% if answer.is_correct %}
+                  <i class="fa fa-check-circle correct"></i>
+                  <span>{{ answer.points|round(1) }} / {{ answer.get_max_points()|round(1) }} {{ _('points') }}</span>
+                {% elif answer.graded_at %}
+                  <i class="fa fa-times-circle incorrect"></i>
+                  <span>{{ answer.points|round(1) }} / {{ answer.get_max_points()|round(1) }} {{ _('points') }}</span>
+                {% else %}
+                  <i class="fa fa-clock-o pending"></i>
+                  <span>{{ _('Pending grading') }}</span>
                 {% endif %}
               </div>
-            {% endfor %}
+            {% endif %}
           </div>
-        {% endif %}
 
-        {% if show_answers and question.correct_answers %}
-          <div class="correct-answer">
-            <strong>{{ _('Correct answer') }}:</strong>
-            {% set correct = question.correct_answers.get('answers', []) %}
+          <div class="question-content content-description">
+            {{ question.content|markdown|reference|str|safe }}
+          </div>
+
+          <div class="user-answer">
+            <strong>{{ _('Your answer') }}:</strong>
             {% if question.question_type in ['MC', 'TF'] %}
               {% for choice in question.choices %}
-                {% if choice.id == correct %}
+                {% if choice.id == answer.answer %}
                   <div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div>
                 {% endif %}
               {% endfor %}
             {% elif question.question_type == 'MA' %}
+              {% set selected = answer.answer|default('[]') %}
               <ul>
                 {% for choice in question.choices %}
-                  {% if choice.id in correct %}
+                  {% if choice.id in selected %}
                     <li><div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div></li>
                   {% endif %}
                 {% endfor %}
               </ul>
-            {% elif question.question_type == 'SA' %}
-              {% if correct is string %}
-                <span class="sa-correct-answer">{{ correct }}</span>
-              {% else %}
-                {% for ans in correct %}
-                  <span class="sa-correct-answer">{{ ans }}</span>
-                  {% if not loop.last %}, {% endif %}
-                {% endfor %}
-              {% endif %}
+            {% elif question.question_type in ['SA', 'ES'] %}
+              <div class="answer-text-content content-description">{{ answer.answer|markdown|reference|str|safe if answer.answer else _('No answer provided') }}</div>
+            {% else %}
+              <div class="answer-text-content">{{ answer.answer or _('No answer provided') }}</div>
             {% endif %}
           </div>
-        {% endif %}
 
-        {% if show_answers and question.explanation %}
-          <div class="explanation">
-            <strong>{{ _('Explanation') }}:</strong>
-            <div class="content-description">
-              {{ question.explanation|markdown|reference|str|safe }}
+          {% if question.question_type == 'ES' and answer.files.exists() %}
+            <div class="answer-files">
+              <h4><i class="fa fa-paperclip"></i> {{ _('Attached Files') }}</h4>
+              {% for file in answer.files.all() %}
+                {% set ext = file.get_file_extension() %}
+                {% set has_preview = ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'pdf'] %}
+                <div class="file-item-collapsible{% if has_preview %} has-preview{% endif %}">
+                  <div class="file-item-header">
+                    <span class="file-icon"><i class="fa fa-file"></i></span>
+                    <a href="{{ file.file.url }}" target="_blank" class="file-name">{{ file.original_filename }}</a>
+                    <span class="file-size">({{ file.get_file_size() }})</span>
+                    {% if has_preview %}
+                      <button type="button" class="file-preview-toggle" aria-expanded="false">
+                        <i class="fa fa-chevron-down"></i>
+                      </button>
+                    {% endif %}
+                  </div>
+                  {% if ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'] %}
+                    <div class="file-preview-collapsible file-preview-image" style="display: none;">
+                      <img src="{{ file.file.url }}" alt="{{ file.original_filename }}" loading="lazy">
+                    </div>
+                  {% elif ext == 'pdf' %}
+                    <div class="file-preview-collapsible file-preview-pdf" style="display: none;">
+                      <iframe src="{{ file.file.url }}" title="{{ file.original_filename }}"></iframe>
+                    </div>
+                  {% endif %}
+                </div>
+              {% endfor %}
             </div>
-          </div>
-        {% endif %}
+          {% endif %}
 
-        {% if answer.feedback %}
-          <div class="teacher-feedback">
-            <strong>{{ _('Teacher Feedback') }}:</strong>
-            <div class="feedback-content">
-              {{ answer.feedback }}
+          {% if show_answers and question.correct_answers %}
+            <div class="correct-answer">
+              <strong>{{ _('Correct answer') }}:</strong>
+              {% set correct = question.correct_answers.get('answers', []) %}
+              {% if question.question_type in ['MC', 'TF'] %}
+                {% for choice in question.choices %}
+                  {% if choice.id == correct %}
+                    <div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div>
+                  {% endif %}
+                {% endfor %}
+              {% elif question.question_type == 'MA' %}
+                <ul>
+                  {% for choice in question.choices %}
+                    {% if choice.id in correct %}
+                      <li><div class="choice-content content-description">{{ choice.text|markdown|reference|str|safe }}</div></li>
+                    {% endif %}
+                  {% endfor %}
+                </ul>
+              {% elif question.question_type == 'SA' %}
+                {% if correct is string %}
+                  <span class="sa-correct-answer">{{ correct }}</span>
+                {% else %}
+                  {% for ans in correct %}
+                    <span class="sa-correct-answer">{{ ans }}</span>
+                    {% if not loop.last %}, {% endif %}
+                  {% endfor %}
+                {% endif %}
+              {% endif %}
             </div>
-          </div>
-        {% endif %}
-      </div>
-    {% endfor %}
+          {% endif %}
+
+          {% if show_answers and question.explanation %}
+            <div class="explanation">
+              <strong>{{ _('Explanation') }}:</strong>
+              <div class="content-description">
+                {{ question.explanation|markdown|reference|str|safe }}
+              </div>
+            </div>
+          {% endif %}
+
+          {% if answer.feedback %}
+            <div class="teacher-feedback">
+              <strong>{{ _('Teacher Feedback') }}:</strong>
+              <div class="feedback-content">
+                {{ answer.feedback }}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+    {% endif %}{# end not _is_result_hidden #}
 
     {% if can_retake %}
       <div class="retake-section">

@@ -745,6 +745,7 @@ class QuizCreateForm(forms.ModelForm):
             "description",
             "time_limit",
             "shuffle_questions",
+            "is_shown_correctness",
             "is_shown_answer",
             "is_public",
             "authors",
@@ -858,6 +859,7 @@ class QuizEditForm(forms.ModelForm):
             "description",
             "time_limit",
             "shuffle_questions",
+            "is_shown_correctness",
             "is_shown_answer",
             "is_public",
             "authors",
@@ -1446,7 +1448,12 @@ class QuizDetail(TitleMixin, DetailView):
 
             # Check if in contest mode and show max submissions info
             # Use request.in_contest to respect the "Out contest" toggle
-            if getattr(self.request, "in_contest", False) and profile.current_contest:
+            # Spectators should not see contest-specific limits
+            if (
+                getattr(self.request, "in_contest", False)
+                and profile.current_contest
+                and not profile.current_contest.spectate
+            ):
                 contest_quiz = ContestProblem.objects.filter(
                     contest=profile.current_contest.contest, quiz=quiz
                 ).first()
@@ -1490,8 +1497,13 @@ class QuizStart(LoginRequiredMixin, View):
         contest_participation = None
 
         # Respect the "Out contest" toggle - only apply contest rules if in_contest is True
+        # Spectators (virtual=-1) should not be bound by contest rules
         in_contest = getattr(request, "in_contest", False)
-        if in_contest and profile.current_contest:
+        if (
+            in_contest
+            and profile.current_contest
+            and not profile.current_contest.spectate
+        ):
             # Check if this quiz is in the current contest
             contest_quiz = ContestProblem.objects.filter(
                 contest=profile.current_contest.contest, quiz=quiz
@@ -2128,7 +2140,22 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
             .order_by("question__id")
         )
         context["show_answers"] = quiz.show_answers(self.request.user)
+        context["show_correctness"] = quiz.show_correctness(self.request.user)
         context["can_edit"] = quiz.is_editable_by(self.request.user)
+
+        # Check if results should be hidden in contest context
+        is_result_hidden = False
+        if attempt.contest_participation_id:
+            from judge.models.contest import ContestProblem
+
+            cp = ContestProblem.objects.filter(
+                contest=attempt.contest_participation.contest, quiz=quiz
+            ).first()
+            if cp:
+                is_result_hidden = quiz.should_hide_result(
+                    self.request.user, contest_problem=cp
+                )
+        context["is_result_hidden"] = is_result_hidden
 
         # Check if user can retake the quiz
         # Currently allow unlimited retakes - can add max_attempts check later
@@ -2213,7 +2240,11 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
         # - Contest mode: contest attempts only
         # - Standalone: standalone attempts only (no lesson, no contest)
         in_contest = getattr(self.request, "in_contest", False)
-        if in_contest and profile.current_contest:
+        if (
+            in_contest
+            and profile.current_contest
+            and not profile.current_contest.spectate
+        ):
             contest_quiz = ContestProblem.objects.filter(
                 contest=profile.current_contest.contest, quiz=quiz
             ).first()
@@ -2246,6 +2277,7 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
         context["best_score"] = best_attempt.score if best_attempt else None
 
         # Show context info (respect "Out contest" toggle)
+        contest_quiz = None
         in_contest = getattr(self.request, "in_contest", False)
         if in_contest and self.request.profile.current_contest:
             contest_quiz = ContestProblem.objects.filter(
@@ -2254,6 +2286,14 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
             if contest_quiz:
                 context["in_contest"] = True
                 context["contest"] = self.request.profile.current_contest.contest
+
+        # Check if results should be hidden
+        is_result_hidden = False
+        if contest_quiz:
+            is_result_hidden = quiz.should_hide_result(
+                self.request.user, contest_problem=contest_quiz
+            )
+        context["is_result_hidden"] = is_result_hidden
 
         # Add pagination context for query parameter pagination
         context.update(paginate_query_context(self.request))
@@ -2874,6 +2914,12 @@ class ContestQuizAttemptsAjax(View):
         # Calculate best score
         best_attempt = attempts.order_by("-score").first()
 
+        # Check if results should be hidden
+        cp = ContestProblem.objects.filter(contest=contest_obj, quiz=quiz).first()
+        is_result_hidden = False
+        if cp and cp.is_result_hidden:
+            is_result_hidden = not contest_obj.is_editable_by(request.user)
+
         return render(
             request,
             "quiz/contest-attempts-ajax.html",
@@ -2884,6 +2930,7 @@ class ContestQuizAttemptsAjax(View):
                 "quiz": quiz,
                 "attempts": attempts,
                 "best_attempt": best_attempt,
+                "is_result_hidden": is_result_hidden,
             },
         )
 
@@ -3512,10 +3559,16 @@ class LessonQuizResult(LessonQuizMixin, LoginRequiredMixin, TitleMixin, DetailVi
             .order_by("question__id")
         )
         context["show_answers"] = quiz.show_answers(self.request.user)
+        context["show_correctness"] = quiz.show_correctness(self.request.user)
         context["can_edit"] = quiz.is_editable_by(self.request.user)
 
-        # Check if user can retake in this lesson context
+        # Check if results should be hidden in lesson context
         lesson_quiz = self.get_lesson_quiz()
+        context["is_result_hidden"] = quiz.should_hide_result(
+            self.request.user, lesson_quiz=lesson_quiz
+        )
+
+        # Check if user can retake in this lesson context
         can_retake = (
             attempt.user == self.request.profile
             and lesson_quiz.can_attempt(self.request.user)
@@ -3574,6 +3627,11 @@ class LessonQuizAttemptList(LessonQuizMixin, LoginRequiredMixin, TitleMixin, Lis
             self.get_queryset().filter(is_submitted=True).order_by("-score").first()
         )
         context["best_score"] = best_attempt.score if best_attempt else None
+
+        # Check if results should be hidden in lesson context
+        context["is_result_hidden"] = quiz.should_hide_result(
+            self.request.user, lesson_quiz=lesson_quiz
+        )
 
         context.update(paginate_query_context(self.request))
         return context
