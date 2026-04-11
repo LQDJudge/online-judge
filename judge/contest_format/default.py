@@ -64,6 +64,7 @@ class DefaultContestFormat(BaseContestFormat):
         participation.score = round(points, self.contest.points_precision)
         participation.tiebreaker = 0
         participation.format_data = format_data
+        self.apply_result_hidden(participation, format_data)
         participation.save()
 
     def display_empty_cell(self, contest_problem):
@@ -165,33 +166,13 @@ class DefaultContestFormat(BaseContestFormat):
         else:
             return self.display_empty_cell(contest_problem)
 
-    def _compute_hidden_adjustment(self, participation, result_hidden_ids):
-        """Compute points and cumtime to subtract for hidden problems."""
-        hidden_points = 0
-        hidden_cumtime = 0
-        format_data = participation.format_data or {}
-        for cp_id in result_hidden_ids:
-            for key in (str(cp_id), f"quiz_{cp_id}"):
-                cp_data = format_data.get(key)
-                if cp_data:
-                    hidden_points += cp_data.get("points", 0)
-                    hidden_cumtime += cp_data.get("time", 0)
-        return hidden_points, hidden_cumtime
-
-    def display_participation_result(
-        self, participation, show_final=False, result_hidden_ids=None
-    ):
+    def display_participation_result(self, participation, show_final=False):
         if show_final and hasattr(participation, "score_final"):
             score = participation.score_final
             cumtime = participation.cumtime_final
         else:
             score = participation.score
             cumtime = participation.cumtime
-
-        if result_hidden_ids:
-            hp, hc = self._compute_hidden_adjustment(participation, result_hidden_ids)
-            score = round(max(score - hp, 0), self.contest.points_precision)
-            cumtime = max(cumtime - hc, 0)
 
         show_cumtime = (getattr(self, "config", None) or {}).get("cumtime", True)
 

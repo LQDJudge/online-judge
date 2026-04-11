@@ -1,3 +1,5 @@
+import copy
+
 from abc import ABCMeta, abstractmethod, abstractproperty
 from django.db.models import Max
 from django.utils.translation import gettext as _
@@ -63,15 +65,13 @@ class BaseContestFormat(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def display_participation_result(
-        self, participation, show_final, result_hidden_ids=None
-    ):
+    def display_participation_result(self, participation, show_final):
         """
         Returns the HTML fragment to show a user's performance on the whole contest. This is expected to use
         information from the format_data field instead of computing it from scratch.
 
         :param participation: The ContestParticipation object.
-        :param result_hidden_ids: Set of ContestProblem IDs whose scores should be excluded from the displayed total.
+        :param show_final: Whether to show final (full) scores or public (hidden-adjusted) scores.
         :return: An HTML fragment, marked as safe for Jinja2.
         """
         raise NotImplementedError()
@@ -134,6 +134,54 @@ class BaseContestFormat(metaclass=ABCMeta):
                     format_data[problem]["frozen"] = True
             else:
                 format_data[problem] = {"time": 0, "points": 0, "frozen": True}
+
+    def apply_result_hidden(self, participation, format_data):
+        """
+        Save full scores as final, then subtract is_result_hidden problems
+        from the public score. Must be called after the format sets
+        participation.score/cumtime/format_data, but before save().
+
+        For formats that already compute score_final (e.g., new_ioi),
+        this preserves their final values and only adjusts the public score.
+        """
+        from judge.models import ContestProblem
+
+        has_final = self.has_hidden_subtasks  # format already set score_final
+
+        # Save full values as final (if format didn't already)
+        if not has_final:
+            participation.score_final = participation.score
+            participation.cumtime_final = participation.cumtime
+            participation.format_data_final = copy.deepcopy(format_data)
+
+        # Find is_result_hidden problems
+        hidden_cp_ids = set(
+            ContestProblem.objects.filter(
+                contest=self.contest, is_result_hidden=True
+            ).values_list("id", flat=True)
+        )
+        if not hidden_cp_ids:
+            return
+
+        # Recompute public score/cumtime from non-hidden entries only
+        non_hidden_points = 0
+        non_hidden_cumtime = 0
+        for key, entry in format_data.items():
+            # Check if this entry belongs to a hidden problem
+            is_hidden = False
+            for cp_id in hidden_cp_ids:
+                if key in (str(cp_id), f"quiz_{cp_id}"):
+                    is_hidden = True
+                    break
+            if not is_hidden and entry.get("points", 0) > 0:
+                non_hidden_points += entry.get("points", 0)
+                non_hidden_cumtime += entry.get("time", 0)
+
+        participation.score = round(
+            max(non_hidden_points, 0),
+            self.contest.points_precision,
+        )
+        participation.cumtime = max(non_hidden_cumtime, 0)
 
     def calculate_quiz_scores(self, participation, format_data):
         """

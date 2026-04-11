@@ -114,6 +114,7 @@ class ICPCContestFormat(DefaultContestFormat):
         participation.score = round(score, self.contest.points_precision)
         participation.tiebreaker = last  # field is sorted from least to greatest
         participation.format_data = format_data
+        self.apply_result_hidden(participation, format_data)
         participation.save()
 
     def display_user_problem(self, participation, contest_problem, show_final=False):

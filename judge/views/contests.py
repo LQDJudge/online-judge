@@ -462,10 +462,12 @@ class ContestMixin(object):
         context["og_image"] = self.object.og_image or metadata[1]
         context["has_moss_api_key"] = settings.MOSS_API_KEY is not None
         context["contest_has_hidden_subtasks"] = self.object.format.has_hidden_subtasks
+        has_hidden_results = self.object.contest_problems.filter(
+            is_result_hidden=True
+        ).exists()
         context["show_final_ranking"] = (
-            self.object.format.has_hidden_subtasks
-            and self.object.is_editable_by(self.request.user)
-        )
+            self.object.format.has_hidden_subtasks or has_hidden_results
+        ) and self.object.is_editable_by(self.request.user)
         context["logo_override_image"] = self.object.logo_override_image
         context["organizations"] = self.object.get_organizations()
         context["is_clonable"] = is_contest_clonable(self.request, self.object)
@@ -1271,14 +1273,6 @@ def make_contest_ranking_profile(
         points = participation.score_final
         cumtime = participation.cumtime_final
 
-    # Adjust displayed points/cumtime to exclude hidden problems
-    if result_hidden_ids:
-        hp, hc = contest.format._compute_hidden_adjustment(
-            participation, result_hidden_ids
-        )
-        points = round(max(points - hp, 0), contest.points_precision)
-        cumtime = max(cumtime - hc, 0)
-
     user = participation.user
 
     problem_cells = []
@@ -1304,7 +1298,7 @@ def make_contest_ranking_profile(
         ),
         problem_cells=problem_cells,
         result_cell=contest.format.display_participation_result(
-            participation, show_final, result_hidden_ids
+            participation, show_final
         ),
         participation=participation,
     )
@@ -1393,9 +1387,9 @@ def get_contest_ranking_list(
     if participation is None:
         participation = _get_current_virtual_participation(request, contest)
 
-    # Compute result_hidden_ids for non-editors
+    # Compute result_hidden_ids for ? cells (empty when show_final=True)
     result_hidden_ids = set()
-    if not contest.is_editable_by(request.user):
+    if not show_final:
         result_hidden_ids = set(
             contest.contest_problems.filter(is_result_hidden=True).values_list(
                 "id", flat=True
@@ -1453,6 +1447,12 @@ class ContestRankingBase(ContestMixin, TitleMixin, DetailView):
         context["users"] = users
         context["problems"] = problems
         context["page_type"] = self.page_type
+        has_hidden_results = self.object.contest_problems.filter(
+            is_result_hidden=True
+        ).exists()
+        context["show_final_ranking"] = (
+            self.object.format.has_hidden_subtasks or has_hidden_results
+        ) and self.object.is_editable_by(self.request.user)
         return context
 
 
@@ -1530,7 +1530,11 @@ class ContestFinalRanking(LoginRequiredMixin, ContestRanking):
     def get_ranking_list(self):
         if not self.object.is_editable_by(self.request.user):
             raise Http404()
-        if not self.object.format.has_hidden_subtasks:
+        has_hidden = (
+            self.object.format.has_hidden_subtasks
+            or self.object.contest_problems.filter(is_result_hidden=True).exists()
+        )
+        if not has_hidden:
             raise Http404()
         return super().get_ranking_list()
 

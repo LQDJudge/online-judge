@@ -122,6 +122,7 @@ class ECOOContestFormat(DefaultContestFormat):
         participation.score = round(points, self.contest.points_precision)
         participation.tiebreaker = 0
         participation.format_data = format_data
+        self.apply_result_hidden(participation, format_data)
         participation.save()
 
     def display_user_problem(self, participation, contest_problem, show_final=False):

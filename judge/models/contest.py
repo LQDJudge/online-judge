@@ -940,10 +940,23 @@ class ContestProblem(models.Model):
 
     def save(self, *args, **kwargs):
         self.full_clean()  # Validate before saving
+        # Check if is_result_hidden changed
+        is_result_hidden_changed = False
+        if self.pk:
+            try:
+                old = ContestProblem.objects.get(pk=self.pk)
+                if old.is_result_hidden != self.is_result_hidden:
+                    is_result_hidden_changed = True
+            except ContestProblem.DoesNotExist:
+                pass
         super().save(*args, **kwargs)
         # Invalidate the cache when a contest problem is updated
         get_contest_problem_points.dirty(self.contest_id)
         get_contest_problem_ids.dirty(self.contest_id)
+        # Recompute all participations when is_result_hidden changes
+        if is_result_hidden_changed:
+            for participation in self.contest.users.filter(virtual__gte=0):
+                participation.recompute_results()
 
     save.alters_data = True
 

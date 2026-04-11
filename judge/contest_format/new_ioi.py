@@ -180,4 +180,5 @@ class NewIOIContestFormat(IOIContestFormat):
         participation.cumtime_final = max(cumtime_final, 0)
         participation.score_final = round(score_final, self.contest.points_precision)
         participation.format_data_final = format_data_final
+        self.apply_result_hidden(participation, format_data)
         participation.save()
