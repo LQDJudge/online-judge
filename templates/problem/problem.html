@@ -97,8 +97,13 @@
 {% block title_row %}
   <div class="problem-title">
     {% if request.user.is_authenticated and not has_hidden_subtasks %}
+      {% if request.in_contest and contest_problem %}
+        {% set my_subs_link = url('contest_user_submissions', request.profile.current_contest.contest.key, request.user.username, problem.code) %}
+      {% else %}
+        {% set my_subs_link = url('user_submissions', problem.code, request.user.username) %}
+      {% endif %}
       {% if problem.id in completed_problem_ids %}
-        <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
+        <a href="{{ my_subs_link }}">
           {% if problem.is_public or request.in_contest %}
             <i class="solved-problem-color title-state fa fa-check-circle"></i>
           {% else %}
@@ -106,7 +111,7 @@
           {% endif %}
         </a>
       {% elif problem.id in attempted_problems %}
-        <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
+        <a href="{{ my_subs_link }}">
           {% if problem.is_public or request.in_contest %}
             <i class="attempted-problem-color title-state fa fa-minus-circle"></i>
           {% else %}
@@ -181,23 +186,39 @@
 
   <hr style="padding-bottom: 0.3em">
 
-  {% if request.user.is_authenticated and has_submissions %}
+  {% if request.in_contest and contest_problem %}
+    {% set contest_key = request.profile.current_contest.contest.key %}
+    {% if request.user.is_authenticated and has_submissions %}
+      <div class="link-row">
+        <a href="{{ url('contest_user_submissions', contest_key, request.user.username, problem.code) }}">
+          <i class="fa fa-address-book"></i><span> {{ _('My submissions') }}</span>
+        </a>
+      </div>
+    {% endif %}
     <div class="link-row">
-      <a href="{{url('user_submissions', problem.code, request.user.username) }}">
-        <i class="fa fa-address-book"></i><span> {{ _('My submissions') }}</span>
+      <a href="{{ url('contest_submissions', contest_key) }}?user_filter=all&problem={{ problem.code }}">
+        <i class="fa fa-rectangle-list"></i><span> {{ _('All submissions') }}</span>
+      </a>
+    </div>
+  {% else %}
+    {% if request.user.is_authenticated and has_submissions %}
+      <div class="link-row">
+        <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
+          <i class="fa fa-address-book"></i><span> {{ _('My submissions') }}</span>
+        </a>
+      </div>
+    {% endif %}
+    <div class="link-row">
+      <a href="{{ url('chronological_submissions', problem.code) }}">
+        <i class="fa fa-rectangle-list"></i><span> {{ _('All submissions') }}</span>
+      </a>
+    </div>
+    <div class="link-row">
+      <a href="{{ url('ranked_submissions', problem.code) }}">
+        <i class="fa fa-list-check"></i><span> {{ _('Best submissions') }}</span>
       </a>
     </div>
   {% endif %}
-  <div class="link-row">
-    <a href="{{ url('chronological_submissions', problem.code) }}">
-      <i class="fa fa-rectangle-list"></i><span> {{ _('All submissions') }}</span>
-    </a>
-  </div>
-  <div class="link-row">
-    <a href="{{ url('ranked_submissions', problem.code) }}">
-      <i class="fa fa-list-check"></i><span> {{ _('Best submissions') }}</span>
-    </a>
-  </div>
   {% if problem.has_public_editorial() and not request.in_contest %}
     <hr>
     <div class="link-row">

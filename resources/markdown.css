@@ -103,8 +103,6 @@
 /* Text Elements */
 .content-description p {
   margin: 0.7em 0;
-  text-align: justify;
-  hyphens: auto;
 }
 
 .content-description strong {

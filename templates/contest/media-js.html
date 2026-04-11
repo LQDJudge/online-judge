@@ -153,7 +153,6 @@
         var prob = getCellProblem($(this));
         if (!prob) return;
         var $td = $(this).closest('td');
-        var isFrozen = $td.hasClass('frozen');
         var newScore = getCellScore($(this));
         var oldScore = oldScores[prob];
         if (oldScore === undefined || newScore !== oldScore) {
@@ -163,11 +162,11 @@
           activities.push({
             username: username,
             problem: label,
-            oldScore: isFrozen ? '-' : oldScore,
-            newScore: isFrozen ? '?' : newScore,
-            increased: !isFrozen && newNum > oldNum,
-            full: !isFrozen && maxMap[prob] && newNum === parseFloat(maxMap[prob]),
-            frozen: isFrozen,
+            oldScore: oldScore,
+            newScore: newScore,
+            increased: newNum > oldNum,
+            full: maxMap[prob] && newNum === parseFloat(maxMap[prob]),
+            frozen: $td.hasClass('frozen'),
             rankDelta: rankDelta,
             oldRank: oldRank,
             newRank: newRank,
@@ -275,6 +274,8 @@
         }
         if (typeof applyFavoriteStars === 'function') applyFavoriteStars();
         if (typeof applyRowFilters === 'function') applyRowFilters();
+        if ($('#show-schools-checkbox').is(':checked')) $('.school').show();
+        if ($('#show-fullnames-checkbox').is(':checked')) $('.fullname').show();
       },
       fail: function() {
         console.log('Fail to update ranking');
