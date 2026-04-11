@@ -1446,7 +1446,12 @@ class QuizDetail(TitleMixin, DetailView):
 
             # Check if in contest mode and show max submissions info
             # Use request.in_contest to respect the "Out contest" toggle
-            if getattr(self.request, "in_contest", False) and profile.current_contest:
+            # Spectators should not see contest-specific limits
+            if (
+                getattr(self.request, "in_contest", False)
+                and profile.current_contest
+                and not profile.current_contest.spectate
+            ):
                 contest_quiz = ContestProblem.objects.filter(
                     contest=profile.current_contest.contest, quiz=quiz
                 ).first()
@@ -1490,8 +1495,13 @@ class QuizStart(LoginRequiredMixin, View):
         contest_participation = None
 
         # Respect the "Out contest" toggle - only apply contest rules if in_contest is True
+        # Spectators (virtual=-1) should not be bound by contest rules
         in_contest = getattr(request, "in_contest", False)
-        if in_contest and profile.current_contest:
+        if (
+            in_contest
+            and profile.current_contest
+            and not profile.current_contest.spectate
+        ):
             # Check if this quiz is in the current contest
             contest_quiz = ContestProblem.objects.filter(
                 contest=profile.current_contest.contest, quiz=quiz
@@ -2227,7 +2237,11 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
         # - Contest mode: contest attempts only
         # - Standalone: standalone attempts only (no lesson, no contest)
         in_contest = getattr(self.request, "in_contest", False)
-        if in_contest and profile.current_contest:
+        if (
+            in_contest
+            and profile.current_contest
+            and not profile.current_contest.spectate
+        ):
             contest_quiz = ContestProblem.objects.filter(
                 contest=profile.current_contest.contest, quiz=quiz
             ).first()
