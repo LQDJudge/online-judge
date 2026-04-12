@@ -170,6 +170,9 @@ class BaseContestFormat(metaclass=ABCMeta):
             return
 
         # Recompute public score/cumtime from non-hidden entries only
+        # Note: cumtime uses sum which is correct for most formats (default,
+        # IOI, ICPC, ECOO). AtCoder uses max-based cumtime which may be
+        # slightly inaccurate when is_result_hidden is used.
         non_hidden_points = 0
         non_hidden_cumtime = 0
         for key, entry in format_data.items():

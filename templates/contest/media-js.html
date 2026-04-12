@@ -107,7 +107,7 @@
 
   function getCellProblem($anchor) {
     var link = $anchor.attr('data-featherlight') || '';
-    if (!link.includes('submissions')) return null;
+    if (!link.includes('submissions') && !link.includes('quiz-attempts')) return null;
     var parts = link.split('/');
     return parts[parts.length - 2];
   }

@@ -343,6 +343,16 @@ def auto_grade_quiz_attempt(attempt) -> float:
     if hasattr(attempt, "contest_participation") and attempt.contest_participation:
         try:
             attempt.contest_participation.recompute_results()
+            # Post ranking-update event for live scoreboard
+            from judge.models import Contest
+            from judge import event_poster as event
+
+            contest = attempt.contest_participation.contest
+            if contest.scoreboard_visibility == Contest.SCOREBOARD_VISIBLE:
+                event.post(
+                    "contest_%s" % contest.key,
+                    {"type": "ranking-update"},
+                )
         except Exception:
             pass
 

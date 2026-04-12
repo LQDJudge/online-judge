@@ -629,8 +629,13 @@ class ContestDetail(
                     is_submitted=True,
                 )
                 best = attempts.order_by("-score").first()
+                contest_score = None
+                if best and best.score is not None and best.max_score:
+                    contest_score = (
+                        float(best.score) / float(best.max_score) * cq.points
+                    )
                 quiz_user_data[cq.quiz.id] = {
-                    "best_score": best.score if best else None,
+                    "best_score": contest_score,
                     "best_attempt_id": best.id if best else None,
                     "attempt_count": attempts.count(),
                 }
@@ -722,8 +727,13 @@ class ContestProblems(ContestMixin, SolvedProblemMixin, TitleMixin, DetailView):
                     is_submitted=True,
                 )
                 best = attempts.order_by("-score").first()
+                contest_score = None
+                if best and best.score is not None and best.max_score:
+                    contest_score = (
+                        float(best.score) / float(best.max_score) * cq.points
+                    )
                 quiz_user_data[cq.quiz.id] = {
-                    "best_score": best.score if best else None,
+                    "best_score": contest_score,
                     "best_attempt_id": best.id if best else None,
                     "attempt_count": attempts.count(),
                 }
