@@ -1,4 +1,6 @@
 {% if contest_quizzes %}
+  {% set _quiz_user_data = quiz_user_data if quiz_user_data is defined else {} %}
+  {% set _result_hidden_ids = result_hidden_contest_quiz_ids if result_hidden_contest_quiz_ids is defined else set() %}
   <table id="contest-quizzes" class="table striped">
     <thead>
       <tr>
@@ -11,11 +13,27 @@
     </thead>
     <tbody>
       {% for contest_quiz in contest_quizzes %}
+        {% set qdata = _quiz_user_data.get(contest_quiz.quiz.id, {}) if _quiz_user_data else {} %}
+        {% set is_hidden = contest_quiz.id in _result_hidden_ids %}
         <tr>
           <td class="quiz-name">
             <a href="{{ url('quiz_detail', contest_quiz.quiz.code) }}">{{ contest_quiz.quiz.title }}</a>
           </td>
-          <td class="quiz-points">{{ contest_quiz.points }}</td>
+          <td class="quiz-points">
+            {% if _quiz_user_data %}
+              {% if is_hidden and qdata.get('best_score') is not none %}
+                ? / {{ contest_quiz.points }}
+              {% elif qdata.get('best_score') is not none %}
+                <a href="{{ url('quiz_result', contest_quiz.quiz.code, qdata['best_attempt_id']) }}">
+                  {{ qdata['best_score']|round(1) }}
+                </a> / {{ contest_quiz.points }}
+              {% else %}
+                {{ contest_quiz.points }}
+              {% endif %}
+            {% else %}
+              {{ contest_quiz.points }}
+            {% endif %}
+          </td>
           <td class="quiz-questions">{{ contest_quiz.quiz.get_question_count() }}</td>
           <td class="quiz-time">
             {% if contest_quiz.quiz.time_limit %}
@@ -25,7 +43,9 @@
             {% endif %}
           </td>
           <td class="quiz-attempts">
-            {% if contest_quiz.max_submissions > 0 %}
+            {% if _quiz_user_data and contest_quiz.max_submissions > 0 %}
+              {{ contest_quiz.max_submissions - qdata.get('attempt_count', 0) }} / {{ contest_quiz.max_submissions }}
+            {% elif contest_quiz.max_submissions > 0 %}
               {{ contest_quiz.max_submissions }}
             {% else %}
               {{ _('Unlimited') }}
