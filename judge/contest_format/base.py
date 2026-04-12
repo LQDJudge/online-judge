@@ -151,7 +151,13 @@ class BaseContestFormat(metaclass=ABCMeta):
         # Save full values as final (if format didn't already)
         if not has_final:
             participation.score_final = participation.score
-            participation.cumtime_final = participation.cumtime
+            # participation.cumtime has problem times (+ penalty for ICPC/AtCoder)
+            # but may miss quiz times, so add those separately
+            quiz_cumtime = 0
+            for key, entry in format_data.items():
+                if key.startswith("quiz_") and entry.get("points", 0) > 0:
+                    quiz_cumtime += entry.get("time", 0)
+            participation.cumtime_final = max(participation.cumtime + quiz_cumtime, 0)
             participation.format_data_final = copy.deepcopy(format_data)
 
         # Find is_result_hidden problems
