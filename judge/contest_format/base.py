@@ -151,7 +151,13 @@ class BaseContestFormat(metaclass=ABCMeta):
         # Save full values as final (if format didn't already)
         if not has_final:
             participation.score_final = participation.score
-            participation.cumtime_final = participation.cumtime
+            # participation.cumtime has problem times (+ penalty for ICPC/AtCoder)
+            # but may miss quiz times, so add those separately
+            quiz_cumtime = 0
+            for key, entry in format_data.items():
+                if key.startswith("quiz_") and entry.get("points", 0) > 0:
+                    quiz_cumtime += entry.get("time", 0)
+            participation.cumtime_final = max(participation.cumtime + quiz_cumtime, 0)
             participation.format_data_final = copy.deepcopy(format_data)
 
         # Find is_result_hidden problems
@@ -164,6 +170,9 @@ class BaseContestFormat(metaclass=ABCMeta):
             return
 
         # Recompute public score/cumtime from non-hidden entries only
+        # Note: cumtime uses sum which is correct for most formats (default,
+        # IOI, ICPC, ECOO). AtCoder uses max-based cumtime which may be
+        # slightly inaccurate when is_result_hidden is used.
         non_hidden_points = 0
         non_hidden_cumtime = 0
         for key, entry in format_data.items():

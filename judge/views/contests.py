@@ -597,6 +597,9 @@ class ContestDetail(
             .order_by("order")
         )
         context["contest_quizzes"] = contest_quizzes
+        context["result_hidden_contest_quiz_ids"] = set(
+            cq.id for cq in contest_quizzes if cq.is_result_hidden
+        )
 
         if self.object.is_in_course:
             course = CourseContest.get_course_of_contest(self.object)
@@ -612,6 +615,31 @@ class ContestDetail(
         context["current_contest"] = (
             self.request.participation.contest if is_in_viewed_contest else None
         )
+
+        # User's quiz attempt data for display
+        if self.profile and is_in_viewed_contest:
+            from judge.models.quiz import QuizAttempt
+
+            quiz_user_data = {}
+            for cq in context["contest_quizzes"]:
+                attempts = QuizAttempt.objects.filter(
+                    quiz=cq.quiz,
+                    user=self.profile,
+                    contest_participation=self.request.participation,
+                    is_submitted=True,
+                )
+                best = attempts.order_by("-score").first()
+                contest_score = None
+                if best and best.score is not None and best.max_score:
+                    contest_score = (
+                        float(best.score) / float(best.max_score) * cq.points
+                    )
+                quiz_user_data[cq.quiz.id] = {
+                    "best_score": contest_score,
+                    "best_attempt_id": best.id if best else None,
+                    "attempt_count": attempts.count(),
+                }
+            context["quiz_user_data"] = quiz_user_data
 
         context["has_hidden_subtasks"] = self.object.format.has_hidden_subtasks
         context["hide_contest_scoreboard"] = self.object.scoreboard_visibility in (
@@ -681,9 +709,37 @@ class ContestProblems(ContestMixin, SolvedProblemMixin, TitleMixin, DetailView):
             .order_by("order")
         )
         context["contest_quizzes"] = contest_quizzes
+        context["result_hidden_contest_quiz_ids"] = set(
+            cq.id for cq in contest_quizzes if cq.is_result_hidden
+        )
+
+        # User's quiz attempt data for display
+        is_in_contest = contest.is_in_contest(self.request.user)
+        if self.profile and is_in_contest and self.request.in_contest:
+            from judge.models.quiz import QuizAttempt
+
+            quiz_user_data = {}
+            for cq in contest_quizzes:
+                attempts = QuizAttempt.objects.filter(
+                    quiz=cq.quiz,
+                    user=self.profile,
+                    contest_participation=self.request.participation,
+                    is_submitted=True,
+                )
+                best = attempts.order_by("-score").first()
+                contest_score = None
+                if best and best.score is not None and best.max_score:
+                    contest_score = (
+                        float(best.score) / float(best.max_score) * cq.points
+                    )
+                quiz_user_data[cq.quiz.id] = {
+                    "best_score": contest_score,
+                    "best_attempt_id": best.id if best else None,
+                    "attempt_count": attempts.count(),
+                }
+            context["quiz_user_data"] = quiz_user_data
 
         # Determine if user is actively in this contest (live or virtual)
-        is_in_contest = contest.is_in_contest(self.request.user)
         context["is_in_contest"] = is_in_contest
         context["current_contest"] = (
             self.request.participation.contest
@@ -1275,12 +1331,19 @@ def make_contest_ranking_profile(
 
     user = participation.user
 
+    format_data = participation.format_data or {}
     problem_cells = []
     for contest_problem in contest_problems:
         if result_hidden_ids and contest_problem.id in result_hidden_ids:
-            cell = format_html(
-                '<td class="problem-score-col frozen"><span>?</span></td>'
-            )
+            # Only show ? if user actually has data for this problem
+            if contest_problem.quiz_id:
+                has_data = f"quiz_{contest_problem.id}" in format_data
+            else:
+                has_data = str(contest_problem.id) in format_data
+            if has_data:
+                cell = format_html('<td class="problem-score-col"><span>?</span></td>')
+            else:
+                cell = contest.format.display_empty_cell(contest_problem)
         else:
             cell = contest.format.display_user_problem(
                 participation, contest_problem, show_final
