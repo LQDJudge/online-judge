@@ -36,6 +36,8 @@ def generic_message(request, title, message, status=None):
 def paginate_query_context(request):
     query = request.GET.copy()
     query.setlist("page", [])
+    query.setlist("ajax", [])
+    query.setlist("user", [])
     query = query.urlencode()
     if query:
         return {

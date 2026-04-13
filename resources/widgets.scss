@@ -380,6 +380,28 @@ ul.pagination {
     }
 }
 
+// Mobile: compact pagination — show only « [1] [2] ... [N] »
+@media (max-width: 799px) {
+    ul.pagination > li {
+        > a, > span {
+            padding: 0.15rem 0.4rem;
+            font-size: 0.75rem;
+            margin-right: 2px;
+            border-width: 1px;
+        }
+
+        // Hide all middle pages by default
+        &:not(:first-child):not(:nth-child(2)):not(:nth-child(3)):not(:nth-last-child(2)):not(:last-child):not(.active-page):not(.disabled-page) {
+            display: none;
+        }
+
+        // Always show the page right after active
+        &.active-page + li:not(.disabled-page) {
+            display: inline;
+        }
+    }
+}
+
 .alert {
     padding: $space-relaxed;
     margin-bottom: 20px;

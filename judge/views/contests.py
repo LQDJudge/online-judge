@@ -1,3 +1,5 @@
+import csv
+import io
 from copy import deepcopy
 import json
 import math
@@ -78,12 +80,14 @@ from judge.utils.problems import _get_result_data
 from judge.views.problem import SolvedProblemMixin
 from judge.utils.ranker import ranker
 from judge.utils.stats import get_bar_chart, get_pie_chart, get_histogram
+from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.views import (
     DiggPaginatorMixin,
     QueryStringSortMixin,
     SingleObjectFormView,
     TitleMixin,
     generic_message,
+    paginate_query_context,
 )
 from judge.widgets import HeavyPreviewPageDownWidget
 from judge.views.pagevote import PageVoteDetailView
@@ -104,8 +108,9 @@ __all__ = [
     "ContestMossDelete",
     "ContestParticipationList",
     "ContestParticipationDisqualify",
-    "get_contest_ranking_list",
-    "base_contest_ranking_list",
+    "get_ranking_queryset",
+    "get_contest_problems",
+    "build_ranking_profiles",
     "ContestClarificationView",
     "OfficialContestList",
     "RecommendedContestList",
@@ -1315,176 +1320,124 @@ ContestRankingProfile = namedtuple(
 BestSolutionData = namedtuple("BestSolutionData", "code points time state is_pretested")
 
 
-def make_contest_ranking_profile(
-    contest,
-    participation,
-    contest_problems,
-    show_final=False,
-    result_hidden_ids=None,
-):
-    if not show_final:
-        points = participation.score
-        cumtime = participation.cumtime
-    else:
-        points = participation.score_final
-        cumtime = participation.cumtime_final
-
-    user = participation.user
-
-    format_data = participation.format_data or {}
-    problem_cells = []
-    for contest_problem in contest_problems:
-        if result_hidden_ids and contest_problem.id in result_hidden_ids:
-            # Only show ? if user actually has data for this problem
-            if contest_problem.quiz_id:
-                has_data = f"quiz_{contest_problem.id}" in format_data
-            else:
-                has_data = str(contest_problem.id) in format_data
-            if has_data:
-                cell = format_html('<td class="problem-score-col"><span>?</span></td>')
-            else:
-                cell = contest.format.display_empty_cell(contest_problem)
-        else:
-            cell = contest.format.display_user_problem(
-                participation, contest_problem, show_final
-            )
-        problem_cells.append(cell)
-
-    return ContestRankingProfile(
-        id=user.id,
-        user=user,
-        points=points,
-        cumtime=cumtime,
-        tiebreaker=participation.tiebreaker,
-        participation_rating=(
-            participation.rating.rating if hasattr(participation, "rating") else None
-        ),
-        problem_cells=problem_cells,
-        result_cell=contest.format.display_participation_result(
-            participation, show_final
-        ),
-        participation=participation,
-    )
-
-
-def base_contest_ranking_list(
-    contest,
-    problems,
-    queryset,
-    show_final=False,
-    extra_participation=None,
-    result_hidden_ids=None,
-):
-    participation_fields = [
-        field.name
-        for field in ContestParticipation._meta.get_fields()
-        if field.concrete and not field.many_to_many
-    ]
-    fields_to_fetch = participation_fields + [
-        "user__id",
-        "rating__rating",
-    ]
-
-    res = [
-        make_contest_ranking_profile(
-            contest, participation, problems, show_final, result_hidden_ids
-        )
-        for participation in queryset.select_related("user", "rating").only(
-            *fields_to_fetch
-        )
-    ]
-    Profile.get_cached_instances(*[p.id for p in res])
-    return res
-
-
-def contest_ranking_list(
-    contest,
-    problems,
-    queryset=None,
-    show_final=False,
-    extra_participation=None,
-    result_hidden_ids=None,
-):
+def get_ranking_queryset(contest, queryset=None, show_final=False):
+    """Return an ordered ContestParticipation queryset."""
     if queryset is None:
         queryset = contest.users.filter(virtual=0)
-
-    if extra_participation and extra_participation.virtual:
-        queryset = queryset | contest.users.filter(id=extra_participation.id)
-
     if show_final:
-        queryset = queryset.order_by(
-            "is_disqualified", "-score_final", "cumtime_final", "tiebreaker"
+        return queryset.order_by(
+            "is_disqualified", "-score_final", "cumtime_final", "tiebreaker", "id"
         )
-    else:
-        queryset = queryset.order_by(
-            "is_disqualified", "-score", "cumtime", "tiebreaker"
-        )
-
-    return base_contest_ranking_list(
-        contest,
-        problems,
-        queryset,
-        show_final,
-        result_hidden_ids=result_hidden_ids,
-    )
+    return queryset.order_by("is_disqualified", "-score", "cumtime", "tiebreaker", "id")
 
 
-def get_contest_ranking_list(
-    request,
-    contest,
-    participation=None,
-    ranking_list=contest_ranking_list,
-    ranker=ranker,
-    show_final=False,
-):
-    problems = list(
-        contest.contest_problems.select_related("problem", "quiz")
-        .defer("problem__description")
-        .order_by("order")
-    )
-    # Only prefetch cache for actual problems (not quiz-only entries)
-    problem_ids = [cp.problem_id for cp in problems if cp.problem_id is not None]
+def get_contest_problems(contest):
+    """Fetch contest problems. Problem data accessed via cache (no JOIN)."""
+    problems = list(contest.contest_problems.select_related("quiz").order_by("order"))
+    # Pre-populate Django's FK cache from CacheableModel cache,
+    # so contest_problem.problem.code hits cache instead of DB
+    problem_ids = [cp.problem_id for cp in problems if cp.problem_id]
     if problem_ids:
-        Problem.get_cached_instances(*problem_ids)
+        cached = {p.id: p for p in Problem.get_cached_instances(*problem_ids)}
+        for cp in problems:
+            if cp.problem_id in cached:
+                cp.problem = cached[cp.problem_id]
+    return problems
 
-    if participation is None:
-        participation = _get_current_virtual_participation(request, contest)
 
-    # Compute result_hidden_ids for ? cells (empty when show_final=True)
-    result_hidden_ids = set()
-    if not show_final:
-        result_hidden_ids = set(
+def build_ranking_profiles(contest, problems, participations, show_final=False):
+    """Convert participations into ContestRankingProfile list with rendered cells."""
+    if not hasattr(contest, "_result_hidden_ids"):
+        contest._result_hidden_ids = set(
             contest.contest_problems.filter(is_result_hidden=True).values_list(
                 "id", flat=True
             )
         )
+    result_hidden_ids = contest._result_hidden_ids if not show_final else set()
 
-    ranking_list_result = ranking_list(
-        contest,
-        problems,
-        show_final=show_final,
-        extra_participation=participation,
-        result_hidden_ids=result_hidden_ids,
-    )
+    # Ensure full objects are loaded with relations
+    if hasattr(participations, "select_related"):
+        participations = participations.select_related("user", "rating")
 
-    users = ranker(
-        ranking_list_result,
-        key=attrgetter("points", "cumtime", "tiebreaker"),
-    )
-    return users, problems
+    res = []
+    for participation in participations:
+        points = participation.score_final if show_final else participation.score
+        cumtime = participation.cumtime_final if show_final else participation.cumtime
+
+        format_data = participation.format_data or {}
+        problem_cells = []
+        for cp in problems:
+            if result_hidden_ids and cp.id in result_hidden_ids:
+                key = f"quiz_{cp.id}" if cp.quiz_id else str(cp.id)
+                if key in format_data:
+                    cell = format_html(
+                        '<td class="problem-score-col"><span>?</span></td>'
+                    )
+                else:
+                    cell = contest.format.display_empty_cell(cp)
+            else:
+                cell = contest.format.display_user_problem(
+                    participation, cp, show_final
+                )
+            problem_cells.append(cell)
+
+        res.append(
+            ContestRankingProfile(
+                id=participation.user_id,
+                user=participation.user,
+                points=points,
+                cumtime=cumtime,
+                tiebreaker=participation.tiebreaker,
+                participation_rating=(
+                    participation.rating.rating
+                    if hasattr(participation, "rating")
+                    else None
+                ),
+                problem_cells=problem_cells,
+                result_cell=contest.format.display_participation_result(
+                    participation, show_final
+                ),
+                participation=participation,
+            )
+        )
+
+    Profile.get_cached_instances(*[p.id for p in res])
+    return res
 
 
-def _get_current_virtual_participation(request, contest):
-    # Return None if not eligible
-    if not request.user.is_authenticated:
-        return None
+def compute_ranks(rows, target_ids=None, include_position=False):
+    """Compute ranks from ordered rows using ranker() tie logic.
 
-    participation = request.profile.current_contest
+    Args:
+        rows: iterable of (id, score, cumtime, tiebreaker) tuples (already ordered)
+        target_ids: if set, only return results for these IDs (and stop early if all found)
+        include_position: if True, return {id: (rank, position)} instead of {id: rank}
 
-    if participation is None or participation.contest_id != contest.id:
-        return None
+    Returns:
+        dict {id: rank} or {id: (rank, position)}
+    """
+    result = {}
+    rank = 0
+    delta = 1
+    last_key = None
+    remaining = set(target_ids) if target_ids else None
 
-    return participation
+    for i, (pid, score, cumtime, tb) in enumerate(rows):
+        key = (score, cumtime, tb)
+        if key != last_key:
+            rank += delta
+            delta = 0
+        delta += 1
+        last_key = key
+
+        if remaining is None or pid in remaining:
+            result[pid] = (rank, i) if include_position else rank
+            if remaining:
+                remaining.discard(pid)
+                if not remaining:
+                    break
+
+    return result
 
 
 class ContestRankingBase(ContestMixin, TitleMixin, DetailView):
@@ -1519,6 +1472,9 @@ class ContestRankingBase(ContestMixin, TitleMixin, DetailView):
         return context
 
 
+RANKING_PAGE_SIZE = 100
+
+
 class ContestRanking(ContestRankingBase):
     page_type = "ranking"
     show_final = False
@@ -1529,33 +1485,176 @@ class ContestRanking(ContestRankingBase):
     def get_title(self):
         return _("%s Rankings") % self.object.name
 
-    def get_ranking_list(self):
-        if not self.object.can_see_full_scoreboard(self.request.user):
-            queryset = self.object.users.filter(
-                user=self.request.profile, virtual=ContestParticipation.LIVE
-            )
-            return get_contest_ranking_list(
-                self.request,
-                self.object,
-                ranking_list=partial(base_contest_ranking_list, queryset=queryset),
-                ranker=lambda users, key: ((_("???"), user) for user in users),
-            )
+    def get(self, request, *args, **kwargs):
+        if request.GET.get("format") == "csv":
+            self.object = self.get_object()
+            self.setup_filters()
+            return self._render_csv()
+        return super().get(request, *args, **kwargs)
 
+    def _render_csv(self):
+        contest = self.object
+        if not contest.can_see_full_scoreboard(self.request.user):
+            raise Http404()
+
+        problems = get_contest_problems(contest)
+        self.all_rows = self._get_lightweight_rows(self._get_base_queryset())
+        filtered_rows = self._filter_rows(self.all_rows)
+        filtered_ids = [r[0] for r in filtered_rows]
+        qs = get_ranking_queryset(
+            contest, contest.users.filter(id__in=filtered_ids), self.show_final
+        )
+        s = "score_final" if self.show_final else "score"
+
+        # Fetch only what CSV needs: username, names, score, format_data
+        participations = qs.select_related("user__user").only(
+            "id",
+            "user__user__username",
+            "user__user__first_name",
+            "user__user__last_name",
+            s,
+            "cumtime",
+            "tiebreaker",
+            "format_data",
+        )
+
+        # Compute ranks from lightweight rows
+        rows = ((pid, s_, c_, tb) for pid, _, s_, c_, tb in filtered_rows)
+        rank_map = compute_ranks(rows)
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        header = [_("Rank"), _("Username"), _("Full Name"), _("School"), _("Score")]
+        for cp in problems:
+            header.append(contest.get_label_for_problem(cp.order))
+        writer.writerow(header)
+
+        for p in participations:
+            fd = p.format_data or {}
+            row = [
+                rank_map.get(p.id, ""),
+                p.user.user.username,
+                p.user.user.first_name or "",
+                p.user.user.last_name or "",
+                getattr(p, s),
+            ]
+            for cp in problems:
+                k = f"quiz_{cp.id}" if cp.quiz_id else str(cp.id)
+                pdata = fd.get(k)
+                row.append(pdata["points"] if pdata else "")
+            writer.writerow(row)
+
+        response = HttpResponse(output.getvalue(), content_type="text/csv")
+        safe_key = contest.key.replace('"', "").replace(";", "")
+        response["Content-Disposition"] = (
+            f'attachment; filename="{safe_key}_ranking.csv"'
+        )
+        return response
+
+    def _get_base_queryset(self):
+        """Base queryset with virtual filter + search (DB-level)."""
         queryset = self.object.users
-        if self.friend_only:
-            followings = self.request.profile.get_following_ids(True)
-            queryset = queryset.filter(user_id__in=followings)
         if not self.include_virtual:
             queryset = queryset.filter(virtual=0)
         else:
             queryset = queryset.filter(virtual__gte=0)
+        if self.search_query:
+            queryset = queryset.filter(
+                Q(user__user__username__icontains=self.search_query)
+                | Q(user__user__first_name__icontains=self.search_query)
+            )
+        return queryset
 
-        return get_contest_ranking_list(
-            self.request,
-            self.object,
-            ranking_list=partial(contest_ranking_list, queryset=queryset),
-            show_final=self.show_final,
+    def _get_lightweight_rows(self, queryset):
+        """Fetch ordered (id, user_id, score, cumtime, tiebreaker) tuples."""
+        s = "score_final" if self.show_final else "score"
+        c = "cumtime_final" if self.show_final else "cumtime"
+        qs = get_ranking_queryset(self.object, queryset, self.show_final)
+        return list(qs.values_list("id", "user_id", s, c, "tiebreaker"))
+
+    def _filter_rows(self, rows):
+        """Apply friend/favorites filters in Python."""
+        if self.friend_only:
+            followings = set(self.request.profile.get_following_ids(True))
+            rows = [r for r in rows if r[1] in followings]
+        if self.favorite_ids:
+            fav_set = set(self.favorite_ids)
+            rows = [r for r in rows if r[1] in fav_set]
+        return rows
+
+    def get_ranking_list(self):
+        contest = self.object
+
+        if not contest.can_see_full_scoreboard(self.request.user):
+            qs = get_ranking_queryset(
+                contest,
+                contest.users.filter(
+                    user=self.request.profile, virtual=ContestParticipation.LIVE
+                ),
+                self.show_final,
+            )
+            problems = get_contest_problems(contest)
+            profiles = build_ranking_profiles(contest, problems, qs, self.show_final)
+            users = ((_("???"), user) for user in profiles)
+            return users, problems
+
+        problems = get_contest_problems(contest)
+
+        # One lightweight query for all participants (with search at DB level)
+        self.all_rows = self._get_lightweight_rows(self._get_base_queryset())
+        filtered_rows = self._filter_rows(self.all_rows)
+
+        # Paginate in Python
+        total = len(filtered_rows)
+        page_number = 1
+
+        # ?user=username → find their page
+        highlight_user = self.request.GET.get("user", "").strip()
+        if highlight_user:
+            target_uid = (
+                Profile.objects.filter(user__username=highlight_user)
+                .values_list("id", flat=True)
+                .first()
+            )
+            if target_uid:
+                for i, (pid, uid, *_) in enumerate(filtered_rows):
+                    if uid == target_uid:
+                        page_number = (i // RANKING_PAGE_SIZE) + 1
+                        self.highlight_username = highlight_user
+                        break
+
+        if not highlight_user:
+            try:
+                page_number = int(self.request.GET.get("page", 1))
+            except ValueError:
+                page_number = 1
+        num_pages = max(1, (total + RANKING_PAGE_SIZE - 1) // RANKING_PAGE_SIZE)
+        page_number = max(1, min(page_number, num_pages))
+
+        start = (page_number - 1) * RANKING_PAGE_SIZE
+        page_rows = filtered_rows[start : start + RANKING_PAGE_SIZE]
+
+        # Fetch full objects for this page only
+        page_ids = [row[0] for row in page_rows]
+        qs = get_ranking_queryset(
+            contest, contest.users.filter(id__in=page_ids), self.show_final
         )
+        profiles = build_ranking_profiles(contest, problems, qs, self.show_final)
+
+        users = ranker(
+            profiles,
+            key=attrgetter("points", "cumtime", "tiebreaker"),
+            rank=start,
+        )
+
+        # Build page_obj for template pagination
+        self.page_obj = DiggPaginator(
+            filtered_rows, RANKING_PAGE_SIZE, body=3, tail=1, padding=1
+        ).get_page(page_number)
+        self.filtered_rows = filtered_rows
+
+        return users, problems
 
     def _get_default_include_virtual(self):
         if hasattr(self.object, "official"):
@@ -1570,15 +1669,87 @@ class ContestRanking(ContestRankingBase):
         self.include_virtual = bool(
             self.request.GET.get("virtual", self._get_default_include_virtual()) == "1"
         )
+        self.search_query = self.request.GET.get("search", "").strip()
         self.ajax_only = bool(self.request.GET.get("ajax") == "1")
+        self.page_obj = None
+        self.all_rows = None
+        self.filtered_rows = None
+        self.highlight_username = None
+
+        # Parse favorite user IDs (max 50, from localStorage via JS)
+        self.favorite_ids = []
+        fav_param = self.request.GET.get("favorites", "")
+        if fav_param:
+            for x in fav_param.split(",")[:50]:
+                try:
+                    self.favorite_ids.append(int(x))
+                except ValueError:
+                    pass
 
         if self.ajax_only:
-            self.template_name = "contest/ranking-table.html"
+            self.template_name = "contest/ranking-ajax.html"
+
+    def _find_my_position(self):
+        """Find current user's position and rank in filtered_rows (no extra queries)."""
+        if not self.request.user.is_authenticated or not self.filtered_rows:
+            return None
+        my_pid = (
+            self.object.users.filter(
+                user=self.request.profile, virtual=ContestParticipation.LIVE
+            )
+            .values_list("id", flat=True)
+            .first()
+        )
+        if not my_pid:
+            return None
+
+        rows = ((pid, s, c, tb) for pid, uid, s, c, tb in self.filtered_rows)
+        ranks = compute_ranks(rows, target_ids={my_pid}, include_position=True)
+        if my_pid not in ranks:
+            return None
+        rank, position = ranks[my_pid]
+        return {
+            "rank": rank,
+            "page": (position // RANKING_PAGE_SIZE) + 1,
+            "participation_id": my_pid,
+        }
+
+    def _compute_global_ranks(self, page_user_ids):
+        """Compute overall ranks from all_rows (no extra queries)."""
+        rows = ((uid, s, c, tb) for _, uid, s, c, tb in self.all_rows)
+        return compute_ranks(rows, target_ids=page_user_ids)
 
     def get_context_data(self, **kwargs):
         self.setup_filters()
         context = super().get_context_data(**kwargs)
         context["has_rating"] = self.object.ratings.exists()
+        context["search_query"] = self.search_query
+        context["page_obj"] = self.page_obj
+        if self.page_obj is not None:
+            context.update(paginate_query_context(self.request))
+            my_info = self._find_my_position()
+            if my_info:
+                context["my_page"] = my_info["page"]
+                context["my_rank"] = my_info["rank"]
+                if my_info["page"] != self.page_obj.number:
+                    participation = (
+                        self.object.users.filter(id=my_info["participation_id"])
+                        .select_related("user", "rating")
+                        .first()
+                    )
+                    if participation:
+                        context["my_profile"] = build_ranking_profiles(
+                            self.object,
+                            context["problems"],
+                            [participation],
+                            self.show_final,
+                        )[0]
+            if self.friend_only or self.favorite_ids:
+                start = (self.page_obj.number - 1) * RANKING_PAGE_SIZE
+                end = self.page_obj.number * RANKING_PAGE_SIZE
+                page_user_ids = set(row[1] for row in self.filtered_rows[start:end])
+                context["global_ranks"] = self._compute_global_ranks(page_user_ids)
+        context["highlight_username"] = self.highlight_username
         if not self.ajax_only:
             context["include_virtual"] = self.include_virtual
             context["friend_only"] = self.friend_only
@@ -1620,24 +1791,22 @@ class ContestParticipationList(LoginRequiredMixin, ContestRankingBase):
         ):
             raise Http404()
 
-        queryset = self.object.users.filter(user=self.profile, virtual__gte=0).order_by(
+        contest = self.object
+        qs = contest.users.filter(user=self.profile, virtual__gte=0).order_by(
             "-virtual"
         )
+
+        problems = get_contest_problems(contest)
+        profiles = build_ranking_profiles(contest, problems, qs)
+
         live_link = format_html(
             '<a href="{2}#!{1}">{0}</a>',
             _("Live"),
             self.profile.username,
-            reverse("contest_ranking", args=[self.object.key]),
+            reverse("contest_ranking", args=[contest.key]),
         )
-
-        return get_contest_ranking_list(
-            self.request,
-            self.object,
-            ranking_list=partial(base_contest_ranking_list, queryset=queryset),
-            ranker=lambda users, key: (
-                (user.participation.virtual or live_link, user) for user in users
-            ),
-        )
+        users = ((user.participation.virtual or live_link, user) for user in profiles)
+        return users, problems
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1937,8 +2106,12 @@ def recalculate_contest_summary_result(request, contest_summary):
 
     for i in range(len(contests)):
         contest = contests[i]
-        users, problems = get_contest_ranking_list(request, contest)
-        users = list(users)  # Convert generator to list for multiple iterations
+        problems = get_contest_problems(contest)
+        qs = get_ranking_queryset(contest)
+        profiles = build_ranking_profiles(contest, problems, qs)
+        users = list(
+            ranker(profiles, key=attrgetter("points", "cumtime", "tiebreaker"))
+        )
 
         # Group users by rank and calculate sum of points for tied positions
         rank_groups = defaultdict(list)

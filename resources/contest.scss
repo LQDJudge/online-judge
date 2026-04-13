@@ -562,12 +562,11 @@
         text-align: left !important;
     }
 
-    // Filter controls - compact inline style
+    // Filter controls - two-row grouped layout
     .ranking-filters-container {
         display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.3rem 0.8rem;
+        flex-direction: column;
+        gap: 0.3rem;
         padding: 0.3rem 0;
         margin-bottom: 0.4rem;
 
@@ -593,21 +592,56 @@
             padding: 0.35rem 0.7rem;
             font-size: 0.75rem;
         }
+    }
 
-        .ranking-search-input {
-            margin-left: auto;
-            width: 150px;
-            height: 1.8em;
-            border-radius: 4px;
-            border: 1px solid $border_gray;
-            padding: 0 0.5em;
+    // Row 1: server-side filters + actions
+    .ranking-filters-primary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
 
-            &:focus {
-                border-color: $theme_color;
-                outline: none;
-            }
+        .ranking-filters-group {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .ranking-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
     }
+
+    // Row 2: client-side display toggles
+    .ranking-filters-display {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.3rem 0.8rem;
+    }
+
+    // Pinned "my row" at top of ranking table
+    tr.pinned-row {
+        font-weight: 600;
+        border-bottom: 2px solid $border_gray;
+    }
+
+    .ranking-search-input {
+        width: 200px;
+        height: 2em;
+        border-radius: 4px;
+        border: 1px solid $border_gray;
+        padding: 0 0.5em;
+        font-size: 0.8rem;
+
+        &:focus {
+            border-color: $theme_color;
+            outline: none;
+        }
+    }
+
 
     // Search box
     #search-contest {
@@ -642,15 +676,18 @@
 
     // Responsive
     @media (max-width: 799px) {
-        .ranking-filters-container {
+        .ranking-filters-primary {
             flex-direction: column;
             align-items: flex-start;
             gap: 0.3rem;
 
-            .download-link {
-                margin-left: 0;
-                margin-top: 0.2rem;
+            .ranking-filters-group {
+                flex-wrap: wrap;
             }
+        }
+
+        .ranking-search-input {
+            width: 100%;
         }
 
         #users-table thead th {
@@ -663,9 +700,8 @@
         }
 
         // Mobile-optimized sticky columns - only rank and username are sticky
-        // Use smaller widths to leave more room for problem scores
         $mobile-rank-col-width: 1.8rem;
-        $mobile-username-col-width: 6rem;
+        $mobile-username-col-width: 8rem;
 
         // Header sticky columns on mobile
         #users-table thead th.rank {
@@ -696,14 +732,12 @@
             min-width: $mobile-username-col-width;
             max-width: $mobile-username-col-width;
             overflow: hidden;
-            text-overflow: ellipsis;
             white-space: nowrap;
 
             // Override inline max-width: 25em on the inner div
             > div {
                 max-width: 100% !important;
                 overflow: hidden;
-                text-overflow: ellipsis;
                 white-space: nowrap;
             }
 
@@ -712,13 +746,17 @@
                 display: none !important;
             }
 
-            // Truncate username link
-            a {
-                display: inline !important;
+            // Truncate username - the <a> inside .rating must be block-like for ellipsis
+            .rating {
+                display: inline-block;
+                max-width: 100%;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                white-space: nowrap;
-                font-size: 0.75rem;
+                vertical-align: middle;
+
+                a {
+                    font-size: 0.75rem;
+                }
             }
         }
 

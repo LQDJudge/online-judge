@@ -39,7 +39,7 @@ def get_awards(profile):
             "label": rating["contest_name"],
             "ranking": rating["rank"],
             "link": reverse("contest_ranking", args=(rating["contest_key"],))
-            + "#!"
+            + "?user="
             + profile.username,
             "date": date_format(rating["contest_end_time"], _("M j, Y")),
         }

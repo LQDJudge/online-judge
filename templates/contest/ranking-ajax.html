@@ -1,0 +1,10 @@
+<div class="ranking-table-wrapper">
+  <table id="users-table" class="table striped no-border">
+    {% include "contest/ranking-table.html" %}
+  </table>
+</div>
+{% if page_obj and page_obj.num_pages > 1 %}
+  <div id="ranking-pagination" style="margin-top:10px;">
+    {% include "list-pages.html" %}
+  </div>
+{% endif %}

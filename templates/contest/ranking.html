@@ -160,8 +160,14 @@
   <script type="text/javascript">
     $(function () {
       var CONTEST_KEY = "{{ contest.key }}";
-      var STORAGE_KEY = "contest_favorites_" + CONTEST_KEY;
+      window.CONTEST_KEY = CONTEST_KEY;
+      var STORAGE_KEY = "contest_fav_ids_" + CONTEST_KEY;
 
+      // Track current page and search for AJAX refreshes
+      window.currentPage = {{ page_obj.number if page_obj else 1 }};
+      window.currentSearch = "{{ search_query|default('', true)|escapejs }}";
+
+      // --- Favorites (stored by user ID) ---
       function getFavorites() {
         try {
           return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
@@ -174,26 +180,25 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(favs));
       }
 
-      function getUsername(row) {
-        return row.find('.user-name .rating a').first().text().trim();
+      function getUserId(row) {
+        return row.attr('data-id');
       }
 
       window.applyFavoriteStars = function () {
         var favs = getFavorites();
-        $('#users-table tbody tr').each(function () {
+        $('#users-table tbody tr[data-id]').each(function () {
           var $row = $(this);
-          var username = getUsername($row);
-          if (!username) return;
+          var uid = getUserId($row);
+          if (!uid) return;
 
-          // Remove existing star to avoid duplicates after AJAX refresh
           $row.find('.fav-star').remove();
 
-          var isFav = !!favs[username];
-          var $star = $('<span class="fav-star" title="Toggle favorite"></span>')
+          var isFav = !!favs[uid];
+          var $star = $('<span class="fav-star"></span>').attr('title', '{{ _("Toggle favorite") }}')
             .text(isFav ? '\u2605' : '\u2606')
             .toggleClass('fav-active', isFav);
 
-          $row.find('.user-name > div').first().prepend($star);
+          $row.find('.user-name .rating').first().after($star);
           $row.toggleClass('fav-row', isFav);
         });
       };
@@ -202,41 +207,108 @@
         e.stopPropagation();
         var $star = $(this);
         var $row = $star.closest('tr');
-        var username = getUsername($row);
-        if (!username) return;
+        var uid = getUserId($row);
+        if (!uid) return;
 
         var favs = getFavorites();
-        if (favs[username]) {
-          delete favs[username];
+        if (favs[uid]) {
+          delete favs[uid];
           $star.text('\u2606').removeClass('fav-active');
           $row.removeClass('fav-row');
         } else {
-          favs[username] = true;
+          favs[uid] = true;
           $star.text('\u2605').addClass('fav-active');
           $row.addClass('fav-row');
         }
         saveFavorites(favs);
-        applyRowFilters();
       });
 
-      window.applyRowFilters = function () {
-        var searchText = $('#ranking-search').val().toLowerCase().trim();
-        var favOnly = $('#show-favorites-checkbox').is(':checked');
-        var favs = getFavorites();
+      // --- Favorites filter (server-side) ---
+      window.applyRowFilters = function () {};
 
-        $('#users-table tbody tr').each(function () {
-          var $row = $(this);
-          var username = getUsername($row);
-          var textMatch = !searchText || $row.find('td.user-name, td.user').text().toLowerCase().indexOf(searchText) !== -1;
-          var favMatch = !favOnly || !!favs[username];
-          $row.toggle(textMatch && favMatch);
-        });
-      };
+      $('#show-favorites-checkbox').on('change', function () {
+        update_ranking({page: 1});
+      });
 
-      $('#ranking-search').on('input', applyRowFilters);
-      $('#show-favorites-checkbox').on('change', applyRowFilters);
+      // --- Server-side search (debounced via AJAX) ---
+      var _searchTimer = null;
+
+      $('#ranking-search').on('input', function () {
+        clearTimeout(_searchTimer);
+        var val = $(this).val().trim();
+        _searchTimer = setTimeout(function () {
+          window.currentSearch = val;
+          update_ranking({search: val, page: 1});
+        }, 300);
+      });
+
+      $('#ranking-search').on('keydown', function (e) {
+        if (e.key === 'Enter') {
+          clearTimeout(_searchTimer);
+          var val = $(this).val().trim();
+          window.currentSearch = val;
+          update_ranking({search: val, page: 1});
+        }
+      });
 
       applyFavoriteStars();
+
+      // --- Toggle state persistence ---
+      var TOGGLE_KEY = 'ranking_toggles_' + CONTEST_KEY;
+      var toggleIds = ['show-schools-checkbox', 'show-fullnames-checkbox', 'show-total-score-checkbox', 'disable-animations-checkbox'];
+
+      function saveToggles() {
+        var state = {};
+        toggleIds.forEach(function (id) {
+          state[id] = $('#' + id).is(':checked');
+        });
+        try { sessionStorage.setItem(TOGGLE_KEY, JSON.stringify(state)); } catch (e) {}
+      }
+
+      function restoreToggles() {
+        try {
+          var state = JSON.parse(sessionStorage.getItem(TOGGLE_KEY));
+          if (!state) return;
+          if (state['show-schools-checkbox']) { $('#show-schools-checkbox').prop('checked', true); $('.school').show(); }
+          if (state['show-fullnames-checkbox']) { $('#show-fullnames-checkbox').prop('checked', true); $('.fullname').show(); }
+          if (state['show-total-score-checkbox']) { $('#show-total-score-checkbox').prop('checked', true); $('.problem-score-col').hide(); }
+          if (state['disable-animations-checkbox']) { $('#disable-animations-checkbox').prop('checked', true); }
+        } catch (e) {}
+      }
+
+      restoreToggles();
+      toggleIds.forEach(function (id) {
+        $('#' + id).on('change', saveToggles);
+      });
+
+      // --- Highlight user from ?user= param ---
+      {% if highlight_username %}
+        $(function () {
+          var $row = $('#users-table tbody tr').filter(function () {
+            return $(this).find('.user-name .rating a').first().text().trim() === '{{ highlight_username|escapejs }}';
+          });
+          if ($row.length) {
+            $row.addClass('highlight');
+            $row[0].scrollIntoView({behavior: 'smooth', block: 'center'});
+          }
+        });
+      {% endif %}
+
+      // --- My Rank button ---
+      function scrollToMyRow() {
+        var el = document.querySelector('tr.highlight:not(.pinned-row)');
+        if (el) el.scrollIntoView({behavior: 'smooth', block: 'center'});
+      }
+
+      $('#my-rank-btn').on('click', function (e) {
+        e.preventDefault();
+        var myPage = parseInt($(this).data('page'));
+        if (myPage === window.currentPage) {
+          scrollToMyRow();
+        } else {
+          update_ranking({page: myPage, onComplete: scrollToMyRow});
+        }
+      });
     });
   </script>
 {% endblock %}
@@ -245,53 +317,61 @@
 
 {% block middle_content %}
   <div class="contest-ranking-page">
-    {% if page_obj and page_obj.num_pages > 1 %}
-      <div style="margin-bottom: 7px; margin-top: 3px;">
-        {% include "list-pages.html" %}
-        <form id="search-form" name="form" action="{{ url('user_ranking_redirect') }}" method="get">
-          <input id="search-handle" type="text" name="search" placeholder="{{ _('Search by handle...') }}">
-        </form>
-        <div style="clear:both"></div>
-      </div>
-    {% endif %}
-
     {% include "contest/contest-datetime.html" %}
 
-    {% if page_type == 'ranking' %}
+    {% if page_type == 'ranking' or page_type == 'final_ranking' %}
       <div class="ranking-filters-container">
-        <label class="filter-option"><input id="show-schools-checkbox" type="checkbox">{{ _('Schools') }}</label>
-        <label class="filter-option"><input id="show-fullnames-checkbox" type="checkbox">{{ _('Full name') }}</label>
-        {% if request.user.is_authenticated %}
-          <label class="filter-option"><input id="show-friends-checkbox" type="checkbox" {{"checked" if friend_only}}>{{
-            _('Friends') }}</label>
-        {% endif %}
-        <label class="filter-option"><input id="show-total-score-checkbox" type="checkbox">{{ _('Score only') }}</label>
-        <label class="filter-option" id="show-virtual-label"><input id="show-virtual-checkbox" type="checkbox" {{"checked"
-                                                                    if include_virtual}}>{{ _('Virtual') }}</label>
-        <label class="filter-option"><input id="show-favorites-checkbox" type="checkbox">{{ _('Favorites') }}</label>
-        {% if can_edit %}
-          <label class="filter-option"><input id="show-admin-checkbox" type="checkbox">{{ _('Admin') }}</label>
-          <button type="button" id="bulk-disqualify-btn" class="action-btn small admin-only-btn" style="display: none;">
-            <i class="fa fa-ban"></i> {{ _('Disqualify') }}
-          </button>
-        {% endif %}
-        <label class="filter-option"><input id="disable-animations-checkbox" type="checkbox">{{ _('No animations') }}</label>
-        <a class="action-btn small" href="#" onclick="download_ranking_as_csv(); return false;"><i
-          class="fa fa-download"></i> {{ _('CSV') }}</a>
-        <i class="fa fa-spinner fa-pulse" style="display: none" id="loading-gif"></i>
-        <input type="text" id="ranking-search" class="ranking-search-input" placeholder="{{ _('Search...') }}">
+        <div class="ranking-filters-primary">
+          <div class="ranking-filters-group">
+            <input type="text" id="ranking-search" class="ranking-search-input"
+                   placeholder="{{ _('Search...') }}" value="{{ search_query or '' }}">
+            {% if request.user.is_authenticated %}
+              <label class="filter-option"><input id="show-friends-checkbox" type="checkbox"
+                                                  {{"checked" if friend_only}}>{{ _('Friends') }}</label>
+            {% endif %}
+            <label class="filter-option" id="show-virtual-label"><input id="show-virtual-checkbox"
+                                                                        type="checkbox" {{"checked" if include_virtual}}>{{ _('Virtual') }}</label>
+          </div>
+          <div class="ranking-actions">
+            <i class="fa fa-spinner fa-pulse" style="display: none" id="loading-gif"></i>
+            {% if my_page %}
+              <a class="action-btn small" id="my-rank-btn" href="#" data-page="{{ my_page }}">
+                <i class="fa fa-user"></i> {{ _('My rank') }}</a>
+            {% endif %}
+            <a class="action-btn small"
+               href="?format=csv&friend={{ '1' if friend_only else '0' }}&virtual={{ '1' if include_virtual else '0' }}">
+              <i class="fa fa-download"></i> {{ _('CSV') }}</a>
+          </div>
+        </div>
+        <div class="ranking-filters-display">
+          <label class="filter-option"><input id="show-schools-checkbox" type="checkbox">{{ _('Schools') }}</label>
+          <label class="filter-option"><input id="show-fullnames-checkbox" type="checkbox">{{ _('Full name') }}</label>
+          <label class="filter-option"><input id="show-total-score-checkbox" type="checkbox">{{ _('Score only') }}</label>
+          <label class="filter-option"><input id="show-favorites-checkbox" type="checkbox">{{ _('Favorites') }}</label>
+          <label class="filter-option"><input id="disable-animations-checkbox" type="checkbox">{{ _('No animations') }}</label>
+          {% if can_edit %}
+            <label class="filter-option"><input id="show-admin-checkbox" type="checkbox">{{ _('Admin') }}</label>
+            <button type="button" id="bulk-disqualify-btn" class="action-btn small admin-only-btn" style="display: none;">
+              <i class="fa fa-ban"></i> {{ _('Disqualify') }}
+            </button>
+          {% endif %}
+        </div>
       </div>
     {% endif %}
 
-    <div class="ranking-table-wrapper">
-      <table id="users-table" class="table striped no-border">
-        {% include "contest/ranking-table.html" %}
-      </table>
-    </div>
+    <div id="ranking-container">
+      <div class="ranking-table-wrapper">
+        <table id="users-table" class="table striped no-border">
+          {% include "contest/ranking-table.html" %}
+        </table>
+      </div>
 
-    {% if page_obj and page_obj.num_pages > 1 %}
-      <div style="margin-top:10px;">{% include "list-pages.html" %}</div>
-    {% endif %}
+      {% if page_obj and page_obj.num_pages > 1 %}
+        <div id="ranking-pagination" style="margin-top:10px;">
+          {% include "list-pages.html" %}
+        </div>
+      {% endif %}
+    </div>
 
     {% if can_edit %}
       <div id="bulk-disqualify-modal" class="modal-overlay" style="display: none;">

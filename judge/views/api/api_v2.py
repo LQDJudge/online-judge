@@ -1,11 +1,7 @@
-from operator import attrgetter
-
 from django.db.models import Max
 from django.http import JsonResponse
 
-from judge.models import ContestParticipation, Problem, Profile, Submission
-from judge.utils.ranker import ranker
-from judge.views.contests import contest_ranking_list
+from judge.models import Problem, Profile, Submission
 
 
 def error(message):
@@ -63,46 +59,8 @@ def api_v2_user_info(request):
         "organizations": list(profile.organizations.values_list("key", flat=True)),
     }
 
-    contest_history = []
-    for participation in ContestParticipation.objects.filter(
-        user=profile, virtual=0, contest__is_visible=True
-    ).order_by("-contest__end_time"):
-        contest = participation.contest
-
-        problems = list(
-            contest.contest_problems.select_related("problem")
-            .defer("problem__description")
-            .order_by("order")
-        )
-        rank, result = next(
-            filter(
-                lambda data: data[1].user == profile.user,
-                ranker(
-                    contest_ranking_list(contest, problems),
-                    key=attrgetter("points", "cumtime"),
-                ),
-            )
-        )
-
-        contest_history.append(
-            {
-                "contest": {
-                    "code": contest.key,
-                    "name": contest.name,
-                    "tags": list(contest.tags.values_list("name", flat=True)),
-                    "time_limit": contest.time_limit
-                    and contest.time_limit.total_seconds(),
-                    "start_time": contest.start_time.isoformat(),
-                    "end_time": contest.end_time.isoformat(),
-                },
-                "rank": rank,
-                "rating": result.participation_rating,
-            }
-        )
-
     resp["contests"] = {
         "current_rating": last_rating[0].rating if last_rating else None,
-        "history": contest_history,
     }
 
     solved_problems = []

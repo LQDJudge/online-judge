@@ -53,18 +53,15 @@
       $form.submit();
     });
 
-    var $last = null;
-    $(window).on('hashchange', function () {
-      var hash = window.location.hash;
-      if (hash.startsWith('#!')) {
-        var $user = $('#user-' + hash.substring(2)).addClass('highlight');
-        if ($user) {
-          $(document).scrollTop($user.position().top - 50);
-          if ($last !== null) $last.removeClass('highlight');
-          $last = $user;
-        }
+    // Highlight user from ?user= param
+    var userParam = new URLSearchParams(window.location.search).get('user');
+    if (userParam) {
+      var $user = $('#user-' + userParam);
+      if ($user.length) {
+        $user.addClass('highlight');
+        $user[0].scrollIntoView({behavior: 'smooth', block: 'center'});
       }
-    }).trigger('hashchange');
+    }
 
     $('.about-td').on('click', function() {
       var max_height = $(this).css('max-height');

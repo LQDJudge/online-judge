@@ -25,18 +25,30 @@
 
 .fav-star {
     cursor: pointer;
-    font-size: 1.1em;
-    margin-right: 4px;
+    font-size: 1em;
     vertical-align: middle;
-    opacity: 0.35;
-    transition: opacity 0.15s;
+    opacity: 0;
+    width: 0;
+    display: inline-block;
+    overflow: hidden;
+    transition: opacity 0.15s, width 0.15s;
+
+    &.fav-active {
+        color: #f5a623;
+        opacity: 1;
+        width: 0.7em;
+    }
+}
+
+#users-table tbody tr:hover .fav-star {
+    opacity: 0.4;
+    width: 0.7em;
 
     &:hover {
         opacity: 0.7;
     }
 
     &.fav-active {
-        color: #f5a623;
         opacity: 1;
     }
 }

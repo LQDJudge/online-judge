@@ -1,5 +1,32 @@
 {% extends "user/base-users-table.html" %}
 
+{% block before_rows %}
+  {% if my_profile %}
+    {% set user = my_profile %}
+    <tr class="highlight pinned-row">
+      <td class="rank-td">{{ my_rank }}</td>
+      {% if has_rating %}
+        <td class="rating-column">{% if user.participation_rating %}{{ rating_number(user.participation_rating) }}{% endif %}</td>
+      {% endif %}
+      <td class="user-name">
+        <div style="display: inline-block; max-width: 25em;">
+          {{ link_user(user.user, show_image=True) }}
+        </div>
+      </td>
+      <th class="full-name" style="display:none;"></th>
+      <th style="display:none;"></th>
+      {{ user.result_cell }}
+      {% for cell in user.problem_cells %}
+        {{ cell }}
+      {% endfor %}
+    </tr>
+  {% endif %}
+{% endblock %}
+
+{% block rank_cell %}
+  {{ rank }}{% if global_ranks and user.id in global_ranks %} <span class="gray" style="font-size:0.8em">({{ global_ranks[user.id] }})</span>{% endif %}
+{% endblock %}
+
 {% block after_rank_head %}
   {% if has_rating %}
     <th class="rating-column">{{ _('Rating') }}</th>
@@ -81,7 +108,7 @@
 {% endblock %}
 
 {% block row_extra %}
-  class="{{ 'disqualified' if user.participation.is_disqualified }} {{'highlight' if user.id == request.user.id}}"
+  class="{{ 'disqualified' if user.participation.is_disqualified }} {{'highlight' if user.id == request.profile.id}}" data-id="{{ user.id }}"
 {% endblock %}
 
 {% block before_point %}

@@ -1,5 +1,9 @@
 {% extends "user/base-users-table.html" %}
 
+{% block row_extra %}
+  id="user-{{ user.username }}"
+{% endblock %}
+
 {% block after_rank_head %}
   <th></th>
 {% endblock %}

@@ -151,7 +151,7 @@
             {% for course_contest in course_contests %}
               {% set val = grade_contests_student.get(course_contest.id) %}
               <td class="partial-score">
-                <a href="{{url('contest_ranking', course_contest.contest.key)}}#!{{student.username}}" target="_blank">
+                <a href="{{url('contest_ranking', course_contest.contest.key)}}?user={{student.username}}" target="_blank">
                   {% if val and val['total_points'] %}
                     {{ (val['achieved_points'] / val['total_points'] * course_contest.points) | floatformat(0) }}
                   {% else %}

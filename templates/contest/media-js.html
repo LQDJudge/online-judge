@@ -136,16 +136,44 @@
     var labelMap = getProblemLabelMap();
     var maxMap = getProblemMaxMap();
 
-    $('#users-table tbody tr').each(function () {
+    $('#users-table tbody tr:not(.pinned-row)').each(function () {
       var $row = $(this);
       var username = $row.find('.user-name .rating a').first().text();
-      if (!username || !oldSnap[username]) return;
+      if (!username) return;
+
+      var newRank = parseInt($row.find('.rank-td').text().trim()) || 0;
+
+      if (!oldSnap[username]) {
+        // New user on this page — show toast with new rank only
+        $row.find('td a[data-featherlight]').each(function () {
+          var prob = getCellProblem($(this));
+          if (!prob) return;
+          var $td = $(this).closest('td');
+          var newScore = getCellScore($(this));
+          if (!newScore || newScore === '0') return;
+          var label = labelMap[prob] || prob;
+          var newNum = parseFloat(newScore) || 0;
+          activities.push({
+            username: username,
+            problem: label,
+            oldScore: undefined,
+            newScore: newScore,
+            increased: true,
+            full: maxMap[prob] && newNum === parseFloat(maxMap[prob]),
+            frozen: $td.hasClass('frozen'),
+            rankDelta: 0,
+            oldRank: 0,
+            newRank: newRank,
+            $row: $row,
+            $td: $td
+          });
+        });
+        return;
+      }
 
       var oldData = oldSnap[username];
       var oldRank = parseInt(oldData.rank) || 0;
-      var newRank = parseInt($row.find('.rank-td').text().trim()) || 0;
-      var rankDelta = oldRank - newRank; // positive = moved up
-
+      var rankDelta = oldRank - newRank;
       var rankUp = newRank && oldRank && newRank < oldRank;
 
       var oldScores = oldData.scores;
@@ -206,22 +234,22 @@
         }
 
         var scoreText = a.oldScore ? a.oldScore + ' \u2192 ' + a.newScore : a.newScore;
-        var rankInfo = '';
+        var rankText = '';
         if (a.oldRank && a.newRank && a.oldRank !== a.newRank) {
-          var rankCls = a.newRank < a.oldRank ? 'toast-rank-up' : 'toast-rank-down';
-          rankInfo = '<span class="toast-rank ' + rankCls + '">#' + a.oldRank + ' \u2192 #' + a.newRank + '</span>';
+          rankText = '#' + a.oldRank + ' \u2192 #' + a.newRank;
         } else if (a.newRank) {
-          rankInfo = '<span class="toast-rank">#' + a.newRank + '</span>';
+          rankText = '#' + a.newRank;
         }
+        var rankCls = (a.newRank && a.oldRank && a.newRank < a.oldRank) ? 'toast-rank-up' : ((a.newRank && a.oldRank && a.newRank > a.oldRank) ? 'toast-rank-down' : '');
 
-        var $toast = $('<div class="live-toast ' + cls + '">' +
-          '<div class="toast-problem">' + $('<span>').text(a.problem).html() + '</div>' +
-          '<div class="toast-body">' +
-          '<span class="toast-user">' + $('<span>').text(a.username).html() + '</span>' +
-          '<span class="toast-score">' + scoreText + '</span>' +
-          rankInfo +
-          '</div>' +
-          '</div>');
+        var $toast = $('<div>').addClass('live-toast ' + cls).append(
+          $('<div class="toast-problem">').text(a.problem),
+          $('<div class="toast-body">').append(
+            $('<span class="toast-user">').text(a.username),
+            $('<span class="toast-score">').text(scoreText),
+            rankText ? $('<span>').addClass('toast-rank ' + rankCls).text(rankText) : null
+          )
+        );
 
         // Highlight table row/cell in sync with toast
         // Remove first and force reflow to restart CSS animation
@@ -246,36 +274,57 @@
     });
   }
 
-  function update_ranking() {
+  function buildRankingUrl(opts) {
+    var friend = opts.friend !== undefined ? opts.friend : ($('#show-friends-checkbox').is(':checked') ? 1 : 0);
+    var virtual = opts.virtual !== undefined ? opts.virtual : ($('#show-virtual-checkbox').is(':checked') ? 1 : 0);
+    var page = opts.page || window.currentPage || 1;
+    var search = opts.search !== undefined ? opts.search : (window.currentSearch || '');
+    var url = `?friend=${friend}&virtual=${virtual}&page=${page}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    // Favorites: send user IDs from localStorage (max 50)
+    if ($('#show-favorites-checkbox').is(':checked')) {
+      var CONTEST_KEY = window.CONTEST_KEY || '';
+      try {
+        var favs = JSON.parse(localStorage.getItem('contest_fav_ids_' + CONTEST_KEY)) || {};
+        var ids = Object.keys(favs).slice(0, 50);
+        if (ids.length) url += '&favorites=' + ids.join(',');
+      } catch (e) {}
+    }
+    return url;
+  }
+
+  function update_ranking(opts) {
+    opts = opts || {};
     if (!$('#users-table').length) {
       return;
     }
-    var friend = $('#show-friends-checkbox').is(':checked');
-    var virtual = $('#show-virtual-checkbox').is(':checked');
+    var isLiveRefresh = !opts.page && opts.search === undefined;
     $('#loading-gif').show();
-    var url = `?friend=${friend ? 1 : 0}&virtual=${virtual ? 1 : 0}&ajax=1`;
+    var url = buildRankingUrl(opts) + '&ajax=1';
 
-    var oldSnap = snapshot_ranking();
+    var oldSnap = isLiveRefresh ? snapshot_ranking() : {};
 
     $.get({
       url: url,
       success: function(HTML) {
-        $('#users-table').html(HTML);
+        $('#ranking-container').html(HTML);
+        // Update browser URL without reload
+        var stateUrl = buildRankingUrl(opts);
+        history.replaceState(null, '', stateUrl);
+        // Update tracked state
+        if (opts.page) window.currentPage = opts.page;
+        if (opts.search !== undefined) window.currentSearch = opts.search;
+
         highlightFirstSolve();
         $('#loading-gif').hide();
-        if (!virtual && !friend) {
-          get_initial_rank();
-        }
-        if (friend) {
-          add_initial_friend_rank();
-        }
-        if (Object.keys(oldSnap).length > 0) {
+        if (isLiveRefresh && Object.keys(oldSnap).length > 0) {
           apply_ranking_animations(oldSnap);
         }
         if (typeof applyFavoriteStars === 'function') applyFavoriteStars();
         if (typeof applyRowFilters === 'function') applyRowFilters();
         if ($('#show-schools-checkbox').is(':checked')) $('.school').show();
         if ($('#show-fullnames-checkbox').is(':checked')) $('.fullname').show();
+        if (opts.onComplete) opts.onComplete();
       },
       fail: function() {
         console.log('Fail to update ranking');
@@ -331,12 +380,12 @@
 
     {% if request.user.is_authenticated %}
       $('#show-friends-checkbox').click(function() {
-        update_ranking();
-      })
+        update_ranking({page: 1});
+      });
     {% endif %}
     $('#show-virtual-checkbox').click(function() {
-      update_ranking();
-    })
+      update_ranking({page: 1});
+    });
     $('#show-total-score-checkbox').click(function() {
       $('.problem-score-col').toggle();
     })

@@ -15,9 +15,10 @@
 </thead>
 
 <tbody>
+  {% block before_rows %}{% endblock %}
   {% for rank, user in users %}
     <tr {% block row_extra scoped %}{% endblock %}>
-      <td class="rank-td">{{ rank }}</td>
+      <td class="rank-td">{% block rank_cell scoped %}{{ rank }}{% endblock %}</td>
       {% block after_rank scoped %}{% endblock %}
       <td class="user-name">
         <div style="display: inline-block; max-width: 25em;">

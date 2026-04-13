@@ -189,7 +189,7 @@ class UserAboutPage(UserPage):
                             "link": reverse(
                                 "contest_ranking", args=(rating["contest_key"],)
                             )
-                            + "#!"
+                            + "?user="
                             + self.object.username,
                             "timestamp": (
                                 rating["contest_end_time"] - EPOCH
@@ -513,8 +513,7 @@ def user_ranking_redirect(request):
     ).count()
     page = rank // UserList.paginate_by
     return HttpResponseRedirect(
-        "%s%s#!%s"
-        % (reverse("user_list"), "?page=%d" % (page + 1) if page else "", username)
+        "%s?page=%d&user=%s" % (reverse("user_list"), page + 1, username)
     )
 
 
