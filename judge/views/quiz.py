@@ -593,7 +593,6 @@ class QuestionBankDelete(
 
 
 class QuizList(
-    LoginRequiredMixin,
     PendingGradingCountMixin,
     DiggPaginatorMixin,
     TitleMixin,
@@ -602,7 +601,8 @@ class QuizList(
     """List all quizzes.
 
     In contest mode: Shows only quizzes from the current contest (accessible to all participants).
-    Outside contest mode: Shows quizzes the user can edit (editors only).
+    Outside contest mode: Shows public quizzes + quizzes the user can edit.
+    Anonymous users can see public quizzes.
     """
 
     model = Quiz
@@ -620,22 +620,6 @@ class QuizList(
             and self.request.in_contest
         )
 
-    def test_func(self):
-        """Check if user has permission to view quiz list"""
-        # In contest mode, any authenticated participant can view contest quizzes
-        if self.in_contest:
-            return True
-        # Outside contest, any authenticated user can view public quizzes
-        if not self.request.user.is_authenticated:
-            return False
-        return True
-
-    def dispatch(self, request, *args, **kwargs):
-        # Check permissions
-        if not self.test_func():
-            raise PermissionDenied(_("You do not have permission to view quizzes."))
-        return super().dispatch(request, *args, **kwargs)
-
     def get_queryset(self):
         # In contest mode, show only quizzes from the current contest
         if self.in_contest:
@@ -648,8 +632,11 @@ class QuizList(
             # Outside contest mode, show public quizzes and quizzes the user can edit
             queryset = Quiz.objects.prefetch_related("authors__user")
 
-            # If not superuser, show public quizzes + own quizzes + quizzes user can test
-            if not self.request.user.is_superuser:
+            if not self.request.user.is_authenticated:
+                # Anonymous users can only see public quizzes
+                queryset = queryset.filter(is_public=True)
+            elif not self.request.user.is_superuser:
+                # Non-superusers see public quizzes + own quizzes + quizzes they can test
                 profile = self.request.profile
                 queryset = queryset.filter(
                     Q(is_public=True)
