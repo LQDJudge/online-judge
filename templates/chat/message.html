@@ -14,10 +14,10 @@
         {{message.body|markdown(lazy_load=False)|reference|str|safe }}
       </div>
       <div class="message-actions">
-        {% if request.user.is_staff or request.profile.id == message.author_id %}
+        {% if request.user.has_perm('judge.change_comment') or request.profile.id == message.author_id %}
           <a class="chat_remove" value="{{message.id}}">{{_('Delete')}}</a>
         {% endif %}
-        {% if request.user.is_staff and request.profile.id != message.author_id and not message.room_id %}
+        {% if request.user.has_perm('judge.change_comment') and request.profile.id != message.author_id and not message.room_id %}
           <a class="chat_mute" value="{{message.id}}">{{_('Mute')}}</a>
         {% endif %}
       </div>

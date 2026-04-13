@@ -31,8 +31,6 @@ class CommentEditAjax(LoginRequiredMixin, CommentMixin, UpdateView):
 
     def get_object(self, queryset=None):
         comment = super(CommentEditAjax, self).get_object(queryset)
-        if self.request.user.has_perm("judge.change_comment"):
-            return comment
         profile = self.request.profile
         if profile != comment.author or profile.mute or comment.hidden:
             raise Http404()

@@ -136,7 +136,10 @@ def delete_message(request):
     except:
         return HttpResponseBadRequest()
 
-    if not request.user.is_staff and request.profile != mess.author:
+    if (
+        not request.user.has_perm("judge.change_comment")
+        and request.profile != mess.author
+    ):
         return HttpResponseBadRequest()
 
     room_id = mess.room_id
@@ -179,7 +182,7 @@ def mute_message(request):
     if request.method == "GET":
         return HttpResponseBadRequest()
 
-    if not request.user.is_staff:
+    if not request.user.has_perm("judge.change_comment"):
         return HttpResponseBadRequest()
 
     try:

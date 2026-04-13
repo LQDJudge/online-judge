@@ -25,7 +25,7 @@
       },
       user: {
         id: {{ request.profile.id }},
-        isStaff: {{ request.user.is_staff|tojson }},
+        isStaff: {{ request.user.has_perm('judge.change_comment')|tojson }},
         isMuted: {{ request.profile.mute|tojson }}
       },
       room: {
