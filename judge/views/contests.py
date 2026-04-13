@@ -1596,7 +1596,8 @@ class ContestRanking(ContestRankingBase):
             )
             problems = get_contest_problems(contest)
             profiles = build_ranking_profiles(contest, problems, qs, self.show_final)
-            users = ((_("???"), user) for user in profiles)
+            unknown = _("???")
+            users = ((unknown, user) for user in profiles)
             return users, problems
 
         problems = get_contest_problems(contest)

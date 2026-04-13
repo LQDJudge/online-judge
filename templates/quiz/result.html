@@ -98,10 +98,10 @@
               <div class="answer-status">
                 {% if answer.is_correct %}
                   <i class="fa fa-check-circle correct"></i>
-                  <span>{{ answer.points|round(1) }} / {{ answer.get_max_points()|round(1) }} {{ _('points') }}</span>
+                  <span>{{ answer.points|round(1) }} / {{ answer._max_points|round(1) }} {{ _('points') }}</span>
                 {% elif answer.graded_at %}
                   <i class="fa fa-times-circle incorrect"></i>
-                  <span>{{ answer.points|round(1) }} / {{ answer.get_max_points()|round(1) }} {{ _('points') }}</span>
+                  <span>{{ answer.points|round(1) }} / {{ answer._max_points|round(1) }} {{ _('points') }}</span>
                 {% else %}
                   <i class="fa fa-clock-o pending"></i>
                   <span>{{ _('Pending grading') }}</span>

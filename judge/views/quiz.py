@@ -2113,17 +2113,22 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
 
     def get_object(self, queryset=None):
         attempt = get_object_or_404(
-            QuizAttempt, pk=self.kwargs["attempt_id"], quiz__code=self.kwargs["code"]
+            QuizAttempt.objects.select_related("quiz", "user"),
+            pk=self.kwargs["attempt_id"],
+            quiz__code=self.kwargs["code"],
         )
+
+        quiz = attempt.quiz
 
         # Check quiz accessibility (respects contest mode toggle)
         in_contest = getattr(self.request, "in_contest", False)
-        if not attempt.quiz.is_accessible_by(self.request.user, in_contest):
+        if not quiz.is_accessible_by(self.request.user, in_contest):
             raise Http404(_("Quiz not found."))
 
         is_owner = attempt.user == self.request.profile
-        is_editor = attempt.quiz.is_editable_by(self.request.user)
-        if not (is_owner or is_editor):
+        # Cache is_editor to avoid repeated DB queries in get_context_data
+        self._is_editor = quiz.is_editable_by(self.request.user)
+        if not (is_owner or self._is_editor):
             raise PermissionDenied(_("You cannot view this result."))
 
         return attempt
@@ -2132,22 +2137,32 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
         context = super().get_context_data(**kwargs)
         attempt = self.object
         quiz = attempt.quiz
+        is_editor = self._is_editor
 
-        context["answers"] = (
+        answers = list(
             QuizAnswer.objects.filter(attempt=attempt)
             .select_related("question")
             .prefetch_related("files")
             .order_by("question__id")
         )
-        context["show_answers"] = quiz.show_answers(self.request.user)
-        context["show_correctness"] = quiz.show_correctness(self.request.user)
-        context["can_edit"] = quiz.is_editable_by(self.request.user)
+
+        # Batch-load max points to avoid N+1 queries from get_max_points()
+        question_ids = [a.question_id for a in answers]
+        assignments = QuizQuestionAssignment.objects.filter(
+            quiz=quiz, question_id__in=question_ids
+        )
+        max_points_map = {a.question_id: a.points for a in assignments}
+        for answer in answers:
+            answer._max_points = max_points_map.get(answer.question_id, 1.0)
+
+        context["answers"] = answers
+        context["show_answers"] = is_editor or quiz.is_shown_answer
+        context["show_correctness"] = is_editor or quiz.is_shown_correctness
+        context["can_edit"] = is_editor
 
         # Check if results should be hidden in contest context
         is_result_hidden = False
         if attempt.contest_participation_id:
-            from judge.models.contest import ContestProblem
-
             cp = ContestProblem.objects.filter(
                 contest=attempt.contest_participation.contest, quiz=quiz
             ).first()
@@ -2158,7 +2173,6 @@ class QuizResult(LoginRequiredMixin, TitleMixin, DetailView):
         context["is_result_hidden"] = is_result_hidden
 
         # Check if user can retake the quiz
-        # Currently allow unlimited retakes - can add max_attempts check later
         context["can_retake"] = (
             attempt.user == self.request.profile
             and not QuizAttempt.objects.filter(
@@ -3532,14 +3546,14 @@ class LessonQuizResult(LessonQuizMixin, LoginRequiredMixin, TitleMixin, DetailVi
 
     def get_object(self, queryset=None):
         attempt = get_object_or_404(
-            QuizAttempt,
+            QuizAttempt.objects.select_related("quiz", "user"),
             pk=self.kwargs["attempt_id"],
             quiz__code=self.kwargs["code"],
         )
 
         is_owner = attempt.user == self.request.profile
-        is_editor = attempt.quiz.is_editable_by(self.request.user)
-        if not (is_owner or is_editor):
+        self._is_editor = attempt.quiz.is_editable_by(self.request.user)
+        if not (is_owner or self._is_editor):
             raise PermissionDenied(_("You cannot view this result."))
 
         self.validate_attempt_context(attempt)
@@ -3549,18 +3563,30 @@ class LessonQuizResult(LessonQuizMixin, LoginRequiredMixin, TitleMixin, DetailVi
         context = super().get_context_data(**kwargs)
         attempt = self.object
         quiz = attempt.quiz
+        is_editor = self._is_editor
 
         context.update(self.get_lesson_quiz_urls(attempt_id=attempt.id))
 
-        context["answers"] = (
+        answers = list(
             QuizAnswer.objects.filter(attempt=attempt)
             .select_related("question")
             .prefetch_related("files")
             .order_by("question__id")
         )
-        context["show_answers"] = quiz.show_answers(self.request.user)
-        context["show_correctness"] = quiz.show_correctness(self.request.user)
-        context["can_edit"] = quiz.is_editable_by(self.request.user)
+
+        # Batch-load max points to avoid N+1 queries from get_max_points()
+        question_ids = [a.question_id for a in answers]
+        assignments = QuizQuestionAssignment.objects.filter(
+            quiz=quiz, question_id__in=question_ids
+        )
+        max_points_map = {a.question_id: a.points for a in assignments}
+        for answer in answers:
+            answer._max_points = max_points_map.get(answer.question_id, 1.0)
+
+        context["answers"] = answers
+        context["show_answers"] = is_editor or quiz.is_shown_answer
+        context["show_correctness"] = is_editor or quiz.is_shown_correctness
+        context["can_edit"] = is_editor
 
         # Check if results should be hidden in lesson context
         lesson_quiz = self.get_lesson_quiz()
