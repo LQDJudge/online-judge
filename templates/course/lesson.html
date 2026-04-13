@@ -1,5 +1,18 @@
 {% extends "course/base.html" %}
 
+{% block left_sidebar %}
+  <div class="left-sidebar">
+    {{ make_tab_item('home', 'fa fa-home', course.get_absolute_url(), _('Home')) }}
+    {% for sl in sidebar_lessons %}
+      <a class="left-sidebar-item {% if sl.id == lesson.id %}active{% endif %}"
+         href="{{ url('course_lesson_detail', course.slug, sl.id) }}">
+        <span class="sidebar-icon"><i class="fa fa-book"></i></span>
+        <span class="sidebar-text">{{ sl.title }}</span>
+      </a>
+    {% endfor %}
+  </div>
+{% endblock %}
+
 {% block two_col_media %}
   <style>
     .course-problem-list .quiz-attempts {
@@ -10,7 +23,7 @@
 
 {% block middle_content %}
   <center>
-    <h2>{{title}} - {{profile.username}}</h2>
+    <h2>{{title}}</h2>
   </center>
   <h3 class="course-content-title">{{_("Content")}}</h3>
   <div>

@@ -1052,3 +1052,56 @@
         color: white;
     }
 }
+
+// Course grades page styles
+.course-grades-page {
+    table {
+        font-size: 15px;
+    }
+
+    td {
+        height: 2.5em;
+    }
+
+    .user-name {
+        padding-left: 1em !important;
+    }
+
+    .total-score {
+        font-weight: bold;
+    }
+
+    .grades-filter-form {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        flex-wrap: wrap;
+        margin-top: 0.5em;
+        margin-bottom: 1em;
+
+        input[name="search"] {
+            margin: 0;
+        }
+
+        label {
+            cursor: pointer;
+        }
+    }
+
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .grades-pagination {
+        margin-top: 10px;
+    }
+
+    .points.quiz-col {
+        background: rgba(91, 192, 222, 0.1);
+    }
+
+    .quiz-score {
+        background: rgba(91, 192, 222, 0.05);
+    }
+}

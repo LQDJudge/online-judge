@@ -29,7 +29,6 @@ from judge.models import (
     Course,
     Contest,
     CourseLesson,
-    Submission,
     Profile,
     CourseLessonProblem,
     CourseContest,
@@ -46,6 +45,7 @@ from judge.models.course import RoleInCourse, EDITABLE_ROLES
 from judge.utils.contest import (
     maybe_trigger_contest_rescore,
 )
+from judge.utils.course_prerequisites import get_lesson_lock_status
 from judge.utils.problems import (
     user_attempted_ids,
     user_completed_ids,
@@ -60,7 +60,14 @@ from judge.widgets import (
 )
 from judge.widgets.direct_upload import DirectUploadImageWidget, DirectUploadFormMixin
 from judge.forms import HTMLDisplayWidget
-from judge.utils.views import SingleObjectFormView, TitleMixin, DiggPaginatorMixin
+from judge.utils.diggpaginator import DiggPaginator
+from judge.utils.ranker import ranker
+from judge.utils.views import (
+    SingleObjectFormView,
+    TitleMixin,
+    DiggPaginatorMixin,
+    paginate_query_context,
+)
 
 
 def bulk_max_case_points_per_problem(students, all_problems):
@@ -81,9 +88,6 @@ def bulk_max_case_points_per_problem(students, all_problems):
         user__in=students, problem__in=all_problems, case_total__gt=0
     ).values("user_id", "problem_id", "points", "case_total")
 
-    # Track which user-problem pairs we found in cache
-    found_pairs = set()
-
     for best_sub in best_subs:
         user_id = best_sub["user_id"]
         problem_id = best_sub["problem_id"]
@@ -95,60 +99,6 @@ def bulk_max_case_points_per_problem(students, all_problems):
             "case_points": best_sub["points"],
             "case_total": best_sub["case_total"],
         }
-        found_pairs.add((user_id, problem_id))
-
-    # Check for missing pairs and fall back to Submission query
-    all_pairs = set()
-    student_ids = [s.id for s in students]
-    problem_ids = [p.id for p in all_problems]
-    for s_id in student_ids:
-        for p_id in problem_ids:
-            all_pairs.add((s_id, p_id))
-
-    missing_pairs = all_pairs - found_pairs
-
-    if missing_pairs:
-        # Fall back to submission query for missing pairs
-        # Group by user for more efficient querying
-        missing_by_user = {}
-        for user_id, problem_id in missing_pairs:
-            if user_id not in missing_by_user:
-                missing_by_user[user_id] = []
-            missing_by_user[user_id].append(problem_id)
-
-        for user_id, prob_ids in missing_by_user.items():
-            submissions = Submission.objects.filter(
-                user_id=user_id, problem_id__in=prob_ids, case_total__gt=0
-            ).values("problem", "case_points", "case_total")
-
-            for sub in submissions:
-                problem_id = sub["problem"]
-                percentage = (
-                    sub["case_points"] / sub["case_total"]
-                    if sub["case_total"] > 0
-                    else 0
-                )
-
-                if user_id not in result:
-                    result[user_id] = {}
-
-                if problem_id in result[user_id]:
-                    existing = result[user_id][problem_id]
-                    existing_percentage = (
-                        existing["case_points"] / existing["case_total"]
-                        if existing["case_total"] > 0
-                        else 0
-                    )
-                    if percentage > existing_percentage:
-                        result[user_id][problem_id] = {
-                            "case_points": sub["case_points"],
-                            "case_total": sub["case_total"],
-                        }
-                else:
-                    result[user_id][problem_id] = {
-                        "case_points": sub["case_points"],
-                        "case_total": sub["case_total"],
-                    }
 
     return result
 
@@ -176,23 +126,21 @@ def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
             for p in lesson.get_problems_and_scores()
         ]
 
-    # Pre-fetch all lesson quizzes data with quiz objects for get_total_points()
-    lesson_quizzes_data = {}
+    # Pre-fetch all lesson quizzes in a single query
+    lesson_quizzes_data = {lesson.id: [] for lesson in lessons}
     quiz_totals = {}  # Map quiz_id -> current total points
-    for lesson in lessons:
-        lesson_quiz_objects = list(
-            CourseLessonQuiz.objects.filter(
-                lesson=lesson, is_visible=True
-            ).select_related("quiz")
-        )
-        lesson_quizzes_data[lesson.id] = [
+    lesson_ids = [lesson.id for lesson in lessons]
+    all_lesson_quizzes = list(
+        CourseLessonQuiz.objects.filter(
+            lesson_id__in=lesson_ids, is_visible=True
+        ).select_related("quiz")
+    )
+    for lq in all_lesson_quizzes:
+        lesson_quizzes_data[lq.lesson_id].append(
             {"id": lq.id, "quiz_id": lq.quiz_id, "points": lq.points}
-            for lq in lesson_quiz_objects
-        ]
-        # Store current quiz totals
-        for lq in lesson_quiz_objects:
-            if lq.quiz_id not in quiz_totals:
-                quiz_totals[lq.quiz_id] = lq.quiz.get_total_points()
+        )
+        if lq.quiz_id not in quiz_totals:
+            quiz_totals[lq.quiz_id] = lq.quiz.get_total_points()
 
     # Bulk fetch best quiz attempts for all students and lessons
     # Build a dict of {(student_id, lesson_quiz_id): best_score_ratio}
@@ -210,13 +158,11 @@ def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
     # Get best attempts for all students and lesson quizzes
     best_quiz_scores = {}
     if lesson_quiz_ids and student_ids:
-        # Try using BestQuizAttempt cache first
         cached_best_attempts = BestQuizAttempt.objects.filter(
             user_id__in=student_ids,
             lesson_quiz_id__in=lesson_quiz_ids,
         ).values("user_id", "lesson_quiz_id", "score", "max_score")
 
-        found_pairs = set()
         for attempt in cached_best_attempts:
             lesson_quiz_id = attempt["lesson_quiz_id"]
             quiz_id = lesson_quiz_to_quiz.get(lesson_quiz_id)
@@ -226,46 +172,6 @@ def bulk_calculate_lessons_progress(students, lessons, bulk_problem_points):
             else:
                 ratio = 0
             best_quiz_scores[(attempt["user_id"], lesson_quiz_id)] = ratio
-            found_pairs.add((attempt["user_id"], lesson_quiz_id))
-
-        # Check for missing pairs and fall back to QuizAttempt query
-        all_pairs = set()
-        for s_id in student_ids:
-            for lq_id in lesson_quiz_ids:
-                all_pairs.add((s_id, lq_id))
-
-        missing_pairs = all_pairs - found_pairs
-
-        if missing_pairs:
-            # Fall back to QuizAttempt for missing pairs
-            # Only count attempts made within the specific lesson context
-            from django.db.models import Max
-
-            missing_lq_ids = set(lq_id for _, lq_id in missing_pairs)
-            missing_user_ids = set(uid for uid, _ in missing_pairs)
-
-            if missing_lq_ids:
-                best_attempts = (
-                    QuizAttempt.objects.filter(
-                        user_id__in=missing_user_ids,
-                        lesson_quiz_id__in=missing_lq_ids,
-                        is_submitted=True,
-                    )
-                    .values("user_id", "lesson_quiz_id")
-                    .annotate(
-                        best_score=Max("score"),
-                    )
-                )
-
-                for attempt in best_attempts:
-                    lq_id = attempt["lesson_quiz_id"]
-                    quiz_id = lesson_quiz_to_quiz.get(lq_id)
-                    quiz_max = quiz_totals.get(quiz_id, 0)
-                    if quiz_max and quiz_max > 0:
-                        ratio = float(attempt["best_score"] or 0) / float(quiz_max)
-                    else:
-                        ratio = 0
-                    best_quiz_scores[(attempt["user_id"], lq_id)] = ratio
 
     for student in students:
         student_results = {}
@@ -608,8 +514,20 @@ class CourseAdd(CoursePermissionMixin, LoginRequiredMixin, TitleMixin, CreateVie
 class CourseDetailMixin(object):
     def dispatch(self, request, *args, **kwargs):
         self.course = get_object_or_404(Course, slug=self.kwargs["slug"])
-        self.is_accessible = Course.is_accessible_by(self.course, self.request.profile)
-        self.is_editable = Course.is_editable_by(self.course, self.request.profile)
+        if request.profile and request.profile.user.is_superuser:
+            self.is_accessible = True
+            self.is_editable = True
+        elif request.profile:
+            role = (
+                CourseRole.objects.filter(course=self.course, user=request.profile)
+                .values_list("role", flat=True)
+                .first()
+            )
+            self.is_accessible = role is not None
+            self.is_editable = role in EDITABLE_ROLES if role else False
+        else:
+            self.is_accessible = False
+            self.is_editable = False
         return super(CourseDetailMixin, self).dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -618,6 +536,16 @@ class CourseDetailMixin(object):
         context["is_editable"] = self.is_editable
         context["is_accessible"] = self.is_accessible
         return context
+
+
+class CourseAccessibleMixin(CourseDetailMixin):
+    """Requires the user to be enrolled in the course (any role)."""
+
+    def dispatch(self, request, *args, **kwargs):
+        res = super(CourseAccessibleMixin, self).dispatch(request, *args, **kwargs)
+        if not self.is_accessible:
+            raise Http404()
+        return res
 
 
 class CourseEditableMixin(CourseDetailMixin):
@@ -839,31 +767,12 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
         if Course.is_editable_by(self.course, profile):
             return True
 
-        from judge.utils.course_prerequisites import get_lesson_lock_status
-
         lock_status = get_lesson_lock_status(profile, self.course)
         is_locked = lock_status.get(lesson.id, False)
         return not is_locked
 
     def get_profile(self):
-        username = self.request.GET.get("user")
-        if not username:
-            return self.request.profile
-
-        is_editable = Course.is_editable_by(self.course, self.request.profile)
-        if not is_editable:
-            raise Http404()
-
-        try:
-            profile = Profile.objects.get(user__username=username)
-            is_student = profile.course_roles.filter(
-                role=RoleInCourse.STUDENT, course=self.course
-            ).exists()
-            if not is_student:
-                raise Http404()
-            return profile
-        except ObjectDoesNotExist:
-            raise Http404()
+        return self.request.profile
 
     def get_context_data(self, **kwargs):
         context = super(CourseLessonDetail, self).get_context_data(**kwargs)
@@ -935,6 +844,10 @@ class CourseLessonDetail(CourseDetailMixin, DetailView):
             )
 
         context["lesson_quizzes"] = quiz_data
+
+        context["sidebar_lessons"] = _get_unlocked_lessons(
+            self.course, self.request.profile, self.is_editable
+        )
         return context
 
 
@@ -1676,7 +1589,90 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
         return self.request.path
 
 
-class CourseStudentResults(CourseEditableMixin, DetailView):
+GRADES_PAGE_SIZE = 100
+
+
+def _parse_org_filter(request):
+    """Parse and validate org filter from GET params."""
+    org_query = []
+    if request.GET.get("orgs") and request.profile:
+        try:
+            org_query = list(map(int, request.GET.getlist("orgs")))
+            user_org_ids = set(request.profile.get_organization_ids())
+            org_query = [i for i in org_query if i in user_org_ids]
+        except ValueError:
+            pass
+    return org_query
+
+
+def _filter_students_by_org(students, org_query):
+    """Filter students to those belonging to any of the selected orgs."""
+    if not org_query:
+        return students
+    org_set = set(org_query)
+    student_ids = [s.id for s in students]
+    member_ids = set(
+        Profile.objects.filter(id__in=student_ids, organizations__id__in=org_set)
+        .distinct()
+        .values_list("id", flat=True)
+    )
+    return [s for s in students if s.id in member_ids]
+
+
+def _apply_student_filters(students, request, org_query, friend_only):
+    """Apply search, org, and friend filters to a sorted student list."""
+    search_query = request.GET.get("search", "").strip().lower()
+    if search_query:
+        students = [
+            s
+            for s in students
+            if search_query in s.username.lower()
+            or search_query in (s.first_name or "").lower()
+        ]
+
+    students = _filter_students_by_org(students, org_query)
+
+    if friend_only:
+        following_ids = set(request.profile.get_following_ids(True))
+        students = [s for s in students if s.id in following_ids]
+
+    return students
+
+
+def _paginate_students(students, request):
+    """Paginate a student list using DiggPaginator. Returns (page_students, page_obj)."""
+    if not students:
+        return [], None
+
+    total = len(students)
+    try:
+        page_number = int(request.GET.get("page", 1))
+    except ValueError:
+        page_number = 1
+    num_pages = max(1, (total + GRADES_PAGE_SIZE - 1) // GRADES_PAGE_SIZE)
+    page_number = max(1, min(page_number, num_pages))
+
+    start = (page_number - 1) * GRADES_PAGE_SIZE
+    page_students = students[start : start + GRADES_PAGE_SIZE]
+
+    page_obj = DiggPaginator(
+        students, GRADES_PAGE_SIZE, body=3, tail=1, padding=1
+    ).get_page(page_number)
+
+    return page_students, page_obj
+
+
+def _get_unlocked_lessons(course, profile, is_editable):
+    """Get visible lessons that are unlocked for the user."""
+    all_lessons = course.get_lessons()
+    if is_editable:
+        return list(all_lessons)
+
+    lock_status = get_lesson_lock_status(profile, course)
+    return [lesson for lesson in all_lessons if not lock_status.get(lesson.id, False)]
+
+
+class CourseStudentResults(CourseAccessibleMixin, DetailView):
     model = Course
     template_name = "course/grades.html"
 
@@ -1686,32 +1682,58 @@ class CourseStudentResults(CourseEditableMixin, DetailView):
         return self.course
 
     def get_grades(self):
-        students = self.course.get_students()
+        self.org_query = _parse_org_filter(self.request)
+        self.friend_only = (
+            self.request.GET.get("friend") == "1" and self.request.profile
+        )
+        all_students = self.course.get_students()
 
-        # Collect all problems from all lessons for bulk query
+        if not all_students:
+            return {}, {}, {}, None, {}
+
+        # Compute grades for ALL students (needed for global ranking)
         all_problems = []
         for lesson in self.lessons:
             all_problems.extend(lesson.get_problems())
 
-        bulk_problem_points = bulk_max_case_points_per_problem(students, all_problems)
-        grade_lessons = bulk_calculate_lessons_progress(
-            students, self.lessons, bulk_problem_points
+        bulk_problem_points = bulk_max_case_points_per_problem(
+            all_students, all_problems
         )
-        grade_contests = bulk_calculate_contests_progress(students, self.contests)
+        grade_lessons = bulk_calculate_lessons_progress(
+            all_students, self.lessons, bulk_problem_points
+        )
+        grade_contests = bulk_calculate_contests_progress(all_students, self.contests)
 
         grade_total = {}
-        for student in students:
+        for student in all_students:
             grade_total[student] = calculate_total_progress(
                 grade_lessons[student], grade_contests[student]
             )
 
-        students.sort(key=lambda s: (-grade_total[s]["percentage"], s.username.lower()))
+        # Sort and compute global ranks with tie handling
+        all_students.sort(
+            key=lambda s: (-grade_total[s]["percentage"], s.username.lower())
+        )
+        global_rank = {}
+        for rank, student in ranker(
+            all_students, key=lambda s: grade_total[s]["percentage"]
+        ):
+            global_rank[student.id] = rank
 
-        grade_lessons = {s: grade_lessons[s] for s in students}
-        grade_contests = {s: grade_contests[s] for s in students}
-        grade_total = {s: grade_total[s] for s in students}
+        # Filter and paginate
+        students = _apply_student_filters(
+            all_students, self.request, self.org_query, self.friend_only
+        )
+        if not students:
+            return {}, {}, {}, None, global_rank
 
-        return grade_lessons, grade_contests, grade_total
+        page_students, page_obj = _paginate_students(students, self.request)
+
+        grade_lessons = {s: grade_lessons[s] for s in page_students}
+        grade_contests = {s: grade_contests[s] for s in page_students}
+        grade_total = {s: grade_total[s] for s in page_students}
+
+        return grade_lessons, grade_contests, grade_total, page_obj, global_rank
 
     def get_context_data(self, **kwargs):
         context = super(CourseStudentResults, self).get_context_data(**kwargs)
@@ -1730,13 +1752,22 @@ class CourseStudentResults(CourseEditableMixin, DetailView):
             context["grade_lessons"],
             context["grade_contests"],
             context["grade_total"],
+            context["page_obj"],
+            context["global_rank"],
         ) = self.get_grades()
+        if context["page_obj"]:
+            context.update(paginate_query_context(self.request))
+        context["search_query"] = self.request.GET.get("search", "").strip()
+        context["org_query"] = self.org_query
+        context["friend_only"] = self.friend_only
+        if self.request.profile:
+            context["organizations"] = self.request.profile.get_organizations()
         context["lessons"] = self.lessons
         context["course_contests"] = self.contests
         return context
 
 
-class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
+class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
     model = CourseLesson
     template_name = "course/grades_lesson.html"
 
@@ -1746,9 +1777,7 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
                 course=self.course, id=self.kwargs["id"]
             )
             # Security: Only allow access to visible lessons or if user can edit course
-            if not self.lesson.is_visible and not Course.is_editable_by(
-                self.course, self.request.profile
-            ):
+            if not self.lesson.is_visible and not self.is_editable:
                 raise Http404()
 
             self.problems = self.lesson.get_problems()
@@ -1762,49 +1791,43 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
             raise Http404()
 
     def get_lesson_grades(self):
-        students = self.course.get_students()
+        self.org_query = _parse_org_filter(self.request)
+        self.friend_only = (
+            self.request.GET.get("friend") == "1" and self.request.profile
+        )
+        all_students = self.course.get_students()
 
-        bulk_problem_points = bulk_max_case_points_per_problem(students, self.problems)
+        if not all_students:
+            return {}, None, {}
 
-        # Bulk fetch best quiz scores for all students and lesson quizzes
-        student_ids = [s.id for s in students]
-        quiz_ids = [lq.quiz_id for lq in self.lesson_quizzes]
+        bulk_problem_points = bulk_max_case_points_per_problem(
+            all_students, self.problems
+        )
 
-        # Pre-compute current quiz totals (use quiz.get_total_points() for current value)
+        student_ids = [s.id for s in all_students]
         quiz_totals = {
             lq.quiz_id: lq.quiz.get_total_points() for lq in self.lesson_quizzes
         }
 
-        # Get best score for each (user, quiz) combination
         best_quiz_scores = {}
-        if quiz_ids and student_ids:
-            from django.db.models import Max
+        if self.lesson_quizzes and student_ids:
+            cached_best = BestQuizAttempt.objects.filter(
+                user_id__in=student_ids,
+                lesson_quiz__in=[lq.id for lq in self.lesson_quizzes],
+            ).values("user_id", "lesson_quiz__quiz_id", "score")
 
-            best_attempts = (
-                QuizAttempt.objects.filter(
-                    user_id__in=student_ids,
-                    quiz_id__in=quiz_ids,
-                    is_submitted=True,
-                )
-                .values("user_id", "quiz_id")
-                .annotate(
-                    best_score=Max("score"),
-                )
-            )
-
-            for attempt in best_attempts:
-                best_quiz_scores[(attempt["user_id"], attempt["quiz_id"])] = {
-                    "score": float(attempt["best_score"] or 0),
-                }
+            for attempt in cached_best:
+                best_quiz_scores[
+                    (attempt["user_id"], attempt["lesson_quiz__quiz_id"])
+                ] = {"score": float(attempt["score"] or 0)}
 
         grades = {}
-        for student in students:
+        for student in all_students:
             student_points = bulk_problem_points.get(student.id, {})
             grades[student] = dict(student_points)
 
             achieved_points = total_points = 0
 
-            # Calculate problem points
             for ps in self.lesson.get_problems_and_scores():
                 problem_data = student_points.get(ps["problem_id"])
                 if problem_data and problem_data["case_total"]:
@@ -1815,12 +1838,10 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
                     )
                 total_points += ps["score"]
 
-            # Calculate quiz points
             for lesson_quiz in self.lesson_quizzes:
                 quiz_points = lesson_quiz.points or 0
                 total_points += quiz_points
 
-                # Use current quiz total, not the one stored in attempts
                 quiz_max_score = quiz_totals.get(lesson_quiz.quiz_id, 0)
                 quiz_data = best_quiz_scores.get((student.id, lesson_quiz.quiz_id))
 
@@ -1847,17 +1868,27 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
                 ),
             }
 
-        # Sort students by total percentage (descending), then by username
-        students.sort(
+        # Sort and compute global ranks with tie handling
+        all_students.sort(
             key=lambda s: (-grades[s]["total"]["percentage"], s.username.lower())
         )
+        global_rank = {}
+        for rank, student in ranker(
+            all_students, key=lambda s: grades[s]["total"]["percentage"]
+        ):
+            global_rank[student.id] = rank
 
-        # Return grades in sorted order
-        sorted_grades = {}
-        for student in students:
-            sorted_grades[student] = grades[student]
+        # Filter and paginate
+        students = _apply_student_filters(
+            all_students, self.request, self.org_query, self.friend_only
+        )
+        if not students:
+            return {}, None, global_rank
 
-        return sorted_grades
+        page_students, page_obj = _paginate_students(students, self.request)
+        sorted_grades = {s: grades[s] for s in page_students}
+
+        return sorted_grades, page_obj, global_rank
 
     def get_context_data(self, **kwargs):
         context = super(CourseStudentResultsLesson, self).get_context_data(**kwargs)
@@ -1877,13 +1908,28 @@ class CourseStudentResultsLesson(CourseEditableMixin, DetailView):
                 "url_lesson": self.lesson.get_absolute_url(),
             }
         )
-        context["page_type"] = "grades"
-        context["grades"] = self.get_lesson_grades()
+        context["page_type"] = "grades_lesson"
+        (
+            context["grades"],
+            context["page_obj"],
+            context["global_rank"],
+        ) = self.get_lesson_grades()
+        if context["page_obj"]:
+            context.update(paginate_query_context(self.request))
+        context["search_query"] = self.request.GET.get("search", "").strip()
+        context["org_query"] = self.org_query
+        context["friend_only"] = self.friend_only
+        if self.request.profile:
+            context["organizations"] = self.request.profile.get_organizations()
         context["problems"] = [
             {"problem": p, "score": ps["score"]}
             for p, ps in zip(self.problems, self.lesson.get_problems_and_scores())
         ]
         context["lesson_quizzes"] = self.lesson_quizzes
+
+        context["sidebar_lessons"] = _get_unlocked_lessons(
+            self.course, self.request.profile, self.is_editable
+        )
         return context
 
 
