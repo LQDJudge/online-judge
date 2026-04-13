@@ -1519,7 +1519,7 @@ class ContestRanking(ContestRankingBase):
         )
 
         # Compute ranks from lightweight rows
-        rows = ((pid, s_, c_, tb) for pid, _, s_, c_, tb in filtered_rows)
+        rows = ((pid, s_, c_, tb) for pid, _uid, s_, c_, tb in filtered_rows)
         rank_map = compute_ranks(rows)
 
         output = io.StringIO()
@@ -1596,8 +1596,7 @@ class ContestRanking(ContestRankingBase):
             )
             problems = get_contest_problems(contest)
             profiles = build_ranking_profiles(contest, problems, qs, self.show_final)
-            unknown = _("???")
-            users = ((unknown, user) for user in profiles)
+            users = ((_("???"), user) for user in profiles)
             return users, problems
 
         problems = get_contest_problems(contest)
@@ -1619,7 +1618,7 @@ class ContestRanking(ContestRankingBase):
                 .first()
             )
             if target_uid:
-                for i, (pid, uid, *_) in enumerate(filtered_rows):
+                for i, (pid, uid, *_rest) in enumerate(filtered_rows):
                     if uid == target_uid:
                         page_number = (i // RANKING_PAGE_SIZE) + 1
                         self.highlight_username = highlight_user
@@ -1717,7 +1716,7 @@ class ContestRanking(ContestRankingBase):
 
     def _compute_global_ranks(self, page_user_ids):
         """Compute overall ranks from all_rows (no extra queries)."""
-        rows = ((uid, s, c, tb) for _, uid, s, c, tb in self.all_rows)
+        rows = ((uid, s, c, tb) for _pid, uid, s, c, tb in self.all_rows)
         return compute_ranks(rows, target_ids=page_user_ids)
 
     def get_context_data(self, **kwargs):
