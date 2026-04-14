@@ -683,6 +683,15 @@ body:has(.chat-page) {
     border-top: 1px solid $border_gray;
   }
 
+  .chat-disabled-notice {
+    justify-content: center;
+    align-items: center;
+    color: $text-muted;
+    font-size: 0.9em;
+    font-style: italic;
+    padding: 12px;
+  }
+
   // Input wrapper: textarea + emoji button together
   .chat-input-wrapper {
     flex: 1;

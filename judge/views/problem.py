@@ -54,6 +54,7 @@ from judge.models import (
     LanguageLimit,
     LanguageTemplate,
     Problem,
+    ProblemData,
     ContestProblemClarification,
     ProblemTranslation,
     RuntimeVersion,
@@ -63,6 +64,7 @@ from judge.models import (
     Profile,
     Contest,
 )
+from judge.models.problem_data import ProblemSolutionCode
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.opengraph import generate_opengraph
@@ -1495,8 +1497,48 @@ class ProblemLog(TitleMixin, ListView):
             else:
                 version.changes = []
 
+        # ProblemData (test data) versions
+        test_data_versions = []
+        if hasattr(self.problem, "data_files"):
+            test_data_versions = list(
+                Version.objects.get_for_object(self.problem.data_files)
+                .select_related("revision__user__profile")
+                .order_by("-revision__date_created")
+            )
+            td_raw = [self._get_raw_fields(v) for v in test_data_versions]
+            for i, version in enumerate(test_data_versions):
+                version.object_type = "test_data"
+                if i < len(test_data_versions) - 1:
+                    version.changes = self._compute_changes(
+                        td_raw[i + 1], td_raw[i], model=ProblemData
+                    )
+                else:
+                    version.changes = []
+
+        # ProblemSolutionCode versions (grouped by revision)
+        solution_code_versions = []
+        sol_codes = ProblemSolutionCode.objects.filter(problem=self.problem)
+        seen_revisions = set()
+        for sc in sol_codes:
+            for version in (
+                Version.objects.get_for_object(sc)
+                .select_related("revision__user__profile")
+                .order_by("-revision__date_created")
+            ):
+                if version.revision_id not in seen_revisions:
+                    seen_revisions.add(version.revision_id)
+                    version.object_type = "solution_code"
+                    version.changes = []
+                    solution_code_versions.append(version)
+        solution_code_versions.sort(key=lambda v: v.revision.date_created, reverse=True)
+
         # Merge and sort by date
-        all_versions = problem_versions + solution_versions
+        all_versions = (
+            problem_versions
+            + solution_versions
+            + test_data_versions
+            + solution_code_versions
+        )
         all_versions.sort(key=lambda v: v.revision.date_created, reverse=True)
 
         return all_versions
@@ -1511,7 +1553,7 @@ class ProblemLog(TitleMixin, ListView):
             pass
         return {}
 
-    _TEXT_DIFF_FIELDS = {"description", "summary", "content"}
+    _TEXT_DIFF_FIELDS = {"description", "summary", "content", "generator_script"}
 
     def _compute_changes(self, old_dict, new_dict, model=None):
         if model is None:
@@ -1519,7 +1561,7 @@ class ProblemLog(TitleMixin, ListView):
 
         changes = []
         all_keys = set(old_dict.keys()) | set(new_dict.keys())
-        skip_fields = {"id", "ac_rate", "user_count"}
+        skip_fields = {"id", "ac_rate", "user_count", "problem"}
 
         for key in sorted(all_keys):
             if key in skip_fields:

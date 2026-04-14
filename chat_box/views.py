@@ -204,6 +204,9 @@ def mute_message(request):
 
 
 def check_valid_message(request, room):
+    if request.in_contest and request.participation.contest.use_clarifications:
+        return False
+
     if not room and len(request.POST["body"]) > 200:
         return False
 

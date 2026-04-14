@@ -7,10 +7,7 @@ import shutil
 from tempfile import gettempdir
 from zipfile import BadZipfile, ZipFile
 
-from django.conf import settings
-from django.http import HttpResponse
-from django.shortcuts import render
-from django.views.generic import View
+import reversion
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -35,7 +32,7 @@ from django.urls import reverse
 from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
-from django.views.generic import DetailView
+from django.views.generic import DetailView, View
 
 from judge.highlight_code import highlight_code
 from judge.models import (
@@ -365,18 +362,22 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
             and cases_formset.is_valid()
             and signature_grader_formset.is_valid()
         ):
-            data = data_form.save()
-            for case in cases_formset.save(commit=False):
-                case.dataset_id = problem.id
-                case.save()
-            for case in cases_formset.deleted_objects:
-                case.delete()
+            with reversion.create_revision():
+                data = data_form.save()
+                for case in cases_formset.save(commit=False):
+                    case.dataset_id = problem.id
+                    case.save()
+                for case in cases_formset.deleted_objects:
+                    case.delete()
 
-            for grader in signature_grader_formset.save(commit=False):
-                grader.problem_id = problem.id
-                grader.save()
-            for grader in signature_grader_formset.deleted_objects:
-                grader.delete()
+                for grader in signature_grader_formset.save(commit=False):
+                    grader.problem_id = problem.id
+                    grader.save()
+                for grader in signature_grader_formset.deleted_objects:
+                    grader.delete()
+
+                reversion.set_user(request.user)
+                reversion.set_comment(_("Updated test data"))
 
             ProblemDataCompiler.generate(
                 problem, data, problem.cases.order_by("order"), valid_files
@@ -836,28 +837,32 @@ class ProblemSolutionCodesSaveView(ProblemManagerMixin, View):
         existing = list(
             ProblemSolutionCode.objects.filter(problem=problem).order_by("order")
         )
-        for i, entry in enumerate(entries):
-            if i < len(existing):
-                sc = existing[i]
-                # Clear last_submission if source/language/expected changed
-                code_changed = (
-                    sc.source_code != entry["source_code"]
-                    or sc.language_id != entry["language_id"]
-                    or sc.expected_result != entry["expected_result"]
-                )
-                if code_changed:
-                    sc.last_submission = None
-                sc.order = entry["order"]
-                sc.name = entry["name"]
-                sc.source_code = entry["source_code"]
-                sc.language_id = entry["language_id"]
-                sc.expected_result = entry["expected_result"]
-                sc.save()
-            else:
-                ProblemSolutionCode.objects.create(problem=problem, **entry)
-        # Delete extras
-        for sc in existing[len(entries) :]:
-            sc.delete()
+        with reversion.create_revision():
+            for i, entry in enumerate(entries):
+                if i < len(existing):
+                    sc = existing[i]
+                    # Clear last_submission if source/language/expected changed
+                    code_changed = (
+                        sc.source_code != entry["source_code"]
+                        or sc.language_id != entry["language_id"]
+                        or sc.expected_result != entry["expected_result"]
+                    )
+                    if code_changed:
+                        sc.last_submission = None
+                    sc.order = entry["order"]
+                    sc.name = entry["name"]
+                    sc.source_code = entry["source_code"]
+                    sc.language_id = entry["language_id"]
+                    sc.expected_result = entry["expected_result"]
+                    sc.save()
+                else:
+                    ProblemSolutionCode.objects.create(problem=problem, **entry)
+            # Delete extras
+            for sc in existing[len(entries) :]:
+                sc.delete()
+
+            reversion.set_user(request.user)
+            reversion.set_comment(_("Updated solution codes"))
 
         return JsonResponse({"status": "ok"})
 

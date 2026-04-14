@@ -87,17 +87,23 @@
             {% include 'chat/message_list.html' %}
           </ul>
         </div>
-        <div id="chat-input-container" class="chat-input-area">
-          <div class="chat-input-wrapper">
-            <textarea rows="1" maxlength="{{5000 if room else 200}}" id="chat-input" class="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
-            <div class="chat-input-icon chat-emoji-btn" id="emoji-button" title="{{_('Emoji')}}">
-              <i class="icofont-slightly-smile"></i>
+        {% if request.in_contest and request.participation.contest.use_clarifications %}
+          <div class="chat-input-area chat-disabled-notice">
+            {{ _('Chat is disabled during contest.') }}
+          </div>
+        {% else %}
+          <div id="chat-input-container" class="chat-input-area">
+            <div class="chat-input-wrapper">
+              <textarea rows="1" maxlength="{{5000 if room else 200}}" id="chat-input" class="chat-input" placeholder="{{_('Enter your message')}}"></textarea>
+              <div class="chat-input-icon chat-emoji-btn" id="emoji-button" title="{{_('Emoji')}}">
+                <i class="icofont-slightly-smile"></i>
+              </div>
+            </div>
+            <div class="chat-input-icon chat-submit-btn" id="chat-submit-button">
+              <i class="fa fa-paper-plane"></i>
             </div>
           </div>
-          <div class="chat-input-icon chat-submit-btn" id="chat-submit-button">
-            <i class="fa fa-paper-plane"></i>
-          </div>
-        </div>
+        {% endif %}
         <div class="tooltip emoji-tooltip" role="tooltip">
           <emoji-picker></emoji-picker>
         </div>
