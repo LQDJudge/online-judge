@@ -39,6 +39,7 @@
         {{ _("Friends") }}
       </label>
       <input type="text" name="search" placeholder="{{_('Search')}}" value="{{ search_query or '' }}">
+      <button type="submit" hidden></button>
     </form>
     <div class="table-container">
       <table class="table striped" id="users-table">
