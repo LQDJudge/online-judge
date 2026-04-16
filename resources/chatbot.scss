@@ -218,6 +218,21 @@
             }
         }
     }
+
+    .tool-working-indicator {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+        padding: 6px 0;
+        color: $theme_color;
+        font-size: 0.85em;
+        opacity: 0.85;
+
+        .fa-cog {
+            font-size: 1em;
+        }
+    }
 }
 
 @keyframes typing-dot {

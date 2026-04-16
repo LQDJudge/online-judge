@@ -1738,6 +1738,72 @@ body:not(.problem-raw) {
     .result-pending {
         color: darkorange;
     }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-card {
+        background: $background_light_gray;
+        border: 1px solid $border_gray;
+        border-radius: 8px;
+        padding: 24px;
+        width: 480px;
+        max-width: 90vw;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+        h3 {
+            margin: 0 0 16px;
+        }
+    }
+
+    .modal-field {
+        margin-bottom: 12px;
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .checkbox-label {
+            font-weight: normal;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        select,
+        textarea {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid $border_gray;
+            border-radius: 4px;
+            color: $widget_black;
+            background: $background_light_gray;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 16px;
+    }
 }
 
 // Problem edit history log styles

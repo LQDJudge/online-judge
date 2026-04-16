@@ -60,6 +60,18 @@ COMMON TOOL USAGE:
 - Writing editorials → get_solution_template
 - Test data help → get_test_data_docs
 
+COORDINATOR / REVIEW TOOLS:
+- Test data overview (checker, subtasks, points, generator) → get_test_data_config
+- Existing solution codes → get_solution_codes
+- Editorial content → get_editorial
+- Validator source code → get_validator_code
+- Interactive judge source → get_interactive_judge_code
+
+SCORING TYPES (IMPORTANT — do NOT comment on point distribution):
+- ICPC (partial=False): all-or-nothing. Any point values per test are fine.
+- IOI (partial=True): partial points per subtask. Points should sum to 100.
+- NEVER suggest changing test case points/scores — that is the author's choice.
+
 CRITICAL FOR GENERATORS:
 When asked to write a test generator, you MUST:
 1. Call BOTH tools: get_problem_statement AND get_generator_template
@@ -79,6 +91,11 @@ GENERATOR SCRIPT FORMAT:
 
 STREAM_CACHE_PREFIX = "chatbot_stream"
 STREAM_CACHE_TTL = 300  # seconds
+
+# Timeout for LLM streaming (seconds). Tool-calling workflows need much more
+# time than the default 30s: each Poe API round-trip takes ~5s, and coordinator
+# requests can involve 5-10+ tool calls in sequence.
+LLM_TIMEOUT = 300
 
 # Reserve tokens for system prompt, current message, tool outputs, and response.
 RESERVED_TOKENS = 50_000
@@ -236,6 +253,7 @@ def chatbot_respond_task(self, user_id, problem_code, user_message):
             tool_executables=tool_executables,
             strip_thinking=True,
             on_partial=on_partial,
+            timeout=LLM_TIMEOUT,
         )
 
         # Mark stream as done
@@ -246,7 +264,11 @@ def chatbot_respond_task(self, user_id, problem_code, user_message):
         )
 
         if not response:
-            response = "Xin lỗi, tôi gặp lỗi khi xử lý. Vui lòng thử lại."
+            response = (
+                "Xin lỗi, AI đã xử lý nhưng không tạo được câu trả lời hoàn chỉnh "
+                "(có thể do model suy nghĩ quá lâu mà chưa đưa ra kết quả). "
+                "Vui lòng thử lại hoặc đặt câu hỏi cụ thể hơn."
+            )
 
         # Fix LaTeX before markdown rendering
         response = _fix_latex(response)

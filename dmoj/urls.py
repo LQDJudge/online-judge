@@ -80,6 +80,8 @@ from judge.views.problem_data import (
     ProblemSolutionCodesSaveView,
     ProblemSolutionCodesRunView,
     ProblemSolutionCodesStatusView,
+    ProblemSolutionCodesGenerateView,
+    ProblemSolutionCodesGenerateStatusView,
 )
 from judge.views.register import ActivationView, RegistrationView
 from judge.views.select2 import (
@@ -439,6 +441,16 @@ urlpatterns = [
                     r"^/test_data/solution_codes/status$",
                     ProblemSolutionCodesStatusView.as_view(),
                     name="problem_solution_codes_status",
+                ),
+                re_path(
+                    r"^/test_data/solution_codes/generate$",
+                    ProblemSolutionCodesGenerateView.as_view(),
+                    name="problem_solution_codes_generate",
+                ),
+                re_path(
+                    r"^/test_data/solution_codes/generate_status$",
+                    ProblemSolutionCodesGenerateStatusView.as_view(),
+                    name="problem_solution_codes_generate_status",
                 ),
                 re_path(
                     r"^/data/(?P<path>.+)$", problem_data_file, name="problem_data_file"

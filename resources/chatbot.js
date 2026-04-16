@@ -214,6 +214,8 @@ $(document).ready(function() {
     var $assistantMsg = null;
     var $contentEl = null;
     var lastPartialLen = 0;
+    var lastUpdateTime = Date.now();
+    var toolIndicatorShown = false;
 
     // Show typing indicator until first partial arrives
     addTypingIndicator();
@@ -225,6 +227,11 @@ $(document).ready(function() {
         type: 'GET',
         success: function(data) {
           if (data.partial && data.partial.length > lastPartialLen) {
+            // New content arrived — reset stale timer
+            lastUpdateTime = Date.now();
+            if (toolIndicatorShown) {
+              toolIndicatorShown = false;
+            }
             // First partial: replace typing indicator with message bubble
             if (!$assistantMsg) {
               removeTypingIndicator();
@@ -235,17 +242,33 @@ $(document).ready(function() {
             $contentEl.html(renderMarkdownClient(data.partial));
             lastPartialLen = data.partial.length;
             scrollToBottomIfNear();
+          } else if ($assistantMsg && !toolIndicatorShown && Date.now() - lastUpdateTime > 3000) {
+            // Stream stalled for 3s with existing text — AI is likely executing tools
+            toolIndicatorShown = true;
+            if (!$contentEl.find('.tool-working-indicator').length) {
+              $contentEl.append(
+                '<div class="tool-working-indicator">' +
+                  '<i class="fa fa-cog fa-spin"></i> ' +
+                  '<span>Đang xử lý...</span>' +
+                '</div>'
+              );
+              scrollToBottomIfNear();
+            }
           }
         }
       });
     }, 500);
 
-    // Poll for task completion (every 2s)
+    // Poll for task completion (every 2s, tolerates transient errors)
+    var pollErrorCount = 0;
+    var maxPollErrors = 5;
     var taskInterval = setInterval(function() {
       $.ajax({
         url: config.taskStatusUrl + '?id=' + taskId,
         type: 'GET',
+        timeout: 10000,
         success: function(data) {
+          pollErrorCount = 0; // Reset on success
           if (data.code === 'SUCCESS') {
             clearInterval(taskInterval);
             clearInterval(streamInterval);
@@ -291,16 +314,20 @@ $(document).ready(function() {
           // Continue polling for PROGRESS/WORKING states
         },
         error: function() {
-          clearInterval(taskInterval);
-          clearInterval(streamInterval);
-          setProcessing(false);
-          removeTypingIndicator();
-          if ($assistantMsg) {
-            $assistantMsg.removeClass('streaming');
-            $contentEl.html(formatContent(config.translations.networkError, false));
-          } else {
-            addMessage('assistant', config.translations.networkError, null, false);
+          pollErrorCount++;
+          if (pollErrorCount >= maxPollErrors) {
+            clearInterval(taskInterval);
+            clearInterval(streamInterval);
+            setProcessing(false);
+            removeTypingIndicator();
+            if ($assistantMsg) {
+              $assistantMsg.removeClass('streaming');
+              $contentEl.html(formatContent(config.translations.networkError, false));
+            } else {
+              addMessage('assistant', config.translations.networkError, null, false);
+            }
           }
+          // Otherwise keep polling — transient error
         }
       });
     }, 2000); // Poll every 2 seconds
