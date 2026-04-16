@@ -92,7 +92,16 @@ class LLMService:
                         signal.signal(signal.SIGALRM, old_handler)
 
             if strip_thinking:
-                response = self._remove_thinking_content(response)
+                cleaned = self._remove_thinking_content(response)
+                if not cleaned and response:
+                    logger.warning(
+                        "strip_thinking removed entire response (%d chars). "
+                        "First 500 chars: %s ... Last 500 chars: %s",
+                        len(response),
+                        response[:500],
+                        response[-500:],
+                    )
+                response = cleaned
             return response.strip()
 
         except TimeoutError as e:
@@ -114,6 +123,7 @@ class LLMService:
           *Thinking...* > [thinking] answer *Thinking...* > [thinking] answer
         Splitting on *Thinking...* and taking the last clean segment handles this.
         """
+        import re
 
         def _strip_thinking_lines(segment: str) -> str:
             result_lines = []
@@ -134,8 +144,6 @@ class LLMService:
 
         # Split on *Thinking...* markers — models like Gemini wrap the whole
         # response in repeated thinking+answer blocks; take the last clean segment
-        import re
-
         segments = re.split(r"\*Thinking\.\.\.\*", text)
         clean_segments = [_strip_thinking_lines(s) for s in segments]
         non_empty = [s for s in clean_segments if s]
@@ -233,6 +241,7 @@ class LLMService:
         tool_executables: Optional[List] = None,
         strip_thinking: bool = True,
         on_partial: Optional[callable] = None,
+        timeout: Optional[int] = None,
     ) -> Optional[str]:
         """
         Call LLM with native message array for conversation history.
@@ -245,6 +254,7 @@ class LLMService:
             tool_executables: Optional list of callables for automatic tool execution
             strip_thinking: Whether to remove thinking content from response
             on_partial: Optional callback called with accumulated text during streaming
+            timeout: Optional timeout in seconds (overrides default)
 
         Returns:
             LLM response as string, or None if failed
@@ -258,6 +268,7 @@ class LLMService:
             tool_executables=tool_executables,
             strip_thinking=strip_thinking,
             on_partial=on_partial,
+            timeout=timeout,
         )
 
     def _get_site_domain(self) -> Optional[str]:

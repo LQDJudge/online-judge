@@ -3,9 +3,17 @@ Celery tasks for LLM operations (solution generation, markdown improvement, etc.
 These tasks run asynchronously to avoid timeout issues with long-running LLM calls.
 """
 
-from celery import shared_task
-
 import logging
+
+from celery import shared_task
+from django.db.models import Max
+
+from judge.models import Problem, Language, ProblemType
+from judge.models.problem_data import ProblemSolutionCode
+from ai_features.problem_tag_service import get_problem_tag_service
+from ai_features.quiz_ai_service import get_quiz_ai_service
+from ai_features.solution_code_generator import SolutionCodeGenerator
+from llm_service.config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +31,6 @@ def generate_solution_task(self, problem_code, rough_ideas=""):
         Dict with generation results (stored in Celery result backend)
     """
     try:
-        # Import here to avoid circular imports
-        from judge.models import Problem
-        from ai_features.problem_tag_service import get_problem_tag_service
-
         problem = Problem.objects.get(code=problem_code)
         tag_service = get_problem_tag_service()
         result = tag_service.generate_problem_solution(problem, rough_ideas=rough_ideas)
@@ -67,10 +71,6 @@ def tag_problem_task(self, problem_code, description=""):
         Dict with tagging results (stored in Celery result backend)
     """
     try:
-        # Import here to avoid circular imports
-        from judge.models import Problem, ProblemType
-        from ai_features.problem_tag_service import get_problem_tag_service
-
         problem = Problem.objects.get(code=problem_code)
         tag_service = get_problem_tag_service()
         result = tag_service.tag_single_problem(
@@ -123,10 +123,6 @@ def improve_markdown_task(self, problem_code, description=""):
         Dict with improvement results (stored in Celery result backend)
     """
     try:
-        # Import here to avoid circular imports
-        from judge.models import Problem
-        from ai_features.problem_tag_service import get_problem_tag_service
-
         problem = Problem.objects.get(code=problem_code)
         tag_service = get_problem_tag_service()
         result = tag_service.improve_problem_markdown(
@@ -167,8 +163,6 @@ def improve_question_markdown_task(self, content, choices_json=""):
         Dict with improvement results (stored in Celery result backend)
     """
     try:
-        from ai_features.quiz_ai_service import get_quiz_ai_service
-
         service = get_quiz_ai_service()
         result = service.improve_question_markdown(content, choices_json)
 
@@ -213,8 +207,6 @@ def generate_question_explanation_task(
         Dict with generation results (stored in Celery result backend)
     """
     try:
-        from ai_features.quiz_ai_service import get_quiz_ai_service
-
         service = get_quiz_ai_service()
         result = service.generate_or_improve_explanation(
             question_content=question_content,
@@ -236,5 +228,108 @@ def generate_question_explanation_task(
         logger.error(f"Error in generate_question_explanation_task: {e}")
         return {
             "success": False,
+            "error": str(e),
+        }
+
+
+@shared_task(bind=True)
+def generate_solution_codes_task(
+    self, problem_code, model_id="", instructions="", include_reference=False
+):
+    """
+    Celery task to generate multiple reference solution codes using LLM.
+
+    Generates AC, WA, TLE solutions and appends them to existing
+    ProblemSolutionCode entries.
+
+    Args:
+        problem_code: The problem code
+        model_id: LLM model to use (empty = default)
+        instructions: Optional user instructions for generation
+
+    Returns:
+        Dict with {success, count, error}
+    """
+    try:
+        problem = Problem.objects.get(code=problem_code)
+        config = get_config()
+        bot_name = model_id or config.get_bot_name()
+
+        generator = SolutionCodeGenerator(
+            api_key=config.api_key,
+            bot_name=bot_name,
+            sleep_time=config.sleep_time,
+        )
+        result = generator.generate(
+            problem, instructions=instructions, include_reference=include_reference
+        )
+
+        if not result["success"]:
+            return {
+                "success": False,
+                "count": 0,
+                "error": result.get("error", "Generation failed"),
+            }
+
+        solutions = result["solutions"]
+        if not solutions:
+            return {
+                "success": False,
+                "count": 0,
+                "error": "LLM returned no valid solutions",
+            }
+
+        # Determine starting order (append after existing codes)
+        max_order = problem.solution_codes.aggregate(max_order=Max("order"))[
+            "max_order"
+        ]
+        next_order = (max_order or 0) + 1
+
+        # Cache language lookups
+        language_cache = {}
+        created = 0
+
+        for sol in solutions:
+            lang_key = sol["language_key"]
+            if lang_key not in language_cache:
+                try:
+                    language_cache[lang_key] = Language.objects.get(key=lang_key)
+                except Language.DoesNotExist:
+                    logger.warning(f"Language key '{lang_key}' not found, skipping")
+                    continue
+
+            ProblemSolutionCode.objects.create(
+                problem=problem,
+                order=next_order,
+                name=sol["name"],
+                source_code=sol["source_code"],
+                language=language_cache[lang_key],
+                expected_result=sol["expected_result"],
+            )
+            next_order += 1
+            created += 1
+
+        logger.info(f"Generated {created} solution codes for {problem_code}")
+        return {
+            "success": True,
+            "count": created,
+            "error": None,
+        }
+
+    except Problem.DoesNotExist:
+        return {
+            "success": False,
+            "count": 0,
+            "error": f"Problem {problem_code} not found",
+        }
+
+    except Exception as e:
+        logger.error(
+            f"Error in generate_solution_codes_task for {problem_code}: {e}",
+            exc_info=True,
+        )
+        return {
+            "success": False,
+            "count": 0,
             "error": str(e),
         }

@@ -8,6 +8,7 @@ from tempfile import gettempdir
 from zipfile import BadZipfile, ZipFile
 
 import reversion
+from celery.result import AsyncResult
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -58,6 +59,9 @@ from judge.widgets.fine_uploader import (
 )
 from judge.widgets.file_edit import FileEditWidget
 from judge.views.problem import ProblemMixin
+from judge.judgeapi import validate_testcases
+from judge.tasks.llm import generate_solution_codes_task
+from llm_service.config import CHATBOT_SUPPORTED_MODELS
 
 mimetypes.init()
 mimetypes.add_type("application/x-yaml", ".yml")
@@ -631,8 +635,6 @@ MAX_PENDING_VALIDATIONS_PER_USER = 3
 
 class ValidateTestCasesView(ProblemManagerMixin, View):
     def post(self, request, *args, **kwargs):
-        from judge.judgeapi import validate_testcases
-
         problem = self.get_object()
         profile = request.profile
 
@@ -723,7 +725,7 @@ class ValidateTestCasesStatusView(ProblemManagerMixin, View):
         )
 
 
-MAX_SOLUTION_CODES = 6
+MAX_SOLUTION_CODES = 20
 MAX_PENDING_SOLUTION_RUNS = 3
 
 
@@ -761,6 +763,10 @@ class ProblemSolutionCodesView(TitleMixin, ProblemManagerMixin):
         )
         context["expected_result_choices"] = ProblemSolutionCode.EXPECTED_RESULT_CHOICES
         context["ACE_URL"] = settings.ACE_URL
+        if self.request.user.is_superuser:
+            context["supported_models"] = CHATBOT_SUPPORTED_MODELS
+        else:
+            context["supported_models"] = []
         return context
 
 
@@ -988,3 +994,72 @@ class ProblemSolutionCodesStatusView(ProblemManagerMixin, View):
             )
 
         return JsonResponse({"all_graded": all_graded, "results": results})
+
+
+class ProblemSolutionCodesGenerateView(ProblemManagerMixin, View):
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return JsonResponse(
+                {"status": "error", "message": _("Superuser access required.")},
+                status=403,
+            )
+
+        problem = self.get_object()
+
+        try:
+            body = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            body = {}
+
+        model_id = body.get("model_id", "")
+        instructions = body.get("instructions", "")
+        include_reference = body.get("include_reference", False)
+
+        task = generate_solution_codes_task.delay(
+            problem.code,
+            model_id=model_id,
+            instructions=instructions,
+            include_reference=include_reference,
+        )
+        return JsonResponse({"status": "ok", "task_id": task.id})
+
+
+class ProblemSolutionCodesGenerateStatusView(ProblemManagerMixin, View):
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return JsonResponse(
+                {"status": "error", "message": _("Superuser access required.")},
+                status=403,
+            )
+
+        self.get_object()  # permission check
+        task_id = request.GET.get("id")
+        if not task_id:
+            return JsonResponse(
+                {"status": "error", "message": _("Missing task ID.")},
+                status=400,
+            )
+
+        result = AsyncResult(task_id)
+
+        if result.state == "PENDING":
+            return JsonResponse({"code": "PENDING"})
+        elif result.state == "SUCCESS":
+            data = result.result or {}
+            return JsonResponse(
+                {
+                    "code": "SUCCESS",
+                    "success": data.get("success", False),
+                    "count": data.get("count", 0),
+                    "error": data.get("error"),
+                }
+            )
+        elif result.state == "FAILURE":
+            return JsonResponse(
+                {
+                    "code": "FAILURE",
+                    "error": str(result.result) if result.result else "Unknown error",
+                }
+            )
+        else:
+            return JsonResponse({"code": result.state})

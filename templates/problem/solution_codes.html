@@ -188,7 +188,7 @@
       function showMessage(msg, isError) {
         var $msg = $('#solution-message');
         $msg.text(msg).removeClass('green red').addClass(isError ? 'red' : 'green').show();
-        setTimeout(function () { $msg.fadeOut(); }, 4000);
+        setTimeout(function () { $msg.fadeOut(); }, isError ? 10000 : 4000);
       }
 
       // Save
@@ -387,6 +387,95 @@
         }
         pollStatus();
       }
+
+      {% if request.user.is_superuser %}
+      // Generate with AI
+        var isGenerating = false;
+
+        $('#generate-ai-btn').click(function () {
+          if (isGenerating) return;
+          $('#generate-ai-modal').show();
+        });
+
+        $('#generate-ai-cancel').click(function () {
+          $('#generate-ai-modal').hide();
+        });
+
+      // Close modal on overlay click
+        $('#generate-ai-modal').click(function (e) {
+          if (e.target === this) $(this).hide();
+        });
+
+        function setGenerating(running) {
+          isGenerating = running;
+          var $btn = $('#generate-ai-btn');
+          $btn.prop('disabled', running);
+          if (running) {
+            $btn.html('<i class="fa fa-spinner fa-spin"></i> {{ _("Generating...") }}');
+          } else {
+            $btn.html('<i class="fa fa-magic"></i> {{ _("Generate with AI") }}');
+          }
+        }
+
+        var generatePollCount = 0;
+        var MAX_GENERATE_POLLS = 150; // 5 minutes at 2s intervals
+
+        function pollGenerateStatus(taskId) {
+          generatePollCount++;
+          if (generatePollCount > MAX_GENERATE_POLLS) {
+            showMessage('{{ _("Generation timed out. The task may still be running — try refreshing the page later.") }}', true);
+            setGenerating(false);
+            return;
+          }
+          $.getJSON('{{ url("problem_solution_codes_generate_status", problem.code) }}', {id: taskId}, function (data) {
+            if (data.code === 'PENDING' || data.code === 'STARTED') {
+              setTimeout(function () { pollGenerateStatus(taskId); }, 2000);
+            } else if (data.code === 'SUCCESS' && data.success) {
+              showMessage('{{ _("Generated") }} ' + data.count + ' {{ _("solution codes. Reloading...") }}', false);
+              setTimeout(function () { location.reload(); }, 1000);
+            } else {
+              var errMsg = (data.error || '{{ _("Generation failed.") }}');
+              showMessage(errMsg, true);
+              setGenerating(false);
+            }
+          }).fail(function () {
+            showMessage('{{ _("Network error while checking status.") }}', true);
+            setGenerating(false);
+          });
+        }
+
+        $('#generate-ai-confirm').click(function () {
+          var modelId = $('#generate-ai-model').val();
+          var instructions = $('#generate-ai-instructions').val().trim();
+          var includeReference = $('#generate-ai-reference').is(':checked');
+          $('#generate-ai-modal').hide();
+          setGenerating(true);
+          generatePollCount = 0;
+
+          $.ajax({
+            url: '{{ url("problem_solution_codes_generate", problem.code) }}',
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            contentType: 'application/json',
+            data: JSON.stringify({model_id: modelId, instructions: instructions, include_reference: includeReference}),
+            dataType: 'json',
+            success: function (data) {
+              if (data.status === 'ok' && data.task_id) {
+                setTimeout(function () { pollGenerateStatus(data.task_id); }, 2000);
+              } else {
+                showMessage(data.message || '{{ _("Failed to start generation.") }}', true);
+                setGenerating(false);
+              }
+            },
+            error: function (xhr) {
+              var msg = '{{ _("Failed to start generation.") }}';
+              try { msg = JSON.parse(xhr.responseText).message; } catch (e) {}
+              showMessage(msg, true);
+              setGenerating(false);
+            }
+          });
+        });
+      {% endif %}
     }
   </script>
 {% endblock %}
@@ -409,6 +498,11 @@
       <button id="run-all-btn" class="action-btn" type="button">
         <i class="fa fa-play"></i> {{ _('Run All') }}
       </button>
+      {% if request.user.is_superuser %}
+        <button id="generate-ai-btn" class="action-btn" type="button">
+          <i class="fa fa-magic"></i> {{ _('Generate with AI') }}
+        </button>
+      {% endif %}
     </div>
 
     <div id="solution-message" class="solution-message" style="display:none;"></div>
@@ -436,5 +530,41 @@
     </div>
 
     <div id="solution-codes-container"></div>
+
+    {% if request.user.is_superuser %}
+      <div id="generate-ai-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-card">
+          <h3>{{ _('Generate Solution Codes with AI') }}</h3>
+          <div class="modal-field">
+            <label for="generate-ai-model">{{ _('Model') }}</label>
+            <select id="generate-ai-model">
+              {% for model in supported_models %}
+                <option value="{{ model.id }}" {{ 'selected' if model.default else '' }}>{{ model.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="modal-field">
+            <label for="generate-ai-instructions">{{ _('Instructions') }}</label>
+            <textarea id="generate-ai-instructions" rows="4"
+                      placeholder="{{ _('Optional: describe what codes you want (leave empty for default generation)') }}"></textarea>
+          </div>
+          <div class="modal-field">
+            <label class="checkbox-label">
+              <input type="checkbox" id="generate-ai-reference">
+              {{ _('Include editorial & AC submissions as reference') }}
+            </label>
+          </div>
+          <small class="gray">{{ _('Note: AI-generated code may not be correct. Always verify with "Run All" after generating.') }}</small>
+          <div class="modal-actions">
+            <button id="generate-ai-confirm" class="action-btn" type="button">
+              <i class="fa fa-magic"></i> {{ _('Generate') }}
+            </button>
+            <button id="generate-ai-cancel" class="action-btn" type="button">
+              {{ _('Cancel') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    {% endif %}
   </div>
 {% endblock %}

@@ -9,10 +9,14 @@ import logging
 import fastapi_poe as fp
 from asgiref.sync import sync_to_async
 from django.conf import settings
+from django.db import close_old_connections
+
+from judge.models import Submission
 
 logger = logging.getLogger(__name__)
 
-# Tool metadata: name -> description (used for both ToolDefinition and system prompt)
+# Tool metadata: name -> description + optional parameters.
+# Tools without "parameters" accept no arguments (problem is pre-bound).
 CHATBOT_TOOLS = {
     "get_problem_info": {
         "description": "Get basic problem metadata (name, code, points, time/memory limits, authors)",
@@ -38,18 +42,43 @@ CHATBOT_TOOLS = {
     "get_solution_template": {
         "description": "Get the template format for writing problem solutions/editorials",
     },
+    # --- Coordinator tools ---
+    "get_test_data_config": {
+        "description": "Get lightweight test data overview: checker type, generator info, validator/interactive presence, subtask structure with points (no actual test content)",
+    },
+    "get_solution_codes": {
+        "description": "Get existing reference solution codes (ProblemSolutionCode entries) with source code and expected results",
+    },
+    "get_editorial": {
+        "description": "Get the editorial/solution content for this problem",
+    },
+    "get_validator_code": {
+        "description": "Get the testcase validator source code",
+    },
+    "get_interactive_judge_code": {
+        "description": "Get the interactive judge source code",
+    },
 }
 
-# Map tool names to their implementation functions
+# Map tool names to their implementation functions.
+# All lambdas accept **kw so parameterized tools can receive kwargs.
 _TOOL_FUNCTIONS = {
-    "get_problem_info": lambda problem: _get_problem_info(problem),
-    "get_problem_statement": lambda problem: _get_problem_statement(problem),
-    "get_test_data_docs": lambda problem: _get_test_data_docs(problem),
-    "get_checker_template": lambda problem: _get_checker_template(problem),
-    "get_generator_template": lambda problem: _get_generator_template(problem),
-    "get_ac_submissions": lambda problem: _get_ac_submissions(problem),
-    "get_existing_checker": lambda problem: _get_existing_checker(problem),
-    "get_solution_template": lambda problem: _get_solution_template(problem),
+    "get_problem_info": lambda problem, **kw: _get_problem_info(problem),
+    "get_problem_statement": lambda problem, **kw: _get_problem_statement(problem),
+    "get_test_data_docs": lambda problem, **kw: _get_test_data_docs(problem),
+    "get_checker_template": lambda problem, **kw: _get_checker_template(problem),
+    "get_generator_template": lambda problem, **kw: _get_generator_template(problem),
+    "get_ac_submissions": lambda problem, **kw: _get_ac_submissions(problem),
+    "get_existing_checker": lambda problem, **kw: _get_existing_checker(problem),
+    "get_solution_template": lambda problem, **kw: _get_solution_template(problem),
+    # Coordinator tools
+    "get_test_data_config": lambda problem, **kw: _get_test_data_config(problem),
+    "get_solution_codes": lambda problem, **kw: _get_solution_codes(problem),
+    "get_editorial": lambda problem, **kw: _get_editorial(problem),
+    "get_validator_code": lambda problem, **kw: _get_validator_code(problem),
+    "get_interactive_judge_code": lambda problem, **kw: _get_interactive_judge_code(
+        problem
+    ),
 }
 
 
@@ -57,17 +86,17 @@ def get_tool_definitions():
     """Build Poe ToolDefinition objects for all chatbot tools."""
     definitions = []
     for name, tool in CHATBOT_TOOLS.items():
+        params = tool.get(
+            "parameters",
+            {"type": "object", "properties": {}, "required": []},
+        )
         definitions.append(
             fp.ToolDefinition(
                 type="function",
                 function={
                     "name": name,
                     "description": tool["description"],
-                    "parameters": {
-                        "type": "object",
-                        "properties": {},
-                        "required": [],
-                    },
+                    "parameters": params,
                 },
             )
         )
@@ -83,16 +112,16 @@ def get_tool_executables(problem):
     """
 
     def _make_executor(func, tool_name):
+        has_params = bool(CHATBOT_TOOLS[tool_name].get("parameters"))
+
         @sync_to_async
         def executor(**kwargs):
             # Close stale DB connections before ORM queries.
             # Celery workers hold long-lived connections that MySQL
             # may drop during idle periods between chat messages.
-            from django.db import close_old_connections
-
             close_old_connections()
-            # Accept and ignore any kwargs the LLM may pass —
-            # tools are pre-bound to the problem instance.
+            if has_params:
+                return func(problem, **kwargs)
             return func(problem)
 
         executor.__name__ = tool_name
@@ -443,8 +472,6 @@ random 100000 3001
 
 def _get_ac_submissions(problem):
     """Get accepted submissions for reference."""
-    from judge.models import Submission
-
     submissions = []
 
     # Try author submissions first
@@ -601,3 +628,180 @@ Guidelines:
 - Provide working reference code in C++
 - Mention edge cases and common mistakes
 - Use Vietnamese by default"""
+
+
+# =============================================================================
+# Coordinator tools
+# =============================================================================
+
+
+def _get_test_data_config(problem):
+    """Get lightweight test data overview (no actual test content)."""
+    try:
+        data = problem.data_files
+    except Exception:
+        return "No test data configured for this problem."
+
+    scoring = (
+        "IOI (partial points per subtask)"
+        if problem.partial
+        else "ICPC (all-or-nothing, points=0 per test is normal)"
+    )
+    result = "Test Data Configuration:\n"
+    result += f"- Scoring type: {scoring}\n"
+    result += f"- Checker: {data.checker or 'standard'}\n"
+
+    if data.checker_args:
+        result += f"- Checker args: {data.checker_args}\n"
+
+    # Generator info
+    has_generator = bool(data.generator and data.generator.name)
+    result += f"- Generator: {'Yes' if has_generator else 'No'}\n"
+    if data.generator_script:
+        script = data.generator_script
+        if len(script) > 1000:
+            script = script[:1000] + "\n... (truncated)"
+        result += f"- Generator script:\n```\n{script}\n```\n"
+
+    # Validator / interactive presence
+    has_validator = bool(data.testcase_validator and data.testcase_validator.name)
+    has_interactive = bool(data.interactive_judge and data.interactive_judge.name)
+    result += f"- Testcase validator: {'Yes (' + (data.testcase_validator_language or 'unknown') + ')' if has_validator else 'No'}\n"
+    result += f"- Interactive judge: {'Yes' if has_interactive else 'No'}\n"
+
+    # Other flags
+    if data.output_only:
+        result += "- Output only: Yes\n"
+    if data.use_ioi_signature:
+        result += "- IOI signature: Yes\n"
+    if data.fileio_input:
+        result += (
+            f"- File I/O: input={data.fileio_input}, output={data.fileio_output}\n"
+        )
+
+    # Subtask / test case structure (lightweight: counts and points only)
+    cases = problem.cases.all().order_by("order")
+    if cases.exists():
+        result += f"\nTest Cases ({cases.count()} total):\n"
+        total_points = 0
+        batch_num = 0
+        for case in cases:
+            type_map = {"C": "Normal", "S": "Batch Start", "E": "Batch End"}
+            case_type = type_map.get(case.type, case.type)
+            points = case.points if case.points is not None else "-"
+            if case.points:
+                total_points += case.points
+            if case.type == "S":
+                batch_num += 1
+
+            gen_info = ""
+            if case.generator_args:
+                args = case.generator_args
+                if len(args) > 50:
+                    args = args[:48] + ".."
+                gen_info = f" | gen_args: {args}"
+
+            pretest = " [pretest]" if case.is_pretest else ""
+            result += (
+                f"  #{case.order}: {case_type}, points={points}{gen_info}{pretest}\n"
+            )
+
+        result += f"\nTotal points: {total_points}"
+        if batch_num > 0:
+            result += f" | Batches (subtasks): {batch_num}"
+    else:
+        result += "\nNo test cases defined."
+
+    return result
+
+
+def _get_solution_codes(problem):
+    """Get existing reference solution codes."""
+    codes = problem.solution_codes.all().order_by("order")
+    if not codes.exists():
+        return "No reference solution codes found for this problem."
+
+    results = [f"Reference Solution Codes ({codes.count()} total):\n"]
+
+    for code in codes:
+        lang = code.language.name if code.language else "Unknown"
+        name = code.name or "(unnamed)"
+        source = code.source_code
+        if len(source) > 4000:
+            source = source[:4000] + "\n... (truncated)"
+
+        last_result = ""
+        if code.last_submission:
+            last_result = f" | Last judge result: {code.last_submission.result}"
+
+        lang_short = lang.lower().split()[0]
+        results.append(
+            f"### {name} [expected: {code.expected_result}] ({lang}){last_result}\n"
+            f"```{lang_short}\n{source}\n```\n"
+        )
+
+    return "\n".join(results)
+
+
+def _get_editorial(problem):
+    """Get the editorial/solution content."""
+    try:
+        solution = problem.solution
+    except Exception:
+        return "No editorial found for this problem."
+
+    if not solution:
+        return "No editorial found for this problem."
+
+    content = solution.content
+    if len(content) > 8000:
+        content = content[:8000] + "\n\n... (truncated)"
+
+    authors = ", ".join([a.user.username for a in solution.authors.all()]) or "None"
+    is_public = "Yes" if solution.is_public else "No"
+
+    return f"Editorial:\n- Authors: {authors}\n- Public: {is_public}\n\n{content}"
+
+
+def _get_validator_code(problem):
+    """Get the testcase validator source code."""
+    try:
+        data = problem.data_files
+    except Exception:
+        return "No test data configured for this problem."
+
+    if not data.testcase_validator or not data.testcase_validator.name:
+        return "No testcase validator configured for this problem."
+
+    lang = data.testcase_validator_language or "unknown"
+
+    try:
+        data.testcase_validator.open("r")
+        code = data.testcase_validator.read().decode("utf-8")
+        data.testcase_validator.close()
+        if len(code) > 4000:
+            code = code[:4000] + "\n... (truncated)"
+        return f"Testcase Validator ({lang}):\n```{lang}\n{code}\n```"
+    except Exception as e:
+        return f"Error reading validator: {str(e)}"
+
+
+def _get_interactive_judge_code(problem):
+    """Get the interactive judge source code."""
+    try:
+        data = problem.data_files
+    except Exception:
+        return "No test data configured for this problem."
+
+    if not data.interactive_judge or not data.interactive_judge.name:
+        return "No interactive judge configured for this problem."
+
+    try:
+        data.interactive_judge.open("r")
+        code = data.interactive_judge.read().decode("utf-8")
+        data.interactive_judge.close()
+        if len(code) > 4000:
+            code = code[:4000] + "\n... (truncated)"
+        return f"Interactive Judge (C++):\n```cpp\n{code}\n```"
+    except Exception as e:
+        return f"Error reading interactive judge: {str(e)}"
