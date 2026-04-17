@@ -876,7 +876,11 @@ class ProblemSolutionCodesSaveView(ProblemManagerMixin, View):
 class ProblemSolutionCodesRunView(ProblemManagerMixin, View):
     def post(self, request, *args, **kwargs):
         problem = self.get_object()
-        codes = ProblemSolutionCode.objects.filter(problem=problem).order_by("order")
+        codes = (
+            ProblemSolutionCode.objects.filter(problem=problem)
+            .select_related("last_submission")
+            .order_by("order")
+        )
 
         if not codes.exists():
             return JsonResponse(
@@ -884,17 +888,19 @@ class ProblemSolutionCodesRunView(ProblemManagerMixin, View):
                 status=400,
             )
 
-        # Block concurrent: check if any last_submission is still in progress
-        in_progress_ids = (
-            codes.filter(last_submission__status__in=("QU", "P", "G"))
-            .exclude(last_submission=None)
-            .values_list("last_submission_id", flat=True)
-        )
-        if in_progress_ids:
+        # Skip codes that are already being judged
+        codes_to_run = [
+            sc
+            for sc in codes
+            if not sc.last_submission
+            or sc.last_submission.status not in ("QU", "P", "G")
+        ]
+
+        if not codes_to_run:
             return JsonResponse(
                 {
                     "status": "error",
-                    "message": _("A run is already in progress."),
+                    "message": _("All codes are already being judged."),
                 },
                 status=409,
             )
@@ -917,7 +923,7 @@ class ProblemSolutionCodesRunView(ProblemManagerMixin, View):
             )
 
         submission_ids = []
-        for sc in codes:
+        for sc in codes_to_run:
             sub = Submission.objects.create(
                 user=request.profile,
                 problem=problem,
@@ -930,6 +936,80 @@ class ProblemSolutionCodesRunView(ProblemManagerMixin, View):
             submission_ids.append(sub.id)
 
         return JsonResponse({"status": "ok", "submission_ids": submission_ids})
+
+
+class ProblemSolutionCodesRunOneView(ProblemManagerMixin, View):
+    def post(self, request, *args, **kwargs):
+        problem = self.get_object()
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse(
+                {"status": "error", "message": _("Invalid JSON.")}, status=400
+            )
+
+        order = data.get("order")
+        if order is None or not isinstance(order, int) or order < 0:
+            return JsonResponse(
+                {"status": "error", "message": _("Invalid order.")}, status=400
+            )
+
+        try:
+            sc = ProblemSolutionCode.objects.select_related(
+                "language", "last_submission"
+            ).get(problem=problem, order=order)
+        except ProblemSolutionCode.DoesNotExist:
+            return JsonResponse(
+                {"status": "error", "message": _("Solution code not found.")},
+                status=404,
+            )
+        except ProblemSolutionCode.MultipleObjectsReturned:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": _("Duplicate order found. Please save and retry."),
+                },
+                status=409,
+            )
+
+        # Block if this code is already being judged
+        if sc.last_submission and sc.last_submission.status in ("QU", "P", "G"):
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": _("This code is already being judged."),
+                },
+                status=409,
+            )
+
+        # Per-user limit
+        pending_count = Submission.objects.filter(
+            user=request.profile,
+            status__in=("QU", "P", "G"),
+            id__in=ProblemSolutionCode.objects.exclude(
+                last_submission=None
+            ).values_list("last_submission_id", flat=True),
+        ).count()
+        if pending_count >= MAX_PENDING_SOLUTION_RUNS:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": _("Too many pending solution code runs."),
+                },
+                status=429,
+            )
+
+        sub = Submission.objects.create(
+            user=request.profile,
+            problem=problem,
+            language=sc.language,
+        )
+        SubmissionSource.objects.create(submission=sub, source=sc.source_code)
+        sc.last_submission = sub
+        sc.save(update_fields=["last_submission"])
+        sub.judge(rejudge=False, batch_rejudge=True)
+
+        return JsonResponse({"status": "ok", "submission_ids": [sub.id]})
 
 
 class ProblemSolutionCodesStatusView(ProblemManagerMixin, View):
@@ -963,7 +1043,7 @@ class ProblemSolutionCodesStatusView(ProblemManagerMixin, View):
                         "memory": None,
                     }
                 )
-                all_graded = False
+                # Don't set all_graded = False for codes that were never run
                 continue
 
             is_graded = sub.status == "D"
