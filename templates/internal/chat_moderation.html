@@ -1,0 +1,144 @@
+{% extends "two-column-content.html" %}
+
+{% block js_media %}
+  {% compress js %}
+    <script type="text/javascript">
+      $(function () {
+        $(".unmute-button").on("click", function () {
+          var button = $(this);
+          var profileId = button.data("profile-id");
+          var row = button.closest("tr");
+
+          if (!confirm('{{ _("Are you sure you want to unmute this user?") }}')) {
+            return;
+          }
+
+          button.prop("disabled", true);
+          $.ajax({
+            url: "{{ url('internal_unmute_user') }}",
+            type: "POST",
+            data: {
+              id: profileId,
+              csrfmiddlewaretoken: $.cookie("csrftoken"),
+            },
+            success: function (response) {
+              if (response.success) {
+                row.fadeOut(300, function () {
+                  $(this).remove();
+                });
+              } else {
+                alert(response.error || '{{ _("An error occurred.") }}');
+                button.prop("disabled", false);
+              }
+            },
+            error: function () {
+              alert('{{ _("An error occurred. Please try again.") }}');
+              button.prop("disabled", false);
+            },
+          });
+        });
+      });
+    </script>
+  {% endcompress %}
+{% endblock %}
+
+{% block left_sidebar %}
+  {% include "internal/left-sidebar.html" %}
+{% endblock %}
+
+{% block middle_content %}
+  <h2>{{ _("Moderation Log") }}</h2>
+
+  <div style="margin-bottom: 1em;">
+    <a class="action-btn small {% if not action_filter %}background-gray{% endif %}"
+       href="{{ url('internal_chat_moderation') }}{% if search_query %}?search={{ search_query }}{% endif %}">
+      {{ _("All") }}
+    </a>
+    <a class="action-btn small {% if action_filter == 'hide' %}background-gray{% endif %}"
+       href="{{ url('internal_chat_moderation') }}?action=hide{% if search_query %}&search={{ search_query }}{% endif %}">
+      {{ _("Hidden") }}
+    </a>
+    <a class="action-btn small {% if action_filter == 'mute' %}background-gray{% endif %}"
+       href="{{ url('internal_chat_moderation') }}?action=mute{% if search_query %}&search={{ search_query }}{% endif %}">
+      {{ _("Muted") }}
+    </a>
+    <form method="get" style="display: inline;">
+      {% if action_filter %}
+        <input type="hidden" name="action" value="{{ action_filter }}">
+      {% endif %}
+      <input type="text" name="search" value="{{ search_query }}" placeholder="{{ _('Search username...') }}">
+      <button type="submit" class="action-btn small">{{ _("Search") }}</button>
+    </form>
+  </div>
+
+  {% if page_obj.num_pages > 1 %}
+    <div style="margin-top:10px;">{% include "list-pages.html" %}</div>
+  {% endif %}
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ _("Time") }}</th>
+        <th>{{ _("User") }}</th>
+        <th>{{ _("Message") }}</th>
+        <th>{{ _("Action") }}</th>
+        <th>{{ _("Source") }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+        <tr>
+          <td>
+            <span class="gray">{{ log.created_at | date(_("N j, Y, g:i a")) }}</span>
+          </td>
+          <td>
+            {% if log.message.author %}
+              <a href="{{ url('user_page', log.message.author.user.username) }}">
+                {{ log.message.author.user.username }}
+              </a>
+            {% else %}
+              <span class="gray">{{ _("Unknown") }}</span>
+            {% endif %}
+          </td>
+          <td title="{{ log.message.body }}">
+            {{ log.message.body[:80] }}{% if log.message.body|length > 80 %}...{% endif %}
+          </td>
+          <td>
+            {% if log.action == "mute" %}
+              <span class="red">{{ _("Muted") }}</span>
+            {% elif log.action == "hide" %}
+              <span class="gray">{{ _("Hidden") }}</span>
+            {% else %}
+              <span class="green">{{ _("Kept") }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if log.is_automated %}
+              {{ _("Auto") }}
+            {% else %}
+              {{ _("Manual") }}
+            {% endif %}
+          </td>
+          <td>
+            {% if log.action == "mute" and log.message.author and log.message.author.mute %}
+              <button class="unmute-button action-btn" data-profile-id="{{ log.message.author.id }}">
+                {{ _("Unmute") }}
+              </button>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="6" class="gray" style="text-align: center; padding: 2em;">
+            {{ _("No moderation logs found") }}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if page_obj.num_pages > 1 %}
+    <div style="margin-top:10px;">{% include "list-pages.html" %}</div>
+  {% endif %}
+{% endblock %}

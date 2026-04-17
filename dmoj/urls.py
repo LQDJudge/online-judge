@@ -1733,6 +1733,16 @@ urlpatterns = [
                     name="internal_request_public",
                 ),
                 re_path(
+                    r"^chat_moderation$",
+                    internal.InternalChatModeration.as_view(),
+                    name="internal_chat_moderation",
+                ),
+                re_path(
+                    r"^unmute_user$",
+                    internal.unmute_user,
+                    name="internal_unmute_user",
+                ),
+                re_path(
                     r"^request_time$",
                     internal.InternalRequestTime.as_view(),
                     name="internal_request_time",

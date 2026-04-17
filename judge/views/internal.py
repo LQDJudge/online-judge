@@ -20,6 +20,7 @@ from judge.models.public_request import PublicRequest
 from judge.models.notification import Notification, NotificationCategory
 from judge.tasks import rescore_problem
 from judge.tasks.llm import tag_problem_task, improve_markdown_task
+from chat_box.models import ChatModerationLog
 
 
 class InternalView(object):
@@ -612,3 +613,76 @@ class InternalSlowRequest(InternalRequestTime):
 
 class InternalSlowRequestDetail(InternalRequestTimeDetail):
     log_name = "judge.slow_request"
+
+
+class InternalChatModeration(InternalView, ListView):
+    model = ChatModerationLog
+    title = _("Chat Moderation")
+    template_name = "internal/chat_moderation.html"
+    paginate_by = 50
+    context_object_name = "logs"
+
+    def get_paginator(
+        self, queryset, per_page, orphans=0, allow_empty_first_page=True, **kwargs
+    ):
+        return DiggPaginator(
+            queryset,
+            per_page,
+            body=6,
+            padding=2,
+            orphans=orphans,
+            allow_empty_first_page=allow_empty_first_page,
+            **kwargs,
+        )
+
+    def get_queryset(self):
+        queryset = ChatModerationLog.objects.exclude(action="keep").select_related(
+            "message__author__user"
+        )
+
+        action_filter = self.request.GET.get("action", "")
+        if action_filter:
+            queryset = queryset.filter(action=action_filter)
+
+        search = self.request.GET.get("search", "").strip()
+        if search:
+            queryset = queryset.filter(
+                message__author__user__username__icontains=search
+            )
+
+        return queryset.order_by("-created_at")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_type"] = "chat_moderation"
+        context["title"] = self.title
+        context["action_filter"] = self.request.GET.get("action", "")
+        context["search_query"] = self.request.GET.get("search", "")
+        query_params = self.request.GET.copy()
+        if "page" in query_params:
+            del query_params["page"]
+        if query_params:
+            query_string = query_params.urlencode()
+            context["page_prefix"] = self.request.path + "?" + query_string + "&page="
+            context["first_page_href"] = self.request.path + "?" + query_string
+        else:
+            context["page_prefix"] = self.request.path + "?page="
+            context["first_page_href"] = self.request.path
+
+        return context
+
+
+@require_POST
+def unmute_user(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden()
+    try:
+        profile_id = int(request.POST.get("id"))
+        profile = Profile.objects.get(id=profile_id)
+    except Exception:
+        return JsonResponse({"success": False, "error": "User not found"})
+
+    profile.mute = False
+    profile.save(update_fields=["mute"])
+    Profile.dirty_cache(profile.id)
+    return JsonResponse({"success": True})

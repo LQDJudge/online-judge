@@ -10,6 +10,7 @@ import re
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 
 # Add llm_service to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../..", ".."))
@@ -21,6 +22,8 @@ from judge.models import (
     Comment,
     OrganizationModerationLog,
 )
+from chat_box.models import Message as ChatMessage, ChatModerationLog
+from chat_box.views import hide_lobby_message, mute_chat_user
 
 
 # Static system prompts for LLM caching
@@ -57,6 +60,21 @@ POST_USER_PROMPT = """Community: {about}
 Posts to review:
 {posts}"""
 
+CHAT_SYSTEM_PROMPT = """You are a chat lobby moderator. Review messages and decide the action for each.
+
+Respond ONLY with valid JSON array: [{"id": <message_id>, "action": "hide" or "mute" or "keep"}]
+
+Actions:
+- "hide": Hide this single message. Use for: spam, off-topic advertising, mildly inappropriate content.
+- "mute": Hide ALL lobby messages from this user AND mute them from future lobby posting. Use for: severe harassment, hate speech, threats, doxxing, repeated spam from same user.
+- "keep": Message is acceptable. Keep it visible.
+
+HIDE single messages for isolated violations. MUTE only for severe or repeated abuse.
+When in doubt, KEEP the message."""
+
+CHAT_USER_PROMPT = """Chat lobby messages to review:
+{messages}"""
+
 
 class Command(BaseCommand):
     help = "Auto-moderate community organizations using LLM"
@@ -88,6 +106,11 @@ class Command(BaseCommand):
             default=50,
             help="Number of items to process per batch (default: 50)",
         )
+        parser.add_argument(
+            "--chat-only",
+            action="store_true",
+            help="Only moderate chat lobby messages",
+        )
 
     def handle(self, *args, **options):
         # Get LLM settings
@@ -96,7 +119,7 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR("POE_API_KEY not found in settings"))
             return
 
-        bot_name = getattr(settings, "POE_BOT_NAME", "Claude-Sonnet-4.6")
+        bot_name = getattr(settings, "POE_BOT_NAME", "Gemini-3-Flash")
 
         try:
             self.llm_service = LLMService(
@@ -112,46 +135,75 @@ class Command(BaseCommand):
         self.dry_run = options["dry_run"]
         self.batch_size = options["batch_size"]
 
-        # Get organizations
-        if options["org_ids"]:
-            org_ids = [int(x.strip()) for x in options["org_ids"].split(",")]
-            organizations = Organization.objects.filter(id__in=org_ids)
-        else:
-            # Default to all communities
-            organizations = Organization.objects.filter(is_community=True)
-
-        if not organizations.exists():
-            self.stdout.write(self.style.WARNING("No organizations found"))
+        if options["chat_only"] and (options["comments_only"] or options["posts_only"]):
+            self.stderr.write(
+                self.style.ERROR(
+                    "--chat-only cannot be combined with --comments-only or --posts-only"
+                )
+            )
             return
 
-        self.stdout.write(
-            self.style.SUCCESS(f"Processing {organizations.count()} organization(s)")
-        )
         if self.dry_run:
             self.stdout.write(
                 self.style.WARNING("DRY RUN MODE - No changes will be made")
             )
 
-        # Process each organization
         total_stats = {
             "comments_hidden": 0,
             "comments_kept": 0,
             "posts_approved": 0,
             "posts_rejected": 0,
             "posts_skipped": 0,
+            "chat_hidden": 0,
+            "chat_muted": 0,
+            "chat_kept": 0,
             "errors": 0,
         }
 
-        for org in organizations:
+        if options["chat_only"]:
+            # Only moderate chat lobby
             self.stdout.write(f"\n{'='*60}")
-            self.stdout.write(
-                self.style.SUCCESS(f"Organization: {org.name} (ID: {org.id})")
-            )
+            self.stdout.write(self.style.SUCCESS("Chat Lobby Moderation"))
             self.stdout.write(f"{'='*60}")
+            chat_stats = self.moderate_chat()
+            for key in chat_stats:
+                total_stats[key] += chat_stats.get(key, 0)
+        else:
+            # Get organizations
+            if options["org_ids"]:
+                org_ids = [int(x.strip()) for x in options["org_ids"].split(",")]
+                organizations = Organization.objects.filter(id__in=org_ids)
+            else:
+                organizations = Organization.objects.filter(is_community=True)
 
-            org_stats = self.process_organization(org, options)
-            for key in total_stats:
-                total_stats[key] += org_stats.get(key, 0)
+            if organizations.exists():
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"Processing {organizations.count()} organization(s)"
+                    )
+                )
+
+                for org in organizations:
+                    self.stdout.write(f"\n{'='*60}")
+                    self.stdout.write(
+                        self.style.SUCCESS(f"Organization: {org.name} (ID: {org.id})")
+                    )
+                    self.stdout.write(f"{'='*60}")
+
+                    org_stats = self.process_organization(org, options)
+                    for key in total_stats:
+                        total_stats[key] += org_stats.get(key, 0)
+            else:
+                self.stdout.write(self.style.WARNING("No organizations found"))
+
+            # Also moderate chat unless filtered to comments/posts only
+            if not options["comments_only"] and not options["posts_only"]:
+                self.stdout.write(f"\n{'='*60}")
+                self.stdout.write(self.style.SUCCESS("Chat Lobby Moderation"))
+                self.stdout.write(f"{'='*60}")
+                chat_stats = self.moderate_chat()
+                for key in chat_stats:
+                    total_stats[key] += chat_stats.get(key, 0)
 
         # Print summary
         self.stdout.write(f"\n{'='*60}")
@@ -162,6 +214,9 @@ class Command(BaseCommand):
         self.stdout.write(f"Posts approved: {total_stats['posts_approved']}")
         self.stdout.write(f"Posts rejected: {total_stats['posts_rejected']}")
         self.stdout.write(f"Posts skipped: {total_stats['posts_skipped']}")
+        self.stdout.write(f"Chat messages hidden: {total_stats['chat_hidden']}")
+        self.stdout.write(f"Chat users muted: {total_stats['chat_muted']}")
+        self.stdout.write(f"Chat messages kept: {total_stats['chat_kept']}")
         self.stdout.write(f"Errors: {total_stats['errors']}")
 
     def process_organization(self, org, options):
@@ -490,6 +545,127 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"  Error: {e}"))
             stats["errors"] = len(posts_map)
+
+        return stats
+
+    def moderate_chat(self):
+        """Moderate lobby chat messages (batched)"""
+        stats = {"chat_hidden": 0, "chat_muted": 0, "chat_kept": 0, "errors": 0}
+
+        # Only review messages from the last hour
+        cutoff = timezone.now() - timezone.timedelta(hours=1)
+
+        # Get message IDs already reviewed (within the same time window)
+        already_reviewed = ChatModerationLog.objects.filter(
+            created_at__gte=cutoff
+        ).values_list("message_id", flat=True)
+
+        # Get unhidden lobby messages not yet reviewed, within cutoff
+        messages = list(
+            ChatMessage.objects.filter(room=None, hidden=False, time__gte=cutoff)
+            .exclude(id__in=already_reviewed)
+            .select_related("author__user")
+            .order_by("id")[: self.batch_size]
+        )
+
+        if not messages:
+            self.stdout.write("  No chat messages to review")
+            return stats
+
+        self.stdout.write(f"  Reviewing {len(messages)} chat messages...")
+
+        # Build batch prompt
+        messages_text = []
+        messages_map = {}
+        for msg in messages:
+            author_name = msg.author.user.username if msg.author else "Anonymous"
+            body = (msg.body or "").strip()
+            if not body:
+                continue
+            messages_map[msg.id] = msg
+            messages_text.append(f"[Message ID: {msg.id}] by {author_name}:\n{body}")
+
+        if not messages_text:
+            self.stdout.write("  No non-empty chat messages to review")
+            return stats
+
+        user_prompt = CHAT_USER_PROMPT.format(
+            messages="\n\n---\n\n".join(messages_text),
+        )
+
+        try:
+            response = self.llm_service.call_llm(
+                user_prompt, system_prompt=CHAT_SYSTEM_PROMPT
+            )
+            if not response:
+                self.stdout.write(self.style.WARNING("  LLM returned no response"))
+                stats["errors"] = len(messages_map)
+                return stats
+
+            results = self.parse_json_response(response)
+            if not results or not isinstance(results, list):
+                self.stdout.write(
+                    self.style.WARNING(f"  Failed to parse response: {response[:200]}")
+                )
+                stats["errors"] = len(messages_map)
+                return stats
+
+            # Track muted authors to skip redundant processing
+            muted_authors = set()
+
+            for result in results:
+                msg_id = result.get("id")
+                action = result.get("action", "").lower()
+
+                if msg_id not in messages_map:
+                    continue
+
+                msg = messages_map[msg_id]
+
+                # Skip if this author was already muted in this batch
+                if msg.author_id in muted_authors:
+                    continue
+
+                author_name = msg.author.user.username if msg.author else "Anonymous"
+
+                if action == "mute":
+                    if not self.dry_run:
+                        mute_chat_user(msg, is_automated=True)
+                    muted_authors.add(msg.author_id)
+                    stats["chat_muted"] += 1
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"    MUTED: {author_name} - {msg.body[:50]}..."
+                        )
+                    )
+
+                elif action == "hide":
+                    if not self.dry_run:
+                        hide_lobby_message(msg, is_automated=True)
+                    stats["chat_hidden"] += 1
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"    HIDDEN: {author_name} - {msg.body[:50]}..."
+                        )
+                    )
+
+                else:  # keep
+                    if not self.dry_run:
+                        ChatModerationLog.log_action(
+                            message=msg, action="keep", is_automated=True
+                        )
+                    stats["chat_kept"] += 1
+
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"  Batch complete: {stats['chat_kept']} kept, "
+                    f"{stats['chat_hidden']} hidden, {stats['chat_muted']} muted"
+                )
+            )
+
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"  Error: {e}"))
+            stats["errors"] = len(messages_map)
 
         return stats
 

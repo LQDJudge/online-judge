@@ -7,7 +7,7 @@ from judge.models.profile import Profile
 from judge.caching import cache_wrapper, CacheableModel
 
 
-__all__ = ["Message", "Room", "UserRoom", "Ignore"]
+__all__ = ["Message", "Room", "UserRoom", "Ignore", "ChatModerationLog"]
 
 
 class Room(CacheableModel):
@@ -263,6 +263,43 @@ class Ignore(models.Model):
             cls.remove_ignore(current_user, ignored_user)
         else:
             cls.add_ignore(current_user, ignored_user)
+
+
+class ChatModerationLog(models.Model):
+    ACTIONS = (
+        ("keep", _("Keep")),
+        ("hide", _("Hide Message")),
+        ("mute", _("Mute User")),
+    )
+
+    message = models.ForeignKey(
+        Message, on_delete=CASCADE, related_name="moderation_logs"
+    )
+    action = models.CharField(max_length=10, choices=ACTIONS)
+    reason = models.TextField(blank=True)
+    is_automated = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["message", "created_at"]),
+        ]
+        app_label = "chat_box"
+        verbose_name = _("chat moderation log")
+        verbose_name_plural = _("chat moderation logs")
+
+    def __str__(self):
+        return f"{self.get_action_display()} - Message #{self.message_id} - {self.created_at}"
+
+    @classmethod
+    def log_action(cls, message, action, reason="", is_automated=False):
+        return cls.objects.create(
+            message=message,
+            action=action,
+            reason=reason,
+            is_automated=is_automated,
+        )
 
 
 def _get_room_batch(args_list):

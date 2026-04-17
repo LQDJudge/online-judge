@@ -22,6 +22,7 @@ from chat_box.models import (
     Room,
     UserRoom,
     Ignore,
+    ChatModerationLog,
     get_ignored_user_ids,
     get_user_room_list,
     get_first_msg_id,
@@ -124,6 +125,28 @@ class ChatView(ListView):
         return context
 
 
+def hide_lobby_message(message, is_automated=False):
+    """Hide a single lobby message and log the action."""
+    message.hidden = True
+    message.save(update_fields=["hidden"])
+    get_first_msg_id.dirty(None)
+    ChatModerationLog.log_action(
+        message=message, action="hide", is_automated=is_automated
+    )
+
+
+def mute_chat_user(message, is_automated=False):
+    """Mute a user: hide all their lobby messages and prevent future posting."""
+    message.author.mute = True
+    message.author.save(update_fields=["mute"])
+    Profile.dirty_cache(message.author_id)
+    Message.objects.filter(room=None, author=message.author).update(hidden=True)
+    get_first_msg_id.dirty(None)
+    ChatModerationLog.log_action(
+        message=message, action="mute", is_automated=is_automated
+    )
+
+
 def delete_message(request):
     ret = {"delete": "done"}
 
@@ -143,6 +166,12 @@ def delete_message(request):
         return HttpResponseBadRequest()
 
     room_id = mess.room_id
+
+    if not room_id and request.user.has_perm("judge.change_comment"):
+        # Lobby message deleted by staff — shared helper handles hide + cache + log
+        hide_lobby_message(mess)
+        return JsonResponse(ret)
+
     mess.hidden = True
     mess.save()
 
@@ -194,11 +223,7 @@ def mute_message(request):
     with revisions.create_revision():
         revisions.set_comment(_("Mute chat") + ": " + mess.body)
         revisions.set_user(request.user)
-        mess.author.mute = True
-        mess.author.save()
-
-    Message.objects.filter(room=None, author=mess.author).update(hidden=True)
-    get_first_msg_id.dirty(None)
+        mute_chat_user(mess)
 
     return JsonResponse(ret)
 

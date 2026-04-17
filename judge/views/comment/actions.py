@@ -243,7 +243,7 @@ def post_comment(request):
     - body: Comment text content
     """
     if is_comment_locked(request):
-        return HttpResponseForbidden("Comments are locked in this contest")
+        return HttpResponseForbidden(_("Comments are not allowed during this contest"))
 
     if (
         not request.user.is_staff
@@ -252,7 +252,7 @@ def post_comment(request):
         ).exists()
     ):
         return HttpResponseBadRequest(
-            "You need to solve at least one problem before commenting"
+            _("You need to solve at least one problem before commenting")
         )
 
     parent = request.POST.get("parent")
