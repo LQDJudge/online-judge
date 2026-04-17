@@ -89,6 +89,9 @@
         var $expSel = makeExpectedSelect(data.expected_result || 'AC');
         $header.append($('<span></span>').append($expSel));
 
+        var $runBtn = $('<button type="button" class="run-one-btn action-btn" title="{{ _("Run") }}"><i class="fa fa-play"></i></button>');
+        $header.append($runBtn);
+
         var $delBtn = $('<button type="button" class="delete-code-btn" title="{{ _("Delete") }}"><i class="fa fa-trash"></i></button>');
         $header.append($delBtn);
 
@@ -145,7 +148,8 @@
           editor: editor,
           $nameInput: $nameInput,
           $langSel: $langSel,
-          $expSel: $expSel
+          $expSel: $expSel,
+          $runBtn: $runBtn
         };
         entries.push(entryObj);
 
@@ -156,6 +160,56 @@
           entries = entries.filter(function (e) { return e.idx !== idx; });
           renumber();
           updateAddBtn();
+        });
+
+        $runBtn.click(function (e) {
+          e.stopPropagation();
+          if ($runBtn.prop('disabled')) return;
+          var entryIndex = entries.indexOf(entryObj);
+          if (entryIndex < 0) return;
+
+          $runBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+          $('#solution-results-summary').html('');
+
+          $.ajax({
+            url: '{{ url("problem_solution_codes_save", problem.code) }}',
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            contentType: 'application/json',
+            data: JSON.stringify(collectData()),
+            dataType: 'json',
+            success: function () {
+              $.ajax({
+                url: '{{ url("problem_solution_codes_run_one", problem.code) }}',
+                method: 'POST',
+                headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                contentType: 'application/json',
+                data: JSON.stringify({order: entryIndex}),
+                dataType: 'json',
+                success: function (data) {
+                  if (data.status === 'ok') {
+                    $('#solution-results-section').show();
+                    ensurePolling();
+                  } else {
+                    showMessage(data.message, true);
+                    $runBtn.prop('disabled', false).html('<i class="fa fa-play"></i>');
+                  }
+                },
+                error: function (xhr) {
+                  var msg = '{{ _("Failed to run.") }}';
+                  try { msg = JSON.parse(xhr.responseText).message; } catch (e) {}
+                  showMessage(msg, true);
+                  $runBtn.prop('disabled', false).html('<i class="fa fa-play"></i>');
+                }
+              });
+            },
+            error: function (xhr) {
+              var msg = '{{ _("Failed to save before running.") }}';
+              try { msg = JSON.parse(xhr.responseText).message; } catch (e) {}
+              showMessage(msg, true);
+              $runBtn.prop('disabled', false).html('<i class="fa fa-play"></i>');
+            }
+          });
         });
 
         updateAddBtn();
@@ -215,18 +269,35 @@
         });
       });
 
-      // Run All
+      // Run
       var pollTimer = null;
-      var isRunning = false;
 
-      function setRunning(running) {
-        isRunning = running;
+      function setRunAllBtn(running) {
         $('#run-all-btn').prop('disabled', running);
         if (running) {
           $('#run-all-btn').html('<i class="fa fa-spinner fa-spin"></i> {{ _("Running...") }}');
         } else {
           $('#run-all-btn').html('<i class="fa fa-play"></i> {{ _("Run All") }}');
         }
+      }
+
+      function updateRunButtonStates(data) {
+        if (!data.results) return;
+        for (var i = 0; i < data.results.length; i++) {
+          var r = data.results[i];
+          if (r.order < 0 || r.order >= entries.length) continue;
+          var $btn = entries[r.order].$runBtn;
+          if (!r.submission_id || r.is_graded) {
+            $btn.prop('disabled', false).html('<i class="fa fa-play"></i>');
+          } else {
+            $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+          }
+        }
+      }
+
+      function ensurePolling() {
+        if (pollTimer) return;
+        pollTimer = setTimeout(pollStatus, 1000);
       }
 
       function renderResults(data) {
@@ -297,15 +368,19 @@
       function pollStatus() {
         $.getJSON('{{ url("problem_solution_codes_status", problem.code) }}', function (data) {
           renderResults(data);
-          if (isRunning && !data.all_graded) {
+          updateRunButtonStates(data);
+          if (!data.all_graded) {
             pollTimer = setTimeout(pollStatus, 2000);
           } else {
-            setRunning(false);
             pollTimer = null;
+            setRunAllBtn(false);
           }
         }).fail(function () {
-          setRunning(false);
           pollTimer = null;
+          setRunAllBtn(false);
+          for (var i = 0; i < entries.length; i++) {
+            entries[i].$runBtn.prop('disabled', false).html('<i class="fa fa-play"></i>');
+          }
         });
       }
 
@@ -313,10 +388,8 @@
         if ($(this).prop('disabled')) return;
 
         // Save first, then run
-        var $btn = $(this);
-        $btn.prop('disabled', true);
+        setRunAllBtn(true);
         $('#solution-results-summary').html('');
-        $('#solution-results-tbody').empty();
 
         $.ajax({
           url: '{{ url("problem_solution_codes_save", problem.code) }}',
@@ -326,8 +399,6 @@
           data: JSON.stringify(collectData()),
           dataType: 'json',
           success: function () {
-            // Now run
-            setRunning(true);
             $.ajax({
               url: '{{ url("problem_solution_codes_run", problem.code) }}',
               method: 'POST',
@@ -335,17 +406,18 @@
               dataType: 'json',
               success: function (data) {
                 if (data.status === 'ok') {
-                  pollTimer = setTimeout(pollStatus, 1000);
+                  $('#solution-results-section').show();
+                  ensurePolling();
                 } else {
                   showMessage(data.message, true);
-                  setRunning(false);
+                  setRunAllBtn(false);
                 }
               },
               error: function (xhr) {
                 var msg = '{{ _("Failed to run.") }}';
                 try { msg = JSON.parse(xhr.responseText).message; } catch (e) {}
                 showMessage(msg, true);
-                setRunning(false);
+                setRunAllBtn(false);
               }
             });
           },
@@ -353,7 +425,7 @@
             var msg = '{{ _("Failed to save before running.") }}';
             try { msg = JSON.parse(xhr.responseText).message; } catch (e) {}
             showMessage(msg, true);
-            $btn.prop('disabled', false);
+            setRunAllBtn(false);
           }
         });
       });
@@ -371,20 +443,14 @@
 
       // Check if any code has a submission
       var hasSubmissions = false;
-      var anyPending = false;
       for (var i = 0; i < initialCodes.length; i++) {
         if (initialCodes[i].last_submission_id) {
           hasSubmissions = true;
-          if (initialCodes[i].last_submission_status !== 'D') {
-            anyPending = true;
-          }
+          break;
         }
       }
       if (hasSubmissions) {
         $('#solution-results-section').show();
-        if (anyPending) {
-          setRunning(true);
-        }
         pollStatus();
       }
 

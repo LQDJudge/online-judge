@@ -1668,8 +1668,13 @@ body:not(.problem-raw) {
             width: 150px;
         }
 
-        .delete-code-btn {
+        .run-one-btn {
             margin-left: auto;
+            padding: 2px 8px;
+            font-size: 13px;
+        }
+
+        .delete-code-btn {
             cursor: pointer;
             color: $announcement_red;
             background: none;
