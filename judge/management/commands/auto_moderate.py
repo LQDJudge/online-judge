@@ -577,17 +577,24 @@ class Command(BaseCommand):
         # Build batch prompt
         messages_text = []
         messages_map = {}
+        attachments = []
+        image_counter = [0]
         for msg in messages:
             author_name = msg.author.user.username if msg.author else "Anonymous"
             body = (msg.body or "").strip()
             if not body:
                 continue
             messages_map[msg.id] = msg
-            messages_text.append(f"[Message ID: {msg.id}] by {author_name}:\n{body}")
+            labeled, imgs = self._embed_images(body, image_counter)
+            attachments.extend(imgs)
+            messages_text.append(f"[Message ID: {msg.id}] by {author_name}:\n{labeled}")
 
         if not messages_text:
             self.stdout.write("  No non-empty chat messages to review")
             return stats
+
+        if attachments:
+            self.stdout.write(f"  Uploaded {len(attachments)} image(s) to Poe")
 
         user_prompt = CHAT_USER_PROMPT.format(
             messages="\n\n---\n\n".join(messages_text),
@@ -595,7 +602,9 @@ class Command(BaseCommand):
 
         try:
             response = self.llm_service.call_llm(
-                user_prompt, system_prompt=CHAT_SYSTEM_PROMPT
+                user_prompt,
+                system_prompt=CHAT_SYSTEM_PROMPT,
+                attachments=attachments,
             )
             if not response:
                 self.stdout.write(self.style.WARNING("  LLM returned no response"))
