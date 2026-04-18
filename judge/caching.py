@@ -10,6 +10,11 @@ from inspect import signature
 MAX_NUM_CHAR = 8
 NONE_RESULT = "__None__"  # Placeholder for None values in caching
 
+# Registry of cache_wrapper prefixes -> "module.qualname" of the first function
+# that registered under each prefix. Used to fail loudly on prefix collisions
+# so two functions never silently share a cache key space.
+_CACHE_PREFIXES = {}
+
 
 # Utility functions
 def arg_to_str(arg):
@@ -43,6 +48,15 @@ def cache_wrapper(prefix, timeout=None, expected_type=None, batch_fn=None):
         return key
 
     def decorator(func):
+        owner = f"{func.__module__}.{func.__qualname__}"
+        existing = _CACHE_PREFIXES.get(prefix)
+        if existing and existing != owner:
+            raise RuntimeError(
+                f"cache_wrapper prefix collision: {prefix!r} is used by "
+                f"both {existing} and {owner}. Pick a unique prefix."
+            )
+        _CACHE_PREFIXES[prefix] = owner
+
         def _validate_type(cache_key, result):
             if expected_type and not isinstance(result, expected_type):
                 return False

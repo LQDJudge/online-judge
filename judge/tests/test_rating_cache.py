@@ -11,7 +11,7 @@ from judge.utils.users import get_contest_ratings
 class RateContestCacheInvalidationTest(TestCase):
     """
     Tests that rate_contest() correctly invalidates the get_contest_ratings
-    cache (prefix 'gcr2') after rating a contest.
+    cache (prefix 'gcrating') after rating a contest.
 
     Regression test for: cache left stale when process dies between transaction
     commit and the dirty_multi calls (fixed by using transaction.on_commit).
@@ -54,7 +54,7 @@ class RateContestCacheInvalidationTest(TestCase):
         )
 
     def test_cache_is_dirtied_after_rating(self):
-        """After rate_contest(), the gcr2 cache entry must be cleared."""
+        """After rate_contest(), the get_contest_ratings cache entry must be cleared."""
         profile = self._make_user("testuser_rating")
         contest = self._make_contest("test_cache_dirty")
 
