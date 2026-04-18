@@ -117,6 +117,18 @@ class ICPCContestFormat(DefaultContestFormat):
         self.apply_result_hidden(participation, format_data)
         participation.save()
 
+    def compute_cumtime(self, format_data, entries=None):
+        cumtime = 0
+        penalty = 0
+        for key, entry in format_data.items():
+            if entries is not None and key not in entries:
+                continue
+            if entry.get("points", 0) > 0:
+                cumtime += entry.get("time", 0)
+                if self.config["penalty"] and entry.get("penalty"):
+                    penalty += entry["penalty"] * self.config["penalty"] * 60
+        return max(0, cumtime + penalty)
+
     def display_user_problem(self, participation, contest_problem, show_final=False):
         if contest_problem.quiz_id:
             format_key = f"quiz_{contest_problem.id}"

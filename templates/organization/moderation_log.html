@@ -1,117 +1,153 @@
 {% extends "organization/home-base.html" %}
 
+{% block org_js %}
+  <script>
+    $(function() {
+      $('.moderation-log-table').on('click', '.toggle-text', function(e) {
+        e.preventDefault();
+        var $this = $(this);
+        var $container = $this.closest('.expandable-text');
+        var $short = $container.find('.text-short');
+        var $full = $container.find('.text-full');
+
+        if ($full.is(':visible')) {
+          $full.hide();
+          $short.show();
+          $this.text('{{ _("...More") }}');
+        } else {
+          $short.hide();
+          $full.show();
+          $this.text('{{ _("Less") }}');
+        }
+      });
+    });
+  </script>
+{% endblock %}
+
+{% macro expandable(short_text, full_text) %}
+  {% if full_text|length > 80 %}
+    {% set display_text = short_text[:-3] if short_text.endswith('...') else short_text %}
+    <span class="expandable-text">
+      <span class="text-short gray">{{ display_text }}</span>
+      <span class="text-full gray">{{ full_text }}</span>
+      <a class="toggle-text">{{ _("...More") }}</a>
+    </span>
+  {% else %}
+    <span class="gray">{{ full_text }}</span>
+  {% endif %}
+{% endmacro %}
+
 {% block middle_content %}
   {% if logs %}
-    <table class="table striped">
-      <thead>
-        <tr>
-          <th>{{ _('Time') }}</th>
-          <th>{{ _('Moderator') }}</th>
-          <th>{{ _('Action') }}</th>
-          <th>{{ _('Content') }}</th>
-          <th>{{ _('Preview') }}</th>
-          <th>{{ _('Reason') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for log in logs %}
+    <div class="moderation-log-table">
+      <table class="table striped">
+        <thead>
           <tr>
-            <td title="{{ log.created_at }}">
-              {{ relative_time(log.created_at) }}
-            </td>
-            <td>
-              {% if log.is_automated %}
-                <span class="badge background-blue white" style="padding: 2px 6px; border-radius: 3px;">
-                  <i class="fa fa-robot"></i> {{ _('LLM') }}
-                </span>
-              {% elif log.moderator %}
-                {{ link_user(log.moderator) }}
-              {% else %}
-                <span class="gray">{{ _('Unknown') }}</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if log.action == 'hide_comment' %}
-                <span class="badge background-red white" style="padding: 2px 6px; border-radius: 3px;">
-                  <i class="fa fa-eye-slash"></i> {{ _('Hide') }}
-                </span>
-              {% elif log.action == 'unhide_comment' %}
-                <span class="badge background-green white" style="padding: 2px 6px; border-radius: 3px;">
-                  <i class="fa fa-eye"></i> {{ _('Unhide') }}
-                </span>
-              {% elif log.action == 'keep_comment' %}
-                <span class="badge background-green white" style="padding: 2px 6px; border-radius: 3px;">
-                  <i class="fa fa-check"></i> {{ _('Keep') }}
-                </span>
-              {% elif log.action == 'approve_post' %}
-                <span class="badge background-green white" style="padding: 2px 6px; border-radius: 3px;">
-                  <i class="fa fa-check"></i> {{ _('Approve') }}
-                </span>
-              {% elif log.action == 'reject_post' %}
-                <span class="badge background-red white" style="padding: 2px 6px; border-radius: 3px;">
-                  <i class="fa fa-times"></i> {{ _('Reject') }}
-                </span>
-              {% elif log.action == 'skip' %}
-                <span class="badge background-gray white" style="padding: 2px 6px; border-radius: 3px;">
-                  <i class="fa fa-forward"></i> {{ _('Skipped') }}
-                </span>
-              {% else %}
-                {{ log.get_action_display() }}
-              {% endif %}
-            </td>
-            <td>
-              {% set content_obj = log.content_object %}
-              {% if content_obj %}
-                {% if log.content_type.model == 'comment' %}
-                  <a href="{{ content_obj.get_absolute_url() }}">
-                    {{ _('Comment') }} #{{ log.object_id }}
-                  </a>
-                  {% if content_obj.author %}
-                    {{ _('by') }} {{ link_user(content_obj.author) }}
-                  {% endif %}
-                {% elif log.content_type.model == 'blogpost' %}
-                  <a href="{{ content_obj.get_absolute_url() }}">{{ content_obj.title[:50] }}</a>
+            <th class="col-time">{{ _('Time') }}</th>
+            <th class="col-moderator">{{ _('Moderator') }}</th>
+            <th class="col-action">{{ _('Action') }}</th>
+            <th class="col-content">{{ _('Content') }}</th>
+            <th class="col-preview">{{ _('Preview') }}</th>
+            <th class="col-reason">{{ _('Reason') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+            <tr>
+              <td title="{{ log.created_at }}">
+                {{ relative_time(log.created_at) }}
+              </td>
+              <td>
+                {% if log.is_automated %}
+                  <span class="badge background-blue white" style="padding: 2px 6px; border-radius: 3px;">
+                    <i class="fa fa-robot"></i> {{ _('LLM') }}
+                  </span>
+                {% elif log.moderator %}
+                  {{ link_user(log.moderator) }}
                 {% else %}
-                  {{ log.content_type.model }} #{{ log.object_id }}
+                  <span class="gray">{{ _('Unknown') }}</span>
                 {% endif %}
-              {% else %}
-                <span class="gray">{{ log.content_type.model }} #{{ log.object_id }} ({{ _('deleted') }})</span>
-              {% endif %}
-            </td>
-            <td>
-              {% set content_obj = log.content_object %}
-              {% if content_obj %}
-                {% if log.content_type.model == 'comment' and content_obj.body %}
-                  <span title="{{ content_obj.body[:500] }}" class="gray">
-                    {{ content_obj.body|truncate(80, True) }}
+              </td>
+              <td>
+                {% if log.action == 'hide_comment' %}
+                  <span class="badge background-red white" style="padding: 2px 6px; border-radius: 3px;">
+                    <i class="fa fa-eye-slash"></i> {{ _('Hide') }}
                   </span>
-                {% elif log.content_type.model == 'blogpost' and content_obj.content %}
-                  <span title="{{ content_obj.content[:500] }}" class="gray">
-                    {{ content_obj.content|striptags|truncate(80, True) }}
+                {% elif log.action == 'unhide_comment' %}
+                  <span class="badge background-green white" style="padding: 2px 6px; border-radius: 3px;">
+                    <i class="fa fa-eye"></i> {{ _('Unhide') }}
                   </span>
+                {% elif log.action == 'keep_comment' %}
+                  <span class="badge background-green white" style="padding: 2px 6px; border-radius: 3px;">
+                    <i class="fa fa-check"></i> {{ _('Keep') }}
+                  </span>
+                {% elif log.action == 'approve_post' %}
+                  <span class="badge background-green white" style="padding: 2px 6px; border-radius: 3px;">
+                    <i class="fa fa-check"></i> {{ _('Approve') }}
+                  </span>
+                {% elif log.action == 'reject_post' %}
+                  <span class="badge background-red white" style="padding: 2px 6px; border-radius: 3px;">
+                    <i class="fa fa-times"></i> {{ _('Reject') }}
+                  </span>
+                {% elif log.action == 'skip' %}
+                  <span class="badge background-gray white" style="padding: 2px 6px; border-radius: 3px;">
+                    <i class="fa fa-forward"></i> {{ _('Skipped') }}
+                  </span>
+                {% else %}
+                  {{ log.get_action_display() }}
+                {% endif %}
+              </td>
+              <td>
+                {% set content_obj = log.content_object %}
+                {% if content_obj %}
+                  {% if log.content_type.model == 'comment' %}
+                    <a href="{{ content_obj.get_absolute_url() }}">
+                      {{ _('Comment') }} #{{ log.object_id }}
+                    </a>
+                    {% if content_obj.author %}
+                      {{ _('by') }} {{ link_user(content_obj.author) }}
+                    {% endif %}
+                  {% elif log.content_type.model == 'blogpost' %}
+                    <a href="{{ content_obj.get_absolute_url() }}">{{ content_obj.title[:50] }}</a>
+                  {% else %}
+                    {{ log.content_type.model }} #{{ log.object_id }}
+                  {% endif %}
+                {% else %}
+                  <span class="gray">{{ log.content_type.model }} #{{ log.object_id }} ({{ _('deleted') }})</span>
+                {% endif %}
+              </td>
+              <td>
+                {% set content_obj = log.content_object %}
+                {% if content_obj %}
+                  {% if log.content_type.model == 'comment' and content_obj.body %}
+                    {{ expandable(content_obj.body|truncate(80, True), content_obj.body[:500]) }}
+                  {% elif log.content_type.model == 'blogpost' and content_obj.content %}
+                    {% set stripped = content_obj.content|striptags %}
+                    {{ expandable(stripped|truncate(80, True), stripped[:500]) }}
+                  {% else %}
+                    <span class="gray">-</span>
+                  {% endif %}
                 {% else %}
                   <span class="gray">-</span>
                 {% endif %}
-              {% else %}
-                <span class="gray">-</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if log.reason %}
-                <span title="{{ log.reason }}">{{ log.reason[:80] }}{% if log.reason|length > 80 %}...{% endif %}</span>
-              {% else %}
-                <span class="gray">-</span>
-              {% endif %}
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+              </td>
+              <td>
+                {% if log.reason %}
+                  {{ expandable(log.reason[:80], log.reason) }}
+                {% else %}
+                  <span class="gray">-</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
     {% include "list-pages.html" %}
   {% else %}
     <div class="empty-message">
-      <i class="fa fa-check-circle" style="font-size: 3em; color: #ccc;"></i>
+      <i class="fa fa-check-circle gray" style="font-size: 3em;"></i>
       <p>{{ _('No moderation actions recorded yet.') }}</p>
     </div>
   {% endif %}

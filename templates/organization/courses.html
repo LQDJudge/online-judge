@@ -99,7 +99,7 @@
           {% if course.course_image %}
             <img src="{{ course.course_image.url }}" alt="{{ course.name }}" class="course-image">
           {% else %}
-            <div class="course-image" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+            <div class="course-image" style="background: linear-gradient(135deg, #667eea, #764ba2);"></div>
           {% endif %}
 
           <a href="{{ url('course_detail', course.slug) }}" class="course-name">
@@ -126,11 +126,11 @@
             </div>
 
             {% if course.is_open %}
-              <div style="color: green; margin-top: 5px;">
+              <div class="green" style="margin-top: 5px;">
                 <i class="fa fa-check-circle"></i> {{ _('Open for enrollment') }}
               </div>
             {% else %}
-              <div style="color: #666; margin-top: 5px;">
+              <div class="gray" style="margin-top: 5px;">
                 <i class="fa fa-lock"></i> {{ _('Closed for enrollment') }}
               </div>
             {% endif %}

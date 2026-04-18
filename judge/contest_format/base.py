@@ -135,6 +135,23 @@ class BaseContestFormat(metaclass=ABCMeta):
             else:
                 format_data[problem] = {"time": 0, "points": 0, "frozen": True}
 
+    def compute_cumtime(self, format_data, entries=None):
+        """
+        Compute cumtime from format_data entries. Each format can override
+        this to match its own cumtime logic (sum vs max, penalty, etc.).
+
+        :param format_data: The full format_data dict.
+        :param entries: If provided, only consider these keys. If None, use all.
+        :return: Computed cumtime value.
+        """
+        cumtime = 0
+        for key, entry in format_data.items():
+            if entries is not None and key not in entries:
+                continue
+            if entry.get("points", 0) > 0:
+                cumtime += entry.get("time", 0)
+        return max(cumtime, 0)
+
     def apply_result_hidden(self, participation, format_data):
         """
         Save full scores as final, then subtract is_result_hidden problems
@@ -151,13 +168,7 @@ class BaseContestFormat(metaclass=ABCMeta):
         # Save full values as final (if format didn't already)
         if not has_final:
             participation.score_final = participation.score
-            # participation.cumtime has problem times (+ penalty for ICPC/AtCoder)
-            # but may miss quiz times, so add those separately
-            quiz_cumtime = 0
-            for key, entry in format_data.items():
-                if key.startswith("quiz_") and entry.get("points", 0) > 0:
-                    quiz_cumtime += entry.get("time", 0)
-            participation.cumtime_final = max(participation.cumtime + quiz_cumtime, 0)
+            participation.cumtime_final = self.compute_cumtime(format_data)
             participation.format_data_final = copy.deepcopy(format_data)
 
         # Find is_result_hidden problems
@@ -169,28 +180,29 @@ class BaseContestFormat(metaclass=ABCMeta):
         if not hidden_cp_ids:
             return
 
-        # Recompute public score/cumtime from non-hidden entries only
-        # Note: cumtime uses sum which is correct for most formats (default,
-        # IOI, ICPC, ECOO). AtCoder uses max-based cumtime which may be
-        # slightly inaccurate when is_result_hidden is used.
-        non_hidden_points = 0
-        non_hidden_cumtime = 0
-        for key, entry in format_data.items():
-            # Check if this entry belongs to a hidden problem
+        # Determine which format_data keys are NOT hidden
+        non_hidden_keys = set()
+        for key in format_data:
             is_hidden = False
             for cp_id in hidden_cp_ids:
                 if key in (str(cp_id), f"quiz_{cp_id}"):
                     is_hidden = True
                     break
-            if not is_hidden and entry.get("points", 0) > 0:
-                non_hidden_points += entry.get("points", 0)
-                non_hidden_cumtime += entry.get("time", 0)
+            if not is_hidden:
+                non_hidden_keys.add(key)
+
+        # Recompute public score from non-hidden entries
+        non_hidden_points = sum(
+            entry.get("points", 0)
+            for key, entry in format_data.items()
+            if key in non_hidden_keys and entry.get("points", 0) > 0
+        )
 
         participation.score = round(
             max(non_hidden_points, 0),
             self.contest.points_precision,
         )
-        participation.cumtime = max(non_hidden_cumtime, 0)
+        participation.cumtime = self.compute_cumtime(format_data, non_hidden_keys)
 
     def calculate_quiz_scores(self, participation, format_data):
         """

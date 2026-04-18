@@ -86,6 +86,11 @@ class IOIContestFormat(DefaultContestFormat):
         self.apply_result_hidden(participation, format_data)
         participation.save()
 
+    def compute_cumtime(self, format_data, entries=None):
+        if not self.config["cumtime"]:
+            return 0
+        return super().compute_cumtime(format_data, entries)
+
     def display_user_problem(self, participation, contest_problem, show_final=False):
         if contest_problem.quiz_id:
             format_key = f"quiz_{contest_problem.id}"
