@@ -1,10 +1,21 @@
 $highlight_blue: white;
 $widget_black: #00007d;//68BBE3, add8e6
-$border_gray: #ccc;
-$background_gray: #ededed;
-$background_light_gray: #f1f2f2;
+$border_gray: #e2e4e8;
+$background_gray: #eef0f3;
+$background_light_gray: #f7f8fa;
 $announcement_red: #ae0000;
-$theme_color:  #9c3706;
+$theme_color: #9c3706;
+
+// Derived palette
+$theme_light: #fdf3ef;
+$theme_mid: #c44a0e;
+$surface_white: #ffffff;
+$surface_card: #ffffff;
+$surface_page: #f4f5f8;
+$text_primary: #1a1a2e;
+$text_secondary: #5a6275;
+$text_muted: #8a94a6;
+$border_subtle: #e8eaee;
 
 // Core design tokens
 $surface-primary: #fff;
@@ -54,12 +65,12 @@ $radius-base: 5px;
 $radius-pill: 40px;
 
 $base_font_size: 14px;
-$widget_border_radius: 0.5em;
+$widget_border_radius: 8px;
 $table_header_rounding: 6px;
 
 $monospace-fonts: var(--md-code-font-family),monospace;
-$navbar_height: 50px;
-$navbar_height_mobile: 36px;
+$navbar_height: 52px;
+$navbar_height_mobile: 40px;
 
 // Semantic status colors
 $color-success: #28a745;

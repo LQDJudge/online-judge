@@ -38,14 +38,15 @@
         height: 2em;
         color: $text-on-primary;
         background-color: $theme_color;
-        border-color: $border_gray;
+        border-color: rgba(255, 255, 255, 0.15);
         border-width: 1px 1px 0 0;
         border-style: solid;
         padding: 4px 10px;
         vertical-align: middle;
         text-align: center;
         font-weight: 600;
-        font-size: 1.1em;
+        font-size: 1em;
+        letter-spacing: 0.01em;
     }
 
     td {

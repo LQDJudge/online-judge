@@ -35,8 +35,9 @@
 
 .left-sidebar-item.active {
     color: white;
-    font-weight: bold;
+    font-weight: 600;
     background-color: $theme_color;
+    border-color: $theme_color;
 
     .sidebar-icon {
         color: white;
@@ -45,8 +46,10 @@
 
 .blog-sidebox {
     h3 {
-        padding-bottom: 0.25em;
-        padding-left: 0.5em;
+        padding-bottom: 0.35em;
+        padding-left: 0.6em;
+        font-size: 1.05em;
+        font-weight: 600;
     }
 
     ul {
@@ -140,24 +143,30 @@
 }
 
 .blog-box {
-    border-bottom: 1.4px solid lightgray;
-    border-top: 1.4px solid lightgray;
-    margin-bottom: 1.5em;
-    padding: 1em 1.25em 0.5em 1.25em;
-    background-color: white;
+    border: 1px solid $border_gray;
+    margin-bottom: 1.25em;
+    padding: 1.1em 1.4em 0.6em 1.4em;
+    background-color: $surface_white;
     margin-left: auto;
     margin-right: auto;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
 
     .title {
-        margin-bottom: 0.2em;
-        font-weight: 500;
+        margin-bottom: 0.25em;
+        font-weight: 600;
+        font-size: 1.05em;
     }
 }
 
-.blog-box:hover, .blog-box:not(.pre-expand-blog) {
-    border-color: #8a8a8a;
-    box-shadow: 0 0 2px rgba(0, 0, 0, 0.1);
+.blog-box:hover {
+    border-color: rgba($theme_color, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.blog-box:not(.pre-expand-blog) {
+    border-color: $border_gray;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .blog-description {
@@ -324,8 +333,8 @@
 
 .middle-right-content.wrapper {
     padding: 1em 0;
-    background: white;
-    border-radius: 1em;
+    background: $surface_white;
+    border-radius: 12px;
 }
 
 .post-content-header {
@@ -367,9 +376,9 @@
     }
 
     .blog-box {
-        border-left: 1.4px solid lightgray;
-        border-right: 1.4px solid lightgray;
-        border-radius: 16px;
+        border-left: 1px solid $border_gray;
+        border-right: 1px solid $border_gray;
+        border-radius: 12px;
     }
 
     .post-full {
