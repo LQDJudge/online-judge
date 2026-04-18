@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
-from judge.models.profile import Profile
+from judge.models.profile import Profile, get_contribution_rank
 from judge.caching import cache_wrapper
 
 __all__ = ["PageVote", "PageVoteVoter", "PageVotable", "VoteService"]
@@ -136,6 +136,8 @@ class VoteService:
 
 def _update_contribution_for_pagevote(pagevote, delta):
     """Update contribution_points for authors of the voted content."""
+    # Local import: judge.utils.contribution imports from judge.models.pagevote,
+    # so moving this to the module level creates a circular import.
     from judge.utils.contribution import (
         is_content_public,
         get_content_author_profile_ids,
@@ -151,4 +153,5 @@ def _update_contribution_for_pagevote(pagevote, delta):
         Profile.objects.filter(id__in=author_ids).update(
             contribution_points=F("contribution_points") + delta
         )
-        Profile.dirty_cache(*author_ids)
+        for author_id in author_ids:
+            get_contribution_rank.dirty(Profile(id=author_id))

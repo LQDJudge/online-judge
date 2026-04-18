@@ -1,8 +1,20 @@
-from django.contrib.contenttypes.models import ContentType
-from django.db.models import Sum, Q
+from collections import defaultdict
 
-from judge.models.pagevote import PageVote
-from judge.models.comment import Comment
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Count, Sum, Q
+
+from judge.models import BlogPost, Contest, Problem, Solution
+from judge.models.pagevote import (
+    PageVote,
+    PageVoteVoter,
+    dirty_pagevote,
+)
+from judge.models.comment import (
+    Comment,
+    CommentVote,
+    get_user_vote_on_comment,
+)
+from judge.models.profile import Organization
 
 
 def _get_public_content_ids_by_author(profile):
@@ -10,9 +22,6 @@ def _get_public_content_ids_by_author(profile):
     Returns dict of {ContentType: [list of object IDs]} for all public content
     authored by the given profile.
     """
-    from judge.models import BlogPost, Contest, Problem, Solution
-    from judge.models.profile import Organization
-
     result = {}
 
     # Public Solutions
@@ -85,9 +94,6 @@ def _get_all_public_content_ids():
     Returns dict of {ContentType: [list of object IDs]} for all public content.
     Used to determine which content comments can count toward contribution.
     """
-    from judge.models import BlogPost, Contest, Problem, Solution
-    from judge.models.profile import Organization
-
     result = {}
 
     ct = ContentType.objects.get_for_model(Solution)
@@ -190,8 +196,6 @@ def is_content_public(content_type, object_id):
     Check if a piece of content passes the public/community visibility checks.
     Returns (is_public, author_profile_id_or_None).
     """
-    from judge.models import BlogPost, Contest, Problem, Solution
-
     model_class = content_type.model_class()
 
     try:
@@ -240,10 +244,6 @@ def bulk_compute_contributions():
     Returns dict of {profile_id: contribution_points}.
     Much faster than calling compute_contribution() per profile.
     """
-    from collections import defaultdict
-    from judge.models import BlogPost, Contest, Problem, Solution
-    from judge.models.profile import Organization
-
     scores = defaultdict(int)
 
     # Build public content sets per model
@@ -332,3 +332,142 @@ def bulk_compute_contributions():
         scores[pid] = max(INT_MIN, min(INT_MAX, scores[pid]))
 
     return dict(scores)
+
+
+def detect_abusive_downvoters(min_downvotes=20, max_up_ratio=0.10):
+    """
+    Return the set of profile IDs whose combined PageVoteVoter + CommentVote
+    history satisfies:
+      - downvotes >= min_downvotes (volume gate)
+      - upvotes <= max_up_ratio * downvotes (heavy-negative skew)
+
+    This is the "serial downvoter" heuristic used in recompute_contributions.
+    """
+    counts = defaultdict(lambda: {"up": 0, "down": 0})
+
+    for table in (PageVoteVoter, CommentVote):
+        rows = table.objects.values("voter_id").annotate(
+            up=Count("id", filter=Q(score=1)),
+            down=Count("id", filter=Q(score=-1)),
+        )
+        for row in rows:
+            counts[row["voter_id"]]["up"] += row["up"]
+            counts[row["voter_id"]]["down"] += row["down"]
+
+    flagged = set()
+    for voter_id, c in counts.items():
+        down = c["down"]
+        up = c["up"]
+        if down >= min_downvotes and up <= max_up_ratio * down:
+            flagged.add(voter_id)
+    return flagged
+
+
+def purge_downvotes_from(flagged_voter_ids):
+    """
+    Delete score=-1 PageVoteVoter + CommentVote rows from the given voter IDs,
+    re-sum PageVote.score / Comment.score, and dirty the same caches the
+    normal vote path dirties.
+
+    Returns a dict of stats:
+      {
+        "pagevote_deleted": int,
+        "commentvote_deleted": int,
+        "pagevotes_rescored": int,
+        "comments_rescored": int,
+      }
+
+    The caller is responsible for dirtying get_contribution_rank and
+    recomputing Profile.contribution_points.
+    """
+    stats = {
+        "pagevote_deleted": 0,
+        "commentvote_deleted": 0,
+        "pagevotes_rescored": 0,
+        "comments_rescored": 0,
+    }
+
+    if not flagged_voter_ids:
+        return stats
+
+    # Snapshot what we're about to touch before deletion.
+    affected_pv_ids = set(
+        PageVoteVoter.objects.filter(
+            voter_id__in=flagged_voter_ids,
+            score=-1,
+        ).values_list("pagevote_id", flat=True)
+    )
+
+    affected_voter_comment_pairs = list(
+        CommentVote.objects.filter(
+            voter_id__in=flagged_voter_ids,
+            score=-1,
+        ).values_list("voter_id", "comment_id")
+    )
+    affected_comment_ids = {c for _, c in affected_voter_comment_pairs}
+
+    parent_triples = set()
+    if affected_comment_ids:
+        for ct_id, obj_id, parent_id in Comment.objects.filter(
+            id__in=affected_comment_ids
+        ).values_list("content_type_id", "object_id", "parent_id"):
+            parent_triples.add((ct_id, obj_id, parent_id))
+
+    # Delete the -1 rows.
+    stats["pagevote_deleted"], _ = PageVoteVoter.objects.filter(
+        voter_id__in=flagged_voter_ids,
+        score=-1,
+    ).delete()
+    stats["commentvote_deleted"], _ = CommentVote.objects.filter(
+        voter_id__in=flagged_voter_ids,
+        score=-1,
+    ).delete()
+
+    # Re-sum PageVote.score for affected pagevotes (bulk_update = one UPDATE).
+    if affected_pv_ids:
+        pv_sums = dict(
+            PageVoteVoter.objects.filter(pagevote_id__in=affected_pv_ids)
+            .values("pagevote_id")
+            .annotate(total=Sum("score"))
+            .values_list("pagevote_id", "total")
+        )
+        pagevotes_to_update = []
+        for pv in PageVote.objects.filter(id__in=affected_pv_ids):
+            pv.score = pv_sums.get(pv.id) or 0
+            pagevotes_to_update.append(pv)
+        PageVote.objects.bulk_update(pagevotes_to_update, ["score"], batch_size=500)
+        stats["pagevotes_rescored"] = len(pagevotes_to_update)
+
+    # Re-sum Comment.score for affected comments.
+    if affected_comment_ids:
+        cv_sums = dict(
+            CommentVote.objects.filter(comment_id__in=affected_comment_ids)
+            .values("comment_id")
+            .annotate(total=Sum("score"))
+            .values_list("comment_id", "total")
+        )
+        comments_to_update = []
+        for c in Comment.objects.filter(id__in=affected_comment_ids):
+            c.score = cv_sums.get(c.id) or 0
+            comments_to_update.append(c)
+        Comment.objects.bulk_update(comments_to_update, ["score"], batch_size=500)
+        stats["comments_rescored"] = len(comments_to_update)
+
+    # Dirty caches using the same helpers the normal vote flow uses.
+    # Single query for pagevotes, single delete_many for user-vote cache.
+    for pv in PageVote.objects.filter(id__in=affected_pv_ids).select_related(
+        "content_type"
+    ):
+        dirty_pagevote(pv)
+
+    if affected_comment_ids:
+        Comment.dirty_cache(*affected_comment_ids)
+    for ct_id, obj_id, parent_id in parent_triples:
+        Comment.dirty_list_cache(ct_id, obj_id, parent_id)
+
+    if affected_voter_comment_pairs:
+        get_user_vote_on_comment.dirty_multi(
+            [(v, c) for v, c in affected_voter_comment_pairs]
+        )
+
+    return stats

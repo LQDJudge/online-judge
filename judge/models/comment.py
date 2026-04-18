@@ -493,7 +493,7 @@ def _get_user_vote_on_comment_batch(args_list):
     return [vote_dict.get((args[0], args[1]), 0) for args in args_list]
 
 
-@cache_wrapper(prefix="ucvs", batch_fn=_get_user_vote_on_comment_batch)
+@cache_wrapper(prefix="ucvs2", batch_fn=_get_user_vote_on_comment_batch)
 def get_user_vote_on_comment(profile_id, comment_id):
     """Get a user's vote score on a comment (0 if not voted)."""
     try:
@@ -526,7 +526,7 @@ def get_visible_reply_count(comment_id):
     return Comment.objects.filter(parent_id=comment_id, hidden=False).count()
 
 
-@cache_wrapper(prefix="ctlcids")
+@cache_wrapper(prefix="ctlcids2")
 def get_top_level_comment_ids(content_type_id, object_id, sort_by, sort_order):
     """
     Get cached list of top-level comment IDs for an object.

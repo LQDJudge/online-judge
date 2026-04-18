@@ -12,6 +12,7 @@ from judge.models import (
     Comment,
     CommentVote,
 )
+from judge.models.comment import get_user_vote_on_comment, get_top_level_comment_ids
 
 
 class CommentVotingTestCase(TransactionTestCase):
@@ -256,3 +257,40 @@ class CommentVotingPermissionTestCase(TestCase):
 
         # Should return 400 Bad Request (message may be in different language)
         self.assertEqual(response.status_code, 400)
+
+
+class VoteCommentCacheDirtyTest(CommentVotingTestCase):
+    def test_vote_dirties_user_vote_cache(self):
+        """After voting, get_user_vote_on_comment must return the new state, not the stale cached 0."""
+        # Prime the cache: user has no vote yet
+        self.assertEqual(get_user_vote_on_comment(self.profile.id, self.comment.id), 0)
+
+        # Upvote via the view
+        self.client.login(username="test_user", password="password123")
+        response = self.client.post(reverse("comment_upvote"), {"id": self.comment.id})
+        self.assertEqual(response.status_code, 200)
+
+        # Cache must reflect the new vote
+        self.assertEqual(get_user_vote_on_comment(self.profile.id, self.comment.id), 1)
+
+    def test_vote_dirties_score_sorted_list_cache(self):
+        """After voting, the score-sorted top-level-comment-ids cache must be invalidated."""
+        ct_id = self.comment.content_type_id
+        obj_id = self.comment.object_id
+
+        # Prime the score-sorted list cache
+        get_top_level_comment_ids(ct_id, obj_id, "score", "desc")
+
+        # Upvote via the view
+        self.client.login(username="test_user", password="password123")
+        self.client.post(reverse("comment_upvote"), {"id": self.comment.id})
+
+        # Cache key must no longer be present
+        from django.core.cache import cache
+        from judge.caching import arg_to_str
+
+        key = (
+            f"ctlcids2:{arg_to_str(ct_id)}:{arg_to_str(obj_id)}"
+            f":{arg_to_str('score')}:{arg_to_str('desc')}"
+        )
+        self.assertIsNone(cache.get(key))

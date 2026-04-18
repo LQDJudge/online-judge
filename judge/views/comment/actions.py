@@ -31,9 +31,12 @@ from judge.models import (
 from judge.models.problem import Solution
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.comment import (
+    get_user_vote_on_comment,
     get_visible_comment_count,
     get_visible_top_level_comment_count,
 )
+from judge.models.profile import Profile, get_contribution_rank
+from judge.utils.contribution import is_content_public
 from judge.utils.ratelimit import ratelimit
 from judge.views.comment.forms import CommentForm
 from judge.views.comment.mixins import is_comment_locked
@@ -110,6 +113,10 @@ def vote_comment(request, delta):
 
     # Dirty comment cache since we updated score via QuerySet.update()
     Comment.dirty_cache(comment_id)
+    get_user_vote_on_comment.dirty(request.profile.id, comment_id)
+    Comment.dirty_list_cache(
+        comment.content_type_id, comment.object_id, comment.parent_id
+    )
     return HttpResponse("success", content_type="text/plain")
 
 
@@ -353,9 +360,6 @@ def post_comment(request):
 
 def _update_contribution_for_comment_vote(comment_id, delta):
     """Update contribution_points for the comment author based on vote delta."""
-    from judge.utils.contribution import is_content_public
-    from judge.models.profile import Profile
-
     try:
         comment = Comment.objects.get(id=comment_id)
     except Comment.DoesNotExist:
@@ -370,4 +374,4 @@ def _update_contribution_for_comment_vote(comment_id, delta):
     Profile.objects.filter(id=comment.author_id).update(
         contribution_points=F("contribution_points") + delta
     )
-    Profile.dirty_cache(comment.author_id)
+    get_contribution_rank.dirty(Profile(id=comment.author_id))
