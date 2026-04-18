@@ -280,7 +280,11 @@ class ContestList(
             get_recommended_contests_for_anonymous,
         )
 
-        if self.request.user.is_authenticated and self.request.profile:
+        if (
+            getattr(settings, "USE_ML", False)
+            and self.request.user.is_authenticated
+            and self.request.profile
+        ):
             scored = get_recommended_contests(self.request.profile, limit=100)
             if scored:
                 contest_ids = [cid for cid, _ in scored]

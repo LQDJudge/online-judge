@@ -36,24 +36,6 @@
       }
     }
 
-    .small-action-btn {
-      padding: 4px 10px;
-      font-size: 0.85em;
-      font-weight: normal;
-      cursor: pointer;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background: #f8f8f8;
-      transition: background 0.2s;
-    }
-
-    .small-action-btn:hover {
-      background: #e8e8e8;
-    }
-
-    .small-action-btn i {
-      margin-right: 4px;
-    }
   </style>
 {% endblock %}
 
@@ -176,7 +158,7 @@
           <div class="form-row">
             <label for="{{ form.description.id_for_label }}">
               <b>{{ _('Problem Description') }}{% if form.description.field.required %}<span class="red"> * </span>{% endif %}:</b>
-              <button type="button" id="use-template-btn" class="small-action-btn" style="margin-left: 10px;">
+              <button type="button" id="use-template-btn" class="action-btn small" style="margin-left: 10px;">
                 <i class="fa fa-file-alt"></i> {{ _('Use Template') }}
               </button>
             </label>

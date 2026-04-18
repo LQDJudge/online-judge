@@ -29,7 +29,7 @@
   </div>
 
   {% if not blogs %}
-    <div class="empty-message" style="text-align: center; padding: 2em; color: #888;">
+    <div class="empty-message gray" style="text-align: center; padding: 2em;">
       <i class="fa {% if current_tab == 'rejected' %}fa-check-circle{% else %}fa-inbox{% endif %}" style="font-size: 3em;"></i>
       <p>{% if current_tab == 'rejected' %}{{ _('No rejected posts.') }}{% else %}{{ _('No pending posts.') }}{% endif %}</p>
     </div>
@@ -55,8 +55,8 @@
         <a href="{{ url('blog_post', post.id, post.slug) }}">{{ post.title }}</a>
       </h2>
       {% if current_tab == 'rejected' and post.rejection_info %}
-        <div class="rejection-info" style="background: rgba(255, 0, 0, 0.05); border-left: 3px solid #dc3545; padding: 0.5em 1em; margin-bottom: 0.5em; font-size: 0.9em;">
-          <i class="fa fa-times-circle" style="color: #dc3545;"></i>
+        <div class="rejection-info" style="border-left: 3px solid; padding: 0.5em 1em; margin-bottom: 0.5em; font-size: 0.9em;">
+          <i class="fa fa-times-circle red"></i>
           <strong>{{ _('Rejected') }}</strong>
           {{ _('by') }}
           {% if post.rejection_info.is_automated %}
@@ -71,7 +71,7 @@
           &#8226;
           {{ relative_time(post.rejection_info.created_at) }}
           {% if post.rejection_info.reason %}
-            <div style="margin-top: 0.3em; color: #666;">
+            <div class="gray" style="margin-top: 0.3em;">
               <i class="fa fa-comment"></i> {{ post.rejection_info.reason }}
             </div>
           {% endif %}

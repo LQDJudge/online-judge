@@ -1,18 +1,18 @@
 {{ form.media.css }}
 
 <div style="padding: 20px; max-width: 500px; min-width: 400px;">
-  <div style="font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+  <div style="font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid; padding-bottom: 10px;">
     {{ _('Edit Ticket Assignees') }}
   </div>
 
   <form id="edit-assignees" action="{{ url('ticket_assignees', ticket.id) }}" method="post">
     {% csrf_token %}
     <div style="margin-bottom: 20px;">
-      <label for="{{ form.assignees.id_for_label }}" style="display: block; font-weight: bold; margin-bottom: 8px; color: #333;">
+      <label for="{{ form.assignees.id_for_label }}" style="display: block; font-weight: bold; margin-bottom: 8px;">
         {{ form.assignees.label }}
       </label>
       {{ form.assignees }}
-      <div style="font-size: 12px; color: #666; margin-top: 5px;">
+      <div class="gray" style="font-size: 12px; margin-top: 5px;">
         {{ _('Select users to assign to this ticket. Start typing to search.') }}
       </div>
     </div>

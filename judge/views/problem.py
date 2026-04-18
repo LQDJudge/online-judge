@@ -395,7 +395,7 @@ class ProblemDetail(
                 self.profile, self.object
             )
 
-        if not self.in_contest:
+        if not self.in_contest and not (self.profile and self.profile.current_contest):
             context["contest_list"] = get_contests_for_problem(self.object.id)
 
         # Add comment context
