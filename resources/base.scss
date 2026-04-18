@@ -19,10 +19,10 @@
 }
 
 a {
-    color: #1a5fc4;
+    color: #1958c1;
 
     &:hover {
-        color: #1148a0;
+        color: #0645ad;
     }
 
     &:active {
@@ -410,23 +410,6 @@ div {
 
 pre {
     white-space: pre-wrap;
-    font-family: $monospace-fonts;
-    background: $background_light_gray;
-    border: 1px solid $border_subtle;
-    border-radius: 6px;
-    padding: 0.75em 1em;
-    font-size: 0.9em;
-    overflow-x: auto;
-}
-
-code {
-    font-family: $monospace-fonts;
-    background: $background_light_gray;
-    border: 1px solid $border_subtle;
-    border-radius: 4px;
-    padding: 0.15em 0.4em;
-    font-size: 0.88em;
-    color: $theme_color;
 }
 
 hr {
@@ -434,9 +417,8 @@ hr {
     height: 0;
     border: 0;
     font-style: italic;
-    border-bottom: 1px solid $border_subtle;
+    border-bottom: 1px solid $border_gray;
     padding: 0;
-    margin: 0.6em 0;
 }
 
 .dashed {
@@ -450,10 +432,9 @@ th {
 .form-area {
     display: inline-block;
     background: $background_light_gray;
-    padding: 8px 12px 12px 16px;
+    padding: 5px 10px 10px 15px;
     border-radius: $widget_border_radius;
-    border: 1px solid $border_subtle;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    border: 1px solid $border_gray;
 }
 
 div.info-float {
@@ -474,10 +455,10 @@ body {
     min-height: 100%;
     margin: 0 auto;
     font-size: $base_font_size;
-    line-height: 1.5;
-    background: $surface_page;
+    line-height: 1.231;
+    background: $background_light_gray;
     font-family: "Noto Sans", Arial, "Lucida Grande", sans-serif;
-    color: $text_primary;
+    color: #000;
     height: 100%;
     overflow-x: hidden;
 }
@@ -499,30 +480,25 @@ b {
 }
 
 h2 {
-    font-weight: 600;
-    font-size: 1.55em;
+    font-weight: 400;
+    font-size: 1.6em;
     border-radius: $widget_border_radius;
     padding: 0;
     margin: 0;
-    color: $text_primary;
-    letter-spacing: -0.02em;
 }
 
 h3 {
-    font-weight: 600;
-    font-size: 1.2em;
+    font-weight: 400;
+    font-size: 1.4em;
     border-radius: $widget_border_radius;
     padding: 0;
     margin: 0;
-    color: $text_primary;
 }
 
 h4 {
-    font-size: 1.0em;
-    font-weight: 600;
+    font-size: 1.1em;
     padding: 0;
     margin: 0;
-    color: $text_primary;
 }
 
 header {
@@ -538,27 +514,29 @@ header {
 #user-links {
     display: flex;
     text-align: center;
-    padding: 4px 8px;
-    margin-right: 0.5em;
+    padding: 4px;
+    margin-right: 1em;
     gap: 5px;
-    border-radius: 8px;
-    transition: background 0.15s ease;
 
     &:hover {
-        color: $text_primary;
-        border-radius: 8px;
-        background: $background_gray;
+        color: black;
+        border-radius: 2px;
+        border: 0.5px solid black;
         cursor: pointer;
+        padding: 3.5px;
     }
 }
 
 #nav-shadow {
-    height: 1px;
-    background: $border_subtle;
+    height: 2px;
+    background: linear-gradient(lightgray, transparent);
 }
 
 #nav-container {
-    background: $surface_white;
+    background: white;
+
+    // opacity: 0.77;
+    // filter: alpha(opacity=77)
     height: 100%;
 }
 
@@ -566,9 +544,8 @@ header {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
+    right: 10px;
     height: $navbar_height;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 0 $border_subtle;
 }
 
 nav {
@@ -710,7 +687,7 @@ hr {
 
 #content {
     margin: $navbar_height auto 1em auto;
-    padding-top: 1.25em;
+    padding-top: 1em;
 
     // Header
     width: 90%;
@@ -719,18 +696,15 @@ hr {
     display: block;
 
     .title {
-        color: $text_primary;
+        color: #393630;
     }
 }
 
 footer {
     text-align: center;
-    height: 44px;
-    line-height: 44px;
-    border-top: 1px solid $border_subtle;
-    background: $background_gray;
-    color: $text_muted;
-    font-size: 0.85em;
+    height: 40px;
+    border-top: 1px solid $border_gray;
+    background: #ededed;
 }
 
 html {
@@ -807,7 +781,12 @@ noscript #noscript {
     display: none;
 }
 
-/* #nav-placeholder overridden above */
+#nav-placeholder {
+    height: 47px;
+    background: white;
+    border-right: 1px solid $border_gray;
+    border-left: 1px solid $border_gray;
+}
 
 #contest-info {
     font-size: 1.25em;
@@ -871,8 +850,8 @@ noscript #noscript {
     min-height: 100%;
     position: relative;
     margin: 0 auto;
-    border-right: 1px solid $border_subtle;
-    border-left: 1px solid $border_subtle;
+    border-right: 1px solid $border_gray;
+    border-left: 1px solid $border_gray;
 }
 
 // border-bottom: 1px solid rgb(204, 204, 204)
@@ -899,23 +878,16 @@ noscript #noscript {
     }
 }
 
-#nav-placeholder {
-    height: $navbar_height;
-    background: $surface_white;
-    border-right: 1px solid $border_subtle;
-    border-left: 1px solid $border_subtle;
-}
-
 #notification {
-    color: #5b8fd6;
+    color: lightsteelblue;
 }
 
 #notification:hover {
-    color: #3a6bbf;
+    color: darkgray;
 }
 
 #chat-icon {
-    color: #2e7d4f;
+    color: darkgreen;
 }
 
 #chat-icon:hover {
@@ -923,31 +895,30 @@ noscript #noscript {
 }
 
 #nav-lang-icon {
-    color: #2a5cc4;
+    color: blue;
     cursor: pointer;
 }
 
 #nav-lang-icon:hover {
-    color: #1a3f9c;
+    color: darkblue;
 }
 
 #nav-darkmode-icon {
     cursor: pointer;
-    color: #5a6275;
 
     &:hover {
-        color: $text_primary;
+        color: gray;
     }
 }
 
 .dropdown {
     display: none;
-    background-color: $surface_white;
-    min-width: 168px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 0 0 1px $border_subtle;
+    background-color: white;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
     padding: 4px 0;
     z-index: 1;
-    border-radius: 10px;
+    border-radius: 5px;
 
     a {
         display: block;
@@ -958,30 +929,21 @@ noscript #noscript {
 }
 
 .dropdown-item {
-    font-size: 14px;
-    padding: 7px 20px 7px 14px;
+    font-size: 16px;
+    padding: 6px 40px 6px 15px;
     cursor: pointer;
-    color: $text_primary;
-    font-weight: 500;
-    border-top: 1px solid $border_subtle;
+    color: black;
+    font-weight: 600;
+    border-top: 1px solid #ccc;
 
     i {
         width: 1.5em;
-        color: $text_muted;
-    }
-
-    &:first-of-type {
-        border-top: none;
     }
 }
 
 .dropdown-item:hover {
     color: $theme_color;
-    background-color: $theme_light;
-
-    i {
-        color: $theme_color;
-    }
+    background-color: #f8f8f2;
 }
 
 .popper-arrow,
@@ -1039,10 +1001,8 @@ noscript #noscript {
 }
 
 .title-row {
-    color: $text_primary;
+    color: #393630;
     display: inline;
-    font-weight: 600;
-    letter-spacing: -0.02em;
 }
 
 .gray {
@@ -1159,38 +1119,44 @@ noscript #noscript {
 }
 
 ::placeholder {
-    color: $text_muted;
+    /* Chrome, Firefox, Opera, Safari 10.1+ */
+    color: $theme_color;
     opacity: 1;
+    /* Firefox */
     text-align: center;
 }
 
 :-ms-input-placeholder {
-    color: $text_muted;
+    /* Internet Explorer 10-11 */
+    color: $theme_color;
     text-align: center;
 }
 
 ::-ms-input-placeholder {
-    color: $text_muted;
+    /* Microsoft Edge */
+    color: $theme_color;
     text-align: center;
 }
 
 input::placeholder {
-    color: $text_muted;
+    color: $theme_color;
     text-align: center;
 }
 
 ::-webkit-input-placeholder {
-    color: $text_muted;
+    color: $theme_color;
     text-align: center;
 }
 
 :-moz-placeholder {
-    color: $text_muted;
+    /* Firefox 18- */
+    color: $theme_color;
     text-align: center;
 }
 
 ::-moz-placeholder {
-    color: $text_muted;
+    /* Firefox 19+ */
+    color: $theme_color;
     text-align: center;
 }
 
@@ -1221,7 +1187,7 @@ input::placeholder {
     align-items: center;
     gap: 0.5em;
     border-radius: $radius-md;
-    color: $text-secondary;
+    color: $text-primary;
     text-decoration: none;
     transition: $transition-fast;
 
@@ -1258,14 +1224,9 @@ input::placeholder {
 }
 
 .left-sidebar-item:hover {
-    background-color: $theme_light;
-    border-color: rgba($theme_color, 0.25);
+    background-color: $color-interactive-hover-bg;
     cursor: pointer;
-    color: $theme_color;
-
-    .sidebar-icon {
-        color: $theme_color;
-    }
+    color: $text-primary;
 }
 
 .left-sidebar-item.active {
@@ -1289,13 +1250,12 @@ input::placeholder {
 
 .left-sidebar-header {
     padding: 0.6em 0.75em 0.3em;
-    border-bottom: 1px solid $border_subtle;
-    color: $text-muted;
-    border-radius: 0;
-    font-size: 0.8em;
+    font-size: 0.75em;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.5px;
+    color: $text-muted;
+    border-radius: 0;
 }
 
 @media (max-width: 799px) {
@@ -1591,9 +1551,6 @@ input::placeholder {
         margin-bottom: 0.25em;
         padding: 0.4em 0.5em;
         background-color: $background_light_gray;
-        border: 1px solid $border_subtle;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        border-radius: $radius-md;
     }
 
     .middle-content,
@@ -1839,7 +1796,7 @@ input::placeholder {
     }
 
     #page-container {
-        background: $surface_page;
+        background: $background_light_gray;
     }
 
     #event-tab {
@@ -1847,10 +1804,9 @@ input::placeholder {
     }
 
     #content.wrapper {
-        background: $surface_white;
-        padding: 2em 2.5em;
-        border-radius: 12px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        background: white;
+        padding: 2em;
+        border-radius: 1em;
     }
 
     .view-next-page {
@@ -1863,15 +1819,15 @@ input::placeholder {
     text-align: center;
     padding: 1em 1.5em;
     margin-bottom: 1em;
-    background: $theme_light;
-    border-radius: 10px;
+    background: $background_light_gray;
+    border-radius: 8px;
     border-left: 4px solid $theme_color;
 
     .page-title {
         font-size: 1.4em;
         font-weight: 700;
         margin: 0 0 0.3em 0;
-        color: $text_primary;
+        color: #111;
 
         a {
             color: inherit;
@@ -1885,6 +1841,6 @@ input::placeholder {
 
     .page-subtitle {
         font-size: 0.9em;
-        color: $text_secondary;
+        color: #4b5563;
     }
 }

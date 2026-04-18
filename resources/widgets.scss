@@ -145,8 +145,8 @@ input {
         background: $surface-primary none;
         border: 1px solid $border_gray;
         border-radius: $widget_border_radius;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) inset;
-        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
+        transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
         box-sizing: border-box;
 
         // Need this explicitly because UA stylesheet for Chrome on 4k makes
@@ -164,31 +164,32 @@ textarea {
     background: $surface-primary none;
     border: 1px solid $border_gray;
     border-radius: $widget_border_radius;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) inset;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
+    transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
     box-sizing: border-box;
 }
 
 textarea:hover {
-    border-color: $text_muted;
+    border-color: $text-primary;
 }
 
 input {
-    &[type="text"]:hover, &[type="password"]:hover, &[type="email"]:hover {
-        border-color: $text_muted;
+    &[type="text"]:hover, &[type="password"]:hover {
+        border-color: rgba(82, 168, 236, 0.8);
+        box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 4px rgba(82, 168, 236, 0.6);
     }
 }
 
 textarea:focus {
-    border-color: $theme_color;
-    box-shadow: 0 0 0 3px rgba($theme_color, 0.12);
+    border-color: $text-primary;
+    border-width: unset;
     outline: 0;
 }
 
 input {
-    &[type="text"]:focus, &[type="password"]:focus, &[type="email"]:focus {
-        border-color: $theme_color;
-        box-shadow: 0 0 0 3px rgba($theme_color, 0.12);
+    &[type="text"]:focus, &[type="password"]:focus {
+        border-color: rgba(82, 168, 236, 0.8);
+        box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(82, 168, 236, 0.6);
         outline: 0;
     }
 }
@@ -300,14 +301,10 @@ input {
                 color: $text-secondary;
                 text-decoration: none;
                 white-space: nowrap;
-                font-weight: 600;
-                font-size: 0.9em;
-                letter-spacing: 0.02em;
-                transition: color 0.15s ease, border-color 0.15s ease;
+                font-weight: bold;
 
                 &:hover {
-                    border-bottom: 3px solid $theme_color;
-                    color: $theme_color;
+                    border-bottom: 3px solid $color-tab-hover;
                 }
             }
         }
@@ -351,15 +348,15 @@ ul.pagination {
 
         .disabled-page > {
             a {
-                color: $text_muted;
-                background-color: $background_gray;
-                border-color: $border_subtle;
+                color: $color-pagination-disabled-text;
+                background-color: $color-pagination-disabled-bg;
+                border-color: $color-pagination-disabled-border;
             }
 
             span {
-                color: $text_muted;
-                background-color: $background_gray;
-                border-color: $border_subtle;
+                color: $color-pagination-disabled-text;
+                background-color: $color-pagination-disabled-bg;
+                border-color: $color-pagination-disabled-border;
             }
         }
 
@@ -375,7 +372,7 @@ ul.pagination {
             span {
                 z-index: 2;
                 color: $text-on-primary;
-                background-color: $theme_color;
+                background-color: $highlight_blue;
                 border-color: transparent;
                 cursor: default;
             }
@@ -502,24 +499,19 @@ ul.select2-selection__rendered {
     border-radius: $widget_border_radius $widget_border_radius 0 0;
     padding-top: 10px;
     padding-bottom: 10px;
-    padding-left: 10px;
-    font-size: 1.05em;
-    font-weight: 600;
+    padding-left: 7px;
+    font-size: 1.3em;
+    font-weight: bold;
     background: $surface-primary;
     display: flex;
-    align-items: center;
-    color: $text-primary;
-    border-bottom: 1px solid $border_subtle;
 
     .fa {
         background: $theme_color;
         color: $text-on-primary;
         padding: $space-xs;
-        margin-right: 9px;
+        margin-right: 8px;
         border-radius: $radius-base;
-        font-size: 0.8em;
-        width: 1.4em;
-        text-align: center;
+        font-size: smaller;
     }
 }
 
@@ -540,10 +532,10 @@ ul.select2-selection__rendered {
 }
 
 .sidebox {
-    border-radius: $widget_border_radius;
-    margin-bottom: 1.25em;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08), 0 0 0 1px $border_subtle;
-    overflow: hidden;
+    border-top-left-radius: $widget_border_radius;
+    border-top-right-radius: $widget_border_radius;
+    margin-bottom: 1.5em;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
 .ws-closed {
