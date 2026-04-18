@@ -17,7 +17,7 @@ ValidateItem = namedtuple("ValidateItem", "validate_id problem_id")
 
 
 class JudgeList(object):
-    priorities = 4
+    priorities = 5
 
     def __init__(self):
         self.queue = dllist()

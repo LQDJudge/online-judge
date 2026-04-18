@@ -59,10 +59,11 @@ def judge_request(packet, reply=True):
 def judge_submission(submission, rejudge=False, batch_rejudge=False, judge_id=None):
     from .models import ContestSubmission, Submission, SubmissionTestCase
 
-    CONTEST_SUBMISSION_PRIORITY = 0
-    DEFAULT_PRIORITY = 1
-    REJUDGE_PRIORITY = 2
-    BATCH_REJUDGE_PRIORITY = 3
+    OFFICIAL_CONTEST_PRIORITY = 0
+    PRIVATE_CONTEST_PRIORITY = 1
+    DEFAULT_PRIORITY = 2
+    REJUDGE_PRIORITY = 3
+    BATCH_REJUDGE_PRIORITY = 4
 
     updates = {
         "time": None,
@@ -76,15 +77,28 @@ def judge_submission(submission, rejudge=False, batch_rejudge=False, judge_id=No
     try:
         # This is set proactively; it might get unset in judgecallback's on_grading_begin if the problem doesn't
         # actually have pretests stored on the judge.
-        updates["is_pretested"] = all(
-            ContestSubmission.objects.filter(submission=submission).values_list(
-                "problem__contest__run_pretests_only", "problem__is_pretested"
-            )[0]
-        )
+        contest_info = ContestSubmission.objects.filter(
+            submission=submission
+        ).values_list(
+            "problem__contest__run_pretests_only",
+            "problem__is_pretested",
+            "problem__contest__is_private",
+            "problem__contest__is_organization_private",
+            "participation__virtual",
+        )[
+            0
+        ]
+        updates["is_pretested"] = all(contest_info[:2])
     except IndexError:
         priority = DEFAULT_PRIORITY
     else:
-        priority = CONTEST_SUBMISSION_PRIORITY
+        is_private, is_organization_private, virtual = contest_info[2:5]
+        if virtual:
+            priority = DEFAULT_PRIORITY
+        elif is_private or is_organization_private:
+            priority = PRIVATE_CONTEST_PRIORITY
+        else:
+            priority = OFFICIAL_CONTEST_PRIORITY
 
     # This should prevent double rejudge issues by permitting only the judging of
     # QU (which is the initial state) and D (which is the final state).
