@@ -358,7 +358,7 @@ input[type="submit"].submit-btn {
         color: white !important;
         text-decoration: none !important;
         transform: none !important;
-        box-shadow: 0px 12px 25px -6px rgba(0, 0, 0, 0.18) !important;
+        box-shadow: 0 12px 25px -6px rgba(0, 0, 0, 0.18) !important;
 
         span {
             margin-left: -12px !important;
@@ -440,14 +440,6 @@ th {
 div.info-float {
     float: right;
     padding: 10px;
-}
-
-footer {
-    color: gray;
-    display: block;
-    width: 100%;
-    position: absolute;
-    bottom: 0;
 }
 
 body {
@@ -701,6 +693,11 @@ hr {
 }
 
 footer {
+    color: gray;
+    display: block;
+    width: 100%;
+    position: absolute;
+    bottom: 0;
     text-align: center;
     height: 40px;
     border-top: 1px solid $border_gray;
@@ -880,27 +877,27 @@ noscript #noscript {
 
 #notification {
     color: lightsteelblue;
-}
 
-#notification:hover {
-    color: darkgray;
+    &:hover {
+        color: darkgray;
+    }
 }
 
 #chat-icon {
     color: darkgreen;
-}
 
-#chat-icon:hover {
-    color: $theme_color;
+    &:hover {
+        color: $theme_color;
+    }
 }
 
 #nav-lang-icon {
     color: blue;
     cursor: pointer;
-}
 
-#nav-lang-icon:hover {
-    color: darkblue;
+    &:hover {
+        color: darkblue;
+    }
 }
 
 #nav-darkmode-icon {
@@ -915,7 +912,7 @@ noscript #noscript {
     display: none;
     background-color: white;
     min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
     padding: 4px 0;
     z-index: 1;
     border-radius: 5px;
