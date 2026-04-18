@@ -6,7 +6,7 @@ from judge.caching import cache_wrapper
 from judge.models import Rating
 
 
-@cache_wrapper(prefix="gcr2")
+@cache_wrapper(prefix="gcrating")
 def get_contest_ratings(profile_id):
     ratings = (
         Rating.objects.filter(user_id=profile_id)

@@ -675,7 +675,7 @@ def get_points_rank(profile):
     )
 
 
-@cache_wrapper(prefix="gcr2")
+@cache_wrapper(prefix="gcrank")
 def get_contribution_rank(profile):
     if profile.is_unlisted:
         return None
