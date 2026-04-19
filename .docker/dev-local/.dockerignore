@@ -1,0 +1,10 @@
+.git
+.gitignore
+.sass-cache
+node_modules
+__pycache__
+*.py[co]
+*.mo
+.DS_Store
+sass_processed
+dmoj/local_settings.py

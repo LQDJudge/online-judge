@@ -6,7 +6,11 @@ import time
 import sys
 
 DEFAULT_L0_TIMEOUT = 60
-primary_cache = caches["primary"] if "primary" in caches else None
+
+
+def _primary_cache():
+    return caches["primary"] if "primary" in caches else None
+
 
 # Thread-local storage for request-scoped L0 cache
 _thread_local = threading.local()
@@ -431,7 +435,7 @@ class CacheHandler(BaseCache):
         if stats_config["track_primary"] and l0_cache.stats:
             start_time = time.perf_counter()
             try:
-                result = primary_cache.get(key, **kwargs)
+                result = _primary_cache().get(key, **kwargs)
                 duration = time.perf_counter() - start_time
 
                 if result is not None:
@@ -446,7 +450,7 @@ class CacheHandler(BaseCache):
                 return default
         else:
             # Original behavior when stats are disabled
-            result = primary_cache.get(key, **kwargs)
+            result = _primary_cache().get(key, **kwargs)
             if result is not None:
                 l0_cache.set(key, result)
                 return result
@@ -464,7 +468,7 @@ class CacheHandler(BaseCache):
         if stats_config["track_primary"] and l0_cache.stats:
             start_time = time.perf_counter()
             try:
-                primary_cache.set(key, value, timeout, **kwargs)
+                _primary_cache().set(key, value, timeout, **kwargs)
                 duration = time.perf_counter() - start_time
                 l0_cache.stats.record_primary_set(duration)
             except Exception:
@@ -472,7 +476,7 @@ class CacheHandler(BaseCache):
                 raise  # Re-raise since set operations should fail if primary cache fails
         else:
             # Original behavior when stats are disabled
-            primary_cache.set(key, value, timeout, **kwargs)
+            _primary_cache().set(key, value, timeout, **kwargs)
 
     def delete(self, key, **kwargs):
         """
@@ -485,14 +489,14 @@ class CacheHandler(BaseCache):
         stats_config = _get_cache_stats_config()
         if stats_config["track_primary"] and l0_cache.stats:
             try:
-                primary_cache.delete(key, **kwargs)
+                _primary_cache().delete(key, **kwargs)
                 l0_cache.stats.record_primary_delete()
             except Exception:
                 l0_cache.stats.record_primary_error()
                 raise  # Re-raise since delete operations should fail if primary cache fails
         else:
             # Original behavior when stats are disabled
-            primary_cache.delete(key, **kwargs)
+            _primary_cache().delete(key, **kwargs)
 
     def add(self, key, value, timeout=None, **kwargs):
         """
@@ -507,7 +511,7 @@ class CacheHandler(BaseCache):
         if stats_config["track_primary"] and l0_cache.stats:
             start_time = time.perf_counter()
             try:
-                result = primary_cache.add(key, value, timeout, **kwargs)
+                result = _primary_cache().add(key, value, timeout, **kwargs)
                 duration = time.perf_counter() - start_time
                 l0_cache.stats.record_primary_set(duration)
                 return result
@@ -516,7 +520,7 @@ class CacheHandler(BaseCache):
                 raise  # Re-raise since add operations should fail if primary cache fails
         else:
             # Original behavior when stats are disabled
-            return primary_cache.add(key, value, timeout, **kwargs)
+            return _primary_cache().add(key, value, timeout, **kwargs)
 
     def get_many(self, keys, **kwargs):
         """
@@ -543,7 +547,7 @@ class CacheHandler(BaseCache):
         if stats_config["track_primary"] and l0_cache.stats:
             start_time = time.perf_counter()
             try:
-                cache_results = primary_cache.get_many(remaining_keys, **kwargs)
+                cache_results = _primary_cache().get_many(remaining_keys, **kwargs)
                 duration = time.perf_counter() - start_time
 
                 # Record hits and misses for each key
@@ -568,7 +572,7 @@ class CacheHandler(BaseCache):
                 return results
         else:
             # Original behavior when stats are disabled
-            cache_results = primary_cache.get_many(remaining_keys, **kwargs)
+            cache_results = _primary_cache().get_many(remaining_keys, **kwargs)
             if cache_results:
                 # Update L0 cache with results from primary cache
                 for key, value in cache_results.items():
@@ -589,7 +593,7 @@ class CacheHandler(BaseCache):
         if stats_config["track_primary"] and l0_cache.stats:
             start_time = time.perf_counter()
             try:
-                primary_cache.set_many(data, timeout, **kwargs)
+                _primary_cache().set_many(data, timeout, **kwargs)
                 duration = time.perf_counter() - start_time
                 for _ in data:
                     l0_cache.stats.record_primary_set(duration / len(data))
@@ -597,7 +601,7 @@ class CacheHandler(BaseCache):
                 l0_cache.stats.record_primary_error()
                 raise
         else:
-            primary_cache.set_many(data, timeout, **kwargs)
+            _primary_cache().set_many(data, timeout, **kwargs)
 
     def delete_many(self, keys, **kwargs):
         """
@@ -610,14 +614,14 @@ class CacheHandler(BaseCache):
         stats_config = _get_cache_stats_config()
         if stats_config["track_primary"] and l0_cache.stats:
             try:
-                primary_cache.delete_many(keys, **kwargs)
+                _primary_cache().delete_many(keys, **kwargs)
                 for _ in keys:
                     l0_cache.stats.record_primary_delete()
             except Exception:
                 l0_cache.stats.record_primary_error()
                 raise
         else:
-            primary_cache.delete_many(keys, **kwargs)
+            _primary_cache().delete_many(keys, **kwargs)
 
     def clear(self, **kwargs):
         """
@@ -629,13 +633,13 @@ class CacheHandler(BaseCache):
         stats_config = _get_cache_stats_config()
         if stats_config["track_primary"] and l0_cache.stats:
             try:
-                primary_cache.clear(**kwargs)
+                _primary_cache().clear(**kwargs)
                 l0_cache.stats.record_primary_delete()
             except Exception:
                 l0_cache.stats.record_primary_error()
                 raise
         else:
-            primary_cache.clear(**kwargs)
+            _primary_cache().clear(**kwargs)
 
     def incr(self, key, delta=1, **kwargs):
         """
@@ -647,7 +651,7 @@ class CacheHandler(BaseCache):
         if stats_config["track_primary"] and l0_cache.stats:
             start_time = time.perf_counter()
             try:
-                result = primary_cache.incr(key, delta, **kwargs)
+                result = _primary_cache().incr(key, delta, **kwargs)
                 duration = time.perf_counter() - start_time
                 l0_cache.stats.record_primary_set(
                     duration
@@ -658,7 +662,7 @@ class CacheHandler(BaseCache):
                 l0_cache.stats.record_primary_error()
                 raise
         else:
-            result = primary_cache.incr(key, delta, **kwargs)
+            result = _primary_cache().incr(key, delta, **kwargs)
             l0_cache.set(key, result)
             return result
 
@@ -672,7 +676,7 @@ class CacheHandler(BaseCache):
         if stats_config["track_primary"] and l0_cache.stats:
             start_time = time.perf_counter()
             try:
-                result = primary_cache.decr(key, delta, **kwargs)
+                result = _primary_cache().decr(key, delta, **kwargs)
                 duration = time.perf_counter() - start_time
                 l0_cache.stats.record_primary_set(
                     duration
@@ -683,6 +687,6 @@ class CacheHandler(BaseCache):
                 l0_cache.stats.record_primary_error()
                 raise
         else:
-            result = primary_cache.decr(key, delta, **kwargs)
+            result = _primary_cache().decr(key, delta, **kwargs)
             l0_cache.set(key, result)
             return result
