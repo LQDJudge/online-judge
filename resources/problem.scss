@@ -1309,6 +1309,28 @@ body:not(.problem-raw) {
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
+// Visually distinguish disabled (locked) form fields
+.problem-edit-form,
+.language-limits-page {
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+        background-color: $background_gray !important;
+        border-color: $border_gray !important;
+        color: $widget_black;
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    // Select2 disabled state
+    .select2-container--disabled .select2-selection {
+        background-color: $background_gray !important;
+        border-color: $border_gray !important;
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+}
+
 .tab-navigation {
     display: flex;
     border-bottom: 2px solid #e0e0e0;
