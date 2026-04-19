@@ -50,7 +50,7 @@
   <td class="user-contribution">{{ user.contribution_points }}</td>
   <td>
     <div class="about-td">
-      {{ user.about|markdown(lazy_load=True)|reference|str|safe }}
+      {% if user.about %}{{ user.about|markdown(lazy_load=True)|reference|str|safe }}{% endif %}
     </div>
   </td>
 {% endblock %}
