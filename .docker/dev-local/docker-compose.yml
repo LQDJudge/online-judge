@@ -49,5 +49,32 @@ services:
       redis:
         condition: service_started
 
+  # Bridge: relay between Django web server and judge(s).
+  bridge:
+    build:
+      context: ../../..                              # = LQDOJ/ — Dockerfile does COPY online-judge /app
+      dockerfile: online-judge/.docker/bridge/Dockerfile
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ../..:/app                                   # online-judge/ → /app (live-mount)
+      - ./local_settings_docker.py:/app/dmoj/local_settings.py
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Judge: sandboxed code execution.
+  # Build the image once with:  cd judge-server/.docker && make judge-tier1
+  judge:
+    image: ${JUDGE_IMAGE:-vnoj/judge-tier1:latest}
+    restart: unless-stopped
+    cap_add:
+      - SYS_PTRACE
+    volumes:
+      - ../../../problems:/problems                  # LQDOJ/problems
+    command: ["run", "-c", "/problems/__conf__/general.yml", "--no-watchdog", "bridge", "judge1"]
+    depends_on:
+      - bridge
+
 volumes:
   db_data:

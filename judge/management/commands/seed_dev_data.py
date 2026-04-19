@@ -71,6 +71,19 @@ _LANGUAGE_DEFS = [
     ),
 ]
 
+# Allowed language keys for all seeded problems
+_PROBLEM_ALLOWED_LANG_KEYS = [
+    "C",
+    "C11",
+    "CPP14",
+    "CPP17",
+    "CPP20",
+    "JAVA",
+    "JAVA8",
+    "PAS",
+    "PY3",
+]
+
 # (tier, count, rating_lo, rating_hi, lang_key, max_difficulty, ac_base_prob)
 _SKILL_TIERS = [
     ("grandmaster", 5, 2200, 2800, "CPP17", 100, 0.88),
@@ -189,6 +202,13 @@ _SRC = {
     "RTE": "#include<bits/stdc++.h>\nusing namespace std;\nint main(){int*p=0;*p=1;}",
 }
 
+_CE_ERRORS = [
+    "solution.cpp:1:1: error: 'this' is not valid C++\n  1 | this is not valid C++\n    | ^~~~",
+    "solution.cpp:1:8: error: expected ';' before 'is'\n  1 | this is not valid C++\n    |        ^~",
+    "solution.cpp:1:1: error: stray '#' in program\nnote: did you mean to use '#include'?",
+    "solution.cpp:3:5: error: 'mainn' was not declared in this scope\n  3 | int mainn() { return 0; }\n    |     ^~~~~",
+]
+
 
 def _src_for(result, lang_key):
     if result == "AC":
@@ -224,7 +244,8 @@ class Command(BaseCommand):
         self._seed_blog_posts(profiles)
         self._seed_contests(profiles, prob_diff_map)
         self._seed_submissions(user_tier_map, prob_diff_map)
-        self._update_user_points(profiles)
+        self._update_user_stats(profiles)
+        self._update_problem_stats(list(prob_diff_map.keys()))
 
         self.stdout.write(self.style.SUCCESS("\n✓ Dev seed complete."))
         self.stdout.write("  admin / devpass123  (superuser)")
@@ -269,7 +290,14 @@ class Command(BaseCommand):
             admin = User.objects.create_superuser(
                 "admin", "admin@dev.local", "devpass123"
             )
-            Profile.objects.get_or_create(user=admin)
+            Profile.objects.get_or_create(
+                user=admin,
+                defaults=dict(
+                    about="Site administrator.",
+                    timezone="Asia/Ho_Chi_Minh",
+                    display_rank="admin",
+                ),
+            )
             self.stdout.write("  created  admin (password: devpass123, superuser=True)")
         else:
             self.stdout.write("  exists   admin")
@@ -318,8 +346,10 @@ class Command(BaseCommand):
                     username=username,
                     defaults=dict(
                         first_name=syl.title(),
+                        last_name="Dev",
                         email=f"{username}@dev.local",
                         is_staff=False,
+                        is_active=True,
                     ),
                 )
                 if created:
@@ -327,10 +357,26 @@ class Command(BaseCommand):
                     user.save()
                     created_in_tier += 1
 
-                profile, _ = Profile.objects.get_or_create(user=user)
-                profile.timezone = random.choice(_TIMEZONES)
-                profile.rating = random.randint(rating_lo, rating_hi)
-                profile.points = 0.0
+                profile, _ = Profile.objects.get_or_create(
+                    user=user,
+                    defaults=dict(
+                        about=f"Competitive programmer — {tier} tier.",
+                        timezone=random.choice(_TIMEZONES),
+                        display_rank="user",
+                        rating=random.randint(rating_lo, rating_hi),
+                        points=0.0,
+                        performance_points=0.0,
+                        contribution_points=0,
+                        problem_count=0,
+                    ),
+                )
+                if not created:
+                    # Update mutable fields on existing profile
+                    profile.timezone = random.choice(_TIMEZONES)
+                    profile.rating = random.randint(rating_lo, rating_hi)
+                    profile.points = 0.0
+                    profile.problem_count = 0
+
                 if lang:
                     profile.language = lang
                 profile.save()
@@ -363,9 +409,10 @@ class Command(BaseCommand):
                 defaults=dict(
                     name=name,
                     short_name=short,
-                    about="",
+                    about=f"Official LQDOJ organization: {name}.",
                     is_open=is_open,
                     registrant=admin,
+                    is_community=False,
                 ),
             )
             if created:
@@ -379,7 +426,7 @@ class Command(BaseCommand):
     # ── Problems ──────────────────────────────────────────────────────────────
 
     def _seed_problems(self, profiles):
-        from judge.models import Problem, ProblemGroup, ProblemType
+        from judge.models import Language, Problem, ProblemGroup, ProblemType
 
         self.stdout.write("\n── Problem types / groups / problems")
 
@@ -394,10 +441,15 @@ class Command(BaseCommand):
             obj, _ = ProblemGroup.objects.get_or_create(name=g)
             groups.append(obj)
 
+        allowed_langs = list(
+            Language.objects.filter(key__in=_PROBLEM_ALLOWED_LANG_KEYS)
+        )
+
         # Use first 8 profiles as potential authors
         author_pool = profiles[:8]
         prob_diff_map = {}
         total = 0
+        now = timezone.now()
 
         for (
             prefix,
@@ -419,6 +471,7 @@ class Command(BaseCommand):
                 diff = random.randint(diff_min, diff_max)
                 pts = random.randint(pts_min, pts_max)
                 ml = random.choice(ml_choices)
+                pub_date = now - timedelta(days=random.randint(30, 365))
 
                 p, created = Problem.objects.get_or_create(
                     code=code,
@@ -431,6 +484,10 @@ class Command(BaseCommand):
                         is_public=True,
                         short_circuit=False,
                         partial=False,
+                        is_manually_managed=False,
+                        is_organization_private=False,
+                        date=pub_date,
+                        summary=f"A {display.lower()} problem.",
                         description=(
                             f"## {display} #{i}\n\n"
                             f"Solve this problem.\n\n"
@@ -438,15 +495,21 @@ class Command(BaseCommand):
                             f"### Input\nDescribed in the problem statement.\n\n"
                             f"### Output\nDescribed in the problem statement."
                         ),
+                        # Stats — will be recomputed after submissions
+                        user_count=0,
+                        ac_rate=0.0,
                     ),
                 )
-                if created and author_pool:
-                    p.types.set([ptype])
-                    p.authors.set(
-                        random.sample(
-                            author_pool, random.randint(1, min(2, len(author_pool)))
+                if created:
+                    if author_pool:
+                        p.types.set([ptype])
+                        p.authors.set(
+                            random.sample(
+                                author_pool, random.randint(1, min(2, len(author_pool)))
+                            )
                         )
-                    )
+                    if allowed_langs:
+                        p.allowed_languages.set(allowed_langs)
 
                 prob_diff_map[p] = diff
                 total += 1
@@ -486,7 +549,7 @@ class Command(BaseCommand):
     # ── Contests ──────────────────────────────────────────────────────────────
 
     def _seed_contests(self, profiles, prob_diff_map):
-        from judge.models import Contest, ContestProblem
+        from judge.models import Contest, ContestParticipation, ContestProblem
 
         self.stdout.write("\n── Contests")
 
@@ -523,6 +586,7 @@ class Command(BaseCommand):
                     start=now - timedelta(days=n * 7 + 2, hours=14),
                     end=now - timedelta(days=n * 7 + 2, hours=10),
                     rated=True,
+                    past=True,
                     probs=pick(1, 2, 3),
                 )
             )
@@ -536,6 +600,7 @@ class Command(BaseCommand):
                     start=now - timedelta(days=n * 7 + 1, hours=20),
                     end=now - timedelta(days=n * 7 + 1, hours=17),
                     rated=False,
+                    past=True,
                     probs=pick(2, 2, 1),
                 )
             )
@@ -549,6 +614,7 @@ class Command(BaseCommand):
                     start=now - timedelta(days=n * 14 + 3, hours=15),
                     end=now - timedelta(days=n * 14 + 3, hours=13),
                     rated=True,
+                    past=True,
                     probs=pick(3, 1, 0),
                 )
             )
@@ -561,6 +627,7 @@ class Command(BaseCommand):
                 start=now - timedelta(hours=1),
                 end=now + timedelta(hours=3),
                 rated=False,
+                past=False,
                 probs=pick(1, 2, 2),
             )
         )
@@ -571,6 +638,7 @@ class Command(BaseCommand):
                 start=now - timedelta(hours=2),
                 end=now + timedelta(hours=2),
                 rated=False,
+                past=False,
                 probs=pick(0, 2, 3),
             )
         )
@@ -584,6 +652,7 @@ class Command(BaseCommand):
                     start=now + timedelta(days=n * 7 - 3, hours=14),
                     end=now + timedelta(days=n * 7 - 3, hours=18),
                     rated=True,
+                    past=False,
                     probs=pick(1, 2, 3),
                 )
             )
@@ -599,9 +668,18 @@ class Command(BaseCommand):
                     time_limit=None,
                     is_visible=True,
                     is_rated=s["rated"],
+                    is_private=False,
+                    is_organization_private=False,
+                    use_clarifications=True,
+                    hide_problem_tags=False,
+                    run_pretests_only=False,
+                    public_scoreboard=True,
                     format_name="default",
                     scoreboard_visibility=Contest.SCOREBOARD_VISIBLE,
                     description=f"Welcome to **{s['name']}**!",
+                    summary=f"Dev-seeded contest: {s['name']}",
+                    user_count=0,
+                    points_precision=2,
                 ),
             )
             if created:
@@ -611,8 +689,40 @@ class Command(BaseCommand):
                     ContestProblem.objects.get_or_create(
                         contest=c,
                         problem=prob,
-                        defaults=dict(points=prob.points, order=order),
+                        defaults=dict(
+                            points=prob.points,
+                            order=order,
+                            max_submissions=0,
+                        ),
                     )
+
+                # Add participants for past contests
+                if s["past"]:
+                    n_participants = random.randint(
+                        max(5, len(profiles) // 4), len(profiles) // 2
+                    )
+                    participants = random.sample(profiles, n_participants)
+                    for participant in participants:
+                        # real_start: random time within contest window
+                        duration = s["end"] - s["start"]
+                        join_offset = timedelta(
+                            seconds=random.randint(
+                                0, int(duration.total_seconds() * 0.1)
+                            )
+                        )
+                        ContestParticipation.objects.get_or_create(
+                            contest=c,
+                            user=participant,
+                            virtual=ContestParticipation.LIVE,
+                            defaults=dict(
+                                real_start=s["start"] + join_offset,
+                                score=0.0,
+                                cumtime=0,
+                                is_disqualified=False,
+                                tiebreaker=0.0,
+                            ),
+                        )
+
                 count += 1
 
         self.stdout.write(f"  {count} new contests  ({len(specs)} total)")
@@ -620,7 +730,7 @@ class Command(BaseCommand):
     # ── Submissions ───────────────────────────────────────────────────────────
 
     def _seed_submissions(self, user_tier_map, prob_diff_map):
-        from judge.models import Language, Submission
+        from judge.models import Judge, Language, Submission
 
         self.stdout.write("\n── Submissions  (this may take a moment…)")
 
@@ -631,6 +741,9 @@ class Command(BaseCommand):
         cpp = lang_cache.get("CPP17") or lang_cache.get("CPP14")
         now = timezone.now()
         total = 0
+
+        # Fetch the dev judge for judged_on FK (may not exist yet in some envs)
+        dev_judge = Judge.objects.filter(name="judge1").first()
 
         for profile, tier in user_tier_map.items():
             max_diff = tier["max_diff"]
@@ -662,10 +775,10 @@ class Command(BaseCommand):
                             ["WA", "TLE", "CE"], weights=[55, 30, 15]
                         )[0]
                         total += self._make_sub(
-                            profile, problem, fail, lang, lang_key, cpp, now
+                            profile, problem, fail, lang, lang_key, cpp, now, dev_judge
                         )
                     total += self._make_sub(
-                        profile, problem, "AC", lang, lang_key, cpp, now
+                        profile, problem, "AC", lang, lang_key, cpp, now, dev_judge
                     )
                 else:
                     # 1–3 failed attempts, no AC
@@ -676,31 +789,55 @@ class Command(BaseCommand):
                             weights=[45, 25, 15, 10, 5],
                         )[0]
                         total += self._make_sub(
-                            profile, problem, fail, lang, lang_key, cpp, now
+                            profile, problem, fail, lang, lang_key, cpp, now, dev_judge
                         )
 
         self.stdout.write(f"  {total} submissions created")
 
-    def _make_sub(self, profile, problem, result, lang, lang_key, cpp_lang, now):
+    def _make_sub(
+        self, profile, problem, result, lang, lang_key, cpp_lang, now, dev_judge
+    ):
         from judge.models import Submission, SubmissionSource
 
         if result == "CE":
-            exe_time, mem = None, None
+            exe_time = None
+            mem = None
             sub_lang = cpp_lang or lang
+            error_text = random.choice(_CE_ERRORS)
         elif result == "TLE":
             exe_time = round(problem.time_limit + random.uniform(0.1, 1.0), 3)
             mem = round(random.uniform(2048, problem.memory_limit * 0.5), 1)
             sub_lang = cpp_lang or lang
+            error_text = None
         elif result == "MLE":
             exe_time = round(random.uniform(0.1, problem.time_limit * 0.5), 3)
             mem = round(problem.memory_limit + random.uniform(512, 4096), 1)
             sub_lang = cpp_lang or lang
+            error_text = None
+        elif result == "RTE":
+            exe_time = round(random.uniform(0.01, problem.time_limit * 0.5), 3)
+            mem = round(random.uniform(2048, problem.memory_limit * 0.4), 1)
+            sub_lang = cpp_lang or lang
+            error_text = None
         else:
             exe_time = round(random.uniform(0.01, problem.time_limit * 0.85), 3)
             mem = round(random.uniform(2048, problem.memory_limit * 0.7), 1)
             sub_lang = lang if result == "AC" else (cpp_lang or lang)
+            error_text = None
 
         pts = float(problem.points) if result == "AC" else 0.0
+        case_pts = pts
+        case_total = float(problem.points)
+
+        # Submission date: random point in the past 90 days
+        sub_date = now - timedelta(
+            days=random.randint(0, 90),
+            hours=random.randint(0, 23),
+            minutes=random.randint(0, 59),
+            seconds=random.randint(0, 59),
+        )
+        # Judging completes a few seconds to minutes after submission
+        judged_date = sub_date + timedelta(seconds=random.uniform(2, 120))
 
         sub = Submission.objects.create(
             user=profile,
@@ -711,28 +848,30 @@ class Command(BaseCommand):
             time=exe_time,
             memory=mem,
             points=pts,
-            case_points=pts,
-            case_total=float(problem.points),
+            case_points=case_pts,
+            case_total=case_total,
+            error=error_text,
+            current_testcase=0,
+            batch=False,
+            judged_on=dev_judge,
+            judged_date=judged_date,
+            was_rejudged=False,
+            is_pretested=False,
+            contest_object=None,
         )
         # auto_now_add=True prevents setting date in create(), use update()
-        Submission.objects.filter(pk=sub.pk).update(
-            date=now
-            - timedelta(
-                days=random.randint(0, 90),
-                hours=random.randint(0, 23),
-                minutes=random.randint(0, 59),
-            )
-        )
+        Submission.objects.filter(pk=sub.pk).update(date=sub_date)
+
         SubmissionSource.objects.get_or_create(
             submission=sub,
             defaults=dict(source=_src_for(result, lang_key)),
         )
         return 1
 
-    # ── Recompute points ──────────────────────────────────────────────────────
+    # ── Recompute stats ───────────────────────────────────────────────────────
 
-    def _update_user_points(self, profiles):
-        self.stdout.write("\n── Recomputing user points")
+    def _update_user_stats(self, profiles):
+        self.stdout.write("\n── Recomputing user stats")
         from judge.models import Submission
 
         for profile in profiles:
@@ -741,8 +880,32 @@ class Command(BaseCommand):
                 .values("problem_id")
                 .annotate(best=Max("points"))
             )
-            total = sum(row["best"] or 0 for row in best)
-            profile.points = total
-            profile.save(update_fields=["points"])
+            total_pts = sum(row["best"] or 0 for row in best)
+            solved_count = best.count()
+
+            profile.points = total_pts
+            profile.problem_count = solved_count
+            profile.save(update_fields=["points", "problem_count"])
 
         self.stdout.write(f"  updated {len(profiles)} profiles")
+
+    def _update_problem_stats(self, problems):
+        self.stdout.write("\n── Recomputing problem stats")
+        from judge.models import Submission
+
+        for problem in problems:
+            subs = Submission.objects.filter(problem=problem, status="D")
+            total = subs.count()
+            ac = subs.filter(result="AC").count()
+            solvers = (
+                Submission.objects.filter(problem=problem, result="AC")
+                .values("user_id")
+                .distinct()
+                .count()
+            )
+
+            problem.user_count = solvers
+            problem.ac_rate = round((ac / total * 100) if total > 0 else 0.0, 1)
+            problem.save(update_fields=["user_count", "ac_rate"])
+
+        self.stdout.write(f"  updated {len(problems)} problems")
