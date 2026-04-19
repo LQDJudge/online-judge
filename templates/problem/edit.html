@@ -259,6 +259,13 @@
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
 
+      {% if is_restricted %}
+        <div class="alert alert-info">
+          <i class="fa fa-lock"></i>
+          {{ _('Some fields are locked because this problem is public. Contact an admin to modify them.') }}
+        </div>
+      {% endif %}
+
       {% if form.non_field_errors() %}
         <div class="alert alert-danger">
           {% for error in form.non_field_errors() %}

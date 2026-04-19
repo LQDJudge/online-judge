@@ -972,6 +972,21 @@ class AddCourseForm(ModelForm):
 
 MEMORY_UNITS = (("KB", "KB"), ("MB", "MB"))
 
+# Fields that non-superusers cannot edit after a problem is made public.
+# These are critical fields that affect scoring, grading behavior, or judge safety.
+RESTRICTED_FIELDS_AFTER_PUBLIC = [
+    "points",
+    "types",
+    "time_limit",
+    "memory_limit",
+    "partial",
+    "short_circuit",
+]
+
+# Upper bounds for non-superusers to prevent judge abuse (e.g., 51s Python causing 88-min lockups).
+MAX_USER_TIME_LIMIT = 10  # seconds
+MAX_USER_MEMORY_LIMIT = 1048576  # KB (1 GB)
+
 
 class ProblemEditForm(DirectUploadFormMixin, ModelForm):
     memory_unit = forms.ChoiceField(choices=MEMORY_UNITS)
@@ -984,6 +999,25 @@ class ProblemEditForm(DirectUploadFormMixin, ModelForm):
         self.fields["testers"].widget.can_add_related = False
         self.fields["types"].required = False
         self.fields["group"].required = False
+
+        if (
+            self.instance
+            and self.instance.pk
+            and self.user
+            and not self.user.is_superuser
+        ):
+            # Points capped at 1 for private/org-private problems (by Problem.save()).
+            # Disable the field so the silent cap doesn't confuse users.
+            if not self.instance.is_public or self.instance.is_organization_private:
+                self.fields["points"].disabled = True
+
+            # Disable critical fields on public problems
+            if self.instance.is_public:
+                for field_name in RESTRICTED_FIELDS_AFTER_PUBLIC:
+                    if field_name in self.fields:
+                        self.fields[field_name].disabled = True
+                if "memory_unit" in self.fields:
+                    self.fields["memory_unit"].disabled = True
 
     def clean_code(self):
         code = self.cleaned_data.get("code")
@@ -1008,6 +1042,59 @@ class ProblemEditForm(DirectUploadFormMixin, ModelForm):
         date = cleaned_data.get("date")
         if not date or date > timezone.now():
             cleaned_data["date"] = timezone.now()
+
+        # Enforce time/memory upper bounds for non-superusers (skip disabled fields
+        # since those hold the original DB value which may exceed the cap legitimately).
+        if self.user and not self.user.is_superuser:
+            time_limit = cleaned_data.get("time_limit")
+            if (
+                time_limit is not None
+                and not self.fields["time_limit"].disabled
+                and time_limit > MAX_USER_TIME_LIMIT
+            ):
+                self.add_error(
+                    "time_limit",
+                    _("Time limit cannot exceed %(max)s seconds.")
+                    % {"max": MAX_USER_TIME_LIMIT},
+                )
+
+            memory_limit = cleaned_data.get("memory_limit")
+            if (
+                memory_limit is not None
+                and not self.fields["memory_limit"].disabled
+                and memory_limit > MAX_USER_MEMORY_LIMIT
+            ):
+                self.add_error(
+                    "memory_limit",
+                    _("Memory limit cannot exceed %(max)s MB.")
+                    % {"max": MAX_USER_MEMORY_LIMIT // 1024},
+                )
+
+        # Server-side safety net: verify restricted fields haven't changed on public problems.
+        # Django's disabled fields already ignore submitted data, but this catches edge cases
+        # like concurrent is_public changes or forms initialized without the disabled flag.
+        if (
+            self.instance
+            and self.instance.pk
+            and self.instance.is_public
+            and self.user
+            and not self.user.is_superuser
+        ):
+            for field_name in RESTRICTED_FIELDS_AFTER_PUBLIC:
+                if field_name in cleaned_data:
+                    original_value = getattr(self.instance, field_name)
+                    new_value = cleaned_data[field_name]
+                    if field_name == "types":
+                        # M2M field: compare as sets of IDs
+                        original_ids = set(
+                            self.instance.types.values_list("id", flat=True)
+                        )
+                        new_ids = set(v.id for v in new_value) if new_value else set()
+                        if new_ids != original_ids:
+                            cleaned_data[field_name] = list(self.instance.types.all())
+                    else:
+                        if new_value != original_value:
+                            cleaned_data[field_name] = original_value
 
         # Validate when non-admin users try to make problem public without organizations
         organizations = cleaned_data.get("organizations")
@@ -1155,9 +1242,12 @@ class ProblemAddForm(ModelForm):
         self.fields["types"].required = False
         self.fields["group"].required = False
 
-        # Default: all languages selected
-        from judge.models import Language
+        # New problems are private → points capped at 1 by Problem.save().
+        # Disable the field so users aren't confused when their value is silently capped.
+        if self.user and not self.user.is_superuser:
+            self.fields["points"].disabled = True
 
+        # Default: all languages selected
         self.fields["allowed_languages"].initial = Language.objects.values_list(
             "pk", flat=True
         )
@@ -1176,6 +1266,24 @@ class ProblemAddForm(ModelForm):
         date = cleaned_data.get("date")
         if not date or date > timezone.now():
             cleaned_data["date"] = timezone.now()
+
+        # Enforce time/memory upper bounds for non-superusers
+        if self.user and not self.user.is_superuser:
+            time_limit = cleaned_data.get("time_limit")
+            if time_limit is not None and time_limit > MAX_USER_TIME_LIMIT:
+                self.add_error(
+                    "time_limit",
+                    _("Time limit cannot exceed %(max)s seconds.")
+                    % {"max": MAX_USER_TIME_LIMIT},
+                )
+
+            memory_limit = cleaned_data.get("memory_limit")
+            if memory_limit is not None and memory_limit > MAX_USER_MEMORY_LIMIT:
+                self.add_error(
+                    "memory_limit",
+                    _("Memory limit cannot exceed %(max)s MB.")
+                    % {"max": MAX_USER_MEMORY_LIMIT // 1024},
+                )
 
         # Validate when non-admin users try to create public problem without organizations
         organizations = cleaned_data.get("organizations")
@@ -1288,6 +1396,7 @@ class LanguageLimitEditForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         problem = kwargs.pop("problem", None)
+        self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
         self.problem = problem
         if problem:
@@ -1348,6 +1457,23 @@ class LanguageLimitEditForm(ModelForm):
 
         # Remove memory_unit from cleaned_data since it's not a model field
         cleaned_data.pop("memory_unit", None)
+
+        # Enforce time/memory upper bounds for non-superusers
+        if self.user and not self.user.is_superuser:
+            if time_limit is not None and time_limit > MAX_USER_TIME_LIMIT:
+                self.add_error(
+                    "time_limit",
+                    _("Time limit cannot exceed %(max)s seconds.")
+                    % {"max": MAX_USER_TIME_LIMIT},
+                )
+
+            final_memory = cleaned_data.get("memory_limit")
+            if final_memory is not None and final_memory > MAX_USER_MEMORY_LIMIT:
+                self.add_error(
+                    "memory_limit",
+                    _("Memory limit cannot exceed %(max)s MB.")
+                    % {"max": MAX_USER_MEMORY_LIMIT // 1024},
+                )
 
         return cleaned_data
 

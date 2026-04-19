@@ -1420,6 +1420,11 @@ class ProblemEdit(
         except PublicRequest.DoesNotExist:
             context["public_request"] = None
 
+        # Flag for template: are critical fields restricted?
+        context["is_restricted"] = (
+            self.object.is_public and not self.request.user.is_superuser
+        )
+
         return context
 
 
@@ -1770,12 +1775,16 @@ class ProblemEditLanguageLimits(
         problem = self.get_object()
         return problem.is_editable_by(self.request.user)
 
+    def _is_restricted(self):
+        """Check if language limits editing is restricted (public problem + non-superuser)."""
+        return self.object.is_public and not self.request.user.is_superuser
+
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         language_limits = self.object.language_limits.all().order_by("language__name")
 
         # Create form for adding new language limit
-        form = LanguageLimitEditForm(problem=self.object)
+        form = LanguageLimitEditForm(problem=self.object, user=request.user)
 
         return self.render_to_response(
             {
@@ -1784,11 +1793,16 @@ class ProblemEditLanguageLimits(
                 "form": form,
                 "title": self.get_title(),
                 "content_title": self.get_content_title(),
+                "is_restricted": self._is_restricted(),
             }
         )
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+
+        # Block all modifications on public problems for non-superusers
+        if self._is_restricted():
+            return HttpResponseForbidden()
 
         # Handle delete requests
         if "delete_limit" in request.POST:
@@ -1803,7 +1817,9 @@ class ProblemEditLanguageLimits(
             )
 
         # Handle add form submission
-        form = LanguageLimitEditForm(request.POST, problem=self.object)
+        form = LanguageLimitEditForm(
+            request.POST, problem=self.object, user=request.user
+        )
 
         if form.is_valid():
             language_limit = form.save(commit=False)
@@ -1822,6 +1838,7 @@ class ProblemEditLanguageLimits(
                 "form": form,
                 "title": self.get_title(),
                 "content_title": self.get_content_title(),
+                "is_restricted": self._is_restricted(),
             }
         )
 
