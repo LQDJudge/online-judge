@@ -126,6 +126,7 @@ def judge_submission(submission, rejudge=False, batch_rejudge=False, judge_id=No
                 "language": submission.language.key,
                 "source": submission.source.source,
                 "judge-id": judge_id,
+                "user-id": submission.user_id,
                 "priority": (
                     BATCH_REJUDGE_PRIORITY
                     if batch_rejudge
