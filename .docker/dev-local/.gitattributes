@@ -1,0 +1,30 @@
+# Shell scripts and entrypoints MUST use LF on all platforms.
+# Without this, Windows Git will convert to CRLF and Docker will fail
+# with "/bin/bash^M: bad interpreter".
+
+*.sh        text eol=lf
+*.env       text eol=lf
+Dockerfile* text eol=lf
+
+# Standard text normalization
+*.py        text eol=lf
+*.html      text eol=lf
+*.scss      text eol=lf
+*.css       text eol=lf
+*.js        text eol=lf
+*.json      text eol=lf
+*.md        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.txt       text eol=lf
+
+# Binaries — no conversion
+*.png       binary
+*.jpg       binary
+*.gif       binary
+*.ico       binary
+*.woff      binary
+*.woff2     binary
+*.ttf       binary
+*.eot       binary
+*.mo        binary
