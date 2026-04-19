@@ -6,6 +6,7 @@ from datetime import datetime
 from urllib.parse import quote
 
 from django.conf import settings
+from django.contrib.auth import logout
 from django.http import HttpResponseRedirect
 from django.urls import Resolver404, resolve, reverse
 from django.contrib.sites.shortcuts import get_current_site
@@ -36,6 +37,17 @@ class ShortCircuitMiddleware:
 
         if getattr(callback, "short_circuit_middleware", False):
             return callback(request, *args, **kwargs)
+        return self.get_response(request)
+
+
+class InactiveUserLogoutMiddleware(object):
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = getattr(request, "user", None)
+        if user is not None and user.is_authenticated and not user.is_active:
+            logout(request)
         return self.get_response(request)
 
 
