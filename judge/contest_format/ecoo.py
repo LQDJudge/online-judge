@@ -53,9 +53,7 @@ class ECOOContestFormat(DefaultContestFormat):
         self.config.update(config or {})
         self.contest = contest
 
-    def update_participation(self, participation):
-        cumtime = 0
-        points = 0
+    def gather_results(self, participation):
         format_data = {}
 
         frozen_time = self.contest.end_time
@@ -93,8 +91,6 @@ class ECOOContestFormat(DefaultContestFormat):
             for score, time, prob, subs, max_score in cursor.fetchall():
                 time = from_database_time(time)
                 dt = (time - participation.start).total_seconds()
-                if self.config["cumtime"]:
-                    cumtime += dt
 
                 bonus = 0
                 if score > 0:
@@ -108,22 +104,19 @@ class ECOOContestFormat(DefaultContestFormat):
                             // 60
                             // self.config["time_bonus"]
                         )
-                    points += bonus
 
                 format_data[str(prob)] = {"time": dt, "points": score, "bonus": bonus}
-                points += score
 
-        # Calculate quiz scores using base class method
-        quiz_points = self.calculate_quiz_scores(participation, format_data)
-        points += quiz_points
+        return format_data
 
-        self.handle_frozen_state(participation, format_data)
-        participation.cumtime = cumtime
-        participation.score = round(points, self.contest.points_precision)
-        participation.tiebreaker = 0
-        participation.format_data = format_data
-        self.apply_result_hidden(participation, format_data)
-        participation.save()
+    def compute_score(self, format_data, entries=None):
+        score = 0
+        for key, entry in format_data.items():
+            if entries is not None and key not in entries:
+                continue
+            score += entry.get("points", 0)
+            score += entry.get("bonus", 0)
+        return max(score, 0)
 
     def compute_cumtime(self, format_data, entries=None):
         if not self.config.get("cumtime"):

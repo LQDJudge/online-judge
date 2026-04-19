@@ -28,9 +28,7 @@ class DefaultContestFormat(BaseContestFormat):
         self.config = config or {}
         super(DefaultContestFormat, self).__init__(contest, config)
 
-    def update_participation(self, participation):
-        cumtime = 0
-        points = 0
+    def gather_results(self, participation):
         format_data = {}
 
         queryset = participation.submissions
@@ -47,25 +45,12 @@ class DefaultContestFormat(BaseContestFormat):
 
         for result in queryset:
             dt = (result["time"] - participation.start).total_seconds()
-            if result["points"]:
-                cumtime += dt
             format_data[str(result["problem_id"])] = {
                 "time": dt,
                 "points": result["points"],
             }
-            points += result["points"]
 
-        # Calculate quiz scores using base class method
-        quiz_points = self.calculate_quiz_scores(participation, format_data)
-        points += quiz_points
-
-        self.handle_frozen_state(participation, format_data)
-        participation.cumtime = max(cumtime, 0)
-        participation.score = round(points, self.contest.points_precision)
-        participation.tiebreaker = 0
-        participation.format_data = format_data
-        self.apply_result_hidden(participation, format_data)
-        participation.save()
+        return format_data
 
     def display_empty_cell(self, contest_problem):
         """

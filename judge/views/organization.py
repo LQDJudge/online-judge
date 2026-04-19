@@ -691,7 +691,15 @@ class OrganizationUsers(
     DiggPaginatorMixin, QueryStringSortMixin, OrganizationMixin, ListView
 ):
     template_name = "organization/users.html"
-    all_sorts = frozenset(("points", "problem_count", "rating", "performance_points"))
+    all_sorts = frozenset(
+        (
+            "points",
+            "problem_count",
+            "rating",
+            "performance_points",
+            "contribution_points",
+        )
+    )
     default_desc = all_sorts
     default_sort = "-performance_points"
     paginate_by = 100
@@ -709,6 +717,8 @@ class OrganizationUsers(
                 "rating",
                 "performance_points",
                 "problem_count",
+                "contribution_points",
+                "about",
             )
         )
 
