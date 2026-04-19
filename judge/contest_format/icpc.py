@@ -46,11 +46,7 @@ class ICPCContestFormat(DefaultContestFormat):
         self.config.update(config or {})
         self.contest = contest
 
-    def update_participation(self, participation):
-        cumtime = 0
-        last = 0
-        penalty = 0
-        score = 0
+    def gather_results(self, participation):
         format_data = {}
 
         frozen_time = self.contest.end_time
@@ -91,31 +87,24 @@ class ICPCContestFormat(DefaultContestFormat):
                     )
                     if points:
                         prev = subs.filter(submission__date__lte=time).count() - 1
-                        penalty += prev * self.config["penalty"] * 60
                     else:
                         # We should always display the penalty, even if the user has a score of 0
                         prev = subs.count()
                 else:
                     prev = 0
 
-                if points:
-                    cumtime += dt
-                    last = max(last, dt)
-
                 format_data[str(prob)] = {"time": dt, "points": points, "penalty": prev}
-                score += points
 
-        # Calculate quiz scores using base class method
-        quiz_points = self.calculate_quiz_scores(participation, format_data)
-        score += quiz_points
+        return format_data
 
-        self.handle_frozen_state(participation, format_data)
-        participation.cumtime = max(0, cumtime + penalty)
-        participation.score = round(score, self.contest.points_precision)
-        participation.tiebreaker = last  # field is sorted from least to greatest
-        participation.format_data = format_data
-        self.apply_result_hidden(participation, format_data)
-        participation.save()
+    def compute_tiebreaker(self, format_data, entries=None):
+        last = 0
+        for key, entry in format_data.items():
+            if entries is not None and key not in entries:
+                continue
+            if entry.get("points", 0) > 0:
+                last = max(last, entry.get("time", 0))
+        return last
 
     def compute_cumtime(self, format_data, entries=None):
         cumtime = 0

@@ -46,10 +46,7 @@ class AtCoderContestFormat(DefaultContestFormat):
         self.config.update(config or {})
         self.contest = contest
 
-    def update_participation(self, participation):
-        cumtime = 0
-        penalty = 0
-        points = 0
+    def gather_results(self, participation):
         format_data = {}
 
         frozen_time = self.contest.end_time
@@ -90,30 +87,15 @@ class AtCoderContestFormat(DefaultContestFormat):
                     )
                     if score:
                         prev = subs.filter(submission__date__lte=time).count() - 1
-                        penalty += prev * self.config["penalty"] * 60
                     else:
                         # We should always display the penalty, even if the user has a score of 0
                         prev = subs.count()
                 else:
                     prev = 0
 
-                if score:
-                    cumtime = max(cumtime, dt)
-
                 format_data[str(prob)] = {"time": dt, "points": score, "penalty": prev}
-                points += score
 
-        # Calculate quiz scores using base class method
-        quiz_points = self.calculate_quiz_scores(participation, format_data)
-        points += quiz_points
-
-        self.handle_frozen_state(participation, format_data)
-        participation.cumtime = cumtime + penalty
-        participation.score = round(points, self.contest.points_precision)
-        participation.tiebreaker = 0
-        participation.format_data = format_data
-        self.apply_result_hidden(participation, format_data)
-        participation.save()
+        return format_data
 
     def compute_cumtime(self, format_data, entries=None):
         cumtime = 0

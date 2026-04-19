@@ -41,16 +41,67 @@ class BaseContestFormat(metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
-    @abstractmethod
     def update_participation(self, participation):
         """
-        Updates a ContestParticipation object's score, cumtime, and format_data fields based on this contest format.
-        Implementations should call ContestParticipation.save().
+        Template method — shared flow for all standard formats.
+        Subclasses override gather_results() and optionally compute_score(),
+        compute_tiebreaker(), compute_cumtime(). Formats with fundamentally
+        different flows (e.g. new_ioi) may override this entirely.
 
         :param participation: A ContestParticipation object.
         :return: None
         """
-        raise NotImplementedError()
+        format_data = self.gather_results(participation)
+        self.calculate_quiz_scores(participation, format_data)
+        self.handle_frozen_state(participation, format_data)
+
+        participation.score = round(
+            self.compute_score(format_data),
+            self.contest.points_precision,
+        )
+        participation.cumtime = self.compute_cumtime(format_data)
+        participation.tiebreaker = self.compute_tiebreaker(format_data)
+        participation.format_data = format_data
+
+        self.apply_result_hidden(participation, format_data)
+        participation.save()
+
+    def gather_results(self, participation):
+        """
+        Query problem submissions and return a populated format_data dict.
+        Each key is a string problem_id, each value has at least 'time' and 'points'.
+        Must be overridden by formats that use the template update_participation().
+
+        :param participation: A ContestParticipation object.
+        :return: dict — the format_data for this participation.
+        """
+        raise NotImplementedError
+
+    def compute_score(self, format_data, entries=None):
+        """
+        Compute total score from format_data. Override for bonus points, etc.
+
+        :param format_data: The full format_data dict.
+        :param entries: If provided, only consider these keys. If None, use all.
+        :return: Computed score value.
+        """
+        score = 0
+        for key, entry in format_data.items():
+            if entries is not None and key not in entries:
+                continue
+            score += entry.get("points", 0)
+        return max(score, 0)
+
+    def compute_tiebreaker(self, format_data, entries=None):
+        """
+        Compute tiebreaker value. Override for ICPC (last solve time).
+        Default: 0 (no tiebreaker).
+
+        :param format_data: The full format_data dict.
+        :param entries: If provided, only consider these keys. If None, use all.
+        :return: Tiebreaker value (lower is better).
+        """
+        return 0
 
     @abstractmethod
     def display_user_problem(self, participation, contest_problem, show_final):
@@ -168,7 +219,7 @@ class BaseContestFormat(metaclass=ABCMeta):
         # Save full values as final (if format didn't already)
         if not has_final:
             participation.score_final = participation.score
-            participation.cumtime_final = self.compute_cumtime(format_data)
+            participation.cumtime_final = participation.cumtime
             participation.format_data_final = copy.deepcopy(format_data)
 
         # Find is_result_hidden problems
@@ -191,18 +242,13 @@ class BaseContestFormat(metaclass=ABCMeta):
             if not is_hidden:
                 non_hidden_keys.add(key)
 
-        # Recompute public score from non-hidden entries
-        non_hidden_points = sum(
-            entry.get("points", 0)
-            for key, entry in format_data.items()
-            if key in non_hidden_keys and entry.get("points", 0) > 0
-        )
-
+        # Recompute public score/cumtime/tiebreaker from non-hidden entries
         participation.score = round(
-            max(non_hidden_points, 0),
+            self.compute_score(format_data, non_hidden_keys),
             self.contest.points_precision,
         )
         participation.cumtime = self.compute_cumtime(format_data, non_hidden_keys)
+        participation.tiebreaker = self.compute_tiebreaker(format_data, non_hidden_keys)
 
     def calculate_quiz_scores(self, participation, format_data):
         """
