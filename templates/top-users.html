@@ -1,3 +1,9 @@
+{% if organization is defined and organization %}
+  {% set users_url = url('organization_users', organization.id, organization.slug) %}
+{% else %}
+  {% set users_url = url('user_list') %}
+{% endif %}
+
 {% if top_rated %}
   <div class="blog-sidebox sidebox">
     <h3 class="bold-text colored-text"><i class="fa fa-trophy"></i>{{ _('Top Rating') }}</h3>
@@ -14,7 +20,7 @@
         </tbody>
       </table>
       <div style="text-align: center; padding: 0.4em;">
-        <a href="{{ url('user_list') }}?order=-rating" style="font-size: 0.85em;">{{ _('View all') }} &rarr;</a>
+        <a href="{{ users_url }}?order=-rating" style="font-size: 0.85em;">{{ _('View all') }} &rarr;</a>
       </div>
     </div>
   </div>
@@ -36,7 +42,7 @@
         </tbody>
       </table>
       <div style="text-align: center; padding: 0.4em;">
-        <a href="{{ url('user_list') }}?order=-performance_points" style="font-size: 0.85em;">{{ _('View all') }} &rarr;</a>
+        <a href="{{ users_url }}?order=-performance_points" style="font-size: 0.85em;">{{ _('View all') }} &rarr;</a>
       </div>
     </div>
   </div>
@@ -60,7 +66,7 @@
         </tbody>
       </table>
       <div style="text-align: center; padding: 0.4em;">
-        <a href="{{ url('user_list') }}?order=-contribution_points" style="font-size: 0.85em;">{{ _('View all') }} &rarr;</a>
+        <a href="{{ users_url }}?order=-contribution_points" style="font-size: 0.85em;">{{ _('View all') }} &rarr;</a>
       </div>
     </div>
   </div>

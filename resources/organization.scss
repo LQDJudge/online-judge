@@ -682,22 +682,16 @@
 .moderation-log-table {
     overflow-x: auto;
 
-    .table {
-        table-layout: fixed;
-    }
-
     .table td,
     .table th {
         word-break: break-word;
         overflow-wrap: break-word;
     }
 
-    .col-time { width: 12%; }
-    .col-moderator { width: 13%; }
-    .col-action { width: 10%; }
-    .col-content { width: 20%; }
-    .col-preview { width: 25%; }
-    .col-reason { width: 20%; }
+    .badge {
+        white-space: nowrap;
+        font-size: 0.85em;
+    }
 }
 
 .expandable-text {
