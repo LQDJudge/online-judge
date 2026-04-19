@@ -75,7 +75,6 @@ from judge.models import (
     QuizAnswerFile,
 )
 
-
 admin.site.register(BlogPost, BlogPostAdmin)
 admin.site.register(Comment, CommentAdmin)
 admin.site.register(CommentLock)

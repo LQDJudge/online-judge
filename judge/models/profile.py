@@ -25,7 +25,6 @@ from judge.utils.files import generate_secure_filename
 
 from typing import Optional
 
-
 __all__ = [
     "Organization",
     "Profile",

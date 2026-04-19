@@ -3,7 +3,6 @@ from django.core.files.storage import default_storage
 from judge.caching import cache_wrapper
 from judge.utils.storage_helpers import storage_listdir
 
-
 SAMPLE_BACKGROUNDS_PREFIX = "sample_backgrounds"
 
 

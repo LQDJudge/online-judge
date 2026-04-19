@@ -66,7 +66,6 @@ from judge.utils.celery import redirect_to_task_status
 
 from .contests import ContestRanking
 
-
 __all__ = [
     "UserPage",
     "UserAboutPage",

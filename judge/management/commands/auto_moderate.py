@@ -25,7 +25,6 @@ from judge.models import (
 from chat_box.models import Message as ChatMessage, ChatModerationLog
 from chat_box.views import hide_lobby_message, mute_chat_user
 
-
 # Static system prompts for LLM caching
 COMMENT_SYSTEM_PROMPT = """You are a content moderator. Review comments and decide if each should be HIDDEN or KEPT.
 

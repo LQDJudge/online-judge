@@ -8,7 +8,6 @@ from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 from judge.markdown_extensions import YouTubeExtension, EmoticonExtension
 
-
 EXTENSIONS = [
     "pymdownx.arithmatex",
     "pymdownx.magiclink",

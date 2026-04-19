@@ -18,7 +18,6 @@ from judge.models import Organization, Course, Language, Profile
 from judge.utils.views import generic_message
 from judge.cache_handler import clear_request_l0_cache
 
-
 USED_DOMAINS = ["www"]
 URL_NAMES_BYPASS_SUBDOMAIN = ["submission_source_file"]
 

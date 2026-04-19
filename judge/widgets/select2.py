@@ -37,6 +37,7 @@ Light widgets are normally named, i.e. there is no
 'Light' word in their names.
 
 """
+
 from copy import copy
 from itertools import chain
 

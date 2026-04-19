@@ -9,7 +9,6 @@ from judge import template_context
 from judge.models import BlogPost, MiscConfig, NavigationBar, Solution
 from judge.models.interface import _get_blogpost_organization_ids
 
-
 _misc_config_i18n = [code for code, _ in settings.LANGUAGES]
 _misc_config_i18n.append("")
 

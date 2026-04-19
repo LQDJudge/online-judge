@@ -140,15 +140,13 @@ def gen_problem_votes(output_path):
         f = csv.writer(csvfile)
         f.writerow(["pid", "uid", "score"])
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT pv.object_id, pvv.voter_id, pvv.score
                 FROM judge_pagevotevoter pvv
                 JOIN judge_pagevote pv ON pv.id = pvv.pagevote_id
                 JOIN django_content_type ct ON ct.id = pv.content_type_id
                 WHERE ct.model = 'problem'
-                """
-            )
+                """)
             for pid, uid, score in cursor.fetchall():
                 f.writerow([pid, uid, score])
                 count += 1
@@ -162,15 +160,13 @@ def gen_problem_bookmarks(output_path):
         f = csv.writer(csvfile)
         f.writerow(["pid", "uid"])
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT bm.object_id, bu.profile_id
                 FROM judge_bookmark_users bu
                 JOIN judge_bookmark bm ON bm.id = bu.bookmark_id
                 JOIN django_content_type ct ON ct.id = bm.content_type_id
                 WHERE ct.model = 'problem'
-                """
-            )
+                """)
             for pid, uid in cursor.fetchall():
                 f.writerow([pid, uid])
                 count += 1

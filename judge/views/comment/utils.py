@@ -8,7 +8,6 @@ from judge.models import Comment
 from judge.models.notification import Notification, NotificationCategory
 from judge.jinja2.reference import get_user_from_text
 
-
 DEFAULT_COMMENT_LIMIT = 10
 COMPACT_COMMENT_LIMIT = 3
 

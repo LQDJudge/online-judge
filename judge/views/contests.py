@@ -93,7 +93,6 @@ from judge.widgets import HeavyPreviewPageDownWidget
 from judge.views.pagevote import PageVoteDetailView
 from judge.views.bookmark import BookMarkDetailView
 
-
 __all__ = [
     "ContestList",
     "ContestDetail",

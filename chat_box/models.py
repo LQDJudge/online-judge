@@ -6,7 +6,6 @@ from django.utils import timezone
 from judge.models.profile import Profile
 from judge.caching import cache_wrapper, CacheableModel
 
-
 __all__ = ["Message", "Room", "UserRoom", "Ignore", "ChatModerationLog"]
 
 

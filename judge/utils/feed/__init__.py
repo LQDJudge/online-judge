@@ -9,7 +9,6 @@ from .cursor import FeedCursor
 from .generator import FeedGenerator
 from .items import FeedItem
 
-
 FIRST_PAGE_SIZE = 3
 SCROLL_PAGE_SIZE = 6
 

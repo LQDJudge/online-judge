@@ -17,7 +17,6 @@ from judge.models.course import BestSubmission
 from judge.ml.vector_store import VectorStore
 from judge.caching import cache_wrapper
 
-
 __all__ = [
     "contest_completed_ids",
     "get_result_data",

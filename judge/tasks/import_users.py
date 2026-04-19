@@ -10,7 +10,6 @@ from celery import shared_task
 from judge.models import Profile, Language, Organization
 from judge.utils.celery import Progress
 
-
 fields = ["username", "password", "name", "school", "email", "organizations"]
 descriptions = [
     "my_username(edit old one if exist)",
