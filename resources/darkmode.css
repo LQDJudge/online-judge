@@ -1414,10 +1414,9 @@ input::placeholder {
 }
 @media (min-width: 800px) {
     .left-sidebar-item {
-        background-color: transparent;
+        background-color: var(--darkreader-background-f1f2f2, #202224);
     }
     .left-sidebar {
-        background-color: var(--darkreader-background-f1f2f2, #202224);
         scrollbar-color: auto;
     }
     .left-sidebar::-webkit-scrollbar {
