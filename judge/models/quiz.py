@@ -10,8 +10,6 @@ from judge.models.profile import Profile
 from judge.models.contest import ContestParticipation
 from judge.models.course import CourseLesson, Course
 
-MAX_QUESTION_POINTS = 1000
-
 
 def quiz_answer_file_path(instance, filename):
     """Generate unique path for quiz answer file uploads"""
@@ -522,10 +520,9 @@ class QuizQuestionAssignment(models.Model):
 
     points = models.IntegerField(
         default=1,
-        validators=[MinValueValidator(0), MaxValueValidator(MAX_QUESTION_POINTS)],
+        validators=[MinValueValidator(0)],
         verbose_name=_("Points"),
-        help_text=_("Points for this question in this quiz (max %(max)s)")
-        % {"max": MAX_QUESTION_POINTS},
+        help_text=_("Points for this question in this quiz"),
     )
 
     order = models.IntegerField(
@@ -705,11 +702,11 @@ class QuizAttempt(models.Model):
 
     # Scoring
     score = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Score")
+        max_digits=6, decimal_places=2, null=True, blank=True, verbose_name=_("Score")
     )
 
     max_score = models.DecimalField(
-        max_digits=10,
+        max_digits=6,
         decimal_places=2,
         null=True,
         blank=True,
@@ -1046,14 +1043,14 @@ class BestQuizAttempt(models.Model):
         verbose_name=_("best attempt"),
     )
     score = models.DecimalField(
-        max_digits=10,
+        max_digits=6,
         decimal_places=2,
         default=0,
         verbose_name=_("score"),
         help_text=_("Best score achieved"),
     )
     max_score = models.DecimalField(
-        max_digits=10,
+        max_digits=6,
         decimal_places=2,
         default=0,
         verbose_name=_("max score"),

@@ -800,7 +800,7 @@ class QuizCreate(
                     questions = json.loads(question_data)
                     for order, q_data in enumerate(questions):
                         question_id = q_data.get("questionId")
-                        points = max(0, min(1000, int(q_data.get("points", 1))))
+                        points = q_data.get("points", 1)
                         if question_id:
                             try:
                                 qs = QuizQuestion.objects.filter(pk=question_id)
@@ -971,7 +971,7 @@ class QuizEdit(
                     quiz=quiz, id=int(assignment_id)
                 )
                 if "points" in update_data:
-                    assignment.points = max(0, min(1000, int(update_data["points"])))
+                    assignment.points = update_data["points"]
                     assignment.save()
             except (QuizQuestionAssignment.DoesNotExist, ValueError):
                 pass
@@ -987,7 +987,7 @@ class QuizEdit(
 
         for i, new_question in enumerate(added):
             question_id = new_question.get("questionId")
-            points = max(0, min(1000, int(new_question.get("points", 1))))
+            points = new_question.get("points", 1)
             if question_id:
                 try:
                     qs = QuizQuestion.objects.filter(pk=question_id)
@@ -1065,7 +1065,7 @@ class QuizAddQuestion(LoginRequiredMixin, QuizObjectEditorMixin, View):
     def post(self, request, *args, **kwargs):
         quiz = self.get_object()
         question_id = request.POST.get("question_id")
-        points = max(0, min(1000, int(request.POST.get("points", 1))))
+        points = request.POST.get("points", 1)
 
         try:
             qs = QuizQuestion.objects.filter(pk=question_id)
@@ -1089,7 +1089,7 @@ class QuizAddQuestion(LoginRequiredMixin, QuizObjectEditorMixin, View):
         assignment, created = QuizQuestionAssignment.objects.get_or_create(
             quiz=quiz,
             question=question,
-            defaults={"points": points, "order": max_order + 1},
+            defaults={"points": float(points), "order": max_order + 1},
         )
 
         if not created:
@@ -1158,9 +1158,9 @@ class QuizUpdatePoints(LoginRequiredMixin, QuizObjectEditorMixin, View):
 
         try:
             points = int(points)
-            if points < 0 or points > 1000:
+            if points < 0:
                 return JsonResponse(
-                    {"error": "Points must be between 0 and 1000"}, status=400
+                    {"error": "Points must be non-negative"}, status=400
                 )
         except (TypeError, ValueError):
             return JsonResponse({"error": "Invalid points value"}, status=400)
