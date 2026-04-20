@@ -26,8 +26,37 @@
         }
       });
 
+      var MAX_POINTS = 1000;
+
       function markUnsaved() {
         $('.unsaved-indicator').removeClass('hidden');
+      }
+
+      function validatePointsInput(input) {
+        var $input = $(input);
+        var val = parseInt($input.val());
+        var $warning = $input.next('.points-warning');
+        if (isNaN(val) || val < 0 || val > MAX_POINTS) {
+          if (!$warning.length) {
+            $('<span class="points-warning red" style="margin-left: 0.5em; font-size: 0.85em;">' +
+              '<i class="fa fa-exclamation-triangle"></i> {{ _("Max") }}: ' + MAX_POINTS +
+              '</span>').insertAfter($input);
+          }
+          $input.css('border-color', 'red');
+          return false;
+        } else {
+          $warning.remove();
+          $input.css('border-color', '');
+          return true;
+        }
+      }
+
+      function validateAllPoints() {
+        var valid = true;
+        $('.points-input').each(function () {
+          if (!validatePointsInput(this)) valid = false;
+        });
+        return valid;
       }
 
       function updateQuestionNumbers() {
@@ -64,9 +93,10 @@
       }
 
     // Update points (track change, don't save immediately)
-      $('.points-input').on('change', function () {
+      $('.points-input').on('change input', function () {
         var assignmentId = $(this).data('assignment-id');
-        var points = parseFloat($(this).val()) || 0;
+        var points = parseInt($(this).val()) || 0;
+        validatePointsInput(this);
 
         if (!pendingQuestionChanges.updated[assignmentId]) {
           pendingQuestionChanges.updated[assignmentId] = {};
@@ -127,7 +157,7 @@
         if (type) html += '<span class="badge">' + type + '</span>';
         html += '<span class="badge badge-success">{{ _("New") }}</span>';
         html += '</div>';
-        html += '<input type="number" class="points-input pending-points" data-question-id="' + id + '" value="' + points + '" min="0" step="1" title="{{ _("Points") }}">';
+        html += '<input type="number" class="points-input pending-points" data-question-id="' + id + '" value="' + points + '" min="0" max="1000" step="1" title="{{ _("Points") }}">';
         html += '<span class="text-muted">{{ _("pts") }}</span>';
         html += '<div class="question-actions">';
         html += '<button type="button" class="btn btn-sm btn-danger remove-pending-btn" data-question-id="' + id + '" title="{{ _("Remove") }}">';
@@ -264,9 +294,10 @@
       }
 
   // Update points for pending-add questions
-      $(document).on('change', '.pending-points', function () {
+      $(document).on('change input', '.pending-points', function () {
         var questionId = $(this).data('question-id');
-        var points = parseFloat($(this).val()) || 0;
+        var points = parseInt($(this).val()) || 0;
+        validatePointsInput(this);
 
         pendingQuestionChanges.added.forEach(function (q) {
           if (q.questionId == questionId) {
@@ -375,6 +406,13 @@
 
   // Before form submit, add question changes to hidden fields
       $('form.quiz-form').on('submit', function (e) {
+    // Validate all points before submitting
+        if (!validateAllPoints()) {
+          e.preventDefault();
+          alert('{{ _("Please fix invalid point values before saving. Points must be between 0 and 1000.") }}');
+          return false;
+        }
+
     // Remove old hidden fields
         $(this).find('.question-changes-field').remove();
 
@@ -504,7 +542,7 @@
                 <span class="badge">{{ assignment.question.get_question_type_display() }}</span>
               </div>
               <input type="number" class="points-input" data-assignment-id="{{ assignment.id }}"
-                     value="{{ assignment.points }}" min="0" step="1" title="{{ _('Points') }}">
+                     value="{{ assignment.points }}" min="0" max="1000" step="1" title="{{ _('Points') }}">
               <span class="text-muted">{{ _('pts') }}</span>
               <div class="question-actions">
                 <button type="button" class="btn btn-sm btn-danger remove-question-btn"
@@ -541,7 +579,7 @@
             </div>
             <div class="points-wrapper" style="display: flex; align-items: center; gap: 0.5em; margin-bottom: 1em;">
               <label for="add-question-points">{{ _('Points per question:') }}</label>
-              <input type="number" id="add-question-points" value="1" min="0" step="1" style="width: 80px;">
+              <input type="number" id="add-question-points" value="1" min="0" max="1000" step="1" style="width: 80px;">
             </div>
             <button type="button" id="add-questions-btn" class="btn btn-success">
               <i class="fa fa-plus"></i> {{ _('Add Selected Questions') }}
