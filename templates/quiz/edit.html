@@ -66,8 +66,7 @@
     // Update points (track change, don't save immediately)
       $('.points-input').on('change', function () {
         var assignmentId = $(this).data('assignment-id');
-        var points = Math.max(0, Math.min(1000, parseInt($(this).val()) || 0));
-        $(this).val(points);
+        var points = parseFloat($(this).val()) || 0;
 
         if (!pendingQuestionChanges.updated[assignmentId]) {
           pendingQuestionChanges.updated[assignmentId] = {};
@@ -128,7 +127,7 @@
         if (type) html += '<span class="badge">' + type + '</span>';
         html += '<span class="badge badge-success">{{ _("New") }}</span>';
         html += '</div>';
-        html += '<input type="number" class="points-input pending-points" data-question-id="' + id + '" value="' + points + '" min="0" max="1000" step="1" title="{{ _("Points") }}">';
+        html += '<input type="number" class="points-input pending-points" data-question-id="' + id + '" value="' + points + '" min="0" step="1" title="{{ _("Points") }}">';
         html += '<span class="text-muted">{{ _("pts") }}</span>';
         html += '<div class="question-actions">';
         html += '<button type="button" class="btn btn-sm btn-danger remove-pending-btn" data-question-id="' + id + '" title="{{ _("Remove") }}">';
@@ -267,8 +266,7 @@
   // Update points for pending-add questions
       $(document).on('change', '.pending-points', function () {
         var questionId = $(this).data('question-id');
-        var points = Math.max(0, Math.min(1000, parseInt($(this).val()) || 0));
-        $(this).val(points);
+        var points = parseFloat($(this).val()) || 0;
 
         pendingQuestionChanges.added.forEach(function (q) {
           if (q.questionId == questionId) {
@@ -506,7 +504,7 @@
                 <span class="badge">{{ assignment.question.get_question_type_display() }}</span>
               </div>
               <input type="number" class="points-input" data-assignment-id="{{ assignment.id }}"
-                     value="{{ assignment.points }}" min="0" max="1000" step="1" title="{{ _('Points') }}">
+                     value="{{ assignment.points }}" min="0" step="1" title="{{ _('Points') }}">
               <span class="text-muted">{{ _('pts') }}</span>
               <div class="question-actions">
                 <button type="button" class="btn btn-sm btn-danger remove-question-btn"
@@ -543,7 +541,7 @@
             </div>
             <div class="points-wrapper" style="display: flex; align-items: center; gap: 0.5em; margin-bottom: 1em;">
               <label for="add-question-points">{{ _('Points per question:') }}</label>
-              <input type="number" id="add-question-points" value="1" min="0" max="1000" step="1" style="width: 80px;">
+              <input type="number" id="add-question-points" value="1" min="0" step="1" style="width: 80px;">
             </div>
             <button type="button" id="add-questions-btn" class="btn btn-success">
               <i class="fa fa-plus"></i> {{ _('Add Selected Questions') }}
