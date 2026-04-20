@@ -358,7 +358,7 @@ input[type="submit"].submit-btn {
         color: white !important;
         text-decoration: none !important;
         transform: none !important;
-        box-shadow: 0 12px 25px -6px rgba(0, 0, 0, 0.18) !important;
+        box-shadow: 0px 12px 25px -6px rgba(0, 0, 0, 0.18) !important;
 
         span {
             margin-left: -12px !important;
@@ -440,6 +440,14 @@ th {
 div.info-float {
     float: right;
     padding: 10px;
+}
+
+footer {
+    color: gray;
+    display: block;
+    width: 100%;
+    position: absolute;
+    bottom: 0;
 }
 
 body {
@@ -693,11 +701,6 @@ hr {
 }
 
 footer {
-    color: gray;
-    display: block;
-    width: 100%;
-    position: absolute;
-    bottom: 0;
     text-align: center;
     height: 40px;
     border-top: 1px solid $border_gray;
@@ -877,27 +880,27 @@ noscript #noscript {
 
 #notification {
     color: lightsteelblue;
+}
 
-    &:hover {
-        color: darkgray;
-    }
+#notification:hover {
+    color: darkgray;
 }
 
 #chat-icon {
     color: darkgreen;
+}
 
-    &:hover {
-        color: $theme_color;
-    }
+#chat-icon:hover {
+    color: $theme_color;
 }
 
 #nav-lang-icon {
     color: blue;
     cursor: pointer;
+}
 
-    &:hover {
-        color: darkblue;
-    }
+#nav-lang-icon:hover {
+    color: darkblue;
 }
 
 #nav-darkmode-icon {
@@ -912,7 +915,7 @@ noscript #noscript {
     display: none;
     background-color: white;
     min-width: 160px;
-    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
     padding: 4px 0;
     z-index: 1;
     border-radius: 5px;
@@ -1193,9 +1196,9 @@ input::placeholder {
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        width: 1.9em;
-        height: 1.9em;
-        font-size: 1.05em;
+        width: 1.6em;
+        height: 1.6em;
+        font-size: 0.85em;
         color: $text-secondary;
 
         i {
@@ -1208,8 +1211,7 @@ input::placeholder {
         text-overflow: ellipsis;
         white-space: nowrap;
         line-height: 1.3;
-        font-size: 1.0em;
-        font-weight: 500;
+        font-size: 0.9em;
     }
 
     .org-logo {
@@ -1222,7 +1224,7 @@ input::placeholder {
 }
 
 .left-sidebar-item:hover {
-    background-color: rgba(0, 0, 0, 0.07);
+    background-color: $color-interactive-hover-bg;
     cursor: pointer;
     color: $text-primary;
 }
@@ -1547,8 +1549,8 @@ input::placeholder {
 @media(min-width: 800px) {
     .left-sidebar-item {
         margin-bottom: 0.25em;
-        padding: 0.6em 0.8em;
-        background-color: transparent;
+        padding: 0.4em 0.5em;
+        background-color: $background_light_gray;
     }
 
     .middle-content,
@@ -1590,10 +1592,6 @@ input::placeholder {
         height: calc(100vh - $navbar_height - 20px);
         overflow-y: auto;
         scrollbar-color: auto;
-        background: $background_light_gray;
-        border-radius: $radius-md;
-        padding: 0.5em 0.3em;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 
         &::-webkit-scrollbar {
             width: 0;

@@ -2,7 +2,7 @@
 @use "vars" as *;
 
 .middle-content {
-    padding-right: 0;
+    padding-right: 0em;
     vertical-align: top;
     margin-right: 0;
     width: 100%;
@@ -89,7 +89,8 @@
 }
 
 #mobile.tabs {
-    margin: 0 0 1em;
+    margin: 0;
+    margin-bottom: 1em;
 }
 
 .tabs.tabs-no-flex {
@@ -200,15 +201,16 @@
     color: black;
     font-size: 16px;
     font-weight: 700;
+    padding: 0px 12px;
     margin-top: 5px;
     position: absolute;
-    inset: 50% 0 0;
+    inset: 50% 0px 0px;
     background: linear-gradient(transparent, white);
     -webkit-box-pack: end;
     justify-content: flex-end;
     align-items: flex-end;
     cursor: pointer;
-    padding: 16px;
+    padding: 16px 16px;
 }
 
 .actionbar-box {
