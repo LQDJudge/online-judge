@@ -1196,9 +1196,9 @@ input::placeholder {
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        width: 1.6em;
-        height: 1.6em;
-        font-size: 0.85em;
+        width: 1.75em;
+        height: 1.75em;
+        font-size: 0.95em;
         color: $text-secondary;
 
         i {
@@ -1211,12 +1211,12 @@ input::placeholder {
         text-overflow: ellipsis;
         white-space: nowrap;
         line-height: 1.3;
-        font-size: 0.9em;
+        font-size: 0.95em;
     }
 
     .org-logo {
-        height: 1.6em;
-        width: 1.6em;
+        height: 1.75em;
+        width: 1.75em;
         border-radius: $radius-sm;
         flex-shrink: 0;
         object-fit: cover;
@@ -1549,7 +1549,7 @@ input::placeholder {
 @media(min-width: 800px) {
     .left-sidebar-item {
         margin-bottom: 0.25em;
-        padding: 0.4em 0.5em;
+        padding: 0.55em 0.7em;
         background-color: $background_light_gray;
     }
 
