@@ -82,14 +82,7 @@ class Command(BaseCommand):
                 min_downvotes=min_down,
                 max_up_ratio=max_ratio,
             )
-            self.stdout.write(f"  Flagged {len(flagged)} users.")
-            if flagged:
-                usernames = list(
-                    Profile.objects.filter(id__in=flagged).values_list(
-                        "user__username", flat=True
-                    )[:20]
-                )
-                self.stdout.write("  Sample: " + ", ".join(usernames))
+            self._print_flagged_report(flagged)
 
             if dry_run:
                 self.stdout.write(
@@ -99,7 +92,7 @@ class Command(BaseCommand):
 
             if flagged:
                 self.stdout.write("Purging downvotes...")
-                stats = purge_downvotes_from(flagged)
+                stats = purge_downvotes_from(set(flagged))
                 self.stdout.write(
                     f"  Deleted {stats['pagevote_deleted']} PageVoteVoter rows, "
                     f"{stats['commentvote_deleted']} CommentVote rows."
@@ -144,3 +137,51 @@ class Command(BaseCommand):
                 f"Recomputation complete. {updated} profiles with contributions."
             )
         )
+
+    def _print_flagged_report(self, flagged):
+        """
+        Print the full flagged list with per-user counts and which signal(s)
+        triggered. `flagged` is the dict returned by detect_abusive_downvoters.
+        """
+        total = len(flagged)
+        self.stdout.write(f"  Flagged {total} users.")
+        if not flagged:
+            return
+
+        by_ratio = sum(1 for v in flagged.values() if "ratio" in v["signals"])
+        by_popular = sum(1 for v in flagged.values() if "popular" in v["signals"])
+        by_both = sum(
+            1 for v in flagged.values() if set(v["signals"]) == {"ratio", "popular"}
+        )
+        self.stdout.write(
+            f"  Signals: {by_ratio} ratio, {by_popular} popular-content, "
+            f"{by_both} by both"
+        )
+
+        usernames = dict(
+            Profile.objects.filter(id__in=flagged).values_list("id", "user__username")
+        )
+
+        rows = []
+        for vid, data in flagged.items():
+            name = usernames.get(vid, f"<profile {vid}>")
+            total_votes = data["down"] + data["up"]
+            ratio_pct = (data["down"] / total_votes * 100) if total_votes else 0.0
+            rows.append((name, data, ratio_pct))
+        # Sort: most popular-downvotes first, then highest total downvotes.
+        rows.sort(key=lambda r: (-r[1]["popular"], -r[1]["down"]))
+
+        self.stdout.write("")
+        header = (
+            f"  {'username':<30} {'down':>6} {'up':>6} {'ratio':>6} "
+            f"{'popular':>8}  signals"
+        )
+        self.stdout.write(header)
+        self.stdout.write("  " + "-" * (len(header) - 2))
+        for name, data, ratio_pct in rows:
+            signals = ",".join(data["signals"])
+            self.stdout.write(
+                f"  {name:<30} {data['down']:>6} {data['up']:>6} "
+                f"{ratio_pct:>5.0f}% {data['popular']:>8}  {signals}"
+            )
+        self.stdout.write("")
