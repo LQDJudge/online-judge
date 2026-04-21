@@ -334,17 +334,31 @@ def bulk_compute_contributions():
     return dict(scores)
 
 
+# A downvote on content whose own score >= POPULAR_TARGET_SCORE is contrarian:
+# the community has already endorsed it. Repeated such votes at scale catch
+# abusers who dilute their overall ratio with a handful of upvotes and slip
+# past the ratio-only rule.
+POPULAR_TARGET_SCORE = 3
+POPULAR_DOWNVOTE_THRESHOLD = 30
+
+
 def detect_abusive_downvoters(min_downvotes=20, max_up_ratio=0.10):
     """
-    Return the set of profile IDs whose combined PageVoteVoter + CommentVote
-    history satisfies:
-      - downvotes >= min_downvotes (volume gate)
-      - upvotes <= max_up_ratio * downvotes (heavy-negative skew)
+    Return {voter_id: {"down", "up", "popular", "signals": [...]}} for every
+    voter flagged by at least one rule (signals are OR'd):
+      - "ratio":   downvotes >= min_downvotes AND
+                   upvotes <= max_up_ratio * downvotes
+      - "popular": >= POPULAR_DOWNVOTE_THRESHOLD downvotes on content whose
+                   own score >= POPULAR_TARGET_SCORE
 
-    This is the "serial downvoter" heuristic used in recompute_contributions.
+    A dict is returned (not a set) so callers can report why each voter was
+    flagged and display per-voter totals. The returned object is falsy when
+    empty, iterates over voter IDs, and supports `in` / `voter_id__in=` —
+    so existing callers keep working.
     """
-    counts = defaultdict(lambda: {"up": 0, "down": 0})
+    counts = defaultdict(lambda: {"up": 0, "down": 0, "popular": 0})
 
+    # Overall up / down across both vote tables.
     for table in (PageVoteVoter, CommentVote):
         rows = table.objects.values("voter_id").annotate(
             up=Count("id", filter=Q(score=1)),
@@ -354,12 +368,45 @@ def detect_abusive_downvoters(min_downvotes=20, max_up_ratio=0.10):
             counts[row["voter_id"]]["up"] += row["up"]
             counts[row["voter_id"]]["down"] += row["down"]
 
-    flagged = set()
+    # Downvotes on comments with community-endorsed scores.
+    # Note: this compares against the comment's *current* score, which already
+    # reflects the abuser's own -1. For comments dogpiled below threshold this
+    # undercounts the popular signal — an inherent limitation without
+    # timestamped votes. The threshold (30) is generous enough that serial
+    # abusers still trip the rule; acknowledge and move on.
+    popular_cmt_rows = (
+        CommentVote.objects.filter(score=-1, comment__score__gte=POPULAR_TARGET_SCORE)
+        .values("voter_id")
+        .annotate(n=Count("id"))
+    )
+    for row in popular_cmt_rows:
+        counts[row["voter_id"]]["popular"] += row["n"]
+
+    # Downvotes on pages (blogs/problems/contests/solutions) with positive score.
+    popular_page_rows = (
+        PageVoteVoter.objects.filter(
+            score=-1, pagevote__score__gte=POPULAR_TARGET_SCORE
+        )
+        .values("voter_id")
+        .annotate(n=Count("id"))
+    )
+    for row in popular_page_rows:
+        counts[row["voter_id"]]["popular"] += row["n"]
+
+    flagged = {}
     for voter_id, c in counts.items():
-        down = c["down"]
-        up = c["up"]
-        if down >= min_downvotes and up <= max_up_ratio * down:
-            flagged.add(voter_id)
+        signals = []
+        if c["down"] >= min_downvotes and c["up"] <= max_up_ratio * c["down"]:
+            signals.append("ratio")
+        if c["popular"] >= POPULAR_DOWNVOTE_THRESHOLD:
+            signals.append("popular")
+        if signals:
+            flagged[voter_id] = {
+                "down": c["down"],
+                "up": c["up"],
+                "popular": c["popular"],
+                "signals": signals,
+            }
     return flagged
 
 
