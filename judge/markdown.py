@@ -1,3 +1,5 @@
+import threading
+
 import markdown as _markdown
 import bleach
 from django.utils.html import escape
@@ -208,11 +210,22 @@ def _sanitize_iframe_autoplay(soup):
     return soup
 
 
+_markdown_local = threading.local()
+
+
+def _get_markdown_instance():
+    inst = getattr(_markdown_local, "instance", None)
+    if inst is None:
+        inst = _markdown.Markdown(
+            extensions=EXTENSIONS, extension_configs=EXTENSION_CONFIGS
+        )
+        _markdown_local.instance = inst
+    return inst
+
+
 def markdown(value, lazy_load=False):
-    extensions = EXTENSIONS
-    html = _markdown.markdown(
-        value, extensions=extensions, extension_configs=EXTENSION_CONFIGS
-    )
+    md = _get_markdown_instance()
+    html = md.reset().convert(value)
 
     html = bleach.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS)
 

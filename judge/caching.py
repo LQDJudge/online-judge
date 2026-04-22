@@ -37,17 +37,20 @@ def filter_args(args_list):
 
 
 def cache_wrapper(prefix, timeout=None, expected_type=None, batch_fn=None):
-    def get_key(func, *args, **kwargs):
-        args_list = list(args)
-        signature_args = list(signature(func).parameters.keys())
-        args_list += [kwargs.get(k) for k in signature_args[len(args) :]]
-        args_list = filter_args(args_list)
-        args_list = [arg_to_str(i) for i in args_list]
-        key = prefix + ":" + ":".join(args_list)
-        key = key.replace(" ", "_")
-        return key
-
     def decorator(func):
+        # Compute the parameter name list once at decoration time. inspect.signature
+        # is ~5us per call; `func` is immutable so we only need it once.
+        param_names = list(signature(func).parameters.keys())
+
+        def get_key(*args, **kwargs):
+            args_list = list(args)
+            args_list += [kwargs.get(k) for k in param_names[len(args) :]]
+            args_list = filter_args(args_list)
+            args_list = [arg_to_str(i) for i in args_list]
+            key = prefix + ":" + ":".join(args_list)
+            key = key.replace(" ", "_")
+            return key
+
         owner = f"{func.__module__}.{func.__qualname__}"
         existing = _CACHE_PREFIXES.get(prefix)
         if existing and existing != owner:
@@ -63,7 +66,7 @@ def cache_wrapper(prefix, timeout=None, expected_type=None, batch_fn=None):
             return True
 
         def wrapper(*args, **kwargs):
-            cache_key = get_key(func, *args, **kwargs)
+            cache_key = get_key(*args, **kwargs)
             result = cache.get(cache_key)
 
             if result is not None and _validate_type(cache_key, result):
@@ -77,7 +80,7 @@ def cache_wrapper(prefix, timeout=None, expected_type=None, batch_fn=None):
             return result
 
         def dirty(*args, **kwargs):
-            cache_key = get_key(func, *args, **kwargs)
+            cache_key = get_key(*args, **kwargs)
             cache.delete(cache_key)
 
         def batch(args_list):
@@ -98,7 +101,7 @@ def cache_wrapper(prefix, timeout=None, expected_type=None, batch_fn=None):
             Returns:
                 List of results corresponding to each argument list
             """
-            keys = [get_key(func, *args) for args in args_list]
+            keys = [get_key(*args) for args in args_list]
             key_to_args = dict(zip(keys, args_list))
 
             results = cache.get_many(keys)
@@ -129,7 +132,7 @@ def cache_wrapper(prefix, timeout=None, expected_type=None, batch_fn=None):
             return [None if r == NONE_RESULT else r for r in final_results]
 
         def dirty_multi(args_list):
-            keys = [get_key(func, *args) for args in args_list]
+            keys = [get_key(*args) for args in args_list]
             cache.delete_many(keys)
 
         wrapper.dirty = dirty
