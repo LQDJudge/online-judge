@@ -489,43 +489,40 @@ function showCopyFeedback(target, message) {
 function register_copy_clipboard($elements, callback) {
     $elements.on('paste', function(event) {
         const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+        const textarea = this;
+        const $textarea = $(textarea);
         for (const index in items) {
             const item = items[index];
             if (item.kind === 'file' && item.type.indexOf('image') !== -1) {
                 const blob = item.getAsFile();
-                const formData = new FormData();
-                formData.append('image', blob);
+                $textarea.prop('disabled', true);
 
-                $(this).prop('disabled', true);
+                const uploader = (typeof DjangoPagedown !== 'undefined' && DjangoPagedown.uploadImage)
+                    ? DjangoPagedown.uploadImage(blob)
+                    : (function () {
+                        const formData = new FormData();
+                        formData.append('image', blob);
+                        return fetch('/pagedown/image-upload/', { method: 'POST', body: formData })
+                            .then(r => r.json())
+                            .then(d => d.url);
+                    })();
 
-                $.ajax({
-                    url: '/pagedown/image-upload/',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(data) {
-                        // Assuming the server returns the URL of the image
-                        const imageUrl = data.url;
-                        const editor = $(event.target); // Get the textarea where the event was triggered
-                        let currentMarkdown = editor.val();
-                        const markdownImageText = '![](' + imageUrl + ')'; // Markdown for an image
-                        
+                uploader
+                    .then(function (imageUrl) {
+                        let currentMarkdown = $textarea.val();
+                        const markdownImageText = '![](' + imageUrl + ')';
                         if (currentMarkdown) currentMarkdown += "\n";
                         currentMarkdown += markdownImageText;
-
-                        editor.val(currentMarkdown);
+                        $textarea.val(currentMarkdown);
                         callback?.();
-                    },
-                    error: function() {
+                    })
+                    .catch(function () {
                         alert('There was an error uploading the image.');
-                    },
-                    complete: () => {
-                        // Re-enable the editor
-                        $(this).prop('disabled', false).focus();
-                    }
-                });
-                
+                    })
+                    .finally(function () {
+                        $textarea.prop('disabled', false).focus();
+                    });
+
                 // We only handle the first image in the clipboard data
                 break;
             }

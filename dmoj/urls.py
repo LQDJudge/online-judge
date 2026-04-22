@@ -1865,6 +1865,11 @@ urlpatterns = [
         direct_upload.delete_file,
         name="direct_upload_delete",
     ),
+    re_path(
+        r"^api/upload/pagedown/$",
+        direct_upload.pagedown_upload_config,
+        name="pagedown_upload_config",
+    ),
 ] + url_static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if "debug_toolbar.middleware.DebugToolbarMiddleware" in settings.MIDDLEWARE:

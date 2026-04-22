@@ -4,6 +4,72 @@ DjangoPagedown = (function () {
   let converter = null;
   const editors = {};
 
+  const PAGEDOWN_UPLOAD_URL = '/pagedown/image-upload/';
+  const PAGEDOWN_CONFIG_URL = '/api/upload/pagedown/';
+
+  const getCookie = function (name) {
+    const match = document.cookie.match(new RegExp('(^|;\\s*)' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : '';
+  };
+
+  /**
+   * Upload an image blob. Tries presigned S3 direct upload first; falls back
+   * to the Django pagedown endpoint when storage is local or presign fails.
+   * Returns a Promise resolving to the public image URL.
+   */
+  const uploadImage = function (blob) {
+    const filename = blob.name || 'image.png';
+    const contentType = blob.type || 'application/octet-stream';
+    const fileSize = blob.size;
+    const csrftoken = getCookie('csrftoken');
+
+    const fallbackLocal = function () {
+      const formData = new FormData();
+      formData.append('image', blob);
+      return fetch(PAGEDOWN_UPLOAD_URL, {
+        method: 'POST',
+        body: formData,
+        headers: csrftoken ? { 'X-CSRFToken': csrftoken } : {}
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (result) {
+          if (result && result.url) return result.url;
+          throw new Error((result && result.error) || 'Upload failed');
+        });
+    };
+
+    return fetch(PAGEDOWN_CONFIG_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken
+      },
+      body: JSON.stringify({
+        filename: filename,
+        content_type: contentType,
+        file_size: fileSize
+      })
+    })
+      .then(function (resp) {
+        if (!resp.ok) throw new Error('config failed');
+        return resp.json();
+      })
+      .then(function (config) {
+        if (config.storage_type !== 's3') return fallbackLocal();
+        return fetch(config.upload_url, {
+          method: config.method || 'PUT',
+          headers: { 'Content-Type': config.content_type || contentType },
+          body: blob
+        }).then(function (putResp) {
+          if (!putResp.ok) throw new Error('direct upload failed');
+          return config.file_url;
+        });
+      })
+      .catch(function () {
+        return fallbackLocal();
+      });
+  };
+
   // Lazy-initialize converter (shared across all editors)
   const getConverter = function () {
     if (!converter) {
@@ -24,24 +90,14 @@ DjangoPagedown = (function () {
       for (const item of items) {
         if (item.kind === 'file' && item.type.startsWith('image/')) {
           const blob = item.getAsFile();
-          const formData = new FormData();
-          formData.append('image', blob);
-
           element.disabled = true;
 
-          const xhr = new XMLHttpRequest();
-          xhr.open('POST', '/pagedown/image-upload/', true);
+          uploadImage(blob)
+            .then(function (imageUrl) {
+              element.disabled = false;
+              element.focus();
 
-          xhr.onload = function () {
-            element.disabled = false;
-            element.focus();
-
-            if (xhr.status === 200) {
-              const response = JSON.parse(xhr.responseText);
-              const imageUrl = response.url;
-              let currentMarkdown = element.value;
               let markdownImageText = `![](${imageUrl})`;
-
               const start = element.selectionStart;
               const end = element.selectionEnd;
               const currentValue = element.value;
@@ -52,20 +108,13 @@ DjangoPagedown = (function () {
               if (endValue) markdownImageText += "\n";
               element.value = startValue + markdownImageText + endValue;
 
-              // Move the cursor to just after the inserted text
               const newCursorPosition = start + markdownImageText.length;
               element.setSelectionRange(newCursorPosition, newCursorPosition);
-            } else {
+            })
+            .catch(function () {
+              element.disabled = false;
               alert('There was an error uploading the image.');
-            }
-          };
-
-          xhr.onerror = function () {
-            element.disabled = false;
-            alert('There was an error uploading the image.');
-          };
-
-          xhr.send(formData);
+            });
 
           // Only handle the first image in the clipboard data
           break;
@@ -130,41 +179,18 @@ DjangoPagedown = (function () {
                 loading.classList.add('show');
                 submit.classList.remove('show');
 
-                const data = new FormData();
-                const xhr = new XMLHttpRequest();
-                data.append('image', file.files[0]);
-                xhr.open('POST', file.dataset.action, true);
-
-                xhr.onload = function () {
-                  loading.classList.remove('show');
-                  submit.classList.add('show');
-
-                  if (xhr.status !== 200) {
-                    alert(xhr.statusText);
-                  } else {
-                    const response = JSON.parse(xhr.response);
-                    if (response.success) {
-                      close(response.url, callback);
-                    } else {
-                      if (response.error) {
-                        let error = '';
-                        for (const key in response.error) {
-                          if (response.error.hasOwnProperty(key)) {
-                            error += `${key}: ${response.error[key]}`;
-                          }
-                        }
-                        alert(error);
-                      }
-                      close(null, callback);
-                    }
-                  }
-                };
-
-                xhr.onerror = function () {
-                  alert('Upload failed.');
-                };
-
-                xhr.send(data);
+                uploadImage(file.files[0])
+                  .then(function (imageUrl) {
+                    loading.classList.remove('show');
+                    submit.classList.add('show');
+                    close(imageUrl, callback);
+                  })
+                  .catch(function (err) {
+                    loading.classList.remove('show');
+                    submit.classList.add('show');
+                    alert((err && err.message) || 'Upload failed.');
+                    close(null, callback);
+                  });
               } else {
                 close(null, callback);
               }
@@ -214,7 +240,8 @@ DjangoPagedown = (function () {
     destroyEditor: function (element) {
       return destroyEditor(element);
     },
-    getConverter: getConverter
+    getConverter: getConverter,
+    uploadImage: uploadImage
   };
 })();
 
@@ -657,33 +684,18 @@ class MarkdownEditor {
           loading.classList.add('show');
           submit.classList.remove('show');
 
-          const data = new FormData();
-          data.append('image', file.files[0]);
-
-          fetch(file.dataset.action, {
-            method: 'POST',
-            body: data
-          })
-          .then(response => response.json())
-          .then(result => {
-            loading.classList.remove('show');
-            submit.classList.add('show');
-
-            if (result.success) {
-              close(result.url, callback);
-            } else {
-              if (result.error) {
-                alert(Object.entries(result.error).map(([k, v]) => `${k}: ${v}`).join('\n'));
-              }
+          DjangoPagedown.uploadImage(file.files[0])
+            .then(imageUrl => {
+              loading.classList.remove('show');
+              submit.classList.add('show');
+              close(imageUrl, callback);
+            })
+            .catch(err => {
+              loading.classList.remove('show');
+              submit.classList.add('show');
+              alert((err && err.message) || 'Upload failed.');
               close(null, callback);
-            }
-          })
-          .catch(() => {
-            loading.classList.remove('show');
-            submit.classList.add('show');
-            alert('Upload failed.');
-            close(null, callback);
-          });
+            });
         } else {
           close(null, callback);
         }
@@ -782,22 +794,14 @@ class MarkdownEditor {
       for (const item of items) {
         if (item.kind === 'file' && item.type.startsWith('image/')) {
           const blob = item.getAsFile();
-          const formData = new FormData();
-          formData.append('image', blob);
-
           input.disabled = true;
 
-          fetch(this.options.imageUploadUrl, {
-            method: 'POST',
-            body: formData
-          })
-          .then(response => response.json())
-          .then(result => {
-            input.disabled = false;
-            input.focus();
+          DjangoPagedown.uploadImage(blob)
+            .then(imageUrl => {
+              input.disabled = false;
+              input.focus();
 
-            if (result.url) {
-              const imageMarkdown = `![](${result.url})`;
+              const imageMarkdown = `![](${imageUrl})`;
               const start = input.selectionStart;
               const end = input.selectionEnd;
               let before = input.value.slice(0, start);
@@ -811,14 +815,12 @@ class MarkdownEditor {
               const newPos = before.length + imageMarkdown.length;
               input.setSelectionRange(newPos, newPos);
 
-              // Trigger input event for preview update
               input.dispatchEvent(new Event('input'));
-            }
-          })
-          .catch(() => {
-            input.disabled = false;
-            alert('Error uploading image.');
-          });
+            })
+            .catch(() => {
+              input.disabled = false;
+              alert('Error uploading image.');
+            });
 
           break;
         }
