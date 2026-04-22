@@ -1421,8 +1421,11 @@ class ProblemEdit(
             context["public_request"] = None
 
         # Flag for template: are critical fields restricted?
+        # Only lock when the problem is public to the whole site (not merely org-private).
         context["is_restricted"] = (
-            self.object.is_public and not self.request.user.is_superuser
+            self.object.is_public
+            and not self.object.is_organization_private
+            and not self.request.user.is_superuser
         )
 
         return context
@@ -1776,8 +1779,12 @@ class ProblemEditLanguageLimits(
         return problem.is_editable_by(self.request.user)
 
     def _is_restricted(self):
-        """Check if language limits editing is restricted (public problem + non-superuser)."""
-        return self.object.is_public and not self.request.user.is_superuser
+        """Check if language limits editing is restricted (site-public problem + non-superuser)."""
+        return (
+            self.object.is_public
+            and not self.object.is_organization_private
+            and not self.request.user.is_superuser
+        )
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()

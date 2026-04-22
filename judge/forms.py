@@ -1011,8 +1011,9 @@ class ProblemEditForm(DirectUploadFormMixin, ModelForm):
             if not self.instance.is_public or self.instance.is_organization_private:
                 self.fields["points"].disabled = True
 
-            # Disable critical fields on public problems
-            if self.instance.is_public:
+            # Disable critical fields only when the problem is public to the whole site.
+            # Org-private problems (is_public=True but is_organization_private=True) stay editable.
+            if self.instance.is_public and not self.instance.is_organization_private:
                 for field_name in RESTRICTED_FIELDS_AFTER_PUBLIC:
                     if field_name in self.fields:
                         self.fields[field_name].disabled = True
@@ -1070,13 +1071,14 @@ class ProblemEditForm(DirectUploadFormMixin, ModelForm):
                     % {"max": MAX_USER_MEMORY_LIMIT // 1024},
                 )
 
-        # Server-side safety net: verify restricted fields haven't changed on public problems.
+        # Server-side safety net: verify restricted fields haven't changed on site-public problems.
         # Django's disabled fields already ignore submitted data, but this catches edge cases
         # like concurrent is_public changes or forms initialized without the disabled flag.
         if (
             self.instance
             and self.instance.pk
             and self.instance.is_public
+            and not self.instance.is_organization_private
             and self.user
             and not self.user.is_superuser
         ):
