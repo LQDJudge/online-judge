@@ -424,6 +424,18 @@ class Contest(models.Model, PageVotable, Bookmarkable):
             return False
         return True
 
+    def can_see_problems(self, user):
+        if user.is_authenticated:
+            if user.has_perm("judge.see_private_contest") or user.has_perm(
+                "judge.edit_all_contest"
+            ):
+                return True
+            if user.profile.id in self.editor_ids:
+                return True
+            if user.profile.id in self.tester_ids:
+                return True
+        return self.can_join
+
     def can_see_full_scoreboard(self, user):
         if self.show_scoreboard:
             return True
