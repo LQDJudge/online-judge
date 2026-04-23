@@ -701,6 +701,8 @@ class ContestProblems(ContestMixin, SolvedProblemMixin, TitleMixin, DetailView):
         return self.request.profile
 
     def get_context_data(self, **kwargs):
+        if not self.object.can_see_problems(self.request.user):
+            raise Http404()
         context = super().get_context_data(**kwargs)
         contest = self.object
         contest_problem_ids = get_contest_problem_ids(contest.id)

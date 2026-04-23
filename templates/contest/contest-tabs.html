@@ -9,7 +9,9 @@
 <div class="left-sidebar">
   {% if can_access %}
     {{ make_tab_item('detail', 'fa fa-info-circle', url('contest_view', contest.key), _('Info')) }}
-    {{ make_tab_item('problems', 'fa fa-question-circle', url('contest_problems', contest.key), _('Problems')) }}
+    {% if contest.can_see_problems(request.user) %}
+      {{ make_tab_item('problems', 'fa fa-question-circle', url('contest_problems', contest.key), _('Problems')) }}
+    {% endif %}
   {% endif %}
 
   {% if contest.start_time <= now or perms.judge.see_private_contest %}
