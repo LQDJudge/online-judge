@@ -402,6 +402,26 @@ ul.problem-list {
         margin-top: 4px;
     }
 
+    #output-only-upload {
+        margin-top: 4px;
+        padding: 1.5em 1em;
+        border: 1px dashed $border_gray;
+        border-radius: 4px;
+        text-align: center;
+        background: $background_light_gray;
+        color: $widget_black;
+        font-size: 1.05em;
+        cursor: pointer;
+
+        &:hover {
+            border-color: $widget_black;
+        }
+
+        .fa {
+            margin-right: 0.4em;
+        }
+    }
+
     #id_language {
         width: 100%;
     }

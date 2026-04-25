@@ -17,14 +17,29 @@
       return $('#id_language').find('option:selected').attr('data-name') === 'Output';
     }
 
+    function isFileOnlyLanguage() {
+      var name = $('#id_language').find('option:selected').attr('data-name');
+      return name === 'Output' || name === 'Scratch';
+    }
+
     function update_language_template() {
-      if (isOutputLanguage()) {
-        update_submit_area("{{ _('Upload a .zip file or select multiple output files.') }}");
+      if (isFileOnlyLanguage()) {
+        update_submit_area("");
         window.ace_source.env.editor.setReadOnly(true);
-        $('#id_source_file').attr('multiple', true);
+        $('#editor').hide();
+        if (isOutputLanguage()) {
+          $('#file-upload-hint').text("{{ _('Upload a .zip file or select multiple output files below.') }}");
+          $('#id_source_file').attr('multiple', true).removeAttr('accept');
+        } else {
+          $('#file-upload-hint').text("{{ _('Upload your .sb3 file below.') }}");
+          $('#id_source_file').removeAttr('multiple').attr('accept', '.sb3');
+        }
+        $('#output-only-upload').show();
       } else {
         window.ace_source.env.editor.setReadOnly(false);
-        $('#id_source_file').removeAttr('multiple');
+        $('#editor').show();
+        $('#output-only-upload').hide();
+        $('#id_source_file').removeAttr('multiple').removeAttr('accept');
         var source = $('textarea#id_source');
         if (source.val() == window.previous_template.replace(/\r/g, '') || source.val() == '') {
           var lang_id = $('#id_language').val();
@@ -268,6 +283,10 @@
       <div id="editor">
         {{ form.source.errors }}
         {{ form.source }}
+      </div>
+      <div id="output-only-upload" style="display: none;" onclick="document.getElementById('id_source_file').click();">
+        <i class="fa fa-file-archive-o"></i>
+        <span id="file-upload-hint"></span>
       </div>
       {% if not no_judges %}
         <div id="language">
