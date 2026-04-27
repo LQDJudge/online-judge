@@ -66,6 +66,14 @@ from judge.views import (
 )
 from judge.views import package_import
 from judge.views import quiz_import
+from judge.views.problem_attachment import (
+    attachment_delete,
+    attachment_download,
+    attachment_reorder,
+    attachment_update,
+    attachment_upload,
+    attachments_tab,
+)
 from judge.views.problem_data import (
     ProblemDataView,
     ProblemSubmissionDiff,
@@ -460,6 +468,36 @@ urlpatterns = [
                 ),
                 re_path(
                     r"^/data/(?P<path>.+)$", problem_data_file, name="problem_data_file"
+                ),
+                re_path(
+                    r"^/attachments$",
+                    attachments_tab,
+                    name="problem_attachments",
+                ),
+                re_path(
+                    r"^/attachments/upload$",
+                    attachment_upload,
+                    name="problem_attachment_upload",
+                ),
+                re_path(
+                    r"^/attachments/reorder$",
+                    attachment_reorder,
+                    name="problem_attachment_reorder",
+                ),
+                re_path(
+                    r"^/attachments/(?P<attachment_id>\d+)/delete$",
+                    attachment_delete,
+                    name="problem_attachment_delete",
+                ),
+                re_path(
+                    r"^/attachments/(?P<attachment_id>\d+)/update$",
+                    attachment_update,
+                    name="problem_attachment_update",
+                ),
+                re_path(
+                    r"^/attachments/(?P<attachment_id>\d+)$",
+                    attachment_download,
+                    name="problem_attachment_download",
                 ),
                 re_path(
                     r"^/tickets$",
@@ -1869,6 +1907,11 @@ urlpatterns = [
         r"^api/upload/pagedown/$",
         direct_upload.pagedown_upload_config,
         name="pagedown_upload_config",
+    ),
+    re_path(
+        r"^submission/upload-config$",
+        direct_upload.submission_upload_config,
+        name="submission_upload_config",
     ),
 ] + url_static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

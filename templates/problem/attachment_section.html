@@ -1,0 +1,15 @@
+{% if problem.attachments.all() %}
+  <div class="problem-attachments-list">
+    <h3>{{ _('Files') }}</h3>
+    <ul>
+      {% for att in problem.attachments.all() %}
+        <li>
+          <a href="{{ url('problem_attachment_download', problem.code, att.id) }}">
+            {{ att.filename }}
+          </a>
+          {% if att.description %} — {{ att.description }}{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}

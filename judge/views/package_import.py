@@ -3,6 +3,7 @@ Views for AI-powered problem package import.
 Handles zip upload, Celery task dispatch, status polling, and per-field Apply.
 """
 
+import json
 import logging
 import os
 import re
@@ -10,8 +11,10 @@ import tempfile
 import zipfile
 
 from django.conf import settings
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.db.models import Max
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.html import escape
@@ -21,7 +24,18 @@ from django.views import View
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
-from judge.models import Problem, ProblemData, Language
+from judge.models import (
+    CSV_CHECKER_KEYS,
+    Language,
+    Problem,
+    ProblemAttachment,
+    ProblemData,
+    ProblemSolutionCode,
+    ProblemTestCase,
+)
+from judge.package_import.kaggle_bootstrap import bootstrap as kaggle_bootstrap
+from judge.tasks.package_import import package_import_task
+from judge.utils.problem_data import ProblemDataCompiler
 from judge.views.problem import ProblemMixin, TitleMixin
 
 logger = logging.getLogger(__name__)
@@ -81,7 +95,6 @@ class PackageImportView(
         self.object = self.get_object()
 
         # Check for a previous import task result in cache
-        from django.core.cache import cache
 
         cache_key = f"import_task_{self.object.code}_{request.user.id}"
         last_task_id = cache.get(cache_key)
@@ -107,7 +120,11 @@ class PackageImportView(
 
 
 class PackageImportUploadView(View):
-    """API endpoint: receives zip upload, dispatches Celery analysis task."""
+    """API endpoint: receives zip upload (→ AI Celery task) or labeled CSV with
+    `mode=kaggle_bootstrap` (→ sync split + scaffold).
+
+    Returns either {task_id} (zip path) or {result: <import_result>} (csv path).
+    """
 
     def post(self, request, problem):
         if not request.user.is_authenticated or not request.user.is_superuser:
@@ -115,14 +132,10 @@ class PackageImportUploadView(View):
 
         problem_obj = get_object_or_404(Problem, code=problem)
 
-        # Get uploaded file
+        mode = (request.POST.get("mode") or "ai").strip()
         upload = request.FILES.get("package_file")
         if not upload:
             return JsonResponse({"error": "No file uploaded"}, status=400)
-
-        if not upload.name.endswith(".zip"):
-            return JsonResponse({"error": "File must be a .zip"}, status=400)
-
         if upload.size > MAX_UPLOAD_SIZE:
             size_mb = upload.size // (1024 * 1024)
             return JsonResponse(
@@ -130,6 +143,13 @@ class PackageImportUploadView(View):
                 status=400,
             )
 
+        if mode == "kaggle_bootstrap":
+            return self._kaggle_bootstrap(request, upload)
+
+        if not upload.name.endswith(".zip"):
+            return JsonResponse({"error": "File must be a .zip"}, status=400)
+
+        upload.seek(0)
         # Validate it's a valid zip (fix #5: use context manager)
         try:
             with zipfile.ZipFile(upload):
@@ -154,22 +174,77 @@ class PackageImportUploadView(View):
             tmp.name,
         )
 
+        # Optional author hint passed through to the AI prompt.
+        hint = (request.POST.get("hint") or "").strip()[:1000]
+
         # Dispatch Celery task (fix #6: clean up temp file on dispatch failure)
         try:
-            from judge.tasks.package_import import package_import_task
 
-            task = package_import_task.delay(problem_obj.code, tmp.name)
+            task = package_import_task.delay(problem_obj.code, tmp.name, hint)
         except Exception:
             os.unlink(tmp.name)
             raise
 
         # Cache the task ID so the Import page can recover after refresh
-        from django.core.cache import cache
 
         cache_key = f"import_task_{problem}_{request.user.id}"
         cache.set(cache_key, task.id, 3600)  # 1 hour TTL
 
         return JsonResponse({"success": True, "task_id": task.id})
+
+    def _kaggle_bootstrap(self, request, upload):
+
+        metric = (request.POST.get("metric") or "csv_rmse").strip()
+        try:
+            train_ratio = float(request.POST.get("train_ratio") or "0.8")
+        except ValueError:
+            return JsonResponse({"error": "train_ratio must be a number."}, status=400)
+        id_column = (request.POST.get("id_column") or "").strip()
+        label_column = (request.POST.get("label_column") or "").strip()
+        has_header = (request.POST.get("has_header") or "true").lower() not in (
+            "false",
+            "0",
+            "no",
+        )
+        notes = (request.POST.get("notes") or "").strip()[:500]
+
+        try:
+            save_dir, saved_files, summary = kaggle_bootstrap(
+                csv_blob=upload.read(),
+                metric=metric,
+                train_ratio=train_ratio,
+                id_column=id_column,
+                label_column=label_column,
+                has_header=has_header,
+                notes=notes,
+            )
+        except ValueError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+        except Exception as e:
+            logger.error("Kaggle bootstrap failed: %s", e, exc_info=True)
+            return JsonResponse({"error": "Bootstrap failed."}, status=500)
+
+        files = {}
+        for f in saved_files:
+            name = f["name"]
+            if name == "summary.json":
+                continue
+            if name == "testdata.zip":
+                files["testdata"] = f
+            elif name in ("train.csv", "test_input.csv", "sample_submission.csv"):
+                files.setdefault("attachments", []).append(f)
+
+        return JsonResponse(
+            {
+                "success": True,
+                "result": {
+                    "summary": summary,
+                    "files": files,
+                    "save_dir": save_dir,
+                    "all_files": saved_files,
+                },
+            }
+        )
 
 
 class PackageImportFileView(View):
@@ -245,6 +320,12 @@ class PackageImportApplyView(View):
             return self._apply_generator_script(problem, save_dir)
         elif field == "interactive":
             return self._apply_interactive(problem, save_dir)
+        elif field == "output_only":
+            return self._apply_output_only(problem, post_data)
+        elif field == "csv_checker":
+            return self._apply_csv_checker(problem, post_data)
+        elif field.startswith("attachment_"):
+            return self._apply_attachment(problem, save_dir, field, post_data, user)
         elif field.startswith("solution_"):
             return self._apply_solution(problem, save_dir, field, post_data)
         else:
@@ -349,7 +430,41 @@ class PackageImportApplyView(View):
         with open(path, "rb") as f:
             data.zipfile.save("testdata.zip", ContentFile(f.read()))
         data.save()
+
+        # If this came from the Kaggle bootstrap, also create the test case row
+        # and regenerate init.yml so the judge can actually grade. Detected by
+        # summary.json with format=kaggle_bootstrap in save_dir.
+        summary_path = os.path.join(save_dir, "summary.json")
+        if os.path.exists(summary_path):
+            try:
+                with open(summary_path, encoding="utf-8") as f:
+                    summary = json.load(f)
+            except (OSError, ValueError):
+                summary = {}
+            if summary.get("format") == "kaggle_bootstrap":
+                self._setup_kaggle_test_case(problem, summary)
+                return "Test data uploaded; test case created and init.yml regenerated."
+
         return "Test data zip uploaded"
+
+    def _setup_kaggle_test_case(self, problem, summary):
+        problem.cases.all().delete()
+        ProblemTestCase.objects.create(
+            dataset=problem,
+            order=0,
+            type="C",
+            input_file="1.in",
+            output_file="test_answer.csv",
+            points=100,
+            is_pretest=True,
+        )
+        data = problem.data_files
+        ProblemDataCompiler.generate(
+            problem,
+            data,
+            list(problem.cases.order_by("order")),
+            ["1.in", "test_answer.csv"],
+        )
 
     def _apply_checker(self, problem, save_dir):
         path = _validate_path_in_dir(save_dir, "checker.cpp")
@@ -393,8 +508,63 @@ class PackageImportApplyView(View):
         data.save()
         return "Interactive judge uploaded (type: interact)"
 
+    def _apply_output_only(self, problem, post_data):
+        flag = (post_data.get("value", "true") or "true").lower() not in (
+            "false",
+            "0",
+            "no",
+        )
+        data, _ = ProblemData.objects.get_or_create(problem=problem)
+        data.output_only = bool(flag)
+        data.save(update_fields=["output_only"])
+        return f"output_only set to {bool(flag)}"
+
+    def _apply_csv_checker(self, problem, post_data):
+        metric = (post_data.get("metric") or "").strip()
+        if metric not in CSV_CHECKER_KEYS:
+            raise ValueError(f"Unknown CSV metric '{metric}'.")
+        args = {
+            "id_column": (post_data.get("id_column") or "").strip(),
+            "label_column": (post_data.get("label_column") or "").strip(),
+            "has_header": (post_data.get("has_header") or "true").lower()
+            not in ("false", "0", "no"),
+        }
+        baseline = (post_data.get("baseline") or "").strip()
+        if baseline:
+            try:
+                bv = float(baseline)
+                if bv > 0:
+                    args["baseline"] = bv
+            except ValueError:
+                pass
+        data, _ = ProblemData.objects.get_or_create(problem=problem)
+        data.checker = metric
+        data.checker_args = json.dumps(args)
+        data.save(update_fields=["checker", "checker_args"])
+        return f"Checker set to {metric} with args {args}"
+
+    def _apply_attachment(self, problem, save_dir, field, post_data, user=None):
+
+        filename = (post_data.get("filename") or "").strip()
+        if not filename:
+            raise ValueError("filename is required")
+        path = _validate_path_in_dir(save_dir, filename)
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"{filename} not found in import")
+
+        description = (post_data.get("description") or "").strip()[:255]
+        next_order = (problem.attachments.aggregate(m=Max("order"))["m"] or 0) + 1
+
+        with open(path, "rb") as f:
+            content = f.read()
+        att = ProblemAttachment(
+            problem=problem, description=description, order=next_order
+        )
+        att.file.save(os.path.basename(filename), ContentFile(content), save=False)
+        att.save()
+        return f"Attachment '{filename}' uploaded ({len(content)} bytes)"
+
     def _apply_solution(self, problem, save_dir, field, post_data):
-        from judge.models import ProblemSolutionCode
 
         filename = post_data.get("filename", "")
         if not filename:

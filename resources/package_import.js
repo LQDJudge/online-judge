@@ -15,6 +15,48 @@ $(document).ready(function () {
     $uploadBtn.prop('disabled', !this.files.length);
   });
 
+  // Kaggle bootstrap form
+  var $kaggleFile = $('#kaggle-file-input');
+  var $kaggleBtn = $('#kaggle-bootstrap-btn');
+  $kaggleFile.change(function () { $kaggleBtn.prop('disabled', !this.files.length); });
+  $kaggleBtn.click(function () {
+    var file = $kaggleFile[0].files[0];
+    if (!file) return;
+    if (file.size > config.maxUploadSize) {
+      showStatus('error', (t.fileTooLarge || 'File too large') + ' (' + (file.size / 1024 / 1024).toFixed(1) + ' MB)');
+      return;
+    }
+    $kaggleBtn.prop('disabled', true);
+    showStatus('analyzing', '<i class="fa fa-spinner fa-spin"></i> ' + (t.uploading || 'Splitting...'));
+    var fd = new FormData();
+    fd.append('mode', 'kaggle_bootstrap');
+    fd.append('package_file', file);
+    fd.append('csrfmiddlewaretoken', config.csrfToken);
+    fd.append('metric', $('#kaggle-metric').val());
+    fd.append('train_ratio', $('#kaggle-ratio').val());
+    fd.append('id_column', $('#kaggle-id').val());
+    fd.append('label_column', $('#kaggle-label').val());
+    fd.append('has_header', $('#kaggle-has-header').is(':checked') ? 'true' : 'false');
+    $.ajax({
+      url: config.uploadUrl, type: 'POST', data: fd, processData: false, contentType: false,
+      success: function (data) {
+        $kaggleBtn.prop('disabled', false);
+        if (data.success && data.result) {
+          $status.empty();
+          renderResults(data.result);
+        } else {
+          showStatus('error', data.error || (t.uploadFailed || 'Bootstrap failed'));
+        }
+      },
+      error: function (xhr) {
+        $kaggleBtn.prop('disabled', false);
+        var msg = t.uploadFailed || 'Bootstrap failed';
+        try { msg = JSON.parse(xhr.responseText).error || msg; } catch (e) {}
+        showStatus('error', msg);
+      },
+    });
+  });
+
   // Restore previous results if a task ID exists
   if (config.lastTaskId) {
     showStatus('analyzing', '<i class="fa fa-spinner fa-spin"></i> ' + (t.loading || 'Loading...'));
@@ -36,6 +78,8 @@ $(document).ready(function () {
     var formData = new FormData();
     formData.append('package_file', file);
     formData.append('csrfmiddlewaretoken', config.csrfToken);
+    var hintVal = $('#import-hint-input').val();
+    if (hintVal) formData.append('hint', hintVal);
 
     $.ajax({
       url: config.uploadUrl,
@@ -199,6 +243,49 @@ $(document).ready(function () {
       })(i, solutions[i]);
     }
 
+    // Output-only flag
+    if (summary.output_only === true) {
+      addValueField('output_only', 'fa-file-export', 'output_only', 'true', 'true', saveDir);
+    }
+
+    // CSV checker
+    if (summary.csv_checker && summary.csv_checker.metric) {
+      var c = summary.csv_checker;
+      var label = c.metric;
+      var bits = [];
+      if (c.id_column) bits.push('id=' + c.id_column);
+      if (c.label_column) bits.push('label=' + c.label_column);
+      bits.push('has_header=' + (c.has_header !== false));
+      if (c.baseline) bits.push('baseline=' + c.baseline);
+      var display = c.metric + ' (' + bits.join(', ') + ')';
+      addValueField(
+        'csv_checker', 'fa-check-circle', 'CSV Checker', display, c.metric,
+        saveDir,
+        {
+          metric: c.metric,
+          id_column: c.id_column || '',
+          label_column: c.label_column || '',
+          has_header: (c.has_header !== false) ? 'true' : 'false',
+          baseline: c.baseline || '',
+        }
+      );
+    }
+
+    // Attachments — one Apply per file
+    var attachments = (summary.attachments || []).map(function (a) { return a; });
+    var attachmentFiles = files.attachments || [];
+    attachmentFiles.forEach(function (file, idx) {
+      var meta = attachments.find(function (a) { return a.name === file.name; }) || {};
+      var title = file.name + (meta.description ? ' — ' + meta.description : '');
+      addField('attachment_' + idx, 'fa-paperclip', title, file, saveDir,
+               file.name.endsWith('.csv'),
+               function (body, fi) {
+                 if (fi.name.endsWith('.csv')) loadFilePreview(body, fi.path, false);
+                 else body.html('<div class="import-field-preview">' + escapeHtml(fi.name) + ' (' + (fi.size/1024).toFixed(1) + ' KB)</div>');
+               },
+               { filename: file.name, description: meta.description || '' });
+    });
+
     $results.addClass('show');
   }
 
@@ -259,7 +346,7 @@ $(document).ready(function () {
     $fields.append($field);
   }
 
-  function addValueField(fieldName, icon, title, displayValue, rawValue, saveDir) {
+  function addValueField(fieldName, icon, title, displayValue, rawValue, saveDir, extraData) {
     var $field = $('<div class="import-field"></div>');
     var $header = $('<div class="import-field-header"></div>');
     var $applyBtn = $('<button class="action-btn" style="font-size: 0.85em; padding: 4px 12px;">Apply</button>');
@@ -275,12 +362,14 @@ $(document).ready(function () {
       var btn = $(this);
       btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
 
-      $.post(config.applyUrl, {
+      var postData = {
         field: fieldName,
         save_dir: saveDir,
         value: rawValue,
         csrfmiddlewaretoken: config.csrfToken,
-      }, function (data) {
+      };
+      if (extraData) $.extend(postData, extraData);
+      $.post(config.applyUrl, postData, function (data) {
         if (data.success) {
           btn.hide();
           $appliedLabel.show();

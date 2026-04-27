@@ -468,3 +468,59 @@ def main():
 
 main()
 ```
+## 6. Bài Output-only
+
+Bài *output-only* không yêu cầu người giải viết chương trình thực thi — thay vào đó họ tải file input về, tính đáp án ở máy mình (bằng bất kỳ công cụ nào), rồi chỉ nộp file kết quả. Để cấu hình, hãy tick **Output-only?** trong biểu mẫu Test Data. Trang nộp bài khi đó sẽ chấp nhận một file `.zip` (file đơn được tự động đóng gói thành zip ở phía trình duyệt) và bộ chấm được chọn sẽ áp dụng lên nội dung bên trong.
+
+> **Ngôn ngữ cho phép.** Hãy giới hạn **Ngôn ngữ cho phép** chỉ còn `Output` ở tab **Ngôn ngữ**. Nếu không, người giải sẽ thấy các ngôn ngữ khác trong menu nộp bài và có thể nộp mã nguồn, trong khi bộ chấm output-only không thể chấm mã nguồn.
+
+> **Phân phối input test cho người giải.** Các file trong file zip Test Data là riêng tư cho hệ thống chấm — người giải không thấy được. Để cung cấp cho người giải các input họ cần để tính đáp án ở máy (ví dụ các test cho bài output-only kiểu IOI, hoặc file CSV training/test cho bài Kaggle), hãy tải lên qua tab **Tệp đính kèm** trên trang chỉnh sửa bài. Các tệp đính kèm sẽ hiển thị ở mục "Tệp" trên trang đề bài, với liên kết tải xuống tuân theo quyền truy cập thông thường của bài.
+
+### 6.1. Output-only truyền thống (kiểu IOI)
+
+Với mỗi test case, đặt tên file output kỳ vọng ở cột **Output file** (ví dụ `test01.out`). File zip người dùng nộp phải chứa một file có tên trùng khớp; bộ chấm được cấu hình (thường là `Standard`, `Floats`, hoặc một bộ chấm tùy chỉnh) sẽ so sánh output trong bài nộp với output kỳ vọng, giống như bài thường.
+
+Định dạng này phù hợp khi đáp án là một file xác định cho mỗi test case (ví dụ độ dài đường đi ngắn nhất, một số nguyên, danh sách đã sắp xếp). Hãy chọn bộ chấm chuẩn hoặc tùy chỉnh phù hợp với loại output.
+
+### 6.2. Bài kiểu Kaggle (CSV)
+
+Với các bài kiểu machine-learning nơi bài nộp là một file CSV chứa các dự đoán, được chấm so với đáp án ẩn bằng các chỉ số như độ chính xác hoặc RMSE, hãy chọn một trong các bộ chấm CSV có sẵn từ menu `Bộ chấm` — không cần viết code:
+
+| Bộ chấm | Chỉ số | Hướng |
+|---|---|---|
+| `csv_accuracy` | độ chính xác (so khớp tuyệt đối trên cột nhãn) | càng cao càng tốt |
+| `csv_rmse` | sai số bình phương trung bình (root mean squared error) | càng thấp càng tốt |
+| `csv_mae` | sai số tuyệt đối trung bình | càng thấp càng tốt |
+| `csv_f1` | macro F1 trên cột nhãn | càng cao càng tốt |
+| `csv_auc` | ROC AUC nhị phân trên cột xác suất | càng cao càng tốt |
+| `csv_logloss` | log loss trên cột xác suất | càng thấp càng tốt |
+
+Bộ chấm đọc cả file đáp án và file người dùng nộp dưới dạng CSV, ghép theo cột `id_column`, rồi tính chỉ số trên cột `label_column`. Giá trị thô của chỉ số được hiển thị trong phản hồi của bài nộp.
+
+**Chuẩn hoá điểm cho các chỉ số "càng thấp càng tốt"** (`csv_rmse`, `csv_mae`, `csv_logloss`):
+
+- Khi đặt **`baseline`** trong `checker_args`: `điểm = max(0, 1 - giá_trị / baseline)`. Bài hoàn hảo (`giá_trị = 0`) đạt điểm 1.0; bài có giá trị bằng baseline đạt 0; tệ hơn nữa thì cũng kẹp ở 0. Dùng để hiệu chuẩn điểm theo ví dụ RMSE của một dự đoán tầm thường.
+- Không đặt `baseline`: dùng công thức dự phòng `điểm = 1 / (1 + giá_trị)`. Đơn giản, không cần hiệu chuẩn, nhưng tỉ lệ điểm phụ thuộc vào miền giá trị tự nhiên của chỉ số.
+
+#### `checker_args`
+
+Khi chọn một bộ chấm `csv_*`, biểu mẫu sẽ hiện ra:
+
+- **`id_column`** *(tuỳ chọn)* — tên cột định danh (hoặc chỉ số 0-based khi `has_header` không được tick). **Nếu để trống**, các hàng sẽ được khớp theo vị trí dòng — hữu ích khi CSV chỉ có một cột nhãn (ví dụ `y` mỗi dòng).
+- **`label_column`** *(tuỳ chọn)* — tên (hoặc chỉ số) của cột nhãn / mục tiêu / xác suất. Mặc định là cột đầu tiên.
+- **`has_header`** — tick nếu file CSV có hàng tiêu đề (mặc định: có).
+- **`baseline`** *(tuỳ chọn, chỉ áp dụng cho chỉ số càng thấp càng tốt)* — một số dương xác định "giá trị tệ nhất tương ứng với 0 điểm". Ví dụ: với `csv_rmse`, đặt `baseline: 0.5` nghĩa là bài có RMSE ≥ 0.5 sẽ được 0 điểm, RMSE = 0 đạt điểm tối đa, ở giữa thì tuyến tính.
+
+> **Mẹo — bài chỉ có một cột.** Nếu file đáp án và bài nộp chỉ chứa `y` (một giá trị trên mỗi dòng, không có cột `id`), hãy để trống cả `id_column` và `label_column`, và bỏ tick `has_header`. Bộ chấm sẽ so sánh từng dòng theo thứ tự.
+
+#### Bảng xếp hạng public/private qua `pretest_fraction`
+
+Để tổ chức kỳ thi kiểu Kaggle với bảng xếp hạng public hiển thị trong lúc thi và bảng private hé lộ khi kết thúc:
+
+1. Đặt **`pretest_fraction`** trong `checker_args` thành một giá trị thuộc `(0, 1]` — ví dụ `0.5` để chấm trên 50% số dòng trong lúc thi.
+2. Đánh dấu test case là **`is_pretest`** trong trình chỉnh sửa dữ liệu.
+3. Ở phần kỳ thi, đặt **`run_pretests_only=True`** trên kỳ thi và đánh dấu bài là **`is_pretested`**.
+
+Trong lúc kỳ thi chạy ở chế độ pretests-only, bộ chấm sẽ áp dụng `pretest_fraction` và chỉ chấm điểm trên một tập con các dòng được chọn theo hàm băm — người giải chỉ thấy điểm trên tập đó (bảng xếp hạng public). Việc chọn dòng được xác định bằng `md5(id)`, do đó cùng một tập con được dùng cho mọi bài nộp.
+
+Sau khi kỳ thi kết thúc, hãy chuyển `run_pretests_only=False` trên kỳ thi rồi nhấn **Chấm lại tất cả bài nộp**. Bộ chấm khi đó sẽ bỏ qua `pretest_fraction` và chấm trên toàn bộ dòng — đó là bảng xếp hạng private.

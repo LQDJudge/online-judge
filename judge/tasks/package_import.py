@@ -16,6 +16,7 @@ from judge.package_import.parser import (
     get_import_result,
 )
 from judge.package_import.prompts import build_import_prompt
+from llm_service.config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ MAX_ZIP_SIZE = 50 * 1024 * 1024
 
 
 @shared_task(bind=True)
-def package_import_task(self, problem_code, zip_file_path):
+def package_import_task(self, problem_code, zip_file_path, hint=""):
     """
     Celery task to analyze a problem package using Claude Code on Poe.
 
@@ -53,8 +54,6 @@ def package_import_task(self, problem_code, zip_file_path):
     """
     save_dir = None
     try:
-        from llm_service.config import get_config
-
         # Validate zip file
         if not os.path.exists(zip_file_path):
             return {"success": False, "error": "Zip file not found"}
@@ -88,7 +87,7 @@ def package_import_task(self, problem_code, zip_file_path):
         logger.info("Upload OK: %s", attachment.url)
 
         # Build prompt and send to Claude Code
-        prompt = build_import_prompt()
+        prompt = build_import_prompt(hint=hint)
 
         messages = [
             fp.ProtocolMessage(

@@ -34,6 +34,7 @@ from judge.models.problem import (
 )
 from judge.models.problem_data import (
     CHECKERS,
+    CSV_CHECKER_KEYS,
     ProblemData,
     ProblemTestCase,
     ProblemSignatureGrader,
@@ -88,6 +89,7 @@ from judge.models.quiz import (
 from judge.models.notification import Notification, NotificationProfile
 from judge.models.block import Block
 from judge.models.email_change import EmailChangeRequest
+from judge.models.problem_attachment import ProblemAttachment
 from judge.models.public_request import PublicRequest
 
 revisions.register(Profile, exclude=["points", "last_access", "ip", "rating"])

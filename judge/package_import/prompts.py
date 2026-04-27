@@ -272,21 +272,59 @@ Template:
 
    i) summary.json — Metadata about the package:
       {{
-        "format": "polygon|kattis|usaco|cms|simple|unknown",
+        "format": "polygon|kattis|usaco|cms|simple|kaggle|output_only|unknown",
         "problem_name": "name or null",
         "time_limit_seconds": number or null,
         "memory_limit_mb": number or null,
-        "checker_type": "standard|custom|interactive|null",
+        "checker_type": "standard|custom|interactive|csv|null",
         "test_count": total number of test input files,
         "sample_count": number of sample/example tests,
         "has_generator": true/false,
         "has_checker": true/false,
         "has_interactive": true/false,
+        "output_only": true/false,
+        "csv_checker": null OR {{
+            "metric": "csv_accuracy|csv_rmse|csv_mae|csv_f1|csv_auc|csv_logloss",
+            "id_column": "name or empty string",
+            "label_column": "name or empty string",
+            "has_header": true/false,
+            "baseline": null OR positive number (lower-better only)
+        }},
+        "attachments": [
+            {{"name": "train.csv", "description": "Training data"}}
+        ],
         "solutions": [
           {{"name": "main.cpp", "language": "cpp", "verdict": "AC"}}
         ],
         "notes": "any observations about the package"
       }}
+
+   j) Attachment files (Kaggle / output-only problems): if the package distributes
+      input files to solvers (e.g. train.csv, sample_submission.csv, dataset zips,
+      reference PDFs, sample images), include each as a returned attachment AND
+      list it in summary.json's `attachments` array with a short description.
+      Do NOT include answer keys or hidden test inputs as attachments — those go
+      in testdata.zip only.
+
+=== OUTPUT-ONLY DETECTION ===
+Set `output_only: true` when ANY of these hold:
+- init.yml or problem.yaml has `output_only: true`
+- The package contains expected output files but no required submission program
+- The problem statement says "submit the output / predictions / answer file"
+
+For output-only problems with traditional file-by-file scoring (IOI-style),
+keep `csv_checker: null` and let the existing `Standard`/`Floats`/custom checker apply.
+
+=== KAGGLE-STYLE CSV DETECTION ===
+Set `csv_checker` (and `output_only: true`) when the problem expects a CSV
+of predictions scored against a hidden answer:
+- The package contains `train.csv`/`test.csv`/`sample_submission.csv` style files
+- The problem statement mentions a metric like accuracy/RMSE/MAE/F1/AUC/log-loss
+- Solvers submit a single CSV of predictions
+
+Pick the metric from the statement. Choose `id_column`/`label_column` from
+sample_submission.csv columns when available; if the file has only one column
+(predictions only) leave both empty so the checker aligns by row index.
 
 3. IMPORTANT — SEND ALL FILES BACK:
    After creating all files, you MUST attach/send every output file back to me.
@@ -302,11 +340,16 @@ Template:
 """
 
 
-def build_import_prompt():
-    """Build the full prompt for Claude Code with all templates filled in."""
-    return IMPORT_PROMPT.format(
+def build_import_prompt(hint: str = ""):
+    """Build the full prompt for Claude Code with all templates filled in.
+    `hint`: optional free-text from the author (e.g. "Kaggle-like, train/test 80/20,
+    metric is RMSE on column y") prepended to the prompt."""
+    body = IMPORT_PROMPT.format(
         description_template=DESCRIPTION_TEMPLATE,
         checker_template=CHECKER_TEMPLATE,
         generator_template=GENERATOR_TEMPLATE,
         interactive_template=INTERACTIVE_TEMPLATE,
     )
+    if hint:
+        body = f"=== AUTHOR NOTES (use these as guidance) ===\n{hint}\n\n" + body
+    return body

@@ -18,6 +18,7 @@ __all__ = [
     "ProblemValidationResult",
     "ProblemSolutionCode",
     "CHECKERS",
+    "CSV_CHECKER_KEYS",
 ]
 
 problem_data_storage = ProblemDataStorage()
@@ -45,7 +46,22 @@ CHECKERS = (
     ("interact", _("Interactive")),
     ("testlib", _("Testlib")),
     ("interacttl", _("Interactive (Testlib)")),
+    ("csv_accuracy", _("CSV: accuracy")),
+    ("csv_rmse", _("CSV: RMSE")),
+    ("csv_mae", _("CSV: MAE")),
+    ("csv_f1", _("CSV: F1 (macro)")),
+    ("csv_auc", _("CSV: AUC (binary)")),
+    ("csv_logloss", _("CSV: log loss")),
 )
+
+CSV_CHECKER_KEYS = {
+    "csv_accuracy",
+    "csv_rmse",
+    "csv_mae",
+    "csv_f1",
+    "csv_auc",
+    "csv_logloss",
+}
 
 
 class ProblemData(models.Model):
@@ -83,7 +99,7 @@ class ProblemData(models.Model):
         verbose_name=_("init.yml generation feedback"), blank=True
     )
     checker = models.CharField(
-        max_length=10, verbose_name=_("checker"), choices=CHECKERS, blank=True
+        max_length=20, verbose_name=_("checker"), choices=CHECKERS, blank=True
     )
     checker_args = models.TextField(
         verbose_name=_("checker arguments"),
@@ -283,7 +299,7 @@ class ProblemTestCase(models.Model):
         verbose_name=_("output limit length"), blank=True, null=True
     )
     checker = models.CharField(
-        max_length=10, verbose_name=_("checker"), choices=CHECKERS, blank=True
+        max_length=20, verbose_name=_("checker"), choices=CHECKERS, blank=True
     )
     checker_args = models.TextField(
         verbose_name=_("checker arguments"),

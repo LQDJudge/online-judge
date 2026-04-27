@@ -468,3 +468,60 @@ def main():
 
 main()
 ```
+
+## 6. Output-only Problems
+
+Output-only problems don't require solvers to write a runnable program — instead they download the input data, compute the answer locally (with whatever tools they like), and submit just the result file. To configure one, tick **Is output only** in the test data form. The submit page then accepts a `.zip` (single files are auto-zipped client-side) and the chosen checker is applied to its contents.
+
+> **Allowed language.** Make sure to restrict the **Allowed languages** to just `Output` on the **Languages** tab. Otherwise solvers will see other languages in the submit dropdown and submit source code, which the output-only checker can't grade.
+
+> **Distributing the test inputs to solvers.** Files inside the test-data zip are private to the judge — solvers can't see them. To give solvers the inputs they need to compute answers locally (e.g. the test cases for an IOI-style output-only problem, or the training/test CSV for a Kaggle problem), upload them via the **Attachments** tab on the problem edit page. Attachments appear in a "Files" section on the problem statement page, with download links scoped to the problem's normal access permissions.
+
+### 6.1. Traditional output-only (IOI-style)
+
+For each test case, name the expected output file in the **Output file** column (e.g. `test01.out`). The submitter's zip must contain a file with the matching name; the configured checker (typically `Standard`, `Floats`, or a custom one) is then applied to compare submission output vs. expected output, the same as for a normal problem.
+
+This format is appropriate when the answer is a single deterministic file per test case (e.g. shortest-path lengths, integer answers, sorted lists). Pick whichever standard or custom checker fits the output type.
+
+### 6.2. Kaggle-style CSV problems
+
+For machine-learning–style problems where the submission is a CSV of predictions to be scored against a hidden answer key with a metric like accuracy or RMSE, use one of the built-in CSV checkers from the `Checker` dropdown — no custom code needed:
+
+| Checker | Metric | Direction |
+|---|---|---|
+| `csv_accuracy` | exact-match accuracy on the label column | higher is better |
+| `csv_rmse` | root mean squared error on a numeric column | lower is better |
+| `csv_mae` | mean absolute error on a numeric column | lower is better |
+| `csv_f1` | macro F1 on the label column | higher is better |
+| `csv_auc` | binary ROC AUC on a probability column | higher is better |
+| `csv_logloss` | log loss on a probability column | lower is better |
+
+The checker reads both the answer key and the submission as CSV, joins on `id_column`, and computes the metric on `label_column`. The raw metric value is shown in the submission feedback.
+
+**Score normalization for lower-better metrics** (`csv_rmse`, `csv_mae`, `csv_logloss`):
+
+- With **`baseline`** set in `checker_args`: `score = max(0, 1 - value / baseline)`. A perfect submission (`value = 0`) scores 1.0; a submission at the baseline (`value = baseline`) scores 0; anything worse is clamped to 0. Use this to calibrate scoring against e.g. the trivial-prediction RMSE.
+- Without `baseline`: fallback `score = 1 / (1 + value)`. Simple, no calibration, but score scaling depends on the metric's natural range.
+
+#### `checker_args`
+
+When you select a `csv_*` checker the form exposes:
+
+- **`id_column`** *(optional)* — name (or 0-based index when `has_header` is off) of the row identifier column. **If omitted**, rows are aligned by row index — useful when the CSV is just a single column of labels (e.g. `y` per line).
+- **`label_column`** *(optional)* — name (or index) of the label / target / probability column. Defaults to the first column.
+- **`has_header`** — checked if your CSVs have a header row (default: yes).
+- **`baseline`** *(optional, lower-better metrics only)* — a positive number defining "the worst score worth zero points". E.g., for `csv_rmse` setting `baseline: 0.5` means a submission with RMSE ≥ 0.5 scores 0, RMSE = 0 scores full points, with linear scaling in between.
+
+> **Tip — single-column predictions.** If the answer key and submissions are just `y` (one value per line, no `id`), leave both `id_column` and `label_column` blank and uncheck `has_header`. The checker will compare row-by-row.
+
+#### Public / Private leaderboard via `pretest_fraction`
+
+To run a Kaggle-style contest with a public leaderboard during the contest and a private leaderboard revealed at the end:
+
+1. Set **`pretest_fraction`** in checker_args to a value in `(0, 1]` — e.g. `0.5` to score on 50% of rows during the contest.
+2. Mark the test case as **`is_pretest`** in the test data editor.
+3. On the contest, set **`run_pretests_only=True`** and mark the contest problem as **`is_pretested`**.
+
+While the contest runs in pretests-only mode, the checker honors `pretest_fraction` and scores only a deterministic hash-selected subset of rows — solvers see scores only on that subset (the public leaderboard). Row selection is keyed off `md5(id)`, so the same subset is used for every submission.
+
+After the contest ends, flip `run_pretests_only=False` on the contest and click **Rejudge all submissions**. The checker then ignores `pretest_fraction` and scores all rows — that's the private leaderboard.

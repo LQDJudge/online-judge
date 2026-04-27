@@ -37,6 +37,7 @@ from django.views.generic import DetailView, View
 
 from judge.highlight_code import highlight_code
 from judge.models import (
+    CSV_CHECKER_KEYS,
     Problem,
     ProblemData,
     ProblemTestCase,
@@ -72,13 +73,29 @@ MAX_TESTDATA_FILE_SIZE = 50 * 1024 * 1024
 
 def checker_args_cleaner(self):
     data = self.cleaned_data["checker_args"]
+    checker = self.cleaned_data.get("checker", "")
+
     if not data or data.isspace():
+        if checker in CSV_CHECKER_KEYS:
+            # CSV checkers can run with all defaults: align by row index, label
+            # in the first/only column.
+            return json.dumps({"has_header": True})
         return ""
+
     try:
-        if not isinstance(json.loads(data), dict):
-            raise ValidationError(_("Checker arguments must be a JSON object"))
+        parsed = json.loads(data)
     except ValueError:
         raise ValidationError(_("Checker arguments is invalid JSON"))
+
+    if not isinstance(parsed, dict):
+        raise ValidationError(_("Checker arguments must be a JSON object"))
+
+    if checker in CSV_CHECKER_KEYS:
+        parsed.setdefault("has_header", True)
+        # id_column and label_column are both optional; the checker falls back
+        # to row-index alignment + first column when omitted.
+        return json.dumps(parsed)
+
     return data
 
 

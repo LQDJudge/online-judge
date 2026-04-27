@@ -237,14 +237,15 @@
   font-size: 0.98em;
 }
 
-/* Inline code */
+/* Inline code (light mode: light gray background, dark text) */
 .content-description code, .content-description span.code {
   font-family: var(--md-code-font-family) !important;
   margin: 0 2px;
   padding: 2px 6px;
-  background-color: rgba(47, 49, 41, 0.8);
+  background-color: var(--code-bg, #f6f8fa);
+  border: 1px solid var(--border, #e1e4e8);
   border-radius: 4px;
-  color: var(--md-code-fg-color);
+  color: #24292f;
 }
 
 /* Code blocks - Responsive theme */

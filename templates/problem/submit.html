@@ -182,22 +182,82 @@
             if (fileInput && fileInput.files.length > 0) {
               var files = fileInput.files;
               var needsZip = files.length > 1 || !files[0].name.endsWith('.zip');
-              if (needsZip) {
-                event.preventDefault();
+              var fileResolved = needsZip ? new Promise(function (resolve) {
                 var zip = new JSZip();
-                for (var i = 0; i < files.length; i++) {
-                  zip.file(files[i].name, files[i]);
-                }
+                for (var i = 0; i < files.length; i++) zip.file(files[i].name, files[i]);
                 zip.generateAsync({type: 'blob'}).then(function (blob) {
-                  var zippedFile = new File([blob], 'output.zip', {type: 'application/zip'});
+                  resolve(new File([blob], 'output.zip', {type: 'application/zip'}));
+                });
+              }) : Promise.resolve(files[0]);
+
+              event.preventDefault();
+              fileResolved.then(function (file) {
+                var BIG = 10 * 1024 * 1024;
+                if (file.size <= BIG) {
+                  // Small file: use existing multipart path
                   var dataTransfer = new DataTransfer();
-                  dataTransfer.items.add(zippedFile);
+                  dataTransfer.items.add(file);
                   fileInput.files = dataTransfer.files;
                   $('#submit-button').prop('disabled', true).val("{{ _('Submitting...') }}");
                   $('#problem_submit')[0].submit();
+                  return;
+                }
+                // Big file: presigned direct upload
+                $('#submit-button').prop('disabled', true).val("{{ _('Uploading...') }}");
+                var csrf = $('input[name=csrfmiddlewaretoken]').val();
+                $.ajax({
+                  url: '/submission/upload-config',
+                  method: 'POST',
+                  contentType: 'application/json',
+                  headers: {'X-CSRFToken': csrf},
+                  data: JSON.stringify({
+                    filename: file.name,
+                    content_type: file.type || 'application/octet-stream',
+                    file_size: file.size
+                  }),
+                  success: function (config) {
+                    if (config.storage_type === 'local' || !config.upload_url) {
+                      // Fall back to multipart (local storage backend)
+                      var dataTransfer = new DataTransfer();
+                      dataTransfer.items.add(file);
+                      fileInput.files = dataTransfer.files;
+                      $('#submit-button').val("{{ _('Submitting...') }}");
+                      $('#problem_submit')[0].submit();
+                      return;
+                    }
+                    // S3 path
+                    var doUpload;
+                    if (config.method === 'POST' && config.fields) {
+                      var fd = new FormData();
+                      Object.keys(config.fields).forEach(function (k) { fd.append(k, config.fields[k]); });
+                      fd.append('file', file);
+                      doUpload = fetch(config.upload_url, {method: 'POST', body: fd});
+                    } else {
+                      doUpload = fetch(config.upload_url, {
+                        method: config.method || 'PUT',
+                        body: file,
+                        headers: {'Content-Type': file.type || 'application/octet-stream'}
+                      });
+                    }
+                    doUpload.then(function (resp) {
+                      if (!resp.ok) throw new Error('S3 upload failed: ' + resp.status);
+                      $('<input>', {type: 'hidden', name: 'uploaded_file_key', value: config.file_key}).appendTo('#problem_submit');
+                      fileInput.value = '';
+                      $('#submit-button').val("{{ _('Submitting...') }}");
+                      $('#problem_submit')[0].submit();
+                    }).catch(function (err) {
+                      $('#submit-button').prop('disabled', false).val("{{ _('Submit!') }}");
+                      alert('{{ _("Upload failed") }}: ' + err.message);
+                    });
+                  },
+                  error: function (xhr) {
+                    $('#submit-button').prop('disabled', false).val("{{ _('Submit!') }}");
+                    var msg = (xhr.responseJSON && xhr.responseJSON.error) || xhr.statusText;
+                    alert('{{ _("Upload config failed") }}: ' + msg);
+                  }
                 });
-                return;
-              }
+              });
+              return;
             }
           }
           $('#submit-button').prop('disabled', true).val("{{ _('Submitting...') }}");

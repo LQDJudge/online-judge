@@ -1,0 +1,173 @@
+{% extends "problem/edit_base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block middle_title %}
+  <h2 class="content-title">
+    {{ _('Attachments for') }}
+    <a href="{{ url('problem_detail', problem.code) }}">{{ problem.name }}</a>
+  </h2>
+  <hr>
+{% endblock %}
+
+{% block edit_media %}
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+  <script>
+    $(function() {
+      var problemCode = "{{ problem.code }}";
+      var csrf = $('input[name=csrfmiddlewaretoken]').val() || (function() {
+        var m = document.cookie.match(/(?:^| )csrftoken=([^;]+)/);
+        return m ? m[1] : '';
+      })();
+      $.ajaxSetup({ headers: { 'X-CSRFToken': csrf } });
+
+      $('#attachment-upload-form').on('submit', function(e) {
+        e.preventDefault();
+        var fd = new FormData(this);
+        $.ajax({
+          url: '/problem/' + problemCode + '/attachments/upload',
+          method: 'POST',
+          data: fd,
+          processData: false,
+          contentType: false,
+          success: function() { location.reload(); },
+          error: function(xhr) {
+            var msg = (xhr.responseJSON && (xhr.responseJSON.error || JSON.stringify(xhr.responseJSON.errors))) || xhr.statusText;
+            alert('{{ _("Upload failed") }}: ' + msg);
+          }
+        });
+      });
+
+      $('#attachment-list').on('click', '.delete-btn', function() {
+        if (!confirm('{{ _("Delete this attachment?") }}')) return;
+        var id = $(this).data('id');
+        $.post('/problem/' + problemCode + '/attachments/' + id + '/delete', function() {
+          $('tr[data-id="' + id + '"]').remove();
+        });
+      });
+
+      $('#attachment-list').on('blur', '.description-input', function() {
+        var $inp = $(this);
+        var id = $inp.closest('tr').data('id');
+        var val = $inp.val();
+        if ($inp.data('original') === val) return;
+        $.post('/problem/' + problemCode + '/attachments/' + id + '/update',
+          { description: val },
+          function(resp) {
+            if (resp && resp.success) {
+              $inp.data('original', resp.description);
+              $inp.removeClass('is-error').addClass('is-saved');
+              setTimeout(function() { $inp.removeClass('is-saved'); }, 700);
+            } else {
+              $inp.addClass('is-error');
+            }
+          }
+        ).fail(function() { $inp.addClass('is-error'); });
+      });
+      $('#attachment-list').on('keydown', '.description-input', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); $(this).blur(); }
+      });
+
+      $('#attachment-list').on('click', '.rename-btn', function() {
+        var $tr = $(this).closest('tr');
+        $tr.find('.filename-link, .rename-btn').hide();
+        var $inp = $tr.find('.filename-input').show().focus();
+        $inp[0].setSelectionRange(0, ($inp.val().lastIndexOf('.') >= 0 ? $inp.val().lastIndexOf('.') : $inp.val().length));
+      });
+
+      $('#attachment-list').on('keydown', '.filename-input', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); $(this).blur(); }
+        if (e.key === 'Escape') { $(this).val($(this).data('original')).blur(); }
+      });
+
+      $('#attachment-list').on('blur', '.filename-input', function() {
+        var $inp = $(this);
+        var $tr = $inp.closest('tr');
+        var id = $tr.data('id');
+        var val = $inp.val().trim();
+        $inp.hide();
+        $tr.find('.rename-btn').show();
+        $tr.find('.filename-link').show();
+        if (!val || val === $inp.data('original')) return;
+        $.post('/problem/' + problemCode + '/attachments/' + id + '/update',
+          { filename: val },
+          function(resp) {
+            if (resp && resp.success) {
+              $tr.find('.filename-link').text(resp.filename);
+              $inp.val(resp.filename).data('original', resp.filename);
+            } else {
+              alert((resp && resp.error) || '{{ _("Rename failed") }}');
+              $inp.val($inp.data('original'));
+            }
+          }
+        ).fail(function(xhr) {
+          var msg = (xhr.responseJSON && xhr.responseJSON.error) || xhr.statusText;
+          alert('{{ _("Rename failed") }}: ' + msg);
+          $inp.val($inp.data('original'));
+        });
+      });
+
+      var $tbody = $('#attachment-list tbody');
+      if ($tbody.length && $tbody.sortable) {
+        $tbody.sortable({
+          handle: '.drag-handle',
+          helper: function(e, tr) {
+            var $originals = tr.children();
+            var $helper = tr.clone();
+            $helper.children().each(function(i) {
+              $(this).width($originals.eq(i).width());
+            });
+            return $helper;
+          },
+          update: function() {
+            var ids = $tbody.find('tr').map(function() { return $(this).data('id'); }).get();
+            $.post('/problem/' + problemCode + '/attachments/reorder', { 'order[]': ids });
+          }
+        });
+      }
+    });
+  </script>
+{% endblock %}
+
+{% block edit_content %}
+  <div class="problem-attachments-page">
+    <form id="attachment-upload-form" enctype="multipart/form-data" method="post">
+      {% csrf_token %}
+      <div class="upload-row">
+        <label>{{ _('File') }}: <input type="file" name="file" required></label>
+        <label>{{ _('Rename to') }}: <input type="text" name="rename" maxlength="200"></label>
+        <label class="upload-description">{{ _('Description') }}: <input type="text" name="description" maxlength="255"></label>
+      </div>
+      <div class="upload-footer">
+        <span class="attachment-limits">{{ attachment_limits_msg }}</span>
+        <button type="submit" class="button small">{{ _('Upload') }}</button>
+      </div>
+    </form>
+
+    <table id="attachment-list">
+      <thead>
+        <tr>
+          <th>{{ _('Order') }}</th>
+          <th>{{ _('Filename') }}</th>
+          <th>{{ _('Description') }}</th>
+          <th>{{ _('Size') }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for att in attachments %}
+          <tr data-id="{{ att.id }}">
+            <td class="drag-handle">&#x2630;</td>
+            <td>
+              <a class="filename-link" href="{{ url('problem_attachment_download', problem.code, att.id) }}">{{ att.filename }}</a>
+              <input type="text" class="filename-input" value="{{ att.filename }}" data-original="{{ att.filename }}" maxlength="200" style="display:none;">
+              <button type="button" class="rename-btn" title="{{ _('Rename') }}">✎</button>
+            </td>
+            <td><input type="text" class="description-input" value="{{ att.description }}" data-original="{{ att.description }}" maxlength="255" aria-label="{{ _('Description') }}"></td>
+            <td>{{ att.file.size | filesizeformat }}</td>
+            <td><button class="delete-btn" data-id="{{ att.id }}">{{ _('Delete') }}</button></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
