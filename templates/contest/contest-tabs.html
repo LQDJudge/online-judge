@@ -45,6 +45,8 @@
     {% if perms.judge.moss_contest and has_moss_api_key %}
       {{ make_tab_item('moss', 'fa fa-gavel', url('contest_moss', contest.key), _('MOSS')) }}
     {% endif %}
-    {{ make_tab_item('edit', 'fa fa-edit', url('admin:judge_contest_change', contest.id), _('Edit'), force_new_page=True) }}
+    {% if perms.judge.change_contest %}
+      {{ make_tab_item('edit', 'fa fa-edit', url('admin:judge_contest_change', contest.id), _('Admin'), force_new_page=True) }}
+    {% endif %}
   {% endif %}
 </div>
