@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run numbered SQL files from judge/sql/ against MariaDB.
+# Run numbered SQL files from judge/ml/sql/ against MariaDB.
 # Usage:
 #   ./judge/ml/setup.sh                # run all .sql files in order
 #   ./judge/ml/setup.sh 001            # run only files matching prefix "001"
@@ -11,7 +11,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SQL_DIR="$(cd "$SCRIPT_DIR/../sql" && pwd)"
+SQL_DIR="$(cd "$SCRIPT_DIR/sql" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Read DB config from Django settings if env vars not set

@@ -25,7 +25,7 @@ pip install torch --index-url https://download.pytorch.org/whl/cu124
 ./judge/ml/setup.sh
 ```
 
-This runs all numbered `.sql` files in `judge/sql/` against your MariaDB database.
+This runs all numbered `.sql` files in `judge/ml/sql/` against your MariaDB database.
 Connection settings are read from Django's `DATABASES['default']`.
 You can also run a specific file: `./judge/ml/setup.sh 001`
 
@@ -133,7 +133,7 @@ python manage.py import_embeddings --all --dir /tmp/ml_embeddings/
 1. Create `judge/ml/training/<model_name>/` with `model.py` and `trainer.py`
 2. `trainer.py` must export `train_model(model_name, data_path, embedding_dim, iterations, lr, log_path, output_npz)` returning `(uid_embeddings, pid_embeddings)`
 3. Register in `judge/ml/training/__init__.py` MODELS dict
-4. Add tables in a new SQL file (e.g. `judge/sql/002_<model>_tables.sql`)
+4. Add tables in a new SQL file (e.g. `judge/ml/sql/002_<model>_tables.sql`)
 5. Add table mapping in `judge/ml/vector_store.py` TABLE_MAP
 6. Modal runner reads from `MODELS` automatically — no extra step needed
 
@@ -146,6 +146,9 @@ judge/ml/
 ├── setup.sh               # Run SQL migrations
 ├── vector_store.py        # MariaDB vector search (public API)
 ├── evaluate.py            # Evaluation script
+├── sql/
+│   ├── 001_ml_vector_tables.sql   # CF vector table DDL
+│   └── 002_two_tower_tables.sql   # Two Tower vector table DDL
 └── training/
     ├── __init__.py             # Model registry (MODELS dict, get_trainer)
     ├── data_utils.py           # Shared data loading/preprocessing
@@ -157,10 +160,6 @@ judge/ml/
         ├── model.py            # ProblemTower + UserTower + TwoTowerModel
         ├── dataset.py          # Feature preprocessing + dataset materialization
         └── trainer.py          # Two Tower training pipeline
-
-judge/sql/
-├── 001_ml_vector_tables.sql   # CF vector table DDL
-└── 002_two_tower_tables.sql   # Two Tower vector table DDL
 
 judge/management/commands/
 ├── generate_data.py           # Export training data to CSV
