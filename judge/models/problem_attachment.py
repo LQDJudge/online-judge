@@ -1,16 +1,20 @@
 import os
+import secrets
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
-from judge.models.problem_data import problem_data_storage
 
 __all__ = ["ProblemAttachment"]
 
 
 def problem_attachment_path(instance, filename):
+    # Random subdir keeps the path unguessable from problem code + filename,
+    # so leaking one CDN URL doesn't expose other attachments by guessing.
     return os.path.join(
-        "problem_attachments", instance.problem.code, os.path.basename(filename)
+        "problem_attachments",
+        instance.problem.code,
+        secrets.token_urlsafe(8),
+        os.path.basename(filename),
     )
 
 
@@ -24,7 +28,6 @@ class ProblemAttachment(models.Model):
     file = models.FileField(
         verbose_name=_("file"),
         upload_to=problem_attachment_path,
-        storage=problem_data_storage,
     )
     description = models.CharField(
         verbose_name=_("description"),

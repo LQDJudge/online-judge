@@ -301,7 +301,6 @@ def serve_file_with_nginx(
     use_nginx = request.META.get("SERVER_SOFTWARE", "").startswith("nginx/")
 
     if use_nginx:
-        # Let Nginx serve the file directly using MEDIA_URL
         media_url = getattr(settings, "MEDIA_URL", "/media/")
         response["X-Accel-Redirect"] = f"{media_url}{file_path}"
     else:

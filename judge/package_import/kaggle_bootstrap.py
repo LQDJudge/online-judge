@@ -178,8 +178,7 @@ def bootstrap(
     test_input_header = drop_label(header) if header is not None else None
     test_input_rows = [drop_label(r) for r in test_rows]
 
-    # test_answer.csv: keep id + label columns only (this is what the checker
-    # compares against). When id is None, fall back to writing index + label.
+    # test_answer.csv: id + label only (what the checker scores against).
     if header is not None:
         if id_idx is not None:
             answer_header = [header[id_idx], header[label_idx]]
@@ -195,9 +194,7 @@ def bootstrap(
             answer_header = None
             answer_rows = [[r[label_idx]] for r in test_rows]
 
-    # sample_submission.csv: same SHAPE as the answer key but only a small
-    # head sample (20 rows) — solvers derive the full submission format from
-    # this. Keeping it small avoids bloating storage for big test sets.
+    # sample_submission.csv: head sample only (capped at SAMPLE_LIMIT) to keep storage small.
     SAMPLE_LIMIT = 20
     placeholder = train_rows[0][label_idx] if train_rows else "0"
     sample_test = test_rows[:SAMPLE_LIMIT]

@@ -1,4 +1,5 @@
 import json
+import mimetypes
 import os
 
 from django.contrib.auth.decorators import login_required
@@ -94,9 +95,6 @@ def attachment_upload(request, problem):
             status=400,
         )
 
-    # Optional rename — caller may pass a custom basename. We keep the original
-    # extension to avoid mismatches with the test_data filename (output-only
-    # judging looks files up by extension/name).
     custom_name = (request.POST.get("rename") or "").strip()
     if custom_name and uploaded is not None:
         custom_name = os.path.basename(custom_name)
@@ -104,9 +102,8 @@ def attachment_upload(request, problem):
             c for c in custom_name if c.isprintable() and c not in "/\\"
         )
         if custom_name:
+            # Force-preserve original extension regardless of what the user typed.
             _, orig_ext = os.path.splitext(uploaded.name)
-            # Always preserve original extension — strip any extension the
-            # user typed and append the original.
             base, _ = os.path.splitext(custom_name)
             uploaded.name = (base or custom_name) + orig_ext
 
@@ -153,10 +150,8 @@ def attachment_update(request, problem, attachment_id):
         new_name = "".join(c for c in new_name if c.isprintable() and c not in "/\\")
         if new_name and new_name != att.filename:
             _, orig_ext = os.path.splitext(att.filename)
-            # Always preserve original extension — strip user-typed extension.
             base, _ = os.path.splitext(new_name)
             new_name = (base or new_name) + orig_ext
-            # Move file in storage to the new name (per-problem dir)
             storage = att.file.storage
             old_path = att.file.name
             new_path = os.path.join(os.path.dirname(old_path), new_name)
@@ -226,9 +221,11 @@ def attachment_reorder(request, problem):
 def attachment_download(request, problem, attachment_id):
     problem_obj = _get_viewable(request, problem)
     att = get_object_or_404(ProblemAttachment, id=attachment_id, problem=problem_obj)
+    content_type = mimetypes.guess_type(att.filename)[0] or "application/octet-stream"
     return serve_file_with_nginx(
         request,
         att.file.storage,
         att.file.name,
+        content_type=content_type,
         attachment_filename=att.filename,
     )
