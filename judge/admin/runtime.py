@@ -110,7 +110,6 @@ class JudgeAdmin(VersionAdmin):
         "load",
         "last_ip",
         "runtimes",
-        "problems",
     )
     fieldsets = (
         (None, {"fields": ("name", "auth_key", "is_blocked")}),
@@ -119,7 +118,7 @@ class JudgeAdmin(VersionAdmin):
             _("Information"),
             {"fields": ("created", "online", "last_ip", "start_time", "ping", "load")},
         ),
-        (_("Capabilities"), {"fields": ("runtimes", "problems")}),
+        (_("Capabilities"), {"fields": ("runtimes",)}),
     )
     list_display = ("name", "online", "start_time", "ping", "load", "last_ip")
     ordering = ["-online", "name"]
