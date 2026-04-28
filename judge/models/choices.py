@@ -1,12 +1,11 @@
 from collections import defaultdict
 from operator import itemgetter
-
-import pytz
+from zoneinfo import available_timezones
 
 
 def make_timezones():
     data = defaultdict(list)
-    for tz in pytz.all_timezones:
+    for tz in sorted(available_timezones()):
         if "/" in tz:
             area, loc = tz.split("/", 1)
         else:

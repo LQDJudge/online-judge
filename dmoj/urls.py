@@ -1,6 +1,5 @@
 from django.conf import settings
-from django.conf.urls import include
-from django.urls import re_path, path
+from django.urls import include, re_path, path
 from django.conf.urls.static import static as url_static
 from django.contrib import admin
 from django.contrib.auth import views as auth_views

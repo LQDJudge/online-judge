@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone as datetime_timezone
 from collections import defaultdict
 
 from django.core.cache import cache
@@ -167,7 +167,7 @@ class UserPage(TitleMixin, UserMixin, DetailView):
         return super(UserPage, self).get(request, *args, **kwargs)
 
 
-EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+EPOCH = datetime(1970, 1, 1, tzinfo=datetime_timezone.utc)
 
 
 class UserAboutPage(UserPage):

@@ -1,5 +1,5 @@
-Django>=4.2,<5
-django_compressor>=3,<=4.4
+Django>=5.2,<5.3
+django_compressor>=4.5
 django-mptt>=0.13
 django-pagedown
 django-registration-redux>=2.10
@@ -12,7 +12,6 @@ dmoj-wpadmin @ git+https://github.com/LQDJudge/dmoj-wpadmin.git
 lxml
 Pygments
 social-auth-app-django
-pytz
 django-statici18n
 pika
 ua-parser
@@ -24,7 +23,6 @@ requests
 django-fernet-fields-v2
 pyotp
 qrcode[pil]
-jsonfield @ git+https://github.com/DMOJ/jsonfield.git
 pymoss
 packaging
 celery

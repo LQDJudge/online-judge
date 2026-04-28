@@ -64,7 +64,6 @@ DATABASES = {
 # Internationalization.
 # Documentation: <https://docs.djangoproject.com/en/1.11/topics/i18n/>
 USE_I18N = True
-USE_L10N = True
 USE_TZ = True
 
 ## django-compressor settings, for speeding up page load times by minifying CSS and JavaScript files.
