@@ -9,7 +9,7 @@
   {% if is_member or can_edit or organization.is_open %}
     {{ make_tab_item('users', 'fa fa-users', organization.get_users_url(), _('Members')) }}
   {% endif %}
-  {% if perms.judge.change_organization %}
+  {% if request.user.is_superuser %}
     {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_organization_change', organization.id), _('Admin'), force_new_page=True) }}
   {% endif %}
 </div>

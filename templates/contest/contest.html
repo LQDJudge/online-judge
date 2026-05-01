@@ -84,7 +84,7 @@
   {% if contest.is_organization_private %}
     <div style="display: flex; margin-bottom: 1em">
       {% for org in organizations %}
-        {% with edit_url = url('organization_contest_edit', org.id, org.slug, contest.key) if org in editable_organizations
+        {% with edit_url = url('contest_edit', contest.key) if org in editable_organizations
         else None %}
         {% include "organization/tag.html" %}
       {% endwith %}
@@ -94,7 +94,7 @@
 
 {% if course %}
   <div style="display: flex; margin-bottom: 1em">
-    {% with edit_url = url('edit_course_contest', course.slug, contest.key) if is_editable_course else None %}
+    {% with edit_url = url('contest_edit', contest.key) if is_editable_course else None %}
       {% include "course/tag.html" %}
     {% endwith %}
   </div>

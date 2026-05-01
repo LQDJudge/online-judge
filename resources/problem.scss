@@ -1327,6 +1327,19 @@ body:not(.problem-raw) {
     background: white;
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+
+    // Wider Code/Name inputs so long problem identifiers don't get truncated
+    // visually. `width` (not `max-width`) actually expands the input past its
+    // default `size=20`; `max-width: 100%` keeps it from overflowing narrow
+    // viewports. Sizes mirror the contest edit page for consistency.
+    input#id_code {
+        width: 24em;
+        max-width: 100%;
+    }
+    input#id_name {
+        width: 32em;
+        max-width: 100%;
+    }
 }
 
 // Visually distinguish disabled (locked) form fields

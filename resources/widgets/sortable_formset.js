@@ -233,12 +233,22 @@ class SortableFormset {
   }
 }
 
-// Auto-initialize on DOM ready
-document.addEventListener('DOMContentLoaded', function() {
+// Auto-initialize on DOM ready. We check readyState because this script can be
+// loaded after DOMContentLoaded has already fired (e.g. on a cold load where
+// the asset pipeline delays script delivery). In that case, attaching a
+// DOMContentLoaded listener silently does nothing — the browser does not re-fire
+// past events. The fallback path runs init synchronously when the DOM is ready.
+function initAllSortableFormsets() {
   document.querySelectorAll('.sortable-formset').forEach(function(container) {
     new SortableFormset(container);
   });
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAllSortableFormsets);
+} else {
+  initAllSortableFormsets();
+}
 
 // Export for manual initialization
 if (typeof window !== 'undefined') {

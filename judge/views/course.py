@@ -20,8 +20,6 @@ from django.views.generic.edit import FormView
 from reversion import revisions
 
 from judge.forms import (
-    ContestProblemFormSet,
-    ContestQuizFormSet,
     LessonCloneForm,
     AddCourseForm,
 )
@@ -42,9 +40,6 @@ from judge.models import (
     BestQuizAttempt,
 )
 from judge.models.course import RoleInCourse, EDITABLE_ROLES
-from judge.utils.contest import (
-    maybe_trigger_contest_rescore,
-)
 from judge.utils.course_prerequisites import get_lesson_lock_status
 from judge.utils.problems import (
     user_attempted_ids,
@@ -55,7 +50,6 @@ from judge.widgets import (
     HeavySelect2MultipleWidget,
     HeavySelect2Widget,
     DateTimePickerWidget,
-    Select2MultipleWidget,
     Select2Widget,
 )
 from judge.widgets.direct_upload import DirectUploadImageWidget, DirectUploadFormMixin
@@ -2011,10 +2005,7 @@ class AddCourseContest(CourseEditableMixin, FormView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse(
-            "edit_course_contest",
-            args=[self.course.slug, self.contest.key],
-        )
+        return reverse("contest_edit", args=[self.contest.key])
 
 
 class CourseContestList(CourseEditableMixin, ListView):
@@ -2065,206 +2056,35 @@ class CourseContestList(CourseEditableMixin, ListView):
                     }
                 )
 
+        if action == "update_points":
+            cc_id = request.POST.get("cc_id")
+            points_raw = request.POST.get("points")
+            try:
+                cc_id = int(cc_id)
+                points = int(points_raw)
+                if points < 0:
+                    raise ValueError
+            except (TypeError, ValueError):
+                return JsonResponse(
+                    {"success": False, "error": str(_("Invalid points value."))}
+                )
+            cc = get_object_or_404(CourseContest, id=cc_id, course=self.course)
+            cc.points = points
+            cc.save(update_fields=["points"])
+            return JsonResponse({"success": True, "points": points})
+
         return JsonResponse({"success": False, "error": str(_("Unknown action."))})
 
 
-class EditCourseContestForm(ModelForm):
-    points = forms.IntegerField(label=_("Points"))
-    order = forms.IntegerField(widget=forms.HiddenInput(), required=False)
+class CourseContestEditRedirect(View):
+    """
+    Backward-compat redirect: course-scoped contest editing was consolidated
+    into the standalone /contest/<key>/edit page. Permission is enforced by
+    ContestEdit.dispatch (course teacher/assistant path).
+    """
 
-    class Meta:
-        model = Contest
-        fields = (
-            "points",
-            "order",
-            "is_visible",
-            "key",
-            "name",
-            "start_time",
-            "end_time",
-            "format_name",
-            "authors",
-            "curators",
-            "testers",
-            "time_limit",
-            "freeze_after",
-            "use_clarifications",
-            "hide_problem_tags",
-            "public_scoreboard",
-            "scoreboard_visibility",
-            "points_precision",
-            "rate_limit",
-            "description",
-            "access_code",
-            "private_contestants",
-            "view_contest_scoreboard",
-            "banned_users",
-        )
-        widgets = {
-            "authors": HeavySelect2MultipleWidget(data_view="profile_select2"),
-            "curators": HeavySelect2MultipleWidget(data_view="profile_select2"),
-            "testers": HeavySelect2MultipleWidget(data_view="profile_select2"),
-            "private_contestants": HeavySelect2MultipleWidget(
-                data_view="profile_select2"
-            ),
-            "banned_users": HeavySelect2MultipleWidget(data_view="profile_select2"),
-            "view_contest_scoreboard": HeavySelect2MultipleWidget(
-                data_view="profile_select2"
-            ),
-            "tags": Select2MultipleWidget,
-            "description": HeavyPreviewPageDownWidget(
-                preview=reverse_lazy("contest_preview")
-            ),
-            "start_time": DateTimePickerWidget(),
-            "end_time": DateTimePickerWidget(),
-            "format_name": Select2Widget(),
-            "scoreboard_visibility": Select2Widget(),
-        }
-
-    def __init__(self, *args, **kwargs):
-        self.course_contest_instance = kwargs.pop("course_contest_instance", None)
-        super().__init__(*args, **kwargs)
-
-        if self.course_contest_instance:
-            self.fields["points"].initial = self.course_contest_instance.points
-            self.fields["order"].initial = self.course_contest_instance.order
-
-    def save(self, commit=True):
-        contest = super().save(commit=commit)
-
-        if self.course_contest_instance:
-            self.course_contest_instance.points = self.cleaned_data["points"]
-            if self.cleaned_data.get("order") is not None:
-                self.course_contest_instance.order = self.cleaned_data["order"]
-            if commit:
-                self.course_contest_instance.save()
-
-        return contest
-
-
-class EditCourseContest(CourseEditableMixin, FormView):
-    template_name = "course/edit_contest.html"
-    form_class = EditCourseContestForm
-
-    def dispatch(self, request, *args, **kwargs):
-        self.contest = get_object_or_404(Contest, key=self.kwargs["contest"])
-        # Store original key for URL generation in case form modifies the instance
-        self.original_contest_key = self.contest.key
-        res = super().dispatch(request, *args, **kwargs)
-        if not self.contest.is_in_course:
-            raise Http404()
-        return res
-
-    def get_form_kwargs(self):
-        self.course_contest = get_object_or_404(
-            CourseContest, course=self.course, contest=self.contest
-        )
-
-        kwargs = super().get_form_kwargs()
-        kwargs["instance"] = self.contest
-        kwargs["course_contest_instance"] = self.course_contest
-        return kwargs
-
-    def post(self, request, *args, **kwargs):
-        problem_formset = self.get_problem_formset(True)
-        quiz_formset = self.get_quiz_formset(True)
-
-        problems_valid = problem_formset.is_valid()
-        quizzes_valid = quiz_formset.is_valid()
-
-        if problems_valid and quizzes_valid:
-            self.problem_form_changes = False
-
-            # Process problem formset
-            for problem_form in problem_formset:
-                if problem_form.has_changed():
-                    self.problem_form_changes = True
-                if problem_form.cleaned_data.get("DELETE") and problem_form.instance.pk:
-                    problem_form.instance.delete()
-
-            for problem_form in problem_formset.save(commit=False):
-                if problem_form:
-                    problem_form.contest = self.contest
-                    problem_form.save()
-
-            # Process quiz formset
-            for quiz_form in quiz_formset:
-                if quiz_form.has_changed():
-                    self.problem_form_changes = True
-                if quiz_form.cleaned_data.get("DELETE") and quiz_form.instance.pk:
-                    quiz_form.instance.delete()
-
-            for quiz_form in quiz_formset.save(commit=False):
-                if quiz_form:
-                    quiz_form.contest = self.contest
-                    quiz_form.save()
-
-            return super().post(request, *args, **kwargs)
-
-        self.object = self.contest
-        return self.render_to_response(
-            self.get_context_data(
-                problems_form=problem_formset,
-                quizzes_form=quiz_formset,
-            )
-        )
-
-    def get_title(self):
-        return _("Edit contest")
-
-    def form_valid(self, form):
-        with revisions.create_revision():
-            revisions.set_comment(_("Edited from course") + " " + self.course.name)
-            revisions.set_user(self.request.user)
-
-            if self.problem_form_changes:
-                maybe_trigger_contest_rescore(form, self.contest, True)
-
-            form.save()
-
-        return super().form_valid(form)
-
-    def get_problem_formset(self, post=False):
-        return ContestProblemFormSet(
-            data=self.request.POST if post else None,
-            prefix="problems",
-            queryset=ContestProblem.objects.filter(
-                contest=self.contest, problem__isnull=False
-            ).order_by("order"),
-        )
-
-    def get_quiz_formset(self, post=False):
-        return ContestQuizFormSet(
-            data=self.request.POST if post else None,
-            prefix="quizzes",
-            queryset=ContestProblem.objects.filter(
-                contest=self.contest, quiz__isnull=False
-            ).order_by("order"),
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["title"] = self.get_title()
-        # Use original key for URL in case form validation modified the instance
-        contest_url = reverse("contest_view", args=[self.original_contest_key])
-        context["content_title"] = mark_safe(
-            _("Edit <a href='%(url)s'>%(contest_name)s</a>")
-            % {
-                "contest_name": self.contest.name,
-                "url": contest_url,
-            }
-        )
-        if "problems_form" not in context:
-            context["problems_form"] = self.get_problem_formset()
-        if "quizzes_form" not in context:
-            context["quizzes_form"] = self.get_quiz_formset()
-        return context
-
-    def get_success_url(self):
-        return reverse(
-            "edit_course_contest",
-            args=[self.course.slug, self.contest.key],
-        )
+    def get(self, request, slug, contest, *args, **kwargs):
+        return HttpResponseRedirect(reverse("contest_edit", args=[contest]))
 
 
 def is_lesson_clonable(request, lesson):

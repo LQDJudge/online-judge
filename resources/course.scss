@@ -437,7 +437,9 @@
 
         .drag-handle {
             margin-right: 15px;
-            color: $border_gray;
+            // `$border_gray` (#ccc) renders nearly invisible against white;
+            // use a proper text token so the handle is legible in both themes.
+            color: $text-muted;
         }
 
         .item-order {
@@ -462,14 +464,62 @@
         .item-meta {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 4px;
             margin-right: 15px;
-            color: $border_gray;
+            // Use semantic text token, not the (too-light) border color.
+            color: $text-secondary;
             font-size: 0.9em;
 
             .item-points {
                 font-weight: 500;
                 color: $widget_black;
+            }
+
+            // Inline points editor: always-visible bordered input so it
+            // reads clearly as editable. Color/background are set explicitly
+            // (not inherited) so the value stays legible even when the parent
+            // `.item-meta` uses a muted color or in dark mode.
+            .inline-points-edit {
+                width: 3.5em;
+                border: 1px solid $text-lighter;
+                background: $surface-primary;
+                color: $widget_black;
+                font: inherit;
+                font-weight: 600;
+                text-align: right;
+                border-radius: 3px;
+                padding: 2px 6px;
+                transition: border-color 0.15s, background-color 0.4s;
+                // Hide native number-input spinners (overflow at this size).
+                appearance: textfield;
+                -moz-appearance: textfield;
+
+                &::-webkit-inner-spin-button,
+                &::-webkit-outer-spin-button {
+                    appearance: none;
+                    margin: 0;
+                }
+
+                &:hover {
+                    border-color: $widget_black;
+                }
+
+                &:focus {
+                    border-color: $theme_color;
+                    outline: none;
+                }
+
+                &.saved {
+                    background-color: rgba(0, 200, 0, 0.15);
+                }
+
+                &.error {
+                    border-color: $announcement_red;
+                }
+            }
+
+            .points-suffix {
+                font-weight: 500;
             }
 
             .item-visibility {

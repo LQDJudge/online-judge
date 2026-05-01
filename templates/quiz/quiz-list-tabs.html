@@ -13,7 +13,7 @@
       {% endif %}
     </a>
   {% endif %}
-  {% if perms.judge.change_quiz %}
+  {% if request.user.is_superuser %}
     {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_quiz_changelist'), _('Admin'), force_new_page=True) }}
   {% endif %}
 </div>

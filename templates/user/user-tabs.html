@@ -12,10 +12,8 @@
     {{ make_tab('edit', 'fa-gear', url('user_edit_profile'), _('Settings')) }}
     {{ make_tab('theme', 'fa-palette', url('theme_settings'), _('Theme')) }}
   {% else %}
-    {% if perms.auth.change_user %}
+    {% if request.user.is_superuser %}
       {{ make_tab('edit', 'fa-edit', url('admin:auth_user_change', user.user.id), _('Admin User'), force_new_page=True) }}
-    {% endif %}
-    {% if perms.judge.change_profile %}
       {{ make_tab('edit', 'fa-edit', url('admin:judge_profile_change', user.id), _('Admin Profile'), force_new_page=True) }}
     {% endif %}
   {% endif %}

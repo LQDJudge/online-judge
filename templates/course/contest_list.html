@@ -52,6 +52,65 @@
       }
 
       initSortable('sortable-contests', 'reorder_contests', 'contests-save-status');
+
+      // Inline points editor — co-located with the contest list so course
+      // teachers don't have to open the full edit form just to bump points.
+      var originalPointsValue = null;
+      var $statusInline = $('#contests-save-status');
+      var csrfToken = $('input[name=csrfmiddlewaretoken]').val();
+
+      $(document).on('focus', '.inline-points-edit', function() {
+        originalPointsValue = $(this).val();
+      });
+
+      $(document).on('keydown', '.inline-points-edit', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          $(this).blur();
+        } else if (e.key === 'Escape') {
+          $(this).val(originalPointsValue).blur();
+        }
+      });
+
+      $(document).on('change blur', '.inline-points-edit', function() {
+        var $input = $(this);
+        var points = $input.val();
+        var ccId = $input.data('cc-id');
+
+        if (points === originalPointsValue) return;
+        if (points === '' || parseInt(points, 10) < 0 || isNaN(parseInt(points, 10))) {
+          $input.val(originalPointsValue).addClass('error');
+          setTimeout(function() { $input.removeClass('error'); }, 1500);
+          return;
+        }
+
+        $statusInline.html('<i class="fa fa-spinner fa-spin"></i> {{ _("Saving...") }}')
+          .removeClass('success error').show();
+
+        $.post('', {
+          'action': 'update_points',
+          'cc_id': ccId,
+          'points': points,
+          'csrfmiddlewaretoken': csrfToken
+        }).done(function(response) {
+          if (response.success !== false) {
+            $input.removeClass('error').addClass('saved');
+            setTimeout(function() { $input.removeClass('saved'); }, 800);
+            originalPointsValue = points;
+            $statusInline.html('<i class="fa fa-check"></i> {{ _("Saved") }}').addClass('success');
+            setTimeout(function() { $statusInline.fadeOut(); }, 1500);
+          } else {
+            $input.val(originalPointsValue).addClass('error');
+            setTimeout(function() { $input.removeClass('error'); }, 1500);
+            $statusInline.html('<i class="fa fa-exclamation-triangle"></i> ' + (response.error || '{{ _("Error saving") }}'))
+              .addClass('error');
+          }
+        }).fail(function() {
+          $input.val(originalPointsValue).addClass('error');
+          setTimeout(function() { $input.removeClass('error'); }, 1500);
+          $statusInline.html('<i class="fa fa-exclamation-triangle"></i> {{ _("Error saving") }}').addClass('error');
+        });
+      });
     });
   </script>
 {% endblock %}
@@ -76,10 +135,15 @@
               <a href="{{url('contest_view', cc.contest.key)}}" target="_blank">{{ cc.contest.name }}</a>
             </span>
             <span class="item-meta">
-              <span class="item-points">{{ cc.points }}{{ _('p') }}</span>
+              <input type="number" class="inline-points-edit"
+                     data-cc-id="{{ cc.id }}"
+                     value="{{ cc.points }}"
+                     min="0" step="1"
+                     aria-label="{{ _('Points') }}">
+              <span class="points-suffix">{{ _('p') }}</span>
             </span>
             <span class="item-actions">
-              <a href="{{url('edit_course_contest', course.slug, cc.contest.key)}}" class="action-btn small" title="{{ _('Edit') }}">
+              <a href="{{url('contest_edit', cc.contest.key)}}" class="action-btn small" title="{{ _('Edit') }}">
                 <i class="fa fa-pencil"></i> {{ _('Edit') }}
               </a>
             </span>

@@ -730,3 +730,13 @@
         }
     }
 }
+
+// White card around org form pages embedded in the 3-column org layout
+// (e.g. Add Contest). Mirrors the .middle-right-content.wrapper styling
+// used on 2-column pages so themed backgrounds don't bleed through and
+// hurt text contrast.
+.org-form-card {
+    background: white;
+    padding: 1.5em 2em;
+    border-radius: 1em;
+}

@@ -970,3 +970,137 @@ form.contest-join-pseudotab {
         }
     }
 }
+
+// Standalone /contest/<key>/edit page. Layout mirrors templates/problem/add.html
+// (`.form-row` keeps label and field on a single baseline, `<hr>` separates
+// sections). Widths are constrained per input type so the form doesn't sprawl.
+.contest-edit-page {
+    .form-row {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 0.4em 0.75em;
+        margin-bottom: 1em;
+
+        > label {
+            flex: 0 0 auto;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        // Errors and help text break to a new line under the field.
+        > .field-error,
+        > .form-help {
+            flex-basis: 100%;
+            margin-top: 0.1em;
+            font-size: 0.9em;
+        }
+    }
+
+    // Long-form fields (description, etc.) — title on its own line, field
+    // below at full width. Mirrors how /problem/add lays out Description.
+    .form-row.form-row-block {
+        display: block;
+
+        > label {
+            display: block;
+            margin-bottom: 0.4em;
+        }
+
+        > .field-error,
+        > .form-help {
+            display: block;
+            margin-top: 0.4em;
+            font-size: 0.9em;
+        }
+    }
+
+    .form-help i.fa {
+        margin-right: 0.25em;
+    }
+
+    .section-title {
+        margin: 0 0 0.6em 0;
+        font-size: 1.25em;
+        font-weight: 700;
+    }
+
+    hr {
+        border: 0;
+        border-top: 1px solid $border_gray;
+        margin: 1.4em 0 1em;
+    }
+
+    // Width constraints — text inputs sized to fit content, not full row.
+    // Note: `width` (not `max-width`) is required to actually expand inputs
+    // beyond their default `size=20` rendering. `max-width: 100%` lets them
+    // shrink gracefully on narrow viewports.
+    input[type=text] {
+        width: 32em;
+        max-width: 100%;
+    }
+    input[type=number] {
+        width: 5em;
+    }
+    input#id_key {
+        width: 24em;
+        max-width: 100%;
+    }
+    input[name$=time],
+    input[name=freeze_after],
+    input[name=time_limit] {
+        width: 14em;
+    }
+    select {
+        min-width: 12em;
+        max-width: 22em;
+    }
+
+    // Select2 widgets (authors/curators/orgs/...) — sized as a percentage of
+    // the row so they scale with the column (matching the wide feel of
+    // /problem/add). Bump to 75% if 50% turns out too cramped for typical
+    // multi-tag selections.
+    .select2-container {
+        width: 50% !important;
+        max-width: none !important;
+        min-width: 0;
+    }
+
+    // Long-form widgets remain full width.
+    textarea,
+    .wmd-panel,
+    #format_config-field .ace_editor {
+        width: 100%;
+        max-width: none;
+    }
+
+    #format_config-field {
+        display: none;
+        flex-basis: 100%;
+    }
+    .config-toggle-btn {
+        margin-left: 0.5em;
+        padding: 2px 8px;
+        font-size: 0.85em;
+    }
+
+    // Problems & Quizzes table inside this page.
+    .sortable-table {
+        input[type=number] {
+            width: 4em;
+        }
+        .sortable-col-problem,
+        .sortable-col-quiz {
+            min-width: 16em;
+        }
+        // The page-level 50% Select2 rule above would squish the per-row
+        // selects in this table; override so they fill their column. The
+        // outer `.sortable-formset` already has `overflow-x: auto`, so wide
+        // columns scroll horizontally rather than break the layout.
+        .select2-container {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+    }
+}
+

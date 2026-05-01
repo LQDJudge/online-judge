@@ -1,5 +1,4 @@
 @use "../vars" as *;
-@use "sass:color";
 
 /**
  * Sortable Formset Widget Styles
@@ -7,13 +6,19 @@
 
 .sortable-formset {
     margin-bottom: 1.5em;
+    // Keep the table contained within its parent column. When the table's
+    // intrinsic width (many columns + select2 widgets) exceeds the column,
+    // scroll horizontally inside the formset rather than breaking the page
+    // layout. `min-width: 0` lets this work inside flex/grid parents.
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
 
     .sortable-table {
         width: 100%;
         border-collapse: collapse;
         background-color: white;
         border-radius: 6px;
-        overflow: hidden;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 
         th, td {
@@ -125,28 +130,11 @@
         margin-top: 1em;
     }
 
-    .add-row-btn {
-        background-color: $theme_color;
-        color: white;
-        border: none;
-        padding: 0.5em 1.2em;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.2s, transform 0.1s;
-        font-weight: 500;
-
-        &:hover {
-            background-color: color.adjust($theme_color, $lightness: -8%);
-            transform: translateY(-1px);
-        }
-
-        &:active {
-            transform: translateY(0);
-        }
-
-        i {
-            margin-right: 0.5em;
-        }
+    // `.add-row-btn` is a JS-only hook here — visual styling comes from the
+    // shared `.action-btn` class applied in the template, so the button looks
+    // consistent with Save and other primary actions across the site.
+    .add-row-btn i {
+        margin-right: 0.5em;
     }
 
     // Field errors

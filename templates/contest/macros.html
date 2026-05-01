@@ -10,7 +10,7 @@
     {% endif %}
     {% if organization and contest.is_editable %}
       <span class="contest-tag contest-tag-edit">
-        <a href="{{ url('organization_contest_edit', organization.id, organization.slug, contest.key) }}" class="white">
+        <a href="{{ url('contest_edit', contest.key) }}" class="white">
           <i class="fa fa-edit"></i> {{ _('Edit') }}
         </a>
       </span>
