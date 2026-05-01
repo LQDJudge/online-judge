@@ -846,7 +846,7 @@ urlpatterns = [
                 ),
                 re_path(
                     r"^/edit_contest/(?P<contest>\w+)$",
-                    course.EditCourseContest.as_view(),
+                    course.CourseContestEditRedirect.as_view(),
                     name="edit_course_contest",
                 ),
                 re_path(
@@ -1071,6 +1071,11 @@ urlpatterns = [
             [
                 re_path(r"^$", contests.ContestDetail.as_view(), name="contest_view"),
                 re_path(
+                    r"^/edit$",
+                    contests.ContestEdit.as_view(),
+                    name="contest_edit",
+                ),
+                re_path(
                     r"^/problems$",
                     contests.ContestProblems.as_view(),
                     name="contest_problems",
@@ -1219,7 +1224,7 @@ urlpatterns = [
                 ),
                 re_path(
                     r"^/contest/edit/(?P<contest>\w+)",
-                    organization.EditOrganizationContest.as_view(),
+                    organization.OrganizationContestEditRedirect.as_view(),
                     name="organization_contest_edit",
                 ),
                 re_path(

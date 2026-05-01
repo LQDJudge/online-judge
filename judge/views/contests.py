@@ -11,10 +11,15 @@ from operator import attrgetter, itemgetter
 
 from django import forms
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.cache import cache
-from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
-from django.db import IntegrityError
+from django.core.exceptions import (
+    ImproperlyConfigured,
+    ObjectDoesNotExist,
+    ValidationError,
+)
+from django.db import IntegrityError, transaction
 from django.db.models import (
     Case,
     Count,
@@ -51,9 +56,17 @@ from django.views.generic.detail import (
     View,
 )
 
+from reversion import revisions
+
 from judge import event_poster as event
 from judge.views.comment import CommentableMixin
-from judge.forms import ContestCloneForm
+from judge.forms import (
+    ContestCloneForm,
+    ContestEditForm,
+    ContestRowFormSet,
+    CONTEST_EDIT_FIELD_SECTIONS,
+)
+from judge.utils.contest import maybe_trigger_contest_rescore
 from judge.models import (
     Contest,
     ContestMoss,
@@ -874,10 +887,6 @@ class ContestClone(ContestMixin, TitleMixin, SingleObjectFormView):
             contest.is_in_course = False
             organization = form.cleaned_data["organization"]
             contest.organizations.set([organization])
-            redirect_url = reverse(
-                "organization_contest_edit",
-                args=(organization.id, organization.slug, contest.key),
-            )
         elif target_type == "course":
             course = form.cleaned_data["course"]
             contest.is_in_course = True
@@ -890,13 +899,10 @@ class ContestClone(ContestMixin, TitleMixin, SingleObjectFormView):
                 order=CourseContest.objects.filter(course=course).count() + 1,
                 points=0,  # Default points, can be adjusted as needed
             )
-
-            redirect_url = reverse(
-                "edit_course_contest",
-                args=(course.slug, contest.key),
-            )
         else:
             raise Http404("Invalid target type selected.")
+
+        redirect_url = reverse("contest_edit", args=(contest.key,))
 
         for problem in contest_problems:
             problem.contest = contest
@@ -2338,3 +2344,162 @@ class ContestProblemset(ContestMixin, TitleMixin, DetailView):
         context["contest_problems"] = contest_problems
         context["problems"] = [cp.problem for cp in contest_problems]
         return context
+
+
+class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectFormView):
+    """
+    Unified edit page for all three contest types (public, org-private,
+    course-private). Permission paths:
+      1. Authors / curators / superusers / `edit_all_contest` perm holders.
+      2. Org admins of any organization owning the contest.
+      3. Teachers / assistants of the course owning the contest.
+    """
+
+    template_name = "contest/edit.html"
+    form_class = ContestEditForm
+
+    def _user_can_edit(self, user, contest):
+        if not user.is_authenticated:
+            return False
+        if contest.is_editable_by(user):
+            return True
+        if hasattr(user, "profile"):
+            for org in contest.organizations.all():
+                if user.profile.can_edit_organization(org):
+                    return True
+            if contest.is_in_course:
+                course_contest = contest.course.first()
+                if course_contest and Course.is_editable_by(
+                    course_contest.course, user.profile
+                ):
+                    return True
+        return False
+
+    def should_bypass_access_check(self, contest):
+        # Editors don't need to "join" a contest to edit it. NOTE: this hook
+        # is invoked from inside ContestMixin.get_object() *before* self.object
+        # is set — use the `contest` argument, never self.object.
+        return self._user_can_edit(self.request.user, contest)
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
+        try:
+            self.object = self.get_object()
+        except PrivateContestError:
+            # Non-editor of an org-private contest: collapse the access-check
+            # exception into the same permission-denied response as below so
+            # the user sees a clean 403, not a 500.
+            return generic_message(
+                request,
+                _("Permission denied"),
+                _("You do not have permission to edit this contest."),
+                status=403,
+            )
+        if not self._user_can_edit(request.user, self.object):
+            return generic_message(
+                request,
+                _("Permission denied"),
+                _("You do not have permission to edit this contest."),
+                status=403,
+            )
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        kwargs["instance"] = self.object
+        return kwargs
+
+    def get_rows_formset(self, post=False):
+        return ContestRowFormSet(
+            data=self.request.POST if post else None,
+            prefix="rows",
+            queryset=ContestProblem.objects.filter(contest=self.object).order_by(
+                "order"
+            ),
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if "rows_form" not in context:
+            context["rows_form"] = self.get_rows_formset()
+        context["field_sections"] = CONTEST_EDIT_FIELD_SECTIONS
+        # `page_type` is read by `make_tab_item` (templates/three-column-content.html)
+        # to highlight the active sidebar tab.
+        context["page_type"] = "edit"
+        return context
+
+    def get_title(self):
+        return _("Edit %s") % self.object.name
+
+    def post(self, request, *args, **kwargs):
+        # self.object was set in dispatch(); skip the redundant lookup that
+        # SingleObjectFormView.post() would otherwise do.
+        rows_formset = self.get_rows_formset(True)
+        form = self.get_form()
+
+        # Validate BOTH formset and main form before touching the DB.
+        # Otherwise a malformed `format_config` would leave already-deleted
+        # or already-saved rows persisted while the user sees a form error.
+        rows_valid = rows_formset.is_valid()
+        form_valid = form.is_valid()
+        if not rows_valid or not form_valid:
+            return self.render_to_response(
+                self.get_context_data(form=form, rows_form=rows_formset)
+            )
+
+        with transaction.atomic():
+            # First pass: handle deletions.
+            for row_form in rows_formset:
+                if row_form.cleaned_data.get("DELETE") and row_form.instance.pk:
+                    row_form.instance.delete()
+            # Second pass: save valid non-empty rows. The form's clean() flags
+            # empty rows with `_empty_row` so we silently skip them.
+            for row_form in rows_formset.forms:
+                if row_form.cleaned_data.get("DELETE"):
+                    continue
+                if row_form.cleaned_data.get("_empty_row"):
+                    continue
+                instance = row_form.save(commit=False)
+                instance.contest = self.object
+                try:
+                    # Inner savepoint: IntegrityError invalidates the outer
+                    # transaction on PG, so wrap the per-row save so we can
+                    # recover without aborting the whole edit.
+                    with transaction.atomic():
+                        instance.save()
+                except (IntegrityError, ValidationError):
+                    # Resolve unique-constraint conflict by purging the
+                    # existing row for this contest+problem (or contest+quiz)
+                    # pair, then re-saving. Same idiom used by the old
+                    # org-edit view. The retry is also wrapped in its own
+                    # savepoint — if the row violates ANOTHER constraint
+                    # (e.g. unique_together on `order`), the second save
+                    # would otherwise poison the outer transaction.
+                    if instance.problem_id:
+                        ContestProblem.objects.filter(
+                            contest=self.object, problem=instance.problem
+                        ).delete()
+                    elif instance.quiz_id:
+                        ContestProblem.objects.filter(
+                            contest=self.object, quiz=instance.quiz
+                        ).delete()
+                    with transaction.atomic():
+                        instance.save()
+
+            return self.form_valid(form)
+
+    def form_valid(self, form):
+        # SingleObjectFormView inherits FormView (not ModelFormMixin), so
+        # FormView.form_valid does NOT save — call form.save() directly.
+        with revisions.create_revision():
+            revisions.set_comment(_("Edited from site"))
+            revisions.set_user(self.request.user)
+            self.object = form.save()
+            maybe_trigger_contest_rescore(form, self.object, True)
+        messages.success(self.request, _("Contest saved."))
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse("contest_edit", args=[self.object.key])

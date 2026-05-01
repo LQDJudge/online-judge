@@ -7,9 +7,8 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import PermissionDenied
 from django.utils.text import slugify
-from django.db import IntegrityError
 from django.db.models import Count, Q, Subquery, OuterRef
 from django.forms import Form, modelformset_factory
 from django.http import (
@@ -22,7 +21,6 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.functional import cached_property
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _, gettext_lazy, ngettext
 from django.views.generic import (
     DetailView,
@@ -37,7 +35,6 @@ from django.views.generic.detail import (
     SingleObjectTemplateResponseMixin,
 )
 from django.contrib.sites.shortcuts import get_current_site
-from django.urls.exceptions import NoReverseMatch
 from reversion import revisions
 
 from judge.forms import (
@@ -46,9 +43,6 @@ from judge.forms import (
     AddOrganizationMemberForm,
     OrganizationBlogForm,
     OrganizationAdminBlogForm,
-    EditOrganizationContestForm,
-    ContestProblemFormSet,
-    ContestQuizFormSet,
     AddOrganizationContestForm,
 )
 from judge.models import (
@@ -60,7 +54,6 @@ from judge.models import (
     OrganizationModerationLog,
     Profile,
     Contest,
-    ContestProblem,
     OrganizationProfile,
     Block,
     Course,
@@ -78,7 +71,6 @@ from judge.utils.views import (
     DiggPaginatorMixin,
 )
 from judge.utils.problems import user_attempted_ids, user_completed_ids
-from judge.utils.contest import maybe_trigger_contest_rescore
 from judge.views.problem import ProblemList
 from judge.views.contests import ContestList
 from judge.views.course import CourseList
@@ -1450,165 +1442,19 @@ class AddOrganizationContest(
             return res
 
     def get_success_url(self):
-        return reverse(
-            "organization_contest_edit",
-            args=[self.organization.id, self.organization.slug, self.object.key],
-        )
+        return reverse("contest_edit", args=[self.object.key])
 
 
-class EditOrganizationContest(
-    OrganizationContestMixin, MemberOrganizationMixin, UpdateView
-):
-    template_name = "organization/contest/edit.html"
-    form_class = EditOrganizationContestForm
+class OrganizationContestEditRedirect(View):
+    """
+    Backward-compat redirect: org-scoped contest editing was consolidated
+    into the standalone /contest/<key>/edit page. Old URL still resolves
+    so external links (and existing reverse() calls under the same name)
+    keep working. Permission is enforced by ContestEdit.dispatch.
+    """
 
-    def setup_contest(self, request, *args, **kwargs):
-        contest_key = kwargs.get("contest", None)
-        if not contest_key:
-            raise Http404()
-        self.contest = get_object_or_404(Contest, key=contest_key)
-        if self.organization not in self.contest.organizations.all():
-            raise Http404()
-        if not self.is_contest_editable(request, self.contest):
-            return generic_message(
-                self.request,
-                _("Permission denied"),
-                _("You are not allowed to edit this contest"),
-                status=400,
-            )
-
-    def get_form_kwargs(self):
-        kwargs = super(EditOrganizationContest, self).get_form_kwargs()
-        kwargs["org_id"] = self.organization.id
-        kwargs["request"] = self.request
-        return kwargs
-
-    def get(self, request, *args, **kwargs):
-        res = self.setup_contest(request, *args, **kwargs)
-        if res:
-            return res
-        return super().get(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        res = self.setup_contest(request, *args, **kwargs)
-        if res:
-            return res
-        problem_formset = self.get_problem_formset(True)
-        quiz_formset = self.get_quiz_formset(True)
-
-        problems_valid = problem_formset.is_valid()
-        quizzes_valid = quiz_formset.is_valid()
-
-        if problems_valid and quizzes_valid:
-            # Process problem formset
-            for problem_form in problem_formset:
-                if problem_form.cleaned_data.get("DELETE") and problem_form.instance.pk:
-                    problem_form.instance.delete()
-
-            for contest_problem in problem_formset.save(commit=False):
-                if contest_problem:
-                    contest_problem.contest = self.contest
-                    try:
-                        contest_problem.save()
-                    except (IntegrityError, ValidationError):
-                        problem = contest_problem.problem
-                        ContestProblem.objects.filter(
-                            contest=self.contest, problem=problem
-                        ).delete()
-                        contest_problem.save()
-
-            # Process quiz formset
-            for quiz_form in quiz_formset:
-                if quiz_form.cleaned_data.get("DELETE") and quiz_form.instance.pk:
-                    quiz_form.instance.delete()
-
-            for contest_quiz in quiz_formset.save(commit=False):
-                if contest_quiz:
-                    contest_quiz.contest = self.contest
-                    try:
-                        contest_quiz.save()
-                    except (IntegrityError, ValidationError):
-                        quiz = contest_quiz.quiz
-                        ContestProblem.objects.filter(
-                            contest=self.contest, quiz=quiz
-                        ).delete()
-                        contest_quiz.save()
-
-            return super().post(request, *args, **kwargs)
-
-        self.object = self.contest
-        return self.render_to_response(
-            self.get_context_data(
-                problems_form=problem_formset,
-                quizzes_form=quiz_formset,
-            )
-        )
-
-    def get_title(self):
-        return _("Edit %s") % self.contest.key
-
-    def get_content_title(self):
-        try:
-            href = reverse("contest_view", args=[self.contest.key])
-            return mark_safe(_("Edit") + f' <a href="{href}">{self.contest.key}</a>')
-        except NoReverseMatch:
-            if self.contest.pk:
-                original_contest = Contest.objects.get(pk=self.contest.pk)
-                href = reverse("contest_view", args=[original_contest.key])
-                return mark_safe(
-                    _("Edit") + f' <a href="{href}">{original_contest.key}</a>'
-                )
-            else:
-                return _("Edit contest")
-
-    def get_object(self):
-        return self.contest
-
-    def form_valid(self, form):
-        with revisions.create_revision():
-            revisions.set_comment(_("Edited from site"))
-            revisions.set_user(self.request.user)
-            res = super(EditOrganizationContest, self).form_valid(form)
-            self.object.organizations.add(self.organization)
-            self.object.is_organization_private = True
-            self.object.save()
-
-            maybe_trigger_contest_rescore(form, self.object, True)
-
-            return res
-
-    def get_problem_formset(self, post=False):
-        return ContestProblemFormSet(
-            data=self.request.POST if post else None,
-            prefix="problems",
-            queryset=ContestProblem.objects.filter(
-                contest=self.contest, problem__isnull=False
-            ).order_by("order"),
-        )
-
-    def get_quiz_formset(self, post=False):
-        return ContestQuizFormSet(
-            data=self.request.POST if post else None,
-            prefix="quizzes",
-            queryset=ContestProblem.objects.filter(
-                contest=self.contest, quiz__isnull=False
-            ).order_by("order"),
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if "problems_form" not in context:
-            context["problems_form"] = self.get_problem_formset()
-        if "quizzes_form" not in context:
-            context["quizzes_form"] = self.get_quiz_formset()
-        return context
-
-    def get_success_url(self):
-        # Use the updated contest key in case it was changed
-        return reverse(
-            "organization_contest_edit",
-            args=[self.organization.id, self.organization.slug, self.object.key],
-        )
+    def get(self, request, pk, slug, contest, *args, **kwargs):
+        return HttpResponseRedirect(reverse("contest_edit", args=[contest]))
 
 
 class AddOrganizationBlog(

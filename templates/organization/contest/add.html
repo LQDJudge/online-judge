@@ -8,6 +8,15 @@
   {{ form.media.css }}
 {% endblock %}
 
+{# Render the title inside the white card so it stays readable
+   against themed page backgrounds. #}
+{% block middle_title %}{% endblock %}
+
 {% block middle_content %}
-  {% include "organization/form.html" %}
+  <div class="org-form-card">
+    {% if title or content_title %}
+      <center><h2>{{ content_title if content_title else title }}</h2></center>
+    {% endif %}
+    {% include "organization/form.html" %}
+  </div>
 {% endblock %}

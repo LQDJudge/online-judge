@@ -99,13 +99,13 @@ class Contest(models.Model, PageVotable, Bookmarkable):
         (SCOREBOARD_AFTER_PARTICIPATION, _("Hidden for duration of participation")),
     )
     key = models.CharField(
-        max_length=20,
+        max_length=30,
         verbose_name=_("contest id"),
         unique=True,
         validators=[RegexValidator("^[a-z0-9]+$", _("Contest id must be ^[a-z0-9]+$"))],
     )
     name = models.CharField(
-        max_length=100, verbose_name=_("contest name"), db_index=True
+        max_length=150, verbose_name=_("contest name"), db_index=True
     )
     authors = models.ManyToManyField(
         Profile,
@@ -290,7 +290,7 @@ class Contest(models.Model, PageVotable, Bookmarkable):
     )
     banned_users = models.ManyToManyField(
         Profile,
-        verbose_name=_("personae non gratae"),
+        verbose_name=_("Banned users"),
         blank=True,
         help_text=_("Bans the selected users from joining this contest."),
     )

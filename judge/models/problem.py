@@ -131,7 +131,7 @@ class License(models.Model):
 
 class Problem(CacheableModel, PageVotable, Bookmarkable):
     code = models.CharField(
-        max_length=20,
+        max_length=30,
         verbose_name=_("problem code"),
         unique=True,
         validators=[
@@ -142,7 +142,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         ),
     )
     name = models.CharField(
-        max_length=100,
+        max_length=150,
         verbose_name=_("problem name"),
         db_index=True,
         help_text=_("The full name of the problem, " "as shown in the problem list."),
@@ -255,7 +255,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
     )
     banned_users = models.ManyToManyField(
         Profile,
-        verbose_name=_("personae non gratae"),
+        verbose_name=_("Banned users"),
         blank=True,
         help_text=_("Bans the selected users from submitting to this problem."),
     )

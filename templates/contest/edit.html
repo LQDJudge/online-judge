@@ -1,0 +1,103 @@
+{% extends "two-column-content.html" %}
+{% from "widgets/sortable_formset.html" import sortable_formset %}
+
+{% block left_sidebar %}
+  {% set title = contest.name %}
+  {% include "contest/contest-tabs.html" %}
+{% endblock %}
+
+{% block js_media %}
+  {{ form.media.js }}
+  {{ rows_form.media.js }}
+  <script src="{{ static('jquery-ui.min.js') }}"></script>
+  <script src="{{ static('widgets/sortable_formset.js') }}"></script>
+  <script>
+    $(function() {
+      $(document).on('click', '.config-toggle-btn', function() {
+        var $configField = $('#format_config-field');
+        var $btns = $('.config-toggle-btn');
+        if ($configField.is(':hidden')) {
+          $configField.show();
+          $btns.text('{{ _("Hide Config") }}');
+        } else {
+          $configField.hide();
+          $btns.text('{{ _("Config") }}');
+        }
+      });
+
+      var $configField = $('#format_config-field');
+      var hasErrors = $configField.find('.errorlist, .red').length > 0
+      || $configField.find('input, textarea').hasClass('error');
+      if (hasErrors) {
+        $configField.show();
+        $('.config-toggle-btn').text('{{ _("Hide Config") }}');
+      }
+    });
+  </script>
+{% endblock %}
+
+{% block two_col_media %}
+  {{ form.media.css }}
+{% endblock %}
+
+{% block middle_content %}
+  <div class="contest-edit-page">
+    <h2>{{ title }}</h2>
+    <form action="" method="post">
+      {% csrf_token %}
+      {% if form.errors or rows_form.errors %}
+        <div class="alert alert-danger alert-dismissable">
+          <a href="#" class="close">x</a>
+          {{ _("Please fix below errors") }}
+        </div>
+      {% endif %}
+
+      {% for section_label, field_names in field_sections %}
+        <hr>
+        <h3 class="section-title">{{ section_label }}</h3>
+        {% for fname in field_names %}
+          {% if fname in form.fields %}
+            {% set field = form[fname] %}
+            {% if not field.is_hidden %}
+              {% set is_block_field = field.html_name == 'description' %}
+              <div class="form-row{% if is_block_field %} form-row-block{% endif %}" id="{{ field.html_name }}-field">
+                <label for="{{ field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
+                {{ field }}
+                {% if field.errors %}
+                  <div class="field-error red">{{ field.errors }}</div>
+                {% endif %}
+                {% if field.help_text %}
+                  <small class="form-help gray">
+                    <i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}
+                    {% if field.html_name == 'format_name' %}
+                      <a href="{{ url('contest_format_instructions') }}" target="_blank">
+                        ({{ _('Instruction') }})
+                      </a>
+                      <button type="button" class="action-btn config-toggle-btn">
+                        {{ _('Config') }}
+                      </button>
+                    {% endif %}
+                  </small>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+
+      <hr>
+      <h3 class="section-title">{{ _('Problems & Quizzes') }}</h3>
+      <p class="gray" style="margin-top: -0.5em; margin-bottom: 0.5em;">
+        <i class="fa fa-info-circle"></i>
+        {{ _('Each row should specify a problem OR a quiz, not both. Drag the handle to reorder.') }}
+      </p>
+      {{ sortable_formset(rows_form, {
+      'order_field': 'order',
+      'add_text': _('Add Row'),
+      'empty_text': _('No problems or quizzes added yet.')
+      }) }}
+
+      <button type="submit" class="action-btn">{{ _('Save') }}</button>
+    </form>
+  </div>
+{% endblock %}

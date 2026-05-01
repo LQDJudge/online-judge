@@ -11,7 +11,7 @@
   {% if page_type == 'user_submissions_tab' %}
     {{ make_tab('user_submissions_tab', 'fa-user', None, _("%(user)s's", user=tab_username)) }}
   {% endif %}
-  {% if perms.judge.change_submission %}
+  {% if request.user.is_superuser %}
     {{ make_tab('admin', 'fa-edit', url('admin:judge_submission_changelist'), _('Admin')) }}
   {% endif %}
 {% endblock %}

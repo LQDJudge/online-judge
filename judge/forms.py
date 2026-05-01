@@ -16,7 +16,7 @@ from django.forms import (
     ChoiceField,
     Form,
     ModelForm,
-    formset_factory,
+    modelformset_factory,
     BaseModelFormSet,
     FileField,
 )
@@ -428,26 +428,36 @@ class AddOrganizationContestForm(ModelForm):
         }
 
 
-class EditOrganizationContestForm(ModelForm):
-    def __init__(self, *args, **kwargs):
-        self.org_id = kwargs.pop("org_id", 0)
-        self.request = kwargs.pop("request", None)
-        super(EditOrganizationContestForm, self).__init__(*args, **kwargs)
-        for field in [
-            "authors",
-            "curators",
-            "testers",
-            "private_contestants",
-            "banned_users",
-            "view_contest_scoreboard",
-        ]:
-            self.fields[field].widget.data_url = (
-                self.fields[field].widget.get_url() + f"?org_id={self.org_id}"
-            )
+class ContestEditForm(ModelForm):
+    """
+    Unified contest edit form. Serves all three contest types (public,
+    org-private, course-private) via the general /contest/<key>/edit page.
+    Admin-only fields (`is_visible`, `organizations`) are disabled for
+    non-superusers so authors can edit their own contests safely without
+    being able to flip visibility or move the contest between orgs.
+    """
 
-        # Set user's preferred ace theme for format_config
-        if self.request and hasattr(self.request, "profile"):
-            self.fields["format_config"].widget.theme = self.request.profile.ace_theme
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+
+        if not (self.user and self.user.is_superuser):
+            self.fields["organizations"].disabled = True
+
+            # `is_visible` rule mirrors Problem's `is_public` gating: a contest
+            # scoped to an org or course is freely toggleable by editors, but
+            # an unscoped (would-be site-public) draft can only be promoted
+            # by a superuser. Demotion of an already-public contest stays
+            # open so editors can pull it off the listing.
+            is_scoped = bool(
+                self.instance.pk
+                and (self.instance.is_in_course or self.instance.organizations.exists())
+            )
+            if not is_scoped and not self.instance.is_visible:
+                self.fields["is_visible"].disabled = True
+
+        if self.user and hasattr(self.user, "profile"):
+            self.fields["format_config"].widget.theme = self.user.profile.ace_theme
 
     def clean(self):
         cleaned_data = super().clean()
@@ -460,6 +470,29 @@ class EditOrganizationContestForm(ModelForm):
                 format_class.validate(format_config)
             except Exception as e:
                 self.add_error("format_config", str(e))
+
+        # Server-side safety net for the `is_visible` promotion rule. The
+        # field's disabled flag already drops tampered values during form
+        # binding, but this catches edge cases — a programmatic caller that
+        # forgot to pass `user=`, a concurrent edit, or a bypassed disable.
+        if (
+            self.user
+            and not self.user.is_superuser
+            and self.instance
+            and self.instance.pk
+            and cleaned_data.get("is_visible")
+            and not self.instance.is_visible
+        ):
+            is_scoped = (
+                self.instance.is_in_course or self.instance.organizations.exists()
+            )
+            if not is_scoped:
+                raise ValidationError(
+                    _(
+                        "Only administrators can publish a public contest. "
+                        "Add it to an organization or course first."
+                    )
+                )
 
         return cleaned_data
 
@@ -482,12 +515,14 @@ class EditOrganizationContestForm(ModelForm):
             "hide_problem_tags",
             "public_scoreboard",
             "scoreboard_visibility",
+            "run_pretests_only",
             "points_precision",
             "rate_limit",
             "description",
             "og_image",
             "logo_override_image",
             "summary",
+            "organizations",
             "access_code",
             "private_contestants",
             "view_contest_scoreboard",
@@ -507,7 +542,6 @@ class EditOrganizationContestForm(ModelForm):
             "organizations": HeavySelect2MultipleWidget(
                 data_view="organization_select2"
             ),
-            "tags": Select2MultipleWidget,
             "description": HeavyPreviewPageDownWidget(
                 preview=reverse_lazy("contest_preview")
             ),
@@ -517,6 +551,41 @@ class EditOrganizationContestForm(ModelForm):
             "format_config": AceWidget(mode="json", width="100%", height="200px"),
             "scoreboard_visibility": Select2Widget(),
         }
+
+
+# Section grouping for the unified contest edit page. Mirrors Django Admin's
+# fieldsets (judge/admin/contest.py:183-244) with two intentional changes:
+#   - `is_visible` moved out of Settings into Format (per UX feedback).
+#   - Rating/problem_label_script/tags omitted (admin-only fields not exposed
+#     to non-superuser editors).
+CONTEST_EDIT_FIELD_SECTIONS = [
+    (_("Basic"), ["key", "name", "authors", "curators", "testers"]),
+    (_("Scheduling"), ["start_time", "end_time", "time_limit", "freeze_after"]),
+    (_("Format"), ["format_name", "format_config", "is_visible"]),
+    (
+        _("Settings"),
+        [
+            "use_clarifications",
+            "hide_problem_tags",
+            "public_scoreboard",
+            "scoreboard_visibility",
+            "run_pretests_only",
+            "points_precision",
+            "rate_limit",
+        ],
+    ),
+    (_("Details"), ["description", "og_image", "logo_override_image", "summary"]),
+    (
+        _("Access"),
+        [
+            "organizations",
+            "access_code",
+            "private_contestants",
+            "view_contest_scoreboard",
+        ],
+    ),
+    (_("Justice"), ["banned_users"]),
+]
 
 
 class AddOrganizationMemberForm(ModelForm):
@@ -785,109 +854,96 @@ class ProblemPointsVoteForm(ModelForm):
         fields = ["points"]
 
 
-class ContestProblemForm(ModelForm):
+class ContestRowForm(ModelForm):
+    """
+    Single row in the unified contest problems-and-quizzes table.
+    A row's `problem` and `quiz` are mutually exclusive — exactly one must
+    be set. The model allows both nullable (problem nulled for quiz rows
+    and vice versa), and our clean() enforces the XOR constraint.
+    """
+
     class Meta:
         model = ContestProblem
         fields = (
             "order",
             "problem",
+            "quiz",
             "points",
             "partial",
-            "show_testcases",
+            "is_pretested",
             "max_submissions",
+            "hidden_subtasks",
+            "is_result_hidden",
+            "show_testcases",
         )
         widgets = {
             "problem": HeavySelect2Widget(
                 data_view="problem_select2", attrs={"style": "width: 100%"}
             ),
-        }
-
-
-class ContestProblemModelFormSet(BaseModelFormSet):
-    def is_valid(self):
-        valid = super().is_valid()
-
-        if not valid:
-            return valid
-
-        problems = set()
-        duplicates = []
-
-        for form in self.forms:
-            if form.cleaned_data and not form.cleaned_data.get("DELETE", False):
-                problem = form.cleaned_data.get("problem")
-                if problem in problems:
-                    duplicates.append(problem)
-                else:
-                    problems.add(problem)
-
-        if duplicates:
-            for form in self.forms:
-                problem = form.cleaned_data.get("problem")
-                if problem in duplicates:
-                    form.add_error("problem", _("This problem is duplicated."))
-            return False
-
-        return True
-
-
-class ContestProblemFormSet(
-    formset_factory(
-        ContestProblemForm, formset=ContestProblemModelFormSet, extra=0, can_delete=True
-    )
-):
-    model = ContestProblem
-
-
-class ContestQuizForm(ModelForm):
-    class Meta:
-        model = ContestProblem
-        fields = (
-            "order",
-            "quiz",
-            "points",
-        )
-        widgets = {
             "quiz": HeavySelect2Widget(
                 data_view="quiz_select2", attrs={"style": "width: 100%"}
             ),
+            "points": forms.NumberInput(attrs={"style": "width: 4em"}),
+            "max_submissions": forms.NumberInput(attrs={"style": "width: 4em"}),
+            "hidden_subtasks": forms.TextInput(attrs={"style": "width: 5em"}),
         }
 
+    def clean(self):
+        cleaned = super().clean()
+        # Skip XOR check for empty/deleted rows (no problem AND no quiz means
+        # the user added a row but didn't fill it in — silently drop).
+        if cleaned.get("DELETE"):
+            return cleaned
+        problem = cleaned.get("problem")
+        quiz = cleaned.get("quiz")
+        if not problem and not quiz:
+            # Mark for skip on save (handled in view).
+            cleaned["_empty_row"] = True
+        elif problem and quiz:
+            raise ValidationError(_("A row may have a problem or a quiz, not both."))
+        return cleaned
 
-class ContestQuizModelFormSet(BaseModelFormSet):
+
+class ContestRowModelFormSet(BaseModelFormSet):
     def is_valid(self):
         valid = super().is_valid()
-
         if not valid:
             return valid
 
-        quizzes = set()
-        duplicates = []
-
+        # Detect duplicate problems and duplicate quizzes within one save.
+        seen_problems, seen_quizzes = set(), set()
+        dup_problems, dup_quizzes = set(), set()
         for form in self.forms:
-            if form.cleaned_data and not form.cleaned_data.get("DELETE", False):
-                quiz = form.cleaned_data.get("quiz")
-                if quiz in quizzes:
-                    duplicates.append(quiz)
-                else:
-                    quizzes.add(quiz)
+            if not form.cleaned_data or form.cleaned_data.get("DELETE"):
+                continue
+            problem = form.cleaned_data.get("problem")
+            quiz = form.cleaned_data.get("quiz")
+            if problem:
+                (dup_problems if problem in seen_problems else seen_problems).add(
+                    problem
+                )
+            if quiz:
+                (dup_quizzes if quiz in seen_quizzes else seen_quizzes).add(quiz)
 
-        if duplicates:
+        if dup_problems or dup_quizzes:
             for form in self.forms:
-                quiz = form.cleaned_data.get("quiz")
-                if quiz in duplicates:
+                if not form.cleaned_data:
+                    continue
+                if form.cleaned_data.get("problem") in dup_problems:
+                    form.add_error("problem", _("This problem is duplicated."))
+                if form.cleaned_data.get("quiz") in dup_quizzes:
                     form.add_error("quiz", _("This quiz is duplicated."))
             return False
-
         return True
 
 
-class ContestQuizFormSet(
-    formset_factory(
-        ContestQuizForm, formset=ContestQuizModelFormSet, extra=0, can_delete=True
-    )
-):
-    model = ContestProblem
+ContestRowFormSet = modelformset_factory(
+    ContestProblem,
+    form=ContestRowForm,
+    formset=ContestRowModelFormSet,
+    extra=0,
+    can_delete=True,
+)
 
 
 class LessonCloneForm(Form):

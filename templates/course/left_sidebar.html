@@ -7,7 +7,7 @@
     {{ make_tab_item('members', 'fa fa-users', url('course_members', course.slug), _('Members')) }}
     {{ make_tab_item('edit', 'fa fa-gear', url('course_edit', course.slug), _('Settings')) }}
   {% endif %}
-  {% if perms.judge.change_course %}
+  {% if request.user.is_superuser %}
     {{ make_tab_item('admin', 'fa fa-edit', url('admin:judge_course_change', course.id), _('Admin'), force_new_page=True) }}
   {% endif %}
 </div>
