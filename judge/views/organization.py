@@ -1550,6 +1550,12 @@ class EditOrganizationBlog(
             return OrganizationAdminBlogForm
         return OrganizationBlogForm
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.get_form_class() is OrganizationAdminBlogForm:
+            kwargs["is_admin"] = self.request.user.is_superuser
+        return kwargs
+
     def setup_blog(self, request, *args, **kwargs):
         try:
             self.blog_id = kwargs["blog_pk"]
@@ -1736,6 +1742,11 @@ class EditOrganizationBlog(
             self.create_notification("Edit blog")
 
             self.object.slug = slugify(self.object.title)[:50]
+            # Privacy is derived from org membership: a post is org-private
+            # iff it has any organizations attached. Only admins can change
+            # the M2M from this page (the field is hidden otherwise), so
+            # this is a no-op for non-admins.
+            self.object.is_organization_private = self.object.organizations.exists()
             self.object.save()
             return res
 

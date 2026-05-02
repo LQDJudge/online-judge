@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Edit blog post') }}{% endblock %}
+
+{% block media %}
+  {{ form.media.css }}
+{% endblock %}
+
+{% block js_media %}
+  {{ form.media.js }}
+{% endblock %}
+
+{% block body %}
+  <div class="blog-edit-page">
+    <form action="" method="post">
+      {% csrf_token %}
+      {% if form.errors %}
+        <div class="alert alert-danger alert-dismissable">
+          <a href="#" class="close">x</a>
+          {{ form.non_field_errors() }}
+          {{ form.errors }}
+        </div>
+      {% endif %}
+      {% for field in form %}
+        <div class="blog-edit-field">
+          {{ field.errors }}
+          <label for="{{ field.id_for_label }}">
+            <b>{{ field.label }}{% if field.field.required %}<span class="red"> *</span>{% endif %}:</b>
+          </label>
+          <div class="blog-edit-field-wrapper">{{ field }}</div>
+          {% if field.help_text %}
+            <small class="blog-edit-help"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div class="blog-edit-actions">
+        <button type="submit" class="action-btn">{{ _('Save') }}</button>
+        <a class="action-btn" href="{{ url('blog_post', object.id, object.slug) }}">{{ _('Cancel') }}</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}
