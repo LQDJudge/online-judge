@@ -85,9 +85,18 @@ class SubmissionMixin(object):
 
 
 class SubmissionDetailBase(LoginRequiredMixin, TitleMixin, SubmissionMixin, DetailView):
-    queryset = Submission.objects.select_related(
-        "language", "problem", "user", "contest_object"
-    ).defer("problem__description", "user__about", "contest_object__description")
+    queryset = (
+        Submission.objects.select_related(
+            "language",
+            "problem",
+            "user",
+            "contest_object",
+            "source",
+            "contest__problem",
+        )
+        .prefetch_related("test_cases")
+        .defer("problem__description", "user__about", "contest_object__description")
+    )
 
     def get_object(self, queryset=None):
         submission = super(SubmissionDetailBase, self).get_object(queryset)
@@ -131,10 +140,9 @@ def get_hidden_subtasks(request, submission):
         try:
             cp = submission.contest.problem
             if cp.is_result_hidden:
-                all_batches = set(
-                    submission.test_cases.values_list("batch", flat=True).distinct()
-                )
-                all_batches.discard(None)
+                all_batches = {
+                    c.batch for c in submission.test_cases.all() if c.batch is not None
+                }
                 return all_batches if all_batches else {-1}
         except Exception:
             pass
@@ -161,7 +169,7 @@ def make_batch(batch, cases, include_cases=True):
 
 
 def group_test_cases(submission, hidden_subtasks, include_cases=True):
-    cases = submission.test_cases.exclude(batch__in=hidden_subtasks)
+    cases = [c for c in submission.test_cases.all() if c.batch not in hidden_subtasks]
     result = []
     buf = []
     last = None
@@ -184,8 +192,19 @@ def get_cases_data(submission):
     if submission.is_pretested:
         testcases = testcases.filter(is_pretest=True)
 
+    submitted_cases = {c.case for c in submission.test_cases.all()}
+    if not submitted_cases:
+        return {}
+
+    # Only fetch files for type-C cases the submission actually ran.
     files = []
+    count = 0
     for case in testcases:
+        if case.type != "C":
+            continue
+        count += 1
+        if count not in submitted_cases:
+            continue
         if case.input_file:
             files.append(case.input_file)
         if case.output_file:
@@ -200,6 +219,8 @@ def get_cases_data(submission):
         if case.type != "C":
             continue
         count += 1
+        if count not in submitted_cases:
+            continue
         input_data = case_data.get(case.input_file, "") if case.input_file else ""
         answer_data = case_data.get(case.output_file, "") if case.output_file else ""
         problem_data[count] = {"input": input_data, "answer": answer_data}
