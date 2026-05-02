@@ -6,6 +6,8 @@ Stores conversation history in Django cache with TTL.
 import time
 from django.core.cache import cache
 
+from llm_service.config import get_config
+
 CACHE_KEY_PREFIX = "chatbot"
 CACHE_TTL = 86400  # 1 day in seconds
 MAX_STORED_MESSAGES = 50
@@ -30,11 +32,9 @@ def get_conversation(user_id, problem_code):
     key = get_cache_key(user_id, problem_code)
     conversation = cache.get(key)
 
-    if conversation is None:
-        # Import here to avoid circular imports
-        from llm_service.config import get_config
+    config = get_config()
 
-        config = get_config()
+    if conversation is None:
         return {
             "messages": [],
             "model": config.get_chatbot_default_model(),
@@ -42,11 +42,10 @@ def get_conversation(user_id, problem_code):
             "updated_at": int(time.time()),
         }
 
-    # Ensure model field exists for existing conversations
-    if "model" not in conversation:
-        from llm_service.config import get_config
-
-        config = get_config()
+    # Stale IDs (e.g. an old GPT version that was removed from the registry)
+    # would otherwise be sent to Poe and fail with an unknown-bot error.
+    valid_models = {m["id"] for m in config.get_chatbot_supported_models()}
+    if conversation.get("model") not in valid_models:
         conversation["model"] = config.get_chatbot_default_model()
 
     return conversation
@@ -169,9 +168,6 @@ def set_model(user_id, problem_code, model_id):
     Returns:
         True if successful, False if model is invalid
     """
-    # Validate model ID
-    from llm_service.config import get_config
-
     config = get_config()
     valid_models = [m["id"] for m in config.get_chatbot_supported_models()]
 
