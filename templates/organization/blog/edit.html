@@ -9,34 +9,43 @@
   {{ form.media.css }}
 {% endblock %}
 
+{# Render the title inside the white card so it stays readable
+   against themed page backgrounds. #}
+{% block middle_title %}{% endblock %}
+
 {% block middle_content %}
-  <form action="" method="post">
-    {% csrf_token %}
-    {% if form.errors %}
-      <div class="alert alert-danger alert-dismissable">
-        <a href="#" class="close">x</a>
-        {{ form.non_field_errors() }}
-        {{ form.errors }}
-      </div>
+  <div class="org-form-card">
+    {% if title or content_title %}
+      <center><h2>{{ content_title if content_title else title }}</h2></center>
     {% endif %}
-    {% for field in form %}
-      {% if not field.is_hidden %}
-        <div style="margin-bottom: 1em;">
-          {{ field.errors }}
-          <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span style="color:red"> * </span>{% endif %}:</b> </label>
-          <div class="org-field-wrapper" id="org-field-wrapper-{{field.html_name }}">
-            {{ field }}
-          </div>
-          {% if field.help_text %}
-            <small class="org-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
-          {% endif %}
+    <form action="" method="post">
+      {% csrf_token %}
+      {% if form.errors %}
+        <div class="alert alert-danger alert-dismissable">
+          <a href="#" class="close">x</a>
+          {{ form.non_field_errors() }}
+          {{ form.errors }}
         </div>
       {% endif %}
-    {% endfor %}
-    <button type="submit" style="display: inline;" class="button" name="action" value="Save">{{ _('Save') }} </button>
-    <button type="submit" style="float: right;" class="button background-red" name="action" value="Delete">
-      <i class="fa fa-trash"></i>
-      {{ _('Delete') }}
-    </button>
-  </form>
+      {% for field in form %}
+        {% if not field.is_hidden %}
+          <div style="margin-bottom: 1em;">
+            {{ field.errors }}
+            <label for="{{field.id_for_label }}"><b>{{ field.label }}{% if field.field.required %}<span style="color:red"> * </span>{% endif %}:</b> </label>
+            <div class="org-field-wrapper" id="org-field-wrapper-{{field.html_name }}">
+              {{ field }}
+            </div>
+            {% if field.help_text %}
+              <small class="org-help-text"><i class="fa fa-exclamation-circle"></i> {{ field.help_text|safe }}</small>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+      <button type="submit" style="display: inline;" class="action-btn" name="action" value="Save">{{ _('Save') }} </button>
+      <button type="submit" style="float: right;" class="action-btn background-red" name="action" value="Delete">
+        <i class="fa fa-trash"></i>
+        {{ _('Delete') }}
+      </button>
+    </form>
+  </div>
 {% endblock %}

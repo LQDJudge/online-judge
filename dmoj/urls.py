@@ -1371,6 +1371,13 @@ urlpatterns = [
         ),
     ),
     re_path(r"^blog/", blog.PostList.as_view(), name="blog_post_list"),
+    # Must come BEFORE blog_post: blog_post's slug regex (.*)$ is greedy and
+    # would otherwise swallow `/edit`.
+    re_path(
+        r"^post/(?P<id>\d+)-(?P<slug>.*)/edit$",
+        blog.EditBlogPost.as_view(),
+        name="edit_blog_post",
+    ),
     re_path(
         r"^post/(?P<id>\d+)-(?P<slug>.*)$", blog.PostView.as_view(), name="blog_post"
     ),

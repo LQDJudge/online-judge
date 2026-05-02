@@ -51,7 +51,7 @@
               <i class="fa fa-edit"></i> {{ _('Edit') }}
             </a>
           {% elif post.is_editable_by(request.user) %}
-            <a href="{{ url('admin:judge_blogpost_change', post.id) }}" class="post-action-btn">
+            <a href="{{ url('edit_blog_post', post.id, post.slug) }}" class="post-action-btn">
               <i class="fa fa-edit"></i> {{ _('Edit') }}
             </a>
           {% endif %}

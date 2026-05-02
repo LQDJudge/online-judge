@@ -686,3 +686,39 @@
         text-align: center;
     }
 }
+
+.blog-edit-page {
+    max-width: 900px;
+    margin: 1em auto;
+
+    .blog-edit-field {
+        margin-bottom: 1.25em;
+
+        > label {
+            display: block;
+            margin-bottom: 0.4em;
+        }
+
+        .blog-edit-field-wrapper input[type="text"],
+        .blog-edit-field-wrapper textarea {
+            width: 100%;
+            box-sizing: border-box;
+        }
+    }
+
+    .blog-edit-help {
+        display: block;
+        margin-top: 0.3em;
+    }
+
+    .blog-edit-actions {
+        margin-top: 1.5em;
+        display: flex;
+        gap: 0.75em;
+
+        .button {
+            display: inline-block;
+            flex: 0 0 auto;
+        }
+    }
+}

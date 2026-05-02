@@ -124,7 +124,7 @@ class BlogPost(models.Model, PageVotable, Bookmarkable):
                 ).exists()
             ):
                 return True
-        if user.has_perm("judge.edit_all_post"):
+        if user.is_superuser:
             return True
         return (
             user.is_authenticated and self.authors.filter(id=user.profile.id).exists()
@@ -133,7 +133,7 @@ class BlogPost(models.Model, PageVotable, Bookmarkable):
     def is_editable_by(self, user):
         if not user.is_authenticated:
             return False
-        if user.has_perm("judge.edit_all_post"):
+        if user.is_superuser:
             return True
         return user.profile.id in self.get_author_ids()
 

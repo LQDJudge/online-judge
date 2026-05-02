@@ -1,18 +1,25 @@
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
 from django.shortcuts import render
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.text import slugify
 from django.utils.translation import gettext as _
+from django.views.generic import UpdateView, View
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
-from django.views.generic import View
 
-from judge.views.comment import CommentableMixin
-from judge.views.pagevote import PageVoteDetailView
-from judge.views.bookmark import BookMarkDetailView
+from reversion import revisions
+
+from judge.forms import BlogPostEditForm
 from judge.models import BlogPost
-from judge.utils.views import TitleMixin
 from judge.utils.feed import build_home_feed
+from judge.utils.views import TitleMixin, generic_message
+from judge.views.bookmark import BookMarkDetailView
+from judge.views.comment import CommentableMixin
 from judge.views.feed import HomeFeedView
+from judge.views.pagevote import PageVoteDetailView
 
 
 class PostList(HomeFeedView):
@@ -138,3 +145,68 @@ class PostView(
         if not post.is_accessible_by(self.request.user):
             raise Http404()
         return post
+
+
+class EditBlogPost(LoginRequiredMixin, TitleMixin, UpdateView):
+    model = BlogPost
+    pk_url_kwarg = "id"
+    template_name = "blog/edit.html"
+    form_class = BlogPostEditForm
+
+    def get_title(self):
+        return _("Edit %s") % self.object.title
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        self.object = self.get_object()
+        if self.object.is_organization_private:
+            return generic_message(
+                request,
+                _("Use organization edit"),
+                _(
+                    "This post is private to an organization. "
+                    "Edit it through the organization page."
+                ),
+                status=400,
+            )
+        if not self.object.is_editable_by(request.user):
+            return generic_message(
+                request,
+                _("Permission denied"),
+                _("You are not allowed to edit this blog post."),
+                status=403,
+            )
+        if request.profile.mute and not request.user.is_superuser:
+            return generic_message(
+                request,
+                _("Muted"),
+                _("Muted users are not allowed to edit blog posts."),
+                status=403,
+            )
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["is_admin"] = self.request.user.is_superuser
+        return kwargs
+
+    def form_valid(self, form):
+        # Slug must be regenerated before super().form_valid so that
+        # get_success_url builds the redirect with the new slug.
+        form.instance.slug = slugify(form.instance.title)[:50]
+        with revisions.create_revision():
+            res = super().form_valid(form)
+            # Privacy is derived from org membership: a post is org-private
+            # iff it has any organizations attached.
+            new_state = self.object.organizations.exists()
+            if self.object.is_organization_private != new_state:
+                self.object.is_organization_private = new_state
+                self.object.save()
+            revisions.set_comment(_("Edited from site"))
+            revisions.set_user(self.request.user)
+        messages.success(self.request, _("Blog post updated."))
+        return res
+
+    def get_success_url(self):
+        return reverse("blog_post", args=[self.object.id, self.object.slug])
