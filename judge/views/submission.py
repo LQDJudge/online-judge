@@ -247,6 +247,7 @@ def get_cases_data(submission):
 
 class SubmissionStatus(SubmissionDetailBase):
     template_name = "submission/status.html"
+    highlight_source = True
 
     def can_see_testcases(self):
         contest_submission = self.object.contest_or_none
@@ -289,12 +290,13 @@ class SubmissionStatus(SubmissionDetailBase):
         )
         context["time_limit"] = submission.problem.time_limit
         context["can_see_testcases"] = False
-        context["highlighted_source"] = highlight_code(
-            submission.source.source,
-            submission.language.pygments,
-            linenos=False,
-            title=submission.language,
-        )
+        if self.highlight_source:
+            context["highlighted_source"] = highlight_code(
+                submission.source.source,
+                submission.language.pygments,
+                linenos=False,
+                title=submission.language,
+            )
 
         if self.can_see_testcases():
             context["cases_data"] = get_cases_data(submission)
@@ -312,6 +314,7 @@ class SubmissionStatus(SubmissionDetailBase):
 
 class SubmissionTestCaseQuery(SubmissionStatus):
     template_name = "submission/status-testcases.html"
+    highlight_source = False
 
     def get(self, request, *args, **kwargs):
         if "id" not in request.GET or not request.GET["id"].isdigit():

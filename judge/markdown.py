@@ -59,6 +59,7 @@ EXTENSION_CONFIGS = {
         "auto_title_map": {
             "Text Only": "",
         },
+        "guess_lang": False,
     },
 }
 
