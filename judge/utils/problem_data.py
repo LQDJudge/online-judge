@@ -138,15 +138,13 @@ class ProblemDataCompiler(object):
         for i, case in enumerate(self.cases, 1):
             if case.type == "C":
                 data = {}
+                if case.points is None:
+                    raise ProblemDataError(
+                        _("Points must be defined for case #%d.") % i
+                    )
                 if batch:
-                    if case.points is None:
-                        case.points = 0
                     case.is_pretest = batch["is_pretest"]
                 else:
-                    if case.points is None:
-                        raise ProblemDataError(
-                            _("Points must be defined for non-batch case #%d.") % i
-                        )
                     data["is_pretest"] = case.is_pretest
 
                 if not self.generator:
