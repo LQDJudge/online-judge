@@ -125,17 +125,20 @@ class ChatView(ListView):
         return context
 
 
-def hide_lobby_message(message, is_automated=False):
+def hide_lobby_message(message, is_automated=False, moderator=None):
     """Hide a single lobby message and log the action."""
     message.hidden = True
     message.save(update_fields=["hidden"])
     get_first_msg_id.dirty(None)
     ChatModerationLog.log_action(
-        message=message, action="hide", is_automated=is_automated
+        message=message,
+        action="hide",
+        is_automated=is_automated,
+        moderator=moderator,
     )
 
 
-def mute_chat_user(message, is_automated=False):
+def mute_chat_user(message, is_automated=False, moderator=None):
     """Mute a user: hide all their lobby messages and prevent future posting."""
     message.author.mute = True
     message.author.save(update_fields=["mute"])
@@ -143,7 +146,10 @@ def mute_chat_user(message, is_automated=False):
     Message.objects.filter(room=None, author=message.author).update(hidden=True)
     get_first_msg_id.dirty(None)
     ChatModerationLog.log_action(
-        message=message, action="mute", is_automated=is_automated
+        message=message,
+        action="mute",
+        is_automated=is_automated,
+        moderator=moderator,
     )
 
 
@@ -169,7 +175,7 @@ def delete_message(request):
 
     if not room_id and request.user.has_perm("judge.change_comment"):
         # Lobby message deleted by staff — shared helper handles hide + cache + log
-        hide_lobby_message(mess)
+        hide_lobby_message(mess, moderator=request.profile)
         return JsonResponse(ret)
 
     mess.hidden = True
@@ -223,7 +229,7 @@ def mute_message(request):
     with revisions.create_revision():
         revisions.set_comment(_("Mute chat") + ": " + mess.body)
         revisions.set_user(request.user)
-        mute_chat_user(mess)
+        mute_chat_user(mess, moderator=request.profile)
 
     return JsonResponse(ret)
 

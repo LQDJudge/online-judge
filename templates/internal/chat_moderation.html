@@ -116,6 +116,10 @@
           <td>
             {% if log.is_automated %}
               {{ _("Auto") }}
+            {% elif log.moderator %}
+              <a href="{{ url('user_page', log.moderator.user.username) }}">
+                {{ log.moderator.user.username }}
+              </a>
             {% else %}
               {{ _("Manual") }}
             {% endif %}

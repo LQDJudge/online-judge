@@ -637,7 +637,7 @@ class InternalChatModeration(InternalView, ListView):
 
     def get_queryset(self):
         queryset = ChatModerationLog.objects.exclude(action="keep").select_related(
-            "message__author__user"
+            "message__author__user", "moderator__user"
         )
 
         action_filter = self.request.GET.get("action", "")

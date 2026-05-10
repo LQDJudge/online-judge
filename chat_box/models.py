@@ -277,6 +277,13 @@ class ChatModerationLog(models.Model):
     action = models.CharField(max_length=10, choices=ACTIONS)
     reason = models.TextField(blank=True)
     is_automated = models.BooleanField(default=False)
+    moderator = models.ForeignKey(
+        Profile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="chat_moderation_actions",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -292,12 +299,13 @@ class ChatModerationLog(models.Model):
         return f"{self.get_action_display()} - Message #{self.message_id} - {self.created_at}"
 
     @classmethod
-    def log_action(cls, message, action, reason="", is_automated=False):
+    def log_action(cls, message, action, reason="", is_automated=False, moderator=None):
         return cls.objects.create(
             message=message,
             action=action,
             reason=reason,
             is_automated=is_automated,
+            moderator=moderator,
         )
 
 
