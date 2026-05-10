@@ -16,9 +16,9 @@
     if (!container) {
       container = document.createElement('div');
       container.id = 'dynamic-effects-container';
-      container.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999;';
       document.body.appendChild(container);
     }
+    container.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999;';
     return container;
   }
 
@@ -143,6 +143,86 @@
         });
       }
     });
+  }
+
+  // Red poinciana / phoenix flower (Hoa Phượng) effect.
+  // Keep the same gentle pace as cherry blossoms, but use a warmer red-orange palette
+  // and a custom five-petal flower with a pale spotted banner petal and long stamens.
+  function initRedPoinciana() {
+    var container = createContainer();
+    container.className = (container.className + ' poinciana-effects').trim();
+
+    if (!document.getElementById('poinciana-effects-style')) {
+      var style = document.createElement('style');
+      style.id = 'poinciana-effects-style';
+      style.textContent = [
+        '.poinciana-effects .poinciana-flower,.poinciana-effects .poinciana-petal{',
+        'position:absolute;top:-8vh;left:0;will-change:transform,opacity;',
+        'filter:drop-shadow(0 0 3px rgba(255,58,31,.45));',
+        'animation-name:poinciana-fall;animation-timing-function:linear;animation-iteration-count:infinite;',
+        '}',
+        '.poinciana-effects .poinciana-petal{filter:none;}',
+        '.poinciana-effects svg{display:block;width:100%;height:100%;}',
+        '@keyframes poinciana-fall{',
+        '0%{transform:translate3d(var(--x-start),-12vh,0) rotate(var(--r-start));opacity:0;}',
+        '8%{opacity:var(--opacity);}',
+        '100%{transform:translate3d(var(--x-end),112vh,0) rotate(var(--r-end));opacity:0;}',
+        '}'
+      ].join('');
+      document.head.appendChild(style);
+    }
+
+    var flowerSvg = [
+      '<svg viewBox="-38 -42 76 84" aria-hidden="true">',
+      '<g>',
+      '<path d="M0 -8 C-11 -35 19 -42 17 -14 C35 -23 44 4 18 7 C31 30 5 39 -5 14 C-24 31 -42 8 -17 0 C-33 -19 -12 -35 0 -8Z" fill="#e31b23"/>',
+      '<path d="M0 -10 C-8 -32 16 -38 14 -13 C31 -21 39 3 16 5 C27 25 6 33 -4 12 C-21 27 -35 8 -14 0 C-28 -16 -10 -30 0 -10Z" fill="#ff3b1f" opacity=".86"/>',
+      '<path d="M-4 -12 C-10 -38 15 -44 22 -18 C19 -8 8 -2 0 -5Z" fill="#fff2a6"/>',
+      '<path d="M-2 -13 C4 -20 11 -21 18 -17 M1 -9 C7 -12 12 -12 17 -9 M2 -5 C7 -6 11 -5 15 -2" fill="none" stroke="#c8102e" stroke-width="2" stroke-linecap="round" opacity=".8"/>',
+      '<circle cx="4" cy="-15" r="1.5" fill="#c8102e"/><circle cx="10" cy="-13" r="1.2" fill="#c8102e"/><circle cx="14" cy="-7" r="1.2" fill="#c8102e"/>',
+      '<path d="M0 5 C-3 15 -10 22 -18 30 M3 5 C3 17 -1 25 -6 35 M6 4 C10 15 15 22 22 31" fill="none" stroke="#b40016" stroke-width="2" stroke-linecap="round"/>',
+      '<circle cx="-18" cy="30" r="2" fill="#ffd166"/><circle cx="-6" cy="35" r="2" fill="#ffd166"/><circle cx="22" cy="31" r="2" fill="#ffd166"/>',
+      '<circle cx="0" cy="2" r="5" fill="#9c0012"/>',
+      '</g>',
+      '</svg>'
+    ].join('');
+
+    var petalSvg = [
+      '<svg viewBox="-14 -12 28 24" aria-hidden="true">',
+      '<path d="M0 -10 C10 -6 12 5 0 11 C-12 5 -10 -6 0 -10Z" fill="#e31b23"/>',
+      '<path d="M0 -8 C5 -4 6 4 0 8" fill="none" stroke="#ff7a18" stroke-width="1.4" stroke-linecap="round" opacity=".75"/>',
+      '</svg>'
+    ].join('');
+
+    function addFallingItem(className, svg, index, total, minSize, maxSize, minDuration, maxDuration) {
+      var item = document.createElement('div');
+      var size = minSize + Math.random() * (maxSize - minSize);
+      var xStart = Math.random() * 100;
+      var drift = -8 + Math.random() * 16;
+      var duration = minDuration + Math.random() * (maxDuration - minDuration);
+      var delay = -(index / total) * duration;
+      var opacity = 0.55 + Math.random() * 0.35;
+
+      item.className = className;
+      item.style.width = size + 'px';
+      item.style.height = size + 'px';
+      item.style.setProperty('--x-start', xStart + 'vw');
+      item.style.setProperty('--x-end', Math.max(-5, Math.min(105, xStart + drift)) + 'vw');
+      item.style.setProperty('--r-start', Math.floor(Math.random() * 360) + 'deg');
+      item.style.setProperty('--r-end', Math.floor(360 + Math.random() * 540) + 'deg');
+      item.style.setProperty('--opacity', opacity.toFixed(2));
+      item.style.animationDuration = duration + 's';
+      item.style.animationDelay = delay + 's';
+      item.innerHTML = svg;
+      container.appendChild(item);
+    }
+
+    for (var i = 0; i < 20; i++) {
+      addFallingItem('poinciana-flower', flowerSvg, i, 20, 18, 30, 24, 34);
+    }
+    for (var j = 0; j < 14; j++) {
+      addFallingItem('poinciana-petal', petalSvg, j, 14, 7, 13, 24, 34);
+    }
   }
 
   // Rain effect (falling raindrops - thin lines)
@@ -358,6 +438,9 @@
         break;
       case 'cherry_blossoms':
         initCherryBlossoms();
+        break;
+      case 'red_poinciana':
+        initRedPoinciana();
         break;
       case 'rain':
         initRain();

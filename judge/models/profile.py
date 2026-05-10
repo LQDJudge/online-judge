@@ -48,6 +48,7 @@ DYNAMIC_EFFECT_CHOICES = (
     ("snowflakes", _("Snowflakes")),
     ("snow", _("Snow")),
     ("cherry_blossoms", _("Cherry Blossoms")),
+    ("red_poinciana", _("Red Poinciana")),
     ("rain", _("Rain")),
     ("fireflies", _("Fireflies")),
     ("lunar_new_year", _("Lunar New Year")),
