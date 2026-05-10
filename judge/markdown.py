@@ -8,9 +8,14 @@ from pymdownx import superfences, arithmatex
 from django.conf import settings
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
-from judge.markdown_extensions import YouTubeExtension, EmoticonExtension
+from judge.markdown_extensions import (
+    YouTubeExtension,
+    EmoticonExtension,
+    BlockMathPaddingExtension,
+)
 
 EXTENSIONS = [
+    BlockMathPaddingExtension(),
     "pymdownx.arithmatex",
     "pymdownx.magiclink",
     "pymdownx.betterem",
