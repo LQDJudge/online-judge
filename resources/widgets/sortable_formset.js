@@ -27,31 +27,112 @@ class SortableFormset {
   }
 
   initSortable() {
-    if (!this.tbody || typeof $ === 'undefined' || !$.fn.sortable) {
-      console.warn('SortableFormset: jQuery UI sortable not available');
+    if (!this.tbody) {
       return;
     }
 
-    const self = this;
-    $(this.tbody).sortable({
-      handle: '.drag-handle',
-      items: '.sortable-row:not(.sortable-template):visible',
-      axis: 'y',
-      cursor: 'grabbing',
-      placeholder: 'sortable-placeholder',
-      helper: function(e, tr) {
-        // Preserve cell widths during drag
-        const $originals = tr.children();
-        const $helper = tr.clone();
-        $helper.children().each(function(index) {
-          $(this).width($originals.eq(index).width());
+    if (typeof $ !== 'undefined' && $.fn.sortable) {
+      const self = this;
+      try {
+        $(this.tbody).sortable({
+          handle: '.drag-handle',
+          items: '.sortable-row:not(.sortable-template):visible',
+          axis: 'y',
+          cursor: 'grabbing',
+          placeholder: 'sortable-placeholder',
+          helper: function(e, tr) {
+            // Preserve cell widths during drag
+            const $originals = tr.children();
+            const $helper = tr.clone();
+            $helper.children().each(function(index) {
+              $(this).width($originals.eq(index).width());
+            });
+            return $helper;
+          },
+          update: function() {
+            self.updateOrder();
+            self.updateRowNumbers();
+          }
         });
-        return $helper;
-      },
-      update: function() {
-        self.updateOrder();
-        self.updateRowNumbers();
+        return;
+      } catch (err) {
+        console.warn(
+          'SortableFormset: jQuery UI sortable failed; using native drag-and-drop fallback',
+          err
+        );
       }
+    }
+
+    console.warn(
+      'SortableFormset: jQuery UI sortable not available; using native drag-and-drop fallback'
+    );
+    this.initNativeDragSort();
+  }
+
+  initNativeDragSort() {
+    let draggedRow = null;
+
+    const visibleRows = () => Array.from(
+      this.tbody.querySelectorAll(
+        '.sortable-row:not(.sortable-template):not(.sortable-deleted)'
+      )
+    ).filter(row => row.style.display !== 'none');
+
+    const getRowAfterPointer = (y) => {
+      return visibleRows()
+        .filter(row => row !== draggedRow)
+        .reduce((closest, row) => {
+          const rect = row.getBoundingClientRect();
+          const offset = y - rect.top - rect.height / 2;
+          if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, row: row };
+          }
+          return closest;
+        }, { offset: Number.NEGATIVE_INFINITY, row: null }).row;
+    };
+
+    this.tbody.addEventListener('dragstart', (e) => {
+      const handle = e.target.closest('.drag-handle');
+      const row = e.target.closest('.sortable-row');
+      if (!handle || !row || row.classList.contains('sortable-template')) {
+        e.preventDefault();
+        return;
+      }
+
+      draggedRow = row;
+      row.classList.add('ui-sortable-helper');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', '');
+    });
+
+    this.tbody.addEventListener('dragover', (e) => {
+      if (!draggedRow) return;
+      e.preventDefault();
+
+      const afterRow = getRowAfterPointer(e.clientY);
+      if (afterRow) {
+        this.tbody.insertBefore(draggedRow, afterRow);
+      } else {
+        const templateRow = this.tbody.querySelector('.sortable-template');
+        this.tbody.insertBefore(draggedRow, templateRow);
+      }
+    });
+
+    this.tbody.addEventListener('dragend', () => {
+      if (!draggedRow) return;
+      draggedRow.classList.remove('ui-sortable-helper');
+      draggedRow = null;
+      this.updateOrder();
+      this.updateRowNumbers();
+    });
+
+    this.refreshNativeDragHandles();
+  }
+
+  refreshNativeDragHandles(row) {
+    const root = row || this.container;
+    root.querySelectorAll('.drag-handle').forEach(handle => {
+      handle.setAttribute('draggable', 'true');
     });
   }
 
@@ -107,6 +188,7 @@ class SortableFormset {
 
     // Initialize any widgets on the new row (Select2, etc.)
     this.initWidgets(newRow);
+    this.refreshNativeDragHandles(newRow);
 
     // Update order and row numbers
     this.updateOrder();
