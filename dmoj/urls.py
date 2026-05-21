@@ -739,6 +739,12 @@ urlpatterns = [
             [
                 re_path(r"^$", course.CourseDetail.as_view(), name="course_detail"),
                 re_path(
+                    r"^/$",
+                    lambda _, slug: HttpResponsePermanentRedirect(
+                        reverse("course_detail", args=[slug])
+                    ),
+                ),
+                re_path(
                     r"^/join$",
                     course.CourseJoin.as_view(),
                     name="course_join",
@@ -926,6 +932,12 @@ urlpatterns = [
             [
                 # Student views
                 re_path(r"^$", quiz.QuizDetail.as_view(), name="quiz_detail"),
+                re_path(
+                    r"^/$",
+                    lambda _, code: HttpResponsePermanentRedirect(
+                        reverse("quiz_detail", args=[code])
+                    ),
+                ),
                 re_path(r"^/start/$", quiz.QuizStart.as_view(), name="quiz_start"),
                 re_path(
                     r"^/take/(?P<attempt_id>\d+)/$",
@@ -1572,6 +1584,12 @@ urlpatterns = [
         include(
             [
                 re_path(r"^$", ticket.TicketView.as_view(), name="ticket"),
+                re_path(
+                    r"^/$",
+                    lambda _, pk: HttpResponsePermanentRedirect(
+                        reverse("ticket", args=[pk])
+                    ),
+                ),
                 re_path(
                     r"^/ajax$",
                     ticket.TicketMessageDataAjax.as_view(),
