@@ -63,7 +63,6 @@ from judge.models import (
 from judge.models.course import RoleInCourse
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.block import get_all_blocked_pairs
-from judge.utils.ranker import ranker
 from judge.utils.views import (
     TitleMixin,
     generic_message,
@@ -72,7 +71,7 @@ from judge.utils.views import (
 )
 from judge.utils.problems import user_attempted_ids, user_completed_ids
 from judge.views.problem import ProblemList
-from judge.views.contests import ContestList
+from judge.views.contests import ContestList, compute_ranks
 from judge.views.course import CourseList
 from judge.views.submission import SubmissionsListBase
 from judge.utils.feed import build_home_feed
@@ -735,9 +734,16 @@ class OrganizationUsers(
             "organization_user_kick",
             args=[self.organization.id, self.organization.slug],
         )
-        context["users"] = ranker(
-            context["users"], rank=self.paginate_by * (context["page_obj"].number - 1)
-        )
+        page_ids = {u.id for u in context["users"]}
+        if page_ids:
+            full_rows = self.object_list.values_list("id", "points")
+            rank_map = compute_ranks(
+                ((pid, points, 0, 0) for pid, points in full_rows),
+                target_ids=page_ids,
+            )
+            context["users"] = [(rank_map.get(u.id, 1), u) for u in context["users"]]
+        else:
+            context["users"] = []
 
         context["page_type"] = "users"
         context.update(self.get_sort_context())
