@@ -540,7 +540,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         return self.get_cached_value("is_public")
 
     def get_group_name(self):
-        return self.get_cached_value("group_name")
+        return self.get_cached_value("group_name") or ""
 
     def get_partial(self):
         return self.get_cached_value("partial")
