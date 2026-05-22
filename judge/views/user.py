@@ -47,7 +47,7 @@ from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
 from judge.tasks import import_users
 from judge.utils.problems import contest_completed_ids, user_completed_ids
-from judge.utils.ranker import ranker
+from judge.views.contests import compute_ranks
 from judge.utils.unicode import utf8text
 from judge.models.profile import get_rating_rank, get_points_rank, get_contribution_rank
 from judge.utils.users import (
@@ -472,9 +472,16 @@ class UserList(QueryStringSortMixin, InfinitePaginationMixin, TitleMixin, ListVi
         context = super(UserList, self).get_context_data(**kwargs)
         Profile.get_cached_instances(*[u.id for u in context["users"]])
         Profile.prefetch_cache_about(*[u.id for u in context["users"]])
-        context["users"] = ranker(
-            context["users"], rank=self.paginate_by * (context["page_obj"].number - 1)
-        )
+        page_ids = {u.id for u in context["users"]}
+        if page_ids:
+            full_rows = self.object_list.values_list("id", "points")
+            rank_map = compute_ranks(
+                ((pid, points, 0, 0) for pid, points in full_rows),
+                target_ids=page_ids,
+            )
+            context["users"] = [(rank_map.get(u.id, 1), u) for u in context["users"]]
+        else:
+            context["users"] = []
         context["first_page_href"] = "."
         context["page_type"] = "friends" if self.filter_friend else "list"
         context.update(self.get_sort_context())

@@ -123,6 +123,7 @@ __all__ = [
     "get_ranking_queryset",
     "get_contest_problems",
     "build_ranking_profiles",
+    "compute_ranks",
     "ContestClarificationView",
     "OfficialContestList",
     "RecommendedContestList",
@@ -1653,11 +1654,11 @@ class ContestRanking(ContestRankingBase):
         )
         profiles = build_ranking_profiles(contest, problems, qs, self.show_final)
 
-        users = ranker(
-            profiles,
-            key=attrgetter("points", "cumtime", "tiebreaker"),
-            rank=start,
+        rank_map = compute_ranks(
+            ((pid, s, c, tb) for pid, _uid, s, c, tb in filtered_rows),
+            target_ids=set(page_ids),
         )
+        users = ((rank_map[p.participation.id], p) for p in profiles)
 
         # Build page_obj for template pagination
         self.page_obj = DiggPaginator(
