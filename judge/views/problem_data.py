@@ -114,6 +114,30 @@ class ProblemDataForm(ModelForm):
 
     clean_checker_args = checker_args_cleaner
 
+    OUTPUT_ZIP_LIMIT_ADMIN_MB = 20
+    OUTPUT_ZIP_LIMIT_USER_MB = 10
+
+    def clean_output_zip_size_mb(self):
+        value = self.cleaned_data.get("output_zip_size_mb")
+        if value is None:
+            return value
+        user = getattr(getattr(self, "request", None), "user", None)
+        cap = (
+            self.OUTPUT_ZIP_LIMIT_ADMIN_MB
+            if user is not None and user.is_superuser
+            else self.OUTPUT_ZIP_LIMIT_USER_MB
+        )
+        if value > cap:
+            raise ValidationError(
+                _("Output submission size limit cannot exceed %(cap)d MB.")
+                % {"cap": cap}
+            )
+        if value < 1:
+            raise ValidationError(
+                _("Output submission size limit must be at least 1 MB.")
+            )
+        return value
+
     class Meta:
         model = ProblemData
         fields = [
@@ -128,6 +152,8 @@ class ProblemDataForm(ModelForm):
             "fileio_input",
             "fileio_output",
             "output_only",
+            "binary_data",
+            "output_zip_size_mb",
             "use_ioi_signature",
             "testcase_validator",
         ]
@@ -141,6 +167,7 @@ class ProblemDataForm(ModelForm):
             "fileio_input": TextInput,
             "fileio_output": TextInput,
             "output_only": CheckboxInput,
+            "binary_data": CheckboxInput,
             "use_ioi_signature": CheckboxInput,
             "custom_checker_cpp": FileEditWidget,
             "custom_checker": FileEditWidget,
@@ -296,12 +323,14 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
         )
 
     def get_data_form(self, post=False):
-        return ProblemDataForm(
+        form = ProblemDataForm(
             data=self.request.POST if post else None,
             prefix="problem-data",
             files=self.request.FILES if post else None,
             instance=ProblemData.objects.get_or_create(problem=self.object)[0],
         )
+        form.request = self.request
+        return form
 
     def get_case_formset(self, files, post=False):
         return ProblemCaseFormSet(

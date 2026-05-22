@@ -147,6 +147,24 @@ class ProblemData(models.Model):
         help_text=_("Support output-only problem"),
         null=True,
     )
+    binary_data = models.BooleanField(
+        verbose_name=_("binary answer data"),
+        help_text=_(
+            "Skip newline normalisation on answer files. Required when the "
+            "answer key or submission is binary (e.g. .npz / .npy / images)."
+        ),
+        null=True,
+        blank=True,
+    )
+    output_zip_size_mb = models.PositiveIntegerField(
+        verbose_name=_("output submission size limit (MB)"),
+        help_text=_(
+            "Maximum size in megabytes of the user's submission zip for "
+            "output-only problems. Defaults to 1 MB if unset."
+        ),
+        null=True,
+        blank=True,
+    )
     use_ioi_signature = models.BooleanField(
         verbose_name=_("is IOI signature"),
         help_text=_("Use IOI Signature"),

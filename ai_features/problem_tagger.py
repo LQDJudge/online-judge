@@ -198,27 +198,41 @@ class ProblemTagger:
         """
         tags_str = ", ".join(available_tags)
 
-        system_prompt = f"""You are an expert competitive programming judge with deep knowledge of algorithmic problems and contest difficulty ratings.
+        system_prompt = f"""You are an expert judge for both competitive programming and AI / machine-learning / output-only (Kaggle-style) problems.
 
 AVAILABLE TAGS (use ONLY these exact tags): {tags_str}
 
-DIFFICULTY RATING GUIDELINES (like Codeforces):
+PROBLEM STYLES YOU MUST RECOGNISE AS VALID:
+A) Classical competitive programming. Expect: problem statement, input format, output format, constraints, sample I/O.
+B) AI / output-only / Kaggle-style. Expect: task description, data description (training / validation / test files and their schema), submission format (CSV / JSON / NPZ / image zip), and a scoring metric (accuracy, F1, AUC, RMSE, MAE, Dice, Hits@K, custom checker, etc.). These problems often do NOT have classical sample I/O or numerical constraints, and the dataset may be linked externally rather than embedded — that is normal and must NOT cause `is_valid=false`.
+
+A problem is `is_valid=true` if it falls into EITHER style and the reader can tell what to predict and how submissions will be scored. Missing classical-CP-only elements (sample I/O, time/memory limits, integer constraints) is FINE for style B.
+
+DIFFICULTY RATING GUIDELINES:
+For classical CP, use Codeforces-style ratings:
 - 800-1200: Basic implementation, simple math, greedy, ad-hoc
-- 1300-1600: Standard algorithms, basic DP, graph traversal, binary search  
+- 1300-1600: Standard algorithms, basic DP, graph traversal, binary search
 - 1700-2000: Advanced algorithms, complex DP, data structures, number theory
 - 2100-2400: Sophisticated techniques, advanced data structures, complex math
 - 2500+: Expert-level algorithms, research-level techniques
 
+For AI / output-only problems, calibrate as:
+- 800-1200: Tabular Kaggle-style task with clean CSV, standard metric (accuracy / RMSE), small dataset, baseline obvious.
+- 1300-1600: Bigger / dirtier dataset, semi-supervised or class-imbalance issues, classical ML model expected.
+- 1700-2000: CV / NLP / signal task requiring a non-trivial neural model, custom data loading, or careful preprocessing.
+- 2100-2400: Hard CV / NLP with strict constraints (model-size cap, no external data, structured output), retrieval / segmentation / multi-output scoring.
+- 2500+: Research-frontier AI tasks (LLM-judged, dense prediction with custom metric, novel modality).
+
 TAG SELECTION RULES:
-1. Choose 1-4 most relevant tags that represent the CORE techniques needed
-2. Focus on the PRIMARY algorithmic approach, not auxiliary operations  
-3. Avoid basic operations (sorting, I/O) unless they're the main challenge
-4. Use specific tags over general ones when available
-5. For mixed problems, include all essential techniques
+1. Choose 1-4 most relevant tags that represent the CORE technique(s) needed.
+2. Focus on the PRIMARY approach, not auxiliary operations.
+3. Avoid basic operations (sorting, I/O) unless they're the main challenge.
+4. Use specific tags over general ones when available.
+5. For AI / output-only problems, prefer tags reflecting the task family (e.g. classification, regression, segmentation, retrieval, NLP, CV) and any required ML technique; always include the `AI` tag if it exists in the available list.
 
-IMPORTANT: If files (images, PDFs, etc.) are provided as attachments, analyze them carefully as they may contain the complete problem statement, constraints, examples, diagrams, or additional context that are essential for understanding the problem requirements.
+IMPORTANT: If files (images, PDFs, etc.) are provided as attachments, analyze them carefully — they may contain the complete problem statement, constraints, examples, diagrams, or additional context essential to understanding the problem.
 
-MULTI-PROBLEM FILES: If a file contains multiple problems (like a contest problem set), use the problem name and code provided to identify and analyze ONLY the specific problem requested. Focus on the problem that matches the given name/code, and ignore other problems in the same file."""
+MULTI-PROBLEM FILES: If a file contains multiple problems (like a contest problem set), use the problem name and code provided to identify and analyze ONLY the specific problem requested."""
 
         # Get author's accepted submission to help with analysis
         author_solution = (
@@ -235,7 +249,7 @@ MULTI-PROBLEM FILES: If a file contains multiple problems (like a contest proble
 """
 
             user_prompt = f"""TASK: Analyze this competitive programming problem and provide:
-1. Format validation (does it have complete problem statement, input/output format, constraints, examples?)
+1. Format validation: is it a complete problem of either style A (classical CP with statement + I/O format + constraints + examples) OR style B (AI / output-only / Kaggle-style with task description + data description + submission format + scoring metric)?
 2. Difficulty rating (integer, like Codeforces rating) - only if valid format
 3. Core algorithmic tags (1-4 tags from provided list) - only if valid format
 
@@ -263,7 +277,7 @@ AUTHOR'S ACCEPTED SOLUTION:
 """
 
             user_prompt = f"""TASK: Analyze this competitive programming problem and provide:
-1. Format validation (does it have complete problem statement, input/output format, constraints, examples?)
+1. Format validation: is it a complete problem of either style A (classical CP with statement + I/O format + constraints + examples) OR style B (AI / output-only / Kaggle-style with task description + data description + submission format + scoring metric)?
 2. Difficulty rating (integer, like Codeforces rating) - only if valid format  
 3. Core algorithmic tags (1-4 tags from provided list) - only if valid format
 

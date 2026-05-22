@@ -273,6 +273,10 @@ class ProblemDataCompiler(object):
             init["file_io"]["output"] = self.data.fileio_output
         if self.data.output_only:
             init["output_only"] = True
+        if self.data.binary_data:
+            init["binary_data"] = True
+        if self.data.output_zip_size_mb:
+            init["fize_size_limit"] = self.data.output_zip_size_mb
         if self.data.testcase_validator:
             validator_path = split_path_first(self.data.testcase_validator.name)
             if len(validator_path) != 2:
