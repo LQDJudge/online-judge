@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-10 12:21+0700\n"
+"POT-Creation-Date: 2026-05-22 15:14+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -2344,7 +2344,7 @@ msgid "pdf statement"
 msgstr "Đề bài bằng file pdf"
 
 #: judge/models/problem.py:760 judge/models/problem.py:793
-#: judge/models/problem.py:837 judge/models/problem_data.py:413
+#: judge/models/problem.py:837 judge/models/problem_data.py:431
 #: judge/models/runtime.py:155
 msgid "language"
 msgstr "Ngôn ngữ"
@@ -2373,7 +2373,7 @@ msgstr "giới hạn tài nguyên theo ngôn ngữ"
 msgid "language-specific resource limits"
 msgstr "giới hạn tài nguyên theo ngôn ngữ"
 
-#: judge/models/problem.py:839 judge/models/problem_data.py:410
+#: judge/models/problem.py:839 judge/models/problem_data.py:428
 #: judge/models/submission.py:324
 msgid "source code"
 msgstr "mã nguồn"
@@ -2433,7 +2433,7 @@ msgstr "bình chọn"
 msgid "file"
 msgstr "Trang cá nhân"
 
-#: judge/models/problem_attachment.py:38 judge/models/problem_data.py:403
+#: judge/models/problem_attachment.py:38 judge/models/problem_data.py:421
 msgid "display order"
 msgstr "Thứ tự hiển thị"
 
@@ -2533,11 +2533,11 @@ msgstr "file sinh test"
 msgid "generator script"
 msgstr "script sinh test"
 
-#: judge/models/problem_data.py:93 judge/models/problem_data.py:296
+#: judge/models/problem_data.py:93 judge/models/problem_data.py:314
 msgid "output prefix length"
 msgstr "độ dài hiển thị output"
 
-#: judge/models/problem_data.py:96 judge/models/problem_data.py:299
+#: judge/models/problem_data.py:96 judge/models/problem_data.py:317
 msgid "output limit length"
 msgstr "giới hạn hiển thị output"
 
@@ -2545,15 +2545,15 @@ msgstr "giới hạn hiển thị output"
 msgid "init.yml generation feedback"
 msgstr "phản hồi của quá trình tạo file init.yml"
 
-#: judge/models/problem_data.py:102 judge/models/problem_data.py:302
+#: judge/models/problem_data.py:102 judge/models/problem_data.py:320
 msgid "checker"
 msgstr "trình chấm"
 
-#: judge/models/problem_data.py:105 judge/models/problem_data.py:305
+#: judge/models/problem_data.py:105 judge/models/problem_data.py:323
 msgid "checker arguments"
 msgstr "tham số trong trình chấm"
 
-#: judge/models/problem_data.py:107 judge/models/problem_data.py:307
+#: judge/models/problem_data.py:107 judge/models/problem_data.py:325
 msgid "checker arguments as a JSON object"
 msgstr "tham số trong trình chấm theo dạng JSON"
 
@@ -2569,7 +2569,7 @@ msgstr "trình chấm C++"
 msgid "interactive judge"
 msgstr "trình chấm interactive"
 
-#: judge/models/problem_data.py:134 judge/models/problem_data.py:287
+#: judge/models/problem_data.py:134 judge/models/problem_data.py:305
 msgid "input file name"
 msgstr "tên file input"
 
@@ -2577,7 +2577,7 @@ msgstr "tên file input"
 msgid "Leave empty for stdin"
 msgstr "Để trống nếu nhập từ bàn phím"
 
-#: judge/models/problem_data.py:140 judge/models/problem_data.py:290
+#: judge/models/problem_data.py:140 judge/models/problem_data.py:308
 msgid "output file name"
 msgstr "tên file output"
 
@@ -2594,78 +2594,102 @@ msgid "Support output-only problem"
 msgstr "Dùng cho các bài output-only (nộp bằng file zip)"
 
 #: judge/models/problem_data.py:151
+msgid "binary answer data"
+msgstr "dữ liệu đáp án nhị phân"
+
+#: judge/models/problem_data.py:153
+msgid ""
+"Skip newline normalisation on answer files. Required when the answer key or "
+"submission is binary (e.g. .npz / .npy / images)."
+msgstr ""
+"Bỏ qua chuẩn hoá ký tự xuống dòng cho file đáp án. Cần thiết khi đáp án hoặc "
+"bài nộp là file nhị phân (ví dụ .npz / .npy / ảnh)."
+
+#: judge/models/problem_data.py:160
+msgid "output submission size limit (MB)"
+msgstr "giới hạn dung lượng bài nộp output (MB)"
+
+#: judge/models/problem_data.py:162
+msgid ""
+"Maximum size in megabytes of the user's submission zip for output-only "
+"problems. Defaults to 1 MB if unset."
+msgstr ""
+"Dung lượng tối đa (MB) của file zip bài nộp cho bài output-only. Mặc định là "
+"1 MB nếu không thiết lập."
+
+#: judge/models/problem_data.py:169
 msgid "is IOI signature"
 msgstr "Nộp bài bằng hàm?"
 
-#: judge/models/problem_data.py:152
+#: judge/models/problem_data.py:170
 msgid "Use IOI Signature"
 msgstr "Nộp bài bằng hàm như IOI"
 
-#: judge/models/problem_data.py:156
+#: judge/models/problem_data.py:174
 msgid "testcase validator"
 msgstr "trình kiểm tra test"
 
-#: judge/models/problem_data.py:165
+#: judge/models/problem_data.py:183
 msgid "validator language"
 msgstr "ngôn ngữ validator"
 
-#: judge/models/problem_data.py:167
+#: judge/models/problem_data.py:185
 msgid "C/C++"
 msgstr "C/C++"
 
-#: judge/models/problem_data.py:168
+#: judge/models/problem_data.py:186
 msgid "Python"
 msgstr "Python"
 
-#: judge/models/problem_data.py:173 judge/models/problem_data.py:327
+#: judge/models/problem_data.py:191 judge/models/problem_data.py:345
 msgid "signature handler"
 msgstr "File xử lý hàm"
 
-#: judge/models/problem_data.py:181 judge/models/problem_data.py:335
+#: judge/models/problem_data.py:199 judge/models/problem_data.py:353
 msgid "signature header"
 msgstr "File định nghĩa hàm"
 
-#: judge/models/problem_data.py:271
+#: judge/models/problem_data.py:289
 msgid "problem data set"
 msgstr "tập hợp dữ liệu bài"
 
-#: judge/models/problem_data.py:275
+#: judge/models/problem_data.py:293
 msgid "case position"
 msgstr "vị trí test"
 
-#: judge/models/problem_data.py:278
+#: judge/models/problem_data.py:296
 msgid "case type"
 msgstr "loại test"
 
-#: judge/models/problem_data.py:280
+#: judge/models/problem_data.py:298
 msgid "Normal case"
 msgstr "Test bình thường"
 
-#: judge/models/problem_data.py:281
+#: judge/models/problem_data.py:299
 msgid "Batch start"
 msgstr "Bắt đầu nhóm"
 
-#: judge/models/problem_data.py:282
+#: judge/models/problem_data.py:300
 msgid "Batch end"
 msgstr "Kết thúc nhóm"
 
-#: judge/models/problem_data.py:292
+#: judge/models/problem_data.py:310
 msgid "generator arguments"
 msgstr "tham số sinh test"
 
-#: judge/models/problem_data.py:293
+#: judge/models/problem_data.py:311
 msgid "point value"
 msgstr "điểm"
 
-#: judge/models/problem_data.py:294
+#: judge/models/problem_data.py:312
 msgid "case is pretest?"
 msgstr "test là pretest?"
 
-#: judge/models/problem_data.py:324
+#: judge/models/problem_data.py:342
 msgid "signature language"
 msgstr "Ngôn ngữ"
 
-#: judge/models/problem_data.py:359 judge/models/public_request.py:10
+#: judge/models/problem_data.py:377 judge/models/public_request.py:10
 #: templates/internal/problem_queue.html:646
 #: templates/organization/blog/pending.html:14
 #: templates/organization/requests/tabs.html:4
@@ -2675,60 +2699,60 @@ msgstr "Ngôn ngữ"
 msgid "Pending"
 msgstr "Đang chờ"
 
-#: judge/models/problem_data.py:360 templates/problem/validator.html:119
+#: judge/models/problem_data.py:378 templates/problem/validator.html:119
 msgid "Validating"
 msgstr "Đang kiểm tra"
 
-#: judge/models/problem_data.py:361
+#: judge/models/problem_data.py:379
 msgid "Done"
 msgstr "Hoàn thành"
 
-#: judge/models/problem_data.py:362 judge/utils/problems.py:135
+#: judge/models/problem_data.py:380 judge/utils/problems.py:135
 #: templates/problem/chatbot.html:40 templates/problem/validator.html:125
 #: templates/problem/validator.html:284
 msgid "Error"
 msgstr "Lỗi"
 
-#: judge/models/problem_data.py:389 judge/models/submission.py:31
+#: judge/models/problem_data.py:407 judge/models/submission.py:31
 #: judge/models/submission.py:58 judge/utils/problems.py:117
 msgid "Accepted"
 msgstr "Accepted"
 
-#: judge/models/problem_data.py:390 judge/models/submission.py:32
+#: judge/models/problem_data.py:408 judge/models/submission.py:32
 #: judge/models/submission.py:59 judge/utils/problems.py:120
 msgid "Wrong Answer"
 msgstr "Wrong Answer"
 
-#: judge/models/problem_data.py:391 judge/models/submission.py:33
+#: judge/models/problem_data.py:409 judge/models/submission.py:33
 #: judge/models/submission.py:61 judge/utils/problems.py:130
 msgid "Time Limit Exceeded"
 msgstr "Time Limit Exceeded"
 
-#: judge/models/problem_data.py:392 judge/models/submission.py:34
+#: judge/models/problem_data.py:410 judge/models/submission.py:34
 #: judge/models/submission.py:62
 msgid "Memory Limit Exceeded"
 msgstr "Memory Limit Exceeded"
 
-#: judge/models/problem_data.py:393 judge/models/submission.py:37
+#: judge/models/problem_data.py:411 judge/models/submission.py:37
 #: judge/models/submission.py:65
 msgid "Runtime Error"
 msgstr "Runtime Error"
 
-#: judge/models/problem_data.py:394 judge/models/submission.py:35
+#: judge/models/problem_data.py:412 judge/models/submission.py:35
 #: judge/models/submission.py:63
 msgid "Output Limit Exceeded"
 msgstr "Output Limit Exceeded"
 
-#: judge/models/problem_data.py:395 judge/models/submission.py:36
+#: judge/models/problem_data.py:413 judge/models/submission.py:36
 #: judge/models/submission.py:64
 msgid "Invalid Return"
 msgstr "Invalid Return"
 
-#: judge/models/problem_data.py:406
+#: judge/models/problem_data.py:424
 msgid "name"
 msgstr "tên"
 
-#: judge/models/problem_data.py:418
+#: judge/models/problem_data.py:436
 msgid "expected result"
 msgstr "kết quả mong đợi"
 
@@ -4004,20 +4028,20 @@ msgstr "Làm sao bạn làm hỏng đường dẫn generator?"
 msgid "Invalid interactor judge"
 msgstr "Máy chấm tương tác không hợp lệ"
 
-#: judge/utils/problem_data.py:279
+#: judge/utils/problem_data.py:283
 msgid "Invalid validator source path"
 msgstr "Đường dẫn mã nguồn validator không hợp lệ"
 
-#: judge/utils/problem_data.py:287
+#: judge/utils/problem_data.py:291
 #, python-format
 msgid "Unsupported validator extension: %s"
 msgstr "Phần mở rộng validator không được hỗ trợ: %s"
 
-#: judge/utils/problem_data.py:298
+#: judge/utils/problem_data.py:302
 msgid "Invalid signature handler"
 msgstr "Trình xử lý không hợp lệ"
 
-#: judge/utils/problem_data.py:307
+#: judge/utils/problem_data.py:311
 msgid "Invalid signature header for C/C++"
 msgstr "File định nghĩa hàm không hợp lệ"
 
@@ -5654,159 +5678,168 @@ msgstr "File Zip không hợp lệ!"
 msgid "Generator file must be a .cpp file."
 msgstr "File generator phải là file .cpp."
 
-#: judge/views/problem_data.py:208
+#: judge/views/problem_data.py:132
+#, python-format
+msgid "Output submission size limit cannot exceed %(cap)d MB."
+msgstr "Giới hạn dung lượng bài nộp output không được vượt quá %(cap)d MB."
+
+#: judge/views/problem_data.py:137
+msgid "Output submission size limit must be at least 1 MB."
+msgstr "Giới hạn dung lượng bài nộp output phải tối thiểu 1 MB."
+
+#: judge/views/problem_data.py:235
 msgid "Each language must be unique."
 msgstr "Mỗi ngôn ngữ phải phân biệt"
 
-#: judge/views/problem_data.py:243
+#: judge/views/problem_data.py:270
 #, python-brace-format
 msgid "Comparing submissions for {0}"
 msgstr "So sánh các bài nộp cho {0}"
 
-#: judge/views/problem_data.py:247
+#: judge/views/problem_data.py:274
 #, python-brace-format
 msgid "Comparing submissions for <a href=\"{1}\">{0}</a>"
 msgstr "So sánh các bài nộp cho <a href=\"{1}\">{0}</a>"
 
-#: judge/views/problem_data.py:284
+#: judge/views/problem_data.py:311
 #, python-brace-format
 msgid "Editing data for {0}"
 msgstr "Chỉnh sửa dữ liệu cho {0}"
 
-#: judge/views/problem_data.py:288
+#: judge/views/problem_data.py:315
 #, python-format
 msgid "Editing data for %s"
 msgstr "Chỉnh sửa dữ liệu cho %s"
 
-#: judge/views/problem_data.py:401
+#: judge/views/problem_data.py:430
 #, fuzzy
 #| msgid "Edit test data"
 msgid "Updated test data"
 msgstr "Chỉnh sửa test"
 
-#: judge/views/problem_data.py:465 judge/views/problem_data.py:467
+#: judge/views/problem_data.py:494 judge/views/problem_data.py:496
 #, python-format
 msgid "Generated init.yml for %s"
 msgstr "File init.yml cho %s"
 
-#: judge/views/problem_data.py:504 judge/views/problem_data.py:523
+#: judge/views/problem_data.py:533 judge/views/problem_data.py:552
 #: templates/problem/data.html:33
 msgid "File size exceeds 50 MB limit. Contact admin for larger uploads."
 msgstr ""
 "Kích thước file vượt quá giới hạn 50 MB. Liên hệ admin để tải lên file lớn "
 "hơn."
 
-#: judge/views/problem_data.py:555
+#: judge/views/problem_data.py:584
 #, python-brace-format
 msgid "Testcase Validator for {0}"
 msgstr "Kiểm tra test cho {0}"
 
-#: judge/views/problem_data.py:559
+#: judge/views/problem_data.py:588
 #, python-format
 msgid "Testcase Validator for %s"
 msgstr "Kiểm tra test cho %s"
 
-#: judge/views/problem_data.py:614 judge/views/problem_data.py:797
-#: judge/views/problem_data.py:965
+#: judge/views/problem_data.py:643 judge/views/problem_data.py:826
+#: judge/views/problem_data.py:994
 msgid "Invalid JSON."
 msgstr "JSON không hợp lệ."
 
-#: judge/views/problem_data.py:621
+#: judge/views/problem_data.py:650
 msgid "Invalid language."
 msgstr "Ngôn ngữ không hợp lệ."
 
-#: judge/views/problem_data.py:665
+#: judge/views/problem_data.py:694
 msgid "Validation already in progress for this problem."
 msgstr "Đang có quá trình kiểm tra cho bài này."
 
-#: judge/views/problem_data.py:679
+#: judge/views/problem_data.py:708
 #, python-format
 msgid "You have %(count)d validations running. Max %(max)d allowed."
 msgstr "Bạn đang có %(count)d quá trình kiểm tra. Tối đa %(max)d."
 
-#: judge/views/problem_data.py:704
+#: judge/views/problem_data.py:733
 msgid "No judges available."
 msgstr "Không có máy chấm khả dụng."
 
-#: judge/views/problem_data.py:753
+#: judge/views/problem_data.py:782
 #, python-brace-format
 msgid "Solution Codes for {0}"
 msgstr "Code lời giải cho {0}"
 
-#: judge/views/problem_data.py:757
+#: judge/views/problem_data.py:786
 #, python-format
 msgid "Solution Codes for %s"
 msgstr "Code lời giải cho %s"
 
-#: judge/views/problem_data.py:802
+#: judge/views/problem_data.py:831
 msgid "Expected a list."
 msgstr "Dữ liệu phải là danh sách."
 
-#: judge/views/problem_data.py:809
+#: judge/views/problem_data.py:838
 #, python-format
 msgid "Maximum %d solution codes allowed."
 msgstr "Tối đa %d code lời giải."
 
-#: judge/views/problem_data.py:829
+#: judge/views/problem_data.py:858
 #, python-format
 msgid "Code #%d has empty source."
 msgstr "Code #%d có mã nguồn trống."
 
-#: judge/views/problem_data.py:837
+#: judge/views/problem_data.py:866
 #, python-format
 msgid "Code #%d has invalid language."
 msgstr "Code #%d có ngôn ngữ không hợp lệ."
 
-#: judge/views/problem_data.py:845
+#: judge/views/problem_data.py:874
 #, python-format
 msgid "Code #%d has invalid expected result."
 msgstr "Code #%d có kết quả mong đợi không hợp lệ."
 
-#: judge/views/problem_data.py:888
+#: judge/views/problem_data.py:917
 #, fuzzy
 #| msgid "Update Solution"
 msgid "Updated solution codes"
 msgstr "Cập nhật lời giải"
 
-#: judge/views/problem_data.py:904
+#: judge/views/problem_data.py:933
 msgid "No solution codes to run."
 msgstr "Không có code lời giải để chạy."
 
-#: judge/views/problem_data.py:920
+#: judge/views/problem_data.py:949
 msgid "All codes are already being judged."
 msgstr ""
 
-#: judge/views/problem_data.py:937 judge/views/problem_data.py:1014
+#: judge/views/problem_data.py:966 judge/views/problem_data.py:1043
 msgid "Too many pending solution code runs."
 msgstr "Quá nhiều lượt chạy đang chờ."
 
-#: judge/views/problem_data.py:971
+#: judge/views/problem_data.py:1000
 #, fuzzy
 #| msgid "Invalid model"
 msgid "Invalid order."
 msgstr "Model không hợp lệ"
 
-#: judge/views/problem_data.py:980
+#: judge/views/problem_data.py:1009
 #, fuzzy
 #| msgid "Solution not found."
 msgid "Solution code not found."
 msgstr "Lời giải không tìm thấy"
 
-#: judge/views/problem_data.py:987
+#: judge/views/problem_data.py:1016
 msgid "Duplicate order found. Please save and retry."
 msgstr ""
 
-#: judge/views/problem_data.py:997
+#: judge/views/problem_data.py:1026
 #, fuzzy
 #| msgid "This code already exists"
 msgid "This code is already being judged."
 msgstr "Mã này đã tồn tại"
 
-#: judge/views/problem_data.py:1100 judge/views/problem_data.py:1128
+#: judge/views/problem_data.py:1129 judge/views/problem_data.py:1157
 msgid "Superuser access required."
 msgstr ""
 
-#: judge/views/problem_data.py:1136
+#: judge/views/problem_data.py:1165
 msgid "Missing task ID."
 msgstr ""
 
@@ -12369,336 +12402,3 @@ msgstr "Chọn tất cả"
 #: templates/widgets/sortable_formset.html:21
 msgid "No items yet."
 msgstr "Chưa có mục nào."
-
-#~ msgid "Included problems"
-#~ msgstr "Các bài tập bao gồm"
-
-#~ msgid "These problems are included in this group of problems"
-#~ msgstr "Các bài tập trong nhóm này"
-
-#~ msgid "These problems are included in this type of problems"
-#~ msgstr "Các bài tập dạng này"
-
-#~ msgid "personae non gratae"
-#~ msgstr "Chặn tham gia"
-
-#~ msgid "Edit contest"
-#~ msgstr "Chỉnh sửa kỳ thi"
-
-#~ msgid "Edited from course"
-#~ msgstr "Chỉnh sửa từ khóa học"
-
-#, python-format
-#~ msgid "Edit <a href='%(url)s'>%(contest_name)s</a>"
-#~ msgstr "Chỉnh sửa <a href='%(url)s'>%(contest_name)s</a>"
-
-#~ msgid "CSV checkers require checker_args with id_column and label_column."
-#~ msgstr "Bộ chấm CSV yêu cầu checker_args có id_column và label_column."
-
-#, python-format
-#~ msgid "CSV checker requires '%(field)s' in checker_args."
-#~ msgstr "Bộ chấm CSV yêu cầu '%(field)s' trong checker_args."
-
-#~ msgid "A run is already in progress."
-#~ msgstr "Đang có lượt chạy khác."
-
-#~ msgid "You do not have permission to view quizzes."
-#~ msgstr "Bạn không có quyền xem các câu hỏi lý thuyết."
-
-#~ msgid "Sort by"
-#~ msgstr "Sắp xếp theo"
-
-#, python-format
-#~ msgid "Page %d of Posts"
-#~ msgstr "Trang %d"
-
-#~ msgid "Out contest"
-#~ msgstr "Ngoài kỳ thi"
-
-#~ msgid "News"
-#~ msgstr "Tin tức"
-
-#~ msgid "Events"
-#~ msgstr "Sự kiện"
-
-#~ msgid "OFFICIAL"
-#~ msgstr "CHÍNH THỨC"
-
-#~ msgid "GROUP"
-#~ msgstr "NHÓM"
-
-#~ msgid "COMMUNITY"
-#~ msgstr "CỘNG ĐỒNG"
-
-#~ msgid "Newest"
-#~ msgstr "Mới nhất"
-
-#~ msgid "Latest Comment"
-#~ msgstr "Bình luận mới"
-
-#~ msgid "My Tickets"
-#~ msgstr "Của tôi"
-
-#~ msgid "All Tickets"
-#~ msgstr "Tất cả"
-
-#~ msgid "No tickets found"
-#~ msgstr "Không có báo cáo nào"
-
-#~ msgid "All Comments"
-#~ msgstr "Tất cả"
-
-#~ msgid "My Comments"
-#~ msgstr "Của tôi"
-
-#~ msgid "Blogs"
-#~ msgstr "Bài đăng"
-
-#~ msgid "Other"
-#~ msgstr "Thành viên khác"
-
-#~ msgid "No comments found"
-#~ msgstr "không có bình luận"
-
-#~ msgid "Question search"
-#~ msgstr "Tìm kiếm câu hỏi"
-
-#~ msgid "Quiz search"
-#~ msgstr "Tìm kiếm câu hỏi lý thuyết"
-
-#, python-format
-#~ msgid "%(user)s"
-#~ msgstr "%(user)s"
-
-#~ msgid "Posting..."
-#~ msgstr "Đang đăng..."
-
-#~ msgid "Edit language limits"
-#~ msgstr "Chỉnh sửa giới hạn ngôn ngữ"
-
-#~ msgid "Edit templates"
-#~ msgstr "Chỉnh sửa code mẫu"
-
-#~ msgid "Edit solutions"
-#~ msgstr "Chỉnh sửa lời giải"
-
-#~ msgid "Edit translations"
-#~ msgstr "Chỉnh sửa bản dịch"
-
-#~ msgid "Please select at least one question."
-#~ msgstr "Vui lòng chọn ít nhất một câu hỏi."
-
-#~ msgid "Already in quiz:"
-#~ msgstr "Đã có trong bài:"
-
-#~ msgid "Markdown updated successfully!"
-#~ msgstr "Cập nhật markdown thành công!"
-
-#~ msgid "Public request was approved."
-#~ msgstr "Yêu cầu công khai đã được chấp nhận."
-
-#~ msgid ""
-#~ "No testcase validator configured. Add a validator program in Test Data "
-#~ "settings first."
-#~ msgstr ""
-#~ "Chưa cấu hình trình kiểm tra test. Hãy thêm chương trình validator trong "
-#~ "phần Dữ liệu Test trước."
-
-#~ msgid "Current Background"
-#~ msgstr "Hình nền hiện tại"
-
-#~ msgid "Clear Background"
-#~ msgstr "Xóa hình nền"
-
-#~ msgid "Custom Upload"
-#~ msgstr "Tải lên tùy chỉnh"
-
-#~ msgid "Save Background"
-#~ msgstr "Lưu hình nền"
-
-#~ msgid "Friends only"
-#~ msgstr "Chỉ bạn bè"
-
-#~ msgid "testcase file"
-#~ msgstr "bộ test"
-
-#~ msgid "CONTESTS"
-#~ msgstr "KÌ THI"
-
-#~ msgid "ORDER"
-#~ msgstr "THỨ TỰ"
-
-#~ msgid "Drag and drop to reorder contests. Changes are saved automatically."
-#~ msgstr "Kéo thả để sắp xếp lại kì thi. Thay đổi được lưu tự động."
-
-#~ msgid "No contests yet."
-#~ msgstr "Chưa có kì thi nào."
-
-#~ msgid "Drag and drop to reorder lessons. Changes are saved automatically."
-#~ msgstr "Kéo thả để sắp xếp lại bài học. Thay đổi được lưu tự động."
-
-#~ msgid "No lessons yet."
-#~ msgstr "Chưa có bài học nào."
-
-#~ msgid "Edit lessons"
-#~ msgstr "Chỉnh sửa bài học"
-
-#~ msgid "Problem format is incomplete - could not analyze"
-#~ msgstr "Định dạng bài toán chưa hoàn chỉnh - không thể phân tích"
-
-#~ msgid "No problems added yet."
-#~ msgstr "Chưa có bài tập nào."
-
-#~ msgid "No quizzes added yet."
-#~ msgstr "Chưa có câu hỏi lý thuyết nào."
-
-#~ msgid "Add Quiz"
-#~ msgstr "Thêm câu hỏi lý thuyết"
-
-#~ msgid "If you run out of rows, click Save"
-#~ msgstr "Ấn nút lưu lại nếu cần thêm hàng"
-
-#~ msgid "Close"
-#~ msgstr "Đóng"
-
-#~ msgid "Points & Feedback"
-#~ msgstr "Điểm và nhận xét"
-
-#~ msgid "Default Points"
-#~ msgstr "Điểm mặc định"
-
-#~ msgid "Default point value when added to quizzes"
-#~ msgstr "Điểm mặc định khi thêm vào câu hỏi lý thuyết"
-
-#~ msgid "is too large, maximum file size is"
-#~ msgstr "quá lớn, kích thước tối đa là"
-
-#~ msgid "PUBLIC"
-#~ msgstr "CÔNG KHAI"
-
-#~ msgid "File size exceeds the maximum allowed limit of 10MB."
-#~ msgstr "File tải lên đã vượt quá 10MB."
-
-#~ msgid "No comments yet. Be the first to comment!"
-#~ msgstr "Chưa có bình luận nào. Hãy là người đầu tiên bình luận!"
-
-#~ msgid "New comment"
-#~ msgstr "Bình luận mới"
-
-#~ msgid "Invalid comment body."
-#~ msgstr "Nội dung không hợp lệ."
-
-#~ msgid "Post!"
-#~ msgstr "Đăng!"
-
-#~ msgid "Replying to comment"
-#~ msgstr "Trả lời bình luận"
-
-#~ msgid "CSS custom background properties: url(\"image_url\"), color, etc"
-#~ msgstr "CSS background tự chọn. Ví dụ: url(\"image_url\"), white, ..."
-
-#~ msgid "knowledge points"
-#~ msgstr "Độ khó kiến thức"
-
-#~ msgid "Points awarded by knowledge difficulty"
-#~ msgstr "Điểm thưởng theo độ khó kiến thức"
-
-#~ msgid "thinking points"
-#~ msgstr "Độ khó nghĩ"
-
-#~ msgid "Points awarded by thinking difficulty"
-#~ msgstr "Điểm thưởng theo độ khó tư duy"
-
-#~ msgid "feedback"
-#~ msgstr "phản hồi"
-
-#~ msgid "volunteer vote"
-#~ msgstr "vote từ TNV"
-
-#~ msgid "volunteer votes"
-#~ msgstr "vote từ TNV"
-
-#~ msgid "Internal problems"
-#~ msgstr "Bài tập nội bộ"
-
-#~ msgid " posted on %(time)s"
-#~ msgstr " đã đăng vào %(time)s"
-
-#~ msgid "Code"
-#~ msgstr "Mã"
-
-#~ msgid "Vote count"
-#~ msgstr "Số phiếu bầu"
-
-#~ msgid "Votes for problem"
-#~ msgstr "Phiếu bầu cho bài tập"
-
-#~ msgid "Knowledge"
-#~ msgstr "Kiến thức"
-
-#~ msgid "Thinking"
-#~ msgstr "Đang suy nghĩ"
-
-#~ msgid "Unblock group"
-#~ msgstr "Bỏ chặn nhóm"
-
-#~ msgid "Add types..."
-#~ msgstr "Thêm dạng"
-
-#~ msgid "Fail to vote!"
-#~ msgstr "Hệ thống lỗi!"
-
-#~ msgid "Successful vote! Thank you!"
-#~ msgstr "Đã gửi thành công! Cảm ơn bạn!"
-
-#~ msgid "Show solved problems"
-#~ msgstr "Hiện các bài đã giải"
-
-#~ msgid "View user participation"
-#~ msgstr "Xem các lần tham gia"
-
-#~ msgid "Show schools"
-#~ msgstr "Hiển thị trường"
-
-#~ msgid "Show full name"
-#~ msgstr "Hiển thị họ tên"
-
-#~ msgid "Show virtual participation"
-#~ msgstr "Hiển thị tham gia ảo"
-
-#~ msgid "Download as CSV"
-#~ msgstr "Tải file CSV"
-
-#~ msgid ""
-#~ "You are not enrolled in any courses in this organization yet. Browse "
-#~ "available courses and join to start learning!"
-#~ msgstr ""
-#~ "Bạn chưa đăng ký khóa học nào trong tổ chức này. Hãy khám phá các khóa "
-#~ "học có sẵn và tham gia để bắt đầu học tập!"
-
-#~ msgid "Activity"
-#~ msgstr "Hoạt động"
-
-#~ msgid "Link"
-#~ msgstr "Đường dẫn"
-
-#~ msgid "Rate limit exceeded."
-#~ msgstr "Vượt quá giới hạn tốc độ"
-
-#~ msgid "Rate limit exceeded. Too many requests."
-#~ msgstr "Vượt quá giới hạn tốc độ. Quá nhiều yêu cầu."
-
-#~ msgid "%s in %s, v%d"
-#~ msgstr "%s trong %s, v%d"
-
-#~ msgid "%s in %s"
-#~ msgstr "%s trong %s"
-
-#~ msgid "Assign"
-#~ msgstr "Phân công"
-
-#~ msgid "Page %s of %s"
-#~ msgstr "Trang %s/%s"
-
-#~ msgid "Course search"
-#~ msgstr "Tìm kiếm khóa học"

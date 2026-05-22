@@ -248,6 +248,17 @@
           $signature_table.toggle($ioi_signature.is(':checked'));
         }).change();
 
+        // Output-only sub-fields (binary_data, output_zip_size_mb): only
+        // relevant when the problem is marked output-only.
+        let $output_only = $('#id_problem-data-output_only');
+        let $tr_binary_data = $('#id_problem-data-binary_data').closest('tr');
+        let $tr_output_zip = $('#id_problem-data-output_zip_size_mb').closest('tr');
+        $output_only.change(function () {
+          let on = $output_only.is(':checked');
+          $tr_binary_data.toggle(on);
+          $tr_output_zip.toggle(on);
+        }).change();
+
         // Testcase validator link
         var $validatorTd = $('#id_problem-data-testcase_validator').closest('td');
         {% if data_form.testcase_validator.value() %}
