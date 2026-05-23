@@ -318,6 +318,11 @@ class ProblemTestCase(models.Model):
         related_name="cases",
         on_delete=models.CASCADE,
     )
+    BATCH_SCORING_CHOICES = (
+        ("sum", _("Sum")),
+        ("min", _("Min")),
+    )
+
     order = models.IntegerField(verbose_name=_("case position"))
     type = models.CharField(
         max_length=1,
@@ -328,6 +333,18 @@ class ProblemTestCase(models.Model):
             ("E", _("Batch end")),
         ),
         default="C",
+    )
+    batch_scoring = models.CharField(
+        max_length=20,
+        verbose_name=_("batch scoring"),
+        choices=BATCH_SCORING_CHOICES,
+        default="sum",
+        help_text=_(
+            "How per-case scores aggregate into the batch score. "
+            "Only applies to Batch start (S) rows. "
+            "Sum: Σ(case_points) — with [0,…,0,1] weights this is all-or-nothing. "
+            "Min: min(case_fraction) × batch_points — use [1,…,1] weights."
+        ),
     )
     input_file = models.CharField(
         max_length=100, verbose_name=_("input file name"), blank=True

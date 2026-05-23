@@ -156,13 +156,18 @@ def get_hidden_subtasks(request, submission):
     return set()
 
 
-def make_batch(batch, cases, include_cases=True):
-    result = {"id": batch}
+def make_batch(batch, cases, batch_scoring=None, include_cases=True):
+    result = {"id": batch, "scoring": batch_scoring}
     if include_cases:
         result["cases"] = cases
     if batch:
-        result["points"] = sum(map(attrgetter("points"), cases))
-        result["total"] = sum(map(attrgetter("total"), cases))
+        batch_total = sum(map(attrgetter("total"), cases))
+        if batch_scoring == "min" and batch_total > 0:
+            min_fraction = min(c.points / c.total if c.total else 0.0 for c in cases)
+            result["points"] = min_fraction * batch_total
+        else:
+            result["points"] = sum(map(attrgetter("points"), cases))
+        result["total"] = batch_total
         result["AC"] = abs(result["points"] - result["total"]) < 1e-5
 
     return result
@@ -170,17 +175,30 @@ def make_batch(batch, cases, include_cases=True):
 
 def group_test_cases(submission, hidden_subtasks, include_cases=True):
     cases = [c for c in submission.test_cases.all() if c.batch not in hidden_subtasks]
+
+    # Map batch number (1-indexed) → batch_scoring, for display hints.
+    batch_scorings = {
+        i + 1: scoring
+        for i, scoring in enumerate(
+            ProblemTestCase.objects.filter(dataset=submission.problem, type="S")
+            .order_by("order")
+            .values_list("batch_scoring", flat=True)
+        )
+    }
+
     result = []
     buf = []
     last = None
     for case in cases:
         if case.batch != last and buf:
-            result.append(make_batch(last, buf, include_cases))
+            result.append(
+                make_batch(last, buf, batch_scorings.get(last), include_cases)
+            )
             buf = []
         buf.append(case)
         last = case.batch
     if buf:
-        result.append(make_batch(last, buf, include_cases))
+        result.append(make_batch(last, buf, batch_scorings.get(last), include_cases))
     return result
 
 

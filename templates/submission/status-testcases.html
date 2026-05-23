@@ -92,8 +92,8 @@
           {% for batch in batches %}
             {% if not is_full_result_hidden and batch.id not in hidden_subtasks %}
               {% if batch.id %}
-                {% set batch_AC = (batch.points == batch.total) %}
-                <tr class="case-row background-{{'d6e8f7' if batch.points == batch.total else 'bisque'}}">
+                {% set batch_AC = batch.AC %}
+                <tr class="case-row background-{{'d6e8f7' if batch.AC else 'bisque'}}">
                   <td>
                     <b>{{ _('Batch ') }}#{{ batch.id }}</b>
                   </td>
@@ -136,7 +136,11 @@
                   </td>
 
                   <td><span class="col-title">{{_('Point')}}: </span>
-                    {{ case.points|floatformat }}/{{ case.total|floatformat }}
+                    {%- if batch.scoring == 'min' -%}
+                      {{ ((case.points / case.total) if case.total else 0)|floatformat }}/1
+                    {%- else -%}
+                      {{ case.points|floatformat }}/{{ case.total|floatformat }}
+                    {%- endif -%}
                   </td>
                   <td>
                     {%- if case.status != 'SC' -%}

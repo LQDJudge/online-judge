@@ -21,6 +21,7 @@ from judge.models import (
     Language,
     LanguageLimit,
     Problem,
+    ProblemTestCase,
     ProblemValidation,
     ProblemValidationResult,
     RuntimeVersion,
@@ -589,7 +590,7 @@ class JudgeHandler(ZlibPacketHandler):
         total = 0
         status = 0
         status_codes = ["SC", "AC", "WA", "MLE", "TLE", "IR", "RTE", "OLE"]
-        batches = {}  # batch number: (points, total)
+        batches = {}  # batch number: [list of (case.points, case.total)]
 
         for case in SubmissionTestCase.objects.filter(submission=submission):
             time = max(time, case.time)
@@ -597,19 +598,35 @@ class JudgeHandler(ZlibPacketHandler):
                 points += case.points
                 total += case.total
             else:
-                if case.batch in batches:
-                    batches[case.batch][0] += case.points
-                    batches[case.batch][1] += case.total
-                else:
-                    batches[case.batch] = [case.points, case.total]
+                batches.setdefault(case.batch, []).append((case.points, case.total))
             memory = max(memory, case.memory)
             i = status_codes.index(case.status)
             if i > status:
                 status = i
 
-        for i in batches:
-            points += batches[i][0]
-            total += batches[i][1]
+        # Determine which batches use min-scoring.
+        # SubmissionTestCase.batch is a sequential counter (1-indexed) assigned
+        # during judging, matching the Nth type="S" ProblemTestCase row by order.
+        # This mapping is correct for all fresh judgings; it could drift if
+        # ProblemTestCase rows are reordered after old submissions were graded.
+        min_batch_numbers = set(
+            i + 1
+            for i, scoring in enumerate(
+                ProblemTestCase.objects.filter(dataset=submission.problem, type="S")
+                .order_by("order")
+                .values_list("batch_scoring", flat=True)
+            )
+            if scoring == "min"
+        )
+
+        for batch_id, case_pairs in batches.items():
+            batch_total = sum(t for _, t in case_pairs)
+            if batch_id in min_batch_numbers and batch_total > 0:
+                min_fraction = min(p / t if t else 0.0 for p, t in case_pairs)
+                points += min_fraction * batch_total
+            else:
+                points += sum(p for p, _ in case_pairs)
+            total += batch_total
 
         points = points
         total = total
