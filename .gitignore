@@ -27,6 +27,7 @@ Roo.md
 AGENTS.md
 plan/
 .claude/
+.codex/
 .claude-config/
 
 # Playwright & temporary files
