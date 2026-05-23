@@ -215,6 +215,11 @@ class ProblemDataCompiler(object):
                     "batched": [],
                     "is_pretest": case.is_pretest,
                 }
+                # Emit score_type when non-default ("min") so the judge
+                # knows how to aggregate per-case scores into the batch score.
+                # Default "sum" needs no entry (judge defaults to sum).
+                if case.batch_scoring == "min":
+                    batch["score_type"] = "min"
                 if case.generator_args:
                     batch["generator_args"] = case.generator_args.split()
                 if case.output_limit is not None:

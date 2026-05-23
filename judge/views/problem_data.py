@@ -229,6 +229,7 @@ class ProblemCaseForm(ModelForm):
             "output_file",
             "points",
             "is_pretest",
+            "batch_scoring",
             "checker",
             "checker_args",
             "generator_args",
@@ -236,6 +237,7 @@ class ProblemCaseForm(ModelForm):
         widgets = {
             "generator_args": TextInput(attrs={"style": "width: 100%"}),
             "type": Select(attrs={"style": "width: 100%"}),
+            "batch_scoring": Select(attrs={"style": "width: 100%"}),
             "points": NumberInput(attrs={"style": "width: 4em"}),
             # Render as <select> with the current value pre-populated. Saves
             # the per-row <input> → <select> JS rewrite at page load (big

@@ -418,6 +418,7 @@
         var $opts = $tr.find('input').slice(2, 5);
         var $files = $tr.find('select[id$=input_file], select[id$=output_file]');
         var $delete = $tr.find('input[id$=DELETE]');
+        var $batchScoring = $tr.find('.batch-scoring-container');
         // generator_args is only meaningful for real cases (type=C), not for
         // batch start/end markers.
         var $genArgs = $tr.find('.generator-args-container');
@@ -437,12 +438,14 @@
               $fileWidgets().hide();
               $deleteWidget().toggle(val == 'S');
               $genArgs.hide();
+              $batchScoring.toggle(val == 'S');
               break;
             default:
               $opts.toggle(val == 'C');
               $fileWidgets().toggle(val == 'C');
               $deleteWidget().toggle(val == 'C');
               $genArgs.toggle(val == 'C');
+              $batchScoring.toggle(val == 'S');
               $tr.find('input[id$=pretest]').toggle(val == 'C' && !disabled);
           }
           $tr.attr('data-type', val);
@@ -680,7 +683,12 @@
         // First: Create test cases from zip files (without generator args)
         for (var i = 0; i < zipFileCount; i++) {
           if (batch_starts.has(caseIndex)) {
-            $("#id_cases-"+row+"-type").val('S').change();
+            var $sRow = $("#id_cases-"+row+"-type").val('S').change().closest('tr');
+            // Set batch_scoring mode from the selected problem type
+            var batchMode = $("#problem-type").val();
+            $sRow.find('select[id$=batch_scoring]').val(
+              batchMode === 'MIN' ? 'min' : 'sum'
+            ).change();
             row += 1;
           }
 
@@ -709,6 +717,8 @@
           $generatorInput.addClass('generator-args-hidden');
 
           // Set points
+          // ICPC: [0,...,0,1] — earlier cases have 0 weight.
+          // SUM / MIN: [1,...,1] — equal weights, all cases contribute.
           if ($("#problem-type").val() == "ICPC") {
             $("#id_cases-"+row+"-points").val('0').change();
           } else {
@@ -719,7 +729,10 @@
           caseIndex += 1;
 
           if (batch_starts.has(caseIndex)) {
-            $("#id_cases-"+(row-1)+"-points").val('1').change();
+            // For all-or-nothing (ICPC), set last case of batch to 1.
+            if ($("#problem-type").val() == "ICPC") {
+              $("#id_cases-"+(row-1)+"-points").val('1').change();
+            }
             $("#id_cases-"+row+"-type").val('E').change();
             row += 1;
           }
@@ -728,7 +741,12 @@
         // Second: Use existing test cases with generator args
         for (var i = 0; i < existingGeneratorCount; i++) {
           if (batch_starts.has(caseIndex)) {
-            $("#id_cases-"+row+"-type").val('S').change();
+            var $sRow = $("#id_cases-"+row+"-type").val('S').change().closest('tr');
+            // Set batch_scoring mode from the selected problem type
+            var batchMode = $("#problem-type").val();
+            $sRow.find('select[id$=batch_scoring]').val(
+              batchMode === 'MIN' ? 'min' : 'sum'
+            ).change();
             row += 1;
           }
 
@@ -747,6 +765,8 @@
           $generatorInput.removeClass('generator-args-hidden').show();
 
           // Set points
+          // ICPC: [0,...,0,1] — earlier cases have 0 weight.
+          // SUM / MIN: [1,...,1] — equal weights, all cases contribute.
           if ($("#problem-type").val() == "ICPC") {
             $("#id_cases-"+row+"-points").val('0').change();
           } else {
@@ -757,7 +777,9 @@
           caseIndex += 1;
 
           if (batch_starts.has(caseIndex)) {
-            $("#id_cases-"+(row-1)+"-points").val('1').change();
+            if ($("#problem-type").val() == "ICPC") {
+              $("#id_cases-"+(row-1)+"-points").val('1').change();
+            }
             $("#id_cases-"+row+"-type").val('E').change();
             row += 1;
           }
@@ -766,7 +788,12 @@
         // Third: Create test cases from generator script (without test files)
         for (var i = 0; i < newGeneratorCount; i++) {
           if (batch_starts.has(caseIndex)) {
-            $("#id_cases-"+row+"-type").val('S').change();
+            var $sRow = $("#id_cases-"+row+"-type").val('S').change().closest('tr');
+            // Set batch_scoring mode from the selected problem type
+            var batchMode = $("#problem-type").val();
+            $sRow.find('select[id$=batch_scoring]').val(
+              batchMode === 'MIN' ? 'min' : 'sum'
+            ).change();
             row += 1;
           }
 
@@ -788,6 +815,8 @@
           }
 
           // Set points
+          // ICPC: [0,...,0,1] — earlier cases have 0 weight.
+          // SUM / MIN: [1,...,1] — equal weights, all cases contribute.
           if ($("#problem-type").val() == "ICPC") {
             $("#id_cases-"+row+"-points").val('0').change();
           } else {
@@ -798,7 +827,9 @@
           caseIndex += 1;
 
           if (batch_starts.has(caseIndex)) {
-            $("#id_cases-"+(row-1)+"-points").val('1').change();
+            if ($("#problem-type").val() == "ICPC") {
+              $("#id_cases-"+(row-1)+"-points").val('1').change();
+            }
             $("#id_cases-"+row+"-type").val('E').change();
             row += 1;
           }
@@ -852,8 +883,30 @@
         }
       });
 
-      // Change to OI if the first row point > 0
-      if($("#id_cases-0-points").val() != '0') $('#problem-type').val('OI');
+      // Auto-detect batch mode from existing rows:
+      //   MIN  → any type=S row has batch_scoring=min
+      //   ICPC → first in-batch type=C row has points=0
+      //   SUM  → otherwise
+      (function() {
+        var mode = 'ICPC';
+        var foundBatchC = false;
+        $('[id$="-type"]').each(function() {
+          var rowPrefix = this.id.replace(/-type$/, '');
+          var type = $(this).val();
+          if (type === 'S') {
+            if ($('#' + rowPrefix + '-batch_scoring').val() === 'min') {
+              mode = 'MIN';
+              return false; // break
+            }
+          } else if (type === 'C' && !foundBatchC) {
+            // First C row: if points > 0, it's SUM-style equal weights
+            var pts = parseFloat($('#' + rowPrefix + '-points').val()) || 0;
+            if (pts > 0) mode = 'SUM';
+            foundBatchC = true;
+          }
+        });
+        $('#problem-type').val(mode);
+      })();
       $("#problem-type").select2();
 
       // Change batch_starts based on current tests
@@ -1036,10 +1089,11 @@
       </th>
       <td>
         <div>
-          {{_('Problem type')}}:
-          <select id="problem-type" style="width: 5em">
-            <option value="ICPC">ICPC</option>
-            <option value="OI">OI</option>
+          {{_('Batch mode')}}:
+          <select id="problem-type" style="width: 11em">
+            <option value="ICPC">{{_('All or 0 (ICPC)')}}</option>
+            <option value="SUM">{{_('Sum (VOI)')}}</option>
+            <option value="MIN">{{_('Min (IOI)')}}</option>
           </select>
           <a id="fill-testcases" href="#">
             <i class="fa fa-circle"></i>
@@ -1169,7 +1223,13 @@
             form['output_file'].value() in valid_files) %} class="bad-file"{% endif %}>
           {{ form.output_file.errors }}{{ form.output_file }}
         </td>
-<td>{{ form.points.errors }}{{ form.points }}</td>
+<td>
+  {{ form.points.errors }}{{ form.points }}
+  {{ form.batch_scoring.errors }}
+  <div class="batch-scoring-container" style="display:none; margin-top:2px;">
+    {{ form.batch_scoring }}
+  </div>
+</td>
 <td>{{ form.is_pretest.errors }}{{ form.is_pretest }}</td>
 <td>
   {{ form.generator_args.errors }}
