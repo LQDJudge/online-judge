@@ -83,23 +83,6 @@
         text-align: center;
     }
 
-    .remove-row-btn {
-        background: none;
-        border: none;
-        padding: 0.25em 0.5em;
-        cursor: pointer;
-        opacity: 0.6;
-        transition: opacity 0.2s;
-
-        &:hover {
-            opacity: 1;
-        }
-
-        i {
-            font-size: 1.1em;
-        }
-    }
-
     // Sorting placeholder
     .sortable-placeholder {
         height: 45px;
@@ -154,3 +137,27 @@
         max-width: 350px;
     }
 }
+
+// Hoisted out of `.sortable-formset` so other formsets (e.g. the test-data
+// case table) can reuse the same inline-delete styling.
+.remove-row-btn {
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0.25em 0.5em;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+
+    &:hover {
+        opacity: 1;
+        background: none;
+    }
+
+    i {
+        font-size: 1.1em;
+        cursor: pointer;
+    }
+}
+

@@ -155,6 +155,9 @@ class ProblemDataForm(ModelForm):
             "binary_data",
             "output_zip_size_mb",
             "use_ioi_signature",
+            "is_communication",
+            "communication_manager",
+            "communication_num_processes",
             "testcase_validator",
         ]
         widgets = {
@@ -169,6 +172,7 @@ class ProblemDataForm(ModelForm):
             "output_only": CheckboxInput,
             "binary_data": CheckboxInput,
             "use_ioi_signature": CheckboxInput,
+            "is_communication": CheckboxInput,
             "custom_checker_cpp": FileEditWidget,
             "custom_checker": FileEditWidget,
         }
@@ -187,9 +191,30 @@ class ProblemDataForm(ModelForm):
         self.fields["interactive_judge"].widget = FileEditWidget(
             default_file_name="interactive.cpp"
         )
+        self.fields["communication_manager"].widget = FileEditWidget(
+            default_file_name="manager.cpp"
+        )
         self.fields["testcase_validator"].widget = FileEditWidget(
             default_file_name="validator.cpp"
         )
+
+
+class CaseFileSelectWidget(Select):
+    """Widget that renders the input_file / output_file fields as a <select>
+    pre-populated with only the current row's value (or empty).
+
+    Rendering as <input> and rewriting to <select> per row in JS is expensive
+    for big tables (hundreds of rows). The actual list of valid files is
+    supplied to Select2 client-side from window.valid_files, so a one-option
+    <select> is enough on the server.
+    """
+
+    def optgroups(self, name, value, attrs=None):
+        v = value[0] if value else ""
+        if v:
+            opt = self.create_option(name, v, v, True, 0)
+            return [(None, [opt], 0)]
+        return [(None, [self.create_option(name, "", "", False, 0)], 0)]
 
 
 class ProblemCaseForm(ModelForm):
@@ -212,6 +237,11 @@ class ProblemCaseForm(ModelForm):
             "generator_args": TextInput(attrs={"style": "width: 100%"}),
             "type": Select(attrs={"style": "width: 100%"}),
             "points": NumberInput(attrs={"style": "width: 4em"}),
+            # Render as <select> with the current value pre-populated. Saves
+            # the per-row <input> → <select> JS rewrite at page load (big
+            # tables with hundreds of rows were 200ms+ just on this).
+            "input_file": CaseFileSelectWidget(attrs={"style": "width: 100%"}),
+            "output_file": CaseFileSelectWidget(attrs={"style": "width: 100%"}),
             # 'output_prefix': NumberInput(attrs={'style': 'width: 4.5em'}),
             # 'output_limit': NumberInput(attrs={'style': 'width: 6em'}),
             # 'checker_args': HiddenInput,
@@ -222,6 +252,14 @@ class ProblemSignatureGraderForm(ModelForm):
     class Meta:
         model = ProblemSignatureGrader
         fields = ["language", "handler", "header"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Match the rest of the data form: render handler + header as inline
+        # editors (FileEditWidget) so users can paste/edit directly without a
+        # separate upload step.
+        self.fields["handler"].widget = FileEditWidget(default_file_name="grader.cpp")
+        self.fields["header"].widget = FileEditWidget(default_file_name="task.h")
 
 
 class ProblemSignatureGraderFormSet(BaseModelFormSet):

@@ -2,24 +2,13 @@
 
 ## 1. Test Generator
 
-Test Generator cho phép bạn sinh test bằng một chương trình generator viết bằng C++, thay vì upload file test như thông thường.
-
-### File sinh test
-
-Đầu tiên, bạn cần viết một file sinh test bằng C++ (có thể upload hoặc chỉnh sửa trực tiếp) nhận tham số là các số đại diện cho giới hạn của input và thêm một tham số là seed dùng cho random. Chương trình sẽ random input từ giới hạn và seed được nhập từ tham số.
-
-Sau khi có input, bạn cần code lời giải bài toán trong file với input đó để tạo ra output. Cuối cùng, in input ra stdout (dùng cout) và in output ra stderr (dùng cerr).
-
-Để test chương trình trên máy tính của bạn, bạn có thể sử dụng lệnh sau (Windows):
+Sinh test bằng một chương trình C++ thay vì upload file. Chương trình nhận các tham số ràng buộc cộng thêm `seed`; in input ra **stdout** và output mong đợi ra **stderr**.
 
 ```bash
-generator.exe [arg_1] [arg_2] ... [arg_n] [seed]
+./generator [arg_1] [arg_2] ... [seed]
 ```
 
-hoặc thay bằng `./generator` trên Linux/MacOS.
-
-**Ví dụ:**
-Dưới đây là ví dụ cho một bài toán: Input chứa 2 số nguyên a, b (1 <= a, b <= 100000). In ra tổng a + b.
+**Ví dụ.** Bài toán: input gồm hai số `a, b` với `1 <= a, b <= 100000`. Output: `a + b`.
 
 ```cpp
 #include <bits/stdc++.h>
@@ -66,13 +55,9 @@ int main(int args_length, char* args[]) {
 
 ### Script sinh test
 
-Script sinh test sẽ hiện ra dưới mục file sinh test sau khi bạn lưu file generator. Script sinh test giúp bạn tạo ra bộ test nhanh chóng bằng cách nhập các tham số, mỗi dòng tương ứng một test. Mỗi dòng tham số được dùng trong file sinh test để sinh ra một test với input/output in ra từ file, từ đó tạo ra bộ test hoàn chỉnh.
+Hiện ra dưới mục file sinh test sau khi lưu. Mỗi dòng là tham số cho một test, được chuyển đến generator. Dùng **seed khác nhau** cho mỗi test để tránh trùng lặp.
 
-Lấy ví dụ bài toán a + b. Bạn muốn tạo ra 10 test với giới hạn đa dạng để bao quát hết mọi trường hợp, một ví dụ về bộ test mạnh sẽ có 3 test với a, b nằm trong đoạn 1 đến 10, 3 test từ 100 đến 1000, và 4 test từ 10000 đến 100000. Với cách chia này, bộ test của bạn sẽ bao quát cho giá trị nhỏ lẫn giá trị lớn. 
-
-**Lưu ý**, bạn nên để seed phân biệt cho các test để đảm bảo các test tạo ra sẽ không trùng nhau.
-
-**Generator Script:**
+Với bài `a + b`, một bộ 10 test mạnh có thể trải đều các dải nhỏ / trung bình / lớn:
 
 ```
 1 10 12
@@ -87,54 +72,28 @@ Lấy ví dụ bài toán a + b. Bạn muốn tạo ra 10 test với giới hạ
 10000 100000 4753
 ```
 
-Sau khi có script sinh test, bạn hãy bấm nút **"Điền test"** trong mục **"Tự động điền test"**. Bảng test sẽ được thêm số lượng test bằng với số dòng trong script, mỗi test sẽ có tham số (hiện trong mục **"Tham số sinh test"**) từ dòng tương ứng trong script.
+Bấm **"Điền test"** để tạo một test cho mỗi dòng trong script. Tham số hiển thị ở cột **"Tham số sinh test"** và có thể chỉnh trực tiếp; nút **"Thêm test mới"** để thêm test rời.
 
-**Lưu ý**: Khi bấm **"Điền test"**, nếu có file trong mục **"File zip chứa test"**, các test trong file cũng sẽ được thêm.
-
-### Tham số sinh test
-
-Tham số của mỗi test sẽ hiện ở mục **"Tham số sinh test"** và bạn có thể thay đổi tham số của test ở đó.
-
-Bạn cũng có thể thêm từng test bằng cách bấm **"Thêm test mới"** và nhập tham số vào mục tham số sinh test của test đó.
-
-**Lưu ý quan trọng**
-Mỗi test case chỉ sử dụng **một trong hai cách**:
-- Hoặc lấy data từ file ZIP
-- Hoặc sinh data từ generator + argument
-
-Nhớ bấm **"Lưu"** ở cuối trang để lưu lại các thay đổi.
+**Mỗi test chỉ dùng một nguồn dữ liệu** — hoặc từ ZIP, hoặc từ generator. Đừng quên bấm **"Lưu"**.
 
 ## 2. Custom Checker
 
-Custom Checker cho phép bạn tự định nghĩa cách thức chấm bài toán thay vì chỉ so sánh output trực tiếp. Điều này rất hữu ích cho các bài toán có nhiều đáp án đúng hoặc cần kiểm tra format đặc biệt.
+Định nghĩa cách chấm cho các bài có nhiều đáp án đúng hoặc format đặc biệt.
 
 ### Python
 
-Đây là checker mặc định của website, cho phép người dùng cập nhật nhiều thông tin nhất (xem chi tiết bên dưới). Chúng ta cần hoàn thành hàm `check` bên dưới:
+Checker mặc định. Cài đặt hàm `check`:
 
 ```py
 def check(process_output, judge_output, **kwargs):
     # return True/False
 ```
 
-Trong đó `**kwargs` có thể chứa các biến sau:
+`**kwargs` có thể chứa: `process_output` (output bài nộp), `judge_output` (đáp án), `submission_source`, `judge_input`, `point_value`, `case_position`, `submission_language`, `execution_time`.
 
-- `process_output`: output
-- `judge_output`: đáp án
-- `submission_source`: mã nguồn bài nộp
-- `judge_input`: input
-- `point_value`: điểm của test hiện tại
-- `case_position`: thứ tự test case
-- `submission_language`: ngôn ngữ bài nộp
-- `execution_time`: thời gian thực thi
+Trả về bool, hoặc `CheckerResult(passed, points, feedback='')` cho điểm thành phần.
 
-**Trả về:**
-
-- Cách 1: Trả về True/False
-- Cách 2: Trả về một đối tượng `CheckerResult` có thể gọi dưới dạng `CheckerResult(case_passed_bool, points_awarded, feedback='')`
-
-**Ví dụ:**
-Dưới đây là ví dụ cho một bài toán: Input chứa 1 số nguyên n. In ra hai số nguyên a, b sao cho a + b = n.
+**Ví dụ.** Input là một số nguyên `n`; output là hai số nguyên `a, b` bất kỳ thoả `a + b = n`.
 
 ```py
 from dmoj.result import CheckerResult
@@ -166,29 +125,11 @@ def check(process_output, judge_output, judge_input, **kwargs):
 
 ### C++
 
-Để sử dụng tính năng này, bạn cần viết một chương trình C++ nhận 3 argument theo thứ tự: `input_file`, `output_file`, `ans_file` tương ứng với file input, output và đáp án.
+Viết một chương trình C++ chạy theo dạng `./main <input_file> <output_file> <ans_file>`.
 
-Để test chương trình trên máy tính của bạn, bạn có thể sử dụng lệnh sau (Windows):
+**Mã thoát**: `0` = AC, `1` = WA, `2` = điểm thành phần (in tỷ lệ trong `[0,1]` ra **stderr**). Mọi thứ in ra **stdout** được hiển thị cho người nộp bài làm feedback.
 
-```bash
-main.exe [input_file] [output_file] [ans_file]
-```
-
-hoặc thay bằng ``` trên Linux/MacOS.
-
-**Trả về:**
-Chương trình trả về:
-
-- 0 nếu AC (100% điểm)
-- 1 nếu WA (0 điểm)
-- 2 nếu điểm một phần. Trường hợp này, in ra một số thực trong [0, 1] ra stderr đại diện cho tỷ lệ điểm. Nếu điểm < 1, hiển thị WA; nếu điểm = 1, hiển thị AC.
-
-Thông tin ghi ra stdout (bằng cout) sẽ được hiển thị cho người nộp bài (feedback).
-
-**Ví dụ:**
-Chương trình sau được dùng để chấm một bài toán: Cho n là một số nguyên dương. In ra hai số tự nhiên a, b sao cho a + b = n.
-
-Nếu a + b = n và a, b >= 0, được 100% điểm; nếu a + b = n nhưng một trong a, b âm, được 50% điểm.
+**Ví dụ.** Cho `n`, chấp nhận mọi `a, b` thoả `a + b = n`. 100% điểm nếu cả hai không âm, 50% nếu có số âm.
 
 ```cpp
 #include <bits/stdc++.h>
@@ -225,27 +166,11 @@ int main(int argc, char** argv) {
 
 ## 3. Interactive (C++)
 
-Để sử dụng tính năng này, bạn cần viết một chương trình C++ nhận 2 argument: `input_file` `answer_file` tương ứng với file input và đáp án (nếu cần).
+Chương trình C++ chạy theo dạng `./main <input_file> <answer_file>`. Bài làm và interactor giao tiếp qua stdin/stdout.
 
-Để test chương trình trên máy tính của bạn với tư cách là thí sinh, bạn có thể sử dụng lệnh sau (Windows):
+**Mã thoát**: `0` = AC, `1` = WA, `2` = điểm thành phần (tỷ lệ ra **stderr**). Mọi thứ ghi ra **stderr** được hiển thị làm feedback.
 
-```bash
-main.exe [input_file] [answer_file]
-```
-
-hoặc thay bằng ``` trên Linux/MacOS.
-
-**Trả về:**
-Chương trình trả về:
-
-- 0 nếu AC (100% điểm)
-- 1 nếu WA (0 điểm)
-- 2 nếu điểm một phần. Trường hợp này, in ra một số thực trong [0, 1] ra stderr đại diện cho tỷ lệ điểm. Nếu điểm < 1, hiển thị WA; nếu điểm = 1, hiển thị AC.
-
-Thông tin in ra stderr (bằng cerr) sẽ là feedback hiển thị cho người dùng.
-
-**Ví dụ:**
-Chương trình sau được dùng để chấm một bài toán guessgame: Người chơi phải tìm ra một số bí mật n (n có trong file input). Mỗi lần họ hỏi một số x, và chương trình sẽ trả lời "SMALLER", "BIGGER" hoặc "HOLA" dựa trên giá trị của n và x. Cần tìm ra n sau không quá 31 câu hỏi.
+**Ví dụ.** Đoán số: thí sinh phải tìm số bí mật `n` trong ≤ 31 câu hỏi. Mỗi truy vấn `x` nhận về `"SMALLER"`, `"BIGGER"` hoặc `"HOLA"`.
 
 ```cpp
 #include <bits/stdc++.h>
@@ -292,16 +217,11 @@ int main(int argc, char *argv[]) {
 
 ## 4. IOI Signature
 
-Tính năng này được sử dụng để implement function như trong IOI. Thí sinh được cho một định nghĩa function và cần implement function đó để trả về giá trị đúng.
+Thí sinh cài đặt một hàm; judge liên kết với handler do bạn cung cấp. Bạn chuẩn bị:
+- **Header** (`.h`) — khai báo hàm (chỉ C/C++)
+- **Handler** — chương trình đọc input, gọi hàm, in output
 
-Để sử dụng tính năng này, bạn cần viết 2 chương trình:
-- Header: Đây là file định nghĩa function (extension phải là `.h`, chỉ áp dụng với C/C++)
-- Handler: Đây là chương trình xử lý input và output dựa trên function
-
-**Ví dụ:**
-Cho một bài toán: input số n. Viết function `solve(int n)` trả về `n * 2`. Giả sử input là multitest với format:
-- Dòng đầu chứa `t` là số test
-- Mỗi dòng chứa một số nguyên `n`
+**Ví dụ.** Input là `t` rồi đến `t` số nguyên `n`. Thí sinh cài đặt `solve(int n)` trả về `n * 2`.
 
 ### C/C++
 
@@ -391,21 +311,27 @@ public class Solution {
 }
 ```
 
+### Import bài IOI
+
+LQDOJ hỗ trợ đầy đủ các bài kiểu IOI: signature grader, chia subtask all-or-nothing, và bài tương tác / nhiều tiến trình.
+
+1. **Test data** — upload ZIP test ở mục "File zip chứa test".
+2. **Checker** — chọn **Checker** = **Testlib (CMS / IOI)** rồi upload `checker.cpp` của bài. **Trước khi upload, đổi `#include "testlib.h"` thành `#include "testlib_ioi.h"`** — IOI dùng một bản testlib tuỳ biến, trên judge đã được cài sẵn là `testlib_ioi.h`.
+3. **Signature grader** — bật **Nộp bài bằng hàm?**, thêm một dòng cho mỗi ngôn ngữ kèm `grader.cpp` + file header của bài (ví dụ `festival.h`) — cùng giao diện như phần signature grader cơ bản ở trên.
+4. **Bài tương tác** — nếu gói IOI có kèm `manager.cpp` (bài thuộc dạng tương tác), tick **Bài Communication**, upload `manager.cpp` sau khi cũng đổi `#include "testlib.h"` thành `#include "testlib_ioi.h"`, rồi đặt **Số tiến trình** = `1` cho bài tương tác thông thường hoặc `2` cho bài hai pha encode/decode.
+5. **Chia subtask** — vào **Tự động điền test**, chọn chế độ **ICPC**, mỗi batch ứng với một subtask kèm tổng điểm. Chế độ ICPC chấm all-or-nothing cho mỗi batch — đúng kiểu IOI.
+
+Bấm **Lưu** là bài có thể submit được.
+
+**Bài mẫu trên site:**
+
+- [IOI 2025 — Festival](https://ioinformatics.org/files/ioi2025problem4.pdf) — batch + signature grader + testlib checker (kiểu IOI chuẩn).
+- [IOI 2025 — Souvenirs](https://ioinformatics.org/files/ioi2025problem1.pdf) — bài tương tác (một tiến trình bài làm giao tiếp với manager).
+- [IOI 2025 — Migrations](https://ioinformatics.org/files/ioi2025problem5.pdf) — bài tương tác hai tiến trình (encode + decode).
+
 ## 5. Trình kiểm tra test
 
-Trình kiểm tra test cho phép bạn kiểm tra dữ liệu input của test có thỏa mãn ràng buộc của bài toán hay không. Chương trình kiểm tra đọc input từ stdin và trả về exit code 0 nếu input hợp lệ, hoặc exit code khác 0 nếu input không hợp lệ. Tính năng này giúp phát hiện lỗi trong dữ liệu test trước khi thí sinh gặp phải.
-
-Để sử dụng tính năng này, upload hoặc chỉnh sửa chương trình kiểm tra trong mục **Trình kiểm tra test**.
-
-### Cách hoạt động
-
-1. Trình kiểm tra nhận input của test qua **stdin**
-2. Kiểm tra xem input có thỏa mãn ràng buộc của bài toán không
-3. **Exit code 0** = input hợp lệ
-4. **Exit code khác 0** = input không hợp lệ
-5. Output ra **stderr** sẽ được ghi lại làm phản hồi (giải thích lý do kiểm tra thất bại)
-
-Sau khi lưu trình kiểm tra, bấm nút **"Chạy kiểm tra"** để chạy kiểm tra trên tất cả test case. Kết quả sẽ hiển thị test case nào hợp lệ hoặc không hợp lệ.
+Chương trình kiểm tra input của mỗi test có thoả ràng buộc của đề. Đọc stdin; exit `0` = hợp lệ, khác 0 = không hợp lệ (stderr được ghi lại làm feedback). Bấm **"Chạy kiểm tra"** để kiểm tra tất cả test.
 
 ### C++
 
@@ -524,3 +450,4 @@ Khi chọn một bộ chấm `csv_*`, biểu mẫu sẽ hiện ra:
 Trong lúc kỳ thi chạy ở chế độ pretests-only, bộ chấm sẽ áp dụng `pretest_fraction` và chỉ chấm điểm trên một tập con các dòng được chọn theo hàm băm — người giải chỉ thấy điểm trên tập đó (bảng xếp hạng public). Việc chọn dòng được xác định bằng `md5(id)`, do đó cùng một tập con được dùng cho mọi bài nộp.
 
 Sau khi kỳ thi kết thúc, hãy chuyển `run_pretests_only=False` trên kỳ thi rồi nhấn **Chấm lại tất cả bài nộp**. Bộ chấm khi đó sẽ bỏ qua `pretest_fraction` và chấm trên toàn bộ dòng — đó là bảng xếp hạng private.
+

@@ -88,6 +88,26 @@ class ProblemDataCompiler(object):
             cases.append(batch)
 
         def make_checker(case):
+            # File-bearing checker types (custom, customcpp, testlib, testlibcms)
+            # store their file on `ProblemData`, not on `ProblemTestCase`. If a
+            # per-case row sets one of these, fall back to its checker_args
+            # JSON below — we can't resolve a path to a per-case file because
+            # the model doesn't carry one.
+            if not hasattr(case, "custom_checker") and case.checker in (
+                "custom",
+                "customcpp",
+                "testlib",
+                "testlibcms",
+            ):
+                raise ProblemDataError(
+                    _(
+                        "Per-case checker %s requires a file that's only "
+                        "configurable on the problem (not per test case). "
+                        "Set the checker at the problem level instead."
+                    )
+                    % case.checker
+                )
+
             if case.checker == "custom":
                 custom_checker_path = split_path_first(case.custom_checker.name)
                 if len(custom_checker_path) != 2:
@@ -113,7 +133,7 @@ class ProblemDataCompiler(object):
                     },
                 }
 
-            if case.checker == "testlib":
+            if case.checker in ("testlib", "testlibcms"):
                 custom_checker_path = split_path_first(case.custom_checker_cpp.name)
                 if len(custom_checker_path) != 2:
                     raise ProblemDataError(
@@ -124,7 +144,9 @@ class ProblemDataCompiler(object):
                     "args": {
                         "files": custom_checker_path[1],
                         "lang": latest_cpp_key,
-                        "type": "testlib",
+                        # `testlibcms` uses the CMS-style testlib fork (Kian Mirjalali) which
+                        # expects argv `input answer output` and prints CMS-format scores.
+                        "type": "cms" if case.checker == "testlibcms" else "testlib",
                     },
                 }
 
@@ -259,6 +281,13 @@ class ProblemDataCompiler(object):
                     "type": "lqdoj" if self.data.checker == "interact" else "testlib",
                 }
                 init["unbuffered"] = True
+            elif (
+                self.data.checker in ("testlib", "testlibcms")
+                and not self.data.custom_checker_cpp
+            ):
+                # Communication tasks may set data.checker = "testlibcms" purely as a
+                # type signal (the manager scores itself; no separate checker file).
+                pass
             else:
                 init["checker"] = make_checker(self.data)
         else:
@@ -294,7 +323,43 @@ class ProblemDataCompiler(object):
                 "language": lang,
             }
 
-        if self.data.use_ioi_signature:
+        # Communication tasks (IOI-style separate manager process) take
+        # precedence over the plain signature_grader emit: the user binary is
+        # still compiled with stub.cpp + <task>.h (provided by the C signature
+        # grader rows), but the judge launches `num_processes` copies of it
+        # alongside a sandboxed manager binary, talking over FIFOs.
+        if (
+            self.data.communication_manager
+            and (self.data.communication_num_processes or 0) >= 1
+        ):
+            mgr_path = split_path_first(self.data.communication_manager.name)
+            if len(mgr_path) != 2:
+                raise ProblemDataError(_("Invalid communication manager"))
+            communication = {
+                "manager": {
+                    "files": mgr_path[1],
+                    "lang": _get_latest_cpp_key(),
+                },
+                "num_processes": int(self.data.communication_num_processes),
+                # IOI/CMS managers print a score to stdout and always exit 0;
+                # other managers signal pass/fail via exit code.
+                "type": "cms" if self.data.checker == "testlibcms" else "default",
+            }
+            # Reuse the C/C++ signature grader as the stub + header.
+            if self.data.use_ioi_signature:
+                for grader in self.problem.signature_graders.all():
+                    if grader.language != "c":
+                        continue
+                    handler_path = split_path_first(grader.handler.name)
+                    header_path = split_path_first(grader.header.name)
+                    if len(handler_path) == 2 and len(header_path) == 2:
+                        communication["signature"] = {
+                            "entry": handler_path[1],
+                            "header": header_path[1],
+                        }
+                    break
+            init["communication"] = communication
+        elif self.data.use_ioi_signature:
             signature_graders = {}
             for grader in self.problem.signature_graders.all():
                 handler_path = split_path_first(grader.handler.name)

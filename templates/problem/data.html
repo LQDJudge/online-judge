@@ -42,15 +42,18 @@
       });
       toggle_custom();
 
-      function update_select2() {
+      $("#id_problem-data-checker").select2();
+      $("#id_problem-data-signature_language").select2();
+
+      // Type column has 3 fixed options (S/C/E). For small problems we Select2
+      // it for visual consistency with the rest of the form; for big problems
+      // (hundreds of rows) we keep it as a native <select> since hundreds of
+      // Select2 widgets at page load is the dominant perf cost.
+      if (!window.big_input) {
         $('tbody:not(.extra-row-body) .type-column select').select2({
           minimumResultsForSearch: -1
         });
       }
-
-      $("#id_problem-data-checker").select2();
-      $("#id_problem-data-signature_language").select2();
-      update_select2();
 
       function autofill_if_exists($select, file) {
         if (!$select.val() && ~window.valid_files.indexOf(file))
@@ -59,25 +62,27 @@
 
       var $table = $('#case-table');
       $table.on('add-row', function (e, $tr) {
-        // update_select2();
-        $tr.find('input').filter('[id$=file]').each(function () {
-          var $select, val = $(this).replaceWith($select = $('<select>').attr({
-            id: $(this).attr('id'),
-            name: $(this).attr('name'),
-            style: 'width: 100%'
-          })).val();
+        // The server already renders input_file/output_file as <select>
+        // elements (CaseFileSelectWidget), each with a single option for the
+        // current value. We only need to wire up Select2 + autofill — no DOM
+        // rewrite per row. Big-input problems skip Select2 entirely; small
+        // problems get the full picker populated from window.valid_files.
+        if (window.big_input) return;
+
+        $tr.find('select[id$=input_file], select[id$=output_file]').each(function () {
+          var $select = $(this);
+          var val = $select.val();
           $select.select2({
-            data: window.big_input ? [val] : window.valid_files,
+            data: window.valid_files,
             allowClear: true,
-            placeholder: ''
+            placeholder: '',
           }).val(val).trigger('change').on('change', function () {
-            var val = $select.val();
-            if (val) {
-              if ($select.attr('id').endsWith('input_file'))
-                autofill_if_exists($tr.find('select[id$=output_file]'), val.replace(/in(?!.*?in)/, 'out'));
-              else
-                autofill_if_exists($tr.find('select[id$=input_file]'), val.replace(/out(?!.*?out)/, 'in'));
-            }
+            var v = $select.val();
+            if (!v) return;
+            if ($select.attr('id').endsWith('input_file'))
+              autofill_if_exists($tr.find('select[id$=output_file]'), v.replace(/in(?!.*?in)/, 'out'));
+            else
+              autofill_if_exists($tr.find('select[id$=input_file]'), v.replace(/out(?!.*?out)/, 'in'));
           });
         });
       });
@@ -240,7 +245,7 @@
 
         $checker.change(function () {
           $tr_checker.toggle($checker.val() == 'custom').change();
-          $tr_validator.toggle($checker.val() == 'customcpp' || $checker.val() == 'testlib').change();
+          $tr_validator.toggle(['customcpp', 'testlib', 'testlibcms'].indexOf($checker.val()) !== -1).change();
           $tr_interactive.toggle($checker.val() == 'interact' || $checker.val() == 'interacttl').change();
         }).change();
 
@@ -257,6 +262,17 @@
           let on = $output_only.is(':checked');
           $tr_binary_data.toggle(on);
           $tr_output_zip.toggle(on);
+        }).change();
+
+        // Communication sub-fields (manager + num_processes): only relevant
+        // when the problem is marked as a Communication task.
+        let $is_communication = $('#id_problem-data-is_communication');
+        let $tr_comm_manager = $('#id_problem-data-communication_manager').closest('tr');
+        let $tr_comm_num_proc = $('#id_problem-data-communication_num_processes').closest('tr');
+        $is_communication.change(function () {
+          let on = $is_communication.is(':checked');
+          $tr_comm_manager.toggle(on);
+          $tr_comm_num_proc.toggle(on);
         }).change();
 
         // Testcase validator link
@@ -352,42 +368,163 @@
       checker_precision($('#id_problem-data-checker'));
       checker_csv_args($('#id_problem-data-checker'));
 
-      $table.on('add-row', function (e, $tr) {
+      // Per-row state computed once; the per-row add-row handler reads from
+      // this map instead of walking siblings (was O(n²) via prevAll/nextUntil).
+      var rowDisabled = {};
+
+      // Inline delete UX: hide the raw DELETE checkbox and replace it with an
+      // × button (matches the contest-edit page pattern in sortable_formset.js).
+      // Saved rows are hidden (Django still needs the DELETE field to persist
+      // the deletion on Apply). New unsaved rows are removed from the DOM and
+      // the formset's TOTAL_FORMS count is decremented so Django doesn't try
+      // to validate the gap.
+      function attachInlineDelete($tr) {
+        var $del = $tr.find('input[id$=DELETE]');
+        if (!$del.length || $del.data('inline-delete-attached')) return;
+        $del.data('inline-delete-attached', true).hide();
+        var $id = $tr.find('input[id$=-id]');
+        var hasPk = !!$id.val();
+        var $btn = $(
+          '<button type="button" class="remove-row-btn" title="{{ _("Remove") }}">' +
+          '<i class="fa fa-times red"></i></button>'
+        );
+        $del.after($btn);
+        $btn.on('click', function (e) {
+          e.preventDefault();
+          if (hasPk) {
+            $del.prop('checked', true);
+            $tr.hide();
+          } else {
+            $tr.remove();
+            var $total = $('#id_cases-TOTAL_FORMS');
+            var n = parseInt($total.val(), 10);
+            if (n > 0) $total.val(n - 1);
+          }
+        });
+        // Already-deleted saved rows (page reloaded with DELETE flagged) stay
+        // hidden so the Apply form still submits the flag without UI clutter.
+        if ($del.is(':checked')) $tr.hide();
+      }
+
+      $table.on('add-row', function (e, $tr, opts) {
+        opts = opts || {};
         var $order = $tr.find('input').filter('[id$=order]').attr('type', 'hidden').val(++order);
         $order.after($('<span>', {'class': 'order'}).text($order.val()))
           .after($('<i>', {'class': 'fa fa-fw fa-lg fa-ellipsis-v'}));
 
-        var $opts = $tr.find('input').slice(2, 6);
-        var $files = $tr.find('select').slice(1, 3);
-        var $delete = $files.end().last();
-        $tr.find('select[id$=type]').change(function () {
-          var $this = $(this), val = $this.val(), disabled;
+        // Exclude DELETE (last input) from $opts — inline-delete will hide
+        // the raw checkbox and own its visibility via $deleteWidget below.
+        // Otherwise interactive type changes would re-show the raw checkbox.
+        var $opts = $tr.find('input').slice(2, 5);
+        var $files = $tr.find('select[id$=input_file], select[id$=output_file]');
+        var $delete = $tr.find('input[id$=DELETE]');
+        // generator_args is only meaningful for real cases (type=C), not for
+        // batch start/end markers.
+        var $genArgs = $tr.find('.generator-args-container');
+        // attachInlineDelete permanently hides the raw DELETE checkbox and
+        // adds an × button. Use the button as the toggleable affordance.
+        var $deleteWidget = function () { return $tr.find('.remove-row-btn'); };
+        // Toggle both the native <select> and its Select2 wrapper (if present).
+        // Big-input problems skip Select2, so the bare <select> is what's visible.
+        var $fileWidgets = function () { return $files.add($files.siblings('.select2')); };
+        var $type = $tr.find('select[id$=type]');
+
+        function applyType(val, disabled) {
           switch (val) {
             case 'S':
             case 'E':
-              disabled = val == 'S';
               $opts.toggle(val == 'S');
-              $files.siblings('.select2').hide();
-              $delete.toggle(val == 'S');
+              $fileWidgets().hide();
+              $deleteWidget().toggle(val == 'S');
+              $genArgs.hide();
               break;
             default:
               $opts.toggle(val == 'C');
-              $files.siblings('.select2').toggle(val == 'C');
-              $delete.toggle(val == 'C');
-              var $prevs = $tr.prevAll('tr[data-type=S], tr[data-type=E]');
-              disabled = $prevs.length && $prevs.get(0).getAttribute('data-type') == 'S';
+              $fileWidgets().toggle(val == 'C');
+              $deleteWidget().toggle(val == 'C');
+              $genArgs.toggle(val == 'C');
               $tr.find('input[id$=pretest]').toggle(val == 'C' && !disabled);
           }
-          $tr.attr('data-type', val).nextUntil('tr[data-type=S], tr[data-type=E], tr[data-type=""]')
+          $tr.attr('data-type', val);
+        }
+
+        $type.change(function () {
+          // User-driven change: recompute disabled from siblings (cheap, only
+          // fires when the user actually edits the type — not the bulk case).
+          var val = $(this).val();
+          var $prevs = $tr.prevAll('tr[data-type=S], tr[data-type=E]');
+          var disabled = $prevs.length && $prevs.get(0).getAttribute('data-type') == 'S';
+          applyType(val, disabled);
+          $tr.nextUntil('tr[data-type=S], tr[data-type=E], tr[data-type=""]')
             .find('input[id$=pretest]').toggle(!disabled);
-        }).change();
+        });
 
+        // Attach the inline delete button BEFORE applyType — applyType's
+        // visibility toggle needs the × element to exist so it can hide it
+        // on S/E rows.
+        attachInlineDelete($tr);
 
-        checker_precision($tr.find('select[id$=checker]'));
-        checker_csv_args($tr.find('select[id$=checker]'));
-      }).find('tbody:first').find('tr').each(function () {
-        $table.trigger('add-row', [$(this)]);
+        if (opts.initial) {
+          // Bulk path (initial render): caller passes `disabled` from the
+          // single-pass scan below. Skip the per-row sibling walk.
+          applyType($type.val(), opts.disabled);
+        } else {
+          $type.change();
+        }
+
+        // Per-row checker helpers only matter if the row picked a per-case
+        // checker. Otherwise they spawn ~10 unused DOM elements per row;
+        // multiply by 270 rows = ~3k unnecessary nodes. Defer until the user
+        // actually picks one.
+        var $rowChecker = $tr.find('select[id$=checker]');
+        function initRowChecker() {
+          checker_precision($rowChecker);
+          checker_csv_args($rowChecker);
+        }
+        if ($rowChecker.val()) {
+          initRowChecker();
+        } else {
+          $rowChecker.one('change', function () {
+            initRowChecker();
+            // Re-trigger so the just-initialized helpers see the new value.
+            $rowChecker.trigger('change');
+          });
+        }
       });
+
+      // Initial render: process the first chunk synchronously so visible rows
+      // are ready by paint, then stream the rest in larger chunks across
+      // animation frames. Per-row work is ~5-10ms in jQuery; we use a 60ms
+      // chunk budget so each frame makes meaningful progress without blocking
+      // the user from scrolling for more than a frame.
+      (function () {
+        var rows = $table.find('tbody:first > tr').toArray();
+        var i = 0, disabled = false;
+        var SYNC_ROWS = 40;       // process this many before yielding
+        var CHUNK_BUDGET_MS = 60; // and ~60ms per subsequent chunk
+
+        function processRow() {
+          var $tr = $(rows[i++]);
+          var dataType = $tr.attr('data-type');
+          var rowDisabled = disabled;
+          if (dataType === 'S') { rowDisabled = true; disabled = true; }
+          else if (dataType === 'E') { rowDisabled = false; disabled = false; }
+          $table.trigger('add-row', [$tr, {initial: true, disabled: rowDisabled}]);
+        }
+
+        // Synchronous bootstrap so above-the-fold rows have handlers wired up
+        // when the user first sees the page.
+        while (i < rows.length && i < SYNC_ROWS) processRow();
+
+        function processChunk() {
+          var start = performance.now();
+          while (i < rows.length && performance.now() - start < CHUNK_BUDGET_MS) {
+            processRow();
+          }
+          if (i < rows.length) requestAnimationFrame(processChunk);
+        }
+        if (i < rows.length) requestAnimationFrame(processChunk);
+      })();
 
       $('form').submit(function () {
         $table.find('tbody:first').find('tr').each(function () {
@@ -547,13 +684,19 @@
             row += 1;
           }
 
-          // Set input/output files from zip
-          var $input = $("#id_cases-"+row+"-input_file");
-          $input.select2('destroy').empty().select2({ data: [inFiles[i]] });
-          $input.val(inFiles[i]).change();
-          var $output = $("#id_cases-"+row+"-output_file");
-          $output.select2('destroy').empty().select2({ data: [outFiles[i]] });
-          $output.val(outFiles[i]).change();
+          // Set input/output files from zip. In big_input mode Select2 was
+          // never initialized on these selects — re-set option list directly.
+          function setSelectValue($sel, file) {
+            if (window.big_input || !$sel.hasClass('select2-hidden-accessible')) {
+              $sel.empty().append($('<option>', {value: file, text: file, selected: true}));
+              $sel.val(file).change();
+            } else {
+              $sel.select2('destroy').empty().select2({ data: [file] });
+              $sel.val(file).change();
+            }
+          }
+          setSelectValue($("#id_cases-"+row+"-input_file"), inFiles[i]);
+          setSelectValue($("#id_cases-"+row+"-output_file"), outFiles[i]);
 
           // Clear any existing generator args for file-based test cases
           var $generatorInput = $("#id_cases-"+row+"-generator_args");

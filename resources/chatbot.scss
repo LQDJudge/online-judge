@@ -3,7 +3,7 @@
  * Uses SCSS variables for dark mode compatibility
  */
 
-@import "vars";
+@use "vars" as *;
 
 .chatbot-container {
     display: flex;

@@ -2,24 +2,13 @@
 
 ## 1. Test Generator
 
-Test Generator allows you to generate tests using a generator program written in C++, instead of uploading test files as usual.
-
-### Generator File
-
-First, you need to write a generator file in C++ (can be uploaded or edited directly) that takes as arguments representing the constraint of the input and adds an argument as the seed used for random. The program will randomize the input from the constraint and the seed is entered from the argument.
-
-Once you have the input, you need to code the solution with that input in the file to create the output. Finally, print the input to stdout (use cout) and print the output to stderr (use cerr).
-
-To test the program on your computer, you can use the following command (Windows):
+Generate tests with a C++ program instead of uploading them. The generator takes constraint args plus a seed; print the input to **stdout** and the expected output to **stderr**.
 
 ```bash
-generator.exe [arg_1] [arg_2] ... [arg_n] [seed]
+./generator [arg_1] [arg_2] ... [seed]
 ```
 
-or with `./generator` on Linux/MacOS.
-
-**Ví dụ:**
-Here is an example of a problem: Input contains 2 integers a, b (1 <= a, b <= 100000). Print the sum a + b.
+**Example.** Input: two integers `a, b` with `1 <= a, b <= 100000`. Output: `a + b`.
 
 ```cpp
 #include <bits/stdc++.h>
@@ -66,13 +55,9 @@ int main(int args_length, char* args[]) {
 
 ### Generator Script
 
-Generator Script will appear under Generator file after you save the generator file. Generator Script helps you create a test suite quickly by entering arguments, each line corresponding to a test. Each argument line is used in the generator file to generate a test with input/output printed from the file, thereby creating a complete test suite.
+Appears under the generator file once saved. One line per test case — arguments are forwarded to the generator. Use **distinct seeds** to avoid duplicate tests.
 
-Take the problem a + b for example. You want to create 10 test cases with diverse constraints to cover all cases, an example of a strong test suite would have 3 tests with a, b in the range 1 to 10, 3 tests from 100 to 1000, and 4 tests from 10000 to 100000. With this division, your test suite will cover both small and large values.
-
-**Note**, you should leave a distinct seed for the tests to ensure that the generated tests will not be duplicated.
-
-**Generator Script:**
+For the `a + b` problem, a strong 10-test suite might cover small/medium/large ranges:
 
 ```
 1 10 12
@@ -87,54 +72,28 @@ Take the problem a + b for example. You want to create 10 test cases with divers
 10000 100000 4753
 ```
 
-After having the generator script, click the "Fill testcases" button in the "Autofill testcases" section. The testcases table will be added with the number of tests equal to the number of lines in the script, each test will have arguments (shown in Generator Args) from the corresponding line in the script. 
+Click **"Fill testcases"** to materialize one test row per script line. Args show in the **Generator Args** column and can be edited inline; "Add new case" lets you add individual tests.
 
-**Note**: When clicking "Fill testcases", if there is a file in the "Data zip file" section, the testcases in the file will also be added.
-
-### Generator Args
-
-The arguments of each test will be shown in the generator args section and you can change the arguments of the test there. 
-
-You can also add individual testcases by "Add new case" and enter arguments in the generator args section of that test.
-
-**Important Note**
-Each test case only uses **one of two ways**:
-- Either get data from ZIP file
-- Or generate data from generator + argument
-
-Remember to click **"Apply!"** at the bottom of the page to save the changes.
+**Each test uses one source only** — either a file from the data ZIP or the generator. Don't forget to click **"Apply!"**.
 
 ## 2. Custom Checker
 
-Custom Checker allows you to define custom judging logic instead of just direct output comparison. This is very useful for problems with multiple correct answers or special format requirements.
+Define custom judging logic for problems with multiple valid answers or special output formats.
 
 ### Python
 
-This is the default checker for the website, allowing users to update the most information (see details below). We need to complete the `check` function below:
+The default checker. Implement `check`:
 
 ```py
 def check(process_output, judge_output, **kwargs):
     # return True/False
 ```
 
-Where `**kwargs` can contain the following variables:
+Available via `**kwargs`: `process_output` (submitter's output), `judge_output` (expected), `submission_source`, `judge_input`, `point_value`, `case_position`, `submission_language`, `execution_time`.
 
-- `process_output`: output
-- `judge_output`: expected answer
-- `submission_source`: submission code
-- `judge_input`: input
-- `point_value`: points for the current test
-- `case_position`: test case order
-- `submission_language`: submission language
-- `execution_time`: execution time
+Return a bool, or `CheckerResult(passed, points, feedback='')` for partial credit.
 
-**Return:**
-
-- Method 1: Return True/False
-- Method 2: Return a `CheckerResult` object that can be called as `CheckerResult(case_passed_bool, points_awarded, feedback='')`
-
-**Example:**
-Below is an example for a problem: Input contains 1 integer n. Print two integers a, b such that a + b = n.
+**Example.** Input is one integer `n`; output any two integers `a, b` with `a + b = n`.
 
 ```py
 from dmoj.result import CheckerResult
@@ -166,29 +125,11 @@ def check(process_output, judge_output, judge_input, **kwargs):
 
 ### C++
 
-To use this feature, you need to write a C++ program that takes 3 arguments in order: `input_file`, `output_file`, `ans_file` corresponding to input, output, and answer files.
+Compile a C++ program invoked as `./main <input_file> <output_file> <ans_file>`.
 
-To test the program on your computer, you can use the following command (Windows):
+**Exit codes**: `0` = AC, `1` = WA, `2` = partial (print a ratio in `[0,1]` to **stderr**). Anything written to **stdout** is shown to the submitter as feedback.
 
-```bash
-main.exe [input_file] [output_file] [ans_file]
-```
-
-or replace with `./main` on Linux/MacOS.
-
-**Return:**
-The program returns:
-
-- 0 if AC (100% points)
-- 1 if WA (0 points)
-- 2 if partial points. In this case, print a real number in [0, 1] to stderr representing the point ratio. If points < 1, display WA; if points = 1, display AC.
-
-Information written to stdout (using cout) will be displayed to the submitter (feedback).
-
-**Example:**
-The following program is used to judge a problem: Given n as a positive integer. Print two natural numbers a, b such that a + b = n.
-
-If a + b = n and a, b >= 0, get 100% points; if a + b = n but one of a, b is negative, get 50% points.
+**Example.** Given `n`, accept any `a, b` with `a + b = n`. Award 100% if both non-negative, 50% otherwise.
 
 ```cpp
 #include <bits/stdc++.h>
@@ -225,27 +166,11 @@ int main(int argc, char** argv) {
 
 ## 3. Interactive (C++)
 
-To use this feature, you need to write a C++ program that takes 2 arguments: `input_file` `answer_file` corresponding to input and answer files (if needed).
+C++ program invoked as `./main <input_file> <answer_file>`. The submitter's binary and your interactor are connected via stdin/stdout pipes.
 
-To test the program on your computer as a contestant, you can use the following command (Windows):
+**Exit codes**: `0` = AC, `1` = WA, `2` = partial (ratio on **stderr**). Anything to **stderr** is shown as feedback.
 
-```bash
-main.exe [input_file] [answer_file]
-```
-
-or replace with `./main` on Linux/MacOS.
-
-**Return:**
-The program returns:
-
-- 0 if AC (100% points)
-- 1 if WA (0 points)
-- 2 if partial points. In this case, print a real number in [0, 1] to stderr representing the point ratio. If points < 1, display WA; if points = 1, display AC.
-
-Information printed to stderr (using cerr) will be feedback displayed to the user.
-
-**Example:**
-The following program is used to judge a guessgame problem: The player must find a secret number n (n is contained in the input file). Each time they ask a number x, and the program will return "SMALLER", "BIGGER" or "HOLA" based on the values of n and x. Need to find n after no more than 31 questions.
+**Example.** Guess-the-number: the contestant must find a secret `n` in ≤ 31 queries. Each query `x` gets `"SMALLER"`, `"BIGGER"`, or `"HOLA"`.
 
 ```cpp
 #include <bits/stdc++.h>
@@ -292,16 +217,11 @@ int main(int argc, char *argv[]) {
 
 ## 4. IOI Signature
 
-This feature is used to implement functions like in IOI. Contestants are given a function definition and need to implement that function to return the correct value.
+Contestants implement a function; the judge links it with your handler. You provide:
+- **Header** (`.h`) — function declaration (C/C++ only)
+- **Handler** — driver that reads input, calls the function, prints output
 
-To use this feature, you need to write 2 programs:
-- Header: This is the function definition file (extension must be `.h`, only applies to C/C++)
-- Handler: This is the program that processes input and outputs based on the function
-
-**Example:**
-For a problem: input number n. Write function `solve(int n)` that returns `n * 2`. Assume input is multitest with format:
-- First line contains `t` as number of tests
-- Each line contains an integer `n`
+**Example.** Input is `t` followed by `t` integers `n`. Contestants implement `solve(int n)` returning `n * 2`.
 
 ### C/C++
 
@@ -391,21 +311,27 @@ public class Solution {
 }
 ```
 
+### Importing IOI tasks
+
+LQDOJ supports IOI-style tasks end-to-end: signature graders, subtask batching with all-or-nothing scoring, and interactive / multi-process tasks.
+
+1. **Test data** — upload the test ZIP under "Data zip file".
+2. **Checker** — set **Checker** to **Testlib (CMS / IOI)** and upload the task's `checker.cpp`. **Before uploading, change `#include "testlib.h"` to `#include "testlib_ioi.h"`** — IOI uses a customized testlib fork shipped on the judge as `testlib_ioi.h`.
+3. **Signature grader** — tick **Is IOI signature**, then add one row per language with `grader.cpp` + the task header (e.g. `festival.h`) — same UI as the basic signature graders above.
+4. **Interactive tasks** — if the IOI package ships a `manager.cpp` (the task is interactive), tick **Is communication**, upload `manager.cpp` after the same `testlib.h` → `testlib_ioi.h` edit, and set **Num processes** to `1` for a normal interactive task or `2` for a two-phase encode/decode task.
+5. **Subtask batching** — in **Autofill testcases**, pick mode **ICPC**, one batch per subtask with the batch's total points. ICPC mode gives all-or-nothing scoring per batch — the standard IOI shape.
+
+Hit **Apply!** and the problem is live.
+
+**Sample problems on this site:**
+
+- [IOI 2025 — Festival](https://ioinformatics.org/files/ioi2025problem4.pdf) — batch + signature grader + testlib checker (the standard IOI shape).
+- [IOI 2025 — Souvenirs](https://ioinformatics.org/files/ioi2025problem1.pdf) — interactive task (one user process talking to a manager).
+- [IOI 2025 — Migrations](https://ioinformatics.org/files/ioi2025problem5.pdf) — two-process interactive task (encode + decode phases).
+
 ## 5. Testcase Validator
 
-Testcase Validator allows you to validate that your test input data satisfies the problem's constraints. The validator program reads the test input from stdin and returns exit code 0 if the input is valid, or a non-zero exit code if the input is invalid. This helps catch errors in test data before contestants encounter them.
-
-To use this feature, upload or edit a validator program in the **Testcase validator** field.
-
-### How It Works
-
-1. The validator receives the test input on **stdin**
-2. It checks whether the input satisfies the problem's constraints
-3. **Exit code 0** = input is valid
-4. **Non-zero exit code** = input is invalid
-5. Any output to **stderr** is captured as feedback (explains why validation failed)
-
-After saving the validator, click **"Run Validator"** to run the validator against all test cases. The results will show which test cases pass or fail validation.
+A program that confirms each test input matches the problem's constraints. Reads stdin; exit `0` = valid, non-zero = invalid (stderr captured as feedback). Click **"Run Validator"** to check every test.
 
 ### C++
 
@@ -525,3 +451,4 @@ To run a Kaggle-style contest with a public leaderboard during the contest and a
 While the contest runs in pretests-only mode, the checker honors `pretest_fraction` and scores only a deterministic hash-selected subset of rows — solvers see scores only on that subset (the public leaderboard). Row selection is keyed off `md5(id)`, so the same subset is used for every submission.
 
 After the contest ends, flip `run_pretests_only=False` on the contest and click **Rejudge all submissions**. The checker then ignores `pretest_fraction` and scores all rows — that's the private leaderboard.
+

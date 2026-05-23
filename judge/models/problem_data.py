@@ -45,6 +45,7 @@ CHECKERS = (
     ("customcpp", _("Custom checker (CPP)")),
     ("interact", _("Interactive")),
     ("testlib", _("Testlib")),
+    ("testlibcms", _("Testlib (CMS / IOI)")),
     ("interacttl", _("Interactive (Testlib)")),
     ("csv_accuracy", _("CSV: accuracy")),
     ("csv_rmse", _("CSV: RMSE")),
@@ -170,6 +171,28 @@ class ProblemData(models.Model):
         help_text=_("Use IOI Signature"),
         null=True,
     )
+    is_communication = models.BooleanField(
+        verbose_name=_("Is communication"),
+        help_text=_("IOI-style multi-process task with a manager."),
+        default=False,
+    )
+    communication_manager = models.FileField(
+        verbose_name=_("Manager"),
+        help_text=_("Manager source. Runs sandboxed, talks to user via FIFO."),
+        storage=problem_data_storage,
+        null=True,
+        blank=True,
+        upload_to=problem_directory_file,
+        validators=[FileExtensionValidator(allowed_extensions=["cpp", "c"])],
+    )
+    communication_num_processes = models.PositiveSmallIntegerField(
+        verbose_name=_("Num processes"),
+        help_text=_(
+            "Copies of the user's solution to launch (1 for callbacks, 2+ for multi-phase)."
+        ),
+        null=True,
+        blank=True,
+    )
     testcase_validator = models.FileField(
         verbose_name=_("testcase validator"),
         storage=problem_data_storage,
@@ -276,6 +299,11 @@ class ProblemData(models.Model):
         if self.testcase_validator:
             self.testcase_validator.name = problem_directory_file_helper(
                 new, self.testcase_validator.name
+            )
+
+        if self.communication_manager:
+            self.communication_manager.name = problem_directory_file_helper(
+                new, self.communication_manager.name
             )
 
         self.save()

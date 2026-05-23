@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-22 15:14+0700\n"
+"POT-Creation-Date: 2026-05-23 08:42+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -301,7 +301,7 @@ msgstr "Phân loại"
 #: templates/contest/feed/item.html:33 templates/contest/problems.html:36
 #: templates/contest/problemset.html:33 templates/course/contest_list.html:142
 #: templates/internal/problem_queue.html:819 templates/problem/add.html:221
-#: templates/problem/data.html:981 templates/problem/edit.html:508
+#: templates/problem/data.html:1003 templates/problem/edit.html:508
 #: templates/problem/list.html:37 templates/profile-table.html:31
 #: templates/profile-table.html:41 templates/quiz/create.html:82
 #: templates/quiz/detail.html:94 templates/quiz/edit.html:160
@@ -316,7 +316,7 @@ msgid "Limits"
 msgstr "Giới hạn"
 
 #: judge/admin/problem.py:237 judge/admin/submission.py:353
-#: templates/base.html:198 templates/problem/data.html:927
+#: templates/base.html:198 templates/problem/data.html:949
 #: templates/problem/language_limits.html:63
 #: templates/problem/language_limits.html:146
 #: templates/problem/language_templates.html:135
@@ -1474,7 +1474,7 @@ msgstr "lần tham gia kỳ thi"
 #: judge/models/course.py:522 judge/models/problem.py:748
 #: judge/models/problem.py:755 judge/models/problem.py:788
 #: judge/models/problem.py:832 judge/models/problem_attachment.py:24
-#: judge/models/problem_data.py:70 judge/models/public_request.py:19
+#: judge/models/problem_data.py:71 judge/models/public_request.py:19
 msgid "problem"
 msgstr "bài tập"
 
@@ -2344,7 +2344,7 @@ msgid "pdf statement"
 msgstr "Đề bài bằng file pdf"
 
 #: judge/models/problem.py:760 judge/models/problem.py:793
-#: judge/models/problem.py:837 judge/models/problem_data.py:431
+#: judge/models/problem.py:837 judge/models/problem_data.py:457
 #: judge/models/runtime.py:155
 msgid "language"
 msgstr "Ngôn ngữ"
@@ -2373,7 +2373,7 @@ msgstr "giới hạn tài nguyên theo ngôn ngữ"
 msgid "language-specific resource limits"
 msgstr "giới hạn tài nguyên theo ngôn ngữ"
 
-#: judge/models/problem.py:839 judge/models/problem_data.py:428
+#: judge/models/problem.py:839 judge/models/problem_data.py:454
 #: judge/models/submission.py:324
 msgid "source code"
 msgstr "mã nguồn"
@@ -2433,7 +2433,7 @@ msgstr "bình chọn"
 msgid "file"
 msgstr "Trang cá nhân"
 
-#: judge/models/problem_attachment.py:38 judge/models/problem_data.py:421
+#: judge/models/problem_attachment.py:38 judge/models/problem_data.py:447
 msgid "display order"
 msgstr "Thứ tự hiển thị"
 
@@ -2494,110 +2494,114 @@ msgid "Testlib"
 msgstr "Testlib"
 
 #: judge/models/problem_data.py:48
+msgid "Testlib (CMS / IOI)"
+msgstr ""
+
+#: judge/models/problem_data.py:49
 msgid "Interactive (Testlib)"
 msgstr "trình chấm interactive"
 
-#: judge/models/problem_data.py:49
+#: judge/models/problem_data.py:50
 msgid "CSV: accuracy"
 msgstr "CSV: accuracy"
 
-#: judge/models/problem_data.py:50
+#: judge/models/problem_data.py:51
 msgid "CSV: RMSE"
 msgstr "CSV: RMSE"
 
-#: judge/models/problem_data.py:51
+#: judge/models/problem_data.py:52
 msgid "CSV: MAE"
 msgstr "CSV: MAE"
 
-#: judge/models/problem_data.py:52
+#: judge/models/problem_data.py:53
 msgid "CSV: F1 (macro)"
 msgstr "CSV: F1 (macro)"
 
-#: judge/models/problem_data.py:53
+#: judge/models/problem_data.py:54
 msgid "CSV: AUC (binary)"
 msgstr "CSV: AUC (nhị phân)"
 
-#: judge/models/problem_data.py:54
+#: judge/models/problem_data.py:55
 msgid "CSV: log loss"
 msgstr "CSV: log loss"
 
-#: judge/models/problem_data.py:75
+#: judge/models/problem_data.py:76
 msgid "data zip file"
 msgstr "file zip chứa test"
 
-#: judge/models/problem_data.py:82
+#: judge/models/problem_data.py:83
 msgid "generator file"
 msgstr "file sinh test"
 
-#: judge/models/problem_data.py:89
+#: judge/models/problem_data.py:90
 msgid "generator script"
 msgstr "script sinh test"
 
-#: judge/models/problem_data.py:93 judge/models/problem_data.py:314
+#: judge/models/problem_data.py:94 judge/models/problem_data.py:340
 msgid "output prefix length"
 msgstr "độ dài hiển thị output"
 
-#: judge/models/problem_data.py:96 judge/models/problem_data.py:317
+#: judge/models/problem_data.py:97 judge/models/problem_data.py:343
 msgid "output limit length"
 msgstr "giới hạn hiển thị output"
 
-#: judge/models/problem_data.py:99
+#: judge/models/problem_data.py:100
 msgid "init.yml generation feedback"
 msgstr "phản hồi của quá trình tạo file init.yml"
 
-#: judge/models/problem_data.py:102 judge/models/problem_data.py:320
+#: judge/models/problem_data.py:103 judge/models/problem_data.py:346
 msgid "checker"
 msgstr "trình chấm"
 
-#: judge/models/problem_data.py:105 judge/models/problem_data.py:323
+#: judge/models/problem_data.py:106 judge/models/problem_data.py:349
 msgid "checker arguments"
 msgstr "tham số trong trình chấm"
 
-#: judge/models/problem_data.py:107 judge/models/problem_data.py:325
+#: judge/models/problem_data.py:108 judge/models/problem_data.py:351
 msgid "checker arguments as a JSON object"
 msgstr "tham số trong trình chấm theo dạng JSON"
 
-#: judge/models/problem_data.py:110
+#: judge/models/problem_data.py:111
 msgid "custom checker file"
 msgstr "trình chấm"
 
-#: judge/models/problem_data.py:118
+#: judge/models/problem_data.py:119
 msgid "custom cpp checker file"
 msgstr "trình chấm C++"
 
-#: judge/models/problem_data.py:126
+#: judge/models/problem_data.py:127
 msgid "interactive judge"
 msgstr "trình chấm interactive"
 
-#: judge/models/problem_data.py:134 judge/models/problem_data.py:305
+#: judge/models/problem_data.py:135 judge/models/problem_data.py:331
 msgid "input file name"
 msgstr "tên file input"
 
-#: judge/models/problem_data.py:137
+#: judge/models/problem_data.py:138
 msgid "Leave empty for stdin"
 msgstr "Để trống nếu nhập từ bàn phím"
 
-#: judge/models/problem_data.py:140 judge/models/problem_data.py:308
+#: judge/models/problem_data.py:141 judge/models/problem_data.py:334
 msgid "output file name"
 msgstr "tên file output"
 
-#: judge/models/problem_data.py:143
+#: judge/models/problem_data.py:144
 msgid "Leave empty for stdout"
 msgstr "Để trống nếu xuất ra màn hình"
 
-#: judge/models/problem_data.py:146
+#: judge/models/problem_data.py:147
 msgid "is output only"
 msgstr "Output-only?"
 
-#: judge/models/problem_data.py:147
+#: judge/models/problem_data.py:148
 msgid "Support output-only problem"
 msgstr "Dùng cho các bài output-only (nộp bằng file zip)"
 
-#: judge/models/problem_data.py:151
+#: judge/models/problem_data.py:152
 msgid "binary answer data"
 msgstr "dữ liệu đáp án nhị phân"
 
-#: judge/models/problem_data.py:153
+#: judge/models/problem_data.py:154
 msgid ""
 "Skip newline normalisation on answer files. Required when the answer key or "
 "submission is binary (e.g. .npz / .npy / images)."
@@ -2605,11 +2609,11 @@ msgstr ""
 "Bỏ qua chuẩn hoá ký tự xuống dòng cho file đáp án. Cần thiết khi đáp án hoặc "
 "bài nộp là file nhị phân (ví dụ .npz / .npy / ảnh)."
 
-#: judge/models/problem_data.py:160
+#: judge/models/problem_data.py:161
 msgid "output submission size limit (MB)"
 msgstr "giới hạn dung lượng bài nộp output (MB)"
 
-#: judge/models/problem_data.py:162
+#: judge/models/problem_data.py:163
 msgid ""
 "Maximum size in megabytes of the user's submission zip for output-only "
 "problems. Defaults to 1 MB if unset."
@@ -2617,79 +2621,106 @@ msgstr ""
 "Dung lượng tối đa (MB) của file zip bài nộp cho bài output-only. Mặc định là "
 "1 MB nếu không thiết lập."
 
-#: judge/models/problem_data.py:169
+#: judge/models/problem_data.py:170
 msgid "is IOI signature"
 msgstr "Nộp bài bằng hàm?"
 
-#: judge/models/problem_data.py:170
+#: judge/models/problem_data.py:171
 msgid "Use IOI Signature"
 msgstr "Nộp bài bằng hàm như IOI"
 
-#: judge/models/problem_data.py:174
+#: judge/models/problem_data.py:175
+msgid "Is communication"
+msgstr "Bài Communication"
+
+#: judge/models/problem_data.py:176
+msgid "IOI-style multi-process task with a manager."
+msgstr "Bài kiểu IOI nhiều tiến trình, có manager."
+
+#: judge/models/problem_data.py:180
+msgid "Manager"
+msgstr "Manager"
+
+#: judge/models/problem_data.py:181
+msgid "Manager source. Runs sandboxed, talks to user via FIFO."
+msgstr "Mã nguồn manager. Chạy trong sandbox, giao tiếp với bài làm qua FIFO."
+
+#: judge/models/problem_data.py:189
+msgid "Num processes"
+msgstr "Số tiến trình"
+
+#: judge/models/problem_data.py:190
+msgid ""
+"Copies of the user's solution to launch (1 for callbacks, 2+ for multi-"
+"phase)."
+msgstr ""
+"Số bản sao của bài làm để chạy (1 cho callback, 2+ cho nhiều pha)."
+
+#: judge/models/problem_data.py:195
 msgid "testcase validator"
 msgstr "trình kiểm tra test"
 
-#: judge/models/problem_data.py:183
+#: judge/models/problem_data.py:204
 msgid "validator language"
 msgstr "ngôn ngữ validator"
 
-#: judge/models/problem_data.py:185
+#: judge/models/problem_data.py:206
 msgid "C/C++"
 msgstr "C/C++"
 
-#: judge/models/problem_data.py:186
+#: judge/models/problem_data.py:207
 msgid "Python"
 msgstr "Python"
 
-#: judge/models/problem_data.py:191 judge/models/problem_data.py:345
+#: judge/models/problem_data.py:212 judge/models/problem_data.py:371
 msgid "signature handler"
 msgstr "File xử lý hàm"
 
-#: judge/models/problem_data.py:199 judge/models/problem_data.py:353
+#: judge/models/problem_data.py:220 judge/models/problem_data.py:379
 msgid "signature header"
 msgstr "File định nghĩa hàm"
 
-#: judge/models/problem_data.py:289
+#: judge/models/problem_data.py:315
 msgid "problem data set"
 msgstr "tập hợp dữ liệu bài"
 
-#: judge/models/problem_data.py:293
+#: judge/models/problem_data.py:319
 msgid "case position"
 msgstr "vị trí test"
 
-#: judge/models/problem_data.py:296
+#: judge/models/problem_data.py:322
 msgid "case type"
 msgstr "loại test"
 
-#: judge/models/problem_data.py:298
+#: judge/models/problem_data.py:324
 msgid "Normal case"
 msgstr "Test bình thường"
 
-#: judge/models/problem_data.py:299
+#: judge/models/problem_data.py:325
 msgid "Batch start"
 msgstr "Bắt đầu nhóm"
 
-#: judge/models/problem_data.py:300
+#: judge/models/problem_data.py:326
 msgid "Batch end"
 msgstr "Kết thúc nhóm"
 
-#: judge/models/problem_data.py:310
+#: judge/models/problem_data.py:336
 msgid "generator arguments"
 msgstr "tham số sinh test"
 
-#: judge/models/problem_data.py:311
+#: judge/models/problem_data.py:337
 msgid "point value"
 msgstr "điểm"
 
-#: judge/models/problem_data.py:312
+#: judge/models/problem_data.py:338
 msgid "case is pretest?"
 msgstr "test là pretest?"
 
-#: judge/models/problem_data.py:342
+#: judge/models/problem_data.py:368
 msgid "signature language"
 msgstr "Ngôn ngữ"
 
-#: judge/models/problem_data.py:377 judge/models/public_request.py:10
+#: judge/models/problem_data.py:403 judge/models/public_request.py:10
 #: templates/internal/problem_queue.html:646
 #: templates/organization/blog/pending.html:14
 #: templates/organization/requests/tabs.html:4
@@ -2699,60 +2730,60 @@ msgstr "Ngôn ngữ"
 msgid "Pending"
 msgstr "Đang chờ"
 
-#: judge/models/problem_data.py:378 templates/problem/validator.html:119
+#: judge/models/problem_data.py:404 templates/problem/validator.html:119
 msgid "Validating"
 msgstr "Đang kiểm tra"
 
-#: judge/models/problem_data.py:379
+#: judge/models/problem_data.py:405
 msgid "Done"
 msgstr "Hoàn thành"
 
-#: judge/models/problem_data.py:380 judge/utils/problems.py:135
+#: judge/models/problem_data.py:406 judge/utils/problems.py:135
 #: templates/problem/chatbot.html:40 templates/problem/validator.html:125
 #: templates/problem/validator.html:284
 msgid "Error"
 msgstr "Lỗi"
 
-#: judge/models/problem_data.py:407 judge/models/submission.py:31
+#: judge/models/problem_data.py:433 judge/models/submission.py:31
 #: judge/models/submission.py:58 judge/utils/problems.py:117
 msgid "Accepted"
 msgstr "Accepted"
 
-#: judge/models/problem_data.py:408 judge/models/submission.py:32
+#: judge/models/problem_data.py:434 judge/models/submission.py:32
 #: judge/models/submission.py:59 judge/utils/problems.py:120
 msgid "Wrong Answer"
 msgstr "Wrong Answer"
 
-#: judge/models/problem_data.py:409 judge/models/submission.py:33
+#: judge/models/problem_data.py:435 judge/models/submission.py:33
 #: judge/models/submission.py:61 judge/utils/problems.py:130
 msgid "Time Limit Exceeded"
 msgstr "Time Limit Exceeded"
 
-#: judge/models/problem_data.py:410 judge/models/submission.py:34
+#: judge/models/problem_data.py:436 judge/models/submission.py:34
 #: judge/models/submission.py:62
 msgid "Memory Limit Exceeded"
 msgstr "Memory Limit Exceeded"
 
-#: judge/models/problem_data.py:411 judge/models/submission.py:37
+#: judge/models/problem_data.py:437 judge/models/submission.py:37
 #: judge/models/submission.py:65
 msgid "Runtime Error"
 msgstr "Runtime Error"
 
-#: judge/models/problem_data.py:412 judge/models/submission.py:35
+#: judge/models/problem_data.py:438 judge/models/submission.py:35
 #: judge/models/submission.py:63
 msgid "Output Limit Exceeded"
 msgstr "Output Limit Exceeded"
 
-#: judge/models/problem_data.py:413 judge/models/submission.py:36
+#: judge/models/problem_data.py:439 judge/models/submission.py:36
 #: judge/models/submission.py:64
 msgid "Invalid Return"
 msgstr "Invalid Return"
 
-#: judge/models/problem_data.py:424
+#: judge/models/problem_data.py:450
 msgid "name"
 msgstr "tên"
 
-#: judge/models/problem_data.py:436
+#: judge/models/problem_data.py:462
 msgid "expected result"
 msgstr "kết quả mong đợi"
 
@@ -3990,58 +4021,64 @@ msgstr "Nhóm test trống là không hợp lệ."
 msgid "How did you corrupt the custom checker path?"
 msgstr "How did you corrupt the custom checker path?"
 
-#: judge/utils/problem_data.py:143
+#: judge/utils/problem_data.py:145
 #, fuzzy, python-format
 #| msgid "Points must be defined for non-batch case #%d."
 msgid "Points must be defined for case #%d."
 msgstr "Ô điểm số cho test #%d phải được điền."
 
-#: judge/utils/problem_data.py:154
+#: judge/utils/problem_data.py:156
 #, python-format
 msgid "Input file for case %(case_num)d does not exist: %(filename)s"
 msgstr "File input cho test %(case_num)d không tồn tại: %(filename)s"
 
-#: judge/utils/problem_data.py:161
+#: judge/utils/problem_data.py:163
 #, python-format
 msgid "Output file for case %(case_num)d does not exist: %(filename)s"
 msgstr "File output cho test %(case_num)d không tồn tại: %(filename)s"
 
-#: judge/utils/problem_data.py:189
+#: judge/utils/problem_data.py:191
 #, python-format
 msgid "Batch start case #%d requires points."
 msgstr "Nhóm test #%d cần được điền điểm số."
 
-#: judge/utils/problem_data.py:212
+#: judge/utils/problem_data.py:214
 #, python-format
 msgid "Attempt to end batch outside of one in case #%d"
 msgstr "Nhóm test #%d kết thúc không hợp lệ"
 
-#: judge/utils/problem_data.py:231
+#: judge/utils/problem_data.py:233
 msgid "How did you corrupt the zip path?"
 msgstr "Làm sao bạn làm hỏng đường dẫn zip?"
 
-#: judge/utils/problem_data.py:237
+#: judge/utils/problem_data.py:239
 msgid "How did you corrupt the generator path?"
 msgstr "Làm sao bạn làm hỏng đường dẫn generator?"
 
-#: judge/utils/problem_data.py:255
+#: judge/utils/problem_data.py:257
 msgid "Invalid interactor judge"
 msgstr "Máy chấm tương tác không hợp lệ"
 
-#: judge/utils/problem_data.py:283
+#: judge/utils/problem_data.py:289
 msgid "Invalid validator source path"
 msgstr "Đường dẫn mã nguồn validator không hợp lệ"
 
-#: judge/utils/problem_data.py:291
+#: judge/utils/problem_data.py:297
 #, python-format
 msgid "Unsupported validator extension: %s"
 msgstr "Phần mở rộng validator không được hỗ trợ: %s"
 
-#: judge/utils/problem_data.py:302
+#: judge/utils/problem_data.py:311
+#, fuzzy
+#| msgid "Invalid Two Factor Authentication token."
+msgid "Invalid communication manager"
+msgstr "Token Two Factor Authentication không hợp lệ."
+
+#: judge/utils/problem_data.py:341
 msgid "Invalid signature handler"
 msgstr "Trình xử lý không hợp lệ"
 
-#: judge/utils/problem_data.py:311
+#: judge/utils/problem_data.py:350
 msgid "Invalid signature header for C/C++"
 msgstr "File định nghĩa hàm không hợp lệ"
 
@@ -5687,159 +5724,159 @@ msgstr "Giới hạn dung lượng bài nộp output không được vượt qu�
 msgid "Output submission size limit must be at least 1 MB."
 msgstr "Giới hạn dung lượng bài nộp output phải tối thiểu 1 MB."
 
-#: judge/views/problem_data.py:235
+#: judge/views/problem_data.py:242
 msgid "Each language must be unique."
 msgstr "Mỗi ngôn ngữ phải phân biệt"
 
-#: judge/views/problem_data.py:270
+#: judge/views/problem_data.py:277
 #, python-brace-format
 msgid "Comparing submissions for {0}"
 msgstr "So sánh các bài nộp cho {0}"
 
-#: judge/views/problem_data.py:274
+#: judge/views/problem_data.py:281
 #, python-brace-format
 msgid "Comparing submissions for <a href=\"{1}\">{0}</a>"
 msgstr "So sánh các bài nộp cho <a href=\"{1}\">{0}</a>"
 
-#: judge/views/problem_data.py:311
+#: judge/views/problem_data.py:318
 #, python-brace-format
 msgid "Editing data for {0}"
 msgstr "Chỉnh sửa dữ liệu cho {0}"
 
-#: judge/views/problem_data.py:315
+#: judge/views/problem_data.py:322
 #, python-format
 msgid "Editing data for %s"
 msgstr "Chỉnh sửa dữ liệu cho %s"
 
-#: judge/views/problem_data.py:430
+#: judge/views/problem_data.py:437
 #, fuzzy
 #| msgid "Edit test data"
 msgid "Updated test data"
 msgstr "Chỉnh sửa test"
 
-#: judge/views/problem_data.py:494 judge/views/problem_data.py:496
+#: judge/views/problem_data.py:501 judge/views/problem_data.py:503
 #, python-format
 msgid "Generated init.yml for %s"
 msgstr "File init.yml cho %s"
 
-#: judge/views/problem_data.py:533 judge/views/problem_data.py:552
+#: judge/views/problem_data.py:540 judge/views/problem_data.py:559
 #: templates/problem/data.html:33
 msgid "File size exceeds 50 MB limit. Contact admin for larger uploads."
 msgstr ""
 "Kích thước file vượt quá giới hạn 50 MB. Liên hệ admin để tải lên file lớn "
 "hơn."
 
-#: judge/views/problem_data.py:584
+#: judge/views/problem_data.py:591
 #, python-brace-format
 msgid "Testcase Validator for {0}"
 msgstr "Kiểm tra test cho {0}"
 
-#: judge/views/problem_data.py:588
+#: judge/views/problem_data.py:595
 #, python-format
 msgid "Testcase Validator for %s"
 msgstr "Kiểm tra test cho %s"
 
-#: judge/views/problem_data.py:643 judge/views/problem_data.py:826
-#: judge/views/problem_data.py:994
+#: judge/views/problem_data.py:650 judge/views/problem_data.py:833
+#: judge/views/problem_data.py:1001
 msgid "Invalid JSON."
 msgstr "JSON không hợp lệ."
 
-#: judge/views/problem_data.py:650
+#: judge/views/problem_data.py:657
 msgid "Invalid language."
 msgstr "Ngôn ngữ không hợp lệ."
 
-#: judge/views/problem_data.py:694
+#: judge/views/problem_data.py:701
 msgid "Validation already in progress for this problem."
 msgstr "Đang có quá trình kiểm tra cho bài này."
 
-#: judge/views/problem_data.py:708
+#: judge/views/problem_data.py:715
 #, python-format
 msgid "You have %(count)d validations running. Max %(max)d allowed."
 msgstr "Bạn đang có %(count)d quá trình kiểm tra. Tối đa %(max)d."
 
-#: judge/views/problem_data.py:733
+#: judge/views/problem_data.py:740
 msgid "No judges available."
 msgstr "Không có máy chấm khả dụng."
 
-#: judge/views/problem_data.py:782
+#: judge/views/problem_data.py:789
 #, python-brace-format
 msgid "Solution Codes for {0}"
 msgstr "Code lời giải cho {0}"
 
-#: judge/views/problem_data.py:786
+#: judge/views/problem_data.py:793
 #, python-format
 msgid "Solution Codes for %s"
 msgstr "Code lời giải cho %s"
 
-#: judge/views/problem_data.py:831
+#: judge/views/problem_data.py:838
 msgid "Expected a list."
 msgstr "Dữ liệu phải là danh sách."
 
-#: judge/views/problem_data.py:838
+#: judge/views/problem_data.py:845
 #, python-format
 msgid "Maximum %d solution codes allowed."
 msgstr "Tối đa %d code lời giải."
 
-#: judge/views/problem_data.py:858
+#: judge/views/problem_data.py:865
 #, python-format
 msgid "Code #%d has empty source."
 msgstr "Code #%d có mã nguồn trống."
 
-#: judge/views/problem_data.py:866
+#: judge/views/problem_data.py:873
 #, python-format
 msgid "Code #%d has invalid language."
 msgstr "Code #%d có ngôn ngữ không hợp lệ."
 
-#: judge/views/problem_data.py:874
+#: judge/views/problem_data.py:881
 #, python-format
 msgid "Code #%d has invalid expected result."
 msgstr "Code #%d có kết quả mong đợi không hợp lệ."
 
-#: judge/views/problem_data.py:917
+#: judge/views/problem_data.py:924
 #, fuzzy
 #| msgid "Update Solution"
 msgid "Updated solution codes"
 msgstr "Cập nhật lời giải"
 
-#: judge/views/problem_data.py:933
+#: judge/views/problem_data.py:940
 msgid "No solution codes to run."
 msgstr "Không có code lời giải để chạy."
 
-#: judge/views/problem_data.py:949
+#: judge/views/problem_data.py:956
 msgid "All codes are already being judged."
 msgstr ""
 
-#: judge/views/problem_data.py:966 judge/views/problem_data.py:1043
+#: judge/views/problem_data.py:973 judge/views/problem_data.py:1050
 msgid "Too many pending solution code runs."
 msgstr "Quá nhiều lượt chạy đang chờ."
 
-#: judge/views/problem_data.py:1000
+#: judge/views/problem_data.py:1007
 #, fuzzy
 #| msgid "Invalid model"
 msgid "Invalid order."
 msgstr "Model không hợp lệ"
 
-#: judge/views/problem_data.py:1009
+#: judge/views/problem_data.py:1016
 #, fuzzy
 #| msgid "Solution not found."
 msgid "Solution code not found."
 msgstr "Lời giải không tìm thấy"
 
-#: judge/views/problem_data.py:1016
+#: judge/views/problem_data.py:1023
 msgid "Duplicate order found. Please save and retry."
 msgstr ""
 
-#: judge/views/problem_data.py:1026
+#: judge/views/problem_data.py:1033
 #, fuzzy
 #| msgid "This code already exists"
 msgid "This code is already being judged."
 msgstr "Mã này đã tồn tại"
 
-#: judge/views/problem_data.py:1129 judge/views/problem_data.py:1157
+#: judge/views/problem_data.py:1136 judge/views/problem_data.py:1164
 msgid "Superuser access required."
 msgstr ""
 
-#: judge/views/problem_data.py:1165
+#: judge/views/problem_data.py:1172
 msgid "Missing task ID."
 msgstr ""
 
@@ -6736,7 +6773,7 @@ msgstr "Chỉnh sửa bài đăng"
 #: templates/course/members.html:169 templates/organization/blog/edit.html:44
 #: templates/organization/course/add.html:63
 #: templates/organization/form.html:30 templates/pagedown.html:31
-#: templates/problem/data.html:916 templates/problem/edit.html:594
+#: templates/problem/data.html:938 templates/problem/edit.html:594
 #: templates/problem/language_templates.html:139
 #: templates/problem/solution_codes.html:562
 #: templates/problem/translations.html:76 templates/problem/validator.html:264
@@ -6761,7 +6798,7 @@ msgstr "Lưu"
 #: templates/organization/blog/pending-js.html:43
 #: templates/organization/course/edit.html:89
 #: templates/organization/invite_join.html:30 templates/pagedown.html:32
-#: templates/problem/data.html:915 templates/problem/solution_codes.html:629
+#: templates/problem/data.html:937 templates/problem/solution_codes.html:629
 #: templates/quiz/create.html:390 templates/quiz/delete.html:21
 #: templates/quiz/edit.html:608 templates/quiz/question_bank/create.html:797
 #: templates/quiz/question_bank/delete.html:26
@@ -9014,7 +9051,7 @@ msgid "There are no requests to approve."
 msgstr "Không có đơn đăng ký."
 
 #: templates/organization/requests/pending.html:24
-#: templates/problem/data.html:931 templates/problem/data.html:985
+#: templates/problem/data.html:953 templates/problem/data.html:1007
 msgid "Delete?"
 msgstr "Xóa?"
 
@@ -9266,40 +9303,40 @@ msgstr "Thêm script sinh test"
 msgid "Edit Generator Script"
 msgstr "Chỉnh sửa script sinh test"
 
-#: templates/problem/data.html:256
+#: templates/problem/data.html:278
 msgid "Run Validator"
 msgstr "Chạy kiểm tra"
 
-#: templates/problem/data.html:858
+#: templates/problem/data.html:880
 msgid "View YAML"
 msgstr "Xem YAML"
 
-#: templates/problem/data.html:869
+#: templates/problem/data.html:891
 msgid "Test Data Setup"
 msgstr "Cách tạo Test Data"
 
-#: templates/problem/data.html:871
+#: templates/problem/data.html:893
 msgid "View Instructions"
 msgstr "Xem hướng dẫn"
 
-#: templates/problem/data.html:881
+#: templates/problem/data.html:903
 msgid "Autofill testcases"
 msgstr "Tự động điền test"
 
-#: templates/problem/data.html:885 templates/problem/problem.html:328
+#: templates/problem/data.html:907 templates/problem/problem.html:328
 msgid "Problem type"
 msgid_plural "Problem types"
 msgstr[0] "Dạng bài"
 
-#: templates/problem/data.html:892
+#: templates/problem/data.html:914
 msgid "Fill testcases"
 msgstr "Điền test"
 
-#: templates/problem/data.html:896
+#: templates/problem/data.html:918
 msgid "Batch start positions"
 msgstr "Vị trí bắt đầu nhóm"
 
-#: templates/problem/data.html:900
+#: templates/problem/data.html:922
 msgid ""
 "Leave empty if not use batch. If you want to divide to three batches [1, 4], "
 "[5, 8], [9, 10], enter: 1, 5, 9"
@@ -9307,11 +9344,11 @@ msgstr ""
 "Để trống nếu không dùng nhóm. Nếu muốn chia test thành các nhóm [1, 4], [5, "
 "8], [9, 10], nhập: 1, 5, 9"
 
-#: templates/problem/data.html:908 templates/problem/import.html:41
+#: templates/problem/data.html:930 templates/problem/import.html:41
 msgid "Generator Script"
 msgstr "Script sinh test"
 
-#: templates/problem/data.html:909
+#: templates/problem/data.html:931
 msgid ""
 "Enter generator arguments for test cases. Each line represents arguments for "
 "one test case."
@@ -9319,48 +9356,48 @@ msgstr ""
 "Nhập các tham số cho script sinh test. Mỗi dòng đại diện cho tham số của một "
 "test."
 
-#: templates/problem/data.html:923
+#: templates/problem/data.html:945
 msgid "IOI Signature Graders"
 msgstr "Trình chấm IOI"
 
-#: templates/problem/data.html:928
+#: templates/problem/data.html:950
 msgid "Handler"
 msgstr "File xử lý"
 
-#: templates/problem/data.html:929
+#: templates/problem/data.html:951
 msgid "Header"
 msgstr "File định nghĩa"
 
-#: templates/problem/data.html:971 templates/problem/data.html:1034
+#: templates/problem/data.html:993 templates/problem/data.html:1056
 msgid "Apply!"
 msgstr "Lưu!"
 
-#: templates/problem/data.html:973
+#: templates/problem/data.html:995
 msgid "Test Cases"
 msgstr "Bộ Test"
 
-#: templates/problem/data.html:978 templates/quiz/detail.html:93
+#: templates/problem/data.html:1000 templates/quiz/detail.html:93
 #: templates/quiz/manage.html:45
 msgid "Type"
 msgstr "Kiểu"
 
-#: templates/problem/data.html:979
+#: templates/problem/data.html:1001
 msgid "Input file"
 msgstr "File Input"
 
-#: templates/problem/data.html:980
+#: templates/problem/data.html:1002
 msgid "Output file"
 msgstr "File Output"
 
-#: templates/problem/data.html:982
+#: templates/problem/data.html:1004
 msgid "Pretest?"
 msgstr "Pretest?"
 
-#: templates/problem/data.html:983
+#: templates/problem/data.html:1005
 msgid "Generator Args"
 msgstr "Tham số sinh test"
 
-#: templates/problem/data.html:1035
+#: templates/problem/data.html:1057
 msgid "Add new case"
 msgstr "Thêm test mới"
 

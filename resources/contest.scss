@@ -1089,6 +1089,55 @@ form.contest-join-pseudotab {
         input[type=number] {
             width: 4em;
         }
+
+        .contest-row-type-header,
+        .contest-row-type-cell {
+            width: 5.25em;
+            min-width: 5.25em;
+            text-align: center;
+        }
+
+        .contest-row-type-toggle {
+            display: inline-flex;
+            border: 1px solid $border_gray;
+            border-radius: 999px;
+            overflow: hidden;
+            background: $background_light_gray;
+            white-space: nowrap;
+        }
+
+        .contest-row-type-btn {
+            border: 0;
+            background: transparent;
+            color: $text-secondary;
+            cursor: pointer;
+            min-width: 2.1em;
+            padding: 0.35em 0.45em;
+            line-height: 1.2;
+
+            + .contest-row-type-btn {
+                border-left: 1px solid $border_gray;
+            }
+
+            &.active {
+                background: $theme_color;
+                color: $text-on-primary;
+            }
+
+            &:not(.active):hover {
+                background: rgba($theme_color, 0.08);
+                color: $text-strong;
+            }
+        }
+
+        .contest-row-item-cell {
+            min-width: 18em;
+        }
+
+        .contest-row-item-panel {
+            width: 100%;
+        }
+
         .sortable-col-problem,
         .sortable-col-quiz {
             min-width: 16em;
@@ -1103,4 +1152,3 @@ form.contest-join-pseudotab {
         }
     }
 }
-

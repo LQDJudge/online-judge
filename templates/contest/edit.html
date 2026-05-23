@@ -32,6 +32,137 @@
         $configField.show();
         $('.config-toggle-btn').text('{{ _("Hide Config") }}');
       }
+
+      function getFieldValue($field) {
+        if (!$field.length) {
+          return '';
+        }
+        var value = $field.val();
+        if (Array.isArray(value)) {
+          return value.length ? value.join('') : '';
+        }
+        return value || '';
+      }
+
+      function clearField($field) {
+        if (!$field.length) {
+          return;
+        }
+        // Works for native selects, django-select2 AJAX selects, and inputs.
+        $field.val('').trigger('change');
+      }
+
+      function setContestRowType($row, type, clearInactive) {
+        var inactiveType = type === 'quiz' ? 'problem' : 'quiz';
+        $row.attr('data-contest-item-type', type);
+
+        $row.find('.contest-row-type-btn').each(function() {
+          var $btn = $(this);
+          var isActive = $btn.data('item-type') === type;
+          $btn.toggleClass('active', isActive)
+            .attr('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        $row.find('.contest-row-item-panel').each(function() {
+          var $panel = $(this);
+          var panelType = $panel.data('item-type');
+          $panel.toggle(panelType === type);
+          if (clearInactive && panelType === inactiveType) {
+            clearField($panel.find('select, input').first());
+          }
+        });
+      }
+
+      function enhanceContestRow($row) {
+        var $problemCell = $row.children('.sortable-col-problem');
+        var $quizCell = $row.children('.sortable-col-quiz');
+
+        if (!$problemCell.length || !$quizCell.length) {
+          return;
+        }
+
+        if (!$row.children('.contest-row-type-cell').length) {
+          var typeToggle = [
+            '<td class="contest-row-type-cell">',
+            '<div class="contest-row-type-toggle" role="group" aria-label="{{ _("Choose row type") }}">',
+            '<button type="button" class="contest-row-type-btn" data-item-type="problem" title="{{ _("Problem") }}" aria-label="{{ _("Problem") }}">',
+            '<i class="fa fa-code"></i><span class="sr-only">{{ _("Problem") }}</span>',
+            '</button>',
+            '<button type="button" class="contest-row-type-btn" data-item-type="quiz" title="{{ _("Quiz") }}" aria-label="{{ _("Quiz") }}">',
+            '<i class="fa fa-question-circle"></i><span class="sr-only">{{ _("Quiz") }}</span>',
+            '</button>',
+            '</div>',
+            '</td>'
+          ].join('');
+          $problemCell.before(typeToggle);
+        }
+
+        if (!$problemCell.children('.contest-row-item-panel[data-item-type="problem"]').length) {
+          $problemCell.wrapInner('<div class="contest-row-item-panel" data-item-type="problem"></div>');
+        }
+        if (!$problemCell.children('.contest-row-item-panel[data-item-type="quiz"]').length) {
+          var $quizPanel = $('<div class="contest-row-item-panel" data-item-type="quiz"></div>');
+          $quizPanel.append($quizCell.contents());
+          $problemCell.append($quizPanel);
+        }
+
+        $problemCell.addClass('contest-row-item-cell');
+        $quizCell.hide();
+
+        var problemValue = getFieldValue($problemCell.find('.contest-row-item-panel[data-item-type="problem"]').find('select, input').first());
+        var quizValue = getFieldValue($problemCell.find('.contest-row-item-panel[data-item-type="quiz"]').find('select, input').first());
+        var initialType = $row.attr('data-contest-item-type') || (quizValue && !problemValue ? 'quiz' : 'problem');
+        setContestRowType($row, initialType, false);
+      }
+
+      function enhanceContestRows() {
+        var $formset = $('.contest-edit-page .sortable-formset[data-prefix="rows"]');
+        if (!$formset.length) {
+          return;
+        }
+
+        var $problemHeader = $formset.find('thead th.sortable-col-problem');
+        var $quizHeader = $formset.find('thead th.sortable-col-quiz');
+        if ($problemHeader.length && !$formset.find('thead th.contest-row-type-header').length) {
+          $problemHeader.before('<th class="contest-row-type-header">{{ _("Type") }}</th>');
+          $problemHeader.text('{{ _("Item") }}');
+        }
+        $quizHeader.hide();
+
+        $formset.find('.sortable-row').each(function() {
+          enhanceContestRow($(this));
+        });
+      }
+
+      enhanceContestRows();
+
+      $(document).on('click', '.contest-row-type-btn', function() {
+        var $btn = $(this);
+        // Preserve both selector values while switching so users can compare
+        // or change their mind without re-searching. We only clear the
+        // inactive field immediately before submit to satisfy backend XOR
+        // validation.
+        setContestRowType($btn.closest('.sortable-row'), $btn.data('item-type'), false);
+      });
+
+      $(document).on('click', '.contest-edit-page .sortable-formset[data-prefix="rows"] .add-row-btn', function() {
+        // SortableFormset adds the row in its own click handler. Enhance after
+        // that handler finishes so new rows receive the same type toggle.
+        setTimeout(enhanceContestRows, 0);
+      });
+
+      $('.contest-edit-page form').on('submit', function() {
+        $('.contest-edit-page .sortable-formset[data-prefix="rows"] .sortable-row:not(.sortable-template)').each(function() {
+          var $row = $(this);
+          var type = $row.attr('data-contest-item-type') || 'problem';
+          setContestRowType($row, type, true);
+        });
+      });
+
+      var rowsBody = document.querySelector('.contest-edit-page .sortable-formset[data-prefix="rows"] .sortable-body');
+      if (rowsBody && window.MutationObserver) {
+        new MutationObserver(enhanceContestRows).observe(rowsBody, { childList: true });
+      }
     });
   </script>
 {% endblock %}
@@ -89,7 +220,7 @@
       <h3 class="section-title">{{ _('Problems & Quizzes') }}</h3>
       <p class="gray" style="margin-top: -0.5em; margin-bottom: 0.5em;">
         <i class="fa fa-info-circle"></i>
-        {{ _('Each row should specify a problem OR a quiz, not both. Drag the handle to reorder.') }}
+        {{ _('Use the Type toggle to choose whether each row is a problem or a quiz. Drag the handle to reorder.') }}
       </p>
       {{ sortable_formset(rows_form, {
       'order_field': 'order',
