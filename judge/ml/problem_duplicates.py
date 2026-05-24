@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from celery.result import AsyncResult
@@ -69,9 +69,18 @@ def get_cached_duplicate_problem_candidates(options=None):
     if report is None:
         return None
     hidden_merge_pairs = _active_or_completed_merge_pairs()
+    candidates = report.candidates.filter(
+        status=ProblemDuplicateCandidate.OPEN,
+        source_problem__isnull=False,
+        target_problem__isnull=False,
+        source_problem__is_public=True,
+        target_problem__is_public=True,
+        source_problem__is_organization_private=False,
+        target_problem__is_organization_private=False,
+    )
     return [
         format_candidate(candidate)
-        for candidate in report.candidates.filter(status=ProblemDuplicateCandidate.OPEN)
+        for candidate in candidates
         if (candidate.source_code, candidate.target_code) not in hidden_merge_pairs
     ]
 
@@ -150,7 +159,7 @@ def is_duplicate_problem_report_refresh_pending():
 
 def _active_or_completed_merge_pairs():
     sync_pending_duplicate_problem_merges()
-    return set(
+    pairs = set(
         ProblemDuplicateMergeHistory.objects.filter(
             status__in=[
                 ProblemDuplicateMergeHistory.PENDING,
@@ -159,6 +168,8 @@ def _active_or_completed_merge_pairs():
             ]
         ).values_list("source_code", "target_code")
     )
+    pairs.update((target_code, source_code) for source_code, target_code in list(pairs))
+    return pairs
 
 
 def _sync_pending_report_state(report):
@@ -376,11 +387,17 @@ def record_duplicate_problem_merge(report, user=None, username=None):
     )
 
 
-def create_pending_duplicate_problem_merge(source, target, user=None, task_id=""):
+def create_pending_duplicate_problem_merge(
+    source,
+    target,
+    user=None,
+    task_id="",
+    force=False,
+):
     sync_pending_duplicate_problem_merges()
     existing = ProblemDuplicateMergeHistory.objects.filter(
-        source_code=source.code,
-        target_code=target.code,
+        Q(source_code=source.code, target_code=target.code)
+        | Q(source_code=target.code, target_code=source.code),
         status__in=[
             ProblemDuplicateMergeHistory.PENDING,
             ProblemDuplicateMergeHistory.RUNNING,
@@ -393,7 +410,7 @@ def create_pending_duplicate_problem_merge(source, target, user=None, task_id=""
     try:
         from judge.utils.problem_merge import ProblemMerge
 
-        dry_run = ProblemMerge(source.code, target.code).run()
+        dry_run = ProblemMerge(source.code, target.code, force=force).run()
     except Exception:
         dry_run = {}
     merge = ProblemDuplicateMergeHistory.objects.create(
@@ -418,6 +435,7 @@ def create_pending_duplicate_problem_merge(source, target, user=None, task_id=""
         actor=user,
         source_id=source.id,
         target_id=target.id,
+        details={"force": force},
     )
     return merge
 
@@ -439,7 +457,12 @@ def run_pending_duplicate_problem_merge(merge_id):
         details={"task_id": merge.task_id},
     )
     try:
-        report = ProblemMerge(merge.source_code, merge.target_code, apply=True).run()
+        report = ProblemMerge(
+            merge.source_code,
+            merge.target_code,
+            apply=True,
+            force=merge.source_problem_id_snapshot < merge.target_problem_id_snapshot,
+        ).run()
     except Exception as exc:
         merge.status = ProblemDuplicateMergeHistory.FAILED
         merge.error = str(exc)

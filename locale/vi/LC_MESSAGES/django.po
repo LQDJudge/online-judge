@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-24 12:11+0700\n"
+"POT-Creation-Date: 2026-05-24 13:21+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -160,7 +160,7 @@ msgstr "Các kỳ thi bao gồm"
 #: templates/contest/feed/item.html:32 templates/contest/moss.html:41
 #: templates/contest/problems.html:35 templates/contest/problemset.html:32
 #: templates/contest/submissions.html:54
-#: templates/internal/problem_duplicate_detail.html:178
+#: templates/internal/problem_duplicate_detail.html:198
 #: templates/internal/semantic_search.html:138
 #: templates/internal/semantic_search.html:157
 #: templates/problem/import.html:27 templates/problem/list.html:23
@@ -269,7 +269,7 @@ msgid "object"
 msgstr "đối tượng"
 
 #: judge/admin/interface.py:226
-#: templates/internal/problem_duplicate_detail.html:207
+#: templates/internal/problem_duplicate_detail.html:227
 #: templates/problem/log.html:62
 msgid "Diff"
 msgstr "Khác biệt"
@@ -310,7 +310,7 @@ msgstr "Phân loại"
 #: templates/contest/contests_summary.html:42
 #: templates/contest/feed/item.html:33 templates/contest/problems.html:36
 #: templates/contest/problemset.html:33 templates/course/contest_list.html:142
-#: templates/internal/problem_duplicate_detail.html:182
+#: templates/internal/problem_duplicate_detail.html:202
 #: templates/internal/problem_queue.html:819
 #: templates/internal/semantic_search.html:158 templates/problem/add.html:221
 #: templates/problem/data.html:1194 templates/problem/edit.html:508
@@ -330,7 +330,7 @@ msgstr "Giới hạn"
 
 #: judge/admin/problem.py:237 judge/admin/submission.py:353
 #: templates/base.html:198
-#: templates/internal/problem_duplicate_detail.html:179
+#: templates/internal/problem_duplicate_detail.html:199
 #: templates/problem/data.html:1140 templates/problem/language_limits.html:63
 #: templates/problem/language_limits.html:146
 #: templates/problem/language_templates.html:135
@@ -5207,99 +5207,99 @@ msgstr "không có quyền cho %s"
 msgid "corrupt page %s"
 msgstr "trang bị sập %s"
 
-#: judge/views/internal.py:68 templates/internal/left-sidebar.html:4
+#: judge/views/internal.py:67 templates/internal/left-sidebar.html:4
 #: templates/internal/semantic_search.html:115
 msgid "Semantic Search"
 msgstr "Tìm kiếm ngữ nghĩa"
 
-#: judge/views/internal.py:92
+#: judge/views/internal.py:91
 msgid "Query is required"
 msgstr "Cần nhập truy vấn."
 
-#: judge/views/internal.py:114
+#: judge/views/internal.py:113
 msgid "Problem is required"
 msgstr "Vui lòng chọn bài."
 
-#: judge/views/internal.py:122
+#: judge/views/internal.py:121
 msgid "Problem not found"
 msgstr "Không tìm thấy bài tập"
 
-#: judge/views/internal.py:139 templates/internal/left-sidebar.html:5
+#: judge/views/internal.py:138 templates/internal/left-sidebar.html:5
 #: templates/internal/problem_duplicates.html:9
 msgid "Duplicate Problems"
 msgstr "Bài tập trùng lặp"
 
-#: judge/views/internal.py:159 judge/views/internal.py:418
+#: judge/views/internal.py:158 judge/views/internal.py:447
 #, python-format
 msgid "Marked %(source)s and %(target)s as not duplicated."
 msgstr "Đã đánh dấu %(source)s và %(target)s là không trùng."
 
-#: judge/views/internal.py:166
+#: judge/views/internal.py:165
 #, python-format
 msgid "No open duplicate candidate was found for %(source)s and %(target)s."
 msgstr ""
 "Không tìm thấy ứng viên trùng lặp đang mở cho %(source)s và %(target)s."
 
-#: judge/views/internal.py:180
+#: judge/views/internal.py:179
 msgid "A duplicate report refresh is already pending."
 msgstr "Đã có tác vụ làm mới báo cáo bài trùng đang chờ."
 
-#: judge/views/internal.py:182
+#: judge/views/internal.py:181
 msgid "Duplicate report refresh queued."
 msgstr "Đã đưa tác vụ làm mới báo cáo bài trùng vào hàng đợi."
 
-#: judge/views/internal.py:193
+#: judge/views/internal.py:192
 msgid "USE_ML is disabled"
 msgstr "USE_ML đang tắt"
 
-#: judge/views/internal.py:233
+#: judge/views/internal.py:232
 #: templates/internal/problem_duplicate_detail.html:70
 msgid "Duplicate Problem Review"
 msgstr "Xem xét bài tập trùng lặp"
 
-#: judge/views/internal.py:349
+#: judge/views/internal.py:373
 msgid "Problem not found."
 msgstr "Không tìm thấy bài tập."
 
-#: judge/views/internal.py:356
+#: judge/views/internal.py:380
 msgid "No accepted source submissions with stored source code were found."
 msgstr "Không tìm thấy bài nộp AC có lưu mã nguồn."
 
-#: judge/views/internal.py:377
+#: judge/views/internal.py:401
 #, python-format
 msgid "Queued %(count)s verification submissions."
 msgstr "Đã đưa %(count)s bài nộp kiểm chứng vào hàng đợi."
 
-#: judge/views/internal.py:384
+#: judge/views/internal.py:408
 msgid "Type MERGE to confirm the merge."
 msgstr "Nhập MERGE để xác nhận gộp."
 
-#: judge/views/internal.py:393
+#: judge/views/internal.py:421
 msgid "A merge for these problems is already pending."
 msgstr "Đã có yêu cầu gộp cho các bài này đang chờ."
 
-#: judge/views/internal.py:405
+#: judge/views/internal.py:431
 #, python-format
 msgid "Merge queued for %(source)s into %(target)s."
 msgstr "Đã đưa yêu cầu gộp %(source)s vào %(target)s vào hàng đợi."
 
-#: judge/views/internal.py:481
+#: judge/views/internal.py:512
 msgid "Internal problem queue"
 msgstr "Bài trong hàng đợi nội bộ"
 
-#: judge/views/internal.py:788
+#: judge/views/internal.py:819
 msgid "A pending request already exists."
 msgstr "Yêu cầu đang chờ xử lý đã tồn tại."
 
-#: judge/views/internal.py:823 templates/internal/problem_duplicates.html:202
+#: judge/views/internal.py:854 templates/internal/problem_duplicates.html:202
 msgid "Review"
 msgstr "Xem xét"
 
-#: judge/views/internal.py:997
+#: judge/views/internal.py:1028
 msgid "Request times"
 msgstr "thời gian đăng ký"
 
-#: judge/views/internal.py:1066 templates/internal/left-sidebar.html:7
+#: judge/views/internal.py:1097 templates/internal/left-sidebar.html:7
 msgid "Chat Moderation"
 msgstr "Kiểm duyệt chat"
 
@@ -6458,8 +6458,8 @@ msgid "Language statistics"
 msgstr "Thống kê ngôn ngữ"
 
 #: judge/views/stats.py:174 templates/contest/contest-tabs.html:20
-#: templates/internal/problem_duplicate_detail.html:145
-#: templates/internal/problem_duplicate_detail.html:162
+#: templates/internal/problem_duplicate_detail.html:165
+#: templates/internal/problem_duplicate_detail.html:182
 #: templates/internal/problem_duplicates.html:177
 #: templates/organization/org-left-sidebar.html:7
 #: templates/problem/left-sidebar.html:11 templates/stats/site.html:15
@@ -6481,7 +6481,7 @@ msgid "Site statistics"
 msgstr "Thống kê"
 
 #: judge/views/status.py:27
-#: templates/internal/problem_duplicate_detail.html:180
+#: templates/internal/problem_duplicate_detail.html:200
 #: templates/internal/problem_duplicates.html:40
 #: templates/notification/list.html:88 templates/notification/list.html:135
 #: templates/problem/validator.html:296
@@ -7553,7 +7553,7 @@ msgid "Type"
 msgstr "Kiểu"
 
 #: templates/contest/edit.html:128
-#: templates/internal/problem_duplicate_detail.html:102
+#: templates/internal/problem_duplicate_detail.html:112
 msgid "Item"
 msgstr "Mục"
 
@@ -7879,8 +7879,10 @@ msgstr "Bộ nhớ:"
 msgid "Input:"
 msgstr "Input:"
 
-#: templates/contest/problemset.html:96 templates/problem/problem.html:422
-#: templates/problem/raw.html:91
+#: templates/contest/problemset.html:96
+#: templates/internal/problem_duplicate_detail.html:120
+#: templates/internal/problem_duplicate_detail.html:121
+#: templates/problem/problem.html:422 templates/problem/raw.html:91
 msgid "stdin"
 msgstr "bàn phím"
 
@@ -7890,8 +7892,10 @@ msgstr "bàn phím"
 msgid "Output:"
 msgstr "Output:"
 
-#: templates/contest/problemset.html:103 templates/problem/problem.html:428
-#: templates/problem/raw.html:97
+#: templates/contest/problemset.html:103
+#: templates/internal/problem_duplicate_detail.html:125
+#: templates/internal/problem_duplicate_detail.html:126
+#: templates/problem/problem.html:428 templates/problem/raw.html:97
 msgid "stdout"
 msgstr "màn hình"
 
@@ -8538,7 +8542,7 @@ msgid "Action"
 msgstr "Hành động"
 
 #: templates/internal/chat_moderation.html:87
-#: templates/internal/problem_duplicate_detail.html:209
+#: templates/internal/problem_duplicate_detail.html:229
 #: templates/internal/problem_duplicates.html:41
 #: templates/internal/problem_duplicates.html:87
 #: templates/internal/problem_queue.html:873
@@ -8587,13 +8591,25 @@ msgstr "Requests chậm"
 msgid "Back to duplicate report"
 msgstr "Quay về báo cáo bài trùng"
 
-#: templates/internal/problem_duplicate_detail.html:74
+#: templates/internal/problem_duplicate_detail.html:73
+msgid "Swap merge direction"
+msgstr "Đổi chiều gộp"
+
+#: templates/internal/problem_duplicate_detail.html:77
+msgid ""
+"Reversed direction: the smaller-ID problem will be deleted and the larger-ID"
+" problem will remain canonical."
+msgstr ""
+"Chiều gộp đã đảo: bài có ID nhỏ hơn sẽ bị xóa và bài có ID lớn hơn sẽ được "
+"giữ làm bản chính."
+
+#: templates/internal/problem_duplicate_detail.html:84
 #: templates/internal/problem_duplicates.html:175
 msgid "Merge source"
 msgstr "Nguồn gộp"
 
-#: templates/internal/problem_duplicate_detail.html:77
 #: templates/internal/problem_duplicate_detail.html:87
+#: templates/internal/problem_duplicate_detail.html:97
 #: templates/internal/problem_duplicates.html:60
 #: templates/internal/problem_duplicates.html:64
 #: templates/internal/problem_duplicates.html:100
@@ -8603,36 +8619,44 @@ msgstr "Nguồn gộp"
 msgid "ID:"
 msgstr "ID:"
 
-#: templates/internal/problem_duplicate_detail.html:80
+#: templates/internal/problem_duplicate_detail.html:90
 msgid "This larger-ID problem will be deleted after merge."
 msgstr "Bài có ID lớn hơn này sẽ bị xóa sau khi gộp."
 
-#: templates/internal/problem_duplicate_detail.html:84
+#: templates/internal/problem_duplicate_detail.html:94
 #: templates/internal/problem_duplicates.html:176
 msgid "Merge target"
 msgstr "Đích gộp"
 
-#: templates/internal/problem_duplicate_detail.html:90
+#: templates/internal/problem_duplicate_detail.html:100
 msgid "This smaller-ID problem will remain canonical."
 msgstr "Bài có ID nhỏ hơn này sẽ được giữ làm bản chính."
 
-#: templates/internal/problem_duplicate_detail.html:95
+#: templates/internal/problem_duplicate_detail.html:105
 msgid "Merge dry run"
 msgstr "Chạy thử gộp"
 
 #: templates/internal/problem_duplicate_detail.html:119
+msgid "File I/O input"
+msgstr "File input"
+
+#: templates/internal/problem_duplicate_detail.html:124
+msgid "File I/O output"
+msgstr "File output"
+
+#: templates/internal/problem_duplicate_detail.html:139
 msgid "Contest conflicts:"
 msgstr "Xung đột kỳ thi:"
 
-#: templates/internal/problem_duplicate_detail.html:124
+#: templates/internal/problem_duplicate_detail.html:144
 msgid "Course lesson conflicts:"
 msgstr "Xung đột bài học:"
 
-#: templates/internal/problem_duplicate_detail.html:131
+#: templates/internal/problem_duplicate_detail.html:151
 msgid "Check equivalence"
 msgstr "Kiểm tra tương đương"
 
-#: templates/internal/problem_duplicate_detail.html:133
+#: templates/internal/problem_duplicate_detail.html:153
 msgid ""
 "Queue accepted submissions from one problem against the other problem. "
 "Passing submissions are evidence that the test data is compatible."
@@ -8640,32 +8664,32 @@ msgstr ""
 "Đưa các bài nộp AC của một bài sang chấm ở bài còn lại. Nếu các bài nộp này "
 "vẫn AC thì có thêm bằng chứng rằng bộ test tương thích."
 
-#: templates/internal/problem_duplicate_detail.html:149
+#: templates/internal/problem_duplicate_detail.html:169
 msgid "Submit target AC to source"
 msgstr "Nộp AC của đích sang nguồn"
 
-#: templates/internal/problem_duplicate_detail.html:166
+#: templates/internal/problem_duplicate_detail.html:186
 msgid "Submit source AC to target"
 msgstr "Nộp AC của nguồn sang đích"
 
-#: templates/internal/problem_duplicate_detail.html:173
+#: templates/internal/problem_duplicate_detail.html:193
 msgid "Verification submissions"
 msgstr "Bài nộp kiểm chứng"
 
-#: templates/internal/problem_duplicate_detail.html:177
+#: templates/internal/problem_duplicate_detail.html:197
 #: templates/problem/solution_codes.html:591
 msgid "Submission"
 msgstr "Bài nộp"
 
-#: templates/internal/problem_duplicate_detail.html:181
+#: templates/internal/problem_duplicate_detail.html:201
 msgid "Result"
 msgstr "Kết quả"
 
-#: templates/internal/problem_duplicate_detail.html:202
+#: templates/internal/problem_duplicate_detail.html:222
 msgid "Statement diff"
 msgstr "Diff đề bài"
 
-#: templates/internal/problem_duplicate_detail.html:204
+#: templates/internal/problem_duplicate_detail.html:224
 msgid ""
 "Diff is shown as target statement to source statement, using the same view "
 "as problem history."
@@ -8673,17 +8697,17 @@ msgstr ""
 "Diff được hiển thị từ đề bài đích sang đề bài nguồn, dùng cùng giao diện với"
 " lịch sử bài tập."
 
-#: templates/internal/problem_duplicate_detail.html:208
+#: templates/internal/problem_duplicate_detail.html:228
 #: templates/internal/problem_duplicates.html:42
 #: templates/internal/problem_duplicates.html:88
 msgid "Target"
 msgstr "Đích"
 
-#: templates/internal/problem_duplicate_detail.html:218
+#: templates/internal/problem_duplicate_detail.html:238
 msgid "Decision"
 msgstr "Quyết định"
 
-#: templates/internal/problem_duplicate_detail.html:220
+#: templates/internal/problem_duplicate_detail.html:240
 msgid ""
 "This hard merge moves submissions, contest references, course references, "
 "metadata, comments, tickets, votes, and related data from the source problem"
@@ -8693,15 +8717,23 @@ msgstr ""
 "metadata, bình luận, ticket, phiếu bầu và dữ liệu liên quan từ bài nguồn "
 "sang bài đích, rồi xóa bài nguồn."
 
-#: templates/internal/problem_duplicate_detail.html:228
+#: templates/internal/problem_duplicate_detail.html:244
+msgid ""
+"This is a reversed merge direction. Use it only when the higher-ID problem "
+"has stronger tests or should remain canonical."
+msgstr ""
+"Đây là chiều gộp đảo. Chỉ dùng khi bài có ID lớn hơn có bộ test mạnh hơn "
+"hoặc nên được giữ làm bản chính."
+
+#: templates/internal/problem_duplicate_detail.html:256
 msgid "Type MERGE to confirm"
 msgstr "Nhập MERGE để xác nhận"
 
-#: templates/internal/problem_duplicate_detail.html:231
+#: templates/internal/problem_duplicate_detail.html:259
 msgid "Merge source into target"
 msgstr "Gộp nguồn vào đích"
 
-#: templates/internal/problem_duplicate_detail.html:239
+#: templates/internal/problem_duplicate_detail.html:270
 msgid "Mark as not duplicated"
 msgstr "Đánh dấu là không trùng"
 
@@ -12954,6 +12986,9 @@ msgstr "Chọn tất cả"
 #: templates/widgets/sortable_formset.html:21
 msgid "No items yet."
 msgstr "Chưa có mục nào."
+
+#~ msgid "Merge target into source"
+#~ msgstr "Gộp đích vào nguồn"
 
 #~ msgid "Find similar"
 #~ msgstr "Tìm tương tự"

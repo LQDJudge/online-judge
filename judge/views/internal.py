@@ -1,6 +1,7 @@
 import difflib
 import json
 import logging
+import uuid
 
 from django.conf import settings
 from django.contrib import messages
@@ -239,6 +240,8 @@ class InternalProblemDuplicateDetail(InternalView, TemplateView):
         context["title"] = self.title
         context["source"] = source
         context["target"] = target
+        context["is_reverse_merge_direction"] = source.id < target.id
+        context["swap_merge_url"] = self._swap_merge_url(source, target)
         context["merge_report"] = self._merge_dry_run(source, target)
         context["statement_diff"] = self._statement_diff(source, target)
         context["source_ac_submissions"] = self._accepted_submissions(source)
@@ -272,13 +275,36 @@ class InternalProblemDuplicateDetail(InternalView, TemplateView):
             raise Http404() from exc
         if first.id == second.id:
             raise Http404()
-        return (first, second) if first.id > second.id else (second, first)
+        larger, smaller = (first, second) if first.id > second.id else (second, first)
+        if self._is_reverse_direction():
+            return smaller, larger
+        return larger, smaller
 
     def _merge_dry_run(self, source, target):
         try:
-            return ProblemMerge(source.code, target.code).run()
+            return ProblemMerge(
+                source.code,
+                target.code,
+                force=source.id < target.id,
+            ).run()
         except ProblemMergeError as exc:
             return {"error": str(exc)}
+
+    def _is_reverse_direction(self):
+        return (
+            self.request.GET.get("direction") == "reverse"
+            or self.request.POST.get("direction") == "reverse"
+        )
+
+    def _swap_merge_url(self, source, target):
+        url = "%s?source=%s&target=%s" % (
+            reverse("internal_problem_duplicate_detail"),
+            source.code,
+            target.code,
+        )
+        if source.id > target.id:
+            url += "&direction=reverse"
+        return url
 
     def _statement_diff(self, source, target):
         source_text = source.description or ""
@@ -381,8 +407,6 @@ class InternalProblemDuplicateDetail(InternalView, TemplateView):
         if request.POST.get("confirm") != "MERGE":
             messages.error(request, _("Type MERGE to confirm the merge."))
             return self._redirect_to_detail(source, target)
-        import uuid
-        from judge.tasks.semantic_search import merge_duplicate_problem
 
         task_id = str(uuid.uuid4())
         try:
@@ -391,12 +415,15 @@ class InternalProblemDuplicateDetail(InternalView, TemplateView):
                 target,
                 user=request.user,
                 task_id=task_id,
+                force=source.id < target.id,
             )
         except DuplicateProblemMergePending:
             messages.error(request, _("A merge for these problems is already pending."))
             return redirect(
                 "%s?tab=pending_merges" % reverse("internal_problem_duplicates")
             )
+
+        from judge.tasks.semantic_search import merge_duplicate_problem
 
         merge_duplicate_problem.apply_async((merge.id,), task_id=task_id)
         messages.success(
@@ -407,15 +434,18 @@ class InternalProblemDuplicateDetail(InternalView, TemplateView):
         return redirect("internal_problem_duplicates")
 
     def _post_false_positive(self, request, source, target):
+        candidate_source, candidate_target = (
+            (source, target) if source.id > target.id else (target, source)
+        )
         mark_duplicate_candidate_false_positive(
-            source.code,
-            target.code,
+            candidate_source.code,
+            candidate_target.code,
             user=request.user,
         )
         messages.success(
             request,
             _("Marked %(source)s and %(target)s as not duplicated.")
-            % {"source": source.code, "target": target.code},
+            % {"source": candidate_source.code, "target": candidate_target.code},
         )
         return redirect("internal_problem_duplicates")
 
@@ -425,6 +455,8 @@ class InternalProblemDuplicateDetail(InternalView, TemplateView):
             source.code,
             target.code,
         )
+        if source.id < target.id:
+            url += "&direction=reverse"
         if verification_ids:
             url += "&verification_ids=%s" % ",".join(map(str, verification_ids))
         return redirect(url)

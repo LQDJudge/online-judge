@@ -68,6 +68,16 @@
     </p>
 
     <h2>{{ _('Duplicate Problem Review') }}</h2>
+    <p>
+      <a class="action-btn small" href="{{ swap_merge_url }}">
+        {{ _('Swap merge direction') }}
+      </a>
+      {% if is_reverse_merge_direction %}
+        <span class="red">
+          {{ _('Reversed direction: the smaller-ID problem will be deleted and the larger-ID problem will remain canonical.') }}
+        </span>
+      {% endif %}
+    </p>
 
     <div class="duplicate-review-grid">
       <section class="duplicate-review-card">
@@ -105,6 +115,16 @@
             </tr>
           </thead>
           <tbody>
+            <tr>
+              <td>{{ _('File I/O input') }}</td>
+              <td>{{ merge_report.file_io.source.input or _('stdin') }}</td>
+              <td>{{ merge_report.file_io.target.input or _('stdin') }}</td>
+            </tr>
+            <tr>
+              <td>{{ _('File I/O output') }}</td>
+              <td>{{ merge_report.file_io.source.output or _('stdout') }}</td>
+              <td>{{ merge_report.file_io.target.output or _('stdout') }}</td>
+            </tr>
             {% for key, value in merge_report.counts.source.items() %}
               <tr>
                 <td>{{ key }}</td>
@@ -219,11 +239,19 @@
       <p class="red">
         {{ _('This hard merge moves submissions, contest references, course references, metadata, comments, tickets, votes, and related data from the source problem to the target problem, then deletes the source problem.') }}
       </p>
+      {% if is_reverse_merge_direction %}
+        <p class="red">
+          {{ _('This is a reversed merge direction. Use it only when the higher-ID problem has stronger tests or should remain canonical.') }}
+        </p>
+      {% endif %}
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="action" value="merge">
         <input type="hidden" name="source" value="{{ source.code }}">
         <input type="hidden" name="target" value="{{ target.code }}">
+        {% if is_reverse_merge_direction %}
+          <input type="hidden" name="direction" value="reverse">
+        {% endif %}
         <label>
           {{ _('Type MERGE to confirm') }}
           <input type="text" name="confirm" autocomplete="off">
@@ -236,6 +264,9 @@
         <input type="hidden" name="action" value="false_positive">
         <input type="hidden" name="source" value="{{ source.code }}">
         <input type="hidden" name="target" value="{{ target.code }}">
+        {% if is_reverse_merge_direction %}
+          <input type="hidden" name="direction" value="reverse">
+        {% endif %}
         <button type="submit" class="action-btn">{{ _('Mark as not duplicated') }}</button>
       </form>
     </section>

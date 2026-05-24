@@ -135,6 +135,10 @@ class ProblemMerge:
                 "code": self.target.code,
                 "name": self.target.name,
             },
+            "file_io": {
+                "source": self._problem_file_io(self.source),
+                "target": self._problem_file_io(self.target),
+            },
             "counts": {
                 "source": source_counts,
                 "target": target_counts,
@@ -167,6 +171,18 @@ class ProblemMerge:
             "has_public_request": PublicRequest.objects.filter(
                 problem=problem
             ).exists(),
+        }
+
+    def _problem_file_io(self, problem):
+        problem_data = ProblemData.objects.filter(problem=problem).first()
+        if problem_data is None:
+            return {
+                "input": "",
+                "output": "",
+            }
+        return {
+            "input": problem_data.fileio_input or "",
+            "output": problem_data.fileio_output or "",
         }
 
     def _merge_m2m(self):

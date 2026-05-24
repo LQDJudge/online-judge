@@ -24,6 +24,8 @@ from judge.models import (
     Problem,
     ProblemAttachment,
     ProblemData,
+    ProblemDuplicateCandidate,
+    ProblemDuplicateReport,
     ProblemGroup,
     ProblemSolutionCode,
     ProblemTestCase,
@@ -36,6 +38,11 @@ from judge.models import (
     Ticket,
 )
 from judge.utils.problem_merge import ProblemMerge
+from judge.ml.problem_duplicates import (
+    DuplicateProblemMergePending,
+    create_pending_duplicate_problem_merge,
+    get_cached_duplicate_problem_candidates,
+)
 
 
 class ProblemMergeTestCase(TestCase):
@@ -134,6 +141,25 @@ class ProblemMergeTestCase(TestCase):
         self.assertEqual(report["source"]["code"], older.code)
         self.assertEqual(report["target"]["code"], newer.code)
 
+    def test_dry_run_reports_file_io(self):
+        ProblemData.objects.create(
+            problem=self.source,
+            fileio_input="source.inp",
+            fileio_output="source.out",
+        )
+        ProblemData.objects.create(
+            problem=self.target,
+            fileio_input="target.inp",
+            fileio_output="target.out",
+        )
+
+        report = ProblemMerge(self.source.code, self.target.code, apply=False).run()
+
+        self.assertEqual(report["file_io"]["source"]["input"], "source.inp")
+        self.assertEqual(report["file_io"]["source"]["output"], "source.out")
+        self.assertEqual(report["file_io"]["target"]["input"], "target.inp")
+        self.assertEqual(report["file_io"]["target"]["output"], "target.out")
+
     def test_merge_moves_submissions_and_recalculates_best_submission(self):
         weak_target_submission = self.make_submission(self.target, points=20)
         strong_source_submission = self.make_submission(self.source, points=90)
@@ -174,6 +200,35 @@ class ProblemMergeTestCase(TestCase):
                 ProblemMerge(self.source.code, self.target.code, apply=True).run()
 
         update_cache.assert_called_once_with(self.source.id, self.target.id)
+
+    def test_create_pending_merge_blocks_reverse_duplicate_pair(self):
+        create_pending_duplicate_problem_merge(self.source, self.target)
+
+        with self.assertRaises(DuplicateProblemMergePending):
+            create_pending_duplicate_problem_merge(
+                self.target,
+                self.source,
+                force=True,
+            )
+
+    def test_cached_duplicate_candidates_hide_deleted_problem_rows(self):
+        report = ProblemDuplicateReport.objects.create(
+            status=ProblemDuplicateReport.SUCCESS,
+        )
+        ProblemDuplicateCandidate.objects.create(
+            report=report,
+            source_problem=None,
+            target_problem=self.target,
+            source_problem_id_snapshot=self.source.id,
+            target_problem_id_snapshot=self.target.id,
+            source_code=self.source.code,
+            target_code=self.target.code,
+            source_name=self.source.name,
+            target_name=self.target.name,
+            score=0.99,
+        )
+
+        self.assertEqual(get_cached_duplicate_problem_candidates(), [])
 
     def test_merge_repoints_contest_problem_without_target_conflict(self):
         contest = self.make_contest()
