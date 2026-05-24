@@ -517,11 +517,7 @@ def invalidate_duplicate_problem_report_cache():
 
 def store_duplicate_problem_report_candidates(report, candidates):
     with transaction.atomic():
-        old_false_positive_keys = set(
-            report.candidates.filter(
-                status=ProblemDuplicateCandidate.FALSE_POSITIVE
-            ).values_list("source_code", "target_code")
-        )
+        false_positive_keys = _false_positive_pairs_for_candidates(candidates)
         report.candidates.all().delete()
         candidate_rows = [
             candidate_to_model(
@@ -531,7 +527,7 @@ def store_duplicate_problem_report_candidates(report, candidates):
                     candidate["source"]["code"],
                     candidate["target"]["code"],
                 )
-                in old_false_positive_keys,
+                in false_positive_keys,
             )
             for candidate in candidates
         ]
@@ -544,12 +540,35 @@ def store_duplicate_problem_report_candidates(report, candidates):
         report.save(update_fields=["candidate_count"])
 
 
+def _false_positive_pairs_for_candidates(candidates):
+    codes = {
+        problem["code"]
+        for candidate in candidates
+        for problem in (candidate["source"], candidate["target"])
+    }
+    if not codes:
+        return set()
+    pairs = set(
+        ProblemDuplicateReviewHistory.objects.filter(
+            action=ProblemDuplicateReviewHistory.MARKED_NOT_DUPLICATE,
+            source_code__in=codes,
+            target_code__in=codes,
+        ).values_list("source_code", "target_code")
+    )
+    pairs.update((target_code, source_code) for source_code, target_code in list(pairs))
+    return pairs
+
+
 def mark_duplicate_candidate_false_positive(source_code, target_code, user=None):
-    updated = ProblemDuplicateCandidate.objects.filter(
-        source_code=source_code,
-        target_code=target_code,
+    matching_candidates = ProblemDuplicateCandidate.objects.filter(
+        Q(source_code=source_code, target_code=target_code)
+        | Q(source_code=target_code, target_code=source_code),
         status=ProblemDuplicateCandidate.OPEN,
-    ).update(
+    )
+    report_ids = list(
+        matching_candidates.values_list("report_id", flat=True).distinct()
+    )
+    updated = matching_candidates.update(
         status=ProblemDuplicateCandidate.FALSE_POSITIVE,
         reviewed_by=user,
         reviewed_at=timezone.now(),
@@ -562,7 +581,16 @@ def mark_duplicate_candidate_false_positive(source_code, target_code, user=None)
             actor=user,
             details={"updated_candidates": updated},
         )
+        _refresh_report_candidate_counts(report_ids)
     return updated
+
+
+def _refresh_report_candidate_counts(report_ids):
+    for report in ProblemDuplicateReport.objects.filter(id__in=report_ids):
+        report.candidate_count = report.candidates.filter(
+            status=ProblemDuplicateCandidate.OPEN
+        ).count()
+        report.save(update_fields=["candidate_count"])
 
 
 def candidate_to_model(report, candidate, is_false_positive=False):

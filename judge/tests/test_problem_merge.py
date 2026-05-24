@@ -42,6 +42,8 @@ from judge.ml.problem_duplicates import (
     DuplicateProblemMergePending,
     create_pending_duplicate_problem_merge,
     get_cached_duplicate_problem_candidates,
+    mark_duplicate_candidate_false_positive,
+    store_duplicate_problem_report_candidates,
 )
 
 
@@ -228,6 +230,58 @@ class ProblemMergeTestCase(TestCase):
             score=0.99,
         )
 
+        self.assertEqual(get_cached_duplicate_problem_candidates(), [])
+
+    def test_refreshed_duplicate_report_keeps_false_positive_hidden(self):
+        first_report = ProblemDuplicateReport.objects.create(
+            status=ProblemDuplicateReport.SUCCESS,
+            finished_at=timezone.now(),
+        )
+        ProblemDuplicateCandidate.objects.create(
+            report=first_report,
+            source_problem=self.source,
+            target_problem=self.target,
+            source_problem_id_snapshot=self.source.id,
+            target_problem_id_snapshot=self.target.id,
+            source_code=self.source.code,
+            target_code=self.target.code,
+            source_name=self.source.name,
+            target_name=self.target.name,
+            score=0.99,
+        )
+
+        mark_duplicate_candidate_false_positive(self.source.code, self.target.code)
+
+        refreshed_report = ProblemDuplicateReport.objects.create(
+            status=ProblemDuplicateReport.SUCCESS,
+            finished_at=timezone.now() + timezone.timedelta(minutes=1),
+        )
+        store_duplicate_problem_report_candidates(
+            refreshed_report,
+            [
+                {
+                    "score": 0.99,
+                    "source": {
+                        "id": self.source.id,
+                        "code": self.source.code,
+                        "name": self.source.name,
+                        "submission_count": 0,
+                    },
+                    "target": {
+                        "id": self.target.id,
+                        "code": self.target.code,
+                        "name": self.target.name,
+                        "submission_count": 0,
+                    },
+                }
+            ],
+        )
+
+        refreshed_candidate = refreshed_report.candidates.get()
+        self.assertEqual(
+            refreshed_candidate.status,
+            ProblemDuplicateCandidate.FALSE_POSITIVE,
+        )
         self.assertEqual(get_cached_duplicate_problem_candidates(), [])
 
     def test_merge_repoints_contest_problem_without_target_conflict(self):
