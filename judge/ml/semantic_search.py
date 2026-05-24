@@ -691,6 +691,8 @@ def _format_results(rows):
     problem_map = {
         problem.id: problem for problem in Problem.get_cached_instances(*ids)
     }
+    Problem.prefetch_cache_types_name(*ids)
+
     results = []
     for problem_id, score in rows:
         problem = problem_map.get(problem_id)
@@ -703,6 +705,7 @@ def _format_results(rows):
                 "url": problem.get_absolute_url(),
                 "points": problem.get_points(),
                 "group": problem.get_group_name(),
+                "types": problem.get_types_name(),
                 "score": score,
             }
         )

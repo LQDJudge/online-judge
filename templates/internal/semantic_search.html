@@ -52,6 +52,11 @@
             $('<div>').addClass('semantic-result-name').text(result.name).appendTo($problem);
             $('<td>').text(result.points).appendTo($row);
             $('<td>').text(result.group || '').appendTo($row);
+            var $types = $('<td>');
+            (result.types || []).forEach(function (t) {
+              $('<span>').addClass('semantic-type-tag').text(t).appendTo($types);
+            });
+            $types.appendTo($row);
             $('<td>').text(Number(result.score).toFixed(4)).appendTo($row);
             $row.prepend($problem);
             $tbody.append($row);
@@ -152,6 +157,7 @@
           <th>{{ _('Problem') }}</th>
           <th>{{ _('Points') }}</th>
           <th>{{ _('Group') }}</th>
+          <th>{{ _('Types') }}</th>
           <th>{{ _('Score') }}</th>
         </tr>
       </thead>

@@ -106,4 +106,15 @@
         font-size: 0.9em;
         margin-top: $space-xs;
     }
+
+    .semantic-type-tag {
+        display: inline-block;
+        background: $background_light_gray;
+        border: 1px solid $border_gray;
+        border-radius: 3px;
+        font-size: 0.8em;
+        padding: 1px 5px;
+        margin: 1px 2px 1px 0;
+        white-space: nowrap;
+    }
 }
