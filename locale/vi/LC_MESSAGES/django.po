@@ -8616,61 +8616,51 @@ msgid "Preview"
 msgstr "Xem trước"
 
 #: templates/internal/semantic_search.html:42
-#, fuzzy
-#| msgid "Search..."
 msgid "Searching..."
-msgstr "Tìm kiếm..."
+msgstr "Đang tìm kiếm..."
 
 #: templates/internal/semantic_search.html:54
-#, fuzzy
-#| msgid "Search files..."
 msgid "Search failed"
-msgstr "Tìm files..."
+msgstr "Tìm kiếm thất bại"
 
 #: templates/internal/semantic_search.html:86
 msgid "Semantic Search"
-msgstr ""
+msgstr "Tìm kiếm ngữ nghĩa"
 
 #: templates/internal/semantic_search.html:88
 msgid ""
 "Internal-only semantic search over public, non-organization-private problems."
 msgstr ""
+"Tìm kiếm ngữ nghĩa nội bộ trên các bài công khai, không riêng tư theo tổ "
+"chức."
 
 #: templates/internal/semantic_search.html:93
-#, fuzzy
-#| msgid "Search in content"
 msgid "Search by text"
-msgstr "Tìm kiếm trong nội dung"
+msgstr "Tìm kiếm bằng văn bản"
 
 #: templates/internal/semantic_search.html:94
 msgid "Query"
-msgstr ""
+msgstr "Truy vấn"
 
 #: templates/internal/semantic_search.html:95
 msgid "e.g. quy hoạch động trên cây"
-msgstr ""
+msgstr "ví dụ: quy hoạch động trên cây"
 
 #: templates/internal/semantic_search.html:100
-#, fuzzy
-#| msgid "Hide solved problems"
 msgid "Find similar problems"
-msgstr "Ẩn các bài đã giải"
+msgstr "Tìm bài tương tự"
 
 #: templates/internal/semantic_search.html:103
 msgid "Find similar"
-msgstr ""
+msgstr "Tìm tương tự"
 
 #: templates/internal/semantic_search.html:108
-#, fuzzy
-#| msgid "Limits"
 msgid "Limit"
 msgstr "Giới hạn"
 
 #: templates/internal/semantic_search.html:114
-#, fuzzy
-#| msgid "No questions found"
 msgid "No results found."
-msgstr "Không tìm thấy câu hỏi nào"
+msgstr "Không tìm thấy kết quả nào."
 
 #: templates/judge/emails/problem_checker_error.html:14
 msgid "Dear authors of"
