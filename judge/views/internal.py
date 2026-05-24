@@ -54,6 +54,7 @@ class InternalSemanticSearch(InternalView, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["page_type"] = "semantic_search"
         context["title"] = self.title
         context["default_limit"] = 20
         context["max_limit"] = 50
@@ -86,13 +87,17 @@ class InternalSimilarProblemsApi(InternalView, View):
         if not getattr(settings, "USE_ML", False):
             raise Http404()
 
+        problem_id = request.GET.get("problem_id", "").strip()
         problem_code = request.GET.get("problem", "").strip()
-        if not problem_code:
-            return JsonResponse({"error": _("Problem code is required")}, status=400)
+        if not problem_id and not problem_code:
+            return JsonResponse({"error": _("Problem is required")}, status=400)
 
         try:
-            problem = Problem.objects.get(code=problem_code)
-        except Problem.DoesNotExist:
+            if problem_id:
+                problem = Problem.objects.get(id=problem_id)
+            else:
+                problem = Problem.objects.get(code=problem_code)
+        except (Problem.DoesNotExist, ValueError):
             return JsonResponse({"error": _("Problem not found")}, status=404)
 
         limit = clamp_limit(request.GET.get("limit"))
@@ -105,7 +110,7 @@ class InternalSimilarProblemsApi(InternalView, View):
             return JsonResponse({"error": str(exc)}, status=500)
 
         return JsonResponse(
-            {"problem": problem_code, "limit": limit, "results": results}
+            {"problem": problem.code, "limit": limit, "results": results}
         )
 
 

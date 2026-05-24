@@ -8623,6 +8623,10 @@ msgstr "Đang tìm kiếm..."
 msgid "Search failed"
 msgstr "Tìm kiếm thất bại"
 
+#: templates/internal/semantic_search.html:13
+msgid "Select a problem..."
+msgstr "Chọn một bài..."
+
 #: templates/internal/semantic_search.html:86
 msgid "Semantic Search"
 msgstr "Tìm kiếm ngữ nghĩa"
@@ -8661,6 +8665,10 @@ msgstr "Giới hạn"
 #: templates/internal/semantic_search.html:114
 msgid "No results found."
 msgstr "Không tìm thấy kết quả nào."
+
+#: judge/views/internal.py:93
+msgid "Problem is required"
+msgstr "Vui lòng chọn bài."
 
 #: templates/judge/emails/problem_checker_error.html:14
 msgid "Dear authors of"

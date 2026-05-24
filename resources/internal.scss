@@ -1,11 +1,28 @@
 @use "vars" as *;
 
 .internal-semantic-search-page {
+    .semantic-search-tabs {
+        display: flex;
+        gap: $space-xs;
+        margin-top: $space-lg;
+    }
+
+    .semantic-search-tab {
+        background: white;
+        border: $space-hairline solid $border_gray;
+        border-radius: $radius-md $radius-md 0 0;
+        cursor: pointer;
+        padding: $space-sm $space-lg;
+
+        &.active {
+            background: $background_light_gray;
+            border-bottom-color: $background_light_gray;
+            font-weight: bold;
+        }
+    }
+
     .semantic-search-controls {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: $space-lg;
-        margin: $space-lg 0;
+        margin: 0 0 $space-lg;
     }
 
     .semantic-search-card {
@@ -13,6 +30,7 @@
         border-radius: $radius-md;
         padding: $space-lg;
         background: $background_light_gray;
+        max-width: 64em;
 
         h3 {
             margin-top: 0;
@@ -24,11 +42,45 @@
             margin-bottom: $space-xs;
         }
 
-        input {
+        input,
+        select,
+        textarea {
             box-sizing: border-box;
             display: block;
             margin-bottom: $space-md;
             width: 100%;
+        }
+
+        textarea {
+            min-height: 9em;
+            padding: $space-sm;
+            resize: vertical;
+            text-align: left;
+
+            &::placeholder {
+                color: $text-lighter;
+                opacity: 1;
+                text-align: left;
+            }
+        }
+    }
+
+    .semantic-query-card {
+        textarea {
+            font-size: 1.05em;
+            line-height: 1.5;
+        }
+    }
+
+    @media(max-width: 700px) {
+        .semantic-search-tabs {
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .semantic-search-tab {
+            border-radius: 0;
+            text-align: left;
         }
     }
 

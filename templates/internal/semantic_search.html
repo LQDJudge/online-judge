@@ -8,6 +8,26 @@
         var $results = $('#semantic-search-results');
         var $tbody = $results.find('tbody');
         var $empty = $('#semantic-search-empty');
+        var activeMode = 'query';
+
+        $('.semantic-search-tab').on('click', function () {
+          var target = $(this).data('target');
+          activeMode = $(this).data('mode');
+          $('.semantic-search-tab').removeClass('active');
+          $(this).addClass('active');
+          $('.semantic-search-card').hide();
+          $(target).show();
+        });
+
+        $('#semantic-problem').select2({
+          placeholder: '{{ _('Select a problem...') }}',
+          ajax: {
+            url: '{{ url('problem_select2') }}',
+            delay: 250,
+            cache: true
+          },
+          width: '100%'
+        });
 
         function setStatus(message, isError) {
           $status.text(message || '');
@@ -57,20 +77,24 @@
           });
         }
 
-        $('#semantic-query-form').on('submit', function (event) {
-          event.preventDefault();
-          runSearch('{{ url('internal_semantic_search_api') }}', {
-            q: $('#semantic-query').val(),
-            limit: $('#semantic-limit').val()
-          });
-        });
+        function runActiveSearch() {
+          if (activeMode === 'similar') {
+            runSearch('{{ url('internal_semantic_search_similar_api') }}', {
+              problem_id: $('#semantic-problem').val(),
+              limit: $('#semantic-limit').val()
+            });
+          } else {
+            runSearch('{{ url('internal_semantic_search_api') }}', {
+              q: $('#semantic-query').val(),
+              limit: $('#semantic-limit').val()
+            });
+          }
+        }
 
-        $('#semantic-similar-form').on('submit', function (event) {
+        $('#semantic-search-submit').on('click', runActiveSearch);
+        $('#semantic-query-form, #semantic-similar-form').on('submit', function (event) {
           event.preventDefault();
-          runSearch('{{ url('internal_semantic_search_similar_api') }}', {
-            problem: $('#semantic-problem').val(),
-            limit: $('#semantic-limit').val()
-          });
+          runActiveSearch();
         });
       });
     </script>
@@ -88,25 +112,33 @@
       {{ _('Internal-only semantic search over public, non-organization-private problems.') }}
     </p>
 
+    <div class="semantic-search-tabs">
+      <button type="button" class="semantic-search-tab active" data-mode="query" data-target="#semantic-query-form">
+        {{ _('Search by text') }}
+      </button>
+      <button type="button" class="semantic-search-tab" data-mode="similar" data-target="#semantic-similar-form">
+        {{ _('Find similar problems') }}
+      </button>
+    </div>
+
     <div class="semantic-search-controls">
-      <form id="semantic-query-form" class="semantic-search-card">
+      <form id="semantic-query-form" class="semantic-search-card semantic-query-card">
         <h3>{{ _('Search by text') }}</h3>
         <label for="semantic-query">{{ _('Query') }}</label>
-        <input id="semantic-query" type="text" name="q" placeholder="{{ _('e.g. quy hoạch động trên cây') }}">
-        <button type="submit" class="action-btn">{{ _('Search') }}</button>
+        <textarea id="semantic-query" name="q" rows="7" placeholder="{{ _('e.g. quy hoạch động trên cây') }}"></textarea>
       </form>
 
-      <form id="semantic-similar-form" class="semantic-search-card">
+      <form id="semantic-similar-form" class="semantic-search-card" style="display: none">
         <h3>{{ _('Find similar problems') }}</h3>
-        <label for="semantic-problem">{{ _('Problem code') }}</label>
-        <input id="semantic-problem" type="text" name="problem" placeholder="ioi25triples">
-        <button type="submit" class="action-btn">{{ _('Find similar') }}</button>
+        <label for="semantic-problem">{{ _('Problem') }}</label>
+        <select id="semantic-problem" name="problem_id"></select>
       </form>
     </div>
 
     <div class="semantic-limit-row">
       <label for="semantic-limit">{{ _('Limit') }}</label>
       <input id="semantic-limit" type="number" min="1" max="{{ max_limit }}" value="{{ default_limit }}">
+      <button id="semantic-search-submit" type="button" class="action-btn">{{ _('Search') }}</button>
       <span id="semantic-search-status" class="gray"></span>
     </div>
 
