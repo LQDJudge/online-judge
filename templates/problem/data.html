@@ -378,39 +378,42 @@
       // the deletion on Apply). New unsaved rows are removed from the DOM and
       // the formset's TOTAL_FORMS count is decremented so Django doesn't try
       // to validate the gap.
+      // Single delegated handler for all delete buttons — avoids binding one
+      // handler per row (588 bindings for large problems).
+      $table.on('click', '.remove-row-btn', function (e) {
+        e.preventDefault();
+        var $tr = $(this).closest('tr');
+        if ($(this).attr('data-has-pk') === 'true') {
+          $tr.find('input[id$=DELETE]').prop('checked', true);
+          $tr.hide();
+        } else {
+          $tr.remove();
+          var $total = $('#id_cases-TOTAL_FORMS');
+          var n = parseInt($total.val(), 10);
+          if (n > 0) $total.val(n - 1);
+        }
+      });
+
       function attachInlineDelete($tr) {
+        // Button and hidden DELETE input are server-rendered. This function
+        // only needs to hide rows that were already deleted (DELETE checked)
+        // on a previous save, so the Apply form keeps submitting the flag.
         var $del = $tr.find('input[id$=DELETE]');
-        if (!$del.length || $del.data('inline-delete-attached')) return;
-        $del.data('inline-delete-attached', true).hide();
-        var $id = $tr.find('input[id$=-id]');
-        var hasPk = !!$id.val();
-        var $btn = $(
-          '<button type="button" class="remove-row-btn" title="{{ _("Remove") }}">' +
-          '<i class="fa fa-times red"></i></button>'
-        );
-        $del.after($btn);
-        $btn.on('click', function (e) {
-          e.preventDefault();
-          if (hasPk) {
-            $del.prop('checked', true);
-            $tr.hide();
-          } else {
-            $tr.remove();
-            var $total = $('#id_cases-TOTAL_FORMS');
-            var n = parseInt($total.val(), 10);
-            if (n > 0) $total.val(n - 1);
-          }
-        });
-        // Already-deleted saved rows (page reloaded with DELETE flagged) stay
-        // hidden so the Apply form still submits the flag without UI clutter.
         if ($del.is(':checked')) $tr.hide();
       }
 
       $table.on('add-row', function (e, $tr, opts) {
         opts = opts || {};
-        var $order = $tr.find('input').filter('[id$=order]').attr('type', 'hidden').val(++order);
-        $order.after($('<span>', {'class': 'order'}).text($order.val()))
-          .after($('<i>', {'class': 'fa fa-fw fa-lg fa-ellipsis-v'}));
+        // Drag handle and order span are rendered server-side; just sync the
+        // order counter and update the span text for newly added rows.
+        var $order = $tr.find('input').filter('[id$=order]');
+        if (!$tr.find('span.order').length) {
+          // New row added by JS (extra-row-body clone): inject handle + span.
+          $order.after($('<span>', {'class': 'order'}))
+            .after($('<i>', {'class': 'fa fa-fw fa-lg fa-ellipsis-v'}));
+        }
+        $order.val(++order);
+        $tr.find('span.order').text(order);
 
         // Exclude DELETE (last input) from $opts — inline-delete will hide
         // the raw checkbox and own its visibility via $deleteWidget below.
@@ -424,9 +427,11 @@
         var $genArgs = $tr.find('.generator-args-container');
         // attachInlineDelete permanently hides the raw DELETE checkbox and
         // adds an × button. Use the button as the toggleable affordance.
-        var $deleteWidget = function () { return $tr.find('.remove-row-btn'); };
-        // Toggle both the native <select> and its Select2 wrapper (if present).
-        // Big-input problems skip Select2, so the bare <select> is what's visible.
+        // Cached once — the button is server-rendered so it exists immediately.
+        var $deleteWidget = $tr.find('.remove-row-btn');
+        // $fileWidgets stays a function: Select2 wrappers may be added after
+        // this handler runs (by the file-select add-row handler), so we
+        // re-query siblings on each applyType call.
         var $fileWidgets = function () { return $files.add($files.siblings('.select2')); };
         var $type = $tr.find('select[id$=type]');
 
@@ -436,14 +441,14 @@
             case 'E':
               $opts.toggle(val == 'S');
               $fileWidgets().hide();
-              $deleteWidget().toggle(val == 'S');
+              $deleteWidget.toggle(val == 'S');
               $genArgs.hide();
               $batchScoring.toggle(val == 'S');
               break;
             default:
               $opts.toggle(val == 'C');
               $fileWidgets().toggle(val == 'C');
-              $deleteWidget().toggle(val == 'C');
+              $deleteWidget.toggle(val == 'C');
               $genArgs.toggle(val == 'C');
               $batchScoring.toggle(val == 'S');
               $tr.find('input[id$=pretest]').toggle(val == 'C' && !disabled);
@@ -1210,7 +1215,10 @@
           {% endif %}
           <tr data-type="{{ form['type'].value() }}">
             <td>
-              {{ form.id }}{{ form.order.errors }}{{ form.order }}
+              {{ form.id }}{{ form.order.errors }}
+              <span style="display:none">{{ form.order }}</span>
+              <i class="fa fa-fw fa-lg fa-ellipsis-v"></i>
+              <span class="order">{{ form['order'].value() or '' }}</span>
             </td>
             <td class="type-column">
               {{ form.type.errors }}{{ form.type }}
@@ -1239,7 +1247,14 @@
   </div>
 </td>
 {% if cases_formset.can_delete %}
-  <td>{{ form.DELETE }}</td>
+  <td>
+    <span style="display:none">{{ form.DELETE }}</span>
+    <button type="button" class="remove-row-btn"
+            data-has-pk="{{ 'true' if form['id'].value() else 'false' }}"
+            title="{{ _('Remove') }}">
+      <i class="fa fa-times red"></i>
+    </button>
+  </td>
 {% endif %}
 </tr>
 {% endfor %}
