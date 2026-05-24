@@ -542,9 +542,12 @@ def _existing_content_hash(problem_id):
 
 
 def _error_content_hash(problem_id):
-    return hashlib.sha256(
-        "%s:%s:%s:index-error" % (problem_id, get_semantic_model(), get_semantic_dims())
-    ).hexdigest()
+    payload = "%s:%s:%s:index-error" % (
+        problem_id,
+        get_semantic_model(),
+        get_semantic_dims(),
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def _record_index_error(problem_id, content_hash, error_text):
