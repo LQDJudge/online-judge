@@ -39,6 +39,8 @@ from judge.tasks.semantic_search import index_problem_semantic_embedding
 
 logger = logging.getLogger(__name__)
 
+PROBLEM_MERGE_BATCH_SIZE = 1000
+
 
 class ProblemMergeError(Exception):
     pass
@@ -199,12 +201,17 @@ class ProblemMerge:
 
     def _merge_problem_test_cases(self):
         if ProblemTestCase.objects.filter(dataset=self.target).exists():
-            ProblemTestCase.objects.filter(dataset=self.source).delete()
+            self._batched_delete(
+                ProblemTestCase.objects.filter(dataset=self.source),
+            )
             self.report.setdefault("warnings", []).append(
                 "ProblemTestCase conflict; kept target"
             )
             return
-        ProblemTestCase.objects.filter(dataset=self.source).update(dataset=self.target)
+        self._batched_update(
+            ProblemTestCase.objects.filter(dataset=self.source),
+            dataset=self.target,
+        )
 
     def _merge_one_to_one_row(self, model):
         source_row = model.objects.filter(problem=self.source).first()
@@ -229,8 +236,9 @@ class ProblemMerge:
         self._merge_solution()
 
     def _merge_problem_validations(self):
-        ProblemValidation.objects.filter(problem=self.source).update(
-            problem=self.target
+        self._batched_update(
+            ProblemValidation.objects.filter(problem=self.source),
+            problem=self.target,
         )
 
     def _merge_unique_by_language(self, model, compare_fields):
@@ -338,8 +346,9 @@ class ProblemMerge:
                 source_cp.save()
                 continue
 
-            ContestSubmission.objects.filter(problem=source_cp).update(
-                problem=target_cp
+            self._batched_update(
+                ContestSubmission.objects.filter(problem=source_cp),
+                problem=target_cp,
             )
             self._merge_contest_problem_settings(source_cp, target_cp)
             source_cp.delete()
@@ -393,11 +402,16 @@ class ProblemMerge:
                 problem__in=[self.source, self.target]
             ).values_list("user_id", flat=True)
         )
-        Submission.objects.filter(problem=self.source).update(problem=self.target)
-        BestSubmission.objects.filter(
-            problem__in=[self.source, self.target],
-            user_id__in=self.affected_user_ids,
-        ).delete()
+        self._batched_update(
+            Submission.objects.filter(problem=self.source),
+            problem=self.target,
+        )
+        self._batched_delete(
+            BestSubmission.objects.filter(
+                problem__in=[self.source, self.target],
+                user_id__in=self.affected_user_ids,
+            )
+        )
         for user_id in self.affected_user_ids:
             BestSubmission.recalculate_for_user_problem(user_id, self.target_id)
 
@@ -422,13 +436,20 @@ class ProblemMerge:
                 source_row.save()
 
     def _merge_problem_points_votes(self):
-        ProblemPointsVote.objects.filter(problem=self.source).update(
-            problem=self.target
+        self._batched_update(
+            ProblemPointsVote.objects.filter(problem=self.source),
+            problem=self.target,
         )
 
     def _merge_generic_problem_rows(self):
-        self._generic_queryset(Comment, self.source).update(object_id=self.target_id)
-        self._generic_queryset(Ticket, self.source).update(object_id=self.target_id)
+        self._batched_update(
+            self._generic_queryset(Comment, self.source),
+            object_id=self.target_id,
+        )
+        self._batched_update(
+            self._generic_queryset(Ticket, self.source),
+            object_id=self.target_id,
+        )
         self._merge_pagevotes()
         self._merge_bookmarks()
 
@@ -478,6 +499,32 @@ class ProblemMerge:
         return model.objects.filter(
             content_type=content_type,
             object_id=problem.id,
+        )
+
+    def _batched_update(self, queryset, **fields):
+        model = queryset.model
+        total = 0
+        while True:
+            ids = self._next_batch_ids(queryset)
+            if not ids:
+                return total
+            total += model.objects.filter(pk__in=ids).update(**fields)
+
+    def _batched_delete(self, queryset):
+        model = queryset.model
+        total = 0
+        while True:
+            ids = self._next_batch_ids(queryset)
+            if not ids:
+                return total
+            deleted, _ = model.objects.filter(pk__in=ids).delete()
+            total += deleted
+
+    def _next_batch_ids(self, queryset):
+        return list(
+            queryset.order_by("pk").values_list("pk", flat=True)[
+                :PROBLEM_MERGE_BATCH_SIZE
+            ]
         )
 
     def _delete_source(self):
