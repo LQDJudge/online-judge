@@ -1,6 +1,10 @@
 @use "vars" as *;
 
 #problem-table {
+    th {
+        white-space: nowrap;
+    }
+
     td {
         &.category {
             text-align: left;

@@ -46,10 +46,6 @@
         text-align: center;
         font-weight: 600;
         font-size: 1.1em;
-        line-break: anywhere;
-        overflow-wrap: anywhere;
-        white-space: normal;
-        word-break: break-word;
     }
 
     td {
@@ -59,10 +55,7 @@
         padding: 7px 5px;
         vertical-align: middle;
         text-align: center;
-        line-break: anywhere;
-        overflow-wrap: anywhere;
-        white-space: normal;
-        word-break: break-word;
+        overflow-wrap: break-word;
     }
 }
 

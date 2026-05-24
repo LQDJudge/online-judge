@@ -234,6 +234,11 @@
         margin-top: $space-md;
         table-layout: fixed;
         width: 100%;
+
+        th, td {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
     }
 
     .duplicate-table-details,
