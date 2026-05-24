@@ -1,5 +1,69 @@
 @use "vars" as *;
 
+.internal-table-scroll {
+    box-sizing: border-box;
+    max-width: 100%;
+    overflow-x: auto;
+    width: 100%;
+
+    table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    th,
+    td {
+        overflow-wrap: anywhere;
+        vertical-align: top;
+        word-break: break-word;
+    }
+
+    code {
+        overflow-wrap: anywhere;
+        white-space: normal;
+        word-break: break-word;
+    }
+}
+
+.internal-chat-moderation-page {
+    max-width: 100%;
+    min-width: 0;
+
+    .chat-moderation-controls {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: $space-sm;
+        margin-bottom: $space-md;
+
+        form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: $space-xs;
+        }
+    }
+
+    .chat-moderation-table {
+        .chat-time-column {
+            width: 8.5em;
+        }
+
+        .chat-user-column,
+        .chat-action-column,
+        .chat-source-column {
+            width: 7em;
+        }
+
+        .chat-button-column {
+            width: 6em;
+        }
+    }
+
+    .chat-pagination {
+        margin-top: $space-md;
+    }
+}
+
 .internal-semantic-search-page {
     .semantic-search-tabs {
         display: flex;
@@ -116,5 +180,131 @@
         padding: 1px 5px;
         margin: 1px 2px 1px 0;
         white-space: nowrap;
+    }
+}
+
+.internal-duplicate-problems-page,
+.internal-duplicate-problem-detail-page {
+    max-width: 100%;
+    min-width: 0;
+
+    .duplicate-report-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $space-xs;
+        margin: $space-lg 0;
+    }
+
+    .duplicate-report-tab {
+        background: white;
+        border: $space-hairline solid $border_gray;
+        border-radius: $radius-md;
+        padding: $space-sm $space-lg;
+
+        &.active {
+            background: $background_light_gray;
+            font-weight: bold;
+        }
+    }
+
+    .duplicate-report-controls,
+    .duplicate-review-actions {
+        align-items: flex-end;
+        display: flex;
+        flex-wrap: wrap;
+        gap: $space-md;
+        margin: $space-lg 0;
+
+        label {
+            display: flex;
+            flex-direction: column;
+            font-weight: bold;
+            gap: $space-xs;
+        }
+
+        input {
+            max-width: 9em;
+        }
+    }
+
+    .duplicate-candidates-table,
+    .duplicate-dry-run-table,
+    .duplicate-merge-history-table,
+    .duplicate-verification-table {
+        margin-top: $space-md;
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .duplicate-table-details,
+    .duplicate-error-text {
+        line-break: anywhere;
+        overflow-wrap: anywhere;
+        white-space: normal;
+        word-break: break-all;
+    }
+
+    .duplicate-error-text {
+        display: block;
+    }
+
+    .duplicate-problem-name {
+        color: $widget_black;
+        margin-top: $space-xs;
+        overflow-wrap: anywhere;
+    }
+}
+
+.internal-duplicate-problem-detail-page {
+    .duplicate-review-grid {
+        display: grid;
+        gap: $space-md;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin: $space-lg 0;
+    }
+
+    .duplicate-review-card {
+        background: $background_light_gray;
+        border: $space-hairline solid $border_gray;
+        border-radius: $radius-md;
+        margin-bottom: $space-lg;
+        padding: $space-lg;
+
+        h3 {
+            margin-top: 0;
+        }
+    }
+
+    .duplicate-review-actions {
+        align-items: stretch;
+
+        form {
+            background: $background_gray;
+            border: $space-hairline solid $border_gray;
+            border-radius: $radius-sm;
+            padding: $space-md;
+        }
+    }
+
+    .verification-passed {
+        background: rgba($theme_color, 0.12);
+    }
+
+    .verification-failed {
+        background: rgba($announcement_red, 0.12);
+    }
+
+    .duplicate-merge-card {
+        border-color: $announcement_red;
+    }
+
+    .duplicate-false-positive-form {
+        margin-top: $space-md;
+    }
+
+    @media(max-width: 800px) {
+        .duplicate-review-grid {
+            grid-template-columns: 1fr;
+        }
     }
 }

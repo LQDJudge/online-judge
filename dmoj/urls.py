@@ -1791,6 +1791,21 @@ urlpatterns = [
                     name="internal_semantic_search_similar_api",
                 ),
                 re_path(
+                    r"^problem_duplicates$",
+                    internal.InternalProblemDuplicates.as_view(),
+                    name="internal_problem_duplicates",
+                ),
+                re_path(
+                    r"^problem_duplicates/detail$",
+                    internal.InternalProblemDuplicateDetail.as_view(),
+                    name="internal_problem_duplicate_detail",
+                ),
+                re_path(
+                    r"^problem_duplicates/status_api$",
+                    internal.InternalProblemDuplicateStatusApi.as_view(),
+                    name="internal_problem_duplicate_status_api",
+                ),
+                re_path(
                     r"^problem_queue_mark_private$",
                     internal.mark_problem_private,
                     name="internal_mark_problem_private",

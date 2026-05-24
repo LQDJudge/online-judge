@@ -1,0 +1,243 @@
+{% extends "two-column-content.html" %}
+
+{% block js_media %}
+  {% compress js %}
+    <script type="text/javascript">
+      function switchDiffTab(btn, uid, mode) {
+        var tabs = btn.parentElement.querySelectorAll('.diff-tab');
+        for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+        btn.classList.add('active');
+        document.getElementById(uid + '-diff').style.display = mode === 'diff' ? '' : 'none';
+        document.getElementById(uid + '-old').style.display = mode === 'old' ? '' : 'none';
+        document.getElementById(uid + '-new').style.display = mode === 'new' ? '' : 'none';
+      }
+
+      $(function () {
+        var verificationIds = '{{ verification_ids }}';
+        if (!verificationIds) {
+          return;
+        }
+
+        function renderStatus(submission) {
+          var $row = $('#verification-' + submission.id);
+          $row.find('.verification-status').text(submission.status);
+          $row.find('.verification-result').text(submission.result || '');
+          $row.find('.verification-points').text(
+            submission.case_points + ' / ' + submission.case_total
+          );
+          $row.toggleClass('verification-passed', !!submission.passed);
+          if (submission.status === 'D' && submission.result !== 'AC') {
+            $row.addClass('verification-failed');
+          }
+        }
+
+        function pollStatus() {
+          $.ajax({
+            url: '{{ url('internal_problem_duplicate_status_api') }}',
+            method: 'GET',
+            data: {ids: verificationIds},
+            success: function (response) {
+              var stillRunning = false;
+              (response.submissions || []).forEach(function (submission) {
+                renderStatus(submission);
+                if (submission.status === 'QU' || submission.status === 'P' || submission.status === 'G') {
+                  stillRunning = true;
+                }
+              });
+              if (stillRunning) {
+                window.setTimeout(pollStatus, 3000);
+              }
+            }
+          });
+        }
+
+        pollStatus();
+      });
+    </script>
+  {% endcompress %}
+{% endblock %}
+
+{% block left_sidebar %}
+  {% include "internal/left-sidebar.html" %}
+{% endblock %}
+
+{% block middle_content %}
+  <div class="internal-duplicate-problem-detail-page">
+    <p>
+      <a href="{{ url('internal_problem_duplicates') }}">&larr; {{ _('Back to duplicate report') }}</a>
+    </p>
+
+    <h2>{{ _('Duplicate Problem Review') }}</h2>
+
+    <div class="duplicate-review-grid">
+      <section class="duplicate-review-card">
+        <h3>{{ _('Merge source') }}</h3>
+        <p>
+          <a href="{{ source.get_absolute_url() }}">{{ source.code }}</a>
+          <span class="gray">{{ _('ID:') }} {{ source.id }}</span>
+        </p>
+        <p>{{ source.name }}</p>
+        <p class="gray">{{ _('This larger-ID problem will be deleted after merge.') }}</p>
+      </section>
+
+      <section class="duplicate-review-card">
+        <h3>{{ _('Merge target') }}</h3>
+        <p>
+          <a href="{{ target.get_absolute_url() }}">{{ target.code }}</a>
+          <span class="gray">{{ _('ID:') }} {{ target.id }}</span>
+        </p>
+        <p>{{ target.name }}</p>
+        <p class="gray">{{ _('This smaller-ID problem will remain canonical.') }}</p>
+      </section>
+    </div>
+
+    <section class="duplicate-review-card">
+      <h3>{{ _('Merge dry run') }}</h3>
+      {% if merge_report.error %}
+        <p class="red">{{ merge_report.error }}</p>
+      {% else %}
+        <table class="table duplicate-dry-run-table">
+          <thead>
+            <tr>
+              <th>{{ _('Item') }}</th>
+              <th>{{ source.code }}</th>
+              <th>{{ target.code }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for key, value in merge_report.counts.source.items() %}
+              <tr>
+                <td>{{ key }}</td>
+                <td>{{ value }}</td>
+                <td>{{ merge_report.counts.target[key] }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if merge_report.conflicts.contest_keys %}
+          <p class="red">
+            {{ _('Contest conflicts:') }} {{ merge_report.conflicts.contest_keys|join(', ') }}
+          </p>
+        {% endif %}
+        {% if merge_report.conflicts.course_lesson_ids %}
+          <p class="red">
+            {{ _('Course lesson conflicts:') }} {{ merge_report.conflicts.course_lesson_ids|join(', ') }}
+          </p>
+        {% endif %}
+      {% endif %}
+    </section>
+
+    <section class="duplicate-review-card">
+      <h3>{{ _('Check equivalence') }}</h3>
+      <p class="gray">
+        {{ _('Queue accepted submissions from one problem against the other problem. Passing submissions are evidence that the test data is compatible.') }}
+      </p>
+
+      <div class="duplicate-review-actions">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="verify">
+          <input type="hidden" name="source" value="{{ source.code }}">
+          <input type="hidden" name="target" value="{{ target.code }}">
+          <input type="hidden" name="verify_source" value="{{ target.code }}">
+          <input type="hidden" name="verify_target" value="{{ source.code }}">
+          <label>
+            {{ _('Submissions') }}
+            <input type="number" name="count" min="1" max="5" value="3">
+          </label>
+          <button type="submit" class="action-btn">
+            {{ _('Submit target AC to source') }}
+          </button>
+          <div class="gray">{{ target.code }} &rarr; {{ source.code }}</div>
+        </form>
+
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="verify">
+          <input type="hidden" name="source" value="{{ source.code }}">
+          <input type="hidden" name="target" value="{{ target.code }}">
+          <input type="hidden" name="verify_source" value="{{ source.code }}">
+          <input type="hidden" name="verify_target" value="{{ target.code }}">
+          <label>
+            {{ _('Submissions') }}
+            <input type="number" name="count" min="1" max="5" value="3">
+          </label>
+          <button type="submit" class="action-btn">
+            {{ _('Submit source AC to target') }}
+          </button>
+          <div class="gray">{{ source.code }} &rarr; {{ target.code }}</div>
+        </form>
+      </div>
+
+      {% if verification_submissions %}
+        <h4>{{ _('Verification submissions') }}</h4>
+        <table class="table duplicate-verification-table">
+          <thead>
+            <tr>
+              <th>{{ _('Submission') }}</th>
+              <th>{{ _('Problem') }}</th>
+              <th>{{ _('Language') }}</th>
+              <th>{{ _('Status') }}</th>
+              <th>{{ _('Result') }}</th>
+              <th>{{ _('Points') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for submission in verification_submissions %}
+              <tr id="verification-{{ submission.id }}">
+                <td><a href="{{ url('submission_status', submission.id) }}">{{ submission.id }}</a></td>
+                <td>{{ submission.problem.code }}</td>
+                <td>{{ submission.language.key }}</td>
+                <td class="verification-status">{{ submission.status }}</td>
+                <td class="verification-result">{{ submission.result or '' }}</td>
+                <td class="verification-points">{{ submission.case_points }} / {{ submission.case_total }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </section>
+
+    <section class="duplicate-review-card problem-log">
+      <h3>{{ _('Statement diff') }}</h3>
+      <p class="gray">
+        {{ _('Diff is shown as target statement to source statement, using the same view as problem history.') }}
+      </p>
+      <div class="diff-tabs">
+        <button type="button" class="diff-tab active" onclick="switchDiffTab(this, 'statement-diff', 'diff')">{{ _('Diff') }}</button>
+        <button type="button" class="diff-tab" onclick="switchDiffTab(this, 'statement-diff', 'old')">{{ _('Target') }}</button>
+        <button type="button" class="diff-tab" onclick="switchDiffTab(this, 'statement-diff', 'new')">{{ _('Source') }}</button>
+      </div>
+      <pre class="diff-block" id="statement-diff-diff">{% for line in statement_diff.diff_lines %}<span class="{% if line.startswith('@@') %}diff-hunk{% elif line.startswith('+') %}diff-add{% elif line.startswith('-') %}diff-del{% else %}diff-ctx{% endif %}">{{ line }}</span>
+{% endfor %}</pre>
+      <pre class="diff-block" id="statement-diff-old" style="display:none">{{ statement_diff.old or '—' }}</pre>
+      <pre class="diff-block" id="statement-diff-new" style="display:none">{{ statement_diff.new or '—' }}</pre>
+    </section>
+
+    <section class="duplicate-review-card duplicate-merge-card">
+      <h3>{{ _('Decision') }}</h3>
+      <p class="red">
+        {{ _('This hard merge moves submissions, contest references, course references, metadata, comments, tickets, votes, and related data from the source problem to the target problem, then deletes the source problem.') }}
+      </p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="merge">
+        <input type="hidden" name="source" value="{{ source.code }}">
+        <input type="hidden" name="target" value="{{ target.code }}">
+        <label>
+          {{ _('Type MERGE to confirm') }}
+          <input type="text" name="confirm" autocomplete="off">
+        </label>
+        <button type="submit" class="action-btn">{{ _('Merge source into target') }}</button>
+      </form>
+
+      <form method="post" class="duplicate-false-positive-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="false_positive">
+        <input type="hidden" name="source" value="{{ source.code }}">
+        <input type="hidden" name="target" value="{{ target.code }}">
+        <button type="submit" class="action-btn">{{ _('Mark as not duplicated') }}</button>
+      </form>
+    </section>
+  </div>
+{% endblock %}

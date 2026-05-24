@@ -2,6 +2,7 @@
   {{ make_tab_item('problem_queue', 'fa fa-list', url('internal_problem_queue'), _('Problem Queue')) }}
   {% if USE_ML_ENABLED() %}
     {{ make_tab_item('semantic_search', 'fa fa-search', url('internal_semantic_search'), _('Semantic Search')) }}
+    {{ make_tab_item('problem_duplicates', 'fa fa-copy', url('internal_problem_duplicates'), _('Duplicate Problems')) }}
   {% endif %}
   {{ make_tab_item('chat_moderation', 'fa fa-comments', url('internal_chat_moderation'), _('Chat Moderation')) }}
   {{ make_tab_item('request_time', 'fa fa-angle-right', url('internal_request_time'), _('Average speed')) }}

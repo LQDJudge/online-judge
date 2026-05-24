@@ -1,0 +1,212 @@
+{% extends "two-column-content.html" %}
+
+{% block left_sidebar %}
+  {% include "internal/left-sidebar.html" %}
+{% endblock %}
+
+{% block middle_content %}
+  <div class="internal-duplicate-problems-page">
+    <h2>{{ _('Duplicate Problems') }}</h2>
+    <p class="gray">
+      {{ _('Review likely duplicate public problems, verify them by cross-submitting accepted solutions, then merge the larger problem ID into the smaller problem ID.') }}
+    </p>
+
+    <div class="duplicate-report-tabs">
+      <a class="duplicate-report-tab{% if current_tab == 'report' %} active{% endif %}" href="{{ url('internal_problem_duplicates') }}">
+        {{ _('Report') }}
+      </a>
+      <a class="duplicate-report-tab{% if current_tab == 'history' %} active{% endif %}" href="{{ url('internal_problem_duplicates') }}?tab=history">
+        {{ _('History') }}
+      </a>
+      <a class="duplicate-report-tab{% if current_tab == 'pending_merges' %} active{% endif %}" href="{{ url('internal_problem_duplicates') }}?tab=pending_merges">
+        {{ _('Pending merges') }}
+      </a>
+      <a class="duplicate-report-tab{% if current_tab == 'done_merges' %} active{% endif %}" href="{{ url('internal_problem_duplicates') }}?tab=done_merges">
+        {{ _('Done merges') }}
+      </a>
+    </div>
+
+    {% if current_tab == 'pending_merges' or current_tab == 'done_merges' %}
+      {% set merge_rows = pending_merges if current_tab == 'pending_merges' else done_merges %}
+      {% if not merge_rows %}
+        <p class="gray">{{ _('No merges in this tab.') }}</p>
+      {% else %}
+        <table class="table duplicate-merge-history-table">
+          <thead>
+            <tr>
+              <th>{{ _('Requested at') }}</th>
+              <th>{{ _('Merged at') }}</th>
+              <th>{{ _('Merged by') }}</th>
+              <th>{{ _('Status') }}</th>
+              <th>{{ _('Source') }}</th>
+              <th>{{ _('Target') }}</th>
+              <th>{{ _('Details') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in merge_rows %}
+              <tr>
+                <td title="{{ entry.requested_at }}">{{ entry.requested_at|date("H:i d/m") }}</td>
+                <td title="{{ entry.merged_at or '' }}">{{ entry.merged_at|date("H:i d/m") if entry.merged_at else '' }}</td>
+                <td>{{ entry.merged_by.username if entry.merged_by else '' }}</td>
+                <td class="duplicate-table-details">
+                  {{ entry.get_status_display() }}
+                  {% if entry.error %}
+                    <div class="red duplicate-error-text">{{ entry.error }}</div>
+                  {% endif %}
+                </td>
+                <td>
+                  <code>{{ entry.source_code }}</code>
+                  <div class="gray">{{ _('ID:') }} {{ entry.source_problem_id_snapshot }}</div>
+                </td>
+                <td>
+                  <code>{{ entry.target_code }}</code>
+                  <div class="gray">{{ _('ID:') }} {{ entry.target_problem_id_snapshot }}</div>
+                </td>
+                <td class="duplicate-table-details">
+                  {% if entry.task_id %}
+                    {{ _('Task:') }}
+                    <code title="{{ entry.task_id }}">{{ entry.task_id[:8] }}</code>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    {% elif current_tab == 'history' %}
+      {% if not merge_history %}
+        <p class="gray">{{ _('No merge history yet.') }}</p>
+      {% else %}
+        <table class="table duplicate-merge-history-table">
+          <thead>
+            <tr>
+              <th>{{ _('Merged at') }}</th>
+              <th>{{ _('Actor') }}</th>
+              <th>{{ _('Action') }}</th>
+              <th>{{ _('Source') }}</th>
+              <th>{{ _('Target') }}</th>
+              <th>{{ _('Details') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in merge_history %}
+              <tr>
+                <td title="{{ entry.created_at }}">{{ entry.created_at|date("H:i d/m") }}</td>
+                <td>{{ entry.actor.username if entry.actor else '' }}</td>
+                <td>{{ entry.get_action_display() }}</td>
+                <td>
+                  <code>{{ entry.source_code }}</code>
+                  <div class="gray">{{ _('ID:') }} {{ entry.source_problem_id_snapshot }}</div>
+                </td>
+                <td>
+                  <code>{{ entry.target_code }}</code>
+                  <div class="gray">{{ _('ID:') }} {{ entry.target_problem_id_snapshot }}</div>
+                </td>
+                <td class="duplicate-table-details">
+                  {% if entry.details.error %}
+                    <span class="red duplicate-error-text">{{ entry.details.error }}</span>
+                  {% elif entry.details.updated_candidates %}
+                    {{ _('Updated candidates:') }} {{ entry.details.updated_candidates }}
+                  {% elif entry.details.counts %}
+                    {{ _('Moved submissions:') }} {{ entry.details.counts.source.submissions }}
+                    &rarr;
+                    {{ entry.details.counts.target.submissions }}
+                  {% elif entry.details.task_id %}
+                    {{ _('Task:') }}
+                    <code title="{{ entry.details.task_id }}">{{ entry.details.task_id[:8] }}</code>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    {% else %}
+
+      <form method="post" class="duplicate-report-controls">
+        {% csrf_token %}
+        <label>
+          {{ _('Minimum score') }}
+          <input type="number" name="min_score" min="0.5" max="1" step="0.001" value="{{ min_score }}">
+        </label>
+        <label>
+          {{ _('Limit') }}
+          <input type="number" name="limit" min="1" max="500" value="{{ limit }}">
+        </label>
+        <label>
+          {{ _('Neighbors') }}
+          <input type="number" name="neighbors" min="1" max="50" value="{{ neighbors }}">
+        </label>
+        <button type="submit" class="action-btn" {% if refresh_pending %}disabled{% endif %}>
+          {% if refresh_pending %}
+            {{ _('Refresh pending') }}
+          {% else %}
+            {{ _('Refresh report') }}
+          {% endif %}
+        </button>
+      </form>
+
+      {% if refresh_state.status == 'PENDING' %}
+        <p class="gray">
+          {{ _('A refresh task is running. This page shows the latest cached report until the task finishes.') }}
+        </p>
+      {% elif refresh_state.status == 'SUCCESS' %}
+        <p class="green">
+          {{ _('Last refresh completed with candidates:') }} {{ refresh_state.count }}
+        </p>
+      {% elif refresh_state.status == 'FAILED' %}
+        <p class="red">
+          {{ _('Last refresh failed:') }} {{ refresh_state.error }}
+        </p>
+      {% endif %}
+
+      {% if error %}
+        <p class="red">{{ error }}</p>
+      {% elif not has_cached_report %}
+        <p class="gray">{{ _('No cached duplicate report yet. Click refresh report to generate one in the background.') }}</p>
+      {% elif not candidates %}
+        <p class="gray">{{ _('The cached report has no duplicate candidates. Try refreshing the report or lowering the minimum score.') }}</p>
+      {% else %}
+        <table class="table duplicate-candidates-table">
+          <thead>
+            <tr>
+              <th>{{ _('Score') }}</th>
+              <th>{{ _('Merge source') }}</th>
+              <th>{{ _('Merge target') }}</th>
+              <th>{{ _('Submissions') }}</th>
+              <th>{{ _('Action') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for candidate in candidates %}
+              <tr>
+                <td>{{ '%.4f' % candidate.score }}</td>
+                <td>
+                  <a href="{{ candidate.source.url }}">{{ candidate.source.code }}</a>
+                  <div class="duplicate-problem-name">{{ candidate.source.name }}</div>
+                  <div class="gray">{{ _('ID:') }} {{ candidate.source.id }}</div>
+                </td>
+                <td>
+                  <a href="{{ candidate.target.url }}">{{ candidate.target.code }}</a>
+                  <div class="duplicate-problem-name">{{ candidate.target.name }}</div>
+                  <div class="gray">{{ _('ID:') }} {{ candidate.target.id }}</div>
+                </td>
+                <td>
+                  {{ candidate.source.submission_count }}
+                  &rarr;
+                  {{ candidate.target.submission_count }}
+                </td>
+                <td>
+                  <a class="action-btn" href="{{ url('internal_problem_duplicate_detail') }}?source={{ candidate.source.code }}&target={{ candidate.target.code }}">
+                    {{ _('Review') }}
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endblock %}

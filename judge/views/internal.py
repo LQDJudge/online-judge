@@ -1,32 +1,51 @@
-import logging
+import difflib
 import json
+import logging
 
 from django.conf import settings
-from django.views.generic import ListView, TemplateView, View
-from django.utils.translation import gettext as _, get_language
+from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.http import Http404, HttpResponseForbidden, JsonResponse
+from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils.translation import gettext as _, get_language
 from django.views.decorators.http import require_POST
+from django.views.generic import ListView, TemplateView, View
 
-from judge.utils.strings import safe_float_or_none
-from judge.models.problem import get_distinct_problem_points
-from judge.models import Profile
-
-from judge.utils.diggpaginator import DiggPaginator
-from judge.models import Problem, ProblemType
-from judge.models.public_request import PublicRequest
-from judge.models.notification import Notification, NotificationCategory
-from judge.tasks import rescore_problem
-from judge.tasks.llm import tag_problem_task, improve_markdown_task
+from chat_box.models import ChatModerationLog
+from judge.ml.problem_duplicates import (
+    DuplicateProblemMergePending,
+    DuplicateProblemReportOptions,
+    DuplicateProblemReportRefreshPending,
+    create_pending_duplicate_problem_merge,
+    get_cached_duplicate_problem_candidates,
+    get_done_duplicate_problem_merges,
+    get_duplicate_problem_merge_history,
+    get_duplicate_problem_report_refresh_state,
+    get_pending_duplicate_problem_merges,
+    mark_duplicate_candidate_false_positive,
+    schedule_duplicate_problem_report_refresh,
+)
 from judge.ml.semantic_search import (
     SemanticSearchUnavailable,
     clamp_limit,
     search_problems,
     similar_problems,
 )
-from chat_box.models import ChatModerationLog
+from judge.models import Problem, ProblemType, Profile, Submission
+from judge.models.notification import Notification, NotificationCategory
+from judge.models.problem import get_distinct_problem_points
+from judge.models.public_request import PublicRequest
+from judge.tasks import rescore_problem
+from judge.tasks.llm import improve_markdown_task, tag_problem_task
+from judge.utils.diggpaginator import DiggPaginator
+from judge.utils.problem_equivalence import (
+    ProblemEquivalenceError,
+    ProblemEquivalenceVerifier,
+)
+from judge.utils.problem_merge import ProblemMerge, ProblemMergeError
+from judge.utils.strings import safe_float_or_none
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +131,348 @@ class InternalSimilarProblemsApi(InternalView, View):
         return JsonResponse(
             {"problem": problem.code, "limit": limit, "results": results}
         )
+
+
+class InternalProblemDuplicates(InternalView, TemplateView):
+    title = _("Duplicate Problems")
+    template_name = "internal/problem_duplicates.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not getattr(settings, "USE_ML", False):
+            raise Http404()
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        if request.POST.get("action") == "false_positive":
+            source_code = request.POST.get("source")
+            target_code = request.POST.get("target")
+            updated = mark_duplicate_candidate_false_positive(
+                source_code,
+                target_code,
+                user=request.user,
+            )
+            if updated:
+                messages.success(
+                    request,
+                    _("Marked %(source)s and %(target)s as not duplicated.")
+                    % {"source": source_code, "target": target_code},
+                )
+            else:
+                messages.warning(
+                    request,
+                    _(
+                        "No open duplicate candidate was found for %(source)s and %(target)s."
+                    )
+                    % {"source": source_code, "target": target_code},
+                )
+            return redirect("internal_problem_duplicates")
+
+        options = self._options_from_request(request.POST)
+        try:
+            schedule_duplicate_problem_report_refresh(
+                options, requested_by=request.user
+            )
+        except SemanticSearchUnavailable as exc:
+            messages.error(request, str(exc))
+        except DuplicateProblemReportRefreshPending:
+            messages.error(request, _("A duplicate report refresh is already pending."))
+        else:
+            messages.success(request, _("Duplicate report refresh queued."))
+        return redirect("internal_problem_duplicates")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        options = self._options_from_request(self.request.GET)
+        current_tab = self.request.GET.get("tab", "report")
+        candidates = get_cached_duplicate_problem_candidates(options)
+        refresh_state = get_duplicate_problem_report_refresh_state()
+        error = None
+        if not getattr(settings, "USE_ML", False):
+            error = _("USE_ML is disabled")
+        context["page_type"] = "problem_duplicates"
+        context["title"] = self.title
+        context["current_tab"] = current_tab
+        context["candidates"] = candidates or []
+        context["has_cached_report"] = candidates is not None
+        context["merge_history"] = get_duplicate_problem_merge_history()
+        context["pending_merges"] = get_pending_duplicate_problem_merges()
+        context["done_merges"] = get_done_duplicate_problem_merges()
+        context["refresh_state"] = refresh_state
+        context["refresh_pending"] = refresh_state.get("status") == "PENDING"
+        context["error"] = error
+        context["min_score"] = options.min_score
+        context["limit"] = options.limit
+        context["neighbors"] = options.neighbors
+        return context
+
+    def _options_from_request(self, params):
+        return DuplicateProblemReportOptions(
+            min_score=self._safe_float(params.get("min_score"), 0.97, 0.5, 1.0),
+            limit=self._safe_int(params.get("limit"), 100, 1, 500),
+            neighbors=self._safe_int(params.get("neighbors"), 10, 1, 50),
+        )
+
+    def _safe_int(self, value, default, min_value, max_value):
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            value = default
+        return max(min_value, min(value, max_value))
+
+    def _safe_float(self, value, default, min_value, max_value):
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            value = default
+        return max(min_value, min(value, max_value))
+
+
+class InternalProblemDuplicateDetail(InternalView, TemplateView):
+    title = _("Duplicate Problem Review")
+    template_name = "internal/problem_duplicate_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        source, target = self._get_merge_pair()
+        verification_ids = self._verification_ids_from_request()
+        context["page_type"] = "problem_duplicates"
+        context["title"] = self.title
+        context["source"] = source
+        context["target"] = target
+        context["merge_report"] = self._merge_dry_run(source, target)
+        context["statement_diff"] = self._statement_diff(source, target)
+        context["source_ac_submissions"] = self._accepted_submissions(source)
+        context["target_ac_submissions"] = self._accepted_submissions(target)
+        context["verification_submissions"] = self._verification_submissions(
+            verification_ids
+        )
+        context["verification_ids"] = ",".join(map(str, verification_ids))
+        return context
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get("action")
+        source, target = self._get_merge_pair()
+        if action == "verify":
+            return self._post_verify(request, source, target)
+        if action == "merge":
+            return self._post_merge(request, source, target)
+        if action == "false_positive":
+            return self._post_false_positive(request, source, target)
+        raise Http404()
+
+    def _get_merge_pair(self):
+        source_code = self.request.GET.get("source") or self.request.POST.get("source")
+        target_code = self.request.GET.get("target") or self.request.POST.get("target")
+        if not source_code or not target_code:
+            raise Http404()
+        try:
+            first = Problem.objects.get(code=source_code)
+            second = Problem.objects.get(code=target_code)
+        except Problem.DoesNotExist as exc:
+            raise Http404() from exc
+        if first.id == second.id:
+            raise Http404()
+        return (first, second) if first.id > second.id else (second, first)
+
+    def _merge_dry_run(self, source, target):
+        try:
+            return ProblemMerge(source.code, target.code).run()
+        except ProblemMergeError as exc:
+            return {"error": str(exc)}
+
+    def _statement_diff(self, source, target):
+        source_text = source.description or ""
+        target_text = target.description or ""
+        diff_lines = list(
+            difflib.unified_diff(
+                target_text.splitlines(),
+                source_text.splitlines(),
+                lineterm="",
+                n=2,
+            )
+        )
+        return {
+            "old": target_text,
+            "new": source_text,
+            "diff_lines": [
+                line
+                for line in diff_lines
+                if not line.startswith("---") and not line.startswith("+++")
+            ],
+        }
+
+    def _accepted_submissions(self, problem, limit=10):
+        return (
+            Submission.objects.filter(
+                problem=problem,
+                status="D",
+                result="AC",
+                source__isnull=False,
+            )
+            .select_related("user__user", "language", "source")
+            .order_by("-case_points", "-points", "-date", "-id")[:limit]
+        )
+
+    def _verification_ids_from_request(self):
+        raw_ids = self.request.GET.get("verification_ids", "")
+        ids = []
+        for raw_id in raw_ids.split(","):
+            try:
+                ids.append(int(raw_id))
+            except ValueError:
+                continue
+        return ids[:20]
+
+    def _verification_submissions(self, ids):
+        if not ids:
+            return []
+        submissions = Submission.objects.filter(id__in=ids).select_related(
+            "problem", "user__user", "language"
+        )
+        submission_map = {submission.id: submission for submission in submissions}
+        return [
+            submission_map[submission_id]
+            for submission_id in ids
+            if submission_id in submission_map
+        ]
+
+    def _post_verify(self, request, source, target):
+        verify_source_code = request.POST.get("verify_source")
+        verify_target_code = request.POST.get("verify_target")
+        count = self._safe_int(request.POST.get("count"), 3, 1, 5)
+        try:
+            verify_source = Problem.objects.get(code=verify_source_code)
+            verify_target = Problem.objects.get(code=verify_target_code)
+        except Problem.DoesNotExist:
+            messages.error(request, _("Problem not found."))
+            return self._redirect_to_detail(source, target)
+
+        submissions = self._accepted_submissions(verify_source, limit=count)
+        if not submissions:
+            messages.error(
+                request,
+                _("No accepted source submissions with stored source code were found."),
+            )
+            return self._redirect_to_detail(source, target)
+
+        verification_ids = []
+        for submission in submissions:
+            try:
+                report = ProblemEquivalenceVerifier(
+                    verify_source.code,
+                    verify_target.code,
+                    source_submission_id=submission.id,
+                    apply=True,
+                ).run()
+            except ProblemEquivalenceError as exc:
+                messages.error(request, str(exc))
+                continue
+            verification_ids.append(report["verification_submission_id"])
+
+        if verification_ids:
+            messages.success(
+                request,
+                _("Queued %(count)s verification submissions.")
+                % {"count": len(verification_ids)},
+            )
+        return self._redirect_to_detail(source, target, verification_ids)
+
+    def _post_merge(self, request, source, target):
+        if request.POST.get("confirm") != "MERGE":
+            messages.error(request, _("Type MERGE to confirm the merge."))
+            return self._redirect_to_detail(source, target)
+        import uuid
+        from judge.tasks.semantic_search import merge_duplicate_problem
+
+        task_id = str(uuid.uuid4())
+        try:
+            merge = create_pending_duplicate_problem_merge(
+                source,
+                target,
+                user=request.user,
+                task_id=task_id,
+            )
+        except DuplicateProblemMergePending:
+            messages.error(request, _("A merge for these problems is already pending."))
+            return redirect(
+                "%s?tab=pending_merges" % reverse("internal_problem_duplicates")
+            )
+
+        merge_duplicate_problem.apply_async((merge.id,), task_id=task_id)
+        messages.success(
+            request,
+            _("Merge queued for %(source)s into %(target)s.")
+            % {"source": source.code, "target": target.code},
+        )
+        return redirect("internal_problem_duplicates")
+
+    def _post_false_positive(self, request, source, target):
+        mark_duplicate_candidate_false_positive(
+            source.code,
+            target.code,
+            user=request.user,
+        )
+        messages.success(
+            request,
+            _("Marked %(source)s and %(target)s as not duplicated.")
+            % {"source": source.code, "target": target.code},
+        )
+        return redirect("internal_problem_duplicates")
+
+    def _redirect_to_detail(self, source, target, verification_ids=None):
+        url = "%s?source=%s&target=%s" % (
+            reverse("internal_problem_duplicate_detail"),
+            source.code,
+            target.code,
+        )
+        if verification_ids:
+            url += "&verification_ids=%s" % ",".join(map(str, verification_ids))
+        return redirect(url)
+
+    def _safe_int(self, value, default, min_value, max_value):
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            value = default
+        return max(min_value, min(value, max_value))
+
+
+class InternalProblemDuplicateStatusApi(InternalView, View):
+    def get(self, request, *args, **kwargs):
+        ids = []
+        for raw_id in request.GET.get("ids", "").split(","):
+            try:
+                ids.append(int(raw_id))
+            except ValueError:
+                continue
+        submissions = Submission.objects.filter(id__in=ids).select_related(
+            "problem", "language"
+        )
+        submission_map = {submission.id: submission for submission in submissions}
+        results = []
+        for submission_id in ids:
+            submission = submission_map.get(submission_id)
+            if not submission:
+                continue
+            results.append(
+                {
+                    "id": submission.id,
+                    "problem": submission.problem.code,
+                    "language": submission.language.key,
+                    "status": submission.status,
+                    "result": submission.result,
+                    "points": submission.points,
+                    "case_points": submission.case_points,
+                    "case_total": submission.case_total,
+                    "passed": submission.status == "D"
+                    and submission.result == "AC"
+                    and (
+                        not submission.case_total
+                        or submission.case_points == submission.case_total
+                    ),
+                }
+            )
+        return JsonResponse({"submissions": results})
 
 
 class InternalProblemQueue(InternalView, ListView):

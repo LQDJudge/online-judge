@@ -69,7 +69,9 @@ Actions:
 - "keep": Message is acceptable. Keep it visible.
 
 HIDE single messages for isolated violations. MUTE only for severe or repeated abuse.
-When in doubt, KEEP the message."""
+When in doubt, KEEP the message.
+
+IMAGES: Messages containing images (shown as [imageN] with an attached file) are normal in this community — users share screenshots, problem images, memes, etc. KEEP image messages unless the image is clearly harmful (nudity, gore, hate symbols). If you cannot see an image or it failed to load, always KEEP the message."""
 
 CHAT_USER_PROMPT = """Chat lobby messages to review:
 {messages}"""
@@ -249,18 +251,24 @@ class Command(BaseCommand):
 
         counter is a mutable list [n] shared across items in a batch so labels
         are unique within the full prompt.
+        If upload fails the original markdown is kept so the LLM knows an image
+        was present but couldn't be loaded (preventing false hide/mute decisions).
         Returns (labeled_content, attachments).
         """
         attachments = []
 
         def replace(match):
+            original = match.group(0)
             url = match.group(1)
             counter[0] += 1
             label = f"[image{counter[0]}]"
             attachment = self.llm_service.upload_file(url)
             if attachment:
                 attachments.append(attachment)
-            return label
+                return label
+            # Upload failed — keep original markdown so the LLM sees that
+            # an image was shared and defaults to KEEP per the system prompt.
+            return original
 
         labeled = re.sub(r"!\[[^\]]*\]\(([^)]+)\)", replace, content)
         return labeled, attachments
