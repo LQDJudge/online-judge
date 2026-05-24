@@ -393,6 +393,7 @@ def create_pending_duplicate_problem_merge(
     user=None,
     task_id="",
     force=False,
+    dry_run=None,
 ):
     sync_pending_duplicate_problem_merges()
     existing = ProblemDuplicateMergeHistory.objects.filter(
@@ -406,13 +407,7 @@ def create_pending_duplicate_problem_merge(
     if existing:
         raise DuplicateProblemMergePending("duplicate problem merge is pending")
 
-    dry_run = None
-    try:
-        from judge.utils.problem_merge import ProblemMerge
-
-        dry_run = ProblemMerge(source.code, target.code, force=force).run()
-    except Exception:
-        dry_run = {}
+    dry_run = dry_run or {}
     merge = ProblemDuplicateMergeHistory.objects.create(
         source_problem_id=source.id,
         target_problem_id=target.id,

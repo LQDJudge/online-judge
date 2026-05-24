@@ -45,7 +45,7 @@ from judge.utils.problem_equivalence import (
     ProblemEquivalenceError,
     ProblemEquivalenceVerifier,
 )
-from judge.utils.problem_merge import ProblemMerge, ProblemMergeError
+from judge.utils.problem_merge import ProblemMerge
 from judge.utils.strings import safe_float_or_none
 
 logger = logging.getLogger(__name__)
@@ -287,7 +287,14 @@ class InternalProblemDuplicateDetail(InternalView, TemplateView):
                 target.code,
                 force=source.id < target.id,
             ).run()
-        except ProblemMergeError as exc:
+        except Exception as exc:
+            logger.warning(
+                "Failed to build duplicate merge dry-run for %s -> %s: %s",
+                source.code,
+                target.code,
+                exc,
+                exc_info=True,
+            )
             return {"error": str(exc)}
 
     def _is_reverse_direction(self):

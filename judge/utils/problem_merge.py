@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from django.db import transaction
+from django.db import connection, transaction
 
 from judge.ml.problem_duplicates import (
     update_duplicate_problem_report_cache_after_merge,
@@ -17,6 +17,7 @@ from judge.models import (
     ContestProblem,
     ContestSubmission,
     CourseLessonProblem,
+    CourseRole,
     LanguageLimit,
     LanguageTemplate,
     PageVote,
@@ -39,7 +40,7 @@ from judge.tasks.semantic_search import index_problem_semantic_embedding
 
 logger = logging.getLogger(__name__)
 
-PROBLEM_MERGE_BATCH_SIZE = 1000
+PROBLEM_MERGE_BATCH_SIZE = 500
 
 
 class ProblemMergeError(Exception):
@@ -58,41 +59,64 @@ class ProblemMerge:
     affected_user_ids: set = field(default_factory=set)
 
     def run(self):
-        with transaction.atomic():
-            self.source = Problem.objects.select_for_update().get(code=self.source_code)
-            self.target = Problem.objects.select_for_update().get(code=self.target_code)
-            self._source_id = self.source.id
-            self._target_id = self.target.id
-            if self.source_id == self.target_id:
-                raise ProblemMergeError("source and target must be different problems")
-            if self.source_id < self.target_id and not self.force:
-                raise ProblemMergeError(
-                    "merge direction must move the larger id into the smaller id; "
-                    "use --source %s --target %s or pass --force to override"
-                    % (self.target.code, self.source.code)
-                )
+        self._load_problem_pair(lock=self.apply)
+        self.report = self._build_report()
+        if not self.apply:
+            return self.report
 
-            self.report = self._build_report()
-            if not self.apply:
-                return self.report
+        for step in (
+            self._merge_m2m,
+            self._merge_source_fields_when_target_blank,
+            self._merge_singleton_problem_rows,
+            self._merge_problem_test_cases,
+            self._merge_problem_owned_rows,
+            self._merge_problem_validations,
+            self._merge_contest_problems,
+            self._merge_course_lesson_problems,
+            self._merge_submissions_and_best_submissions,
+            self._merge_contest_moss,
+            self._merge_problem_points_votes,
+            self._merge_generic_problem_rows,
+            self._clear_source_m2m,
+            self._delete_source,
+        ):
+            logger.info(
+                "Merging duplicate problem %s into %s: %s",
+                self.source_code,
+                self.target_code,
+                step.__name__,
+            )
+            step()
 
-            self._merge_m2m()
-            self._merge_source_fields_when_target_blank()
-            self._merge_singleton_problem_rows()
-            self._merge_problem_test_cases()
-            self._merge_problem_owned_rows()
-            self._merge_problem_validations()
-            self._merge_contest_problems()
-            self._merge_course_lesson_problems()
-            self._merge_submissions_and_best_submissions()
-            self._merge_contest_moss()
-            self._merge_problem_points_votes()
-            self._merge_generic_problem_rows()
-            self._delete_source()
-            self._register_post_commit()
-
+        self._register_post_commit()
         self.report["applied"] = True
         return self.report
+
+    def _load_problem_pair(self, lock=False):
+        queryset = Problem.objects.all()
+        if not lock:
+            self.source = queryset.get(code=self.source_code)
+            self.target = queryset.get(code=self.target_code)
+        else:
+            with transaction.atomic():
+                locked_queryset = queryset.select_for_update()
+                self.source = locked_queryset.get(code=self.source_code)
+                self.target = locked_queryset.get(code=self.target_code)
+                self._validate_problem_pair()
+                return
+        self._validate_problem_pair()
+
+    def _validate_problem_pair(self):
+        self._source_id = self.source.id
+        self._target_id = self.target.id
+        if self.source_id == self.target_id:
+            raise ProblemMergeError("source and target must be different problems")
+        if self.source_id < self.target_id and not self.force:
+            raise ProblemMergeError(
+                "merge direction must move the larger id into the smaller id; "
+                "use --source %s --target %s or pass --force to override"
+                % (self.target.code, self.source.code)
+            )
 
     @property
     def source_id(self):
@@ -351,12 +375,17 @@ class ProblemMerge:
             source_solution.save()
 
     def _merge_contest_problems(self):
-        for source_cp in list(ContestProblem.objects.filter(problem=self.source)):
-            self.touched_contest_ids.add(source_cp.contest_id)
-            target_cp = ContestProblem.objects.filter(
-                contest=source_cp.contest,
+        source_cps = list(ContestProblem.objects.filter(problem=self.source))
+        target_by_contest_id = {
+            contest_problem.contest_id: contest_problem
+            for contest_problem in ContestProblem.objects.filter(
                 problem=self.target,
-            ).first()
+                contest_id__in=[source_cp.contest_id for source_cp in source_cps],
+            )
+        }
+        for source_cp in source_cps:
+            self.touched_contest_ids.add(source_cp.contest_id)
+            target_cp = target_by_contest_id.get(source_cp.contest_id)
             if target_cp is None:
                 source_cp.problem = self.target
                 source_cp.save()
@@ -390,12 +419,26 @@ class ProblemMerge:
             target_cp.save(update_fields=update_fields)
 
     def _merge_course_lesson_problems(self):
-        for source_lp in list(CourseLessonProblem.objects.filter(problem=self.source)):
-            self.touched_course_ids.add(source_lp.lesson.course_id)
-            target_lp = CourseLessonProblem.objects.filter(
-                lesson=source_lp.lesson,
+        self.touched_course_ids.update(
+            CourseLessonProblem.objects.filter(problem__in=[self.source, self.target])
+            .select_related("lesson")
+            .values_list("lesson__course_id", flat=True)
+        )
+        source_lps = list(
+            CourseLessonProblem.objects.filter(problem=self.source).select_related(
+                "lesson"
+            )
+        )
+        target_by_lesson_id = {
+            lesson_problem.lesson_id: lesson_problem
+            for lesson_problem in CourseLessonProblem.objects.filter(
                 problem=self.target,
-            ).first()
+                lesson_id__in=[source_lp.lesson_id for source_lp in source_lps],
+            )
+        }
+        for source_lp in source_lps:
+            self.touched_course_ids.add(source_lp.lesson.course_id)
+            target_lp = target_by_lesson_id.get(source_lp.lesson_id)
             if target_lp is None:
                 source_lp.problem = self.target
                 source_lp.save()
@@ -414,22 +457,23 @@ class ProblemMerge:
 
     def _merge_submissions_and_best_submissions(self):
         self.affected_user_ids = set(
-            Submission.objects.filter(
-                problem__in=[self.source, self.target]
-            ).values_list("user_id", flat=True)
+            Submission.objects.filter(problem__in=[self.source, self.target])
+            .values_list("user_id", flat=True)
+            .distinct()
         )
         self._batched_update(
             Submission.objects.filter(problem=self.source),
             problem=self.target,
         )
-        self._batched_delete(
-            BestSubmission.objects.filter(
-                problem__in=[self.source, self.target],
-                user_id__in=self.affected_user_ids,
+        for user_ids in self._chunked_ids(sorted(self.affected_user_ids)):
+            self._batched_delete(
+                BestSubmission.objects.filter(
+                    problem__in=[self.source, self.target],
+                    user_id__in=user_ids,
+                )
             )
-        )
-        for user_id in self.affected_user_ids:
-            BestSubmission.recalculate_for_user_problem(user_id, self.target_id)
+            self._bulk_create_best_submissions(user_ids)
+            self._mark_course_roles_for_recalculation(user_ids)
 
     def _merge_contest_moss(self):
         for source_row in list(ContestMoss.objects.filter(problem=self.source)):
@@ -456,6 +500,49 @@ class ProblemMerge:
             ProblemPointsVote.objects.filter(problem=self.source),
             problem=self.target,
         )
+
+    def _bulk_create_best_submissions(self, user_ids):
+        if not user_ids:
+            return
+
+        submission_table = connection.ops.quote_name(Submission._meta.db_table)
+        best_submission_table = connection.ops.quote_name(BestSubmission._meta.db_table)
+        placeholders = ", ".join(["%s"] * len(user_ids))
+        sql = """
+            INSERT INTO {best_submission_table}
+                (user_id, problem_id, submission_id, points, case_total)
+            SELECT user_id, %s, id, COALESCE(case_points, 0), COALESCE(case_total, 0)
+            FROM (
+                SELECT
+                    id,
+                    user_id,
+                    case_points,
+                    case_total,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY user_id
+                        ORDER BY case_points DESC, date DESC, id DESC
+                    ) AS best_submission_rank
+                FROM {submission_table}
+                WHERE problem_id = %s
+                    AND status = %s
+                    AND user_id IN ({placeholders})
+            ) ranked_submissions
+            WHERE best_submission_rank = 1
+        """.format(
+            best_submission_table=best_submission_table,
+            submission_table=submission_table,
+            placeholders=placeholders,
+        )
+        with connection.cursor() as cursor:
+            cursor.execute(sql, [self.target_id, self.target_id, "D", *user_ids])
+
+    def _mark_course_roles_for_recalculation(self, user_ids):
+        if not self.touched_course_ids or not user_ids:
+            return
+        CourseRole.objects.filter(
+            course_id__in=self.touched_course_ids,
+            user_id__in=user_ids,
+        ).update(needs_progress_recalculation=True)
 
     def _merge_generic_problem_rows(self):
         self._batched_update(
@@ -543,8 +630,29 @@ class ProblemMerge:
             ]
         )
 
+    def _chunked_ids(self, ids):
+        for offset in range(0, len(ids), PROBLEM_MERGE_BATCH_SIZE):
+            yield ids[offset : offset + PROBLEM_MERGE_BATCH_SIZE]
+
+    def _clear_source_m2m(self):
+        for field_name in (
+            "authors",
+            "curators",
+            "testers",
+            "types",
+            "allowed_languages",
+            "banned_users",
+            "organizations",
+            "judges",
+        ):
+            getattr(self.source, field_name).clear()
+
     def _delete_source(self):
-        self.source.delete()
+        try:
+            source = Problem.objects.get(pk=self.source_id)
+        except Problem.DoesNotExist:
+            return
+        source.delete()
 
     def _register_post_commit(self):
         def post_commit():
