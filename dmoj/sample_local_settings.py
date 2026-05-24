@@ -356,7 +356,15 @@ LOGGING = {
     },
 }
 
-# USE_ML = True  # Enable after: ./judge/ml/setup.sh && python manage.py train_embeddings --import-to-db
+## AI / ML settings
+# POE_API_KEY = ""  # Required for llm_service/ai_features; can also use environment variable.
+# POE_BOT_NAME = "Gemini-3-Flash"
+# USE_ML = True  # Enables vector/embedding features after running the relevant judge/ml setup.
+# GEMINI_API_KEY = ""  # Required for semantic search embeddings; can also use environment variable.
+# SEMANTIC_SEARCH_MODEL = "gemini-embedding-2"
+# SEMANTIC_SEARCH_DIM = 768  # Must match judge/ml/sql/003_semantic_problem_embeddings.sql.
+# SEMANTIC_SEARCH_EMBEDDING_REQUESTS_PER_MINUTE = 1500
+# SEMANTIC_SEARCH_EMBEDDING_BATCH_SIZE = 50
 
 ## ======== Integration Settings ========
 ## Python Social Auth

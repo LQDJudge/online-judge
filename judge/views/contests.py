@@ -3,6 +3,7 @@ import io
 from copy import deepcopy
 import json
 import math
+import random
 from calendar import Calendar, SUNDAY
 from collections import defaultdict, namedtuple
 from datetime import date, datetime, time, timedelta
@@ -288,25 +289,50 @@ class ContestList(
     @cached_property
     def _recommended_contests_queryset(self):
         """Get recommended contests for the current user. Computed once per request."""
-        from judge.utils.contest_recommendation import (
-            get_recommended_contests,
-            get_recommended_contests_for_anonymous,
-        )
+        use_ml = getattr(settings, "USE_ML", False)
+        if use_ml:
+            from judge.utils.contest_recommendation import (
+                get_recommended_contests,
+                get_recommended_contests_for_anonymous,
+            )
 
-        if (
-            getattr(settings, "USE_ML", False)
-            and self.request.user.is_authenticated
-            and self.request.profile
-        ):
-            scored = get_recommended_contests(self.request.profile, limit=100)
-            if scored:
-                contest_ids = [cid for cid, _ in scored]
-                preserved = Case(
-                    *[When(pk=pk, then=pos) for pos, pk in enumerate(contest_ids)]
-                )
-                return Contest.objects.filter(id__in=contest_ids).order_by(preserved)
-        contest_ids = get_recommended_contests_for_anonymous(limit=100)
-        return Contest.objects.filter(id__in=contest_ids).order_by("-user_count")
+            if self.request.user.is_authenticated and self.request.profile:
+                scored = get_recommended_contests(self.request.profile, limit=100)
+                if scored:
+                    contest_ids = [cid for cid, _ in scored]
+                    preserved = Case(
+                        *[When(pk=pk, then=pos) for pos, pk in enumerate(contest_ids)]
+                    )
+                    return Contest.objects.filter(id__in=contest_ids).order_by(
+                        preserved
+                    )
+
+            contest_ids = get_recommended_contests_for_anonymous(limit=100)
+            if not contest_ids:
+                return Contest.objects.none()
+            return Contest.objects.filter(id__in=contest_ids).order_by("-user_count")
+
+        queryset = Contest.objects.filter(
+            is_visible=True,
+            is_private=False,
+            is_organization_private=False,
+            is_in_course=False,
+        )
+        if self.request.user.is_authenticated and self.request.profile:
+            participated_ids = ContestParticipation.objects.filter(
+                user=self.request.profile
+            ).values_list("contest_id", flat=True)
+            queryset = queryset.exclude(id__in=participated_ids)
+
+        contest_ids = list(queryset.values_list("id", flat=True))
+        if not contest_ids:
+            return Contest.objects.none()
+
+        rng = random.Random(timezone.localdate().isoformat())
+        rng.shuffle(contest_ids)
+        contest_ids = contest_ids[:100]
+        preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(contest_ids)])
+        return Contest.objects.filter(id__in=contest_ids).order_by(preserved)
 
     def _active_participations(self):
         return ContestParticipation.objects.filter(

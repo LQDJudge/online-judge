@@ -1,0 +1,57 @@
+@use "vars" as *;
+
+.internal-semantic-search-page {
+    .semantic-search-controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: $space-lg;
+        margin: $space-lg 0;
+    }
+
+    .semantic-search-card {
+        border: $space-hairline solid $border_gray;
+        border-radius: $radius-md;
+        padding: $space-lg;
+        background: $background_light_gray;
+
+        h3 {
+            margin-top: 0;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: $space-xs;
+        }
+
+        input {
+            box-sizing: border-box;
+            display: block;
+            margin-bottom: $space-md;
+            width: 100%;
+        }
+    }
+
+    .semantic-limit-row {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: $space-sm;
+        margin-bottom: $space-md;
+
+        input {
+            width: 5em;
+        }
+    }
+
+    .semantic-empty-state,
+    .semantic-results-table {
+        display: none;
+    }
+
+    .semantic-result-name {
+        color: $widget_black;
+        font-size: 0.9em;
+        margin-top: $space-xs;
+    }
+}

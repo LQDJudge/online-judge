@@ -40,6 +40,7 @@ registry.function("inlinei18n", inlinei18n)
 registry.function("mptt_tree", get_cached_trees)
 registry.function("user_trans", gettext)
 registry.function("TESTCASE_VISIBLE_LENGTH", settings.TESTCASE_VISIBLE_LENGTH)
+registry.function("USE_ML_ENABLED", lambda: getattr(settings, "USE_ML", False))
 
 
 @registry.function

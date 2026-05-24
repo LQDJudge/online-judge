@@ -1776,6 +1776,21 @@ urlpatterns = [
                     name="internal_problem_queue",
                 ),
                 re_path(
+                    r"^semantic_search$",
+                    internal.InternalSemanticSearch.as_view(),
+                    name="internal_semantic_search",
+                ),
+                re_path(
+                    r"^semantic_search/api$",
+                    internal.InternalSemanticSearchApi.as_view(),
+                    name="internal_semantic_search_api",
+                ),
+                re_path(
+                    r"^semantic_search/similar_api$",
+                    internal.InternalSimilarProblemsApi.as_view(),
+                    name="internal_semantic_search_similar_api",
+                ),
+                re_path(
                     r"^problem_queue_mark_private$",
                     internal.mark_problem_private,
                     name="internal_mark_problem_private",

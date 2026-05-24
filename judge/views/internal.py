@@ -2,11 +2,11 @@ import logging
 import json
 
 from django.conf import settings
-from django.views.generic import ListView
+from django.views.generic import ListView, TemplateView, View
 from django.utils.translation import gettext as _, get_language
 from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponseForbidden, JsonResponse
+from django.http import Http404, HttpResponseForbidden, JsonResponse
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
@@ -20,14 +20,93 @@ from judge.models.public_request import PublicRequest
 from judge.models.notification import Notification, NotificationCategory
 from judge.tasks import rescore_problem
 from judge.tasks.llm import tag_problem_task, improve_markdown_task
+from judge.ml.semantic_search import (
+    SemanticSearchUnavailable,
+    clamp_limit,
+    search_problems,
+    similar_problems,
+)
 from chat_box.models import ChatModerationLog
+
+logger = logging.getLogger(__name__)
 
 
 class InternalView(object):
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_superuser:
+            return super(InternalView, self).dispatch(request, *args, **kwargs)
+        return HttpResponseForbidden()
+
     def get(self, request, *args, **kwargs):
         if request.user.is_superuser:
             return super(InternalView, self).get(request, *args, **kwargs)
         return HttpResponseForbidden()
+
+
+class InternalSemanticSearch(InternalView, TemplateView):
+    title = _("Semantic Search")
+    template_name = "internal/semantic_search.html"
+
+    def get(self, request, *args, **kwargs):
+        if not getattr(settings, "USE_ML", False):
+            raise Http404()
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = self.title
+        context["default_limit"] = 20
+        context["max_limit"] = 50
+        return context
+
+
+class InternalSemanticSearchApi(InternalView, View):
+    def get(self, request, *args, **kwargs):
+        if not getattr(settings, "USE_ML", False):
+            raise Http404()
+
+        query = request.GET.get("q", "").strip()
+        if not query:
+            return JsonResponse({"error": _("Query is required")}, status=400)
+
+        limit = clamp_limit(request.GET.get("limit"))
+        try:
+            results = search_problems(query, limit=limit)
+        except SemanticSearchUnavailable as exc:
+            return JsonResponse({"error": str(exc)}, status=503)
+        except Exception as exc:
+            logger.error("Semantic search failed: %s", exc, exc_info=True)
+            return JsonResponse({"error": str(exc)}, status=500)
+
+        return JsonResponse({"query": query, "limit": limit, "results": results})
+
+
+class InternalSimilarProblemsApi(InternalView, View):
+    def get(self, request, *args, **kwargs):
+        if not getattr(settings, "USE_ML", False):
+            raise Http404()
+
+        problem_code = request.GET.get("problem", "").strip()
+        if not problem_code:
+            return JsonResponse({"error": _("Problem code is required")}, status=400)
+
+        try:
+            problem = Problem.objects.get(code=problem_code)
+        except Problem.DoesNotExist:
+            return JsonResponse({"error": _("Problem not found")}, status=404)
+
+        limit = clamp_limit(request.GET.get("limit"))
+        try:
+            results = similar_problems(problem, limit=limit)
+        except SemanticSearchUnavailable as exc:
+            return JsonResponse({"error": str(exc)}, status=503)
+        except Exception as exc:
+            logger.error("Similar problem search failed: %s", exc, exc_info=True)
+            return JsonResponse({"error": str(exc)}, status=500)
+
+        return JsonResponse(
+            {"problem": problem_code, "limit": limit, "results": results}
+        )
 
 
 class InternalProblemQueue(InternalView, ListView):
