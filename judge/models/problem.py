@@ -721,7 +721,7 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
         self._notify_judges_update()
 
     def _notify_judges_update(self):
-        if not getattr(settings, "DMOJ_PROBLEM_DATA_PUSH_UPDATE", True):
+        if not getattr(settings, "DMOJ_PROBLEM_DATA_PUSH_UPDATE", False):
             return
         from judge.judgeapi import notify_problem_update
 

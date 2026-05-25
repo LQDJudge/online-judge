@@ -368,6 +368,14 @@
       checker_precision($('#id_problem-data-checker'));
       checker_csv_args($('#id_problem-data-checker'));
 
+      $(document).off('click.dataPageTestcaseJson', '#open-custom-testcase-json');
+      $(document).on('click.dataPageTestcaseJson', '#open-custom-testcase-json', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openTestcaseJsonModal();
+        return false;
+      });
+
       // Per-row state computed once; the per-row add-row handler reads from
       // this map instead of walking siblings (was O(n²) via prevAll/nextUntil).
       var rowDisabled = {};
@@ -541,6 +549,12 @@
             var $this = $(this);
             if (!$this.attr('name'))
               return;
+            if ($this.attr('name').endsWith('id') || $this.attr('name').endsWith('batch_scoring'))
+              return;
+            if ($this.attr('name').endsWith('type')) {
+              filled |= $this.val() && $this.val() !== 'C';
+              return;
+            }
             if ($this.attr('type') === 'checkbox')
               filled |= $this.is(':checked');
             else if (!$this.attr('name').endsWith('order'))
@@ -595,6 +609,410 @@
           }
         }
         return false;
+      }
+
+      function setSelectValue($sel, file) {
+        if (window.big_input || !$sel.hasClass('select2-hidden-accessible')) {
+          $sel.empty().append($('<option>', {value: file, text: file, selected: true}));
+          $sel.val(file).change();
+        } else {
+          $sel.select2('destroy').empty().select2({ data: [file] });
+          $sel.val(file).change();
+        }
+      }
+
+      function update_select2() {
+        // Rows are wired up by the add-row handler as they are created. This
+        // compatibility hook is kept for the autofill paths that call it after
+        // bulk row creation.
+      }
+
+      function findTestFile(testcaseName, kind) {
+        var name = (testcaseName || '').trim();
+        if (!name) return '';
+        if (window.valid_files.indexOf(name) !== -1) {
+          if (kind === 'input' && isInpFile(name)) return name;
+          if (kind === 'output' && isOutFile(name)) return name;
+        }
+
+        var extensions = kind === 'input'
+          ? ['.in', '.inp', '.txt', '.dat', '.IN', '.INP', '.TXT', '.DAT']
+          : ['.out', '.ans', '.res', '.a', '.OUT', '.ANS', '.RES', '.A'];
+        for (var i = 0; i < extensions.length; i++) {
+          var candidate = name + extensions[i];
+          if (window.valid_files.indexOf(candidate) !== -1) return candidate;
+        }
+
+        var slash = name.lastIndexOf('/');
+        var dir = slash >= 0 ? name.substring(0, slash + 1) : '';
+        var base = slash >= 0 ? name.substring(slash + 1) : name;
+        var dot = base.lastIndexOf('.');
+        if (dot > 0) {
+          var stem = dir + base.substring(0, dot);
+          for (var j = 0; j < extensions.length; j++) {
+            var stemCandidate = stem + extensions[j];
+            if (window.valid_files.indexOf(stemCandidate) !== -1) return stemCandidate;
+          }
+        }
+
+        return name;
+      }
+
+      function clearCaseRow(row) {
+        $("#id_cases-"+row+"-generator_args").val('').change();
+        $("#id_cases-"+row+"-input_file").val('').change();
+        $("#id_cases-"+row+"-output_file").val('').change();
+      }
+
+      function updateGeneratorArgsDisplay($generatorInput) {
+        var $container = $generatorInput.closest('.generator-args-container');
+        var $icon = $container.find('.generator-args-icon');
+        if ($generatorInput.val() && $generatorInput.val().trim()) {
+          $icon.hide();
+          $generatorInput.removeClass('generator-args-hidden').show();
+        } else {
+          $icon.show();
+          $generatorInput.addClass('generator-args-hidden');
+        }
+      }
+
+      function ensureCaseRows(totalRowsNeeded) {
+        while ($total.val() < totalRowsNeeded) {
+          $('a#add-case-row').click();
+        }
+      }
+
+      function setBatchStartRow(row, score, batchMode) {
+        var $sRow = $("#id_cases-"+row+"-type").val('S').change().closest('tr');
+        $sRow.find('select[id$=batch_scoring]').val(
+          batchMode === 'MIN' ? 'min' : 'sum'
+        ).change();
+        $("#id_cases-"+row+"-points").val(score).change();
+        clearCaseRow(row);
+      }
+
+      function setBatchEndRow(row) {
+        $("#id_cases-"+row+"-type").val('E').change();
+        $("#id_cases-"+row+"-points").val('').change();
+        clearCaseRow(row);
+      }
+
+      function setNormalCaseRow(row, inputFile, outputFile, points, generatorArgs) {
+        $("#id_cases-"+row+"-type").val('C').change();
+        setSelectValue($("#id_cases-"+row+"-input_file"), inputFile);
+        setSelectValue($("#id_cases-"+row+"-output_file"), outputFile);
+        $("#id_cases-"+row+"-points").val(points).change();
+
+        var $generatorInput = $("#id_cases-"+row+"-generator_args");
+        $generatorInput.val(generatorArgs || '').change();
+        updateGeneratorArgsDisplay($generatorInput);
+      }
+
+      function normalizeGeneratorArgs(args) {
+        if (args == null) return '';
+        if (Array.isArray(args)) return args.join(' ');
+        return String(args).trim();
+      }
+
+      function normalizeTestcaseJsonEntry(item, defaultScore, fallbackTestcase) {
+        if (typeof item === 'string') {
+          if (!item.trim()) {
+            throw '{{_("Every testcase name must be a non-empty string.")}}';
+          }
+          return {
+            score: defaultScore == null ? 1 : defaultScore,
+            testcase: item.trim(),
+            generator_args: ''
+          };
+        }
+
+        if (!item || typeof item !== 'object' || Array.isArray(item)) {
+          throw '{{_("Every testcase entry must be a string or an object.")}}';
+        }
+
+        var explicitTestcase = (item.testcase || item.name || '').trim();
+        var generatorArgs = normalizeGeneratorArgs(item.generator_args);
+        if (explicitTestcase && generatorArgs) {
+          throw '{{_("Use either testcase or generator_args for each row, not both.")}}';
+        }
+        var testcase = explicitTestcase || (generatorArgs ? fallbackTestcase : '');
+        if (!testcase) throw '{{_("Every row must have either testcase or generator_args.")}}';
+
+        var score = item.score == null || item.score === ''
+          ? (defaultScore == null ? 1 : defaultScore)
+          : Number(item.score);
+        if (!isFinite(score)) {
+          throw '{{_("Each testcase score must be numeric.")}}';
+        }
+
+        return {
+          score: score,
+          testcase: testcase,
+          generator_args: generatorArgs
+        };
+      }
+
+      function parseTestcaseJsonData(raw) {
+        var parsed;
+        try {
+          parsed = JSON.parse(raw);
+        } catch (e) {
+          throw '{{_("Invalid JSON.")}}';
+        }
+        if (!Array.isArray(parsed)) {
+          throw '{{_("Expected a JSON list.")}}';
+        }
+        if (!parsed.length) {
+          throw '{{_("JSON list cannot be empty.")}}';
+        }
+
+        var isBatchJson = parsed.every(function(item) {
+          return item && typeof item === 'object' && !Array.isArray(item) && Array.isArray(item.testcases);
+        });
+        var isFlatJson = parsed.every(function(item) {
+          if (typeof item === 'string') return !!item.trim();
+          if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
+          var hasTestcase = typeof item.testcase === 'string' || typeof item.name === 'string';
+          var hasGeneratorArgs = item.generator_args != null && normalizeGeneratorArgs(item.generator_args);
+          return (hasTestcase || hasGeneratorArgs) && !(hasTestcase && hasGeneratorArgs);
+        });
+
+        if (isBatchJson) {
+          return {
+            mode: 'batch',
+            batches: parsed.map(function(batch, batchIndex) {
+              var score = Number(batch.score);
+              if (!isFinite(score)) {
+                throw '{{_("Each batch must have a numeric score.")}}';
+              }
+              if (!batch.testcases.length) {
+                throw '{{_("Each batch must have a non-empty testcases list.")}}';
+              }
+              return {
+                score: score,
+                testcases: batch.testcases.map(function(testcase, caseIndex) {
+                  return normalizeTestcaseJsonEntry(
+                    testcase,
+                    1,
+                    'json_gen_batch' + (batchIndex + 1) + '_case' + (caseIndex + 1)
+                  );
+                })
+              };
+            })
+          };
+        }
+
+        if (isFlatJson) {
+          return {
+            mode: 'case',
+            cases: parsed.map(function(item, caseIndex) {
+              return normalizeTestcaseJsonEntry(
+                item,
+                1,
+                'json_gen_case' + (caseIndex + 1)
+              );
+            })
+          };
+        }
+
+        throw '{{_("Use either batch objects with testcases, or flat testcase entries.")}}';
+      }
+
+      function updateTestcaseJsonLineNumbers() {
+        var textarea = $('#testcase-json-textarea');
+        var lineNumbers = $('#testcase-json-line-numbers');
+        var lines = textarea.val().split('\n');
+        var numberHtml = '';
+
+        for (var i = 1; i <= Math.max(lines.length, 15); i++) {
+          numberHtml += i + '\n';
+        }
+
+        lineNumbers.text(numberHtml);
+      }
+
+      function testcaseJsonExample() {
+        return [
+          {
+            score: 21,
+            testcases: ['subtask1-01', 'subtask1-02', 'subtask1-03']
+          },
+          {
+            score: 79,
+            testcases: ['subtask2-01', 'subtask2-02', 'subtask2-03', 'subtask2-04']
+          }
+        ];
+      }
+
+      function flatTestcaseJsonExample() {
+        return [
+          {score: 1, testcase: '1'},
+          {score: 1, generator_args: '2 --small'},
+          {score: 2, testcase: 'complete-small-01'}
+        ];
+      }
+
+      function testcaseNameFromFile(file) {
+        if (!file) return '';
+        var base = file.split('/').pop();
+        return base.replace(/\.(in|inp|txt|dat|out|ans|res|a)$/i, '');
+      }
+
+      function testcaseJsonFromCurrentRows() {
+        var batches = [];
+        var standalone = [];
+        var currentBatch = null;
+
+        function finishBatch() {
+          if (currentBatch && currentBatch.testcases.length) {
+            batches.push(currentBatch);
+          }
+          currentBatch = null;
+        }
+
+        $("#case-table tbody:first tr").each(function() {
+          var $tr = $(this);
+          if (!$tr.is(':visible')) return;
+
+          var type = $tr.find('select[id$=type]').val();
+          var points = parseFloat($tr.find('input[id$=points]').val());
+          var inputName = testcaseNameFromFile($tr.find('select[id$=input_file]').val());
+          var outputName = testcaseNameFromFile($tr.find('select[id$=output_file]').val());
+          var generatorArgs = ($tr.find('input[id$=generator_args]').val() || '').trim();
+          var testcaseName = inputName || outputName;
+
+          if (type === 'S') {
+            finishBatch();
+            currentBatch = {
+              score: isFinite(points) ? points : 0,
+              testcases: []
+            };
+          } else if (type === 'E') {
+            finishBatch();
+          } else if (type === 'C' && (testcaseName || generatorArgs)) {
+            if (currentBatch) {
+              if (generatorArgs) {
+                currentBatch.testcases.push({generator_args: generatorArgs});
+              } else {
+                currentBatch.testcases.push(testcaseName);
+              }
+            } else {
+              var testcaseEntry = {
+                score: isFinite(points) ? points : 1,
+              };
+              if (generatorArgs) {
+                testcaseEntry.generator_args = generatorArgs;
+              } else if (testcaseName) {
+                testcaseEntry.testcase = testcaseName;
+              }
+              standalone.push(testcaseEntry);
+            }
+          }
+        });
+        finishBatch();
+
+        if (batches.length) return batches;
+        if (standalone.length) return standalone;
+        return [];
+      }
+
+      function openTestcaseJsonModal() {
+        $('#testcase-json-error').hide().text('');
+        $('#testcase-json-help').hide();
+        $('#toggle-testcase-json-help').text('{{_("Show examples")}}');
+        var testcaseJson = testcaseJsonFromCurrentRows();
+        $('#testcase-json-textarea').val(
+          testcaseJson.length ? JSON.stringify(testcaseJson, null, 2) : ''
+        );
+        updateTestcaseJsonLineNumbers();
+        $('#testcase-json-modal').css({
+          display: 'flex',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 1000,
+          alignItems: 'center',
+          justifyContent: 'center'
+        });
+        $('#testcase-json-textarea').focus();
+      }
+
+      function closeTestcaseJsonModal() {
+        $('#testcase-json-modal').hide();
+      }
+
+      function fillTestcaseJsonTestcases(raw, showModalError) {
+        var parsed;
+        try {
+          parsed = parseTestcaseJsonData(raw);
+        } catch (e) {
+          if (showModalError) {
+            $('#testcase-json-error').text(e).show();
+          } else {
+            alert(e);
+          }
+          return false;
+        }
+
+        if (parsed.mode === 'case') {
+          ensureCaseRows(parsed.cases.length);
+          parsed.cases.forEach(function(testcase, row) {
+            setNormalCaseRow(
+              row,
+              findTestFile(testcase.testcase, 'input'),
+              findTestFile(testcase.testcase, 'output'),
+              testcase.score,
+              testcase.generator_args
+            );
+          });
+
+          update_select2();
+          setTimeout(function() {
+            updateAllGeneratorArgsDisplays();
+          }, 100);
+          return true;
+        }
+
+        var batches = parsed.batches;
+        var totalCases = 0;
+        batches.forEach(function(batch) {
+          totalCases += batch.testcases.length;
+        });
+        var totalRowsNeeded = totalCases + 2 * batches.length;
+        ensureCaseRows(totalRowsNeeded);
+
+        var batchMode = $("#problem-type").val();
+        var casePoints = batchMode === 'ICPC' ? '0' : '1';
+        var row = 0;
+        batches.forEach(function(batch) {
+          setBatchStartRow(row, batch.score, batchMode);
+          row += 1;
+
+          batch.testcases.forEach(function(testcase) {
+            setNormalCaseRow(
+              row,
+              findTestFile(testcase.testcase, 'input'),
+              findTestFile(testcase.testcase, 'output'),
+              casePoints,
+              testcase.generator_args
+            );
+            row += 1;
+          });
+
+          if (batchMode === 'ICPC') {
+            $("#id_cases-"+(row-1)+"-points").val(batch.score).change();
+          }
+          setBatchEndRow(row);
+          row += 1;
+        });
+
+        update_select2();
+        setTimeout(function() {
+          updateAllGeneratorArgsDisplays();
+        }, 100);
+        return true;
       }
 
       $('a#fill-testcases').click(function (e) {
@@ -699,15 +1117,6 @@
 
           // Set input/output files from zip. In big_input mode Select2 was
           // never initialized on these selects — re-set option list directly.
-          function setSelectValue($sel, file) {
-            if (window.big_input || !$sel.hasClass('select2-hidden-accessible')) {
-              $sel.empty().append($('<option>', {value: file, text: file, selected: true}));
-              $sel.val(file).change();
-            } else {
-              $sel.select2('destroy').empty().select2({ data: [file] });
-              $sel.val(file).change();
-            }
-          }
           setSelectValue($("#id_cases-"+row+"-input_file"), inFiles[i]);
           setSelectValue($("#id_cases-"+row+"-output_file"), outFiles[i]);
 
@@ -879,13 +1288,22 @@
         }
       });
 
-      $('input#delete-all').change(function() {
-        if (this.checked) {
-          $("input[name$='DELETE']").attr('checked', true);
-        }
-        else {
-          $("input[name$='DELETE']").attr('checked', false);
-        }
+      $('#delete-all-btn').click(function(e) {
+        e.preventDefault();
+        $("#case-table tbody:first tr").filter(':visible').each(function() {
+          var $tr = $(this);
+          var $delete = $tr.find('input[id$=DELETE]');
+          if ($delete.length) {
+            if ($tr.find('.remove-row-btn').attr('data-has-pk') === 'true') {
+              $delete.prop('checked', true);
+              $tr.hide();
+            } else {
+              $tr.remove();
+              var n = parseInt($total.val(), 10);
+              if (n > 0) $total.val(n - 1);
+            }
+          }
+        });
       });
 
       // Auto-detect batch mode from existing rows:
@@ -1017,6 +1435,29 @@
         saveGeneratorScript();
       });
 
+      $('#cancel-testcase-json').click(function() {
+        closeTestcaseJsonModal();
+      });
+
+      $('#fill-testcase-json').click(function() {
+        if (fillTestcaseJsonTestcases($('#testcase-json-textarea').val(), true)) {
+          closeTestcaseJsonModal();
+        }
+      });
+
+      $('#toggle-testcase-json-help').click(function() {
+        var $help = $('#testcase-json-help');
+        $help.toggle();
+        $(this).text($help.is(':visible') ? '{{_("Hide examples")}}' : '{{_("Show examples")}}');
+      });
+
+      $('#testcase-json-textarea').on('input scroll', function() {
+        updateTestcaseJsonLineNumbers();
+
+        var lineNumbers = $('#testcase-json-line-numbers');
+        lineNumbers.scrollTop($(this).scrollTop());
+      });
+
       // Update line numbers when typing
       $('#generator-script-textarea').on('input scroll', function() {
         updateLineNumbers();
@@ -1030,6 +1471,12 @@
       $('#generator-script-modal').click(function(e) {
         if (e.target === this) {
           closeGeneratorScriptModal();
+        }
+      });
+
+      $('#testcase-json-modal').click(function(e) {
+        if (e.target === this) {
+          closeTestcaseJsonModal();
         }
       });
 
@@ -1132,6 +1579,11 @@
         <div>
           {{_("Leave empty if not use batch. If you want to divide to three batches [1, 4], [5, 8], [9, 10], enter: 1, 5, 9")}}
         </div>
+        <div class="testcase-json-container" style="margin-top: 1em;">
+          <button type="button" class="btn btn-sm" id="open-custom-testcase-json">
+            <i class="fa fa-code"></i> {{_("Or use custom JSON")}}
+          </button>
+        </div>
       </td>
     </table>
 
@@ -1147,6 +1599,46 @@
         <div class="modal-buttons" style="margin-top: 15px; text-align: right;">
           <button type="button" class="btn" id="cancel-generator-script">{{_('Cancel')}}</button>
           <button type="button" class="action-btn" id="save-generator-script">{{_('Save')}}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Testcase JSON Modal -->
+    <div id="testcase-json-modal" style="display: none;">
+      <div class="modal-content">
+        <h3>{{_('Custom testcase JSON')}}</h3>
+        <p>
+          {{_('Paste JSON to fill testcase rows. Each row should use either testcase or generator_args, not both.')}}
+        </p>
+        <button type="button" class="btn btn-sm" id="toggle-testcase-json-help">{{_('Show examples')}}</button>
+        <div id="testcase-json-help" style="display: none; margin-top: 1em;">
+          <p>
+            {{_('This only fills rows on this page; click Apply! after reviewing the generated testcases.')}}
+          </p>
+          <p>{{_('Non-batched format')}}:</p>
+          <pre style="white-space: pre-wrap;">[
+  {"score": 1, "testcase": "1"},
+  {"score": 1, "generator_args": "2 --small"},
+  {"score": 2, "testcase": "complete-small-01"}
+]</pre>
+          <p>{{_('Example format with two batches')}}:</p>
+          <pre style="white-space: pre-wrap;">[
+  {"score": 21, "testcases": ["subtask1-01", "subtask1-02", "subtask1-03"]},
+  {"score": 79, "testcases": [
+    "subtask2-01",
+    {"generator_args": "2 --large"},
+    "subtask2-03"
+  ]}
+]</pre>
+        </div>
+        <div class="textarea-with-lines">
+          <div id="testcase-json-line-numbers"></div>
+          <textarea id="testcase-json-textarea" rows="15" style="width: 100%; font-family: monospace; padding: 10px; border: none; outline: none; resize: vertical;"></textarea>
+        </div>
+        <div id="testcase-json-error" class="red" style="display: none; margin-top: 0.75em;"></div>
+        <div class="modal-buttons" style="margin-top: 15px; text-align: right;">
+          <button type="button" class="btn" id="cancel-testcase-json">{{_('Cancel')}}</button>
+          <button type="button" class="action-btn" id="fill-testcase-json">{{_('Fill testcases')}}</button>
         </div>
       </div>
     </div>
@@ -1217,7 +1709,9 @@
           {% if cases_formset.can_delete %}
             <th>{{ _('Delete?') }}
               <br>
-              <input type="checkbox" name="delete-all" id="delete-all">
+              <button type="button" id="delete-all-btn" title="{{ _('Remove all') }}">
+                <i class="fa fa-times red"></i>
+              </button>
             </th>
           {% endif %}
         </tr>

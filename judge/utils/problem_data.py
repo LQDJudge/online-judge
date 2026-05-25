@@ -407,10 +407,11 @@ class ProblemDataCompiler(object):
     def _notify_judges(self):
         """Notify connected judges that problem data has changed.
 
-        Gated behind DMOJ_PROBLEM_DATA_PUSH_UPDATE setting (default True).
-        Set to False if you want to rely entirely on watchdog monitoring.
+        Gated behind DMOJ_PROBLEM_DATA_PUSH_UPDATE setting (default False).
+        Set to True if you want bridge push notifications in addition to
+        watchdog monitoring.
         """
-        if not getattr(settings, "DMOJ_PROBLEM_DATA_PUSH_UPDATE", True):
+        if not getattr(settings, "DMOJ_PROBLEM_DATA_PUSH_UPDATE", False):
             return
         from judge.judgeapi import notify_problem_update
 

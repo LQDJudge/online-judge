@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-25 07:33+0700\n"
+"POT-Creation-Date: 2026-05-25 11:00+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -94,11 +94,11 @@ msgstr "Gần đây"
 msgid "Admin"
 msgstr "Admin"
 
-#: dmoj/settings.py:395
+#: dmoj/settings.py:396
 msgid "Vietnamese"
 msgstr "Tiếng Việt"
 
-#: dmoj/settings.py:396
+#: dmoj/settings.py:397
 msgid "English"
 msgstr "English"
 
@@ -310,7 +310,7 @@ msgstr "Phân loại"
 #: templates/contest/problemset.html:33 templates/course/contest_list.html:142
 #: templates/internal/problem_duplicate_detail.html:202
 #: templates/internal/problem_queue.html:819 templates/problem/add.html:221
-#: templates/problem/data.html:1214 templates/problem/edit.html:508
+#: templates/problem/data.html:1706 templates/problem/edit.html:508
 #: templates/problem/list.html:37 templates/profile-table.html:31
 #: templates/profile-table.html:41 templates/quiz/create.html:82
 #: templates/quiz/detail.html:94 templates/quiz/edit.html:160
@@ -327,7 +327,7 @@ msgstr "Giới hạn"
 
 #: judge/admin/problem.py:237 judge/admin/submission.py:353
 #: templates/base.html:198 templates/internal/problem_duplicate_detail.html:199
-#: templates/problem/data.html:1160 templates/problem/language_limits.html:63
+#: templates/problem/data.html:1652 templates/problem/language_limits.html:63
 #: templates/problem/language_limits.html:146
 #: templates/problem/language_templates.html:135
 #: templates/problem/language_templates.html:194
@@ -4300,12 +4300,12 @@ msgstr "Chỉnh sửa từ web"
 msgid "Blog post updated."
 msgstr "Đã cập nhật bài đăng."
 
-#: judge/views/chatbot.py:43
+#: judge/views/chatbot.py:49
 #, python-brace-format
 msgid "AI Assistant - {0}"
 msgstr "Trợ lý AI - {0}"
 
-#: judge/views/chatbot.py:47
+#: judge/views/chatbot.py:53
 #, python-format
 msgid "AI Assistant for %s"
 msgstr "Trợ lý AI cho %s"
@@ -5345,7 +5345,7 @@ msgstr "%s Thành viên"
 msgid "All submissions in <a href=\"{1}\">{0}</a>"
 msgstr "Bài nộp trong <a href=\"{1}\">{0}</a>"
 
-#: judge/views/organization.py:875 judge/views/submission.py:967
+#: judge/views/organization.py:875 judge/views/submission.py:968
 msgid "Submissions in"
 msgstr "Bài nộp trong"
 
@@ -5606,12 +5606,12 @@ msgstr "Nhật ký kiểm duyệt - %s"
 msgid "Courses in %s"
 msgstr "Khóa học trong %s"
 
-#: judge/views/package_import.py:87
+#: judge/views/package_import.py:96
 #, python-brace-format
 msgid "Import Package - {0}"
 msgstr "Nhập gói bài - {0}"
 
-#: judge/views/package_import.py:111
+#: judge/views/package_import.py:121
 #, python-format
 msgid "Import Package for %s"
 msgstr "Nhập gói bài cho %s"
@@ -5928,7 +5928,7 @@ msgid "Testcase Validator for %s"
 msgstr "Kiểm tra test cho %s"
 
 #: judge/views/problem_data.py:684 judge/views/problem_data.py:867
-#: judge/views/problem_data.py:1035
+#: judge/views/problem_data.py:1035 templates/problem/data.html:760
 msgid "Invalid JSON."
 msgstr "JSON không hợp lệ."
 
@@ -6490,59 +6490,59 @@ msgstr "Ma trận phiên bản"
 msgid "Submission of %(problem)s by %(user)s"
 msgstr "Bài nộp của %(user)s cho bài %(problem)s"
 
-#: judge/views/submission.py:370 judge/views/submission.py:371
+#: judge/views/submission.py:371 judge/views/submission.py:372
 #: templates/contest/submissions.html:49 templates/problem/problem.html:200
 #: templates/problem/problem.html:213 templates/submission/list.html:381
 msgid "All submissions"
 msgstr "Tất cả bài nộp"
 
-#: judge/views/submission.py:671 judge/views/submission.py:676
+#: judge/views/submission.py:672 judge/views/submission.py:677
 msgid "All my submissions"
 msgstr "Tất cả bài nộp của tôi"
 
-#: judge/views/submission.py:672
+#: judge/views/submission.py:673
 #, python-format
 msgid "All submissions by %s"
 msgstr "Tất cả bài nộp của %s"
 
-#: judge/views/submission.py:678
+#: judge/views/submission.py:679
 #, python-brace-format
 msgid "All submissions by <a href=\"{1}\">{0}</a>"
 msgstr "Tất cả bài nộp của <a href=\"{1}\">{0}</a>"
 
-#: judge/views/submission.py:701
+#: judge/views/submission.py:702
 msgid "All friend submissions"
 msgstr "Bài nộp của bạn bè"
 
-#: judge/views/submission.py:730
+#: judge/views/submission.py:731
 #, python-format
 msgid "All submissions for %s"
 msgstr "Tất cả bài nộp cho %s"
 
-#: judge/views/submission.py:758
+#: judge/views/submission.py:759
 msgid "Must pass a problem"
 msgstr "Phải làm được một bài"
 
-#: judge/views/submission.py:823
+#: judge/views/submission.py:824
 #, python-format
 msgid "My submissions for %(problem)s"
 msgstr "Bài nộp của tôi cho %(problem)s"
 
-#: judge/views/submission.py:824
+#: judge/views/submission.py:825
 #, python-format
 msgid "%(user)s's submissions for %(problem)s"
 msgstr "Các bài nộp của %(user)s cho %(problem)s"
 
-#: judge/views/submission.py:947
+#: judge/views/submission.py:948
 msgid "Must pass a contest"
 msgstr "Phải qua một kỳ thi"
 
-#: judge/views/submission.py:971
+#: judge/views/submission.py:972
 #, python-brace-format
 msgid "Submissions in <a href=\"{0}\">{1}</a>"
 msgstr "Bài nộp trong <a href=\"{0}\">{1}</a>"
 
-#: judge/views/submission.py:1042
+#: judge/views/submission.py:1043
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for <a href=\"{3}\">{2}</a> in <a "
@@ -6551,7 +6551,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho <a href=\"{3}\">{2}</a> trong <a "
 "href=\"{5}\">{4}</a>"
 
-#: judge/views/submission.py:1054
+#: judge/views/submission.py:1055
 #, python-brace-format
 msgid ""
 "<a href=\"{1}\">{0}</a>'s submissions for problem {2} in <a href=\"{4}\">{3}"
@@ -6560,7 +6560,7 @@ msgstr ""
 "Các bài nộp của <a href=\"{1}\">{0}</a> cho bài {2} trong <a href=\"{4}\">{3}"
 "</a>"
 
-#: judge/views/submission.py:1215
+#: judge/views/submission.py:1216
 msgid "You don't have permission to access."
 msgstr "Bạn không có quyền truy cập."
 
@@ -6728,7 +6728,7 @@ msgid "Change"
 msgstr "Thay đổi"
 
 #: judge/widgets/direct_upload.py:101 templates/course/edit_lesson.html:455
-#: templates/problem/data.html:1274 templates/quiz/create.html:85
+#: templates/problem/data.html:1768 templates/quiz/create.html:85
 #: templates/quiz/edit.html:163 templates/quiz/edit.html:549
 #: templates/ticket/list.html:353 templates/widgets/sortable_formset.html:80
 #: templates/widgets/sortable_formset.html:116
@@ -6952,7 +6952,7 @@ msgstr "Chỉnh sửa bài đăng"
 #: templates/course/members.html:169 templates/organization/blog/edit.html:44
 #: templates/organization/course/add.html:63
 #: templates/organization/form.html:30 templates/pagedown.html:31
-#: templates/problem/data.html:1149 templates/problem/edit.html:594
+#: templates/problem/data.html:1601 templates/problem/edit.html:594
 #: templates/problem/language_templates.html:139
 #: templates/problem/solution_codes.html:562
 #: templates/problem/translations.html:76 templates/problem/validator.html:264
@@ -6977,9 +6977,10 @@ msgstr "Lưu"
 #: templates/organization/blog/pending-js.html:43
 #: templates/organization/course/edit.html:89
 #: templates/organization/invite_join.html:30 templates/pagedown.html:32
-#: templates/problem/data.html:1148 templates/problem/solution_codes.html:629
-#: templates/quiz/create.html:390 templates/quiz/delete.html:21
-#: templates/quiz/edit.html:608 templates/quiz/question_bank/create.html:797
+#: templates/problem/data.html:1600 templates/problem/data.html:1640
+#: templates/problem/solution_codes.html:629 templates/quiz/create.html:390
+#: templates/quiz/delete.html:21 templates/quiz/edit.html:608
+#: templates/quiz/question_bank/create.html:797
 #: templates/quiz/question_bank/delete.html:26
 #: templates/quiz/question_bank/edit.html:795
 msgid "Cancel"
@@ -7535,7 +7536,7 @@ msgstr "Cấu hình"
 msgid "Choose row type"
 msgstr "Chọn loại mục tiêu"
 
-#: templates/contest/edit.html:127 templates/problem/data.html:1211
+#: templates/contest/edit.html:127 templates/problem/data.html:1703
 #: templates/quiz/detail.html:93 templates/quiz/manage.html:45
 msgid "Type"
 msgstr "Kiểu"
@@ -9511,7 +9512,7 @@ msgid "There are no requests to approve."
 msgstr "Không có đơn đăng ký."
 
 #: templates/organization/requests/pending.html:24
-#: templates/problem/data.html:1164 templates/problem/data.html:1218
+#: templates/problem/data.html:1656 templates/problem/data.html:1710
 msgid "Delete?"
 msgstr "Xóa?"
 
@@ -9767,48 +9768,97 @@ msgstr "Chỉnh sửa script sinh test"
 msgid "Run Validator"
 msgstr "Chạy kiểm tra"
 
-#: templates/problem/data.html:1090
+#: templates/problem/data.html:720
+msgid "Every testcase name must be a non-empty string."
+msgstr "Tên mỗi test phải là chuỗi không rỗng."
+
+#: templates/problem/data.html:730
+msgid "Every testcase entry must be a string or an object."
+msgstr "Mỗi mục testcase phải là một chuỗi hoặc một đối tượng."
+
+#: templates/problem/data.html:736
+msgid "Use either testcase or generator_args for each row, not both."
+msgstr "Mỗi dòng chỉ dùng testcase hoặc generator_args, không dùng cả hai."
+
+#: templates/problem/data.html:739
+msgid "Every row must have either testcase or generator_args."
+msgstr "Mỗi dòng phải có testcase hoặc generator_args."
+
+#: templates/problem/data.html:745
+msgid "Each testcase score must be numeric."
+msgstr "Điểm của mỗi test phải là số."
+
+#: templates/problem/data.html:763
+msgid "Expected a JSON list."
+msgstr "Dữ liệu phải là một danh sách JSON."
+
+#: templates/problem/data.html:766
+msgid "JSON list cannot be empty."
+msgstr "Danh sách JSON không được để trống."
+
+#: templates/problem/data.html:786
+msgid "Each batch must have a numeric score."
+msgstr "Mỗi nhóm test phải có điểm là số."
+
+#: templates/problem/data.html:789
+msgid "Each batch must have a non-empty testcases list."
+msgstr "Mỗi nhóm test phải có danh sách test không rỗng."
+
+#: templates/problem/data.html:818
+msgid "Use either batch objects with testcases, or flat testcase entries."
+msgstr ""
+"Hãy dùng đối tượng nhóm có trường testcases, hoặc danh sách test phẳng."
+
+#: templates/problem/data.html:922 templates/problem/data.html:1451
+#: templates/problem/data.html:1613
+msgid "Show examples"
+msgstr "Hiện ví dụ"
+
+#: templates/problem/data.html:1451
+msgid "Hide examples"
+msgstr "Ẩn ví dụ"
+
+#: templates/problem/data.html:1537
 msgid "View YAML"
 msgstr "Xem YAML"
 
-#: templates/problem/data.html:1101
+#: templates/problem/data.html:1548
 msgid "Test Data Setup"
 msgstr "Cách tạo Test Data"
 
-#: templates/problem/data.html:1103
+#: templates/problem/data.html:1550
 msgid "View Instructions"
 msgstr "Xem hướng dẫn"
 
-#: templates/problem/data.html:1113
+#: templates/problem/data.html:1560
 msgid "Autofill testcases"
 msgstr "Tự động điền test"
 
-#: templates/problem/data.html:1117
-#, fuzzy
+#: templates/problem/data.html:1564
 msgid "Batch mode"
-msgstr "Kiểu chấm nhóm"
+msgstr "Chế độ nhóm test"
 
-#: templates/problem/data.html:1119
+#: templates/problem/data.html:1566
 msgid "Sum (VOI)"
 msgstr "Tổng (VOI)"
 
-#: templates/problem/data.html:1120
+#: templates/problem/data.html:1567
 msgid "All or 0 (ICPC)"
 msgstr "Tất cả hoặc 0 (ICPC)"
 
-#: templates/problem/data.html:1121
+#: templates/problem/data.html:1568
 msgid "Min (IOI)"
 msgstr "Min (IOI)"
 
-#: templates/problem/data.html:1125
+#: templates/problem/data.html:1572 templates/problem/data.html:1641
 msgid "Fill testcases"
 msgstr "Điền test"
 
-#: templates/problem/data.html:1129
+#: templates/problem/data.html:1576
 msgid "Batch start positions"
 msgstr "Vị trí bắt đầu nhóm"
 
-#: templates/problem/data.html:1133
+#: templates/problem/data.html:1580
 msgid ""
 "Leave empty if not use batch. If you want to divide to three batches [1, 4], "
 "[5, 8], [9, 10], enter: 1, 5, 9"
@@ -9816,11 +9866,15 @@ msgstr ""
 "Để trống nếu không dùng nhóm. Nếu muốn chia test thành các nhóm [1, 4], [5, "
 "8], [9, 10], nhập: 1, 5, 9"
 
-#: templates/problem/data.html:1141 templates/problem/import.html:41
+#: templates/problem/data.html:1584
+msgid "Or use custom JSON"
+msgstr "Hoặc dùng JSON tùy chỉnh"
+
+#: templates/problem/data.html:1593 templates/problem/import.html:41
 msgid "Generator Script"
 msgstr "Script sinh test"
 
-#: templates/problem/data.html:1142
+#: templates/problem/data.html:1594
 msgid ""
 "Enter generator arguments for test cases. Each line represents arguments for "
 "one test case."
@@ -9828,43 +9882,77 @@ msgstr ""
 "Nhập các tham số cho script sinh test. Mỗi dòng đại diện cho tham số của một "
 "test."
 
-#: templates/problem/data.html:1156
+#: templates/problem/data.html:1609
+msgid "Custom testcase JSON"
+msgstr "JSON test tùy chỉnh"
+
+#: templates/problem/data.html:1611
+msgid ""
+"Paste JSON to fill testcase rows. Each row should use either testcase or "
+"generator_args, not both."
+msgstr ""
+"Dán JSON để điền các dòng testcase. Mỗi dòng chỉ nên dùng testcase hoặc "
+"generator_args, không dùng cả hai."
+
+#: templates/problem/data.html:1616
+msgid ""
+"This only fills rows on this page; click Apply! after reviewing the "
+"generated testcases."
+msgstr ""
+"Công cụ này chỉ điền các dòng trên trang; hãy bấm Apply! sau khi kiểm tra "
+"các test được tạo."
+
+#: templates/problem/data.html:1618
+msgid "Non-batched format"
+msgstr "Định dạng không theo nhóm"
+
+#: templates/problem/data.html:1624
+msgid "Example format with two batches"
+msgstr "Ví dụ định dạng với hai nhóm test"
+
+#: templates/problem/data.html:1648
 msgid "IOI Signature Graders"
 msgstr "Trình chấm IOI"
 
-#: templates/problem/data.html:1161
+#: templates/problem/data.html:1653
 msgid "Handler"
 msgstr "File xử lý"
 
-#: templates/problem/data.html:1162
+#: templates/problem/data.html:1654
 msgid "Header"
 msgstr "File định nghĩa"
 
-#: templates/problem/data.html:1204 templates/problem/data.html:1283
+#: templates/problem/data.html:1696 templates/problem/data.html:1777
 msgid "Apply!"
 msgstr "Lưu!"
 
-#: templates/problem/data.html:1206
+#: templates/problem/data.html:1698
 msgid "Test Cases"
 msgstr "Bộ Test"
 
-#: templates/problem/data.html:1212
+#: templates/problem/data.html:1704
 msgid "Input file"
 msgstr "File Input"
 
-#: templates/problem/data.html:1213
+#: templates/problem/data.html:1705
 msgid "Output file"
 msgstr "File Output"
 
-#: templates/problem/data.html:1215
+#: templates/problem/data.html:1707
 msgid "Pretest?"
 msgstr "Pretest?"
 
-#: templates/problem/data.html:1216
+#: templates/problem/data.html:1708
 msgid "Generator Args"
 msgstr "Tham số sinh test"
 
-#: templates/problem/data.html:1284
+#: templates/problem/data.html:1712
+#, fuzzy
+#| msgid "Remove"
+msgid "Remove all"
+msgstr "Xóa"
+
+#: templates/problem/data.html:1778
 msgid "Add new case"
 msgstr "Thêm test mới"
 
@@ -12943,6 +13031,18 @@ msgstr "Chọn tất cả"
 #: templates/widgets/sortable_formset.html:21
 msgid "No items yet."
 msgstr "Chưa có mục nào."
+
+#, fuzzy
+#~ msgid ""
+#~ "Edit or paste a JSON list. Use testcases for batches, or testcase for non-"
+#~ "batched cases. Add generator_args when a row should be generated by the "
+#~ "generator script. This only fills rows on this page; click Apply! after "
+#~ "reviewing the generated testcases."
+#~ msgstr ""
+#~ "Chỉnh sửa hoặc dán một danh sách JSON. Dùng testcases cho nhóm test, hoặc "
+#~ "testcase cho test không theo nhóm. Thêm generator_args khi dòng đó cần "
+#~ "được tạo bằng script sinh test. Công cụ này chỉ điền các dòng trên trang; "
+#~ "hãy bấm Apply! sau khi kiểm tra các test được tạo."
 
 #~ msgid "Query"
 #~ msgstr "Truy vấn"
