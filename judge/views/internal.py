@@ -30,9 +30,6 @@ from judge.ml.problem_duplicates import (
 )
 from judge.ml.semantic_search import (
     SemanticSearchUnavailable,
-    clamp_limit,
-    search_problems,
-    similar_problems,
 )
 from judge.models import Problem, ProblemType, Profile, Submission
 from judge.models.notification import Notification, NotificationCategory
@@ -61,77 +58,6 @@ class InternalView(object):
         if request.user.is_superuser:
             return super(InternalView, self).get(request, *args, **kwargs)
         return HttpResponseForbidden()
-
-
-class InternalSemanticSearch(InternalView, TemplateView):
-    title = _("Semantic Search")
-    template_name = "internal/semantic_search.html"
-
-    def get(self, request, *args, **kwargs):
-        if not getattr(settings, "USE_ML", False):
-            raise Http404()
-        return super().get(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["page_type"] = "semantic_search"
-        context["title"] = self.title
-        context["default_limit"] = 20
-        context["max_limit"] = 50
-        return context
-
-
-class InternalSemanticSearchApi(InternalView, View):
-    def get(self, request, *args, **kwargs):
-        if not getattr(settings, "USE_ML", False):
-            raise Http404()
-
-        query = request.GET.get("q", "").strip()
-        if not query:
-            return JsonResponse({"error": _("Query is required")}, status=400)
-
-        limit = clamp_limit(request.GET.get("limit"))
-        try:
-            results = search_problems(query, limit=limit)
-        except SemanticSearchUnavailable as exc:
-            return JsonResponse({"error": str(exc)}, status=503)
-        except Exception as exc:
-            logger.error("Semantic search failed: %s", exc, exc_info=True)
-            return JsonResponse({"error": str(exc)}, status=500)
-
-        return JsonResponse({"query": query, "limit": limit, "results": results})
-
-
-class InternalSimilarProblemsApi(InternalView, View):
-    def get(self, request, *args, **kwargs):
-        if not getattr(settings, "USE_ML", False):
-            raise Http404()
-
-        problem_id = request.GET.get("problem_id", "").strip()
-        problem_code = request.GET.get("problem", "").strip()
-        if not problem_id and not problem_code:
-            return JsonResponse({"error": _("Problem is required")}, status=400)
-
-        try:
-            if problem_id:
-                problem = Problem.objects.get(id=problem_id)
-            else:
-                problem = Problem.objects.get(code=problem_code)
-        except (Problem.DoesNotExist, ValueError):
-            return JsonResponse({"error": _("Problem not found")}, status=404)
-
-        limit = clamp_limit(request.GET.get("limit"))
-        try:
-            results = similar_problems(problem, limit=limit)
-        except SemanticSearchUnavailable as exc:
-            return JsonResponse({"error": str(exc)}, status=503)
-        except Exception as exc:
-            logger.error("Similar problem search failed: %s", exc, exc_info=True)
-            return JsonResponse({"error": str(exc)}, status=500)
-
-        return JsonResponse(
-            {"problem": problem.code, "limit": limit, "results": results}
-        )
 
 
 class InternalProblemDuplicates(InternalView, TemplateView):

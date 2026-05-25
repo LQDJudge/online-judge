@@ -212,8 +212,8 @@
                     <div class="problem-help-text">{{ _('Select the authors who contributed to this solution.') }}</div>
                   </div>
 
-                  <!-- Auto Generate Solution Button (only for superusers) -->
-                  {% if request.user.is_superuser %}
+                  <!-- Auto Generate Solution Button (AI permission required) -->
+                  {% if request.user|can_use_ai_features %}
                     <div class="problem-form-group">
                       <button type="button" id="generate-solution-btn" class="action-btn small" style="margin-right: 10px;">
                         <i class="fa fa-magic"></i> {{ _('Auto Generate Solution') }}
@@ -320,8 +320,8 @@
                     <div class="problem-help-text">{{ _('Select the authors who contributed to this solution.') }}</div>
                   </div>
 
-                  <!-- Auto Generate Solution Button (only for superusers) -->
-                  {% if request.user.is_superuser %}
+                  <!-- Auto Generate Solution Button (AI permission required) -->
+                  {% if request.user|can_use_ai_features %}
                     <div class="problem-form-group">
                       <button type="button" id="generate-solution-btn" class="action-btn small" style="margin-right: 10px;">
                         <i class="fa fa-magic"></i> {{ _('Auto Generate Solution') }}

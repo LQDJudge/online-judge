@@ -19,6 +19,7 @@ from django.views.generic.base import TemplateResponseMixin
 
 from judge.models import Quiz, QuizQuestion, QuizQuestionAssignment
 from judge.models.quiz import QuizQuestionType
+from judge.utils.permissions import can_use_ai_features
 from judge.views.quiz import PendingGradingCountMixin
 from judge.utils.views import TitleMixin
 
@@ -41,7 +42,7 @@ class QuizImportView(
     title = _("Import Questions")
 
     def get(self, request, *args, **kwargs):
-        if not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             from django.http import Http404
 
             raise Http404()
@@ -64,7 +65,7 @@ class QuizImportUploadView(View):
     """API endpoint: receives file upload, dispatches Celery analysis task."""
 
     def post(self, request):
-        if not request.user.is_authenticated or not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             return JsonResponse({"error": _("Permission denied")}, status=403)
 
         upload = request.FILES.get("file")
@@ -126,7 +127,7 @@ class QuizImportCreateQuestionView(View):
     """API endpoint: create a single QuizQuestion from import data."""
 
     def post(self, request):
-        if not request.user.is_authenticated or not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             return JsonResponse({"error": _("Permission denied")}, status=403)
 
         try:
@@ -177,7 +178,7 @@ class QuizImportCreateQuizView(View):
     """API endpoint: create a Quiz with specified questions."""
 
     def post(self, request):
-        if not request.user.is_authenticated or not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             return JsonResponse({"error": _("Permission denied")}, status=403)
 
         try:

@@ -8,6 +8,9 @@
 <div class="left-sidebar">
   {{ make_tab_item('feed', 'far fa-lightbulb', problem_feed_url, _('Feed')) }}
   {{ make_tab_item('list', 'fa fa-list', problem_list_url, _('List')) }}
+  {% if USE_ML_ENABLED() and request.user.is_authenticated %}
+    {{ make_tab_item('semantic_search', 'fa fa-search', url('semantic_search'), _('Semantic Search')) }}
+  {% endif %}
   {{ make_tab_item('all_submissions_list', 'fa fa-code', url('all_submissions'), _('Submissions')) }}
   {% if request.user.is_superuser or perms.judge.add_problem %}
     {{ make_tab_item('add', 'fa fa-plus', url('problem_add'), _('Add')) }}

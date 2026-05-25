@@ -1,7 +1,7 @@
 <div class="left-sidebar">
   {{ make_tab_item('list', 'fa fa-list', url('quiz_list'), _('Quiz')) }}
   {{ make_tab_item('questions', 'fa fa-database', url('question_bank_list'), _('Question Bank')) }}
-  {% if request.user.is_superuser %}
+  {% if request.user|can_use_ai_features %}
     {{ make_tab_item('import', 'fa fa-upload', url('quiz_import'), _('Import')) }}
   {% endif %}
   {% if request.user.is_superuser or pending_grading_count is defined and pending_grading_count > 0 %}

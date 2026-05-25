@@ -51,6 +51,7 @@ from judge.models import (
     Language,
 )
 from judge.utils.problem_data import ProblemDataCompiler
+from judge.utils.permissions import can_use_ai_features
 from judge.utils.unicode import utf8text
 from judge.utils.views import TitleMixin
 from judge.widgets.fine_uploader import (
@@ -849,7 +850,7 @@ class ProblemSolutionCodesView(TitleMixin, ProblemManagerMixin):
         )
         context["expected_result_choices"] = ProblemSolutionCode.EXPECTED_RESULT_CHOICES
         context["ACE_URL"] = settings.ACE_URL
-        if self.request.user.is_superuser:
+        if can_use_ai_features(self.request.user):
             context["supported_models"] = CHATBOT_SUPPORTED_MODELS
         else:
             context["supported_models"] = []
@@ -1164,9 +1165,9 @@ class ProblemSolutionCodesStatusView(ProblemManagerMixin, View):
 
 class ProblemSolutionCodesGenerateView(ProblemManagerMixin, View):
     def post(self, request, *args, **kwargs):
-        if not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             return JsonResponse(
-                {"status": "error", "message": _("Superuser access required.")},
+                {"status": "error", "message": _("AI feature permission required.")},
                 status=403,
             )
 
@@ -1192,9 +1193,9 @@ class ProblemSolutionCodesGenerateView(ProblemManagerMixin, View):
 
 class ProblemSolutionCodesGenerateStatusView(ProblemManagerMixin, View):
     def get(self, request, *args, **kwargs):
-        if not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             return JsonResponse(
-                {"status": "error", "message": _("Superuser access required.")},
+                {"status": "error", "message": _("AI feature permission required.")},
                 status=403,
             )
 

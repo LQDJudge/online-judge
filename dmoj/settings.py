@@ -530,6 +530,10 @@ RL_VOTE = "200/h"
 RL_COMMENT = "30/h"
 RL_EMAIL_CHANGE = "5/h"
 RL_PASSWORD_RESET = "20/h"
+RL_SEMANTIC_SEARCH = "5/m"
+
+# Anonymous users may only access the first N pages of paginated listings.
+ANON_MAX_PAGE = 3
 
 
 try:

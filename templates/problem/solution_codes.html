@@ -454,7 +454,7 @@
         pollStatus();
       }
 
-      {% if request.user.is_superuser %}
+      {% if request.user|can_use_ai_features %}
       // Generate with AI
         var isGenerating = false;
 
@@ -564,7 +564,7 @@
       <button id="run-all-btn" class="action-btn" type="button">
         <i class="fa fa-play"></i> {{ _('Run All') }}
       </button>
-      {% if request.user.is_superuser %}
+      {% if request.user|can_use_ai_features %}
         <button id="generate-ai-btn" class="action-btn" type="button">
           <i class="fa fa-magic"></i> {{ _('Generate with AI') }}
         </button>
@@ -597,7 +597,7 @@
 
     <div id="solution-codes-container"></div>
 
-    {% if request.user.is_superuser %}
+    {% if request.user|can_use_ai_features %}
       <div id="generate-ai-modal" class="modal-overlay" style="display:none;">
         <div class="modal-card">
           <h3>{{ _('Generate Solution Codes with AI') }}</h3>

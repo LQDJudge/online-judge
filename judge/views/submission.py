@@ -366,6 +366,7 @@ def abort_submission(request, submission):
 class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     model = Submission
     paginate_by = 50
+    limit_anonymous_pages = True
     show_problem = True
     title = gettext_lazy("All submissions")
     content_title = gettext_lazy("All submissions")

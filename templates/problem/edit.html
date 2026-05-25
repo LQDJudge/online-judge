@@ -425,8 +425,8 @@
             {% endif %}
           </div>
 
-          <!-- AI Improve Markdown Button (only for superusers) -->
-          {% if request.user.is_superuser %}
+          <!-- AI Improve Markdown Button (AI permission required) -->
+          {% if request.user|can_use_ai_features %}
             <div class="form-row">
               <button type="button" id="improve-markdown-btn" class="action-btn small" style="margin-right: 10px;">
                 <i class="fa fa-magic"></i> {{ _('Auto Improve Markdown') }}
@@ -491,8 +491,8 @@
 
           <hr>
 
-          <!-- AI Tagging Button (only for superusers) -->
-          {% if request.user.is_superuser %}
+          <!-- AI Tagging Button (AI permission required) -->
+          {% if request.user|can_use_ai_features %}
             <div class="form-row">
               <button type="button" id="tag-btn" class="action-btn small" style="margin-right: 10px;">
                 <i class="fa fa-magic"></i> {{ _('Auto-Generate Types & Points') }}

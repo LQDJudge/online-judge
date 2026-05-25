@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.contrib.auth.views import redirect_to_login
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views.generic import FormView
@@ -71,6 +73,15 @@ class TitleMixin(object):
 
 
 class DiggPaginatorMixin(object):
+    limit_anonymous_pages = False
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.limit_anonymous_pages:
+            limited_response = anonymous_page_limit_response(request, kwargs)
+            if limited_response is not None:
+                return limited_response
+        return super().dispatch(request, *args, **kwargs)
+
     def get_paginator(
         self, queryset, per_page, orphans=0, allow_empty_first_page=True, **kwargs
     ):
@@ -83,6 +94,31 @@ class DiggPaginatorMixin(object):
             allow_empty_first_page=allow_empty_first_page,
             **kwargs
         )
+
+
+def anonymous_page_limit_response(request, kwargs=None, page_kwarg="page"):
+    if request.user.is_authenticated:
+        return None
+
+    max_page = getattr(settings, "ANON_MAX_PAGE", None)
+    if max_page is None:
+        return None
+
+    page = None
+    if kwargs:
+        page = kwargs.get(page_kwarg)
+    page = page or request.GET.get(page_kwarg)
+    if page is None:
+        return None
+
+    try:
+        page_number = int(page)
+    except (TypeError, ValueError):
+        return None
+
+    if page_number > max_page:
+        return redirect_to_login(request.get_full_path())
+    return None
 
 
 class QueryStringSortMixin(object):

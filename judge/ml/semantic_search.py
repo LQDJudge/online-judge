@@ -24,7 +24,7 @@ SEMANTIC_TABLE = "ml_problem_semantic_embedding"
 SEMANTIC_ERROR_TABLE = "ml_problem_semantic_index_error"
 DEFAULT_MODEL = "gemini-embedding-2"
 DEFAULT_DIMS = 768
-DEFAULT_LIMIT = 20
+DEFAULT_LIMIT = 50
 MAX_LIMIT = 50
 DEFAULT_REQUESTS_PER_MINUTE = 10
 DEFAULT_BATCH_SIZE = 50
@@ -443,51 +443,38 @@ def _get_media_url(storage_name):
 
 
 def build_problem_document(problem):
-    problem = (
-        Problem.objects.select_related("group")
-        .prefetch_related("types", "translations")
-        .get(id=problem.id)
-    )
-    translations = list(problem.translations.all())
+    problem = Problem.objects.prefetch_related("authors", "types").get(id=problem.id)
+    authors = list(problem.authors.all())
     types = list(problem.types.all())
 
     parts = [
         f"Code: {problem.code}",
         f"Name: {problem.name}",
+        f"CF benchmark points: {problem.points:g}",
+        f"Partial points: {'yes' if problem.partial else 'no'}",
+        f"Time limit: {problem.time_limit:g} seconds",
+        f"Memory limit: {problem.memory_limit} KB",
     ]
-    if problem.group:
-        parts.append(f"Group: {problem.group.full_name}")
+    if authors:
+        parts.append("Authors: " + ", ".join(str(author) for author in authors))
     if types:
         parts.append(
             "Types: " + ", ".join(problem_type.full_name for problem_type in types)
         )
-    if problem.summary:
-        parts.append("Summary:\n" + problem.summary)
     if problem.description:
         parts.append("Statement:\n" + problem.description)
-
-    for translation in translations:
-        parts.append(
-            "Translation (%s):\nName: %s\nStatement:\n%s"
-            % (translation.language, translation.name, translation.description)
-        )
 
     pdf_bytes = _read_pdf_bytes(problem)
     hash_payload = {
         "code": problem.code,
         "name": problem.name,
-        "group": problem.group.full_name if problem.group else "",
+        "authors": [str(author) for author in authors],
         "types": [problem_type.full_name for problem_type in types],
-        "summary": problem.summary or "",
+        "points": problem.points,
+        "partial": problem.partial,
+        "time_limit": problem.time_limit,
+        "memory_limit": problem.memory_limit,
         "description": problem.description or "",
-        "translations": [
-            {
-                "language": translation.language,
-                "name": translation.name,
-                "description": translation.description,
-            }
-            for translation in translations
-        ],
         "pdf_sha256": hashlib.sha256(pdf_bytes).hexdigest() if pdf_bytes else "",
     }
     content_hash = hashlib.sha256(

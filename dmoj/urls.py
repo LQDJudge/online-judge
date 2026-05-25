@@ -47,6 +47,7 @@ from judge.views import (
     stats,
     status,
     submission,
+    semantic_search,
     tasks,
     ticket,
     totp,
@@ -228,10 +229,12 @@ def exception(request):
 
 
 def paged_list_view(view, name, **kwargs):
+    view_func = view.as_view(**kwargs)
+
     return include(
         [
-            re_path(r"^$", view.as_view(**kwargs), name=name),
-            re_path(r"^(?P<page>\d+)$", view.as_view(**kwargs), name=name),
+            re_path(r"^$", view_func, name=name),
+            re_path(r"^(?P<page>\d+)$", view_func, name=name),
         ]
     )
 
@@ -243,6 +246,21 @@ urlpatterns = [
         blog.PostList.as_view(template_name="home.html", title=_("Home")),
         kwargs={"page": 1},
         name="home",
+    ),
+    re_path(
+        r"^semantic_search$",
+        semantic_search.SemanticSearch.as_view(),
+        name="semantic_search",
+    ),
+    re_path(
+        r"^semantic_search/api$",
+        semantic_search.SemanticSearchApi.as_view(),
+        name="semantic_search_api",
+    ),
+    re_path(
+        r"^semantic_search/similar_api$",
+        semantic_search.SimilarProblemsApi.as_view(),
+        name="semantic_search_similar_api",
     ),
     re_path(r"^500/$", exception),
     re_path(r"^toggle_darkmode/$", user.toggle_darkmode, name="toggle_darkmode"),
@@ -1774,21 +1792,6 @@ urlpatterns = [
                     r"^problem_queue$",
                     internal.InternalProblemQueue.as_view(),
                     name="internal_problem_queue",
-                ),
-                re_path(
-                    r"^semantic_search$",
-                    internal.InternalSemanticSearch.as_view(),
-                    name="internal_semantic_search",
-                ),
-                re_path(
-                    r"^semantic_search/api$",
-                    internal.InternalSemanticSearchApi.as_view(),
-                    name="internal_semantic_search_api",
-                ),
-                re_path(
-                    r"^semantic_search/similar_api$",
-                    internal.InternalSimilarProblemsApi.as_view(),
-                    name="internal_semantic_search_similar_api",
                 ),
                 re_path(
                     r"^problem_duplicates$",

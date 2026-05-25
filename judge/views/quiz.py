@@ -31,6 +31,7 @@ from judge.tasks.llm import (
     improve_question_markdown_task,
     generate_question_explanation_task,
 )
+from judge.utils.permissions import can_use_ai_features
 
 from judge.widgets import HeavySelect2MultipleWidget, HeavyPreviewPageDownWidget
 
@@ -340,12 +341,12 @@ logger = logging.getLogger(__name__)
 
 class QuizAIMixin:
     """Mixin that adds AI features (markdown improvement, explanation generation) to quiz views.
-    Superuser-only. Intercepts AJAX POSTs before normal form processing."""
+    Intercepts AJAX POSTs before normal form processing."""
 
     def handle_improve_question_markdown(self, request):
         """Handle AI markdown improvement request — dispatches async Celery task"""
         try:
-            if not request.user.is_superuser:
+            if not can_use_ai_features(request.user):
                 return JsonResponse({"success": False, "error": "Permission denied"})
 
             content = request.POST.get("content", "").strip()
@@ -373,7 +374,7 @@ class QuizAIMixin:
     def handle_generate_explanation(self, request):
         """Handle AI explanation generation/improvement — dispatches async Celery task"""
         try:
-            if not request.user.is_superuser:
+            if not can_use_ai_features(request.user):
                 return JsonResponse({"success": False, "error": "Permission denied"})
 
             question_content = request.POST.get("content", "").strip()

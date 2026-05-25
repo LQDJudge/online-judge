@@ -3,8 +3,9 @@ Views for the problem author chatbot feature.
 Provides AI-powered assistance for problem authors.
 """
 
+from django.core.cache import cache
+from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
@@ -12,8 +13,6 @@ from django.utils.translation import gettext as _
 from django.views.generic import View
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
-
-from django.core.cache import cache
 
 from judge.models import Problem
 from judge.views.problem import ProblemMixin, TitleMixin
@@ -23,8 +22,16 @@ from judge.chatbot.cache import (
     delete_message,
     set_model,
 )
+from judge.utils.permissions import can_use_ai_features
 from judge.utils.views import short_circuit_middleware
 from llm_service.config import get_config
+
+
+def _get_editable_problem(user, code):
+    queryset = Problem.objects.filter(code=code)
+    if not user.is_superuser:
+        queryset = queryset.filter(Q(authors=user.profile) | Q(curators=user.profile))
+    return queryset.distinct().get()
 
 
 class ProblemChatbotView(
@@ -54,16 +61,17 @@ class ProblemChatbotView(
         )
 
     def has_permission(self):
-        """Only superusers can access the chatbot."""
-        return self.request.user.is_authenticated and self.request.user.is_superuser
+        """Users with AI permission can access the chatbot for editable problems."""
+        if not can_use_ai_features(self.request.user):
+            return False
+        self.object = self.get_object()
+        return self.object.is_editable_by(self.request.user)
 
     def get(self, request, *args, **kwargs):
         if not self.has_permission():
             from django.http import Http404
 
             raise Http404()
-
-        self.object = self.get_object()
 
         # Load conversation history from cache
         conversation = get_conversation(request.user.id, self.object.code)
@@ -93,13 +101,14 @@ class ChatbotSendMessage(View):
         # Check authentication
         if not request.user.is_authenticated:
             return JsonResponse({"error": "Not authenticated"}, status=401)
-
-        # Check superuser permission
-        if not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             return JsonResponse({"error": "Permission denied"}, status=403)
 
         # Get problem
-        problem_obj = get_object_or_404(Problem, code=problem)
+        try:
+            problem_obj = _get_editable_problem(request.user, problem)
+        except Problem.DoesNotExist:
+            return JsonResponse({"error": "Problem not found"}, status=404)
 
         # Get message from request
         message = request.POST.get("message", "").strip()
@@ -153,13 +162,14 @@ class ChatbotClearHistory(View):
         # Check authentication
         if not request.user.is_authenticated:
             return JsonResponse({"error": "Not authenticated"}, status=401)
-
-        # Check superuser permission
-        if not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             return JsonResponse({"error": "Permission denied"}, status=403)
 
         # Get problem (validate it exists)
-        problem_obj = get_object_or_404(Problem, code=problem)
+        try:
+            problem_obj = _get_editable_problem(request.user, problem)
+        except Problem.DoesNotExist:
+            return JsonResponse({"error": "Problem not found"}, status=404)
 
         # Clear conversation from cache
         clear_conversation(request.user.id, problem_obj.code)
@@ -174,13 +184,14 @@ class ChatbotGetHistory(View):
         # Check authentication
         if not request.user.is_authenticated:
             return JsonResponse({"error": "Not authenticated"}, status=401)
-
-        # Check superuser permission
-        if not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             return JsonResponse({"error": "Permission denied"}, status=403)
 
         # Get problem
-        problem_obj = get_object_or_404(Problem, code=problem)
+        try:
+            problem_obj = _get_editable_problem(request.user, problem)
+        except Problem.DoesNotExist:
+            return JsonResponse({"error": "Problem not found"}, status=404)
 
         # Get conversation from cache
         conversation = get_conversation(request.user.id, problem_obj.code)
@@ -200,13 +211,14 @@ class ChatbotSetModel(View):
         # Check authentication
         if not request.user.is_authenticated:
             return JsonResponse({"error": "Not authenticated"}, status=401)
-
-        # Check superuser permission
-        if not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             return JsonResponse({"error": "Permission denied"}, status=403)
 
         # Get problem (validate it exists)
-        problem_obj = get_object_or_404(Problem, code=problem)
+        try:
+            problem_obj = _get_editable_problem(request.user, problem)
+        except Problem.DoesNotExist:
+            return JsonResponse({"error": "Problem not found"}, status=404)
 
         # Get model from request
         model_id = request.POST.get("model", "").strip()
@@ -240,10 +252,13 @@ class ChatbotDeleteMessage(View):
     def post(self, request, problem):
         if not request.user.is_authenticated:
             return JsonResponse({"error": "Not authenticated"}, status=401)
-        if not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             return JsonResponse({"error": "Permission denied"}, status=403)
 
-        problem_obj = get_object_or_404(Problem, code=problem)
+        try:
+            problem_obj = _get_editable_problem(request.user, problem)
+        except Problem.DoesNotExist:
+            return JsonResponse({"error": "Problem not found"}, status=404)
 
         try:
             message_index = int(request.POST.get("message_index", -1))

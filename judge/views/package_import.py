@@ -14,9 +14,8 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.http import Http404, HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
@@ -36,6 +35,7 @@ from judge.models import (
 from judge.package_import.kaggle_bootstrap import bootstrap as kaggle_bootstrap
 from judge.tasks.package_import import package_import_task
 from judge.utils.problem_data import ProblemDataCompiler
+from judge.utils.permissions import can_use_ai_features
 from judge.views.problem import ProblemMixin, TitleMixin
 
 logger = logging.getLogger(__name__)
@@ -71,6 +71,16 @@ def _validate_save_dir(save_dir):
     return real_dir
 
 
+def _get_importable_problem_or_404(user, code):
+    if not can_use_ai_features(user):
+        raise Http404()
+
+    queryset = Problem.objects.filter(code=code)
+    if not user.is_superuser:
+        queryset = queryset.filter(Q(authors=user.profile) | Q(curators=user.profile))
+    return queryset.distinct().get()
+
+
 class PackageImportView(
     ProblemMixin,
     TitleMixin,
@@ -86,13 +96,17 @@ class PackageImportView(
         return _("Import Package - {0}").format(self.object.name)
 
     def has_permission(self):
-        return self.request.user.is_authenticated and self.request.user.is_superuser
+        try:
+            self.object = _get_importable_problem_or_404(
+                self.request.user, self.kwargs["problem"]
+            )
+        except (Problem.DoesNotExist, Http404):
+            return False
+        return True
 
     def get(self, request, *args, **kwargs):
         if not self.has_permission():
             raise Http404()
-
-        self.object = self.get_object()
 
         # Check for a previous import task result in cache
 
@@ -127,10 +141,12 @@ class PackageImportUploadView(View):
     """
 
     def post(self, request, problem):
-        if not request.user.is_authenticated or not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             return JsonResponse({"error": "Permission denied"}, status=403)
-
-        problem_obj = get_object_or_404(Problem, code=problem)
+        try:
+            problem_obj = _get_importable_problem_or_404(request.user, problem)
+        except (Problem.DoesNotExist, Http404):
+            raise Http404()
 
         mode = (request.POST.get("mode") or "ai").strip()
         upload = request.FILES.get("package_file")
@@ -251,8 +267,12 @@ class PackageImportFileView(View):
     """API endpoint: read a file from the import temp dir for preview."""
 
     def get(self, request, problem):
-        if not request.user.is_authenticated or not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             return JsonResponse({"error": "Permission denied"}, status=403)
+        try:
+            _get_importable_problem_or_404(request.user, problem)
+        except (Problem.DoesNotExist, Http404):
+            raise Http404()
 
         file_path = request.GET.get("path", "")
         if not file_path or not file_path.startswith("/tmp/"):
@@ -278,10 +298,12 @@ class PackageImportApplyView(View):
     """API endpoint: applies a single imported field to the problem."""
 
     def post(self, request, problem):
-        if not request.user.is_authenticated or not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             return JsonResponse({"error": "Permission denied"}, status=403)
-
-        problem_obj = get_object_or_404(Problem, code=problem)
+        try:
+            problem_obj = _get_importable_problem_or_404(request.user, problem)
+        except (Problem.DoesNotExist, Http404):
+            raise Http404()
 
         field = request.POST.get("field")
         save_dir = request.POST.get("save_dir")

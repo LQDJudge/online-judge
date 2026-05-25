@@ -79,6 +79,7 @@ from judge.utils.problems import (
 )
 from judge.utils.contest_recommendation import get_contests_for_problem
 from judge.utils.storage_helpers import serve_file_inline
+from judge.utils.permissions import can_use_ai_features
 from judge.utils.strings import safe_float_or_none, safe_int_or_none
 from judge.utils.tickets import own_ticket_filter
 from judge.utils.views import (
@@ -1334,8 +1335,7 @@ class ProblemEdit(
     def handle_problem_tag(self, request):
         """Handle AI tagging request - dispatches async Celery task"""
         try:
-            # Check if user is superuser (only superusers can use AI tagging)
-            if not request.user.is_superuser:
+            if not can_use_ai_features(request.user):
                 return JsonResponse({"success": False, "error": "Permission denied"})
 
             problem_code = request.POST.get("problem_code")
@@ -1348,6 +1348,8 @@ class ProblemEdit(
                 problem = Problem.objects.get(code=problem_code)
             except Problem.DoesNotExist:
                 return JsonResponse({"success": False, "error": "Problem not found"})
+            if not problem.is_editable_by(request.user):
+                return JsonResponse({"success": False, "error": "Permission denied"})
 
             # Dispatch async Celery task
             description = request.POST.get("description", "").strip()
@@ -1372,8 +1374,7 @@ class ProblemEdit(
     def handle_improve_markdown(self, request):
         """Handle markdown improvement request - dispatches async Celery task"""
         try:
-            # Check if user is superuser (only superusers can use this feature)
-            if not request.user.is_superuser:
+            if not can_use_ai_features(request.user):
                 return JsonResponse({"success": False, "error": "Permission denied"})
 
             problem_code = request.POST.get("problem_code")
@@ -1386,6 +1387,8 @@ class ProblemEdit(
                 problem = Problem.objects.get(code=problem_code)
             except Problem.DoesNotExist:
                 return JsonResponse({"success": False, "error": "Problem not found"})
+            if not problem.is_editable_by(request.user):
+                return JsonResponse({"success": False, "error": "Permission denied"})
 
             # Get description from form (current editor content) or fall back to DB
             description = request.POST.get("description", "").strip()
@@ -2096,7 +2099,7 @@ class ProblemEditSolutions(
 
     def handle_generate_solution(self, request):
         """Handle AJAX request for auto-generating solution using LLM - dispatches async Celery task"""
-        if not request.user.is_superuser:
+        if not can_use_ai_features(request.user):
             return JsonResponse({"success": False, "error": "Permission denied"})
 
         try:

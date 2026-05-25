@@ -392,7 +392,7 @@
         }
       });
 
-      {% if request.user.is_superuser %}
+      {% if request.user|can_use_ai_features %}
       // ─── Quiz AI Features ───────────────────────────────────────────
 
       // Sync all editors before AI requests to ensure hidden fields are up-to-date
