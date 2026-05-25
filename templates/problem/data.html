@@ -890,26 +890,46 @@
 
       // Auto-detect batch mode from existing rows:
       //   MIN  → any type=S row has batch_scoring=min
-      //   ICPC → first in-batch type=C row has points=0
+      //   ICPC → first in-batch C row has points=0, OR
+      //          no batches and standalone C rows have all-but-one points=0
       //   SUM  → otherwise
       (function() {
-        var mode = 'SUM';
-        var foundBatchC = false;
+        var mode = null;
+        var inBatch = false;
+        var sawBatch = false;
+        var standaloneRows = 0;
+        var standaloneZeroPts = 0;
         $('[id$="-type"]').each(function() {
           var rowPrefix = this.id.replace(/-type$/, '');
           var type = $(this).val();
+          var pts = parseFloat($('#' + rowPrefix + '-points').val()) || 0;
           if (type === 'S') {
+            sawBatch = true;
+            inBatch = true;
             if ($('#' + rowPrefix + '-batch_scoring').val() === 'min') {
               mode = 'MIN';
               return false; // break
             }
-          } else if (type === 'C' && !foundBatchC) {
-            // First C row: if points > 0, it's SUM-style equal weights
-            var pts = parseFloat($('#' + rowPrefix + '-points').val()) || 0;
-            if (pts > 0) mode = 'SUM';
-            foundBatchC = true;
+          } else if (type === 'E') {
+            inBatch = false;
+          } else if (type === 'C') {
+            if (inBatch) {
+              // First in-batch C decides ICPC vs SUM
+              if (mode === null) mode = (pts > 0) ? 'SUM' : 'ICPC';
+            } else {
+              standaloneRows++;
+              if (pts === 0) standaloneZeroPts++;
+            }
           }
         });
+        if (mode === null) {
+          // No batches (or batches with no inner C): infer from standalone rows
+          if (standaloneRows >= 2 && standaloneZeroPts === standaloneRows - 1) {
+            mode = 'ICPC';
+          } else {
+            mode = 'SUM';
+          }
+        }
         $('#problem-type').val(mode);
       })();
       $("#problem-type").select2();
