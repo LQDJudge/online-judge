@@ -893,7 +893,7 @@
       //   ICPC → first in-batch type=C row has points=0
       //   SUM  → otherwise
       (function() {
-        var mode = 'ICPC';
+        var mode = 'SUM';
         var foundBatchC = false;
         $('[id$="-type"]').each(function() {
           var rowPrefix = this.id.replace(/-type$/, '');
@@ -1096,8 +1096,8 @@
         <div>
           {{_('Batch mode')}}:
           <select id="problem-type" style="width: 11em">
+            <option value="SUM" selected>{{_('Sum (VOI)')}}</option>
             <option value="ICPC">{{_('All or 0 (ICPC)')}}</option>
-            <option value="SUM">{{_('Sum (VOI)')}}</option>
             <option value="MIN">{{_('Min (IOI)')}}</option>
           </select>
           <a id="fill-testcases" href="#">
