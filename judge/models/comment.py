@@ -16,6 +16,7 @@ from reversion.models import Version
 from judge.models.contest import Contest
 from judge.models.interface import BlogPost
 from judge.models.problem import Problem, Solution
+from judge.models.problem_review import ProblemReviewRun
 from judge.models.profile import Profile
 from judge.caching import cache_wrapper, CacheableModel
 
@@ -274,6 +275,7 @@ class Comment(CacheableModel, MPTTModel):
         contest_ct = ContentType.objects.get_for_model(Contest)
         blog_ct = ContentType.objects.get_for_model(BlogPost)
         solution_ct = ContentType.objects.get_for_model(Solution)
+        review_run_ct = ContentType.objects.get_for_model(ProblemReviewRun)
 
         output = []
         for i in itertools.count(0):
@@ -320,6 +322,28 @@ class Comment(CacheableModel, MPTTModel):
                 )
                 for sid in accessible_solutions:
                     accessible.add((solution_ct.id, sid))
+
+            # ProblemReviewRun comments are private to the problem's editors
+            # (authors/curators). If we silently dropped them (the prior
+            # default-deny behavior), correctness held but the intent wasn't
+            # explicit — a future contributor extending this method might
+            # misread the silence as "no need to handle." Make the editor
+            # check explicit so the access rule is searchable + grep-able.
+            if review_run_ct.id in ids_by_ct:
+                rrids = ids_by_ct[review_run_ct.id]
+                if profile is not None:
+                    accessible_run_ids = set(
+                        ProblemReviewRun.objects.filter(
+                            id__in=rrids,
+                        )
+                        .filter(
+                            Q(problem__authors=profile) | Q(problem__curators=profile),
+                        )
+                        .values_list("id", flat=True)
+                        .distinct()
+                    )
+                    for rrid in accessible_run_ids:
+                        accessible.add((review_run_ct.id, rrid))
 
             for comment in chunk:
                 key = (comment.content_type_id, comment.object_id)
@@ -371,6 +395,8 @@ class Comment(CacheableModel, MPTTModel):
             return _("Editorial for ") + linked_obj.problem.name
         elif isinstance(linked_obj, BlogPost):
             return linked_obj.title
+        elif isinstance(linked_obj, ProblemReviewRun):
+            return linked_obj.problem.name + " — " + _("Review")
 
     @cached_property
     def link(self):
@@ -389,6 +415,8 @@ class Comment(CacheableModel, MPTTModel):
                     linked_obj.slug,
                 ),
             )
+        elif isinstance(linked_obj, ProblemReviewRun):
+            return reverse("problem_review_dashboard", args=(linked_obj.problem.code,))
 
     def get_absolute_url(self):
         return "%s?target_comment=%d#comment-%d" % (self.link, self.id, self.id)

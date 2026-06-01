@@ -97,6 +97,11 @@ from judge.models.problem_duplicate import (
     ProblemDuplicateReviewHistory,
 )
 from judge.models.public_request import PublicRequest
+from judge.models.problem_review import (
+    ProblemReviewRun,
+    ProblemReviewCheckResult,
+    ProblemReviewSubmissionTag,
+)
 
 revisions.register(Profile, exclude=["points", "last_access", "ip", "rating"])
 revisions.register(Problem, follow=["language_limits"])

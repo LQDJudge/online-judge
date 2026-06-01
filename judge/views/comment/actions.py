@@ -29,6 +29,7 @@ from judge.models import (
     OrganizationModerationLog,
 )
 from judge.models.problem import Solution
+from judge.models.problem_review import ProblemReviewRun
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.comment import (
     get_user_vote_on_comment,
@@ -182,6 +183,17 @@ def _can_hide_comment(request, comment):
         except Solution.DoesNotExist:
             pass
 
+    # ProblemReviewRun: authors/curators of the underlying problem may
+    # moderate the review-thread comments on their own problem. Without
+    # this branch, only global judge.change_comment holders could hide.
+    elif content_type.model == "problemreviewrun":
+        try:
+            run = ProblemReviewRun.objects.select_related("problem").get(id=object_id)
+            if run.problem.is_editor(profile):
+                return True
+        except ProblemReviewRun.DoesNotExist:
+            pass
+
     return False
 
 
@@ -277,6 +289,18 @@ def post_comment(request):
         target_object = model_class.objects.get(id=object_id)
     except model_class.DoesNotExist:
         return HttpResponseBadRequest("Target object does not exist")
+
+    # Per-content-type write access. ProblemReviewRun threads are private
+    # author/admin discussions: only editors of the underlying problem may
+    # post. Without this check any authenticated user (who has solved >=1
+    # problem) could POST comments into any review thread by crafting the
+    # content_type_id + object_id parameters. Other content types here
+    # (Problem/Contest/BlogPost/Solution) are themselves publicly visible
+    # to anyone who can reach a comment form, so their existing implicit
+    # "if you can see the form, you can comment" model is acceptable.
+    if content_type.model == "problemreviewrun":
+        if not target_object.problem.is_editable_by(request.user):
+            return HttpResponseForbidden()
 
     if parent:
         try:
