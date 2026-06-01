@@ -34,6 +34,10 @@ body:has(.chat-page) {
     #page-container {
       position: fixed;
       overflow: hidden;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
     }
   }
 
@@ -97,7 +101,7 @@ body:has(.chat-page) {
   .chat-container {
     display: flex;
     width: 100%;
-    background: #ffffff;
+    background: transparent;
     overflow: hidden;
   }
 
@@ -112,7 +116,7 @@ body:has(.chat-page) {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    background: #ffffff;
+    background: rgba($surface-primary, 0.85);
   }
 
   .chat-sidebar-content {
@@ -336,7 +340,7 @@ body:has(.chat-page) {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    background: #ffffff;
+    background: rgba($surface-primary, 0.85);
   }
 
   // Chat header

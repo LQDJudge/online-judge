@@ -4967,11 +4967,11 @@ button:focus {
     border-color: transparent;
 }
 .chat-page .chat-container {
-    background-color: var(--darkreader-background-ffffff, #181a1b);
+    background-color: transparent;
     background-image: initial;
 }
 .chat-page .chat-sidebar {
-    background-color: var(--darkreader-background-ffffff, #181a1b);
+    background-color: var(--darkreader-background-ffffffd9, rgba(24, 26, 27, 0.85));
     background-image: initial;
     border-bottom-color: currentcolor;
     border-right-color: var(--darkreader-border-e4e6eb, #373b3d);
@@ -5041,7 +5041,7 @@ button:focus {
     color: var(--darkreader-text-31a24c, #66d180);
 }
 .chat-page .chat-area {
-    background-color: var(--darkreader-background-ffffff, #181a1b);
+    background-color: var(--darkreader-background-ffffffd9, rgba(24, 26, 27, 0.85));
     background-image: initial;
 }
 .chat-page .chat-header {
