@@ -4323,15 +4323,15 @@ msgstr ""
 #: judge/review/checks/solutions_rubric.py:86
 #, python-format
 msgid "Solutions rubric LLM call failed: %(error)s"
-msgstr ""
+msgstr "Lời gọi LLM cho rubric thất bại: %(error)s"
 
 #: judge/review/checks/solutions_rubric.py:95
 msgid "All reference solutions look right."
-msgstr ""
+msgstr "Tập bài tham chiếu trông ổn."
 
 #: judge/review/checks/solutions_rubric.py:99
 msgid "Solutions rubric flagged an issue."
-msgstr ""
+msgstr "Rubric phát hiện vấn đề."
 
 #: judge/review/checks/solutions_rubric.py:101
 #, python-format
@@ -4349,6 +4349,8 @@ msgid ""
 "No fully-AC reference submission — depends on solutions_rubric reference "
 "set."
 msgstr ""
+"Chưa có bài nộp tham chiếu nào đạt full AC — phụ thuộc vào tập tham chiếu "
+"của solutions_rubric."
 
 #: judge/review/checks/time_limit_headroom.py:74
 #, python-format
@@ -10445,22 +10447,19 @@ msgid "Reference solutions for review"
 msgstr "Các bài nộp tham chiếu cho xem xét"
 
 #: templates/problem/edit.html:481
-#, fuzzy
 #| msgid "Generate Solution"
 msgid "Reference solutions"
-msgstr "Tạo lời giải"
+msgstr "Bài nộp tham chiếu"
 
 #: templates/problem/edit.html:483
-#, fuzzy
 #| msgid "Attached files"
 msgid "attached"
-msgstr "Tệp đính kèm"
+msgstr "đã gắn"
 
 #: templates/problem/edit.html:485
-#, fuzzy
 #| msgid "problem attachment"
 msgid "none attached"
-msgstr "Tệp đính kèm bài"
+msgstr "chưa gắn bài nào"
 
 #: templates/problem/edit.html:492
 msgid ""
@@ -10479,16 +10478,14 @@ msgid "No reference solutions attached yet."
 msgstr "Chưa có bài nộp tham chiếu nào."
 
 #: templates/problem/edit.html:528
-#, fuzzy
 #| msgid "Submission"
 msgid "Submission ID"
-msgstr "Bài nộp"
+msgstr "ID bài nộp"
 
 #: templates/problem/edit.html:530
-#, fuzzy
 #| msgid "Attachments"
 msgid "Attach"
-msgstr "Tệp đính kèm"
+msgstr "Gắn"
 
 #: templates/problem/edit.html:573
 msgid "Auto-Generate Types & Points"
@@ -10496,7 +10493,7 @@ msgstr "Tự động gán nhãn dạng bài & điểm"
 
 #: templates/problem/edit.html:674
 msgid "Awaiting admin approval."
-msgstr ""
+msgstr "Đang chờ admin duyệt."
 
 #: templates/problem/edit.html:677
 #| msgid "Review"
@@ -10524,16 +10521,14 @@ msgid "Rejection feedback:"
 msgstr "phản hồi từ máy chấm"
 
 #: templates/problem/edit.html:747
-#, fuzzy
 #| msgid "Filter submissions"
 msgid "Please enter a submission ID."
-msgstr "Lọc bài nộp"
+msgstr "Vui lòng nhập ID bài nộp."
 
 #: templates/problem/edit.html:753
-#, fuzzy
 #| msgid "Attached files"
 msgid "Attach failed."
-msgstr "Tệp đính kèm"
+msgstr "Gắn bài nộp thất bại."
 
 #: templates/problem/edit_base.html:13 templates/problem/import.html:38
 #: templates/problem/log.html:26
