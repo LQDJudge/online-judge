@@ -71,6 +71,7 @@ class LLMConfig:
         self.bot_name_markdown: Optional[str] = None
         self.bot_name_solution: Optional[str] = None
         self.bot_name_chatbot: Optional[str] = None
+        self.bot_name_review: Optional[str] = None
 
         # Try to load from Django settings first, then environment
         self._load_config()
@@ -93,6 +94,7 @@ class LLMConfig:
             self.bot_name_markdown = getattr(settings, "POE_BOT_NAME_MARKDOWN", None)
             self.bot_name_solution = getattr(settings, "POE_BOT_NAME_SOLUTION", None)
             self.bot_name_chatbot = getattr(settings, "POE_BOT_NAME_CHATBOT", None)
+            self.bot_name_review = getattr(settings, "POE_BOT_NAME_REVIEW", None)
         except ImportError:
             # Django not available, use environment variables
             pass
@@ -152,6 +154,10 @@ class LLMConfig:
         """Get bot name for chatbot tasks (falls back to default bot_name)"""
         return self.bot_name_chatbot or self.bot_name
 
+    def get_bot_name_for_review(self) -> str:
+        """Get bot name for auto-review pipeline (falls back to default bot_name)"""
+        return self.bot_name_review or self.bot_name
+
     def get_chatbot_supported_models(self) -> list:
         """Get list of supported models for chatbot"""
         return CHATBOT_SUPPORTED_MODELS
@@ -183,6 +189,7 @@ class LLMConfig:
             "bot_name_markdown": self.get_bot_name_for_markdown(),
             "bot_name_solution": self.get_bot_name_for_solution(),
             "bot_name_chatbot": self.get_bot_name_for_chatbot(),
+            "bot_name_review": self.get_bot_name_for_review(),
             "sleep_time": self.sleep_time,
             "timeout": self.timeout,
             "max_retries": self.max_retries,

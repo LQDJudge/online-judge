@@ -17,6 +17,7 @@
     {{ make_edit_tab_item('templates', 'fa fa-code', url('problem_edit_language_templates', problem.code), _('Templates')) }}
     {{ make_edit_tab_item('solutions', 'fa fa-lightbulb', url('problem_edit_solutions', problem.code), _('Solutions')) }}
     {{ make_edit_tab_item('translations', 'fa fa-language', url('problem_edit_translations', problem.code), _('Translate')) }}
+    {{ make_edit_tab_item('review', 'fa fa-clipboard-check', url('problem_review_dashboard', problem.code), _('Review')) }}
     {{ make_edit_tab_item('log', 'fa fa-history', url('problem_log', problem.code), _('History')) }}
     {% if request.user|can_use_ai_features %}
       {{ make_edit_tab_item('chatbot', 'fa fa-robot', url('problem_chatbot', problem.code), _('AI Assistant')) }}

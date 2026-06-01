@@ -747,6 +747,22 @@
             </div>
           {% endif %}
         {% endif %}
+        <div class="request-info">
+          <b>{{ _('Auto-review') }}:</b>
+          {% set v = review_verdicts.get(problem.id) %}
+          {% if v %}
+            <a href="{{ url('problem_review_dashboard', problem.code) }}"
+               class="auto-review-badge auto-review-badge-{{ v }}">
+              {% if v == 'pass' %}<i class="fa fa-check"></i> {{ _('Pass') }}
+              {% elif v == 'fail' %}<i class="fa fa-times"></i> {{ _('Fail') }}
+              {% elif v == 'running' %}<i class="fa fa-spinner fa-spin"></i> {{ _('Running') }}
+              {% elif v == 'error' %}<i class="fa fa-exclamation-triangle"></i> {{ _('Error') }}
+              {% endif %}
+            </a>
+          {% else %}
+            <span class="auto-review-badge auto-review-badge-none">{{ _('No run yet') }}</span>
+          {% endif %}
+        </div>
       {% endif %}
 
       <div class="blog-description">

@@ -180,6 +180,39 @@
       setupUseTemplateButton('{{ form.description.id_for_label }}', '{{ _("This will replace the current description. Continue?") }}');
 
       // Handle Request Public button click
+      var requestPublicCountdownTimer = null;
+
+      function formatMMSS(seconds) {
+        seconds = Math.max(0, Math.floor(seconds));
+        var m = Math.floor(seconds / 60);
+        var s = seconds % 60;
+        return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+      }
+
+      function startCooldownCountdown($status, $btn, remainingSeconds, serverMessage) {
+        // serverMessage is the already-translated text returned by the server,
+        // containing one "MM:SS" run. We swap THAT substring out each second
+        // so the translation (Vietnamese / English) stays correct without the
+        // client needing to know the gettext template.
+        if (requestPublicCountdownTimer) {
+          clearInterval(requestPublicCountdownTimer);
+        }
+        var ends = Date.now() + remainingSeconds * 1000;
+        function render() {
+          var left = Math.ceil((ends - Date.now()) / 1000);
+          if (left <= 0) {
+            clearInterval(requestPublicCountdownTimer);
+            requestPublicCountdownTimer = null;
+            $status.text('').css('color', '');
+            $btn.prop('disabled', false);
+            return;
+          }
+          $status.text(serverMessage.replace(/\d{2}:\d{2}/, formatMMSS(left))).css('color', 'red');
+        }
+        render();
+        requestPublicCountdownTimer = setInterval(render, 1000);
+      }
+
       $('#request-public-btn').click(function() {
         var $btn = $(this);
         var $status = $('#request-public-status');
@@ -199,11 +232,22 @@
           },
           success: function(data) {
             if (data.success) {
-              location.reload();
-            } else {
-              $status.text(data.error || '{{ _("An error occurred.") }}').css('color', 'red');
-              $btn.prop('disabled', false);
+              // Server returns `redirect` pointing at /problem/<code>/review so
+              // the author lands on the dashboard right after kicking off a run.
+              // Fall back to a soft reload if it's not present.
+              if (data.redirect) {
+                location.href = data.redirect;
+              } else {
+                location.reload();
+              }
+              return;
             }
+            if (typeof data.cooldown_seconds_remaining === 'number' && data.cooldown_seconds_remaining > 0) {
+              startCooldownCountdown($status, $btn, data.cooldown_seconds_remaining, data.error || '');
+              return;
+            }
+            $status.text(data.error || '{{ _("An error occurred.") }}').css('color', 'red');
+            $btn.prop('disabled', false);
           },
           error: function() {
             $status.text('{{ _("Network error occurred") }}').css('color', 'red');
@@ -312,39 +356,6 @@
             <label for="{{ form.is_public.id_for_label }}"><b>{{ form.is_public.label }}{% if form.is_public.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
             {{ form.is_public }}
           </div>
-
-          {% if not problem.is_public or problem.is_organization_private %}
-            <div class="form-row" id="request-public-section">
-              {% if public_request and public_request.status == 'P' %}
-                <div class="alert alert-info" style="margin: 0;">
-                  <i class="fa fa-clock"></i> {{_("Public request is pending review.")}}
-                </div>
-              {% elif public_request and public_request.status == 'R' %}
-                <div class="alert alert-danger" style="margin: 0;">
-                  <i class="fa fa-times-circle"></i> {{_("Public request was rejected.")}}
-                  {% if public_request.feedback %}
-                    <div style="margin-top: 0.5em; padding-top: 0.5em;">
-                      <b>{{_("Feedback:")}}</b> {{ public_request.feedback }}
-                    </div>
-                  {% endif %}
-                  <div style="margin-top: 0.5em;">
-                    <button type="button" id="request-public-btn" class="action-btn small">
-                      <i class="fa fa-redo"></i> {{_("Re-request Public")}}
-                    </button>
-                    <span id="request-public-status" style="margin-left: 10px;"></span>
-                  </div>
-                </div>
-              {% else %}
-                <button type="button" id="request-public-btn" class="action-btn small">
-                  <i class="fa fa-globe"></i> {{_("Request Public")}}
-                </button>
-                <span id="request-public-status" style="margin-left: 10px;"></span>
-                <div style="margin-top: 0.3em;">
-                  <small class="gray">{{_("Request to publish this problem so it is visible to everyone. An admin will review and approve or reject your request.")}}</small>
-                </div>
-              {% endif %}
-            </div>
-          {% endif %}
 
           <div class="form-row">
             <label for="{{ form.organizations.id_for_label }}"><b>{{ _('Organizations') }}{% if form.organizations.field.required %}<span class="red"> * </span>{% endif %}:</b></label>
@@ -458,6 +469,70 @@
                 {% endfor %}
               </div>
             {% endif %}
+          </div>
+
+          {% set tags_for_problem = review_existing_tags.values() %}
+          {% set tag_count = tags_for_problem|length %}
+          <div class="form-row">
+            <label><b>{{ _('Reference solutions for review') }}:</b></label>
+            <details class="review-tag-panel"{% if tag_count > 0 %} open{% endif %}>
+              <summary class="review-tag-summary">
+                <span class="review-tag-summary-icon"><i class="fa fa-flask"></i></span>
+                <span class="review-tag-summary-title">{{ _('Reference solutions') }}</span>
+                {% if tag_count > 0 %}
+                  <span class="review-tag-summary-count">{{ tag_count }} {{ _('attached') }}</span>
+                {% else %}
+                  <span class="review-tag-summary-count gray">{{ _('none attached') }}</span>
+                {% endif %}
+                <span class="review-tag-summary-chevron"><i class="fa fa-chevron-down"></i></span>
+              </summary>
+
+              <div class="review-tag-body">
+                <p class="review-tag-help">
+                  {{ _('Attach the submission IDs of your reference solutions (main AC, brute force, subtask-targeted solutions). The auto-review system will analyze them against the problem statement and verify correctness, complexity, and subtask coverage.') }}
+                </p>
+
+                <div id="attached-references">
+                  {% if tag_count == 0 %}
+                    <p class="gray review-tag-empty">{{ _('No reference solutions attached yet.') }}</p>
+                  {% else %}
+                    <ul class="attached-ref-list">
+                      {% for tag in tags_for_problem %}
+                        <li data-submission-id="{{ tag.submission_id }}" class="attached-ref-item">
+                          <a href="{{ url('submission_status', tag.submission.id) }}" class="attached-ref-id">
+                            #{{ tag.submission.id }}
+                          </a>
+                          <span class="attached-ref-lang">
+                            {{ tag.submission.language.name if tag.submission.language else '' }}
+                          </span>
+                          <span class="attached-ref-result {{ 'green' if tag.submission.result == 'AC' else 'red' }}">
+                            {{ tag.submission.result }}
+                          </span>
+                          {% if tag.submission.case_total %}
+                            <span class="attached-ref-score gray">
+                              {{ tag.submission.case_points }}/{{ tag.submission.case_total }}
+                            </span>
+                          {% endif %}
+                          <button type="button" class="action-btn small detach-btn">
+                            <i class="fa fa-times"></i> {{ _('Remove') }}
+                          </button>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% endif %}
+                </div>
+
+                <div class="review-tag-attach">
+                  <input type="number" id="attach-ref-input" min="1"
+                         class="attach-ref-input"
+                         placeholder="{{ _('Submission ID') }}" />
+                  <button type="button" id="attach-reference-btn" class="action-btn small">
+                    <i class="fa fa-plus"></i> {{ _('Attach') }}
+                  </button>
+                  <span id="attach-ref-status" class="red attach-ref-status"></span>
+                </div>
+              </div>
+            </details>
           </div>
 
         </div>
@@ -592,8 +667,117 @@
 
       <div class="form-actions" style="margin-top: 1em;">
         <button type="submit" class="action-btn">{{ _('Save') }}</button>
+
+        {% if not problem.is_public or problem.is_organization_private %}
+          {% if public_request and public_request.status == 'P' %}
+            <span class="form-actions-status alert alert-info">
+              <i class="fa fa-clock"></i> {{_("Awaiting admin approval.")}}
+            </span>
+            <button type="button" id="request-public-btn" class="action-btn">
+              <i class="fa fa-redo"></i> {{_("Re-run review")}}
+            </button>
+            <span id="request-public-status" class="form-actions-status"></span>
+          {% elif public_request and public_request.status == 'R' %}
+            <button type="button" id="request-public-btn" class="action-btn">
+              <i class="fa fa-redo"></i> {{_("Re-request Public")}}
+            </button>
+            <span id="request-public-status" class="form-actions-status"></span>
+          {% else %}
+            <button type="button" id="request-public-btn" class="action-btn">
+              <i class="fa fa-globe"></i> {{_("Request Public")}}
+            </button>
+            <span id="request-public-status" class="form-actions-status"></span>
+          {% endif %}
+
+          {# Surface the bot's auto-review verdict so author isn't confused between
+             "admin pending" and "bot status". They are independent. #}
+          {% if latest_review_run %}
+            <a href="{{ url('problem_review_dashboard', problem.code) }}"
+               class="form-actions-status review-verdict-pill">
+              <i class="fa fa-robot"></i>
+              {{ _('Auto-review') }}:
+              {% if review_verdict == 'pass' %}
+                <b class="green">{{ _('Pass') }}</b>
+              {% elif review_verdict == 'fail' %}
+                <b class="red">{{ _('Issues found') }}</b>
+              {% elif review_verdict == 'running' %}
+                <b class="gray">{{ _('Running…') }}</b>
+              {% elif review_verdict == 'error' %}
+                <b class="red">{{ _('Error') }}</b>
+              {% else %}
+                <b class="gray">{{ latest_review_run.get_status_display() }}</b>
+              {% endif %}
+              <i class="fa fa-arrow-right review-verdict-arrow"></i>
+            </a>
+          {% endif %}
+        {% endif %}
       </div>
+
+      {% if not problem.is_public or problem.is_organization_private %}
+        {% if public_request and public_request.status == 'R' and public_request.feedback %}
+          <div class="alert alert-danger" style="margin-top: 0.5em;">
+            <i class="fa fa-times-circle"></i>
+            <b>{{_("Rejection feedback:")}}</b> {{ public_request.feedback }}
+          </div>
+        {% endif %}
+      {% endif %}
     </form>
+
+    <script>
+      (function () {
+        var tagUrl = "{{ url('problem_review_tag', problem.code) }}";
+        var untagUrl = "{{ url('problem_review_untag', problem.code) }}";
+        var csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (!csrfInput) return;
+        var csrf = csrfInput.value;
+
+        function post(url, body) {
+          var fd = new FormData();
+          Object.keys(body).forEach(function (k) { fd.append(k, body[k]); });
+          fd.append("csrfmiddlewaretoken", csrf);
+          return fetch(url, {method: "POST", body: fd, credentials: "same-origin"}).then(function (r) { return r.json(); });
+        }
+
+        var input = document.getElementById("attach-ref-input");
+        var statusEl = document.getElementById("attach-ref-status");
+        var attachBtn = document.getElementById("attach-reference-btn");
+
+        function submitAttach() {
+          var sid = (input.value || "").trim();
+          if (!sid) { statusEl.textContent = "{{ _('Please enter a submission ID.') }}"; return; }
+          statusEl.textContent = "";
+          attachBtn.disabled = true;
+          post(tagUrl, {submission_id: sid}).then(function (j) {
+            if (j.success) { location.reload(); }
+            else {
+              statusEl.textContent = j.error || "{{ _('Attach failed.') }}";
+              attachBtn.disabled = false;
+            }
+          });
+        }
+
+        if (attachBtn) {
+          attachBtn.addEventListener("click", submitAttach);
+        }
+        if (input) {
+          input.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              submitAttach();
+            }
+          });
+        }
+
+        document.querySelectorAll(".detach-btn").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var sid = btn.closest("li").dataset.submissionId;
+            post(untagUrl, {submission_id: sid}).then(function (j) {
+              if (j.success) { location.reload(); }
+            });
+          });
+        });
+      })();
+    </script>
   </div>
 
 {% endblock %}

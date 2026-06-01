@@ -536,6 +536,33 @@ RL_SEMANTIC_SEARCH = "5/m"
 # Anonymous users may only access the first N pages of paginated listings.
 ANON_MAX_PAGE = 3
 
+# ============================================================
+# Auto-review pipeline (problem public requests)
+# ============================================================
+AUTO_REVIEW_ENABLED = True
+AUTO_REVIEW_REQUEST_COOLDOWN_SECONDS = 600  # 10 min between Request public presses
+AUTO_REVIEW_RUN_TIMEOUT_SECONDS = 1800  # 30 min before a stuck run is reaped
+AUTO_REVIEW_DUPLICATE_THRESHOLD = 0.93  # cosine sim threshold for duplicate_detection
+AUTO_REVIEW_TL_HEADROOM_RATIO = 0.8  # main AC must use < this fraction of TL
+AUTO_REVIEW_SUBTASK_TOLERANCE_PCT = 5.0  # OI subtask % must be within this band
+AUTO_REVIEW_STATEMENT_MIN_CHARS = 100  # min statement length for artifacts_present
+AUTO_REVIEW_LLM_RETRY_COUNT = 3  # LLM retry budget per call
+AUTO_REVIEW_JUDGE_WAIT_TIMEOUT_SECONDS = (
+    600  # max time to wait for an internal submission
+)
+
+# Celery Beat schedule. Currently only used by the auto-review reaper; if you
+# add a new periodic task, append it here. Note: the schedule is only active
+# when celery-beat is running (`celery -A dmoj_celery beat`), separate from
+# the worker process. If beat is not deployed in your environment, the reaper
+# will not fire — stuck runs would have to be cleared manually.
+CELERY_BEAT_SCHEDULE = {
+    "reap-stale-review-runs": {
+        "task": "judge.tasks.review.reap_stale_review_runs",
+        "schedule": 300.0,  # every 5 minutes
+    },
+}
+
 
 try:
     with open(os.path.join(os.path.dirname(__file__), "local_settings.py")) as f:
