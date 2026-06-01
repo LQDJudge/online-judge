@@ -2,6 +2,7 @@ import difflib
 import json
 import logging
 import uuid
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib import messages
@@ -10,6 +11,7 @@ from django.db.models import Q
 from django.http import Http404, HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext as _, get_language
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, TemplateView, View
@@ -35,8 +37,12 @@ from judge.models import Problem, ProblemType, Profile, Submission
 from judge.models.notification import Notification, NotificationCategory
 from judge.models.problem import get_distinct_problem_points
 from judge.models.public_request import PublicRequest
+from judge.models.problem_review import ProblemReviewCheckResult, ProblemReviewRun
+from judge.review.hashing import compute_input_hash
+from judge.review.system_bot import post_system_comment_on_review
 from judge.tasks import rescore_problem
 from judge.tasks.llm import improve_markdown_task, tag_problem_task
+from judge.tasks.review import review_problem
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.problem_equivalence import (
     ProblemEquivalenceError,
@@ -46,6 +52,12 @@ from judge.utils.problem_merge import ProblemMerge
 from judge.utils.strings import safe_float_or_none
 
 logger = logging.getLogger(__name__)
+
+
+def _format_mmss(seconds):
+    """Format remaining seconds as MM:SS for human-readable countdowns."""
+    total = max(0, int(seconds))
+    return "%02d:%02d" % (total // 60, total % 60)
 
 
 class InternalView(object):
@@ -609,6 +621,49 @@ class InternalProblemQueue(InternalView, ListView):
             context["page_prefix"] = self.request.path + "?page="
             context["first_page_href"] = self.request.path
 
+        # Auto-review status for the request_public tab.
+        if self.current_tab == "request_public":
+            problems_in_page = list(context.get("problems", []))
+            problem_ids = [p.id for p in problems_in_page]
+            latest_runs = {}
+            for r in ProblemReviewRun.objects.filter(
+                problem_id__in=problem_ids, superseded_by__isnull=True
+            ).order_by("-started_at"):
+                latest_runs.setdefault(r.problem_id, r)
+            context["latest_review_runs"] = latest_runs
+
+            # One query to find which DONE runs have any FAIL — replaces an
+            # N+1 .exists() per row in the loop below. For a 20-row page
+            # that's 20 queries → 1.
+            done_run_ids = [
+                r.id for r in latest_runs.values() if r.status == ProblemReviewRun.DONE
+            ]
+            fail_run_ids = set(
+                ProblemReviewCheckResult.objects.filter(
+                    run_id__in=done_run_ids,
+                    status=ProblemReviewCheckResult.FAIL,
+                )
+                .values_list("run_id", flat=True)
+                .distinct()
+            )
+
+            def _verdict_for(pid):
+                r = latest_runs.get(pid)
+                if not r:
+                    return None
+                if r.status == ProblemReviewRun.RUNNING:
+                    return "running"
+                if r.status == ProblemReviewRun.ERROR:
+                    return "error"
+                return "fail" if r.id in fail_run_ids else "pass"
+
+            context["review_verdicts"] = {
+                p.id: _verdict_for(p.id) for p in problems_in_page
+            }
+        else:
+            context["latest_review_runs"] = {}
+            context["review_verdicts"] = {}
+
         return context
 
 
@@ -657,8 +712,20 @@ def publish_problem(request):
         # Rescore after publish
         transaction.on_commit(lambda: rescore_problem.delay(problem.id))
 
-    # Notify the author
+    # Notify the author (notification bell)
     _notify_request_author(problem, request.profile, PublicRequest.APPROVED)
+
+    # Post a system message in the review thread so the conversation is
+    # complete — author sees "approved" inline with their iteration history
+    # instead of only via the notification bell. The reviewer name is wrapped
+    # in `[user:NAME]` (the project's reference-filter syntax) so it renders
+    # as a rank-colored link just like "Triggered by ..." in the run header.
+    reviewer_token = "[user:%s]" % request.user.username
+    post_system_comment_on_review(
+        problem,
+        _("**[System]** This problem was approved by %(name)s. It is now public.")
+        % {"name": reviewer_token},
+    )
 
     return JsonResponse({"success": True})
 
@@ -685,8 +752,24 @@ def reject_problem(request):
     except PublicRequest.DoesNotExist:
         return JsonResponse({"success": False, "error": "No public request found"})
 
-    # Notify the author
+    # Notify the author (notification bell)
     _notify_request_author(problem, request.profile, PublicRequest.REJECTED)
+
+    # Post a system message in the review thread so the author sees the
+    # rejection reason inline with their iteration history. Include the
+    # feedback verbatim (it's the actionable instruction they need). The
+    # reviewer name uses `[user:NAME]` so the reference filter renders it
+    # as a rank-colored link (matching the header style elsewhere).
+    reviewer_token = "[user:%s]" % request.user.username
+    if feedback:
+        body = _(
+            "**[System]** This problem was rejected by %(name)s.\n\n**Reason:** %(reason)s"
+        ) % {"name": reviewer_token, "reason": feedback}
+    else:
+        body = _(
+            "**[System]** This problem was rejected by %(name)s. No reason was provided."
+        ) % {"name": reviewer_token}
+    post_system_comment_on_review(problem, body)
 
     return JsonResponse({"success": True})
 
@@ -730,7 +813,13 @@ def improve_markdown_queue(request):
 
 @require_POST
 def request_public(request):
-    """Author requests a problem to be made public."""
+    """Author requests a problem to be made public.
+
+    With auto-review enabled, this creates a PublicRequest (or transitions
+    existing one to PENDING), creates a new ProblemReviewRun, supersedes any prior
+    run, and enqueues review_problem. Guards: permission, in-flight,
+    dirty-check, cooldown.
+    """
     if not request.user.is_authenticated:
         return HttpResponseForbidden()
 
@@ -740,18 +829,139 @@ def request_public(request):
     except Exception:
         return JsonResponse({"success": False, "error": "Problem not found"})
 
-    # Must be an editor of the problem
+    # Guard 1: Permission
     if not problem.is_editable_by(request.user):
         return JsonResponse({"success": False, "error": "Permission denied"})
 
-    # Check if there's already a pending request
+    # If auto-review is disabled, fall back to legacy behavior.
+    if not getattr(settings, "AUTO_REVIEW_ENABLED", True):
+        return _legacy_request_public(request, problem)
+
+    new_hash = compute_input_hash(problem)
+
+    # The in-flight + dirty-check + cooldown guards plus the run creation all
+    # happen inside a single atomic block, with a SELECT … FOR UPDATE on the
+    # Problem row serializing concurrent POSTs for the same problem. Without
+    # this, two near-simultaneous Request Public clicks could both pass the
+    # in-flight check, both pass dirty-check, and both create a new run —
+    # leaving two rows where `superseded_by IS NULL`, breaking the dashboard's
+    # "latest run" assumption.
+    with transaction.atomic():
+        Problem.objects.select_for_update().filter(id=problem.id).first()
+
+        # Guard 2: In-flight (inside the lock so a racing peer's run is visible)
+        if ProblemReviewRun.objects.filter(
+            problem=problem, status=ProblemReviewRun.RUNNING
+        ).exists():
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": _("Review currently running, please wait."),
+                }
+            )
+
+        latest_run = (
+            ProblemReviewRun.objects.filter(problem=problem)
+            .order_by("-started_at")
+            .first()
+        )
+
+        if latest_run is not None:
+            # Guard 3: Dirty-check
+            if latest_run.input_hash == new_hash:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": _(
+                            "No changes since your last review — edit "
+                            "something and try again."
+                        ),
+                    }
+                )
+            # Guard 4: Cooldown — only enforced when the *same* non-admin user
+            # is re-requesting. Cases that bypass:
+            #   - current user is superuser (admin diagnostic re-runs)
+            #   - previous run was triggered by a different user (e.g. admin
+            #     re-ran in between; clock shouldn't restart against the author)
+            # The rate-limit's purpose is preventing one author from hammering
+            # the button, not penalizing them for someone else's action.
+            same_user_recently = (
+                not request.user.is_superuser
+                and latest_run.triggered_by_id == request.profile.id
+            )
+            if same_user_recently:
+                cooldown_seconds = getattr(
+                    settings, "AUTO_REVIEW_REQUEST_COOLDOWN_SECONDS", 600
+                )
+                cooldown_end = latest_run.started_at + timedelta(
+                    seconds=cooldown_seconds
+                )
+                remaining = (cooldown_end - timezone.now()).total_seconds()
+                if remaining > 0:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": _(
+                                "Please wait %(mmss)s before requesting review again."
+                            )
+                            % {"mmss": _format_mmss(remaining)},
+                            "cooldown_seconds_remaining": int(remaining),
+                        }
+                    )
+
+        # All guards passed.
+        existing = PublicRequest.objects.filter(problem=problem).first()
+        if existing:
+            existing.status = PublicRequest.PENDING
+            existing.requested_by = request.profile
+            existing.feedback = ""
+            existing.reviewed_by = None
+            existing.save(
+                update_fields=[
+                    "status",
+                    "requested_by",
+                    "feedback",
+                    "reviewed_by",
+                    "updated_at",
+                ]
+            )
+        else:
+            PublicRequest.objects.create(
+                problem=problem,
+                requested_by=request.profile,
+            )
+
+        new_run = ProblemReviewRun.objects.create(
+            problem=problem,
+            triggered_by=request.profile,
+            input_hash=new_hash,
+        )
+        if latest_run:
+            latest_run.superseded_by = new_run
+            latest_run.save(update_fields=["superseded_by"])
+
+        transaction.on_commit(lambda: review_problem.delay(new_run.id))
+
+    return JsonResponse(
+        {
+            "success": True,
+            "run_id": new_run.id,
+            "redirect": reverse("problem_review_dashboard", args=[problem.code]),
+        }
+    )
+
+
+def _legacy_request_public(request, problem):
+    """Fallback when AUTO_REVIEW_ENABLED=False — pre-auto-review flow."""
     existing = PublicRequest.objects.filter(problem=problem).first()
     if existing:
         if existing.status == PublicRequest.PENDING:
             return JsonResponse(
-                {"success": False, "error": _("A pending request already exists.")}
+                {
+                    "success": False,
+                    "error": _("A pending request already exists."),
+                }
             )
-        # Re-request after rejection: update existing record
         existing.status = PublicRequest.PENDING
         existing.requested_by = request.profile
         existing.feedback = ""
@@ -770,10 +980,7 @@ def request_public(request):
             problem=problem,
             requested_by=request.profile,
         )
-
-    # Notify superusers
     _notify_superusers_new_request(problem, request.profile)
-
     return JsonResponse({"success": True})
 
 

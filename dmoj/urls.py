@@ -66,6 +66,7 @@ from judge.views import (
 )
 from judge.views import package_import
 from judge.views import quiz_import
+from judge.views import review as problem_review
 from judge.views.problem_attachment import (
     attachment_delete,
     attachment_download,
@@ -312,6 +313,26 @@ urlpatterns = [
                 ),
                 re_path(r"^/edit$", problem.ProblemEdit.as_view(), name="problem_edit"),
                 re_path(r"^/log$", problem.ProblemLog.as_view(), name="problem_log"),
+                re_path(
+                    r"^/review$",
+                    problem_review.problem_review_dashboard,
+                    name="problem_review_dashboard",
+                ),
+                re_path(
+                    r"^/review/status$",
+                    problem_review.problem_review_status,
+                    name="problem_review_status",
+                ),
+                re_path(
+                    r"^/review/tag$",
+                    problem_review.problem_review_tag,
+                    name="problem_review_tag",
+                ),
+                re_path(
+                    r"^/review/untag$",
+                    problem_review.problem_review_untag,
+                    name="problem_review_untag",
+                ),
                 re_path(
                     r"^/edit/language_limits$",
                     problem.ProblemEditLanguageLimits.as_view(),

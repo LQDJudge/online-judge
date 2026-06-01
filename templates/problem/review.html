@@ -1,0 +1,254 @@
+{% extends "problem/edit_base.html" %}
+{% set page_type = 'review' %}
+
+{% block media %}
+  {{ super() }}
+  {% if latest_run %}
+    {% include "comments/media-css.html" %}
+  {% endif %}
+{% endblock %}
+
+{% block js_media %}
+  {{ super() }}
+  {% if latest_run %}
+    {% include "comments/media-js.html" %}
+  {% endif %}
+{% endblock %}
+
+{% block edit_content %}
+  <div class="review-dashboard">
+    {% if not latest_run %}
+      <div class="review-empty">
+        <i class="fa fa-clipboard-check"></i>
+        <p>{{ _("No review run yet for this problem.") }}</p>
+      </div>
+    {% else %}
+      {% set passed = check_results | selectattr("status", "equalto", "S") | list | length %}
+      {% set failed = check_results | selectattr("status", "equalto", "F") | list | length %}
+      {% set skipped = check_results | selectattr("status", "equalto", "K") | list | length %}
+      {% set errored = check_results | selectattr("status", "equalto", "E") | list | length %}
+      {% set pending = check_results | selectattr("status", "equalto", "P") | list | length %}
+      {% set total = check_results | length %}
+
+      {# === Header card === #}
+      <section id="run-status" class="review-card review-header"
+               data-run-id="{{ latest_run.id }}" data-status="{{ latest_run.status }}"
+               data-viewing-history="{{ '1' if viewing_history else '0' }}">
+        <div class="review-header-row">
+          <div class="review-header-status">
+            {% if latest_run.status == 'D' %}
+              {% set header_class = 'green' %}
+            {% elif latest_run.status == 'R' %}
+              {% set header_class = 'gray' %}
+            {% else %}
+              {% set header_class = 'red' %}
+            {% endif %}
+            <span class="review-status-badge {{ header_class }}">
+              {{ latest_run.get_status_display() }}
+            </span>
+            <span class="review-header-runid">
+              {{ _("Run") }} #{{ latest_run_index if latest_run_index else latest_run.id }}
+            </span>
+          </div>
+          <div class="review-header-meta">
+            {{ _("Triggered by") }}
+            {% if latest_run.triggered_by %}
+              {{ link_user(latest_run.triggered_by) }}
+            {% else %}
+              {{ _("(unknown)") }}
+            {% endif %}
+            &middot; {{ latest_run.started_at | date(_("N j, Y, g:i a")) }}
+          </div>
+          {% if history_entries | length > 1 %}
+            <div class="review-header-history">
+              <label for="review-history-select" class="review-history-label">
+                {{ _("View run") }}:
+              </label>
+              <select id="review-history-select" class="review-history-select">
+                {% for entry in history_entries %}
+                  <option value="{{ url('problem_review_dashboard', problem.code) }}?run={{ entry.index }}"
+                          {% if entry.id == latest_run.id %}selected{% endif %}>
+                    #{{ entry.index }} — {{ entry.status_display }}{% if entry.is_latest %} ({{ _("latest") }}){% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      {# Superseded-run banner — only when the user explicitly navigated to a
+         non-latest run via ?run=N. Provides a quick way back to the active one. #}
+      {% if viewing_history and actual_latest_run %}
+        <section class="review-card review-superseded-banner">
+          <i class="fa fa-history"></i>
+          {{ _("You are viewing a historical run.") }}
+          {{ _("It was superseded by") }}
+          <a href="{{ url('problem_review_dashboard', problem.code) }}">
+            {{ _("Run") }} #{{ actual_latest_run_index }}
+          </a>.
+        </section>
+      {% endif %}
+
+      {# === Overall verdict === #}
+      <section class="review-card review-verdict">
+        <div class="review-verdict-row">
+          {% if latest_run.status == 'R' %}
+            <span class="review-verdict-icon gray"><i class="fa fa-spinner fa-spin"></i></span>
+            <span class="review-verdict-text">{{ _("Review in progress…") }}</span>
+          {% elif failed > 0 or errored > 0 %}
+            <span class="review-verdict-icon red"><i class="fa fa-exclamation-circle"></i></span>
+            <span class="review-verdict-text">
+              <strong>{{ failed + errored }} {{ _("issue(s) to address.") }}</strong>
+              <span class="review-verdict-counts">
+                ({{ passed }} {{ _("passed") }}, {{ skipped }} {{ _("skipped") }})
+              </span>
+            </span>
+          {% elif passed > 0 %}
+            <span class="review-verdict-icon green"><i class="fa fa-check-circle"></i></span>
+            <span class="review-verdict-text">
+              <strong>{{ _("All checks passed.") }}</strong>
+              <span class="review-verdict-counts">
+                ({{ passed }} {{ _("passed") }}{% if skipped > 0 %}, {{ skipped }} {{ _("skipped") }}{% endif %})
+              </span>
+            </span>
+          {% else %}
+            <span class="review-verdict-icon gray"><i class="fa fa-minus-circle"></i></span>
+            <span class="review-verdict-text">{{ _("No checks ran.") }}</span>
+          {% endif %}
+        </div>
+      </section>
+
+      {# === Checks table === #}
+      <section class="review-card review-checks">
+        <h3 class="review-section-title">
+          <i class="fa fa-list-check"></i> {{ _("Check results") }}
+        </h3>
+        <table class="review-checks-table">
+          <thead>
+            <tr>
+              <th class="check-col-icon"></th>
+              <th class="check-col-name">{{ _("Check") }}</th>
+              <th class="check-col-status">{{ _("Status") }}</th>
+              <th class="check-col-reason">{{ _("Details") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cr in check_results %}
+              {% if cr.status == 'S' %}
+                {% set row_class = 'check-pass' %}
+                {% set icon = 'fa-check' %}
+                {% set status_class = 'green' %}
+              {% elif cr.status == 'F' %}
+                {% set row_class = 'check-fail' %}
+                {% set icon = 'fa-times' %}
+                {% set status_class = 'red' %}
+              {% elif cr.status == 'E' %}
+                {% set row_class = 'check-error' %}
+                {% set icon = 'fa-exclamation-triangle' %}
+                {% set status_class = 'red' %}
+              {% elif cr.status == 'P' %}
+                {% set row_class = 'check-pending' %}
+                {% set icon = 'fa-spinner fa-spin' %}
+                {% set status_class = 'gray' %}
+              {% else %}
+                {% set row_class = 'check-skipped' %}
+                {% set icon = 'fa-minus-circle' %}
+                {% set status_class = 'gray' %}
+              {% endif %}
+              <tr class="review-check-row {{ row_class }}">
+                <td class="check-col-icon"><i class="fa {{ icon }} {{ status_class }}"></i></td>
+                <td class="check-col-name">{{ check_display_names.get(cr.check_id, cr.check_id) }}</td>
+                <td class="check-col-status">
+                  <span class="review-status-badge {{ status_class }}">
+                    {{ cr.get_status_display() }}
+                  </span>
+                </td>
+                <td class="check-col-reason">
+                  {{ cr.reason }}
+                {# Expandable raw payload — useful for admins debugging an LLM
+                   verdict, gated behind <details> so it doesn't crowd the row.
+                   `cr.details_json` is a JSONField (dict); rendering empty
+                   dicts/None is suppressed so passing rows stay clean. #}
+                  {% if cr.details_json %}
+                    <details class="check-details">
+                      <summary>{{ _("View details") }}</summary>
+                    <pre class="check-details-json">{{ cr.details_json | tojson(indent=2) }}</pre>
+                    </details>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      {# === AI synthesis report === #}
+      <section class="review-card review-summary">
+        <h3 class="review-section-title">
+          <i class="fa fa-robot"></i> {{ _("AI-synthesized feedback") }}
+        </h3>
+        {% if latest_run.summary_report %}
+          <div class="review-summary-body content-description">
+            {{ latest_run.summary_report | markdown | str | safe }}
+          </div>
+        {% elif latest_run.status == 'R' %}
+          <div class="review-summary-placeholder">
+            <i class="fa fa-spinner fa-spin"></i>
+            {{ _("Generating AI feedback… this will appear automatically when the run finishes.") }}
+          </div>
+        {% elif failed == 0 and errored == 0 %}
+          <div class="review-summary-placeholder">
+            <i class="fa fa-check-circle green"></i>
+            {{ _("All checks passed — no AI feedback needed.") }}
+          </div>
+        {% else %}
+          <div class="review-summary-placeholder">
+            <i class="fa fa-info-circle"></i>
+            {{ _("No AI feedback was produced for this run.") }}
+          </div>
+        {% endif %}
+      </section>
+
+      {# === Author ↔ admin discussion thread, scoped to this run === #}
+      <section class="review-card review-comments">
+        {% include "comments/list.html" %}
+      </section>
+    {% endif %}
+  </div>
+
+  <script>
+    (function () {
+      // History dropdown navigation: selecting another run loads its URL.
+      var historySelect = document.getElementById("review-history-select");
+      if (historySelect) {
+        historySelect.addEventListener("change", function () {
+          if (this.value) location.href = this.value;
+        });
+      }
+
+      var statusEl = document.getElementById("run-status");
+      if (!statusEl) return;
+      // Only auto-refresh when (a) the run we're viewing is RUNNING, and
+      // (b) the user is on the latest run (not a historical one via ?run=N).
+      // Otherwise the JS would either repeatedly reload a non-running page or
+      // bounce a history-viewer back to whatever URL they were on.
+      if (statusEl.dataset.status !== "R") return;
+      if (statusEl.dataset.viewingHistory === "1") return;
+
+      var url = "{{ url('problem_review_status', problem.code) }}";
+      function poll() {
+        fetch(url, {credentials: "same-origin"})
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (!j.run) return;
+            if (j.run.status !== "R") {
+              location.reload();
+            }
+          })
+          .catch(function () {});
+      }
+      setInterval(poll, 3000);
+    })();
+  </script>
+{% endblock %}

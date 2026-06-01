@@ -124,6 +124,12 @@ DjangoPagedown = (function () {
   };
 
   const createEditor = function (element) {
+    // Skip wrappers managed by the newer MarkdownEditor class — those declare
+    // .wmd-wrapper-minimal and own their own button bar / image-upload UI.
+    // Mixing the legacy init with them crashes because the minimal renderer
+    // sets .image-upload-enabled without the .pagedown-image-upload child div.
+    if (element.classList.contains('wmd-wrapper-minimal')) return;
+
     const input = element.getElementsByClassName('wmd-input')[0];
     if (!input) return;
 
@@ -134,6 +140,13 @@ DjangoPagedown = (function () {
       // Handle image upload dialog
       if (element.classList.contains('image-upload-enabled')) {
         const upload = element.getElementsByClassName('pagedown-image-upload')[0];
+        if (!upload) {
+          // Wrapper opted in via class but never rendered the upload widget —
+          // belt-and-suspenders fallback if the minimal-skip above ever misses.
+          editor.run();
+          editors[id] = editor;
+          return;
+        }
         const url = upload.getElementsByClassName('url-input')[0];
         const file = upload.getElementsByClassName('file-input')[0];
         const cancel = upload.getElementsByClassName('deletelink')[0];

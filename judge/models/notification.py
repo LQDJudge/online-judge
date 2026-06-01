@@ -31,6 +31,10 @@ class NotificationCategory(models.TextChoices):
     PUBLIC_REQUEST_NEW = "public_request_new", _("New public request")
     PUBLIC_REQUEST_APPROVED = "public_request_approved", _("Public request approved")
     PUBLIC_REQUEST_REJECTED = "public_request_rejected", _("Public request rejected")
+    PUBLIC_REQUEST_REVIEW_DONE = "public_request_review_done", _(
+        "Auto-review completed"
+    )
+    PUBLIC_REQUEST_REVIEW_ERROR = "public_request_review_error", _("Auto-review error")
 
 
 class NotificationManager(models.Manager):

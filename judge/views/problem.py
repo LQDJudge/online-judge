@@ -65,6 +65,12 @@ from judge.models import (
     Contest,
 )
 from judge.models.problem_data import ProblemSolutionCode
+from judge.models.problem_review import (
+    ProblemReviewCheckResult,
+    ProblemReviewRun,
+    ProblemReviewSubmissionTag,
+)
+from judge.models.public_request import PublicRequest
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.opengraph import generate_opengraph
@@ -1416,8 +1422,6 @@ class ProblemEdit(
         context = super().get_context_data(**kwargs)
         context["problem"] = self.object
 
-        from judge.models.public_request import PublicRequest
-
         try:
             context["public_request"] = self.object.public_request
         except PublicRequest.DoesNotExist:
@@ -1430,6 +1434,44 @@ class ProblemEdit(
             and not self.object.is_organization_private
             and not self.request.user.is_superuser
         )
+
+        # Author submissions + existing review tags for the
+        # "Reference solutions for review" panel.
+        context["review_author_submissions"] = list(
+            Submission.objects.filter(problem=self.object, user=self.request.profile)
+            .select_related("language")
+            .order_by("-id")[:30]
+        )
+        context["review_existing_tags"] = {
+            t.submission_id: t
+            for t in ProblemReviewSubmissionTag.objects.filter(
+                submission__problem=self.object
+            )
+        }
+
+        # Latest non-superseded review run + an aggregated verdict so the
+        # edit page can show what the bot decided (separate from the admin
+        # decision tracked by PublicRequest.status).
+        latest_run = (
+            ProblemReviewRun.objects.filter(
+                problem=self.object, superseded_by__isnull=True
+            )
+            .order_by("-started_at")
+            .first()
+        )
+        context["latest_review_run"] = latest_run
+        verdict = None
+        if latest_run:
+            if latest_run.status == ProblemReviewRun.RUNNING:
+                verdict = "running"
+            elif latest_run.status == ProblemReviewRun.ERROR:
+                verdict = "error"
+            else:
+                has_fail = latest_run.check_results.filter(
+                    status=ProblemReviewCheckResult.FAIL
+                ).exists()
+                verdict = "fail" if has_fail else "pass"
+        context["review_verdict"] = verdict
 
         return context
 
