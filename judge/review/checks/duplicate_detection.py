@@ -3,7 +3,7 @@
 import logging
 
 from django.conf import settings
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext as _, gettext_lazy
 
 from judge.ml.semantic_search import (
     SemanticSearchUnavailable,
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class DuplicateDetectionCheck(ProblemReviewCheck):
     id = "duplicate_detection"
-    display_name = "Duplicate detection"
+    display_name = gettext_lazy("Duplicates")
 
     def run(self, problem, run):
         if not getattr(settings, "USE_ML", False):

@@ -11,7 +11,7 @@ path uses. Deferred from v1 — see `VALIDATOR_GENERATION_SYSTEM` in
 `judge/review/prompts.py` for the prompt skeleton.
 """
 
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext as _, gettext_lazy
 
 from judge.models.problem_data import ProblemData, ProblemValidation
 from judge.models.problem_review import ProblemReviewCheckResult
@@ -20,7 +20,7 @@ from judge.review.base import CheckResultData, ProblemReviewCheck
 
 class ValidatorRunsCleanCheck(ProblemReviewCheck):
     id = "validator_runs_clean"
-    display_name = "Validator runs clean"
+    display_name = gettext_lazy("Validator")
 
     def run(self, problem, run):
         try:
