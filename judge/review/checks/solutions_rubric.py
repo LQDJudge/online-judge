@@ -8,7 +8,7 @@ whole set against the problem statement, classifies each submission's role
 import json
 import logging
 
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext as _, gettext_lazy
 
 from judge.models.problem_review import (
     ProblemReviewCheckResult,
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class SolutionsRubricCheck(ProblemReviewCheck):
     id = "solutions_rubric"
-    display_name = "Solutions rubric"
+    display_name = gettext_lazy("Solutions")
 
     def run(self, problem, run):
         tags = list(

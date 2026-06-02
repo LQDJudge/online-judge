@@ -2,7 +2,7 @@
 
 import logging
 
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext as _, gettext_lazy
 
 from judge.models.problem_data import ProblemData
 from judge.models.problem_review import ProblemReviewCheckResult
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class CheckerCorrectnessCheck(ProblemReviewCheck):
     id = "checker_correctness"
-    display_name = "Checker correctness"
+    display_name = gettext_lazy("Checker")
 
     def run(self, problem, run):
         try:

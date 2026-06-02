@@ -1,7 +1,7 @@
 """time_limit_headroom: main AC submissions must use < TL_HEADROOM_RATIO of TL."""
 
 from django.conf import settings
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext as _, gettext_lazy
 
 from judge.models.problem_review import (
     ProblemReviewCheckResult,
@@ -12,7 +12,7 @@ from judge.review.base import ProblemReviewCheck, CheckResultData
 
 class TimeLimitHeadroomCheck(ProblemReviewCheck):
     id = "time_limit_headroom"
-    display_name = "Time-limit headroom"
+    display_name = gettext_lazy("Time limit")
 
     def run(self, problem, run):
         ratio_threshold = getattr(settings, "AUTO_REVIEW_TL_HEADROOM_RATIO", 0.8)

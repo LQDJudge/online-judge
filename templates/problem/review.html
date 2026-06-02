@@ -166,16 +166,6 @@
                 </td>
                 <td class="check-col-reason">
                   {{ cr.reason }}
-                {# Expandable raw payload — useful for admins debugging an LLM
-                   verdict, gated behind <details> so it doesn't crowd the row.
-                   `cr.details_json` is a JSONField (dict); rendering empty
-                   dicts/None is suppressed so passing rows stay clean. #}
-                  {% if cr.details_json %}
-                    <details class="check-details">
-                      <summary>{{ _("View details") }}</summary>
-                    <pre class="check-details-json">{{ cr.details_json | tojson(indent=2) }}</pre>
-                    </details>
-                  {% endif %}
                 </td>
               </tr>
             {% endfor %}
