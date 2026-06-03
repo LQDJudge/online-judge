@@ -170,6 +170,24 @@ class UserPage(TitleMixin, UserMixin, DetailView):
 EPOCH = datetime(1970, 1, 1, tzinfo=datetime_timezone.utc)
 
 
+def _json_for_script(data):
+    """Serialize ``data`` to JSON safe for inlining inside a <script> block.
+
+    ``json.dumps`` does not escape ``<``, ``>``, ``&`` or the U+2028/U+2029 line
+    separators, so a value like ``</script>`` would break out of the surrounding
+    script context (XSS). Escape them as unicode sequences — the same approach
+    Django uses in ``django.utils.html.json_script``.
+    """
+    return (
+        json.dumps(data)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+        .replace(" ", "\\u2028")
+        .replace(" ", "\\u2029")
+    )
+
+
 class UserAboutPage(UserPage):
     template_name = "user/user-about.html"
 
@@ -179,7 +197,7 @@ class UserAboutPage(UserPage):
 
         if ratings:
             context["rating_data"] = mark_safe(
-                json.dumps(
+                _json_for_script(
                     [
                         {
                             "label": rating["contest_name"],
@@ -224,12 +242,12 @@ class UserAboutPage(UserPage):
 
         # Use cached submission dates
         submission_dates = get_user_submission_dates(self.object.id)
-        context["submission_data"] = mark_safe(json.dumps(submission_dates))
+        context["submission_data"] = mark_safe(_json_for_script(submission_dates))
 
         # Use cached min submission year
         min_year = get_user_min_submission_year(self.object.id)
         context["submission_metadata"] = mark_safe(
-            json.dumps(
+            _json_for_script(
                 {
                     "min_year": min_year,
                 }

@@ -240,3 +240,27 @@ class RequestScopedCacheMiddleware:
         # Clear the request-scoped L0 cache after processing the request
         clear_request_l0_cache()
         return response
+
+
+class ContentSecurityPolicyMiddleware:
+    """Set a Content-Security-Policy that restricts iframe sources.
+
+    Only the ``frame-src`` directive is emitted, so nothing else on the page is
+    restricted (no ``default-src``). This is the browser-enforced twin of the
+    server-side allowlist in ``judge.markdown`` — both read the same
+    ``settings.IFRAME_ALLOWED_HOSTS`` list so they never drift apart. Even if a
+    foreign iframe somehow slips past the markdown sanitizer, the browser
+    refuses to load it.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+        hosts = getattr(settings, "IFRAME_ALLOWED_HOSTS", [])
+        sources = ["'self'"] + ["https://%s" % h for h in hosts]
+        self.policy = "frame-src " + " ".join(sources)
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        # Do not override a policy already set further up the stack.
+        response.setdefault("Content-Security-Policy", self.policy)
+        return response
