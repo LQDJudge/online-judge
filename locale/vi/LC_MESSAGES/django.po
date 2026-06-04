@@ -726,11 +726,11 @@ msgstr "Mật khẩu"
 
 #: judge/forms.py:773
 msgid "Two Factor Authentication tokens must be 6 decimal digits."
-msgstr "Two Factor Authentication phải chứa 6 chữ số."
+msgstr "Mã Xác thực hai yếu tố phải chứa 6 chữ số."
 
 #: judge/forms.py:786 templates/registration/totp_auth.html:32
 msgid "Invalid Two Factor Authentication token."
-msgstr "Token Two Factor Authentication không hợp lệ."
+msgstr "Mã Xác thực hai yếu tố không hợp lệ."
 
 #: judge/forms.py:793 judge/models/problem.py:138
 msgid "Problem code must be ^[a-z0-9]+$"
@@ -4498,7 +4498,7 @@ msgstr "Phần mở rộng validator không được hỗ trợ: %s"
 #, fuzzy
 #| msgid "Invalid Two Factor Authentication token."
 msgid "Invalid communication manager"
-msgstr "Token Two Factor Authentication không hợp lệ."
+msgstr "Mã Xác thực hai yếu tố không hợp lệ."
 
 #: judge/utils/problem_data.py:372
 msgid "Invalid signature handler"
@@ -4720,11 +4720,11 @@ msgstr "Thời gian bắt đầu (giảm)"
 
 #: judge/views/contests.py:429 judge/views/organization.py:577
 msgid "Name (asc.)"
-msgstr "Tên (tăng)"
+msgstr "Tên (A-Z)"
 
 #: judge/views/contests.py:430 judge/views/organization.py:578
 msgid "Name (desc.)"
-msgstr "Tên (giảm)"
+msgstr "Tên (Z-A)"
 
 #: judge/views/contests.py:431
 msgid "User count (asc.)"
@@ -5689,11 +5689,11 @@ msgstr "Nhóm"
 
 #: judge/views/organization.py:579
 msgid "Member count (asc.)"
-msgstr "Số lượng thành viên (tăng)"
+msgstr "Số lượng thành viên (ít trước)"
 
 #: judge/views/organization.py:580
 msgid "Member count (desc.)"
-msgstr "Số lượng thành viên (giảm)"
+msgstr "Số lượng thành viên (nhiều trước)"
 
 #: judge/views/organization.py:587
 msgid "Last visit"
@@ -7015,19 +7015,19 @@ msgstr "Báo cáo"
 
 #: judge/views/totp.py:42 templates/registration/totp_enable.html:86
 msgid "Enable Two Factor Authentication"
-msgstr "Kích hoạt Two Factor Authentication"
+msgstr "Bật Xác thực hai yếu tố"
 
 #: judge/views/totp.py:93 templates/registration/totp_disable.html:48
 msgid "Disable Two Factor Authentication"
-msgstr "Hủy kích hoạt Two Factor Authentication"
+msgstr "Tắt Xác thực hai yếu tố"
 
 #: judge/views/totp.py:109
 msgid "Perform Two Factor Authentication"
-msgstr "Thực hiện Two Factor Authentication"
+msgstr "Thực hiện Xác thực hai yếu tố"
 
 #: judge/views/user.py:106
 msgid "No such user"
-msgstr "Không người dùng nào như vậy"
+msgstr "Không tìm thấy người dùng"
 
 #: judge/views/user.py:107
 #, python-format
@@ -7510,12 +7510,12 @@ msgstr "d/m/Y"
 #: templates/comments/inline-comments.html:20 templates/comments/list.html:20
 #: templates/comments/list.html:25
 msgid "Most recent"
-msgstr "Gần nhất"
+msgstr "Mới nhất"
 
 #: templates/comments/inline-comments.html:21 templates/comments/list.html:16
 #: templates/comments/list.html:26
 msgid "Least recent"
-msgstr "Xa nhất"
+msgstr "Cũ nhất"
 
 #: templates/comments/inline-comments.html:30
 msgid "No comments yet."
@@ -7614,7 +7614,7 @@ msgstr "chỉnh sửa {edits}"
 
 #: templates/comments/media-js.html:319
 msgid "original"
-msgstr "original"
+msgstr "ban đầu"
 
 #: templates/comments/media-js.html:480 templates/course/contest_list.html:32
 #: templates/course/contest_list.html:87 templates/course/edit_lesson.html:288
@@ -13152,7 +13152,7 @@ msgstr "Giao diện cho code editor"
 
 #: templates/user/edit-profile.html:173
 msgid "Two Factor Authentication is enabled."
-msgstr "Two Factor Authentication đã được kích hoạt."
+msgstr "Đã bật Xác thực hai yếu tố."
 
 #: templates/user/edit-profile.html:177
 msgid "Disable"
@@ -13160,7 +13160,7 @@ msgstr "Tắt"
 
 #: templates/user/edit-profile.html:180
 msgid "Two Factor Authentication is disabled."
-msgstr "Two Factor Authentication chưa kích hoạt."
+msgstr "Chưa bật Xác thực hai yếu tố."
 
 #: templates/user/edit-profile.html:181
 msgid "Enable"
