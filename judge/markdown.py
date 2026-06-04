@@ -165,6 +165,48 @@ def _open_external_links_in_new_tab(soup):
     return soup
 
 
+def _iframe_host_allowed(src):
+    """Return True if the iframe src points at an allowlisted host.
+
+    Matching is done on the parsed netloc (host only, port/userinfo stripped)
+    against settings.IFRAME_ALLOWED_HOSTS using exact comparison, so tricks like
+    ``youtube.com.evil.com`` or ``youtube.com@evil.com`` do not pass.
+    """
+    if not src:
+        return False
+    try:
+        netloc = urlparse(src).netloc.lower()
+    except ValueError:
+        return False
+    # Strip optional userinfo ("user@host") and port (":443").
+    host = netloc.rsplit("@", 1)[-1].split(":", 1)[0]
+    if not host:
+        return False
+    allowed = getattr(settings, "IFRAME_ALLOWED_HOSTS", [])
+    return host in {h.lower() for h in allowed}
+
+
+def _sanitize_iframe_sources(soup):
+    """Drop iframes whose src host is not allowlisted (default-deny).
+
+    Disallowed iframes are replaced with a plain text link to the URL so the
+    content is not silently lost while no foreign page is embedded. This blocks
+    phishing/clickjacking via arbitrary iframe injection in user markdown.
+    """
+    for iframe in soup.findAll("iframe"):
+        src = iframe.get("src")
+        if _iframe_host_allowed(src):
+            continue
+        if src:
+            link = soup.new_tag("a", href=src)
+            link["rel"] = "nofollow noopener"
+            link.string = src
+            iframe.replace_with(link)
+        else:
+            iframe.decompose()
+    return soup
+
+
 def _sanitize_iframe_autoplay(soup):
     """Remove autoplay parameters from iframe src URLs and attributes to prevent autoplay"""
     for iframe in soup.findAll("iframe"):
@@ -244,6 +286,7 @@ def markdown(value, lazy_load=False):
 
     soup = _wrap_images_with_featherlight(soup)
     soup = _open_external_links_in_new_tab(soup)
+    soup = _sanitize_iframe_sources(soup)
     soup = _sanitize_iframe_autoplay(soup)
     html = str(soup)
 

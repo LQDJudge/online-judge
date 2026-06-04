@@ -299,9 +299,27 @@ MIDDLEWARE = (
     "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
     "judge.social_auth.SocialAuthExceptionMiddleware",
     "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
+    "judge.middleware.ContentSecurityPolicyMiddleware",
 )
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
+
+# Hosts whose pages are allowed to be embedded via <iframe> in user-authored
+# markdown (comments, problems, blogs, course/org descriptions, ...).
+# This is a default-deny allowlist: any iframe whose src host is not listed is
+# stripped server-side (see judge/markdown.py) AND blocked by the browser via
+# the Content-Security-Policy frame-src header (see judge.middleware
+# .ContentSecurityPolicyMiddleware). Keep both layers in sync by editing only
+# this single list. Exact-host match (no implicit subdomains).
+IFRAME_ALLOWED_HOSTS = [
+    "www.youtube.com",
+    "youtube.com",
+    "www.youtube-nocookie.com",
+    "docs.google.com",  # Google Docs/Sheets/Slides/Forms embeds
+    "drive.google.com",  # Google Drive file preview embeds
+    "www.google.com",  # Google Maps embeds
+    "calendar.google.com",  # Google Calendar embeds
+]
 
 LANGUAGE_COOKIE_AGE = 8640000
 

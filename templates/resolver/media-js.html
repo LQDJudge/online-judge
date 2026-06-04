@@ -1,8 +1,11 @@
+{{ contest_json_script }}
 {% compress js %}
   <script src="{{ static('resolver.js') }}"></script>
   <script type="text/javascript">
     $(function () {
-      var data = {{ contest_json }};
+      var data = JSON.parse(
+        document.getElementById('contest-resolver-data').textContent
+      );
       var resolver = new ContestResolver(data);
       var $table = $('#resolver-table');
       var $tbody = $('#resolver-body');

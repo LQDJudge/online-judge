@@ -13,7 +13,7 @@ from django.core.files.uploadedfile import UploadedFile
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy, reverse
-from django.utils.html import mark_safe
+from django.utils.html import escape, mark_safe
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import ListView, DetailView, View, CreateView
 from django.views.generic.edit import FormView
@@ -912,7 +912,7 @@ class CreateCourseLesson(CourseEditableMixin, FormView):
         context["content_title"] = mark_safe(
             _("Edit lessons for <a href='%(url)s'>%(course_name)s</a>")
             % {
-                "course_name": self.course.name,
+                "course_name": escape(self.course.name),
                 "url": self.course.get_absolute_url(),
             }
         )
@@ -1092,7 +1092,7 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
         context["content_title"] = mark_safe(
             _("Edit lessons for <a href='%(url)s'>%(course_name)s</a>")
             % {
-                "course_name": self.course.name,
+                "course_name": escape(self.course.name),
                 "url": self.course.get_absolute_url(),
             }
         )
@@ -1238,7 +1238,7 @@ class EditCourseLessonsView(CourseEditableMixin, FormView):
         context["content_title"] = mark_safe(
             _("Edit lessons for <a href='%(url)s'>%(course_name)s</a>")
             % {
-                "course_name": self.course.name,
+                "course_name": escape(self.course.name),
                 "url": self.course.get_absolute_url(),
             }
         )
@@ -1737,7 +1737,7 @@ class CourseStudentResults(CourseAccessibleMixin, DetailView):
         context["content_title"] = mark_safe(
             _("Grades in <a href='%(url)s'>%(course_name)s</a>")
             % {
-                "course_name": self.course.name,
+                "course_name": escape(self.course.name),
                 "url": self.course.get_absolute_url(),
             }
         )
@@ -1896,8 +1896,8 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
                 "Grades of <a href='%(url_lesson)s'>%(lesson_name)s</a> in <a href='%(url_course)s'>%(course_name)s</a>"
             )
             % {
-                "course_name": self.course.name,
-                "lesson_name": self.lesson.title,
+                "course_name": escape(self.course.name),
+                "lesson_name": escape(self.lesson.title),
                 "url_course": self.course.get_absolute_url(),
                 "url_lesson": self.lesson.get_absolute_url(),
             }
@@ -2018,7 +2018,7 @@ class CourseContestList(CourseEditableMixin, ListView):
         context["content_title"] = mark_safe(
             _("Edit contests for <a href='%(url)s'>%(course_name)s</a>")
             % {
-                "course_name": self.course.name,
+                "course_name": escape(self.course.name),
                 "url": self.course.get_absolute_url(),
             }
         )
@@ -2305,7 +2305,7 @@ class CourseMembers(CourseAdminMixin, FormView):
         context["content_title"] = mark_safe(
             _("Manage members for <a href='%(url)s'>%(course_name)s</a>")
             % {
-                "course_name": self.course.name,
+                "course_name": escape(self.course.name),
                 "url": self.course.get_absolute_url(),
             }
         )
@@ -2698,7 +2698,7 @@ class CourseEdit(CourseEditableMixin, SingleObjectFormView):
         context["content_title"] = mark_safe(
             _('Edit <a href="%(url)s">%(course_name)s</a>')
             % {
-                "course_name": self.course.name,
+                "course_name": escape(self.course.name),
                 "url": self.course.get_absolute_url(),
             }
         )

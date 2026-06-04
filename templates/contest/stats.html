@@ -6,8 +6,9 @@
 {% endblock %}
 
 {% block js_media %}
+  {{ stats_script }}
   <script type="text/javascript">
-    window.stats = {{ stats }};
+    window.stats = JSON.parse(document.getElementById('contest-stats-data').textContent);
   </script>
   {% compress js %}
     {% include "stats/media-js.html" %}

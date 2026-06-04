@@ -30,16 +30,25 @@
 {% endblock %}
 
 {% block bodyend %}
+  {{ data_all_script }}
+  {{ lang_ac_script }}
+  {{ status_counts_script }}
+  {{ ac_rate_script }}
   <script type="text/javascript">
     $(function () {
       Chart.defaults.global.scaleFontFamily =
         Chart.defaults.global.tooltipFontFamily =
         Chart.defaults.global.tooltipTitleFontFamily =
         $('body').css('font-family');
-      draw_pie_chart({{ data_all }}, $('#lang-all'));
-      draw_pie_chart({{ lang_ac }}, $('#lang-ac'));
-      draw_pie_chart({{ status_counts }}, $('#status-counts'));
-      draw_bar_chart({{ ac_rate }}, $('#ac-rate'));
+
+      function readJsonData(id) {
+        return JSON.parse(document.getElementById(id).textContent);
+      }
+
+      draw_pie_chart(readJsonData('language-data-all'), $('#lang-all'));
+      draw_pie_chart(readJsonData('language-ac-data'), $('#lang-ac'));
+      draw_pie_chart(readJsonData('language-status-counts-data'), $('#status-counts'));
+      draw_bar_chart(readJsonData('language-ac-rate-data'), $('#ac-rate'));
     });
   </script>
 {% endblock %}
