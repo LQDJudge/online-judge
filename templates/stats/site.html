@@ -47,6 +47,12 @@
 {% endblock %}
 
 {% block bodyend %}
+  {{ submissions_script }}
+  {{ new_users_script }}
+  {{ comments_script }}
+  {{ chat_messages_script }}
+  {{ contests_script }}
+  {{ groups_script }}
   <script type="text/javascript">
     $(function () {
       Chart.defaults.global.scaleFontFamily =
@@ -54,12 +60,16 @@
         Chart.defaults.global.tooltipTitleFontFamily =
         $('body').css('font-family');
 
-      draw_timeline({{submissions}}, $('#submissions'));
-      draw_timeline({{new_users}}, $('#new_users'));
-      draw_timeline({{comments}}, $('#comments'));
-      draw_timeline({{chat_messages}}, $('#chat_messages'));
-      draw_timeline({{contests}}, $('#contests'));
-      draw_timeline({{groups}}, $('#groups'));
+      function readJsonData(id) {
+        return JSON.parse(document.getElementById(id).textContent);
+      }
+
+      draw_timeline(readJsonData('site-submissions-data'), $('#submissions'));
+      draw_timeline(readJsonData('site-new-users-data'), $('#new_users'));
+      draw_timeline(readJsonData('site-comments-data'), $('#comments'));
+      draw_timeline(readJsonData('site-chat-messages-data'), $('#chat_messages'));
+      draw_timeline(readJsonData('site-contests-data'), $('#contests'));
+      draw_timeline(readJsonData('site-groups-data'), $('#groups'));
     });
   </script>
 {% endblock %}

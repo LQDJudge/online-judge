@@ -1,10 +1,8 @@
-import json
-
 from django.db.models import Max
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404
+from django.utils.html import json_script
 from django.utils import timezone
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 from django.views.generic import TemplateView
 
@@ -34,7 +32,9 @@ class Resolver(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["contest_json"] = mark_safe(json.dumps(self.get_contest_json()))
+        context["contest_json_script"] = json_script(
+            self.get_contest_json(), "contest-resolver-data"
+        )
         contest = self.contest
         context["title"] = _("Resolver") + " - " + contest.name
         context["content_title"] = contest.name + " " + _("Resolver")

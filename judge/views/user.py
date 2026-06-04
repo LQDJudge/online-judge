@@ -21,6 +21,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.functional import cached_property
+from django.utils.html import json_script
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _, gettext_lazy
 from django.views.generic import DetailView, ListView, TemplateView
@@ -170,24 +171,6 @@ class UserPage(TitleMixin, UserMixin, DetailView):
 EPOCH = datetime(1970, 1, 1, tzinfo=datetime_timezone.utc)
 
 
-def _json_for_script(data):
-    """Serialize ``data`` to JSON safe for inlining inside a <script> block.
-
-    ``json.dumps`` does not escape ``<``, ``>``, ``&`` or the U+2028/U+2029 line
-    separators, so a value like ``</script>`` would break out of the surrounding
-    script context (XSS). Escape them as unicode sequences — the same approach
-    Django uses in ``django.utils.html.json_script``.
-    """
-    return (
-        json.dumps(data)
-        .replace("<", "\\u003c")
-        .replace(">", "\\u003e")
-        .replace("&", "\\u0026")
-        .replace(" ", "\\u2028")
-        .replace(" ", "\\u2029")
-    )
-
-
 class UserAboutPage(UserPage):
     template_name = "user/user-about.html"
 
@@ -196,32 +179,27 @@ class UserAboutPage(UserPage):
         ratings = get_contest_ratings(self.object.id)
 
         if ratings:
-            context["rating_data"] = mark_safe(
-                _json_for_script(
-                    [
-                        {
-                            "label": rating["contest_name"],
-                            "rating": rating["rating"],
-                            "ranking": rating["rank"],
-                            "link": reverse(
-                                "contest_ranking", args=(rating["contest_key"],)
-                            )
-                            + "?user="
-                            + self.object.username,
-                            "timestamp": (
-                                rating["contest_end_time"] - EPOCH
-                            ).total_seconds()
-                            * 1000,
-                            "date": date_format(
-                                timezone.localtime(rating["contest_end_time"]),
-                                _("M j, Y, G:i"),
-                            ),
-                            "class": rating_class(rating["rating"]),
-                            "height": "%.3fem" % rating_progress(rating["rating"]),
-                        }
-                        for rating in ratings
-                    ]
-                )
+            rating_data = [
+                {
+                    "label": rating["contest_name"],
+                    "rating": rating["rating"],
+                    "ranking": rating["rank"],
+                    "link": reverse("contest_ranking", args=(rating["contest_key"],))
+                    + "?user="
+                    + self.object.username,
+                    "timestamp": (rating["contest_end_time"] - EPOCH).total_seconds()
+                    * 1000,
+                    "date": date_format(
+                        timezone.localtime(rating["contest_end_time"]),
+                        _("M j, Y, G:i"),
+                    ),
+                    "class": rating_class(rating["rating"]),
+                    "height": "%.3fem" % rating_progress(rating["rating"]),
+                }
+                for rating in ratings
+            ]
+            context["rating_data_script"] = json_script(
+                rating_data, "rating-history-data"
             )
 
         context["awards"] = get_awards(self.object)
@@ -242,16 +220,17 @@ class UserAboutPage(UserPage):
 
         # Use cached submission dates
         submission_dates = get_user_submission_dates(self.object.id)
-        context["submission_data"] = mark_safe(_json_for_script(submission_dates))
+        context["submission_data_script"] = json_script(
+            submission_dates, "submission-activity-data"
+        )
 
         # Use cached min submission year
         min_year = get_user_min_submission_year(self.object.id)
-        context["submission_metadata"] = mark_safe(
-            _json_for_script(
-                {
-                    "min_year": min_year,
-                }
-            )
+        context["submission_metadata_script"] = json_script(
+            {
+                "min_year": min_year,
+            },
+            "submission-metadata-data",
         )
 
         return context

@@ -195,9 +195,15 @@
 {% endblock %}
 
 {% block bodyend %}
+  {{ submission_data_script }}
+  {{ submission_metadata_script }}
   <script type="text/javascript">
-    var submission_activity = {{ submission_data }};
-    var metadata = {{ submission_metadata }};
+    function readJsonData(id) {
+      return JSON.parse(document.getElementById(id).textContent);
+    }
+
+    var submission_activity = readJsonData('submission-activity-data');
+    var metadata = readJsonData('submission-metadata-data');
     const activity_levels = 5; // 5 levels of activity
 
     $(function () {
@@ -316,10 +322,11 @@
   </script>
 
 
-  {% if rating_data %}
+  {% if rating_data_script %}
+    {{ rating_data_script }}
     <script type="text/javascript" src="{{ static('libs/chart.js/Chart.js') }}"></script>
     <script type="text/javascript">
-      var rating_history = {{ rating_data }};
+      var rating_history = readJsonData('rating-history-data');
 
       $.each(rating_history, function (index, item) {
         item.x = new Date(item.timestamp);

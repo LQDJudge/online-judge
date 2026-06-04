@@ -1,16 +1,16 @@
 from datetime import datetime
 from itertools import chain, repeat
 from operator import itemgetter
-import json
 
 from django.conf import settings
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db import connection
 from django.db.models import Case, Count, FloatField, IntegerField, Value, When
 from django.db.models.expressions import CombinedExpression
-from django.utils.translation import gettext as _
 from django.http import Http404
+from django.utils.html import json_script
+from django.utils.translation import gettext as _
 from django.views.generic import TemplateView
-from django.utils.safestring import mark_safe
-from django.db import connection
 
 from judge.models import Language, Submission
 from judge.utils.stats import (
@@ -102,10 +102,16 @@ class StatLanguage(StatViewBase):
         context = super().get_context_data(**kwargs)
         context["title"] = _("Language statistics")
         context["tab"] = "language"
-        context["data_all"] = mark_safe(json.dumps(self.language_data()))
-        context["lang_ac"] = mark_safe(json.dumps(self.ac_language_data()))
-        context["status_counts"] = mark_safe(json.dumps(self.status_data()))
-        context["ac_rate"] = mark_safe(json.dumps(self.ac_rate()))
+        context["data_all_script"] = json_script(
+            self.language_data(), "language-data-all"
+        )
+        context["lang_ac_script"] = json_script(
+            self.ac_language_data(), "language-ac-data"
+        )
+        context["status_counts_script"] = json_script(
+            self.status_data(), "language-status-counts-data"
+        )
+        context["ac_rate_script"] = json_script(self.ac_rate(), "language-ac-rate-data")
         return context
 
 
@@ -165,7 +171,7 @@ class StatSite(StatViewBase):
                 }
             ],
         }
-        return mark_safe(json.dumps(res, default=str))
+        return res
 
     def get_submissions(self):
         query = """
@@ -211,10 +217,34 @@ class StatSite(StatViewBase):
         context = super().get_context_data(**kwargs)
         context["tab"] = "site"
         context["title"] = _("Site statistics")
-        context["submissions"] = self.get_submissions()
-        context["comments"] = self.get_comments()
-        context["new_users"] = self.get_new_users()
-        context["chat_messages"] = self.get_chat_messages()
-        context["contests"] = self.get_contests()
-        context["groups"] = self.get_groups()
+        context["submissions_script"] = json_script(
+            self.get_submissions(),
+            "site-submissions-data",
+            encoder=DjangoJSONEncoder,
+        )
+        context["comments_script"] = json_script(
+            self.get_comments(),
+            "site-comments-data",
+            encoder=DjangoJSONEncoder,
+        )
+        context["new_users_script"] = json_script(
+            self.get_new_users(),
+            "site-new-users-data",
+            encoder=DjangoJSONEncoder,
+        )
+        context["chat_messages_script"] = json_script(
+            self.get_chat_messages(),
+            "site-chat-messages-data",
+            encoder=DjangoJSONEncoder,
+        )
+        context["contests_script"] = json_script(
+            self.get_contests(),
+            "site-contests-data",
+            encoder=DjangoJSONEncoder,
+        )
+        context["groups_script"] = json_script(
+            self.get_groups(),
+            "site-groups-data",
+            encoder=DjangoJSONEncoder,
+        )
         return context

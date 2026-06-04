@@ -3,8 +3,11 @@
 
 {% block js_media %}
   {{ data_form.media.js }}
+  {{ valid_files_script }}
   <script type="text/javascript">
-    window.valid_files = {{valid_files_json}};
+    window.valid_files = JSON.parse(
+      document.getElementById('problem-valid-files-data').textContent
+    );
     window.big_input = (window.valid_files.length > 100);
   </script>
   <script type="text/javascript" src="{{ static('jquery-ui.min.js') }}"></script>

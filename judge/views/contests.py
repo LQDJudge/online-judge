@@ -1,7 +1,6 @@
 import csv
 import io
 from copy import deepcopy
-import json
 import math
 import random
 from calendar import Calendar, SUNDAY
@@ -45,7 +44,7 @@ from django.template.defaultfilters import date as date_filter
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.functional import cached_property
-from django.utils.html import format_html, escape
+from django.utils.html import format_html, escape, json_script
 from django.utils.safestring import mark_safe
 from django.utils.timezone import make_aware
 from django.utils.translation import gettext as _, gettext_lazy
@@ -1344,7 +1343,7 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
             ),
         }
 
-        context["stats"] = mark_safe(json.dumps(stats))
+        context["stats_script"] = json_script(stats, "contest-stats-data")
         context["problems"] = labels
         return context
 

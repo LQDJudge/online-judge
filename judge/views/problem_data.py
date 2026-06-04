@@ -30,7 +30,7 @@ from django.forms import (
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
-from django.utils.html import escape, format_html
+from django.utils.html import escape, format_html, json_script
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 from django.views.generic import DetailView, View
@@ -427,7 +427,9 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
             context["cases_formset"] = self.get_case_formset(valid_files)
             context["signature_grader_formset"] = self.get_signature_grader_formset()
 
-        context["valid_files_json"] = mark_safe(json.dumps(context["valid_files"]))
+        context["valid_files_script"] = json_script(
+            context["valid_files"], "problem-valid-files-data"
+        )
         context["valid_files"] = set(context["valid_files"])
         context["all_case_forms"] = chain(
             context["cases_formset"], [context["cases_formset"].empty_form]
