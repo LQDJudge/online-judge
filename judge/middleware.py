@@ -3,7 +3,7 @@ import logging
 import random
 import json
 from datetime import datetime
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 from django.conf import settings
 from django.contrib.auth import logout
@@ -243,21 +243,30 @@ class RequestScopedCacheMiddleware:
 
 
 class ContentSecurityPolicyMiddleware:
-    """Set a Content-Security-Policy that restricts iframe sources.
+    """Set a Content-Security-Policy that restricts embedded frame sources.
 
     Only the ``frame-src`` directive is emitted, so nothing else on the page is
-    restricted (no ``default-src``). This is the browser-enforced twin of the
-    server-side allowlist in ``judge.markdown`` — both read the same
-    ``settings.IFRAME_ALLOWED_HOSTS`` list so they never drift apart. Even if a
-    foreign iframe somehow slips past the markdown sanitizer, the browser
-    refuses to load it.
+    restricted (no ``default-src``). User-authored markdown iframes are still
+    sanitized against ``settings.IFRAME_ALLOWED_HOSTS``; app-controlled embeds
+    such as PDF descriptions may also need the configured media origin when
+    files are served from remote storage/CDN.
     """
 
     def __init__(self, get_response):
         self.get_response = get_response
-        hosts = getattr(settings, "IFRAME_ALLOWED_HOSTS", [])
+        hosts = list(getattr(settings, "IFRAME_ALLOWED_HOSTS", []))
+        media_origin = self._media_origin()
         sources = ["'self'"] + ["https://%s" % h for h in hosts]
+        if media_origin and media_origin not in sources:
+            sources.append(media_origin)
         self.policy = "frame-src " + " ".join(sources)
+
+    def _media_origin(self):
+        media_url = getattr(settings, "MEDIA_URL", "")
+        parsed = urlparse(media_url)
+        if parsed.scheme in ("http", "https") and parsed.netloc:
+            return "%s://%s" % (parsed.scheme, parsed.netloc)
+        return None
 
     def __call__(self, request):
         response = self.get_response(request)

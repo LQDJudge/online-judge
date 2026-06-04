@@ -66,7 +66,10 @@ class MarkdownIframeSanitizeTest(SimpleTestCase):
         self.assertIn("youtube.com/embed/", html)
 
 
-@override_settings(IFRAME_ALLOWED_HOSTS=["www.youtube.com", "docs.google.com"])
+@override_settings(
+    IFRAME_ALLOWED_HOSTS=["www.youtube.com", "docs.google.com"],
+    MEDIA_URL="/media/",
+)
 class ContentSecurityPolicyMiddlewareTest(SimpleTestCase):
     def _make_response(self):
         middleware = ContentSecurityPolicyMiddleware(lambda request: HttpResponse("ok"))
@@ -84,6 +87,16 @@ class ContentSecurityPolicyMiddlewareTest(SimpleTestCase):
         # Only frame-src is constrained; the rest of the page is untouched.
         csp = self._make_response()["Content-Security-Policy"]
         self.assertNotIn("default-src", csp)
+
+    @override_settings(MEDIA_URL="https://cdn.example.com/media/")
+    def test_remote_media_origin_allowed_for_pdf_embeds(self):
+        csp = self._make_response()["Content-Security-Policy"]
+        self.assertIn("https://cdn.example.com", csp)
+        self.assertNotIn("https://cdn.example.com/media/", csp)
+
+    def test_relative_media_url_not_added_to_frame_src(self):
+        csp = self._make_response()["Content-Security-Policy"]
+        self.assertNotIn("/media/", csp)
 
     def test_existing_policy_not_overridden(self):
         existing = "frame-src 'none'"
