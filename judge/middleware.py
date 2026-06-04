@@ -246,15 +246,18 @@ class ContentSecurityPolicyMiddleware:
     """Set a Content-Security-Policy that restricts embedded frame sources.
 
     Only the ``frame-src`` directive is emitted, so nothing else on the page is
-    restricted (no ``default-src``). User-authored markdown iframes are still
-    sanitized against ``settings.IFRAME_ALLOWED_HOSTS``; app-controlled embeds
-    such as PDF descriptions may also need the configured media origin when
-    files are served from remote storage/CDN.
+    restricted (no ``default-src``). User-authored markdown iframes are
+    sanitized against ``settings.IFRAME_ALLOWED_HOSTS``. App-controlled embeds
+    can add hosts via ``settings.CSP_FRAME_ALLOWED_HOSTS``; PDF descriptions may
+    also need the configured media origin when files are served from remote
+    storage/CDN.
     """
 
     def __init__(self, get_response):
         self.get_response = get_response
-        hosts = list(getattr(settings, "IFRAME_ALLOWED_HOSTS", []))
+        hosts = list(getattr(settings, "IFRAME_ALLOWED_HOSTS", [])) + list(
+            getattr(settings, "CSP_FRAME_ALLOWED_HOSTS", [])
+        )
         media_origin = self._media_origin()
         sources = ["'self'"] + ["https://%s" % h for h in hosts]
         if media_origin and media_origin not in sources:

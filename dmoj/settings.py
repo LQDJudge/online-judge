@@ -307,10 +307,9 @@ X_FRAME_OPTIONS = "SAMEORIGIN"
 # Hosts whose pages are allowed to be embedded via <iframe> in user-authored
 # markdown (comments, problems, blogs, course/org descriptions, ...).
 # This is a default-deny allowlist: any iframe whose src host is not listed is
-# stripped server-side (see judge/markdown.py) AND blocked by the browser via
-# the Content-Security-Policy frame-src header (see judge.middleware
-# .ContentSecurityPolicyMiddleware). Keep both layers in sync by editing only
-# this single list. Exact-host match (no implicit subdomains).
+# stripped server-side (see judge/markdown.py). Exact-host match (no implicit
+# subdomains). Browser frame-src also includes these hosts, but app-controlled
+# frame sources such as Turnstile belong in CSP_FRAME_ALLOWED_HOSTS instead.
 IFRAME_ALLOWED_HOSTS = [
     "www.youtube.com",
     "youtube.com",
@@ -319,6 +318,13 @@ IFRAME_ALLOWED_HOSTS = [
     "drive.google.com",  # Google Drive file preview embeds
     "www.google.com",  # Google Maps embeds
     "calendar.google.com",  # Google Calendar embeds
+]
+
+# Hosts allowed by the browser frame-src policy for app-controlled embeds only.
+# Do not add these to IFRAME_ALLOWED_HOSTS unless users should be able to embed
+# them from markdown too.
+CSP_FRAME_ALLOWED_HOSTS = [
+    "challenges.cloudflare.com",  # Cloudflare Turnstile widget
 ]
 
 LANGUAGE_COOKIE_AGE = 8640000

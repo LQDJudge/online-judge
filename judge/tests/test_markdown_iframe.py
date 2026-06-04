@@ -68,6 +68,7 @@ class MarkdownIframeSanitizeTest(SimpleTestCase):
 
 @override_settings(
     IFRAME_ALLOWED_HOSTS=["www.youtube.com", "docs.google.com"],
+    CSP_FRAME_ALLOWED_HOSTS=["challenges.cloudflare.com"],
     MEDIA_URL="/media/",
 )
 class ContentSecurityPolicyMiddlewareTest(SimpleTestCase):
@@ -82,6 +83,13 @@ class ContentSecurityPolicyMiddlewareTest(SimpleTestCase):
         self.assertIn("'self'", csp)
         self.assertIn("https://www.youtube.com", csp)
         self.assertIn("https://docs.google.com", csp)
+        self.assertIn("https://challenges.cloudflare.com", csp)
+
+    def test_csp_only_hosts_do_not_allow_markdown_iframes(self):
+        html = markdown(
+            '<iframe src="https://challenges.cloudflare.com/turnstile/v0/foo"></iframe>'
+        )
+        self.assertNotIn("<iframe", html)
 
     def test_no_default_src(self):
         # Only frame-src is constrained; the rest of the page is untouched.
