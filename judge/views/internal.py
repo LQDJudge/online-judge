@@ -40,9 +40,10 @@ from judge.models.public_request import PublicRequest
 from judge.models.problem_review import ProblemReviewCheckResult, ProblemReviewRun
 from judge.review.hashing import compute_input_hash
 from judge.review.system_bot import post_system_comment_on_review
+from judge.review.triggers import trigger_problem_review_for
+from judge.review.verdict import batched_verdicts
 from judge.tasks import rescore_problem
 from judge.tasks.llm import improve_markdown_task, tag_problem_task
-from judge.tasks.review import review_problem
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.problem_equivalence import (
     ProblemEquivalenceError,
@@ -50,14 +51,9 @@ from judge.utils.problem_equivalence import (
 )
 from judge.utils.problem_merge import ProblemMerge
 from judge.utils.strings import safe_float_or_none
+from judge.utils.timefmt import format_mmss
 
 logger = logging.getLogger(__name__)
-
-
-def _format_mmss(seconds):
-    """Format remaining seconds as MM:SS for human-readable countdowns."""
-    total = max(0, int(seconds))
-    return "%02d:%02d" % (total // 60, total % 60)
 
 
 class InternalView(object):
@@ -625,40 +621,16 @@ class InternalProblemQueue(InternalView, ListView):
         if self.current_tab == "request_public":
             problems_in_page = list(context.get("problems", []))
             problem_ids = [p.id for p in problems_in_page]
-            latest_runs = {}
-            for r in ProblemReviewRun.objects.filter(
-                problem_id__in=problem_ids, superseded_by__isnull=True
-            ).order_by("-started_at"):
-                latest_runs.setdefault(r.problem_id, r)
-            context["latest_review_runs"] = latest_runs
-
-            # One query to find which DONE runs have any FAIL — replaces an
-            # N+1 .exists() per row in the loop below. For a 20-row page
-            # that's 20 queries → 1.
-            done_run_ids = [
-                r.id for r in latest_runs.values() if r.status == ProblemReviewRun.DONE
-            ]
-            fail_run_ids = set(
-                ProblemReviewCheckResult.objects.filter(
-                    run_id__in=done_run_ids,
-                    status=ProblemReviewCheckResult.FAIL,
-                )
-                .values_list("run_id", flat=True)
-                .distinct()
+            latest_runs, verdicts = batched_verdicts(
+                problem_ids,
+                ProblemReviewRun,
+                ProblemReviewCheckResult,
+                "problem_id",
             )
-
-            def _verdict_for(pid):
-                r = latest_runs.get(pid)
-                if not r:
-                    return None
-                if r.status == ProblemReviewRun.RUNNING:
-                    return "running"
-                if r.status == ProblemReviewRun.ERROR:
-                    return "error"
-                return "fail" if r.id in fail_run_ids else "pass"
-
+            context["latest_review_runs"] = latest_runs
+            # Ensure every problem on the page has a key (even if no run).
             context["review_verdicts"] = {
-                p.id: _verdict_for(p.id) for p in problems_in_page
+                p.id: verdicts.get(p.id) for p in problems_in_page
             }
         else:
             context["latest_review_runs"] = {}
@@ -867,8 +839,10 @@ def request_public(request):
         )
 
         if latest_run is not None:
-            # Guard 3: Dirty-check
-            if latest_run.input_hash == new_hash:
+            # Guard 3: Dirty-check — admins bypass so they can re-run a
+            # review without having to edit the problem first (useful for
+            # diagnosing flaky LLM checks or testing a config change).
+            if latest_run.input_hash == new_hash and not request.user.is_superuser:
                 return JsonResponse(
                     {
                         "success": False,
@@ -891,7 +865,7 @@ def request_public(request):
             )
             if same_user_recently:
                 cooldown_seconds = getattr(
-                    settings, "AUTO_REVIEW_REQUEST_COOLDOWN_SECONDS", 600
+                    settings, "AUTO_REVIEW_REQUEST_COOLDOWN_SECONDS", 300
                 )
                 cooldown_end = latest_run.started_at + timedelta(
                     seconds=cooldown_seconds
@@ -904,7 +878,7 @@ def request_public(request):
                             "error": _(
                                 "Please wait %(mmss)s before requesting review again."
                             )
-                            % {"mmss": _format_mmss(remaining)},
+                            % {"mmss": format_mmss(remaining)},
                             "cooldown_seconds_remaining": int(remaining),
                         }
                     )
@@ -931,16 +905,11 @@ def request_public(request):
                 requested_by=request.profile,
             )
 
-        new_run = ProblemReviewRun.objects.create(
-            problem=problem,
-            triggered_by=request.profile,
-            input_hash=new_hash,
+        # Run creation + supersede + dispatch moved to a shared helper so the
+        # contest-review path can reuse it without creating a PublicRequest.
+        new_run = trigger_problem_review_for(
+            problem, request.profile, dispatch="celery"
         )
-        if latest_run:
-            latest_run.superseded_by = new_run
-            latest_run.save(update_fields=["superseded_by"])
-
-        transaction.on_commit(lambda: review_problem.delay(new_run.id))
 
     return JsonResponse(
         {
@@ -949,6 +918,32 @@ def request_public(request):
             "redirect": reverse("problem_review_dashboard", args=[problem.code]),
         }
     )
+
+
+@require_POST
+def cancel_request_public(request):
+    """Author withdraws their PENDING PublicRequest so it disappears from
+    the admin queue (e.g., misclicked, or wants to keep the problem private
+    because they'll use it in a contest instead).
+
+    Deletes the row outright — the prior request never produced state worth
+    preserving (admin hadn't acted). Any ProblemReviewRun rows the request
+    triggered remain (they're the review audit trail, separate from the
+    publish-request state). Author can click Request Public again later.
+    """
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+    try:
+        problem_id = int(request.POST.get("id"))
+        problem = Problem.objects.get(id=problem_id)
+    except Exception:
+        return JsonResponse({"success": False, "error": "Problem not found"})
+    if not problem.is_editable_by(request.user):
+        return JsonResponse({"success": False, "error": "Permission denied"})
+    deleted, _ignored = PublicRequest.objects.filter(
+        problem=problem, status=PublicRequest.PENDING
+    ).delete()
+    return JsonResponse({"success": True, "cancelled": deleted})
 
 
 def _legacy_request_public(request, problem):

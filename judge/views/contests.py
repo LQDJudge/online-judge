@@ -86,6 +86,7 @@ from judge.models import (
 )
 from judge.models.course import EDITABLE_ROLES
 from judge.models.contest import get_contest_problem_ids
+from judge.models.contest_review import ContestPublicRequest
 from judge.tasks import run_moss
 from judge.utils.celery import redirect_to_task_status
 from judge.utils.opengraph import generate_opengraph
@@ -2454,6 +2455,12 @@ class ContestEdit(LoginRequiredMixin, ContestMixin, TitleMixin, SingleObjectForm
         # `page_type` is read by `make_tab_item` (templates/three-column-content.html)
         # to highlight the active sidebar tab.
         context["page_type"] = "edit"
+        # Expose a PENDING publish request so the edit page can show a
+        # "Cancel request" button next to "Awaiting admin approval", mirroring
+        # the problem edit page. None when there's nothing to cancel.
+        context["contest_public_request"] = ContestPublicRequest.objects.filter(
+            contest=self.object, status=ContestPublicRequest.PENDING
+        ).first()
         return context
 
     def get_title(self):

@@ -69,7 +69,7 @@ class SolutionCodeGenerator:
     """Generates multiple reference solution codes for a problem using LLM."""
 
     def __init__(self, api_key, bot_name="Gemini-3-Flash", sleep_time=2.5):
-        self.llm_service = LLMService(api_key, bot_name, sleep_time, timeout=300)
+        self.llm_service = LLMService(api_key, bot_name, sleep_time, timeout=900)
         self.bot_name = bot_name
 
     def generate(self, problem, instructions="", include_reference=False):

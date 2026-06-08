@@ -11,6 +11,7 @@
   {{ rows_form.media.js }}
   <script src="{{ static('jquery-ui.min.js') }}"></script>
   <script src="{{ static('widgets/sortable_formset.js') }}"></script>
+  <script src="{{ static('widgets/cooldown_countdown.js') }}"></script>
   <script>
     $(function() {
       $(document).on('click', '.config-toggle-btn', function() {
@@ -228,7 +229,115 @@
       'empty_text': _('No problems or quizzes added yet.')
       }) }}
 
-      <button type="submit" class="action-btn">{{ _('Save') }}</button>
+      {# Save + Request public sit side by side, mirroring the problem edit
+         layout. The Request public button is `type="button"` so clicking it
+         does NOT submit the contest form; instead the JS below POSTs to the
+         auto-review pipeline via fetch and on success redirects the browser
+         to the contest review dashboard. Only visible on private contests. #}
+      <div class="form-actions" style="margin-top: 1em;">
+        <button type="submit" class="action-btn">{{ _('Save') }}</button>
+        {% if not contest.is_visible %}
+          {% if contest_public_request %}
+            {# A PENDING ContestPublicRequest already exists. Tell the author
+               so they don't keep retrying, and offer a Cancel button so they
+               can withdraw the row from the admin queue (e.g., misclicked, or
+               want to keep editing before admins look at it). #}
+            <span class="form-actions-status alert alert-info">
+              <i class="fa fa-clock"></i> {{ _("Awaiting admin approval.") }}
+            </span>
+            <button type="button" id="contest-request-public-btn" class="action-btn">
+              <i class="fa fa-redo"></i> {{ _("Re-run review") }}
+            </button>
+            <button type="button" id="contest-cancel-request-btn" class="action-btn">
+              <i class="fa fa-times"></i> {{ _("Cancel request") }}
+            </button>
+          {% else %}
+            <button type="button" id="contest-request-public-btn" class="action-btn">
+              <i class="fa fa-globe"></i> {{ _("Request public") }}
+            </button>
+          {% endif %}
+          <span id="contest-request-public-status" class="red form-actions-status"></span>
+        {% endif %}
+      </div>
     </form>
+
+    {% if not contest.is_visible %}
+      <script>
+        (function () {
+          var btn = document.getElementById("contest-request-public-btn");
+          var statusEl = document.getElementById("contest-request-public-status");
+          if (!btn) return;
+
+          var csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+          if (!csrfInput) return;
+          var csrf = csrfInput.value;
+          var url = "{{ url('contest_request_public', contest.key) }}";
+
+          // Cooldown countdown widget shared with problem edit — see
+          // resources/widgets/cooldown_countdown.js.
+          var cooldownStop = null;
+
+          btn.addEventListener("click", function () {
+            statusEl.textContent = "";
+            btn.disabled = true;
+            var fd = new FormData();
+            fd.append("csrfmiddlewaretoken", csrf);
+            fetch(url, {method: "POST", body: fd, credentials: "same-origin"})
+              .then(function (r) { return r.json(); })
+              .then(function (j) {
+                if (j.success) {
+                  location.href = j.redirect;
+                  return;
+                }
+                if (typeof j.cooldown_seconds_remaining === "number"
+                  && j.cooldown_seconds_remaining > 0) {
+                    if (cooldownStop) cooldownStop();
+                    cooldownStop = window.CooldownCountdown.start(
+                      statusEl, btn, j.cooldown_seconds_remaining, j.error || ""
+                    );
+                    return;
+                  }
+                statusEl.textContent = j.error || "{{ _('Request failed.') }}";
+                btn.disabled = false;
+              })
+              .catch(function (e) {
+                statusEl.textContent = String(e);
+                btn.disabled = false;
+              });
+          });
+
+          // Cancel button — only present in the DOM when contest_public_request
+          // is PENDING, so a soft reload is enough: the server re-renders
+          // without the alert and swaps the buttons back to "Request public".
+          var cancelBtn = document.getElementById("contest-cancel-request-btn");
+          if (cancelBtn) {
+            var cancelUrl = "{{ url('contest_request_cancel', contest.key) }}";
+            cancelBtn.addEventListener("click", function () {
+              if (!confirm("{{ _('Withdraw your public request? Admins will no longer see it in the queue. You can request again later.') }}")) {
+                return;
+              }
+              statusEl.textContent = "";
+              cancelBtn.disabled = true;
+              var fd2 = new FormData();
+              fd2.append("csrfmiddlewaretoken", csrf);
+              fetch(cancelUrl, {method: "POST", body: fd2, credentials: "same-origin"})
+                .then(function (r) { return r.json(); })
+                .then(function (j) {
+                  if (j.success) {
+                    location.reload();
+                    return;
+                  }
+                  statusEl.textContent = j.error || "{{ _('Request failed.') }}";
+                  cancelBtn.disabled = false;
+                })
+                .catch(function (e) {
+                  statusEl.textContent = String(e);
+                  cancelBtn.disabled = false;
+                });
+            });
+          }
+        })();
+      </script>
+    {% endif %}
   </div>
 {% endblock %}

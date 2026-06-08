@@ -1,0 +1,416 @@
+{% extends "two-column-content.html" %}
+{% set page_type = 'review' %}
+
+{% block left_sidebar %}
+  {% include "contest/contest-tabs.html" %}
+{% endblock %}
+
+{% block media %}
+  {{ super() }}
+  {% if latest_run %}
+    {% include "comments/media-css.html" %}
+  {% endif %}
+{% endblock %}
+
+{% block js_media %}
+  {{ super() }}
+  {% if latest_run %}
+    {% include "comments/media-js.html" %}
+  {% endif %}
+{% endblock %}
+
+{% block middle_content %}
+  <div class="review-dashboard">
+    {# Mirror the problem review page EXACTLY:
+       1. `<h2 class="content-title">` first (renders with global divider line)
+       2. Admin-only Rerun button right-aligned beneath the title
+       3. Rest of the dashboard
+       On the problem page the title comes from edit_base.html's `middle_title`
+       block, then `edit_content` (which holds the rerun button) renders below
+       — so the rerun button naturally sits between title and run-status card.
+       Here we render the title inline since two-column-content has no title
+       slot, preserving the same visual sequence. #}
+    <h2 class="content-title">{{ contest.name }} — {{ _("Review") }}</h2>
+    {% if request.user.is_superuser %}
+      <div class="review-actions" style="text-align: right; margin-bottom: 0.75em;">
+        <form method="post" action="{{ url('contest_review_trigger', contest.key) }}"
+              style="display: inline; margin: 0;">
+          <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+          <button type="submit" class="action-btn small">
+            <i class="fa fa-redo"></i> {{ _("Rerun review") }}
+          </button>
+        </form>
+      </div>
+    {% endif %}
+
+    {% if not latest_run %}
+      <div class="review-empty">
+        <i class="fa fa-clipboard-check"></i>
+        <p>{{ _("No review run yet for this contest.") }}</p>
+      </div>
+    {% else %}
+      {% set passed = check_results | selectattr("status", "equalto", "S") | list | length %}
+      {% set failed = check_results | selectattr("status", "equalto", "F") | list | length %}
+      {% set warned = check_results | selectattr("status", "equalto", "W") | list | length %}
+      {% set skipped = check_results | selectattr("status", "equalto", "K") | list | length %}
+      {% set errored = check_results | selectattr("status", "equalto", "E") | list | length %}
+      {% set pending = check_results | selectattr("status", "equalto", "P") | list | length %}
+      {% set total = check_results | length %}
+
+      {# === Header card === #}
+      <section id="run-status" class="review-card review-header"
+               data-run-id="{{ latest_run.id }}" data-status="{{ latest_run.status }}"
+               data-viewing-history="{{ '1' if viewing_history else '0' }}">
+        <div class="review-header-row">
+          <div class="review-header-status">
+            {% if latest_run.status == 'D' %}
+              {% set header_class = 'green' %}
+            {% elif latest_run.status == 'R' %}
+              {% set header_class = 'gray' %}
+            {% else %}
+              {% set header_class = 'red' %}
+            {% endif %}
+            <span class="review-status-badge {{ header_class }}">
+              {{ latest_run.get_status_display() }}
+            </span>
+            <span class="review-header-runid">
+              {{ _("Run") }} #{{ latest_run_index if latest_run_index else latest_run.id }}
+            </span>
+          </div>
+          <div class="review-header-meta">
+            {{ _("Triggered by") }}
+            {% if latest_run.triggered_by %}
+              {{ link_user(latest_run.triggered_by) }}
+            {% else %}
+              {{ _("(unknown)") }}
+            {% endif %}
+            &middot; {{ latest_run.started_at | date(_("N j, Y, g:i a")) }}
+          </div>
+          {% if history_entries | length > 1 %}
+            <div class="review-header-history">
+              <label for="review-history-select" class="review-history-label">
+                {{ _("View run") }}:
+              </label>
+              <select id="review-history-select" class="review-history-select">
+                {% for entry in history_entries %}
+                  <option value="{{ url('contest_review_dashboard', contest.key) }}?run={{ entry.index }}"
+                          {% if entry.id == latest_run.id %}selected{% endif %}>
+                    #{{ entry.index }} — {{ entry.status_display }}{% if entry.is_latest %} ({{ _("latest") }}){% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      {% if viewing_history and actual_latest_run %}
+        <section class="review-card review-superseded-banner">
+          <i class="fa fa-history"></i>
+          {{ _("You are viewing a historical run.") }}
+          {{ _("It was superseded by") }}
+          <a href="{{ url('contest_review_dashboard', contest.key) }}">
+            {{ _("Run") }} #{{ actual_latest_run_index }}
+          </a>.
+        </section>
+      {% endif %}
+
+      {# === Overall verdict === #}
+      <section class="review-card review-verdict">
+        <div class="review-verdict-row">
+          {% if latest_run.status == 'R' %}
+            <span class="review-verdict-icon gray"><i class="fa fa-spinner fa-spin"></i></span>
+            <span class="review-verdict-text">{{ _("Review in progress…") }}</span>
+          {% elif failed > 0 or errored > 0 %}
+            <span class="review-verdict-icon red"><i class="fa fa-exclamation-circle"></i></span>
+            <span class="review-verdict-text">
+              <strong>{{ failed + errored }} {{ _("issue(s) to address.") }}</strong>
+              {% if warned > 0 %} <strong class="orange">+ {{ warned }} {{ _("warning(s)") }}.</strong>{% endif %}
+              <span class="review-verdict-counts">
+                ({{ passed }} {{ _("passed") }}, {{ skipped }} {{ _("skipped") }})
+              </span>
+            </span>
+          {% elif warned > 0 %}
+            <span class="review-verdict-icon orange"><i class="fa fa-exclamation-triangle"></i></span>
+            <span class="review-verdict-text">
+              <strong>{{ warned }} {{ _("advisory warning(s).") }}</strong>
+              <span class="review-verdict-counts">
+                ({{ passed }} {{ _("passed") }}{% if skipped > 0 %}, {{ skipped }} {{ _("skipped") }}{% endif %})
+              </span>
+            </span>
+          {% elif passed > 0 %}
+            <span class="review-verdict-icon green"><i class="fa fa-check-circle"></i></span>
+            <span class="review-verdict-text">
+              <strong>{{ _("All checks passed.") }}</strong>
+              <span class="review-verdict-counts">
+                ({{ passed }} {{ _("passed") }}{% if skipped > 0 %}, {{ skipped }} {{ _("skipped") }}{% endif %})
+              </span>
+            </span>
+          {% else %}
+            <span class="review-verdict-icon gray"><i class="fa fa-minus-circle"></i></span>
+            <span class="review-verdict-text">{{ _("No checks ran.") }}</span>
+          {% endif %}
+        </div>
+      </section>
+
+      {# === Checks table === #}
+      <section class="review-card review-checks">
+        <h3 class="review-section-title">
+          <i class="fa fa-list-check"></i> {{ _("Check results") }}
+        </h3>
+        <table class="review-checks-table">
+          <thead>
+            <tr>
+              <th class="check-col-icon"></th>
+              <th class="check-col-name">{{ _("Check") }}</th>
+              <th class="check-col-status">{{ _("Status") }}</th>
+              <th class="check-col-reason">{{ _("Details") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cr in check_results %}
+              {% if cr.status == 'S' %}
+                {% set row_class = 'check-pass' %}
+                {% set icon = 'fa-check' %}
+                {% set status_class = 'green' %}
+              {% elif cr.status == 'F' %}
+                {% set row_class = 'check-fail' %}
+                {% set icon = 'fa-times' %}
+                {% set status_class = 'red' %}
+              {% elif cr.status == 'W' %}
+                {% set row_class = 'check-warning' %}
+                {% set icon = 'fa-exclamation-triangle' %}
+                {% set status_class = 'orange' %}
+              {% elif cr.status == 'E' %}
+                {% set row_class = 'check-error' %}
+                {% set icon = 'fa-exclamation-triangle' %}
+                {% set status_class = 'red' %}
+              {% elif cr.status == 'P' %}
+                {% set row_class = 'check-pending' %}
+                {% set icon = 'fa-spinner fa-spin' %}
+                {% set status_class = 'gray' %}
+              {% else %}
+                {% set row_class = 'check-skipped' %}
+                {% set icon = 'fa-minus-circle' %}
+                {% set status_class = 'gray' %}
+              {% endif %}
+              <tr class="review-check-row {{ row_class }}">
+                <td class="check-col-icon"><i class="fa {{ icon }} {{ status_class }}"></i></td>
+                <td class="check-col-name">{{ check_display_names.get(cr.check_id, cr.check_id) }}</td>
+                <td class="check-col-status">
+                  <span class="review-status-badge {{ status_class }}">
+                    {{ cr.get_status_display() }}
+                  </span>
+                </td>
+                <td class="check-col-reason">
+                  {{ cr.reason }}
+                </td>
+              </tr>
+              {# Expanded per-problem listing under problems_reviewed.
+                 Lets the author click straight to each individual review
+                 dashboard without leaving this page. #}
+              {% if cr.check_id == 'problems_reviewed' and cr.details_json and cr.details_json.per_problem %}
+                <tr class="review-check-row review-check-subrow">
+                  <td></td>
+                  <td colspan="3">
+                    <table class="review-checks-subtable">
+                      <thead>
+                        <tr>
+                          <th>{{ _("Problem") }}</th>
+                          <th>{{ _("Verdict") }}</th>
+                          <th>{{ _("Details") }}</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for pp in cr.details_json.per_problem %}
+                          {% if pp.verdict == 'pass' %}
+                            {% set pp_class = 'green' %}
+                            {% set pp_icon = 'fa-check' %}
+                            {% set pp_label = _("Pass") %}
+                          {% elif pp.verdict == 'fail' %}
+                            {% set pp_class = 'red' %}
+                            {% set pp_icon = 'fa-times' %}
+                            {% set pp_label = _("Fail") %}
+                          {% elif pp.verdict == 'error' %}
+                            {% set pp_class = 'red' %}
+                            {% set pp_icon = 'fa-exclamation-triangle' %}
+                            {% set pp_label = _("Error") %}
+                          {% else %}
+                            {% set pp_class = 'gray' %}
+                            {% set pp_icon = 'fa-question-circle' %}
+                            {% set pp_label = _("Missing") %}
+                          {% endif %}
+                          <tr>
+                            {# Name links to the PROBLEM page (semantic: clicking
+                               the title takes you to the thing it names). The
+                               right-side "Open" button takes you to that
+                               problem's REVIEW dashboard. Two affordances,
+                               two distinct destinations — no redundant link.
+                               Just the name (no code prefix) since the column
+                               is already labeled "Problem" and code is shown
+                               on hover via the link's URL. #}
+                            <td>
+                              <a href="{{ url('problem_detail', pp.code) }}">
+                                {{ pp.name }}
+                              </a>
+                            </td>
+                            <td>
+                              <i class="fa {{ pp_icon }} {{ pp_class }}"></i>
+                              <span class="{{ pp_class }}"><strong>{{ pp_label }}</strong></span>
+                            </td>
+                            <td>
+                              {% if pp.failing_checks %}
+                                {{ _("Failing checks") }}: {{ pp.failing_checks | join(', ') }}
+                              {% elif pp.verdict == 'missing' %}
+                                {{ _("No fresh review available — open the per-problem page to investigate.") }}
+                              {% endif %}
+                            </td>
+                            <td style="padding-left: 1.5em; white-space: nowrap;">
+                              <a href="{{ pp.dashboard_url }}" class="action-btn small">
+                                <i class="fa fa-clipboard-check"></i> {{ _("Open") }}
+                              </a>
+                            </td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              {% endif %}
+              {# Expanded role-leak + submission-leak listings under
+                 submission_leak_check. Each non-trusted user appears with
+                 either a sub_count column (they submitted) or a role badge
+                 list (they hold a per-problem role). #}
+              {% if cr.check_id == 'submission_leak_check' and cr.details_json and cr.status == 'F' %}
+                <tr class="review-check-row review-check-subrow">
+                  <td></td>
+                  <td colspan="3">
+                    {# Two leak sub-sections side-by-side via flex so the wide
+                       right-side whitespace from the previous stacked layout
+                       collapses. Each child gets flex:1, so they split the
+                       row evenly; on narrow viewports flex-wrap drops the
+                       second one below. #}
+                    <div style="display: flex; gap: 1.5em; flex-wrap: wrap;">
+                      {% if cr.details_json.role_leakers %}
+                        <div style="flex: 1 1 320px; min-width: 0;">
+                          <h4 style="margin: 0.5em 0;">{{ _("Role-access leaks") }}</h4>
+                          <table class="review-checks-subtable">
+                            <thead>
+                              <tr>
+                                <th>{{ _("User") }}</th>
+                                <th>{{ _("Problem") }}</th>
+                                <th>{{ _("Roles") }}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {% for rl in cr.details_json.role_leakers %}
+                                <tr>
+                                  <td><a href="{{ url('user_page', rl.username) }}">{{ rl.username }}</a></td>
+                                  <td><a href="{{ url('problem_detail', rl.problem_code) }}">{{ rl.problem_name }}</a></td>
+                                  <td>
+                                    {% for r in rl.roles %}
+                                      <span class="review-status-badge orange">{{ r }}</span>
+                                    {% endfor %}
+                                  </td>
+                                </tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      {% endif %}
+                      {% if cr.details_json.leakers %}
+                        <div style="flex: 1 1 320px; min-width: 0;">
+                          <h4 style="margin: 0.5em 0;">{{ _("Submission leaks") }}</h4>
+                          <table class="review-checks-subtable">
+                            <thead>
+                              <tr>
+                                <th>{{ _("User") }}</th>
+                                <th>{{ _("Problem") }}</th>
+                                <th>{{ _("Submissions") }}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {% for sl in cr.details_json.leakers %}
+                                <tr>
+                                  <td><a href="{{ url('user_page', sl.username) }}">{{ sl.username }}</a></td>
+                                  <td><a href="{{ url('problem_detail', sl.problem_code) }}">{{ sl.problem_name }}</a></td>
+                                  <td>{{ sl.submission_count }}</td>
+                                </tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+              {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      {# === AI synthesis report === #}
+      <section class="review-card review-summary">
+        <h3 class="review-section-title">
+          <i class="fa fa-robot"></i> {{ _("AI-synthesized feedback") }}
+        </h3>
+        {% if latest_run.summary_report %}
+          <div class="review-summary-body content-description">
+            {{ latest_run.summary_report | markdown | str | safe }}
+          </div>
+        {% elif latest_run.status == 'R' %}
+          <div class="review-summary-placeholder">
+            <i class="fa fa-spinner fa-spin"></i>
+            {{ _("Generating AI feedback… this will appear automatically when the run finishes.") }}
+          </div>
+        {% elif failed == 0 and errored == 0 and warned == 0 %}
+          <div class="review-summary-placeholder">
+            <i class="fa fa-check-circle green"></i>
+            {{ _("All checks passed — no AI feedback needed.") }}
+          </div>
+        {% else %}
+          <div class="review-summary-placeholder">
+            <i class="fa fa-info-circle"></i>
+            {{ _("No AI feedback was produced for this run.") }}
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="review-card review-comments">
+        {% include "comments/list.html" %}
+      </section>
+    {% endif %}
+  </div>
+
+  <script>
+    (function () {
+      var historySelect = document.getElementById("review-history-select");
+      if (historySelect) {
+        historySelect.addEventListener("change", function () {
+          if (this.value) location.href = this.value;
+        });
+      }
+
+      var statusEl = document.getElementById("run-status");
+      if (!statusEl) return;
+      if (statusEl.dataset.status !== "R") return;
+      if (statusEl.dataset.viewingHistory === "1") return;
+
+      var url = "{{ url('contest_review_status', contest.key) }}";
+      function poll() {
+        fetch(url, {credentials: "same-origin"})
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (!j.run) return;
+            if (j.run.status !== "R") {
+              location.reload();
+            }
+          })
+          .catch(function () {});
+      }
+      setInterval(poll, 3000);
+    })();
+  </script>
+{% endblock %}
