@@ -2,17 +2,17 @@
 Compute a deterministic content hash of a Problem for the dirty-check guard.
 
 Covers everything the auto-review pipeline reads: statement, time/memory/points,
-test data identity + size, checker config, and the set of tagged submissions
-(including their source). If a future check reads a new field, add it here
-AND add a test in test_review_hashing.py asserting the hash changes.
+test data identity + size, checker config, and the set of saved solution codes
+(source, language, expected_result, last_submission_id). If a future check
+reads a new field, add it here AND add a test in test_review_hashing.py
+asserting the hash changes.
 """
 
 import hashlib
 import json
 
 from judge.models import Problem
-from judge.models.problem_data import ProblemData
-from judge.models.problem_review import ProblemReviewSubmissionTag
+from judge.models.problem_data import ProblemData, ProblemSolutionCode
 
 
 def _file_field_name(file_field):
@@ -79,25 +79,22 @@ def compute_input_hash(problem: Problem) -> str:
         payload["custom_checker_source"] = ""
         payload["custom_checker_content"] = ""
 
-    tags = (
-        ProblemReviewSubmissionTag.objects.filter(submission__problem=problem)
-        .select_related("submission__source")
-        .order_by("id")
-    )
-    payload["tags"] = [
+    # Solution codes: source, language, expected verdict, and the linked
+    # submission ID. Each Run creates a new Submission row, so including
+    # last_submission_id is enough to dirty the hash on re-runs without
+    # needing to read submission timing/result directly. Order by `order`
+    # (not id) so reordering codes in the UI also dirties the hash —
+    # that changes which code is "Code #1" in the rubric prompt.
+    codes = ProblemSolutionCode.objects.filter(problem=problem).order_by("order", "id")
+    payload["solution_codes"] = [
         {
-            "submission_id": tag.submission_id,
-            "kind": tag.kind,
-            "target_subtask": tag.target_subtask,
-            "claimed_complexity": tag.claimed_complexity,
-            "source": (
-                tag.submission.source.source
-                if hasattr(tag.submission, "source")
-                and tag.submission.source is not None
-                else ""
-            ),
+            "order": sc.order,
+            "source": sc.source_code or "",
+            "language_id": sc.language_id,
+            "expected_result": sc.expected_result or "",
+            "last_submission_id": sc.last_submission_id,
         }
-        for tag in tags
+        for sc in codes
     ]
 
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")

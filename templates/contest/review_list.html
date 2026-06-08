@@ -1,0 +1,174 @@
+{% extends "three-column-content.html" %}
+
+{# Review dashboard for contests. Mirror of problem/review_list.html. #}
+
+{% block left_sidebar %}
+  {% include "contest/contest-list-tabs.html" %}
+{% endblock %}
+
+{% macro verdict_pill(v) %}
+  {% if v == 'pass' %}
+    <span class="verdict-pill verdict-pass"><i class="fa fa-check"></i>{{ _('Pass') }}</span>
+  {% elif v == 'fail' %}
+    <span class="verdict-pill verdict-fail"><i class="fa fa-times"></i>{{ _('Fail') }}</span>
+  {% elif v == 'running' %}
+    <span class="verdict-pill verdict-running"><i class="fa fa-spinner fa-spin"></i>{{ _('Running') }}</span>
+  {% elif v == 'error' %}
+    <span class="verdict-pill verdict-error"><i class="fa fa-exclamation-triangle"></i>{{ _('Error') }}</span>
+  {% else %}
+    <span class="verdict-pill verdict-none">{{ _('—') }}</span>
+  {% endif %}
+{% endmacro %}
+
+{% macro publish_pill(pr) %}
+  {% if pr and pr.status == 'P' %}
+    <span class="publish-pill publish-pending"><i class="fa fa-clock"></i>{{ _('Pending') }}</span>
+  {% elif pr and pr.status == 'A' %}
+    <span class="publish-pill publish-approved"><i class="fa fa-check"></i>{{ _('Approved') }}</span>
+  {% elif pr and pr.status == 'R' %}
+    <span class="publish-pill publish-rejected"><i class="fa fa-times"></i>{{ _('Rejected') }}</span>
+  {% else %}
+    <span class="publish-pill publish-none">{{ _('Not requested') }}</span>
+  {% endif %}
+{% endmacro %}
+
+{% block middle_content %}
+  <div class="review-list-page">
+    {% if items %}
+      <div class="review-list-table-scroll">
+        <table class="review-list-table">
+          <thead>
+            <tr>
+              <th class="col-name">
+                <a href="{{ sort_links.name }}">{{ _('Contest') }}{{ sort_order.name }}</a>
+              </th>
+              <th class="col-authors">{{ _('Authors') }}</th>
+              <th class="col-verdict">{{ _('Auto-review') }}</th>
+              <th class="col-public">
+                <a href="{{ sort_links.public_status }}">{{ _('Public request') }}{{ sort_order.public_status }}</a>
+              </th>
+              <th class="col-when">
+                <a href="{{ sort_links.last_reviewed }}">{{ _('Last reviewed') }}{{ sort_order.last_reviewed }}</a>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in items %}
+              {% set run = latest_runs.get(c.id) %}
+              {% set v = verdicts.get(c.id) %}
+              {% set pr = public_requests.get(c.id) %}
+              <tr>
+                <td class="col-name">
+                  <a href="{{ url('contest_review_dashboard', c.key) }}">{{ c.name }}</a>
+                </td>
+                <td class="review-author-list">
+                  {% for author in c.authors.all() %}
+                    {{ link_user(author) }}{% if not loop.last %} {% endif %}
+                  {% endfor %}
+                </td>
+                <td>{{ verdict_pill(v) }}</td>
+                <td>{{ publish_pill(pr) }}</td>
+                <td class="review-when">
+                  {% if run and run.finished_at %}
+                    <span title="{{ run.finished_at }}">{{ relative_time(run.finished_at) }}</span>
+                  {% elif run %}
+                    <span title="{{ run.started_at }}">{{ relative_time(run.started_at) }}</span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="review-list-pagination">
+        {% include "list-pages.html" %}
+      </div>
+    {% else %}
+      <div class="review-empty">
+        <i class="fa fa-clipboard-check"></i>
+        <p>{{ _('No contest reviews match your filters.') }}</p>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
+{% block right_sidebar %}
+  <div class="right-sidebar">
+    <div class="sidebox">
+      <h3 class="colored-text"><i class="fa fa-search"></i>{{ _('Review search') }}</h3>
+      <div class="sidebox-content">
+        <form id="filter-form" name="form" action="" method="get">
+          <div>
+            <input id="search" type="text" name="search" value="{{ search_query }}"
+                   placeholder="{{ _('Search reviews...') }}">
+          </div>
+          <div class="filter-form-group">
+            <label class="bold-text margin-label" for="search-author"><i class="non-italics">{{ _('Author') }}</i></label>
+            <select id="search-author" name="authors" multiple>
+              {% for author in selected_authors %}
+                <option value="{{ author.id }}" selected>{{ author.user.username }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-form-group">
+            <label class="bold-text margin-label" for="verdict"><i class="non-italics">{{ _('Auto-review') }}</i></label>
+            <select id="verdict" name="verdict" style="width: 100%">
+              <option value="">{{ _('All') }}</option>
+              <option value="pass" {% if active_verdict == 'pass' %}selected{% endif %}>{{ _('Pass') }}</option>
+              <option value="fail" {% if active_verdict == 'fail' %}selected{% endif %}>{{ _('Fail') }}</option>
+              <option value="running" {% if active_verdict == 'running' %}selected{% endif %}>{{ _('Running') }}</option>
+              <option value="error" {% if active_verdict == 'error' %}selected{% endif %}>{{ _('Error') }}</option>
+            </select>
+          </div>
+          <div class="filter-form-group">
+            <label class="bold-text margin-label" for="public"><i class="non-italics">{{ _('Public request') }}</i></label>
+            <select id="public" name="public" style="width: 100%">
+              <option value="">{{ _('All') }}</option>
+              <option value="pending" {% if active_public == 'pending' %}selected{% endif %}>{{ _('Pending') }}</option>
+              <option value="approved" {% if active_public == 'approved' %}selected{% endif %}>{{ _('Approved') }}</option>
+              <option value="rejected" {% if active_public == 'rejected' %}selected{% endif %}>{{ _('Rejected') }}</option>
+              <option value="none" {% if active_public == 'none' %}selected{% endif %}>{{ _('No request') }}</option>
+            </select>
+          </div>
+          <div class="form-submit-group">
+            <a id="go" class="action-btn">{{ _('Go') }}</a>
+            <a href="{{ url('contest_review_list') }}" class="action-btn">{{ _('Reset') }}</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block js_media %}
+  <script>
+    $(function () {
+      {# Contests don't have a dedicated author endpoint, so use the generic
+         user-search one. Returns any user matching the query — fine since
+         the queryset filter only keeps matches that actually authored a
+         contest with a review. #}
+      $('#search-author').select2({
+        multiple: 1,
+        placeholder: '{{ _('Authors') }}...',
+        ajax: {
+          url: '{{ url('user_search_select2_ajax') }}',
+          delay: 250,
+          cache: true,
+        }
+      });
+      $('#verdict, #public').select2({minimumResultsForSearch: Infinity});
+      $('#go').click(function () {
+        $('#filter-form').submit();
+      });
+      $('#search').keypress(function (e) {
+        if (e.which === 13) {
+          e.preventDefault();
+          $('#go').click();
+        }
+      });
+    });
+  </script>
+{% endblock %}

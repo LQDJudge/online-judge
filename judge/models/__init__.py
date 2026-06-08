@@ -102,6 +102,11 @@ from judge.models.problem_review import (
     ProblemReviewCheckResult,
     ProblemReviewSubmissionTag,
 )
+from judge.models.contest_review import (
+    ContestReviewRun,
+    ContestReviewCheckResult,
+    ContestPublicRequest,
+)
 
 revisions.register(Profile, exclude=["points", "last_access", "ip", "rating"])
 revisions.register(Problem, follow=["language_limits"])

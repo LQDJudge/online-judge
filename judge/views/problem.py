@@ -68,7 +68,6 @@ from judge.models.problem_data import ProblemSolutionCode
 from judge.models.problem_review import (
     ProblemReviewCheckResult,
     ProblemReviewRun,
-    ProblemReviewSubmissionTag,
 )
 from judge.models.public_request import PublicRequest
 from judge.pdf_problems import DefaultPdfMaker, HAS_PDF
@@ -1434,20 +1433,6 @@ class ProblemEdit(
             and not self.object.is_organization_private
             and not self.request.user.is_superuser
         )
-
-        # Author submissions + existing review tags for the
-        # "Reference solutions for review" panel.
-        context["review_author_submissions"] = list(
-            Submission.objects.filter(problem=self.object, user=self.request.profile)
-            .select_related("language")
-            .order_by("-id")[:30]
-        )
-        context["review_existing_tags"] = {
-            t.submission_id: t
-            for t in ProblemReviewSubmissionTag.objects.filter(
-                submission__problem=self.object
-            )
-        }
 
         # Latest non-superseded review run + an aggregated verdict so the
         # edit page can show what the bot decided (separate from the admin

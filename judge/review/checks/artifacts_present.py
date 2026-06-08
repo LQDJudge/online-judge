@@ -6,21 +6,17 @@
   - `ProblemData.generator_script` (in-DB generator script text).
 LQDOJ supports all three at grading time, so the check accepts any.
 
-`main_ac_source` is considered present if EITHER:
-  - The author uploaded a `ProblemSolutionCode` blob via the Solution Codes
-    sidebar tab, OR
-  - The author tagged at least one Submission as a reference via the
-    "Reference solutions for review" panel (`ProblemReviewSubmissionTag`).
+`main_ac_source` is considered present if there's at least one
+`ProblemSolutionCode` row saved via the Solution Codes tab. (Earlier
+versions accepted `ProblemReviewSubmissionTag` as an alternative; that
+model has since been consolidated into `ProblemSolutionCode`.)
 """
 
 from django.conf import settings
 from django.utils.translation import gettext as _, gettext_lazy
 
 from judge.models.problem_data import ProblemData, ProblemSolutionCode
-from judge.models.problem_review import (
-    ProblemReviewCheckResult,
-    ProblemReviewSubmissionTag,
-)
+from judge.models.problem_review import ProblemReviewCheckResult
 from judge.review.base import ProblemReviewCheck, CheckResultData
 
 
@@ -76,11 +72,7 @@ class ArtifactsPresentCheck(ProblemReviewCheck):
         else:
             missing.append("checker")
 
-        has_solution_code = ProblemSolutionCode.objects.filter(problem=problem).exists()
-        has_reference_tag = ProblemReviewSubmissionTag.objects.filter(
-            submission__problem=problem
-        ).exists()
-        if has_solution_code or has_reference_tag:
+        if ProblemSolutionCode.objects.filter(problem=problem).exists():
             present.append("main_ac_source")
         else:
             missing.append("main_ac_source")

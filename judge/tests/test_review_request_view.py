@@ -51,8 +51,11 @@ class RequestPublicGuardsTest(TestCase):
         return patch("judge.views.internal.reverse", return_value="/stub/")
 
     def test_first_request_enqueues_run(self):
+        # review_problem.delay() is now invoked inside
+        # `judge.review.triggers.trigger_problem_review_for` (lazy-imported),
+        # so the mock must target the actual task module.
         with self._patch_dashboard_reverse(), patch(
-            "judge.views.internal.review_problem"
+            "judge.tasks.review.review_problem"
         ) as mock_task, self.captureOnCommitCallbacks(execute=True):
             resp = self.client.post(
                 "/internal/request_public",

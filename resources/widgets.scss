@@ -1563,3 +1563,12 @@ button:hover, button:focus {
     }
 }
 
+
+// Cooldown countdown widget — see resources/widgets/cooldown_countdown.js.
+// The widget toggles `.cooldown-countdown-active` on its status element
+// while the timer is ticking. Using a semantic token (`$announcement_red`)
+// instead of an inline `color: red` lets the dark-mode generator rewrite
+// it to a dark-mode-friendly variant.
+.cooldown-countdown-active {
+    color: $announcement_red;
+}

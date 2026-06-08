@@ -17,6 +17,24 @@
 
 {% block edit_content %}
   <div class="review-dashboard">
+    {# Admin-only Rerun button — bypasses all guards (dirty-check, cooldown,
+       in-flight). The problem review page's title is rendered by the parent
+       edit_base.html chrome (not in this template), so we right-align the
+       button at the top of the content area to give it the same visual
+       "next-to-title" feel without restructuring the chrome. Always shows
+       (even zero prior runs) so admins can dry-run a never-public problem. #}
+    {% if request.user.is_superuser %}
+      <div class="review-actions" style="text-align: right; margin-bottom: 0.75em;">
+        <form method="post" action="{{ url('problem_review_rerun', problem.code) }}"
+              style="display: inline; margin: 0;">
+          <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+          <button type="submit" class="action-btn small">
+            <i class="fa fa-redo"></i> {{ _("Rerun review") }}
+          </button>
+        </form>
+      </div>
+    {% endif %}
+
     {% if not latest_run %}
       <div class="review-empty">
         <i class="fa fa-clipboard-check"></i>

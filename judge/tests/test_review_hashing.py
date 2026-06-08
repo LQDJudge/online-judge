@@ -3,7 +3,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
 from judge.models import Language, Problem, ProblemGroup, Profile
-from judge.models.problem_data import ProblemData
+from judge.models.problem_data import ProblemData, ProblemSolutionCode
 from judge.review.hashing import compute_input_hash
 
 
@@ -76,5 +76,31 @@ class ComputeInputHashTest(TestCase):
             "checker.cpp", b"int main() { return 1; /* changed */ }"
         )
         pd.save()
+        h2 = compute_input_hash(self.problem)
+        self.assertNotEqual(h1, h2)
+
+    def test_changes_when_solution_code_added(self):
+        h1 = compute_input_hash(self.problem)
+        ProblemSolutionCode.objects.create(
+            problem=self.problem,
+            order=0,
+            source_code="print('hi')",
+            language=self.language,
+            expected_result="AC",
+        )
+        h2 = compute_input_hash(self.problem)
+        self.assertNotEqual(h1, h2)
+
+    def test_changes_when_solution_code_source_changes(self):
+        sc = ProblemSolutionCode.objects.create(
+            problem=self.problem,
+            order=0,
+            source_code="print('a')",
+            language=self.language,
+            expected_result="AC",
+        )
+        h1 = compute_input_hash(self.problem)
+        sc.source_code = "print('b')"
+        sc.save()
         h2 = compute_input_hash(self.problem)
         self.assertNotEqual(h1, h2)
