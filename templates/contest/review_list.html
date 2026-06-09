@@ -35,53 +35,52 @@
 {% block middle_content %}
   <div class="review-list-page">
     {% if items %}
-      <div class="review-list-table-scroll">
-        <table class="review-list-table">
-          <thead>
+      {# See note in problem/review_list.html. #}
+      <table class="review-list-table table striped modern">
+        <thead>
+          <tr>
+            <th class="col-name">
+              <a href="{{ sort_links.name }}">{{ _('Contest') }}{{ sort_order.name }}</a>
+            </th>
+            <th class="col-authors">{{ _('Authors') }}</th>
+            <th class="col-verdict">{{ _('Auto-review') }}</th>
+            <th class="col-public">
+              <a href="{{ sort_links.public_status }}">{{ _('Public request') }}{{ sort_order.public_status }}</a>
+            </th>
+            <th class="col-when">
+              <a href="{{ sort_links.last_reviewed }}">{{ _('Last reviewed') }}{{ sort_order.last_reviewed }}</a>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in items %}
+            {% set run = latest_runs.get(c.id) %}
+            {% set v = verdicts.get(c.id) %}
+            {% set pr = public_requests.get(c.id) %}
             <tr>
-              <th class="col-name">
-                <a href="{{ sort_links.name }}">{{ _('Contest') }}{{ sort_order.name }}</a>
-              </th>
-              <th class="col-authors">{{ _('Authors') }}</th>
-              <th class="col-verdict">{{ _('Auto-review') }}</th>
-              <th class="col-public">
-                <a href="{{ sort_links.public_status }}">{{ _('Public request') }}{{ sort_order.public_status }}</a>
-              </th>
-              <th class="col-when">
-                <a href="{{ sort_links.last_reviewed }}">{{ _('Last reviewed') }}{{ sort_order.last_reviewed }}</a>
-              </th>
+              <td class="col-name">
+                <a href="{{ url('contest_review_dashboard', c.key) }}">{{ c.name }}</a>
+              </td>
+              <td class="review-author-list">
+                {% for author in c.authors.all() %}
+                  {{ link_user(author) }}{% if not loop.last %} {% endif %}
+                {% endfor %}
+              </td>
+              <td>{{ verdict_pill(v) }}</td>
+              <td>{{ publish_pill(pr) }}</td>
+              <td class="review-when">
+                {% if run and run.finished_at %}
+                  <span title="{{ run.finished_at }}">{{ relative_time(run.finished_at) }}</span>
+                {% elif run %}
+                  <span title="{{ run.started_at }}">{{ relative_time(run.started_at) }}</span>
+                {% else %}
+                  —
+                {% endif %}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {% for c in items %}
-              {% set run = latest_runs.get(c.id) %}
-              {% set v = verdicts.get(c.id) %}
-              {% set pr = public_requests.get(c.id) %}
-              <tr>
-                <td class="col-name">
-                  <a href="{{ url('contest_review_dashboard', c.key) }}">{{ c.name }}</a>
-                </td>
-                <td class="review-author-list">
-                  {% for author in c.authors.all() %}
-                    {{ link_user(author) }}{% if not loop.last %} {% endif %}
-                  {% endfor %}
-                </td>
-                <td>{{ verdict_pill(v) }}</td>
-                <td>{{ publish_pill(pr) }}</td>
-                <td class="review-when">
-                  {% if run and run.finished_at %}
-                    <span title="{{ run.finished_at }}">{{ relative_time(run.finished_at) }}</span>
-                  {% elif run %}
-                    <span title="{{ run.started_at }}">{{ relative_time(run.started_at) }}</span>
-                  {% else %}
-                    —
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+          {% endfor %}
+        </tbody>
+      </table>
 
       <div class="review-list-pagination">
         {% include "list-pages.html" %}

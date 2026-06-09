@@ -237,7 +237,15 @@ def problem_review_rerun(request, problem):
 # ----------------------------------------------------------------------------
 
 VERDICT_FILTER_CHOICES = ("pass", "fail", "running", "error")
-PUBLIC_REQUEST_FILTER_CHOICES = ("pending", "approved", "rejected", "none")
+# Note: `in_contest` is only relevant for the problem dashboard (a contest
+# can't be "in" another contest). Contest view defines its own subset.
+PUBLIC_REQUEST_FILTER_CHOICES = (
+    "pending",
+    "approved",
+    "rejected",
+    "in_contest",
+    "none",
+)
 
 
 class ProblemReviewListView(QueryStringSortMixin, TitleMixin, ListView):
@@ -323,8 +331,19 @@ class ProblemReviewListView(QueryStringSortMixin, TitleMixin, ListView):
             qs = qs.filter(public_request__status=PublicRequest.APPROVED)
         elif public == "rejected":
             qs = qs.filter(public_request__status=PublicRequest.REJECTED)
+        elif public == "in_contest":
+            # Belongs to ANY contest AND has no per-problem PublicRequest
+            # (otherwise the per-problem request status takes priority in
+            # the pill rendering, so we'd want the user to filter by that).
+            # `.distinct()` immediately because the M2M join through
+            # `contests` would otherwise multiply rows for problems used
+            # in multiple contests, inflating the paginator's count().
+            qs = qs.filter(
+                contests__isnull=False, public_request__isnull=True
+            ).distinct()
         elif public == "none":
-            qs = qs.filter(public_request__isnull=True)
+            # Truly orphan: no contest membership AND no PublicRequest.
+            qs = qs.filter(contests__isnull=True, public_request__isnull=True)
 
         verdict = self.request.GET.get("verdict")
         if verdict in VERDICT_FILTER_CHOICES:
@@ -385,6 +404,21 @@ class ProblemReviewListView(QueryStringSortMixin, TitleMixin, ListView):
             for pr in PublicRequest.objects.filter(problem_id__in=item_ids)
         }
 
+        # Which of these problems belong to ANY contest (private or public)?
+        # The "publish path" for those is the contest's Request Public flow,
+        # not a per-problem one — so the template shows a "Trong kỳ thi"
+        # pill instead of the default "Chưa yêu cầu". Broader than just
+        # private contests: even if the contest is public, the per-problem
+        # request would be a duplicate of the contest's publish state.
+        in_any_contest = set(
+            Problem.objects.filter(
+                id__in=item_ids,
+                contests__isnull=False,
+            )
+            .values_list("id", flat=True)
+            .distinct()
+        )
+
         # Preload the selected author profiles so select2 can render their
         # chips on initial page load (it can't reach back into the AJAX
         # endpoint without an extra round-trip per chip).
@@ -398,6 +432,7 @@ class ProblemReviewListView(QueryStringSortMixin, TitleMixin, ListView):
                 "latest_runs": latest_runs,
                 "verdicts": verdicts,
                 "public_requests": public_requests,
+                "in_any_contest": in_any_contest,
                 "search_query": self.request.GET.get("search", ""),
                 "active_verdict": self.request.GET.get("verdict", ""),
                 "active_public": self.request.GET.get("public", ""),
