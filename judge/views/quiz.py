@@ -2442,12 +2442,19 @@ class GradingDashboard(
             except Profile.DoesNotExist:
                 pass
 
-        # Add has_ungraded_essays flag to each attempt
-        for attempt in context["attempts"]:
-            attempt.has_ungraded_essays = attempt.answers.filter(
+        # Compute has_ungraded_essays in ONE batched query instead of one
+        # .exists() per attempt (which was an N+1). Collect the ids of attempts
+        # on this page that still have an ungraded essay answer, then flag each.
+        page_attempts = list(context["attempts"])
+        ungraded_attempt_ids = set(
+            QuizAnswer.objects.filter(
+                attempt_id__in=[a.id for a in page_attempts],
                 question__question_type="ES",
                 graded_at__isnull=True,
-            ).exists()
+            ).values_list("attempt_id", flat=True)
+        )
+        for attempt in page_attempts:
+            attempt.has_ungraded_essays = attempt.id in ungraded_attempt_ids
 
         context["page_type"] = "grading"
 
@@ -3030,12 +3037,19 @@ class QuizGradingTab(
             except Profile.DoesNotExist:
                 pass
 
-        # Add has_ungraded_essays flag to each attempt
-        for attempt in context["attempts"]:
-            attempt.has_ungraded_essays = attempt.answers.filter(
+        # Compute has_ungraded_essays in ONE batched query instead of one
+        # .exists() per attempt (which was an N+1). Collect the ids of attempts
+        # on this page that still have an ungraded essay answer, then flag each.
+        page_attempts = list(context["attempts"])
+        ungraded_attempt_ids = set(
+            QuizAnswer.objects.filter(
+                attempt_id__in=[a.id for a in page_attempts],
                 question__question_type="ES",
                 graded_at__isnull=True,
-            ).exists()
+            ).values_list("attempt_id", flat=True)
+        )
+        for attempt in page_attempts:
+            attempt.has_ungraded_essays = attempt.id in ungraded_attempt_ids
 
         context["page_type"] = "grade"
 
