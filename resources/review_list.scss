@@ -5,87 +5,40 @@
 // don't leak into other tables. Colors come from the semantic tokens in
 // vars.scss so dark-mode generation picks up the right variants.
 
-// The 3-column layout sets `.middle-content` as a flex item with auto
-// width — its default behavior is to grow to fit content, which means a
-// wide table pushes the right sidebar offscreen at high zoom. `min-width:
-// 0` lets the flex item shrink below its content's intrinsic size; the
-// inner `.review-list-table-scroll` wrapper then horizontally scrolls.
-//
-// We target `.middle-content` directly (not nested under `.review-list-page`)
-// because the rule has to apply to the flex item itself, not its child.
-.middle-content:has(.review-list-page) {
-    min-width: 0;
-}
-
 .review-list-page {
-
-    // Wrap the table so it horizontally scrolls inside the middle column
-    // instead of pushing the sidebar away when content gets long.
-    .review-list-table-scroll {
-        overflow-x: auto;
-        max-width: 100%;
-    }
 
     .review-list-table {
         // `table-layout: fixed` + explicit width: 100% is what stops the
-        // table from growing past its container at high zoom. With the
-        // default `table-layout: auto`, columns expand to fit the widest
-        // cell content, which pushes the right sidebar offscreen.
-        // `fixed` makes column widths follow the header proportions only,
-        // and `min-width: 0` lets cells truncate via the styles below.
+        // table from growing past its container at high zoom. Cells
+        // truncate or wrap (per body rules below) to fit their column.
+        // No `border-collapse: collapse` override — let `.table`'s default
+        // `border-spacing: 0` take effect, which is what makes the rounded
+        // corners from `.table.modern` actually clip the table cleanly.
         width: 100%;
         table-layout: fixed;
-        border-collapse: collapse;
 
         th, td {
-            padding: 0.6em 0.7em;
+            padding: 0.7em 0.8em;
             vertical-align: middle;
         }
 
-        thead th {
-            text-align: left;
-            font-weight: 600;
-            border-bottom: 2px solid $border_gray;
-            background: $background_light_gray;
-            // No `white-space: nowrap` — Vietnamese labels like "Tự động xem
-            // xét" or "Yêu cầu công khai" exceed their 13–16% columns and
-            // overlap when forced onto one line. Wrap to a second line is
-            // visually preferable to clipping or pushing the table wider.
-            vertical-align: bottom;
-
-            // Sortable-header anchors inherit the regular text color so the
-            // arrow indicator ( ▴/▾ ) reads as a hint, not as a link.
-            a {
-                color: inherit;
-                text-decoration: none;
-            }
-
-            a:hover {
-                color: $theme_color;
-            }
-        }
-
-        tbody tr {
-            border-bottom: 1px solid $border_gray;
-        }
-
-        tbody tr:hover {
-            background: $color-interactive-hover-bg;
-        }
+        // Header row inherits orange `$theme_color` background + centered
+        // white text from `.table th` in resources/table.scss. We don't
+        // override anything — this rule exists only as a place to layer
+        // future header tweaks if needed.
 
         // Column widths under table-layout: fixed. These percentages
-        // proportion the available 100% across the six columns; the browser
-        // honors them strictly (no auto-grow). Tuned so the name gets the
-        // most room and the timestamp column doesn't wrap.
+        // proportion the available 100% across the columns; browser honors
+        // them strictly (no auto-grow).
         .col-name { width: 28%; }
         .col-authors { width: 18%; }
         .col-verdict { width: 13%; }
         .col-public { width: 16%; }
         .col-when { width: 16%; }
 
-        // Wrap long content rather than ellipsis-truncate. `word-break`
-        // makes long unbroken tokens (URLs, monospace strings) break too,
-        // so they can't push the column past its declared width.
+        // Wrap long content rather than ellipsis-truncate. `overflow-wrap:
+        // anywhere` makes long unbroken tokens (URLs, monospace strings)
+        // break mid-token so they can't push past their declared column.
         tbody td {
             word-wrap: break-word;
             overflow-wrap: anywhere;
@@ -162,6 +115,23 @@
         }
         &.publish-none {
             opacity: 0.55;
+        }
+        // Problem is in a private contest — info-tone, distinct from the
+        // "no request" gray. Reads as "publishing via the contest flow".
+        &.publish-in-contest {
+            background: $color-message-info-bg;
+            color: $color-message-info-text;
+        }
+    }
+
+    // Pending/approved/rejected pills become anchor links for admins (see
+    // publish_pill macro in problem/review_list.html). Strip default link
+    // chrome so they look identical to the non-admin span versions.
+    a.publish-pill {
+        text-decoration: none;
+
+        &:hover {
+            opacity: 0.85;
         }
     }
 

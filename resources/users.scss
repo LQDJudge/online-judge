@@ -67,18 +67,18 @@ th.header.rank {
 #users-table {
     border-collapse: collapse;
     border-spacing: 0;
-    background: white;
+    background: $surface-primary;
 
     // Header styling - theme color
     thead th {
         background: $theme_color;
-        color: white;
+        color: $text-on-primary;
         font-weight: 600;
         padding: 0.5rem 0.6rem;
         vertical-align: middle;
 
         a, a:link, a:visited {
-            color: white;
+            color: $text-on-primary;
             text-decoration: none;
         }
 

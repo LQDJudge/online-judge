@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lqdoj2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-08 10:49+0700\n"
+"POT-Creation-Date: 2026-06-09 17:40+0700\n"
 "PO-Revision-Date: 2021-07-20 03:44\n"
 "Last-Translator: Icyene\n"
 "Language-Team: Vietnamese\n"
@@ -163,7 +163,7 @@ msgstr "Các kỳ thi bao gồm"
 #: templates/contest/review.html:329 templates/contest/submissions.html:54
 #: templates/internal/problem_duplicate_detail.html:198
 #: templates/problem/import.html:27 templates/problem/list.html:23
-#: templates/problem/list.html:153 templates/problem/review_list.html:49
+#: templates/problem/list.html:153 templates/problem/review_list.html:86
 #: templates/semantic_search.html:152 templates/user/user-problems.html:56
 #: templates/user/user-problems.html:98
 msgid "Problem"
@@ -313,7 +313,7 @@ msgstr "Phân loại"
 #: templates/contest/feed/item.html:33 templates/contest/problems.html:36
 #: templates/contest/problemset.html:33 templates/course/contest_list.html:142
 #: templates/internal/problem_duplicate_detail.html:202
-#: templates/internal/problem_queue.html:835 templates/problem/add.html:221
+#: templates/internal/problem_queue.html:838 templates/problem/add.html:221
 #: templates/problem/data.html:1709 templates/problem/edit.html:530
 #: templates/problem/list.html:37 templates/profile-table.html:31
 #: templates/profile-table.html:41 templates/quiz/create.html:82
@@ -347,10 +347,10 @@ msgid "History"
 msgstr "Lịch sử"
 
 #: judge/admin/problem.py:291 judge/admin/quiz.py:139 judge/admin/quiz.py:305
-#: templates/contest/review_list.html:47 templates/contest/review_list.html:157
+#: templates/contest/review_list.html:45 templates/contest/review_list.html:154
 #: templates/internal/problem_queue.html:133 templates/problem/add.html:123
 #: templates/problem/edit.html:396 templates/problem/list-base.html:90
-#: templates/problem/review_list.html:51 templates/problem/review_list.html:158
+#: templates/problem/review_list.html:88 templates/problem/review_list.html:195
 msgid "Authors"
 msgstr "Các tác giả"
 
@@ -1012,7 +1012,7 @@ msgstr "bình luận"
 msgid "Editorial for "
 msgstr "Hướng dẫn cho {0}"
 
-#: judge/models/comment.py:399 judge/views/internal.py:993
+#: judge/models/comment.py:399 judge/views/internal.py:989
 #: templates/contest/contest-list-tabs.html:7
 #: templates/contest/contest-tabs.html:49 templates/contest/review.html:33
 #: templates/internal/problem_duplicates.html:202
@@ -1700,9 +1700,9 @@ msgstr "các kỳ thi chính thức"
 
 #: judge/models/contest_review.py:30 judge/models/problem_duplicate.py:115
 #: judge/models/problem_review.py:12 templates/contest/review_list.html:15
-#: templates/contest/review_list.html:124
-#: templates/internal/problem_queue.html:758
-#: templates/problem/review_list.html:19 templates/problem/review_list.html:128
+#: templates/contest/review_list.html:121
+#: templates/internal/problem_queue.html:761
+#: templates/problem/review_list.html:19 templates/problem/review_list.html:164
 msgid "Running"
 msgstr "Đang chạy"
 
@@ -1715,10 +1715,10 @@ msgstr "Hoàn thành"
 #: judge/models/problem_data.py:425 judge/models/problem_review.py:14
 #: judge/models/problem_review.py:96 judge/utils/problems.py:135
 #: templates/contest/review.html:238 templates/contest/review_list.html:17
-#: templates/contest/review_list.html:125
-#: templates/internal/problem_queue.html:759 templates/problem/chatbot.html:40
+#: templates/contest/review_list.html:122
+#: templates/internal/problem_queue.html:762 templates/problem/chatbot.html:40
 #: templates/problem/edit.html:658 templates/problem/review_list.html:21
-#: templates/problem/review_list.html:129 templates/problem/validator.html:125
+#: templates/problem/review_list.html:165 templates/problem/validator.html:125
 #: templates/problem/validator.html:284
 msgid "Error"
 msgstr "Lỗi"
@@ -1788,11 +1788,11 @@ msgstr "các lần chạy xem xét đề"
 #: judge/models/problem_data.py:422 judge/models/problem_duplicate.py:12
 #: judge/models/problem_duplicate.py:114 judge/models/problem_review.py:92
 #: judge/models/public_request.py:10 templates/contest/review_list.html:25
-#: templates/contest/review_list.html:132
+#: templates/contest/review_list.html:129
 #: templates/internal/problem_queue.html:646
 #: templates/organization/blog/pending.html:14
 #: templates/organization/requests/tabs.html:4
-#: templates/problem/review_list.html:29 templates/problem/review_list.html:136
+#: templates/problem/review_list.html:39 templates/problem/review_list.html:172
 #: templates/problem/solution_codes.html:326
 #: templates/quiz/grading/dashboard.html:119
 #: templates/quiz/grading/quiz_grade.html:94
@@ -1801,17 +1801,17 @@ msgstr "Đang chờ"
 
 #: judge/models/contest_review.py:137 judge/models/problem_review.py:93
 #: templates/contest/review.html:230 templates/contest/review_list.html:11
-#: templates/contest/review_list.html:122
-#: templates/internal/problem_queue.html:756 templates/problem/edit.html:652
-#: templates/problem/review_list.html:15 templates/problem/review_list.html:126
+#: templates/contest/review_list.html:119
+#: templates/internal/problem_queue.html:759 templates/problem/edit.html:652
+#: templates/problem/review_list.html:15 templates/problem/review_list.html:162
 msgid "Pass"
 msgstr "Đạt"
 
 #: judge/models/contest_review.py:138 judge/models/problem_review.py:94
 #: templates/contest/review.html:234 templates/contest/review_list.html:13
-#: templates/contest/review_list.html:123
-#: templates/internal/problem_queue.html:757
-#: templates/problem/review_list.html:17 templates/problem/review_list.html:127
+#: templates/contest/review_list.html:120
+#: templates/internal/problem_queue.html:760
+#: templates/problem/review_list.html:17 templates/problem/review_list.html:163
 msgid "Fail"
 msgstr "Không đạt"
 
@@ -1856,20 +1856,20 @@ msgid "contest review check results"
 msgstr "các kết quả kiểm tra xem xét"
 
 #: judge/models/contest_review.py:182 judge/models/public_request.py:11
-#: templates/contest/review_list.html:27 templates/contest/review_list.html:133
+#: templates/contest/review_list.html:27 templates/contest/review_list.html:130
 #: templates/internal/problem_queue.html:648
 #: templates/organization/requests/tabs.html:10
-#: templates/problem/review_list.html:31 templates/problem/review_list.html:137
+#: templates/problem/review_list.html:48 templates/problem/review_list.html:173
 msgid "Approved"
 msgstr "Chấp thuận"
 
 #: judge/models/contest_review.py:183 judge/models/public_request.py:12
-#: templates/contest/review_list.html:29 templates/contest/review_list.html:134
+#: templates/contest/review_list.html:29 templates/contest/review_list.html:131
 #: templates/internal/problem_queue.html:650
 #: templates/organization/blog/pending.html:22
 #: templates/organization/blog/pending.html:60
 #: templates/organization/requests/tabs.html:13
-#: templates/problem/review_list.html:33 templates/problem/review_list.html:138
+#: templates/problem/review_list.html:57 templates/problem/review_list.html:174
 msgid "Rejected"
 msgstr "Từ chối"
 
@@ -4437,7 +4437,7 @@ msgstr ""
 "Chưa lưu solution code nào. Hãy thêm ít nhất một bài ở tab Solution Codes để "
 "rubric kiểm tra được tính đúng đắn, độ phức tạp và độ bao phủ subtask."
 
-#: judge/review/checks/solutions_rubric.py:60
+#: judge/review/checks/solutions_rubric.py:59
 msgid ""
 "Your solution codes have not been run yet. Open the Solution Codes tab and "
 "click Run so the rubric can use the verdicts."
@@ -4445,20 +4445,20 @@ msgstr ""
 "Solution code của bạn chưa được chạy. Hãy mở tab Solution Codes và bấm Run "
 "để rubric có thể dùng kết quả chấm."
 
-#: judge/review/checks/solutions_rubric.py:101
+#: judge/review/checks/solutions_rubric.py:100
 #, python-format
 msgid "Solutions rubric LLM call failed: %(error)s"
 msgstr "Lời gọi LLM cho rubric thất bại: %(error)s"
 
-#: judge/review/checks/solutions_rubric.py:110
+#: judge/review/checks/solutions_rubric.py:109
 msgid "All reference solutions look right."
 msgstr "Tập bài tham chiếu trông ổn."
 
-#: judge/review/checks/solutions_rubric.py:114
+#: judge/review/checks/solutions_rubric.py:113
 msgid "Solutions rubric flagged an issue."
 msgstr "Rubric phát hiện vấn đề."
 
-#: judge/review/checks/solutions_rubric.py:116
+#: judge/review/checks/solutions_rubric.py:115
 #, python-format
 msgid " (+%(more)d more)"
 msgstr " (+%(more)d vấn đề nữa)"
@@ -4471,7 +4471,7 @@ msgstr "Giới hạn thời gian"
 msgid "No time limit set."
 msgstr "Chưa đặt giới hạn thời gian."
 
-#: judge/review/checks/time_limit_headroom.py:54
+#: judge/review/checks/time_limit_headroom.py:55
 msgid ""
 "No AC-expected solution code with a successful run yet — add one in Solution "
 "Codes (expected=AC) and click Run."
@@ -4479,7 +4479,7 @@ msgstr ""
 "Chưa có solution code nào kỳ vọng AC mà chạy thành công — hãy thêm một bài "
 "trong Solution Codes (expected=AC) và bấm Run."
 
-#: judge/review/checks/time_limit_headroom.py:84
+#: judge/review/checks/time_limit_headroom.py:85
 #, python-format
 msgid ""
 "Solution code '%(name)s' uses %(pct).1f%% of the time limit — exceeds "
@@ -4488,7 +4488,7 @@ msgstr ""
 "Solution code '%(name)s' dùng %(pct).1f%% giới hạn thời gian — vượt ngưỡng "
 "%(threshold)d%%."
 
-#: judge/review/checks/time_limit_headroom.py:96
+#: judge/review/checks/time_limit_headroom.py:97
 #, python-format
 msgid "All AC solution codes use < %(threshold)d%% of the time limit."
 msgstr "Tất cả solution code AC dùng < %(threshold)d%% giới hạn thời gian."
@@ -4513,16 +4513,16 @@ msgstr ""
 msgid "Validator is configured."
 msgstr "Validator đã được cấu hình."
 
-#: judge/review/contest_checks/problems_reviewed.py:113
+#: judge/review/contest_checks/problems_reviewed.py:114
 msgid "Per-problem reviews"
 msgstr "Đánh giá từng bài"
 
 #: judge/review/contest_checks/problems_reviewed.py:128
-#: judge/review/contest_checks/submission_leak_check.py:117
+#: judge/review/contest_checks/submission_leak_check.py:120
 msgid "Contest has no problems."
 msgstr "Kỳ thi không có bài nào."
 
-#: judge/review/contest_checks/problems_reviewed.py:176
+#: judge/review/contest_checks/problems_reviewed.py:174
 #, fuzzy, python-format
 #| msgid ""
 #| "**[System]** Review auto-triggered by **%(user)s** for contest "
@@ -4534,7 +4534,7 @@ msgstr ""
 "**[Hệ thống]** Đánh giá tự động được kích hoạt bởi **%(user)s** cho kỳ thi "
 "[%(contest_name)s](%(contest_url)s)."
 
-#: judge/review/contest_checks/problems_reviewed.py:239
+#: judge/review/contest_checks/problems_reviewed.py:240
 #, python-format
 msgid "All %(n)d problems passed review."
 msgstr "Tất cả %(n)d bài đều đã đạt đánh giá."
@@ -4544,15 +4544,15 @@ msgstr "Tất cả %(n)d bài đều đã đạt đánh giá."
 msgid "%(passed)d/%(total)d problems passed review."
 msgstr "%(passed)d/%(total)d bài đạt đánh giá."
 
-#: judge/review/contest_checks/submission_leak_check.py:110
+#: judge/review/contest_checks/submission_leak_check.py:113
 msgid "Problem leak"
 msgstr "Lộ bài"
 
-#: judge/review/contest_checks/submission_leak_check.py:156
+#: judge/review/contest_checks/submission_leak_check.py:158
 msgid "No leak signals found."
 msgstr "Không phát hiện dấu hiệu lộ bài."
 
-#: judge/review/contest_checks/submission_leak_check.py:166
+#: judge/review/contest_checks/submission_leak_check.py:168
 #, python-format
 msgid "%(n)d submission leak(s)"
 msgstr "%(n)d lộ bài qua bài nộp"
@@ -4562,7 +4562,7 @@ msgstr "%(n)d lộ bài qua bài nộp"
 msgid "%(n)d role-access leak(s)"
 msgstr "%(n)d lộ bài qua quyền truy cập"
 
-#: judge/review/contest_checks/submission_leak_check.py:172
+#: judge/review/contest_checks/submission_leak_check.py:171
 #, python-format
 msgid "Problem leak detected: %(detail)s."
 msgstr "Phát hiện lộ bài: %(detail)s."
@@ -4857,26 +4857,26 @@ msgid ""
 "You need to have solved at least one problem before your voice can be heard."
 msgstr "Bạn phải giải ít nhất một bài trước khi được phép bình luận."
 
-#: judge/views/contest_review.py:314
+#: judge/views/contest_review.py:313
 #, fuzzy
 #| msgid "Contest auto-review completed"
 msgid "Contest auto-review is currently disabled."
 msgstr "Tự động đánh giá kỳ thi hoàn tất"
 
-#: judge/views/contest_review.py:334 judge/views/internal.py:832
+#: judge/views/contest_review.py:334 judge/views/internal.py:831
 msgid "Review currently running, please wait."
 msgstr "Phiên xem xét đang chạy, vui lòng chờ."
 
-#: judge/views/contest_review.py:356 judge/views/internal.py:854
+#: judge/views/contest_review.py:353 judge/views/internal.py:850
 msgid "No changes since your last review — edit something and try again."
 msgstr "Không có thay đổi kể từ lần xem xét trước — hãy sửa gì đó rồi thử lại."
 
-#: judge/views/contest_review.py:379 judge/views/internal.py:883
+#: judge/views/contest_review.py:376 judge/views/internal.py:879
 #, python-format
 msgid "Please wait %(mmss)s before requesting review again."
 msgstr "Vui lòng chờ %(mmss)s trước khi yêu cầu xem xét lại."
 
-#: judge/views/contest_review.py:482 templates/contest/review_list.html:37
+#: judge/views/contest_review.py:479
 msgid "Contest reviews"
 msgstr "Đánh giá đề thi"
 
@@ -5713,75 +5713,75 @@ msgstr "không có quyền cho %s"
 msgid "corrupt page %s"
 msgstr "trang bị sập %s"
 
-#: judge/views/internal.py:73 templates/internal/left-sidebar.html:4
+#: judge/views/internal.py:72 templates/internal/left-sidebar.html:4
 #: templates/internal/problem_duplicates.html:9
 msgid "Duplicate Problems"
 msgstr "Bài tập trùng lặp"
 
-#: judge/views/internal.py:93 judge/views/internal.py:389
+#: judge/views/internal.py:92 judge/views/internal.py:388
 #, python-format
 msgid "Marked %(source)s and %(target)s as not duplicated."
 msgstr "Đã đánh dấu %(source)s và %(target)s là không trùng."
 
-#: judge/views/internal.py:100
+#: judge/views/internal.py:99
 #, python-format
 msgid "No open duplicate candidate was found for %(source)s and %(target)s."
 msgstr ""
 "Không tìm thấy ứng viên trùng lặp đang mở cho %(source)s và %(target)s."
 
-#: judge/views/internal.py:114
+#: judge/views/internal.py:113
 msgid "A duplicate report refresh is already pending."
 msgstr "Đã có tác vụ làm mới báo cáo bài trùng đang chờ."
 
-#: judge/views/internal.py:116
+#: judge/views/internal.py:115
 msgid "Duplicate report refresh queued."
 msgstr "Đã đưa tác vụ làm mới báo cáo bài trùng vào hàng đợi."
 
-#: judge/views/internal.py:127
+#: judge/views/internal.py:126
 msgid "USE_ML is disabled"
 msgstr "USE_ML đang tắt"
 
-#: judge/views/internal.py:167
+#: judge/views/internal.py:166
 #: templates/internal/problem_duplicate_detail.html:70
 msgid "Duplicate Problem Review"
 msgstr "Xem xét bài tập trùng lặp"
 
-#: judge/views/internal.py:315
+#: judge/views/internal.py:314
 msgid "Problem not found."
 msgstr "Không tìm thấy bài tập."
 
-#: judge/views/internal.py:322
+#: judge/views/internal.py:321
 msgid "No accepted source submissions with stored source code were found."
 msgstr "Không tìm thấy bài nộp AC có lưu mã nguồn."
 
-#: judge/views/internal.py:343
+#: judge/views/internal.py:342
 #, python-format
 msgid "Queued %(count)s verification submissions."
 msgstr "Đã đưa %(count)s bài nộp kiểm chứng vào hàng đợi."
 
-#: judge/views/internal.py:350
+#: judge/views/internal.py:349
 msgid "Type MERGE to confirm the merge."
 msgstr "Nhập MERGE để xác nhận gộp."
 
-#: judge/views/internal.py:363
+#: judge/views/internal.py:362
 msgid "A merge for these problems is already pending."
 msgstr "Đã có yêu cầu gộp cho các bài này đang chờ."
 
-#: judge/views/internal.py:373
+#: judge/views/internal.py:372
 #, python-format
 msgid "Merge queued for %(source)s into %(target)s."
 msgstr "Đã đưa yêu cầu gộp %(source)s vào %(target)s vào hàng đợi."
 
-#: judge/views/internal.py:454
+#: judge/views/internal.py:453
 msgid "Internal problem queue"
 msgstr "Bài trong hàng đợi nội bộ"
 
-#: judge/views/internal.py:699
+#: judge/views/internal.py:698
 #, python-format
 msgid "**[System]** This problem was approved by %(name)s. It is now public."
 msgstr "**[Hệ thống]** Đề đã được %(name)s chấp nhận và công khai."
 
-#: judge/views/internal.py:739
+#: judge/views/internal.py:738
 #, python-format
 msgid ""
 "**[System]** This problem was rejected by %(name)s.\n"
@@ -5792,21 +5792,21 @@ msgstr ""
 "\n"
 "**Lý do:** %(reason)s"
 
-#: judge/views/internal.py:743
+#: judge/views/internal.py:742
 #, python-format
 msgid ""
 "**[System]** This problem was rejected by %(name)s. No reason was provided."
 msgstr "**[Hệ thống]** Đề bị %(name)s từ chối. Không có lý do được cung cấp."
 
-#: judge/views/internal.py:961
+#: judge/views/internal.py:957
 msgid "A pending request already exists."
 msgstr "Yêu cầu đang chờ xử lý đã tồn tại."
 
-#: judge/views/internal.py:1167
+#: judge/views/internal.py:1163
 msgid "Request times"
 msgstr "thời gian đăng ký"
 
-#: judge/views/internal.py:1236 templates/internal/left-sidebar.html:6
+#: judge/views/internal.py:1232 templates/internal/left-sidebar.html:6
 msgid "Chat Moderation"
 msgstr "Kiểm duyệt chat"
 
@@ -6961,7 +6961,7 @@ msgstr "Xác thực thất bại"
 msgid "Resolver"
 msgstr "Trình giải quyết"
 
-#: judge/views/review.py:268 templates/problem/review_list.html:41
+#: judge/views/review.py:272
 msgid "Problem reviews"
 msgstr "Đánh giá bài tập"
 
@@ -7461,7 +7461,7 @@ msgstr "Báo cáo"
 
 #: templates/blog/content.html:32 templates/contest/feed/item.html:24
 #: templates/home/feed-post-inner.html:31
-#: templates/internal/problem_queue.html:776
+#: templates/internal/problem_queue.html:779
 #: templates/organization/blog/pending.html:84
 #: templates/organization/moderation_log.html:16
 #: templates/organization/moderation_log.html:33
@@ -7515,9 +7515,9 @@ msgstr "Lưu"
 #: templates/comments/media-js.html:79 templates/comments/media-js.html:197
 #: templates/comments/media-js.html:452 templates/course/create.html:68
 #: templates/fine_uploader/script.html:23
-#: templates/internal/problem_queue.html:850
-#: templates/internal/problem_queue.html:873
-#: templates/internal/problem_queue.html:903
+#: templates/internal/problem_queue.html:853
+#: templates/internal/problem_queue.html:876
+#: templates/internal/problem_queue.html:906
 #: templates/organization/blog/pending-js.html:43
 #: templates/organization/course/edit.html:89
 #: templates/organization/invite_join.html:30 templates/pagedown.html:32
@@ -7948,12 +7948,12 @@ msgid "at"
 msgstr "lúc"
 
 #: templates/contest/contest-list-tabs.html:2
-#: templates/contest/review_list.html:121
-#: templates/contest/review_list.html:131 templates/contest/submissions.html:56
+#: templates/contest/review_list.html:118
+#: templates/contest/review_list.html:128 templates/contest/submissions.html:56
 #: templates/internal/chat_moderation.html:56
 #: templates/internal/problem_queue.html:644
-#: templates/notification/list.html:90 templates/problem/review_list.html:125
-#: templates/problem/review_list.html:135 templates/problem/search-form.html:66
+#: templates/notification/list.html:90 templates/problem/review_list.html:161
+#: templates/problem/review_list.html:171 templates/problem/search-form.html:66
 #: templates/problem/search-form.html:68
 #: templates/quiz/grading/quiz_grade.html:62
 #: templates/quiz/question_bank/list.html:46
@@ -8167,7 +8167,8 @@ msgstr ""
 msgid "By joining in this contest, you will automatically leave contest"
 msgstr "Khi tham gia kỳ thi này, bạn sẽ tự động rời khỏi kỳ thi"
 
-#: templates/contest/list.html:114
+#: templates/contest/list.html:114 templates/problem/review_list.html:68
+#: templates/problem/review_list.html:175
 msgid "In contest"
 msgstr "Trong kỳ thi"
 
@@ -8341,10 +8342,10 @@ msgstr "Sắp xếp theo"
 
 #: templates/contest/official-search-form.html:53
 #: templates/contest/recommended_list.html:52
-#: templates/contest/review_list.html:139 templates/contest/search-form.html:39
+#: templates/contest/review_list.html:136 templates/contest/search-form.html:39
 #: templates/internal/problem_queue.html:694
 #: templates/organization/search-form.html:19
-#: templates/problem/review_list.html:143 templates/problem/search-form.html:86
+#: templates/problem/review_list.html:180 templates/problem/search-form.html:86
 #: templates/quiz/question_bank/list.html:61 templates/quiz/search-form.html:8
 #: templates/submission/list.html:417 templates/ticket/list.html:339
 msgid "Go"
@@ -8685,59 +8686,59 @@ msgstr "Lần chạy này không có phản hồi AI."
 msgid "—"
 msgstr ""
 
-#: templates/contest/review_list.html:31 templates/problem/review_list.html:35
+#: templates/contest/review_list.html:31 templates/problem/review_list.html:71
 msgid "Not requested"
 msgstr "Chưa yêu cầu"
 
-#: templates/contest/review_list.html:45
+#: templates/contest/review_list.html:43
 #, fuzzy
 #| msgid "Contests"
 msgid "Contest"
 msgstr "Kỳ thi"
 
-#: templates/contest/review_list.html:48 templates/contest/review_list.html:119
-#: templates/internal/problem_queue.html:751 templates/problem/edit.html:650
-#: templates/problem/review_list.html:52 templates/problem/review_list.html:123
+#: templates/contest/review_list.html:46 templates/contest/review_list.html:116
+#: templates/internal/problem_queue.html:754 templates/problem/edit.html:650
+#: templates/problem/review_list.html:89 templates/problem/review_list.html:159
 msgid "Auto-review"
 msgstr "Tự động xem xét"
 
-#: templates/contest/review_list.html:50 templates/contest/review_list.html:129
-#: templates/problem/review_list.html:54 templates/problem/review_list.html:133
+#: templates/contest/review_list.html:48 templates/contest/review_list.html:126
+#: templates/problem/review_list.html:91 templates/problem/review_list.html:169
 msgid "Public request"
 msgstr "Yêu cầu công khai"
 
-#: templates/contest/review_list.html:53 templates/problem/review_list.html:57
+#: templates/contest/review_list.html:51 templates/problem/review_list.html:94
 msgid "Last reviewed"
 msgstr "Lần xem xét gần nhất"
 
-#: templates/contest/review_list.html:94
+#: templates/contest/review_list.html:91
 msgid "No contest reviews match your filters."
 msgstr "Không có lượt xem xét đề thi nào khớp với bộ lọc."
 
-#: templates/contest/review_list.html:103
-#: templates/problem/review_list.html:107
+#: templates/contest/review_list.html:100
+#: templates/problem/review_list.html:143
 msgid "Review search"
 msgstr "Tìm kiếm xem xét"
 
-#: templates/contest/review_list.html:108
-#: templates/problem/review_list.html:112
+#: templates/contest/review_list.html:105
+#: templates/problem/review_list.html:148
 msgid "Search reviews..."
 msgstr "Tìm lượt xem xét..."
 
-#: templates/contest/review_list.html:111
+#: templates/contest/review_list.html:108
 #: templates/internal/problem_queue.html:671
 #: templates/notification/list.html:97 templates/notification/list.html:137
-#: templates/problem/review_list.html:115 templates/problem/search-form.html:41
+#: templates/problem/review_list.html:151 templates/problem/search-form.html:41
 msgid "Author"
 msgstr "Tác giả"
 
-#: templates/contest/review_list.html:135
-#: templates/problem/review_list.html:139
+#: templates/contest/review_list.html:132
+#: templates/problem/review_list.html:176
 msgid "No request"
 msgstr "Không có yêu cầu"
 
-#: templates/contest/review_list.html:140
-#: templates/problem/review_list.html:144
+#: templates/contest/review_list.html:137
+#: templates/problem/review_list.html:181
 msgid "Reset"
 msgstr ""
 
@@ -8886,7 +8887,7 @@ msgstr "Đang lưu..."
 #: templates/course/edit_lesson.html:113 templates/course/edit_lesson.html:117
 #: templates/course/edit_lesson.html:471
 #: templates/internal/problem_queue.html:593
-#: templates/internal/problem_queue.html:904 templates/ticket/list.html:356
+#: templates/internal/problem_queue.html:907 templates/ticket/list.html:356
 msgid "Apply"
 msgstr "Áp dụng"
 
@@ -9288,7 +9289,7 @@ msgstr "Hành động"
 #: templates/internal/problem_duplicate_detail.html:229
 #: templates/internal/problem_duplicates.html:41
 #: templates/internal/problem_duplicates.html:87
-#: templates/internal/problem_queue.html:889
+#: templates/internal/problem_queue.html:892
 msgid "Source"
 msgstr "Mã nguồn"
 
@@ -9595,9 +9596,9 @@ msgstr ""
 "người và bỏ giới hạn tổ chức."
 
 #: templates/internal/problem_queue.html:233
-#: templates/internal/problem_queue.html:801
-#: templates/internal/problem_queue.html:860
-#: templates/internal/problem_queue.html:874
+#: templates/internal/problem_queue.html:804
+#: templates/internal/problem_queue.html:863
+#: templates/internal/problem_queue.html:877
 #: templates/organization/blog/pending.html:131
 #: templates/organization/moderation_log.html:90
 msgid "Reject"
@@ -9630,7 +9631,7 @@ msgid "Analyzing..."
 msgstr "Đang phân tích..."
 
 #: templates/internal/problem_queue.html:349
-#: templates/internal/problem_queue.html:822
+#: templates/internal/problem_queue.html:825
 msgid "Suggestion Tag"
 msgstr "Đề xuất nhãn bài"
 
@@ -9715,69 +9716,69 @@ msgstr "Mốc điểm"
 msgid "Clear"
 msgstr "Xóa"
 
-#: templates/internal/problem_queue.html:738
+#: templates/internal/problem_queue.html:741
 msgid "Requested by"
 msgstr "Yêu cầu bởi"
 
-#: templates/internal/problem_queue.html:741
+#: templates/internal/problem_queue.html:744
 msgid "Reviewed by"
 msgstr "Duyệt bởi"
 
-#: templates/internal/problem_queue.html:763
+#: templates/internal/problem_queue.html:766
 #, fuzzy
 #| msgid "No comments yet."
 msgid "No run yet"
 msgstr "Chưa có bình luận nào."
 
-#: templates/internal/problem_queue.html:782
+#: templates/internal/problem_queue.html:785
 msgid "Mark private"
 msgstr "Đánh dấu riêng tư"
 
-#: templates/internal/problem_queue.html:786
-#: templates/internal/problem_queue.html:808
+#: templates/internal/problem_queue.html:789
+#: templates/internal/problem_queue.html:811
 msgid "Problem Tag"
 msgstr "Gán nhãn bài"
 
-#: templates/internal/problem_queue.html:789
-#: templates/internal/problem_queue.html:805
+#: templates/internal/problem_queue.html:792
+#: templates/internal/problem_queue.html:808
 msgid "Improve Markdown"
 msgstr "Cải thiện Markdown"
 
-#: templates/internal/problem_queue.html:796
+#: templates/internal/problem_queue.html:799
 msgid "Publish"
 msgstr "Công khai"
 
-#: templates/internal/problem_queue.html:829
+#: templates/internal/problem_queue.html:832
 msgid "AI Analysis Results"
 msgstr "Kết quả phân tính"
 
-#: templates/internal/problem_queue.html:830
+#: templates/internal/problem_queue.html:833
 msgid ""
 "Review and modify the AI suggestions before applying them to the problem."
 msgstr "Xem xét và sửa đổi các đề xuất trước khi lưu."
 
-#: templates/internal/problem_queue.html:841 templates/problem/add.html:194
+#: templates/internal/problem_queue.html:844 templates/problem/add.html:194
 #: templates/problem/edit.html:491
 msgid "Problem Types"
 msgstr "Dạng bài tập"
 
-#: templates/internal/problem_queue.html:851
+#: templates/internal/problem_queue.html:854
 msgid "Apply Changes"
 msgstr "Lưu thay đổi"
 
-#: templates/internal/problem_queue.html:866
+#: templates/internal/problem_queue.html:869
 msgid "Feedback for the author"
 msgstr "Nhận xét cho tác giả"
 
-#: templates/internal/problem_queue.html:868
+#: templates/internal/problem_queue.html:871
 msgid "Explain why this request is being rejected..."
 msgstr "Giải thích lý do từ chối yêu cầu này..."
 
-#: templates/internal/problem_queue.html:883
+#: templates/internal/problem_queue.html:886
 msgid "Improved Markdown Preview"
 msgstr "Xem trước Markdown cải thiện"
 
-#: templates/internal/problem_queue.html:890
+#: templates/internal/problem_queue.html:893
 #: templates/organization/moderation_log.html:50
 #: templates/user/import/index.html:80
 msgid "Preview"
@@ -11328,7 +11329,16 @@ msgstr "Bài tập gợi ý"
 msgid "No review run yet for this problem."
 msgstr "Chưa có lần chạy xem xét nào cho bài này."
 
-#: templates/problem/review_list.html:98
+#: templates/problem/review_list.html:43 templates/problem/review_list.html:52
+#: templates/problem/review_list.html:61
+msgid "Open in admin queue"
+msgstr "Mở trong hàng đợi admin"
+
+#: templates/problem/review_list.html:67
+msgid "Published via a contest, not per-problem"
+msgstr "Xuất bản thông qua kỳ thi, không phải từng bài"
+
+#: templates/problem/review_list.html:134
 msgid "No problem reviews match your filters."
 msgstr "Không có lượt xem xét bài tập nào khớp với bộ lọc."
 

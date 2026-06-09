@@ -706,7 +706,10 @@
   <br>
 {% endif %}
 {% for problem in problems %}
-  <div class="problem-container" style="display: flex; gap: 1em;">
+  {# `id="problem-row-{N}"` lets the review dashboard's publish-status pills
+     link directly to a specific row via URL fragment (#problem-row-123).
+     Browser scrolls it into view automatically — no JS required. #}
+  <div id="problem-row-{{ problem.id }}" class="problem-container" style="display: flex; gap: 1em;">
     <div class="blog-box" style="width: 100%">
       <h3 class="problem-feed-name">
         <a href="{{ url('problem_detail', problem.code) }}">

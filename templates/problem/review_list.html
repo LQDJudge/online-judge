@@ -24,13 +24,49 @@
   {% endif %}
 {% endmacro %}
 
-{% macro publish_pill(pr) %}
+{# Render the publish-request status pill. For admins, the pending /
+   approved / rejected pills become clickable links that jump straight to
+   the problem's row in the internal admin queue (tab=request_public,
+   filtered by the matching status, anchored to #problem-row-N). For
+   non-admins it stays a plain span.
+
+   When there's no PublicRequest at all, distinguish two cases:
+   - Problem is in a private contest → "Trong kỳ thi" (publishing via the
+     contest flow, not per-problem)
+   - Truly no request → "Chưa yêu cầu" #}
+{% macro publish_pill(pr, problem, in_contest, request) %}
   {% if pr and pr.status == 'P' %}
-    <span class="publish-pill publish-pending"><i class="fa fa-clock"></i>{{ _('Pending') }}</span>
+    {% set body %}<i class="fa fa-clock"></i>{{ _('Pending') }}{% endset %}
+    {% if request.user.is_superuser %}
+      <a class="publish-pill publish-pending"
+         href="{{ url('internal_problem_queue') }}?tab=request_public&status=P#problem-row-{{ problem.id }}"
+         title="{{ _('Open in admin queue') }}">{{ body }}</a>
+    {% else %}
+      <span class="publish-pill publish-pending">{{ body }}</span>
+    {% endif %}
   {% elif pr and pr.status == 'A' %}
-    <span class="publish-pill publish-approved"><i class="fa fa-check"></i>{{ _('Approved') }}</span>
+    {% set body %}<i class="fa fa-check"></i>{{ _('Approved') }}{% endset %}
+    {% if request.user.is_superuser %}
+      <a class="publish-pill publish-approved"
+         href="{{ url('internal_problem_queue') }}?tab=request_public&status=A#problem-row-{{ problem.id }}"
+         title="{{ _('Open in admin queue') }}">{{ body }}</a>
+    {% else %}
+      <span class="publish-pill publish-approved">{{ body }}</span>
+    {% endif %}
   {% elif pr and pr.status == 'R' %}
-    <span class="publish-pill publish-rejected"><i class="fa fa-times"></i>{{ _('Rejected') }}</span>
+    {% set body %}<i class="fa fa-times"></i>{{ _('Rejected') }}{% endset %}
+    {% if request.user.is_superuser %}
+      <a class="publish-pill publish-rejected"
+         href="{{ url('internal_problem_queue') }}?tab=request_public&status=R#problem-row-{{ problem.id }}"
+         title="{{ _('Open in admin queue') }}">{{ body }}</a>
+    {% else %}
+      <span class="publish-pill publish-rejected">{{ body }}</span>
+    {% endif %}
+  {% elif in_contest %}
+    <span class="publish-pill publish-in-contest"
+          title="{{ _('Published via a contest, not per-problem') }}">
+      <i class="fa fa-trophy"></i>{{ _('In contest') }}
+    </span>
   {% else %}
     <span class="publish-pill publish-none">{{ _('Not requested') }}</span>
   {% endif %}
@@ -39,53 +75,55 @@
 {% block middle_content %}
   <div class="review-list-page">
     {% if items %}
-      <div class="review-list-table-scroll">
-        <table class="review-list-table">
-          <thead>
+      {# `.table.striped.modern` matches /problems' chrome — striped rows
+         are opaque (theme bleed-through fix), modern adds rounded corners
+         + drop shadow. Both defined in resources/table.scss. No wrapper —
+         the table owns its own visual chrome end-to-end. #}
+      <table class="review-list-table table striped modern">
+        <thead>
+          <tr>
+            <th class="col-name">
+              <a href="{{ sort_links.name }}">{{ _('Problem') }}{{ sort_order.name }}</a>
+            </th>
+            <th class="col-authors">{{ _('Authors') }}</th>
+            <th class="col-verdict">{{ _('Auto-review') }}</th>
+            <th class="col-public">
+              <a href="{{ sort_links.public_status }}">{{ _('Public request') }}{{ sort_order.public_status }}</a>
+            </th>
+            <th class="col-when">
+              <a href="{{ sort_links.last_reviewed }}">{{ _('Last reviewed') }}{{ sort_order.last_reviewed }}</a>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in items %}
+            {% set run = latest_runs.get(p.id) %}
+            {% set v = verdicts.get(p.id) %}
+            {% set pr = public_requests.get(p.id) %}
             <tr>
-              <th class="col-name">
-                <a href="{{ sort_links.name }}">{{ _('Problem') }}{{ sort_order.name }}</a>
-              </th>
-              <th class="col-authors">{{ _('Authors') }}</th>
-              <th class="col-verdict">{{ _('Auto-review') }}</th>
-              <th class="col-public">
-                <a href="{{ sort_links.public_status }}">{{ _('Public request') }}{{ sort_order.public_status }}</a>
-              </th>
-              <th class="col-when">
-                <a href="{{ sort_links.last_reviewed }}">{{ _('Last reviewed') }}{{ sort_order.last_reviewed }}</a>
-              </th>
+              <td class="col-name">
+                <a href="{{ url('problem_review_dashboard', p.code) }}">{{ p.name }}</a>
+              </td>
+              <td class="review-author-list">
+                {% for author in p.authors.all() %}
+                  {{ link_user(author) }}{% if not loop.last %} {% endif %}
+                {% endfor %}
+              </td>
+              <td>{{ verdict_pill(v) }}</td>
+              <td>{{ publish_pill(pr, p, p.id in in_any_contest, request) }}</td>
+              <td class="review-when">
+                {% if run and run.finished_at %}
+                  <span title="{{ run.finished_at }}">{{ relative_time(run.finished_at) }}</span>
+                {% elif run %}
+                  <span title="{{ run.started_at }}">{{ relative_time(run.started_at) }}</span>
+                {% else %}
+                  —
+                {% endif %}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {% for p in items %}
-              {% set run = latest_runs.get(p.id) %}
-              {% set v = verdicts.get(p.id) %}
-              {% set pr = public_requests.get(p.id) %}
-              <tr>
-                <td class="col-name">
-                  <a href="{{ url('problem_review_dashboard', p.code) }}">{{ p.name }}</a>
-                </td>
-                <td class="review-author-list">
-                  {% for author in p.authors.all() %}
-                    {{ link_user(author) }}{% if not loop.last %} {% endif %}
-                  {% endfor %}
-                </td>
-                <td>{{ verdict_pill(v) }}</td>
-                <td>{{ publish_pill(pr) }}</td>
-                <td class="review-when">
-                  {% if run and run.finished_at %}
-                    <span title="{{ run.finished_at }}">{{ relative_time(run.finished_at) }}</span>
-                  {% elif run %}
-                    <span title="{{ run.started_at }}">{{ relative_time(run.started_at) }}</span>
-                  {% else %}
-                    —
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+          {% endfor %}
+        </tbody>
+      </table>
 
       <div class="review-list-pagination">
         {% include "list-pages.html" %}
@@ -134,6 +172,7 @@
               <option value="pending" {% if active_public == 'pending' %}selected{% endif %}>{{ _('Pending') }}</option>
               <option value="approved" {% if active_public == 'approved' %}selected{% endif %}>{{ _('Approved') }}</option>
               <option value="rejected" {% if active_public == 'rejected' %}selected{% endif %}>{{ _('Rejected') }}</option>
+              <option value="in_contest" {% if active_public == 'in_contest' %}selected{% endif %}>{{ _('In contest') }}</option>
               <option value="none" {% if active_public == 'none' %}selected{% endif %}>{{ _('No request') }}</option>
             </select>
           </div>
