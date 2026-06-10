@@ -2308,7 +2308,12 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
 
 
 class GradingDashboard(
-    LoginRequiredMixin, QuizEditorMixin, PendingGradingCountMixin, TitleMixin, ListView
+    LoginRequiredMixin,
+    QuizEditorMixin,
+    PendingGradingCountMixin,
+    DiggPaginatorMixin,
+    TitleMixin,
+    ListView,
 ):
     """List all submitted attempts for grading.
 
@@ -2947,6 +2952,7 @@ class QuizGradingTab(
     LoginRequiredMixin,
     QuizObjectEditorMixin,
     PendingGradingCountMixin,
+    DiggPaginatorMixin,
     TitleMixin,
     ListView,
 ):
