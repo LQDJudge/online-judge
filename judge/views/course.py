@@ -1662,6 +1662,13 @@ def _get_unlocked_lessons(course, profile, is_editable):
     if is_editable:
         return list(all_lessons)
 
+    # Anonymous users have no profile and thus no per-user unlock state.
+    # They are not course members, so the access mixin returns 404 for them
+    # anyway; bail out before computing grades, which would otherwise crash in
+    # bulk_calculate_lessons_progress ('NoneType' object has no attribute 'id').
+    if profile is None:
+        return []
+
     lock_status = get_lesson_lock_status(profile, course)
     return [lesson for lesson in all_lessons if not lock_status.get(lesson.id, False)]
 
