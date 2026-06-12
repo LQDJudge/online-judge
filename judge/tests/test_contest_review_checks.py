@@ -190,6 +190,61 @@ class ProblemsReviewedCheckTest(TestCase):
         self.assertEqual(result.details["summary"]["failed"], 1)
         self.assertEqual(result.details["summary"]["passed"], 1)
 
+    def test_public_problem_in_contest_fails_and_is_not_triggered(self):
+        # A truly-public problem (is_public=True, is_organization_private=False)
+        # belonging to a private contest is the "cloned public contest" scenario.
+        # The check must FAIL (rated contests can't reuse public problems) and
+        # must NOT trigger per-problem review for the public one (it's already
+        # been reviewed historically — re-reviewing creates dashboard clutter).
+        self.p1.is_public = True
+        self.p1.is_organization_private = False
+        self.p1.save(update_fields=["is_public", "is_organization_private"])
+        # p2 stays private.
+
+        with patch(
+            "judge.review.contest_checks.problems_reviewed.trigger_problem_review_for"
+        ) as mock_trigger:
+            mock_trigger.return_value = None
+            result = ProblemsReviewedCheck().run(self.contest, self.review_run)
+
+        self.assertEqual(result.status, ContestReviewCheckResult.FAIL)
+        self.assertIn("public", result.reason.lower())
+
+        # Only the private problem was passed to the trigger.
+        self.assertEqual(mock_trigger.call_count, 1)
+        triggered_problem = mock_trigger.call_args_list[0][0][0]
+        self.assertEqual(triggered_problem.code, "prp2")
+
+        # details_json lists the public problem(s).
+        public = result.details["public_problems"]
+        self.assertEqual(len(public), 1)
+        self.assertEqual(public[0]["code"], "prp1")
+        # per_problem only contains the private one.
+        per_problem = result.details["per_problem"]
+        self.assertEqual(len(per_problem), 1)
+        self.assertEqual(per_problem[0]["code"], "prp2")
+        self.assertEqual(result.details["summary"]["public_problems_count"], 1)
+
+    def test_org_private_public_problem_does_NOT_count_as_public(self):
+        # is_public=True + is_organization_private=True == "visible inside an
+        # org only" == NOT truly public. A rated contest within that org could
+        # legitimately use this problem, so it should be reviewed normally.
+        self.p1.is_public = True
+        self.p1.is_organization_private = True
+        self.p1.save(update_fields=["is_public", "is_organization_private"])
+
+        with patch(
+            "judge.review.contest_checks.problems_reviewed.trigger_problem_review_for"
+        ) as mock_trigger:
+            mock_trigger.return_value = None
+            result = ProblemsReviewedCheck().run(self.contest, self.review_run)
+
+        # Both problems went through the normal review flow.
+        self.assertEqual(mock_trigger.call_count, 2)
+        # No public-problem entries in details — org-private doesn't count.
+        self.assertEqual(result.details["public_problems"], [])
+        self.assertEqual(result.details["summary"]["public_problems_count"], 0)
+
     def test_stale_run_triggers_but_fresh_run_reuses(self):
         # Default (Request Public) path: a problem with stale hash gets
         # triggered (no reusable match), but a problem with fresh hash is

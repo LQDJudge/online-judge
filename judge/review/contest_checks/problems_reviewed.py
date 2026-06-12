@@ -129,11 +129,27 @@ class ProblemsReviewedCheck(ContestReviewCheck):
                 details={"per_problem": [], "summary": {"total": 0}},
             )
 
+        # Partition into "truly public" (visible to everyone — already-known
+        # problems that can't be in a rated contest) and "reviewable" (private,
+        # or org-private which is still unseen outside that organization).
+        #
+        # Public problems are SKIPPED from the per-problem review pass — they
+        # don't need review (they're already public) and per-problem review
+        # would just create dashboard clutter. At the end of the check, if
+        # any public problems are present, the overall verdict is overridden
+        # to FAIL with a clear reason so the author knows to swap them out.
+        truly_public_problems = [
+            p for p in problems if p.is_public and not p.is_organization_private
+        ]
+        reviewable_problems = [
+            p for p in problems if not (p.is_public and not p.is_organization_private)
+        ]
+
         per_problem_rows = []
         triggerer = run.triggered_by  # may be None if reaper-resurrected
         force_refresh = bool(getattr(run, "force_refresh_problems", False))
 
-        for p in problems:
+        for p in reviewable_problems:
             triggered_inline = False
             latest = None
 
@@ -228,8 +244,35 @@ class ProblemsReviewedCheck(ContestReviewCheck):
             "inline_triggered": sum(
                 1 for r in per_problem_rows if r["triggered_inline"]
             ),
+            "public_problems_count": len(truly_public_problems),
         }
-        details = {"per_problem": per_problem_rows, "summary": summary}
+        details = {
+            "per_problem": per_problem_rows,
+            "summary": summary,
+            "public_problems": [
+                {"code": p.code, "name": p.name} for p in truly_public_problems
+            ],
+        }
+
+        # Public-problem override takes precedence over per-problem verdicts.
+        # A contest containing any already-public problem cannot be rated,
+        # regardless of how the private problems' reviews went. The author
+        # needs to swap those problems out before requesting public again.
+        if truly_public_problems:
+            codes = ", ".join(p.code for p in truly_public_problems[:5])
+            if len(truly_public_problems) > 5:
+                codes += ", ..."
+            reason = _(
+                "Contest contains %(n)d already-public problem(s) "
+                "(%(codes)s). Rated contests can't reuse public problems "
+                "— replace them with original problems before requesting "
+                "public again."
+            ) % {"n": len(truly_public_problems), "codes": codes}
+            return CheckResultData(
+                status=ContestReviewCheckResult.FAIL,
+                reason=reason,
+                details=details,
+            )
 
         bad = (
             verdict_counts["fail"] + verdict_counts["error"] + verdict_counts["missing"]

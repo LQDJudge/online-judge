@@ -138,7 +138,7 @@ class RequestPublicGuardsTest(TestCase):
             status=ProblemReviewRun.DONE,
         )
         with self._patch_dashboard_reverse(), patch(
-            "judge.views.internal.review_problem"
+            "judge.tasks.review.review_problem"
         ), self.captureOnCommitCallbacks(execute=True):
             resp = self.client.post(
                 "/internal/request_public",
@@ -157,7 +157,7 @@ class RequestPublicGuardsTest(TestCase):
             status=ProblemReviewRun.DONE,
         )
         with self._patch_dashboard_reverse(), patch(
-            "judge.views.internal.review_problem"
+            "judge.tasks.review.review_problem"
         ), self.captureOnCommitCallbacks(execute=True):
             resp = self.client.post(
                 "/internal/request_public",
@@ -184,7 +184,7 @@ class RequestPublicGuardsTest(TestCase):
             started_at=timezone.now() - timedelta(hours=2)
         )
         with self._patch_dashboard_reverse(), patch(
-            "judge.views.internal.review_problem"
+            "judge.tasks.review.review_problem"
         ), self.captureOnCommitCallbacks(execute=True):
             resp = self.client.post(
                 "/internal/request_public",
