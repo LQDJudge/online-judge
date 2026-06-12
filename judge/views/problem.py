@@ -1358,7 +1358,7 @@ class ProblemEdit(
 
             # Dispatch async Celery task
             description = request.POST.get("description", "").strip()
-            task = tag_problem_task.delay(problem_code, description=description)
+            task = tag_problem_task.delay(problem.id, description=description)
 
             return JsonResponse(
                 {
@@ -1399,7 +1399,7 @@ class ProblemEdit(
             description = request.POST.get("description", "").strip()
 
             # Dispatch async Celery task
-            task = improve_markdown_task.delay(problem_code, description=description)
+            task = improve_markdown_task.delay(problem.id, description=description)
 
             return JsonResponse(
                 {
@@ -2134,7 +2134,7 @@ class ProblemEditSolutions(
             rough_ideas = request.POST.get("rough_ideas", "").strip()
 
             # Dispatch async Celery task
-            task = generate_solution_task.delay(problem.code, rough_ideas)
+            task = generate_solution_task.delay(problem.id, rough_ideas)
 
             return JsonResponse(
                 {

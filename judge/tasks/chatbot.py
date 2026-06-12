@@ -6,12 +6,16 @@ Handles conversation with native Poe tool calling for problem author assistance.
 import logging
 import time
 
-from celery import shared_task
 from django.core.cache import cache
+
+from celery import shared_task
 
 from judge.chatbot.cache import get_conversation, save_conversation
 from judge.chatbot.tools import get_tool_definitions, get_tool_executables
 from judge.markdown import markdown as render_markdown
+from judge.models import Problem
+from llm_service.config import get_config
+from llm_service.llm_api import LLMService
 
 logger = logging.getLogger(__name__)
 
@@ -105,8 +109,6 @@ CHARS_PER_TOKEN = 4
 
 def _max_history_chars(model_id):
     """Compute the character budget for history based on the model's context window."""
-    from llm_service.config import get_config
-
     config = get_config()
     context_tokens = config.get_context_tokens(model_id)
     available_tokens = context_tokens - RESERVED_TOKENS
@@ -166,29 +168,39 @@ def _fix_latex(text):
 
 
 @shared_task(bind=True)
-def chatbot_respond_task(self, user_id, problem_code, user_message):
+def chatbot_respond_task(
+    self,
+    user_id,
+    problem_id=None,
+    user_message="",
+    problem_code=None,
+):
     """
     Celery task to process chatbot message with native Poe tool calling.
 
     Args:
         user_id: The user's ID
-        problem_code: The problem code
+        problem_id: The problem's persistent database ID
         user_message: The user's message
+        problem_code: Legacy problem code for queued tasks created before the
+            cache key was migrated to problem_id
 
     Returns:
         Dict with response data {success, content, tool_calls, error}
     """
     try:
-        # Import here to avoid circular imports
-        from judge.models import Problem
-        from llm_service.config import get_config
-        from llm_service.llm_api import LLMService
-
         # Get problem
-        problem = Problem.objects.get(code=problem_code)
+        if problem_id is not None:
+            problem = Problem.objects.get(id=problem_id)
+        else:
+            problem = Problem.objects.get(code=problem_code)
 
         # Load conversation history
-        conversation = get_conversation(user_id, problem_code)
+        conversation = get_conversation(
+            user_id,
+            problem.id,
+            legacy_problem_code=problem_code or problem.code,
+        )
 
         # Add user message to history
         conversation["messages"].append(
@@ -297,11 +309,15 @@ def chatbot_respond_task(self, user_id, problem_code, user_message):
         )
 
         # Preserve model changes made during the LLM call (user may have switched)
-        current_conv = get_conversation(user_id, problem_code)
+        current_conv = get_conversation(
+            user_id,
+            problem.id,
+            legacy_problem_code=problem_code or problem.code,
+        )
         conversation["model"] = current_conv.get("model", conversation.get("model"))
 
         # Save updated conversation
-        save_conversation(user_id, problem_code, conversation)
+        save_conversation(user_id, problem.id, conversation)
 
         return {
             "success": True,
@@ -312,11 +328,14 @@ def chatbot_respond_task(self, user_id, problem_code, user_message):
     except Problem.DoesNotExist:
         return {
             "success": False,
-            "error": f"Problem {problem_code} not found",
+            "error": f"Problem {problem_id or problem_code} not found",
         }
 
     except Exception as e:
-        logger.error(f"Chatbot error for {problem_code}: {e}", exc_info=True)
+        logger.error(
+            f"Chatbot error for {problem_id or problem_code}: {e}",
+            exc_info=True,
+        )
         return {
             "success": False,
             "error": str(e),

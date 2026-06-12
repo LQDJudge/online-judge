@@ -3,9 +3,11 @@ Views for the problem author chatbot feature.
 Provides AI-powered assistance for problem authors.
 """
 
+import logging
+
 from django.core.cache import cache
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.urls import reverse
 from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
@@ -14,17 +16,21 @@ from django.views.generic import View
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
 
-from judge.models import Problem
-from judge.views.problem import ProblemMixin, TitleMixin
 from judge.chatbot.cache import (
-    get_conversation,
     clear_conversation,
     delete_message,
+    get_conversation,
     set_model,
 )
+from judge.markdown import markdown as render_markdown
+from judge.models import Problem
+from judge.tasks.chatbot import STREAM_CACHE_PREFIX, chatbot_respond_task
+from judge.views.problem import ProblemMixin, TitleMixin
 from judge.utils.permissions import can_use_ai_features
 from judge.utils.views import short_circuit_middleware
 from llm_service.config import get_config
+
+logger = logging.getLogger(__name__)
 
 
 def _get_editable_problem(user, code):
@@ -69,12 +75,14 @@ class ProblemChatbotView(
 
     def get(self, request, *args, **kwargs):
         if not self.has_permission():
-            from django.http import Http404
-
             raise Http404()
 
         # Load conversation history from cache
-        conversation = get_conversation(request.user.id, self.object.code)
+        conversation = get_conversation(
+            request.user.id,
+            self.object.id,
+            legacy_problem_code=self.object.code,
+        )
         chat_messages = conversation.get("messages", [])
         current_model = conversation.get("model")
 
@@ -121,12 +129,6 @@ class ChatbotSendMessage(View):
                 {"error": "Message too long (max 10000 characters)"}, status=400
             )
 
-        # Render user message markdown immediately
-        from judge.markdown import markdown as render_markdown
-        import logging
-
-        logger = logging.getLogger(__name__)
-
         try:
             user_content_html = render_markdown(message)
         except Exception as md_error:
@@ -137,12 +139,9 @@ class ChatbotSendMessage(View):
                 + "</div>"
             )
 
-        # Dispatch Celery task
-        from judge.tasks.chatbot import chatbot_respond_task
-
         task = chatbot_respond_task.delay(
             user_id=request.user.id,
-            problem_code=problem_obj.code,
+            problem_id=problem_obj.id,
             user_message=message,
         )
 
@@ -172,7 +171,11 @@ class ChatbotClearHistory(View):
             return JsonResponse({"error": "Problem not found"}, status=404)
 
         # Clear conversation from cache
-        clear_conversation(request.user.id, problem_obj.code)
+        clear_conversation(
+            request.user.id,
+            problem_obj.id,
+            legacy_problem_code=problem_obj.code,
+        )
 
         return JsonResponse({"success": True})
 
@@ -194,7 +197,11 @@ class ChatbotGetHistory(View):
             return JsonResponse({"error": "Problem not found"}, status=404)
 
         # Get conversation from cache
-        conversation = get_conversation(request.user.id, problem_obj.code)
+        conversation = get_conversation(
+            request.user.id,
+            problem_obj.id,
+            legacy_problem_code=problem_obj.code,
+        )
 
         return JsonResponse(
             {
@@ -226,7 +233,12 @@ class ChatbotSetModel(View):
             return JsonResponse({"error": "Model is required"}, status=400)
 
         # Set model in cache
-        if set_model(request.user.id, problem_obj.code, model_id):
+        if set_model(
+            request.user.id,
+            problem_obj.id,
+            model_id,
+            legacy_problem_code=problem_obj.code,
+        ):
             # Get model name for display
             config = get_config()
             model_name = model_id
@@ -265,7 +277,12 @@ class ChatbotDeleteMessage(View):
         except (ValueError, TypeError):
             return JsonResponse({"error": "Invalid message index"}, status=400)
 
-        if delete_message(request.user.id, problem_obj.code, message_index):
+        if delete_message(
+            request.user.id,
+            problem_obj.id,
+            message_index,
+            legacy_problem_code=problem_obj.code,
+        ):
             return JsonResponse({"success": True})
         else:
             return JsonResponse({"error": "Invalid message index"}, status=400)
@@ -277,8 +294,6 @@ def chatbot_stream_ajax(request):
     task_id = request.GET.get("id")
     if not task_id:
         return JsonResponse({"partial": None, "done": False})
-
-    from judge.tasks.chatbot import STREAM_CACHE_PREFIX
 
     stream_key = f"{STREAM_CACHE_PREFIX}:{task_id}"
     data = cache.get(stream_key)

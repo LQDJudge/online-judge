@@ -1185,7 +1185,7 @@ class ProblemSolutionCodesGenerateView(ProblemManagerMixin, View):
         include_reference = body.get("include_reference", False)
 
         task = generate_solution_codes_task.delay(
-            problem.code,
+            problem.id,
             model_id=model_id,
             instructions=instructions,
             include_reference=include_reference,
