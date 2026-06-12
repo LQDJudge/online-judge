@@ -186,6 +186,10 @@ class ProblemsReviewedCheck(ContestReviewCheck):
                         # pill via the comment system's parser — same convention
                         # used elsewhere in LQDOJ comments. Plain markdown bold
                         # was just text and didn't link anywhere.
+                        try:
+                            contest_url = reverse("contest_view", args=[contest.key])
+                        except Exception:
+                            contest_url = f"/contest/{contest.key}/"
                         body = _(
                             "**[System]** Review auto-triggered by "
                             "[user:%(user)s] for contest "
@@ -193,7 +197,7 @@ class ProblemsReviewedCheck(ContestReviewCheck):
                         ) % {
                             "user": triggerer.user.username,
                             "contest_name": contest.name,
-                            "contest_url": f"/contest/{contest.key}/",
+                            "contest_url": contest_url,
                         }
                         post_system_comment_on_review(p, str(body))
                     except Exception:

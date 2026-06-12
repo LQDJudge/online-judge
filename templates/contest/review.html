@@ -278,6 +278,43 @@
                   </td>
                 </tr>
               {% endif %}
+              {# Public-problem callout under problems_reviewed.
+                 When the check FAILs because the contest includes already-
+                 public problems, list them so the author can identify and
+                 swap them out. Per-problem review intentionally doesn't
+                 run for public ones (they're already approved), so this
+                 block surfaces what `per_problem` deliberately omits. #}
+              {% if cr.check_id == 'problems_reviewed' and cr.details_json and cr.details_json.public_problems %}
+                <tr class="review-check-row review-check-subrow">
+                  <td></td>
+                  <td colspan="3">
+                    <div class="red" style="margin-bottom: 0.5em;">
+                      <i class="fa fa-exclamation-triangle"></i>
+                      {{ _("Already-public problems (must be swapped out before this contest can be published as rated):") }}
+                    </div>
+                    <table class="review-checks-subtable">
+                      <thead>
+                        <tr>
+                          <th>{{ _("Problem") }}</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for pp in cr.details_json.public_problems %}
+                          <tr>
+                            <td>
+                              <a href="{{ url('problem_detail', pp.code) }}">{{ pp.name }}</a>
+                            </td>
+                            <td style="padding-left: 1.5em; white-space: nowrap;">
+                              <span class="gray">{{ pp.code }}</span>
+                            </td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              {% endif %}
               {# Expanded role-leak + submission-leak listings under
                  submission_leak_check. Each non-trusted user appears with
                  either a sub_count column (they submitted) or a role badge
