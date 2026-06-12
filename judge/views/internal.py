@@ -757,11 +757,11 @@ def improve_markdown_queue(request):
             return JsonResponse({"success": False, "error": "Problem code is required"})
 
         try:
-            Problem.objects.get(code=problem_code)
+            problem = Problem.objects.get(code=problem_code)
         except Problem.DoesNotExist:
             return JsonResponse({"success": False, "error": "Problem not found"})
 
-        task = improve_markdown_task.delay(problem_code)
+        task = improve_markdown_task.delay(problem.id)
         return JsonResponse({"success": True, "task_id": task.id})
 
     elif request.method == "POST":
@@ -1056,7 +1056,7 @@ def problem_tag(request):
             all_types = list(ProblemType.objects.all().values("id", "name"))
 
             # Dispatch async Celery task
-            task = tag_problem_task.delay(problem_code)
+            task = tag_problem_task.delay(problem.id)
 
             return JsonResponse(
                 {

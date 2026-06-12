@@ -5,33 +5,59 @@ These tasks run asynchronously to avoid timeout issues with long-running LLM cal
 
 import logging
 
-from celery import shared_task
 from django.db.models import Max
 
-from judge.models import Problem, Language, ProblemType
-from judge.models.problem_data import ProblemSolutionCode
+from celery import shared_task
+
 from ai_features.problem_tag_service import get_problem_tag_service
 from ai_features.quiz_ai_service import get_quiz_ai_service
 from ai_features.solution_code_generator import SolutionCodeGenerator
+from judge.models import Language, Problem, ProblemType
+from judge.models.problem_data import ProblemSolutionCode
 from llm_service.config import get_config
 
 logger = logging.getLogger(__name__)
 
 
+def _resolve_problem_for_ai_task(problem_ref=None, problem_code=None):
+    """
+    Resolve a problem for AI tasks.
+
+    New callers pass problem.id. Legacy queued tasks may still pass problem.code
+    as the first positional argument, or as the problem_code keyword.
+    """
+    if problem_code:
+        return Problem.objects.get(code=problem_code)
+    if isinstance(problem_ref, int):
+        return Problem.objects.get(id=problem_ref)
+    return Problem.objects.get(code=problem_ref)
+
+
+def _problem_ref_label(problem_ref=None, problem_code=None):
+    return problem_code if problem_code else problem_ref
+
+
 @shared_task(bind=True)
-def generate_solution_task(self, problem_code, rough_ideas=""):
+def generate_solution_task(
+    self,
+    problem_id=None,
+    rough_ideas="",
+    problem_code=None,
+):
     """
     Celery task to generate solution for a problem using LLM.
 
     Args:
-        problem_code: The problem code
+        problem_id: The problem's persistent database ID
         rough_ideas: Optional user-provided rough ideas
+        problem_code: Legacy problem code for queued tasks created before the
+            task argument was migrated to problem_id
 
     Returns:
         Dict with generation results (stored in Celery result backend)
     """
     try:
-        problem = Problem.objects.get(code=problem_code)
+        problem = _resolve_problem_for_ai_task(problem_id, problem_code)
         tag_service = get_problem_tag_service()
         result = tag_service.generate_problem_solution(problem, rough_ideas=rough_ideas)
 
@@ -46,11 +72,16 @@ def generate_solution_task(self, problem_code, rough_ideas=""):
     except Problem.DoesNotExist:
         return {
             "success": False,
-            "error": f"Problem {problem_code} not found",
+            "error": (
+                f"Problem {_problem_ref_label(problem_id, problem_code)} not found"
+            ),
         }
 
     except Exception as e:
-        logger.error(f"Error in generate_solution_task for {problem_code}: {e}")
+        logger.error(
+            f"Error in generate_solution_task for "
+            f"{_problem_ref_label(problem_id, problem_code)}: {e}"
+        )
         return {
             "success": False,
             "error": str(e),
@@ -58,20 +89,27 @@ def generate_solution_task(self, problem_code, rough_ideas=""):
 
 
 @shared_task(bind=True)
-def tag_problem_task(self, problem_code, description=""):
+def tag_problem_task(
+    self,
+    problem_id=None,
+    description="",
+    problem_code=None,
+):
     """
     Celery task to tag a problem (difficulty + types) using LLM.
 
     Args:
-        problem_code: The problem code
+        problem_id: The problem's persistent database ID
         description: Optional description text from the edit form.
                      If provided, uses this instead of the DB description.
+        problem_code: Legacy problem code for queued tasks created before the
+            task argument was migrated to problem_id
 
     Returns:
         Dict with tagging results (stored in Celery result backend)
     """
     try:
-        problem = Problem.objects.get(code=problem_code)
+        problem = _resolve_problem_for_ai_task(problem_id, problem_code)
         tag_service = get_problem_tag_service()
         result = tag_service.tag_single_problem(
             problem, description_override=description
@@ -98,11 +136,16 @@ def tag_problem_task(self, problem_code, description=""):
     except Problem.DoesNotExist:
         return {
             "success": False,
-            "error": f"Problem {problem_code} not found",
+            "error": (
+                f"Problem {_problem_ref_label(problem_id, problem_code)} not found"
+            ),
         }
 
     except Exception as e:
-        logger.error(f"Error in tag_problem_task for {problem_code}: {e}")
+        logger.error(
+            f"Error in tag_problem_task for "
+            f"{_problem_ref_label(problem_id, problem_code)}: {e}"
+        )
         return {
             "success": False,
             "error": str(e),
@@ -110,20 +153,27 @@ def tag_problem_task(self, problem_code, description=""):
 
 
 @shared_task(bind=True)
-def improve_markdown_task(self, problem_code, description=""):
+def improve_markdown_task(
+    self,
+    problem_id=None,
+    description="",
+    problem_code=None,
+):
     """
     Celery task to improve markdown formatting for a problem using LLM.
 
     Args:
-        problem_code: The problem code
+        problem_id: The problem's persistent database ID
         description: Optional description text from the edit form.
                      If provided, uses this instead of the DB description.
+        problem_code: Legacy problem code for queued tasks created before the
+            task argument was migrated to problem_id
 
     Returns:
         Dict with improvement results (stored in Celery result backend)
     """
     try:
-        problem = Problem.objects.get(code=problem_code)
+        problem = _resolve_problem_for_ai_task(problem_id, problem_code)
         tag_service = get_problem_tag_service()
         result = tag_service.improve_problem_markdown(
             problem, description_override=description
@@ -138,11 +188,16 @@ def improve_markdown_task(self, problem_code, description=""):
     except Problem.DoesNotExist:
         return {
             "success": False,
-            "error": f"Problem {problem_code} not found",
+            "error": (
+                f"Problem {_problem_ref_label(problem_id, problem_code)} not found"
+            ),
         }
 
     except Exception as e:
-        logger.error(f"Error in improve_markdown_task for {problem_code}: {e}")
+        logger.error(
+            f"Error in improve_markdown_task for "
+            f"{_problem_ref_label(problem_id, problem_code)}: {e}"
+        )
         return {
             "success": False,
             "error": str(e),
@@ -234,7 +289,12 @@ def generate_question_explanation_task(
 
 @shared_task(bind=True)
 def generate_solution_codes_task(
-    self, problem_code, model_id="", instructions="", include_reference=False
+    self,
+    problem_id=None,
+    model_id="",
+    instructions="",
+    include_reference=False,
+    problem_code=None,
 ):
     """
     Celery task to generate multiple reference solution codes using LLM.
@@ -243,15 +303,17 @@ def generate_solution_codes_task(
     ProblemSolutionCode entries.
 
     Args:
-        problem_code: The problem code
+        problem_id: The problem's persistent database ID
         model_id: LLM model to use (empty = default)
         instructions: Optional user instructions for generation
+        problem_code: Legacy problem code for queued tasks created before the
+            task argument was migrated to problem_id
 
     Returns:
         Dict with {success, count, error}
     """
     try:
-        problem = Problem.objects.get(code=problem_code)
+        problem = _resolve_problem_for_ai_task(problem_id, problem_code)
         config = get_config()
         bot_name = model_id or config.get_bot_name()
 
@@ -309,7 +371,7 @@ def generate_solution_codes_task(
             next_order += 1
             created += 1
 
-        logger.info(f"Generated {created} solution codes for {problem_code}")
+        logger.info(f"Generated {created} solution codes for {problem.code}")
         return {
             "success": True,
             "count": created,
@@ -320,12 +382,15 @@ def generate_solution_codes_task(
         return {
             "success": False,
             "count": 0,
-            "error": f"Problem {problem_code} not found",
+            "error": (
+                f"Problem {_problem_ref_label(problem_id, problem_code)} not found"
+            ),
         }
 
     except Exception as e:
         logger.error(
-            f"Error in generate_solution_codes_task for {problem_code}: {e}",
+            f"Error in generate_solution_codes_task for "
+            f"{_problem_ref_label(problem_id, problem_code)}: {e}",
             exc_info=True,
         )
         return {
