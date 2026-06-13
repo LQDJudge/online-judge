@@ -91,6 +91,11 @@ def problem_review_dashboard(request, problem):
     # for users; the machine id stays in the DB row for stable lookups.
     check_display_names = {c.id: c.display_name for c in CHECKS}
 
+    try:
+        problem_public_request = problem_obj.public_request
+    except PublicRequest.DoesNotExist:
+        problem_public_request = None
+
     context = {
         "problem": problem_obj,
         "title": problem_obj.name + " — Review",
@@ -102,6 +107,7 @@ def problem_review_dashboard(request, problem):
         "check_results": list(selected.check_results.all()) if selected else [],
         "check_display_names": check_display_names,
         "history_entries": history_entries,
+        "problem_public_request": problem_public_request,
     }
 
     # Comments are anchored to the FIRST run for this problem so the

@@ -25,6 +25,12 @@
        (even zero prior runs) so admins can dry-run a never-public problem. #}
     {% if request.user.is_superuser %}
       <div class="review-actions" style="text-align: right; margin-bottom: 0.75em;">
+        {% if problem_public_request %}
+          <a href="{{ url('internal_problem_queue') }}?tab=request_public&status={{ problem_public_request.status }}#problem-row-{{ problem.id }}"
+             class="action-btn small">
+            <i class="fa fa-list"></i> {{ _("Open in problem queue") }}
+          </a>
+        {% endif %}
         <form method="post" action="{{ url('problem_review_rerun', problem.code) }}"
               style="display: inline; margin: 0;">
           <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
