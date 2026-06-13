@@ -30,7 +30,24 @@
        — so the rerun button naturally sits between title and run-status card.
        Here we render the title inline since two-column-content has no title
        slot, preserving the same visual sequence. #}
-    <h2 class="content-title">{{ contest.name }} — {{ _("Review") }}</h2>
+    <h2 class="content-title">
+      {{ contest.name }} — {{ _("Review") }}
+      {% if public_request %}
+        {% if public_request.status == 'A' %}
+          <span class="review-decision-badge green">
+            <i class="fa fa-check"></i> {{ _("Review accepted") }}
+          </span>
+        {% elif public_request.status == 'R' %}
+          <span class="review-decision-badge red">
+            <i class="fa fa-times"></i> {{ _("Review rejected") }}
+          </span>
+        {% else %}
+          <span class="review-decision-badge gray">
+            <i class="fa fa-clock-o"></i> {{ _("Pending review") }}
+          </span>
+        {% endif %}
+      {% endif %}
+    </h2>
     {% if request.user.is_superuser %}
       <div class="review-actions" style="text-align: right; margin-bottom: 0.75em;">
         <form method="post" action="{{ url('contest_review_trigger', contest.key) }}"
@@ -278,6 +295,43 @@
                   </td>
                 </tr>
               {% endif %}
+              {# Public-problem callout under problems_reviewed.
+                 When the check FAILs because the contest includes already-
+                 public problems, list them so the author can identify and
+                 swap them out. Per-problem review intentionally doesn't
+                 run for public ones (they're already approved), so this
+                 block surfaces what `per_problem` deliberately omits. #}
+              {% if cr.check_id == 'problems_reviewed' and cr.details_json and cr.details_json.public_problems %}
+                <tr class="review-check-row review-check-subrow">
+                  <td></td>
+                  <td colspan="3">
+                    <div class="red" style="margin-bottom: 0.5em;">
+                      <i class="fa fa-exclamation-triangle"></i>
+                      {{ _("Already-public problems (must be swapped out before this contest can be published as rated):") }}
+                    </div>
+                    <table class="review-checks-subtable">
+                      <thead>
+                        <tr>
+                          <th>{{ _("Problem") }}</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for pp in cr.details_json.public_problems %}
+                          <tr>
+                            <td>
+                              <a href="{{ url('problem_detail', pp.code) }}">{{ pp.name }}</a>
+                            </td>
+                            <td style="padding-left: 1.5em; white-space: nowrap;">
+                              <span class="gray">{{ pp.code }}</span>
+                            </td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              {% endif %}
               {# Expanded role-leak + submission-leak listings under
                  submission_leak_check. Each non-trusted user appears with
                  either a sub_count column (they submitted) or a role badge
@@ -381,6 +435,37 @@
       <section class="review-card review-comments">
         {% include "comments/list.html" %}
       </section>
+
+      {% if request.user.is_superuser and public_request and not viewing_history %}
+        <section class="review-card review-decision-card">
+          <h3 class="review-section-title">
+            <i class="fa fa-gavel"></i> {{ _("Admin decision") }}
+          </h3>
+          <p class="review-decision-note">
+            {{ _("Accept or reject is a review verdict only — it does not publish the contest. Publishing and setting the contest rated is a separate manual step.") }}
+          </p>
+          {% if public_request.reviewed_by %}
+            <p class="review-decision-current">
+              {{ _("Current decision") }}:
+              <strong>{{ public_request.get_status_display() }}</strong>
+              {{ _("by") }} {{ link_user(public_request.reviewed_by) }}
+            </p>
+          {% endif %}
+          <textarea id="decision-feedback" class="review-decision-feedback"
+                    rows="3"
+                    placeholder="{{ _('Optional feedback for the author…') }}">{{ public_request.feedback }}</textarea>
+          <div class="review-decision-actions">
+            <button type="button" id="decision-accept" class="action-btn background-green"
+                    data-url="{{ url('contest_review_accept', contest.key) }}">
+              <i class="fa fa-check"></i> {{ _("Accept") }}
+            </button>
+            <button type="button" id="decision-reject" class="action-btn background-red"
+                    data-url="{{ url('contest_review_reject', contest.key) }}">
+              <i class="fa fa-times"></i> {{ _("Reject") }}
+            </button>
+          </div>
+        </section>
+      {% endif %}
     {% endif %}
   </div>
 
@@ -392,6 +477,33 @@
           if (this.value) location.href = this.value;
         });
       }
+
+      function postDecision(btn) {
+        if (btn.disabled) return;
+        btn.disabled = true;
+        var fb = document.getElementById("decision-feedback");
+        var body = new URLSearchParams();
+        body.append("feedback", fb ? fb.value : "");
+        body.append("csrfmiddlewaretoken", "{{ csrf_token }}");
+        fetch(btn.dataset.url, {
+          method: "POST",
+          credentials: "same-origin",
+          body: body
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j.success) { location.reload(); }
+            else { btn.disabled = false; alert(j.error || "Error"); }
+          })
+          .catch(function () {
+            btn.disabled = false;
+            alert("{{ _('Network error, please try again.') }}");
+          });
+      }
+      var acceptBtn = document.getElementById("decision-accept");
+      var rejectBtn = document.getElementById("decision-reject");
+      if (acceptBtn) acceptBtn.addEventListener("click", function () { postDecision(acceptBtn); });
+      if (rejectBtn) rejectBtn.addEventListener("click", function () { postDecision(rejectBtn); });
 
       var statusEl = document.getElementById("run-status");
       if (!statusEl) return;

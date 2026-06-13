@@ -1172,6 +1172,16 @@ urlpatterns = [
                     name="contest_request_cancel",
                 ),
                 re_path(
+                    r"^/review/accept$",
+                    contest_review.contest_review_accept,
+                    name="contest_review_accept",
+                ),
+                re_path(
+                    r"^/review/reject$",
+                    contest_review.contest_review_reject,
+                    name="contest_review_reject",
+                ),
+                re_path(
                     r"^/ranking/$",
                     contests.ContestRanking.as_view(),
                     name="contest_ranking",

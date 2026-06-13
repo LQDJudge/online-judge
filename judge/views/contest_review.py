@@ -34,6 +34,10 @@ from judge.models.contest_review import (
 )
 from judge.review.contest_hashing import compute_contest_input_hash
 from judge.review.contest_registry import CONTEST_CHECKS
+from judge.review.decisions import (
+    accept_contest_public_request,
+    reject_contest_public_request,
+)
 from judge.review.verdict import batched_verdicts
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.timefmt import format_mmss
@@ -125,6 +129,8 @@ def contest_review_dashboard(request, contest):
 
     check_display_names = {c.id: c.display_name for c in CONTEST_CHECKS}
 
+    public_request = ContestPublicRequest.objects.filter(contest=contest_obj).first()
+
     context = {
         "contest": contest_obj,
         "title": contest_obj.name + " — Review",
@@ -136,6 +142,7 @@ def contest_review_dashboard(request, contest):
         "check_results": list(selected.check_results.all()) if selected else [],
         "check_display_names": check_display_names,
         "history_entries": history_entries,
+        "public_request": public_request,
     }
     context.update(_contest_sidebar_context(request, contest_obj))
 
@@ -446,6 +453,44 @@ def contest_request_cancel(request, contest):
         contest=contest_obj, status=ContestPublicRequest.PENDING
     ).delete()
     return JsonResponse({"success": True, "cancelled": deleted})
+
+
+@require_POST
+def contest_review_accept(request, contest):
+    """Admin records an Accept verdict on the contest's public request.
+
+    Status-only — does NOT publish (is_visible untouched). Posts a system
+    comment + notifies the author via the shared decisions service.
+    """
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        return HttpResponseForbidden()
+    contest_obj = get_object_or_404(Contest, key=contest)
+    feedback = request.POST.get("feedback", "").strip()
+    pr = accept_contest_public_request(contest_obj, request.profile, feedback)
+    if pr is None:
+        return JsonResponse(
+            {"success": False, "error": _("No public request to act on.")}
+        )
+    return JsonResponse({"success": True})
+
+
+@require_POST
+def contest_review_reject(request, contest):
+    """Admin records a Reject verdict on the contest's public request.
+
+    Status-only — does NOT unpublish (is_visible untouched). Posts a system
+    comment + notifies the author via the shared decisions service.
+    """
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        return HttpResponseForbidden()
+    contest_obj = get_object_or_404(Contest, key=contest)
+    feedback = request.POST.get("feedback", "").strip()
+    pr = reject_contest_public_request(contest_obj, request.profile, feedback)
+    if pr is None:
+        return JsonResponse(
+            {"success": False, "error": _("No public request to act on.")}
+        )
+    return JsonResponse({"success": True})
 
 
 # ----------------------------------------------------------------------------

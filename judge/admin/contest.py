@@ -33,6 +33,7 @@ from judge.widgets import (
     AdminSelect2Widget,
     HeavyPreviewAdminPageDownWidget,
 )
+from judge.review.decisions import post_contest_decision_side_effects
 from judge.views.contests import recalculate_contest_summary_result
 from judge.utils.contest import maybe_trigger_contest_rescore
 
@@ -671,66 +672,39 @@ class ContestPublicRequestAdmin(admin.ModelAdmin):
     review_verdict.short_description = "Auto-review"
 
     def save_model(self, request, obj, form, change):
-        """On approve/reject: post a system comment + (for approve) flip
-        Contest.is_visible to True so the contest goes public, then notify
-        the requesting author + admins.
-        """
-        from judge.models import ContestPublicRequest
-        from judge.models.notification import Notification, NotificationCategory
-        from judge.review.system_bot import post_system_comment_on_contest_review
+        """Persist the admin form normally, then — on a real status transition
+        to Approved/Rejected — stamp the reviewer and emit the shared decision
+        side effects (system comment + author notification).
 
-        # Detect status transition by reading the old row before super().save().
-        # On a brand-new row there's no transition to act on.
+        Status-only: publishing the contest (is_visible / is_rated) is a
+        separate manual admin step, intentionally NOT done here.
+        """
         old_status = None
         if change and obj.pk:
-            try:
-                old_status = ContestPublicRequest.objects.get(pk=obj.pk).status
-            except ContestPublicRequest.DoesNotExist:
-                pass
+            old_status = (
+                ContestPublicRequest.objects.filter(pk=obj.pk)
+                .values_list("status", flat=True)
+                .first()
+            )
 
-        if obj.status in (ContestPublicRequest.APPROVED, ContestPublicRequest.REJECTED):
+        target = obj.status
+        is_decision = (
+            change
+            and target in (ContestPublicRequest.APPROVED, ContestPublicRequest.REJECTED)
+            and target != old_status
+        )
+        if is_decision:
+            # The admin form does not set reviewed_by; stamp it before the
+            # normal save so super() persists it along with status/feedback
+            # and any other field edits (no silent data loss).
             obj.reviewed_by = request.user.profile
 
         super().save_model(request, obj, form, change)
 
-        if old_status == obj.status:
-            # No transition (e.g. admin saved without changing status).
-            return
-
-        contest = obj.contest
-
-        if obj.status == ContestPublicRequest.APPROVED:
-            if not contest.is_visible:
-                contest.is_visible = True
-                contest.save(update_fields=["is_visible"])
-            body = "**[System]** Admin approved this contest's public request."
-            if obj.feedback:
-                body += f"\n\n> {obj.feedback}"
-            post_system_comment_on_contest_review(contest, body)
-
-            if obj.requested_by:
-                Notification.objects.create_notification(
-                    owner=obj.requested_by,
-                    category=NotificationCategory.CONTEST_PUBLIC_REQUEST_APPROVED,
-                    html_link=f'<a href="/contest/{contest.key}/">{contest.name}</a>',
-                    author=request.user.profile,
-                )
-
-        elif obj.status == ContestPublicRequest.REJECTED:
-            body = "**[System]** Admin rejected this contest's public request."
-            if obj.feedback:
-                body += f"\n\n> {obj.feedback}"
-            post_system_comment_on_contest_review(contest, body)
-
-            if obj.requested_by:
-                Notification.objects.create_notification(
-                    owner=obj.requested_by,
-                    category=NotificationCategory.CONTEST_PUBLIC_REQUEST_REJECTED,
-                    html_link=(
-                        f'<a href="/contest/{contest.key}/review/">{contest.name}</a>'
-                    ),
-                    author=request.user.profile,
-                )
+        if is_decision:
+            post_contest_decision_side_effects(
+                obj.contest, target, request.user.profile, obj.feedback or ""
+            )
 
 
 admin.site.register(ContestPublicRequest, ContestPublicRequestAdmin)
