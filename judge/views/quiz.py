@@ -71,7 +71,9 @@ class QuizEditorMixin(UserPassesTestMixin):
         return self.request.user.is_authenticated
 
     def handle_no_permission(self):
-        raise PermissionDenied(_("You do not have permission to manage quizzes."))
+        if self.request.user.is_authenticated:
+            raise PermissionDenied(_("You do not have permission to manage quizzes."))
+        return super().handle_no_permission()  # anonymous -> redirect to login
 
 
 class QuestionAccessMixin(UserPassesTestMixin):
@@ -96,7 +98,9 @@ class QuestionAccessMixin(UserPassesTestMixin):
         return question.is_editor(self.request.user.profile)
 
     def handle_no_permission(self):
-        raise Http404()
+        if self.request.user.is_authenticated:
+            raise Http404()  # hide existence from authenticated non-editors
+        return super().handle_no_permission()  # anonymous -> redirect to login
 
 
 class QuestionEditorMixin(UserPassesTestMixin):
@@ -112,7 +116,11 @@ class QuestionEditorMixin(UserPassesTestMixin):
         return question.is_editable_by(self.request.user)
 
     def handle_no_permission(self):
-        raise PermissionDenied(_("You do not have permission to edit this question."))
+        if self.request.user.is_authenticated:
+            raise PermissionDenied(
+                _("You do not have permission to edit this question.")
+            )
+        return super().handle_no_permission()  # anonymous -> redirect to login
 
 
 class QuizObjectEditorMixin(UserPassesTestMixin):
@@ -127,7 +135,9 @@ class QuizObjectEditorMixin(UserPassesTestMixin):
         return quiz.is_editable_by(self.request.user)
 
     def handle_no_permission(self):
-        raise PermissionDenied(_("You do not have permission to edit this quiz."))
+        if self.request.user.is_authenticated:
+            raise PermissionDenied(_("You do not have permission to edit this quiz."))
+        return super().handle_no_permission()  # anonymous -> redirect to login
 
 
 class PendingGradingCountMixin:

@@ -1,6 +1,7 @@
 from django.views.generic import ListView, View
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.translation import gettext as _
-from django.http import Http404, JsonResponse
+from django.http import JsonResponse
 
 from judge.models import Notification, Profile
 from judge.models.notification import unseen_notifications_count, NotificationCategory
@@ -9,16 +10,13 @@ from judge.utils.infinite_paginator import InfinitePaginationMixin
 __all__ = ["NotificationList", "NotificationMarkAsRead"]
 
 
-class NotificationList(InfinitePaginationMixin, ListView):
+class NotificationList(LoginRequiredMixin, InfinitePaginationMixin, ListView):
     model = Notification
     context_object_name = "notifications"
     template_name = "notification/list.html"
     paginate_by = 50
 
     def get_queryset(self):
-        if not self.request.user.is_authenticated:
-            raise Http404()
-
         # Get filter parameters
         category = self.request.GET.get("category", "")
         status = self.request.GET.get("status", "")  # 'read', 'unread', or ''
@@ -67,13 +65,6 @@ class NotificationList(InfinitePaginationMixin, ListView):
         context["unread_notifications"] = unread_notifications
 
         return context
-
-    def get(self, request, *args, **kwargs):
-        ret = super().get(request, *args, **kwargs)
-        if not request.user.is_authenticated:
-            raise Http404()
-
-        return ret
 
 
 class NotificationMarkAsRead(View):
