@@ -13,7 +13,7 @@ from django.utils.translation import gettext as _, gettext_noop
 from django.http import Http404
 
 from judge.models import Problem, Submission
-from judge.models.course import BestSubmission
+from judge.models.submission import BestSubmission
 from judge.ml.vector_store import VectorStore
 from judge.caching import cache_wrapper
 

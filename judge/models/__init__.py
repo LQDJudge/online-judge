@@ -60,6 +60,7 @@ from judge.models.submission import (
     Submission,
     SubmissionSource,
     SubmissionTestCase,
+    BestSubmission,
 )
 
 from judge.models.ticket import Ticket, TicketMessage
@@ -73,7 +74,6 @@ from judge.models.course import (
     CourseContest,
     CourseLessonPrerequisite,
     CourseLessonProgress,
-    BestSubmission,
 )
 from judge.models.quiz import (
     QuizQuestion,
