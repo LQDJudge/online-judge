@@ -987,6 +987,11 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
     model = CourseLesson
 
     def dispatch(self, request, *args, **kwargs):
+        # Auth-required route: anonymous users go to login (project convention).
+        # This view bypasses CourseEditableMixin.dispatch (see super() call below),
+        # so the anonymous redirect must be repeated here.
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         # First, set up the course from CourseDetailMixin without calling FormView dispatch
         self.course = get_object_or_404(Course, slug=kwargs["slug"])
         if not Course.is_accessible_by(self.course, request.profile):

@@ -30,7 +30,7 @@ class AuthRedirectTest(TestCase):
             is_public=True,
             is_open=True,
         )
-        CourseLesson.objects.create(
+        self.lesson = CourseLesson.objects.create(
             course=self.course, title="L1", content="c", order=1, points=100
         )
 
@@ -66,3 +66,19 @@ class AuthRedirectTest(TestCase):
     # --- NotificationList (LoginRequiredMixin) ---
     def test_notification_anonymous_redirects_to_login(self):
         self._assert_login_redirect(reverse("notification"))
+
+    # --- EditCourseLessonsViewNewWindow (bypasses CourseEditableMixin) ---
+    def test_edit_course_lessons_new_anonymous_redirects_to_login(self):
+        self._assert_login_redirect(
+            reverse("edit_course_lessons_new", args=[self.course.slug, self.lesson.id])
+        )
+
+    # --- InternalView (superuser-only admin tooling) ---
+    def test_internal_anonymous_redirects_to_login(self):
+        self._assert_login_redirect(reverse("internal_problem_queue"))
+
+    def test_internal_authenticated_non_superuser_forbidden(self):
+        self.client.force_login(self.profile.user)
+        self.assertEqual(
+            self.client.get(reverse("internal_problem_queue")).status_code, 403
+        )

@@ -5,6 +5,7 @@ import logging
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q, Max, Avg
@@ -1301,6 +1302,8 @@ class CourseLessonQuizCreate(
     fields = ["quiz", "max_attempts", "points", "order", "is_visible"]
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         self.lesson = self.get_lesson()
         course = self.lesson.course
         if not Course.is_editable_by(course, request.profile):
@@ -1343,6 +1346,8 @@ class CourseLessonQuizEdit(LoginRequiredMixin, QuizEditorMixin, TitleMixin, Upda
     fields = ["max_attempts", "points", "order", "is_visible"]
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         obj = self.get_object()
         if not Course.is_editable_by(obj.lesson.course, request.profile):
             raise PermissionDenied(_("You do not have permission to edit this course."))
@@ -1372,6 +1377,8 @@ class CourseLessonQuizDelete(
     pk_url_kwarg = "quiz_id"
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         obj = self.get_object()
         if not Course.is_editable_by(obj.lesson.course, request.profile):
             raise PermissionDenied(_("You do not have permission to edit this course."))
@@ -2205,6 +2212,8 @@ class QuizAttemptList(LoginRequiredMixin, TitleMixin, ListView):
         return self._quiz
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         quiz = self.get_quiz()
         in_contest = getattr(request, "in_contest", False)
         if not quiz.is_accessible_by(request.user, in_contest):
@@ -3100,6 +3109,8 @@ class LessonQuizMixin:
         return Course.is_accessible_by(self.get_course(), user.profile)
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         if not self.check_enrollment(request.user):
             raise Http404()
         return super().dispatch(request, *args, **kwargs)

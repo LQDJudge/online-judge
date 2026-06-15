@@ -11,7 +11,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from judge.models import Language, Profile
+from judge.models import Course, CourseLesson, CourseLessonQuiz, Language, Profile
 from judge.models.quiz import Quiz, QuizQuestion
 
 
@@ -32,6 +32,20 @@ class QuizAccessRedirectTest(TestCase):
             content="?",
             choices=[{"id": "a", "text": "1"}],
             correct_answers={"answers": "a"},
+        )
+        # Course/lesson/lesson-quiz fixtures for the course-lesson quiz routes.
+        self.course = Course.objects.create(
+            name="Quiz Course",
+            slug="quizcourse",
+            about="about",
+            is_public=True,
+            is_open=True,
+        )
+        self.lesson = CourseLesson.objects.create(
+            course=self.course, title="L1", content="c", order=1, points=100
+        )
+        self.lesson_quiz = CourseLessonQuiz.objects.create(
+            lesson=self.lesson, quiz=self.quiz, is_visible=True
         )
 
     def _assert_login_redirect(self, url):
@@ -72,4 +86,53 @@ class QuizAccessRedirectTest(TestCase):
                 reverse("question_bank_edit", args=[self.question.pk])
             ).status_code,
             403,
+        )
+
+    # --- CourseLessonQuizCreate (self-rolled dispatch: course-editor only) ---
+    def test_lesson_quiz_create_anonymous_redirects_to_login(self):
+        self._assert_login_redirect(
+            reverse(
+                "course_lesson_quiz_create", args=[self.course.slug, self.lesson.id]
+            )
+        )
+
+    def test_lesson_quiz_create_authenticated_non_editor_forbidden(self):
+        self.client.force_login(self.profile.user)
+        self.assertEqual(
+            self.client.get(
+                reverse(
+                    "course_lesson_quiz_create", args=[self.course.slug, self.lesson.id]
+                )
+            ).status_code,
+            403,
+        )
+
+    # --- CourseLessonQuizEdit / CourseLessonQuizDelete (self-rolled dispatch) ---
+    def test_lesson_quiz_edit_anonymous_redirects_to_login(self):
+        self._assert_login_redirect(
+            reverse(
+                "course_lesson_quiz_edit",
+                args=[self.course.slug, self.lesson.id, self.lesson_quiz.id],
+            )
+        )
+
+    def test_lesson_quiz_delete_anonymous_redirects_to_login(self):
+        self._assert_login_redirect(
+            reverse(
+                "course_lesson_quiz_delete",
+                args=[self.course.slug, self.lesson.id, self.lesson_quiz.id],
+            )
+        )
+
+    # --- QuizAttemptList (LoginRequiredMixin, but dispatch 404s anonymous first) ---
+    def test_quiz_attempt_list_anonymous_redirects_to_login(self):
+        self._assert_login_redirect(reverse("quiz_attempt_list", args=[self.quiz.code]))
+
+    # --- LessonQuizMixin (lesson quiz student views: enrollment required) ---
+    def test_lesson_quiz_detail_anonymous_redirects_to_login(self):
+        self._assert_login_redirect(
+            reverse(
+                "lesson_quiz_detail",
+                args=[self.course.slug, self.lesson.id, self.quiz.code],
+            )
         )
