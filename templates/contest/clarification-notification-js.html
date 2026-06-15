@@ -1,0 +1,9 @@
+<script type="text/javascript">
+  window.notify_clarification = function(msg) {
+    var targetLabel = msg.target_label;
+    if (!targetLabel) {
+      targetLabel = msg.contest_wide ? msg.problem__name : `Problem ${msg.order} (${msg.problem__name})`;
+    }
+    alert(targetLabel + ':\n' + msg.description);
+  };
+</script>

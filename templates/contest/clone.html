@@ -1,12 +1,15 @@
-{% extends "base.html" %}
+{% extends "two-column-content.html" %}
+{% set page_type = 'clone' %}
 
-{% block media %}
+{% block left_sidebar %}
+  {% set title = contest.name %}
+  {% include "contest/contest-tabs.html" %}
+{% endblock %}
+
+{% block two_col_media %}
   <style>
     #contest-clone-panel {
-      position: relative;
-      margin: 5em auto auto -10em;
-      top: 40%;
-      left: 50%;
+      max-width: 650px;
     }
 
     #contest-key-container {
@@ -59,7 +62,8 @@
   </script>
 {% endblock %}
 
-{% block body %}
+{% block middle_content %}
+  <h2 class="contest-form-title">{{ title }}</h2>
   <form id="contest-clone-panel" action="" method="post" class="form-area">
     {% csrf_token %}
 
@@ -94,7 +98,7 @@
     </div>
 
     {% if form.errors %}
-      <ul style="color: red;">
+      <ul class="contest-clone-errors">
         {% for field_name, error_list in form.errors.items() %}
           <li>{{ error_list.0 }}</li>
         {% endfor %}

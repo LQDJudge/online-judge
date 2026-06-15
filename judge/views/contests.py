@@ -718,8 +718,11 @@ class ContestDetail(
         # Clarifications
         if self.object.use_clarifications:
             context["clarifications"] = (
-                ContestProblemClarification.objects.filter(problem__contest=self.object)
-                .select_related("problem__problem")
+                ContestProblemClarification.objects.filter(
+                    Q(problem__contest=self.object)
+                    | Q(contest=self.object, problem__isnull=True)
+                )
+                .select_related("contest", "problem__problem")
                 .order_by("-date")
             )
 
@@ -829,8 +832,11 @@ class ContestProblems(ContestMixin, SolvedProblemMixin, TitleMixin, DetailView):
         # Clarifications
         if contest.use_clarifications:
             context["clarifications"] = (
-                ContestProblemClarification.objects.filter(problem__contest=contest)
-                .select_related("problem__problem")
+                ContestProblemClarification.objects.filter(
+                    Q(problem__contest=contest)
+                    | Q(contest=contest, problem__isnull=True)
+                )
+                .select_related("contest", "problem__problem")
                 .order_by("-date")
             )
 
@@ -2018,49 +2024,52 @@ class NewContestClarificationView(ContestMixin, TitleMixin, SingleObjectFormView
     def is_accessible(self):
         if not self.request.user.is_authenticated:
             return False
-        if not self.request.in_contest:
-            return False
-        if not self.request.participation.contest == self.get_object():
-            return False
         return self.get_object().is_editable_by(self.request.user)
 
     def get(self, request, *args, **kwargs):
         if not self.is_accessible():
             raise Http404()
-        return super().get(self, request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        problem_code = self.request.POST["problem"]
+        contest = self.get_object()
+        problem_code = self.request.POST.get("problem")
         description = form.cleaned_data["body"]
 
-        clarification = ContestProblemClarification(description=description)
-        clarification.problem = get_object_or_404(
-            ContestProblem, contest=self.get_object(), problem__code=problem_code
+        clarification = ContestProblemClarification(
+            contest=contest,
+            description=description,
         )
+        if problem_code != "__contest__":
+            clarification.problem = get_object_or_404(
+                ContestProblem, contest=contest, problem__code=problem_code
+            )
         clarification.save()
 
-        return HttpResponseRedirect(
-            reverse("contest_view", args=(self.get_object().key,))
-        )
+        return HttpResponseRedirect(reverse("contest_view", args=(contest.key,)))
 
     def get_title(self):
-        return "New clarification for %s" % self.object.name
+        return _("New clarification for %(contest)s") % {"contest": self.object.name}
 
     def get_content_title(self):
         return mark_safe(
-            escape(_("New clarification for %s"))
-            % format_html(
-                '<a href="{0}">{1}</a>',
-                reverse("problem_detail", args=[self.object.key]),
-                self.object.name,
-            )
+            escape(_("New clarification for %(contest)s"))
+            % {
+                "contest": format_html(
+                    '<a href="{0}">{1}</a>',
+                    reverse("contest_view", args=[self.object.key]),
+                    self.object.name,
+                )
+            }
         )
 
     def get_context_data(self, **kwargs):
         context = super(NewContestClarificationView, self).get_context_data(**kwargs)
-        context["problems"] = ContestProblem.objects.filter(
-            contest=self.object
-        ).order_by("order")
+        context["problems"] = (
+            ContestProblem.objects.filter(contest=self.object, problem__isnull=False)
+            .select_related("problem")
+            .order_by("order")
+        )
         return context
 
 
@@ -2074,23 +2083,43 @@ class ContestClarificationAjax(ContestMixin, DetailView):
         last_one_minute = timezone.now() - timezone.timedelta(minutes=polling_time)
 
         queryset = ContestProblemClarification.objects.filter(
-            problem__in=self.object.contest_problems.all(), date__gte=last_one_minute
-        )
+            Q(problem__contest=self.object)
+            | Q(contest=self.object, problem__isnull=True),
+            date__gte=last_one_minute,
+        ).select_related("problem__problem")
 
         problems = list(
-            ContestProblem.objects.filter(contest=self.object)
+            ContestProblem.objects.filter(contest=self.object, problem__isnull=False)
             .order_by("order")
             .values_list("problem__code", flat=True)
         )
         res = []
         for clarification in queryset:
-            value = {
-                "order": self.object.get_label_for_problem(
+            if clarification.problem_id:
+                order = self.object.get_label_for_problem(
                     problems.index(clarification.problem.problem.code)
-                ),
-                "problem__name": clarification.problem.problem.name,
-                "description": clarification.description,
-            }
+                )
+                problem_name = clarification.problem.problem.name
+                value = {
+                    "target_label": _("Problem %(order)s (%(name)s)")
+                    % {
+                        "order": order,
+                        "name": problem_name,
+                    },
+                    "contest_wide": False,
+                    "order": order,
+                    "problem__name": problem_name,
+                    "description": clarification.description,
+                }
+            else:
+                problem_name = _("Entire contest")
+                value = {
+                    "target_label": problem_name,
+                    "contest_wide": True,
+                    "order": "",
+                    "problem__name": problem_name,
+                    "description": clarification.description,
+                }
             res.append(value)
 
         return JsonResponse(res, safe=False, json_dumps_params={"ensure_ascii": False})
