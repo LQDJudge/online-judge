@@ -693,8 +693,9 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, ListView
 
             participation = self.request.profile.current_contest
             clarifications = ContestProblemClarification.objects.filter(
-                problem__in=participation.contest.contest_problems.all()
-            )
+                Q(problem__contest=participation.contest)
+                | Q(contest=participation.contest, problem__isnull=True)
+            ).select_related("contest", "problem__problem")
             context["has_clarifications"] = clarifications.count() > 0
             context["clarifications"] = clarifications.order_by("-date")
             context["current_contest"] = participation.contest

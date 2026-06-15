@@ -197,7 +197,11 @@ window.register_notify = function (type, options) {
 };
 
 window.notify_clarification = function(msg) {
-    var message = `Problem ${msg.order} (${msg.problem__name}):\n` + msg.description;
+    var targetLabel = msg.target_label;
+    if (!targetLabel) {
+        targetLabel = msg.contest_wide ? msg.problem__name : `Problem ${msg.order} (${msg.problem__name})`;
+    }
+    var message = targetLabel + ':\n' + msg.description;
     alert(message);
 }
 

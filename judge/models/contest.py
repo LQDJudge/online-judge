@@ -984,7 +984,9 @@ class ContestProblem(models.Model):
 
     @property
     def clarifications(self):
-        return ContestProblemClarification.objects.filter(problem=self)
+        return ContestProblemClarification.objects.filter(
+            Q(problem=self) | Q(contest=self.contest, problem__isnull=True)
+        ).select_related("contest", "problem__problem")
 
     @property
     def display_name(self):
@@ -1116,8 +1118,19 @@ class ContestMoss(models.Model):
 
 
 class ContestProblemClarification(models.Model):
+    contest = models.ForeignKey(
+        Contest,
+        verbose_name=_("clarified contest"),
+        on_delete=CASCADE,
+        null=True,
+        blank=True,
+    )
     problem = models.ForeignKey(
-        ContestProblem, verbose_name=_("clarified problem"), on_delete=CASCADE
+        ContestProblem,
+        verbose_name=_("clarified problem"),
+        on_delete=CASCADE,
+        null=True,
+        blank=True,
     )
     description = models.TextField(verbose_name=_("clarification body"))
     date = models.DateTimeField(

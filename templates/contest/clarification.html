@@ -1,11 +1,17 @@
-{% extends "base.html" %}
+{% extends "two-column-content.html" %}
+{% set page_type = 'problems' %}
 
-{% block media %}
+{% block left_sidebar %}
+  {% set title = contest.name %}
+  {% include "contest/contest-tabs.html" %}
+{% endblock %}
+
+{% block two_col_media %}
   {{ form.media.css }}
   <style>
     form#clarification-form {
       display: block;
-      margin: 0 auto;
+      margin: 0;
       width: 100%;
       max-width: 750px;
       padding-top: 1em;
@@ -13,6 +19,10 @@
 
     #id_title {
       width: 100%;
+    }
+
+    #problem-select {
+      max-width: 100%;
     }
 
     form#clarification-form .submit {
@@ -25,12 +35,13 @@
   {{ form.media.js }}
   <script>
     $(function() {
-      $('#problem-select').select2({width: '40em'});
+      $('#problem-select').select2({width: '100%'});
     });
   </script>
 {% endblock %}
 
-{% block body %}
+{% block middle_content %}
+  <h2 class="contest-form-title">{{ content_title or title }}</h2>
   <form id="clarification-form" action="" method="POST" class="form-area">
     {% csrf_token %}
     {% if form.body.errors %}
@@ -39,8 +50,11 @@
       </div>
     {% endif %}
     <h4>
-      <span>{{_('Problem')}}: </span>
+      <span>{{_('Target')}}: </span>
       <select name="problem" id="problem-select">
+        <option value="__contest__" class="point-dropdown">
+          {{ _('Entire contest') }}
+        </option>
         {% for problem in problems %}
           <option value="{{ problem.problem.code }}" class="point-dropdown">
             {{ problem.order }}. {{problem.problem.name}}
