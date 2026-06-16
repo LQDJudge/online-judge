@@ -839,6 +839,11 @@ urlpatterns = [
                     name="course_grades_lesson",
                 ),
                 re_path(
+                    r"^/grades/lesson/(?P<id>\d+)/submissions/(?P<user>\w+)/(?P<problem>\w+)/ajax$",
+                    course.CourseLessonUserSubmissionsAjax.as_view(),
+                    name="course_lesson_user_submissions_ajax",
+                ),
+                re_path(
                     r"^/lesson/(?P<lesson_id>\d+)/clone$",
                     course.LessonClone.as_view(),
                     name="clone_course_lesson",

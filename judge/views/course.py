@@ -12,7 +12,8 @@ from django.forms import (
 )
 from django.core.files.uploadedfile import UploadedFile
 from django.http import Http404, HttpResponseRedirect, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.defaultfilters import floatformat
 from django.urls import reverse_lazy, reverse
 from django.utils.html import escape, mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -39,6 +40,8 @@ from judge.models import (
     QuizAttempt,
     BestSubmission,
     BestQuizAttempt,
+    Problem,
+    Submission,
 )
 from judge.models.course import RoleInCourse, EDITABLE_ROLES
 from judge.utils.course_prerequisites import get_lesson_lock_status
@@ -1954,6 +1957,64 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
             self.course, self.request.profile, self.is_editable
         )
         return context
+
+
+class CourseLessonUserSubmissionsAjax(CourseAccessibleMixin, View):
+    """AJAX fragment: a student's submissions for a problem in a lesson.
+
+    Rendered into the featherlight popup opened from a problem score cell on the
+    lesson grades page. Permission is course-level (CourseAccessibleMixin):
+    anonymous -> login, non-member -> 403. The link to a submission's source only
+    shows if the *viewer* can access it (gated in the template).
+    """
+
+    POPUP_LIMIT = 50
+
+    def get(self, request, *args, **kwargs):
+        lesson = get_object_or_404(
+            CourseLesson, course=self.course, id=self.kwargs["id"]
+        )
+        if not lesson.is_visible and not self.is_editable:
+            raise Http404()
+
+        student = get_object_or_404(Profile, user__username=self.kwargs["user"])
+        problem = get_object_or_404(Problem, code=self.kwargs["problem"])
+
+        # problem must belong to this lesson (get_problems_and_scores -> dicts)
+        lesson_problem_ids = {
+            ps["problem_id"] for ps in lesson.get_problems_and_scores()
+        }
+        if problem.id not in lesson_problem_ids:
+            raise Http404()
+
+        # target student must be enrolled (get_students() returns a LIST, use CourseRole)
+        if not CourseRole.objects.filter(course=self.course, user=student).exists():
+            raise Http404()
+
+        qs = (
+            Submission.objects.filter(user=student, problem=problem)
+            .select_related("language", "problem")
+            .order_by("-id")
+        )
+        submissions = list(qs[: self.POPUP_LIMIT])
+        has_more = qs.count() > self.POPUP_LIMIT
+        for s in submissions:
+            s.display_point = "{} / {}".format(
+                floatformat(s.points, -2), floatformat(problem.points, -2)
+            )
+
+        return render(
+            request,
+            "course/lesson_user_submissions_ajax.html",
+            {
+                "course": self.course,
+                "lesson": lesson,
+                "problem": problem,
+                "profile": student,
+                "submissions": submissions,
+                "has_more": has_more,
+            },
+        )
 
 
 class AddCourseContestForm(forms.ModelForm):
