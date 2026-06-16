@@ -50,6 +50,7 @@ class NotificationCategory(models.TextChoices):
     CONTEST_PUBLIC_REQUEST_REVIEW_ERROR = "contest_public_request_review_error", _(
         "Contest auto-review error"
     )
+    REVIEW_COMMENT = "review_comment", _("New review comment")
 
 
 class NotificationManager(models.Manager):
