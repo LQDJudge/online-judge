@@ -236,7 +236,7 @@
          to the contest review dashboard. Only visible on private contests. #}
       <div class="form-actions" style="margin-top: 1em;">
         <button type="submit" class="action-btn">{{ _('Save') }}</button>
-        {% if not contest.is_visible %}
+        {% if (not contest.is_visible or contest.is_organization_private) and contest.can_request_public_by(request.user) %}
           {% if contest_public_request %}
             {# A PENDING ContestPublicRequest already exists. Tell the author
                so they don't keep retrying, and offer a Cancel button so they
@@ -261,7 +261,7 @@
       </div>
     </form>
 
-    {% if not contest.is_visible %}
+    {% if not contest.is_visible or contest.is_organization_private %}
       <script>
         (function () {
           var btn = document.getElementById("contest-request-public-btn");

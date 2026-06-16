@@ -802,7 +802,7 @@ def request_public(request):
         return JsonResponse({"success": False, "error": "Problem not found"})
 
     # Guard 1: Permission
-    if not problem.is_editable_by(request.user):
+    if not problem.can_request_public_by(request.user):
         return JsonResponse({"success": False, "error": "Permission denied"})
 
     # If auto-review is disabled, fall back to legacy behavior.
@@ -938,7 +938,7 @@ def cancel_request_public(request):
         problem = Problem.objects.get(id=problem_id)
     except Exception:
         return JsonResponse({"success": False, "error": "Problem not found"})
-    if not problem.is_editable_by(request.user):
+    if not problem.can_request_public_by(request.user):
         return JsonResponse({"success": False, "error": "Permission denied"})
     deleted, _ignored = PublicRequest.objects.filter(
         problem=problem, status=PublicRequest.PENDING
