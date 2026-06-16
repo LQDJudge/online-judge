@@ -327,6 +327,25 @@ class Problem(CacheableModel, PageVotable, Bookmarkable):
             return True
         return self.is_editor(user.profile)
 
+    def can_request_public_by(self, user):
+        """Who may request this problem be made public site-wide.
+
+        Publishing site-wide is a vetted-setter action — someone has to take
+        responsibility — so the requester must hold the ``judge.add_problem``
+        qualification AND be able to edit this problem. Superusers always
+        qualify. (Editing itself only needs ``is_editable_by``: co-authors can
+        collaborate freely; only the publish step requires the qualification.)
+
+        The qualification is re-checked here (not just at problem creation) so
+        an unqualified user can't bypass it by getting a qualified friend to
+        create a problem and add them as a co-author/curator and then publish.
+        """
+        if not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        return self.is_editable_by(user) and user.has_perm("judge.add_problem")
+
     def is_accessible_by(self, user, in_contest=True):
         # Problem is public.
         if self.is_public:

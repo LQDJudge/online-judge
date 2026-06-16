@@ -37,6 +37,7 @@ from judge.models.comment import (
     get_visible_top_level_comment_count,
 )
 from judge.models.profile import Profile, get_contribution_rank
+from judge.review.comment_notify import notify_review_comment
 from judge.utils.contribution import is_content_public
 from judge.utils.ratelimit import ratelimit
 from judge.views.comment.forms import CommentForm
@@ -357,6 +358,12 @@ def post_comment(request):
         )
 
     add_mention_notifications(comment)
+
+    # Review threads are anchored to a Problem/Contest review run, which has no
+    # `.authors`, so the page-authors branch above skips them. Notify the
+    # review audience (superusers + the item's authors/curators) explicitly.
+    # No-op for non-review targets.
+    notify_review_comment(comment, target_object, comment_notif_link)
 
     # Note: save() override in Comment model also dirties cache on new comments,
     # but we keep this explicit call for clarity

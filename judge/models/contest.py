@@ -660,6 +660,24 @@ class Contest(models.Model, PageVotable, Bookmarkable):
 
         return False
 
+    def can_request_public_by(self, user):
+        """Who may request this contest be made public site-wide.
+
+        Mirrors the problem flow's qualification model: requesting site-wide
+        public is a vetted-setter action, so the requester must hold the same
+        qualification needed to author/publish problems (``judge.add_problem``)
+        AND be able to edit this contest. Superusers always qualify.
+
+        Used by the Request public / Re-run / Cancel controls on the contest
+        edit page and their endpoints, so the button is shown to exactly the
+        users who can actually use it.
+        """
+        if not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        return self.is_editable_by(user) and user.has_perm("judge.add_problem")
+
     @classmethod
     def get_visible_contests(cls, user, show_own_contests_only=False):
         if not user.is_authenticated:

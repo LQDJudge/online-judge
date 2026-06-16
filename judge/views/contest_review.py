@@ -307,7 +307,7 @@ def contest_request_public(request, contest):
     contest_obj = get_object_or_404(Contest, key=contest)
 
     # Guard 1: Permission.
-    if not contest_obj.is_editable_by(request.user):
+    if not contest_obj.can_request_public_by(request.user):
         return JsonResponse({"success": False, "error": "Permission denied"})
 
     # Ops kill switch — when False, new public requests refuse. Existing
@@ -447,7 +447,7 @@ def contest_request_cancel(request, contest):
     if not request.user.is_authenticated:
         return HttpResponseForbidden()
     contest_obj = get_object_or_404(Contest, key=contest)
-    if not contest_obj.is_editable_by(request.user):
+    if not contest_obj.can_request_public_by(request.user):
         return JsonResponse({"success": False, "error": "Permission denied"})
     deleted, _ignored = ContestPublicRequest.objects.filter(
         contest=contest_obj, status=ContestPublicRequest.PENDING

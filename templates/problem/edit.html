@@ -615,7 +615,7 @@
       <div class="form-actions" style="margin-top: 1em;">
         <button type="submit" class="action-btn">{{ _('Save') }}</button>
 
-        {% if not problem.is_public or problem.is_organization_private %}
+        {% if (not problem.is_public or problem.is_organization_private) and problem.can_request_public_by(request.user) %}
           {% if public_request and public_request.status == 'P' %}
             <span class="form-actions-status alert alert-info">
               <i class="fa fa-clock"></i> {{_("Awaiting admin approval.")}}
