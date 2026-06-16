@@ -122,8 +122,11 @@ class LessonGradesPopupTest(TestCase):
             self.client.get(self._url(problem=self.other_problem)).status_code, 404
         )
 
-    def test_no_submissions_message(self):
+    def test_no_submissions_empty_state(self):
+        # viewer (enrolled) has no submissions to the problem -> no submissions table.
+        # Assert on the stable CSS class, not the translatable "No submissions yet."
+        # string (which renders in Vietnamese once translations are compiled).
         self.client.force_login(self.viewer.user)
         resp = self.client.get(self._url(student=self.viewer))
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "No submissions yet")
+        self.assertNotContains(resp, "lightbox-submissions")

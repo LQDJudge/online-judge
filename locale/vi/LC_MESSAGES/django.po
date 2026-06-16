@@ -13619,3 +13619,15 @@ msgstr "Bạn không có quyền truy cập \"%s\"."
 
 msgid "The page \"%s\" doesn't exist or you don't have permission to view it."
 msgstr "Trang \"%s\" không tồn tại hoặc bạn không có quyền truy cập."
+
+#: templates/course/lesson_user_submissions_ajax.html:1
+msgid "Submissions of"
+msgstr "Bài nộp của"
+
+#: templates/course/lesson_user_submissions_ajax.html:21
+msgid "See all submissions"
+msgstr "Xem tất cả bài nộp"
+
+#: templates/course/lesson_user_submissions_ajax.html:25
+msgid "No submissions yet."
+msgstr "Chưa có bài nộp nào."
