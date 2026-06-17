@@ -6,6 +6,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.views import redirect_to_login
 from django.db import transaction
 from django.db.models import Q
 from django.http import Http404, HttpResponseForbidden, JsonResponse
@@ -58,6 +59,8 @@ logger = logging.getLogger(__name__)
 
 class InternalView(object):
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         if request.user.is_superuser:
             return super(InternalView, self).dispatch(request, *args, **kwargs)
         return HttpResponseForbidden()

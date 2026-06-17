@@ -2,6 +2,7 @@ from copy import deepcopy
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from django.db.models import Max, Sum, Q
 from django.forms import (
@@ -60,6 +61,7 @@ from judge.utils.views import (
     SingleObjectFormView,
     TitleMixin,
     DiggPaginatorMixin,
+    generic_message,
     paginate_query_context,
 )
 
@@ -426,8 +428,9 @@ class CourseAdd(CoursePermissionMixin, LoginRequiredMixin, TitleMixin, CreateVie
         return _("Add Course")
 
     def dispatch(self, request, *args, **kwargs):
+        # Auth-required route: anonymous users go to login (project convention).
         if not request.user.is_authenticated:
-            raise Http404()
+            return redirect_to_login(request.get_full_path())
 
         if request.user.is_superuser:
             return super().dispatch(request, *args, **kwargs)
@@ -536,14 +539,25 @@ class CourseAccessibleMixin(CourseDetailMixin):
     """Requires the user to be enrolled in the course (any role)."""
 
     def dispatch(self, request, *args, **kwargs):
+        # Auth-required route: anonymous users go to login (project convention).
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         res = super(CourseAccessibleMixin, self).dispatch(request, *args, **kwargs)
         if not self.is_accessible:
-            raise Http404()
+            return generic_message(
+                request,
+                _("Access denied"),
+                _('You don\'t have permission to access "%s".') % request.path,
+                status=403,
+            )
         return res
 
 
 class CourseEditableMixin(CourseDetailMixin):
     def dispatch(self, request, *args, **kwargs):
+        # Auth-required route: anonymous users go to login (project convention).
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         res = super(CourseEditableMixin, self).dispatch(request, *args, **kwargs)
         if not self.is_editable:
             raise Http404()
@@ -564,6 +578,9 @@ class CourseEditableMixin(CourseDetailMixin):
 
 class CourseAdminMixin(CourseDetailMixin):
     def dispatch(self, request, *args, **kwargs):
+        # Auth-required route: anonymous users go to login (project convention).
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         res = super(CourseAdminMixin, self).dispatch(request, *args, **kwargs)
         # Allow admins, teachers, and assistants only
         if not (request.user.is_superuser or self.is_editable):
@@ -970,6 +987,11 @@ class EditCourseLessonsViewNewWindow(CourseEditableMixin, FormView):
     model = CourseLesson
 
     def dispatch(self, request, *args, **kwargs):
+        # Auth-required route: anonymous users go to login (project convention).
+        # This view bypasses CourseEditableMixin.dispatch (see super() call below),
+        # so the anonymous redirect must be repeated here.
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         # First, set up the course from CourseDetailMixin without calling FormView dispatch
         self.course = get_object_or_404(Course, slug=kwargs["slug"])
         if not Course.is_accessible_by(self.course, request.profile):

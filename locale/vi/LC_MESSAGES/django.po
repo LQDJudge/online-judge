@@ -14043,3 +14043,18 @@ msgstr "Chưa có mục nào."
 
 #~ msgid "Find similar"
 #~ msgstr "Tìm tương tự"
+
+msgid "This page doesn't exist or you don't have permission to view it."
+msgstr "Trang này không tồn tại hoặc bạn không có quyền truy cập."
+
+msgid "Page not available"
+msgstr "Trang không khả dụng"
+
+msgid "Access denied"
+msgstr "Truy cập bị từ chối"
+
+msgid "You don't have permission to access \"%s\"."
+msgstr "Bạn không có quyền truy cập \"%s\"."
+
+msgid "The page \"%s\" doesn't exist or you don't have permission to view it."
+msgstr "Trang \"%s\" không tồn tại hoặc bạn không có quyền truy cập."

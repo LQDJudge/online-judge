@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.utils.text import slugify
 from django.db.models import Count, Q, Subquery, OuterRef
@@ -373,6 +374,8 @@ class AdminOrganizationMixin(OrganizationMixin):
             self.organization
         ):
             return res
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         return generic_message(
             request,
             _("Can't edit organization"),
@@ -386,6 +389,8 @@ class MemberOrganizationMixin(OrganizationMixin):
         res = super(MemberOrganizationMixin, self).dispatch(request, *args, **kwargs)
         if not hasattr(self, "organization") or self.can_access(self.organization):
             return res
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         return generic_message(
             request,
             _("Can't access organization"),
@@ -408,6 +413,8 @@ class CommunityOrMemberMixin(OrganizationMixin):
         # Allow access if it's a community or if user can access
         if self.organization.is_community or self.can_access(self.organization):
             return res
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         return generic_message(
             request,
             _("Can't access organization"),

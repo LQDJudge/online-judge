@@ -14,22 +14,31 @@ def error404(request, exception=None):
         request,
         "generic-message.html",
         {
-            "title": _("404 error"),
-            "message": _('Could not find page "%s"') % request.path,
+            "title": _("Page not available"),
+            "message": _(
+                "The page \"%s\" doesn't exist or you don't have permission to"
+                " view it."
+            )
+            % request.path,
         },
         status=404,
     )
 
 
 def error403(request, exception=None):
-    return error(
+    # Prefer the specific message the view raised, e.g.
+    # PermissionDenied(_("You do not have permission to edit this quiz.")).
+    message = str(exception) if exception is not None else ""
+    if not message:
+        message = _('You don\'t have permission to access "%s".') % request.path
+    return render(
         request,
+        "generic-message.html",
         {
-            "id": "unauthorized_access",
-            "description": _("no permission for %s") % request.path,
-            "code": 403,
+            "title": _("Access denied"),
+            "message": message,
         },
-        403,
+        status=403,
     )
 
 
