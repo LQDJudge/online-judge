@@ -261,9 +261,15 @@ class Submission(models.Model):
             user_completed_ids,
             user_tester_ids,
             user_editable_ids,
+            editable_course_problem_ids,
         )
 
         if problem_id in user_editable_ids(profile):
+            return True
+
+        # Course editors (teacher/assistant) may view submissions to problems in
+        # their own courses. NOTE: site-wide visibility change — flagged for owner.
+        if problem_id in editable_course_problem_ids(profile):
             return True
 
         if self.problem_id in user_completed_ids(profile):

@@ -13,7 +13,12 @@ from django.utils.translation import gettext as _, gettext_noop
 from django.http import Http404
 
 from judge.models import Problem, Submission
-from judge.models.course import BestSubmission
+from judge.models.course import (
+    BestSubmission,
+    CourseLessonProblem,
+    CourseRole,
+    EDITABLE_ROLES,
+)
 from judge.ml.vector_store import VectorStore
 from judge.caching import cache_wrapper
 
@@ -23,6 +28,7 @@ __all__ = [
     "user_completed_ids",
     "user_editable_ids",
     "user_tester_ids",
+    "editable_course_problem_ids",
 ]
 
 
@@ -46,6 +52,31 @@ def user_editable_ids(profile):
         .distinct()
     )
     return result
+
+
+@cache_wrapper(prefix="editable_course_problems_v1")
+def editable_course_problem_ids(profile):
+    """Problem ids in lessons of courses the profile can edit (TEACHER/ASSISTANT).
+
+    Lets course editors view their students' submissions to those problems. Superusers
+    are already covered earlier (view_all_submission), so this only matters for
+    non-superuser course editors. Cached per profile; stale up to the cache timeout
+    after course-role / lesson-problem changes (acceptable).
+    """
+    if profile is None:
+        return set()
+    course_ids = list(
+        CourseRole.objects.filter(user=profile, role__in=EDITABLE_ROLES).values_list(
+            "course_id", flat=True
+        )
+    )
+    if not course_ids:
+        return set()
+    return set(
+        CourseLessonProblem.objects.filter(lesson__course_id__in=course_ids)
+        .values_list("problem_id", flat=True)
+        .distinct()
+    )
 
 
 @cache_wrapper(prefix="contest_complete")
