@@ -147,3 +147,17 @@ class TeacherSubmissionAccessTest(TestCase):
         self.client.force_login(self.teacher.user)
         resp = self.client.get(reverse("submission_status", args=[self.sub.id]))
         self.assertEqual(resp.status_code, 200)
+
+    # --- cache invalidation: revoking the role must revoke access immediately ---
+    def test_demoting_teacher_to_student_revokes_access(self):
+        role = CourseRole.objects.get(course=self.course, user=self.teacher)
+        self.assertTrue(self.sub.is_accessible_by(self.teacher))  # warms the cache
+        role.role = RoleInCourse.STUDENT
+        role.save()
+        self.assertFalse(self.sub.is_accessible_by(self.teacher))
+
+    def test_removing_role_revokes_access(self):
+        role = CourseRole.objects.get(course=self.course, user=self.teacher)
+        self.assertTrue(self.sub.is_accessible_by(self.teacher))  # warms the cache
+        role.delete()
+        self.assertFalse(self.sub.is_accessible_by(self.teacher))

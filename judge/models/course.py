@@ -248,6 +248,23 @@ class CourseRole(models.Model):
             couresrole.role = role
             couresrole.save()
 
+    def _dirty_editable_course_problem_cache(self, user):
+        # A role change/removal alters which problems this user (as a course editor)
+        # can see submissions for. Invalidate the cached set so access is revoked
+        # immediately, not after the cache timeout. See Submission.is_accessible_by.
+        from judge.utils.problems import editable_course_problem_ids
+
+        editable_course_problem_ids.dirty(user)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self._dirty_editable_course_problem_cache(self.user)
+
+    def delete(self, *args, **kwargs):
+        user = self.user
+        super().delete(*args, **kwargs)
+        self._dirty_editable_course_problem_cache(user)
+
     class Meta:
         unique_together = ("course", "user")
 
