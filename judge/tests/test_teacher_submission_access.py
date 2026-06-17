@@ -161,3 +161,21 @@ class TeacherSubmissionAccessTest(TestCase):
         self.assertTrue(self.sub.is_accessible_by(self.teacher))  # warms the cache
         role.delete()
         self.assertFalse(self.sub.is_accessible_by(self.teacher))
+
+    # --- cache invalidation: changing a lesson's problem set updates editor access ---
+    def test_adding_problem_to_lesson_grants_access(self):
+        # standalone problem isn't in any course yet -> teacher can't see it
+        self.assertFalse(
+            self.standalone_sub.is_accessible_by(self.teacher)
+        )  # warms cache
+        CourseLessonProblem.objects.create(
+            lesson=self.lesson, problem=self.standalone, order=2, score=50
+        )
+        self.assertTrue(self.standalone_sub.is_accessible_by(self.teacher))
+
+    def test_removing_problem_from_lesson_revokes_access(self):
+        self.assertTrue(self.sub.is_accessible_by(self.teacher))  # warms cache
+        CourseLessonProblem.objects.get(
+            lesson=self.lesson, problem=self.problem
+        ).delete()
+        self.assertFalse(self.sub.is_accessible_by(self.teacher))

@@ -378,12 +378,25 @@ class CourseLessonProblem(models.Model):
     order = models.IntegerField(verbose_name=_("order"), default=0)
     score = models.IntegerField(verbose_name=_("score"), default=0)
 
+    def _dirty_editors_problem_cache(self, course):
+        # Adding/removing a problem changes which problems each course editor can see
+        # submissions for. Invalidate the cached set for every editor of the course so
+        # access updates immediately. See Submission.is_accessible_by.
+        from judge.utils.problems import editable_course_problem_ids
+
+        for profile in Profile.objects.filter(
+            course_roles__course=course,
+            course_roles__role__in=EDITABLE_ROLES,
+        ):
+            editable_course_problem_ids.dirty(profile)
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         # Mark all users for recalculation when lesson content changes
         from judge.utils.course_prerequisites import mark_course_for_recalculation
 
         mark_course_for_recalculation(self.lesson.course)
+        self._dirty_editors_problem_cache(self.lesson.course)
 
     def delete(self, *args, **kwargs):
         course = self.lesson.course
@@ -392,6 +405,7 @@ class CourseLessonProblem(models.Model):
         from judge.utils.course_prerequisites import mark_course_for_recalculation
 
         mark_course_for_recalculation(course)
+        self._dirty_editors_problem_cache(course)
 
 
 class CourseContest(models.Model):
