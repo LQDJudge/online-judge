@@ -87,6 +87,7 @@ DMOJ_STATS_SUBMISSION_RESULT_COLORS = {
     "WA": "#ed4420",
     "CE": "#42586d",
     "ERR": "#ffa71c",
+    "HIDDEN": "#8a8f98",
 }
 DMOJ_PROFILE_IMAGE_ROOT = "profile_images"
 DMOJ_ORGANIZATION_IMAGE_ROOT = "organization_images"

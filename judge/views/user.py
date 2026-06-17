@@ -47,6 +47,10 @@ from judge.models.submission import (
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
 from judge.tasks import import_users
+from judge.utils.hidden_results import (
+    hidden_result_best_submission_problem_ids,
+    mark_hidden_result_submissions,
+)
 from judge.utils.problems import contest_completed_ids, user_completed_ids
 from judge.views.contests import compute_ranks
 from judge.utils.unicode import utf8text
@@ -131,11 +135,24 @@ class UserPage(TitleMixin, UserMixin, DetailView):
     def in_contest(self):
         return False
 
+    @cached_property
+    def hidden_result_best_submission_problem_ids(self):
+        if self.profile is None:
+            return set()
+        return hidden_result_best_submission_problem_ids(
+            self.profile, self.request.user
+        )
+
     def get_completed_problems(self):
         if self.in_contest:
             return contest_completed_ids(self.profile.current_contest)
         else:
-            return user_completed_ids(self.profile) if self.profile is not None else ()
+            if self.profile is None:
+                return ()
+            return (
+                user_completed_ids(self.profile)
+                - self.hidden_result_best_submission_problem_ids
+            )
 
     def get_context_data(self, **kwargs):
         context = super(UserPage, self).get_context_data(**kwargs)
@@ -239,6 +256,29 @@ class UserAboutPage(UserPage):
 class UserProblemsPage(UserPage):
     template_name = "user/user-problems.html"
 
+    @cached_property
+    def hidden_result_problem_codes(self):
+        hidden_problem_ids = (
+            self.hidden_result_best_submission_problem_ids
+            if self.object == self.profile
+            else hidden_result_best_submission_problem_ids(
+                self.object, self.request.user
+            )
+        )
+        return {
+            problem.code
+            for problem in Problem.get_cached_instances(*hidden_problem_ids)
+        }
+
+    def filter_hidden_result_breakdown(self, breakdown):
+        if not self.hidden_result_problem_codes:
+            return breakdown
+        return [
+            entry
+            for entry in breakdown
+            if entry.problem_code not in self.hidden_result_problem_codes
+        ]
+
     def get_context_data(self, **kwargs):
         context = super(UserProblemsPage, self).get_context_data(**kwargs)
 
@@ -254,10 +294,17 @@ class UserProblemsPage(UserPage):
             completed_problems = self.get_completed_problems()
             best_subs = best_subs.exclude(problem__in=completed_problems)
 
+        best_subs = list(best_subs)
+        mark_hidden_result_submissions(
+            [bs.submission for bs in best_subs if bs.submission], self.request.user
+        )
+
         # Build a mapping of problem_id to best submission data
         problem_ids = []
         best_sub_map = {}
         for bs in best_subs:
+            if bs.submission and getattr(bs.submission, "_is_result_hidden", False):
+                continue
             problem_ids.append(bs.problem_id)
             best_sub_map[bs.problem_id] = {
                 "points": bs.submission.points if bs.submission else bs.points,
@@ -289,6 +336,7 @@ class UserProblemsPage(UserPage):
             for name, problems in group_problems.items()
         ]
         breakdown, has_more = get_pp_breakdown(self.object, start=0, end=10)
+        breakdown = self.filter_hidden_result_breakdown(breakdown)
         context["pp_breakdown"] = breakdown
         context["pp_has_more"] = has_more
 
@@ -370,6 +418,7 @@ class UserPerformancePointsAjax(UserProblemsPage):
         except ValueError:
             start, end = 0, 100
         breakdown, self.has_more = get_pp_breakdown(self.object, start=start, end=end)
+        breakdown = self.filter_hidden_result_breakdown(breakdown)
         context["pp_breakdown"] = breakdown
         return context
 

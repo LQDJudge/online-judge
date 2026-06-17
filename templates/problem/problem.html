@@ -103,7 +103,7 @@
 
 {% block title_row %}
   <div class="problem-title">
-    {% if request.user.is_authenticated and not has_hidden_subtasks %}
+    {% if request.user.is_authenticated and not has_hidden_subtasks and not problem_result_hidden %}
       {% if request.in_contest and contest_problem %}
         {% set my_subs_link = url('contest_user_submissions', request.profile.current_contest.contest.key, request.user.username, problem.code) %}
       {% else %}

@@ -1,9 +1,15 @@
 from django.urls import reverse
+from django.http import Http404
+from django.utils.functional import cached_property
 from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 
-from judge.utils.problems import get_result_data
+from judge.utils.hidden_results import (
+    get_result_data_with_hidden,
+    hidden_result_submission_ids,
+    is_problem_result_hidden,
+)
 from judge.views.submission import ForceContestMixin, ProblemSubmissions
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 
@@ -14,13 +20,32 @@ class RankedSubmissions(InfinitePaginationMixin, ProblemSubmissions):
     page_type = "best_submissions_list"
     dynamic_update = False
 
+    def access_check(self, request):
+        super().access_check(request)
+        if request.in_contest and is_problem_result_hidden(
+            request.participation.contest, self.problem.id, request.user
+        ):
+            raise Http404()
+
     def get_queryset(self):
         queryset = super(RankedSubmissions, self).get_queryset()
 
         if self.in_contest:
             return queryset.order_by("-contest__points", "time")
         else:
+            queryset = queryset.exclude(
+                id__in=hidden_result_submission_ids(self.request.user)
+            )
             return queryset.order_by("-case_points", "time")
+
+    @cached_property
+    def has_hidden_result_submissions(self):
+        return (
+            super(RankedSubmissions, self)
+            .get_queryset()
+            .filter(id__in=hidden_result_submission_ids(self.request.user))
+            .exists()
+        )
 
     def get_title(self):
         return _("Best solutions for %s") % self.problem_name
@@ -39,8 +64,11 @@ class RankedSubmissions(InfinitePaginationMixin, ProblemSubmissions):
 
     def _get_result_data(self, queryset=None):
         if queryset is None:
-            queryset = super(RankedSubmissions, self).get_queryset()
-        return get_result_data(queryset.order_by())
+            if self.in_contest:
+                queryset = self.get_queryset()
+            else:
+                queryset = super(RankedSubmissions, self).get_queryset()
+        return get_result_data_with_hidden(queryset.order_by(), self.request.user)
 
 
 class ContestRankedSubmission(ForceContestMixin, RankedSubmissions):
