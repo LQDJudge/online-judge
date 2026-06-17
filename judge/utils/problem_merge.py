@@ -394,6 +394,7 @@ class ProblemMerge:
             self._batched_update(
                 ContestSubmission.objects.filter(problem=source_cp),
                 problem=target_cp,
+                is_result_hidden=target_cp.is_result_hidden,
             )
             self._merge_contest_problem_settings(source_cp, target_cp)
             source_cp.delete()

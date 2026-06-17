@@ -14,9 +14,9 @@ from judge.models import (
     Submission,
 )
 from judge.utils.hidden_results import (
+    filter_hidden_result_submissions,
     format_data_key,
     hidden_result_format_keys,
-    hidden_result_submission_ids,
 )
 
 
@@ -240,7 +240,7 @@ def api_v1_user_submissions(request, user):
         user=profile, problem__is_public=True, problem__is_organization_private=False
     )
     hidden_ids = set(
-        subs.filter(id__in=hidden_result_submission_ids(request.user)).values_list(
+        filter_hidden_result_submissions(subs, request.user).values_list(
             "id", flat=True
         )
     )

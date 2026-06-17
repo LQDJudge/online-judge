@@ -164,6 +164,35 @@ class HiddenContestResultTest(TestCase):
         self.assertContains(response, '<div class="memory">---</div>', html=True)
         self.assertNotContains(response, "100 / 100")
 
+    def test_contest_submission_inherits_hidden_result_flag(self):
+        self.submission.contest.refresh_from_db()
+        self.normal_submission.contest.refresh_from_db()
+
+        self.assertTrue(self.submission.contest.is_result_hidden)
+        self.assertFalse(self.normal_submission.contest.is_result_hidden)
+
+    def test_contest_problem_hidden_result_toggle_syncs_contest_submissions(self):
+        self.contest_problem.is_result_hidden = False
+        self.contest_problem.save()
+        self.submission.contest.refresh_from_db()
+        self.assertFalse(self.submission.contest.is_result_hidden)
+
+        self.contest_problem.is_result_hidden = True
+        self.contest_problem.save()
+        self.submission.contest.refresh_from_db()
+        self.assertTrue(self.submission.contest.is_result_hidden)
+
+    def test_contest_problem_unrelated_save_does_not_sync_hidden_result_flag(self):
+        ContestSubmission.objects.filter(submission=self.submission).update(
+            is_result_hidden=False
+        )
+
+        self.contest_problem.points = 99
+        self.contest_problem.save()
+        self.submission.contest.refresh_from_db()
+
+        self.assertFalse(self.submission.contest.is_result_hidden)
+
     def test_own_problem_submissions_mask_hidden_result(self):
         self.client.force_login(self.user)
         response = self.client.get(
@@ -194,7 +223,7 @@ class HiddenContestResultTest(TestCase):
         self.assertContains(response, f'id="{self.submission.id}"')
         self.assert_submission_result_masked(response, self.submission)
 
-    def test_real_status_filter_keeps_hidden_scope_dynamic_update_disabled(self):
+    def test_real_status_filter_excludes_hidden_result_submission_for_ac_filter(self):
         self.client.force_login(self.user)
         response = self.client.get(
             reverse("user_submissions", args=[self.problem.code, self.user.username]),
@@ -203,7 +232,6 @@ class HiddenContestResultTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, f'id="{self.submission.id}"')
-        self.assertNotContains(response, "new EventReceiver")
 
     def test_submission_stats_show_hidden_bucket(self):
         self.client.force_login(self.user)
@@ -240,8 +268,7 @@ class HiddenContestResultTest(TestCase):
         self.assertEqual(data["results_json"]["total"], 2)
 
     def test_global_submission_stats_use_cached_hidden_bucket_path(self):
-        hidden_problem_ids = (self.contest_problem.id,)
-        _get_global_submission_result_data.dirty((), (), (), hidden_problem_ids)
+        _get_global_submission_result_data.dirty((), (), ())
         self.client.force_login(self.user)
         response = self.client.get(reverse("all_submissions"), {"results": "1"})
 
@@ -280,10 +307,7 @@ class HiddenContestResultTest(TestCase):
         self.contest.authors.add(self.profile)
         self.contest._author_ids.dirty(self.contest)
         editable_ids = (self.contest.id,)
-        hidden_problem_ids = (self.contest_problem.id,)
-        _get_global_submission_result_data.dirty(
-            (), (), editable_ids, hidden_problem_ids
-        )
+        _get_global_submission_result_data.dirty((), (), editable_ids)
         self.client.force_login(self.user)
 
         response = self.client.get(reverse("all_submissions"), {"results": "1"})

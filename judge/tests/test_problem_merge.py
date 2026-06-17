@@ -334,6 +334,39 @@ class ProblemMergeTestCase(TestCase):
         self.assertFalse(ContestProblem.objects.filter(id=source_cp.id).exists())
         self.assertEqual(target_cp.points, 100)
 
+    def test_merge_combined_contest_problem_syncs_hidden_result_flag(self):
+        contest = self.make_contest()
+        target_cp = ContestProblem.objects.create(
+            contest=contest,
+            problem=self.target,
+            points=80,
+            order=1,
+            is_result_hidden=True,
+        )
+        source_cp = ContestProblem.objects.create(
+            contest=contest,
+            problem=self.source,
+            points=100,
+            order=2,
+            is_result_hidden=False,
+        )
+        submission = self.make_submission(self.source)
+        participation = ContestParticipation.objects.create(
+            contest=contest, user=self.profile
+        )
+        contest_submission = ContestSubmission.objects.create(
+            submission=submission,
+            problem=source_cp,
+            participation=participation,
+            points=100,
+        )
+
+        ProblemMerge(self.source.code, self.target.code, apply=True).run()
+
+        contest_submission.refresh_from_db()
+        self.assertEqual(contest_submission.problem, target_cp)
+        self.assertTrue(contest_submission.is_result_hidden)
+
     def test_merge_combines_course_lesson_problem_conflict(self):
         course = Course.objects.create(
             name="Merge Course", slug="merge-course", about="", is_open=True
