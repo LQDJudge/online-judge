@@ -186,7 +186,7 @@
     </script>
   {% endcompress %}
 
-  {% if dynamic_update and last_msg and not has_hidden_subtasks and not has_hidden_results %}
+  {% if dynamic_update and last_msg and not has_hidden_subtasks %}
     <script type="text/javascript">
       $(function () {
         function load_dynamic_update(last_msg) {

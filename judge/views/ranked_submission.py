@@ -1,13 +1,12 @@
 from django.urls import reverse
 from django.http import Http404
-from django.utils.functional import cached_property
 from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 
 from judge.utils.hidden_results import (
+    exclude_hidden_result_submissions,
     get_result_data_with_hidden,
-    hidden_result_submission_ids,
     is_problem_result_hidden,
 )
 from judge.views.submission import ForceContestMixin, ProblemSubmissions
@@ -33,19 +32,8 @@ class RankedSubmissions(InfinitePaginationMixin, ProblemSubmissions):
         if self.in_contest:
             return queryset.order_by("-contest__points", "time")
         else:
-            queryset = queryset.exclude(
-                id__in=hidden_result_submission_ids(self.request.user)
-            )
+            queryset = exclude_hidden_result_submissions(queryset, self.request.user)
             return queryset.order_by("-case_points", "time")
-
-    @cached_property
-    def has_hidden_result_submissions(self):
-        return (
-            super(RankedSubmissions, self)
-            .get_queryset()
-            .filter(id__in=hidden_result_submission_ids(self.request.user))
-            .exists()
-        )
 
     def get_title(self):
         return _("Best solutions for %s") % self.problem_name

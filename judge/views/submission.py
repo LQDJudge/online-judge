@@ -1,3 +1,4 @@
+from collections import defaultdict
 from operator import attrgetter
 
 from django.conf import settings
@@ -8,7 +9,6 @@ from django.core.files.storage import default_storage
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import PermissionDenied
 from django.db.models import Prefetch
-from django.db.models import F
 from django.db.models import Q
 from django.http import Http404
 from django.http import HttpResponse
@@ -37,7 +37,6 @@ from judge.highlight_code import highlight_code
 from judge.models import (
     Contest,
     ContestParticipation,
-    ContestProblem,
     Language,
     Problem,
     ProblemTestCase,
@@ -49,12 +48,14 @@ from judge.models.contest import get_contest_problem_ids
 from judge.caching import cache_wrapper
 from judge.utils.hidden_results import (
     HIDDEN_RESULT_STATUS,
+    _get_result_counts,
+    _subtract_result_counts,
     get_result_data_with_hidden,
     hidden_result_submission_ids,
     is_problem_result_hidden,
     mark_hidden_result_submissions,
 )
-from judge.utils.problems import get_result_data
+from judge.utils.problems import _get_result_data
 from judge.utils.problem_data import get_problem_case
 from judge.utils.raw_sql import join_sql_subquery, use_straight_join
 from judge.utils.views import DiggPaginatorMixin, paginate_query_context
@@ -157,8 +158,7 @@ def get_hidden_subtasks(request, submission):
     # Per-problem is_result_hidden: hide ALL batches
     if contest:
         try:
-            cp = submission.contest.problem
-            if cp.is_result_hidden:
+            if submission.contest.is_result_hidden:
                 all_batches = {
                     c.batch for c in submission.test_cases.all() if c.batch is not None
                 }
@@ -318,7 +318,7 @@ class SubmissionStatus(SubmissionDetailBase):
         context["hidden_subtasks"] = get_hidden_subtasks(self.request, self.object)
         context["is_result_hidden"] = False
         contest_sub = submission.contest_or_none
-        if contest_sub and contest_sub.problem.is_result_hidden:
+        if contest_sub and contest_sub.is_result_hidden:
             if not submission.contest_object.is_editable_by(self.request.user):
                 context["is_result_hidden"] = True
         context["last_msg"] = event.last()
@@ -430,16 +430,17 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
 
     def apply_status_filter(self, queryset):
         status_filter = self.get_status_filter()
-        hidden_filter = Q(id__in=hidden_result_submission_ids(self.request.user))
+        hidden_filter = Q(pk__in=hidden_result_submission_ids(self.request.user))
+        visible_filter = ~hidden_filter
         show_hidden = HIDDEN_RESULT_STATUS in self.selected_statuses
         has_real_status = any(
             status != HIDDEN_RESULT_STATUS for status in self.selected_statuses
         )
         if show_hidden and has_real_status:
-            return queryset.filter((status_filter & ~hidden_filter) | hidden_filter)
+            return queryset.filter((status_filter & visible_filter) | hidden_filter)
         if show_hidden:
             return queryset.filter(hidden_filter)
-        return queryset.filter(status_filter & ~hidden_filter)
+        return queryset.filter(status_filter & visible_filter)
 
     def get_queryset_without_status_filter(self):
         selected_statuses = self.selected_statuses
@@ -448,13 +449,6 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             return self.get_queryset()
         finally:
             self.selected_statuses = selected_statuses
-
-    @cached_property
-    def has_hidden_result_submissions(self):
-        queryset = self.get_queryset_without_status_filter()
-        return queryset.filter(
-            id__in=hidden_result_submission_ids(self.request.user)
-        ).exists()
 
     def hide_contest_in_row(self):
         return self.in_contest
@@ -601,7 +595,6 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context["selected_languages"] = self.selected_languages_key
         context["all_statuses"] = self.get_searchable_status_codes()
         context["selected_statuses"] = self.selected_statuses
-        context["has_hidden_results"] = self.has_hidden_result_submissions
         context["can_show_result_data"] = not self.in_hidden_subtasks_contest()
         context["my_submissions_link"] = self.get_my_submissions_page()
         context["friend_submissions_link"] = self.get_friend_submissions_page()
@@ -980,14 +973,9 @@ class AllSubmissions(InfinitePaginationMixin, GeneralSubmissions):
         if self.request.user.is_authenticated and self.request.user.has_perm(
             "judge.edit_all_contest"
         ):
-            return None, ()
-        hidden_contest_problem_ids = tuple(
-            ContestProblem.objects.filter(is_result_hidden=True)
-            .order_by("id")
-            .values_list("id", flat=True)
-        )
+            return None
         if not self.request.user.is_authenticated:
-            return (), hidden_contest_problem_ids
+            return ()
         editable_contest_ids = tuple(
             Contest.objects.filter(
                 Q(authors=self.request.profile) | Q(curators=self.request.profile)
@@ -995,20 +983,17 @@ class AllSubmissions(InfinitePaginationMixin, GeneralSubmissions):
             .order_by("id")
             .values_list("id", flat=True)
         )
-        return editable_contest_ids, hidden_contest_problem_ids
+        return editable_contest_ids
 
     def _get_result_data(self):
         if self.request.organization or self.in_contest:
             return super(AllSubmissions, self)._get_result_data()
 
-        editable_contest_ids, hidden_contest_problem_ids = (
-            self._get_global_hidden_result_scope()
-        )
+        editable_contest_ids = self._get_global_hidden_result_scope()
         return _get_global_submission_result_data(
             tuple(sorted(self.selected_statuses)),
             tuple(sorted(self.selected_languages)),
             editable_contest_ids,
-            hidden_contest_problem_ids,
         )
 
 
@@ -1331,17 +1316,37 @@ class SubmissionSourceFileView(View):
         return HttpResponseRedirect(default_storage.url(storage_path))
 
 
-def _get_global_hidden_result_filter(editable_contest_ids, hidden_contest_problem_ids):
-    if editable_contest_ids is None or not hidden_contest_problem_ids:
-        return Q(pk__in=[])
+def _get_global_hidden_submission_queryset(queryset, editable_contest_ids):
+    if editable_contest_ids is None:
+        return queryset.none()
 
-    hidden_filter = Q(
-        contest_object__contest_problems__id__in=hidden_contest_problem_ids,
-        contest_object__contest_problems__problem_id=F("problem_id"),
+    queryset = queryset.filter(
+        contest__is_result_hidden=True,
+        contest__problem__problem__isnull=False,
     )
     if editable_contest_ids:
-        hidden_filter &= ~Q(contest_object_id__in=editable_contest_ids)
-    return hidden_filter
+        queryset = queryset.exclude(
+            contest__problem__contest_id__in=editable_contest_ids
+        )
+    return queryset
+
+
+def _get_visible_result_data(queryset, hidden_queryset):
+    hidden_counts = _get_result_counts(hidden_queryset)
+    return (
+        _get_result_data(
+            _subtract_result_counts(_get_result_counts(queryset), hidden_counts)
+        ),
+        sum(hidden_counts.values()),
+    )
+
+
+def _get_empty_result_data():
+    return _get_result_data(defaultdict(int))
+
+
+def _get_hidden_count(hidden_queryset):
+    return sum(_get_result_counts(hidden_queryset).values())
 
 
 def _get_status_filter(statuses):
@@ -1363,33 +1368,28 @@ def _get_status_filter(statuses):
 
 
 @cache_wrapper(prefix="gsrd_hidden", timeout=3600, expected_type=dict)
-def _get_global_submission_result_data(
-    statuses, languages, editable_contest_ids, hidden_contest_problem_ids
-):
+def _get_global_submission_result_data(statuses, languages, editable_contest_ids):
     queryset = Submission.objects.all()
     if languages:
         queryset = queryset.filter(language_id__in=languages)
-
-    hidden_ids = Submission.objects.filter(
-        _get_global_hidden_result_filter(
-            editable_contest_ids, hidden_contest_problem_ids
-        )
-    ).values("id")
+    hidden_queryset = _get_global_hidden_submission_queryset(
+        queryset, editable_contest_ids
+    )
 
     if statuses:
         status_filter = _get_status_filter(statuses)
         show_hidden = HIDDEN_RESULT_STATUS in statuses
         has_real_status = any(status != HIDDEN_RESULT_STATUS for status in statuses)
-        hidden_filter = Q(id__in=hidden_ids)
-        if show_hidden and has_real_status:
-            queryset = queryset.filter((status_filter & ~hidden_filter) | hidden_filter)
-        elif show_hidden:
-            queryset = queryset.filter(hidden_filter)
+        if has_real_status:
+            queryset = queryset.filter(status_filter)
+            hidden_status_queryset = hidden_queryset.filter(status_filter)
+            result, _ = _get_visible_result_data(queryset, hidden_status_queryset)
         else:
-            queryset = queryset.filter(status_filter & ~hidden_filter)
+            result = _get_empty_result_data()
+        hidden_count = _get_hidden_count(hidden_queryset) if show_hidden else 0
+    else:
+        result, hidden_count = _get_visible_result_data(queryset, hidden_queryset)
 
-    result = get_result_data(queryset.exclude(id__in=hidden_ids).order_by())
-    hidden_count = queryset.filter(id__in=hidden_ids).count()
     if hidden_count:
         result["categories"].append(
             {

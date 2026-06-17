@@ -973,7 +973,11 @@ class ContestProblem(models.Model):
         self.full_clean()  # Validate before saving
         # Check if is_result_hidden changed
         is_result_hidden_changed = False
-        if self.pk:
+        update_fields = kwargs.get("update_fields")
+        saves_result_hidden = (
+            update_fields is None or "is_result_hidden" in update_fields
+        )
+        if self.pk and saves_result_hidden:
             try:
                 old = ContestProblem.objects.get(pk=self.pk)
                 if old.is_result_hidden != self.is_result_hidden:
@@ -986,6 +990,9 @@ class ContestProblem(models.Model):
         get_contest_problem_ids.dirty(self.contest_id)
         # Recompute all participations when is_result_hidden changes
         if is_result_hidden_changed:
+            ContestSubmission.objects.filter(problem=self).exclude(
+                is_result_hidden=self.is_result_hidden
+            ).update(is_result_hidden=self.is_result_hidden)
             for participation in self.contest.users.filter(virtual__gte=0):
                 participation.recompute_results()
 
@@ -1064,8 +1071,19 @@ class ContestSubmission(models.Model):
         help_text=_("Whether this submission was ran only on pretests."),
         default=False,
     )
+    is_result_hidden = models.BooleanField(
+        default=False,
+        verbose_name=_("hide result"),
+        help_text=_("Whether the contest problem hides this submission's result."),
+    )
 
     def save(self, *args, **kwargs):
+        if self.problem_id:
+            self.is_result_hidden = self.problem.is_result_hidden
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = set(kwargs["update_fields"]) | {
+                    "is_result_hidden"
+                }
         super().save(*args, **kwargs)
         # Invalidate the user count cache when a submission is added or updated
         get_contest_problem_user_count.dirty(self.problem.contest_id)
@@ -1083,6 +1101,12 @@ class ContestSubmission(models.Model):
     class Meta:
         verbose_name = _("contest submission")
         verbose_name_plural = _("contest submissions")
+        indexes = [
+            models.Index(
+                fields=["is_result_hidden", "-submission"],
+                name="judge_csub_hidden_sub_idx",
+            ),
+        ]
 
 
 class Rating(models.Model):
