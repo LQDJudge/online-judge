@@ -13,6 +13,11 @@ from judge.models import (
     Profile,
     Submission,
 )
+from judge.utils.hidden_results import (
+    format_data_key,
+    hidden_result_format_keys,
+    hidden_result_submission_ids,
+)
 
 
 def sane_time_repr(delta):
@@ -63,6 +68,19 @@ def api_v1_contest_detail(request, contest):
     can_see_problems = (
         in_contest or contest.ended or contest.is_editable_by(request.user)
     )
+    hidden_format_keys = hidden_result_format_keys(contest, request.user)
+
+    def get_problem_breakdown(participation):
+        format_data = participation.format_data or {}
+        result = []
+        for problem in problems:
+            format_key = format_data_key(problem)
+            result.append(
+                None
+                if format_key in hidden_format_keys
+                else format_data.get(format_key)
+            )
+        return result
 
     return JsonResponse(
         {
@@ -98,9 +116,7 @@ def api_v1_contest_detail(request, contest):
                     "points": participation.score,
                     "cumtime": participation.cumtime,
                     "is_disqualified": participation.is_disqualified,
-                    "solutions": contest.format.get_problem_breakdown(
-                        participation, problems
-                    ),
+                    "solutions": get_problem_breakdown(participation),
                 }
                 for participation in participations
             ],
@@ -223,19 +239,28 @@ def api_v1_user_submissions(request, user):
     subs = Submission.objects.filter(
         user=profile, problem__is_public=True, problem__is_organization_private=False
     )
+    hidden_ids = set(
+        subs.filter(id__in=hidden_result_submission_ids(request.user)).values_list(
+            "id", flat=True
+        )
+    )
+
+    def serialize_submission(submission):
+        result_hidden = submission["id"] in hidden_ids
+        return {
+            "problem": submission["problem__code"],
+            "time": None if result_hidden else submission["time"],
+            "memory": None if result_hidden else submission["memory"],
+            "points": None if result_hidden else submission["points"],
+            "language": submission["language__key"],
+            "status": None if result_hidden else submission["status"],
+            "result": None if result_hidden else submission["result"],
+        }
 
     return JsonResponse(
         {
-            sub["id"]: {
-                "problem": sub["problem__code"],
-                "time": sub["time"],
-                "memory": sub["memory"],
-                "points": sub["points"],
-                "language": sub["language__key"],
-                "status": sub["status"],
-                "result": sub["result"],
-            }
-            for sub in subs.values(
+            submission["id"]: serialize_submission(submission)
+            for submission in subs.values(
                 "id",
                 "problem__code",
                 "time",

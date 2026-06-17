@@ -3,6 +3,9 @@
     href="{{url('contest_user_submissions', contest.key, profile.username, problem.code)}}">#</a>
 </h4>
 <hr>
+{% if is_result_hidden %}
+  <p><i class="fa fa-eye-slash"></i> {{ _('Results are hidden.') }}</p>
+{% endif %}
 {% if best_subtasks and subtasks %}
   <table class="lightbox-submissions">
     <tbody>

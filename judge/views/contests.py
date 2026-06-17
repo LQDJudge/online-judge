@@ -89,6 +89,11 @@ from judge.models.contest import get_contest_problem_ids
 from judge.models.contest_review import ContestPublicRequest
 from judge.tasks import run_moss
 from judge.utils.celery import redirect_to_task_status
+from judge.utils.hidden_results import (
+    format_data_key,
+    hidden_result_contest_problem_ids,
+    hidden_result_problem_ids,
+)
 from judge.utils.opengraph import generate_opengraph
 from judge.utils.problems import _get_result_data
 from judge.views.problem import SolvedProblemMixin
@@ -695,15 +700,9 @@ class ContestDetail(
             self.object.SCOREBOARD_AFTER_PARTICIPATION,
         )
 
-        # Per-problem result hiding
-        if not self.object.is_editable_by(self.request.user):
-            context["result_hidden_problem_ids"] = set(
-                self.object.contest_problems.filter(
-                    is_result_hidden=True, problem__isnull=False
-                ).values_list("problem_id", flat=True)
-            )
-        else:
-            context["result_hidden_problem_ids"] = set()
+        context["result_hidden_problem_ids"] = hidden_result_problem_ids(
+            self.object, self.request.user
+        )
 
         if self.profile:
             if is_in_viewed_contest:
@@ -809,15 +808,9 @@ class ContestProblems(ContestMixin, SolvedProblemMixin, TitleMixin, DetailView):
             contest.SCOREBOARD_AFTER_PARTICIPATION,
         )
 
-        # Per-problem result hiding
-        if not contest.is_editable_by(self.request.user):
-            context["result_hidden_problem_ids"] = set(
-                contest.contest_problems.filter(
-                    is_result_hidden=True, problem__isnull=False
-                ).values_list("problem_id", flat=True)
-            )
-        else:
-            context["result_hidden_problem_ids"] = set()
+        context["result_hidden_problem_ids"] = hidden_result_problem_ids(
+            contest, self.request.user
+        )
 
         if self.profile:
             if is_in_contest:
@@ -1251,7 +1244,10 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
         if not (self.object.ended or self.can_edit):
             raise Http404()
 
+        hidden_problem_ids = hidden_result_problem_ids(self.object, self.request.user)
         queryset = Submission.objects.filter(contest_object=self.object)
+        if hidden_problem_ids:
+            queryset = queryset.exclude(problem_id__in=hidden_problem_ids)
 
         ac_count = Count(
             Case(When(result="AC", then=Value(1)), output_field=IntegerField())
@@ -1266,7 +1262,12 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
             .values_list("problem__code", "result", "count"),
         )
         labels, codes = [], []
-        contest_problems = self.object.contest_problems.order_by("order").values_list(
+        contest_problems = self.object.contest_problems.order_by("order")
+        if hidden_problem_ids:
+            contest_problems = contest_problems.exclude(
+                problem_id__in=hidden_problem_ids
+            )
+        contest_problems = contest_problems.values_list(
             "problem__name", "problem__code"
         )
         if contest_problems:
@@ -1412,7 +1413,7 @@ def build_ranking_profiles(contest, problems, participations, show_final=False):
         problem_cells = []
         for cp in problems:
             if result_hidden_ids and cp.id in result_hidden_ids:
-                key = f"quiz_{cp.id}" if cp.quiz_id else str(cp.id)
+                key = format_data_key(cp)
                 if key in format_data:
                     cell = format_html(
                         '<td class="problem-score-col"><span>?</span></td>'
@@ -1542,6 +1543,9 @@ class ContestRanking(ContestRankingBase):
             raise Http404()
 
         problems = get_contest_problems(contest)
+        hidden_contest_problem_ids = hidden_result_contest_problem_ids(
+            contest, self.request.user
+        )
         self.all_rows = self._get_lightweight_rows(self._get_base_queryset())
         filtered_rows = self._filter_rows(self.all_rows)
         filtered_ids = [r[0] for r in filtered_rows]
@@ -1584,9 +1588,12 @@ class ContestRanking(ContestRankingBase):
                 getattr(p, s),
             ]
             for cp in problems:
-                k = f"quiz_{cp.id}" if cp.quiz_id else str(cp.id)
+                k = format_data_key(cp)
                 pdata = fd.get(k)
-                row.append(pdata["points"] if pdata else "")
+                if cp.id in hidden_contest_problem_ids:
+                    row.append("?" if pdata else "")
+                else:
+                    row.append(pdata["points"] if pdata else "")
             writer.writerow(row)
 
         response = HttpResponse(output.getvalue(), content_type="text/csv")

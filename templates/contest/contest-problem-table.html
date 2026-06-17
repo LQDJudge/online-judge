@@ -55,17 +55,21 @@
         </td>
         {% if not has_hidden_subtasks %}
           <td class="users">
-            <a href="{{ url('ranked_submissions', problem.code) }}">
-              {% if not hide_contest_scoreboard %}
-                {% if current_contest %}
-                  {{ problem.get_contest_user_count(current_contest.id) }}
+            {% if problem.id in _result_hidden_problem_ids %}
+              <span title="{{ _('Hidden') }}">?</span>
+            {% else %}
+              <a href="{{ url('ranked_submissions', problem.code) }}">
+                {% if not hide_contest_scoreboard %}
+                  {% if current_contest %}
+                    {{ problem.get_contest_user_count(current_contest.id) }}
+                  {% else %}
+                    {{ problem.user_count }}
+                  {% endif %}
                 {% else %}
-                  {{ problem.user_count }}
+                  ???
                 {% endif %}
-              {% else %}
-                ???
-              {% endif %}
-            </a>
+              </a>
+            {% endif %}
           </td>
         {% endif %}
       </tr>

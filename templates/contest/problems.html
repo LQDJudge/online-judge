@@ -54,9 +54,17 @@
                 </td>
                 <td>{{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}</td>
                 {% if contest.ended %}
-                  <td>{{ problem.ac_rate|floatformat(1) }}%</td>
                   <td>
-                    {% if problem.is_public or is_editor or request.user.is_superuser %}
+                    {% if problem.id in result_hidden_problem_ids %}
+                      ?
+                    {% else %}
+                      {{ problem.ac_rate|floatformat(1) }}%
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if problem.id in result_hidden_problem_ids %}
+                      ?
+                    {% elif problem.is_public or is_editor or request.user.is_superuser %}
                       <a href="{{ url('ranked_submissions', problem.code) }}">{{ problem.user_count }}</a>
                     {% else %}
                       {{ problem.user_count }}
