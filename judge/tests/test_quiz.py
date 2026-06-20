@@ -10,6 +10,10 @@ from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal
 
+from ai_features.quiz_import_service import (
+    normalize_quiz_question_payload,
+    parse_quiz_import_response,
+)
 from judge.models import Language, Profile
 from judge.models.quiz import (
     QuizQuestion,
@@ -126,6 +130,110 @@ class QuizQuestionTestCase(TestCase):
 
         self.assertEqual(question.question_type, "TF")
         self.assertEqual(question.correct_answers["answers"], "true")
+
+
+class QuizQuestionDetailTestCase(TestCase):
+    """Tests for question bank detail rendering."""
+
+    fixtures = ["language_small"]
+
+    def setUp(self):
+        self.user = User.objects.create_superuser(
+            username="admin", email="admin@test.com", password="testpass"
+        )
+        self.profile, _ = Profile.objects.get_or_create(
+            user=self.user,
+            defaults={"language": Language.objects.first()},
+        )
+
+    def test_short_answer_with_null_answers_renders(self):
+        question = QuizQuestion.objects.create(
+            question_type="SA",
+            title="Imported SA Question",
+            content="What is 2+3?",
+            choices=[],
+            correct_answers={"answers": None},
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(f"/quiz/questions/{question.pk}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Imported SA Question")
+        self.assertNotContains(response, "Accepted Answers")
+
+
+class QuizImportParsingTestCase(TestCase):
+    """Tests for AI quiz import payload normalization."""
+
+    def test_short_answer_null_answers_normalizes_to_no_correct_answers(self):
+        result = parse_quiz_import_response("""
+            {
+              "questions": [
+                {
+                  "title": "SA",
+                  "question_type": "SA",
+                  "content": "What is 2+3?",
+                  "choices": [],
+                  "correct_answers": {"answers": null}
+                }
+              ]
+            }
+            """)
+
+        self.assertTrue(result["success"])
+        question = result["questions"][0]
+        self.assertEqual(question["choices"], [])
+        self.assertIsNone(question["correct_answers"])
+
+    def test_short_answer_text_answers_preserve_case(self):
+        result = parse_quiz_import_response("""
+            {
+              "questions": [
+                {
+                  "title": "SA",
+                  "question_type": "SA",
+                  "content": "Spell pi",
+                  "choices": [],
+                  "correct_answers": {"answers": ["pi", "Pi"]}
+                }
+              ]
+            }
+            """)
+
+        self.assertTrue(result["success"])
+        question = result["questions"][0]
+        self.assertEqual(question["correct_answers"]["answers"], ["pi", "Pi"])
+
+    def test_short_answer_empty_answer_list_normalizes_to_no_correct_answers(self):
+        result = parse_quiz_import_response("""
+            {
+              "questions": [
+                {
+                  "title": "SA",
+                  "question_type": "SA",
+                  "content": "What is unknown?",
+                  "choices": [],
+                  "correct_answers": {"answers": []}
+                }
+              ]
+            }
+            """)
+
+        self.assertTrue(result["success"])
+        question = result["questions"][0]
+        self.assertIsNone(question["correct_answers"])
+        self.assertEqual(result["summary"]["has_answers"], 0)
+
+    def test_choice_ids_and_answers_are_normalized(self):
+        choices, correct_answers = normalize_quiz_question_payload(
+            "MC",
+            [{"id": " a ", "text": "Choice A"}],
+            {"answers": " a "},
+        )
+
+        self.assertEqual(choices, [{"id": "A", "text": "Choice A"}])
+        self.assertEqual(correct_answers, {"answers": "A"})
 
 
 class QuizTestCase(TestCase):
