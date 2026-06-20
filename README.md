@@ -427,6 +427,32 @@ sudo systemctl enable memcached redis-server
 sudo systemctl start memcached redis-server
 ```
 
+Recommended MariaDB production safeguards for web-only database connections:
+
+```ini
+# Add these inside the existing [mariadbd] or [mysqld] section in:
+# /etc/mysql/mariadb.conf.d/50-server.cnf
+innodb_ft_min_token_size = 2
+max_statement_time = 8
+idle_transaction_timeout = 30
+idle_write_transaction_timeout = 15
+idle_readonly_transaction_timeout = 30
+```
+
+`max_statement_time` prevents unexpectedly expensive statements from running too long. The idle transaction timeouts prevent sleeping web connections from holding row locks indefinitely. After editing the config, validate and restart MariaDB:
+
+```bash
+sudo mariadbd --validate-config
+sudo systemctl restart mariadb
+sudo mariadb dmoj -e "SHOW GLOBAL VARIABLES WHERE Variable_name IN ('innodb_ft_min_token_size', 'max_statement_time', 'idle_transaction_timeout', 'idle_write_transaction_timeout', 'idle_readonly_transaction_timeout');"
+```
+
+For migrations or maintenance commands that legitimately need longer database work, override the limit for that session instead of changing the global default:
+
+```sql
+SET SESSION max_statement_time = 0;
+```
+
 ## uWSGI
 
 Install uWSGI inside the virtualenv:
@@ -1062,6 +1088,32 @@ BRIDGED_DJANGO_ADDRESS = [('localhost', 9998)]
 sudo apt install memcached redis-server
 sudo systemctl enable memcached redis-server
 sudo systemctl start memcached redis-server
+```
+
+Cấu hình MariaDB khuyến nghị cho production khi database chỉ phục vụ web:
+
+```ini
+# Thêm các dòng này vào section [mariadbd] hoặc [mysqld] có sẵn trong:
+# /etc/mysql/mariadb.conf.d/50-server.cnf
+innodb_ft_min_token_size = 2
+max_statement_time = 8
+idle_transaction_timeout = 30
+idle_write_transaction_timeout = 15
+idle_readonly_transaction_timeout = 30
+```
+
+`max_statement_time` chặn các câu SQL bất thường chạy quá lâu. Các timeout `idle_*_transaction_timeout` tránh việc connection web đang ngủ nhưng vẫn giữ row lock quá lâu. Sau khi sửa config, kiểm tra và restart MariaDB:
+
+```bash
+sudo mariadbd --validate-config
+sudo systemctl restart mariadb
+sudo mariadb dmoj -e "SHOW GLOBAL VARIABLES WHERE Variable_name IN ('innodb_ft_min_token_size', 'max_statement_time', 'idle_transaction_timeout', 'idle_write_transaction_timeout', 'idle_readonly_transaction_timeout');"
+```
+
+Với migration hoặc lệnh maintenance cần chạy database lâu hơn bình thường, override theo session thay vì đổi global default:
+
+```sql
+SET SESSION max_statement_time = 0;
 ```
 
 ### uWSGI
