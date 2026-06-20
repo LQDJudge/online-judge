@@ -58,7 +58,7 @@
       </div>
     {% endif %}
 
-    {% if question.correct_answers %}
+    {% if show_correct_answers %}
       <div class="question-section">
         <h3><i class="fa fa-check"></i> {{ _('Correct Answer(s)') }}</h3>
         {% if question.question_type in ['MC', 'TF'] %}
@@ -113,7 +113,7 @@
             </p>
             <p><strong>{{ _('Accepted Answers') }}:</strong></p>
             <ul>
-              {% for answer in sa_config.answers %}
+              {% for answer in accepted_answers %}
                 <li><span class="multiline-text">{{ answer }}</span></li>
               {% endfor %}
             </ul>

@@ -11,12 +11,13 @@ import tempfile
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views import View
 from django.views.generic.base import TemplateResponseMixin
 
+from ai_features.quiz_import_service import normalize_quiz_question_payload
 from judge.models import Quiz, QuizQuestion, QuizQuestionAssignment
 from judge.models.quiz import QuizQuestionType
 from judge.utils.permissions import can_use_ai_features
@@ -43,8 +44,6 @@ class QuizImportView(
 
     def get(self, request, *args, **kwargs):
         if not can_use_ai_features(request.user):
-            from django.http import Http404
-
             raise Http404()
 
         cache_key = f"quiz_import_task_{request.user.id}"
@@ -140,6 +139,9 @@ class QuizImportCreateQuestionView(View):
         content = str(data.get("content", "")).strip()
         choices = data.get("choices")
         correct_answers = data.get("correct_answers")
+        choices, correct_answers = normalize_quiz_question_payload(
+            question_type, choices, correct_answers
+        )
         shuffle_choices = bool(data.get("shuffle_choices", False))
         is_public = bool(data.get("is_public", False))
 
