@@ -1658,16 +1658,19 @@ def _apply_student_filters(students, request, org_query, friend_only):
     return students
 
 
-def _paginate_students(students, request):
+def _paginate_students(students, request, page_override=None):
     """Paginate a student list using DiggPaginator. Returns (page_students, page_obj)."""
     if not students:
         return [], None
 
     total = len(students)
-    try:
-        page_number = int(request.GET.get("page", 1))
-    except ValueError:
-        page_number = 1
+    if page_override is not None:
+        page_number = page_override
+    else:
+        try:
+            page_number = int(request.GET.get("page", 1))
+        except ValueError:
+            page_number = 1
     num_pages = max(1, (total + GRADES_PAGE_SIZE - 1) // GRADES_PAGE_SIZE)
     page_number = max(1, min(page_number, num_pages))
 
@@ -1679,6 +1682,17 @@ def _paginate_students(students, request):
     ).get_page(page_number)
 
     return page_students, page_obj
+
+
+def _locate_student(students, username):
+    """Return (1-based page, profile.id) of `username` in the already filtered+sorted
+    `students` list, or (None, None) if absent."""
+    if not username:
+        return None, None
+    for i, s in enumerate(students):
+        if s.username == username:
+            return i // GRADES_PAGE_SIZE + 1, s.id
+    return None, None
 
 
 def _get_unlocked_lessons(course, profile, is_editable):
@@ -1708,6 +1722,8 @@ class CourseStudentResults(CourseAccessibleMixin, DetailView):
         return self.course
 
     def get_grades(self):
+        self.focus_id = None
+        self.my_page = None
         self.org_query = _parse_org_filter(self.request)
         self.friend_only = (
             self.request.GET.get("friend") == "1" and self.request.profile
@@ -1753,7 +1769,14 @@ class CourseStudentResults(CourseAccessibleMixin, DetailView):
         if not students:
             return {}, {}, {}, None, global_rank
 
-        page_students, page_obj = _paginate_students(students, self.request)
+        focus_username = self.request.GET.get("focus", "").strip() or None
+        focus_page, self.focus_id = _locate_student(students, focus_username)
+        self.my_page, _ = _locate_student(
+            students, self.request.profile.username if self.request.profile else None
+        )
+        page_students, page_obj = _paginate_students(
+            students, self.request, page_override=focus_page
+        )
 
         grade_lessons = {s: grade_lessons[s] for s in page_students}
         grade_contests = {s: grade_contests[s] for s in page_students}
@@ -1781,6 +1804,8 @@ class CourseStudentResults(CourseAccessibleMixin, DetailView):
             context["page_obj"],
             context["global_rank"],
         ) = self.get_grades()
+        context["focus_id"] = self.focus_id
+        context["my_page"] = self.my_page
         if context["page_obj"]:
             context.update(paginate_query_context(self.request))
         context["search_query"] = self.request.GET.get("search", "").strip()
@@ -1817,6 +1842,8 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
             raise Http404()
 
     def get_lesson_grades(self):
+        self.focus_id = None
+        self.my_page = None
         self.org_query = _parse_org_filter(self.request)
         self.friend_only = (
             self.request.GET.get("friend") == "1" and self.request.profile
@@ -1911,7 +1938,14 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
         if not students:
             return {}, None, global_rank
 
-        page_students, page_obj = _paginate_students(students, self.request)
+        focus_username = self.request.GET.get("focus", "").strip() or None
+        focus_page, self.focus_id = _locate_student(students, focus_username)
+        self.my_page, _ = _locate_student(
+            students, self.request.profile.username if self.request.profile else None
+        )
+        page_students, page_obj = _paginate_students(
+            students, self.request, page_override=focus_page
+        )
         sorted_grades = {s: grades[s] for s in page_students}
 
         return sorted_grades, page_obj, global_rank
@@ -1940,6 +1974,8 @@ class CourseStudentResultsLesson(CourseAccessibleMixin, DetailView):
             context["page_obj"],
             context["global_rank"],
         ) = self.get_lesson_grades()
+        context["focus_id"] = self.focus_id
+        context["my_page"] = self.my_page
         if context["page_obj"]:
             context.update(paginate_query_context(self.request))
         context["search_query"] = self.request.GET.get("search", "").strip()
