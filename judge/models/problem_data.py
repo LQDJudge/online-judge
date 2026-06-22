@@ -1,8 +1,12 @@
 import os
 from zipfile import BadZipFile, ZipFile
 
-from django.core.validators import FileExtensionValidator
 from django.core.cache import cache
+from django.core.validators import (
+    FileExtensionValidator,
+    MaxValueValidator,
+    MinValueValidator,
+)
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -22,6 +26,8 @@ __all__ = [
 ]
 
 problem_data_storage = ProblemDataStorage()
+MAX_OUTPUT_ZIP_SIZE_MB = 20
+MAX_COMMUNICATION_NUM_PROCESSES = 16
 
 
 def problem_directory_file_helper(code, filename):
@@ -165,6 +171,10 @@ class ProblemData(models.Model):
         ),
         null=True,
         blank=True,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(MAX_OUTPUT_ZIP_SIZE_MB),
+        ],
     )
     use_ioi_signature = models.BooleanField(
         verbose_name=_("is IOI signature"),
@@ -192,6 +202,10 @@ class ProblemData(models.Model):
         ),
         null=True,
         blank=True,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(MAX_COMMUNICATION_NUM_PROCESSES),
+        ],
     )
     testcase_validator = models.FileField(
         verbose_name=_("testcase validator"),

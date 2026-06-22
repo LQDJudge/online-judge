@@ -18,7 +18,7 @@ from django.views import View
 from django.views.generic.base import TemplateResponseMixin
 
 from judge.models import Quiz, QuizQuestion, QuizQuestionAssignment
-from judge.models.quiz import QuizQuestionType
+from judge.models.quiz import MAX_QUIZ_TIME_LIMIT_MINUTES, QuizQuestionType
 from judge.utils.permissions import can_use_ai_features
 from judge.views.quiz import PendingGradingCountMixin
 from judge.utils.views import TitleMixin
@@ -219,6 +219,14 @@ class QuizImportCreateQuizView(View):
                 time_limit = 0
         except (ValueError, TypeError):
             time_limit = 0
+        if time_limit > MAX_QUIZ_TIME_LIMIT_MINUTES:
+            return JsonResponse(
+                {
+                    "error": _("Time limit cannot exceed %(max)s minutes")
+                    % {"max": MAX_QUIZ_TIME_LIMIT_MINUTES}
+                },
+                status=400,
+            )
 
         # Verify all question IDs exist
         if not question_ids:
